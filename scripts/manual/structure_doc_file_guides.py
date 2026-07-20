@@ -487,7 +487,28 @@ def doc_path_guide(path: str) -> dict[str, str] | None:
     p = path.replace("\\", "/")
     if not p.startswith("docs/") or not p.endswith(".md"):
         return None
-    return DOC_PATH_GUIDES.get(p)
+    if p in DOC_PATH_GUIDES:
+        return DOC_PATH_GUIDES[p]
+    name = PurePosixPath(p).name
+    stem = PurePosixPath(p).stem.replace("_", " ")
+    if p.startswith("docs/reports/"):
+        return {
+            "what": f"Engineering report `{name}` — dated findings under `docs/reports/`.",
+            "what_ru": f"Инженерный отчёт `{name}` — dated findings в `docs/reports/`.",
+            "why": "Preserves audit/parity decisions so later work does not re-litigate the same findings.",
+            "why_ru": "Сохраняет решения audit/parity, чтобы позже не переобсуждать те же findings.",
+            "contains": f"Markdown report body for `{stem}`.",
+            "contains_ru": f"Markdown-тело отчёта `{stem}`.",
+            "responsibilities": "Document evidence and outcomes for this investigation topic.",
+            "responsibilities_ru": "Фиксирует evidence и итоги по теме этого расследования.",
+            "when": f"Reviewing history related to `{stem}` before repeating the work.",
+            "when_ru": f"Смотрите историю по `{stem}` перед повторением той же работы.",
+            "connected": "`docs/ROADMAP.md`, `CHANGELOG.md`, related governing docs.",
+            "connected_ru": "`docs/ROADMAP.md`, `CHANGELOG.md`, связанные governing docs.",
+            "layer": "Repo-only engineering report — not Project Knowledge pack.",
+            "layer_ru": "Repo-only engineering report — не Project Knowledge pack.",
+        }
+    return None
 
 
 def doc_file_ru_field(

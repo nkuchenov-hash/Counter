@@ -135,6 +135,58 @@ register_folder_ru(
 )
 
 register_folder_ru(
+    "lib/features/notes",
+    {
+        "what_ru": "UI Notes — GLM library, full-screen block editor, drawing canvas и карточки заметок.",
+        "why_ru": "Lists Notes и standalone Notes routes собираются здесь; PocketBase I/O остаётся в Brain.",
+        "inside_ru": "Library page, block editor, drawing canvas, GLM surfaces/tokens, виджеты cards/body/shell.",
+        "affects_ru": "Notes во вкладке Lists, full-screen editor и drawing-блоки.",
+        "when_ru": "Layout library, toolbar editor, вставка drawing, неверный preview карточки.",
+        "delete_ru": "Нет — сломается Notes UI.",
+        "related_ru": "`lib/core/widgets/notes/`, `notes_brain_helpers.dart`, `lib/features/lists/`.",
+    },
+)
+
+register_folder_ru(
+    "lib/features/notes/widgets",
+    {
+        "what_ru": "Виджеты Notes library — grid/list карточки, GLM production shell, library body.",
+        "why_ru": "Lists встраивает эти виджеты вместо дублирования card/shell layout в `lists_view.dart`.",
+        "inside_ru": "`note_card.dart`, `notes_library_body.dart`, `notes_library_production_shell.dart`.",
+        "affects_ru": "Отрисовка Notes library (grid/list) внутри Lists.",
+        "when_ru": "Badges карточки, grid vs list, chrome GLM library shell.",
+        "delete_ru": "Нет — сломается Notes library UI.",
+        "related_ru": "`lib/features/notes/`, `lists_view.dart`.",
+    },
+)
+
+register_folder_ru(
+    "lib/features/shared/notes_editor",
+    {
+        "what_ru": "Общий запуск редактора заметок и Quill-лист — полноэкранный маршрут с автосохранением Brain.",
+        "why_ru": "Вкладки Lists и Plans открывают один редактор заметок, не дублируя Quill в каждом экране.",
+        "inside_ru": "`notes_editor_launcher.dart`, `notes_editor_sheet.dart`.",
+        "affects_ru": "Полноэкранный редактор заметок из Lists и общих edit flows.",
+        "when_ru": "Маршрут редактора, автосохранение Quill, переход More → Edit details.",
+        "delete_ru": "Нет — сломается общий вход в редактор заметок.",
+        "related_ru": "`lib/core/widgets/notes/`, `lib/features/shared/edit_sheet/`.",
+    },
+)
+
+register_folder_ru(
+    "lib/core/widgets/notes",
+    {
+        "what_ru": "Канонический reusable Notes UI — editor surface, toolbar, save status, preview card.",
+        "why_ru": "Feature Notes собирает чистые виджеты; Core не импортирует Brain или features.",
+        "inside_ru": "Barrel `notes.dart`, context row, editor surface, markdown helpers, toolbar, preview card.",
+        "affects_ru": "Любой Notes editor/library с import `package:counter/core/widgets/notes/`.",
+        "when_ru": "Невидимый web toolbar, chip save-status, Quill↔Markdown copy/paste.",
+        "delete_ru": "Нет — пропадут канонические Notes виджеты.",
+        "related_ru": "`lib/features/notes/`, `lib/features/shared/notes_editor/`.",
+    },
+)
+
+register_folder_ru(
     "lib/features/profile",
     {
         "what_ru": "Profile и tag settings screens из меню More.",

@@ -382,6 +382,123 @@ register_folder_ru(
 )
 
 register_folder_ru(
+    "installer/windows/stt_helper_src",
+    {
+        "what_ru": "Исходники и build inputs Windows STT helper (`counter_stt_helper`) для installer.",
+        "why_ru": "Desktop voice нужен native helper binary; отсюда собирают `stt_helper_build/`.",
+        "inside_ru": "Исходники STT helper, build scripts и wiring моделей для `build_stt_helper_en.ps1`.",
+        "affects_ru": "Качество transcription desktop voice после установки Windows.",
+        "when_ru": "Меняете whisper/GOLOS helper или пересобираете helper для packaging.",
+        "delete_ru": "Нет — без исходников нельзя rebuild Windows STT helper.",
+        "related_ru": "`installer/windows/stt_helper_build/`, `desktop_stt_helper_service.dart`.",
+    },
+)
+
+register_folder_ru(
+    "installer/windows/wav_stt_replay",
+    {
+        "what_ru": "Windows tooling для WAV replay — offline STT quality checks по реальным capture fixtures.",
+        "why_ru": "Регрессии desktop voice проверяют replay известных WAV через STT helper.",
+        "inside_ru": "Replay scripts и helpers рядом с `test/fixtures/desktop_voice_wav/`.",
+        "affects_ru": "QA и benchmark desktop voice STT — не экраны пользователя.",
+        "when_ru": "Сравнение STT transcripts, latency benchmarks, quiet-whisper regressions.",
+        "delete_ru": "Нет — нужен для задокументированных Windows STT replay/benchmark scripts.",
+        "related_ru": "`test/fixtures/desktop_voice_wav/`, `benchmark_desktop_voice_stt.ps1`.",
+    },
+)
+
+register_folder_ru(
+    "test/fixtures",
+    {
+        "what_ru": "Общие fixtures Flutter tests — WAV captures, golden manifests и статичные inputs.",
+        "why_ru": "Desktop voice и другие suite нуждаются в стабильных binary/JSON fixtures без live mic в CI.",
+        "inside_ru": "`desktop_voice_wav/` и другие fixture assets для `flutter test`.",
+        "affects_ru": "Только качество CI/test — не попадает в APK/web пользователя.",
+        "when_ru": "Падения voice STT golden, missing WAV fixtures, обновление benchmark harness inputs.",
+        "delete_ru": "Нет — тесты с этими fixtures упадут.",
+        "related_ru": "`test/desktop_voice_*_test.dart`, `benchmark_desktop_voice_stt.ps1`.",
+    },
+)
+
+register_folder_ru(
+    "test/notes",
+    {
+        "what_ru": "Flutter tests и fixtures для Notes editor/library parity и сериализации документов.",
+        "why_ru": "GLM Notes UI и миграция `NoteDocument` должны оставаться покрытыми после портов editor.",
+        "inside_ru": "`fixtures/` capture helpers и Notes-related `*_test.dart`.",
+        "affects_ru": "CI Notes regression gate — не ship пользователю.",
+        "when_ru": "Падения Notes editor parity, document parse regressions, обновление library capture.",
+        "delete_ru": "Нет — здесь лежит Notes regression coverage.",
+        "related_ru": "`lib/features/notes/`, `note_document.dart`, `capture_notes_glm_parity.ps1`.",
+    },
+)
+
+register_folder_ru(
+    "test/notes/fixtures",
+    {
+        "what_ru": "Переиспользуемые фикстуры паритета GLM Notes — harness виджетов для визуальной регрессии.",
+        "why_ru": "Вынесены из `lib/features/notes/debug/`, чтобы тестовый capture не считался production UI.",
+        "inside_ru": "`notes_glm_parity_fixture.dart`, `notes_glm_library_parity_fixture.dart`, `notes_production_library_capture.dart`.",
+        "affects_ru": "Только тесты паритета Notes и ручной capture — не production `lib/`.",
+        "when_ru": "Обновление скриншотов GLM Notes или раскладки parity harness.",
+        "delete_ru": "Нет — тесты визуального паритета Notes импортируют эти фикстуры.",
+        "related_ru": "`capture_notes_glm_main.dart`, `notes_glm_editor_parity_test.dart`.",
+    },
+)
+
+register_folder_ru(
+    "test/services",
+    {
+        "what_ru": "Юнит-тесты сервисов устройства — расписание plan alarm и другие политики без UI.",
+        "why_ru": "Планирование уведомлений нужно проверять без запуска полного Flutter UI.",
+        "inside_ru": "`plan_alarm_schedule_test.dart` и связанные тесты сервисов.",
+        "affects_ru": "Корректность CI для сервисов — не попадает пользователю.",
+        "when_ru": "Регрессии расписания напоминаний планов или смена политики сервиса.",
+        "delete_ru": "Нет — здесь покрытие unit-тестами сервисов.",
+        "related_ru": "`plan_alarm_schedule.dart`, `plan_alarm_helpers.dart`.",
+    },
+)
+
+register_folder_ru(
+    "test/fixtures/desktop_voice_wav",
+    {
+        "what_ru": "Золотые WAV-записи desktop voice и манифесты для тестов качества STT.",
+        "why_ru": "CI должен проигрывать известные образцы речи, а не живой микрофон.",
+        "inside_ru": "WAV-файлы, golden_manifest.json и метаданные захвата.",
+        "affects_ru": "Только тесты и бенчмарки desktop voice STT.",
+        "when_ru": "Несовпадение STT golden, добавление нового quiet/submit WAV.",
+        "delete_ru": "Нет — тесты desktop voice зависят от этих WAV.",
+        "related_ru": "`test/desktop_voice_*_test.dart`, `benchmark_desktop_voice_stt.ps1`.",
+    },
+)
+
+register_folder_ru(
+    "test/fixtures/desktop_voice_wav/benchmark_reports",
+    {
+        "what_ru": "JSON-отчёты бенчмарков latency/качества desktop voice STT.",
+        "why_ru": "Хранит последние метрики P95/stop-to-useful для приёмки без повторного прогона каждый раз.",
+        "inside_ru": "`real_helper_latency_latest.json` и связанные файлы вывода бенчмарка.",
+        "affects_ru": "Артефакты обзора бенчмарков — не runtime приложения.",
+        "when_ru": "Проверка последних чисел real-helper latency после правок STT.",
+        "delete_ru": "Возможно — пересоздаётся скриптами бенчмарка; оставить если CI/docs ссылаются на latest.json.",
+        "related_ru": "`run_desktop_voice_real_helper_latency_benchmark.ps1`.",
+    },
+)
+
+register_folder_ru(
+    "installer/windows/wav_stt_replay/src",
+    {
+        "what_ru": "Исходники Windows-инструмента `wav_stt_replay` для офлайн STT replay.",
+        "why_ru": "Собирает exe, которым гоняют fixture WAV через STT helper.",
+        "inside_ru": "Модули исходников, компилируемые в `wav_stt_replay.exe` под target/release.",
+        "affects_ru": "Только скрипты replay/compare desktop voice.",
+        "when_ru": "Меняете CLI replay или пересобираете wav_stt_replay.",
+        "delete_ru": "Нет — без исходников нельзя пересобрать replay-инструмент.",
+        "related_ru": "`installer/windows/wav_stt_replay/`, `compare_desktop_voice_wav_stt.ps1`.",
+    },
+)
+
+register_folder_ru(
     "android/app",
     {
         "what_ru": "Модуль Android-приложения Counter — из него Gradle собирает APK/AAB.",

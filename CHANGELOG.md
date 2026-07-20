@@ -11,6 +11,10 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-20] - Structure: regenerate detailed app guide [engineering]
+
+* **`APP_STRUCTURE_DETAILED.md`:** Regenerated from the current tracked tree after architecture-guard baseline cleanup (63 → 0). Generator mappings updated for Notes, Desktop Voice, plan alarms, final five modules, relocated Notes capture fixtures, and new test/installer folders. Quality OK; deterministic second run identical; structure scan + strict guard remain green. Documentation/generator-data only.
+
 ## [2026-07-20] - Architecture: document final production modules [engineering]
 
 * **`APP_STRUCTURE.md`:** Added exact entries for the final 5 legitimate production modules (`radial_menu_viewport.dart`, `voice_domain_resolver.dart`, `create_category_from_picker.dart`, `record_edit_save_policy.dart`, `shell_bottom_navigation.dart`). Strict guard **5 → 0** (A=0, B=0). Architecture baseline cleanup complete; `APP_STRUCTURE_DETAILED` regeneration remains the only follow-up. Documentation-only.

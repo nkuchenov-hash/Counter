@@ -969,6 +969,59 @@ def script_guide(path: str) -> FileGuide:
 
 def test_guide(path: str, syms: list[str]) -> FileGuide:
     stem = Path(path).stem
+    name = Path(path).name
+    ext = Path(path).suffix.lower()
+    p = path.replace("\\", "/")
+    if p.startswith("test/fixtures/desktop_voice_wav/"):
+        kind = {
+            ".wav": "WAV speech capture",
+            ".json": "JSON golden/benchmark payload",
+            ".txt": "attempt diagnostics text",
+            ".md": "fixture report markdown",
+        }.get(ext, "desktop voice fixture asset")
+        kind_ru = {
+            ".wav": "WAV-запись речи",
+            ".json": "JSON golden/benchmark payload",
+            ".txt": "текстовая диагностика попытки",
+            ".md": "markdown-отчёт по fixture",
+        }.get(ext, "fixture-актив desktop voice")
+        return FileGuide(
+            what=f"{kind} `{name}` for desktop voice STT regression.",
+            why="Desktop voice tests and benchmarks replay known captures instead of live mic input.",
+            contains=f"Tracked fixture file `{name}` under `test/fixtures/desktop_voice_wav/`.",
+            responsibilities=f"Provide stable input/artifact for STT quality checks involving `{stem}`.",
+            when=f"Updating golden WAVs, manifests, or benchmark reports near `{name}`.",
+            delete="No — desktop voice tests/benchmarks reference this fixture.",
+            connected="`test/desktop_voice_*_test.dart`, `scripts/manual/benchmark_desktop_voice_stt.ps1`.",
+            layer="Test fixture — not shipped to users.",
+            what_ru=f"{kind_ru} `{name}` для регрессии desktop voice STT.",
+            why_ru="Тесты и бенчмарки desktop voice проигрывают известные записи вместо живого микрофона.",
+            contains_ru=f"Отслеживаемый fixture-файл `{name}` в `test/fixtures/desktop_voice_wav/`.",
+            responsibilities_ru=f"Даёт стабильный вход/артефакт для проверок STT вокруг `{stem}`.",
+            when_ru=f"Обновление golden WAV, манифестов или отчётов бенчмарка около `{name}`.",
+            delete_ru="Нет — тесты/бенчмарки desktop voice ссылаются на этот fixture.",
+            connected_ru="`test/desktop_voice_*_test.dart`, `benchmark_desktop_voice_stt.ps1`.",
+            layer_ru="Test fixture — не попадает пользователю.",
+        )
+    if p.startswith("test/fixtures/") and ext in {".png", ".jpg", ".jpeg", ".webp"}:
+        return FileGuide(
+            what=f"Captured PNG/image fixture `{name}` for Notes GLM visual parity.",
+            why="Visual regression compares live widget output against these stored frames.",
+            contains=f"Image asset `{name}` under `test/fixtures/`.",
+            responsibilities="Baseline screenshot for Notes GLM parity/capture workflows.",
+            when=f"Refreshing Notes GLM capture frames after UI changes affecting `{stem}`.",
+            delete="No — Notes visual parity/capture references this image.",
+            connected="`scripts/manual/capture_notes_glm_parity.ps1`, `test/notes/fixtures/`.",
+            layer="Test fixture — not shipped to users.",
+            what_ru=f"PNG/image fixture `{name}` для визуального паритета Notes GLM.",
+            why_ru="Визуальная регрессия сравнивает живой вывод виджетов с этими сохранёнными кадрами.",
+            contains_ru=f"Image-актив `{name}` в `test/fixtures/`.",
+            responsibilities_ru="Базовый скриншот для workflow паритета/capture Notes GLM.",
+            when_ru=f"Обновление кадров capture Notes GLM после UI-правок вокруг `{stem}`.",
+            delete_ru="Нет — визуальный паритет/capture Notes ссылается на это изображение.",
+            connected_ru="`capture_notes_glm_parity.ps1`, `test/notes/fixtures/`.",
+            layer_ru="Test fixture — не попадает пользователю.",
+        )
     return FileGuide(
         what=f"Automated test `{stem}` — verifies behavior without manual tapping.",
         why="Prevents regressions when related production code changes.",
@@ -976,8 +1029,16 @@ def test_guide(path: str, syms: list[str]) -> FileGuide:
         responsibilities=f"Assert expected behavior for `{stem}` scenario.",
         when=f"CI failure or changing code near `{stem.replace('_test', '')}`.",
         delete="No — required for tests.",
-        connected=f"Matching files under `lib/` with similar name.",
+        connected="Matching files under `lib/` with similar name.",
         layer="Test — not shipped to users.",
+        what_ru=f"Автотест `{stem}` — проверяет поведение без ручных нажатий.",
+        why_ru="Ловит регрессии при правках связанного production-кода.",
+        contains_ru=f"Тест-кейсы (символы: {', '.join(syms[:3]) or 'test groups'}).",
+        responsibilities_ru=f"Проверяет ожидаемое поведение сценария `{stem}`.",
+        when_ru=f"Падение CI или правка кода около `{stem.replace('_test', '')}`.",
+        delete_ru="Нет — нужен для тестов.",
+        connected_ru="Соответствующие файлы под `lib/` с похожим именем.",
+        layer_ru="Тест — не попадает пользователю.",
     )
 
 

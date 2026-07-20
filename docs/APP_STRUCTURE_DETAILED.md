@@ -2,7 +2,7 @@
 
 Owner-readable guide: every tracked folder and file in plain language (EN + RU).
 
-**Generated at git SHA `205c6b8` on 2026-07-06.**
+**Generated at git SHA `76e660e` on 2026-07-20.**
 
 Concise map: [`APP_STRUCTURE.md`](APP_STRUCTURE.md) · Upload checklist: [`PROJECT_KNOWLEDGE_PACK.md`](PROJECT_KNOWLEDGE_PACK.md)
 
@@ -1028,6 +1028,78 @@ RU:
 
 ---
 
+## Folder: `test/fixtures/`
+
+EN:
+
+- **What this folder is:** Shared Flutter test fixtures — WAV captures, golden manifests, and static inputs for regression tests.
+- **Why it exists:** Desktop voice and other suites need stable binary/JSON fixtures instead of live mic recording in CI.
+- **What lives here:** `desktop_voice_wav/` and other fixture assets referenced by `flutter test`.
+- **What part of the app it affects:** CI/test quality only — not shipped in user APK/web builds.
+- **When to open it:** Voice STT golden failures, missing WAV fixtures, benchmark harness input updates.
+- **Can it be deleted?** No — tests that depend on these fixtures would fail.
+- **Main related paths:** `test/desktop_voice_*_test.dart`, `scripts/manual/benchmark_desktop_voice_stt.ps1`.
+
+RU:
+
+- **Что это за папка:** Общие fixtures Flutter tests — WAV captures, golden manifests и статичные inputs.
+- **Зачем нужна:** Desktop voice и другие suite нуждаются в стабильных binary/JSON fixtures без live mic в CI.
+- **Что здесь лежит:** `desktop_voice_wav/` и другие fixture assets для `flutter test`.
+- **На что влияет в приложении:** Только качество CI/test — не попадает в APK/web пользователя.
+- **Когда открывать:** Падения voice STT golden, missing WAV fixtures, обновление benchmark harness inputs.
+- **Можно удалить?** Нет — tests that depend on these fixtures would fail.
+- **Связанные пути:** `test/desktop_voice_*_test.dart`, `benchmark_desktop_voice_stt.ps1`.
+
+---
+
+## Folder: `test/notes/`
+
+EN:
+
+- **What this folder is:** Flutter tests and fixtures for Notes editor/library parity and document serialization.
+- **Why it exists:** GLM Notes UI and `NoteDocument` migration must stay covered after editor ports.
+- **What lives here:** `fixtures/` capture helpers plus Notes-related `*_test.dart` files.
+- **What part of the app it affects:** CI Notes regression gate — not shipped to users.
+- **When to open it:** Notes editor parity failures, document parse regressions, library capture updates.
+- **Can it be deleted?** No — Notes regression coverage lives here.
+- **Main related paths:** `lib/features/notes/`, `lib/data/models/note_document.dart`, `scripts/manual/capture_notes_glm_parity.ps1`.
+
+RU:
+
+- **Что это за папка:** Flutter tests и fixtures для Notes editor/library parity и сериализации документов.
+- **Зачем нужна:** GLM Notes UI и миграция `NoteDocument` должны оставаться покрытыми после портов editor.
+- **Что здесь лежит:** `fixtures/` capture helpers и Notes-related `*_test.dart`.
+- **На что влияет в приложении:** CI Notes regression gate — не ship пользователю.
+- **Когда открывать:** Падения Notes editor parity, document parse regressions, обновление library capture.
+- **Можно удалить?** Нет — Notes regression coverage lives here.
+- **Связанные пути:** `lib/features/notes/`, `note_document.dart`, `capture_notes_glm_parity.ps1`.
+
+---
+
+## Folder: `test/services/`
+
+EN:
+
+- **What this folder is:** Unit tests for device services — plan alarm schedule and other UI-free service policies.
+- **Why it exists:** Notification/alarm scheduling must be verified without launching full Flutter UI.
+- **What lives here:** `plan_alarm_schedule_test.dart` and related service-focused tests.
+- **What part of the app it affects:** CI service correctness — not shipped to users.
+- **When to open it:** Plan reminder schedule regressions or service policy changes.
+- **Can it be deleted?** No — service unit coverage lives here.
+- **Main related paths:** `lib/services/plan_alarm_schedule.dart`, `lib/data/plans/plan_alarm_helpers.dart`.
+
+RU:
+
+- **Что это за папка:** Юнит-тесты сервисов устройства — расписание plan alarm и другие политики без UI.
+- **Зачем нужна:** Планирование уведомлений нужно проверять без запуска полного Flutter UI.
+- **Что здесь лежит:** `plan_alarm_schedule_test.dart` и связанные тесты сервисов.
+- **На что влияет в приложении:** Корректность CI для сервисов — не попадает пользователю.
+- **Когда открывать:** Регрессии расписания напоминаний планов или смена политики сервиса.
+- **Можно удалить?** Нет — service unit coverage lives here.
+- **Связанные пути:** `plan_alarm_schedule.dart`, `plan_alarm_helpers.dart`.
+
+---
+
 ## Folder: `web/icons/`
 
 EN:
@@ -1193,6 +1265,54 @@ RU:
 - **Когда открывать:** Voice в dev OK, но не в installed app; rebuild STT helper.
 - **Можно удалить?** Нет — Windows installer STT bundle incomplete without it.
 - **Связанные пути:** `build_stt_helper_en.ps1`, `desktop_stt_helper_service.dart`.
+
+---
+
+## Folder: `installer/windows/stt_helper_src/`
+
+EN:
+
+- **What this folder is:** Source and build inputs for the Windows STT helper (`counter_stt_helper`) shipped with the installer.
+- **Why it exists:** Desktop voice needs a native helper binary; this tree holds the code rebuilt into `stt_helper_build/`.
+- **What lives here:** STT helper source, build scripts, and model wiring used by `build_stt_helper_en.ps1`.
+- **What part of the app it affects:** Quality of installed Windows desktop voice transcription.
+- **When to open it:** Changing whisper/GOLOS helper behavior or rebuilding the helper for packaging.
+- **Can it be deleted?** No — cannot rebuild the Windows STT helper without it.
+- **Main related paths:** `installer/windows/stt_helper_build/`, `lib/core/services/desktop_stt_helper_service.dart`.
+
+RU:
+
+- **Что это за папка:** Исходники и build inputs Windows STT helper (`counter_stt_helper`) для installer.
+- **Зачем нужна:** Desktop voice нужен native helper binary; отсюда собирают `stt_helper_build/`.
+- **Что здесь лежит:** Исходники STT helper, build scripts и wiring моделей для `build_stt_helper_en.ps1`.
+- **На что влияет в приложении:** Качество transcription desktop voice после установки Windows.
+- **Когда открывать:** Меняете whisper/GOLOS helper или пересобираете helper для packaging.
+- **Можно удалить?** Нет — cannot rebuild the Windows STT helper without it.
+- **Связанные пути:** `installer/windows/stt_helper_build/`, `desktop_stt_helper_service.dart`.
+
+---
+
+## Folder: `installer/windows/wav_stt_replay/`
+
+EN:
+
+- **What this folder is:** Windows WAV replay tooling for offline STT quality checks against real capture fixtures.
+- **Why it exists:** Desktop voice regressions are validated by replaying known WAVs through the STT helper.
+- **What lives here:** Replay scripts and helpers used with `test/fixtures/desktop_voice_wav/`.
+- **What part of the app it affects:** Desktop voice STT QA and benchmark workflows — not end-user screens.
+- **When to open it:** Comparing STT transcripts, latency benchmarks, or quiet-whisper regressions.
+- **Can it be deleted?** No — required for documented Windows STT replay/benchmark scripts.
+- **Main related paths:** `test/fixtures/desktop_voice_wav/`, `scripts/manual/benchmark_desktop_voice_stt.ps1`.
+
+RU:
+
+- **Что это за папка:** Windows tooling для WAV replay — offline STT quality checks по реальным capture fixtures.
+- **Зачем нужна:** Регрессии desktop voice проверяют replay известных WAV через STT helper.
+- **Что здесь лежит:** Replay scripts и helpers рядом с `test/fixtures/desktop_voice_wav/`.
+- **На что влияет в приложении:** QA и benchmark desktop voice STT — не экраны пользователя.
+- **Когда открывать:** Сравнение STT transcripts, latency benchmarks, quiet-whisper regressions.
+- **Можно удалить?** Нет — нужен для documented Windows STT replay/benchmark scripts.
+- **Связанные пути:** `test/fixtures/desktop_voice_wav/`, `benchmark_desktop_voice_stt.ps1`.
 
 ---
 
@@ -1772,6 +1892,30 @@ RU:
 
 ---
 
+## Folder: `lib/features/notes/`
+
+EN:
+
+- **What this folder is:** Notes feature UI — GLM library, full-screen block editor, drawing canvas, note cards.
+- **Why it exists:** Lists-tab Notes experience and standalone Notes routes compose here; Brain owns PocketBase I/O.
+- **What lives here:** Library page, block editor, drawing canvas, GLM surfaces/tokens, widget cards/body/shell.
+- **What part of the app it affects:** Lists Notes view, full-screen note editor, drawing blocks on notes.
+- **When to open it:** Notes library layout, editor toolbar, drawing insert, card preview wrong.
+- **Can it be deleted?** No — Notes product UI breaks.
+- **Main related paths:** `lib/core/widgets/notes/`, `lib/data/plans/notes_brain_helpers.dart`, `lib/features/lists/`.
+
+RU:
+
+- **Что это за папка:** UI Notes — GLM library, full-screen block editor, drawing canvas и карточки заметок.
+- **Зачем нужна:** Lists Notes и standalone Notes routes собираются здесь; PocketBase I/O остаётся в Brain.
+- **Что здесь лежит:** Library page, block editor, drawing canvas, GLM surfaces/tokens, виджеты cards/body/shell.
+- **На что влияет в приложении:** Notes во вкладке Lists, full-screen editor и drawing-блоки.
+- **Когда открывать:** Layout library, toolbar editor, вставка drawing, неверный preview карточки.
+- **Можно удалить?** Нет — Notes product UI breaks.
+- **Связанные пути:** `lib/core/widgets/notes/`, `notes_brain_helpers.dart`, `lib/features/lists/`.
+
+---
+
 ## Folder: `lib/features/planning/`
 
 EN:
@@ -2084,6 +2228,54 @@ RU:
 
 ---
 
+## Folder: `test/fixtures/desktop_voice_wav/`
+
+EN:
+
+- **What this folder is:** Desktop voice WAV golden captures and manifests used by STT quality tests.
+- **Why it exists:** CI must replay known speech samples instead of live microphone input.
+- **What lives here:** WAV files, golden_manifest.json, and related capture metadata.
+- **What part of the app it affects:** Desktop voice STT/unit tests and benchmark scripts only.
+- **When to open it:** STT golden mismatch, adding a new quiet/submit WAV fixture.
+- **Can it be deleted?** No — desktop voice tests depend on these WAVs.
+- **Main related paths:** `test/desktop_voice_*_test.dart`, `scripts/manual/benchmark_desktop_voice_stt.ps1`.
+
+RU:
+
+- **Что это за папка:** Золотые WAV-записи desktop voice и манифесты для тестов качества STT.
+- **Зачем нужна:** CI должен проигрывать известные образцы речи, а не живой микрофон.
+- **Что здесь лежит:** WAV-файлы, golden_manifest.json и метаданные захвата.
+- **На что влияет в приложении:** Только тесты и бенчмарки desktop voice STT.
+- **Когда открывать:** Несовпадение STT golden, добавление нового quiet/submit WAV.
+- **Можно удалить?** Нет — desktop voice tests depend on these WAVs.
+- **Связанные пути:** `test/desktop_voice_*_test.dart`, `benchmark_desktop_voice_stt.ps1`.
+
+---
+
+## Folder: `test/notes/fixtures/`
+
+EN:
+
+- **What this folder is:** Reusable Notes GLM parity/capture fixtures — production-widget harnesses for visual regression.
+- **Why it exists:** Moved out of `lib/features/notes/debug/` so test-only capture code is not treated as production UI.
+- **What lives here:** `notes_glm_parity_fixture.dart`, `notes_glm_library_parity_fixture.dart`, `notes_production_library_capture.dart`.
+- **What part of the app it affects:** Notes parity widget tests and manual capture entrypoint — not production `lib/`.
+- **When to open it:** Updating Notes GLM capture screenshots or parity harness layout.
+- **Can it be deleted?** No — Notes visual parity tests import these fixtures.
+- **Main related paths:** `scripts/manual/capture_notes_glm_main.dart`, `test/notes_glm_editor_parity_test.dart`.
+
+RU:
+
+- **Что это за папка:** Переиспользуемые фикстуры паритета GLM Notes — harness виджетов для визуальной регрессии.
+- **Зачем нужна:** Вынесены из `lib/features/notes/debug/`, чтобы тестовый capture не считался production UI.
+- **Что здесь лежит:** `notes_glm_parity_fixture.dart`, `notes_glm_library_parity_fixture.dart`, `notes_production_library_capture.dart`.
+- **На что влияет в приложении:** Только тесты паритета Notes и ручной capture — не production `lib/`.
+- **Когда открывать:** Обновление скриншотов GLM Notes или раскладки parity harness.
+- **Можно удалить?** Нет — Notes visual parity tests import these fixtures.
+- **Связанные пути:** `capture_notes_glm_main.dart`, `notes_glm_editor_parity_test.dart`.
+
+---
+
 ## Folder: `windows/runner/resources/`
 
 EN:
@@ -2177,6 +2369,30 @@ RU:
 - **Когда открывать:** Ошибки merge manifest при profile build.
 - **Можно удалить?** Нет — нужен для profile-сборки Android.
 - **Связанные пути:** `android/app/src/main/`.
+
+---
+
+## Folder: `installer/windows/wav_stt_replay/src/`
+
+EN:
+
+- **What this folder is:** Rust/source tree for the Windows `wav_stt_replay` offline STT replay tool.
+- **Why it exists:** Builds the replay executable used to score fixture WAVs through the STT helper.
+- **What lives here:** Source modules compiled into `wav_stt_replay.exe` under target/release.
+- **What part of the app it affects:** Desktop voice replay/compare scripts only.
+- **When to open it:** Changing replay CLI behavior or rebuilding wav_stt_replay.
+- **Can it be deleted?** No — cannot rebuild the replay tool without this source.
+- **Main related paths:** `installer/windows/wav_stt_replay/`, `scripts/manual/compare_desktop_voice_wav_stt.ps1`.
+
+RU:
+
+- **Что это за папка:** Исходники Windows-инструмента `wav_stt_replay` для офлайн STT replay.
+- **Зачем нужна:** Собирает exe, которым гоняют fixture WAV через STT helper.
+- **Что здесь лежит:** Модули исходников, компилируемые в `wav_stt_replay.exe` под target/release.
+- **На что влияет в приложении:** Только скрипты replay/compare desktop voice.
+- **Когда открывать:** Меняете CLI replay или пересобираете wav_stt_replay.
+- **Можно удалить?** Нет — cannot rebuild the replay tool without this source.
+- **Связанные пути:** `installer/windows/wav_stt_replay/`, `compare_desktop_voice_wav_stt.ps1`.
 
 ---
 
@@ -2276,6 +2492,30 @@ RU:
 
 ---
 
+## Folder: `lib/core/widgets/notes/`
+
+EN:
+
+- **What this folder is:** Canonical reusable Notes UI — editor surface, toolbar, save status, preview card.
+- **Why it exists:** Feature Notes screens compose pure widgets; Core must not import Brain or features.
+- **What lives here:** Barrel `notes.dart`, context row, editor surface, markdown helpers, toolbar, preview card.
+- **What part of the app it affects:** Any Notes editor/library that imports `package:counter/core/widgets/notes/`.
+- **When to open it:** Invisible web toolbar, save-status chip, Quill↔Markdown copy/paste.
+- **Can it be deleted?** No — Notes canonical widgets disappear.
+- **Main related paths:** `lib/features/notes/`, `lib/features/shared/notes_editor/`.
+
+RU:
+
+- **Что это за папка:** Канонический reusable Notes UI — editor surface, toolbar, save status, preview card.
+- **Зачем нужна:** Feature Notes собирает чистые виджеты; Core не импортирует Brain или features.
+- **Что здесь лежит:** Barrel `notes.dart`, context row, editor surface, markdown helpers, toolbar, preview card.
+- **На что влияет в приложении:** Любой Notes editor/library с import `package:counter/core/widgets/notes/`.
+- **Когда открывать:** Невидимый web toolbar, chip save-status, Quill↔Markdown copy/paste.
+- **Можно удалить?** Нет — Notes canonical widgets disappear.
+- **Связанные пути:** `lib/features/notes/`, `lib/features/shared/notes_editor/`.
+
+---
+
 ## Folder: `lib/core/widgets/plan_card/`
 
 EN:
@@ -2321,6 +2561,30 @@ RU:
 - **Когда открывать:** Высота card, tag pills, play button, density bands Time View.
 - **Можно удалить?** Нет — plan UI breaks everywhere.
 - **Связанные пути:** `lib/features/planning/`, `plan_card_layouts.dart`.
+
+---
+
+## Folder: `lib/features/notes/widgets/`
+
+EN:
+
+- **What this folder is:** Notes library widgets — grid/list cards, production GLM shell, library body.
+- **Why it exists:** Lists tab embeds these widgets instead of duplicating card/shell layout in `lists_view.dart`.
+- **What lives here:** `note_card.dart`, `notes_library_body.dart`, `notes_library_production_shell.dart`.
+- **What part of the app it affects:** Notes library grid/list rendering inside Lists.
+- **When to open it:** Note card badges, grid vs list, GLM library shell chrome.
+- **Can it be deleted?** No — Notes library UI breaks.
+- **Main related paths:** `lib/features/notes/`, `lib/features/lists/lists_view.dart`.
+
+RU:
+
+- **Что это за папка:** Виджеты Notes library — grid/list карточки, GLM production shell, library body.
+- **Зачем нужна:** Lists встраивает эти виджеты вместо дублирования card/shell layout в `lists_view.dart`.
+- **Что здесь лежит:** `note_card.dart`, `notes_library_body.dart`, `notes_library_production_shell.dart`.
+- **На что влияет в приложении:** Отрисовка Notes library (grid/list) внутри Lists.
+- **Когда открывать:** Badges карточки, grid vs list, chrome GLM library shell.
+- **Можно удалить?** Нет — Notes library UI breaks.
+- **Связанные пути:** `lib/features/notes/`, `lists_view.dart`.
 
 ---
 
@@ -2444,6 +2708,30 @@ RU:
 
 ---
 
+## Folder: `lib/features/shared/notes_editor/`
+
+EN:
+
+- **What this folder is:** Shared Notes editor launch + Quill sheet — full-screen route over Brain autosave.
+- **Why it exists:** Lists/Plans open the same Notes editor without embedding Quill wiring in each tab.
+- **What lives here:** `notes_editor_launcher.dart`, `notes_editor_sheet.dart`.
+- **What part of the app it affects:** Full-screen Notes editor opened from Lists/shared edit flows.
+- **When to open it:** Notes editor route, Quill autosave, More → Edit details handoff.
+- **Can it be deleted?** No — shared Notes editor entry breaks.
+- **Main related paths:** `lib/core/widgets/notes/`, `lib/features/shared/edit_sheet/`.
+
+RU:
+
+- **Что это за папка:** Общий запуск редактора заметок и Quill-лист — полноэкранный маршрут с автосохранением Brain.
+- **Зачем нужна:** Вкладки Lists и Plans открывают один редактор заметок, не дублируя Quill в каждом экране.
+- **Что здесь лежит:** `notes_editor_launcher.dart`, `notes_editor_sheet.dart`.
+- **На что влияет в приложении:** Полноэкранный редактор заметок из Lists и общих edit flows.
+- **Когда открывать:** Маршрут редактора, автосохранение Quill, переход More → Edit details.
+- **Можно удалить?** Нет — shared Notes editor entry breaks.
+- **Связанные пути:** `lib/core/widgets/notes/`, `lib/features/shared/edit_sheet/`.
+
+---
+
 ## Folder: `macos/Runner.xcodeproj/project.xcworkspace/xcshareddata/`
 
 EN:
@@ -2513,6 +2801,30 @@ RU:
 - **Когда открывать:** Неверная или пропавшая app icon на iOS/macOS.
 - **Можно удалить?** Нет — если поддерживается сборка macOS.
 - **Связанные пути:** `macos/Flutter/`.
+
+---
+
+## Folder: `test/fixtures/desktop_voice_wav/benchmark_reports/`
+
+EN:
+
+- **What this folder is:** JSON reports written by desktop voice STT latency/quality benchmark harnesses.
+- **Why it exists:** Stores latest P95/stop-to-useful metrics for acceptance without re-running every review.
+- **What lives here:** `real_helper_latency_latest.json` and related benchmark output files.
+- **What part of the app it affects:** Benchmark review artifacts — not app runtime.
+- **When to open it:** Checking latest real-helper latency numbers after STT changes.
+- **Can it be deleted?** Maybe — regenerate via benchmark scripts; keep if CI/docs reference latest.json.
+- **Main related paths:** `scripts/manual/run_desktop_voice_real_helper_latency_benchmark.ps1`.
+
+RU:
+
+- **Что это за папка:** JSON-отчёты бенчмарков latency/качества desktop voice STT.
+- **Зачем нужна:** Хранит последние метрики P95/stop-to-useful для приёмки без повторного прогона каждый раз.
+- **Что здесь лежит:** `real_helper_latency_latest.json` и связанные файлы вывода бенчмарка.
+- **На что влияет в приложении:** Артефакты обзора бенчмарков — не runtime приложения.
+- **Когда открывать:** Проверка последних чисел real-helper latency после правок STT.
+- **Можно удалить?** Возможно — regenerate via benchmark scripts; keep if CI/docs reference latest.json.
+- **Связанные пути:** `run_desktop_voice_real_helper_latency_benchmark.ps1`.
 
 ---
 
@@ -3954,6 +4266,31 @@ RU:
 - **Слой:** Документация — правила, не runtime.
 
 
+### `docs/reports/ARCHITECTURE_GUARD_BASELINE_2026-07-17.md`
+
+EN:
+
+- **What this is:** Engineering report `ARCHITECTURE_GUARD_BASELINE_2026-07-17.md` — dated findings under `docs/reports/`.
+- **Why needed:** Preserves audit/parity decisions so later work does not re-litigate the same findings.
+- **What it contains:** Markdown report body for `ARCHITECTURE GUARD BASELINE 2026-07-17`.
+- **Responsibilities:** Document evidence and outcomes for this investigation topic.
+- **When to open:** Reviewing history related to `ARCHITECTURE GUARD BASELINE 2026-07-17` before repeating the work.
+- **Can it be deleted?** No — governing/current documentation.
+- **Connected to:** `docs/ROADMAP.md`, `CHANGELOG.md`, related governing docs.
+- **Layer / owner:** Repo-only engineering report — not Project Knowledge pack.
+
+RU:
+
+- **Что это:** Инженерный отчёт `ARCHITECTURE_GUARD_BASELINE_2026-07-17.md` — dated findings в `docs/reports/`.
+- **Зачем:** Сохраняет решения audit/parity, чтобы позже не переобсуждать те же findings.
+- **Содержимое:** Markdown-тело отчёта `ARCHITECTURE GUARD BASELINE 2026-07-17`.
+- **Обязанности:** Фиксирует evidence и итоги по теме этого расследования.
+- **Когда открывать:** Смотрите историю по `ARCHITECTURE GUARD BASELINE 2026-07-17` перед повторением той же работы.
+- **Можно удалить?** Нет — governing документация.
+- **Связано с:** `docs/ROADMAP.md`, `CHANGELOG.md`, связанные governing docs.
+- **Слой:** Документация — правила, не runtime.
+
+
 ### `docs/reports/DESIGN_SYSTEM_INVENTORY.md`
 
 EN:
@@ -3976,6 +4313,56 @@ RU:
 - **Когда открывать:** Планирование V7 UI migration или проверка canonical-compliance экрана.
 - **Можно удалить?** Нет — governing документация.
 - **Связано с:** `docs/DESIGN_SYSTEM.md`, `lib/features/dev/component_lab_view.dart`.
+- **Слой:** Документация — правила, не runtime.
+
+
+### `docs/reports/DESKTOP_VOICE_GOLOS_PARITY_AUDIT_2026-07-07.md`
+
+EN:
+
+- **What this is:** Engineering report `DESKTOP_VOICE_GOLOS_PARITY_AUDIT_2026-07-07.md` — dated findings under `docs/reports/`.
+- **Why needed:** Preserves audit/parity decisions so later work does not re-litigate the same findings.
+- **What it contains:** Markdown report body for `DESKTOP VOICE GOLOS PARITY AUDIT 2026-07-07`.
+- **Responsibilities:** Document evidence and outcomes for this investigation topic.
+- **When to open:** Reviewing history related to `DESKTOP VOICE GOLOS PARITY AUDIT 2026-07-07` before repeating the work.
+- **Can it be deleted?** No — governing/current documentation.
+- **Connected to:** `docs/ROADMAP.md`, `CHANGELOG.md`, related governing docs.
+- **Layer / owner:** Repo-only engineering report — not Project Knowledge pack.
+
+RU:
+
+- **Что это:** Инженерный отчёт `DESKTOP_VOICE_GOLOS_PARITY_AUDIT_2026-07-07.md` — dated findings в `docs/reports/`.
+- **Зачем:** Сохраняет решения audit/parity, чтобы позже не переобсуждать те же findings.
+- **Содержимое:** Markdown-тело отчёта `DESKTOP VOICE GOLOS PARITY AUDIT 2026-07-07`.
+- **Обязанности:** Фиксирует evidence и итоги по теме этого расследования.
+- **Когда открывать:** Смотрите историю по `DESKTOP VOICE GOLOS PARITY AUDIT 2026-07-07` перед повторением той же работы.
+- **Можно удалить?** Нет — governing документация.
+- **Связано с:** `docs/ROADMAP.md`, `CHANGELOG.md`, связанные governing docs.
+- **Слой:** Документация — правила, не runtime.
+
+
+### `docs/reports/DESKTOP_VOICE_HANDY_ENDPOINT_PARITY_2026-07-09.md`
+
+EN:
+
+- **What this is:** Engineering report `DESKTOP_VOICE_HANDY_ENDPOINT_PARITY_2026-07-09.md` — dated findings under `docs/reports/`.
+- **Why needed:** Preserves audit/parity decisions so later work does not re-litigate the same findings.
+- **What it contains:** Markdown report body for `DESKTOP VOICE HANDY ENDPOINT PARITY 2026-07-09`.
+- **Responsibilities:** Document evidence and outcomes for this investigation topic.
+- **When to open:** Reviewing history related to `DESKTOP VOICE HANDY ENDPOINT PARITY 2026-07-09` before repeating the work.
+- **Can it be deleted?** No — governing/current documentation.
+- **Connected to:** `docs/ROADMAP.md`, `CHANGELOG.md`, related governing docs.
+- **Layer / owner:** Repo-only engineering report — not Project Knowledge pack.
+
+RU:
+
+- **Что это:** Инженерный отчёт `DESKTOP_VOICE_HANDY_ENDPOINT_PARITY_2026-07-09.md` — dated findings в `docs/reports/`.
+- **Зачем:** Сохраняет решения audit/parity, чтобы позже не переобсуждать те же findings.
+- **Содержимое:** Markdown-тело отчёта `DESKTOP VOICE HANDY ENDPOINT PARITY 2026-07-09`.
+- **Обязанности:** Фиксирует evidence и итоги по теме этого расследования.
+- **Когда открывать:** Смотрите историю по `DESKTOP VOICE HANDY ENDPOINT PARITY 2026-07-09` перед повторением той же работы.
+- **Можно удалить?** Нет — governing документация.
+- **Связано с:** `docs/ROADMAP.md`, `CHANGELOG.md`, связанные governing docs.
 - **Слой:** Документация — правила, не runtime.
 
 
@@ -4577,6 +4964,131 @@ RU:
 - **Можно удалить?** Нет — удаление ломает voice в installed app.
 - **Связано с:** `lib/core/services/desktop_stt_helper_service.dart`, `prepare_stt_payload.ps1`.
 - **Слой:** Windows STT binary — не Dart UI.
+
+
+### `installer/windows/stt_helper_src/capture.rs`
+
+EN:
+
+- **What this is:** installer build file `capture.rs` in `installer/windows/stt_helper_src` — required by Flutter/native toolchain.
+- **Why needed:** Without `capture.rs`, installer compile or packaging step for this folder may fail.
+- **What it contains:** Native/config source for `installer/windows/stt_helper_src` (open file only when build errors cite it).
+- **Responsibilities:** Support installer embedder build for `installer/windows/stt_helper_src` — not Dart business logic.
+- **When to open:** Build log mentions `capture.rs` or `installer/windows/stt_helper_src`.
+- **Can it be deleted?** No — required for build/deploy/audit workflows documented in repo.
+- **Connected to:** `installer/` platform folder, Flutter embedder.
+- **Layer / owner:** Build/deploy/server configuration.
+
+RU:
+
+- **Что это:** Platform file `capture.rs` в `installer/windows/stt_helper_src` — читает Inno Setup/packaging scripts при сборке `CounterSetup.exe` installer.
+- **Зачем:** Без этого файла Inno Setup/packaging scripts может не собрать или упаковать `CounterSetup.exe` installer.
+- **Содержимое:** Содержимое native/config слоя `installer/windows/stt_helper_src` (смотреть файл при build errors).
+- **Обязанности:** Участвует в Inno Setup/packaging scripts pipeline для `CounterSetup.exe` installer — не Dart business logic.
+- **Когда открывать:** Build log installer ссылается на `capture.rs` или `installer/windows/stt_helper_src`.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `installer/`, Flutter embedder, Inno Setup/packaging scripts.
+- **Слой:** installer platform file — не Dart UI.
+
+
+### `installer/windows/stt_helper_src/win_audio_endpoint.rs`
+
+EN:
+
+- **What this is:** installer build file `win_audio_endpoint.rs` in `installer/windows/stt_helper_src` — required by Flutter/native toolchain.
+- **Why needed:** Without `win_audio_endpoint.rs`, installer compile or packaging step for this folder may fail.
+- **What it contains:** Native/config source for `installer/windows/stt_helper_src` (open file only when build errors cite it).
+- **Responsibilities:** Support installer embedder build for `installer/windows/stt_helper_src` — not Dart business logic.
+- **When to open:** Build log mentions `win_audio_endpoint.rs` or `installer/windows/stt_helper_src`.
+- **Can it be deleted?** No — required for build/deploy/audit workflows documented in repo.
+- **Connected to:** `installer/` platform folder, Flutter embedder.
+- **Layer / owner:** Build/deploy/server configuration.
+
+RU:
+
+- **Что это:** Platform file `win_audio_endpoint.rs` в `installer/windows/stt_helper_src` — читает Inno Setup/packaging scripts при сборке `CounterSetup.exe` installer.
+- **Зачем:** Без этого файла Inno Setup/packaging scripts может не собрать или упаковать `CounterSetup.exe` installer.
+- **Содержимое:** Содержимое native/config слоя `installer/windows/stt_helper_src` (смотреть файл при build errors).
+- **Обязанности:** Участвует в Inno Setup/packaging scripts pipeline для `CounterSetup.exe` installer — не Dart business logic.
+- **Когда открывать:** Build log installer ссылается на `win_audio_endpoint.rs` или `installer/windows/stt_helper_src`.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `installer/`, Flutter embedder, Inno Setup/packaging scripts.
+- **Слой:** installer platform file — не Dart UI.
+
+
+### `installer/windows/wav_stt_replay/Cargo.lock`
+
+EN:
+
+- **What this is:** installer build file `Cargo.lock` in `installer/windows/wav_stt_replay` — required by Flutter/native toolchain.
+- **Why needed:** Without `Cargo.lock`, installer compile or packaging step for this folder may fail.
+- **What it contains:** Native/config source for `installer/windows/wav_stt_replay` (open file only when build errors cite it).
+- **Responsibilities:** Support installer embedder build for `installer/windows/wav_stt_replay` — not Dart business logic.
+- **When to open:** Build log mentions `Cargo.lock` or `installer/windows/wav_stt_replay`.
+- **Can it be deleted?** No — required for build/deploy/audit workflows documented in repo.
+- **Connected to:** `installer/` platform folder, Flutter embedder.
+- **Layer / owner:** Build/deploy/server configuration.
+
+RU:
+
+- **Что это:** Platform file `cargo.lock` в `installer/windows/wav_stt_replay` — читает Inno Setup/packaging scripts при сборке `CounterSetup.exe` installer.
+- **Зачем:** Без этого файла Inno Setup/packaging scripts может не собрать или упаковать `CounterSetup.exe` installer.
+- **Содержимое:** Содержимое native/config слоя `installer/windows/wav_stt_replay` (смотреть файл при build errors).
+- **Обязанности:** Участвует в Inno Setup/packaging scripts pipeline для `CounterSetup.exe` installer — не Dart business logic.
+- **Когда открывать:** Build log installer ссылается на `cargo.lock` или `installer/windows/wav_stt_replay`.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `installer/`, Flutter embedder, Inno Setup/packaging scripts.
+- **Слой:** installer platform file — не Dart UI.
+
+
+### `installer/windows/wav_stt_replay/Cargo.toml`
+
+EN:
+
+- **What this is:** installer build file `Cargo.toml` in `installer/windows/wav_stt_replay` — required by Flutter/native toolchain.
+- **Why needed:** Without `Cargo.toml`, installer compile or packaging step for this folder may fail.
+- **What it contains:** Native/config source for `installer/windows/wav_stt_replay` (open file only when build errors cite it).
+- **Responsibilities:** Support installer embedder build for `installer/windows/wav_stt_replay` — not Dart business logic.
+- **When to open:** Build log mentions `Cargo.toml` or `installer/windows/wav_stt_replay`.
+- **Can it be deleted?** No — required for build/deploy/audit workflows documented in repo.
+- **Connected to:** `installer/` platform folder, Flutter embedder.
+- **Layer / owner:** Build/deploy/server configuration.
+
+RU:
+
+- **Что это:** Platform file `cargo.toml` в `installer/windows/wav_stt_replay` — читает Inno Setup/packaging scripts при сборке `CounterSetup.exe` installer.
+- **Зачем:** Без этого файла Inno Setup/packaging scripts может не собрать или упаковать `CounterSetup.exe` installer.
+- **Содержимое:** Содержимое native/config слоя `installer/windows/wav_stt_replay` (смотреть файл при build errors).
+- **Обязанности:** Участвует в Inno Setup/packaging scripts pipeline для `CounterSetup.exe` installer — не Dart business logic.
+- **Когда открывать:** Build log installer ссылается на `cargo.toml` или `installer/windows/wav_stt_replay`.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `installer/`, Flutter embedder, Inno Setup/packaging scripts.
+- **Слой:** installer platform file — не Dart UI.
+
+
+### `installer/windows/wav_stt_replay/src/main.rs`
+
+EN:
+
+- **What this is:** installer build file `main.rs` in `installer/windows/wav_stt_replay/src` — required by Flutter/native toolchain.
+- **Why needed:** Without `main.rs`, installer compile or packaging step for this folder may fail.
+- **What it contains:** Native/config source for `installer/windows/wav_stt_replay/src` (open file only when build errors cite it).
+- **Responsibilities:** Support installer embedder build for `installer/windows/wav_stt_replay/src` — not Dart business logic.
+- **When to open:** Build log mentions `main.rs` or `installer/windows/wav_stt_replay/src`.
+- **Can it be deleted?** No — required for build/deploy/audit workflows documented in repo.
+- **Connected to:** `installer/` platform folder, Flutter embedder.
+- **Layer / owner:** Build/deploy/server configuration.
+
+RU:
+
+- **Что это:** Platform file `main.rs` в `installer/windows/wav_stt_replay/src` — читает Inno Setup/packaging scripts при сборке `CounterSetup.exe` installer.
+- **Зачем:** Без этого файла Inno Setup/packaging scripts может не собрать или упаковать `CounterSetup.exe` installer.
+- **Содержимое:** Содержимое native/config слоя `installer/windows/wav_stt_replay/src` (смотреть файл при build errors).
+- **Обязанности:** Участвует в Inno Setup/packaging scripts pipeline для `CounterSetup.exe` installer — не Dart business logic.
+- **Когда открывать:** Build log installer ссылается на `main.rs` или `installer/windows/wav_stt_replay/src`.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `installer/`, Flutter embedder, Inno Setup/packaging scripts.
+- **Слой:** installer platform file — не Dart UI.
 
 
 ### `integration_test/perf_date_swipe_test.dart`
@@ -6244,6 +6756,84 @@ RU:
 - **Слой:** Foundation — тема, время, voice, диагностика.
 
 
+### `lib/core/services/desktop_main_window.dart`
+
+EN:
+
+- **What this is:** Foundation module `desktop_main_window.dart` (services) — Main Counter desktop window sizing (separate from voice overlay bounds).
+- **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
+- **What it contains:** Primary symbols: `DesktopMainWindow`.
+- **Key code names:** `DesktopMainWindow`
+- **Responsibilities:** Main Counter desktop window sizing (separate from voice overlay bounds)
+- **When to open:** When behavior tied to `desktop_main_window.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** No — required for app runtime.
+- **Connected to:** APP_STRUCTURE role: Main Counter desktop window sizing (separate from voice overlay bounds)
+- **Layer / owner:** Foundation code — theme, time, voice services, diagnostics (not a full screen).
+
+RU:
+
+- **Что это:** Foundation-модуль `desktop_main_window.dart` (services) — Main Counter desktop window sizing (separate from voice overlay bounds).
+- **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
+- **Содержимое:** Dart-модуль `desktop_main_window.dart` — классы и helpers в исходнике.
+- **Обязанности:** Foundation-логика: Main Counter desktop window sizing (separate from voice overlay bounds).
+- **Когда открывать:** Когда ломается поведение, связанное с `desktop_main_window.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/core/services/`, `docs/APP_STRUCTURE.md`
+- **Слой:** Foundation — тема, время, voice, диагностика.
+
+
+### `lib/core/services/desktop_stt_benchmark_harness.dart`
+
+EN:
+
+- **What this is:** Foundation module `desktop_stt_benchmark_harness.dart` (services) — Golden text STT quality gate (postprocess + parser, no mic).
+- **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
+- **What it contains:** Primary symbols: `DesktopVoiceSttGoldenCase`, `DesktopVoiceSttBenchmarkResult`, `DesktopSttBenchmarkHarness`.
+- **Key code names:** `DesktopVoiceSttGoldenCase`, `DesktopVoiceSttBenchmarkResult`, `DesktopSttBenchmarkHarness`
+- **Responsibilities:** Golden text STT quality gate (postprocess + parser, no mic)
+- **When to open:** When behavior tied to `desktop_stt_benchmark_harness.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** No — required for app runtime.
+- **Connected to:** APP_STRUCTURE role: Golden text STT quality gate (postprocess + parser, no mic)
+- **Layer / owner:** Foundation code — theme, time, voice services, diagnostics (not a full screen).
+
+RU:
+
+- **Что это:** Foundation-модуль `desktop_stt_benchmark_harness.dart` (services) — Golden text STT quality gate (postprocess + parser, no mic).
+- **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
+- **Содержимое:** Dart-модуль `desktop_stt_benchmark_harness.dart` — классы и helpers в исходнике.
+- **Обязанности:** Foundation-логика: Golden text STT quality gate (postprocess + parser, no mic).
+- **Когда открывать:** Когда ломается поведение, связанное с `desktop_stt_benchmark_harness.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/core/services/`, `docs/APP_STRUCTURE.md`
+- **Слой:** Foundation — тема, время, voice, диагностика.
+
+
+### `lib/core/services/desktop_stt_cloud_service.dart`
+
+EN:
+
+- **What this is:** Foundation module `desktop_stt_cloud_service.dart` (services) — DesktopSttCloudBackendHooks.
+- **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
+- **What it contains:** Primary symbols: `DesktopSttCloudHttpResult`, `DesktopSttCloudSessionReadyFn`, `DesktopSttCloudPostTranscribeFn`, `DesktopSttCloudBackendHooks`, `DesktopSttCloudService`, `DesktopSttCloudEngine`.
+- **Key code names:** `DesktopSttCloudHttpResult`, `DesktopSttCloudSessionReadyFn`, `DesktopSttCloudPostTranscribeFn`, `DesktopSttCloudBackendHooks`, `DesktopSttCloudService`, `DesktopSttCloudEngine`
+- **Responsibilities:** DesktopSttCloudBackendHooks
+- **When to open:** When behavior tied to `desktop_stt_cloud_service.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** No — required for app runtime.
+- **Connected to:** APP_STRUCTURE role: Core cloud STT adapter + `DesktopSttCloudBackendHooks` injection surface (no Brain imports)
+- **Layer / owner:** Foundation code — theme, time, voice services, diagnostics (not a full screen).
+
+RU:
+
+- **Что это:** Foundation-модуль `desktop_stt_cloud_service.dart` (services) — DesktopSttCloudBackendHooks.
+- **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
+- **Содержимое:** Dart-модуль `desktop_stt_cloud_service.dart` — классы и helpers в исходнике.
+- **Обязанности:** Foundation-логика: DesktopSttCloudBackendHooks.
+- **Когда открывать:** Когда ломается поведение, связанное с `desktop_stt_cloud_service.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/core/services/`, `docs/APP_STRUCTURE.md`
+- **Слой:** Foundation — тема, время, voice, диагностика.
+
+
 ### `lib/core/services/desktop_stt_diagnostics.dart`
 
 EN:
@@ -6270,6 +6860,32 @@ RU:
 - **Слой:** Foundation — тема, время, voice, диагностика.
 
 
+### `lib/core/services/desktop_stt_engine.dart`
+
+EN:
+
+- **What this is:** Foundation module `desktop_stt_engine.dart` (services) — DesktopSttEngine.
+- **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
+- **What it contains:** Primary symbols: `DesktopSttQualityTier`, `DesktopSttMode`, `DesktopSttEngineContext`, `DesktopSttEngineResult`, `DesktopSttEngine`, `DesktopVoiceEngineIdStt`.
+- **Key code names:** `DesktopSttQualityTier`, `DesktopSttMode`, `DesktopSttEngineContext`, `DesktopSttEngineResult`, `DesktopSttEngine`, `DesktopVoiceEngineIdStt`
+- **Responsibilities:** DesktopSttEngine
+- **When to open:** When behavior tied to `desktop_stt_engine.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** No — required for app runtime.
+- **Connected to:** APP_STRUCTURE role: STT engine contract: quality tiers, modes, context, and `DesktopSttEngine` result types
+- **Layer / owner:** Foundation code — theme, time, voice services, diagnostics (not a full screen).
+
+RU:
+
+- **Что это:** Foundation-модуль `desktop_stt_engine.dart` (services) — DesktopSttEngine.
+- **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
+- **Содержимое:** Dart-модуль `desktop_stt_engine.dart` — классы и helpers в исходнике.
+- **Обязанности:** Foundation-логика: DesktopSttEngine.
+- **Когда открывать:** Когда ломается поведение, связанное с `desktop_stt_engine.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/core/services/`, `docs/APP_STRUCTURE.md`
+- **Слой:** Foundation — тема, время, voice, диагностика.
+
+
 ### `lib/core/services/desktop_stt_helper_service.dart`
 
 EN:
@@ -6291,6 +6907,58 @@ RU:
 - **Содержимое:** Dart-модуль `desktop_stt_helper_service.dart` — классы и helpers в исходнике.
 - **Обязанности:** Foundation-логика: Desktop GOLOS STT helper subprocess and HTTP transcribe.
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_stt_helper_service.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/core/services/`, `docs/APP_STRUCTURE.md`
+- **Слой:** Foundation — тема, время, voice, диагностика.
+
+
+### `lib/core/services/desktop_stt_orchestrator.dart`
+
+EN:
+
+- **What this is:** Foundation module `desktop_stt_orchestrator.dart` (services) — STT quality ladder: engine select → transcribe → postprocess pipeline.
+- **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
+- **What it contains:** Primary symbols: `DesktopRecognitionPipelineResult`, `DesktopSttOrchestrator`.
+- **Key code names:** `DesktopRecognitionPipelineResult`, `DesktopSttOrchestrator`
+- **Responsibilities:** STT quality ladder: engine select → transcribe → postprocess pipeline
+- **When to open:** When behavior tied to `desktop_stt_orchestrator.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** No — required for app runtime.
+- **Connected to:** APP_STRUCTURE role: STT quality ladder: engine select → transcribe → postprocess pipeline
+- **Layer / owner:** Foundation code — theme, time, voice services, diagnostics (not a full screen).
+
+RU:
+
+- **Что это:** Foundation-модуль `desktop_stt_orchestrator.dart` (services) — STT quality ladder: engine select → transcribe → postprocess pipeline.
+- **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
+- **Содержимое:** Dart-модуль `desktop_stt_orchestrator.dart` — классы и helpers в исходнике.
+- **Обязанности:** Foundation-логика: STT quality ladder: engine select → transcribe → postprocess pipeline.
+- **Когда открывать:** Когда ломается поведение, связанное с `desktop_stt_orchestrator.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/core/services/`, `docs/APP_STRUCTURE.md`
+- **Слой:** Foundation — тема, время, voice, диагностика.
+
+
+### `lib/core/services/desktop_stt_quality_evaluation.dart`
+
+EN:
+
+- **What this is:** Foundation module `desktop_stt_quality_evaluation.dart` (services) — Raw-transcript quality markers.
+- **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
+- **What it contains:** Primary symbols: `DesktopSttQualityEvaluation`.
+- **Key code names:** `DesktopSttQualityEvaluation`
+- **Responsibilities:** Raw-transcript quality markers
+- **When to open:** When behavior tied to `desktop_stt_quality_evaluation.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** No — required for app runtime.
+- **Connected to:** APP_STRUCTURE role: Raw-transcript quality markers
+- **Layer / owner:** Foundation code — theme, time, voice services, diagnostics (not a full screen).
+
+RU:
+
+- **Что это:** Foundation-модуль `desktop_stt_quality_evaluation.dart` (services) — Raw-transcript quality markers.
+- **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
+- **Содержимое:** Dart-модуль `desktop_stt_quality_evaluation.dart` — классы и helpers в исходнике.
+- **Обязанности:** Foundation-логика: Raw-transcript quality markers.
+- **Когда открывать:** Когда ломается поведение, связанное с `desktop_stt_quality_evaluation.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/services/`, `docs/APP_STRUCTURE.md`
 - **Слой:** Foundation — тема, время, voice, диагностика.
@@ -6431,8 +7099,8 @@ EN:
 
 - **What this is:** Foundation module `desktop_voice_audio_capture.dart` (services) — Mic capture for desktop voice.
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What it contains:** Primary symbols: `DesktopVoiceAudioCapture`, `DesktopVoiceCaptureResult`.
-- **Key code names:** `DesktopVoiceAudioCapture`, `DesktopVoiceCaptureResult`
+- **What it contains:** Primary symbols: `DesktopVoiceAudioCapture`.
+- **Key code names:** `DesktopVoiceAudioCapture`
 - **Responsibilities:** Mic capture for desktop voice
 - **When to open:** When behavior tied to `desktop_voice_audio_capture.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -6446,6 +7114,32 @@ RU:
 - **Содержимое:** Dart-модуль `desktop_voice_audio_capture.dart` — классы и helpers в исходнике.
 - **Обязанности:** Foundation-логика: Mic capture for desktop voice.
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_audio_capture.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/core/services/`, `docs/APP_STRUCTURE.md`
+- **Слой:** Foundation — тема, время, voice, диагностика.
+
+
+### `lib/core/services/desktop_voice_audio_presentation.dart`
+
+EN:
+
+- **What this is:** Foundation module `desktop_voice_audio_presentation.dart` (services) — Perceptual level meters + calibrated STT gain (RMS target, no blind peak-norm).
+- **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
+- **What it contains:** Primary symbols: `DesktopVoiceAudioPresentation`, `DesktopVoiceSttGain`, `DesktopVoiceCommandEndpoint`.
+- **Key code names:** `DesktopVoiceAudioPresentation`, `DesktopVoiceSttGain`, `DesktopVoiceCommandEndpoint`
+- **Responsibilities:** Perceptual level meters + calibrated STT gain (RMS target, no blind peak-norm)
+- **When to open:** When behavior tied to `desktop_voice_audio_presentation.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** No — required for app runtime.
+- **Connected to:** APP_STRUCTURE role: Perceptual level meters + calibrated STT gain (RMS target, no blind peak-norm)
+- **Layer / owner:** Foundation code — theme, time, voice services, diagnostics (not a full screen).
+
+RU:
+
+- **Что это:** Foundation-модуль `desktop_voice_audio_presentation.dart` (services) — Perceptual level meters + calibrated STT gain (RMS target, no blind peak-norm).
+- **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
+- **Содержимое:** Dart-модуль `desktop_voice_audio_presentation.dart` — классы и helpers в исходнике.
+- **Обязанности:** Foundation-логика: Perceptual level meters + calibrated STT gain (RMS target, no blind peak-norm).
+- **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_audio_presentation.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/services/`, `docs/APP_STRUCTURE.md`
 - **Слой:** Foundation — тема, время, voice, диагностика.
@@ -6477,6 +7171,58 @@ RU:
 - **Слой:** Foundation — тема, время, voice, диагностика.
 
 
+### `lib/core/services/desktop_voice_capture_endpoint.dart`
+
+EN:
+
+- **What this is:** Foundation module `desktop_voice_capture_endpoint.dart` (services) — Windows WASAPI / MMDevice capture endpoint role selection.
+- **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
+- **What it contains:** Primary symbols: `DesktopVoiceCaptureEndpointPolicy`, `DesktopVoiceCaptureEndpointSnapshot`.
+- **Key code names:** `DesktopVoiceCaptureEndpointPolicy`, `DesktopVoiceCaptureEndpointSnapshot`
+- **Responsibilities:** Windows WASAPI / MMDevice capture endpoint role selection
+- **When to open:** When behavior tied to `desktop_voice_capture_endpoint.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** No — required for app runtime.
+- **Connected to:** APP_STRUCTURE role: Windows WASAPI / MMDevice capture endpoint role selection
+- **Layer / owner:** Foundation code — theme, time, voice services, diagnostics (not a full screen).
+
+RU:
+
+- **Что это:** Foundation-модуль `desktop_voice_capture_endpoint.dart` (services) — Windows WASAPI / MMDevice capture endpoint role selection.
+- **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
+- **Содержимое:** Dart-модуль `desktop_voice_capture_endpoint.dart` — классы и helpers в исходнике.
+- **Обязанности:** Foundation-логика: Windows WASAPI / MMDevice capture endpoint role selection.
+- **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_capture_endpoint.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/core/services/`, `docs/APP_STRUCTURE.md`
+- **Слой:** Foundation — тема, время, voice, диагностика.
+
+
+### `lib/core/services/desktop_voice_capture_ready_policy.dart`
+
+EN:
+
+- **What this is:** Foundation module `desktop_voice_capture_ready_policy.dart` (services) — Capture-ready cue + pre-roll / start-trim contracts (cue not counted as STT latency).
+- **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
+- **What it contains:** Primary symbols: `DesktopVoiceCaptureReadyPolicy`.
+- **Key code names:** `DesktopVoiceCaptureReadyPolicy`
+- **Responsibilities:** Capture-ready cue + pre-roll / start-trim contracts (cue not counted as STT latency)
+- **When to open:** When behavior tied to `desktop_voice_capture_ready_policy.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** No — required for app runtime.
+- **Connected to:** APP_STRUCTURE role: Capture-ready cue + pre-roll / start-trim contracts (cue not counted as STT latency)
+- **Layer / owner:** Foundation code — theme, time, voice services, diagnostics (not a full screen).
+
+RU:
+
+- **Что это:** Foundation-модуль `desktop_voice_capture_ready_policy.dart` (services) — Capture-ready cue + pre-roll / start-trim contracts (cue not counted as STT latency).
+- **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
+- **Содержимое:** Dart-модуль `desktop_voice_capture_ready_policy.dart` — классы и helpers в исходнике.
+- **Обязанности:** Foundation-логика: Capture-ready cue + pre-roll / start-trim contracts (cue not counted as STT latency).
+- **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_capture_ready_policy.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/core/services/`, `docs/APP_STRUCTURE.md`
+- **Слой:** Foundation — тема, время, voice, диагностика.
+
+
 ### `lib/core/services/desktop_voice_command_normalize.dart`
 
 EN:
@@ -6498,6 +7244,32 @@ RU:
 - **Содержимое:** Dart-модуль `desktop_voice_command_normalize.dart` — классы и helpers в исходнике.
 - **Обязанности:** Foundation-логика: Transcript normalization before parse/submit.
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_command_normalize.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/core/services/`, `docs/APP_STRUCTURE.md`
+- **Слой:** Foundation — тема, время, voice, диагностика.
+
+
+### `lib/core/services/desktop_voice_command_stt_policy.dart`
+
+EN:
+
+- **What this is:** Foundation module `desktop_voice_command_stt_policy.dart` (services) — Evidence-based command STT primary (whisper-tiny) vs Parakeet fallback policy.
+- **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
+- **What it contains:** Primary symbols: `DesktopVoiceCommandSttPolicy`.
+- **Key code names:** `DesktopVoiceCommandSttPolicy`
+- **Responsibilities:** Evidence-based command STT primary (whisper-tiny) vs Parakeet fallback policy
+- **When to open:** When behavior tied to `desktop_voice_command_stt_policy.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** No — required for app runtime.
+- **Connected to:** APP_STRUCTURE role: Evidence-based command STT primary (whisper-tiny) vs Parakeet fallback policy
+- **Layer / owner:** Foundation code — theme, time, voice services, diagnostics (not a full screen).
+
+RU:
+
+- **Что это:** Foundation-модуль `desktop_voice_command_stt_policy.dart` (services) — Evidence-based command STT primary (whisper-tiny) vs Parakeet fallback policy.
+- **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
+- **Содержимое:** Dart-модуль `desktop_voice_command_stt_policy.dart` — классы и helpers в исходнике.
+- **Обязанности:** Foundation-логика: Evidence-based command STT primary (whisper-tiny) vs Parakeet fallback policy.
+- **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_command_stt_policy.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/services/`, `docs/APP_STRUCTURE.md`
 - **Слой:** Foundation — тема, время, voice, диагностика.
@@ -6529,6 +7301,136 @@ RU:
 - **Слой:** Foundation — тема, время, voice, диагностика.
 
 
+### `lib/core/services/desktop_voice_confirmation_timer.dart`
+
+EN:
+
+- **What this is:** Foundation module `desktop_voice_confirmation_timer.dart` (services) — writeRecord.
+- **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
+- **What it contains:** Primary symbols: `DesktopVoiceConfirmationTimer`, `VoidCallback`.
+- **Key code names:** `DesktopVoiceConfirmationTimer`, `VoidCallback`
+- **Responsibilities:** writeRecord
+- **When to open:** When behavior tied to `desktop_voice_confirmation_timer.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** No — required for app runtime.
+- **Connected to:** APP_STRUCTURE role: Three-second visual commit countdown before `writeRecord`
+- **Layer / owner:** Foundation code — theme, time, voice services, diagnostics (not a full screen).
+
+RU:
+
+- **Что это:** Foundation-модуль `desktop_voice_confirmation_timer.dart` (services) — writeRecord.
+- **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
+- **Содержимое:** Dart-модуль `desktop_voice_confirmation_timer.dart` — классы и helpers в исходнике.
+- **Обязанности:** Foundation-логика: writeRecord.
+- **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_confirmation_timer.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/core/services/`, `docs/APP_STRUCTURE.md`
+- **Слой:** Foundation — тема, время, voice, диагностика.
+
+
+### `lib/core/services/desktop_voice_contamination_gate.dart`
+
+EN:
+
+- **What this is:** Foundation module `desktop_voice_contamination_gate.dart` (services) — Pre-confirm/pre-write gate blocking multi-client / stale / duplicate segments.
+- **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
+- **What it contains:** Primary symbols: `DesktopVoiceContaminationResult`, `DesktopVoiceContaminationGate`.
+- **Key code names:** `DesktopVoiceContaminationResult`, `DesktopVoiceContaminationGate`
+- **Responsibilities:** Pre-confirm/pre-write gate blocking multi-client / stale / duplicate segments
+- **When to open:** When behavior tied to `desktop_voice_contamination_gate.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** No — required for app runtime.
+- **Connected to:** APP_STRUCTURE role: Pre-confirm/pre-write gate blocking multi-client / stale / duplicate segments
+- **Layer / owner:** Foundation code — theme, time, voice services, diagnostics (not a full screen).
+
+RU:
+
+- **Что это:** Foundation-модуль `desktop_voice_contamination_gate.dart` (services) — Pre-confirm/pre-write gate blocking multi-client / stale / duplicate segments.
+- **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
+- **Содержимое:** Dart-модуль `desktop_voice_contamination_gate.dart` — классы и helpers в исходнике.
+- **Обязанности:** Foundation-логика: Pre-confirm/pre-write gate blocking multi-client / stale / duplicate segments.
+- **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_contamination_gate.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/core/services/`, `docs/APP_STRUCTURE.md`
+- **Слой:** Foundation — тема, время, voice, диагностика.
+
+
+### `lib/core/services/desktop_voice_correction_flow.dart`
+
+EN:
+
+- **What this is:** Foundation module `desktop_voice_correction_flow.dart` (services) — Single-instance correction state machine (UI-free.
+- **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
+- **What it contains:** Primary symbols: `DesktopVoiceCorrectionFlow`, `DesktopVoiceCorrectionSession`.
+- **Key code names:** `DesktopVoiceCorrectionFlow`, `DesktopVoiceCorrectionSession`
+- **Responsibilities:** Single-instance correction state machine (UI-free
+- **When to open:** When behavior tied to `desktop_voice_correction_flow.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** No — required for app runtime.
+- **Connected to:** APP_STRUCTURE role: Single-instance correction state machine (UI-free
+- **Layer / owner:** Foundation code — theme, time, voice services, diagnostics (not a full screen).
+
+RU:
+
+- **Что это:** Foundation-модуль `desktop_voice_correction_flow.dart` (services) — Single-instance correction state machine (UI-free.
+- **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
+- **Содержимое:** Dart-модуль `desktop_voice_correction_flow.dart` — классы и helpers в исходнике.
+- **Обязанности:** Foundation-логика: Single-instance correction state machine (UI-free.
+- **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_correction_flow.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/core/services/`, `docs/APP_STRUCTURE.md`
+- **Слой:** Foundation — тема, время, voice, диагностика.
+
+
+### `lib/core/services/desktop_voice_delayed_transcribe.dart`
+
+EN:
+
+- **What this is:** Foundation module `desktop_voice_delayed_transcribe.dart` (services) — Delayed helper transcription after cold-start without forcing re-speak.
+- **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
+- **What it contains:** Primary symbols: `DesktopVoiceDelayedTranscribe`.
+- **Key code names:** `DesktopVoiceDelayedTranscribe`
+- **Responsibilities:** Delayed helper transcription after cold-start without forcing re-speak
+- **When to open:** When behavior tied to `desktop_voice_delayed_transcribe.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** No — required for app runtime.
+- **Connected to:** APP_STRUCTURE role: Delayed helper transcription after cold-start without forcing re-speak
+- **Layer / owner:** Foundation code — theme, time, voice services, diagnostics (not a full screen).
+
+RU:
+
+- **Что это:** Foundation-модуль `desktop_voice_delayed_transcribe.dart` (services) — Delayed helper transcription after cold-start without forcing re-speak.
+- **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
+- **Содержимое:** Dart-модуль `desktop_voice_delayed_transcribe.dart` — классы и helpers в исходнике.
+- **Обязанности:** Foundation-логика: Delayed helper transcription after cold-start without forcing re-speak.
+- **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_delayed_transcribe.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/core/services/`, `docs/APP_STRUCTURE.md`
+- **Слой:** Foundation — тема, время, voice, диагностика.
+
+
+### `lib/core/services/desktop_voice_dev_tools.dart`
+
+EN:
+
+- **What this is:** Foundation module `desktop_voice_dev_tools.dart` (services) — Release-safe gate for Desktop Voice developer / acceptance tooling.
+- **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
+- **What it contains:** Primary symbols: `DesktopVoiceDevTools`.
+- **Key code names:** `DesktopVoiceDevTools`
+- **Responsibilities:** Release-safe gate for Desktop Voice developer / acceptance tooling
+- **When to open:** When behavior tied to `desktop_voice_dev_tools.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** No — required for app runtime.
+- **Connected to:** APP_STRUCTURE role: Release-safe gate for Desktop Voice developer / acceptance tooling
+- **Layer / owner:** Foundation code — theme, time, voice services, diagnostics (not a full screen).
+
+RU:
+
+- **Что это:** Foundation-модуль `desktop_voice_dev_tools.dart` (services) — Release-safe gate for Desktop Voice developer / acceptance tooling.
+- **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
+- **Содержимое:** Dart-модуль `desktop_voice_dev_tools.dart` — классы и helpers в исходнике.
+- **Обязанности:** Foundation-логика: Release-safe gate for Desktop Voice developer / acceptance tooling.
+- **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_dev_tools.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/core/services/`, `docs/APP_STRUCTURE.md`
+- **Слой:** Foundation — тема, время, voice, диагностика.
+
+
 ### `lib/core/services/desktop_voice_engine.dart`
 
 EN:
@@ -6550,6 +7452,57 @@ RU:
 - **Содержимое:** Dart-модуль `desktop_voice_engine.dart` — классы и helpers в исходнике.
 - **Обязанности:** Foundation-логика: Desktop voice engine lifecycle.
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_engine.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/core/services/`, `docs/APP_STRUCTURE.md`
+- **Слой:** Foundation — тема, время, voice, диагностика.
+
+
+### `lib/core/services/desktop_voice_error_classification.dart`
+
+EN:
+
+- **What this is:** Foundation module `desktop_voice_error_classification.dart` (services) — DesktopVoiceFailureKind.
+- **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
+- **What it contains:** Barrel `export` lines: `desktop_voice_user_error.dart`.
+- **Responsibilities:** DesktopVoiceFailureKind
+- **When to open:** When behavior tied to `desktop_voice_error_classification.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** No — required for app runtime.
+- **Connected to:** APP_STRUCTURE role: Re-export of `DesktopVoiceFailureKind` for classification call sites
+- **Layer / owner:** Foundation code — theme, time, voice services, diagnostics (not a full screen).
+
+RU:
+
+- **Что это:** Foundation-модуль `desktop_voice_error_classification.dart` (services) — DesktopVoiceFailureKind.
+- **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
+- **Содержимое:** Dart-модуль `desktop_voice_error_classification.dart` — классы и helpers в исходнике.
+- **Обязанности:** Foundation-логика: DesktopVoiceFailureKind.
+- **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_error_classification.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/core/services/`, `docs/APP_STRUCTURE.md`
+- **Слой:** Foundation — тема, время, voice, диагностика.
+
+
+### `lib/core/services/desktop_voice_glossary.dart`
+
+EN:
+
+- **What this is:** Foundation module `desktop_voice_glossary.dart` (services) — Live + static STT glossary pack for context and postprocess validation.
+- **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
+- **What it contains:** Primary symbols: `DesktopVoiceGlossaryPack`.
+- **Key code names:** `DesktopVoiceGlossaryPack`
+- **Responsibilities:** Live + static STT glossary pack for context and postprocess validation
+- **When to open:** When behavior tied to `desktop_voice_glossary.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** No — required for app runtime.
+- **Connected to:** APP_STRUCTURE role: Live + static STT glossary pack for context and postprocess validation
+- **Layer / owner:** Foundation code — theme, time, voice services, diagnostics (not a full screen).
+
+RU:
+
+- **Что это:** Foundation-модуль `desktop_voice_glossary.dart` (services) — Live + static STT glossary pack for context and postprocess validation.
+- **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
+- **Содержимое:** Dart-модуль `desktop_voice_glossary.dart` — классы и helpers в исходнике.
+- **Обязанности:** Foundation-логика: Live + static STT glossary pack for context and postprocess validation.
+- **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_glossary.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/services/`, `docs/APP_STRUCTURE.md`
 - **Слой:** Foundation — тема, время, voice, диагностика.
@@ -6657,14 +7610,92 @@ RU:
 - **Слой:** Foundation — тема, время, voice, диагностика.
 
 
+### `lib/core/services/desktop_voice_install_smoke_policy.dart`
+
+EN:
+
+- **What this is:** Foundation module `desktop_voice_install_smoke_policy.dart` (services) — Pure installed-app smoke / identity check rules (unit-tested).
+- **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
+- **What it contains:** Primary symbols: `DesktopVoiceInstallSmokePolicy`.
+- **Key code names:** `DesktopVoiceInstallSmokePolicy`
+- **Responsibilities:** Pure installed-app smoke / identity check rules (unit-tested)
+- **When to open:** When behavior tied to `desktop_voice_install_smoke_policy.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** No — required for app runtime.
+- **Connected to:** APP_STRUCTURE role: Pure installed-app smoke / identity check rules (unit-tested)
+- **Layer / owner:** Foundation code — theme, time, voice services, diagnostics (not a full screen).
+
+RU:
+
+- **Что это:** Foundation-модуль `desktop_voice_install_smoke_policy.dart` (services) — Pure installed-app smoke / identity check rules (unit-tested).
+- **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
+- **Содержимое:** Dart-модуль `desktop_voice_install_smoke_policy.dart` — классы и helpers в исходнике.
+- **Обязанности:** Foundation-логика: Pure installed-app smoke / identity check rules (unit-tested).
+- **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_install_smoke_policy.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/core/services/`, `docs/APP_STRUCTURE.md`
+- **Слой:** Foundation — тема, время, voice, диагностика.
+
+
+### `lib/core/services/desktop_voice_installed_identity.dart`
+
+EN:
+
+- **What this is:** Foundation module `desktop_voice_installed_identity.dart` (services) — Installed-app identity for Desktop Voice diagnostics and smoke scripts.
+- **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
+- **What it contains:** Primary symbols: `DesktopVoiceInstalledIdentity`.
+- **Key code names:** `DesktopVoiceInstalledIdentity`
+- **Responsibilities:** Installed-app identity for Desktop Voice diagnostics and smoke scripts
+- **When to open:** When behavior tied to `desktop_voice_installed_identity.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** No — required for app runtime.
+- **Connected to:** APP_STRUCTURE role: Installed-app identity for Desktop Voice diagnostics and smoke scripts
+- **Layer / owner:** Foundation code — theme, time, voice services, diagnostics (not a full screen).
+
+RU:
+
+- **Что это:** Foundation-модуль `desktop_voice_installed_identity.dart` (services) — Installed-app identity for Desktop Voice diagnostics and smoke scripts.
+- **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
+- **Содержимое:** Dart-модуль `desktop_voice_installed_identity.dart` — классы и helpers в исходнике.
+- **Обязанности:** Foundation-логика: Installed-app identity for Desktop Voice diagnostics and smoke scripts.
+- **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_installed_identity.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/core/services/`, `docs/APP_STRUCTURE.md`
+- **Слой:** Foundation — тема, время, voice, диагностика.
+
+
+### `lib/core/services/desktop_voice_last_attempt_store.dart`
+
+EN:
+
+- **What this is:** Foundation module `desktop_voice_last_attempt_store.dart` (services) — On-disk last voice-attempt diagnostics for post-capture pull.
+- **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
+- **What it contains:** Primary symbols: `DesktopVoiceLastAttemptStore`.
+- **Key code names:** `DesktopVoiceLastAttemptStore`
+- **Responsibilities:** On-disk last voice-attempt diagnostics for post-capture pull
+- **When to open:** When behavior tied to `desktop_voice_last_attempt_store.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** No — required for app runtime.
+- **Connected to:** APP_STRUCTURE role: On-disk last voice-attempt diagnostics for post-capture pull
+- **Layer / owner:** Foundation code — theme, time, voice services, diagnostics (not a full screen).
+
+RU:
+
+- **Что это:** Foundation-модуль `desktop_voice_last_attempt_store.dart` (services) — On-disk last voice-attempt diagnostics for post-capture pull.
+- **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
+- **Содержимое:** Dart-модуль `desktop_voice_last_attempt_store.dart` — классы и helpers в исходнике.
+- **Обязанности:** Foundation-логика: On-disk last voice-attempt diagnostics for post-capture pull.
+- **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_last_attempt_store.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/core/services/`, `docs/APP_STRUCTURE.md`
+- **Слой:** Foundation — тема, время, voice, диагностика.
+
+
 ### `lib/core/services/desktop_voice_native_overlay.dart`
 
 EN:
 
 - **What this is:** Foundation module `desktop_voice_native_overlay.dart` (services) — Native overlay channel bridge.
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What it contains:** Primary symbols: `DesktopVoiceNativeOverlay`.
-- **Key code names:** `DesktopVoiceNativeOverlay`
+- **What it contains:** Primary symbols: `DesktopVoiceReadyCuePlayResult`, `DesktopVoiceNativeOverlay`.
+- **Key code names:** `DesktopVoiceReadyCuePlayResult`, `DesktopVoiceNativeOverlay`
 - **Responsibilities:** Native overlay channel bridge
 - **When to open:** When behavior tied to `desktop_voice_native_overlay.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -6704,6 +7735,32 @@ RU:
 - **Содержимое:** Dart-модуль `desktop_voice_overlay_bridge.dart` — классы и helpers в исходнике.
 - **Обязанности:** Foundation-логика: Overlay ↔ Flutter bridge.
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_overlay_bridge.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/core/services/`, `docs/APP_STRUCTURE.md`
+- **Слой:** Foundation — тема, время, voice, диагностика.
+
+
+### `lib/core/services/desktop_voice_overlay_constants.dart`
+
+EN:
+
+- **What this is:** Foundation module `desktop_voice_overlay_constants.dart` (services) — Native overlay size/font contracts (min 16pt.
+- **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
+- **What it contains:** Primary symbols: `DesktopVoiceOverlayConstants`.
+- **Key code names:** `DesktopVoiceOverlayConstants`
+- **Responsibilities:** Native overlay size/font contracts (min 16pt
+- **When to open:** When behavior tied to `desktop_voice_overlay_constants.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** No — required for app runtime.
+- **Connected to:** APP_STRUCTURE role: Native overlay size/font contracts (min 16pt
+- **Layer / owner:** Foundation code — theme, time, voice services, diagnostics (not a full screen).
+
+RU:
+
+- **Что это:** Foundation-модуль `desktop_voice_overlay_constants.dart` (services) — Native overlay size/font contracts (min 16pt.
+- **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
+- **Содержимое:** Dart-модуль `desktop_voice_overlay_constants.dart` — классы и helpers в исходнике.
+- **Обязанности:** Foundation-логика: Native overlay size/font contracts (min 16pt.
+- **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_overlay_constants.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/services/`, `docs/APP_STRUCTURE.md`
 - **Слой:** Foundation — тема, время, voice, диагностика.
@@ -6806,6 +7863,110 @@ RU:
 - **Содержимое:** Dart-модуль `desktop_voice_overlay_service.dart` — классы и helpers в исходнике.
 - **Обязанности:** Foundation-логика: Native overlay state machine.
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_overlay_service.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/core/services/`, `docs/APP_STRUCTURE.md`
+- **Слой:** Foundation — тема, время, voice, диагностика.
+
+
+### `lib/core/services/desktop_voice_overlay_transparency.dart`
+
+EN:
+
+- **What this is:** Foundation module `desktop_voice_overlay_transparency.dart` (services) — Overlay layered color-key / alpha contracts (no black rectangular backdrop).
+- **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
+- **What it contains:** Primary symbols: `DesktopVoiceOverlayTransparency`.
+- **Key code names:** `DesktopVoiceOverlayTransparency`
+- **Responsibilities:** Overlay layered color-key / alpha contracts (no black rectangular backdrop)
+- **When to open:** When behavior tied to `desktop_voice_overlay_transparency.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** No — required for app runtime.
+- **Connected to:** APP_STRUCTURE role: Overlay layered color-key / alpha contracts (no black rectangular backdrop)
+- **Layer / owner:** Foundation code — theme, time, voice services, diagnostics (not a full screen).
+
+RU:
+
+- **Что это:** Foundation-модуль `desktop_voice_overlay_transparency.dart` (services) — Overlay layered color-key / alpha contracts (no black rectangular backdrop).
+- **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
+- **Содержимое:** Dart-модуль `desktop_voice_overlay_transparency.dart` — классы и helpers в исходнике.
+- **Обязанности:** Foundation-логика: Overlay layered color-key / alpha contracts (no black rectangular backdrop).
+- **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_overlay_transparency.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/core/services/`, `docs/APP_STRUCTURE.md`
+- **Слой:** Foundation — тема, время, voice, диагностика.
+
+
+### `lib/core/services/desktop_voice_ready_cue.dart`
+
+EN:
+
+- **What this is:** Foundation module `desktop_voice_ready_cue.dart` (services) — Non-blocking Win32 ready click after capture ready (not STT latency).
+- **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
+- **What it contains:** Primary symbols: `DesktopVoiceReadyCue`.
+- **Key code names:** `DesktopVoiceReadyCue`
+- **Responsibilities:** Non-blocking Win32 ready click after capture ready (not STT latency)
+- **When to open:** When behavior tied to `desktop_voice_ready_cue.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** No — required for app runtime.
+- **Connected to:** APP_STRUCTURE role: Non-blocking Win32 ready click after capture ready (not STT latency)
+- **Layer / owner:** Foundation code — theme, time, voice services, diagnostics (not a full screen).
+
+RU:
+
+- **Что это:** Foundation-модуль `desktop_voice_ready_cue.dart` (services) — Non-blocking Win32 ready click after capture ready (not STT latency).
+- **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
+- **Содержимое:** Dart-модуль `desktop_voice_ready_cue.dart` — классы и helpers в исходнике.
+- **Обязанности:** Foundation-логика: Non-blocking Win32 ready click after capture ready (not STT latency).
+- **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_ready_cue.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/core/services/`, `docs/APP_STRUCTURE.md`
+- **Слой:** Foundation — тема, время, voice, диагностика.
+
+
+### `lib/core/services/desktop_voice_real_helper_latency_benchmark.dart`
+
+EN:
+
+- **What this is:** Foundation module `desktop_voice_real_helper_latency_benchmark.dart` (services) — Per-iteration latency trace against the real installed STT helper.
+- **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
+- **What it contains:** Primary symbols: `DesktopVoiceLatencyIteration`, `DesktopVoiceLatencyBenchmarkReport`, `DesktopVoiceRealHelperLatencyBenchmark`.
+- **Key code names:** `DesktopVoiceLatencyIteration`, `DesktopVoiceLatencyBenchmarkReport`, `DesktopVoiceRealHelperLatencyBenchmark`
+- **Responsibilities:** Per-iteration latency trace against the real installed STT helper
+- **When to open:** When behavior tied to `desktop_voice_real_helper_latency_benchmark.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** No — required for app runtime.
+- **Connected to:** APP_STRUCTURE role: Per-iteration latency trace against the real installed STT helper
+- **Layer / owner:** Foundation code — theme, time, voice services, diagnostics (not a full screen).
+
+RU:
+
+- **Что это:** Foundation-модуль `desktop_voice_real_helper_latency_benchmark.dart` (services) — Per-iteration latency trace against the real installed STT helper.
+- **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
+- **Содержимое:** Dart-модуль `desktop_voice_real_helper_latency_benchmark.dart` — классы и helpers в исходнике.
+- **Обязанности:** Foundation-логика: Per-iteration latency trace against the real installed STT helper.
+- **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_real_helper_latency_benchmark.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/core/services/`, `docs/APP_STRUCTURE.md`
+- **Слой:** Foundation — тема, время, voice, диагностика.
+
+
+### `lib/core/services/desktop_voice_recognition_postprocess.dart`
+
+EN:
+
+- **What this is:** Foundation module `desktop_voice_recognition_postprocess.dart` (services) — Glossary-biased postprocess after raw STT (before parser/resolver).
+- **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
+- **What it contains:** Primary symbols: `DesktopVoiceRecognitionPostprocessResult`, `DesktopVoiceRecognitionPostprocess`.
+- **Key code names:** `DesktopVoiceRecognitionPostprocessResult`, `DesktopVoiceRecognitionPostprocess`
+- **Responsibilities:** Glossary-biased postprocess after raw STT (before parser/resolver)
+- **When to open:** When behavior tied to `desktop_voice_recognition_postprocess.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** No — required for app runtime.
+- **Connected to:** APP_STRUCTURE role: Glossary-biased postprocess after raw STT (before parser/resolver)
+- **Layer / owner:** Foundation code — theme, time, voice services, diagnostics (not a full screen).
+
+RU:
+
+- **Что это:** Foundation-модуль `desktop_voice_recognition_postprocess.dart` (services) — Glossary-biased postprocess after raw STT (before parser/resolver).
+- **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
+- **Содержимое:** Dart-модуль `desktop_voice_recognition_postprocess.dart` — классы и helpers в исходнике.
+- **Обязанности:** Foundation-логика: Glossary-biased postprocess after raw STT (before parser/resolver).
+- **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_recognition_postprocess.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/services/`, `docs/APP_STRUCTURE.md`
 - **Слой:** Foundation — тема, время, voice, диагностика.
@@ -6940,6 +8101,32 @@ RU:
 - **Слой:** Foundation — тема, время, voice, диагностика.
 
 
+### `lib/core/services/desktop_voice_session.dart`
+
+EN:
+
+- **What this is:** Foundation module `desktop_voice_session.dart` (services) — Immutable hotkey session identity + generation for async result discard.
+- **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
+- **What it contains:** Primary symbols: `DesktopVoiceSession`, `DesktopVoiceSessionRegistry`.
+- **Key code names:** `DesktopVoiceSession`, `DesktopVoiceSessionRegistry`
+- **Responsibilities:** Immutable hotkey session identity + generation for async result discard
+- **When to open:** When behavior tied to `desktop_voice_session.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** No — required for app runtime.
+- **Connected to:** APP_STRUCTURE role: Immutable hotkey session identity + generation for async result discard
+- **Layer / owner:** Foundation code — theme, time, voice services, diagnostics (not a full screen).
+
+RU:
+
+- **Что это:** Foundation-модуль `desktop_voice_session.dart` (services) — Immutable hotkey session identity + generation for async result discard.
+- **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
+- **Содержимое:** Dart-модуль `desktop_voice_session.dart` — классы и helpers в исходнике.
+- **Обязанности:** Foundation-логика: Immutable hotkey session identity + generation for async result discard.
+- **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_session.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/core/services/`, `docs/APP_STRUCTURE.md`
+- **Слой:** Foundation — тема, время, voice, диагностика.
+
+
 ### `lib/core/services/desktop_voice_settings.dart`
 
 EN:
@@ -6992,14 +8179,92 @@ RU:
 - **Слой:** Foundation — тема, время, voice, диагностика.
 
 
+### `lib/core/services/desktop_voice_stt_processing.dart`
+
+EN:
+
+- **What this is:** Foundation module `desktop_voice_stt_processing.dart` (services) — STT-only PCM processing variants for quiet command WAVs (raw WAV untouched).
+- **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
+- **What it contains:** Primary symbols: `DesktopVoiceSttProcessingVariant`, `DesktopVoiceSttProcessingPolicy`, `DesktopVoiceSttProcessingResult`.
+- **Key code names:** `DesktopVoiceSttProcessingVariant`, `DesktopVoiceSttProcessingPolicy`, `DesktopVoiceSttProcessingResult`
+- **Responsibilities:** STT-only PCM processing variants for quiet command WAVs (raw WAV untouched)
+- **When to open:** When behavior tied to `desktop_voice_stt_processing.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** No — required for app runtime.
+- **Connected to:** APP_STRUCTURE role: STT-only PCM processing variants for quiet command WAVs (raw WAV untouched)
+- **Layer / owner:** Foundation code — theme, time, voice services, diagnostics (not a full screen).
+
+RU:
+
+- **Что это:** Foundation-модуль `desktop_voice_stt_processing.dart` (services) — STT-only PCM processing variants for quiet command WAVs (raw WAV untouched).
+- **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
+- **Содержимое:** Dart-модуль `desktop_voice_stt_processing.dart` — классы и helpers в исходнике.
+- **Обязанности:** Foundation-логика: STT-only PCM processing variants for quiet command WAVs (raw WAV untouched).
+- **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_stt_processing.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/core/services/`, `docs/APP_STRUCTURE.md`
+- **Слой:** Foundation — тема, время, voice, диагностика.
+
+
+### `lib/core/services/desktop_voice_transcript_merge.dart`
+
+EN:
+
+- **What this is:** Foundation module `desktop_voice_transcript_merge.dart` (services) — Transcript hypothesis merge rules — replace, never concatenate full phrases.
+- **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
+- **What it contains:** Primary symbols: `DesktopVoiceTranscriptMerge`.
+- **Key code names:** `DesktopVoiceTranscriptMerge`
+- **Responsibilities:** Transcript hypothesis merge rules — replace, never concatenate full phrases
+- **When to open:** When behavior tied to `desktop_voice_transcript_merge.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** No — required for app runtime.
+- **Connected to:** APP_STRUCTURE role: Transcript hypothesis merge rules — replace, never concatenate full phrases
+- **Layer / owner:** Foundation code — theme, time, voice services, diagnostics (not a full screen).
+
+RU:
+
+- **Что это:** Foundation-модуль `desktop_voice_transcript_merge.dart` (services) — Transcript hypothesis merge rules — replace, never concatenate full phrases.
+- **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
+- **Содержимое:** Dart-модуль `desktop_voice_transcript_merge.dart` — классы и helpers в исходнике.
+- **Обязанности:** Foundation-логика: Transcript hypothesis merge rules — replace, never concatenate full phrases.
+- **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_transcript_merge.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/core/services/`, `docs/APP_STRUCTURE.md`
+- **Слой:** Foundation — тема, время, voice, диагностика.
+
+
+### `lib/core/services/desktop_voice_useful_candidate_evaluator.dart`
+
+EN:
+
+- **What this is:** Foundation module `desktop_voice_useful_candidate_evaluator.dart` (services) — Shared useful-speech evaluation for widget, helper, and benchmarks.
+- **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
+- **What it contains:** Primary symbols: `DesktopVoiceUsefulCandidateEvaluation`.
+- **Key code names:** `DesktopVoiceUsefulCandidateEvaluation`
+- **Responsibilities:** Shared useful-speech evaluation for widget, helper, and benchmarks
+- **When to open:** When behavior tied to `desktop_voice_useful_candidate_evaluator.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** No — required for app runtime.
+- **Connected to:** APP_STRUCTURE role: Shared useful-speech evaluation for widget, helper, and benchmarks
+- **Layer / owner:** Foundation code — theme, time, voice services, diagnostics (not a full screen).
+
+RU:
+
+- **Что это:** Foundation-модуль `desktop_voice_useful_candidate_evaluator.dart` (services) — Shared useful-speech evaluation for widget, helper, and benchmarks.
+- **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
+- **Содержимое:** Dart-модуль `desktop_voice_useful_candidate_evaluator.dart` — классы и helpers в исходнике.
+- **Обязанности:** Foundation-логика: Shared useful-speech evaluation for widget, helper, and benchmarks.
+- **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_useful_candidate_evaluator.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/core/services/`, `docs/APP_STRUCTURE.md`
+- **Слой:** Foundation — тема, время, voice, диагностика.
+
+
 ### `lib/core/services/desktop_voice_user_error.dart`
 
 EN:
 
 - **What this is:** Foundation module `desktop_voice_user_error.dart` (services) — Friendly desktop voice error mapping.
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What it contains:** Primary symbols: `DesktopVoiceErrorStage`, `DesktopVoiceUserError`.
-- **Key code names:** `DesktopVoiceErrorStage`, `DesktopVoiceUserError`
+- **What it contains:** Primary symbols: `DesktopVoiceErrorStage`, `DesktopVoiceFailureKind`, `DesktopVoiceUserError`.
+- **Key code names:** `DesktopVoiceErrorStage`, `DesktopVoiceFailureKind`, `DesktopVoiceUserError`
 - **Responsibilities:** Friendly desktop voice error mapping
 - **When to open:** When behavior tied to `desktop_voice_user_error.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -7013,6 +8278,32 @@ RU:
 - **Содержимое:** Dart-модуль `desktop_voice_user_error.dart` — классы и helpers в исходнике.
 - **Обязанности:** Foundation-логика: Friendly desktop voice error mapping.
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_user_error.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/core/services/`, `docs/APP_STRUCTURE.md`
+- **Слой:** Foundation — тема, время, voice, диагностика.
+
+
+### `lib/core/services/desktop_voice_wav_stt_benchmark.dart`
+
+EN:
+
+- **What this is:** Foundation module `desktop_voice_wav_stt_benchmark.dart` (services) — Real WAV → local STT helper benchmark (raw transcript quality, no postprocess).
+- **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
+- **What it contains:** Primary symbols: `DesktopVoiceWavSttBenchmarkCase`, `DesktopVoiceWavSttBenchmarkResult`, `CapabilityParityReport`, `DesktopVoiceWavSttBenchmark`.
+- **Key code names:** `DesktopVoiceWavSttBenchmarkCase`, `DesktopVoiceWavSttBenchmarkResult`, `CapabilityParityReport`, `DesktopVoiceWavSttBenchmark`
+- **Responsibilities:** Real WAV → local STT helper benchmark (raw transcript quality, no postprocess)
+- **When to open:** When behavior tied to `desktop_voice_wav_stt_benchmark.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** No — required for app runtime.
+- **Connected to:** APP_STRUCTURE role: Real WAV → local STT helper benchmark (raw transcript quality, no postprocess)
+- **Layer / owner:** Foundation code — theme, time, voice services, diagnostics (not a full screen).
+
+RU:
+
+- **Что это:** Foundation-модуль `desktop_voice_wav_stt_benchmark.dart` (services) — Real WAV → local STT helper benchmark (raw transcript quality, no postprocess).
+- **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
+- **Содержимое:** Dart-модуль `desktop_voice_wav_stt_benchmark.dart` — классы и helpers в исходнике.
+- **Обязанности:** Foundation-логика: Real WAV → local STT helper benchmark (raw transcript quality, no postprocess).
+- **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_wav_stt_benchmark.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/services/`, `docs/APP_STRUCTURE.md`
 - **Слой:** Foundation — тема, время, voice, диагностика.
@@ -7038,6 +8329,32 @@ RU:
 - **Содержимое:** Dart-модуль `desktop_voice_window_flags.dart` — классы и helpers в исходнике.
 - **Обязанности:** Foundation-логика: Desktop window visibility flags.
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_window_flags.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/core/services/`, `docs/APP_STRUCTURE.md`
+- **Слой:** Foundation — тема, время, voice, диагностика.
+
+
+### `lib/core/services/desktop_voice_windows_audio_diagnostics.dart`
+
+EN:
+
+- **What this is:** Foundation module `desktop_voice_windows_audio_diagnostics.dart` (services) — Windows Core Audio capture-endpoint volume/diagnostics snapshot.
+- **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
+- **What it contains:** Primary symbols: `DesktopVoiceEndpointSnapshot`, `DesktopVoiceWindowsAudioDiagnostics`.
+- **Key code names:** `DesktopVoiceEndpointSnapshot`, `DesktopVoiceWindowsAudioDiagnostics`
+- **Responsibilities:** Windows Core Audio capture-endpoint volume/diagnostics snapshot
+- **When to open:** When behavior tied to `desktop_voice_windows_audio_diagnostics.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** No — required for app runtime.
+- **Connected to:** APP_STRUCTURE role: Windows Core Audio capture-endpoint volume/diagnostics snapshot
+- **Layer / owner:** Foundation code — theme, time, voice services, diagnostics (not a full screen).
+
+RU:
+
+- **Что это:** Foundation-модуль `desktop_voice_windows_audio_diagnostics.dart` (services) — Windows Core Audio capture-endpoint volume/diagnostics snapshot.
+- **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
+- **Содержимое:** Dart-модуль `desktop_voice_windows_audio_diagnostics.dart` — классы и helpers в исходнике.
+- **Обязанности:** Foundation-логика: Windows Core Audio capture-endpoint volume/diagnostics snapshot.
+- **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_windows_audio_diagnostics.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/services/`, `docs/APP_STRUCTURE.md`
 - **Слой:** Foundation — тема, время, voice, диагностика.
@@ -7075,7 +8392,8 @@ EN:
 
 - **What this is:** Foundation module `pcm_audio_utils.dart` (services) — PCM/WAV audio helpers for desktop STT.
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What it contains:** Dart module `pcm_audio_utils.dart` — open file for classes and helpers.
+- **What it contains:** Primary symbols: `CalibratedSttGainResult`, `WavHeaderInfo`.
+- **Key code names:** `CalibratedSttGainResult`, `WavHeaderInfo`
 - **Responsibilities:** PCM/WAV audio helpers for desktop STT
 - **When to open:** When behavior tied to `pcm_audio_utils.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -7916,6 +9234,186 @@ RU:
 - **Слой:** Общий UI-виджет design system.
 
 
+### `lib/core/widgets/notes/note_preview_card.dart`
+
+EN:
+
+- **What this is:** Shared design-system widget — `AppNotePreviewCard` — presentational library preview card (title/preview/checklist meta).
+- **Why needed:** Plans, Timeline, and Lists reuse this instead of copying button/card styles.
+- **What it contains:** Canonical Flutter widget (`AppNotePreviewData`, `AppNotePreviewCard`, `_MetaPill`).
+- **Key code names:** `AppNotePreviewData`, `AppNotePreviewCard`, `_MetaPill`
+- **Responsibilities:** `AppNotePreviewCard` — presentational library preview card (title/preview/checklist meta)
+- **When to open:** When behavior tied to `note_preview_card.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** No — required for app runtime.
+- **Connected to:** APP_STRUCTURE role: `AppNotePreviewCard` — presentational library preview card (title/preview/checklist meta)
+- **Layer / owner:** Shared visual widget — reused on multiple tabs.
+
+RU:
+
+- **Что это:** Общий виджет design system — `AppNotePreviewCard` — presentational library preview card (title/preview/checklist meta).
+- **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
+- **Содержимое:** Канонический Flutter-виджет (logic in `note_preview_card`).
+- **Обязанности:** Реализует в UI: `AppNotePreviewCard` — presentational library preview card (title/preview/checklist meta).
+- **Когда открывать:** Когда ломается поведение, связанное с `note_preview_card.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/core/widgets/notes/`, `docs/APP_STRUCTURE.md`
+- **Слой:** Общий UI-виджет design system.
+
+
+### `lib/core/widgets/notes/notes.dart`
+
+EN:
+
+- **What this is:** Shared design-system widget — Barrel re-export of canonical Notes editor widgets (pure UI.
+- **Why needed:** Plans, Timeline, and Lists reuse this instead of copying button/card styles.
+- **What it contains:** Canonical Flutter widget (logic in `notes`).
+- **Responsibilities:** Barrel re-export of canonical Notes editor widgets (pure UI; no Brain/features imports)
+- **When to open:** When behavior tied to `notes.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** No — required for app runtime.
+- **Connected to:** APP_STRUCTURE role: Barrel re-export of canonical Notes editor widgets (pure UI
+- **Layer / owner:** Shared visual widget — reused on multiple tabs.
+
+RU:
+
+- **Что это:** Общий виджет design system — Barrel re-export of canonical Notes editor widgets (pure UI.
+- **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
+- **Содержимое:** Канонический Flutter-виджет (logic in `notes`).
+- **Обязанности:** Реализует в UI: Barrel re-export of canonical Notes editor widgets (pure UI; no Brain/features imports).
+- **Когда открывать:** Когда ломается поведение, связанное с `notes.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/core/widgets/notes/`, `docs/APP_STRUCTURE.md`
+- **Слой:** Общий UI-виджет design system.
+
+
+### `lib/core/widgets/notes/notes_context_row.dart`
+
+EN:
+
+- **What this is:** Shared design-system widget — `AppNotesContextRow` — category/tag chips + trailing save status under title.
+- **Why needed:** Plans, Timeline, and Lists reuse this instead of copying button/card styles.
+- **What it contains:** Canonical Flutter widget (`AppNotesContextRowData`, `AppNotesContextTag`, `AppNotesContextRow`, `_ContextTagChip`).
+- **Key code names:** `AppNotesContextRowData`, `AppNotesContextTag`, `AppNotesContextRow`, `_ContextTagChip`
+- **Responsibilities:** `AppNotesContextRow` — category/tag chips + trailing save status under title
+- **When to open:** When behavior tied to `notes_context_row.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** No — required for app runtime.
+- **Connected to:** APP_STRUCTURE role: `AppNotesContextRow` — category/tag chips + trailing save status under title
+- **Layer / owner:** Shared visual widget — reused on multiple tabs.
+
+RU:
+
+- **Что это:** Общий виджет design system — `AppNotesContextRow` — category/tag chips + trailing save status under title.
+- **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
+- **Содержимое:** Канонический Flutter-виджет (logic in `notes_context_row`).
+- **Обязанности:** Реализует в UI: `AppNotesContextRow` — category/tag chips + trailing save status under title.
+- **Когда открывать:** Когда ломается поведение, связанное с `notes_context_row.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/core/widgets/notes/`, `docs/APP_STRUCTURE.md`
+- **Слой:** Общий UI-виджет design system.
+
+
+### `lib/core/widgets/notes/notes_editor_surface.dart`
+
+EN:
+
+- **What this is:** Shared design-system widget — `AppNotesEditorSurface` — Apple-Notes-style title + Quill body + pinned toolbar.
+- **Why needed:** Plans, Timeline, and Lists reuse this instead of copying button/card styles.
+- **What it contains:** Canonical Flutter widget (`NotesEditorPlaceholderBuilder`, `AppNotesEditorSurface`, `_AppNotesEditorSurfaceState`).
+- **Key code names:** `NotesEditorPlaceholderBuilder`, `AppNotesEditorSurface`, `_AppNotesEditorSurfaceState`
+- **Responsibilities:** `AppNotesEditorSurface` — Apple-Notes-style title + Quill body + pinned toolbar
+- **When to open:** When behavior tied to `notes_editor_surface.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** No — required for app runtime.
+- **Connected to:** APP_STRUCTURE role: `AppNotesEditorSurface` — Apple-Notes-style title + Quill body + pinned toolbar
+- **Layer / owner:** Shared visual widget — reused on multiple tabs.
+
+RU:
+
+- **Что это:** Общий виджет design system — `AppNotesEditorSurface` — Apple-Notes-style title + Quill body + pinned toolbar.
+- **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
+- **Содержимое:** Канонический Flutter-виджет (logic in `notes_editor_surface`).
+- **Обязанности:** Реализует в UI: `AppNotesEditorSurface` — Apple-Notes-style title + Quill body + pinned toolbar.
+- **Когда открывать:** Когда ломается поведение, связанное с `notes_editor_surface.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/core/widgets/notes/`, `docs/APP_STRUCTURE.md`
+- **Слой:** Общий UI-виджет design system.
+
+
+### `lib/core/widgets/notes/notes_markdown.dart`
+
+EN:
+
+- **What this is:** Shared design-system widget — Quill Delta JSON ↔ Markdown helpers for copy/paste (no third-party markdown package).
+- **Why needed:** Plans, Timeline, and Lists reuse this instead of copying button/card styles.
+- **What it contains:** Canonical Flutter widget (logic in `notes_markdown`).
+- **Responsibilities:** Quill Delta JSON ↔ Markdown helpers for copy/paste (no third-party markdown package)
+- **When to open:** When behavior tied to `notes_markdown.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** No — required for app runtime.
+- **Connected to:** APP_STRUCTURE role: Quill Delta JSON ↔ Markdown helpers for copy/paste (no third-party markdown package)
+- **Layer / owner:** Shared visual widget — reused on multiple tabs.
+
+RU:
+
+- **Что это:** Общий виджет design system — Quill Delta JSON ↔ Markdown helpers for copy/paste (no third-party markdown package).
+- **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
+- **Содержимое:** Канонический Flutter-виджет (logic in `notes_markdown`).
+- **Обязанности:** Реализует в UI: Quill Delta JSON ↔ Markdown helpers for copy/paste (no third-party markdown package).
+- **Когда открывать:** Когда ломается поведение, связанное с `notes_markdown.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/core/widgets/notes/`, `docs/APP_STRUCTURE.md`
+- **Слой:** Общий UI-виджет design system.
+
+
+### `lib/core/widgets/notes/notes_save_status.dart`
+
+EN:
+
+- **What this is:** Shared design-system widget — `AppNotesSaveStatus` — idle/editing/saving/saved/offline/error chip.
+- **Why needed:** Plans, Timeline, and Lists reuse this instead of copying button/card styles.
+- **What it contains:** Canonical Flutter widget (`NotesSaveStatusKind`, `AppNotesSaveStatusData`, `AppNotesSaveStatus`).
+- **Key code names:** `NotesSaveStatusKind`, `AppNotesSaveStatusData`, `AppNotesSaveStatus`
+- **Responsibilities:** `AppNotesSaveStatus` — idle/editing/saving/saved/offline/error chip
+- **When to open:** When behavior tied to `notes_save_status.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** No — required for app runtime.
+- **Connected to:** APP_STRUCTURE role: `AppNotesSaveStatus` — idle/editing/saving/saved/offline/error chip
+- **Layer / owner:** Shared visual widget — reused on multiple tabs.
+
+RU:
+
+- **Что это:** Общий виджет design system — `AppNotesSaveStatus` — idle/editing/saving/saved/offline/error chip.
+- **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
+- **Содержимое:** Канонический Flutter-виджет (logic in `notes_save_status`).
+- **Обязанности:** Реализует в UI: `AppNotesSaveStatus` — idle/editing/saving/saved/offline/error chip.
+- **Когда открывать:** Когда ломается поведение, связанное с `notes_save_status.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/core/widgets/notes/`, `docs/APP_STRUCTURE.md`
+- **Слой:** Общий UI-виджет design system.
+
+
+### `lib/core/widgets/notes/notes_toolbar.dart`
+
+EN:
+
+- **What this is:** Shared design-system widget — `AppNotesToolbar` — fixed-height custom Quill format toolbar (web-safe.
+- **Why needed:** Plans, Timeline, and Lists reuse this instead of copying button/card styles.
+- **What it contains:** Canonical Flutter widget (`AppNotesToolbarActions`, `AppNotesToolbarTooltips`, `AppNotesToolbar`, `_AppNotesToolbarState`, `_TogglableFormatButton`).
+- **Key code names:** `AppNotesToolbarActions`, `AppNotesToolbarTooltips`, `AppNotesToolbar`, `_AppNotesToolbarState`, `_TogglableFormatButton`
+- **Responsibilities:** `AppNotesToolbar` — fixed-height custom Quill format toolbar (web-safe; no QuillSimpleToolbar)
+- **When to open:** When behavior tied to `notes_toolbar.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** No — required for app runtime.
+- **Connected to:** APP_STRUCTURE role: `AppNotesToolbar` — fixed-height custom Quill format toolbar (web-safe
+- **Layer / owner:** Shared visual widget — reused on multiple tabs.
+
+RU:
+
+- **Что это:** Общий виджет design system — `AppNotesToolbar` — fixed-height custom Quill format toolbar (web-safe.
+- **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
+- **Содержимое:** Канонический Flutter-виджет (logic in `notes_toolbar`).
+- **Обязанности:** Реализует в UI: `AppNotesToolbar` — fixed-height custom Quill format toolbar (web-safe; no QuillSimpleToolbar).
+- **Когда открывать:** Когда ломается поведение, связанное с `notes_toolbar.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/core/widgets/notes/`, `docs/APP_STRUCTURE.md`
+- **Слой:** Общий UI-виджет design system.
+
+
 ### `lib/core/widgets/omni_date_time_picker_dialog.dart`
 
 EN:
@@ -8349,6 +9847,32 @@ RU:
 - **Когда открывать:** Внешний вид карточки плана.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/widgets/plan_time_task_card/`, `docs/APP_STRUCTURE.md`
+- **Слой:** Общий UI-виджет design system.
+
+
+### `lib/core/widgets/radial_menu_viewport.dart`
+
+EN:
+
+- **What this is:** `RadialMenuViewport` — clamps radial/semi-circle card action menus inside the visible viewport.
+- **Why needed:** Lists and Plans radial menus near screen edges must keep satellites and labels on-screen.
+- **What it contains:** `clampCanvasTopLeft` geometry helper; safe-margin constants.
+- **Key code names:** `RadialMenuViewport`
+- **Responsibilities:** Pure geometry — no Brain/PocketBase imports.
+- **When to open:** When behavior tied to `radial_menu_viewport.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** No — required for app runtime.
+- **Connected to:** APP_STRUCTURE role: `RadialMenuViewport` — clamp radial/semi-circle card menus inside the visible viewport
+- **Layer / owner:** Shared visual widget — reused on multiple tabs.
+
+RU:
+
+- **Что это:** `RadialMenuViewport` — сдвигает радиальное/полукруглое меню карточки внутрь видимой области экрана.
+- **Зачем:** Радиальные меню Lists и Plans у края экрана должны оставлять спутники и подписи видимыми.
+- **Содержимое:** Геометрический хелпер `clampCanvasTopLeft`; константы безопасного отступа.
+- **Обязанности:** Чистая геометрия — без импортов Brain и PocketBase.
+- **Когда открывать:** Когда ломается поведение, связанное с `radial_menu_viewport.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/core/widgets/`, `docs/APP_STRUCTURE.md`
 - **Слой:** Общий UI-виджет design system.
 
 
@@ -8793,6 +10317,32 @@ RU:
 - **Слой:** Brain — модуль `part` в `database_service.dart`.
 
 
+### `lib/data/desktop_stt_cloud_backend.dart`
+
+EN:
+
+- **What this is:** Brain-owned cloud command STT transport — PocketBase auth, `/api/ai/transcribe-command` POST, 25s timeout.
+- **Why needed:** Core desktop STT must not import `database_service.dart`; Brain owns auth/token/HTTP for cloud fallback.
+- **What it contains:** `DesktopSttCloudBackend` hooks consumed by Core via `main.dart` injection (AppClock-style).
+- **Key code names:** `DesktopSttCloudBackend`
+- **Responsibilities:** Ready check, Authorization header, POST body, timeout — no WAV DSP.
+- **When to open:** When behavior tied to `desktop_stt_cloud_backend.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** No — required for app runtime.
+- **Connected to:** UI calls via `DatabaseService.instance`; APP_STRUCTURE role: Brain-owned cloud command STT transport: PocketBase auth, `/api/ai/transcribe-command` POST, 25s timeout
+- **Layer / owner:** Brain module — `part` file merged into `database_service.dart`.
+
+RU:
+
+- **Что это:** Транспорт облачного command STT в Brain — авторизация PocketBase, POST `/api/ai/transcribe-command`, таймаут 25 с.
+- **Зачем:** Ядро desktop STT не должно импортировать `database_service.dart`; Brain владеет токеном и HTTP для облачного fallback.
+- **Содержимое:** Хуки `DesktopSttCloudBackend`, подключение из `main.dart` в стиле AppClock.
+- **Обязанности:** Проверка готовности, заголовок Authorization, тело POST, таймаут — без обработки WAV.
+- **Когда открывать:** Когда ломается поведение, связанное с `desktop_stt_cloud_backend.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** UI вызывает `DatabaseService.instance`
+- **Слой:** Brain — модуль `part` в `database_service.dart`.
+
+
 ### `lib/data/local_sync/offline_sync_state.dart`
 
 EN:
@@ -8999,6 +10549,32 @@ RU:
 - **Слой:** Модели данных — без HTTP.
 
 
+### `lib/data/models/note_document.dart`
+
+EN:
+
+- **What this is:** Defines versioned Notes block documents (`lifeos_notes_blocks_v1`) stored in `plans.notes_delta`.
+- **Why needed:** Block editor and library cards need typed paragraphs/checklists/images/drawings with legacy Quill migration.
+- **What it contains:** `NoteDocument`, `NoteBlock`, parse/serialize, payload size guards — pure data, no Flutter/PB.
+- **Key code names:** `NoteBlockType`, `NoteBlock`, `NoteDocumentMeta`, `NoteDocument`
+- **Responsibilities:** `NoteDocument` / `NoteBlock` — versioned `lifeos_notes_blocks_v1` envelope (pure data)
+- **When to open:** When behavior tied to `note_document.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** No — required for app runtime.
+- **Connected to:** UI calls via `DatabaseService.instance`; APP_STRUCTURE role: `NoteDocument` / `NoteBlock` — versioned `lifeos_notes_blocks_v1` envelope (pure data)
+- **Layer / owner:** Data shape only — no network.
+
+RU:
+
+- **Что это:** Модуль brain для data models — файл `note_document`.
+- **Зачем:** Держит data models согласованным с PocketBase и UI.
+- **Содержимое:** Dart-код (`NoteBlockType`, `NoteBlock`, `NoteDocumentMeta`, `NoteDocument`).
+- **Обязанности:** Реализует в коде: `NoteDocument` / `NoteBlock` — versioned `lifeos_notes_blocks_v1` envelope (pure data).
+- **Когда открывать:** Когда ломается поведение, связанное с `note_document.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** UI вызывает `DatabaseService.instance`
+- **Слой:** Модели данных — без HTTP.
+
+
 ### `lib/data/models/planning.dart`
 
 EN:
@@ -9163,10 +10739,10 @@ EN:
 - **Why needed:** UI calls one plan entry point; this file delegates to focused modules in the subfolder.
 - **What it contains:** Coordinator extensions plus links to `part` files under `plans/` or `plan/`.
 - **Key code names:** `PlanServiceExtension`
-- **Responsibilities:** Plans/lists coordinator: CRUD, streams, wall-time projection, alarms, AI parse
+- **Responsibilities:** Plans/lists coordinator: CRUD, streams, wall-time projection, alarms
 - **When to open:** When behavior tied to `plan_service.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
-- **Connected to:** UI calls via `DatabaseService.instance`; APP_STRUCTURE role: Plans/lists coordinator: CRUD, streams, wall-time projection, alarms, AI parse
+- **Connected to:** UI calls via `DatabaseService.instance`; APP_STRUCTURE role: Plans/lists coordinator: CRUD, streams, wall-time projection, alarms
 - **Layer / owner:** Brain coordinator — entry point for this domain inside `database_service.dart`.
 
 RU:
@@ -9174,7 +10750,7 @@ RU:
 - **Что это:** Главный координатор для plans and backlog lists.
 - **Зачем:** UI вызывает один вход; детали — в модулях subfolder.
 - **Содержимое:** Extensions + `part` файлы для plan.
-- **Обязанности:** Координатор домена: Plans/lists coordinator: CRUD, streams, wall-time projection, alarms, AI parse.
+- **Обязанности:** Координатор домена: Plans/lists coordinator: CRUD, streams, wall-time projection, alarms.
 - **Когда открывать:** Когда ломается поведение, связанное с `plan_service.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** UI вызывает `DatabaseService.instance`
@@ -9204,6 +10780,84 @@ RU:
 - **Когда открывать:** Когда ломается поведение, связанное с `plan_time_sequential_cascade.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** UI вызывает `DatabaseService.instance`
+- **Слой:** Brain — модуль `part` в `database_service.dart`.
+
+
+### `lib/data/plans/notes_brain_helpers.dart`
+
+EN:
+
+- **What this is:** Bridges versioned `NoteDocument` envelopes with `plans.notes_delta` / mirrors and debounced PATCH.
+- **Why needed:** Notes editor/library must stay local-first: cache first, then one PATCH per debounce window.
+- **What it contains:** Parse/apply/pin/done helpers; `createEmptyNote`; optimistic NotesBrainExtension.
+- **Key code names:** `NotesBrainExtension`
+- **Responsibilities:** Notes Brain extension — parse/apply/pin/done + debounced `notes_delta` PATCH
+- **When to open:** Plan/list save, Time View layout, recurrence, tags on plans, offline queue.
+- **Can it be deleted?** No — required for app runtime.
+- **Connected to:** UI calls via `DatabaseService.instance`; Plans tab, Lists tab, Time View; APP_STRUCTURE role: Notes Brain extension — parse/apply/pin/done + debounced `notes_delta` PATCH
+- **Layer / owner:** Brain module — `part` file merged into `database_service.dart`.
+
+RU:
+
+- **Что это:** Модуль brain для plans and lists — файл `notes_brain_helpers`.
+- **Зачем:** Держит plans and lists согласованным с PocketBase и UI.
+- **Содержимое:** Dart-код (`NotesBrainExtension`).
+- **Обязанности:** Реализует в коде: Notes Brain extension — parse/apply/pin/done + debounced `notes_delta` PATCH.
+- **Когда открывать:** Планы/списки: сохранение, Time View, повтор, теги.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** UI вызывает `DatabaseService.instance`; Plans, Lists, Time View
+- **Слой:** Brain — модуль `part` в `database_service.dart`.
+
+
+### `lib/data/plans/plan_ai_parse_helpers.dart`
+
+EN:
+
+- **What this is:** Calls the AI parse-task backend and normalizes planning items from the response.
+- **Why needed:** Smart plan sheet and voice-ish plan drafts need one Brain entry for parse-task.
+- **What it contains:** `parseTaskViaAiBackend`, `parsePlanningItemsViaAiBackend`, HH:mm helpers.
+- **Key code names:** `PlanAiParseHelpersExtension`
+- **Responsibilities:** AI `parse-task` helpers: `parseTaskViaAiBackend`, `parsePlanningItemsViaAiBackend`
+- **When to open:** Plan/list save, Time View layout, recurrence, tags on plans, offline queue.
+- **Can it be deleted?** No — required for app runtime.
+- **Connected to:** UI calls via `DatabaseService.instance`; Plans tab, Lists tab, Time View; APP_STRUCTURE role: AI `parse-task` helpers: `parseTaskViaAiBackend`, `parsePlanningItemsViaAiBackend`
+- **Layer / owner:** Brain module — `part` file merged into `database_service.dart`.
+
+RU:
+
+- **Что это:** Модуль brain для plans and lists — файл `plan_ai_parse_helpers`.
+- **Зачем:** Держит plans and lists согласованным с PocketBase и UI.
+- **Содержимое:** Dart-код (`PlanAiParseHelpersExtension`).
+- **Обязанности:** Реализует в коде: AI `parse-task` helpers: `parseTaskViaAiBackend`, `parsePlanningItemsViaAiBackend`.
+- **Когда открывать:** Планы/списки: сохранение, Time View, повтор, теги.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** UI вызывает `DatabaseService.instance`; Plans, Lists, Time View
+- **Слой:** Brain — модуль `part` в `database_service.dart`.
+
+
+### `lib/data/plans/plan_alarm_helpers.dart`
+
+EN:
+
+- **What this is:** Reconciles plan reminder alarms from the hydrated plan cache (no network on the hot path).
+- **Why needed:** Planning refresh/hydrate/resume must schedule OS alarms without blocking Timeline taps.
+- **What it contains:** `reconcilePlanNotifications`, debounced OS alarm bridge from `_allPlansUserCache`.
+- **Key code names:** `PlanAlarmHelpersExtension`
+- **Responsibilities:** Hydrated-cache plan reminder reconciliation and debounced OS alarm bridge
+- **When to open:** Plan/list save, Time View layout, recurrence, tags on plans, offline queue.
+- **Can it be deleted?** No — required for app runtime.
+- **Connected to:** UI calls via `DatabaseService.instance`; Plans tab, Lists tab, Time View; APP_STRUCTURE role: Hydrated-cache plan reminder reconciliation and debounced OS alarm bridge
+- **Layer / owner:** Brain module — `part` file merged into `database_service.dart`.
+
+RU:
+
+- **Что это:** Модуль brain для plans and lists — файл `plan_alarm_helpers`.
+- **Зачем:** Держит plans and lists согласованным с PocketBase и UI.
+- **Содержимое:** Dart-код (`PlanAlarmHelpersExtension`).
+- **Обязанности:** Реализует в коде: Hydrated-cache plan reminder reconciliation and debounced OS alarm bridge.
+- **Когда открывать:** Планы/списки: сохранение, Time View, повтор, теги.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** UI вызывает `DatabaseService.instance`; Plans, Lists, Time View
 - **Слой:** Brain — модуль `part` в `database_service.dart`.
 
 
@@ -9655,7 +11309,7 @@ EN:
 - **What this is:** Filters and streams the in-memory record list for Timeline display.
 - **Why needed:** Every Timeline day reads from this cache instead of hitting the network each swipe.
 - **What it contains:** `recordsStream`, per-day filter, display-time helpers.
-- **Key code names:** `RecordCacheProjectionExtension`
+- **Key code names:** `RecordCacheProjectionExtension`, `RecordBrainTestBridge`
 - **Responsibilities:** Per-day filter, `recordsStream`, display-time helpers
 - **When to open:** Timeline timer, record edit, offline start/stop, duplicate running record.
 - **Can it be deleted?** No — required for app runtime.
@@ -9666,7 +11320,7 @@ RU:
 
 - **Что это:** Модуль brain для timeline records — файл `record_cache_helpers`.
 - **Зачем:** Держит timeline records согласованным с PocketBase и UI.
-- **Содержимое:** Dart-код (`RecordCacheProjectionExtension`).
+- **Содержимое:** Dart-код (`RecordCacheProjectionExtension`, `RecordBrainTestBridge`).
 - **Обязанности:** Реализует в коде: Per-day filter, `recordsStream`, display-time helpers.
 - **Когда открывать:** Timeline: старт/стоп, правка, офлайн, дубликат running.
 - **Можно удалить?** Нет — нужен для работы приложения.
@@ -10010,6 +11664,32 @@ RU:
 - **Слой:** Brain — модуль `part` в `database_service.dart`.
 
 
+### `lib/data/voice_domain_resolver.dart`
+
+EN:
+
+- **What this is:** `VoiceDomainResolver` — fuzzy voice-domain match against the live category index (`part` of `voice_command_parser.dart`).
+- **Why needed:** Price Reporter and scoped voice commands must resolve spoken domains to category system IDs with confidence gates.
+- **What it contains:** `VoiceDomainMatchCandidate`, `VoiceDomainResolution`, accept/reject status, diagnostic snapshots.
+- **Key code names:** `VoiceDomainResolverStatus`, `VoiceDomainMatchCandidate`, `VoiceDomainResolution`, `VoiceCommandParseComparison`, `_CategoryPathEntry`, `VoiceDomainResolver`
+- **Responsibilities:** Score transcript vs category phrases; reject low-confidence/ambiguous; feed parser.
+- **When to open:** When behavior tied to `voice_domain_resolver.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** No — required for app runtime.
+- **Connected to:** UI calls via `DatabaseService.instance`; APP_STRUCTURE role: `VoiceDomainResolver` — fuzzy voice-domain match against live category index *(part of `voice_command_parser.dart`)*
+- **Layer / owner:** Brain module — `part` file merged into `database_service.dart`.
+
+RU:
+
+- **Что это:** `VoiceDomainResolver` — нечёткое сопоставление голосового домена с живым индексом категорий (`part` файла `voice_command_parser.dart`).
+- **Зачем:** Price Reporter и scoped-команды должны превращать произнесённые домены в system ID категорий с порогом уверенности.
+- **Содержимое:** `VoiceDomainMatchCandidate`, `VoiceDomainResolution`, статусы accept/reject, диагностические снимки.
+- **Обязанности:** Оценивает транскрипт против фраз категорий; отклоняет низкую уверенность и неоднозначность; питает парсер.
+- **Когда открывать:** Когда ломается поведение, связанное с `voice_domain_resolver.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** UI вызывает `DatabaseService.instance`
+- **Слой:** Brain — модуль `part` в `database_service.dart`.
+
+
 ### `lib/data/web_history.dart`
 
 EN:
@@ -10273,8 +11953,8 @@ EN:
 
 - **What this is:** `calendar_month_grid.dart` on Calendar tab — Calendar tab: month/week grids, chrome header, focused-day task panel.
 - **Why needed:** Users see `calendar_month_grid.dart` when using Calendar tab.
-- **What it contains:** Primary symbols: `CalendarMonthGrid`, `CalendarMonthDayCell`.
-- **Key code names:** `CalendarMonthGrid`, `CalendarMonthDayCell`
+- **What it contains:** Primary symbols: `CalendarMonthGrid`, `CalendarMonthDayCell`, `_CalendarDayNumberBadge`.
+- **Key code names:** `CalendarMonthGrid`, `CalendarMonthDayCell`, `_CalendarDayNumberBadge`
 - **Responsibilities:** Calendar tab: month/week grids, chrome header, focused-day task panel
 - **When to open:** When behavior tied to `calendar_month_grid.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -10349,14 +12029,14 @@ RU:
 
 EN:
 
-- **What this is:** `category_appearance_sheet.dart` on More → Categories manager — Category manager (More menu): band grid, editor/appearance sheets, tree picker.
+- **What this is:** `category_appearance_sheet.dart` on More → Categories manager — Category manager (More menu): band grid, editor/appearance sheets, tree picker, picker create flow.
 - **Why needed:** Users see `category_appearance_sheet.dart` when using More → Categories manager.
 - **What it contains:** Primary symbols: `CategoryAppearanceSheet`, `_CategoryAppearanceSheetState`.
 - **Key code names:** `CategoryAppearanceSheet`, `_CategoryAppearanceSheetState`
-- **Responsibilities:** Category manager (More menu): band grid, editor/appearance sheets, tree picker
+- **Responsibilities:** Category manager (More menu): band grid, editor/appearance sheets, tree picker, picker create flow
 - **When to open:** When behavior tied to `category_appearance_sheet.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
-- **Connected to:** APP_STRUCTURE role: Category manager (More menu): band grid, editor/appearance sheets, tree picker
+- **Connected to:** APP_STRUCTURE role: Category manager (More menu): band grid, editor/appearance sheets, tree picker, picker create flow
 - **Layer / owner:** UI code for the categories area of the app (what users see and tap).
 
 RU:
@@ -10375,14 +12055,14 @@ RU:
 
 EN:
 
-- **What this is:** `category_editor_sheet.dart` on More → Categories manager — Category manager (More menu): band grid, editor/appearance sheets, tree picker.
+- **What this is:** `category_editor_sheet.dart` on More → Categories manager — Category manager (More menu): band grid, editor/appearance sheets, tree picker, picker create flow.
 - **Why needed:** Users see `category_editor_sheet.dart` when using More → Categories manager.
 - **What it contains:** Primary symbols: `CategoryEditorSheet`, `_CategoryEditorSheetState`.
 - **Key code names:** `CategoryEditorSheet`, `_CategoryEditorSheetState`
-- **Responsibilities:** Category manager (More menu): band grid, editor/appearance sheets, tree picker
+- **Responsibilities:** Category manager (More menu): band grid, editor/appearance sheets, tree picker, picker create flow
 - **When to open:** When behavior tied to `category_editor_sheet.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
-- **Connected to:** APP_STRUCTURE role: Category manager (More menu): band grid, editor/appearance sheets, tree picker
+- **Connected to:** APP_STRUCTURE role: Category manager (More menu): band grid, editor/appearance sheets, tree picker, picker create flow
 - **Layer / owner:** UI code for the categories area of the app (what users see and tap).
 
 RU:
@@ -10401,13 +12081,13 @@ RU:
 
 EN:
 
-- **What this is:** `category_helpers.dart` on More → Categories manager — Category manager (More menu): band grid, editor/appearance sheets, tree picker.
+- **What this is:** `category_helpers.dart` on More → Categories manager — Category manager (More menu): band grid, editor/appearance sheets, tree picker, picker create flow.
 - **Why needed:** Users see `category_helpers.dart` when using More → Categories manager.
 - **What it contains:** Dart module `category_helpers.dart` — open file for classes and helpers.
-- **Responsibilities:** Category manager (More menu): band grid, editor/appearance sheets, tree picker
+- **Responsibilities:** Category manager (More menu): band grid, editor/appearance sheets, tree picker, picker create flow
 - **When to open:** When behavior tied to `category_helpers.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
-- **Connected to:** APP_STRUCTURE role: Category manager (More menu): band grid, editor/appearance sheets, tree picker
+- **Connected to:** APP_STRUCTURE role: Category manager (More menu): band grid, editor/appearance sheets, tree picker, picker create flow
 - **Layer / owner:** UI code for the categories area of the app (what users see and tap).
 
 RU:
@@ -10426,14 +12106,14 @@ RU:
 
 EN:
 
-- **What this is:** `category_list_view.dart` on More → Categories manager — Category manager (More menu): band grid, editor/appearance sheets, tree picker.
+- **What this is:** `category_list_view.dart` on More → Categories manager — Category manager (More menu): band grid, editor/appearance sheets, tree picker, picker create flow.
 - **Why needed:** Users see `category_list_view.dart` when using More → Categories manager.
 - **What it contains:** Primary symbols: `CategoriesPage`, `_CategoriesPageState`.
 - **Key code names:** `CategoriesPage`, `_CategoriesPageState`
-- **Responsibilities:** Category manager (More menu): band grid, editor/appearance sheets, tree picker
+- **Responsibilities:** Category manager (More menu): band grid, editor/appearance sheets, tree picker, picker create flow
 - **When to open:** When behavior tied to `category_list_view.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
-- **Connected to:** APP_STRUCTURE role: Category manager (More menu): band grid, editor/appearance sheets, tree picker
+- **Connected to:** APP_STRUCTURE role: Category manager (More menu): band grid, editor/appearance sheets, tree picker, picker create flow
 - **Layer / owner:** UI code for the categories area of the app (what users see and tap).
 
 RU:
@@ -10452,14 +12132,14 @@ RU:
 
 EN:
 
-- **What this is:** `category_recursive_tree.dart` on More → Categories manager — Category manager (More menu): band grid, editor/appearance sheets, tree picker.
+- **What this is:** `category_recursive_tree.dart` on More → Categories manager — Category manager (More menu): band grid, editor/appearance sheets, tree picker, picker create flow.
 - **Why needed:** Users see `category_recursive_tree.dart` when using More → Categories manager.
-- **What it contains:** Primary symbols: `CategoryTreeSheetPicked`, `CategoryTreeSheetAll`, `CategoryFilterTreeField`, `CategoryTreeFormField`, `_CategoryTreeBody`, `_CategoryTreeBodyState`.
-- **Key code names:** `CategoryTreeSheetPicked`, `CategoryTreeSheetAll`, `CategoryFilterTreeField`, `CategoryTreeFormField`, `_CategoryTreeBody`, `_CategoryTreeBodyState`, `_CategoryTreeNode`
-- **Responsibilities:** Category manager (More menu): band grid, editor/appearance sheets, tree picker
+- **What it contains:** Primary symbols: `CategoryTreeSheetPicked`, `CategoryTreeSheetAll`, `_CategoryTreePickerSheet`, `_CategoryTreePickerSheetState`, `CategoryFilterTreeField`.
+- **Key code names:** `CategoryTreeSheetPicked`, `CategoryTreeSheetAll`, `_CategoryTreePickerSheet`, `_CategoryTreePickerSheetState`, `CategoryFilterTreeField`
+- **Responsibilities:** Category manager (More menu): band grid, editor/appearance sheets, tree picker, picker create flow
 - **When to open:** When behavior tied to `category_recursive_tree.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
-- **Connected to:** APP_STRUCTURE role: Category manager (More menu): band grid, editor/appearance sheets, tree picker
+- **Connected to:** APP_STRUCTURE role: Category manager (More menu): band grid, editor/appearance sheets, tree picker, picker create flow
 - **Layer / owner:** UI code for the categories area of the app (what users see and tap).
 
 RU:
@@ -10478,14 +12158,14 @@ RU:
 
 EN:
 
-- **What this is:** `category_row_widget.dart` on More → Categories manager — Category manager (More menu): band grid, editor/appearance sheets, tree picker.
+- **What this is:** `category_row_widget.dart` on More → Categories manager — Category manager (More menu): band grid, editor/appearance sheets, tree picker, picker create flow.
 - **Why needed:** Users see `category_row_widget.dart` when using More → Categories manager.
 - **What it contains:** Primary symbols: `CategoryDepthLayout`, `CategoryBandLayout`, `CategoryRowWidget`.
 - **Key code names:** `CategoryDepthLayout`, `CategoryBandLayout`, `CategoryRowWidget`
-- **Responsibilities:** Category manager (More menu): band grid, editor/appearance sheets, tree picker
+- **Responsibilities:** Category manager (More menu): band grid, editor/appearance sheets, tree picker, picker create flow
 - **When to open:** When behavior tied to `category_row_widget.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
-- **Connected to:** APP_STRUCTURE role: Category manager (More menu): band grid, editor/appearance sheets, tree picker
+- **Connected to:** APP_STRUCTURE role: Category manager (More menu): band grid, editor/appearance sheets, tree picker, picker create flow
 - **Layer / owner:** UI code for the categories area of the app (what users see and tap).
 
 RU:
@@ -10504,14 +12184,14 @@ RU:
 
 EN:
 
-- **What this is:** `category_tag_input_field.dart` on More → Categories manager — Category manager (More menu): band grid, editor/appearance sheets, tree picker.
+- **What this is:** `category_tag_input_field.dart` on More → Categories manager — Category manager (More menu): band grid, editor/appearance sheets, tree picker, picker create flow.
 - **Why needed:** Users see `category_tag_input_field.dart` when using More → Categories manager.
 - **What it contains:** Primary symbols: `TagInputField`, `_TagInputFieldState`.
 - **Key code names:** `TagInputField`, `_TagInputFieldState`
-- **Responsibilities:** Category manager (More menu): band grid, editor/appearance sheets, tree picker
+- **Responsibilities:** Category manager (More menu): band grid, editor/appearance sheets, tree picker, picker create flow
 - **When to open:** When behavior tied to `category_tag_input_field.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
-- **Connected to:** APP_STRUCTURE role: Category manager (More menu): band grid, editor/appearance sheets, tree picker
+- **Connected to:** APP_STRUCTURE role: Category manager (More menu): band grid, editor/appearance sheets, tree picker, picker create flow
 - **Layer / owner:** UI code for the categories area of the app (what users see and tap).
 
 RU:
@@ -10530,14 +12210,14 @@ RU:
 
 EN:
 
-- **What this is:** `category_visibility_prefs.dart` on More → Categories manager — Category manager (More menu): band grid, editor/appearance sheets, tree picker.
+- **What this is:** `category_visibility_prefs.dart` on More → Categories manager — Category manager (More menu): band grid, editor/appearance sheets, tree picker, picker create flow.
 - **Why needed:** Users see `category_visibility_prefs.dart` when using More → Categories manager.
 - **What it contains:** Primary symbols: `CategoryVisibilityPrefs`.
 - **Key code names:** `CategoryVisibilityPrefs`
-- **Responsibilities:** Category manager (More menu): band grid, editor/appearance sheets, tree picker
+- **Responsibilities:** Category manager (More menu): band grid, editor/appearance sheets, tree picker, picker create flow
 - **When to open:** When behavior tied to `category_visibility_prefs.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
-- **Connected to:** APP_STRUCTURE role: Category manager (More menu): band grid, editor/appearance sheets, tree picker
+- **Connected to:** APP_STRUCTURE role: Category manager (More menu): band grid, editor/appearance sheets, tree picker, picker create flow
 - **Layer / owner:** UI code for the categories area of the app (what users see and tap).
 
 RU:
@@ -10556,14 +12236,14 @@ RU:
 
 EN:
 
-- **What this is:** `create_category_dialog.dart` on More → Categories manager — Category manager (More menu): band grid, editor/appearance sheets, tree picker.
+- **What this is:** `create_category_dialog.dart` on More → Categories manager — Category manager (More menu): band grid, editor/appearance sheets, tree picker, picker create flow.
 - **Why needed:** Users see `create_category_dialog.dart` when using More → Categories manager.
 - **What it contains:** Primary symbols: `_CreateCategoryDialog`, `_CreateCategoryDialogState`.
 - **Key code names:** `_CreateCategoryDialog`, `_CreateCategoryDialogState`
-- **Responsibilities:** Category manager (More menu): band grid, editor/appearance sheets, tree picker
+- **Responsibilities:** Category manager (More menu): band grid, editor/appearance sheets, tree picker, picker create flow
 - **When to open:** When behavior tied to `create_category_dialog.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
-- **Connected to:** APP_STRUCTURE role: Category manager (More menu): band grid, editor/appearance sheets, tree picker
+- **Connected to:** APP_STRUCTURE role: Category manager (More menu): band grid, editor/appearance sheets, tree picker, picker create flow
 - **Layer / owner:** UI code for the categories area of the app (what users see and tap).
 
 RU:
@@ -10573,6 +12253,32 @@ RU:
 - **Содержимое:** Основные символы: `_CreateCategoryDialog`, `_CreateCategoryDialogState`.
 - **Обязанности:** Пользователь открывает sheet/dialog из entry `create_category_dialog`.
 - **Когда открывать:** Когда ломается поведение, связанное с `create_category_dialog.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/features/categories/`, `docs/APP_STRUCTURE.md`
+- **Слой:** UI — экран/виджет (categories).
+
+
+### `lib/features/categories/create_category_from_picker.dart`
+
+EN:
+
+- **What this is:** `showCreateCategoryFromPickerDialog` — explicit-parent create flow from category tree pickers.
+- **Why needed:** Edit sheets and recursive tree must create a child under a known parent without inferring from search UI.
+- **What it contains:** `CategoryPickerCreateTarget`, submit helper, create dialog widget.
+- **Key code names:** `CategoryPickerCreateTarget`, `CategoryPickerCreateResult`, `_CreateCategoryFromPickerDialog`, `_CreateCategoryFromPickerDialogState`
+- **Responsibilities:** Collect name/parent; call Brain create; return new local category id.
+- **When to open:** When behavior tied to `create_category_from_picker.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** No — required for app runtime.
+- **Connected to:** APP_STRUCTURE role: `showCreateCategoryFromPickerDialog` — explicit-parent create flow from category picker
+- **Layer / owner:** UI code for the categories area of the app (what users see and tap).
+
+RU:
+
+- **Что это:** `showCreateCategoryFromPickerDialog` — создание категории с явным родителем из дерева выбора.
+- **Зачем:** Edit sheets и recursive tree создают потомка под известным родителем без угадывания из поиска.
+- **Содержимое:** `CategoryPickerCreateTarget`, хелпер submit, виджет диалога создания.
+- **Обязанности:** Собирает имя и родителя; вызывает создание в Brain; возвращает новый local id категории.
+- **Когда открывать:** Когда ломается поведение, связанное с `create_category_from_picker.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/features/categories/`, `docs/APP_STRUCTURE.md`
 - **Слой:** UI — экран/виджет (categories).
@@ -10662,8 +12368,8 @@ EN:
 
 - **What this is:** `lists_card.dart` on Lists tab (fourth bottom tab) — BacklogPlanCard.
 - **Why needed:** Users see `lists_card.dart` when using Lists tab (fourth bottom tab).
-- **What it contains:** Primary symbols: `ListsQuadraticChip`, `BacklogPlanCard`, `ListsSemicircleMenuOverlay`, `ListsSemicircleMenuOverlayState`.
-- **Key code names:** `ListsQuadraticChip`, `BacklogPlanCard`, `ListsSemicircleMenuOverlay`, `ListsSemicircleMenuOverlayState`
+- **What it contains:** Primary symbols: `ListsQuadraticChip`, `BacklogPlanCard`.
+- **Key code names:** `ListsQuadraticChip`, `BacklogPlanCard`
 - **Responsibilities:** BacklogPlanCard
 - **When to open:** Lists tab: filters, done checkbox, bulk actions, export.
 - **Can it be deleted?** No — required for app runtime.
@@ -10809,6 +12515,213 @@ RU:
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Вкладка Lists (shell index 3)
 - **Слой:** UI — экран/виджет (lists).
+
+
+### `lib/features/notes/drawing_canvas_page.dart`
+
+EN:
+
+- **What this is:** `drawing_canvas_page.dart` on notes area — Full-screen drawing canvas for image/drawing blocks (PNG data URL in/out).
+- **Why needed:** Users see `drawing_canvas_page.dart` when using notes area.
+- **What it contains:** Primary symbols: `_Stroke`, `DrawingCanvasPage`, `_DrawingCanvasPageState`, `_DrawingPainter`, `_DrawingToolbar`, `_ColorDot`.
+- **Key code names:** `_Stroke`, `DrawingCanvasPage`, `_DrawingCanvasPageState`, `_DrawingPainter`, `_DrawingToolbar`, `_ColorDot`
+- **Responsibilities:** Full-screen drawing canvas for image/drawing blocks (PNG data URL in/out)
+- **When to open:** When behavior tied to `drawing_canvas_page.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** No — required for app runtime.
+- **Connected to:** APP_STRUCTURE role: Full-screen drawing canvas for image/drawing blocks (PNG data URL in/out)
+- **Layer / owner:** UI code for the notes area of the app (what users see and tap).
+
+RU:
+
+- **Что это:** `drawing_canvas_page.dart` на Notes library/editor (Lists + full-screen editor) — Отвечает за видимый UI, собранный в `drawing_canvas_page.dart`..
+- **Зачем:** Пользователь видит UI из `drawing_canvas_page.dart` на Notes library/editor (Lists + full-screen editor).
+- **Содержимое:** Компоновка экрана и state в `drawing_canvas_page.dart`.
+- **Обязанности:** Отвечает за видимый UI, собранный в `drawing_canvas_page.dart`.
+- **Когда открывать:** Когда ломается поведение, связанное с `drawing_canvas_page.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/features/notes/`, `docs/APP_STRUCTURE.md`
+- **Слой:** UI — экран/виджет (notes).
+
+
+### `lib/features/notes/note_editor_page.dart`
+
+EN:
+
+- **What this is:** `note_editor_page.dart` on notes area — Full-screen block editor (primary Notes editing experience).
+- **Why needed:** Users see `note_editor_page.dart` when using notes area.
+- **What it contains:** Primary symbols: `NoteEditorPage`, `_SaveStatus`, `_NoteEditorPageState`.
+- **Key code names:** `NoteEditorPage`, `_SaveStatus`, `_NoteEditorPageState`
+- **Responsibilities:** Full-screen block editor (primary Notes editing experience)
+- **When to open:** When behavior tied to `note_editor_page.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** No — required for app runtime.
+- **Connected to:** APP_STRUCTURE role: Full-screen block editor (primary Notes editing experience)
+- **Layer / owner:** UI code for the notes area of the app (what users see and tap).
+
+RU:
+
+- **Что это:** `note_editor_page.dart` на Notes library/editor (Lists + full-screen editor) — Отвечает за видимый UI, собранный в `note_editor_page.dart`..
+- **Зачем:** Пользователь видит UI из `note_editor_page.dart` на Notes library/editor (Lists + full-screen editor).
+- **Содержимое:** Компоновка экрана и state в `note_editor_page.dart`.
+- **Обязанности:** Отвечает за видимый UI, собранный в `note_editor_page.dart`.
+- **Когда открывать:** Когда ломается поведение, связанное с `note_editor_page.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/features/notes/`, `docs/APP_STRUCTURE.md`
+- **Слой:** UI — экран/виджет (notes).
+
+
+### `lib/features/notes/notes_glm_surface.dart`
+
+EN:
+
+- **What this is:** `notes_glm_surface.dart` on notes area — GLM background + centered library/editor column frames.
+- **Why needed:** Users see `notes_glm_surface.dart` when using notes area.
+- **What it contains:** Primary symbols: `NotesGlmBackground`, `NotesGlmLibraryFrame`, `NotesGlmEditorFrame`.
+- **Key code names:** `NotesGlmBackground`, `NotesGlmLibraryFrame`, `NotesGlmEditorFrame`
+- **Responsibilities:** GLM background + centered library/editor column frames
+- **When to open:** When behavior tied to `notes_glm_surface.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** No — required for app runtime.
+- **Connected to:** APP_STRUCTURE role: GLM background + centered library/editor column frames
+- **Layer / owner:** UI code for the notes area of the app (what users see and tap).
+
+RU:
+
+- **Что это:** `notes_glm_surface.dart` на Notes library/editor (Lists + full-screen editor) — Поддерживает поведение `notes_glm_surface` в этой feature-зоне..
+- **Зачем:** Пользователь видит UI из `notes_glm_surface.dart` на Notes library/editor (Lists + full-screen editor).
+- **Содержимое:** Dart-модуль `notes_glm_surface.dart` — классы и helpers в исходнике.
+- **Обязанности:** Поддерживает поведение `notes_glm_surface` в этой feature-зоне.
+- **Когда открывать:** Когда ломается поведение, связанное с `notes_glm_surface.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/features/notes/`, `docs/APP_STRUCTURE.md`
+- **Слой:** UI — экран/виджет (notes).
+
+
+### `lib/features/notes/notes_library_page.dart`
+
+EN:
+
+- **What this is:** `notes_library_page.dart` on notes area — Standalone Notes library page (search, chips, grid/list, sort).
+- **Why needed:** Users see `notes_library_page.dart` when using notes area.
+- **What it contains:** Primary symbols: `NotesLibraryPage`, `_NotesLibraryPageState`, `_LibraryHeader`.
+- **Key code names:** `NotesLibraryPage`, `_NotesLibraryPageState`, `_LibraryHeader`
+- **Responsibilities:** Standalone Notes library page (search, chips, grid/list, sort)
+- **When to open:** When behavior tied to `notes_library_page.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** No — required for app runtime.
+- **Connected to:** APP_STRUCTURE role: Standalone Notes library page (search, chips, grid/list, sort)
+- **Layer / owner:** UI code for the notes area of the app (what users see and tap).
+
+RU:
+
+- **Что это:** `notes_library_page.dart` на Notes library/editor (Lists + full-screen editor) — Отвечает за видимый UI, собранный в `notes_library_page.dart`..
+- **Зачем:** Пользователь видит UI из `notes_library_page.dart` на Notes library/editor (Lists + full-screen editor).
+- **Содержимое:** Компоновка экрана и state в `notes_library_page.dart`.
+- **Обязанности:** Отвечает за видимый UI, собранный в `notes_library_page.dart`.
+- **Когда открывать:** Когда ломается поведение, связанное с `notes_library_page.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/features/notes/`, `docs/APP_STRUCTURE.md`
+- **Слой:** UI — экран/виджет (notes).
+
+
+### `lib/features/notes/notes_visual_tokens.dart`
+
+EN:
+
+- **What this is:** `notes_visual_tokens.dart` on notes area — GLM Notes spacing/typography/glass token helpers.
+- **Why needed:** Users see `notes_visual_tokens.dart` when using notes area.
+- **What it contains:** Dart module `notes_visual_tokens.dart` — open file for classes and helpers.
+- **Responsibilities:** GLM Notes spacing/typography/glass token helpers
+- **When to open:** When behavior tied to `notes_visual_tokens.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** No — required for app runtime.
+- **Connected to:** APP_STRUCTURE role: GLM Notes spacing/typography/glass token helpers
+- **Layer / owner:** UI code for the notes area of the app (what users see and tap).
+
+RU:
+
+- **Что это:** `notes_visual_tokens.dart` на Notes library/editor (Lists + full-screen editor) — Поддерживает поведение `notes_visual_tokens` в этой feature-зоне..
+- **Зачем:** Пользователь видит UI из `notes_visual_tokens.dart` на Notes library/editor (Lists + full-screen editor).
+- **Содержимое:** Dart-модуль `notes_visual_tokens.dart` — классы и helpers в исходнике.
+- **Обязанности:** Поддерживает поведение `notes_visual_tokens` в этой feature-зоне.
+- **Когда открывать:** Когда ломается поведение, связанное с `notes_visual_tokens.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/features/notes/`, `docs/APP_STRUCTURE.md`
+- **Слой:** UI — экран/виджет (notes).
+
+
+### `lib/features/notes/widgets/note_card.dart`
+
+EN:
+
+- **What this is:** `note_card.dart` on notes area — Grid/list note card with block preview, pin/done badges.
+- **Why needed:** Users see `note_card.dart` when using notes area.
+- **What it contains:** Primary symbols: `NotesLibraryView`, `NoteCardData`, `NoteCard`, `_GridCard`, `_ListRow`, `_BadgesRow`.
+- **Key code names:** `NotesLibraryView`, `NoteCardData`, `NoteCard`, `_GridCard`, `_ListRow`, `_BadgesRow`
+- **Responsibilities:** Grid/list note card with block preview, pin/done badges
+- **When to open:** When behavior tied to `note_card.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** No — required for app runtime.
+- **Connected to:** APP_STRUCTURE role: Grid/list note card with block preview, pin/done badges
+- **Layer / owner:** UI code for the notes area of the app (what users see and tap).
+
+RU:
+
+- **Что это:** `note_card.dart` на Notes library/editor (Lists + full-screen editor) — Поддерживает поведение `note_card` в этой feature-зоне..
+- **Зачем:** Пользователь видит UI из `note_card.dart` на Notes library/editor (Lists + full-screen editor).
+- **Содержимое:** Dart-модуль `note_card.dart` — классы и helpers в исходнике.
+- **Обязанности:** Поддерживает поведение `note_card` в этой feature-зоне.
+- **Когда открывать:** Когда ломается поведение, связанное с `note_card.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/features/notes/widgets/`, `docs/APP_STRUCTURE.md`
+- **Слой:** UI — экран/виджет (notes).
+
+
+### `lib/features/notes/widgets/notes_library_body.dart`
+
+EN:
+
+- **What this is:** `notes_library_body.dart` on notes area — NoteCard.
+- **Why needed:** Users see `notes_library_body.dart` when using notes area.
+- **What it contains:** Primary symbols: `NotesLibraryBody`.
+- **Key code names:** `NotesLibraryBody`
+- **Responsibilities:** NoteCard
+- **When to open:** When behavior tied to `notes_library_body.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** No — required for app runtime.
+- **Connected to:** APP_STRUCTURE role: Grid/list body of `NoteCard`s for Lists tab
+- **Layer / owner:** UI code for the notes area of the app (what users see and tap).
+
+RU:
+
+- **Что это:** `notes_library_body.dart` на Notes library/editor (Lists + full-screen editor) — Поддерживает поведение `notes_library_body` в этой feature-зоне..
+- **Зачем:** Пользователь видит UI из `notes_library_body.dart` на Notes library/editor (Lists + full-screen editor).
+- **Содержимое:** Dart-модуль `notes_library_body.dart` — классы и helpers в исходнике.
+- **Обязанности:** Поддерживает поведение `notes_library_body` в этой feature-зоне.
+- **Когда открывать:** Когда ломается поведение, связанное с `notes_library_body.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/features/notes/widgets/`, `docs/APP_STRUCTURE.md`
+- **Слой:** UI — экран/виджет (notes).
+
+
+### `lib/features/notes/widgets/notes_library_production_shell.dart`
+
+EN:
+
+- **What this is:** `notes_library_production_shell.dart` on notes area — Production Lists-tab GLM library shell + inline add row.
+- **Why needed:** Users see `notes_library_production_shell.dart` when using notes area.
+- **What it contains:** Primary symbols: `NotesLibraryProductionShell`, `NotesGlmInlineAddRow`.
+- **Key code names:** `NotesLibraryProductionShell`, `NotesGlmInlineAddRow`
+- **Responsibilities:** Production Lists-tab GLM library shell + inline add row
+- **When to open:** When behavior tied to `notes_library_production_shell.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** No — required for app runtime.
+- **Connected to:** APP_STRUCTURE role: Production Lists-tab GLM library shell + inline add row
+- **Layer / owner:** UI code for the notes area of the app (what users see and tap).
+
+RU:
+
+- **Что это:** `notes_library_production_shell.dart` на Notes library/editor (Lists + full-screen editor) — Поддерживает поведение `notes_library_production_shell` в этой feature-зоне..
+- **Зачем:** Пользователь видит UI из `notes_library_production_shell.dart` на Notes library/editor (Lists + full-screen editor).
+- **Содержимое:** Dart-модуль `notes_library_production_shell.dart` — классы и helpers в исходнике.
+- **Обязанности:** Поддерживает поведение `notes_library_production_shell` в этой feature-зоне.
+- **Когда открывать:** Когда ломается поведение, связанное с `notes_library_production_shell.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/features/notes/widgets/`, `docs/APP_STRUCTURE.md`
+- **Слой:** UI — экран/виджет (notes).
 
 
 ### `lib/features/planning/bulk_planning_edit_sheet.dart`
@@ -11048,8 +12961,8 @@ EN:
 
 - **What this is:** `default_plan_category_search.dart` on Plans tab (second bottom tab) — Default plan category search delegate.
 - **Why needed:** Users see `default_plan_category_search.dart` when using Plans tab (second bottom tab).
-- **What it contains:** Primary symbols: `DefaultPlanCategorySearchDelegate`.
-- **Key code names:** `DefaultPlanCategorySearchDelegate`
+- **What it contains:** Primary symbols: `DefaultPlanCategoryOption`, `DefaultPlanCategorySearchDelegate`.
+- **Key code names:** `DefaultPlanCategoryOption`, `DefaultPlanCategorySearchDelegate`
 - **Responsibilities:** Default plan category search delegate
 - **When to open:** Plans tab: day swipe, plan cards, play/start plan, bulk edit.
 - **Can it be deleted?** No — required for app runtime.
@@ -11613,6 +13526,32 @@ RU:
 - **Слой:** UI — экран/виджет (planning).
 
 
+### `lib/features/planning/widgets/planning_category_grouped_list.dart`
+
+EN:
+
+- **What this is:** `planning_category_grouped_list.dart` on Plans tab (second bottom tab) — Category-sort grouped plan list.
+- **Why needed:** Users see `planning_category_grouped_list.dart` when using Plans tab (second bottom tab).
+- **What it contains:** Primary symbols: `PlanningCategoryGroupedList`.
+- **Key code names:** `PlanningCategoryGroupedList`
+- **Responsibilities:** Category-sort grouped plan list
+- **When to open:** Plans tab: day swipe, plan cards, play/start plan, bulk edit.
+- **Can it be deleted?** No — required for app runtime.
+- **Connected to:** Plans tab (shell index 1); APP_STRUCTURE role: Category-sort grouped plan list
+- **Layer / owner:** UI code for the planning area of the app (what users see and tap).
+
+RU:
+
+- **Что это:** `planning_category_grouped_list.dart` на вкладка Plans (вторая снизу) — Поддерживает поведение `planning_category_grouped_list` в этой feature-зоне..
+- **Зачем:** Пользователь видит UI из `planning_category_grouped_list.dart` на вкладка Plans (вторая снизу).
+- **Содержимое:** Dart-модуль `planning_category_grouped_list.dart` — классы и helpers в исходнике.
+- **Обязанности:** Поддерживает поведение `planning_category_grouped_list` в этой feature-зоне.
+- **Когда открывать:** Вкладка Plans: день, карточки, play.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** Вкладка Plans (shell index 1)
+- **Слой:** UI — экран/виджет (planning).
+
+
 ### `lib/features/planning/widgets/planning_day_card_list_keep_alive.dart`
 
 EN:
@@ -11711,6 +13650,32 @@ RU:
 - **Зачем:** Пользователь видит UI из `planning_frozen_day_list.dart` на вкладка Plans (вторая снизу).
 - **Содержимое:** Dart-модуль `planning_frozen_day_list.dart` — классы и helpers в исходнике.
 - **Обязанности:** Поддерживает поведение `planning_frozen_day_list` в этой feature-зоне.
+- **Когда открывать:** Вкладка Plans: день, карточки, play.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** Вкладка Plans (shell index 1)
+- **Слой:** UI — экран/виджет (planning).
+
+
+### `lib/features/planning/widgets/planning_group_section.dart`
+
+EN:
+
+- **What this is:** `planning_group_section.dart` on Plans tab (second bottom tab) — Shared grouped-list section widgets.
+- **Why needed:** Users see `planning_group_section.dart` when using Plans tab (second bottom tab).
+- **What it contains:** Primary symbols: `PlanningGroupedPlanCardRowBuilder`, `PlanningGroupedReorderBucket`, `PlanningCategoryGroupHeader`.
+- **Key code names:** `PlanningGroupedPlanCardRowBuilder`, `PlanningGroupedReorderBucket`, `PlanningCategoryGroupHeader`
+- **Responsibilities:** Shared grouped-list section widgets
+- **When to open:** Plans tab: day swipe, plan cards, play/start plan, bulk edit.
+- **Can it be deleted?** No — required for app runtime.
+- **Connected to:** Plans tab (shell index 1); APP_STRUCTURE role: Shared grouped-list section widgets
+- **Layer / owner:** UI code for the planning area of the app (what users see and tap).
+
+RU:
+
+- **Что это:** `planning_group_section.dart` на вкладка Plans (вторая снизу) — Поддерживает поведение `planning_group_section` в этой feature-зоне..
+- **Зачем:** Пользователь видит UI из `planning_group_section.dart` на вкладка Plans (вторая снизу).
+- **Содержимое:** Dart-модуль `planning_group_section.dart` — классы и helpers в исходнике.
+- **Обязанности:** Поддерживает поведение `planning_group_section` в этой feature-зоне.
 - **Когда открывать:** Вкладка Plans: день, карточки, play.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Вкладка Plans (shell index 1)
@@ -11845,6 +13810,32 @@ RU:
 - **Слой:** UI — экран/виджет (planning).
 
 
+### `lib/features/planning/widgets/planning_tag_grouped_list.dart`
+
+EN:
+
+- **What this is:** `planning_tag_grouped_list.dart` on Plans tab (second bottom tab) — Tags-sort grouped plan list.
+- **Why needed:** Users see `planning_tag_grouped_list.dart` when using Plans tab (second bottom tab).
+- **What it contains:** Primary symbols: `PlanningTagGroupedList`.
+- **Key code names:** `PlanningTagGroupedList`
+- **Responsibilities:** Tags-sort grouped plan list
+- **When to open:** Plans tab: day swipe, plan cards, play/start plan, bulk edit.
+- **Can it be deleted?** No — required for app runtime.
+- **Connected to:** Plans tab (shell index 1); APP_STRUCTURE role: Tags-sort grouped plan list
+- **Layer / owner:** UI code for the planning area of the app (what users see and tap).
+
+RU:
+
+- **Что это:** `planning_tag_grouped_list.dart` на вкладка Plans (вторая снизу) — Поддерживает поведение `planning_tag_grouped_list` в этой feature-зоне..
+- **Зачем:** Пользователь видит UI из `planning_tag_grouped_list.dart` на вкладка Plans (вторая снизу).
+- **Содержимое:** Dart-модуль `planning_tag_grouped_list.dart` — классы и helpers в исходнике.
+- **Обязанности:** Поддерживает поведение `planning_tag_grouped_list` в этой feature-зоне.
+- **Когда открывать:** Вкладка Plans: день, карточки, play.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** Вкладка Plans (shell index 1)
+- **Слой:** UI — экран/виджет (planning).
+
+
 ### `lib/features/profile/desktop_voice_attempt_dialog.dart`
 
 EN:
@@ -11877,8 +13868,8 @@ EN:
 
 - **What this is:** `desktop_voice_settings_desktop.dart` on More → Profile and settings — Profile & tag settings, timezone, desktop voice settings (Windows).
 - **Why needed:** Users see `desktop_voice_settings_desktop.dart` when using More → Profile and settings.
-- **What it contains:** Primary symbols: `DesktopVoiceSettingsDesktopGrid`, `_DesktopVoiceSettingsDesktopGridState`, `_HeroIconTile`.
-- **Key code names:** `DesktopVoiceSettingsDesktopGrid`, `_DesktopVoiceSettingsDesktopGridState`, `_HeroIconTile`
+- **What it contains:** Primary symbols: `DesktopVoiceSettingsDesktopGrid`, `_DesktopVoiceSettingsDesktopGridState`.
+- **Key code names:** `DesktopVoiceSettingsDesktopGrid`, `_DesktopVoiceSettingsDesktopGridState`
 - **Responsibilities:** Profile & tag settings, timezone, desktop voice settings (Windows)
 - **When to open:** When behavior tied to `desktop_voice_settings_desktop.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -12212,14 +14203,14 @@ RU:
 
 EN:
 
-- **What this is:** `desktop_voice_capsule.dart` on edit sheets and voice UI on every tab — Activity edit sheets, Omni-Picker entry, offline sync banner, mobile/web voice sheet, desktop Price Reporter voice UI.
+- **What this is:** `desktop_voice_capsule.dart` on edit sheets and voice UI on every tab — Activity edit sheets, Notes launch/sheet routing, Omni-Picker entry, offline sync banner, mobile/web voice sheet, desktop Price Reporter voice UI + compact correction sheet.
 - **Why needed:** Users see `desktop_voice_capsule.dart` when using edit sheets and voice UI on every tab.
 - **What it contains:** Primary symbols: `DesktopVoiceCapsule`, `_LeadingIcon`.
 - **Key code names:** `DesktopVoiceCapsule`, `_LeadingIcon`
-- **Responsibilities:** Activity edit sheets, Omni-Picker entry, offline sync banner, mobile/web voice sheet, desktop Price Reporter voice UI
+- **Responsibilities:** Activity edit sheets, Notes launch/sheet routing, Omni-Picker entry, offline sync banner, mobile/web voice sheet, desktop Price Reporter voice UI + compact correction sheet
 - **When to open:** Edit sheet, date/time picker, tags strip, voice sheet, offline banner UI.
 - **Can it be deleted?** No — required for app runtime.
-- **Connected to:** Edit sheets and voice UI on every tab; APP_STRUCTURE role: Activity edit sheets, Omni-Picker entry, offline sync banner, mobile/web voice sheet, desktop Price Reporter voice UI
+- **Connected to:** Edit sheets and voice UI on every tab; APP_STRUCTURE role: Activity edit sheets, Notes launch/sheet routing, Omni-Picker entry, offline sync banner, mobile/web voice sheet, deskto
 - **Layer / owner:** UI code for the shared area of the app (what users see and tap).
 
 RU:
@@ -12238,14 +14229,14 @@ RU:
 
 EN:
 
-- **What this is:** `desktop_voice_command_panel.dart` on edit sheets and voice UI on every tab — Activity edit sheets, Omni-Picker entry, offline sync banner, mobile/web voice sheet, desktop Price Reporter voice UI.
+- **What this is:** `desktop_voice_command_panel.dart` on edit sheets and voice UI on every tab — Activity edit sheets, Notes launch/sheet routing, Omni-Picker entry, offline sync banner, mobile/web voice sheet, desktop Price Reporter voice UI + compact correction sheet.
 - **Why needed:** Users see `desktop_voice_command_panel.dart` when using edit sheets and voice UI on every tab.
 - **What it contains:** Primary symbols: `_DesktopVoicePanelPhase`, `DesktopVoiceCommandPanel`, `_DesktopVoiceCommandPanelState`.
 - **Key code names:** `_DesktopVoicePanelPhase`, `DesktopVoiceCommandPanel`, `_DesktopVoiceCommandPanelState`
-- **Responsibilities:** Activity edit sheets, Omni-Picker entry, offline sync banner, mobile/web voice sheet, desktop Price Reporter voice UI
+- **Responsibilities:** Activity edit sheets, Notes launch/sheet routing, Omni-Picker entry, offline sync banner, mobile/web voice sheet, desktop Price Reporter voice UI + compact correction sheet
 - **When to open:** Edit sheet, date/time picker, tags strip, voice sheet, offline banner UI.
 - **Can it be deleted?** No — required for app runtime.
-- **Connected to:** Edit sheets and voice UI on every tab; APP_STRUCTURE role: Activity edit sheets, Omni-Picker entry, offline sync banner, mobile/web voice sheet, desktop Price Reporter voice UI
+- **Connected to:** Edit sheets and voice UI on every tab; APP_STRUCTURE role: Activity edit sheets, Notes launch/sheet routing, Omni-Picker entry, offline sync banner, mobile/web voice sheet, deskto
 - **Layer / owner:** UI code for the shared area of the app (what users see and tap).
 
 RU:
@@ -12260,18 +14251,44 @@ RU:
 - **Слой:** UI — экран/виджет (shared).
 
 
+### `lib/features/shared/desktop_voice_correction_sheet.dart`
+
+EN:
+
+- **What this is:** `desktop_voice_correction_sheet.dart` on edit sheets and voice UI on every tab — Activity edit sheets, Notes launch/sheet routing, Omni-Picker entry, offline sync banner, mobile/web voice sheet, desktop Price Reporter voice UI + compact correction sheet.
+- **Why needed:** Users see `desktop_voice_correction_sheet.dart` when using edit sheets and voice UI on every tab.
+- **What it contains:** Primary symbols: `DesktopVoiceCorrectionResult`, `_DesktopVoiceCorrectionSheetBody`, `_DesktopVoiceCorrectionSheetBodyState`.
+- **Key code names:** `DesktopVoiceCorrectionResult`, `_DesktopVoiceCorrectionSheetBody`, `_DesktopVoiceCorrectionSheetBodyState`
+- **Responsibilities:** Activity edit sheets, Notes launch/sheet routing, Omni-Picker entry, offline sync banner, mobile/web voice sheet, desktop Price Reporter voice UI + compact correction sheet
+- **When to open:** Edit sheet, date/time picker, tags strip, voice sheet, offline banner UI.
+- **Can it be deleted?** No — required for app runtime.
+- **Connected to:** Edit sheets and voice UI on every tab; APP_STRUCTURE role: Activity edit sheets, Notes launch/sheet routing, Omni-Picker entry, offline sync banner, mobile/web voice sheet, deskto
+- **Layer / owner:** UI code for the shared area of the app (what users see and tap).
+
+RU:
+
+- **Что это:** `desktop_voice_correction_sheet.dart` на edit sheets и voice UI на всех вкладках — Пользователь открывает sheet/dialog из entry `desktop_voice_correction_sheet`..
+- **Зачем:** Пользователь видит UI из `desktop_voice_correction_sheet.dart` на edit sheets и voice UI на всех вкладках.
+- **Содержимое:** Основные символы: `DesktopVoiceCorrectionResult`, `_DesktopVoiceCorrectionSheetBody`, `_DesktopVoiceCorrectionSheetBodyState`.
+- **Обязанности:** Пользователь открывает sheet/dialog из entry `desktop_voice_correction_sheet`.
+- **Когда открывать:** Шторка редактирования, picker, voice, offline banner.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** Edit sheets и voice UI на всех вкладках
+- **Слой:** UI — экран/виджет (shared).
+
+
 ### `lib/features/shared/desktop_voice_widget.dart`
 
 EN:
 
-- **What this is:** `desktop_voice_widget.dart` on edit sheets and voice UI on every tab — Activity edit sheets, Omni-Picker entry, offline sync banner, mobile/web voice sheet, desktop Price Reporter voice UI.
+- **What this is:** `desktop_voice_widget.dart` on edit sheets and voice UI on every tab — Activity edit sheets, Notes launch/sheet routing, Omni-Picker entry, offline sync banner, mobile/web voice sheet, desktop Price Reporter voice UI + compact correction sheet.
 - **Why needed:** Users see `desktop_voice_widget.dart` when using edit sheets and voice UI on every tab.
-- **What it contains:** Primary symbols: `DesktopVoiceOverlayPhase`, `DesktopVoiceOverlay`, `_DesktopVoiceOverlayState`.
-- **Key code names:** `DesktopVoiceOverlayPhase`, `DesktopVoiceOverlay`, `_DesktopVoiceOverlayState`
-- **Responsibilities:** Activity edit sheets, Omni-Picker entry, offline sync banner, mobile/web voice sheet, desktop Price Reporter voice UI
+- **What it contains:** Primary symbols: `DesktopVoiceOverlayPhase`, `DesktopVoiceStartRecordFn`, `DesktopVoiceOverlay`, `_DesktopVoiceOverlayState`.
+- **Key code names:** `DesktopVoiceOverlayPhase`, `DesktopVoiceStartRecordFn`, `DesktopVoiceOverlay`, `_DesktopVoiceOverlayState`
+- **Responsibilities:** Activity edit sheets, Notes launch/sheet routing, Omni-Picker entry, offline sync banner, mobile/web voice sheet, desktop Price Reporter voice UI + compact correction sheet
 - **When to open:** Edit sheet, date/time picker, tags strip, voice sheet, offline banner UI.
 - **Can it be deleted?** No — required for app runtime.
-- **Connected to:** Edit sheets and voice UI on every tab; APP_STRUCTURE role: Activity edit sheets, Omni-Picker entry, offline sync banner, mobile/web voice sheet, desktop Price Reporter voice UI
+- **Connected to:** Edit sheets and voice UI on every tab; APP_STRUCTURE role: Activity edit sheets, Notes launch/sheet routing, Omni-Picker entry, offline sync banner, mobile/web voice sheet, deskto
 - **Layer / owner:** UI code for the shared area of the app (what users see and tap).
 
 RU:
@@ -12412,6 +14429,32 @@ RU:
 - **Слой:** UI — экран/виджет (shared).
 
 
+### `lib/features/shared/edit_sheet/record_edit_save_policy.dart`
+
+EN:
+
+- **What this is:** `validateRecordEditSave` / `RecordEditSaveMode` — Timeline record edit Save classify/validate policy.
+- **Why needed:** Save must distinguish create-completed vs running metadata vs stopped interval without guessing from empty UUID filters.
+- **What it contains:** Mode enum, validation result, classify/validate helpers (UI-free).
+- **Key code names:** `RecordEditSaveMode`, `RecordEditSaveValidation`, `RunningRecordMetadataSaveDraft`, `RunningRecordCategorySaveUiOutcome`
+- **Responsibilities:** Return ok/error with start/end UTC; consumed by `timeline_record_edit_sheet.dart`.
+- **When to open:** Edit sheet, date/time picker, tags strip, voice sheet, offline banner UI.
+- **Can it be deleted?** No — required for app runtime.
+- **Connected to:** Edit sheets and voice UI on every tab; APP_STRUCTURE role: `validateRecordEditSave` / `RecordEditSaveMode` — Timeline record edit Save classify/validate policy
+- **Layer / owner:** UI code for the shared area of the app (what users see and tap).
+
+RU:
+
+- **Что это:** `validateRecordEditSave` / `RecordEditSaveMode` — политика классификации и проверки Save в редакторе записи Timeline.
+- **Зачем:** Save различает завершённый интервал, метаданные running и остановленный интервал без догадок по пустым UUID.
+- **Содержимое:** Перечисление режимов, результат проверки, хелперы classify/validate без UI.
+- **Обязанности:** Возвращает ok/error со start/end UTC; используется в `timeline_record_edit_sheet.dart`.
+- **Когда открывать:** Шторка редактирования, picker, voice, offline banner.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** Edit sheets и voice UI на всех вкладках
+- **Слой:** UI — экран/виджет (shared).
+
+
 ### `lib/features/shared/edit_sheet/sheet_autosave_gate.dart`
 
 EN:
@@ -12514,6 +14557,58 @@ RU:
 - **Слой:** UI — экран/виджет (shared).
 
 
+### `lib/features/shared/notes_editor/notes_editor_launcher.dart`
+
+EN:
+
+- **What this is:** `notes_editor_launcher.dart` on edit sheets and voice UI on every tab — showNotesEditorSheet.
+- **Why needed:** Users see `notes_editor_launcher.dart` when using edit sheets and voice UI on every tab.
+- **What it contains:** Primary symbols: `_NotesEditorRoute`, `_NotesEditorRouteHost`, `_NotesEditorRouteHostState`.
+- **Key code names:** `_NotesEditorRoute`, `_NotesEditorRouteHost`, `_NotesEditorRouteHostState`
+- **Responsibilities:** showNotesEditorSheet
+- **When to open:** Edit sheet, date/time picker, tags strip, voice sheet, offline banner UI.
+- **Can it be deleted?** No — required for app runtime.
+- **Connected to:** Edit sheets and voice UI on every tab; APP_STRUCTURE role: `showNotesEditorSheet` — full-screen route launcher for Notes editor
+- **Layer / owner:** UI code for the shared area of the app (what users see and tap).
+
+RU:
+
+- **Что это:** `notes_editor_launcher.dart` на edit sheets и voice UI на всех вкладках — Поддерживает поведение `notes_editor_launcher` в этой feature-зоне..
+- **Зачем:** Пользователь видит UI из `notes_editor_launcher.dart` на edit sheets и voice UI на всех вкладках.
+- **Содержимое:** Dart-модуль `notes_editor_launcher.dart` — классы и helpers в исходнике.
+- **Обязанности:** Поддерживает поведение `notes_editor_launcher` в этой feature-зоне.
+- **Когда открывать:** Шторка редактирования, picker, voice, offline banner.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** Edit sheets и voice UI на всех вкладках
+- **Слой:** UI — экран/виджет (shared).
+
+
+### `lib/features/shared/notes_editor/notes_editor_sheet.dart`
+
+EN:
+
+- **What this is:** `notes_editor_sheet.dart` on edit sheets and voice UI on every tab — NotesEditorSheet.
+- **Why needed:** Users see `notes_editor_sheet.dart` when using edit sheets and voice UI on every tab.
+- **What it contains:** Primary symbols: `_NotesStatus`, `NotesEditorSheet`, `_NotesEditorSheetState`.
+- **Key code names:** `_NotesStatus`, `NotesEditorSheet`, `_NotesEditorSheetState`
+- **Responsibilities:** NotesEditorSheet
+- **When to open:** Edit sheet, date/time picker, tags strip, voice sheet, offline banner UI.
+- **Can it be deleted?** No — required for app runtime.
+- **Connected to:** Edit sheets and voice UI on every tab; APP_STRUCTURE role: `NotesEditorSheet` — Quill Notes editor wired to Brain autosave
+- **Layer / owner:** UI code for the shared area of the app (what users see and tap).
+
+RU:
+
+- **Что это:** `notes_editor_sheet.dart` на edit sheets и voice UI на всех вкладках — Пользователь открывает sheet/dialog из entry `notes_editor_sheet`..
+- **Зачем:** Пользователь видит UI из `notes_editor_sheet.dart` на edit sheets и voice UI на всех вкладках.
+- **Содержимое:** Основные символы: `_NotesStatus`, `NotesEditorSheet`, `_NotesEditorSheetState`.
+- **Обязанности:** Пользователь открывает sheet/dialog из entry `notes_editor_sheet`.
+- **Когда открывать:** Шторка редактирования, picker, voice, offline banner.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** Edit sheets и voice UI на всех вкладках
+- **Слой:** UI — экран/виджет (shared).
+
+
 ### `lib/features/shared/offline_sync_status_bar.dart`
 
 EN:
@@ -12598,10 +14693,10 @@ EN:
 - **What this is:** Barrel `shared_widgets.dart` for edit sheets and voice UI on every tab — re-exports entry modules.
 - **Why needed:** Users see `shared_widgets.dart` when using edit sheets and voice UI on every tab.
 - **What it contains:** Barrel `export` lines: `activity_detail_sheet.dart`, `empty_state_placeholder.dart`, `planning_task_edit_sheet.dart`, `timeline_record_edit_sheet.dart`, `checklist_helpers.dart`.
-- **Responsibilities:** Activity edit sheets, Omni-Picker entry, offline sync banner, mobile/web voice sheet, desktop Price Reporter voice UI
+- **Responsibilities:** Activity edit sheets, Notes launch/sheet routing, Omni-Picker entry, offline sync banner, mobile/web voice sheet, desktop Price Reporter voice UI + compact correction sheet
 - **When to open:** Edit sheet, date/time picker, tags strip, voice sheet, offline banner UI.
 - **Can it be deleted?** No — required for app runtime.
-- **Connected to:** Edit sheets and voice UI on every tab; APP_STRUCTURE role: Activity edit sheets, Omni-Picker entry, offline sync banner, mobile/web voice sheet, desktop Price Reporter voice UI
+- **Connected to:** Edit sheets and voice UI on every tab; APP_STRUCTURE role: Activity edit sheets, Notes launch/sheet routing, Omni-Picker entry, offline sync banner, mobile/web voice sheet, deskto
 - **Layer / owner:** UI code for the shared area of the app (what users see and tap).
 
 RU:
@@ -12622,8 +14717,8 @@ EN:
 
 - **What this is:** `timeline_record_edit_sheet.dart` on edit sheets and voice UI on every tab — Timeline record edit sheet.
 - **Why needed:** Users see `timeline_record_edit_sheet.dart` when using edit sheets and voice UI on every tab.
-- **What it contains:** Primary symbols: `TimelineRecordSheetContentState`.
-- **Key code names:** `TimelineRecordSheetContentState`
+- **What it contains:** Primary symbols: `TimelineRecordSheetContent`, `TimelineRecordSheetContentState`.
+- **Key code names:** `TimelineRecordSheetContent`, `TimelineRecordSheetContentState`
 - **Responsibilities:** Timeline record edit sheet
 - **When to open:** Edit sheet, date/time picker, tags strip, voice sheet, offline banner UI.
 - **Can it be deleted?** No — required for app runtime.
@@ -12634,7 +14729,7 @@ RU:
 
 - **Что это:** `timeline_record_edit_sheet.dart` на edit sheets и voice UI на всех вкладках — Пользователь открывает sheet/dialog из entry `timeline_record_edit_sheet`..
 - **Зачем:** Пользователь видит UI из `timeline_record_edit_sheet.dart` на edit sheets и voice UI на всех вкладках.
-- **Содержимое:** Основные символы: `TimelineRecordSheetContentState`.
+- **Содержимое:** Основные символы: `TimelineRecordSheetContent`, `TimelineRecordSheetContentState`.
 - **Обязанности:** Пользователь открывает sheet/dialog из entry `timeline_record_edit_sheet`.
 - **Когда открывать:** Шторка редактирования, picker, voice, offline banner.
 - **Можно удалить?** Нет — нужен для работы приложения.
@@ -12646,14 +14741,14 @@ RU:
 
 EN:
 
-- **What this is:** `voice_capture_config.dart` on edit sheets and voice UI on every tab — Activity edit sheets, Omni-Picker entry, offline sync banner, mobile/web voice sheet, desktop Price Reporter voice UI.
+- **What this is:** `voice_capture_config.dart` on edit sheets and voice UI on every tab — Activity edit sheets, Notes launch/sheet routing, Omni-Picker entry, offline sync banner, mobile/web voice sheet, desktop Price Reporter voice UI + compact correction sheet.
 - **Why needed:** Users see `voice_capture_config.dart` when using edit sheets and voice UI on every tab.
 - **What it contains:** Primary symbols: `VoiceCaptureConfig`.
 - **Key code names:** `VoiceCaptureConfig`
-- **Responsibilities:** Activity edit sheets, Omni-Picker entry, offline sync banner, mobile/web voice sheet, desktop Price Reporter voice UI
+- **Responsibilities:** Activity edit sheets, Notes launch/sheet routing, Omni-Picker entry, offline sync banner, mobile/web voice sheet, desktop Price Reporter voice UI + compact correction sheet
 - **When to open:** Edit sheet, date/time picker, tags strip, voice sheet, offline banner UI.
 - **Can it be deleted?** No — required for app runtime.
-- **Connected to:** Edit sheets and voice UI on every tab; APP_STRUCTURE role: Activity edit sheets, Omni-Picker entry, offline sync banner, mobile/web voice sheet, desktop Price Reporter voice UI
+- **Connected to:** Edit sheets and voice UI on every tab; APP_STRUCTURE role: Activity edit sheets, Notes launch/sheet routing, Omni-Picker entry, offline sync banner, mobile/web voice sheet, deskto
 - **Layer / owner:** UI code for the shared area of the app (what users see and tap).
 
 RU:
@@ -12679,7 +14774,7 @@ EN:
 - **Responsibilities:** Listen/transcribe user speech; return text to shell voice routing.
 - **When to open:** Edit sheet, date/time picker, tags strip, voice sheet, offline banner UI.
 - **Can it be deleted?** No — required for app runtime.
-- **Connected to:** Edit sheets and voice UI on every tab; APP_STRUCTURE role: Activity edit sheets, Omni-Picker entry, offline sync banner, mobile/web voice sheet, desktop Price Reporter voice UI
+- **Connected to:** Edit sheets and voice UI on every tab; APP_STRUCTURE role: Activity edit sheets, Notes launch/sheet routing, Omni-Picker entry, offline sync banner, mobile/web voice sheet, deskto
 - **Layer / owner:** UI code for the shared area of the app (what users see and tap).
 
 RU:
@@ -13335,8 +15430,8 @@ EN:
 
 - **What this is:** Device-side service `notification_service.dart` — Local notifications and plan alarms.
 - **Why needed:** OS APIs (notifications, voice, tray) cannot live in PocketBase brain code.
-- **What it contains:** Platform service code in `notification_service.dart` (`_AlarmCandidate`, `NotificationService`).
-- **Key code names:** `_AlarmCandidate`, `NotificationService`
+- **What it contains:** Platform service code in `notification_service.dart` (`PlanAlarmPermissionStatus`, `NotificationService`).
+- **Key code names:** `PlanAlarmPermissionStatus`, `NotificationService`
 - **Responsibilities:** Local notifications and plan alarms
 - **When to open:** When behavior tied to `notification_service.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -13350,6 +15445,32 @@ RU:
 - **Содержимое:** Platform-код сервиса в `notification_service.dart` (logic in `notification_service`).
 - **Обязанности:** Реализует сервис: Local notifications and plan alarms.
 - **Когда открывать:** Когда ломается поведение, связанное с `notification_service.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/data/plan_service.dart` — reschedule alarm
+- **Слой:** Сервис устройства (уведомления).
+
+
+### `lib/services/plan_alarm_schedule.dart`
+
+EN:
+
+- **What this is:** UI-free plan reminder schedule specs — wall-time conversion, dedupe, cancel/reconcile limits.
+- **Why needed:** Notification plugin scheduling must stay deterministic and outside feature widgets.
+- **What it contains:** Schedule/cancel helpers, profile-timezone fire UTC, occurrence id stability.
+- **Key code names:** `PlanAlarmRejectReason`, `PlanAlarmSpec`, `PlanAlarmBuildResult`
+- **Responsibilities:** Build OS alarm specs; no Flutter UI; consumed by `NotificationService` / Brain helpers.
+- **When to open:** When behavior tied to `plan_alarm_schedule.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** No — required for app runtime.
+- **Connected to:** `lib/data/plan_service.dart` alarm reschedule; APP_STRUCTURE role: UI-free plan reminder schedule specifications, wall-time conversion, dedupe, and limits
+- **Layer / owner:** Device service (notifications) — no PocketBase.
+
+RU:
+
+- **Что это:** Спецификации напоминаний планов без UI — перевод wall-time, дедуп, лимиты cancel/reconcile.
+- **Зачем:** Планирование через notification plugin должно быть детерминированным и вне feature-виджетов.
+- **Содержимое:** Хелперы schedule/cancel, время срабатывания UTC по timezone профиля, стабильные occurrence id.
+- **Обязанности:** Строит спецификации OS-будильников; без Flutter UI; вызывается из `NotificationService` и Brain helpers.
+- **Когда открывать:** Когда ломается поведение, связанное с `plan_alarm_schedule.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/data/plan_service.dart` — reschedule alarm
 - **Слой:** Сервис устройства (уведомления).
@@ -13427,6 +15548,32 @@ RU:
 - **Зачем:** Связывает вкладки, voice, edit sheets и offline banner.
 - **Содержимое:** Shell mixin или виджет (logic in `settings_page`).
 - **Обязанности:** Реализует в shell: Language/TZ settings page (shell route).
+- **Когда открывать:** Навигация, voice, edit host.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** Все main tabs, `app_shell.dart`
+- **Слой:** Shell — навигация приложения.
+
+
+### `lib/shell/shell_bottom_navigation.dart`
+
+EN:
+
+- **What this is:** `ShellCompactBottomNav` — equal-column phone-safe bottom tab bar (compact labels).
+- **Why needed:** Material `NavigationBar` clips five labels on ~390px widths; this bar matches APK phone metrics.
+- **What it contains:** `ShellCompactBottomNav`, `kShellBottomNavHeight`, compact vs full label keys.
+- **Key code names:** `ShellCompactBottomNav`, `_ShellBottomNavItem`
+- **Responsibilities:** Render five shell tabs; no PocketBase I/O.
+- **When to open:** Bottom tabs, voice routing, edit modal host, offline banner slot.
+- **Can it be deleted?** No — required for app runtime.
+- **Connected to:** All main tabs, `app_shell.dart`; APP_STRUCTURE role: `ShellCompactBottomNav` — equal-column phone-safe bottom tab bar
+- **Layer / owner:** App shell — navigation and global wiring.
+
+RU:
+
+- **Что это:** `ShellCompactBottomNav` — компактная нижняя панель вкладок с равными колонками для узких телефонов.
+- **Зачем:** Material `NavigationBar` обрезает пять подписей на ширине ~390px; эта панель совпадает с метриками APK.
+- **Содержимое:** `ShellCompactBottomNav`, `kShellBottomNavHeight`, ключи коротких и полных подписей.
+- **Обязанности:** Рисует пять вкладок оболочки; без обращений к PocketBase.
 - **Когда открывать:** Навигация, voice, edit host.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Все main tabs, `app_shell.dart`
@@ -14590,6 +16737,31 @@ RU:
 - **Слой:** macos Swift glue — не Dart UI.
 
 
+### `pb_hooks/ai.transcribe_command.pb.js`
+
+EN:
+
+- **What this is:** PocketBase server hook `ai.transcribe_command` — runs on VPS when specific API events fire.
+- **Why needed:** Some rules (password reset email, overlapping records) must be enforced server-side.
+- **What it contains:** JavaScript hook handler copied to PocketBase `pb_hooks/` on server.
+- **Responsibilities:** Server-side logic for `ai.transcribe_command` (see `docs/POCKETBASE_MANIFEST.md`).
+- **When to open:** Server behavior differs from app expectations for auth/records.
+- **Can it be deleted?** No — production PocketBase deployment.
+- **Connected to:** PocketBase Admin, Flutter auth/records client.
+- **Layer / owner:** Server hook — not in app binary.
+
+RU:
+
+- **Что это:** PocketBase hook `ai.transcribe_command` — серверная логика при API-событиях на VPS.
+- **Зачем:** Часть правил (reset пароля, overlap записей) должна выполняться на сервере, не в APK.
+- **Содержимое:** JavaScript handler `ai.transcribe_command.pb.js` — копируется в PocketBase `pb_hooks/` на VPS.
+- **Обязанности:** Серверная логика для `ai.transcribe_command` (см. `docs/POCKETBASE_MANIFEST.md`).
+- **Когда открывать:** Поведение auth/records на сервере не совпадает с ожиданиями приложения.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** PocketBase Admin, Flutter auth/records client.
+- **Слой:** Server hook — не в бинарнике приложения.
+
+
 ### `pb_hooks/auth.request_password_reset.pb.js`
 
 EN:
@@ -14715,6 +16887,131 @@ RU:
 - **Слой:** Dev/CI script — не runtime приложения.
 
 
+### `scripts/manual/benchmark_desktop_voice_stt.ps1`
+
+EN:
+
+- **What this is:** Developer script `benchmark_desktop_voice_stt.ps1` — run manually for maintenance, smoke test, or deploy helper.
+- **Why needed:** Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **What it contains:** PowerShell, Python, or Dart commands for `benchmark_desktop_voice_stt.ps1`.
+- **Responsibilities:** See script header comments for exact behavior.
+- **When to open:** When workflow documented for `benchmark_desktop_voice_stt.ps1` is needed.
+- **Can it be deleted?** No — part of documented dev workflow unless cleanup report removed it.
+- **Connected to:** `scripts/manual/`, `docs/DEPLOY.md`.
+- **Layer / owner:** Developer script.
+
+RU:
+
+- **Что это:** Dev/CI скрипт `benchmark_desktop_voice_stt.ps1` — повторяемая команда из repo docs.
+- **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Содержимое:** Команды PowerShell/Python/Dart в `benchmark_desktop_voice_stt.ps1`.
+- **Обязанности:** Workflow, описанный в header или `docs/DEPLOY.md`.
+- **Когда открывать:** Owner или CI запускает `benchmark_desktop_voice_stt.ps1` по инструкции в repo docs.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `scripts/manual/`, `docs/DEPLOY.md`.
+- **Слой:** Dev/CI script — не runtime приложения.
+
+
+### `scripts/manual/benchmark_df696fc_quiet_whisper.ps1`
+
+EN:
+
+- **What this is:** Developer script `benchmark_df696fc_quiet_whisper.ps1` — run manually for maintenance, smoke test, or deploy helper.
+- **Why needed:** Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **What it contains:** PowerShell, Python, or Dart commands for `benchmark_df696fc_quiet_whisper.ps1`.
+- **Responsibilities:** See script header comments for exact behavior.
+- **When to open:** When workflow documented for `benchmark_df696fc_quiet_whisper.ps1` is needed.
+- **Can it be deleted?** No — part of documented dev workflow unless cleanup report removed it.
+- **Connected to:** `scripts/manual/`, `docs/DEPLOY.md`.
+- **Layer / owner:** Developer script.
+
+RU:
+
+- **Что это:** Dev/CI скрипт `benchmark_df696fc_quiet_whisper.ps1` — повторяемая команда из repo docs.
+- **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Содержимое:** Команды PowerShell/Python/Dart в `benchmark_df696fc_quiet_whisper.ps1`.
+- **Обязанности:** Workflow, описанный в header или `docs/DEPLOY.md`.
+- **Когда открывать:** Owner или CI запускает `benchmark_df696fc_quiet_whisper.ps1` по инструкции в repo docs.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `scripts/manual/`, `docs/DEPLOY.md`.
+- **Слой:** Dev/CI script — не runtime приложения.
+
+
+### `scripts/manual/build_counter_installer.ps1`
+
+EN:
+
+- **What this is:** Developer script `build_counter_installer.ps1` — run manually for maintenance, smoke test, or deploy helper.
+- **Why needed:** Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **What it contains:** PowerShell, Python, or Dart commands for `build_counter_installer.ps1`.
+- **Responsibilities:** See script header comments for exact behavior.
+- **When to open:** When workflow documented for `build_counter_installer.ps1` is needed.
+- **Can it be deleted?** No — part of documented dev workflow unless cleanup report removed it.
+- **Connected to:** `scripts/manual/`, `docs/DEPLOY.md`.
+- **Layer / owner:** Developer script.
+
+RU:
+
+- **Что это:** Dev/CI скрипт `build_counter_installer.ps1` — повторяемая команда из repo docs.
+- **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Содержимое:** Команды PowerShell/Python/Dart в `build_counter_installer.ps1`.
+- **Обязанности:** Workflow, описанный в header или `docs/DEPLOY.md`.
+- **Когда открывать:** Owner или CI запускает `build_counter_installer.ps1` по инструкции в repo docs.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `scripts/manual/`, `docs/DEPLOY.md`.
+- **Слой:** Dev/CI script — не runtime приложения.
+
+
+### `scripts/manual/capture_notes_glm_main.dart`
+
+EN:
+
+- **What this is:** Manual Flutter entrypoint that captures Notes GLM editor/library screenshots for parity checks.
+- **Why needed:** Visual Notes regression uses a release Windows run against fixture widgets — not a production app route.
+- **What it contains:** `main()` that mounts notes GLM parity fixtures from `test/notes/fixtures/`.
+- **Responsibilities:** Drive capture UI for `capture_notes_glm_parity.ps1`; no PocketBase writes.
+- **When to open:** Refreshing Notes GLM golden/capture PNGs after editor/library UI changes.
+- **Can it be deleted?** No — Notes visual capture workflow depends on this entrypoint.
+- **Connected to:** `scripts/manual/capture_notes_glm_parity.ps1`, `test/notes/fixtures/`.
+- **Layer / owner:** Manual tooling — not production `lib/` UI.
+
+RU:
+
+- **Что это:** Dev/CI скрипт `capture_notes_glm_main.dart` — повторяемая команда из repo docs.
+- **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Содержимое:** Команды PowerShell/Python/Dart в `capture_notes_glm_main.dart`.
+- **Обязанности:** Workflow, описанный в header или `docs/DEPLOY.md`.
+- **Когда открывать:** Owner или CI запускает `capture_notes_glm_main.dart` по инструкции в repo docs.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `capture_notes_glm_parity.ps1`, `test/notes/fixtures/`.
+- **Слой:** Dev/CI script — не runtime приложения.
+
+
+### `scripts/manual/capture_notes_glm_parity.ps1`
+
+EN:
+
+- **What this is:** Developer script `capture_notes_glm_parity.ps1` — run manually for maintenance, smoke test, or deploy helper.
+- **Why needed:** Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **What it contains:** PowerShell, Python, or Dart commands for `capture_notes_glm_parity.ps1`.
+- **Responsibilities:** See script header comments for exact behavior.
+- **When to open:** When workflow documented for `capture_notes_glm_parity.ps1` is needed.
+- **Can it be deleted?** No — part of documented dev workflow unless cleanup report removed it.
+- **Connected to:** `scripts/manual/`, `docs/DEPLOY.md`.
+- **Layer / owner:** Developer script.
+
+RU:
+
+- **Что это:** Dev/CI скрипт `capture_notes_glm_parity.ps1` — повторяемая команда из repo docs.
+- **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Содержимое:** Команды PowerShell/Python/Dart в `capture_notes_glm_parity.ps1`.
+- **Обязанности:** Workflow, описанный в header или `docs/DEPLOY.md`.
+- **Когда открывать:** Owner или CI запускает `capture_notes_glm_parity.ps1` по инструкции в repo docs.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `scripts/manual/`, `docs/DEPLOY.md`.
+- **Слой:** Dev/CI script — не runtime приложения.
+
+
 ### `scripts/manual/check_no_preparing_ui.ps1`
 
 EN:
@@ -14735,6 +17032,81 @@ RU:
 - **Содержимое:** Команды PowerShell/Python/Dart в `check_no_preparing_ui.ps1`.
 - **Обязанности:** Workflow, описанный в header или `docs/DEPLOY.md`.
 - **Когда открывать:** Owner или CI запускает `check_no_preparing_ui.ps1` по инструкции в repo docs.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `scripts/manual/`, `docs/DEPLOY.md`.
+- **Слой:** Dev/CI script — не runtime приложения.
+
+
+### `scripts/manual/compare_desktop_voice_vad_modes.ps1`
+
+EN:
+
+- **What this is:** Developer script `compare_desktop_voice_vad_modes.ps1` — run manually for maintenance, smoke test, or deploy helper.
+- **Why needed:** Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **What it contains:** PowerShell, Python, or Dart commands for `compare_desktop_voice_vad_modes.ps1`.
+- **Responsibilities:** See script header comments for exact behavior.
+- **When to open:** When workflow documented for `compare_desktop_voice_vad_modes.ps1` is needed.
+- **Can it be deleted?** No — part of documented dev workflow unless cleanup report removed it.
+- **Connected to:** `scripts/manual/`, `docs/DEPLOY.md`.
+- **Layer / owner:** Developer script.
+
+RU:
+
+- **Что это:** Dev/CI скрипт `compare_desktop_voice_vad_modes.ps1` — повторяемая команда из repo docs.
+- **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Содержимое:** Команды PowerShell/Python/Dart в `compare_desktop_voice_vad_modes.ps1`.
+- **Обязанности:** Workflow, описанный в header или `docs/DEPLOY.md`.
+- **Когда открывать:** Owner или CI запускает `compare_desktop_voice_vad_modes.ps1` по инструкции в repo docs.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `scripts/manual/`, `docs/DEPLOY.md`.
+- **Слой:** Dev/CI script — не runtime приложения.
+
+
+### `scripts/manual/compare_desktop_voice_wav_stt.ps1`
+
+EN:
+
+- **What this is:** Developer script `compare_desktop_voice_wav_stt.ps1` — run manually for maintenance, smoke test, or deploy helper.
+- **Why needed:** Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **What it contains:** PowerShell, Python, or Dart commands for `compare_desktop_voice_wav_stt.ps1`.
+- **Responsibilities:** See script header comments for exact behavior.
+- **When to open:** When workflow documented for `compare_desktop_voice_wav_stt.ps1` is needed.
+- **Can it be deleted?** No — part of documented dev workflow unless cleanup report removed it.
+- **Connected to:** `scripts/manual/`, `docs/DEPLOY.md`.
+- **Layer / owner:** Developer script.
+
+RU:
+
+- **Что это:** Dev/CI скрипт `compare_desktop_voice_wav_stt.ps1` — повторяемая команда из repo docs.
+- **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Содержимое:** Команды PowerShell/Python/Dart в `compare_desktop_voice_wav_stt.ps1`.
+- **Обязанности:** Workflow, описанный в header или `docs/DEPLOY.md`.
+- **Когда открывать:** Owner или CI запускает `compare_desktop_voice_wav_stt.ps1` по инструкции в repo docs.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `scripts/manual/`, `docs/DEPLOY.md`.
+- **Слой:** Dev/CI script — не runtime приложения.
+
+
+### `scripts/manual/desktop_voice_desktop_shortcut.ps1`
+
+EN:
+
+- **What this is:** Developer script `desktop_voice_desktop_shortcut.ps1` — run manually for maintenance, smoke test, or deploy helper.
+- **Why needed:** Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **What it contains:** PowerShell, Python, or Dart commands for `desktop_voice_desktop_shortcut.ps1`.
+- **Responsibilities:** See script header comments for exact behavior.
+- **When to open:** When workflow documented for `desktop_voice_desktop_shortcut.ps1` is needed.
+- **Can it be deleted?** No — part of documented dev workflow unless cleanup report removed it.
+- **Connected to:** `scripts/manual/`, `docs/DEPLOY.md`.
+- **Layer / owner:** Developer script.
+
+RU:
+
+- **Что это:** Dev/CI скрипт `desktop_voice_desktop_shortcut.ps1` — повторяемая команда из repo docs.
+- **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Содержимое:** Команды PowerShell/Python/Dart в `desktop_voice_desktop_shortcut.ps1`.
+- **Обязанности:** Workflow, описанный в header или `docs/DEPLOY.md`.
+- **Когда открывать:** Owner или CI запускает `desktop_voice_desktop_shortcut.ps1` по инструкции в repo docs.
 - **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
 - **Связано с:** `scripts/manual/`, `docs/DEPLOY.md`.
 - **Слой:** Dev/CI script — не runtime приложения.
@@ -14791,6 +17163,56 @@ RU:
 - **Слой:** Dev/CI script — не runtime приложения.
 
 
+### `scripts/manual/install_counter_silent.ps1`
+
+EN:
+
+- **What this is:** Developer script `install_counter_silent.ps1` — run manually for maintenance, smoke test, or deploy helper.
+- **Why needed:** Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **What it contains:** PowerShell, Python, or Dart commands for `install_counter_silent.ps1`.
+- **Responsibilities:** See script header comments for exact behavior.
+- **When to open:** When workflow documented for `install_counter_silent.ps1` is needed.
+- **Can it be deleted?** No — part of documented dev workflow unless cleanup report removed it.
+- **Connected to:** `scripts/manual/`, `docs/DEPLOY.md`.
+- **Layer / owner:** Developer script.
+
+RU:
+
+- **Что это:** Dev/CI скрипт `install_counter_silent.ps1` — повторяемая команда из repo docs.
+- **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Содержимое:** Команды PowerShell/Python/Dart в `install_counter_silent.ps1`.
+- **Обязанности:** Workflow, описанный в header или `docs/DEPLOY.md`.
+- **Когда открывать:** Owner или CI запускает `install_counter_silent.ps1` по инструкции в repo docs.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `scripts/manual/`, `docs/DEPLOY.md`.
+- **Слой:** Dev/CI script — не runtime приложения.
+
+
+### `scripts/manual/install_desktop_voice_release.ps1`
+
+EN:
+
+- **What this is:** Developer script `install_desktop_voice_release.ps1` — run manually for maintenance, smoke test, or deploy helper.
+- **Why needed:** Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **What it contains:** PowerShell, Python, or Dart commands for `install_desktop_voice_release.ps1`.
+- **Responsibilities:** See script header comments for exact behavior.
+- **When to open:** When workflow documented for `install_desktop_voice_release.ps1` is needed.
+- **Can it be deleted?** No — part of documented dev workflow unless cleanup report removed it.
+- **Connected to:** `scripts/manual/`, `docs/DEPLOY.md`.
+- **Layer / owner:** Developer script.
+
+RU:
+
+- **Что это:** Dev/CI скрипт `install_desktop_voice_release.ps1` — повторяемая команда из repo docs.
+- **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Содержимое:** Команды PowerShell/Python/Dart в `install_desktop_voice_release.ps1`.
+- **Обязанности:** Workflow, описанный в header или `docs/DEPLOY.md`.
+- **Когда открывать:** Owner или CI запускает `install_desktop_voice_release.ps1` по инструкции в repo docs.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `scripts/manual/`, `docs/DEPLOY.md`.
+- **Слой:** Dev/CI script — не runtime приложения.
+
+
 ### `scripts/manual/run_desktop_voice_acceptance.ps1`
 
 EN:
@@ -14816,6 +17238,31 @@ RU:
 - **Слой:** Dev/CI script — не runtime приложения.
 
 
+### `scripts/manual/run_desktop_voice_real_helper_latency_benchmark.ps1`
+
+EN:
+
+- **What this is:** Developer script `run_desktop_voice_real_helper_latency_benchmark.ps1` — run manually for maintenance, smoke test, or deploy helper.
+- **Why needed:** Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **What it contains:** PowerShell, Python, or Dart commands for `run_desktop_voice_real_helper_latency_benchmark.ps1`.
+- **Responsibilities:** See script header comments for exact behavior.
+- **When to open:** When workflow documented for `run_desktop_voice_real_helper_latency_benchmark.ps1` is needed.
+- **Can it be deleted?** No — part of documented dev workflow unless cleanup report removed it.
+- **Connected to:** `scripts/manual/`, `docs/DEPLOY.md`.
+- **Layer / owner:** Developer script.
+
+RU:
+
+- **Что это:** Dev/CI скрипт `run_desktop_voice_real_helper_latency_benchmark.ps1` — повторяемая команда из repo docs.
+- **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Содержимое:** Команды PowerShell/Python/Dart в `run_desktop_voice_real_helper_latency_benchmark.ps1`.
+- **Обязанности:** Workflow, описанный в header или `docs/DEPLOY.md`.
+- **Когда открывать:** Owner или CI запускает `run_desktop_voice_real_helper_latency_benchmark.ps1` по инструкции в repo docs.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `scripts/manual/`, `docs/DEPLOY.md`.
+- **Слой:** Dev/CI script — не runtime приложения.
+
+
 ### `scripts/manual/smoke_desktop_hotkey.ps1`
 
 EN:
@@ -14836,6 +17283,31 @@ RU:
 - **Содержимое:** Команды PowerShell/Python/Dart в `smoke_desktop_hotkey.ps1`.
 - **Обязанности:** Workflow, описанный в header или `docs/DEPLOY.md`.
 - **Когда открывать:** Owner или CI запускает `smoke_desktop_hotkey.ps1` по инструкции в repo docs.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `scripts/manual/`, `docs/DEPLOY.md`.
+- **Слой:** Dev/CI script — не runtime приложения.
+
+
+### `scripts/manual/smoke_desktop_voice_endpoint_diag.ps1`
+
+EN:
+
+- **What this is:** Developer script `smoke_desktop_voice_endpoint_diag.ps1` — run manually for maintenance, smoke test, or deploy helper.
+- **Why needed:** Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **What it contains:** PowerShell, Python, or Dart commands for `smoke_desktop_voice_endpoint_diag.ps1`.
+- **Responsibilities:** See script header comments for exact behavior.
+- **When to open:** When workflow documented for `smoke_desktop_voice_endpoint_diag.ps1` is needed.
+- **Can it be deleted?** No — part of documented dev workflow unless cleanup report removed it.
+- **Connected to:** `scripts/manual/`, `docs/DEPLOY.md`.
+- **Layer / owner:** Developer script.
+
+RU:
+
+- **Что это:** Dev/CI скрипт `smoke_desktop_voice_endpoint_diag.ps1` — повторяемая команда из repo docs.
+- **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Содержимое:** Команды PowerShell/Python/Dart в `smoke_desktop_voice_endpoint_diag.ps1`.
+- **Обязанности:** Workflow, описанный в header или `docs/DEPLOY.md`.
+- **Когда открывать:** Owner или CI запускает `smoke_desktop_voice_endpoint_diag.ps1` по инструкции в repo docs.
 - **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
 - **Связано с:** `scripts/manual/`, `docs/DEPLOY.md`.
 - **Слой:** Dev/CI script — не runtime приложения.
@@ -14886,6 +17358,31 @@ RU:
 - **Содержимое:** Команды PowerShell/Python/Dart в `smoke_desktop_voice_helper_selftest.ps1`.
 - **Обязанности:** Workflow, описанный в header или `docs/DEPLOY.md`.
 - **Когда открывать:** Owner или CI запускает `smoke_desktop_voice_helper_selftest.ps1` по инструкции в repo docs.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `scripts/manual/`, `docs/DEPLOY.md`.
+- **Слой:** Dev/CI script — не runtime приложения.
+
+
+### `scripts/manual/smoke_desktop_voice_installed.ps1`
+
+EN:
+
+- **What this is:** Developer script `smoke_desktop_voice_installed.ps1` — run manually for maintenance, smoke test, or deploy helper.
+- **Why needed:** Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **What it contains:** PowerShell, Python, or Dart commands for `smoke_desktop_voice_installed.ps1`.
+- **Responsibilities:** See script header comments for exact behavior.
+- **When to open:** When workflow documented for `smoke_desktop_voice_installed.ps1` is needed.
+- **Can it be deleted?** No — part of documented dev workflow unless cleanup report removed it.
+- **Connected to:** `scripts/manual/`, `docs/DEPLOY.md`.
+- **Layer / owner:** Developer script.
+
+RU:
+
+- **Что это:** Dev/CI скрипт `smoke_desktop_voice_installed.ps1` — повторяемая команда из repo docs.
+- **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Содержимое:** Команды PowerShell/Python/Dart в `smoke_desktop_voice_installed.ps1`.
+- **Обязанности:** Workflow, описанный в header или `docs/DEPLOY.md`.
+- **Когда открывать:** Owner или CI запускает `smoke_desktop_voice_installed.ps1` по инструкции в repo docs.
 - **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
 - **Связано с:** `scripts/manual/`, `docs/DEPLOY.md`.
 - **Слой:** Dev/CI script — не runtime приложения.
@@ -15369,6 +17866,58 @@ RU:
 - **Слой:** Автотест — не попадает пользователю в APK.
 
 
+### `test/category_picker_create_test.dart`
+
+EN:
+
+- **What this is:** Automated test `category_picker_create_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **What it contains:** Test cases (symbols: main).
+- **Key code names:** `main`
+- **Responsibilities:** Assert expected behavior for `category_picker_create_test` scenario.
+- **When to open:** CI failure or changing code near `category_picker_create`.
+- **Can it be deleted?** No — required for tests.
+- **Connected to:** Matching files under `lib/` with similar name.
+- **Layer / owner:** Test — not shipped to users.
+
+RU:
+
+- **Что это:** Автотест `category_picker_create` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `category_picker_create`.
+- **Обязанности:** Assert ожидаемого поведения `category_picker_create`.
+- **Когда открывать:** Падение CI или правка кода рядом с `category_picker_create`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
+- **Слой:** Автотест — не попадает пользователю в APK.
+
+
+### `test/desktop_stt_cloud_backend_hooks_test.dart`
+
+EN:
+
+- **What this is:** Automated test `desktop_stt_cloud_backend_hooks_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **What it contains:** Test cases (symbols: main).
+- **Key code names:** `main`
+- **Responsibilities:** Assert expected behavior for `desktop_stt_cloud_backend_hooks_test` scenario.
+- **When to open:** CI failure or changing code near `desktop_stt_cloud_backend_hooks`.
+- **Can it be deleted?** No — required for tests.
+- **Connected to:** Matching files under `lib/` with similar name.
+- **Layer / owner:** Test — not shipped to users.
+
+RU:
+
+- **Что это:** Автотест `desktop_stt_cloud_backend_hooks` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `desktop_stt_cloud_backend_hooks`.
+- **Обязанности:** Assert ожидаемого поведения `desktop_stt_cloud_backend_hooks`.
+- **Когда открывать:** Падение CI или правка кода рядом с `desktop_stt_cloud_backend_hooks`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
+- **Слой:** Автотест — не попадает пользователю в APK.
+
+
 ### `test/desktop_voice_attempt_dialog_test.dart`
 
 EN:
@@ -15421,6 +17970,84 @@ RU:
 - **Слой:** Автотест — не попадает пользователю в APK.
 
 
+### `test/desktop_voice_audio_pipeline_test.dart`
+
+EN:
+
+- **What this is:** Automated test `desktop_voice_audio_pipeline_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **What it contains:** Test cases (symbols: main).
+- **Key code names:** `main`
+- **Responsibilities:** Assert expected behavior for `desktop_voice_audio_pipeline_test` scenario.
+- **When to open:** CI failure or changing code near `desktop_voice_audio_pipeline`.
+- **Can it be deleted?** No — required for tests.
+- **Connected to:** Matching files under `lib/` with similar name.
+- **Layer / owner:** Test — not shipped to users.
+
+RU:
+
+- **Что это:** Автотест `desktop_voice_audio_pipeline` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `desktop_voice_audio_pipeline`.
+- **Обязанности:** Assert ожидаемого поведения `desktop_voice_audio_pipeline`.
+- **Когда открывать:** Падение CI или правка кода рядом с `desktop_voice_audio_pipeline`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
+- **Слой:** Автотест — не попадает пользователю в APK.
+
+
+### `test/desktop_voice_capture_endpoint_selection_test.dart`
+
+EN:
+
+- **What this is:** Automated test `desktop_voice_capture_endpoint_selection_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **What it contains:** Test cases (symbols: main).
+- **Key code names:** `main`
+- **Responsibilities:** Assert expected behavior for `desktop_voice_capture_endpoint_selection_test` scenario.
+- **When to open:** CI failure or changing code near `desktop_voice_capture_endpoint_selection`.
+- **Can it be deleted?** No — required for tests.
+- **Connected to:** Matching files under `lib/` with similar name.
+- **Layer / owner:** Test — not shipped to users.
+
+RU:
+
+- **Что это:** Автотест `desktop_voice_capture_endpoint_selection` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `desktop_voice_capture_endpoint_selection`.
+- **Обязанности:** Assert ожидаемого поведения `desktop_voice_capture_endpoint_selection`.
+- **Когда открывать:** Падение CI или правка кода рядом с `desktop_voice_capture_endpoint_selection`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
+- **Слой:** Автотест — не попадает пользователю в APK.
+
+
+### `test/desktop_voice_capture_ready_cue_test.dart`
+
+EN:
+
+- **What this is:** Automated test `desktop_voice_capture_ready_cue_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **What it contains:** Test cases (symbols: main).
+- **Key code names:** `main`
+- **Responsibilities:** Assert expected behavior for `desktop_voice_capture_ready_cue_test` scenario.
+- **When to open:** CI failure or changing code near `desktop_voice_capture_ready_cue`.
+- **Can it be deleted?** No — required for tests.
+- **Connected to:** Matching files under `lib/` with similar name.
+- **Layer / owner:** Test — not shipped to users.
+
+RU:
+
+- **Что это:** Автотест `desktop_voice_capture_ready_cue` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `desktop_voice_capture_ready_cue`.
+- **Обязанности:** Assert ожидаемого поведения `desktop_voice_capture_ready_cue`.
+- **Когда открывать:** Падение CI или правка кода рядом с `desktop_voice_capture_ready_cue`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
+- **Слой:** Автотест — не попадает пользователю в APK.
+
+
 ### `test/desktop_voice_command_acceptance_test.dart`
 
 EN:
@@ -15442,6 +18069,214 @@ RU:
 - **Содержимое:** Test cases для сценария `desktop_voice_command_acceptance`.
 - **Обязанности:** Assert ожидаемого поведения `desktop_voice_command_acceptance`.
 - **Когда открывать:** Падение CI или правка кода рядом с `desktop_voice_command_acceptance`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
+- **Слой:** Автотест — не попадает пользователю в APK.
+
+
+### `test/desktop_voice_command_lifecycle_test.dart`
+
+EN:
+
+- **What this is:** Automated test `desktop_voice_command_lifecycle_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **What it contains:** Test cases (symbols: main).
+- **Key code names:** `main`
+- **Responsibilities:** Assert expected behavior for `desktop_voice_command_lifecycle_test` scenario.
+- **When to open:** CI failure or changing code near `desktop_voice_command_lifecycle`.
+- **Can it be deleted?** No — required for tests.
+- **Connected to:** Matching files under `lib/` with similar name.
+- **Layer / owner:** Test — not shipped to users.
+
+RU:
+
+- **Что это:** Автотест `desktop_voice_command_lifecycle` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `desktop_voice_command_lifecycle`.
+- **Обязанности:** Assert ожидаемого поведения `desktop_voice_command_lifecycle`.
+- **Когда открывать:** Падение CI или правка кода рядом с `desktop_voice_command_lifecycle`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
+- **Слой:** Автотест — не попадает пользователю в APK.
+
+
+### `test/desktop_voice_confirmation_timer_test.dart`
+
+EN:
+
+- **What this is:** Automated test `desktop_voice_confirmation_timer_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **What it contains:** Test cases (symbols: _PendingCommitSimulator, main).
+- **Key code names:** `_PendingCommitSimulator`, `main`
+- **Responsibilities:** Assert expected behavior for `desktop_voice_confirmation_timer_test` scenario.
+- **When to open:** CI failure or changing code near `desktop_voice_confirmation_timer`.
+- **Can it be deleted?** No — required for tests.
+- **Connected to:** Matching files under `lib/` with similar name.
+- **Layer / owner:** Test — not shipped to users.
+
+RU:
+
+- **Что это:** Автотест `desktop_voice_confirmation_timer` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `desktop_voice_confirmation_timer`.
+- **Обязанности:** Assert ожидаемого поведения `desktop_voice_confirmation_timer`.
+- **Когда открывать:** Падение CI или правка кода рядом с `desktop_voice_confirmation_timer`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
+- **Слой:** Автотест — не попадает пользователю в APK.
+
+
+### `test/desktop_voice_contamination_gate_test.dart`
+
+EN:
+
+- **What this is:** Automated test `desktop_voice_contamination_gate_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **What it contains:** Test cases (symbols: main).
+- **Key code names:** `main`
+- **Responsibilities:** Assert expected behavior for `desktop_voice_contamination_gate_test` scenario.
+- **When to open:** CI failure or changing code near `desktop_voice_contamination_gate`.
+- **Can it be deleted?** No — required for tests.
+- **Connected to:** Matching files under `lib/` with similar name.
+- **Layer / owner:** Test — not shipped to users.
+
+RU:
+
+- **Что это:** Автотест `desktop_voice_contamination_gate` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `desktop_voice_contamination_gate`.
+- **Обязанности:** Assert ожидаемого поведения `desktop_voice_contamination_gate`.
+- **Когда открывать:** Падение CI или правка кода рядом с `desktop_voice_contamination_gate`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
+- **Слой:** Автотест — не попадает пользователю в APK.
+
+
+### `test/desktop_voice_correction_flow_test.dart`
+
+EN:
+
+- **What this is:** Automated test `desktop_voice_correction_flow_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **What it contains:** Test cases (symbols: main).
+- **Key code names:** `main`
+- **Responsibilities:** Assert expected behavior for `desktop_voice_correction_flow_test` scenario.
+- **When to open:** CI failure or changing code near `desktop_voice_correction_flow`.
+- **Can it be deleted?** No — required for tests.
+- **Connected to:** Matching files under `lib/` with similar name.
+- **Layer / owner:** Test — not shipped to users.
+
+RU:
+
+- **Что это:** Автотест `desktop_voice_correction_flow` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `desktop_voice_correction_flow`.
+- **Обязанности:** Assert ожидаемого поведения `desktop_voice_correction_flow`.
+- **Когда открывать:** Падение CI или правка кода рядом с `desktop_voice_correction_flow`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
+- **Слой:** Автотест — не попадает пользователю в APK.
+
+
+### `test/desktop_voice_cpal_capture_test.dart`
+
+EN:
+
+- **What this is:** Automated test `desktop_voice_cpal_capture_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **What it contains:** Test cases (symbols: main).
+- **Key code names:** `main`
+- **Responsibilities:** Assert expected behavior for `desktop_voice_cpal_capture_test` scenario.
+- **When to open:** CI failure or changing code near `desktop_voice_cpal_capture`.
+- **Can it be deleted?** No — required for tests.
+- **Connected to:** Matching files under `lib/` with similar name.
+- **Layer / owner:** Test — not shipped to users.
+
+RU:
+
+- **Что это:** Автотест `desktop_voice_cpal_capture` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `desktop_voice_cpal_capture`.
+- **Обязанности:** Assert ожидаемого поведения `desktop_voice_cpal_capture`.
+- **Когда открывать:** Падение CI или правка кода рядом с `desktop_voice_cpal_capture`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
+- **Слой:** Автотест — не попадает пользователю в APK.
+
+
+### `test/desktop_voice_delayed_transcribe_test.dart`
+
+EN:
+
+- **What this is:** Automated test `desktop_voice_delayed_transcribe_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **What it contains:** Test cases (symbols: main).
+- **Key code names:** `main`
+- **Responsibilities:** Assert expected behavior for `desktop_voice_delayed_transcribe_test` scenario.
+- **When to open:** CI failure or changing code near `desktop_voice_delayed_transcribe`.
+- **Can it be deleted?** No — required for tests.
+- **Connected to:** Matching files under `lib/` with similar name.
+- **Layer / owner:** Test — not shipped to users.
+
+RU:
+
+- **Что это:** Автотест `desktop_voice_delayed_transcribe` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `desktop_voice_delayed_transcribe`.
+- **Обязанности:** Assert ожидаемого поведения `desktop_voice_delayed_transcribe`.
+- **Когда открывать:** Падение CI или правка кода рядом с `desktop_voice_delayed_transcribe`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
+- **Слой:** Автотест — не попадает пользователю в APK.
+
+
+### `test/desktop_voice_domain_resolver_test.dart`
+
+EN:
+
+- **What this is:** Automated test `desktop_voice_domain_resolver_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **What it contains:** Test cases (symbols: main).
+- **Key code names:** `main`
+- **Responsibilities:** Assert expected behavior for `desktop_voice_domain_resolver_test` scenario.
+- **When to open:** CI failure or changing code near `desktop_voice_domain_resolver`.
+- **Can it be deleted?** No — required for tests.
+- **Connected to:** Matching files under `lib/` with similar name.
+- **Layer / owner:** Test — not shipped to users.
+
+RU:
+
+- **Что это:** Автотест `desktop_voice_domain_resolver` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `desktop_voice_domain_resolver`.
+- **Обязанности:** Assert ожидаемого поведения `desktop_voice_domain_resolver`.
+- **Когда открывать:** Падение CI или правка кода рядом с `desktop_voice_domain_resolver`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
+- **Слой:** Автотест — не попадает пользователю в APK.
+
+
+### `test/desktop_voice_engine_selection_test.dart`
+
+EN:
+
+- **What this is:** Automated test `desktop_voice_engine_selection_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **What it contains:** Test cases (symbols: main).
+- **Key code names:** `main`
+- **Responsibilities:** Assert expected behavior for `desktop_voice_engine_selection_test` scenario.
+- **When to open:** CI failure or changing code near `desktop_voice_engine_selection`.
+- **Can it be deleted?** No — required for tests.
+- **Connected to:** Matching files under `lib/` with similar name.
+- **Layer / owner:** Test — not shipped to users.
+
+RU:
+
+- **Что это:** Автотест `desktop_voice_engine_selection` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `desktop_voice_engine_selection`.
+- **Обязанности:** Assert ожидаемого поведения `desktop_voice_engine_selection`.
+- **Когда открывать:** Падение CI или правка кода рядом с `desktop_voice_engine_selection`.
 - **Можно удалить?** Нет — нужен для тестов.
 - **Связано с:** Production files под `lib/` с похожим именем.
 - **Слой:** Автотест — не попадает пользователю в APK.
@@ -15525,6 +18360,58 @@ RU:
 - **Слой:** Автотест — не попадает пользователю в APK.
 
 
+### `test/desktop_voice_install_smoke_policy_test.dart`
+
+EN:
+
+- **What this is:** Automated test `desktop_voice_install_smoke_policy_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **What it contains:** Test cases (symbols: main).
+- **Key code names:** `main`
+- **Responsibilities:** Assert expected behavior for `desktop_voice_install_smoke_policy_test` scenario.
+- **When to open:** CI failure or changing code near `desktop_voice_install_smoke_policy`.
+- **Can it be deleted?** No — required for tests.
+- **Connected to:** Matching files under `lib/` with similar name.
+- **Layer / owner:** Test — not shipped to users.
+
+RU:
+
+- **Что это:** Автотест `desktop_voice_install_smoke_policy` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `desktop_voice_install_smoke_policy`.
+- **Обязанности:** Assert ожидаемого поведения `desktop_voice_install_smoke_policy`.
+- **Когда открывать:** Падение CI или правка кода рядом с `desktop_voice_install_smoke_policy`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
+- **Слой:** Автотест — не попадает пользователю в APK.
+
+
+### `test/desktop_voice_installed_identity_test.dart`
+
+EN:
+
+- **What this is:** Automated test `desktop_voice_installed_identity_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **What it contains:** Test cases (symbols: main).
+- **Key code names:** `main`
+- **Responsibilities:** Assert expected behavior for `desktop_voice_installed_identity_test` scenario.
+- **When to open:** CI failure or changing code near `desktop_voice_installed_identity`.
+- **Can it be deleted?** No — required for tests.
+- **Connected to:** Matching files under `lib/` with similar name.
+- **Layer / owner:** Test — not shipped to users.
+
+RU:
+
+- **Что это:** Автотест `desktop_voice_installed_identity` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `desktop_voice_installed_identity`.
+- **Обязанности:** Assert ожидаемого поведения `desktop_voice_installed_identity`.
+- **Когда открывать:** Падение CI или правка кода рядом с `desktop_voice_installed_identity`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
+- **Слой:** Автотест — не попадает пользователю в APK.
+
+
 ### `test/desktop_voice_laredo_multi_scope_test.dart`
 
 EN:
@@ -15546,6 +18433,110 @@ RU:
 - **Содержимое:** Test cases для сценария `desktop_voice_laredo_multi_scope`.
 - **Обязанности:** Assert ожидаемого поведения `desktop_voice_laredo_multi_scope`.
 - **Когда открывать:** Падение CI или правка кода рядом с `desktop_voice_laredo_multi_scope`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
+- **Слой:** Автотест — не попадает пользователю в APK.
+
+
+### `test/desktop_voice_last_attempt_store_test.dart`
+
+EN:
+
+- **What this is:** Automated test `desktop_voice_last_attempt_store_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **What it contains:** Test cases (symbols: main).
+- **Key code names:** `main`
+- **Responsibilities:** Assert expected behavior for `desktop_voice_last_attempt_store_test` scenario.
+- **When to open:** CI failure or changing code near `desktop_voice_last_attempt_store`.
+- **Can it be deleted?** No — required for tests.
+- **Connected to:** Matching files under `lib/` with similar name.
+- **Layer / owner:** Test — not shipped to users.
+
+RU:
+
+- **Что это:** Автотест `desktop_voice_last_attempt_store` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `desktop_voice_last_attempt_store`.
+- **Обязанности:** Assert ожидаемого поведения `desktop_voice_last_attempt_store`.
+- **Когда открывать:** Падение CI или правка кода рядом с `desktop_voice_last_attempt_store`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
+- **Слой:** Автотест — не попадает пользователю в APK.
+
+
+### `test/desktop_voice_latency_trace_test.dart`
+
+EN:
+
+- **What this is:** Automated test `desktop_voice_latency_trace_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **What it contains:** Test cases (symbols: main).
+- **Key code names:** `main`
+- **Responsibilities:** Assert expected behavior for `desktop_voice_latency_trace_test` scenario.
+- **When to open:** CI failure or changing code near `desktop_voice_latency_trace`.
+- **Can it be deleted?** No — required for tests.
+- **Connected to:** Matching files under `lib/` with similar name.
+- **Layer / owner:** Test — not shipped to users.
+
+RU:
+
+- **Что это:** Автотест `desktop_voice_latency_trace` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `desktop_voice_latency_trace`.
+- **Обязанности:** Assert ожидаемого поведения `desktop_voice_latency_trace`.
+- **Когда открывать:** Падение CI или правка кода рядом с `desktop_voice_latency_trace`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
+- **Слой:** Автотест — не попадает пользователю в APK.
+
+
+### `test/desktop_voice_live_quiet_audio_benchmark_test.dart`
+
+EN:
+
+- **What this is:** Automated test `desktop_voice_live_quiet_audio_benchmark_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **What it contains:** Test cases (symbols: main).
+- **Key code names:** `main`
+- **Responsibilities:** Assert expected behavior for `desktop_voice_live_quiet_audio_benchmark_test` scenario.
+- **When to open:** CI failure or changing code near `desktop_voice_live_quiet_audio_benchmark`.
+- **Can it be deleted?** No — required for tests.
+- **Connected to:** Matching files under `lib/` with similar name.
+- **Layer / owner:** Test — not shipped to users.
+
+RU:
+
+- **Что это:** Автотест `desktop_voice_live_quiet_audio_benchmark` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `desktop_voice_live_quiet_audio_benchmark`.
+- **Обязанности:** Assert ожидаемого поведения `desktop_voice_live_quiet_audio_benchmark`.
+- **Когда открывать:** Падение CI или правка кода рядом с `desktop_voice_live_quiet_audio_benchmark`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
+- **Слой:** Автотест — не попадает пользователю в APK.
+
+
+### `test/desktop_voice_local_engine_benchmark_test.dart`
+
+EN:
+
+- **What this is:** Automated test `desktop_voice_local_engine_benchmark_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **What it contains:** Test cases (symbols: main).
+- **Key code names:** `main`
+- **Responsibilities:** Assert expected behavior for `desktop_voice_local_engine_benchmark_test` scenario.
+- **When to open:** CI failure or changing code near `desktop_voice_local_engine_benchmark`.
+- **Can it be deleted?** No — required for tests.
+- **Connected to:** Matching files under `lib/` with similar name.
+- **Layer / owner:** Test — not shipped to users.
+
+RU:
+
+- **Что это:** Автотест `desktop_voice_local_engine_benchmark` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `desktop_voice_local_engine_benchmark`.
+- **Обязанности:** Assert ожидаемого поведения `desktop_voice_local_engine_benchmark`.
+- **Когда открывать:** Падение CI или правка кода рядом с `desktop_voice_local_engine_benchmark`.
 - **Можно удалить?** Нет — нужен для тестов.
 - **Связано с:** Production files под `lib/` с похожим именем.
 - **Слой:** Автотест — не попадает пользователю в APK.
@@ -15603,6 +18594,32 @@ RU:
 - **Слой:** Автотест — не попадает пользователю в APK.
 
 
+### `test/desktop_voice_overlay_mic_latency_test.dart`
+
+EN:
+
+- **What this is:** Automated test `desktop_voice_overlay_mic_latency_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **What it contains:** Test cases (symbols: main).
+- **Key code names:** `main`
+- **Responsibilities:** Assert expected behavior for `desktop_voice_overlay_mic_latency_test` scenario.
+- **When to open:** CI failure or changing code near `desktop_voice_overlay_mic_latency`.
+- **Can it be deleted?** No — required for tests.
+- **Connected to:** Matching files under `lib/` with similar name.
+- **Layer / owner:** Test — not shipped to users.
+
+RU:
+
+- **Что это:** Автотест `desktop_voice_overlay_mic_latency` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `desktop_voice_overlay_mic_latency`.
+- **Обязанности:** Assert ожидаемого поведения `desktop_voice_overlay_mic_latency`.
+- **Когда открывать:** Падение CI или правка кода рядом с `desktop_voice_overlay_mic_latency`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
+- **Слой:** Автотест — не попадает пользователю в APK.
+
+
 ### `test/desktop_voice_overlay_state_test.dart`
 
 EN:
@@ -15624,6 +18641,58 @@ RU:
 - **Содержимое:** Test cases для сценария `desktop_voice_overlay_state`.
 - **Обязанности:** Assert ожидаемого поведения `desktop_voice_overlay_state`.
 - **Когда открывать:** Падение CI или правка кода рядом с `desktop_voice_overlay_state`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
+- **Слой:** Автотест — не попадает пользователю в APK.
+
+
+### `test/desktop_voice_overlay_transparency_test.dart`
+
+EN:
+
+- **What this is:** Automated test `desktop_voice_overlay_transparency_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **What it contains:** Test cases (symbols: main).
+- **Key code names:** `main`
+- **Responsibilities:** Assert expected behavior for `desktop_voice_overlay_transparency_test` scenario.
+- **When to open:** CI failure or changing code near `desktop_voice_overlay_transparency`.
+- **Can it be deleted?** No — required for tests.
+- **Connected to:** Matching files under `lib/` with similar name.
+- **Layer / owner:** Test — not shipped to users.
+
+RU:
+
+- **Что это:** Автотест `desktop_voice_overlay_transparency` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `desktop_voice_overlay_transparency`.
+- **Обязанности:** Assert ожидаемого поведения `desktop_voice_overlay_transparency`.
+- **Когда открывать:** Падение CI или правка кода рядом с `desktop_voice_overlay_transparency`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
+- **Слой:** Автотест — не попадает пользователю в APK.
+
+
+### `test/desktop_voice_pre_roll_start_guard_test.dart`
+
+EN:
+
+- **What this is:** Automated test `desktop_voice_pre_roll_start_guard_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **What it contains:** Test cases (symbols: main).
+- **Key code names:** `main`
+- **Responsibilities:** Assert expected behavior for `desktop_voice_pre_roll_start_guard_test` scenario.
+- **When to open:** CI failure or changing code near `desktop_voice_pre_roll_start_guard`.
+- **Can it be deleted?** No — required for tests.
+- **Connected to:** Matching files under `lib/` with similar name.
+- **Layer / owner:** Test — not shipped to users.
+
+RU:
+
+- **Что это:** Автотест `desktop_voice_pre_roll_start_guard` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `desktop_voice_pre_roll_start_guard`.
+- **Обязанности:** Assert ожидаемого поведения `desktop_voice_pre_roll_start_guard`.
+- **Когда открывать:** Падение CI или правка кода рядом с `desktop_voice_pre_roll_start_guard`.
 - **Можно удалить?** Нет — нужен для тестов.
 - **Связано с:** Production files под `lib/` с похожим именем.
 - **Слой:** Автотест — не попадает пользователю в APK.
@@ -15655,6 +18724,136 @@ RU:
 - **Слой:** Автотест — не попадает пользователю в APK.
 
 
+### `test/desktop_voice_ready_cue_playback_test.dart`
+
+EN:
+
+- **What this is:** Automated test `desktop_voice_ready_cue_playback_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **What it contains:** Test cases (symbols: main).
+- **Key code names:** `main`
+- **Responsibilities:** Assert expected behavior for `desktop_voice_ready_cue_playback_test` scenario.
+- **When to open:** CI failure or changing code near `desktop_voice_ready_cue_playback`.
+- **Can it be deleted?** No — required for tests.
+- **Connected to:** Matching files under `lib/` with similar name.
+- **Layer / owner:** Test — not shipped to users.
+
+RU:
+
+- **Что это:** Автотест `desktop_voice_ready_cue_playback` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `desktop_voice_ready_cue_playback`.
+- **Обязанности:** Assert ожидаемого поведения `desktop_voice_ready_cue_playback`.
+- **Когда открывать:** Падение CI или правка кода рядом с `desktop_voice_ready_cue_playback`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
+- **Слой:** Автотест — не попадает пользователю в APK.
+
+
+### `test/desktop_voice_real_helper_latency_benchmark_test.dart`
+
+EN:
+
+- **What this is:** Automated test `desktop_voice_real_helper_latency_benchmark_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **What it contains:** Test cases (symbols: main).
+- **Key code names:** `main`
+- **Responsibilities:** Assert expected behavior for `desktop_voice_real_helper_latency_benchmark_test` scenario.
+- **When to open:** CI failure or changing code near `desktop_voice_real_helper_latency_benchmark`.
+- **Can it be deleted?** No — required for tests.
+- **Connected to:** Matching files under `lib/` with similar name.
+- **Layer / owner:** Test — not shipped to users.
+
+RU:
+
+- **Что это:** Автотест `desktop_voice_real_helper_latency_benchmark` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `desktop_voice_real_helper_latency_benchmark`.
+- **Обязанности:** Assert ожидаемого поведения `desktop_voice_real_helper_latency_benchmark`.
+- **Когда открывать:** Падение CI или правка кода рядом с `desktop_voice_real_helper_latency_benchmark`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
+- **Слой:** Автотест — не попадает пользователю в APK.
+
+
+### `test/desktop_voice_release_ui_gating_test.dart`
+
+EN:
+
+- **What this is:** Automated test `desktop_voice_release_ui_gating_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **What it contains:** Test cases (symbols: main).
+- **Key code names:** `main`
+- **Responsibilities:** Assert expected behavior for `desktop_voice_release_ui_gating_test` scenario.
+- **When to open:** CI failure or changing code near `desktop_voice_release_ui_gating`.
+- **Can it be deleted?** No — required for tests.
+- **Connected to:** Matching files under `lib/` with similar name.
+- **Layer / owner:** Test — not shipped to users.
+
+RU:
+
+- **Что это:** Автотест `desktop_voice_release_ui_gating` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `desktop_voice_release_ui_gating`.
+- **Обязанности:** Assert ожидаемого поведения `desktop_voice_release_ui_gating`.
+- **Когда открывать:** Падение CI или правка кода рядом с `desktop_voice_release_ui_gating`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
+- **Слой:** Автотест — не попадает пользователю в APK.
+
+
+### `test/desktop_voice_scw_segment_parser_test.dart`
+
+EN:
+
+- **What this is:** Automated test `desktop_voice_scw_segment_parser_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **What it contains:** Test cases (symbols: main).
+- **Key code names:** `main`
+- **Responsibilities:** Assert expected behavior for `desktop_voice_scw_segment_parser_test` scenario.
+- **When to open:** CI failure or changing code near `desktop_voice_scw_segment_parser`.
+- **Can it be deleted?** No — required for tests.
+- **Connected to:** Matching files under `lib/` with similar name.
+- **Layer / owner:** Test — not shipped to users.
+
+RU:
+
+- **Что это:** Автотест `desktop_voice_scw_segment_parser` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `desktop_voice_scw_segment_parser`.
+- **Обязанности:** Assert ожидаемого поведения `desktop_voice_scw_segment_parser`.
+- **Когда открывать:** Падение CI или правка кода рядом с `desktop_voice_scw_segment_parser`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
+- **Слой:** Автотест — не попадает пользователю в APK.
+
+
+### `test/desktop_voice_session_isolation_test.dart`
+
+EN:
+
+- **What this is:** Automated test `desktop_voice_session_isolation_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **What it contains:** Test cases (symbols: main).
+- **Key code names:** `main`
+- **Responsibilities:** Assert expected behavior for `desktop_voice_session_isolation_test` scenario.
+- **When to open:** CI failure or changing code near `desktop_voice_session_isolation`.
+- **Can it be deleted?** No — required for tests.
+- **Connected to:** Matching files under `lib/` with similar name.
+- **Layer / owner:** Test — not shipped to users.
+
+RU:
+
+- **Что это:** Автотест `desktop_voice_session_isolation` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `desktop_voice_session_isolation`.
+- **Обязанности:** Assert ожидаемого поведения `desktop_voice_session_isolation`.
+- **Когда открывать:** Падение CI или правка кода рядом с `desktop_voice_session_isolation`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
+- **Слой:** Автотест — не попадает пользователю в APK.
+
+
 ### `test/desktop_voice_settings_mic_layout_test.dart`
 
 EN:
@@ -15676,6 +18875,110 @@ RU:
 - **Содержимое:** Test cases для сценария `desktop_voice_settings_mic_layout`.
 - **Обязанности:** Assert ожидаемого поведения `desktop_voice_settings_mic_layout`.
 - **Когда открывать:** Падение CI или правка кода рядом с `desktop_voice_settings_mic_layout`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
+- **Слой:** Автотест — не попадает пользователю в APK.
+
+
+### `test/desktop_voice_stt_processing_variant_test.dart`
+
+EN:
+
+- **What this is:** Automated test `desktop_voice_stt_processing_variant_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **What it contains:** Test cases (symbols: main).
+- **Key code names:** `main`
+- **Responsibilities:** Assert expected behavior for `desktop_voice_stt_processing_variant_test` scenario.
+- **When to open:** CI failure or changing code near `desktop_voice_stt_processing_variant`.
+- **Can it be deleted?** No — required for tests.
+- **Connected to:** Matching files under `lib/` with similar name.
+- **Layer / owner:** Test — not shipped to users.
+
+RU:
+
+- **Что это:** Автотест `desktop_voice_stt_processing_variant` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `desktop_voice_stt_processing_variant`.
+- **Обязанности:** Assert ожидаемого поведения `desktop_voice_stt_processing_variant`.
+- **Когда открывать:** Падение CI или правка кода рядом с `desktop_voice_stt_processing_variant`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
+- **Слой:** Автотест — не попадает пользователю в APK.
+
+
+### `test/desktop_voice_stt_quality_test.dart`
+
+EN:
+
+- **What this is:** Automated test `desktop_voice_stt_quality_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **What it contains:** Test cases (symbols: main).
+- **Key code names:** `main`
+- **Responsibilities:** Assert expected behavior for `desktop_voice_stt_quality_test` scenario.
+- **When to open:** CI failure or changing code near `desktop_voice_stt_quality`.
+- **Can it be deleted?** No — required for tests.
+- **Connected to:** Matching files under `lib/` with similar name.
+- **Layer / owner:** Test — not shipped to users.
+
+RU:
+
+- **Что это:** Автотест `desktop_voice_stt_quality` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `desktop_voice_stt_quality`.
+- **Обязанности:** Assert ожидаемого поведения `desktop_voice_stt_quality`.
+- **Когда открывать:** Падение CI или правка кода рядом с `desktop_voice_stt_quality`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
+- **Слой:** Автотест — не попадает пользователю в APK.
+
+
+### `test/desktop_voice_transcript_merge_test.dart`
+
+EN:
+
+- **What this is:** Automated test `desktop_voice_transcript_merge_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **What it contains:** Test cases (symbols: main).
+- **Key code names:** `main`
+- **Responsibilities:** Assert expected behavior for `desktop_voice_transcript_merge_test` scenario.
+- **When to open:** CI failure or changing code near `desktop_voice_transcript_merge`.
+- **Can it be deleted?** No — required for tests.
+- **Connected to:** Matching files under `lib/` with similar name.
+- **Layer / owner:** Test — not shipped to users.
+
+RU:
+
+- **Что это:** Автотест `desktop_voice_transcript_merge` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `desktop_voice_transcript_merge`.
+- **Обязанности:** Assert ожидаемого поведения `desktop_voice_transcript_merge`.
+- **Когда открывать:** Падение CI или правка кода рядом с `desktop_voice_transcript_merge`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
+- **Слой:** Автотест — не попадает пользователю в APK.
+
+
+### `test/desktop_voice_useful_candidate_test.dart`
+
+EN:
+
+- **What this is:** Automated test `desktop_voice_useful_candidate_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **What it contains:** Test cases (symbols: main).
+- **Key code names:** `main`
+- **Responsibilities:** Assert expected behavior for `desktop_voice_useful_candidate_test` scenario.
+- **When to open:** CI failure or changing code near `desktop_voice_useful_candidate`.
+- **Can it be deleted?** No — required for tests.
+- **Connected to:** Matching files under `lib/` with similar name.
+- **Layer / owner:** Test — not shipped to users.
+
+RU:
+
+- **Что это:** Автотест `desktop_voice_useful_candidate` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `desktop_voice_useful_candidate`.
+- **Обязанности:** Assert ожидаемого поведения `desktop_voice_useful_candidate`.
+- **Когда открывать:** Падение CI или правка кода рядом с `desktop_voice_useful_candidate`.
 - **Можно удалить?** Нет — нужен для тестов.
 - **Связано с:** Production files под `lib/` с похожим именем.
 - **Слой:** Автотест — не попадает пользователю в APK.
@@ -15733,6 +19036,32 @@ RU:
 - **Слой:** Автотест — не попадает пользователю в APK.
 
 
+### `test/desktop_voice_windows_endpoint_diagnostics_test.dart`
+
+EN:
+
+- **What this is:** Automated test `desktop_voice_windows_endpoint_diagnostics_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **What it contains:** Test cases (symbols: main).
+- **Key code names:** `main`
+- **Responsibilities:** Assert expected behavior for `desktop_voice_windows_endpoint_diagnostics_test` scenario.
+- **When to open:** CI failure or changing code near `desktop_voice_windows_endpoint_diagnostics`.
+- **Can it be deleted?** No — required for tests.
+- **Connected to:** Matching files under `lib/` with similar name.
+- **Layer / owner:** Test — not shipped to users.
+
+RU:
+
+- **Что это:** Автотест `desktop_voice_windows_endpoint_diagnostics` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `desktop_voice_windows_endpoint_diagnostics`.
+- **Обязанности:** Assert ожидаемого поведения `desktop_voice_windows_endpoint_diagnostics`.
+- **Когда открывать:** Падение CI или правка кода рядом с `desktop_voice_windows_endpoint_diagnostics`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
+- **Слой:** Автотест — не попадает пользователю в APK.
+
+
 ### `test/edit_sheet_autosave_test.dart`
 
 EN:
@@ -15754,6 +19083,961 @@ RU:
 - **Содержимое:** Test cases для сценария `edit_sheet_autosave`.
 - **Обязанности:** Assert ожидаемого поведения `edit_sheet_autosave`.
 - **Когда открывать:** Падение CI или правка кода рядом с `edit_sheet_autosave`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
+- **Слой:** Автотест — не попадает пользователю в APK.
+
+
+### `test/fixtures/desktop_voice_wav/benchmark_reports/real_helper_latency_2026-07-11T00-01-52.686540Z.json`
+
+EN:
+
+- **What this is:** JSON golden/benchmark payload `real_helper_latency_2026-07-11T00-01-52.686540Z.json` for desktop voice STT regression.
+- **Why needed:** Desktop voice tests and benchmarks replay known captures instead of live mic input.
+- **What it contains:** Tracked fixture file `real_helper_latency_2026-07-11T00-01-52.686540Z.json` under `test/fixtures/desktop_voice_wav/`.
+- **Responsibilities:** Provide stable input/artifact for STT quality checks involving `real_helper_latency_2026-07-11T00-01-52.686540Z`.
+- **When to open:** Updating golden WAVs, manifests, or benchmark reports near `real_helper_latency_2026-07-11T00-01-52.686540Z.json`.
+- **Can it be deleted?** No — desktop voice tests/benchmarks reference this fixture.
+- **Connected to:** `test/desktop_voice_*_test.dart`, `scripts/manual/benchmark_desktop_voice_stt.ps1`.
+- **Layer / owner:** Test fixture — not shipped to users.
+
+RU:
+
+- **Что это:** JSON golden/benchmark payload `real_helper_latency_2026-07-11T00-01-52.686540Z.json` для регрессии desktop voice STT.
+- **Зачем:** Тесты и бенчмарки desktop voice проигрывают известные записи вместо живого микрофона.
+- **Содержимое:** Отслеживаемый fixture-файл `real_helper_latency_2026-07-11T00-01-52.686540Z.json` в `test/fixtures/desktop_voice_wav/`.
+- **Обязанности:** Даёт стабильный вход/артефакт для проверок STT вокруг `real_helper_latency_2026-07-11T00-01-52.686540Z`.
+- **Когда открывать:** Обновление golden WAV, манифестов или отчётов бенчмарка около `real_helper_latency_2026-07-11T00-01-52.686540Z.json`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** `test/desktop_voice_*_test.dart`, `benchmark_desktop_voice_stt.ps1`.
+- **Слой:** Test fixture — не попадает к пользователю.
+
+
+### `test/fixtures/desktop_voice_wav/benchmark_reports/real_helper_latency_2026-07-11T00-06-30.043433Z.json`
+
+EN:
+
+- **What this is:** JSON golden/benchmark payload `real_helper_latency_2026-07-11T00-06-30.043433Z.json` for desktop voice STT regression.
+- **Why needed:** Desktop voice tests and benchmarks replay known captures instead of live mic input.
+- **What it contains:** Tracked fixture file `real_helper_latency_2026-07-11T00-06-30.043433Z.json` under `test/fixtures/desktop_voice_wav/`.
+- **Responsibilities:** Provide stable input/artifact for STT quality checks involving `real_helper_latency_2026-07-11T00-06-30.043433Z`.
+- **When to open:** Updating golden WAVs, manifests, or benchmark reports near `real_helper_latency_2026-07-11T00-06-30.043433Z.json`.
+- **Can it be deleted?** No — desktop voice tests/benchmarks reference this fixture.
+- **Connected to:** `test/desktop_voice_*_test.dart`, `scripts/manual/benchmark_desktop_voice_stt.ps1`.
+- **Layer / owner:** Test fixture — not shipped to users.
+
+RU:
+
+- **Что это:** JSON golden/benchmark payload `real_helper_latency_2026-07-11T00-06-30.043433Z.json` для регрессии desktop voice STT.
+- **Зачем:** Тесты и бенчмарки desktop voice проигрывают известные записи вместо живого микрофона.
+- **Содержимое:** Отслеживаемый fixture-файл `real_helper_latency_2026-07-11T00-06-30.043433Z.json` в `test/fixtures/desktop_voice_wav/`.
+- **Обязанности:** Даёт стабильный вход/артефакт для проверок STT вокруг `real_helper_latency_2026-07-11T00-06-30.043433Z`.
+- **Когда открывать:** Обновление golden WAV, манифестов или отчётов бенчмарка около `real_helper_latency_2026-07-11T00-06-30.043433Z.json`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** `test/desktop_voice_*_test.dart`, `benchmark_desktop_voice_stt.ps1`.
+- **Слой:** Test fixture — не попадает к пользователю.
+
+
+### `test/fixtures/desktop_voice_wav/benchmark_reports/real_helper_latency_2026-07-11T00-21-36.195835Z.json`
+
+EN:
+
+- **What this is:** JSON golden/benchmark payload `real_helper_latency_2026-07-11T00-21-36.195835Z.json` for desktop voice STT regression.
+- **Why needed:** Desktop voice tests and benchmarks replay known captures instead of live mic input.
+- **What it contains:** Tracked fixture file `real_helper_latency_2026-07-11T00-21-36.195835Z.json` under `test/fixtures/desktop_voice_wav/`.
+- **Responsibilities:** Provide stable input/artifact for STT quality checks involving `real_helper_latency_2026-07-11T00-21-36.195835Z`.
+- **When to open:** Updating golden WAVs, manifests, or benchmark reports near `real_helper_latency_2026-07-11T00-21-36.195835Z.json`.
+- **Can it be deleted?** No — desktop voice tests/benchmarks reference this fixture.
+- **Connected to:** `test/desktop_voice_*_test.dart`, `scripts/manual/benchmark_desktop_voice_stt.ps1`.
+- **Layer / owner:** Test fixture — not shipped to users.
+
+RU:
+
+- **Что это:** JSON golden/benchmark payload `real_helper_latency_2026-07-11T00-21-36.195835Z.json` для регрессии desktop voice STT.
+- **Зачем:** Тесты и бенчмарки desktop voice проигрывают известные записи вместо живого микрофона.
+- **Содержимое:** Отслеживаемый fixture-файл `real_helper_latency_2026-07-11T00-21-36.195835Z.json` в `test/fixtures/desktop_voice_wav/`.
+- **Обязанности:** Даёт стабильный вход/артефакт для проверок STT вокруг `real_helper_latency_2026-07-11T00-21-36.195835Z`.
+- **Когда открывать:** Обновление golden WAV, манифестов или отчётов бенчмарка около `real_helper_latency_2026-07-11T00-21-36.195835Z.json`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** `test/desktop_voice_*_test.dart`, `benchmark_desktop_voice_stt.ps1`.
+- **Слой:** Test fixture — не попадает к пользователю.
+
+
+### `test/fixtures/desktop_voice_wav/benchmark_reports/real_helper_latency_2026-07-11T00-30-11.646191Z.json`
+
+EN:
+
+- **What this is:** JSON golden/benchmark payload `real_helper_latency_2026-07-11T00-30-11.646191Z.json` for desktop voice STT regression.
+- **Why needed:** Desktop voice tests and benchmarks replay known captures instead of live mic input.
+- **What it contains:** Tracked fixture file `real_helper_latency_2026-07-11T00-30-11.646191Z.json` under `test/fixtures/desktop_voice_wav/`.
+- **Responsibilities:** Provide stable input/artifact for STT quality checks involving `real_helper_latency_2026-07-11T00-30-11.646191Z`.
+- **When to open:** Updating golden WAVs, manifests, or benchmark reports near `real_helper_latency_2026-07-11T00-30-11.646191Z.json`.
+- **Can it be deleted?** No — desktop voice tests/benchmarks reference this fixture.
+- **Connected to:** `test/desktop_voice_*_test.dart`, `scripts/manual/benchmark_desktop_voice_stt.ps1`.
+- **Layer / owner:** Test fixture — not shipped to users.
+
+RU:
+
+- **Что это:** JSON golden/benchmark payload `real_helper_latency_2026-07-11T00-30-11.646191Z.json` для регрессии desktop voice STT.
+- **Зачем:** Тесты и бенчмарки desktop voice проигрывают известные записи вместо живого микрофона.
+- **Содержимое:** Отслеживаемый fixture-файл `real_helper_latency_2026-07-11T00-30-11.646191Z.json` в `test/fixtures/desktop_voice_wav/`.
+- **Обязанности:** Даёт стабильный вход/артефакт для проверок STT вокруг `real_helper_latency_2026-07-11T00-30-11.646191Z`.
+- **Когда открывать:** Обновление golden WAV, манифестов или отчётов бенчмарка около `real_helper_latency_2026-07-11T00-30-11.646191Z.json`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** `test/desktop_voice_*_test.dart`, `benchmark_desktop_voice_stt.ps1`.
+- **Слой:** Test fixture — не попадает к пользователю.
+
+
+### `test/fixtures/desktop_voice_wav/benchmark_reports/real_helper_latency_2026-07-11T00-33-19.252197Z.json`
+
+EN:
+
+- **What this is:** JSON golden/benchmark payload `real_helper_latency_2026-07-11T00-33-19.252197Z.json` for desktop voice STT regression.
+- **Why needed:** Desktop voice tests and benchmarks replay known captures instead of live mic input.
+- **What it contains:** Tracked fixture file `real_helper_latency_2026-07-11T00-33-19.252197Z.json` under `test/fixtures/desktop_voice_wav/`.
+- **Responsibilities:** Provide stable input/artifact for STT quality checks involving `real_helper_latency_2026-07-11T00-33-19.252197Z`.
+- **When to open:** Updating golden WAVs, manifests, or benchmark reports near `real_helper_latency_2026-07-11T00-33-19.252197Z.json`.
+- **Can it be deleted?** No — desktop voice tests/benchmarks reference this fixture.
+- **Connected to:** `test/desktop_voice_*_test.dart`, `scripts/manual/benchmark_desktop_voice_stt.ps1`.
+- **Layer / owner:** Test fixture — not shipped to users.
+
+RU:
+
+- **Что это:** JSON golden/benchmark payload `real_helper_latency_2026-07-11T00-33-19.252197Z.json` для регрессии desktop voice STT.
+- **Зачем:** Тесты и бенчмарки desktop voice проигрывают известные записи вместо живого микрофона.
+- **Содержимое:** Отслеживаемый fixture-файл `real_helper_latency_2026-07-11T00-33-19.252197Z.json` в `test/fixtures/desktop_voice_wav/`.
+- **Обязанности:** Даёт стабильный вход/артефакт для проверок STT вокруг `real_helper_latency_2026-07-11T00-33-19.252197Z`.
+- **Когда открывать:** Обновление golden WAV, манифестов или отчётов бенчмарка около `real_helper_latency_2026-07-11T00-33-19.252197Z.json`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** `test/desktop_voice_*_test.dart`, `benchmark_desktop_voice_stt.ps1`.
+- **Слой:** Test fixture — не попадает к пользователю.
+
+
+### `test/fixtures/desktop_voice_wav/benchmark_reports/real_helper_latency_2026-07-11T00-36-40.392651Z.json`
+
+EN:
+
+- **What this is:** JSON golden/benchmark payload `real_helper_latency_2026-07-11T00-36-40.392651Z.json` for desktop voice STT regression.
+- **Why needed:** Desktop voice tests and benchmarks replay known captures instead of live mic input.
+- **What it contains:** Tracked fixture file `real_helper_latency_2026-07-11T00-36-40.392651Z.json` under `test/fixtures/desktop_voice_wav/`.
+- **Responsibilities:** Provide stable input/artifact for STT quality checks involving `real_helper_latency_2026-07-11T00-36-40.392651Z`.
+- **When to open:** Updating golden WAVs, manifests, or benchmark reports near `real_helper_latency_2026-07-11T00-36-40.392651Z.json`.
+- **Can it be deleted?** No — desktop voice tests/benchmarks reference this fixture.
+- **Connected to:** `test/desktop_voice_*_test.dart`, `scripts/manual/benchmark_desktop_voice_stt.ps1`.
+- **Layer / owner:** Test fixture — not shipped to users.
+
+RU:
+
+- **Что это:** JSON golden/benchmark payload `real_helper_latency_2026-07-11T00-36-40.392651Z.json` для регрессии desktop voice STT.
+- **Зачем:** Тесты и бенчмарки desktop voice проигрывают известные записи вместо живого микрофона.
+- **Содержимое:** Отслеживаемый fixture-файл `real_helper_latency_2026-07-11T00-36-40.392651Z.json` в `test/fixtures/desktop_voice_wav/`.
+- **Обязанности:** Даёт стабильный вход/артефакт для проверок STT вокруг `real_helper_latency_2026-07-11T00-36-40.392651Z`.
+- **Когда открывать:** Обновление golden WAV, манифестов или отчётов бенчмарка около `real_helper_latency_2026-07-11T00-36-40.392651Z.json`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** `test/desktop_voice_*_test.dart`, `benchmark_desktop_voice_stt.ps1`.
+- **Слой:** Test fixture — не попадает к пользователю.
+
+
+### `test/fixtures/desktop_voice_wav/benchmark_reports/real_helper_latency_2026-07-11T00-41-23.611948Z.json`
+
+EN:
+
+- **What this is:** JSON golden/benchmark payload `real_helper_latency_2026-07-11T00-41-23.611948Z.json` for desktop voice STT regression.
+- **Why needed:** Desktop voice tests and benchmarks replay known captures instead of live mic input.
+- **What it contains:** Tracked fixture file `real_helper_latency_2026-07-11T00-41-23.611948Z.json` under `test/fixtures/desktop_voice_wav/`.
+- **Responsibilities:** Provide stable input/artifact for STT quality checks involving `real_helper_latency_2026-07-11T00-41-23.611948Z`.
+- **When to open:** Updating golden WAVs, manifests, or benchmark reports near `real_helper_latency_2026-07-11T00-41-23.611948Z.json`.
+- **Can it be deleted?** No — desktop voice tests/benchmarks reference this fixture.
+- **Connected to:** `test/desktop_voice_*_test.dart`, `scripts/manual/benchmark_desktop_voice_stt.ps1`.
+- **Layer / owner:** Test fixture — not shipped to users.
+
+RU:
+
+- **Что это:** JSON golden/benchmark payload `real_helper_latency_2026-07-11T00-41-23.611948Z.json` для регрессии desktop voice STT.
+- **Зачем:** Тесты и бенчмарки desktop voice проигрывают известные записи вместо живого микрофона.
+- **Содержимое:** Отслеживаемый fixture-файл `real_helper_latency_2026-07-11T00-41-23.611948Z.json` в `test/fixtures/desktop_voice_wav/`.
+- **Обязанности:** Даёт стабильный вход/артефакт для проверок STT вокруг `real_helper_latency_2026-07-11T00-41-23.611948Z`.
+- **Когда открывать:** Обновление golden WAV, манифестов или отчётов бенчмарка около `real_helper_latency_2026-07-11T00-41-23.611948Z.json`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** `test/desktop_voice_*_test.dart`, `benchmark_desktop_voice_stt.ps1`.
+- **Слой:** Test fixture — не попадает к пользователю.
+
+
+### `test/fixtures/desktop_voice_wav/benchmark_reports/real_helper_latency_2026-07-11T00-47-14.369218Z.json`
+
+EN:
+
+- **What this is:** JSON golden/benchmark payload `real_helper_latency_2026-07-11T00-47-14.369218Z.json` for desktop voice STT regression.
+- **Why needed:** Desktop voice tests and benchmarks replay known captures instead of live mic input.
+- **What it contains:** Tracked fixture file `real_helper_latency_2026-07-11T00-47-14.369218Z.json` under `test/fixtures/desktop_voice_wav/`.
+- **Responsibilities:** Provide stable input/artifact for STT quality checks involving `real_helper_latency_2026-07-11T00-47-14.369218Z`.
+- **When to open:** Updating golden WAVs, manifests, or benchmark reports near `real_helper_latency_2026-07-11T00-47-14.369218Z.json`.
+- **Can it be deleted?** No — desktop voice tests/benchmarks reference this fixture.
+- **Connected to:** `test/desktop_voice_*_test.dart`, `scripts/manual/benchmark_desktop_voice_stt.ps1`.
+- **Layer / owner:** Test fixture — not shipped to users.
+
+RU:
+
+- **Что это:** JSON golden/benchmark payload `real_helper_latency_2026-07-11T00-47-14.369218Z.json` для регрессии desktop voice STT.
+- **Зачем:** Тесты и бенчмарки desktop voice проигрывают известные записи вместо живого микрофона.
+- **Содержимое:** Отслеживаемый fixture-файл `real_helper_latency_2026-07-11T00-47-14.369218Z.json` в `test/fixtures/desktop_voice_wav/`.
+- **Обязанности:** Даёт стабильный вход/артефакт для проверок STT вокруг `real_helper_latency_2026-07-11T00-47-14.369218Z`.
+- **Когда открывать:** Обновление golden WAV, манифестов или отчётов бенчмарка около `real_helper_latency_2026-07-11T00-47-14.369218Z.json`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** `test/desktop_voice_*_test.dart`, `benchmark_desktop_voice_stt.ps1`.
+- **Слой:** Test fixture — не попадает к пользователю.
+
+
+### `test/fixtures/desktop_voice_wav/benchmark_reports/real_helper_latency_2026-07-11T00-51-32.668341Z.json`
+
+EN:
+
+- **What this is:** JSON golden/benchmark payload `real_helper_latency_2026-07-11T00-51-32.668341Z.json` for desktop voice STT regression.
+- **Why needed:** Desktop voice tests and benchmarks replay known captures instead of live mic input.
+- **What it contains:** Tracked fixture file `real_helper_latency_2026-07-11T00-51-32.668341Z.json` under `test/fixtures/desktop_voice_wav/`.
+- **Responsibilities:** Provide stable input/artifact for STT quality checks involving `real_helper_latency_2026-07-11T00-51-32.668341Z`.
+- **When to open:** Updating golden WAVs, manifests, or benchmark reports near `real_helper_latency_2026-07-11T00-51-32.668341Z.json`.
+- **Can it be deleted?** No — desktop voice tests/benchmarks reference this fixture.
+- **Connected to:** `test/desktop_voice_*_test.dart`, `scripts/manual/benchmark_desktop_voice_stt.ps1`.
+- **Layer / owner:** Test fixture — not shipped to users.
+
+RU:
+
+- **Что это:** JSON golden/benchmark payload `real_helper_latency_2026-07-11T00-51-32.668341Z.json` для регрессии desktop voice STT.
+- **Зачем:** Тесты и бенчмарки desktop voice проигрывают известные записи вместо живого микрофона.
+- **Содержимое:** Отслеживаемый fixture-файл `real_helper_latency_2026-07-11T00-51-32.668341Z.json` в `test/fixtures/desktop_voice_wav/`.
+- **Обязанности:** Даёт стабильный вход/артефакт для проверок STT вокруг `real_helper_latency_2026-07-11T00-51-32.668341Z`.
+- **Когда открывать:** Обновление golden WAV, манифестов или отчётов бенчмарка около `real_helper_latency_2026-07-11T00-51-32.668341Z.json`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** `test/desktop_voice_*_test.dart`, `benchmark_desktop_voice_stt.ps1`.
+- **Слой:** Test fixture — не попадает к пользователю.
+
+
+### `test/fixtures/desktop_voice_wav/benchmark_reports/real_helper_latency_latest.json`
+
+EN:
+
+- **What this is:** JSON golden/benchmark payload `real_helper_latency_latest.json` for desktop voice STT regression.
+- **Why needed:** Desktop voice tests and benchmarks replay known captures instead of live mic input.
+- **What it contains:** Tracked fixture file `real_helper_latency_latest.json` under `test/fixtures/desktop_voice_wav/`.
+- **Responsibilities:** Provide stable input/artifact for STT quality checks involving `real_helper_latency_latest`.
+- **When to open:** Updating golden WAVs, manifests, or benchmark reports near `real_helper_latency_latest.json`.
+- **Can it be deleted?** No — desktop voice tests/benchmarks reference this fixture.
+- **Connected to:** `test/desktop_voice_*_test.dart`, `scripts/manual/benchmark_desktop_voice_stt.ps1`.
+- **Layer / owner:** Test fixture — not shipped to users.
+
+RU:
+
+- **Что это:** JSON golden/benchmark payload `real_helper_latency_latest.json` для регрессии desktop voice STT.
+- **Зачем:** Тесты и бенчмарки desktop voice проигрывают известные записи вместо живого микрофона.
+- **Содержимое:** Отслеживаемый fixture-файл `real_helper_latency_latest.json` в `test/fixtures/desktop_voice_wav/`.
+- **Обязанности:** Даёт стабильный вход/артефакт для проверок STT вокруг `real_helper_latency_latest`.
+- **Когда открывать:** Обновление golden WAV, манифестов или отчётов бенчмарка около `real_helper_latency_latest.json`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** `test/desktop_voice_*_test.dart`, `benchmark_desktop_voice_stt.ps1`.
+- **Слой:** Test fixture — не попадает к пользователю.
+
+
+### `test/fixtures/desktop_voice_wav/golden_manifest.json`
+
+EN:
+
+- **What this is:** JSON golden/benchmark payload `golden_manifest.json` for desktop voice STT regression.
+- **Why needed:** Desktop voice tests and benchmarks replay known captures instead of live mic input.
+- **What it contains:** Tracked fixture file `golden_manifest.json` under `test/fixtures/desktop_voice_wav/`.
+- **Responsibilities:** Provide stable input/artifact for STT quality checks involving `golden_manifest`.
+- **When to open:** Updating golden WAVs, manifests, or benchmark reports near `golden_manifest.json`.
+- **Can it be deleted?** No — desktop voice tests/benchmarks reference this fixture.
+- **Connected to:** `test/desktop_voice_*_test.dart`, `scripts/manual/benchmark_desktop_voice_stt.ps1`.
+- **Layer / owner:** Test fixture — not shipped to users.
+
+RU:
+
+- **Что это:** JSON golden/benchmark payload `golden_manifest.json` для регрессии desktop voice STT.
+- **Зачем:** Тесты и бенчмарки desktop voice проигрывают известные записи вместо живого микрофона.
+- **Содержимое:** Отслеживаемый fixture-файл `golden_manifest.json` в `test/fixtures/desktop_voice_wav/`.
+- **Обязанности:** Даёт стабильный вход/артефакт для проверок STT вокруг `golden_manifest`.
+- **Когда открывать:** Обновление golden WAV, манифестов или отчётов бенчмарка около `golden_manifest.json`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** `test/desktop_voice_*_test.dart`, `benchmark_desktop_voice_stt.ps1`.
+- **Слой:** Test fixture — не попадает к пользователю.
+
+
+### `test/fixtures/desktop_voice_wav/last_attempt_diag_67ea8eb_contaminated_2026_07_10.txt`
+
+EN:
+
+- **What this is:** attempt diagnostics text `last_attempt_diag_67ea8eb_contaminated_2026_07_10.txt` for desktop voice STT regression.
+- **Why needed:** Desktop voice tests and benchmarks replay known captures instead of live mic input.
+- **What it contains:** Tracked fixture file `last_attempt_diag_67ea8eb_contaminated_2026_07_10.txt` under `test/fixtures/desktop_voice_wav/`.
+- **Responsibilities:** Provide stable input/artifact for STT quality checks involving `last_attempt_diag_67ea8eb_contaminated_2026_07_10`.
+- **When to open:** Updating golden WAVs, manifests, or benchmark reports near `last_attempt_diag_67ea8eb_contaminated_2026_07_10.txt`.
+- **Can it be deleted?** No — desktop voice tests/benchmarks reference this fixture.
+- **Connected to:** `test/desktop_voice_*_test.dart`, `scripts/manual/benchmark_desktop_voice_stt.ps1`.
+- **Layer / owner:** Test fixture — not shipped to users.
+
+RU:
+
+- **Что это:** текстовая диагностика попытки `last_attempt_diag_67ea8eb_contaminated_2026_07_10.txt` для регрессии desktop voice STT.
+- **Зачем:** Тесты и бенчмарки desktop voice проигрывают известные записи вместо живого микрофона.
+- **Содержимое:** Отслеживаемый fixture-файл `last_attempt_diag_67ea8eb_contaminated_2026_07_10.txt` в `test/fixtures/desktop_voice_wav/`.
+- **Обязанности:** Даёт стабильный вход/артефакт для проверок STT вокруг `last_attempt_diag_67ea8eb_contaminated_2026_07_10`.
+- **Когда открывать:** Обновление golden WAV, манифестов или отчётов бенчмарка около `last_attempt_diag_67ea8eb_contaminated_2026_07_10.txt`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** `test/desktop_voice_*_test.dart`, `benchmark_desktop_voice_stt.ps1`.
+- **Слой:** Test fixture — не попадает к пользователю.
+
+
+### `test/fixtures/desktop_voice_wav/last_attempt_diag_df696fc_live_quiet.txt`
+
+EN:
+
+- **What this is:** attempt diagnostics text `last_attempt_diag_df696fc_live_quiet.txt` for desktop voice STT regression.
+- **Why needed:** Desktop voice tests and benchmarks replay known captures instead of live mic input.
+- **What it contains:** Tracked fixture file `last_attempt_diag_df696fc_live_quiet.txt` under `test/fixtures/desktop_voice_wav/`.
+- **Responsibilities:** Provide stable input/artifact for STT quality checks involving `last_attempt_diag_df696fc_live_quiet`.
+- **When to open:** Updating golden WAVs, manifests, or benchmark reports near `last_attempt_diag_df696fc_live_quiet.txt`.
+- **Can it be deleted?** No — desktop voice tests/benchmarks reference this fixture.
+- **Connected to:** `test/desktop_voice_*_test.dart`, `scripts/manual/benchmark_desktop_voice_stt.ps1`.
+- **Layer / owner:** Test fixture — not shipped to users.
+
+RU:
+
+- **Что это:** текстовая диагностика попытки `last_attempt_diag_df696fc_live_quiet.txt` для регрессии desktop voice STT.
+- **Зачем:** Тесты и бенчмарки desktop voice проигрывают известные записи вместо живого микрофона.
+- **Содержимое:** Отслеживаемый fixture-файл `last_attempt_diag_df696fc_live_quiet.txt` в `test/fixtures/desktop_voice_wav/`.
+- **Обязанности:** Даёт стабильный вход/артефакт для проверок STT вокруг `last_attempt_diag_df696fc_live_quiet`.
+- **Когда открывать:** Обновление golden WAV, манифестов или отчётов бенчмарка около `last_attempt_diag_df696fc_live_quiet.txt`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** `test/desktop_voice_*_test.dart`, `benchmark_desktop_voice_stt.ps1`.
+- **Слой:** Test fixture — не попадает к пользователю.
+
+
+### `test/fixtures/desktop_voice_wav/last_attempt_diag_f69fb1b.txt`
+
+EN:
+
+- **What this is:** attempt diagnostics text `last_attempt_diag_f69fb1b.txt` for desktop voice STT regression.
+- **Why needed:** Desktop voice tests and benchmarks replay known captures instead of live mic input.
+- **What it contains:** Tracked fixture file `last_attempt_diag_f69fb1b.txt` under `test/fixtures/desktop_voice_wav/`.
+- **Responsibilities:** Provide stable input/artifact for STT quality checks involving `last_attempt_diag_f69fb1b`.
+- **When to open:** Updating golden WAVs, manifests, or benchmark reports near `last_attempt_diag_f69fb1b.txt`.
+- **Can it be deleted?** No — desktop voice tests/benchmarks reference this fixture.
+- **Connected to:** `test/desktop_voice_*_test.dart`, `scripts/manual/benchmark_desktop_voice_stt.ps1`.
+- **Layer / owner:** Test fixture — not shipped to users.
+
+RU:
+
+- **Что это:** текстовая диагностика попытки `last_attempt_diag_f69fb1b.txt` для регрессии desktop voice STT.
+- **Зачем:** Тесты и бенчмарки desktop voice проигрывают известные записи вместо живого микрофона.
+- **Содержимое:** Отслеживаемый fixture-файл `last_attempt_diag_f69fb1b.txt` в `test/fixtures/desktop_voice_wav/`.
+- **Обязанности:** Даёт стабильный вход/артефакт для проверок STT вокруг `last_attempt_diag_f69fb1b`.
+- **Когда открывать:** Обновление golden WAV, манифестов или отчётов бенчмарка около `last_attempt_diag_f69fb1b.txt`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** `test/desktop_voice_*_test.dart`, `benchmark_desktop_voice_stt.ps1`.
+- **Слой:** Test fixture — не попадает к пользователю.
+
+
+### `test/fixtures/desktop_voice_wav/last_attempt_diag_fefb502_live_quiet.txt`
+
+EN:
+
+- **What this is:** attempt diagnostics text `last_attempt_diag_fefb502_live_quiet.txt` for desktop voice STT regression.
+- **Why needed:** Desktop voice tests and benchmarks replay known captures instead of live mic input.
+- **What it contains:** Tracked fixture file `last_attempt_diag_fefb502_live_quiet.txt` under `test/fixtures/desktop_voice_wav/`.
+- **Responsibilities:** Provide stable input/artifact for STT quality checks involving `last_attempt_diag_fefb502_live_quiet`.
+- **When to open:** Updating golden WAVs, manifests, or benchmark reports near `last_attempt_diag_fefb502_live_quiet.txt`.
+- **Can it be deleted?** No — desktop voice tests/benchmarks reference this fixture.
+- **Connected to:** `test/desktop_voice_*_test.dart`, `scripts/manual/benchmark_desktop_voice_stt.ps1`.
+- **Layer / owner:** Test fixture — not shipped to users.
+
+RU:
+
+- **Что это:** текстовая диагностика попытки `last_attempt_diag_fefb502_live_quiet.txt` для регрессии desktop voice STT.
+- **Зачем:** Тесты и бенчмарки desktop voice проигрывают известные записи вместо живого микрофона.
+- **Содержимое:** Отслеживаемый fixture-файл `last_attempt_diag_fefb502_live_quiet.txt` в `test/fixtures/desktop_voice_wav/`.
+- **Обязанности:** Даёт стабильный вход/артефакт для проверок STT вокруг `last_attempt_diag_fefb502_live_quiet`.
+- **Когда открывать:** Обновление golden WAV, манифестов или отчётов бенчмарка около `last_attempt_diag_fefb502_live_quiet.txt`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** `test/desktop_voice_*_test.dart`, `benchmark_desktop_voice_stt.ps1`.
+- **Слой:** Test fixture — не попадает к пользователю.
+
+
+### `test/fixtures/desktop_voice_wav/scw_contaminated_67ea8eb_contaminated_2026_07_10.wav`
+
+EN:
+
+- **What this is:** WAV speech capture `scw_contaminated_67ea8eb_contaminated_2026_07_10.wav` for desktop voice STT regression.
+- **Why needed:** Desktop voice tests and benchmarks replay known captures instead of live mic input.
+- **What it contains:** Tracked fixture file `scw_contaminated_67ea8eb_contaminated_2026_07_10.wav` under `test/fixtures/desktop_voice_wav/`.
+- **Responsibilities:** Provide stable input/artifact for STT quality checks involving `scw_contaminated_67ea8eb_contaminated_2026_07_10`.
+- **When to open:** Updating golden WAVs, manifests, or benchmark reports near `scw_contaminated_67ea8eb_contaminated_2026_07_10.wav`.
+- **Can it be deleted?** No — desktop voice tests/benchmarks reference this fixture.
+- **Connected to:** `test/desktop_voice_*_test.dart`, `scripts/manual/benchmark_desktop_voice_stt.ps1`.
+- **Layer / owner:** Test fixture — not shipped to users.
+
+RU:
+
+- **Что это:** WAV-запись речи `scw_contaminated_67ea8eb_contaminated_2026_07_10.wav` для регрессии desktop voice STT.
+- **Зачем:** Тесты и бенчмарки desktop voice проигрывают известные записи вместо живого микрофона.
+- **Содержимое:** Отслеживаемый fixture-файл `scw_contaminated_67ea8eb_contaminated_2026_07_10.wav` в `test/fixtures/desktop_voice_wav/`.
+- **Обязанности:** Даёт стабильный вход/артефакт для проверок STT вокруг `scw_contaminated_67ea8eb_contaminated_2026_07_10`.
+- **Когда открывать:** Обновление golden WAV, манифестов или отчётов бенчмарка около `scw_contaminated_67ea8eb_contaminated_2026_07_10.wav`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** `test/desktop_voice_*_test.dart`, `benchmark_desktop_voice_stt.ps1`.
+- **Слой:** Test fixture — не попадает к пользователю.
+
+
+### `test/fixtures/desktop_voice_wav/scw_contaminated_67ea8eb_contaminated_2026_07_10_raw.wav`
+
+EN:
+
+- **What this is:** WAV speech capture `scw_contaminated_67ea8eb_contaminated_2026_07_10_raw.wav` for desktop voice STT regression.
+- **Why needed:** Desktop voice tests and benchmarks replay known captures instead of live mic input.
+- **What it contains:** Tracked fixture file `scw_contaminated_67ea8eb_contaminated_2026_07_10_raw.wav` under `test/fixtures/desktop_voice_wav/`.
+- **Responsibilities:** Provide stable input/artifact for STT quality checks involving `scw_contaminated_67ea8eb_contaminated_2026_07_10_raw`.
+- **When to open:** Updating golden WAVs, manifests, or benchmark reports near `scw_contaminated_67ea8eb_contaminated_2026_07_10_raw.wav`.
+- **Can it be deleted?** No — desktop voice tests/benchmarks reference this fixture.
+- **Connected to:** `test/desktop_voice_*_test.dart`, `scripts/manual/benchmark_desktop_voice_stt.ps1`.
+- **Layer / owner:** Test fixture — not shipped to users.
+
+RU:
+
+- **Что это:** WAV-запись речи `scw_contaminated_67ea8eb_contaminated_2026_07_10_raw.wav` для регрессии desktop voice STT.
+- **Зачем:** Тесты и бенчмарки desktop voice проигрывают известные записи вместо живого микрофона.
+- **Содержимое:** Отслеживаемый fixture-файл `scw_contaminated_67ea8eb_contaminated_2026_07_10_raw.wav` в `test/fixtures/desktop_voice_wav/`.
+- **Обязанности:** Даёт стабильный вход/артефакт для проверок STT вокруг `scw_contaminated_67ea8eb_contaminated_2026_07_10_raw`.
+- **Когда открывать:** Обновление golden WAV, манифестов или отчётов бенчмарка около `scw_contaminated_67ea8eb_contaminated_2026_07_10_raw.wav`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** `test/desktop_voice_*_test.dart`, `benchmark_desktop_voice_stt.ps1`.
+- **Слой:** Test fixture — не попадает к пользователю.
+
+
+### `test/fixtures/desktop_voice_wav/scw_contaminated_67ea8eb_report.md`
+
+EN:
+
+- **What this is:** fixture report markdown `scw_contaminated_67ea8eb_report.md` for desktop voice STT regression.
+- **Why needed:** Desktop voice tests and benchmarks replay known captures instead of live mic input.
+- **What it contains:** Tracked fixture file `scw_contaminated_67ea8eb_report.md` under `test/fixtures/desktop_voice_wav/`.
+- **Responsibilities:** Provide stable input/artifact for STT quality checks involving `scw_contaminated_67ea8eb_report`.
+- **When to open:** Updating golden WAVs, manifests, or benchmark reports near `scw_contaminated_67ea8eb_report.md`.
+- **Can it be deleted?** No — desktop voice tests/benchmarks reference this fixture.
+- **Connected to:** `test/desktop_voice_*_test.dart`, `scripts/manual/benchmark_desktop_voice_stt.ps1`.
+- **Layer / owner:** Test fixture — not shipped to users.
+
+RU:
+
+- **Что это:** markdown-отчёт по fixture `scw_contaminated_67ea8eb_report.md` для регрессии desktop voice STT.
+- **Зачем:** Тесты и бенчмарки desktop voice проигрывают известные записи вместо живого микрофона.
+- **Содержимое:** Отслеживаемый fixture-файл `scw_contaminated_67ea8eb_report.md` в `test/fixtures/desktop_voice_wav/`.
+- **Обязанности:** Даёт стабильный вход/артефакт для проверок STT вокруг `scw_contaminated_67ea8eb_report`.
+- **Когда открывать:** Обновление golden WAV, манифестов или отчётов бенчмарка около `scw_contaminated_67ea8eb_report.md`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** `test/desktop_voice_*_test.dart`, `benchmark_desktop_voice_stt.ps1`.
+- **Слой:** Test fixture — не попадает к пользователю.
+
+
+### `test/fixtures/desktop_voice_wav/scw_delmod_submit_counter_native_capture_2026_07_08.wav`
+
+EN:
+
+- **What this is:** WAV speech capture `scw_delmod_submit_counter_native_capture_2026_07_08.wav` for desktop voice STT regression.
+- **Why needed:** Desktop voice tests and benchmarks replay known captures instead of live mic input.
+- **What it contains:** Tracked fixture file `scw_delmod_submit_counter_native_capture_2026_07_08.wav` under `test/fixtures/desktop_voice_wav/`.
+- **Responsibilities:** Provide stable input/artifact for STT quality checks involving `scw_delmod_submit_counter_native_capture_2026_07_08`.
+- **When to open:** Updating golden WAVs, manifests, or benchmark reports near `scw_delmod_submit_counter_native_capture_2026_07_08.wav`.
+- **Can it be deleted?** No — desktop voice tests/benchmarks reference this fixture.
+- **Connected to:** `test/desktop_voice_*_test.dart`, `scripts/manual/benchmark_desktop_voice_stt.ps1`.
+- **Layer / owner:** Test fixture — not shipped to users.
+
+RU:
+
+- **Что это:** WAV-запись речи `scw_delmod_submit_counter_native_capture_2026_07_08.wav` для регрессии desktop voice STT.
+- **Зачем:** Тесты и бенчмарки desktop voice проигрывают известные записи вместо живого микрофона.
+- **Содержимое:** Отслеживаемый fixture-файл `scw_delmod_submit_counter_native_capture_2026_07_08.wav` в `test/fixtures/desktop_voice_wav/`.
+- **Обязанности:** Даёт стабильный вход/артефакт для проверок STT вокруг `scw_delmod_submit_counter_native_capture_2026_07_08`.
+- **Когда открывать:** Обновление golden WAV, манифестов или отчётов бенчмарка около `scw_delmod_submit_counter_native_capture_2026_07_08.wav`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** `test/desktop_voice_*_test.dart`, `benchmark_desktop_voice_stt.ps1`.
+- **Слой:** Test fixture — не попадает к пользователю.
+
+
+### `test/fixtures/desktop_voice_wav/scw_delmod_submit_counter_native_capture_2026_07_08_f69fb1b.wav`
+
+EN:
+
+- **What this is:** WAV speech capture `scw_delmod_submit_counter_native_capture_2026_07_08_f69fb1b.wav` for desktop voice STT regression.
+- **Why needed:** Desktop voice tests and benchmarks replay known captures instead of live mic input.
+- **What it contains:** Tracked fixture file `scw_delmod_submit_counter_native_capture_2026_07_08_f69fb1b.wav` under `test/fixtures/desktop_voice_wav/`.
+- **Responsibilities:** Provide stable input/artifact for STT quality checks involving `scw_delmod_submit_counter_native_capture_2026_07_08_f69fb1b`.
+- **When to open:** Updating golden WAVs, manifests, or benchmark reports near `scw_delmod_submit_counter_native_capture_2026_07_08_f69fb1b.wav`.
+- **Can it be deleted?** No — desktop voice tests/benchmarks reference this fixture.
+- **Connected to:** `test/desktop_voice_*_test.dart`, `scripts/manual/benchmark_desktop_voice_stt.ps1`.
+- **Layer / owner:** Test fixture — not shipped to users.
+
+RU:
+
+- **Что это:** WAV-запись речи `scw_delmod_submit_counter_native_capture_2026_07_08_f69fb1b.wav` для регрессии desktop voice STT.
+- **Зачем:** Тесты и бенчмарки desktop voice проигрывают известные записи вместо живого микрофона.
+- **Содержимое:** Отслеживаемый fixture-файл `scw_delmod_submit_counter_native_capture_2026_07_08_f69fb1b.wav` в `test/fixtures/desktop_voice_wav/`.
+- **Обязанности:** Даёт стабильный вход/артефакт для проверок STT вокруг `scw_delmod_submit_counter_native_capture_2026_07_08_f69fb1b`.
+- **Когда открывать:** Обновление golden WAV, манифестов или отчётов бенчмарка около `scw_delmod_submit_counter_native_capture_2026_07_08_f69fb1b.wav`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** `test/desktop_voice_*_test.dart`, `benchmark_desktop_voice_stt.ps1`.
+- **Слой:** Test fixture — не попадает к пользователю.
+
+
+### `test/fixtures/desktop_voice_wav/scw_delmod_submit_counter_native_raw_2026_07_08.wav`
+
+EN:
+
+- **What this is:** WAV speech capture `scw_delmod_submit_counter_native_raw_2026_07_08.wav` for desktop voice STT regression.
+- **Why needed:** Desktop voice tests and benchmarks replay known captures instead of live mic input.
+- **What it contains:** Tracked fixture file `scw_delmod_submit_counter_native_raw_2026_07_08.wav` under `test/fixtures/desktop_voice_wav/`.
+- **Responsibilities:** Provide stable input/artifact for STT quality checks involving `scw_delmod_submit_counter_native_raw_2026_07_08`.
+- **When to open:** Updating golden WAVs, manifests, or benchmark reports near `scw_delmod_submit_counter_native_raw_2026_07_08.wav`.
+- **Can it be deleted?** No — desktop voice tests/benchmarks reference this fixture.
+- **Connected to:** `test/desktop_voice_*_test.dart`, `scripts/manual/benchmark_desktop_voice_stt.ps1`.
+- **Layer / owner:** Test fixture — not shipped to users.
+
+RU:
+
+- **Что это:** WAV-запись речи `scw_delmod_submit_counter_native_raw_2026_07_08.wav` для регрессии desktop voice STT.
+- **Зачем:** Тесты и бенчмарки desktop voice проигрывают известные записи вместо живого микрофона.
+- **Содержимое:** Отслеживаемый fixture-файл `scw_delmod_submit_counter_native_raw_2026_07_08.wav` в `test/fixtures/desktop_voice_wav/`.
+- **Обязанности:** Даёт стабильный вход/артефакт для проверок STT вокруг `scw_delmod_submit_counter_native_raw_2026_07_08`.
+- **Когда открывать:** Обновление golden WAV, манифестов или отчётов бенчмарка около `scw_delmod_submit_counter_native_raw_2026_07_08.wav`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** `test/desktop_voice_*_test.dart`, `benchmark_desktop_voice_stt.ps1`.
+- **Слой:** Test fixture — не попадает к пользователю.
+
+
+### `test/fixtures/desktop_voice_wav/scw_delmod_submit_counter_native_raw_2026_07_08_f69fb1b.wav`
+
+EN:
+
+- **What this is:** WAV speech capture `scw_delmod_submit_counter_native_raw_2026_07_08_f69fb1b.wav` for desktop voice STT regression.
+- **Why needed:** Desktop voice tests and benchmarks replay known captures instead of live mic input.
+- **What it contains:** Tracked fixture file `scw_delmod_submit_counter_native_raw_2026_07_08_f69fb1b.wav` under `test/fixtures/desktop_voice_wav/`.
+- **Responsibilities:** Provide stable input/artifact for STT quality checks involving `scw_delmod_submit_counter_native_raw_2026_07_08_f69fb1b`.
+- **When to open:** Updating golden WAVs, manifests, or benchmark reports near `scw_delmod_submit_counter_native_raw_2026_07_08_f69fb1b.wav`.
+- **Can it be deleted?** No — desktop voice tests/benchmarks reference this fixture.
+- **Connected to:** `test/desktop_voice_*_test.dart`, `scripts/manual/benchmark_desktop_voice_stt.ps1`.
+- **Layer / owner:** Test fixture — not shipped to users.
+
+RU:
+
+- **Что это:** WAV-запись речи `scw_delmod_submit_counter_native_raw_2026_07_08_f69fb1b.wav` для регрессии desktop voice STT.
+- **Зачем:** Тесты и бенчмарки desktop voice проигрывают известные записи вместо живого микрофона.
+- **Содержимое:** Отслеживаемый fixture-файл `scw_delmod_submit_counter_native_raw_2026_07_08_f69fb1b.wav` в `test/fixtures/desktop_voice_wav/`.
+- **Обязанности:** Даёт стабильный вход/артефакт для проверок STT вокруг `scw_delmod_submit_counter_native_raw_2026_07_08_f69fb1b`.
+- **Когда открывать:** Обновление golden WAV, манифестов или отчётов бенчмарка около `scw_delmod_submit_counter_native_raw_2026_07_08_f69fb1b.wav`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** `test/desktop_voice_*_test.dart`, `benchmark_desktop_voice_stt.ps1`.
+- **Слой:** Test fixture — не попадает к пользователю.
+
+
+### `test/fixtures/desktop_voice_wav/scw_delmod_submit_cpal_4f9c984.wav`
+
+EN:
+
+- **What this is:** WAV speech capture `scw_delmod_submit_cpal_4f9c984.wav` for desktop voice STT regression.
+- **Why needed:** Desktop voice tests and benchmarks replay known captures instead of live mic input.
+- **What it contains:** Tracked fixture file `scw_delmod_submit_cpal_4f9c984.wav` under `test/fixtures/desktop_voice_wav/`.
+- **Responsibilities:** Provide stable input/artifact for STT quality checks involving `scw_delmod_submit_cpal_4f9c984`.
+- **When to open:** Updating golden WAVs, manifests, or benchmark reports near `scw_delmod_submit_cpal_4f9c984.wav`.
+- **Can it be deleted?** No — desktop voice tests/benchmarks reference this fixture.
+- **Connected to:** `test/desktop_voice_*_test.dart`, `scripts/manual/benchmark_desktop_voice_stt.ps1`.
+- **Layer / owner:** Test fixture — not shipped to users.
+
+RU:
+
+- **Что это:** WAV-запись речи `scw_delmod_submit_cpal_4f9c984.wav` для регрессии desktop voice STT.
+- **Зачем:** Тесты и бенчмарки desktop voice проигрывают известные записи вместо живого микрофона.
+- **Содержимое:** Отслеживаемый fixture-файл `scw_delmod_submit_cpal_4f9c984.wav` в `test/fixtures/desktop_voice_wav/`.
+- **Обязанности:** Даёт стабильный вход/артефакт для проверок STT вокруг `scw_delmod_submit_cpal_4f9c984`.
+- **Когда открывать:** Обновление golden WAV, манифестов или отчётов бенчмарка около `scw_delmod_submit_cpal_4f9c984.wav`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** `test/desktop_voice_*_test.dart`, `benchmark_desktop_voice_stt.ps1`.
+- **Слой:** Test fixture — не попадает к пользователю.
+
+
+### `test/fixtures/desktop_voice_wav/scw_delmod_submit_df696fc_live_quiet.wav`
+
+EN:
+
+- **What this is:** WAV speech capture `scw_delmod_submit_df696fc_live_quiet.wav` for desktop voice STT regression.
+- **Why needed:** Desktop voice tests and benchmarks replay known captures instead of live mic input.
+- **What it contains:** Tracked fixture file `scw_delmod_submit_df696fc_live_quiet.wav` under `test/fixtures/desktop_voice_wav/`.
+- **Responsibilities:** Provide stable input/artifact for STT quality checks involving `scw_delmod_submit_df696fc_live_quiet`.
+- **When to open:** Updating golden WAVs, manifests, or benchmark reports near `scw_delmod_submit_df696fc_live_quiet.wav`.
+- **Can it be deleted?** No — desktop voice tests/benchmarks reference this fixture.
+- **Connected to:** `test/desktop_voice_*_test.dart`, `scripts/manual/benchmark_desktop_voice_stt.ps1`.
+- **Layer / owner:** Test fixture — not shipped to users.
+
+RU:
+
+- **Что это:** WAV-запись речи `scw_delmod_submit_df696fc_live_quiet.wav` для регрессии desktop voice STT.
+- **Зачем:** Тесты и бенчмарки desktop voice проигрывают известные записи вместо живого микрофона.
+- **Содержимое:** Отслеживаемый fixture-файл `scw_delmod_submit_df696fc_live_quiet.wav` в `test/fixtures/desktop_voice_wav/`.
+- **Обязанности:** Даёт стабильный вход/артефакт для проверок STT вокруг `scw_delmod_submit_df696fc_live_quiet`.
+- **Когда открывать:** Обновление golden WAV, манифестов или отчётов бенчмарка около `scw_delmod_submit_df696fc_live_quiet.wav`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** `test/desktop_voice_*_test.dart`, `benchmark_desktop_voice_stt.ps1`.
+- **Слой:** Test fixture — не попадает к пользователю.
+
+
+### `test/fixtures/desktop_voice_wav/scw_delmod_submit_df696fc_live_quiet_raw.wav`
+
+EN:
+
+- **What this is:** WAV speech capture `scw_delmod_submit_df696fc_live_quiet_raw.wav` for desktop voice STT regression.
+- **Why needed:** Desktop voice tests and benchmarks replay known captures instead of live mic input.
+- **What it contains:** Tracked fixture file `scw_delmod_submit_df696fc_live_quiet_raw.wav` under `test/fixtures/desktop_voice_wav/`.
+- **Responsibilities:** Provide stable input/artifact for STT quality checks involving `scw_delmod_submit_df696fc_live_quiet_raw`.
+- **When to open:** Updating golden WAVs, manifests, or benchmark reports near `scw_delmod_submit_df696fc_live_quiet_raw.wav`.
+- **Can it be deleted?** No — desktop voice tests/benchmarks reference this fixture.
+- **Connected to:** `test/desktop_voice_*_test.dart`, `scripts/manual/benchmark_desktop_voice_stt.ps1`.
+- **Layer / owner:** Test fixture — not shipped to users.
+
+RU:
+
+- **Что это:** WAV-запись речи `scw_delmod_submit_df696fc_live_quiet_raw.wav` для регрессии desktop voice STT.
+- **Зачем:** Тесты и бенчмарки desktop voice проигрывают известные записи вместо живого микрофона.
+- **Содержимое:** Отслеживаемый fixture-файл `scw_delmod_submit_df696fc_live_quiet_raw.wav` в `test/fixtures/desktop_voice_wav/`.
+- **Обязанности:** Даёт стабильный вход/артефакт для проверок STT вокруг `scw_delmod_submit_df696fc_live_quiet_raw`.
+- **Когда открывать:** Обновление golden WAV, манифестов или отчётов бенчмарка около `scw_delmod_submit_df696fc_live_quiet_raw.wav`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** `test/desktop_voice_*_test.dart`, `benchmark_desktop_voice_stt.ps1`.
+- **Слой:** Test fixture — не попадает к пользователю.
+
+
+### `test/fixtures/desktop_voice_wav/scw_delmod_submit_fefb502_live_quiet.wav`
+
+EN:
+
+- **What this is:** WAV speech capture `scw_delmod_submit_fefb502_live_quiet.wav` for desktop voice STT regression.
+- **Why needed:** Desktop voice tests and benchmarks replay known captures instead of live mic input.
+- **What it contains:** Tracked fixture file `scw_delmod_submit_fefb502_live_quiet.wav` under `test/fixtures/desktop_voice_wav/`.
+- **Responsibilities:** Provide stable input/artifact for STT quality checks involving `scw_delmod_submit_fefb502_live_quiet`.
+- **When to open:** Updating golden WAVs, manifests, or benchmark reports near `scw_delmod_submit_fefb502_live_quiet.wav`.
+- **Can it be deleted?** No — desktop voice tests/benchmarks reference this fixture.
+- **Connected to:** `test/desktop_voice_*_test.dart`, `scripts/manual/benchmark_desktop_voice_stt.ps1`.
+- **Layer / owner:** Test fixture — not shipped to users.
+
+RU:
+
+- **Что это:** WAV-запись речи `scw_delmod_submit_fefb502_live_quiet.wav` для регрессии desktop voice STT.
+- **Зачем:** Тесты и бенчмарки desktop voice проигрывают известные записи вместо живого микрофона.
+- **Содержимое:** Отслеживаемый fixture-файл `scw_delmod_submit_fefb502_live_quiet.wav` в `test/fixtures/desktop_voice_wav/`.
+- **Обязанности:** Даёт стабильный вход/артефакт для проверок STT вокруг `scw_delmod_submit_fefb502_live_quiet`.
+- **Когда открывать:** Обновление golden WAV, манифестов или отчётов бенчмарка около `scw_delmod_submit_fefb502_live_quiet.wav`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** `test/desktop_voice_*_test.dart`, `benchmark_desktop_voice_stt.ps1`.
+- **Слой:** Test fixture — не попадает к пользователю.
+
+
+### `test/fixtures/desktop_voice_wav/scw_delmod_submit_fefb502_live_quiet_raw.wav`
+
+EN:
+
+- **What this is:** WAV speech capture `scw_delmod_submit_fefb502_live_quiet_raw.wav` for desktop voice STT regression.
+- **Why needed:** Desktop voice tests and benchmarks replay known captures instead of live mic input.
+- **What it contains:** Tracked fixture file `scw_delmod_submit_fefb502_live_quiet_raw.wav` under `test/fixtures/desktop_voice_wav/`.
+- **Responsibilities:** Provide stable input/artifact for STT quality checks involving `scw_delmod_submit_fefb502_live_quiet_raw`.
+- **When to open:** Updating golden WAVs, manifests, or benchmark reports near `scw_delmod_submit_fefb502_live_quiet_raw.wav`.
+- **Can it be deleted?** No — desktop voice tests/benchmarks reference this fixture.
+- **Connected to:** `test/desktop_voice_*_test.dart`, `scripts/manual/benchmark_desktop_voice_stt.ps1`.
+- **Layer / owner:** Test fixture — not shipped to users.
+
+RU:
+
+- **Что это:** WAV-запись речи `scw_delmod_submit_fefb502_live_quiet_raw.wav` для регрессии desktop voice STT.
+- **Зачем:** Тесты и бенчмарки desktop voice проигрывают известные записи вместо живого микрофона.
+- **Содержимое:** Отслеживаемый fixture-файл `scw_delmod_submit_fefb502_live_quiet_raw.wav` в `test/fixtures/desktop_voice_wav/`.
+- **Обязанности:** Даёт стабильный вход/артефакт для проверок STT вокруг `scw_delmod_submit_fefb502_live_quiet_raw`.
+- **Когда открывать:** Обновление golden WAV, манифестов или отчётов бенчмарка около `scw_delmod_submit_fefb502_live_quiet_raw.wav`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** `test/desktop_voice_*_test.dart`, `benchmark_desktop_voice_stt.ps1`.
+- **Слой:** Test fixture — не попадает к пользователю.
+
+
+### `test/fixtures/desktop_voice_wav/scw_delmod_submit_handy_2026_07_07.wav`
+
+EN:
+
+- **What this is:** WAV speech capture `scw_delmod_submit_handy_2026_07_07.wav` for desktop voice STT regression.
+- **Why needed:** Desktop voice tests and benchmarks replay known captures instead of live mic input.
+- **What it contains:** Tracked fixture file `scw_delmod_submit_handy_2026_07_07.wav` under `test/fixtures/desktop_voice_wav/`.
+- **Responsibilities:** Provide stable input/artifact for STT quality checks involving `scw_delmod_submit_handy_2026_07_07`.
+- **When to open:** Updating golden WAVs, manifests, or benchmark reports near `scw_delmod_submit_handy_2026_07_07.wav`.
+- **Can it be deleted?** No — desktop voice tests/benchmarks reference this fixture.
+- **Connected to:** `test/desktop_voice_*_test.dart`, `scripts/manual/benchmark_desktop_voice_stt.ps1`.
+- **Layer / owner:** Test fixture — not shipped to users.
+
+RU:
+
+- **Что это:** WAV-запись речи `scw_delmod_submit_handy_2026_07_07.wav` для регрессии desktop voice STT.
+- **Зачем:** Тесты и бенчмарки desktop voice проигрывают известные записи вместо живого микрофона.
+- **Содержимое:** Отслеживаемый fixture-файл `scw_delmod_submit_handy_2026_07_07.wav` в `test/fixtures/desktop_voice_wav/`.
+- **Обязанности:** Даёт стабильный вход/артефакт для проверок STT вокруг `scw_delmod_submit_handy_2026_07_07`.
+- **Когда открывать:** Обновление golden WAV, манифестов или отчётов бенчмарка около `scw_delmod_submit_handy_2026_07_07.wav`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** `test/desktop_voice_*_test.dart`, `benchmark_desktop_voice_stt.ps1`.
+- **Слой:** Test fixture — не попадает к пользователю.
+
+
+### `test/fixtures/desktop_voice_wav/scw_delmod_submit_real_2026_07_07.wav`
+
+EN:
+
+- **What this is:** WAV speech capture `scw_delmod_submit_real_2026_07_07.wav` for desktop voice STT regression.
+- **Why needed:** Desktop voice tests and benchmarks replay known captures instead of live mic input.
+- **What it contains:** Tracked fixture file `scw_delmod_submit_real_2026_07_07.wav` under `test/fixtures/desktop_voice_wav/`.
+- **Responsibilities:** Provide stable input/artifact for STT quality checks involving `scw_delmod_submit_real_2026_07_07`.
+- **When to open:** Updating golden WAVs, manifests, or benchmark reports near `scw_delmod_submit_real_2026_07_07.wav`.
+- **Can it be deleted?** No — desktop voice tests/benchmarks reference this fixture.
+- **Connected to:** `test/desktop_voice_*_test.dart`, `scripts/manual/benchmark_desktop_voice_stt.ps1`.
+- **Layer / owner:** Test fixture — not shipped to users.
+
+RU:
+
+- **Что это:** WAV-запись речи `scw_delmod_submit_real_2026_07_07.wav` для регрессии desktop voice STT.
+- **Зачем:** Тесты и бенчмарки desktop voice проигрывают известные записи вместо живого микрофона.
+- **Содержимое:** Отслеживаемый fixture-файл `scw_delmod_submit_real_2026_07_07.wav` в `test/fixtures/desktop_voice_wav/`.
+- **Обязанности:** Даёт стабильный вход/артефакт для проверок STT вокруг `scw_delmod_submit_real_2026_07_07`.
+- **Когда открывать:** Обновление golden WAV, манифестов или отчётов бенчмарка около `scw_delmod_submit_real_2026_07_07.wav`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** `test/desktop_voice_*_test.dart`, `benchmark_desktop_voice_stt.ps1`.
+- **Слой:** Test fixture — не попадает к пользователю.
+
+
+### `test/fixtures/notes_glm_library_parity_capture.png`
+
+EN:
+
+- **What this is:** Captured PNG/image fixture `notes_glm_library_parity_capture.png` for Notes GLM visual parity.
+- **Why needed:** Visual regression compares live widget output against these stored frames.
+- **What it contains:** Image asset `notes_glm_library_parity_capture.png` under `test/fixtures/`.
+- **Responsibilities:** Baseline screenshot for Notes GLM parity/capture workflows.
+- **When to open:** Refreshing Notes GLM capture frames after UI changes affecting `notes_glm_library_parity_capture`.
+- **Can it be deleted?** No — Notes visual parity/capture references this image.
+- **Connected to:** `scripts/manual/capture_notes_glm_parity.ps1`, `test/notes/fixtures/`.
+- **Layer / owner:** Test fixture — not shipped to users.
+
+RU:
+
+- **Что это:** PNG/image fixture `notes_glm_library_parity_capture.png` для визуального паритета Notes GLM.
+- **Зачем:** Визуальная регрессия сравнивает живой вывод виджетов с этими сохранёнными кадрами.
+- **Содержимое:** Image-актив `notes_glm_library_parity_capture.png` в `test/fixtures/`.
+- **Обязанности:** Базовый скриншот для workflow паритета/capture Notes GLM.
+- **Когда открывать:** Обновление кадров capture Notes GLM после UI-правок вокруг `notes_glm_library_parity_capture`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** `capture_notes_glm_parity.ps1`, `test/notes/fixtures/`.
+- **Слой:** Test fixture — не попадает к пользователю.
+
+
+### `test/fixtures/notes_glm_parity_capture.png`
+
+EN:
+
+- **What this is:** Captured PNG/image fixture `notes_glm_parity_capture.png` for Notes GLM visual parity.
+- **Why needed:** Visual regression compares live widget output against these stored frames.
+- **What it contains:** Image asset `notes_glm_parity_capture.png` under `test/fixtures/`.
+- **Responsibilities:** Baseline screenshot for Notes GLM parity/capture workflows.
+- **When to open:** Refreshing Notes GLM capture frames after UI changes affecting `notes_glm_parity_capture`.
+- **Can it be deleted?** No — Notes visual parity/capture references this image.
+- **Connected to:** `scripts/manual/capture_notes_glm_parity.ps1`, `test/notes/fixtures/`.
+- **Layer / owner:** Test fixture — not shipped to users.
+
+RU:
+
+- **Что это:** PNG/image fixture `notes_glm_parity_capture.png` для визуального паритета Notes GLM.
+- **Зачем:** Визуальная регрессия сравнивает живой вывод виджетов с этими сохранёнными кадрами.
+- **Содержимое:** Image-актив `notes_glm_parity_capture.png` в `test/fixtures/`.
+- **Обязанности:** Базовый скриншот для workflow паритета/capture Notes GLM.
+- **Когда открывать:** Обновление кадров capture Notes GLM после UI-правок вокруг `notes_glm_parity_capture`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** `capture_notes_glm_parity.ps1`, `test/notes/fixtures/`.
+- **Слой:** Test fixture — не попадает к пользователю.
+
+
+### `test/fixtures/notes_glm_production_editor_capture.png`
+
+EN:
+
+- **What this is:** Captured PNG/image fixture `notes_glm_production_editor_capture.png` for Notes GLM visual parity.
+- **Why needed:** Visual regression compares live widget output against these stored frames.
+- **What it contains:** Image asset `notes_glm_production_editor_capture.png` under `test/fixtures/`.
+- **Responsibilities:** Baseline screenshot for Notes GLM parity/capture workflows.
+- **When to open:** Refreshing Notes GLM capture frames after UI changes affecting `notes_glm_production_editor_capture`.
+- **Can it be deleted?** No — Notes visual parity/capture references this image.
+- **Connected to:** `scripts/manual/capture_notes_glm_parity.ps1`, `test/notes/fixtures/`.
+- **Layer / owner:** Test fixture — not shipped to users.
+
+RU:
+
+- **Что это:** PNG/image fixture `notes_glm_production_editor_capture.png` для визуального паритета Notes GLM.
+- **Зачем:** Визуальная регрессия сравнивает живой вывод виджетов с этими сохранёнными кадрами.
+- **Содержимое:** Image-актив `notes_glm_production_editor_capture.png` в `test/fixtures/`.
+- **Обязанности:** Базовый скриншот для workflow паритета/capture Notes GLM.
+- **Когда открывать:** Обновление кадров capture Notes GLM после UI-правок вокруг `notes_glm_production_editor_capture`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** `capture_notes_glm_parity.ps1`, `test/notes/fixtures/`.
+- **Слой:** Test fixture — не попадает к пользователю.
+
+
+### `test/fixtures/notes_glm_production_library_capture.png`
+
+EN:
+
+- **What this is:** Captured PNG/image fixture `notes_glm_production_library_capture.png` for Notes GLM visual parity.
+- **Why needed:** Visual regression compares live widget output against these stored frames.
+- **What it contains:** Image asset `notes_glm_production_library_capture.png` under `test/fixtures/`.
+- **Responsibilities:** Baseline screenshot for Notes GLM parity/capture workflows.
+- **When to open:** Refreshing Notes GLM capture frames after UI changes affecting `notes_glm_production_library_capture`.
+- **Can it be deleted?** No — Notes visual parity/capture references this image.
+- **Connected to:** `scripts/manual/capture_notes_glm_parity.ps1`, `test/notes/fixtures/`.
+- **Layer / owner:** Test fixture — not shipped to users.
+
+RU:
+
+- **Что это:** PNG/image fixture `notes_glm_production_library_capture.png` для визуального паритета Notes GLM.
+- **Зачем:** Визуальная регрессия сравнивает живой вывод виджетов с этими сохранёнными кадрами.
+- **Содержимое:** Image-актив `notes_glm_production_library_capture.png` в `test/fixtures/`.
+- **Обязанности:** Базовый скриншот для workflow паритета/capture Notes GLM.
+- **Когда открывать:** Обновление кадров capture Notes GLM после UI-правок вокруг `notes_glm_production_library_capture`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** `capture_notes_glm_parity.ps1`, `test/notes/fixtures/`.
+- **Слой:** Test fixture — не попадает к пользователю.
+
+
+### `test/note_document_test.dart`
+
+EN:
+
+- **What this is:** Automated test `note_document_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **What it contains:** Test cases (symbols: main).
+- **Key code names:** `main`
+- **Responsibilities:** Assert expected behavior for `note_document_test` scenario.
+- **When to open:** CI failure or changing code near `note_document`.
+- **Can it be deleted?** No — required for tests.
+- **Connected to:** Matching files under `lib/` with similar name.
+- **Layer / owner:** Test — not shipped to users.
+
+RU:
+
+- **Что это:** Автотест `note_document` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `note_document`.
+- **Обязанности:** Assert ожидаемого поведения `note_document`.
+- **Когда открывать:** Падение CI или правка кода рядом с `note_document`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
+- **Слой:** Автотест — не попадает пользователю в APK.
+
+
+### `test/notes/fixtures/notes_glm_library_parity_fixture.dart`
+
+EN:
+
+- **What this is:** Widget fixture mounting the Notes GLM library surface for parity/capture tests.
+- **Why needed:** Library grid/list chrome must be captured without living under production `lib/`.
+- **What it contains:** Flutter widget tree wrapping Notes library/production shell with mock notes.
+- **Key code names:** `NotesGlmLibraryParityFixture`
+- **Responsibilities:** Provide stable library layout for parity tests and manual capture.
+- **When to open:** Notes library parity failures or library capture screenshot updates.
+- **Can it be deleted?** No — Notes library parity/capture imports this fixture.
+- **Connected to:** `test/notes_glm_editor_parity_test.dart`, `scripts/manual/capture_notes_glm_main.dart`.
+- **Layer / owner:** Test fixture — not shipped to users.
+
+RU:
+
+- **Что это:** Автотест `notes_glm_library_parity_fixture.dart` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `notes_glm_library_parity_fixture.dart`.
+- **Обязанности:** Assert ожидаемого поведения `notes_glm_library_parity_fixture.dart`.
+- **Когда открывать:** Падение CI или правка кода рядом с `notes_glm_library_parity_fixture.dart`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
+- **Слой:** Автотест — не попадает пользователю в APK.
+
+
+### `test/notes/fixtures/notes_glm_parity_fixture.dart`
+
+EN:
+
+- **What this is:** Widget fixture mounting the Notes GLM editor surface for parity/capture tests.
+- **Why needed:** Moved out of `lib/features/notes/debug/` so test-only capture code is not treated as production UI.
+- **What it contains:** Flutter widget tree wrapping production Notes editor widgets with mock data.
+- **Key code names:** `NotesGlmParityFixture`
+- **Responsibilities:** Provide stable editor layout for parity tests and manual capture.
+- **When to open:** Notes editor parity test fails or capture screenshots need refresh.
+- **Can it be deleted?** No — Notes editor parity/capture imports this fixture.
+- **Connected to:** `test/notes_glm_editor_parity_test.dart`, `scripts/manual/capture_notes_glm_main.dart`.
+- **Layer / owner:** Test fixture — not shipped to users.
+
+RU:
+
+- **Что это:** Автотест `notes_glm_parity_fixture.dart` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `notes_glm_parity_fixture.dart`.
+- **Обязанности:** Assert ожидаемого поведения `notes_glm_parity_fixture.dart`.
+- **Когда открывать:** Падение CI или правка кода рядом с `notes_glm_parity_fixture.dart`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
+- **Слой:** Автотест — не попадает пользователю в APK.
+
+
+### `test/notes/fixtures/notes_production_library_capture.dart`
+
+EN:
+
+- **What this is:** Production-library capture helper used by the Notes GLM manual capture entrypoint.
+- **Why needed:** Builds the live Lists-tab Notes shell composition for screenshot capture with fixtures.
+- **What it contains:** Capture-oriented wrappers around `NotesLibraryProductionShell` / related widgets.
+- **Key code names:** `NotesProductionLibraryCapture`
+- **Responsibilities:** Render production library chrome for Windows capture runs.
+- **When to open:** Updating production-shell capture frames after Lists Notes UI changes.
+- **Can it be deleted?** No — manual Notes capture path depends on this helper.
+- **Connected to:** `scripts/manual/capture_notes_glm_main.dart`, `lib/features/notes/widgets/`.
+- **Layer / owner:** Test fixture — not shipped to users.
+
+RU:
+
+- **Что это:** Автотест `notes_production_library_capture.dart` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `notes_production_library_capture.dart`.
+- **Обязанности:** Assert ожидаемого поведения `notes_production_library_capture.dart`.
+- **Когда открывать:** Падение CI или правка кода рядом с `notes_production_library_capture.dart`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
+- **Слой:** Автотест — не попадает пользователю в APK.
+
+
+### `test/notes_glm_editor_parity_test.dart`
+
+EN:
+
+- **What this is:** Automated test `notes_glm_editor_parity_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **What it contains:** Test cases (symbols: main).
+- **Key code names:** `main`
+- **Responsibilities:** Assert expected behavior for `notes_glm_editor_parity_test` scenario.
+- **When to open:** CI failure or changing code near `notes_glm_editor_parity`.
+- **Can it be deleted?** No — required for tests.
+- **Connected to:** Matching files under `lib/` with similar name.
+- **Layer / owner:** Test — not shipped to users.
+
+RU:
+
+- **Что это:** Автотест `notes_glm_editor_parity` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `notes_glm_editor_parity`.
+- **Обязанности:** Assert ожидаемого поведения `notes_glm_editor_parity`.
+- **Когда открывать:** Падение CI или правка кода рядом с `notes_glm_editor_parity`.
 - **Можно удалить?** Нет — нужен для тестов.
 - **Связано с:** Production files под `lib/` с похожим именем.
 - **Слой:** Автотест — не попадает пользователю в APK.
@@ -16175,6 +20459,32 @@ RU:
 - **Слой:** Автотест — не попадает пользователю в APK.
 
 
+### `test/planning_page_quick_add_test.dart`
+
+EN:
+
+- **What this is:** Automated test `planning_page_quick_add_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **What it contains:** Test cases (symbols: main).
+- **Key code names:** `main`
+- **Responsibilities:** Assert expected behavior for `planning_page_quick_add_test` scenario.
+- **When to open:** CI failure or changing code near `planning_page_quick_add`.
+- **Can it be deleted?** No — required for tests.
+- **Connected to:** Matching files under `lib/` with similar name.
+- **Layer / owner:** Test — not shipped to users.
+
+RU:
+
+- **Что это:** Автотест `planning_page_quick_add` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `planning_page_quick_add`.
+- **Обязанности:** Assert ожидаемого поведения `planning_page_quick_add`.
+- **Когда открывать:** Падение CI или правка кода рядом с `planning_page_quick_add`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
+- **Слой:** Автотест — не попадает пользователю в APK.
+
+
 ### `test/planning_realtime_stream_lifecycle_test.dart`
 
 EN:
@@ -16227,6 +20537,58 @@ RU:
 - **Слой:** Автотест — не попадает пользователю в APK.
 
 
+### `test/record_category_edit_brain_test.dart`
+
+EN:
+
+- **What this is:** Automated test `record_category_edit_brain_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **What it contains:** Test cases (symbols: main).
+- **Key code names:** `main`
+- **Responsibilities:** Assert expected behavior for `record_category_edit_brain_test` scenario.
+- **When to open:** CI failure or changing code near `record_category_edit_brain`.
+- **Can it be deleted?** No — required for tests.
+- **Connected to:** Matching files under `lib/` with similar name.
+- **Layer / owner:** Test — not shipped to users.
+
+RU:
+
+- **Что это:** Автотест `record_category_edit_brain` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `record_category_edit_brain`.
+- **Обязанности:** Assert ожидаемого поведения `record_category_edit_brain`.
+- **Когда открывать:** Падение CI или правка кода рядом с `record_category_edit_brain`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
+- **Слой:** Автотест — не попадает пользователю в APK.
+
+
+### `test/services/plan_alarm_schedule_test.dart`
+
+EN:
+
+- **What this is:** Automated test `plan_alarm_schedule_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **What it contains:** Test cases (symbols: main).
+- **Key code names:** `main`
+- **Responsibilities:** Assert expected behavior for `plan_alarm_schedule_test` scenario.
+- **When to open:** CI failure or changing code near `plan_alarm_schedule`.
+- **Can it be deleted?** No — required for tests.
+- **Connected to:** Matching files under `lib/` with similar name.
+- **Layer / owner:** Test — not shipped to users.
+
+RU:
+
+- **Что это:** Автотест `plan_alarm_schedule` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `plan_alarm_schedule`.
+- **Обязанности:** Assert ожидаемого поведения `plan_alarm_schedule`.
+- **Когда открывать:** Падение CI или правка кода рядом с `plan_alarm_schedule`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
+- **Слой:** Автотест — не попадает пользователю в APK.
+
+
 ### `test/smart_input_parser_test.dart`
 
 EN:
@@ -16248,6 +20610,32 @@ RU:
 - **Содержимое:** Test cases для сценария `smart_input_parser`.
 - **Обязанности:** Assert ожидаемого поведения `smart_input_parser`.
 - **Когда открывать:** Падение CI или правка кода рядом с `smart_input_parser`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
+- **Слой:** Автотест — не попадает пользователю в APK.
+
+
+### `test/timeline_record_edit_save_test.dart`
+
+EN:
+
+- **What this is:** Automated test `timeline_record_edit_save_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **What it contains:** Test cases (symbols: main).
+- **Key code names:** `main`
+- **Responsibilities:** Assert expected behavior for `timeline_record_edit_save_test` scenario.
+- **When to open:** CI failure or changing code near `timeline_record_edit_save`.
+- **Can it be deleted?** No — required for tests.
+- **Connected to:** Matching files under `lib/` with similar name.
+- **Layer / owner:** Test — not shipped to users.
+
+RU:
+
+- **Что это:** Автотест `timeline_record_edit_save` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `timeline_record_edit_save`.
+- **Обязанности:** Assert ожидаемого поведения `timeline_record_edit_save`.
+- **Когда открывать:** Падение CI или правка кода рядом с `timeline_record_edit_save`.
 - **Можно удалить?** Нет — нужен для тестов.
 - **Связано с:** Production files под `lib/` с похожим именем.
 - **Слой:** Автотест — не попадает пользователю в APK.

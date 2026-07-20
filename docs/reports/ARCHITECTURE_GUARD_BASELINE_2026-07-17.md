@@ -31,7 +31,8 @@ The 63 diagnostics below are each listed exactly once. Classification totals at 
 | Notes capture out of `lib/` | `ecff32a4` | 56 | 0 / 56 |
 | Desktop Voice structure docs | `576777f2` | 24 | 0 / 24 |
 | Production Notes structure docs | `7be954d2` | 5 | 0 / 5 |
-| Final post-snapshot modules | this pass | **0** | **0 / 0** |
+| Final post-snapshot modules | `76e660ee` | 0 | 0 / 0 |
+| `APP_STRUCTURE_DETAILED` regeneration | this pass | **0** | **0 / 0** |
 
 ## Guard inputs and configuration
 
@@ -237,15 +238,25 @@ Remaining classification totals are **A=0, B=0, C=0, D=0, E=0**.
 
 Architecture baseline cleanup is complete. Strict guard is green.
 
-`APP_STRUCTURE_DETAILED.md` regeneration remains the only follow-up.
+## `APP_STRUCTURE_DETAILED` regeneration result
+
+`docs/APP_STRUCTURE_DETAILED.md` was regenerated from the current tracked tree (`generate_app_structure_detailed.py`):
+
+- header SHA at generation: `76e660e` (pre-commit baseline `origin/main`);
+- quality check: OK;
+- deterministic second run: identical SHA256 hash;
+- structure scan: OK (716 tracked files);
+- strict architecture guard: remains **0** violations.
+
+Historical mentions of relocated Notes capture under `lib/features/notes/debug/` appear only as “moved out of …” context — those paths are not documented as current files. Navigation uses `AGENT_NAVIGATION.md` (not `CLAUDE.md`).
 
 ## Remaining work
 
-Ordered first by architecture risk, then dependency, then expected effort:
+No remaining architecture-baseline follow-up.
 
 | Order | Remaining cluster | Class | Count | Dependency / removal condition | Expected effort |
 | ---: | :--- | :---: | ---: | :--- | :--- |
-| 1 | Regenerate `APP_STRUCTURE_DETAILED.md` | B follow-up | 0 direct diagnostics | Run the canonical deterministic generator after accepted path classifications | Medium review |
+| — | None | — | 0 | Architecture guard baseline cleanup complete (63 → 0) | — |
 
 After this pass, remaining classification totals are **A=0, B=0, C=0, D=0, E=0** (0 diagnostics).
 

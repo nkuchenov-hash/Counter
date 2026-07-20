@@ -13,6 +13,7 @@ FEATURE_SCREENS: dict[str, str] = {
     "categories": "More → Categories manager",
     "profile": "More → Profile and settings",
     "shared": "edit sheets and voice UI on every tab",
+    "notes": "Notes library/editor (Lists tab + full-screen editor)",
     "dev": "admin-only Component Lab (More → Dev)",
     "wear": "Wear OS watch companion",
     "auth": "sign-in and registration screen",
@@ -92,6 +93,21 @@ PLAN_PART: dict[str, tuple[str, str, str]] = {
         "Queues plan/list edits when offline and flushes when connection returns.",
         "Checking off a list item offline must stick and sync later.",
         "Plan mutation outbox enqueue/flush/replay.",
+    ),
+    "plan_ai_parse_helpers": (
+        "Calls the AI parse-task backend and normalizes planning items from the response.",
+        "Smart plan sheet and voice-ish plan drafts need one Brain entry for parse-task.",
+        "`parseTaskViaAiBackend`, `parsePlanningItemsViaAiBackend`, HH:mm helpers.",
+    ),
+    "plan_alarm_helpers": (
+        "Reconciles plan reminder alarms from the hydrated plan cache (no network on the hot path).",
+        "Planning refresh/hydrate/resume must schedule OS alarms without blocking Timeline taps.",
+        "`reconcilePlanNotifications`, debounced OS alarm bridge from `_allPlansUserCache`.",
+    ),
+    "notes_brain_helpers": (
+        "Bridges versioned `NoteDocument` envelopes with `plans.notes_delta` / mirrors and debounced PATCH.",
+        "Notes editor/library must stay local-first: cache first, then one PATCH per debounce window.",
+        "Parse/apply/pin/done helpers; `createEmptyNote`; optimistic NotesBrainExtension.",
     ),
 }
 
@@ -173,6 +189,11 @@ MODEL_PART: dict[str, tuple[str, str, str]] = {
         "Defines aggregated stats numbers for Timeline stats tab.",
         "Stats views sum records without re-parsing raw JSON each frame.",
         "Stats aggregate structs.",
+    ),
+    "note_document": (
+        "Defines versioned Notes block documents (`lifeos_notes_blocks_v1`) stored in `plans.notes_delta`.",
+        "Block editor and library cards need typed paragraphs/checklists/images/drawings with legacy Quill migration.",
+        "`NoteDocument`, `NoteBlock`, parse/serialize, payload size guards — pure data, no Flutter/PB.",
     ),
 }
 
