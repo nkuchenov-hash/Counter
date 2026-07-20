@@ -30,7 +30,8 @@ The 63 diagnostics below are each listed exactly once. Classification totals at 
 | Core STT cloud boundary | `80ce66a8` | 60 | 4 / 56 |
 | Notes capture out of `lib/` | `ecff32a4` | 56 | 0 / 56 |
 | Desktop Voice structure docs | `576777f2` | 24 | 0 / 24 |
-| Production Notes structure docs | this pass | **5** | **0 / 5** |
+| Production Notes structure docs | `7be954d2` | 5 | 0 / 5 |
+| Final post-snapshot modules | this pass | **0** | **0 / 0** |
 
 ## Guard inputs and configuration
 
@@ -147,10 +148,10 @@ The generated detailed guide records SHA `205c6b8` from 2026-07-06. All 62 undoc
 - **Resolution:** Added exact filename entries under `core/widgets/notes/` (7), `models/note_document.dart`, `plans/notes_brain_helpers.dart`, `features/notes/` (8), and `features/shared/notes_editor/` (2) in `APP_STRUCTURE.md`, each with a unique responsibility. No wildcard substitutes. Test-only capture fixtures under `test/notes/fixtures/` and `scripts/manual/` were not documented as production modules.
 - **Risk:** Low (documentation-only).
 
-### 5. Other valid post-snapshot modules
+### 5. Other valid post-snapshot modules — **RESOLVED**
 
 - **Diagnostic:** `UNDOCUMENTED_IN_APP_STRUCTURE`
-- **Count:** 5
+- **Count:** 5 (resolved)
 - **Affected paths:**
   - `lib/core/widgets/radial_menu_viewport.dart`
   - `lib/data/voice_domain_resolver.dart`
@@ -159,8 +160,8 @@ The generated detailed guide records SHA `205c6b8` from 2026-07-06. All 62 undoc
   - `lib/shell/shell_bottom_navigation.dart`
 - **Why invalid:** Each file has a narrow owner matching the existing layer map, but its exact filename is absent from `APP_STRUCTURE.md`.
 - **Classification:** **B. Legitimate file missing from structure documentation**
-- **Proposed resolution:** Add exact entries in small responsibility-based documentation clusters; do not add broad folder exclusions.
-- **Risk:** Low.
+- **Resolution:** Added exact filename entries in `APP_STRUCTURE.md` under Core widgets (`radial_menu_viewport.dart`), Brain (`voice_domain_resolver.dart`), Categories (`create_category_from_picker.dart`), shared edit-sheet (`record_edit_save_policy.dart`), and Shell (`shell_bottom_navigation.dart`). No wildcard substitutes. Audit confirmed each file has a distinct production responsibility in its current layer.
+- **Risk:** Low (documentation-only).
 
 ### 6. Selected first cluster: plan reminder scheduling — **RESOLVED**
 
@@ -224,15 +225,19 @@ All 19 legitimate production Notes modules are documented by exact path in `APP_
 
 Remaining classification totals are **A=0, B=5, C=0, D=0, E=0**.
 
-Final undocumented cluster (all class B):
+## Final post-snapshot modules documentation result
 
-- `lib/core/widgets/radial_menu_viewport.dart`
-- `lib/data/voice_domain_resolver.dart`
-- `lib/features/categories/create_category_from_picker.dart`
-- `lib/features/shared/edit_sheet/record_edit_save_policy.dart`
-- `lib/shell/shell_bottom_navigation.dart`
+All 5 remaining legitimate production modules are documented by exact path in `APP_STRUCTURE.md`:
 
-`APP_STRUCTURE_DETAILED.md` regeneration remains a separate final pass.
+- previous remaining: **5**;
+- this cluster: **5**;
+- expected and final remaining count: **0**.
+
+Remaining classification totals are **A=0, B=0, C=0, D=0, E=0**.
+
+Architecture baseline cleanup is complete. Strict guard is green.
+
+`APP_STRUCTURE_DETAILED.md` regeneration remains the only follow-up.
 
 ## Remaining work
 
@@ -240,10 +245,9 @@ Ordered first by architecture risk, then dependency, then expected effort:
 
 | Order | Remaining cluster | Class | Count | Dependency / removal condition | Expected effort |
 | ---: | :--- | :---: | ---: | :--- | :--- |
-| 1 | Other valid post-snapshot modules | B | 5 | Split into narrow owner-based documentation updates | Small |
-| 2 | Regenerate `APP_STRUCTURE_DETAILED.md` | B follow-up | 0 direct diagnostics | Run the canonical deterministic generator after accepted path classifications | Medium review |
+| 1 | Regenerate `APP_STRUCTURE_DETAILED.md` | B follow-up | 0 direct diagnostics | Run the canonical deterministic generator after accepted path classifications | Medium review |
 
-After this pass, remaining classification totals are **A=0, B=5, C=0, D=0, E=0** (5 diagnostics).
+After this pass, remaining classification totals are **A=0, B=0, C=0, D=0, E=0** (0 diagnostics).
 
 ## Source documents inspected
 

@@ -11,6 +11,10 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-20] - Architecture: document final production modules [engineering]
+
+* **`APP_STRUCTURE.md`:** Added exact entries for the final 5 legitimate production modules (`radial_menu_viewport.dart`, `voice_domain_resolver.dart`, `create_category_from_picker.dart`, `record_edit_save_policy.dart`, `shell_bottom_navigation.dart`). Strict guard **5 → 0** (A=0, B=0). Architecture baseline cleanup complete; `APP_STRUCTURE_DETAILED` regeneration remains the only follow-up. Documentation-only.
+
 ## [2026-07-20] - Architecture: document production Notes modules [engineering]
 
 * **`APP_STRUCTURE.md`:** Added exact entries for all 19 legitimate production Notes modules (`core/widgets/notes/*`, `models/note_document.dart`, `plans/notes_brain_helpers.dart`, `features/notes/*`, `shared/notes_editor/*`). Strict guard **24 → 5** (A=0, B=5). Documentation-only; no source changes. `APP_STRUCTURE_DETAILED` regeneration deferred.
