@@ -2,7 +2,7 @@
 
 Owner-readable guide: every tracked folder and file in plain language (EN + RU).
 
-**Generated at git SHA `fc71070` on 2026-07-20.**
+**Generated at git SHA `61358cc` on 2026-07-20.**
 
 Concise map: [`APP_STRUCTURE.md`](APP_STRUCTURE.md) · Upload checklist: [`PROJECT_KNOWLEDGE_PACK.md`](PROJECT_KNOWLEDGE_PACK.md)
 
@@ -6881,6 +6881,32 @@ RU:
 - **Содержимое:** Dart-модуль `desktop_stt_engine.dart` — классы и helpers в исходнике.
 - **Обязанности:** Foundation-логика: DesktopSttEngine.
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_stt_engine.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/core/services/`, `docs/APP_STRUCTURE.md`
+- **Слой:** Foundation — тема, время, voice, диагностика.
+
+
+### `lib/core/services/desktop_stt_helper_diagnostics_builder.dart`
+
+EN:
+
+- **What this is:** `DesktopSttHelperDiagnosticsBuilder` — assembles `DesktopSttDiagnostics`, WAV duration fallbacks, and last-attempt persistence for the GOLOS STT helper.
+- **Why needed:** Isolates diagnostics/reporting from helper spawn, capture, and transcribe orchestration without duplicating `_lastDiagnostics` ownership.
+- **What it contains:** `part of desktop_stt_helper_service.dart`; `_updateDiagnostics`, `_resolveRawWavDurationMs`, `_resolveWavDurationMs`, `fetchDiagnostics`, capture-mix/ms helpers.
+- **Key code names:** `DesktopSttHelperDiagnosticsBuilder`
+- **Responsibilities:** Build diagnostics snapshot; emit pipeline markers; write `DesktopVoiceLastAttemptStore`; preserve null/default and WAV duration fallback semantics.
+- **When to open:** When behavior tied to `desktop_stt_helper_diagnostics_builder.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** No — required for app runtime.
+- **Connected to:** APP_STRUCTURE role: Assembles `DesktopSttDiagnostics`, WAV duration fallbacks, and last-attempt persistence *(part of `desktop_stt_helper_se
+- **Layer / owner:** Foundation code — theme, time, voice services, diagnostics (not a full screen).
+
+RU:
+
+- **Что это:** `DesktopSttHelperDiagnosticsBuilder` — собирает `DesktopSttDiagnostics`, fallback длительности WAV и persistence last-attempt для GOLOS STT helper.
+- **Зачем:** Отделяет diagnostics/reporting от spawn/capture/transcribe оркестрации без дублирования владения `_lastDiagnostics`.
+- **Содержимое:** `part of desktop_stt_helper_service.dart`; `_updateDiagnostics`, `_resolveRawWavDurationMs`, `_resolveWavDurationMs`, `fetchDiagnostics`, helpers capture-mix/ms.
+- **Обязанности:** Снимок diagnostics; pipeline markers; запись `DesktopVoiceLastAttemptStore`; семантика null/default и WAV duration fallback.
+- **Когда открывать:** Когда ломается поведение, связанное с `desktop_stt_helper_diagnostics_builder.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/services/`, `docs/APP_STRUCTURE.md`
 - **Слой:** Foundation — тема, время, voice, диагностика.

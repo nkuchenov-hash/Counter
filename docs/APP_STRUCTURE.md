@@ -255,6 +255,7 @@ Re-export stubs remain at `core/navigation/shell_side_navigation.dart`, `feature
 | `desktop_hotkey_codec.dart` | Desktop hotkey string encode/decode |
 | `desktop_stt_diagnostics.dart` | STT helper diagnostics markers |
 | `desktop_stt_helper_service.dart` | Desktop GOLOS STT helper subprocess and HTTP transcribe |
+| `desktop_stt_helper_diagnostics_builder.dart` | Assembles `DesktopSttDiagnostics`, WAV duration fallbacks, and last-attempt persistence *(part of `desktop_stt_helper_service.dart`)* |
 | `desktop_tray_service.dart` | System tray entry (conditional export) |
 | `desktop_tray_service_io.dart` | Windows tray implementation |
 | `desktop_tray_service_stub.dart` | Non-desktop tray stub |

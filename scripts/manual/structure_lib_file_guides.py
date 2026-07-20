@@ -15,6 +15,16 @@ GENERIC_ROLE_MARKERS: tuple[str, ...] = (
 
 # Full guides keyed by repo path (forward slashes).
 LIB_FILE_GUIDES: dict[str, dict[str, str]] = {
+    "lib/core/services/desktop_stt_helper_diagnostics_builder.dart": {
+        "what": "`DesktopSttHelperDiagnosticsBuilder` — assembles `DesktopSttDiagnostics`, WAV duration fallbacks, and last-attempt persistence for the GOLOS STT helper.",
+        "why": "Isolates diagnostics/reporting from helper spawn, capture, and transcribe orchestration without duplicating `_lastDiagnostics` ownership.",
+        "contains": "`part of desktop_stt_helper_service.dart`; `_updateDiagnostics`, `_resolveRawWavDurationMs`, `_resolveWavDurationMs`, `fetchDiagnostics`, capture-mix/ms helpers.",
+        "responsibilities": "Build diagnostics snapshot; emit pipeline markers; write `DesktopVoiceLastAttemptStore`; preserve null/default and WAV duration fallback semantics.",
+        "what_ru": "`DesktopSttHelperDiagnosticsBuilder` — собирает `DesktopSttDiagnostics`, fallback длительности WAV и persistence last-attempt для GOLOS STT helper.",
+        "why_ru": "Отделяет diagnostics/reporting от spawn/capture/transcribe оркестрации без дублирования владения `_lastDiagnostics`.",
+        "contains_ru": "`part of desktop_stt_helper_service.dart`; `_updateDiagnostics`, `_resolveRawWavDurationMs`, `_resolveWavDurationMs`, `fetchDiagnostics`, helpers capture-mix/ms.",
+        "responsibilities_ru": "Снимок diagnostics; pipeline markers; запись `DesktopVoiceLastAttemptStore`; семантика null/default и WAV duration fallback.",
+    },
     "lib/features/notes/widgets/note_editor_block_widgets.dart": {
         "what": "`NoteEditorBlockRow` / `NoteEditorAddBlockRow` — visual note blocks and add-block chrome for the full-screen Notes editor.",
         "why": "Separates block-local input UI from editor document orchestration, autosave, and Brain writes.",

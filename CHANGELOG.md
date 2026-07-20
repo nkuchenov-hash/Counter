@@ -11,6 +11,10 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-20] - Voice: extract helper diagnostics assembly [engineering]
+
+* **`desktop_stt_helper_diagnostics_builder.dart`:** Extracted diagnostics assembly (`_updateDiagnostics`, WAV duration resolvers, `fetchDiagnostics`, last-attempt write) from `desktop_stt_helper_service.dart` as `part of` (**2233 → 1916** Measure-Object lines; new part **322**). `_lastDiagnostics` ownership, public API, and helper/capture/transcribe orchestration unchanged.
+
 ## [2026-07-20] - Notes: extract editor block widgets [engineering]
 
 * **`notes/widgets/note_editor_block_widgets.dart`:** Extracted block rendering + add-block chrome (`NoteEditorBlockRow`, `NoteEditorBlockPatch`, `NoteEditorAddBlockRow`) from `note_editor_page.dart` (**1837 → 1294** Measure-Object lines). Page keeps document/autosave/Brain orchestration; widgets receive data + callbacks only. LARGE_FILE warnings **3 → 2**.
