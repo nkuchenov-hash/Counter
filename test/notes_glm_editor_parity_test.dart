@@ -1,9 +1,10 @@
 import 'dart:io';
 
-import 'package:counter/features/notes/debug/notes_glm_library_parity_fixture.dart';
-import 'package:counter/features/notes/debug/notes_glm_parity_fixture.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import 'notes/fixtures/notes_glm_library_parity_fixture.dart';
+import 'notes/fixtures/notes_glm_parity_fixture.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -42,14 +43,14 @@ void main() {
         File('test/fixtures/notes_glm_production_editor_capture.png').existsSync(),
         isTrue,
         reason:
-            'Run: flutter run -d windows -t lib/features/notes/debug/capture_notes_glm_main.dart',
+            'Run: flutter run -d windows -t scripts/manual/capture_notes_glm_main.dart',
       );
       expect(
         File('test/fixtures/notes_glm_production_library_capture.png')
             .existsSync(),
         isTrue,
         reason:
-            'Run: flutter run -d windows -t lib/features/notes/debug/capture_notes_glm_main.dart',
+            'Run: flutter run -d windows -t scripts/manual/capture_notes_glm_main.dart',
       );
     });
   });

@@ -1,11 +1,12 @@
 // Deterministic GLM library layout fixture for visual capture (test-only).
 
 import 'package:counter/data/models.dart';
-import 'package:counter/features/notes/debug/notes_glm_parity_fixture.dart';
 import 'package:counter/features/notes/notes_glm_surface.dart';
 import 'package:counter/features/notes/widgets/note_card.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
+
+import 'notes_glm_parity_fixture.dart';
 
 const Key kNotesGlmLibraryParityCaptureKey =
     Key('notes_glm_library_parity_capture');

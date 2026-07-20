@@ -11,6 +11,10 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-20] - Notes: move capture fixtures out of production lib [engineering]
+
+* **`test/notes/fixtures/` + `scripts/manual/capture_notes_glm_main.dart`:** Relocated four test-only GLM Notes capture/fixture files from `lib/features/notes/debug/`; updated parity test + `capture_notes_glm_parity.ps1`. Strict guard **60 → 56** (A=0, B=56). Production Notes code unchanged.
+
 ## [2026-07-20] - Voice: remove Core dependency on Brain [engineering]
 
 * **`desktop_stt_cloud_backend.dart` + `DesktopSttCloudBackendHooks`:** Moved PocketBase readiness, auth token, `/api/ai/transcribe-command` POST, and 25s timeout into Brain; Core cloud STT maps HTTP results via main.dart injection (AppClock-style). Strict guard **61 → 60**.

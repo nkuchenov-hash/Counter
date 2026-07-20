@@ -1,14 +1,16 @@
 // One-off GLM parity screenshot capture — run with:
-// flutter run -d windows -t lib/features/notes/debug/capture_notes_glm_main.dart
+// flutter run -d windows -t scripts/manual/capture_notes_glm_main.dart
+// or: .\scripts\manual\capture_notes_glm_parity.ps1
 
 import 'dart:async';
 import 'dart:io';
 import 'dart:ui' as ui;
 
-import 'package:counter/features/notes/debug/notes_glm_parity_fixture.dart';
-import 'package:counter/features/notes/debug/notes_production_library_capture.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+
+import '../../test/notes/fixtures/notes_glm_parity_fixture.dart';
+import '../../test/notes/fixtures/notes_production_library_capture.dart';
 
 final _editorKey = GlobalKey();
 final _libraryKey = GlobalKey();

@@ -1,12 +1,13 @@
 // Production-library visual capture using the live Lists-tab shell widgets.
 
 import 'package:counter/data/models.dart';
-import 'package:counter/features/notes/debug/notes_glm_parity_fixture.dart';
 import 'package:counter/features/notes/notes_glm_surface.dart';
 import 'package:counter/features/notes/widgets/note_card.dart';
 import 'package:counter/features/notes/widgets/notes_library_production_shell.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
+
+import 'notes_glm_parity_fixture.dart';
 
 const Key kNotesProductionLibraryCaptureKey =
     Key('notes_production_library_capture');

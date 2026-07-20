@@ -27,7 +27,8 @@ The 63 diagnostics below are each listed exactly once. Classification totals at 
 | :--- | :--- | ---: | :--- |
 | Baseline | `c8a78c42` | 63 | 5 / 58 |
 | First cluster (plan-alarm docs) | `2079e072` | 61 | 5 / 56 |
-| Core STT cloud boundary | this pass | **60** | **4 / 56** |
+| Core STT cloud boundary | `80ce66a8` | 60 | 4 / 56 |
+| Notes capture out of `lib/` | this pass | **56** | **0 / 56** |
 
 ## Guard inputs and configuration
 
@@ -59,19 +60,19 @@ The generated detailed guide records SHA `205c6b8` from 2026-07-06. All 62 undoc
 - **Resolution:** Brain owns PocketBase readiness, auth token, base URL, route, Authorization, HTTP POST, JSON payload, and 25s timeout in `lib/data/desktop_stt_cloud_backend.dart`. Core keeps WAV read, result mapping, pipeline markers, and `DesktopSttCloudEngine` via injected `DesktopSttCloudBackendHooks` wired from `main.dart` (AppClock-style). Core no longer imports `database_service.dart` or `pb_config.dart`.
 - **Risk:** Medium (behavior-preserving transport split; covered by injection unit test + existing STT quality tests).
 
-### 2. Test-only Notes capture code lives under production `lib/`
+### 2. Test-only Notes capture code lives under production `lib/` — **RESOLVED**
 
 - **Diagnostic:** `UNDOCUMENTED_IN_APP_STRUCTURE`
-- **Count:** 4
-- **Affected paths:**
+- **Count:** 4 (resolved)
+- **Affected paths (old):**
   - `lib/features/notes/debug/capture_notes_glm_main.dart`
   - `lib/features/notes/debug/notes_glm_library_parity_fixture.dart`
   - `lib/features/notes/debug/notes_glm_parity_fixture.dart`
   - `lib/features/notes/debug/notes_production_library_capture.dart`
 - **Why invalid:** The files identify themselves as one-off/test-only visual capture fixtures and are imported by tests or a manual capture script. Test tooling has no production Feature UI ownership merely because it renders production widgets.
 - **Classification:** **A. Real architecture violation**
-- **Proposed resolution:** Move fixtures to `test/` and the capture entrypoint to test/manual tooling, then update the capture script and test imports. Do not document them as production feature modules.
-- **Risk:** Medium. Runtime behavior is unaffected, but capture paths and visual tests must move together.
+- **Resolution:** Moved reusable fixtures to `test/notes/fixtures/` (`notes_glm_parity_fixture.dart`, `notes_glm_library_parity_fixture.dart`, `notes_production_library_capture.dart`) and the manual capture entrypoint to `scripts/manual/capture_notes_glm_main.dart`. Updated `test/notes_glm_editor_parity_test.dart` and `scripts/manual/capture_notes_glm_parity.ps1`. Production Notes widgets under `lib/features/notes/`, `lib/core/widgets/notes/`, and `lib/data/` were not changed.
+- **Risk:** Low (path/import move only; fixture render behavior preserved).
 
 ### 3. Desktop voice modules added after the structure snapshot
 
@@ -191,19 +192,28 @@ The Core → Brain forbidden import is removed without allowlisting:
 
 New production file documented: `lib/data/desktop_stt_cloud_backend.dart`.
 
+## Notes capture relocation result
+
+The four class-A test-only files under `lib/features/notes/debug/` are removed from production `lib/`:
+
+- previous remaining: **60**;
+- this cluster: **4**;
+- expected and final remaining count: **56**.
+
+Remaining classification totals are **A=0, B=56, C=0, D=0, E=0**.
+
 ## Remaining work
 
 Ordered first by architecture risk, then dependency, then expected effort:
 
 | Order | Remaining cluster | Class | Count | Dependency / removal condition | Expected effort |
 | ---: | :--- | :---: | ---: | :--- | :--- |
-| 1 | Test-only Notes capture code under `lib/features/` | A | 4 | Move fixtures/entrypoint and update visual test + capture script paths | Small–medium |
-| 2 | Desktop voice structure documentation | B | 32 | Cloud import boundary resolved; document exact modules | Medium |
-| 3 | Production Notes structure documentation | B | 19 | Keep test-only files from order 1 out of the production manifest | Medium |
-| 4 | Other valid post-snapshot modules | B | 5 | Split into narrow owner-based documentation updates | Small |
-| 5 | Regenerate `APP_STRUCTURE_DETAILED.md` | B follow-up | 0 direct diagnostics | Run the canonical deterministic generator after accepted path classifications | Medium review |
+| 1 | Desktop voice structure documentation | B | 32 | Document exact modules; do not bless invalid imports | Medium |
+| 2 | Production Notes structure documentation | B | 19 | Test-only capture files already moved; document production Notes only | Medium |
+| 3 | Other valid post-snapshot modules | B | 5 | Split into narrow owner-based documentation updates | Small |
+| 4 | Regenerate `APP_STRUCTURE_DETAILED.md` | B follow-up | 0 direct diagnostics | Run the canonical deterministic generator after accepted path classifications | Medium review |
 
-After this pass, remaining classification totals are **A=4, B=56, C=0, D=0, E=0** (60 diagnostics).
+After this pass, remaining classification totals are **A=0, B=56, C=0, D=0, E=0** (56 diagnostics).
 
 ## Source documents inspected
 

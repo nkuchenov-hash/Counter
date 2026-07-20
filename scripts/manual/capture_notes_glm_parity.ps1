@@ -3,7 +3,7 @@
 
 $ErrorActionPreference = 'Stop'
 Set-Location $PSScriptRoot\..\..
-flutter run -d windows -t lib/features/notes/debug/capture_notes_glm_main.dart --release
+flutter run -d windows -t scripts/manual/capture_notes_glm_main.dart --release
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 Write-Host "Screenshots:"
 Write-Host "  test/fixtures/notes_glm_parity_capture.png"

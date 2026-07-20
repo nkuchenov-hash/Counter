@@ -3,7 +3,6 @@
 
 import 'package:counter/data/models.dart';
 import 'package:counter/features/notes/note_editor_page.dart';
-import 'package:counter/features/notes/note_editor_page.dart';
 import 'package:flutter/material.dart';
 
 /// Reference viewport from the acceptance spec.
