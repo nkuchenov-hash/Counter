@@ -377,7 +377,7 @@ Every production Notes widget under `core/widgets/notes/` must be listed by exac
 | `auth/` | `auth_view.dart`, `auth_screen.dart`, `oauth_session.dart` | Sign-in, register, OAuth, password reset |
 | `timeline/` | `timeline_view.dart`, `timeline_header_controls.dart`, `timeline_day_page.dart`, `timeline_record_card.dart`, `timeline_helpers.dart` | `TimelineSwipeWrapper`, `TimelinePage`; header controls + day list + record cards |
 | `stats/` | `stats_view.dart`, `plan_vs_fact_tab.dart` | Productivity stats (embedded in Timeline) |
-| `planning/` | `planning_view.dart` (barrel), **`planning_page.dart`**, **`planning_page_shell.dart`**, **`planning_sort_mode.dart`**, `plan_time_view_layout.dart`, `plan_time_gesture_contract.dart`, `planning_day_start_prefs.dart`, `bulk_planning_edit_sheet.dart`, `recurrence_scope_dialog.dart`, `smart_plan_sheet.dart`, **`time_view/`**, **`settings/`**, **`widgets/`** | Plans tab: date pager shell + day page body, Time View modules, settings, bulk edit |
+| `planning/` | `planning_view.dart` (barrel), **`planning_page.dart`**, **`planning_quick_add_tags_controller.dart`**, **`planning_page_shell.dart`**, **`planning_sort_mode.dart`**, `plan_time_view_layout.dart`, `plan_time_gesture_contract.dart`, `planning_day_start_prefs.dart`, `bulk_planning_edit_sheet.dart`, `recurrence_scope_dialog.dart`, `smart_plan_sheet.dart`, **`time_view/`**, **`settings/`**, **`widgets/`** | Plans tab: date pager shell + day page body, quick-add tag controller, Time View modules, settings, bulk edit |
 | `lists/` | `lists_view.dart`, `lists_filters.dart`, `lists_bulk_actions.dart`, `lists_inline_add.dart`, `lists_empty_state.dart`, `lists_card.dart`, `lists_export.dart` | Lists/backlog coordinator + filter/bulk/inline/empty modules + card + export |
 | `notes/` | `drawing_canvas_page.dart`, `notes_glm_surface.dart`, `notes_library_page.dart`, `notes_visual_tokens.dart`, `note_editor_page.dart`, **`widgets/`** (`notes_library_body.dart`, `notes_library_production_shell.dart`, `note_card.dart`) | Notes library/editor/drawing feature UI (GLM v3); exact roles in §3.4 Notes below |
 | `calendar/` | `calendar_view.dart` (orchestrator), `calendar_chrome_header.dart`, `calendar_month_grid.dart`, `calendar_week_grid.dart`, `calendar_day_panel.dart`, `calendar_day_events.dart`, `calendar_helpers.dart` | Calendar tab: month/week grids, chrome header, focused-day task panel |
@@ -515,7 +515,8 @@ Explicit manifest entries for `architecture_guard.ps1 -Strict`:
 | `planning/widgets/planning_menu_overlay.dart` | Semicircle plan card radial menu |
 | `planning/widgets/planning_day_card_list_keep_alive.dart` | List keep-alive wrapper |
 | `planning/widgets/plan_card_reorder_settle.dart` | Done-card reorder slide settle |
-| `planning/planning_page.dart` | `PlanningPage` + day body state (~2.4k lines; coordinator delegates Time View) |
+| `planning/planning_page.dart` | `PlanningPage` + day body state (quick-add tags via controller; Time View via coordinator) |
+| `planning/planning_quick_add_tags_controller.dart` | Quick-add tag strip state: catalog merge, “No Tags” prefs, creation selection, reorder persistence |
 | `planning/planning_page_shell.dart` | `PlanningSwipeWrapper` date pager |
 | `planning/planning_sort_mode.dart` | `PlanSortMode` + persist index helpers |
 | `planning/widgets/planning_bulk_bar.dart` | Bulk selection bottom bar |
@@ -617,7 +618,7 @@ Before implementation, answer: **owner layer?** · **extends which module?** · 
 | Area | Why leave as-is |
 | :--- | :--- |
 | `plan_service.dart` coordinator | Shared plan cache, streams, wall-time reprojection, CRUD entry — tightly coupled |
-| `planning_page.dart` | Time View state machine + day body; further split needs UX/product scope |
+| `planning_page.dart` | Day body orchestrator + Time View host; quick-add tags extracted to `planning_quick_add_tags_controller.dart` |
 | `database_service.dart` root | Singleton host only (~720 lines); domain logic already in `part` files |
 | `record_service.dart` / `category_service.dart` / `profile_service.dart` coordinators | Cross-domain static bridges and shared Brain state |
 | Platform folders (`android/`, `ios/`, …) | Flutter-generated runners — not product logic |

@@ -11,6 +11,10 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-20] - Plans: extract quick-add tags controller [engineering]
+
+* **`planning_quick_add_tags_controller.dart`:** Extracted quick-add tag strip state (catalog merge, “No Tags” prefs, creation selection, reorder persistence) from `planning_page.dart` (**1964 → 1794** Measure-Object lines). `PlanningPage` constructor / host contract / optimistic submit unchanged. LARGE_FILE warnings **4 → 3** (`planning_page.dart` cleared).
+
 ## [2026-07-20] - Structure: regenerate detailed app guide [engineering]
 
 * **`APP_STRUCTURE_DETAILED.md`:** Regenerated from the current tracked tree after architecture-guard baseline cleanup (63 → 0). Generator mappings updated for Notes, Desktop Voice, plan alarms, final five modules, relocated Notes capture fixtures, and new test/installer folders. Quality OK; deterministic second run identical; structure scan + strict guard remain green. Documentation/generator-data only.

@@ -2,7 +2,7 @@
 
 Owner-readable guide: every tracked folder and file in plain language (EN + RU).
 
-**Generated at git SHA `76e660e` on 2026-07-20.**
+**Generated at git SHA `3498d0e` on 2026-07-20.**
 
 Concise map: [`APP_STRUCTURE.md`](APP_STRUCTURE.md) · Upload checklist: [`PROJECT_KNOWLEDGE_PACK.md`](PROJECT_KNOWLEDGE_PACK.md)
 
@@ -12728,14 +12728,14 @@ RU:
 
 EN:
 
-- **What this is:** `bulk_planning_edit_sheet.dart` on Plans tab (second bottom tab) — Plans tab: date pager shell + day page body, Time View modules, settings, bulk edit.
+- **What this is:** `bulk_planning_edit_sheet.dart` on Plans tab (second bottom tab) — Plans tab: date pager shell + day page body, quick-add tag controller, Time View modules, settings, bulk edit.
 - **Why needed:** Users see `bulk_planning_edit_sheet.dart` when using Plans tab (second bottom tab).
 - **What it contains:** Primary symbols: `BulkPlanningEditResult`, `BulkEditWallTimes`, `_BulkPlanningEditSheetBody`, `_BulkPlanningEditSheetBodyState`.
 - **Key code names:** `BulkPlanningEditResult`, `BulkEditWallTimes`, `_BulkPlanningEditSheetBody`, `_BulkPlanningEditSheetBodyState`
-- **Responsibilities:** Plans tab: date pager shell + day page body, Time View modules, settings, bulk edit
+- **Responsibilities:** Plans tab: date pager shell + day page body, quick-add tag controller, Time View modules, settings, bulk edit
 - **When to open:** Plans tab: day swipe, plan cards, play/start plan, bulk edit.
 - **Can it be deleted?** No — required for app runtime.
-- **Connected to:** Plans tab (shell index 1); APP_STRUCTURE role: Plans tab: date pager shell + day page body, Time View modules, settings, bulk edit
+- **Connected to:** Plans tab (shell index 1); APP_STRUCTURE role: Plans tab: date pager shell + day page body, quick-add tag controller, Time View modules, settings, bulk edit
 - **Layer / owner:** UI code for the planning area of the app (what users see and tap).
 
 RU:
@@ -12754,13 +12754,13 @@ RU:
 
 EN:
 
-- **What this is:** `plan_time_gesture_contract.dart` on Plans tab (second bottom tab) — Plans tab: date pager shell + day page body, Time View modules, settings, bulk edit.
+- **What this is:** `plan_time_gesture_contract.dart` on Plans tab (second bottom tab) — Plans tab: date pager shell + day page body, quick-add tag controller, Time View modules, settings, bulk edit.
 - **Why needed:** Users see `plan_time_gesture_contract.dart` when using Plans tab (second bottom tab).
 - **What it contains:** Dart module `plan_time_gesture_contract.dart` — open file for classes and helpers.
-- **Responsibilities:** Plans tab: date pager shell + day page body, Time View modules, settings, bulk edit
+- **Responsibilities:** Plans tab: date pager shell + day page body, quick-add tag controller, Time View modules, settings, bulk edit
 - **When to open:** Plans tab: day swipe, plan cards, play/start plan, bulk edit.
 - **Can it be deleted?** No — required for app runtime.
-- **Connected to:** Plans tab (shell index 1); APP_STRUCTURE role: Plans tab: date pager shell + day page body, Time View modules, settings, bulk edit
+- **Connected to:** Plans tab (shell index 1); APP_STRUCTURE role: Plans tab: date pager shell + day page body, quick-add tag controller, Time View modules, settings, bulk edit
 - **Layer / owner:** UI code for the planning area of the app (what users see and tap).
 
 RU:
@@ -12779,14 +12779,14 @@ RU:
 
 EN:
 
-- **What this is:** `plan_time_view_layout.dart` on Plans tab (second bottom tab) — Plans tab: date pager shell + day page body, Time View modules, settings, bulk edit.
+- **What this is:** `plan_time_view_layout.dart` on Plans tab (second bottom tab) — Plans tab: date pager shell + day page body, quick-add tag controller, Time View modules, settings, bulk edit.
 - **Why needed:** Users see `plan_time_view_layout.dart` when using Plans tab (second bottom tab).
 - **What it contains:** Primary symbols: `TimeViewYScale`, `PlanTimeViewDurationGrid`, `PlanTimeViewBlockLayout`, `_PlanTimeViewCardSlot`, `PlanTimeViewLayoutCalculator`.
 - **Key code names:** `TimeViewYScale`, `PlanTimeViewDurationGrid`, `PlanTimeViewBlockLayout`, `_PlanTimeViewCardSlot`, `PlanTimeViewLayoutCalculator`
-- **Responsibilities:** Plans tab: date pager shell + day page body, Time View modules, settings, bulk edit
+- **Responsibilities:** Plans tab: date pager shell + day page body, quick-add tag controller, Time View modules, settings, bulk edit
 - **When to open:** Plans tab: day swipe, plan cards, play/start plan, bulk edit.
 - **Can it be deleted?** No — required for app runtime.
-- **Connected to:** Plans tab (shell index 1); APP_STRUCTURE role: Plans tab: date pager shell + day page body, Time View modules, settings, bulk edit
+- **Connected to:** Plans tab (shell index 1); APP_STRUCTURE role: Plans tab: date pager shell + day page body, quick-add tag controller, Time View modules, settings, bulk edit
 - **Layer / owner:** UI code for the planning area of the app (what users see and tap).
 
 RU:
@@ -12805,14 +12805,14 @@ RU:
 
 EN:
 
-- **What this is:** `planning_day_start_prefs.dart` on Plans tab (second bottom tab) — Plans tab: date pager shell + day page body, Time View modules, settings, bulk edit.
+- **What this is:** `planning_day_start_prefs.dart` on Plans tab (second bottom tab) — Plans tab: date pager shell + day page body, quick-add tag controller, Time View modules, settings, bulk edit.
 - **Why needed:** Users see `planning_day_start_prefs.dart` when using Plans tab (second bottom tab).
 - **What it contains:** Primary symbols: `PlanningSheetTimelinePrefs`.
 - **Key code names:** `PlanningSheetTimelinePrefs`
-- **Responsibilities:** Plans tab: date pager shell + day page body, Time View modules, settings, bulk edit
+- **Responsibilities:** Plans tab: date pager shell + day page body, quick-add tag controller, Time View modules, settings, bulk edit
 - **When to open:** Plans tab: day swipe, plan cards, play/start plan, bulk edit.
 - **Can it be deleted?** No — required for app runtime.
-- **Connected to:** Plans tab (shell index 1); APP_STRUCTURE role: Plans tab: date pager shell + day page body, Time View modules, settings, bulk edit
+- **Connected to:** Plans tab (shell index 1); APP_STRUCTURE role: Plans tab: date pager shell + day page body, quick-add tag controller, Time View modules, settings, bulk edit
 - **Layer / owner:** UI code for the planning area of the app (what users see and tap).
 
 RU:
@@ -12838,7 +12838,7 @@ EN:
 - **Responsibilities:** PlanningPage
 - **When to open:** Plans tab: day swipe, plan cards, play/start plan, bulk edit.
 - **Can it be deleted?** No — required for app runtime.
-- **Connected to:** Plans tab (shell index 1); APP_STRUCTURE role: `PlanningPage` + day body state (~2.4k lines
+- **Connected to:** Plans tab (shell index 1); APP_STRUCTURE role: `PlanningPage` + day body state (quick-add tags via controller
 - **Layer / owner:** UI code for the planning area of the app (what users see and tap).
 
 RU:
@@ -12873,6 +12873,32 @@ RU:
 - **Зачем:** Пользователь видит UI из `planning_page_shell.dart` на вкладка Plans (вторая снизу).
 - **Содержимое:** Dart-модуль `planning_page_shell.dart` — классы и helpers в исходнике.
 - **Обязанности:** Поддерживает поведение `planning_page_shell` в этой feature-зоне.
+- **Когда открывать:** Вкладка Plans: день, карточки, play.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** Вкладка Plans (shell index 1)
+- **Слой:** UI — экран/виджет (planning).
+
+
+### `lib/features/planning/planning_quick_add_tags_controller.dart`
+
+EN:
+
+- **What this is:** `PlanningQuickAddTagsController` — quick-add tag strip state: catalog merge, synthetic “No Tags” prefs, creation selection, reorder persistence.
+- **Why needed:** Moves tag-strip prefs and selection out of the Planning day-page orchestrator without changing submit or Time View behavior.
+- **What it contains:** `PlanningQuickAddTagsController` with reload/merge/reorder/persist and TagSettingsHub navigation.
+- **Key code names:** `PlanningQuickAddTagsController`
+- **Responsibilities:** Own quick-add tag UI state and SharedPreferences order; notify PlanningPage via setState callbacks.
+- **When to open:** Plans tab: day swipe, plan cards, play/start plan, bulk edit.
+- **Can it be deleted?** No — required for app runtime.
+- **Connected to:** Plans tab (shell index 1); APP_STRUCTURE role: Quick-add tag strip state: catalog merge, “No Tags” prefs, creation selection, reorder persistence
+- **Layer / owner:** UI code for the planning area of the app (what users see and tap).
+
+RU:
+
+- **Что это:** `PlanningQuickAddTagsController` — состояние полосы тегов quick-add: merge каталога, prefs «Без тегов», выбор при создании, persist reorder.
+- **Зачем:** Выносит prefs и выбор тегов из оркестратора дня Plans без смены submit и Time View.
+- **Содержимое:** `PlanningQuickAddTagsController` с reload/merge/reorder/persist и навигацией в TagSettingsHub.
+- **Обязанности:** Владеет UI-состоянием тегов quick-add и порядком в SharedPreferences; уведомляет PlanningPage через setState.
 - **Когда открывать:** Вкладка Plans: день, карточки, play.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Вкладка Plans (shell index 1)
@@ -12915,7 +12941,7 @@ EN:
 - **Responsibilities:** Public entry surface for the Plans tab modules.
 - **When to open:** Plans tab: day swipe, plan cards, play/start plan, bulk edit.
 - **Can it be deleted?** No — required for app runtime.
-- **Connected to:** Plans tab (shell index 1); APP_STRUCTURE role: Plans tab: date pager shell + day page body, Time View modules, settings, bulk edit
+- **Connected to:** Plans tab (shell index 1); APP_STRUCTURE role: Plans tab: date pager shell + day page body, quick-add tag controller, Time View modules, settings, bulk edit
 - **Layer / owner:** UI code for the planning area of the app (what users see and tap).
 
 RU:
@@ -12934,13 +12960,13 @@ RU:
 
 EN:
 
-- **What this is:** `recurrence_scope_dialog.dart` on Plans tab (second bottom tab) — Plans tab: date pager shell + day page body, Time View modules, settings, bulk edit.
+- **What this is:** `recurrence_scope_dialog.dart` on Plans tab (second bottom tab) — Plans tab: date pager shell + day page body, quick-add tag controller, Time View modules, settings, bulk edit.
 - **Why needed:** Users see `recurrence_scope_dialog.dart` when using Plans tab (second bottom tab).
 - **What it contains:** Modal UI widgets and controllers in `recurrence_scope_dialog.dart`.
-- **Responsibilities:** Plans tab: date pager shell + day page body, Time View modules, settings, bulk edit
+- **Responsibilities:** Plans tab: date pager shell + day page body, quick-add tag controller, Time View modules, settings, bulk edit
 - **When to open:** Plans tab: day swipe, plan cards, play/start plan, bulk edit.
 - **Can it be deleted?** No — required for app runtime.
-- **Connected to:** Plans tab (shell index 1); APP_STRUCTURE role: Plans tab: date pager shell + day page body, Time View modules, settings, bulk edit
+- **Connected to:** Plans tab (shell index 1); APP_STRUCTURE role: Plans tab: date pager shell + day page body, quick-add tag controller, Time View modules, settings, bulk edit
 - **Layer / owner:** UI code for the planning area of the app (what users see and tap).
 
 RU:
@@ -13088,14 +13114,14 @@ RU:
 
 EN:
 
-- **What this is:** `smart_plan_sheet.dart` on Plans tab (second bottom tab) — Plans tab: date pager shell + day page body, Time View modules, settings, bulk edit.
+- **What this is:** `smart_plan_sheet.dart` on Plans tab (second bottom tab) — Plans tab: date pager shell + day page body, quick-add tag controller, Time View modules, settings, bulk edit.
 - **Why needed:** Users see `smart_plan_sheet.dart` when using Plans tab (second bottom tab).
 - **What it contains:** Primary symbols: `SmartPlanCommit`, `SmartPlanSheet`, `_SmartPlanSheetState`.
 - **Key code names:** `SmartPlanCommit`, `SmartPlanSheet`, `_SmartPlanSheetState`
-- **Responsibilities:** Plans tab: date pager shell + day page body, Time View modules, settings, bulk edit
+- **Responsibilities:** Plans tab: date pager shell + day page body, quick-add tag controller, Time View modules, settings, bulk edit
 - **When to open:** Plans tab: day swipe, plan cards, play/start plan, bulk edit.
 - **Can it be deleted?** No — required for app runtime.
-- **Connected to:** Plans tab (shell index 1); APP_STRUCTURE role: Plans tab: date pager shell + day page body, Time View modules, settings, bulk edit
+- **Connected to:** Plans tab (shell index 1); APP_STRUCTURE role: Plans tab: date pager shell + day page body, quick-add tag controller, Time View modules, settings, bulk edit
 - **Layer / owner:** UI code for the planning area of the app (what users see and tap).
 
 RU:

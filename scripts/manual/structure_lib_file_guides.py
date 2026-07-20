@@ -15,6 +15,16 @@ GENERIC_ROLE_MARKERS: tuple[str, ...] = (
 
 # Full guides keyed by repo path (forward slashes).
 LIB_FILE_GUIDES: dict[str, dict[str, str]] = {
+    "lib/features/planning/planning_quick_add_tags_controller.dart": {
+        "what": "`PlanningQuickAddTagsController` — quick-add tag strip state: catalog merge, synthetic “No Tags” prefs, creation selection, reorder persistence.",
+        "why": "Moves tag-strip prefs and selection out of the Planning day-page orchestrator without changing submit or Time View behavior.",
+        "contains": "`PlanningQuickAddTagsController` with reload/merge/reorder/persist and TagSettingsHub navigation.",
+        "responsibilities": "Own quick-add tag UI state and SharedPreferences order; notify PlanningPage via setState callbacks.",
+        "what_ru": "`PlanningQuickAddTagsController` — состояние полосы тегов quick-add: merge каталога, prefs «Без тегов», выбор при создании, persist reorder.",
+        "why_ru": "Выносит prefs и выбор тегов из оркестратора дня Plans без смены submit и Time View.",
+        "contains_ru": "`PlanningQuickAddTagsController` с reload/merge/reorder/persist и навигацией в TagSettingsHub.",
+        "responsibilities_ru": "Владеет UI-состоянием тегов quick-add и порядком в SharedPreferences; уведомляет PlanningPage через setState.",
+    },
     "lib/features/planning/planning_view.dart": {
         "what": "Planning feature barrel — re-exports `planning_page.dart`, `planning_page_shell.dart`, and `planning_sort_mode.dart`.",
         "why": "Shell and tests import one stable path instead of three planning entry files.",

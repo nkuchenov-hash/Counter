@@ -5,7 +5,6 @@
 // ---------------------------------------------------------------------------
 
 import 'dart:async';
-import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:counter/core/date_swipe_physics.dart';
@@ -18,15 +17,13 @@ import 'package:counter/core/shell_layout_state.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/planning/bulk_planning_edit_sheet.dart';
+import 'package:counter/features/planning/planning_quick_add_tags_controller.dart';
 import 'package:counter/features/planning/recurrence_scope_dialog.dart';
 import 'package:counter/data/smart_input_parser.dart';
 import 'package:counter/features/planning/smart_plan_sheet.dart';
-import 'package:counter/core/tag_contrast.dart';
-import 'package:counter/features/profile/tag_settings_hub.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:counter/core/widgets/app_state_views.dart';
 import 'package:counter/core/widgets/plan_card.dart';
 import 'package:counter/features/planning/time_view/time_view_settings_sheet.dart';
@@ -165,24 +162,7 @@ class _PlanningPageState extends State<PlanningPage>
   StreamSubscription<UserSettings>? _settingsSub;
   String? _activeRecordingTitleNorm;
 
-  static const int _kUntaggedPlanGroupId = -1;
-
-  /// Persisted order of tag ids in the quick-add strip, including [_kUntaggedPlanGroupId] for “No Tags”.
-  static const String _prefsKeyQuickBarTagOrder =
-      'planning_quick_bar_tag_ids_v1';
-
-  /// Local-only prefs for the synthetic “No Tags” chip (not PocketBase).
-  static const String _prefsKeyNoTagsVisible = 'no_tags_visible';
-  static const String _prefsKeyNoTagsColor = 'no_tags_color';
-  static const String _defaultNoTagsColorHex = '#9E9E9E';
-  /// Tags for quick-add row; reloaded after returning from [TagSettingsHub].
-  List<Tag> _quickAddAvailableTags = [];
-  bool _quickAddTagsLoading = false;
-  bool _noTagsChipVisible = true;
-  String _noTagsColorHex = _defaultNoTagsColorHex;
-
-  /// M2M tags selected before submitting the inline task.
-  List<Tag> _creationSelectedTags = [];
+  late final PlanningQuickAddTagsController _quickAddTags;
 
   DateTime get _today => DatabaseService.instance.getTimelineDeviceLocalToday();
 
@@ -267,16 +247,18 @@ DatabaseService.instance.persistPlanningTaskOrder(
   Map<String, bool> get planDoneOverride => _planDoneOverride;
 
   @override
-  bool get noTagsChipVisible => _noTagsChipVisible;
+  bool get noTagsChipVisible => _quickAddTags.noTagsChipVisible;
 
   @override
-  String get noTagsColorHex => _noTagsColorHex;
+  String get noTagsColorHex => _quickAddTags.noTagsColorHex;
 
   @override
-  String get prefsKeyNoTagsVisible => _prefsKeyNoTagsVisible;
+  String get prefsKeyNoTagsVisible =>
+      PlanningQuickAddTagsController.prefsKeyNoTagsVisible;
 
   @override
-  String get prefsKeyNoTagsColor => _prefsKeyNoTagsColor;
+  String get prefsKeyNoTagsColor =>
+      PlanningQuickAddTagsController.prefsKeyNoTagsColor;
 
   @override
   void notifySetState([VoidCallback? fn]) {
@@ -293,14 +275,11 @@ DatabaseService.instance.persistPlanningTaskOrder(
   }
 
   @override
-  Future<void> reloadQuickAddTags() => _reloadQuickAddTags();
+  Future<void> reloadQuickAddTags() => _quickAddTags.reload();
 
   @override
   void applyNoTagsChipSettings(bool visible, String colorHex) {
-    notifySetState(() {
-      _noTagsChipVisible = visible;
-      _noTagsColorHex = colorHex;
-    });
+    _quickAddTags.applyNoTagsChipSettings(visible, colorHex);
   }
 
   @override
@@ -361,6 +340,10 @@ DatabaseService.instance.persistPlanningTaskOrder(
   @override
   void initState() {
     super.initState();
+    _quickAddTags = PlanningQuickAddTagsController(
+      notifySetState: notifySetState,
+      isMounted: () => mounted,
+    );
     final persisted = DatabaseService.instance.getPlanActiveTabIndexOrNull();
     if (persisted != null) {
       _sortMode = planSortModeFromPersistedIndex(persisted);
@@ -413,177 +396,8 @@ DatabaseService.instance.persistPlanningTaskOrder(
     timeView.initHourGridTicker(createTicker);
     unawaited(timeView.loadPlanningTimelineBounds());
     unawaited(timeView.loadTimeViewFixedTagIds());
-    unawaited(_reloadQuickAddTags());
+    unawaited(_quickAddTags.reload());
   }
-
-  Tag _syntheticNoTagsTag() {
-    final loc = currentLocale.value;
-    return Tag(
-      tagId: _kUntaggedPlanGroupId,
-      name: t(loc, 'plan_filter_no_tags'),
-      color: _noTagsColorHex,
-      sortOrder: 0,
-      isSynced: true,
-    );
-  }
-
-  List<Tag> _mergeQuickBarTagsFromServer(
-    List<Tag> serverTags,
-    List<int>? savedOrder,
-  ) {
-    final synthetic = _syntheticNoTagsTag();
-    if (savedOrder == null || savedOrder.isEmpty) {
-      return [...serverTags, synthetic];
-    }
-    final byId = {for (final t in serverTags) t.tagId: t};
-    final out = <Tag>[];
-    final usedServer = <int>{};
-    var placedSynthetic = false;
-    for (final id in savedOrder) {
-      if (id == 0) continue;
-      if (id == _kUntaggedPlanGroupId) {
-        if (!placedSynthetic) {
-          out.add(synthetic);
-          placedSynthetic = true;
-        }
-        continue;
-      }
-      final t = byId[id];
-      if (t != null) {
-        out.add(t);
-        usedServer.add(id);
-      }
-    }
-    for (final t in serverTags) {
-      if (!usedServer.contains(t.tagId)) {
-        out.add(t);
-      }
-    }
-    if (!placedSynthetic) {
-      out.add(synthetic);
-    }
-    return out;
-  }
-
-  Future<void> _persistQuickBarTagIdOrderPrefs(List<Tag> ordered) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(
-        _prefsKeyQuickBarTagOrder,
-        jsonEncode(ordered.map((t) => t.tagId).toList()),
-      );
-    } catch (_) {}
-  }
-
-  Future<void> _reloadQuickAddTags() async {
-    if (!mounted) return;
-    setState(() => _quickAddTagsLoading = true);
-    final prefs = await SharedPreferences.getInstance();
-    final visible = prefs.getBool(_prefsKeyNoTagsVisible) ?? true;
-    final cr = prefs.getString(_prefsKeyNoTagsColor)?.trim();
-    final colorHex =
-        (cr != null &&
-            cr.startsWith('#') &&
-            cr.length >= 7 &&
-            parseTagHexColor(cr) != null)
-        ? cr
-        : _defaultNoTagsColorHex;
-
-    final list = await DatabaseService.instance.fetchTagsForCurrentUser(
-      scope: TagCatalogScope.plan,
-    );
-    List<int>? order;
-    try {
-      final raw = prefs.getString(_prefsKeyQuickBarTagOrder);
-      if (raw != null && raw.isNotEmpty) {
-        final decoded = jsonDecode(raw);
-        if (decoded is List) {
-          order = decoded
-              .map((e) => e is int ? e : int.tryParse(e.toString()) ?? 0)
-              .where((id) => id != 0)
-              .toList();
-        }
-      }
-    } catch (_) {}
-    if (!mounted) return;
-    _noTagsChipVisible = visible;
-    _noTagsColorHex = colorHex;
-    var merged = _mergeQuickBarTagsFromServer(list, order);
-    if (!visible) {
-      merged = merged.where((t) => t.tagId != _kUntaggedPlanGroupId).toList();
-    }
-    setState(() {
-      _quickAddAvailableTags = merged;
-      _quickAddTagsLoading = false;
-    });
-  }
-
-  Future<void> _openTagManagerFromQuickAdd() async {
-    await Navigator.of(context).push<void>(
-      MaterialPageRoute<void>(builder: (ctx) => const TagSettingsHub()),
-    );
-    await _reloadQuickAddTags();
-  }
-
-  void _toggleCreationTag(Tag tag) {
-    if (tag.tagId == _kUntaggedPlanGroupId) return;
-    setState(() {
-      final next = List<Tag>.from(_creationSelectedTags);
-      final i = next.indexWhere((x) => x.tagId == tag.tagId);
-      if (i >= 0) {
-        next.removeAt(i);
-      } else {
-        next.add(tag);
-      }
-      _creationSelectedTags = next;
-    });
-  }
-
-  void _onPlanningQuickBarReorder(int oldIndex, int newIndex) {
-    if (_quickAddAvailableTags.length < 2) return;
-    if (oldIndex < 0 || oldIndex >= _quickAddAvailableTags.length) return;
-    if (newIndex < 0 || newIndex > _quickAddAvailableTags.length) return;
-    var ni = newIndex;
-    if (oldIndex < ni) ni -= 1;
-    if (ni < 0 || ni >= _quickAddAvailableTags.length) return;
-
-    final previous = List<Tag>.from(_quickAddAvailableTags);
-    final row = previous[oldIndex];
-    final next = List<Tag>.from(previous);
-    next.removeAt(oldIndex);
-    next.insert(ni, row);
-    final withSort = <Tag>[
-      for (var i = 0; i < next.length; i++) next[i].copyWith(sortOrder: i),
-    ];
-    setState(() => _quickAddAvailableTags = withSort);
-    unawaited(_persistQuickBarTagIdOrderPrefs(withSort));
-    unawaited(_persistPlanningQuickBarSortOrder(previous, withSort));
-  }
-
-  Future<void> _persistPlanningQuickBarSortOrder(
-    List<Tag> previousUiOrder,
-    List<Tag> ordered,
-  ) async {
-    final persistable = ordered
-        .where((t) => t.tagId != _kUntaggedPlanGroupId)
-        .toList();
-    final withSort = <Tag>[
-      for (var i = 0; i < persistable.length; i++)
-        persistable[i].copyWith(sortOrder: i),
-    ];
-    final ok = await DatabaseService.instance
-        .persistTagsSortOrderForCurrentUser(withSort);
-    if (!mounted) return;
-    if (ok) {
-      await _persistQuickBarTagIdOrderPrefs(ordered);
-      DatabaseService.instance.notifyPlanningRefresh();
-      return;
-    }
-    setState(() => _quickAddAvailableTags = List<Tag>.from(previousUiOrder));
-    AppSnack.failed();
-  }
-
-
 
   void _refreshPlanningTasksAfterTimezoneChange() {
     final day = widget.selectedDate ?? _today;
@@ -1110,7 +924,7 @@ DatabaseService.instance.persistPlanningTaskOrder(
         (DatabaseService.instance.rules.isNotEmpty
             ? DatabaseService.instance.rules.first.id
             : 0);
-    final tagsForCreate = List<Tag>.from(_creationSelectedTags);
+    final tagsForCreate = List<Tag>.from(_quickAddTags.creationSelectedTags);
     final existingDay = [
       ..._latestPlanningDayTasks,
       ..._optimisticTasks.where(
@@ -1159,7 +973,7 @@ DatabaseService.instance.persistPlanningTaskOrder(
         if (ok) {
           _textController.clear();
           setState(() {
-            _creationSelectedTags = [];
+            _quickAddTags.clearCreationSelectedTags();
           });
           final displayWalls =
               DatabaseService.instance.profileDisplayWallsFromAutoSchedule(
@@ -1348,9 +1162,9 @@ DatabaseService.instance.persistPlanningTaskOrder(
   }
 
   List<Tag> _tagSortMasterBarOrder() => planningTagSortMasterBarOrder(
-        quickAddAvailableTags: _quickAddAvailableTags,
+        quickAddAvailableTags: _quickAddTags.availableTags,
         cachedUserTagsCatalog: DatabaseService.instance.cachedUserTagsCatalog,
-        syntheticNoTagsTag: _syntheticNoTagsTag(),
+        syntheticNoTagsTag: _quickAddTags.syntheticNoTagsTag(),
       );
 
   PlanCard _planningTaskCardForRow(
@@ -2061,13 +1875,14 @@ DatabaseService.instance.persistPlanningTaskOrder(
                       height: 40,
                       child: PlanningQuickAddTagStrip(
                         scheme: scheme,
-                        tagsLoading: _quickAddTagsLoading,
-                        availableTags: _quickAddAvailableTags,
-                        selectedTags: _creationSelectedTags,
-                        onToggleTag: _toggleCreationTag,
-                        onOpenTagManager: _openTagManagerFromQuickAdd,
-                        onReorder: _quickAddAvailableTags.length >= 2
-                            ? _onPlanningQuickBarReorder
+                        tagsLoading: _quickAddTags.tagsLoading,
+                        availableTags: _quickAddTags.availableTags,
+                        selectedTags: _quickAddTags.creationSelectedTags,
+                        onToggleTag: _quickAddTags.toggleCreationTag,
+                        onOpenTagManager: () =>
+                            unawaited(_quickAddTags.openTagManager(context)),
+                        onReorder: _quickAddTags.availableTags.length >= 2
+                            ? _quickAddTags.onQuickBarReorder
                             : null,
                       ),
                     ),
