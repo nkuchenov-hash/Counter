@@ -46,7 +46,7 @@
 | Field | Detail |
 | :--- | :--- |
 | **User-facing capability** | Scheduled plan blocks on a vertical time canvas. Drag, resize, 5-minute snap. Density-aware cards (micro → large). “Now” line in profile timezone. Configurable visible day length (extended hours, including after midnight). Sequential cascade when blocks overlap. |
-| **Proof** | `lib/features/planning/plan_time_view_layout.dart` — `TimeViewYScale`; `lib/core/widgets/plan_time_task_card.dart` — `PlanTimeTaskCard`; `lib/core/time/plan_time_visible_window.dart`; `lib/data/plan_time_sequential_cascade.dart`; `docs/UX_CONTRACT.md` § Planning Time Mode |
+| **Proof** | `lib/features/planning/plan_time_view_layout.dart` — `TimeViewYScale`; `lib/core/widgets/plan_time_task_card.dart` — `PlanTimeTaskCard`; `lib/shared/time/plan_time_visible_window.dart`; `lib/data/plan_time_sequential_cascade.dart`; `docs/UX_CONTRACT.md` § Planning Time Mode |
 | **User value** | See plan vs clock at a glance; block scheduling that respects real wall time |
 | **Status** | **public-ready** with **wip** polish (CHANGELOG: many P0 Time View entries still `[wip]`) |
 | **Risks / caveats** | Drag/drop/target-insert behavior actively refined — screenshots should use stable, simple schedules. Do not overclaim pixel-perfect Google Calendar parity. |

@@ -458,6 +458,19 @@ def humanize_guide(
             "responsibilities_ru": f"Реализует в shell: {role_clean}.",
         }
 
+    if p.startswith("lib/shared/time/"):
+        role_short = role_clean.replace("*(part)*", "").strip()
+        return {
+            "what": f"Shared time ownership — {role_short}.",
+            "why": "UTC and profile wall-clock rules must stay identical for Brain, header, Plans, and settings.",
+            "contains": f"Time helper or injectable clock hook ({sym}).",
+            "responsibilities": role_clean,
+            "what_ru": f"Общий time-слой — {role_short}.",
+            "why_ru": "UTC и profile wall-clock должны совпадать для Brain, header, Plans и settings.",
+            "contains_ru": f"Time helper или injectable clock hook ({sym}).",
+            "responsibilities_ru": f"Реализует в shared/time: {role_clean}.",
+        }
+
     if p.startswith("lib/core/widgets/"):
         role_short = role_clean.split(";")[0].strip()
         return {

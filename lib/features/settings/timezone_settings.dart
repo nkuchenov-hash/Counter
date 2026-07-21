@@ -2,10 +2,10 @@
 /// No device timezone detection. No DateTime.toLocal().
 library;
 
-import 'package:counter/core/time/profile_timezone_catalog.dart';
+import 'package:counter/shared/time/profile_timezone_catalog.dart';
 
-export 'package:counter/core/time/category_timezone_options.dart';
-export 'package:counter/core/time/profile_timezone_catalog.dart';
+export 'package:counter/shared/time/category_timezone_options.dart';
+export 'package:counter/shared/time/profile_timezone_catalog.dart';
 
 class TimezoneOption {
   const TimezoneOption(this.label, this.offsetHours);

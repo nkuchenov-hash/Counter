@@ -1,4 +1,4 @@
-import 'package:counter/features/profile/timezone_settings.dart' as tz_settings;import 'package:counter/l10n/dictionary.dart';import 'package:flutter/material.dart';class DefaultPlanTimezoneSearchDelegate extends SearchDelegate<String?> {
+import 'package:counter/features/settings/timezone_settings.dart' as tz_settings;import 'package:counter/l10n/dictionary.dart';import 'package:flutter/material.dart';class DefaultPlanTimezoneSearchDelegate extends SearchDelegate<String?> {
   DefaultPlanTimezoneSearchDelegate({
     required this.loc,
     required this.options,

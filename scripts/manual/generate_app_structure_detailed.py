@@ -243,6 +243,8 @@ def parse_app_structure_roles() -> dict[str, str]:
                 current_prefix = "lib/features/"
             if "3.1.1" in line and "shell" in line:
                 current_prefix = "lib/app/shell/"
+            if "3.35" in line and "shared/time" in line:
+                current_prefix = "lib/shared/time/"
             if "3.1 Entry" in line:
                 current_prefix = "lib/"
             if "PocketBase hooks" in line:

@@ -1,4 +1,4 @@
-import 'package:counter/core/time/plan_time_visible_window.dart';
+import 'package:counter/shared/time/plan_time_visible_window.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

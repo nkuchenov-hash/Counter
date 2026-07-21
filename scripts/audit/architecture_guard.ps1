@@ -52,7 +52,9 @@ $forbiddenImportRules = @(
     @{ Label = 'data->features'; Path = 'lib\data'; Pattern = "import 'package:counter/features/" },
     @{ Label = 'core->features'; Path = 'lib\core'; Pattern = "import 'package:counter/features/" },
     @{ Label = 'services->features'; Path = 'lib\services'; Pattern = "import 'package:counter/features/" },
-    @{ Label = 'core->database_service'; Path = 'lib\core'; Pattern = "import 'package:counter/data/database_service.dart'" }
+    @{ Label = 'core->database_service'; Path = 'lib\core'; Pattern = "import 'package:counter/data/database_service.dart'" },
+    @{ Label = 'shared->features'; Path = 'lib\shared'; Pattern = "import 'package:counter/features/" },
+    @{ Label = 'shared->database_service'; Path = 'lib\shared'; Pattern = "import 'package:counter/data/database_service.dart'" }
 )
 
 foreach ($rule in $forbiddenImportRules) {
@@ -108,6 +110,7 @@ $deletedMustStayGone = @(
   'lib/features/more/more_view.dart',
   'lib/features/timeline/timeline_widgets.dart',
   'lib/shell',
+  'lib/core/time',
   'lib/deploy.ps1',
   'lib/notes',
   'lib/core/p0u_diag.dart',

@@ -9,7 +9,7 @@ import 'package:counter/data/database_service.dart';
 import 'package:counter/core/services/desktop_voice_settings.dart';
 import 'package:counter/features/profile/desktop_voice_settings_desktop.dart';
 import 'package:counter/features/profile/desktop_voice_settings_section.dart';
-import 'package:counter/features/profile/timezone_settings.dart' as tz_settings;
+import 'package:counter/features/settings/timezone_settings.dart' as tz_settings;
 import 'package:counter/l10n/app_locales.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;

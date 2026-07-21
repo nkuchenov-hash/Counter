@@ -2,8 +2,8 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:counter/core/app_snackbar.dart';
-import 'package:counter/core/time/profile_timezone_actions.dart';
-import 'package:counter/core/time/profile_timezone_catalog.dart';
+import 'package:counter/shared/time/profile_timezone_actions.dart';
+import 'package:counter/shared/time/profile_timezone_catalog.dart';
 import 'package:counter/core/widgets/app_timezone_icon.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/l10n/dictionary.dart';

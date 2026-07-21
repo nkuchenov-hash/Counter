@@ -1,4 +1,4 @@
-import 'package:counter/core/time/plan_time_labels.dart';
+import 'package:counter/shared/time/plan_time_labels.dart';
 import 'package:counter/core/widgets/plan_card.dart';
 import 'package:counter/data/cache/render_snapshot.dart';
 import 'package:counter/data/database_service.dart';

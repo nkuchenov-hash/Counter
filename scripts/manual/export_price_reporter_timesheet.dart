@@ -15,7 +15,7 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:counter/core/time/wall_clock.dart';
+import 'package:counter/shared/time/wall_clock.dart';
 import 'package:counter/data/price_reporter_client_match.dart';
 import 'package:csv/csv.dart';
 import 'package:intl/intl.dart';

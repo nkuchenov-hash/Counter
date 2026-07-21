@@ -32,25 +32,28 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Layer | Path | Owns | May import | Must NOT import |
 | :--- | :--- | :--- | :--- | :--- |
-| **Entry** | `lib/main.dart`, `lib/app_shell.dart`, `lib/app/shell/` | Boot, auth gate, form-factor shell navigation, cross-tab wiring | `data/`, `core/`, `features/`, `l10n/`, `services/` | — |
-| **Brain** | `lib/data/` | PocketBase I/O, in-memory cache, optimistic UI, offline outboxes, domain models | `core/` (utilities only), `services/` (device bridge), other `data/` | `features/` |
-| **Foundation** | `lib/core/` | Theme, tokens, shared widgets, time helpers, diagnostics, performance flags | `core/`, `data/models.dart` (types only) | `features/`, `data/database_service.dart` |
-| **UI modules** | `lib/features/` | Screens, sheets, feature-specific layout | `data/`, `core/`, `l10n/`, `features/shared/` | other features except via `shared/` or explicit shell routing |
+| **Entry** | `lib/main.dart`, `lib/app_shell.dart`, `lib/app/shell/` | Boot, auth gate, form-factor shell navigation, cross-tab wiring | `data/`, `core/`, `shared/`, `features/`, `l10n/`, `services/` | — |
+| **Brain** | `lib/data/` | PocketBase I/O, in-memory cache, optimistic UI, offline outboxes, domain models | `core/` (utilities only), `shared/time/`, `services/` (device bridge), other `data/` | `features/` |
+| **Shared time** | `lib/shared/time/` | Multi-consumer UTC/wall-clock, timezone catalog, app clock hooks, shared plan-time math used by Brain + UI | `core/` (utilities), `data/models.dart` (types only) | `features/`, `data/database_service.dart` |
+| **Foundation** | `lib/core/` | Theme, tokens, shared widgets, diagnostics, performance flags | `core/`, `shared/time/`, `data/models.dart` (types only) | `features/`, `data/database_service.dart` |
+| **UI modules** | `lib/features/` | Screens, sheets, feature-specific layout | `data/`, `core/`, `shared/`, `l10n/`, `features/shared/` | other features except via `shared/` or explicit shell routing |
 | **Voice** | `lib/l10n/` | Locale catalog and `t()` lookup | Flutter SDK only | `data/`, `features/` |
-| **Device bridge** | `lib/services/` | OS capabilities without UI | `data/models.dart`, Flutter/plugins | `features/` |
+| **Device bridge** | `lib/services/` | OS capabilities without UI | `data/models.dart`, `shared/time/`, Flutter/plugins | `features/` |
 
 ### Import boundary summary
 
 ```
-features  →  data, core, l10n, services   ✓
-data      →  core, services, data        ✓
-data      →  features                    ✗
-core      →  data/models.dart, core       ✓
-core      →  features, database_service   ✗
-services  →  data/models, plugins         ✓
-services  →  features                      ✗
-l10n      →  (self + langs)               ✓
-main/app_shell → all layers               ✓
+features  →  data, core, shared, l10n, services   ✓
+data      →  core, shared/time, services, data    ✓
+data      →  features                            ✗
+shared/time → core, data/models.dart             ✓
+shared/time → features, database_service         ✗
+core      →  data/models.dart, shared/time, core ✓
+core      →  features, database_service           ✗
+services  →  data/models, shared/time, plugins   ✓
+services  →  features                            ✗
+l10n      →  (self + langs)                      ✓
+main/app_shell → all layers                      ✓
 ```
 
 **Brain rule:** `lib/data/database_service.dart` is the only file that performs HTTP/PocketBase calls. Domain logic lives in `part of` extensions (`db_core.dart`, `record_service.dart`, `records/*`, `plan_service.dart`, `plans/*`, `category_service.dart`, `categories/*`, `profile_service.dart`, `profile/*`).
@@ -59,14 +62,14 @@ main/app_shell → all layers               ✓
 
 ---
 
-## 2. Shell injection (main → core)
+## 2. Shell injection (main → shared time / core)
 
-These core abstractions stay free of Brain imports; `main.dart` and `app_shell.dart` wire them at runtime:
+These abstractions stay free of Brain imports in the UI layer; `main.dart` and `app_shell.dart` wire them at runtime:
 
 | Symbol | File | Wired from | Purpose |
 | :--- | :--- | :--- | :--- |
-| `AppClock` | `core/time/app_clock.dart` | `main.dart` `_wireAppClock()` | Profile-timezone wall clock and tick stream for headers |
-| `ProfileTimezoneActions` | `core/time/profile_timezone_actions.dart` | `main.dart` `_wireProfileTimezoneActions()` | Profile timezone label, settings stream, and save hook for header picker |
+| `AppClock` | `shared/time/app_clock.dart` | `main.dart` `_wireAppClock()` | Profile-timezone wall clock and tick stream for headers |
+| `ProfileTimezoneActions` | `shared/time/profile_timezone_actions.dart` | `main.dart` `_wireProfileTimezoneActions()` | Profile timezone label, settings stream, and save hook for header picker |
 | `PlanCategoryLookup` | `core/plan_category_lookup.dart` | `main.dart` `_wirePlanCategoryLookup()` | Category color, icon, breadcrumb for plan cards without importing Brain in widgets |
 | `TagDisplayModeScope` | `core/widgets/tag_display_mode_scope.dart` | `app_shell.dart` | Inherited tag display mode from profile settings |
 
@@ -214,6 +217,7 @@ Compatibility re-exports (remove when callers migrate): root `lib/app_shell.dart
 | `shell_layout_state.dart` | `ShellLayoutController` / FAB clearance |
 | `tag_contrast.dart` | Tag foreground/background contrast |
 | `url_strategy_stub.dart` | Web URL strategy conditional import |
+| `web_redirect.dart` | Production web OAuth redirect URI helper |
 
 **`core/diagnostics/`**
 
@@ -239,19 +243,6 @@ Compatibility re-exports (remove when callers migrate): root `lib/app_shell.dart
 | `runtime_flags.dart` | Feature kill switches (date strip, warm window, etc.) |
 | `shell_flags.dart` | Shell tab stack behavior flags |
 | `rebuild_metrics.dart` | Rebuild/frame metrics (`--dart-define=PERF_DIAG` gated) |
-
-**`core/time/`**
-
-| File | Role |
-| :--- | :--- |
-| `app_clock.dart` | Injectable wall clock + timezone label |
-| `profile_timezone_actions.dart` | Injectable profile timezone read/write hooks (`ProfileTimezoneActions`) |
-| `profile_timezone_catalog.dart` | Canonical profile timezone catalog, IANA IDs, DST labels |
-| `web_redirect.dart` | Production web OAuth redirect URI helper |
-| `wall_clock.dart` | Wall-clock formatting helpers |
-| `plan_time_labels.dart` | Plan time label formatting |
-| `plan_time_visible_window.dart` | Extended Time View day window math (−3..27 h) |
-| `category_timezone_options.dart` | Per-category timezone option list |
 
 **`core/env/`**
 
@@ -386,6 +377,22 @@ Every Desktop Voice / STT production module under `core/services/` must be liste
 
 Every production Notes widget under `core/widgets/notes/` must be listed by exact filename above (no wildcard substitutes).
 
+### 3.35 `lib/shared/time/` — multi-consumer time (Phase 2A)
+
+UTC/wall-clock and timezone catalog code used by Brain plus more than one UI surface. Single-feature time UI stays under the owning feature.
+
+| File | Role |
+| :--- | :--- |
+| `app_clock.dart` | Injectable wall clock + timezone label |
+| `profile_timezone_actions.dart` | Injectable profile timezone read/write hooks (`ProfileTimezoneActions`) |
+| `profile_timezone_catalog.dart` | Canonical profile timezone catalog, IANA IDs, DST labels |
+| `wall_clock.dart` | UTC ↔ profile wall-clock conversion (no device TZ) |
+| `plan_time_labels.dart` | Plan wall-time label formatting (Brain + Planning + plan cards) |
+| `plan_time_visible_window.dart` | Extended Time View day window math (−3..27 h); Brain cascade + Planning |
+| `category_timezone_options.dart` | Per-category default plan-time IANA option list |
+
+Shell-selected date helpers stay under `app/shell/shared/`. Settings-only timezone helpers live in `features/settings/timezone_settings.dart`.
+
 ### 3.4 `lib/features/` — UI modules
 
 | Folder | Files | Role |
@@ -398,7 +405,8 @@ Every production Notes widget under `core/widgets/notes/` must be listed by exac
 | `notes/` | `drawing_canvas_page.dart`, `notes_glm_surface.dart`, `notes_library_page.dart`, `notes_visual_tokens.dart`, `note_editor_page.dart`, **`widgets/`** (`notes_library_body.dart`, `notes_library_production_shell.dart`, `note_card.dart`, `note_editor_block_widgets.dart`) | Notes library/editor/drawing feature UI (GLM v3); exact roles in §3.4 Notes below |
 | `calendar/` | `calendar_view.dart` (orchestrator), `calendar_chrome_header.dart`, `calendar_month_grid.dart`, `calendar_week_grid.dart`, `calendar_day_panel.dart`, `calendar_day_events.dart`, `calendar_helpers.dart` | Calendar tab: month/week grids, chrome header, focused-day task panel |
 | `categories/` | `category_list_view.dart` (orchestrator), `category_row_widget.dart`, `category_editor_sheet.dart`, `category_appearance_sheet.dart`, `category_tag_input_field.dart`, `category_helpers.dart`, `category_recursive_tree.dart`, `category_visibility_prefs.dart`, `create_category_dialog.dart`, `create_category_from_picker.dart` | Category manager (More menu): band grid, editor/appearance sheets, tree picker, picker create flow |
-| `profile/` | `profile_view.dart`, **`settings/`** (account, notification, security sections), `tag_manager_page.dart`, `tag_settings_hub.dart`, `tag_settings_view.dart`, `tag_default_duration_settings_view.dart`, `timezone_settings.dart`, `desktop_voice_settings_section.dart`, `desktop_voice_settings_desktop.dart`, `desktop_voice_attempt_dialog.dart` | Profile & tag settings, timezone, desktop voice settings (Windows) |
+| `profile/` | `profile_view.dart`, **`settings/`** (account, notification, security sections), `tag_manager_page.dart`, `tag_settings_hub.dart`, `tag_settings_view.dart`, `tag_default_duration_settings_view.dart`, `desktop_voice_settings_section.dart`, `desktop_voice_settings_desktop.dart`, `desktop_voice_attempt_dialog.dart` | Profile & tag settings, desktop voice settings (Windows) |
+| `settings/` | `timezone_settings.dart` | Settings-owned timezone helpers/labels (profile catalog re-exports) |
 | `dev/` | `component_lab_view.dart`, `component_lab_cards_demo.dart` | Admin-only Component Lab |
 | `wear/` | `wear_timer_screen.dart`, `wear_main_wrapper.dart`, `wear_platform.dart`, `wear_runtime.dart` | Wear OS companion |
 | `shared/` | `shared_widgets.dart` (barrel), `activity_detail_sheet.dart`, `planning_task_edit_sheet.dart`, `timeline_record_edit_sheet.dart`, `empty_state_placeholder.dart`, **`edit_sheet/`** (autosave gate, time helpers/picker, checklist, repeat RRULE helpers, quill toolbar, parallel record panels), **`notes_editor/`** (`notes_editor_launcher.dart`, `notes_editor_sheet.dart`), `offline_sync_status_bar.dart`, `voice_input_sheet.dart`, `voice_capture_config.dart`, `desktop_voice_widget.dart`, `desktop_voice_capsule.dart`, `desktop_voice_command_panel.dart`, `desktop_voice_correction_sheet.dart` | Activity edit sheets, Notes launch/sheet routing, Omni-Picker entry, offline sync banner, mobile/web voice sheet, desktop Price Reporter voice UI + compact correction sheet |

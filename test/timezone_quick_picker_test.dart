@@ -1,4 +1,4 @@
-import 'package:counter/core/time/profile_timezone_catalog.dart';
+import 'package:counter/shared/time/profile_timezone_catalog.dart';
 import 'package:counter/core/widgets/app_timezone_icon.dart';
 import 'package:counter/core/widgets/timezone_quick_picker.dart';
 import 'package:flutter/material.dart';

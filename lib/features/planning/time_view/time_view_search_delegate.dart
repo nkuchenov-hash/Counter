@@ -6,7 +6,7 @@ import 'package:counter/core/widgets/app_button.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/features/planning/settings/default_plan_timezone_search.dart';
 import 'package:counter/features/planning/time_view/planning_time_view_coordinator.dart';
-import 'package:counter/features/profile/timezone_settings.dart' as tz_settings;
+import 'package:counter/features/settings/timezone_settings.dart' as tz_settings;
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
 
