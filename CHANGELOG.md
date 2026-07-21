@@ -11,6 +11,10 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-21] - Plans: consolidate recurrence mutations [engineering]
+
+* **`plans/plan_recurrence_helpers.dart`:** Consolidated recurring identity, exception_dates mutation, virtual completion/edit materialization, and recurrence edit/delete scope (`_isJitVirtualPlanningTask`…`deletePlanningTaskWithRecurrenceScope`) from `plan_service.dart` into `PlanRecurrenceExtension` (**2585 → 1877** / **178 → 886** Measure-Object lines). Ordinary CRUD (`updatePlanningTask` / `deletePlanningTasksBulk` / …) left in `plan_service`; thisAndFuture still unsupported; exception rollback on failed materialize unchanged. LARGE_FILE remains **1**.
+
 ## [2026-07-21] - Plans: extract record linkage [engineering]
 
 * **`plans/plan_record_link_helpers.dart`:** Extracted plan-to-record linkage + plan-vs-fact stats (`aggregateSourcePlanActualSecondsForWallCalendarDay`, `getBasicDayStats`, `suggestSourcePlanForFreeStart`, `resolveCurrentPlanCategoryForRecordStart`, category inheritance helpers) from `plan_service.dart` into `PlanRecordLinkExtension` (**2848 → 2585** / new part **267**). Actual-time bucketing, BasicDayStats fields, title-link threshold 0.42, and Brain-over-stale-UI category precedence unchanged; `plan_service` role narrowed to cache fetch/realtime and CRUD. LARGE_FILE remains **1**.

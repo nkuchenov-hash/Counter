@@ -119,7 +119,7 @@ Re-export stubs remain at `core/navigation/shell_side_navigation.dart`, `feature
 | `records/record_cache_helpers.dart` | Per-day filter, `recordsStream`, display-time helpers *(part)* |
 | `plan_service.dart` | Plans/lists coordinator: cache fetch/realtime and CRUD entry points *(part)* |
 | `plans/plan_projection_types.dart` | Time Mode projected DTO, UTC/profile-wall conversion, timezone reproject lifecycle, projection cache signature, wall-day visibility/filtering, projection diagnostics *(part)* |
-| `plans/plan_recurrence_helpers.dart` | RRULE JIT expansion, exception-date parse helpers *(part)* |
+| `plans/plan_recurrence_helpers.dart` | RRULE JIT expansion, virtual/materialized occurrence identity, exception-date mutation, concrete instance materialization, and recurrence edit/delete scope *(part)* |
 | `plans/plan_time_cascade_helpers.dart` | Duration/snap policy, collision avoidance, sequential Time View cascade, new-plan auto-scheduling, day/category overload evaluation *(part)* |
 | `plans/plan_tags_helpers.dart` | Plan/list tag catalog fetch + PB `tags_link` sync *(part)* |
 | `plans/plan_cache_helpers.dart` | Plan dedupe/scrub, offline day-cache codec + SharedPreferences persistence, title link scoring *(part)* |

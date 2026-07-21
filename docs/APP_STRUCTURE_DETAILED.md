@@ -2,7 +2,7 @@
 
 Owner-readable guide: every tracked folder and file in plain language (EN + RU).
 
-**Generated at git SHA `ad503be` on 2026-07-21.**
+**Generated at git SHA `4136849` on 2026-07-21.**
 
 Concise map: [`APP_STRUCTURE.md`](APP_STRUCTURE.md) · Upload checklist: [`PROJECT_KNOWLEDGE_PACK.md`](PROJECT_KNOWLEDGE_PACK.md)
 
@@ -11099,14 +11099,14 @@ RU:
 
 EN:
 
-- **What this is:** Expands repeating plans (daily/weekly RRULE) into visible day rows.
-- **Why needed:** A single recurring gym plan must appear on every matching calendar day.
-- **What it contains:** RRULE JIT expansion, exception dates, virtual occurrence handling.
+- **What this is:** Owns RRULE JIT expansion, virtual/materialized occurrence identity, exception-date mutation, and recurrence edit/delete scope.
+- **Why needed:** Recurring plans need one Brain owner for virt ids, template exception_dates, concrete materialization, and scoped edit/delete.
+- **What it contains:** `expandRecurringPlans`; `_parseVirtualPlanRowId`; `_patchRecurringTemplateExceptionDates`; `updatePlanningTaskWithRecurrenceScope`.
 - **Key code names:** `PlanRecurrenceExtension`
-- **Responsibilities:** RRULE JIT expansion, exception-date parse helpers
+- **Responsibilities:** RRULE JIT expansion, virtual/materialized occurrence identity, exception-date mutation, concrete instance materialization, and recurrence edit/delete scope
 - **When to open:** Plan/list save, Time View layout, recurrence, tags on plans, offline queue.
 - **Can it be deleted?** No — required for app runtime.
-- **Connected to:** UI calls via `DatabaseService.instance`; Plans tab, Lists tab, Time View; APP_STRUCTURE role: RRULE JIT expansion, exception-date parse helpers
+- **Connected to:** UI calls via `DatabaseService.instance`; Plans tab, Lists tab, Time View; APP_STRUCTURE role: RRULE JIT expansion, virtual/materialized occurrence identity, exception-date mutation, concrete instance materializatio
 - **Layer / owner:** Brain module — `part` file merged into `database_service.dart`.
 
 RU:
@@ -11114,7 +11114,7 @@ RU:
 - **Что это:** Модуль brain для plans and lists — файл `plan_recurrence_helpers`.
 - **Зачем:** Держит plans and lists согласованным с PocketBase и UI.
 - **Содержимое:** Dart-код (`PlanRecurrenceExtension`).
-- **Обязанности:** Реализует в коде: RRULE JIT expansion, exception-date parse helpers.
+- **Обязанности:** Реализует в коде: RRULE JIT expansion, virtual/materialized occurrence identity, exception-date mutation, concrete instance materialization, and recurrence edit/delete scope.
 - **Когда открывать:** Планы/списки: сохранение, Time View, повтор, теги.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** UI вызывает `DatabaseService.instance`; Plans, Lists, Time View

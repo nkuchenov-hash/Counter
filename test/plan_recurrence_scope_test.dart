@@ -83,6 +83,24 @@ void main() {
     });
   });
 
+  group('recurrence scope APIs', () {
+    test('thisAndFuture update and delete return false when unsupported', () async {
+      final db = DatabaseService.instance;
+      final updated = await db.updatePlanningTaskWithRecurrenceScope(
+        'virt-$_seriesPb-$_dayKey',
+        scope: RecurrenceEditScope.thisAndFuture,
+        suppressAppSnack: true,
+      );
+      final deleted = await db.deletePlanningTaskWithRecurrenceScope(
+        'virt-$_seriesPb-$_dayKey',
+        scope: RecurrenceEditScope.thisAndFuture,
+        suppressAppSnack: true,
+      );
+      expect(updated, isFalse);
+      expect(deleted, isFalse);
+    });
+  });
+
   group('planningTaskIsRecurringForScope', () {
     test('detects virtual, materialized, and series rows', () {
       expect(

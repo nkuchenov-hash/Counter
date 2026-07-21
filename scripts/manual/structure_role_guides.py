@@ -70,9 +70,9 @@ PLAN_PART: dict[str, tuple[str, str, str]] = {
         "`TimeModeProjectedPlan`; `PlanProfileTimezoneProjectionExtension`; `reprojectAllPlansForProfileTimezone`; `plansProjectionCacheSignature`.",
     ),
     "plan_recurrence_helpers": (
-        "Expands repeating plans (daily/weekly RRULE) into visible day rows.",
-        "A single recurring gym plan must appear on every matching calendar day.",
-        "RRULE JIT expansion, exception dates, virtual occurrence handling.",
+        "Owns RRULE JIT expansion, virtual/materialized occurrence identity, exception-date mutation, and recurrence edit/delete scope.",
+        "Recurring plans need one Brain owner for virt ids, template exception_dates, concrete materialization, and scoped edit/delete.",
+        "`expandRecurringPlans`; `_parseVirtualPlanRowId`; `_patchRecurringTemplateExceptionDates`; `updatePlanningTaskWithRecurrenceScope`.",
     ),
     "plan_time_cascade_helpers": (
         "Owns Time View duration/snap policy, collision avoidance, sequential cascade, and new-plan auto-scheduling.",
