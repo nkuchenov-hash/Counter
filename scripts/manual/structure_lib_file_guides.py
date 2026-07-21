@@ -145,7 +145,7 @@ LIB_FILE_GUIDES: dict[str, dict[str, str]] = {
         "contains_ru": "Геометрический хелпер `clampCanvasTopLeft`; константы безопасного отступа.",
         "responsibilities_ru": "Чистая геометрия — без импортов Brain и PocketBase.",
     },
-    "lib/shell/shell_bottom_navigation.dart": {
+    "lib/app/shell/phone/shell_bottom_navigation.dart": {
         "what": "`ShellCompactBottomNav` — equal-column phone-safe bottom tab bar (compact labels).",
         "why": "Material `NavigationBar` clips five labels on ~390px widths; this bar matches APK phone metrics.",
         "contains": "`ShellCompactBottomNav`, `kShellBottomNavHeight`, compact vs full label keys.",

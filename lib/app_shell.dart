@@ -1,2 +1,4 @@
-// APP SHELL — thin entry; dashboard lives under lib/shell/.
-export 'package:counter/shell/life_os_dashboard.dart';
+// APP SHELL — thin compatibility entry.
+// Canonical implementation: package:counter/app/shell/app_shell.dart
+// Remove this root re-export once all callers import the canonical path.
+export 'package:counter/app/shell/app_shell.dart';

@@ -1,1 +1,2 @@
-export 'package:counter/shell/settings_page.dart';
+// Compatibility re-export — prefer package:counter/app/shell/shared/settings_page.dart
+export 'package:counter/app/shell/shared/settings_page.dart';

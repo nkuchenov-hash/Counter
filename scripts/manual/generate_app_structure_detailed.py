@@ -242,7 +242,7 @@ def parse_app_structure_roles() -> dict[str, str]:
             if "3.4.1" in line or ("3.4" in line and "features" in line):
                 current_prefix = "lib/features/"
             if "3.1.1" in line and "shell" in line:
-                current_prefix = "lib/shell/"
+                current_prefix = "lib/app/shell/"
             if "3.1 Entry" in line:
                 current_prefix = "lib/"
             if "PocketBase hooks" in line:
@@ -544,7 +544,7 @@ def layer_for(path: str) -> tuple[str, str]:
             "Foundation code — theme, time, voice services, diagnostics (not a full screen).",
             "Foundation — тема, время, voice, диагностика.",
         )
-    if p.startswith("lib/shell/"):
+    if p.startswith("lib/app/shell/"):
         return ("App shell — navigation and global wiring.", "Shell — навигация приложения.")
     if p.startswith("lib/l10n/"):
         return ("Translations and text keys.", "Локализация — строки UI.")
@@ -679,7 +679,7 @@ def when_for(path: str) -> tuple[str, str]:
             "Plan card look/feel: height, tags, play button, Time View density.",
             "Внешний вид карточки плана.",
         )
-    if p.startswith("lib/shell/"):
+    if p.startswith("lib/app/shell/"):
         return (
             "Bottom tabs, voice routing, edit modal host, offline banner slot.",
             "Навигация, voice, edit host.",
@@ -754,7 +754,7 @@ def connected_for(path: str, role: str) -> tuple[str, str]:
     elif p.startswith("lib/features/shared"):
         en_parts.append("Edit sheets and voice UI on every tab")
         ru_parts.append("Edit sheets и voice UI на всех вкладках")
-    elif p.startswith("lib/shell"):
+    elif p.startswith("lib/app/shell"):
         en_parts.append("All main tabs, `app_shell.dart`")
         ru_parts.append("Все main tabs, `app_shell.dart`")
     elif p.startswith("lib/services/"):
