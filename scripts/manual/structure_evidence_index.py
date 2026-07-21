@@ -427,7 +427,7 @@ def _owner_for(path: str) -> tuple[str, str]:
         return "shared design system", "общий design system"
     if p.startswith("lib/core/"):
         return "shared foundation", "общая foundation"
-    if p.startswith("lib/shell/") or p in ("lib/main.dart", "lib/app_shell.dart"):
+    if p.startswith("lib/app/shell/") or p in ("lib/main.dart", "lib/app_shell.dart"):
         return "app shell", "оболочка приложения"
     if p.startswith("lib/l10n/"):
         return "localization", "локализация"
@@ -473,7 +473,7 @@ def _classify_role(path: str, rec_hints: dict) -> str:
         return "intentionally retained product watchlist"
     if p == "lib/main.dart":
         return "runtime entry point"
-    if p.startswith("lib/features/") or p.startswith("lib/shell/"):
+    if p.startswith("lib/features/") or p.startswith("lib/app/shell/"):
         return "production UI"
     if p.startswith("lib/data/"):
         return "Brain/data"

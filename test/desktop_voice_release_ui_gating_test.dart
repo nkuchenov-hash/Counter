@@ -11,7 +11,7 @@ void main() {
     });
 
     test('more menu diagnostics source gates dev entry', () {
-      final src = File('lib/shell/shell_more_menu.dart').readAsStringSync();
+      final src = File('lib/app/shell/shared/shell_more_menu.dart').readAsStringSync();
       expect(src.contains('DESKTOP_VOICE_MORE_MENU_DIAGNOSTICS_REMOVED'), isTrue);
       expect(src.contains('_desktopVoiceDevDiagnosticsVisible'), isTrue);
       expect(src.contains('DESKTOP_VOICE_DEV_ENTRY_GATED'), isTrue);

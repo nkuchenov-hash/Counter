@@ -46,7 +46,7 @@ Use `CHANGELOG.md` and `docs/ROADMAP.md` to understand what is already built bef
 
 ## Architecture Boundaries
 
-- `lib/main.dart` and `lib/app_shell.dart` own boot, shell, auth gate, global wiring, and navigation.
+- `lib/main.dart` and `lib/app/shell/` (via root `lib/app_shell.dart` re-export) own boot, form-factor shell, auth gate, global wiring, and navigation.
 - `lib/data/` is the Brain. It owns PocketBase I/O, domain models, in-memory cache, optimistic state, and offline outboxes.
 - `lib/data/database_service.dart` is the Brain root. Domain logic lives in its `part of` files: `db_core.dart`; coordinators `record_service.dart`, `plan_service.dart`, `category_service.dart`, `profile_service.dart`; and focused parts under `records/*`, `plans/*`, `categories/*`, `profile/*`.
 - `lib/data/` must not import `lib/features/`.

@@ -11,6 +11,10 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-21] - Shell: form-factor ownership split [engineering]
+
+* **`lib/app/shell/`:** Phase 1 feature-first shell restructure — moved former `lib/shell/` into `app/shell/{shared,phone,tablet,desktop}`; root `lib/app_shell.dart` remains a thin compatibility re-export; tab order, breakpoints, and chrome behavior unchanged (tablet currently shares phone compact chrome below 900px). Wear shell stays in `features/wear/` (no dead placeholders).
+
 ## [2026-07-21] - Docs: include evidence index in file map [engineering]
 
 * **`APP_STRUCTURE_DETAILED.md`:** Regenerated from current 724 tracked files (includes `structure_evidence_index.py`); header now says **Generated from input HEAD** (input SHA, not the commit that will contain the document); generator fails unless evidence/role/necessity/confidence/rendered counts all equal `len(git ls-files)`.

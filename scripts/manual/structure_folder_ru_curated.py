@@ -78,7 +78,7 @@ register_folder_ru(
         "affects_ru": "CI/integration QA — не APK пользователю.",
         "when_ru": "Падает integration test или меняется shell navigation.",
         "delete_ru": "Нет — если integration QA остаётся в pipeline.",
-        "related_ru": "`test/`, `lib/shell/`.",
+        "related_ru": "`test/`, `lib/app/shell/`.",
     },
 )
 
@@ -156,20 +156,85 @@ register_folder_ru(
         "affects_ru": "Вся видимая часть приложения кроме platform wrappers.",
         "when_ru": "UI bug на вкладке, новый экран, edit sheet, voice sheet layout.",
         "delete_ru": "Нет — удаление убирает весь UI продукта.",
-        "related_ru": "`lib/shell/`, `lib/data/`.",
+        "related_ru": "`lib/app/shell/`, `lib/data/`.",
     },
 )
 
 register_folder_ru(
-    "lib/shell",
+    "lib/app",
     {
-        "what_ru": "Оболочка — нижние вкладки, desktop side nav, More menu, voice routing, edit modals, offline banner.",
-        "why_ru": "Связывает `main.dart` с feature pages и глобальным поведением (voice, sync banner).",
-        "inside_ru": "Dashboard scaffold, IndexedStack вкладок, More menu, voice submit routing.",
+        "what_ru": "Корневой слой приложения поверх `lib/` — сейчас владеет form-factor shell.",
+        "why_ru": "Отделяет оболочку приложения от `features/` и `data/` без общих корзин вроде `core` для shell.",
+        "inside_ru": "`shell/` — phone/tablet/desktop/shared chrome и orchestration.",
+        "affects_ru": "Старт UI после auth, навигация по вкладкам, form-factor chrome.",
+        "when_ru": "Перенос shell, смена tab chrome, phone vs desktop layout.",
+        "delete_ru": "Нет — без `lib/app/shell/` нет главной оболочки.",
+        "related_ru": "`lib/app_shell.dart`, `lib/main.dart`, `docs/APP_STRUCTURE.md`.",
+    },
+)
+
+register_folder_ru(
+    "lib/app/shell",
+    {
+        "what_ru": "Оболочка по форм-фактору — phone bottom nav, tablet compact chrome, desktop side nav, shared tab/voice/edit hosts.",
+        "why_ru": "Связывает `main.dart` с feature pages; разделяет владение chrome без redesign экранов.",
+        "inside_ru": "`app_shell.dart`, `shared/`, `phone/`, `tablet/`, `desktop/`; Wear chrome пока в `features/wear/`.",
         "affects_ru": "Навигация, global header, voice commands между вкладками.",
-        "when_ru": "Неверная вкладка, voice уходит не туда, edit sheet host, offline banner.",
+        "when_ru": "Неверная вкладка, voice уходит не туда, edit sheet host, offline banner, phone vs desktop chrome.",
         "delete_ru": "Нет — навигация приложения рушится.",
         "related_ru": "`lib/app_shell.dart`, все `lib/features/*`.",
+    },
+)
+
+register_folder_ru(
+    "lib/app/shell/shared",
+    {
+        "what_ru": "Form-factor-нейтральное состояние shell — вкладки, edit hosts, voice routing, offline banner, settings.",
+        "why_ru": "Общее поведение shell не должно жить только в phone- или desktop-layout файлах.",
+        "inside_ru": "Part mixins, offline banner, resolve форм-фактора, profile hydration bar, settings page.",
+        "affects_ru": "Все форм-факторы.",
+        "when_ru": "Persistence вкладок, More menu logic, voice routing, sync banner.",
+        "delete_ru": "Нет.",
+        "related_ru": "`lib/app/shell/app_shell.dart`.",
+    },
+)
+
+register_folder_ru(
+    "lib/app/shell/phone",
+    {
+        "what_ru": "Phone shell chrome — компактная нижняя навигация и phone content frame.",
+        "why_ru": "Узкие viewport оставляют touch-first bottom tabs.",
+        "inside_ru": "`shell_bottom_navigation.dart`, `phone_shell_frame.dart`.",
+        "affects_ru": "APK и узкий web/phone.",
+        "when_ru": "Layout нижней навигации, compact labels.",
+        "delete_ru": "Нет — ломается phone navigation.",
+        "related_ru": "`lib/core/shell_adaptive.dart`.",
+    },
+)
+
+register_folder_ru(
+    "lib/app/shell/tablet",
+    {
+        "what_ru": "Tablet shell frame — сейчас тот же compact chrome, что у phone, ниже desktop breakpoint.",
+        "why_ru": "Явное владение tablet без выдуманного redesign.",
+        "inside_ru": "`tablet_shell_frame.dart`.",
+        "affects_ru": "Средние compact viewport.",
+        "when_ru": "Когда tablet chrome позже отойдёт от phone.",
+        "delete_ru": "Можно — только после того, как phone frame покроет tablet call sites.",
+        "related_ru": "`lib/app/shell/phone/`.",
+    },
+)
+
+register_folder_ru(
+    "lib/app/shell/desktop",
+    {
+        "what_ru": "Оболочка desktop и web — боковая навигация и широкий content frame.",
+        "why_ru": "Широкие viewport заменяют bottom nav на side nav.",
+        "inside_ru": "`shell_side_navigation.dart`, `desktop_shell_frame.dart`.",
+        "affects_ru": "Desktop, web и широкий tablet landscape от 900px.",
+        "when_ru": "Подписи side nav, wide shell layout.",
+        "delete_ru": "Нет — ломается desktop navigation.",
+        "related_ru": "`lib/core/shell_adaptive.dart`.",
     },
 )
 
@@ -715,7 +780,7 @@ register_folder_ru(
         "affects_ru": "Только вкладка Plans (плюс calendar rows с теми же карточками).",
         "when_ru": "Неверные карточки, drag Time View, swipe дней, play/start plan.",
         "delete_ru": "Нет — вкладка Plans исчезнет.",
-        "related_ru": "`lib/shell/`, `lib/data/plan_service.dart`.",
+        "related_ru": "`lib/app/shell/`, `lib/data/plan_service.dart`.",
     },
 )
 
@@ -728,7 +793,7 @@ register_folder_ru(
         "affects_ru": "Редактирование plans/records по tap; mobile voice sheet; desktop voice panel.",
         "when_ru": "Save edit sheet, date picker, tags на plan, voice input sheet.",
         "delete_ru": "Нет — edit flows сломаются на всех вкладках.",
-        "related_ru": "`lib/shell/shell_edit_hosts.dart`, `docs/UX_CONTRACT.md`.",
+        "related_ru": "`lib/app/shell/shared/shell_edit_hosts.dart`, `docs/UX_CONTRACT.md`.",
     },
 )
 
@@ -806,7 +871,7 @@ register_folder_ru(
         "affects_ru": "Desktop/web layout (side nav) и overlay routing над вкладками.",
         "when_ru": "Desktop overlay не может push routes; неверный breakpoint side navigation.",
         "delete_ru": "Нет — сломаются desktop layout и overlays.",
-        "related_ru": "`lib/shell/shell_side_navigation.dart`, `lib/core/shell_adaptive.dart`.",
+        "related_ru": "`lib/app/shell/desktop/shell_side_navigation.dart`, `lib/core/shell_adaptive.dart`.",
     },
 )
 

@@ -1,4 +1,4 @@
-part of 'life_os_dashboard.dart';
+part of '../app_shell.dart';
 
 mixin ShellVoiceRouting on ShellCoreLogic {
   Future<void> refreshDesktopTrayMenu() async {

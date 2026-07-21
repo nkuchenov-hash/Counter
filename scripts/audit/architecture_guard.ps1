@@ -107,6 +107,7 @@ $deletedMustStayGone = @(
   'lib/data/html_stub.dart',
   'lib/features/more/more_view.dart',
   'lib/features/timeline/timeline_widgets.dart',
+  'lib/shell',
   'lib/deploy.ps1',
   'lib/notes',
   'lib/core/p0u_diag.dart',

@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `9a6fce2` on 2026-07-21.**
+**Generated from input HEAD `019ea16` on 2026-07-21.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 724 — each appears **exactly once** below.
+**Tracked files:** 729 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -26,9 +26,9 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Role | Count |
 | :--- | ---: |
-| `production UI` | 135 |
+| `production UI` | 139 |
 | `shared foundation` | 132 |
-| `test` | 85 |
+| `test` | 86 |
 | `platform build` | 82 |
 | `Brain/data` | 76 |
 | `platform resource` | 44 |
@@ -51,8 +51,8 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 373 |
-| `REQUIRED_FOR_TEST_OR_TOOLING` | 159 |
+| `PROVEN_REQUIRED` | 377 |
+| `REQUIRED_FOR_TEST_OR_TOOLING` | 160 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 126 |
 | `GOVERNING_DOCUMENTATION` | 30 |
 | `RETAINED_PRODUCT_WATCHLIST` | 16 |
@@ -64,7 +64,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 673 |
+| `HIGH` | 678 |
 | `WATCHLIST` | 26 |
 | `MEDIUM` | 25 |
 
@@ -87,12 +87,13 @@ Evidence is computed from Dart import/export/`part` graphs, bounded path referen
 ### lib/
 
 - [`lib/`](#folder-lib)
+- [`lib/app/`](#folder-libapp)
 - [`lib/core/`](#folder-libcore)
 - [`lib/data/`](#folder-libdata)
 - [`lib/features/`](#folder-libfeatures)
 - [`lib/l10n/`](#folder-libl10n)
 - [`lib/services/`](#folder-libservices)
-- [`lib/shell/`](#folder-libshell)
+- [`lib/app/shell/`](#folder-libappshell)
 - [`lib/core/diagnostics/`](#folder-libcorediagnostics)
 - [`lib/core/env/`](#folder-libcoreenv)
 - [`lib/core/navigation/`](#folder-libcorenavigation)
@@ -120,6 +121,10 @@ Evidence is computed from Dart import/export/`part` graphs, bounded path referen
 - [`lib/features/timeline/`](#folder-libfeaturestimeline)
 - [`lib/features/wear/`](#folder-libfeatureswear)
 - [`lib/l10n/langs/`](#folder-libl10nlangs)
+- [`lib/app/shell/desktop/`](#folder-libappshelldesktop)
+- [`lib/app/shell/phone/`](#folder-libappshellphone)
+- [`lib/app/shell/shared/`](#folder-libappshellshared)
+- [`lib/app/shell/tablet/`](#folder-libappshelltablet)
 - [`lib/core/widgets/notes/`](#folder-libcorewidgetsnotes)
 - [`lib/core/widgets/plan_card/`](#folder-libcorewidgetsplan_card)
 - [`lib/core/widgets/plan_time_task_card/`](#folder-libcorewidgetsplan_time_task_card)
@@ -378,7 +383,7 @@ RU:
 - **На что влияет в приложении:** CI/integration QA — не APK пользователю.
 - **Когда открывать:** Падает integration test или меняется shell navigation.
 - **Можно удалить?** Нет — нужен для integration-тестов.
-- **Связанные пути:** `test/`, `lib/shell/`.
+- **Связанные пути:** `test/`, `lib/app/shell/`.
 
 ---
 
@@ -412,7 +417,7 @@ EN:
 
 - **What this folder is:** The Flutter application itself — screens, navigation, cards, buttons, data brain, PocketBase sync, offline queue, localization, shared UI.
 - **Why it exists:** Everything users see and everything that saves data lives here; without `lib/` there is no app.
-- **What lives here:** `lib/data/` brain · `lib/features/` screens · `lib/core/` design system · `lib/shell/` navigation · `lib/l10n/` texts · `lib/services/` device notifications.
+- **What lives here:** `lib/data/` brain · `lib/features/` screens · `lib/core/` design system · `lib/app/shell/` navigation · `lib/l10n/` texts · `lib/services/` device notifications.
 - **What part of the app it affects:** The entire product on Android, iOS, web, Windows, Wear.
 - **When to open it:** Almost any product bug, UI change, or PocketBase behavior fix.
 - **Can it be deleted?** No — deleting `lib/` removes the application.
@@ -422,7 +427,7 @@ RU:
 
 - **Что это за папка:** Это само Flutter-приложение. Здесь живут экраны, навигация, карточки, кнопки, мозг данных, PocketBase-синхронизация, offline queue, локализация и общие UI-компоненты.
 - **Зачем нужна:** Если удалить `lib`, приложения больше нет — весь продукт собран из этой папки.
-- **Что здесь лежит:** `lib/data/` — мозг (PocketBase, cache, optimistic UI, offline). `lib/features/` — экраны Timeline, Plans, Lists, Calendar, Profile, Categories. `lib/core/` — design system, тема, time, desktop voice. `lib/shell/` — вкладки, More, edit sheets, offline banner. `lib/l10n/` — тексты UI. `lib/services/` — уведомления устройства.
+- **Что здесь лежит:** `lib/data/` — мозг (PocketBase, cache, optimistic UI, offline). `lib/features/` — экраны Timeline, Plans, Lists, Calendar, Profile, Categories. `lib/core/` — design system, тема, time, desktop voice. `lib/app/shell/` — вкладки по форм-фактору, More, edit sheets, offline banner. `lib/l10n/` — тексты UI. `lib/services/` — уведомления устройства.
 - **На что влияет в приложении:** Весь продукт на всех платформах.
 - **Когда открывать:** Любой баг UI, сохранение данных, offline, локализация.
 - **Можно удалить?** Нет — deleting `lib/` removes the application.
@@ -886,6 +891,30 @@ RU:
 
 ---
 
+## Folder: `lib/app/`
+
+EN:
+
+- **What this folder is:** Dart source subtree `lib/app/` — part of app code for app.
+- **Why it exists:** Code under `lib/` ships in every platform build; this folder groups related Dart modules.
+- **What lives here:** Dart modules listed in file entries below.
+- **What part of the app it affects:** App behavior for the feature or layer named in the path.
+- **When to open it:** Bug or feature work in `app`.
+- **Can it be deleted?** No — required for app runtime unless explicitly deprecated in ROADMAP.
+- **Main related paths:** `docs/APP_STRUCTURE.md`, parent `lib/` folders.
+
+RU:
+
+- **Что это за папка:** Корневой слой приложения поверх `lib/` — сейчас владеет form-factor shell.
+- **Зачем нужна:** Отделяет оболочку приложения от `features/` и `data/` без общих корзин вроде `core` для shell.
+- **Что здесь лежит:** `shell/` — phone/tablet/desktop/shared chrome и orchestration.
+- **На что влияет в приложении:** Старт UI после auth, навигация по вкладкам, form-factor chrome.
+- **Когда открывать:** Перенос shell, смена tab chrome, phone vs desktop layout.
+- **Можно удалить?** Нет — нужен для работы приложения unless explicitly deprecated in ROADMAP.
+- **Связанные пути:** `lib/app_shell.dart`, `lib/main.dart`, `docs/APP_STRUCTURE.md`.
+
+---
+
 ## Folder: `lib/core/`
 
 EN:
@@ -944,7 +973,7 @@ EN:
 - **What part of the app it affects:** Every visible part of the app except raw platform wrappers.
 - **When to open it:** UI bug on a specific tab, new screen, edit sheet behavior, voice sheet layout.
 - **Can it be deleted?** No — deleting this removes the entire product UI.
-- **Main related paths:** `lib/shell/` (navigation host), `lib/data/` (saves/loads).
+- **Main related paths:** `lib/app/shell/` (navigation host), `lib/data/` (saves/loads).
 
 RU:
 
@@ -954,7 +983,7 @@ RU:
 - **На что влияет в приложении:** Вся видимая часть приложения кроме platform wrappers.
 - **Когда открывать:** UI bug на вкладке, новый экран, edit sheet, voice sheet layout.
 - **Можно удалить?** Нет — deleting this removes the entire product UI.
-- **Связанные пути:** `lib/shell/`, `lib/data/`.
+- **Связанные пути:** `lib/app/shell/`, `lib/data/`.
 
 ---
 
@@ -1003,30 +1032,6 @@ RU:
 - **Когда открывать:** Plan alarm не срабатывает, permission notifications.
 - **Можно удалить?** Нет — plan alarms stop working.
 - **Связанные пути:** `lib/data/plan_service.dart` alarm reschedule.
-
----
-
-## Folder: `lib/shell/`
-
-EN:
-
-- **What this folder is:** App shell — bottom tabs, desktop side nav, voice routing, edit modals, offline banner slot.
-- **Why it exists:** Connects `main.dart` to feature pages and global behaviors (voice, sync banner).
-- **What lives here:** Dashboard scaffold, tab IndexedStack, More menu, voice submit routing.
-- **What part of the app it affects:** Navigation, global header, cross-tab voice commands.
-- **When to open it:** Wrong tab, voice command routes to wrong screen, edit sheet host, offline banner.
-- **Can it be deleted?** No — app navigation collapses.
-- **Main related paths:** `lib/app_shell.dart`, all `lib/features/*` tabs.
-
-RU:
-
-- **Что это за папка:** Оболочка — нижние вкладки, desktop side nav, More menu, voice routing, edit modals, offline banner.
-- **Зачем нужна:** Связывает `main.dart` с feature pages и глобальным поведением (voice, sync banner).
-- **Что здесь лежит:** Dashboard scaffold, IndexedStack вкладок, More menu, voice submit routing.
-- **На что влияет в приложении:** Навигация, global header, voice commands между вкладками.
-- **Когда открывать:** Неверная вкладка, voice уходит не туда, edit sheet host, offline banner.
-- **Можно удалить?** Нет — app navigation collapses.
-- **Связанные пути:** `lib/app_shell.dart`, все `lib/features/*`.
 
 ---
 
@@ -1654,6 +1659,30 @@ RU:
 
 ---
 
+## Folder: `lib/app/shell/`
+
+EN:
+
+- **What this folder is:** App shell by form factor — phone bottom nav, tablet compact chrome, desktop side nav, shared tab/voice/edit hosts.
+- **Why it exists:** Connects `main.dart` to feature pages; separates shell chrome ownership without redesigning features.
+- **What lives here:** `app_shell.dart`, `shared/`, `phone/`, `tablet/`, `desktop/`; Wear chrome still in `features/wear/`.
+- **What part of the app it affects:** Navigation, global header, cross-tab voice commands.
+- **When to open it:** Wrong tab, voice command routes to wrong screen, edit sheet host, offline banner, phone vs desktop chrome.
+- **Can it be deleted?** No — app navigation collapses.
+- **Main related paths:** `lib/app_shell.dart`, all `lib/features/*` tabs.
+
+RU:
+
+- **Что это за папка:** Оболочка по форм-фактору — phone bottom nav, tablet compact chrome, desktop side nav, shared tab/voice/edit hosts.
+- **Зачем нужна:** Связывает `main.dart` с feature pages; разделяет владение chrome без redesign экранов.
+- **Что здесь лежит:** `app_shell.dart`, `shared/`, `phone/`, `tablet/`, `desktop/`; Wear chrome пока в `features/wear/`.
+- **На что влияет в приложении:** Навигация, global header, voice commands между вкладками.
+- **Когда открывать:** Неверная вкладка, voice уходит не туда, edit sheet host, offline banner, phone vs desktop chrome.
+- **Можно удалить?** Нет — app navigation collapses.
+- **Связанные пути:** `lib/app_shell.dart`, все `lib/features/*`.
+
+---
+
 ## Folder: `lib/core/diagnostics/`
 
 EN:
@@ -1712,7 +1741,7 @@ EN:
 - **What part of the app it affects:** Desktop/web layout (side nav) and overlay routing above tabs.
 - **When to open it:** Desktop overlay cannot push routes; side navigation breakpoint wrong.
 - **Can it be deleted?** No — desktop layout and overlays break.
-- **Main related paths:** `lib/shell/shell_side_navigation.dart`, `lib/core/shell_adaptive.dart`.
+- **Main related paths:** `lib/app/shell/desktop/shell_side_navigation.dart`, `lib/core/shell_adaptive.dart`.
 
 RU:
 
@@ -1722,7 +1751,7 @@ RU:
 - **На что влияет в приложении:** Desktop/web layout (side nav) и overlay routing над вкладками.
 - **Когда открывать:** Desktop overlay не может push routes; неверный breakpoint side navigation.
 - **Можно удалить?** Нет — desktop layout and overlays break.
-- **Связанные пути:** `lib/shell/shell_side_navigation.dart`, `lib/core/shell_adaptive.dart`.
+- **Связанные пути:** `lib/app/shell/desktop/shell_side_navigation.dart`, `lib/core/shell_adaptive.dart`.
 
 ---
 
@@ -2144,7 +2173,7 @@ EN:
 - **What part of the app it affects:** Plans tab only (plus calendar rows that reuse plan cards).
 - **When to open it:** Plan cards wrong, Time View drag broken, day swipe on Plans tab, play/start plan.
 - **Can it be deleted?** No — Plans tab disappears.
-- **Main related paths:** `lib/shell/` tab host, `lib/data/plan_service.dart`.
+- **Main related paths:** `lib/app/shell/` tab host, `lib/data/plan_service.dart`.
 
 RU:
 
@@ -2154,7 +2183,7 @@ RU:
 - **На что влияет в приложении:** Только вкладка Plans (плюс calendar rows с теми же карточками).
 - **Когда открывать:** Неверные карточки, drag Time View, swipe дней, play/start plan.
 - **Можно удалить?** Нет — Plans tab disappears.
-- **Связанные пути:** `lib/shell/`, `lib/data/plan_service.dart`.
+- **Связанные пути:** `lib/app/shell/`, `lib/data/plan_service.dart`.
 
 ---
 
@@ -2192,7 +2221,7 @@ EN:
 - **What part of the app it affects:** Any tap-to-edit on plans/records; mobile voice sheet; desktop voice panel.
 - **When to open it:** Edit sheet save, date picker, tags on plan, voice input sheet.
 - **Can it be deleted?** No — edit flows break on all tabs.
-- **Main related paths:** `lib/shell/shell_edit_hosts.dart`, `docs/UX_CONTRACT.md`.
+- **Main related paths:** `lib/app/shell/shared/shell_edit_hosts.dart`, `docs/UX_CONTRACT.md`.
 
 RU:
 
@@ -2202,7 +2231,7 @@ RU:
 - **На что влияет в приложении:** Редактирование plans/records по tap; mobile voice sheet; desktop voice panel.
 - **Когда открывать:** Save edit sheet, date picker, tags на plan, voice input sheet.
 - **Можно удалить?** Нет — edit flows break on all tabs.
-- **Связанные пути:** `lib/shell/shell_edit_hosts.dart`, `docs/UX_CONTRACT.md`.
+- **Связанные пути:** `lib/app/shell/shared/shell_edit_hosts.dart`, `docs/UX_CONTRACT.md`.
 
 ---
 
@@ -2710,6 +2739,102 @@ RU:
 
 ---
 
+## Folder: `lib/app/shell/desktop/`
+
+EN:
+
+- **What this folder is:** Desktop/web shell chrome — side navigation and wide content frame.
+- **Why it exists:** Wide viewports replace bottom nav with side nav.
+- **What lives here:** `shell_side_navigation.dart`, `desktop_shell_frame.dart`.
+- **What part of the app it affects:** Desktop, web, and wide tablet landscape at/above 900px.
+- **When to open it:** Side nav labels, wide shell layout.
+- **Can it be deleted?** No — desktop navigation breaks.
+- **Main related paths:** `lib/core/shell_adaptive.dart`.
+
+RU:
+
+- **Что это за папка:** Оболочка desktop и web — боковая навигация и широкий content frame.
+- **Зачем нужна:** Широкие viewport заменяют bottom nav на side nav.
+- **Что здесь лежит:** `shell_side_navigation.dart`, `desktop_shell_frame.dart`.
+- **На что влияет в приложении:** Desktop, web и широкий tablet landscape от 900px.
+- **Когда открывать:** Подписи side nav, wide shell layout.
+- **Можно удалить?** Нет — desktop navigation breaks.
+- **Связанные пути:** `lib/core/shell_adaptive.dart`.
+
+---
+
+## Folder: `lib/app/shell/phone/`
+
+EN:
+
+- **What this folder is:** Phone shell chrome — compact bottom navigation and phone content frame.
+- **Why it exists:** Narrow viewports keep touch-first bottom tabs.
+- **What lives here:** `shell_bottom_navigation.dart`, `phone_shell_frame.dart`.
+- **What part of the app it affects:** APK and narrow web/phone widths.
+- **When to open it:** Bottom nav layout, compact labels.
+- **Can it be deleted?** No — phone navigation breaks.
+- **Main related paths:** `lib/core/shell_adaptive.dart`.
+
+RU:
+
+- **Что это за папка:** Phone shell chrome — компактная нижняя навигация и phone content frame.
+- **Зачем нужна:** Узкие viewport оставляют touch-first bottom tabs.
+- **Что здесь лежит:** `shell_bottom_navigation.dart`, `phone_shell_frame.dart`.
+- **На что влияет в приложении:** APK и узкий web/phone.
+- **Когда открывать:** Layout нижней навигации, compact labels.
+- **Можно удалить?** Нет — phone navigation breaks.
+- **Связанные пути:** `lib/core/shell_adaptive.dart`.
+
+---
+
+## Folder: `lib/app/shell/shared/`
+
+EN:
+
+- **What this folder is:** Form-factor-neutral shell state — tabs, edit hosts, voice routing, offline banner, settings.
+- **Why it exists:** Shared shell behavior must not live inside phone-only or desktop-only layout files.
+- **What lives here:** Part mixins, offline banner, form-factor resolve, profile hydration bar, settings page.
+- **What part of the app it affects:** All form factors.
+- **When to open it:** Tab persistence, More menu logic, voice routing, sync banner.
+- **Can it be deleted?** No.
+- **Main related paths:** `lib/app/shell/app_shell.dart`.
+
+RU:
+
+- **Что это за папка:** Form-factor-нейтральное состояние shell — вкладки, edit hosts, voice routing, offline banner, settings.
+- **Зачем нужна:** Общее поведение shell не должно жить только в phone- или desktop-layout файлах.
+- **Что здесь лежит:** Part mixins, offline banner, resolve форм-фактора, profile hydration bar, settings page.
+- **На что влияет в приложении:** Все форм-факторы.
+- **Когда открывать:** Persistence вкладок, More menu logic, voice routing, sync banner.
+- **Можно удалить?** Нет — No.
+- **Связанные пути:** `lib/app/shell/app_shell.dart`.
+
+---
+
+## Folder: `lib/app/shell/tablet/`
+
+EN:
+
+- **What this folder is:** Tablet shell frame — currently same compact chrome as phone below desktop breakpoint.
+- **Why it exists:** Explicit tablet ownership without inventing a new tablet redesign.
+- **What lives here:** `tablet_shell_frame.dart`.
+- **What part of the app it affects:** Mid-width compact viewports.
+- **When to open it:** Tablet chrome diverges from phone later.
+- **Can it be deleted?** Maybe — only after phone frame covers tablet call sites.
+- **Main related paths:** `lib/app/shell/phone/`.
+
+RU:
+
+- **Что это за папка:** Tablet shell frame — сейчас тот же compact chrome, что у phone, ниже desktop breakpoint.
+- **Зачем нужна:** Явное владение tablet без выдуманного redesign.
+- **Что здесь лежит:** `tablet_shell_frame.dart`.
+- **На что влияет в приложении:** Средние compact viewport.
+- **Когда открывать:** Когда tablet chrome позже отойдёт от phone.
+- **Можно удалить?** Возможно — only after phone frame covers tablet call sites.
+- **Связанные пути:** `lib/app/shell/phone/`.
+
+---
+
 ## Folder: `lib/core/widgets/notes/`
 
 EN:
@@ -2888,7 +3013,7 @@ EN:
 - **What part of the app it affects:** Settings routes from shell and profile.
 - **When to open it:** Logout, notification permission, password reset UI.
 - **Can it be deleted?** No — settings sections missing.
-- **Main related paths:** `lib/shell/settings_page.dart`.
+- **Main related paths:** `lib/app/shell/shared/settings_page.dart`.
 
 RU:
 
@@ -2898,7 +3023,7 @@ RU:
 - **На что влияет в приложении:** Маршруты settings из shell и profile.
 - **Когда открывать:** Logout, notification permission, password reset UI.
 - **Можно удалить?** Нет — settings sections missing.
-- **Связанные пути:** `lib/shell/settings_page.dart`.
+- **Связанные пути:** `lib/app/shell/shared/settings_page.dart`.
 
 ---
 
@@ -7788,6 +7913,613 @@ RU:
 - **Связано с:** `ios/Runner/Info.plist`, Flutter embedder.
 
 
+### `lib/app/shell/app_shell.dart`
+
+EN:
+
+- **Human purpose:** App shell wiring — Shell dashboard entry (see §3.1.1). Connects bottom tabs, voice, edit sheets, and offline banner across the whole app.
+- **What this is:** App shell wiring — Shell dashboard entry (see §3.1.1).
+- **Why needed:** Connects bottom tabs, voice, edit sheets, and offline banner across the whole app.
+- **Contents:** Shell mixin or widget (`ShellDashboardBase`, `LifeOSDashboard`, `ShellDashboardState`).
+- **Key code names:** `ShellDashboardBase`, `LifeOSDashboard`, `ShellDashboardState`
+- **Repository role:** production UI
+- **Evidence of use:** Imported/exported by production Dart: `lib/app_shell.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** app shell
+- **Responsibilities:** Shell dashboard entry (see §3.1.1)
+- **When to open:** Bottom tabs, voice routing, edit modal host, offline banner slot.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** All main tabs, `app_shell.dart`; APP_STRUCTURE role: Shell dashboard entry (see §3.1.1)
+
+RU:
+
+- **Зачем файл человеку:** Оболочка приложения (shell) — Shell dashboard entry (see §3.1.1). Связывает вкладки, voice, edit sheets и offline banner.
+- **Что это:** Оболочка приложения (shell) — Shell dashboard entry (see §3.1.1).
+- **Зачем:** Связывает вкладки, voice, edit sheets и offline banner.
+- **Содержимое:** Shell mixin или виджет (logic in `app_shell`).
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Импортируется production Dart: `lib/app_shell.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** оболочка приложения
+- **Обязанности:** Реализует в shell: Shell dashboard entry (see §3.1.1).
+- **Когда открывать:** Навигация, voice, edit host.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** Все main tabs, `app_shell.dart`
+
+
+### `lib/app/shell/desktop/desktop_shell_frame.dart`
+
+EN:
+
+- **Human purpose:** App shell wiring — Desktop shell frame. Connects bottom tabs, voice, edit sheets, and offline banner across the whole app.
+- **What this is:** App shell wiring — Desktop shell frame.
+- **Why needed:** Connects bottom tabs, voice, edit sheets, and offline banner across the whole app.
+- **Contents:** Shell mixin or widget (`DesktopShellFrame`).
+- **Key code names:** `DesktopShellFrame`
+- **Repository role:** production UI
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** app shell
+- **Responsibilities:** Desktop shell frame
+- **When to open:** Bottom tabs, voice routing, edit modal host, offline banner slot.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** All main tabs, `app_shell.dart`; APP_STRUCTURE role: Desktop shell frame
+
+RU:
+
+- **Зачем файл человеку:** Оболочка приложения (shell) — Desktop shell frame. Связывает вкладки, voice, edit sheets и offline banner.
+- **Что это:** Оболочка приложения (shell) — Desktop shell frame.
+- **Зачем:** Связывает вкладки, voice, edit sheets и offline banner.
+- **Содержимое:** Shell mixin или виджет (logic in `desktop_shell_frame`).
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** оболочка приложения
+- **Обязанности:** Реализует в shell: Desktop shell frame.
+- **Когда открывать:** Навигация, voice, edit host.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** Все main tabs, `app_shell.dart`
+
+
+### `lib/app/shell/desktop/shell_side_navigation.dart`
+
+EN:
+
+- **Human purpose:** App shell wiring — Desktop/web side navigation rail. Connects bottom tabs, voice, edit sheets, and offline banner across the whole app.
+- **What this is:** App shell wiring — Desktop/web side navigation rail.
+- **Why needed:** Connects bottom tabs, voice, edit sheets, and offline banner across the whole app.
+- **Contents:** Shell mixin or widget (`ShellSideNavigation`, `ShellSideNavItem`).
+- **Key code names:** `ShellSideNavigation`, `ShellSideNavItem`
+- **Repository role:** production UI
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/desktop/desktop_shell_frame.dart`, `lib/core/navigation/shell_side_navigation.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** app shell
+- **Responsibilities:** Desktop/web side navigation rail
+- **When to open:** Bottom tabs, voice routing, edit modal host, offline banner slot.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** All main tabs, `app_shell.dart`; APP_STRUCTURE role: Desktop/web side navigation rail
+
+RU:
+
+- **Зачем файл человеку:** Оболочка приложения (shell) — Desktop/web side navigation rail. Связывает вкладки, voice, edit sheets и offline banner.
+- **Что это:** Оболочка приложения (shell) — Desktop/web side navigation rail.
+- **Зачем:** Связывает вкладки, voice, edit sheets и offline banner.
+- **Содержимое:** Shell mixin или виджет (logic in `shell_side_navigation`).
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/desktop/desktop_shell_frame.dart`, `lib/core/navigation/shell_side_navigation.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** оболочка приложения
+- **Обязанности:** Реализует в shell: Desktop/web side navigation rail.
+- **Когда открывать:** Навигация, voice, edit host.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** Все main tabs, `app_shell.dart`
+
+
+### `lib/app/shell/phone/phone_shell_frame.dart`
+
+EN:
+
+- **Human purpose:** App shell wiring — Phone shell frame. Connects bottom tabs, voice, edit sheets, and offline banner across the whole app.
+- **What this is:** App shell wiring — Phone shell frame.
+- **Why needed:** Connects bottom tabs, voice, edit sheets, and offline banner across the whole app.
+- **Contents:** Shell mixin or widget (`PhoneShellFrame`, `PhoneShellBottomNavigation`).
+- **Key code names:** `PhoneShellFrame`, `PhoneShellBottomNavigation`
+- **Repository role:** production UI
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/app/shell/tablet/tablet_shell_frame.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** app shell
+- **Responsibilities:** Phone shell frame
+- **When to open:** Bottom tabs, voice routing, edit modal host, offline banner slot.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** All main tabs, `app_shell.dart`; APP_STRUCTURE role: Phone shell frame
+
+RU:
+
+- **Зачем файл человеку:** Оболочка приложения (shell) — Phone shell frame. Связывает вкладки, voice, edit sheets и offline banner.
+- **Что это:** Оболочка приложения (shell) — Phone shell frame.
+- **Зачем:** Связывает вкладки, voice, edit sheets и offline banner.
+- **Содержимое:** Shell mixin или виджет (logic in `phone_shell_frame`).
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/app/shell/tablet/tablet_shell_frame.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** оболочка приложения
+- **Обязанности:** Реализует в shell: Phone shell frame.
+- **Когда открывать:** Навигация, voice, edit host.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** Все main tabs, `app_shell.dart`
+
+
+### `lib/app/shell/phone/shell_bottom_navigation.dart`
+
+EN:
+
+- **Human purpose:** `ShellCompactBottomNav` — equal-column phone-safe bottom tab bar (compact labels). Material `NavigationBar` clips five labels on ~390px widths; this bar matches APK phone metrics.
+- **What this is:** `ShellCompactBottomNav` — equal-column phone-safe bottom tab bar (compact labels).
+- **Why needed:** Material `NavigationBar` clips five labels on ~390px widths; this bar matches APK phone metrics.
+- **Contents:** `ShellCompactBottomNav`, `kShellBottomNavHeight`, compact vs full label keys.
+- **Key code names:** `ShellCompactBottomNav`, `_ShellBottomNavItem`
+- **Repository role:** production UI
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/phone/phone_shell_frame.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** app shell
+- **Responsibilities:** Render five shell tabs; no PocketBase I/O.
+- **When to open:** Bottom tabs, voice routing, edit modal host, offline banner slot.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** All main tabs, `app_shell.dart`; APP_STRUCTURE role: `ShellCompactBottomNav` — equal-column phone-safe bottom tab bar
+
+RU:
+
+- **Зачем файл человеку:** `ShellCompactBottomNav` — компактная нижняя панель вкладок с равными колонками для узких телефонов. Material `NavigationBar` обрезает пять подписей на ширине ~390px; эта панель совпадает с метриками APK.
+- **Что это:** `ShellCompactBottomNav` — компактная нижняя панель вкладок с равными колонками для узких телефонов.
+- **Зачем:** Material `NavigationBar` обрезает пять подписей на ширине ~390px; эта панель совпадает с метриками APK.
+- **Содержимое:** `ShellCompactBottomNav`, `kShellBottomNavHeight`, ключи коротких и полных подписей.
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/phone/phone_shell_frame.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** оболочка приложения
+- **Обязанности:** Рисует пять вкладок оболочки; без обращений к PocketBase.
+- **Когда открывать:** Навигация, voice, edit host.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** Все main tabs, `app_shell.dart`
+
+
+### `lib/app/shell/shared/profile_hydration_status_bar.dart`
+
+EN:
+
+- **Human purpose:** App shell wiring — Profile hydration error banner. Connects bottom tabs, voice, edit sheets, and offline banner across the whole app.
+- **What this is:** App shell wiring — Profile hydration error banner.
+- **Why needed:** Connects bottom tabs, voice, edit sheets, and offline banner across the whole app.
+- **Contents:** Shell mixin or widget (`ProfileHydrationStatusBar`).
+- **Key code names:** `ProfileHydrationStatusBar`
+- **Repository role:** production UI
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/shared/shell_offline_banner.dart`, `lib/features/shared/profile_hydration_status_bar.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** app shell
+- **Responsibilities:** Profile hydration error banner
+- **When to open:** Bottom tabs, voice routing, edit modal host, offline banner slot.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** All main tabs, `app_shell.dart`; APP_STRUCTURE role: Profile hydration error banner
+
+RU:
+
+- **Зачем файл человеку:** Оболочка приложения (shell) — Profile hydration error banner. Связывает вкладки, voice, edit sheets и offline banner.
+- **Что это:** Оболочка приложения (shell) — Profile hydration error banner.
+- **Зачем:** Связывает вкладки, voice, edit sheets и offline banner.
+- **Содержимое:** Shell mixin или виджет (logic in `profile_hydration_status_bar`).
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/shared/shell_offline_banner.dart`, `lib/features/shared/profile_hydration_status_bar.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** оболочка приложения
+- **Обязанности:** Реализует в shell: Profile hydration error banner.
+- **Когда открывать:** Навигация, voice, edit host.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** Все main tabs, `app_shell.dart`
+
+
+### `lib/app/shell/shared/settings_page.dart`
+
+EN:
+
+- **Human purpose:** App shell wiring — Language/TZ settings page (shell route). Connects bottom tabs, voice, edit sheets, and offline banner across the whole app.
+- **What this is:** App shell wiring — Language/TZ settings page (shell route).
+- **Why needed:** Connects bottom tabs, voice, edit sheets, and offline banner across the whole app.
+- **Contents:** Shell mixin or widget (`SettingsPage`, `SettingsPageState`).
+- **Key code names:** `SettingsPage`, `SettingsPageState`
+- **Repository role:** production UI
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/profile/settings/settings_page.dart`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Removing it breaks a required repository capability.
+- **Confidence:** MEDIUM
+- **Owner / layer:** app shell
+- **Responsibilities:** Language/TZ settings page (shell route)
+- **When to open:** Bottom tabs, voice routing, edit modal host, offline banner slot.
+- **Can it be deleted?** Removing it breaks a required repository capability.
+- **Connected to:** All main tabs, `app_shell.dart`; APP_STRUCTURE role: Language/TZ settings page (shell route)
+
+RU:
+
+- **Зачем файл человеку:** Оболочка приложения (shell) — Language/TZ settings page (shell route). Связывает вкладки, voice, edit sheets и offline banner.
+- **Что это:** Оболочка приложения (shell) — Language/TZ settings page (shell route).
+- **Зачем:** Связывает вкладки, voice, edit sheets и offline banner.
+- **Содержимое:** Shell mixin или виджет (logic in `settings_page`).
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Импортируется production Dart: `lib/features/profile/settings/settings_page.dart`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Удаление ломает нужную возможность репозитория.
+- **Уверенность:** MEDIUM
+- **Владелец / слой:** оболочка приложения
+- **Обязанности:** Реализует в shell: Language/TZ settings page (shell route).
+- **Когда открывать:** Навигация, voice, edit host.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** Все main tabs, `app_shell.dart`
+
+
+### `lib/app/shell/shared/shell_core.dart`
+
+EN:
+
+- **Human purpose:** App shell wiring — Shell core logic. Connects bottom tabs, voice, edit sheets, and offline banner across the whole app.
+- **What this is:** App shell wiring — Shell core logic.
+- **Why needed:** Connects bottom tabs, voice, edit sheets, and offline banner across the whole app.
+- **Contents:** Shell mixin or widget (`ShellCoreLogic`).
+- **Key code names:** `ShellCoreLogic`
+- **Repository role:** production UI
+- **Evidence of use:** Included by `lib/app/shell/app_shell.dart` through a `part` directive (not imported directly).
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Brain/library compile failure in `lib/app/shell/app_shell.dart` and broken related UI/data ops.
+- **Confidence:** HIGH
+- **Owner / layer:** app shell
+- **Responsibilities:** Shell core logic
+- **When to open:** Bottom tabs, voice routing, edit modal host, offline banner slot.
+- **Can it be deleted?** Brain/library compile failure in `lib/app/shell/app_shell.dart` and broken related UI/data ops.
+- **Connected to:** All main tabs, `app_shell.dart`; APP_STRUCTURE role: Shell core logic
+
+RU:
+
+- **Зачем файл человеку:** Оболочка приложения (shell) — Shell core logic. Связывает вкладки, voice, edit sheets и offline banner.
+- **Что это:** Оболочка приложения (shell) — Shell core logic.
+- **Зачем:** Связывает вкладки, voice, edit sheets и offline banner.
+- **Содержимое:** Shell mixin или виджет (logic in `shell_core`).
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Подключён из `lib/app/shell/app_shell.dart` через `part` (не импортируется напрямую).
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Сломается компиляция `lib/app/shell/app_shell.dart` и связанные экраны/данные.
+- **Уверенность:** HIGH
+- **Владелец / слой:** оболочка приложения
+- **Обязанности:** Реализует в shell: Shell core logic.
+- **Когда открывать:** Навигация, voice, edit host.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** Все main tabs, `app_shell.dart`
+
+
+### `lib/app/shell/shared/shell_edit_hosts.dart`
+
+EN:
+
+- **Human purpose:** App shell wiring — Edit sheet hosts. Connects bottom tabs, voice, edit sheets, and offline banner across the whole app.
+- **What this is:** App shell wiring — Edit sheet hosts.
+- **Why needed:** Connects bottom tabs, voice, edit sheets, and offline banner across the whole app.
+- **Contents:** Shell mixin or widget (`ShellEditHosts`).
+- **Key code names:** `ShellEditHosts`
+- **Repository role:** production UI
+- **Evidence of use:** Included by `lib/app/shell/app_shell.dart` through a `part` directive (not imported directly).
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Brain/library compile failure in `lib/app/shell/app_shell.dart` and broken related UI/data ops.
+- **Confidence:** HIGH
+- **Owner / layer:** app shell
+- **Responsibilities:** Edit sheet hosts
+- **When to open:** Bottom tabs, voice routing, edit modal host, offline banner slot.
+- **Can it be deleted?** Brain/library compile failure in `lib/app/shell/app_shell.dart` and broken related UI/data ops.
+- **Connected to:** All main tabs, `app_shell.dart`; APP_STRUCTURE role: Edit sheet hosts
+
+RU:
+
+- **Зачем файл человеку:** Оболочка приложения (shell) — Edit sheet hosts. Связывает вкладки, voice, edit sheets и offline banner.
+- **Что это:** Оболочка приложения (shell) — Edit sheet hosts.
+- **Зачем:** Связывает вкладки, voice, edit sheets и offline banner.
+- **Содержимое:** Shell mixin или виджет (logic in `shell_edit_hosts`).
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Подключён из `lib/app/shell/app_shell.dart` через `part` (не импортируется напрямую).
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Сломается компиляция `lib/app/shell/app_shell.dart` и связанные экраны/данные.
+- **Уверенность:** HIGH
+- **Владелец / слой:** оболочка приложения
+- **Обязанности:** Реализует в shell: Edit sheet hosts.
+- **Когда открывать:** Навигация, voice, edit host.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** Все main tabs, `app_shell.dart`
+
+
+### `lib/app/shell/shared/shell_form_factor.dart`
+
+EN:
+
+- **Human purpose:** App shell wiring — Form-factor width resolve. Connects bottom tabs, voice, edit sheets, and offline banner across the whole app.
+- **What this is:** App shell wiring — Form-factor width resolve.
+- **Why needed:** Connects bottom tabs, voice, edit sheets, and offline banner across the whole app.
+- **Contents:** Shell mixin or widget (`ShellFormFactor`).
+- **Key code names:** `ShellFormFactor`
+- **Repository role:** production UI
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** app shell
+- **Responsibilities:** Form-factor width resolve
+- **When to open:** Bottom tabs, voice routing, edit modal host, offline banner slot.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** All main tabs, `app_shell.dart`; APP_STRUCTURE role: Form-factor width resolve
+
+RU:
+
+- **Зачем файл человеку:** Оболочка приложения (shell) — Form-factor width resolve. Связывает вкладки, voice, edit sheets и offline banner.
+- **Что это:** Оболочка приложения (shell) — Form-factor width resolve.
+- **Зачем:** Связывает вкладки, voice, edit sheets и offline banner.
+- **Содержимое:** Shell mixin или виджет (logic in `shell_form_factor`).
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** оболочка приложения
+- **Обязанности:** Реализует в shell: Form-factor width resolve.
+- **Когда открывать:** Навигация, voice, edit host.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** Все main tabs, `app_shell.dart`
+
+
+### `lib/app/shell/shared/shell_more_menu.dart`
+
+EN:
+
+- **Human purpose:** App shell wiring — More menu. Connects bottom tabs, voice, edit sheets, and offline banner across the whole app.
+- **What this is:** App shell wiring — More menu.
+- **Why needed:** Connects bottom tabs, voice, edit sheets, and offline banner across the whole app.
+- **Contents:** Shell mixin or widget (`ShellMoreMenu`).
+- **Key code names:** `ShellMoreMenu`
+- **Repository role:** production UI
+- **Evidence of use:** Included by `lib/app/shell/app_shell.dart` through a `part` directive (not imported directly).
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Brain/library compile failure in `lib/app/shell/app_shell.dart` and broken related UI/data ops.
+- **Confidence:** HIGH
+- **Owner / layer:** app shell
+- **Responsibilities:** More menu
+- **When to open:** Bottom tabs, voice routing, edit modal host, offline banner slot.
+- **Can it be deleted?** Brain/library compile failure in `lib/app/shell/app_shell.dart` and broken related UI/data ops.
+- **Connected to:** All main tabs, `app_shell.dart`; APP_STRUCTURE role: More menu
+
+RU:
+
+- **Зачем файл человеку:** Оболочка приложения (shell) — More menu. Связывает вкладки, voice, edit sheets и offline banner.
+- **Что это:** Оболочка приложения (shell) — More menu.
+- **Зачем:** Связывает вкладки, voice, edit sheets и offline banner.
+- **Содержимое:** Shell mixin или виджет (logic in `shell_more_menu`).
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Подключён из `lib/app/shell/app_shell.dart` через `part` (не импортируется напрямую).
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Сломается компиляция `lib/app/shell/app_shell.dart` и связанные экраны/данные.
+- **Уверенность:** HIGH
+- **Владелец / слой:** оболочка приложения
+- **Обязанности:** Реализует в shell: More menu.
+- **Когда открывать:** Навигация, voice, edit host.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** Все main tabs, `app_shell.dart`
+
+
+### `lib/app/shell/shared/shell_offline_banner.dart`
+
+EN:
+
+- **Human purpose:** App shell wiring — Offline banner slot. Connects bottom tabs, voice, edit sheets, and offline banner across the whole app.
+- **What this is:** App shell wiring — Offline banner slot.
+- **Why needed:** Connects bottom tabs, voice, edit sheets, and offline banner across the whole app.
+- **Contents:** Shell mixin or widget (`ShellTopStatusBars`).
+- **Key code names:** `ShellTopStatusBars`
+- **Repository role:** production UI
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** app shell
+- **Responsibilities:** Offline banner slot
+- **When to open:** Bottom tabs, voice routing, edit modal host, offline banner slot.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** All main tabs, `app_shell.dart`; APP_STRUCTURE role: Offline banner slot
+
+RU:
+
+- **Зачем файл человеку:** Оболочка приложения (shell) — Offline banner slot. Связывает вкладки, voice, edit sheets и offline banner.
+- **Что это:** Оболочка приложения (shell) — Offline banner slot.
+- **Зачем:** Связывает вкладки, voice, edit sheets и offline banner.
+- **Содержимое:** Shell mixin или виджет (logic in `shell_offline_banner`).
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** оболочка приложения
+- **Обязанности:** Реализует в shell: Offline banner slot.
+- **Когда открывать:** Навигация, voice, edit host.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** Все main tabs, `app_shell.dart`
+
+
+### `lib/app/shell/shared/shell_shared.dart`
+
+EN:
+
+- **Human purpose:** App shell wiring — Shell shared helpers. Connects bottom tabs, voice, edit sheets, and offline banner across the whole app.
+- **What this is:** App shell wiring — Shell shared helpers.
+- **Why needed:** Connects bottom tabs, voice, edit sheets, and offline banner across the whole app.
+- **Contents:** Shell mixin or widget (logic in `shell_shared`).
+- **Repository role:** production UI
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** app shell
+- **Responsibilities:** Shell shared helpers
+- **When to open:** Bottom tabs, voice routing, edit modal host, offline banner slot.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** All main tabs, `app_shell.dart`; APP_STRUCTURE role: Shell shared helpers
+
+RU:
+
+- **Зачем файл человеку:** Оболочка приложения (shell) — Shell shared helpers. Связывает вкладки, voice, edit sheets и offline banner.
+- **Что это:** Оболочка приложения (shell) — Shell shared helpers.
+- **Зачем:** Связывает вкладки, voice, edit sheets и offline banner.
+- **Содержимое:** Shell mixin или виджет (logic in `shell_shared`).
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** оболочка приложения
+- **Обязанности:** Реализует в shell: Shell shared helpers.
+- **Когда открывать:** Навигация, voice, edit host.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** Все main tabs, `app_shell.dart`
+
+
+### `lib/app/shell/shared/shell_tab_host.dart`
+
+EN:
+
+- **Human purpose:** App shell wiring — Tab host builders. Connects bottom tabs, voice, edit sheets, and offline banner across the whole app.
+- **What this is:** App shell wiring — Tab host builders.
+- **Why needed:** Connects bottom tabs, voice, edit sheets, and offline banner across the whole app.
+- **Contents:** Shell mixin or widget (`ShellTabHost`).
+- **Key code names:** `ShellTabHost`
+- **Repository role:** production UI
+- **Evidence of use:** Included by `lib/app/shell/app_shell.dart` through a `part` directive (not imported directly).
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Brain/library compile failure in `lib/app/shell/app_shell.dart` and broken related UI/data ops.
+- **Confidence:** HIGH
+- **Owner / layer:** app shell
+- **Responsibilities:** Tab host builders
+- **When to open:** Bottom tabs, voice routing, edit modal host, offline banner slot.
+- **Can it be deleted?** Brain/library compile failure in `lib/app/shell/app_shell.dart` and broken related UI/data ops.
+- **Connected to:** All main tabs, `app_shell.dart`; APP_STRUCTURE role: Tab host builders
+
+RU:
+
+- **Зачем файл человеку:** Оболочка приложения (shell) — Tab host builders. Связывает вкладки, voice, edit sheets и offline banner.
+- **Что это:** Оболочка приложения (shell) — Tab host builders.
+- **Зачем:** Связывает вкладки, voice, edit sheets и offline banner.
+- **Содержимое:** Shell mixin или виджет (logic in `shell_tab_host`).
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Подключён из `lib/app/shell/app_shell.dart` через `part` (не импортируется напрямую).
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Сломается компиляция `lib/app/shell/app_shell.dart` и связанные экраны/данные.
+- **Уверенность:** HIGH
+- **Владелец / слой:** оболочка приложения
+- **Обязанности:** Реализует в shell: Tab host builders.
+- **Когда открывать:** Навигация, voice, edit host.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** Все main tabs, `app_shell.dart`
+
+
+### `lib/app/shell/shared/shell_voice_routing.dart`
+
+EN:
+
+- **Human purpose:** App shell wiring — Voice routing. Connects bottom tabs, voice, edit sheets, and offline banner across the whole app.
+- **What this is:** App shell wiring — Voice routing.
+- **Why needed:** Connects bottom tabs, voice, edit sheets, and offline banner across the whole app.
+- **Contents:** Shell mixin or widget (`ShellVoiceRouting`).
+- **Key code names:** `ShellVoiceRouting`
+- **Repository role:** production UI
+- **Evidence of use:** Included by `lib/app/shell/app_shell.dart` through a `part` directive (not imported directly).
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Brain/library compile failure in `lib/app/shell/app_shell.dart` and broken related UI/data ops.
+- **Confidence:** HIGH
+- **Owner / layer:** app shell
+- **Responsibilities:** Voice routing
+- **When to open:** Bottom tabs, voice routing, edit modal host, offline banner slot.
+- **Can it be deleted?** Brain/library compile failure in `lib/app/shell/app_shell.dart` and broken related UI/data ops.
+- **Connected to:** All main tabs, `app_shell.dart`; APP_STRUCTURE role: Voice routing
+
+RU:
+
+- **Зачем файл человеку:** Оболочка приложения (shell) — Voice routing. Связывает вкладки, voice, edit sheets и offline banner.
+- **Что это:** Оболочка приложения (shell) — Voice routing.
+- **Зачем:** Связывает вкладки, voice, edit sheets и offline banner.
+- **Содержимое:** Shell mixin или виджет (logic in `shell_voice_routing`).
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Подключён из `lib/app/shell/app_shell.dart` через `part` (не импортируется напрямую).
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Сломается компиляция `lib/app/shell/app_shell.dart` и связанные экраны/данные.
+- **Уверенность:** HIGH
+- **Владелец / слой:** оболочка приложения
+- **Обязанности:** Реализует в shell: Voice routing.
+- **Когда открывать:** Навигация, voice, edit host.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** Все main tabs, `app_shell.dart`
+
+
+### `lib/app/shell/tablet/tablet_shell_frame.dart`
+
+EN:
+
+- **Human purpose:** App shell wiring — Tablet shell frame (compact chrome). Connects bottom tabs, voice, edit sheets, and offline banner across the whole app.
+- **What this is:** App shell wiring — Tablet shell frame (compact chrome).
+- **Why needed:** Connects bottom tabs, voice, edit sheets, and offline banner across the whole app.
+- **Contents:** Shell mixin or widget (`TabletShellFrame`).
+- **Key code names:** `TabletShellFrame`
+- **Repository role:** production UI
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** app shell
+- **Responsibilities:** Tablet shell frame (compact chrome)
+- **When to open:** Bottom tabs, voice routing, edit modal host, offline banner slot.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** All main tabs, `app_shell.dart`; APP_STRUCTURE role: Tablet shell frame (compact chrome)
+
+RU:
+
+- **Зачем файл человеку:** Оболочка приложения (shell) — Tablet shell frame (compact chrome). Связывает вкладки, voice, edit sheets и offline banner.
+- **Что это:** Оболочка приложения (shell) — Tablet shell frame (compact chrome).
+- **Зачем:** Связывает вкладки, voice, edit sheets и offline banner.
+- **Содержимое:** Shell mixin или виджет (logic in `tablet_shell_frame`).
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** оболочка приложения
+- **Обязанности:** Реализует в shell: Tablet shell frame (compact chrome).
+- **Когда открывать:** Навигация, voice, edit host.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** Все main tabs, `app_shell.dart`
+
+
 ### `lib/app_shell.dart`
 
 EN:
@@ -7805,14 +8537,14 @@ EN:
 - **Responsibilities:** Re-exports `shell/life_os_dashboard.dart` (thin entry).
 - **When to open:** When behavior tied to `app_shell.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: Re-exports `shell/life_os_dashboard.dart` (thin entry)
+- **Connected to:** APP_STRUCTURE role: Thin compatibility re-export of `app/shell/app_shell.dart`
 
 RU:
 
 - **Зачем файл человеку:** Тонкий entry-point приложения — re-export `shell/life_os_dashboard.dart`. Стабильный import path для dashboard без дублирования shell-кода.
 - **Что это:** Тонкий entry-point приложения — re-export `shell/life_os_dashboard.dart`.
 - **Зачем:** Стабильный import path для dashboard без дублирования shell-кода.
-- **Содержимое:** Re-export виджета dashboard из `lib/shell/`.
+- **Содержимое:** Re-export виджета dashboard из `lib/app/shell/`.
 - **Роль в репозитории:** developer tool
 - **Доказательства использования:** Импортируется production Dart: `lib/main.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
@@ -7949,7 +8681,7 @@ EN:
 - **Contents:** Primary symbols: `AppSnack`.
 - **Key code names:** `AppSnack`
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/core/services/desktop_voice_confirmation.dart`, `lib/core/widgets/timezone_quick_picker.dart`, `lib/data/database_service.dart`, `lib/features/categories/create_category_from_picker.dart`, `lib/features/lists/lists_export.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/core/services/desktop_voice_confirmation.dart`, `lib/core/widgets/timezone_quick_picker.dart`, `lib/data/database_service.dart`, `lib/features/categories/create_category_from_picker.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -7966,7 +8698,7 @@ RU:
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
 - **Содержимое:** Dart-модуль `app_snackbar.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/core/services/desktop_voice_confirmation.dart`, `lib/core/widgets/timezone_quick_picker.dart`, `lib/data/database_service.dart`, `lib/features/categories/create_category_from_picker.dart`, `lib/features/lists/lists_export.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/core/services/desktop_voice_confirmation.dart`, `lib/core/widgets/timezone_quick_picker.dart`, `lib/data/database_service.dart`, `lib/features/categories/create_category_from_picker.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -8137,7 +8869,7 @@ EN:
 - **Contents:** Primary symbols: `DesktopVoiceLog`.
 - **Key code names:** `DesktopVoiceLog`
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/core/diagnostics/desktop_voice_pipeline.dart`, `lib/core/services/desktop_stt_helper_service.dart`, `lib/core/services/desktop_voice_recognizer_io.dart`, `lib/core/services/desktop_voice_record_submit.dart`, `lib/core/services/desktop_voice_user_error.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/core/diagnostics/desktop_voice_pipeline.dart`, `lib/core/services/desktop_stt_helper_service.dart`, `lib/core/services/desktop_voice_recognizer_io.dart`, `lib/core/services/desktop_voice_record_submit.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -8154,7 +8886,7 @@ RU:
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
 - **Содержимое:** Dart-модуль `desktop_voice_log.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/core/diagnostics/desktop_voice_pipeline.dart`, `lib/core/services/desktop_stt_helper_service.dart`, `lib/core/services/desktop_voice_recognizer_io.dart`, `lib/core/services/desktop_voice_record_submit.dart`, `lib/core/services/desktop_voice_user_error.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/core/diagnostics/desktop_voice_pipeline.dart`, `lib/core/services/desktop_stt_helper_service.dart`, `lib/core/services/desktop_voice_recognizer_io.dart`, `lib/core/services/desktop_voice_record_submit.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -8175,7 +8907,7 @@ EN:
 - **Contents:** Primary symbols: `DesktopVoicePipeline`.
 - **Key code names:** `DesktopVoicePipeline`
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/core/services/desktop_main_window.dart`, `lib/core/services/desktop_stt_benchmark_harness.dart`, `lib/core/services/desktop_stt_cloud_service.dart`, `lib/core/services/desktop_stt_helper_service.dart`, `lib/core/services/desktop_stt_orchestrator.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/core/services/desktop_main_window.dart`, `lib/core/services/desktop_stt_benchmark_harness.dart`, `lib/core/services/desktop_stt_cloud_service.dart`, `lib/core/services/desktop_stt_helper_service.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -8192,7 +8924,7 @@ RU:
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
 - **Содержимое:** Dart-модуль `desktop_voice_pipeline.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/core/services/desktop_main_window.dart`, `lib/core/services/desktop_stt_benchmark_harness.dart`, `lib/core/services/desktop_stt_cloud_service.dart`, `lib/core/services/desktop_stt_helper_service.dart`, `lib/core/services/desktop_stt_orchestrator.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/core/services/desktop_main_window.dart`, `lib/core/services/desktop_stt_benchmark_harness.dart`, `lib/core/services/desktop_stt_cloud_service.dart`, `lib/core/services/desktop_stt_helper_service.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -8325,7 +9057,7 @@ EN:
 - **Contents:** Primary symbols: `StartupLog`.
 - **Key code names:** `StartupLog`
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/core/widgets/lazy_indexed_stack.dart`, `lib/data/database_service.dart`, `lib/main.dart`, `lib/shell/life_os_dashboard.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/core/widgets/lazy_indexed_stack.dart`, `lib/data/database_service.dart`, `lib/main.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -8342,7 +9074,7 @@ RU:
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
 - **Содержимое:** Dart-модуль `startup_log.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/core/widgets/lazy_indexed_stack.dart`, `lib/data/database_service.dart`, `lib/main.dart`, `lib/shell/life_os_dashboard.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/core/widgets/lazy_indexed_stack.dart`, `lib/data/database_service.dart`, `lib/main.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -8436,7 +9168,7 @@ EN:
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
 - **Contents:** Dart module `app_navigator.dart` — open file for classes and helpers.
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/shared/desktop_voice_widget.dart`, `lib/main.dart`, `lib/shell/life_os_dashboard.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/features/shared/desktop_voice_widget.dart`, `lib/main.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -8453,7 +9185,7 @@ RU:
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
 - **Содержимое:** Dart-модуль `app_navigator.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/features/shared/desktop_voice_widget.dart`, `lib/main.dart`, `lib/shell/life_os_dashboard.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/features/shared/desktop_voice_widget.dart`, `lib/main.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -8511,7 +9243,7 @@ EN:
 - **Contents:** Primary symbols: `RebuildMetrics`.
 - **Key code names:** `RebuildMetrics`
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/core/widgets/global_app_header.dart`, `lib/core/widgets/plan_card.dart`, `lib/core/widgets/plan_time_task_card/plan_time_task_card.dart`, `lib/data/database_service.dart`, `lib/features/planning/planning_page.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/core/widgets/global_app_header.dart`, `lib/core/widgets/plan_card.dart`, `lib/core/widgets/plan_time_task_card/plan_time_task_card.dart`, `lib/data/database_service.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -8528,7 +9260,7 @@ RU:
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
 - **Содержимое:** Dart-модуль `rebuild_metrics.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/core/widgets/global_app_header.dart`, `lib/core/widgets/plan_card.dart`, `lib/core/widgets/plan_time_task_card/plan_time_task_card.dart`, `lib/data/database_service.dart`, `lib/features/planning/planning_page.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/core/widgets/global_app_header.dart`, `lib/core/widgets/plan_card.dart`, `lib/core/widgets/plan_time_task_card/plan_time_task_card.dart`, `lib/data/database_service.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -8548,7 +9280,7 @@ EN:
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
 - **Contents:** Dart module `runtime_flags.dart` — open file for classes and helpers.
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/core/diagnostics/plan_duplicate_log.dart`, `lib/core/diagnostics/runtime_log.dart`, `lib/core/services/desktop_voice_hotkey.dart`, `lib/core/services/desktop_voice_settings.dart`, `lib/data/database_service.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/core/diagnostics/plan_duplicate_log.dart`, `lib/core/diagnostics/runtime_log.dart`, `lib/core/services/desktop_voice_hotkey.dart`, `lib/core/services/desktop_voice_settings.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -8565,7 +9297,7 @@ RU:
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
 - **Содержимое:** Dart-модуль `runtime_flags.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/core/diagnostics/plan_duplicate_log.dart`, `lib/core/diagnostics/runtime_log.dart`, `lib/core/services/desktop_voice_hotkey.dart`, `lib/core/services/desktop_voice_settings.dart`, `lib/data/database_service.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/core/diagnostics/plan_duplicate_log.dart`, `lib/core/diagnostics/runtime_log.dart`, `lib/core/services/desktop_voice_hotkey.dart`, `lib/core/services/desktop_voice_settings.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -8586,7 +9318,7 @@ EN:
 - **Contents:** Primary symbols: `ShellFlags`.
 - **Key code names:** `ShellFlags`
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/planning/time_view/time_view_canvas.dart`, `lib/features/planning/time_view/time_view_drag_controller.dart`, `lib/features/planning/time_view/time_view_drop_preview.dart`, `lib/shell/life_os_dashboard.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/features/planning/time_view/time_view_canvas.dart`, `lib/features/planning/time_view/time_view_drag_controller.dart`, `lib/features/planning/time_view/time_view_drop_preview.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -8603,7 +9335,7 @@ RU:
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
 - **Содержимое:** Dart-модуль `shell_flags.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/features/planning/time_view/time_view_canvas.dart`, `lib/features/planning/time_view/time_view_drag_controller.dart`, `lib/features/planning/time_view/time_view_drop_preview.dart`, `lib/shell/life_os_dashboard.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/features/planning/time_view/time_view_canvas.dart`, `lib/features/planning/time_view/time_view_drag_controller.dart`, `lib/features/planning/time_view/time_view_drop_preview.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -9003,7 +9735,7 @@ EN:
 - **Contents:** Primary symbols: `DesktopSttHelperService`.
 - **Key code names:** `DesktopSttHelperService`
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/core/services/desktop_stt_orchestrator.dart`, `lib/core/services/desktop_voice_benchmark_service.dart`, `lib/core/services/desktop_voice_recognizer_io.dart`, `lib/features/profile/desktop_voice_settings_desktop.dart`, `lib/features/shared/desktop_voice_widget.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/core/services/desktop_stt_orchestrator.dart`, `lib/core/services/desktop_voice_benchmark_service.dart`, `lib/core/services/desktop_voice_recognizer_io.dart`, `lib/features/profile/desktop_voice_settings_desktop.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -9020,7 +9752,7 @@ RU:
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
 - **Содержимое:** Dart-модуль `desktop_stt_helper_service.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/core/services/desktop_stt_orchestrator.dart`, `lib/core/services/desktop_voice_benchmark_service.dart`, `lib/core/services/desktop_voice_recognizer_io.dart`, `lib/features/profile/desktop_voice_settings_desktop.dart`, `lib/features/shared/desktop_voice_widget.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/core/services/desktop_stt_orchestrator.dart`, `lib/core/services/desktop_voice_benchmark_service.dart`, `lib/core/services/desktop_voice_recognizer_io.dart`, `lib/features/profile/desktop_voice_settings_desktop.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -9117,7 +9849,7 @@ EN:
 - **Contents:** Primary symbols: `DesktopTrayService`.
 - **Key code names:** `DesktopTrayService`
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/profile/desktop_voice_settings_desktop.dart`, `lib/features/profile/desktop_voice_settings_section.dart`, `lib/shell/life_os_dashboard.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/features/profile/desktop_voice_settings_desktop.dart`, `lib/features/profile/desktop_voice_settings_section.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -9134,7 +9866,7 @@ RU:
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
 - **Содержимое:** Dart-модуль `desktop_tray_service.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/features/profile/desktop_voice_settings_desktop.dart`, `lib/features/profile/desktop_voice_settings_section.dart`, `lib/shell/life_os_dashboard.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/features/profile/desktop_voice_settings_desktop.dart`, `lib/features/profile/desktop_voice_settings_section.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -9230,7 +9962,7 @@ EN:
 - **Contents:** Primary symbols: `DesktopVoiceAcceptanceBridge`.
 - **Key code names:** `DesktopVoiceAcceptanceBridge`
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/profile/desktop_voice_settings_desktop.dart`, `lib/shell/life_os_dashboard.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/features/profile/desktop_voice_settings_desktop.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -9247,7 +9979,7 @@ RU:
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
 - **Содержимое:** Dart-модуль `desktop_voice_acceptance_bridge.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/features/profile/desktop_voice_settings_desktop.dart`, `lib/shell/life_os_dashboard.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/features/profile/desktop_voice_settings_desktop.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -9572,7 +10304,7 @@ EN:
 - **Contents:** Primary symbols: `DesktopVoiceConfirmation`.
 - **Key code names:** `DesktopVoiceConfirmation`
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/shell/life_os_dashboard.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -9589,7 +10321,7 @@ RU:
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
 - **Содержимое:** Dart-модуль `desktop_voice_confirmation.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/shell/life_os_dashboard.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -9913,7 +10645,7 @@ EN:
 - **Contents:** Primary symbols: `DesktopVoiceHotkey`, `DesktopVoiceHotkeyAction`.
 - **Key code names:** `DesktopVoiceHotkey`, `DesktopVoiceHotkeyAction`
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/profile/desktop_voice_settings_desktop.dart`, `lib/features/profile/desktop_voice_settings_section.dart`, `lib/shell/life_os_dashboard.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/features/profile/desktop_voice_settings_desktop.dart`, `lib/features/profile/desktop_voice_settings_section.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -9930,7 +10662,7 @@ RU:
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
 - **Содержимое:** Dart-модуль `desktop_voice_hotkey.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/features/profile/desktop_voice_settings_desktop.dart`, `lib/features/profile/desktop_voice_settings_section.dart`, `lib/shell/life_os_dashboard.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/features/profile/desktop_voice_settings_desktop.dart`, `lib/features/profile/desktop_voice_settings_section.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -9988,7 +10720,7 @@ EN:
 - **Contents:** Primary symbols: `DesktopVoiceHotkeyMarkers`.
 - **Key code names:** `DesktopVoiceHotkeyMarkers`
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/shell/life_os_dashboard.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -10005,7 +10737,7 @@ RU:
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
 - **Содержимое:** Dart-модуль `desktop_voice_hotkey_markers.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/shell/life_os_dashboard.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -10101,7 +10833,7 @@ EN:
 - **Contents:** Primary symbols: `DesktopVoiceInstalledIdentity`.
 - **Key code names:** `DesktopVoiceInstalledIdentity`
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/core/services/desktop_voice_last_attempt_store.dart`, `lib/features/profile/desktop_voice_settings_desktop.dart`, `lib/shell/life_os_dashboard.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/core/services/desktop_voice_last_attempt_store.dart`, `lib/features/profile/desktop_voice_settings_desktop.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -10118,7 +10850,7 @@ RU:
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
 - **Содержимое:** Dart-модуль `desktop_voice_installed_identity.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/core/services/desktop_voice_last_attempt_store.dart`, `lib/features/profile/desktop_voice_settings_desktop.dart`, `lib/shell/life_os_dashboard.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/core/services/desktop_voice_last_attempt_store.dart`, `lib/features/profile/desktop_voice_settings_desktop.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -10215,7 +10947,7 @@ EN:
 - **Contents:** Primary symbols: `DesktopVoiceOverlayBridge`.
 - **Key code names:** `DesktopVoiceOverlayBridge`
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/shared/desktop_voice_widget.dart`, `lib/shell/life_os_dashboard.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/features/shared/desktop_voice_widget.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -10232,7 +10964,7 @@ RU:
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
 - **Содержимое:** Dart-модуль `desktop_voice_overlay_bridge.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/features/shared/desktop_voice_widget.dart`, `lib/shell/life_os_dashboard.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/features/shared/desktop_voice_widget.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -10291,7 +11023,7 @@ EN:
 - **Contents:** Primary symbols: `DesktopVoiceOverlayHost`.
 - **Key code names:** `DesktopVoiceOverlayHost`
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/core/services/desktop_voice_confirmation.dart`, `lib/core/services/desktop_voice_overlay_service.dart`, `lib/shell/life_os_dashboard.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/core/services/desktop_voice_confirmation.dart`, `lib/core/services/desktop_voice_overlay_service.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -10308,7 +11040,7 @@ RU:
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
 - **Содержимое:** Dart-модуль `desktop_voice_overlay_host.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/core/services/desktop_voice_confirmation.dart`, `lib/core/services/desktop_voice_overlay_service.dart`, `lib/shell/life_os_dashboard.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/core/services/desktop_voice_confirmation.dart`, `lib/core/services/desktop_voice_overlay_service.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -10744,7 +11476,7 @@ EN:
 - **Contents:** Primary symbols: `DesktopVoiceWriteRecordRequest`, `DesktopVoiceWriteRecordFn`, `DesktopVoiceSubmitOutcome`, `DesktopVoiceRecordSubmit`.
 - **Key code names:** `DesktopVoiceWriteRecordRequest`, `DesktopVoiceWriteRecordFn`, `DesktopVoiceSubmitOutcome`, `DesktopVoiceRecordSubmit`
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/shell/life_os_dashboard.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -10761,7 +11493,7 @@ RU:
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
 - **Содержимое:** Dart-модуль `desktop_voice_record_submit.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/shell/life_os_dashboard.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -10820,7 +11552,7 @@ EN:
 - **Contents:** Primary symbols: `DesktopVoiceHotkeyConfig`, `DesktopVoiceSettings`.
 - **Key code names:** `DesktopVoiceHotkeyConfig`, `DesktopVoiceSettings`
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/core/services/desktop_stt_helper_service.dart`, `lib/core/services/desktop_stt_orchestrator.dart`, `lib/core/services/desktop_tray_service.dart`, `lib/core/services/desktop_tray_service_io.dart`, `lib/core/services/desktop_voice_benchmark_service.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/core/services/desktop_stt_helper_service.dart`, `lib/core/services/desktop_stt_orchestrator.dart`, `lib/core/services/desktop_tray_service.dart`, `lib/core/services/desktop_tray_service_io.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -10837,7 +11569,7 @@ RU:
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
 - **Содержимое:** Dart-модуль `desktop_voice_settings.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/core/services/desktop_stt_helper_service.dart`, `lib/core/services/desktop_stt_orchestrator.dart`, `lib/core/services/desktop_tray_service.dart`, `lib/core/services/desktop_tray_service_io.dart`, `lib/core/services/desktop_voice_benchmark_service.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/core/services/desktop_stt_helper_service.dart`, `lib/core/services/desktop_stt_orchestrator.dart`, `lib/core/services/desktop_tray_service.dart`, `lib/core/services/desktop_tray_service_io.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -10858,7 +11590,7 @@ EN:
 - **Contents:** Primary symbols: `DesktopVoiceSmokeBridge`.
 - **Key code names:** `DesktopVoiceSmokeBridge`
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/shell/life_os_dashboard.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -10875,7 +11607,7 @@ RU:
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
 - **Содержимое:** Dart-модуль `desktop_voice_smoke_bridge.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/shell/life_os_dashboard.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -11236,7 +11968,7 @@ EN:
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
 - **Contents:** Dart module `speech_engine_handle.dart` — open file for classes and helpers.
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/shared/desktop_voice_command_panel.dart`, `lib/features/shared/voice_input_sheet.dart`, `lib/shell/life_os_dashboard.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/features/shared/desktop_voice_command_panel.dart`, `lib/features/shared/voice_input_sheet.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -11253,7 +11985,7 @@ RU:
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
 - **Содержимое:** Dart-модуль `speech_engine_handle.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/features/shared/desktop_voice_command_panel.dart`, `lib/features/shared/voice_input_sheet.dart`, `lib/shell/life_os_dashboard.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/features/shared/desktop_voice_command_panel.dart`, `lib/features/shared/voice_input_sheet.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -11311,7 +12043,7 @@ EN:
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
 - **Contents:** Dart module `shell_adaptive.dart` — open file for classes and helpers.
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/core/picker_entry_modes.dart`, `lib/features/calendar/calendar_chrome_header.dart`, `lib/features/calendar/calendar_helpers.dart`, `lib/features/calendar/calendar_view.dart`, `lib/features/planning/plan_time_gesture_contract.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/desktop/desktop_shell_frame.dart`, `lib/app/shell/phone/shell_bottom_navigation.dart`, `lib/app/shell/shared/shell_form_factor.dart`, `lib/core/picker_entry_modes.dart`, `lib/features/calendar/calendar_chrome_header.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -11328,7 +12060,7 @@ RU:
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
 - **Содержимое:** Dart-модуль `shell_adaptive.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/core/picker_entry_modes.dart`, `lib/features/calendar/calendar_chrome_header.dart`, `lib/features/calendar/calendar_helpers.dart`, `lib/features/calendar/calendar_view.dart`, `lib/features/planning/plan_time_gesture_contract.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/desktop/desktop_shell_frame.dart`, `lib/app/shell/phone/shell_bottom_navigation.dart`, `lib/app/shell/shared/shell_form_factor.dart`, `lib/core/picker_entry_modes.dart`, `lib/features/calendar/calendar_chrome_header.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -11349,7 +12081,7 @@ EN:
 - **Contents:** Primary symbols: `ShellLayoutController`, `ShellLayoutScope`.
 - **Key code names:** `ShellLayoutController`, `ShellLayoutScope`
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/lists/lists_view.dart`, `lib/features/planning/planning_page.dart`, `lib/shell/life_os_dashboard.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/features/lists/lists_view.dart`, `lib/features/planning/planning_page.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -11366,7 +12098,7 @@ RU:
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
 - **Содержимое:** Dart-модуль `shell_layout_state.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/features/lists/lists_view.dart`, `lib/features/planning/planning_page.dart`, `lib/shell/life_os_dashboard.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/features/lists/lists_view.dart`, `lib/features/planning/planning_page.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -12291,7 +13023,7 @@ EN:
 - **Contents:** Canonical Flutter widget (`GlobalAppHeader`).
 - **Key code names:** `GlobalAppHeader`
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/dev/component_lab_view.dart`, `lib/features/lists/lists_bulk_actions.dart`, `lib/features/lists/lists_view.dart`, `lib/features/planning/widgets/planning_select_mode_header.dart`, `lib/shell/life_os_dashboard.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/features/dev/component_lab_view.dart`, `lib/features/lists/lists_bulk_actions.dart`, `lib/features/lists/lists_view.dart`, `lib/features/planning/widgets/planning_select_mode_header.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -12308,7 +13040,7 @@ RU:
 - **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
 - **Содержимое:** Канонический Flutter-виджет (logic in `global_app_header`).
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/features/dev/component_lab_view.dart`, `lib/features/lists/lists_bulk_actions.dart`, `lib/features/lists/lists_view.dart`, `lib/features/planning/widgets/planning_select_mode_header.dart`, `lib/shell/life_os_dashboard.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/features/dev/component_lab_view.dart`, `lib/features/lists/lists_bulk_actions.dart`, `lib/features/lists/lists_view.dart`, `lib/features/planning/widgets/planning_select_mode_header.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -12329,7 +13061,7 @@ EN:
 - **Contents:** Canonical Flutter widget (`LazyIndexedStack`, `_LazyIndexedStackState`).
 - **Key code names:** `LazyIndexedStack`, `_LazyIndexedStackState`
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/shell/life_os_dashboard.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -12346,7 +13078,7 @@ RU:
 - **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
 - **Содержимое:** Канонический Flutter-виджет (logic in `lazy_indexed_stack`).
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/shell/life_os_dashboard.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -13385,7 +14117,7 @@ EN:
 - **Contents:** Canonical Flutter widget (`TagDisplayModeScope`).
 - **Key code names:** `TagDisplayModeScope`
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/core/widgets/chip_component.dart`, `lib/shell/life_os_dashboard.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/core/widgets/chip_component.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -13402,7 +14134,7 @@ RU:
 - **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
 - **Содержимое:** Канонический Flutter-виджет (logic in `tag_display_mode_scope`).
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/core/widgets/chip_component.dart`, `lib/shell/life_os_dashboard.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/core/widgets/chip_component.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -13992,7 +14724,7 @@ EN:
 - **Contents:** Shared streams, caches, and `part` declarations for records, plans, categories, profile.
 - **Key code names:** `_BuildNode`, `_OptimisticEndPatch`, `LegacyIdResolutionException`, `AuthenticatedUserIdRequiredException`, `AiBackendException`, `_DatabaseServiceLifecycleObserver`, `_HighlanderRollbackToken`, `DatabaseService`
 - **Repository role:** Brain/data
-- **Evidence of use:** Imported/exported by production Dart: `lib/data/auth_bridge.dart`, `lib/data/desktop_stt_cloud_backend.dart`, `lib/data/local_sync/sync_manager.dart`, `lib/features/calendar/calendar_day_events.dart`, `lib/features/calendar/calendar_day_panel.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/app/shell/shared/profile_hydration_status_bar.dart`, `lib/app/shell/shared/settings_page.dart`, `lib/app/shell/shared/shell_shared.dart`, `lib/data/auth_bridge.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -14009,7 +14741,7 @@ RU:
 - **Зачем:** Один singleton держит правила PocketBase для всех вкладок.
 - **Содержимое:** Потоки, кэш, объявления `part` для records/plans/categories/profile.
 - **Роль в репозитории:** Brain/data
-- **Доказательства использования:** Импортируется production Dart: `lib/data/auth_bridge.dart`, `lib/data/desktop_stt_cloud_backend.dart`, `lib/data/local_sync/sync_manager.dart`, `lib/features/calendar/calendar_day_events.dart`, `lib/features/calendar/calendar_day_panel.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/app/shell/shared/profile_hydration_status_bar.dart`, `lib/app/shell/shared/settings_page.dart`, `lib/app/shell/shared/shell_shared.dart`, `lib/data/auth_bridge.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -14294,7 +15026,7 @@ EN:
 - **Why needed:** Other code imports `models.dart` once to get `TimelineRecord`, `PlanningTask`, etc.
 - **Contents:** `part` directives only — no logic.
 - **Repository role:** Brain/data
-- **Evidence of use:** Imported/exported by production Dart: `lib/core/services/desktop_stt_benchmark_harness.dart`, `lib/core/services/desktop_voice_contamination_gate.dart`, `lib/core/services/desktop_voice_glossary.dart`, `lib/core/services/desktop_voice_real_helper_latency_benchmark.dart`, `lib/core/services/desktop_voice_record_submit.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/app/shell/shared/shell_shared.dart`, `lib/core/services/desktop_stt_benchmark_harness.dart`, `lib/core/services/desktop_voice_contamination_gate.dart`, `lib/core/services/desktop_voice_glossary.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -14311,7 +15043,7 @@ RU:
 - **Зачем:** Один import для всех типов данных.
 - **Содержимое:** Только `part` директивы.
 - **Роль в репозитории:** Brain/data
-- **Доказательства использования:** Импортируется production Dart: `lib/core/services/desktop_stt_benchmark_harness.dart`, `lib/core/services/desktop_voice_contamination_gate.dart`, `lib/core/services/desktop_voice_glossary.dart`, `lib/core/services/desktop_voice_real_helper_latency_benchmark.dart`, `lib/core/services/desktop_voice_record_submit.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/app/shell/shared/shell_shared.dart`, `lib/core/services/desktop_stt_benchmark_harness.dart`, `lib/core/services/desktop_voice_contamination_gate.dart`, `lib/core/services/desktop_voice_glossary.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -16191,7 +16923,7 @@ EN:
 - **Contents:** Dart helpers and types (`VoiceCommandMatchConfidence`, `VoiceCommandParseResult`, `VoiceCommandCategoryCandidate`, `VoiceCommandCategoryIndex`, `VoiceCommandCategoryScope`).
 - **Key code names:** `VoiceCommandMatchConfidence`, `VoiceCommandParseResult`, `VoiceCommandCategoryCandidate`, `VoiceCommandCategoryIndex`, `VoiceCommandCategoryScope`
 - **Repository role:** Brain/data
-- **Evidence of use:** Imported/exported by production Dart: `lib/core/services/desktop_stt_benchmark_harness.dart`, `lib/core/services/desktop_voice_command_normalize.dart`, `lib/core/services/desktop_voice_contamination_gate.dart`, `lib/core/services/desktop_voice_glossary.dart`, `lib/core/services/desktop_voice_recognition_postprocess.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/core/services/desktop_stt_benchmark_harness.dart`, `lib/core/services/desktop_voice_command_normalize.dart`, `lib/core/services/desktop_voice_contamination_gate.dart`, `lib/core/services/desktop_voice_glossary.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -16208,7 +16940,7 @@ RU:
 - **Зачем:** Общая логика PocketBase и auth для нескольких вкладок.
 - **Содержимое:** Dart-хелперы и типы (logic in `voice_command_parser`).
 - **Роль в репозитории:** Brain/data
-- **Доказательства использования:** Импортируется production Dart: `lib/core/services/desktop_stt_benchmark_harness.dart`, `lib/core/services/desktop_voice_command_normalize.dart`, `lib/core/services/desktop_voice_contamination_gate.dart`, `lib/core/services/desktop_voice_glossary.dart`, `lib/core/services/desktop_voice_recognition_postprocess.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/core/services/desktop_stt_benchmark_harness.dart`, `lib/core/services/desktop_voice_command_normalize.dart`, `lib/core/services/desktop_voice_contamination_gate.dart`, `lib/core/services/desktop_voice_glossary.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -16682,7 +17414,7 @@ EN:
 - **Contents:** Primary symbols: `CalendarView`, `_CalendarViewState`.
 - **Key code names:** `CalendarView`, `_CalendarViewState`
 - **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/shell/life_os_dashboard.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -16699,7 +17431,7 @@ RU:
 - **Зачем:** Пользователь видит UI из `calendar_view.dart` на вкладка Calendar.
 - **Содержимое:** Компоновка экрана и state в `calendar_view.dart`.
 - **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/shell/life_os_dashboard.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -16871,7 +17603,7 @@ EN:
 - **Contents:** Primary symbols: `CategoriesPage`, `_CategoriesPageState`.
 - **Key code names:** `CategoriesPage`, `_CategoriesPageState`
 - **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/shell/life_os_dashboard.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -16888,7 +17620,7 @@ RU:
 - **Зачем:** Пользователь видит UI из `category_list_view.dart` на More → Categories.
 - **Содержимое:** Компоновка экрана и state в `category_list_view.dart`.
 - **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/shell/life_os_dashboard.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -17023,7 +17755,7 @@ EN:
 - **Contents:** Primary symbols: `CategoryVisibilityPrefs`.
 - **Key code names:** `CategoryVisibilityPrefs`
 - **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/categories/category_list_view.dart`, `lib/features/categories/category_recursive_tree.dart`, `lib/features/categories/category_row_widget.dart`, `lib/features/lists/lists_filters.dart`, `lib/features/lists/lists_view.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/features/categories/category_list_view.dart`, `lib/features/categories/category_recursive_tree.dart`, `lib/features/categories/category_row_widget.dart`, `lib/features/lists/lists_filters.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -17040,7 +17772,7 @@ RU:
 - **Зачем:** Пользователь видит UI из `category_visibility_prefs.dart` на More → Categories.
 - **Содержимое:** Dart-модуль `category_visibility_prefs.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/features/categories/category_list_view.dart`, `lib/features/categories/category_recursive_tree.dart`, `lib/features/categories/category_row_widget.dart`, `lib/features/lists/lists_filters.dart`, `lib/features/lists/lists_view.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/features/categories/category_list_view.dart`, `lib/features/categories/category_recursive_tree.dart`, `lib/features/categories/category_row_widget.dart`, `lib/features/lists/lists_filters.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -17175,7 +17907,7 @@ EN:
 - **Contents:** Primary symbols: `ComponentLabPage`, `_LabSection`, `_ButtonsDemo`, `_IconButtonsDemo`.
 - **Key code names:** `ComponentLabPage`, `_LabSection`, `_ButtonsDemo`, `_IconButtonsDemo`
 - **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/shell/life_os_dashboard.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -17192,7 +17924,7 @@ RU:
 - **Зачем:** Пользователь видит UI из `component_lab_view.dart` на Component Lab (More → Dev, только admin).
 - **Содержимое:** Компоновка экрана и state в `component_lab_view.dart`.
 - **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/shell/life_os_dashboard.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -17440,7 +18172,7 @@ EN:
 - **Contents:** Primary symbols: `ListsPage`, `_ListsPageState`.
 - **Key code names:** `ListsPage`, `_ListsPageState`
 - **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/shell/life_os_dashboard.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -17457,7 +18189,7 @@ RU:
 - **Зачем:** Пользователь видит UI из `lists_view.dart` на вкладка Lists (четвёртая снизу).
 - **Содержимое:** Компоновка экрана и state в `lists_view.dart`.
 - **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/shell/life_os_dashboard.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -18121,7 +18853,7 @@ EN:
 - **Why needed:** Shell and tests import one stable path instead of three planning entry files.
 - **Contents:** Three `export` lines only — no widgets in this file.
 - **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/shell/life_os_dashboard.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -18138,7 +18870,7 @@ RU:
 - **Зачем:** Shell импортирует один путь вместо трёх entry-файлов planning.
 - **Содержимое:** Только три строки `export` — виджетов здесь нет.
 - **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/shell/life_os_dashboard.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -19485,7 +20217,7 @@ EN:
 - **Contents:** Primary symbols: `DesktopVoiceAttemptCopyFn`, `DesktopVoiceAttemptDialogTestHooks`, `_DesktopVoiceAttemptDialog`, `_DesktopVoiceAttemptDialogState`, `_AttemptView`, `_StatusHeader`.
 - **Key code names:** `DesktopVoiceAttemptCopyFn`, `DesktopVoiceAttemptDialogTestHooks`, `_DesktopVoiceAttemptDialog`, `_DesktopVoiceAttemptDialogState`, `_AttemptView`, `_StatusHeader`
 - **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/shell/life_os_dashboard.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -19502,7 +20234,7 @@ RU:
 - **Зачем:** Пользователь видит UI из `desktop_voice_attempt_dialog.dart` на More → Profile и настройки.
 - **Содержимое:** Основные символы: `DesktopVoiceAttemptCopyFn`, `DesktopVoiceAttemptDialogTestHooks`, `_DesktopVoiceAttemptDialog`, `_DesktopVoiceAttemptDialogState`, `_AttemptView`, `_StatusHeader`.
 - **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/shell/life_os_dashboard.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -19599,7 +20331,7 @@ EN:
 - **Contents:** Primary symbols: `ProfilePage`, `_ProfilePageState`.
 - **Key code names:** `ProfilePage`, `_ProfilePageState`
 - **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/shell/life_os_dashboard.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -19616,7 +20348,7 @@ RU:
 - **Зачем:** Пользователь видит UI из `profile_view.dart` на More → Profile и настройки.
 - **Содержимое:** Компоновка экрана и state в `profile_view.dart`.
 - **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/shell/life_os_dashboard.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -20130,7 +20862,7 @@ EN:
 - **Contents:** Primary symbols: `DesktopVoiceOverlayPhase`, `DesktopVoiceStartRecordFn`, `DesktopVoiceOverlay`, `_DesktopVoiceOverlayState`.
 - **Key code names:** `DesktopVoiceOverlayPhase`, `DesktopVoiceStartRecordFn`, `DesktopVoiceOverlay`, `_DesktopVoiceOverlayState`
 - **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/shell/life_os_dashboard.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -20147,7 +20879,7 @@ RU:
 - **Зачем:** Пользователь видит UI из `desktop_voice_widget.dart` на edit sheets и voice UI на всех вкладках.
 - **Содержимое:** Dart-модуль `desktop_voice_widget.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/shell/life_os_dashboard.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -20618,7 +21350,7 @@ EN:
 - **Contents:** Primary symbols: `OfflineSyncStatusBar`, `OfflineSyncStatusBarState`.
 - **Key code names:** `OfflineSyncStatusBar`, `OfflineSyncStatusBarState`
 - **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/shell/shell_offline_banner.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/shared/shell_offline_banner.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -20635,7 +21367,7 @@ RU:
 - **Зачем:** Пользователь видит UI из `offline_sync_status_bar.dart` на edit sheets и voice UI на всех вкладках.
 - **Содержимое:** Dart-модуль `offline_sync_status_bar.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/shell/shell_offline_banner.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/shared/shell_offline_banner.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -20730,7 +21462,7 @@ EN:
 - **Why needed:** Users see `shared_widgets.dart` when using edit sheets and voice UI on every tab.
 - **Contents:** Barrel `export` lines: `activity_detail_sheet.dart`, `empty_state_placeholder.dart`, `planning_task_edit_sheet.dart`, `timeline_record_edit_sheet.dart`, `checklist_helpers.dart`.
 - **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/categories/category_list_view.dart`, `lib/features/planning/bulk_planning_edit_sheet.dart`, `lib/features/planning/widgets/planning_empty_states.dart`, `lib/features/timeline/timeline_day_page.dart`, `lib/features/timeline/timeline_view.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/features/categories/category_list_view.dart`, `lib/features/planning/bulk_planning_edit_sheet.dart`, `lib/features/planning/widgets/planning_empty_states.dart`, `lib/features/timeline/timeline_day_page.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -20747,7 +21479,7 @@ RU:
 - **Зачем:** Пользователь видит UI из `shared_widgets.dart` на edit sheets и voice UI на всех вкладках.
 - **Содержимое:** Dart-модуль `shared_widgets.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/features/categories/category_list_view.dart`, `lib/features/planning/bulk_planning_edit_sheet.dart`, `lib/features/planning/widgets/planning_empty_states.dart`, `lib/features/timeline/timeline_day_page.dart`, `lib/features/timeline/timeline_view.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/features/categories/category_list_view.dart`, `lib/features/planning/bulk_planning_edit_sheet.dart`, `lib/features/planning/widgets/planning_empty_states.dart`, `lib/features/timeline/timeline_day_page.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -20806,7 +21538,7 @@ EN:
 - **Contents:** Primary symbols: `VoiceCaptureConfig`.
 - **Key code names:** `VoiceCaptureConfig`
 - **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/shared/voice_input_sheet.dart`, `lib/shell/life_os_dashboard.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/features/shared/voice_input_sheet.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -20823,7 +21555,7 @@ RU:
 - **Зачем:** Пользователь видит UI из `voice_capture_config.dart` на edit sheets и voice UI на всех вкладках.
 - **Содержимое:** Dart-модуль `voice_capture_config.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/features/shared/voice_input_sheet.dart`, `lib/shell/life_os_dashboard.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/features/shared/voice_input_sheet.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -20844,7 +21576,7 @@ EN:
 - **Contents:** `VoiceInputSheet`, `_VoiceInputSheetState`; STT engine handle, permission prompts.
 - **Key code names:** `VoiceInputSheet`, `_VoiceInputSheetState`
 - **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/shell/life_os_dashboard.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -20861,7 +21593,7 @@ RU:
 - **Зачем:** Voice submit на Timeline, Plans и Lists открывает эту шторку; не блокирует main thread.
 - **Содержимое:** `VoiceInputSheet`, `_VoiceInputSheetState`; STT handle, запрос permissions.
 - **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/shell/life_os_dashboard.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -21109,7 +21841,7 @@ EN:
 - **Contents:** `TimelineSwipeWrapper`, `_TimelineSwipeWrapperState`; imports day page, header controls, stats.
 - **Key code names:** `TimelineSwipeWrapper`, `_TimelineSwipeWrapperState`
 - **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/shell/life_os_dashboard.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -21126,7 +21858,7 @@ RU:
 - **Зачем:** Первая вкладка: свайп дней, старт/стоп записей, stats — собрано здесь.
 - **Содержимое:** `TimelineSwipeWrapper`, `_TimelineSwipeWrapperState`; подключает day page, header controls, stats.
 - **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/shell/life_os_dashboard.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -21297,7 +22029,7 @@ EN:
 - **Why needed:** UI labels resolve through l10n maps instead of hard-coded strings in widgets.
 - **Contents:** Dart maps/keys in `app_locales.dart`.
 - **Repository role:** localization
-- **Evidence of use:** Imported/exported by production Dart: `lib/data/database_service.dart`, `lib/data/models.dart`, `lib/features/planning/smart_plan_sheet.dart`, `lib/features/profile/profile_view.dart`, `lib/features/shared/desktop_voice_command_panel.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/shared/settings_page.dart`, `lib/data/database_service.dart`, `lib/data/models.dart`, `lib/features/planning/smart_plan_sheet.dart`, `lib/features/profile/profile_view.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -21314,7 +22046,7 @@ RU:
 - **Зачем:** Подписи UI берутся из l10n maps, а не из hard-coded строк в виджетах.
 - **Содержимое:** Dart-карты ключей в `app_locales.dart`.
 - **Роль в репозитории:** localization
-- **Доказательства использования:** Импортируется production Dart: `lib/data/database_service.dart`, `lib/data/models.dart`, `lib/features/planning/smart_plan_sheet.dart`, `lib/features/profile/profile_view.dart`, `lib/features/shared/desktop_voice_command_panel.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/shared/settings_page.dart`, `lib/data/database_service.dart`, `lib/data/models.dart`, `lib/features/planning/smart_plan_sheet.dart`, `lib/features/profile/profile_view.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -21334,7 +22066,7 @@ EN:
 - **Why needed:** UI labels resolve through l10n maps instead of hard-coded strings in widgets.
 - **Contents:** Dart maps/keys in `category_db_display.dart`.
 - **Repository role:** localization
-- **Evidence of use:** Imported/exported by production Dart: `lib/core/widgets/chip_component.dart`, `lib/core/widgets/plan_time_task_card/plan_card_sections.dart`, `lib/core/widgets/plan_time_task_card/plan_time_task_card.dart`, `lib/features/categories/category_recursive_tree.dart`, `lib/features/categories/category_row_widget.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/core/widgets/chip_component.dart`, `lib/core/widgets/plan_time_task_card/plan_card_sections.dart`, `lib/core/widgets/plan_time_task_card/plan_time_task_card.dart`, `lib/features/categories/category_recursive_tree.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -21351,7 +22083,7 @@ RU:
 - **Зачем:** Подписи UI берутся из l10n maps, а не из hard-coded строк в виджетах.
 - **Содержимое:** Dart-карты ключей в `category_db_display.dart`.
 - **Роль в репозитории:** localization
-- **Доказательства использования:** Импортируется production Dart: `lib/core/widgets/chip_component.dart`, `lib/core/widgets/plan_time_task_card/plan_card_sections.dart`, `lib/core/widgets/plan_time_task_card/plan_time_task_card.dart`, `lib/features/categories/category_recursive_tree.dart`, `lib/features/categories/category_row_widget.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/core/widgets/chip_component.dart`, `lib/core/widgets/plan_time_task_card/plan_card_sections.dart`, `lib/core/widgets/plan_time_task_card/plan_time_task_card.dart`, `lib/features/categories/category_recursive_tree.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -21371,7 +22103,7 @@ EN:
 - **Why needed:** UI labels resolve through l10n maps instead of hard-coded strings in widgets.
 - **Contents:** Dart maps/keys in `dictionary.dart`.
 - **Repository role:** localization
-- **Evidence of use:** Imported/exported by production Dart: `lib/core/app_snackbar.dart`, `lib/core/services/desktop_voice_attempt_log.dart`, `lib/core/services/desktop_voice_overlay_service.dart`, `lib/core/services/desktop_voice_recognizer_io.dart`, `lib/core/widgets/app_bar_live_clock.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/app/shell/desktop/shell_side_navigation.dart`, `lib/app/shell/phone/shell_bottom_navigation.dart`, `lib/app/shell/shared/profile_hydration_status_bar.dart`, `lib/app/shell/shared/settings_page.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -21388,7 +22120,7 @@ RU:
 - **Зачем:** Подписи UI берутся из l10n maps, а не из hard-coded строк в виджетах.
 - **Содержимое:** Dart-карты ключей в `dictionary.dart`.
 - **Роль в репозитории:** localization
-- **Доказательства использования:** Импортируется production Dart: `lib/core/app_snackbar.dart`, `lib/core/services/desktop_voice_attempt_log.dart`, `lib/core/services/desktop_voice_overlay_service.dart`, `lib/core/services/desktop_voice_recognizer_io.dart`, `lib/core/widgets/app_bar_live_clock.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/app/shell/desktop/shell_side_navigation.dart`, `lib/app/shell/phone/shell_bottom_navigation.dart`, `lib/app/shell/shared/profile_hydration_status_bar.dart`, `lib/app/shell/shared/settings_page.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -21881,461 +22613,6 @@ RU:
 - **Когда открывать:** Когда ломается поведение, связанное с `plan_alarm_schedule.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/data/plan_service.dart` — reschedule alarm
-
-
-### `lib/shell/life_os_dashboard.dart`
-
-EN:
-
-- **Human purpose:** App shell wiring — Shell dashboard entry (see §3.1.1). Connects bottom tabs, voice, edit sheets, and offline banner across the whole app.
-- **What this is:** App shell wiring — Shell dashboard entry (see §3.1.1).
-- **Why needed:** Connects bottom tabs, voice, edit sheets, and offline banner across the whole app.
-- **Contents:** Shell mixin or widget (`ShellDashboardBase`, `LifeOSDashboard`, `ShellDashboardState`).
-- **Key code names:** `ShellDashboardBase`, `LifeOSDashboard`, `ShellDashboardState`
-- **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/app_shell.dart`.
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
-- **Confidence:** HIGH
-- **Owner / layer:** app shell
-- **Responsibilities:** Shell dashboard entry (see §3.1.1)
-- **When to open:** Bottom tabs, voice routing, edit modal host, offline banner slot.
-- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** All main tabs, `app_shell.dart`; APP_STRUCTURE role: Shell dashboard entry (see §3.1.1)
-
-RU:
-
-- **Зачем файл человеку:** Оболочка приложения (shell) — Shell dashboard entry (see §3.1.1). Связывает вкладки, voice, edit sheets и offline banner.
-- **Что это:** Оболочка приложения (shell) — Shell dashboard entry (see §3.1.1).
-- **Зачем:** Связывает вкладки, voice, edit sheets и offline banner.
-- **Содержимое:** Shell mixin или виджет (logic in `life_os_dashboard`).
-- **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/app_shell.dart`.
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
-- **Уверенность:** HIGH
-- **Владелец / слой:** оболочка приложения
-- **Обязанности:** Реализует в shell: Shell dashboard entry (see §3.1.1).
-- **Когда открывать:** Навигация, voice, edit host.
-- **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Все main tabs, `app_shell.dart`
-
-
-### `lib/shell/profile_hydration_status_bar.dart`
-
-EN:
-
-- **Human purpose:** App shell wiring — Profile hydration failure banner. Connects bottom tabs, voice, edit sheets, and offline banner across the whole app.
-- **What this is:** App shell wiring — Profile hydration failure banner.
-- **Why needed:** Connects bottom tabs, voice, edit sheets, and offline banner across the whole app.
-- **Contents:** Shell mixin or widget (`ProfileHydrationStatusBar`).
-- **Key code names:** `ProfileHydrationStatusBar`
-- **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/shared/profile_hydration_status_bar.dart`, `lib/shell/shell_offline_banner.dart`.
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
-- **Confidence:** HIGH
-- **Owner / layer:** app shell
-- **Responsibilities:** Profile hydration failure banner
-- **When to open:** Bottom tabs, voice routing, edit modal host, offline banner slot.
-- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** All main tabs, `app_shell.dart`; APP_STRUCTURE role: Profile hydration failure banner
-
-RU:
-
-- **Зачем файл человеку:** Оболочка приложения (shell) — Profile hydration failure banner. Связывает вкладки, voice, edit sheets и offline banner.
-- **Что это:** Оболочка приложения (shell) — Profile hydration failure banner.
-- **Зачем:** Связывает вкладки, voice, edit sheets и offline banner.
-- **Содержимое:** Shell mixin или виджет (logic in `profile_hydration_status_bar`).
-- **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/features/shared/profile_hydration_status_bar.dart`, `lib/shell/shell_offline_banner.dart`.
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
-- **Уверенность:** HIGH
-- **Владелец / слой:** оболочка приложения
-- **Обязанности:** Реализует в shell: Profile hydration failure banner.
-- **Когда открывать:** Навигация, voice, edit host.
-- **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Все main tabs, `app_shell.dart`
-
-
-### `lib/shell/settings_page.dart`
-
-EN:
-
-- **Human purpose:** App shell wiring — Language/TZ settings page (shell route). Connects bottom tabs, voice, edit sheets, and offline banner across the whole app.
-- **What this is:** App shell wiring — Language/TZ settings page (shell route).
-- **Why needed:** Connects bottom tabs, voice, edit sheets, and offline banner across the whole app.
-- **Contents:** Shell mixin or widget (`SettingsPage`, `SettingsPageState`).
-- **Key code names:** `SettingsPage`, `SettingsPageState`
-- **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/profile/settings/settings_page.dart`.
-- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
-- **Deletion consequence:** Removing it breaks a required repository capability.
-- **Confidence:** MEDIUM
-- **Owner / layer:** app shell
-- **Responsibilities:** Language/TZ settings page (shell route)
-- **When to open:** Bottom tabs, voice routing, edit modal host, offline banner slot.
-- **Can it be deleted?** Removing it breaks a required repository capability.
-- **Connected to:** All main tabs, `app_shell.dart`; APP_STRUCTURE role: Language/TZ settings page (shell route)
-
-RU:
-
-- **Зачем файл человеку:** Оболочка приложения (shell) — Language/TZ settings page (shell route). Связывает вкладки, voice, edit sheets и offline banner.
-- **Что это:** Оболочка приложения (shell) — Language/TZ settings page (shell route).
-- **Зачем:** Связывает вкладки, voice, edit sheets и offline banner.
-- **Содержимое:** Shell mixin или виджет (logic in `settings_page`).
-- **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/features/profile/settings/settings_page.dart`.
-- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
-- **Что будет, если удалить:** Удаление ломает нужную возможность репозитория.
-- **Уверенность:** MEDIUM
-- **Владелец / слой:** оболочка приложения
-- **Обязанности:** Реализует в shell: Language/TZ settings page (shell route).
-- **Когда открывать:** Навигация, voice, edit host.
-- **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Все main tabs, `app_shell.dart`
-
-
-### `lib/shell/shell_bottom_navigation.dart`
-
-EN:
-
-- **Human purpose:** `ShellCompactBottomNav` — equal-column phone-safe bottom tab bar (compact labels). Material `NavigationBar` clips five labels on ~390px widths; this bar matches APK phone metrics.
-- **What this is:** `ShellCompactBottomNav` — equal-column phone-safe bottom tab bar (compact labels).
-- **Why needed:** Material `NavigationBar` clips five labels on ~390px widths; this bar matches APK phone metrics.
-- **Contents:** `ShellCompactBottomNav`, `kShellBottomNavHeight`, compact vs full label keys.
-- **Key code names:** `ShellCompactBottomNav`, `_ShellBottomNavItem`
-- **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/shell/life_os_dashboard.dart`.
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
-- **Confidence:** HIGH
-- **Owner / layer:** app shell
-- **Responsibilities:** Render five shell tabs; no PocketBase I/O.
-- **When to open:** Bottom tabs, voice routing, edit modal host, offline banner slot.
-- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** All main tabs, `app_shell.dart`; APP_STRUCTURE role: `ShellCompactBottomNav` — equal-column phone-safe bottom tab bar
-
-RU:
-
-- **Зачем файл человеку:** `ShellCompactBottomNav` — компактная нижняя панель вкладок с равными колонками для узких телефонов. Material `NavigationBar` обрезает пять подписей на ширине ~390px; эта панель совпадает с метриками APK.
-- **Что это:** `ShellCompactBottomNav` — компактная нижняя панель вкладок с равными колонками для узких телефонов.
-- **Зачем:** Material `NavigationBar` обрезает пять подписей на ширине ~390px; эта панель совпадает с метриками APK.
-- **Содержимое:** `ShellCompactBottomNav`, `kShellBottomNavHeight`, ключи коротких и полных подписей.
-- **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/shell/life_os_dashboard.dart`.
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
-- **Уверенность:** HIGH
-- **Владелец / слой:** оболочка приложения
-- **Обязанности:** Рисует пять вкладок оболочки; без обращений к PocketBase.
-- **Когда открывать:** Навигация, voice, edit host.
-- **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Все main tabs, `app_shell.dart`
-
-
-### `lib/shell/shell_core.dart`
-
-EN:
-
-- **Human purpose:** App shell wiring — Shell core logic. Connects bottom tabs, voice, edit sheets, and offline banner across the whole app.
-- **What this is:** App shell wiring — Shell core logic.
-- **Why needed:** Connects bottom tabs, voice, edit sheets, and offline banner across the whole app.
-- **Contents:** Shell mixin or widget (`ShellCoreLogic`).
-- **Key code names:** `ShellCoreLogic`
-- **Repository role:** production UI
-- **Evidence of use:** Included by `lib/shell/life_os_dashboard.dart` through a `part` directive (not imported directly).
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Brain/library compile failure in `lib/shell/life_os_dashboard.dart` and broken related UI/data ops.
-- **Confidence:** HIGH
-- **Owner / layer:** app shell
-- **Responsibilities:** Shell core logic
-- **When to open:** Bottom tabs, voice routing, edit modal host, offline banner slot.
-- **Can it be deleted?** Brain/library compile failure in `lib/shell/life_os_dashboard.dart` and broken related UI/data ops.
-- **Connected to:** All main tabs, `app_shell.dart`; APP_STRUCTURE role: Shell core logic
-
-RU:
-
-- **Зачем файл человеку:** Оболочка приложения (shell) — Shell core logic. Связывает вкладки, voice, edit sheets и offline banner.
-- **Что это:** Оболочка приложения (shell) — Shell core logic.
-- **Зачем:** Связывает вкладки, voice, edit sheets и offline banner.
-- **Содержимое:** Shell mixin или виджет (logic in `shell_core`).
-- **Роль в репозитории:** production UI
-- **Доказательства использования:** Подключён из `lib/shell/life_os_dashboard.dart` через `part` (не импортируется напрямую).
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Сломается компиляция `lib/shell/life_os_dashboard.dart` и связанные экраны/данные.
-- **Уверенность:** HIGH
-- **Владелец / слой:** оболочка приложения
-- **Обязанности:** Реализует в shell: Shell core logic.
-- **Когда открывать:** Навигация, voice, edit host.
-- **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Все main tabs, `app_shell.dart`
-
-
-### `lib/shell/shell_edit_hosts.dart`
-
-EN:
-
-- **Human purpose:** App shell wiring — Edit sheet hosts. Connects bottom tabs, voice, edit sheets, and offline banner across the whole app.
-- **What this is:** App shell wiring — Edit sheet hosts.
-- **Why needed:** Connects bottom tabs, voice, edit sheets, and offline banner across the whole app.
-- **Contents:** Shell mixin or widget (`ShellEditHosts`).
-- **Key code names:** `ShellEditHosts`
-- **Repository role:** production UI
-- **Evidence of use:** Included by `lib/shell/life_os_dashboard.dart` through a `part` directive (not imported directly).
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Brain/library compile failure in `lib/shell/life_os_dashboard.dart` and broken related UI/data ops.
-- **Confidence:** HIGH
-- **Owner / layer:** app shell
-- **Responsibilities:** Edit sheet hosts
-- **When to open:** Bottom tabs, voice routing, edit modal host, offline banner slot.
-- **Can it be deleted?** Brain/library compile failure in `lib/shell/life_os_dashboard.dart` and broken related UI/data ops.
-- **Connected to:** All main tabs, `app_shell.dart`; APP_STRUCTURE role: Edit sheet hosts
-
-RU:
-
-- **Зачем файл человеку:** Оболочка приложения (shell) — Edit sheet hosts. Связывает вкладки, voice, edit sheets и offline banner.
-- **Что это:** Оболочка приложения (shell) — Edit sheet hosts.
-- **Зачем:** Связывает вкладки, voice, edit sheets и offline banner.
-- **Содержимое:** Shell mixin или виджет (logic in `shell_edit_hosts`).
-- **Роль в репозитории:** production UI
-- **Доказательства использования:** Подключён из `lib/shell/life_os_dashboard.dart` через `part` (не импортируется напрямую).
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Сломается компиляция `lib/shell/life_os_dashboard.dart` и связанные экраны/данные.
-- **Уверенность:** HIGH
-- **Владелец / слой:** оболочка приложения
-- **Обязанности:** Реализует в shell: Edit sheet hosts.
-- **Когда открывать:** Навигация, voice, edit host.
-- **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Все main tabs, `app_shell.dart`
-
-
-### `lib/shell/shell_more_menu.dart`
-
-EN:
-
-- **Human purpose:** App shell wiring — More menu. Connects bottom tabs, voice, edit sheets, and offline banner across the whole app.
-- **What this is:** App shell wiring — More menu.
-- **Why needed:** Connects bottom tabs, voice, edit sheets, and offline banner across the whole app.
-- **Contents:** Shell mixin or widget (`ShellMoreMenu`).
-- **Key code names:** `ShellMoreMenu`
-- **Repository role:** production UI
-- **Evidence of use:** Included by `lib/shell/life_os_dashboard.dart` through a `part` directive (not imported directly).
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Brain/library compile failure in `lib/shell/life_os_dashboard.dart` and broken related UI/data ops.
-- **Confidence:** HIGH
-- **Owner / layer:** app shell
-- **Responsibilities:** More menu
-- **When to open:** Bottom tabs, voice routing, edit modal host, offline banner slot.
-- **Can it be deleted?** Brain/library compile failure in `lib/shell/life_os_dashboard.dart` and broken related UI/data ops.
-- **Connected to:** All main tabs, `app_shell.dart`; APP_STRUCTURE role: More menu
-
-RU:
-
-- **Зачем файл человеку:** Оболочка приложения (shell) — More menu. Связывает вкладки, voice, edit sheets и offline banner.
-- **Что это:** Оболочка приложения (shell) — More menu.
-- **Зачем:** Связывает вкладки, voice, edit sheets и offline banner.
-- **Содержимое:** Shell mixin или виджет (logic in `shell_more_menu`).
-- **Роль в репозитории:** production UI
-- **Доказательства использования:** Подключён из `lib/shell/life_os_dashboard.dart` через `part` (не импортируется напрямую).
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Сломается компиляция `lib/shell/life_os_dashboard.dart` и связанные экраны/данные.
-- **Уверенность:** HIGH
-- **Владелец / слой:** оболочка приложения
-- **Обязанности:** Реализует в shell: More menu.
-- **Когда открывать:** Навигация, voice, edit host.
-- **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Все main tabs, `app_shell.dart`
-
-
-### `lib/shell/shell_offline_banner.dart`
-
-EN:
-
-- **Human purpose:** App shell wiring — Offline banner slot. Connects bottom tabs, voice, edit sheets, and offline banner across the whole app.
-- **What this is:** App shell wiring — Offline banner slot.
-- **Why needed:** Connects bottom tabs, voice, edit sheets, and offline banner across the whole app.
-- **Contents:** Shell mixin or widget (`ShellTopStatusBars`).
-- **Key code names:** `ShellTopStatusBars`
-- **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/shell/life_os_dashboard.dart`.
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
-- **Confidence:** HIGH
-- **Owner / layer:** app shell
-- **Responsibilities:** Offline banner slot
-- **When to open:** Bottom tabs, voice routing, edit modal host, offline banner slot.
-- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** All main tabs, `app_shell.dart`; APP_STRUCTURE role: Offline banner slot
-
-RU:
-
-- **Зачем файл человеку:** Оболочка приложения (shell) — Offline banner slot. Связывает вкладки, voice, edit sheets и offline banner.
-- **Что это:** Оболочка приложения (shell) — Offline banner slot.
-- **Зачем:** Связывает вкладки, voice, edit sheets и offline banner.
-- **Содержимое:** Shell mixin или виджет (logic in `shell_offline_banner`).
-- **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/shell/life_os_dashboard.dart`.
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
-- **Уверенность:** HIGH
-- **Владелец / слой:** оболочка приложения
-- **Обязанности:** Реализует в shell: Offline banner slot.
-- **Когда открывать:** Навигация, voice, edit host.
-- **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Все main tabs, `app_shell.dart`
-
-
-### `lib/shell/shell_shared.dart`
-
-EN:
-
-- **Human purpose:** App shell wiring — Shell shared helpers. Connects bottom tabs, voice, edit sheets, and offline banner across the whole app.
-- **What this is:** App shell wiring — Shell shared helpers.
-- **Why needed:** Connects bottom tabs, voice, edit sheets, and offline banner across the whole app.
-- **Contents:** Shell mixin or widget (logic in `shell_shared`).
-- **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/shell/life_os_dashboard.dart`.
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
-- **Confidence:** HIGH
-- **Owner / layer:** app shell
-- **Responsibilities:** Shell shared helpers
-- **When to open:** Bottom tabs, voice routing, edit modal host, offline banner slot.
-- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** All main tabs, `app_shell.dart`; APP_STRUCTURE role: Shell shared helpers
-
-RU:
-
-- **Зачем файл человеку:** Оболочка приложения (shell) — Shell shared helpers. Связывает вкладки, voice, edit sheets и offline banner.
-- **Что это:** Оболочка приложения (shell) — Shell shared helpers.
-- **Зачем:** Связывает вкладки, voice, edit sheets и offline banner.
-- **Содержимое:** Shell mixin или виджет (logic in `shell_shared`).
-- **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/shell/life_os_dashboard.dart`.
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
-- **Уверенность:** HIGH
-- **Владелец / слой:** оболочка приложения
-- **Обязанности:** Реализует в shell: Shell shared helpers.
-- **Когда открывать:** Навигация, voice, edit host.
-- **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Все main tabs, `app_shell.dart`
-
-
-### `lib/shell/shell_side_navigation.dart`
-
-EN:
-
-- **Human purpose:** App shell wiring — Desktop/web side navigation rail. Connects bottom tabs, voice, edit sheets, and offline banner across the whole app.
-- **What this is:** App shell wiring — Desktop/web side navigation rail.
-- **Why needed:** Connects bottom tabs, voice, edit sheets, and offline banner across the whole app.
-- **Contents:** Shell mixin or widget (`ShellSideNavigation`, `ShellSideNavItem`).
-- **Key code names:** `ShellSideNavigation`, `ShellSideNavItem`
-- **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/core/navigation/shell_side_navigation.dart`, `lib/shell/life_os_dashboard.dart`.
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
-- **Confidence:** HIGH
-- **Owner / layer:** app shell
-- **Responsibilities:** Desktop/web side navigation rail
-- **When to open:** Bottom tabs, voice routing, edit modal host, offline banner slot.
-- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** All main tabs, `app_shell.dart`; APP_STRUCTURE role: Desktop/web side navigation rail
-
-RU:
-
-- **Зачем файл человеку:** Оболочка приложения (shell) — Desktop/web side navigation rail. Связывает вкладки, voice, edit sheets и offline banner.
-- **Что это:** Оболочка приложения (shell) — Desktop/web side navigation rail.
-- **Зачем:** Связывает вкладки, voice, edit sheets и offline banner.
-- **Содержимое:** Shell mixin или виджет (logic in `shell_side_navigation`).
-- **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/core/navigation/shell_side_navigation.dart`, `lib/shell/life_os_dashboard.dart`.
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
-- **Уверенность:** HIGH
-- **Владелец / слой:** оболочка приложения
-- **Обязанности:** Реализует в shell: Desktop/web side navigation rail.
-- **Когда открывать:** Навигация, voice, edit host.
-- **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Все main tabs, `app_shell.dart`
-
-
-### `lib/shell/shell_tab_host.dart`
-
-EN:
-
-- **Human purpose:** App shell wiring — Tab host builders. Connects bottom tabs, voice, edit sheets, and offline banner across the whole app.
-- **What this is:** App shell wiring — Tab host builders.
-- **Why needed:** Connects bottom tabs, voice, edit sheets, and offline banner across the whole app.
-- **Contents:** Shell mixin or widget (`ShellTabHost`).
-- **Key code names:** `ShellTabHost`
-- **Repository role:** production UI
-- **Evidence of use:** Included by `lib/shell/life_os_dashboard.dart` through a `part` directive (not imported directly).
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Brain/library compile failure in `lib/shell/life_os_dashboard.dart` and broken related UI/data ops.
-- **Confidence:** HIGH
-- **Owner / layer:** app shell
-- **Responsibilities:** Tab host builders
-- **When to open:** Bottom tabs, voice routing, edit modal host, offline banner slot.
-- **Can it be deleted?** Brain/library compile failure in `lib/shell/life_os_dashboard.dart` and broken related UI/data ops.
-- **Connected to:** All main tabs, `app_shell.dart`; APP_STRUCTURE role: Tab host builders
-
-RU:
-
-- **Зачем файл человеку:** Оболочка приложения (shell) — Tab host builders. Связывает вкладки, voice, edit sheets и offline banner.
-- **Что это:** Оболочка приложения (shell) — Tab host builders.
-- **Зачем:** Связывает вкладки, voice, edit sheets и offline banner.
-- **Содержимое:** Shell mixin или виджет (logic in `shell_tab_host`).
-- **Роль в репозитории:** production UI
-- **Доказательства использования:** Подключён из `lib/shell/life_os_dashboard.dart` через `part` (не импортируется напрямую).
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Сломается компиляция `lib/shell/life_os_dashboard.dart` и связанные экраны/данные.
-- **Уверенность:** HIGH
-- **Владелец / слой:** оболочка приложения
-- **Обязанности:** Реализует в shell: Tab host builders.
-- **Когда открывать:** Навигация, voice, edit host.
-- **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Все main tabs, `app_shell.dart`
-
-
-### `lib/shell/shell_voice_routing.dart`
-
-EN:
-
-- **Human purpose:** App shell wiring — Voice routing. Connects bottom tabs, voice, edit sheets, and offline banner across the whole app.
-- **What this is:** App shell wiring — Voice routing.
-- **Why needed:** Connects bottom tabs, voice, edit sheets, and offline banner across the whole app.
-- **Contents:** Shell mixin or widget (`ShellVoiceRouting`).
-- **Key code names:** `ShellVoiceRouting`
-- **Repository role:** production UI
-- **Evidence of use:** Included by `lib/shell/life_os_dashboard.dart` through a `part` directive (not imported directly).
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Brain/library compile failure in `lib/shell/life_os_dashboard.dart` and broken related UI/data ops.
-- **Confidence:** HIGH
-- **Owner / layer:** app shell
-- **Responsibilities:** Voice routing
-- **When to open:** Bottom tabs, voice routing, edit modal host, offline banner slot.
-- **Can it be deleted?** Brain/library compile failure in `lib/shell/life_os_dashboard.dart` and broken related UI/data ops.
-- **Connected to:** All main tabs, `app_shell.dart`; APP_STRUCTURE role: Voice routing
-
-RU:
-
-- **Зачем файл человеку:** Оболочка приложения (shell) — Voice routing. Связывает вкладки, voice, edit sheets и offline banner.
-- **Что это:** Оболочка приложения (shell) — Voice routing.
-- **Зачем:** Связывает вкладки, voice, edit sheets и offline banner.
-- **Содержимое:** Shell mixin или виджет (logic in `shell_voice_routing`).
-- **Роль в репозитории:** production UI
-- **Доказательства использования:** Подключён из `lib/shell/life_os_dashboard.dart` через `part` (не импортируется напрямую).
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Сломается компиляция `lib/shell/life_os_dashboard.dart` и связанные экраны/данные.
-- **Уверенность:** HIGH
-- **Владелец / слой:** оболочка приложения
-- **Обязанности:** Реализует в shell: Voice routing.
-- **Когда открывать:** Навигация, voice, edit host.
-- **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Все main tabs, `app_shell.dart`
 
 
 ### `linux/.gitignore`
@@ -29298,6 +29575,44 @@ RU:
 - **Владелец / слой:** тесты
 - **Обязанности:** Assert ожидаемого поведения `plan_alarm_schedule`.
 - **Когда открывать:** Падение CI или правка кода рядом с `plan_alarm_schedule`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
+
+
+### `test/shell_form_factor_test.dart`
+
+EN:
+
+- **Human purpose:** Automated test `shell_form_factor_test` — verifies behavior without manual tapping. Prevents regressions when related production code changes.
+- **What this is:** Automated test `shell_form_factor_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **Contents:** Test cases (symbols: main).
+- **Key code names:** `main`
+- **Repository role:** test
+- **Evidence of use:** (1) Flutter test file; exercised via `flutter test test/shell_form_factor_test.dart` / CI when enabled. (2) Namesake production subject: `lib/app/shell/shared/shell_form_factor.dart`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Lost automated coverage for its contract.
+- **Confidence:** HIGH
+- **Owner / layer:** tests
+- **Responsibilities:** Assert expected behavior for `shell_form_factor_test` scenario.
+- **When to open:** CI failure or changing code near `shell_form_factor`.
+- **Can it be deleted?** Lost automated coverage for its contract.
+- **Connected to:** `test/` suite; production subject near `shell_form_factor`.
+
+RU:
+
+- **Зачем файл человеку:** Автотест `shell_form_factor` — проверяет поведение без ручного UI. Ловит регрессии при изменении связанного production-кода.
+- **Что это:** Автотест `shell_form_factor` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `shell_form_factor`.
+- **Роль в репозитории:** test
+- **Доказательства использования:** (1) Файл теста Flutter; запускается через `flutter test test/shell_form_factor_test.dart`. (2) Парный production-файл: `lib/app/shell/shared/shell_form_factor.dart`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Пропадёт автоматическая проверка своего контракта.
+- **Уверенность:** HIGH
+- **Владелец / слой:** тесты
+- **Обязанности:** Assert ожидаемого поведения `shell_form_factor`.
+- **Когда открывать:** Падение CI или правка кода рядом с `shell_form_factor`.
 - **Можно удалить?** Нет — нужен для тестов.
 - **Связано с:** Production files под `lib/` с похожим именем.
 

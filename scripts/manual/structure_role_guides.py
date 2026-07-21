@@ -382,7 +382,7 @@ def humanize_guide(
             "responsibilities": "Re-exports `shell/life_os_dashboard.dart` (thin entry).",
             "what_ru": "Тонкий entry-point приложения — re-export `shell/life_os_dashboard.dart`.",
             "why_ru": "Стабильный import path для dashboard без дублирования shell-кода.",
-            "contains_ru": "Re-export виджета dashboard из `lib/shell/`.",
+            "contains_ru": "Re-export виджета dashboard из `lib/app/shell/`.",
             "responsibilities_ru": "Подключает shell dashboard как единую точку входа UI.",
         }
 
@@ -445,7 +445,7 @@ def humanize_guide(
             "responsibilities_ru": f"Реализует сервис: {role_short}.",
         }
 
-    if p.startswith("lib/shell/"):
+    if p.startswith("lib/app/shell/"):
         role_short = role_clean.replace("*(part)*", "").strip()
         return {
             "what": f"App shell wiring — {role_short}.",

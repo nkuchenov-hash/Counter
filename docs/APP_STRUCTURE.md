@@ -32,7 +32,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Layer | Path | Owns | May import | Must NOT import |
 | :--- | :--- | :--- | :--- | :--- |
-| **Entry** | `lib/main.dart`, `lib/app_shell.dart`, `lib/shell/` | Boot, auth gate, shell navigation, cross-tab wiring | `data/`, `core/`, `features/`, `l10n/`, `services/` | — |
+| **Entry** | `lib/main.dart`, `lib/app_shell.dart`, `lib/app/shell/` | Boot, auth gate, form-factor shell navigation, cross-tab wiring | `data/`, `core/`, `features/`, `l10n/`, `services/` | — |
 | **Brain** | `lib/data/` | PocketBase I/O, in-memory cache, optimistic UI, offline outboxes, domain models | `core/` (utilities only), `services/` (device bridge), other `data/` | `features/` |
 | **Foundation** | `lib/core/` | Theme, tokens, shared widgets, time helpers, diagnostics, performance flags | `core/`, `data/models.dart` (types only) | `features/`, `data/database_service.dart` |
 | **UI modules** | `lib/features/` | Screens, sheets, feature-specific layout | `data/`, `core/`, `l10n/`, `features/shared/` | other features except via `shared/` or explicit shell routing |
@@ -79,28 +79,36 @@ These core abstractions stay free of Brain imports; `main.dart` and `app_shell.d
 | File | Role |
 | :--- | :--- |
 | `main.dart` | `runApp`, PocketBase bootstrap, auth gate, Wear entry, locale init, shell injection |
-| `app_shell.dart` | Re-exports `shell/life_os_dashboard.dart` (thin entry) |
+| `app_shell.dart` | Thin compatibility re-export of `app/shell/app_shell.dart` |
 
 **Shell tabs (bottom nav index):** 0 Timeline · 1 Plans · 2 Calendar · 3 Lists · 4 More (Categories, Profile, admin Component Lab).
 
-### 3.1.1 `lib/shell/` — dashboard modules (Pass 3)
+### 3.1.1 `lib/app/shell/` — form-factor app shell (Phase 1)
 
-| File | Role |
+Product sections own section-specific code later; this phase only separates shell chrome by form factor.
+
+| Path | Role |
 | :--- | :--- |
-| `life_os_dashboard.dart` | `LifeOSDashboard`, `ShellDashboardState`, scaffold build |
-| `shell_core.dart` | Core shell logic mixin (date header, tasks load, nav) *(part)* |
-| `shell_tab_host.dart` | Tab `IndexedStack` builders *(part)* |
-| `shell_edit_hosts.dart` | Timeline/plan edit modal hosts *(part)* |
-| `shell_more_menu.dart` | More bottom sheet *(part)* |
-| `shell_voice_routing.dart` | Voice hotkey + submit routing *(part)* |
-| `shell_offline_banner.dart` | Offline sync banner column slot |
-| `shell_shared.dart` | Shell-local date helpers *(part)* |
-| `shell_side_navigation.dart` | Desktop/web side navigation rail |
-| `shell_bottom_navigation.dart` | `ShellCompactBottomNav` — equal-column phone-safe bottom tab bar |
-| `profile_hydration_status_bar.dart` | Profile hydration failure banner |
-| `settings_page.dart` | Language/TZ settings page (shell route) |
+| `app/shell/app_shell.dart` | `LifeOSDashboard`, `ShellDashboardBase`, scaffold orchestration |
+| `app/shell/shared/shell_core.dart` | Core shell logic mixin (date header, tasks load, nav) *(part)* |
+| `app/shell/shared/shell_tab_host.dart` | Tab `IndexedStack` builders *(part)* |
+| `app/shell/shared/shell_edit_hosts.dart` | Timeline/plan edit modal hosts *(part)* |
+| `app/shell/shared/shell_more_menu.dart` | More bottom sheet *(part)* |
+| `app/shell/shared/shell_voice_routing.dart` | Voice hotkey + submit routing *(part)* |
+| `app/shell/shared/shell_offline_banner.dart` | Offline sync banner column slot |
+| `app/shell/shared/shell_shared.dart` | Shell-local date helpers |
+| `app/shell/shared/shell_form_factor.dart` | Phone / tablet / desktop form-factor resolve from width |
+| `app/shell/shared/profile_hydration_status_bar.dart` | Profile hydration failure banner |
+| `app/shell/shared/settings_page.dart` | Language/TZ settings page (shell route) |
+| `app/shell/phone/shell_bottom_navigation.dart` | `ShellCompactBottomNav` — equal-column phone-safe bottom tab bar |
+| `app/shell/phone/phone_shell_frame.dart` | Phone content frame + bottom nav chrome |
+| `app/shell/tablet/tablet_shell_frame.dart` | Tablet frame (currently same compact chrome as phone) |
+| `app/shell/desktop/shell_side_navigation.dart` | Desktop/web side navigation rail |
+| `app/shell/desktop/desktop_shell_frame.dart` | Desktop wide frame (side nav + content) |
 
-Re-export stubs remain at `core/navigation/shell_side_navigation.dart`, `features/shared/profile_hydration_status_bar.dart`, `features/profile/settings/settings_page.dart`.
+Wear shell/layout remains under `lib/features/wear/` (entered from `main.dart`); `app/shell/wear/` is reserved for a later move when Wear chrome is extracted — no dead placeholders.
+
+Compatibility re-exports (remove when callers migrate): root `lib/app_shell.dart`, `core/navigation/shell_side_navigation.dart`, `features/shared/profile_hydration_status_bar.dart`, `features/profile/settings/settings_page.dart`.
 
 ### 3.2 `lib/data/` — Brain & models
 
@@ -493,15 +501,20 @@ Copy `pb_hooks/` beside the PocketBase executable on the server. Client Brain co
 | `lists/lists_empty_state.dart` | Loading / filtered / no-category empty panels |
 | `lists/lists_card.dart` | `BacklogPlanCard`, filter chips, semicircle menu |
 | `lists/lists_export.dart` | Export visible list as clipboard text |
-| `shell/life_os_dashboard.dart` | Shell dashboard entry (see §3.1.1) |
-| `shell/shell_core.dart` | Shell core logic *(part)* |
-| `shell/shell_tab_host.dart` | Tab host builders *(part)* |
-| `shell/shell_edit_hosts.dart` | Edit sheet hosts *(part)* |
-| `shell/shell_more_menu.dart` | More menu *(part)* |
-| `shell/shell_voice_routing.dart` | Voice routing *(part)* |
-| `shell/shell_offline_banner.dart` | Offline banner slot |
-| `shell/shell_shared.dart` | Shell shared helpers *(part)* |
-| `shell/shell_bottom_navigation.dart` | `ShellCompactBottomNav` — equal-column phone-safe bottom tab bar |
+| `app/shell/app_shell.dart` | Shell dashboard entry (see §3.1.1) |
+| `app/shell/shared/shell_core.dart` | Shell core logic *(part)* |
+| `app/shell/shared/shell_tab_host.dart` | Tab host builders *(part)* |
+| `app/shell/shared/shell_edit_hosts.dart` | Edit sheet hosts *(part)* |
+| `app/shell/shared/shell_more_menu.dart` | More menu *(part)* |
+| `app/shell/shared/shell_voice_routing.dart` | Voice routing *(part)* |
+| `app/shell/shared/shell_offline_banner.dart` | Offline banner slot |
+| `app/shell/shared/shell_shared.dart` | Shell shared helpers |
+| `app/shell/shared/shell_form_factor.dart` | Form-factor width resolve |
+| `app/shell/phone/shell_bottom_navigation.dart` | `ShellCompactBottomNav` — equal-column phone-safe bottom tab bar |
+| `app/shell/phone/phone_shell_frame.dart` | Phone shell frame |
+| `app/shell/tablet/tablet_shell_frame.dart` | Tablet shell frame (compact chrome) |
+| `app/shell/desktop/shell_side_navigation.dart` | Desktop side navigation |
+| `app/shell/desktop/desktop_shell_frame.dart` | Desktop shell frame |
 | `plan_time_task_card/plan_card_tags.dart` | Time View tag row/stack/pill widgets |
 | `plan_time_task_card/plan_card_layouts.dart` | Time View CardPlan layout variants |
 | `plan_time_task_card/plan_card_progress.dart` | Progress/invariant card shells |

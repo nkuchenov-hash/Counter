@@ -351,7 +351,7 @@ register_folder_ru(
         "affects_ru": "Маршруты settings из shell и profile.",
         "when_ru": "Logout, notification permission, password reset UI.",
         "delete_ru": "Нет — секции settings пропадут.",
-        "related_ru": "`lib/shell/settings_page.dart`.",
+        "related_ru": "`lib/app/shell/shared/settings_page.dart`.",
     },
 )
 

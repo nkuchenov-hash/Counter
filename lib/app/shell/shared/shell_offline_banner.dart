@@ -1,5 +1,5 @@
 import 'package:counter/features/shared/offline_sync_status_bar.dart';
-import 'package:counter/shell/profile_hydration_status_bar.dart';
+import 'package:counter/app/shell/shared/profile_hydration_status_bar.dart';
 import 'package:flutter/material.dart';
 
 /// Top-of-shell status strip: profile hydration + offline sync banner.

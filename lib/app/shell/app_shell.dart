@@ -24,7 +24,6 @@ import 'package:counter/core/services/desktop_voice_hotkey_markers.dart';
 import 'package:counter/core/services/desktop_voice_settings.dart';
 import 'package:counter/core/services/desktop_voice_smoke_bridge.dart';
 import 'package:counter/core/services/speech_engine_handle.dart';
-import 'package:counter/core/shell_adaptive.dart';
 import 'package:counter/core/shell_layout_state.dart';
 import 'package:counter/core/widgets/global_app_header.dart';
 import 'package:counter/core/widgets/lazy_indexed_stack.dart';
@@ -47,10 +46,12 @@ import 'package:counter/features/shared/voice_input_sheet.dart';
 import 'package:counter/features/timeline/timeline_view.dart';
 import 'package:counter/l10n/category_db_display.dart';
 import 'package:counter/l10n/dictionary.dart';
-import 'package:counter/shell/shell_bottom_navigation.dart';
-import 'package:counter/shell/shell_offline_banner.dart';
-import 'package:counter/shell/shell_shared.dart';
-import 'package:counter/shell/shell_side_navigation.dart';
+import 'package:counter/app/shell/desktop/desktop_shell_frame.dart';
+import 'package:counter/app/shell/phone/phone_shell_frame.dart';
+import 'package:counter/app/shell/shared/shell_form_factor.dart';
+import 'package:counter/app/shell/shared/shell_offline_banner.dart';
+import 'package:counter/app/shell/shared/shell_shared.dart';
+import 'package:counter/app/shell/tablet/tablet_shell_frame.dart';
 import 'package:flutter/foundation.dart' show kDebugMode, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -58,11 +59,11 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 
-part 'shell_core.dart';
-part 'shell_tab_host.dart';
-part 'shell_edit_hosts.dart';
-part 'shell_more_menu.dart';
-part 'shell_voice_routing.dart';
+part 'shared/shell_core.dart';
+part 'shared/shell_tab_host.dart';
+part 'shared/shell_edit_hosts.dart';
+part 'shared/shell_more_menu.dart';
+part 'shared/shell_voice_routing.dart';
 
 mixin ShellDashboardBase on State<LifeOSDashboard> {
   /// 0 Timeline, 1 Planning, 2 Calendar, 3 Lists, 4 Categories, 5 Profile.
@@ -391,7 +392,7 @@ class ShellDashboardState extends State<LifeOSDashboard> with ShellDashboardBase
                     : null,
                 body: LayoutBuilder(
                   builder: (context, constraints) {
-                    final useSideNav = shellUsesSideNavigation(
+                    final formFactor = shellFormFactorForWidth(
                       constraints.maxWidth,
                     );
                     final mainColumn = Column(
@@ -418,19 +419,20 @@ class ShellDashboardState extends State<LifeOSDashboard> with ShellDashboardBase
                         ),
                       ],
                     );
-                    if (!useSideNav) return mainColumn;
-                    return Row(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        ShellSideNavigation(
-                          width: kShellSideNavWidth,
+                    return switch (formFactor) {
+                      ShellFormFactor.desktop => DesktopShellFrame(
                           selectedIndex:
                               desktopSideNavSelectedIndex(shellPageIndex),
                           onTabSelected: onDesktopSideNavSelected,
+                          child: mainColumn,
                         ),
-                        Expanded(child: mainColumn),
-                      ],
-                    );
+                      ShellFormFactor.tablet => TabletShellFrame(
+                          child: mainColumn,
+                        ),
+                      ShellFormFactor.phone => PhoneShellFrame(
+                          child: mainColumn,
+                        ),
+                    };
                   },
                 ),
                 floatingActionButtonLocation:
@@ -473,16 +475,16 @@ class ShellDashboardState extends State<LifeOSDashboard> with ShellDashboardBase
                 ),
                 bottomNavigationBar: LayoutBuilder(
                   builder: (context, constraints) {
-                    if (shellUsesSideNavigation(constraints.maxWidth)) {
+                    final formFactor = shellFormFactorForWidth(
+                      constraints.maxWidth,
+                    );
+                    if (formFactor == ShellFormFactor.desktop) {
                       return const SizedBox.shrink();
                     }
-                    return SafeArea(
-                      top: false,
-                      child: ShellCompactBottomNav(
-                        viewportWidth: constraints.maxWidth,
-                        selectedIndex: navBarSelectedIndex,
-                        onDestinationSelected: onShellTabSelected,
-                      ),
+                    return PhoneShellBottomNavigation(
+                      viewportWidth: constraints.maxWidth,
+                      selectedIndex: navBarSelectedIndex,
+                      onDestinationSelected: onShellTabSelected,
                     );
                   },
                 ),
