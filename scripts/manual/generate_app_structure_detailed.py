@@ -1557,8 +1557,11 @@ def quality_check(text: str, paths: list[str], expected_sha: str) -> list[str]:
     whats: list[str] = []
     all_banned_en = BAD_PHRASES + BANNED_EN_PHRASES
 
-    if f"**Generated at git SHA `{expected_sha}`" not in text:
-        issues.append(f"SHA mismatch: header must contain `{expected_sha}`")
+    if f"**Generated from input HEAD `{expected_sha}`" not in text:
+        issues.append(
+            f"Input HEAD mismatch: header must contain "
+            f"Generated from input HEAD `{expected_sha}`"
+        )
 
     en_ru_pairs = (
         ("- **What this folder is:**", "- **Что это за папка:**"),
@@ -1958,7 +1961,11 @@ def main() -> None:
         "",
         "Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).",
         "",
-        f"**Generated at git SHA `{head_sha}` on {date.today().isoformat()}.**",
+        f"**Generated from input HEAD `{head_sha}` on {date.today().isoformat()}.**",
+        "",
+        "The SHA above is the repository HEAD used as **generator input** "
+        "(via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; "
+        "do not treat the input HEAD as the commit that contains this file.",
         "",
         f"**Tracked files:** {len(all_files)} — each appears **exactly once** below.",
         "",
@@ -2098,12 +2105,41 @@ def main() -> None:
 
     body = "\n".join(lines)
 
-    # Structural validation
-    if len(rendered_paths) != len(all_files):
+    evidence_records = len(EVIDENCE.records)
+    role_total = sum(EVIDENCE.role_counts.values())
+    necessity_total = sum(EVIDENCE.necessity_counts.values())
+    confidence_total = sum(EVIDENCE.confidence_counts.values())
+    unique_rendered = len(set(rendered_paths))
+    tracked_n = len(all_files)
+
+    # Structural + count-integrity validation (all must equal len(git ls-files))
+    if len(rendered_paths) != tracked_n:
         validation_issues.append(
-            f"COUNT_MISMATCH tracked={len(all_files)} rendered={len(rendered_paths)}"
+            f"COUNT_MISMATCH tracked={tracked_n} rendered={len(rendered_paths)}"
         )
-    if len(rendered_paths) != len(set(rendered_paths)):
+    if unique_rendered != tracked_n:
+        validation_issues.append(
+            f"UNIQUE_MISMATCH tracked={tracked_n} unique={unique_rendered}"
+        )
+    if evidence_records != tracked_n:
+        validation_issues.append(
+            f"EVIDENCE_RECORDS_MISMATCH tracked={tracked_n} evidence={evidence_records}"
+        )
+    if role_total != tracked_n:
+        validation_issues.append(
+            f"ROLE_COUNT_TOTAL_MISMATCH tracked={tracked_n} role_total={role_total}"
+        )
+    if necessity_total != tracked_n:
+        validation_issues.append(
+            f"NECESSITY_COUNT_TOTAL_MISMATCH tracked={tracked_n} "
+            f"necessity_total={necessity_total}"
+        )
+    if confidence_total != tracked_n:
+        validation_issues.append(
+            f"CONFIDENCE_COUNT_TOTAL_MISMATCH tracked={tracked_n} "
+            f"confidence_total={confidence_total}"
+        )
+    if len(rendered_paths) != unique_rendered:
         validation_issues.append("DUPLICATE_RENDERED_PATH")
     missing = sorted(set(all_files) - set(rendered_paths))
     extra = sorted(set(rendered_paths) - set(all_files))
@@ -2117,13 +2153,17 @@ def main() -> None:
 
     OUT.write_text(body, encoding="utf-8")
     print(
-        f"Wrote {OUT} ({len(all_files)} files, {len(folder_order)} folders, "
+        f"Wrote {OUT} ({tracked_n} files, {len(folder_order)} folders, "
         f"{len(body.splitlines())} lines)"
     )
     print(
-        f"TRACKED_FILES={len(all_files)}\n"
+        f"TRACKED_FILES={tracked_n}\n"
+        f"EVIDENCE_RECORDS={evidence_records}\n"
+        f"ROLE_COUNT_TOTAL={role_total}\n"
+        f"NECESSITY_COUNT_TOTAL={necessity_total}\n"
+        f"CONFIDENCE_COUNT_TOTAL={confidence_total}\n"
         f"RENDERED_FILES={len(rendered_paths)}\n"
-        f"UNIQUE_ENTRIES={len(set(rendered_paths))}\n"
+        f"UNIQUE_ENTRIES={unique_rendered}\n"
         f"MISSING_EVIDENCE={missing_evidence}\n"
         f"GENERIC_FALLBACKS={generic_hits}\n"
         f"UNCLASSIFIED={unclassified}\n"

@@ -846,9 +846,38 @@ def build_evidence_index(files: list[str] | None = None) -> EvidenceIndex:
                     f"Генератор `{DETAILED_IGNORE}`; вход — `git ls-files` и guide-модули."
                 )
                 confidence = "HIGH"
+            if path.endswith("structure_evidence_index.py"):
+                evidence_en = [
+                    "Imported by `scripts/manual/generate_app_structure_detailed.py`; "
+                    "builds deterministic Dart import/export/`part`, path-reference, "
+                    "platform, and watchlist evidence indexes for the canonical map."
+                ]
+                evidence_ru = [
+                    "Импортируется `scripts/manual/generate_app_structure_detailed.py`; "
+                    "строит детерминированные индексы доказательств (Dart-граф, path refs, "
+                    "platform, watchlist) для канонической карты."
+                ]
+                confidence = "HIGH"
+                contents_hint_en = (
+                    "`build_evidence_index`, `EvidenceRecord`, watchlist set, "
+                    "role/necessity/confidence classifiers."
+                )
+                contents_hint_ru = (
+                    "`build_evidence_index`, `EvidenceRecord`, watchlist, "
+                    "классификаторы роли/необходимости/уверенности."
+                )
+                deletion_en = (
+                    "Broken evidence-backed APP_STRUCTURE_DETAILED generation "
+                    "(import failure in generate_app_structure_detailed.py)."
+                )
+                deletion_ru = (
+                    "Сломается генерация evidence-backed APP_STRUCTURE_DETAILED "
+                    "(ошибка import в generate_app_structure_detailed.py)."
+                )
+            else:
+                deletion_en = "Broken audit/deploy/manual maintenance command."
+                deletion_ru = "Сломается audit/deploy или ручная команда сопровождения."
             necessity = "REQUIRED_FOR_TEST_OR_TOOLING"
-            deletion_en = "Broken audit/deploy/manual maintenance command."
-            deletion_ru = "Сломается audit/deploy или ручная команда сопровождения."
 
         # --- CI ---
         elif path.startswith(".github/"):

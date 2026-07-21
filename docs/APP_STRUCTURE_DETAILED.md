@@ -2,9 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated at git SHA `fdb1b14` on 2026-07-21.**
+**Generated from input HEAD `9a6fce2` on 2026-07-21.**
 
-**Tracked files:** 723 — each appears **exactly once** below.
+The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
+
+**Tracked files:** 724 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -30,7 +32,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | `platform build` | 82 |
 | `Brain/data` | 76 |
 | `platform resource` | 44 |
-| `developer tool` | 41 |
+| `developer tool` | 42 |
 | `governing documentation` | 30 |
 | `test fixture` | 24 |
 | `intentionally retained product watchlist` | 16 |
@@ -50,7 +52,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | Necessity | Count |
 | :--- | ---: |
 | `PROVEN_REQUIRED` | 373 |
-| `REQUIRED_FOR_TEST_OR_TOOLING` | 158 |
+| `REQUIRED_FOR_TEST_OR_TOOLING` | 159 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 126 |
 | `GOVERNING_DOCUMENTATION` | 30 |
 | `RETAINED_PRODUCT_WATCHLIST` | 16 |
@@ -62,7 +64,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 672 |
+| `HIGH` | 673 |
 | `WATCHLIST` | 26 |
 | `MEDIUM` | 25 |
 
@@ -4094,7 +4096,7 @@ EN:
 - **Why needed:** Android OS entry point — without it the APK cannot show the Flutter UI.
 - **Contents:** Minimal `FlutterActivity` subclass.
 - **Repository role:** platform build
-- **Evidence of use:** (1) Flutter/native project file `MainActivity.kt` under `android/app/src/main/kotlin/com/example/counter/`; required by platform build convention for this runner. (2) Also referenced by: `CHANGELOG.md`, `scripts/manual/structure_file_ru_curated.py`, `scripts/manual/structure_guide_data.py`.
+- **Evidence of use:** (1) Flutter/native project file `MainActivity.kt` under `android/app/src/main/kotlin/com/example/counter/`; required by platform build convention for this runner. (2) Also referenced by: `CHANGELOG.md`, `scripts/manual/structure_evidence_index.py`, `scripts/manual/structure_file_ru_curated.py`.
 - **Necessity status:** REQUIRED_BY_PLATFORM_CONVENTION
 - **Deletion consequence:** Unavailable or broken platform build for that OS target.
 - **Confidence:** HIGH
@@ -4612,7 +4614,7 @@ EN:
 - **Why needed:** Root Gradle project must list app module to compile APK.
 - **Contents:** Module includes, plugin management.
 - **Repository role:** platform build
-- **Evidence of use:** (1) Flutter/native project file `settings.gradle.kts` under `android/`; required by platform build convention for this runner. (2) Also referenced by: `scripts/manual/structure_file_ru_curated.py`, `scripts/manual/structure_folder_ru_curated.py`, `scripts/manual/structure_guide_data.py`.
+- **Evidence of use:** (1) Flutter/native project file `settings.gradle.kts` under `android/`; required by platform build convention for this runner. (2) Also referenced by: `scripts/manual/structure_evidence_index.py`, `scripts/manual/structure_file_ru_curated.py`, `scripts/manual/structure_folder_ru_curated.py`.
 - **Necessity status:** REQUIRED_BY_PLATFORM_CONVENTION
 - **Deletion consequence:** Unavailable or broken platform build for that OS target.
 - **Confidence:** HIGH
@@ -5352,7 +5354,7 @@ EN:
 - **Why needed:** Preserves audit/parity decisions so later work does not re-litigate the same findings.
 - **Contents:** Markdown report body for `REPOSITORY HYGIENE AUDIT 2026-07-21`.
 - **Repository role:** historical engineering record
-- **Evidence of use:** (1) Dated engineering report retained as decision history; linked from structure/changelog audits — not runtime code. (2) Referenced by: `CHANGELOG.md`, `docs/APP_STRUCTURE.md`, `scripts/manual/generate_app_structure_detailed.py`.
+- **Evidence of use:** (1) Dated engineering report retained as decision history; linked from structure/changelog audits — not runtime code. (2) Referenced by: `CHANGELOG.md`, `docs/APP_STRUCTURE.md`, `scripts/manual/generate_app_structure_detailed.py`, `scripts/manual/structure_evidence_index.py`.
 - **Necessity status:** HISTORICAL_RECORD
 - **Deletion consequence:** Lost historical decision evidence for that investigation.
 - **Confidence:** MEDIUM
@@ -5981,7 +5983,7 @@ EN:
 - **Why needed:** Inno Setup expects helper exe, models, and runtime files copied into installer layout.
 - **Contents:** Steps copying/checking `counter_stt_helper.exe` and STT runtime payload.
 - **Repository role:** installer
-- **Evidence of use:** Referenced by: `CHANGELOG.md`, `docs/DEPLOY.md`, `scripts/manual/generate_app_structure_detailed.py`, `scripts/manual/install_desktop_voice_release.ps1`, `scripts/manual/structure_file_ru_curated.py`.
+- **Evidence of use:** Referenced by: `CHANGELOG.md`, `docs/DEPLOY.md`, `scripts/manual/generate_app_structure_detailed.py`, `scripts/manual/install_desktop_voice_release.ps1`, `scripts/manual/structure_evidence_index.py`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Broken Windows installer or missing STT helper payload.
 - **Confidence:** HIGH
@@ -5998,7 +6000,7 @@ RU:
 - **Зачем:** Inno Setup script ожидает готовый STT bundle — иначе installed app не найдёт speech helper.
 - **Содержимое:** Шаги копирования `counter_stt_helper.exe`, моделей и runtime файлов в layout installer.
 - **Роль в репозитории:** installer
-- **Доказательства использования:** Упоминается в: `CHANGELOG.md`, `docs/DEPLOY.md`, `scripts/manual/generate_app_structure_detailed.py`, `scripts/manual/install_desktop_voice_release.ps1`, `scripts/manual/structure_file_ru_curated.py`.
+- **Доказательства использования:** Упоминается в: `CHANGELOG.md`, `docs/DEPLOY.md`, `scripts/manual/generate_app_structure_detailed.py`, `scripts/manual/install_desktop_voice_release.ps1`, `scripts/manual/structure_evidence_index.py`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Сломается Windows installer или пропадёт STT helper.
 - **Уверенность:** HIGH
@@ -22826,7 +22828,7 @@ EN:
 - **Why needed:** Without `GeneratedPluginRegistrant.swift`, macos compile or packaging step for this folder may fail.
 - **Contents:** Native/config source for `macos/Flutter` (open file only when build errors cite it).
 - **Repository role:** platform build
-- **Evidence of use:** (1) Flutter tooling regenerates this plugin registrant during `flutter pub get` / build; required by the platform runner to register plugins. (2) Also referenced by: `macos/Runner.xcodeproj/project.pbxproj`.
+- **Evidence of use:** (1) Flutter tooling regenerates this plugin registrant during `flutter pub get` / build; required by the platform runner to register plugins. (2) Also referenced by: `macos/Runner.xcodeproj/project.pbxproj`, `scripts/manual/structure_evidence_index.py`.
 - **Necessity status:** REQUIRED_BY_PLATFORM_CONVENTION
 - **Deletion consequence:** Unavailable or broken platform build for that OS target.
 - **Confidence:** HIGH
@@ -24812,6 +24814,43 @@ RU:
 - **Владелец / слой:** инструменты разработчика
 - **Обязанности:** Workflow, описанный в header или `docs/DEPLOY.md`.
 - **Когда открывать:** Owner или CI запускает `structure_en_ru_adapt.py` по инструкции в repo docs.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `scripts/manual/`, `docs/DEPLOY.md`.
+
+
+### `scripts/manual/structure_evidence_index.py`
+
+EN:
+
+- **Human purpose:** Developer script `structure_evidence_index.py` — run manually for maintenance, smoke test, or deploy helper. Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **What this is:** Developer script `structure_evidence_index.py` — run manually for maintenance, smoke test, or deploy helper.
+- **Why needed:** Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **Contents:** PowerShell, Python, or Dart commands for `structure_evidence_index.py`.
+- **Repository role:** developer tool
+- **Evidence of use:** Imported by `scripts/manual/generate_app_structure_detailed.py`; builds deterministic Dart import/export/`part`, path-reference, platform, and watchlist evidence indexes for the canonical map.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Broken evidence-backed APP_STRUCTURE_DETAILED generation (import failure in generate_app_structure_detailed.py).
+- **Confidence:** HIGH
+- **Owner / layer:** developer tooling
+- **Responsibilities:** See script header comments for exact behavior.
+- **When to open:** When workflow documented for `structure_evidence_index.py` is needed.
+- **Can it be deleted?** No — part of documented dev workflow unless cleanup report removed it.
+- **Connected to:** `scripts/manual/`, `docs/DEPLOY.md`.
+
+RU:
+
+- **Зачем файл человеку:** Dev/CI скрипт `structure_evidence_index.py` — повторяемая команда из repo docs. Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Что это:** Dev/CI скрипт `structure_evidence_index.py` — повторяемая команда из repo docs.
+- **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Содержимое:** Команды PowerShell/Python/Dart в `structure_evidence_index.py`.
+- **Роль в репозитории:** developer tool
+- **Доказательства использования:** Импортируется `scripts/manual/generate_app_structure_detailed.py`; строит детерминированные индексы доказательств (Dart-граф, path refs, platform, watchlist) для канонической карты.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Сломается генерация evidence-backed APP_STRUCTURE_DETAILED (ошибка import в generate_app_structure_detailed.py).
+- **Уверенность:** HIGH
+- **Владелец / слой:** инструменты разработчика
+- **Обязанности:** Workflow, описанный в header или `docs/DEPLOY.md`.
+- **Когда открывать:** Owner или CI запускает `structure_evidence_index.py` по инструкции в repo docs.
 - **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
 - **Связано с:** `scripts/manual/`, `docs/DEPLOY.md`.
 
@@ -27244,7 +27283,7 @@ EN:
 - **Why needed:** Desktop voice tests and benchmarks replay known captures instead of live mic input.
 - **Contents:** Tracked fixture file `real_helper_latency_latest.json` under `test/fixtures/desktop_voice_wav/`.
 - **Repository role:** test fixture
-- **Evidence of use:** (1) Read/referenced by: `CHANGELOG.md`, `docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`, `lib/core/services/desktop_voice_real_helper_latency_benchmark.dart`, `scripts/manual/run_desktop_voice_real_helper_latency_benchmark.ps1`, `scripts/manual/structure_folder_ru_curated.py`. (2) Canonical benchmark output written by `lib/core/services/desktop_voice_real_helper_latency_benchmark.dart`.
+- **Evidence of use:** (1) Read/referenced by: `CHANGELOG.md`, `docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`, `lib/core/services/desktop_voice_real_helper_latency_benchmark.dart`, `scripts/manual/run_desktop_voice_real_helper_latency_benchmark.ps1`, `scripts/manual/structure_evidence_index.py`. (2) Canonical benchmark output written by `lib/core/services/desktop_voice_real_helper_latency_benchmark.dart`.
 - **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Deletion consequence:** Broken fixture-backed test or missing diagnostic sample.
 - **Confidence:** HIGH
@@ -27261,7 +27300,7 @@ RU:
 - **Зачем:** Тесты и бенчмарки desktop voice проигрывают известные записи вместо живого микрофона.
 - **Содержимое:** Отслеживаемый fixture-файл `real_helper_latency_latest.json` в `test/fixtures/desktop_voice_wav/`.
 - **Роль в репозитории:** test fixture
-- **Доказательства использования:** (1) Читается/упоминается: `CHANGELOG.md`, `docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`, `lib/core/services/desktop_voice_real_helper_latency_benchmark.dart`, `scripts/manual/run_desktop_voice_real_helper_latency_benchmark.ps1`, `scripts/manual/structure_folder_ru_curated.py`. (2) Канонический отчёт бенчмарка из `desktop_voice_real_helper_latency_benchmark.dart`.
+- **Доказательства использования:** (1) Читается/упоминается: `CHANGELOG.md`, `docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`, `lib/core/services/desktop_voice_real_helper_latency_benchmark.dart`, `scripts/manual/run_desktop_voice_real_helper_latency_benchmark.ps1`, `scripts/manual/structure_evidence_index.py`. (2) Канонический отчёт бенчмарка из `desktop_voice_real_helper_latency_benchmark.dart`.
 - **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Что будет, если удалить:** Сломается тест на fixture или пропадёт диагностический образец.
 - **Уверенность:** HIGH

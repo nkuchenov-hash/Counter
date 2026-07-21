@@ -11,6 +11,10 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-21] - Docs: include evidence index in file map [engineering]
+
+* **`APP_STRUCTURE_DETAILED.md`:** Regenerated from current 724 tracked files (includes `structure_evidence_index.py`); header now says **Generated from input HEAD** (input SHA, not the commit that will contain the document); generator fails unless evidence/role/necessity/confidence/rendered counts all equal `len(git ls-files)`.
+
 ## [2026-07-21] - Docs: evidence-backed file map [engineering]
 
 * **`APP_STRUCTURE_DETAILED.md`:** Generator now attaches deterministic evidence (Dart import/export/`part`, path refs, platform conventions, hygiene watchlist), repository role, necessity status, deletion consequence, and confidence for every tracked file; new helper `scripts/manual/structure_evidence_index.py`. Watchlist files are labeled `RETAINED_PRODUCT_WATCHLIST` / `COMPATIBILITY_LAYER` (not runtime-required). Deterministic regenerate verified.
