@@ -11,6 +11,10 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-20] - Plans: extract planning stream hubs [engineering]
+
+* **`plans/plan_stream_helpers.dart`:** Extracted shared Planning day-stream hubs + refresh orchestration (`_PlanningDayStreamHub`, `planningStream`, `notifyPlanningRefresh`, refresh getters, poke-from-cache) from `plan_service.dart` into `PlanStreamRefreshExtension` (**4065 → 3866** Measure-Object lines; new part **203**). Hub ref-count, cache-first emit, 400ms network debounce ordering, and no-polling contract unchanged. LARGE_FILE remains **1**.
+
 ## [2026-07-20] - Plans: extract snapshot cache pipeline [engineering]
 
 * **`plans/plan_snapshot_helpers.dart`:** Extracted Planning warm-snapshot / rendered-body / P0t render-snapshot pipeline (`planningDayTasksSnapshot` through `markPlansDayBodyRendered`) from `plan_service.dart` into `PlanSnapshotCacheExtension` (**4493 → 4065** Measure-Object lines; new part **431**). Warm-window gating, disk restore/persist JSON, bodyReady sources, and public APIs unchanged. LARGE_FILE remains **1**.

@@ -2,7 +2,7 @@
 
 Owner-readable guide: every tracked folder and file in plain language (EN + RU).
 
-**Generated at git SHA `6b09ff2` on 2026-07-20.**
+**Generated at git SHA `5d4fbc6` on 2026-07-20.**
 
 Concise map: [`APP_STRUCTURE.md`](APP_STRUCTURE.md) · Upload checklist: [`PROJECT_KNOWLEDGE_PACK.md`](PROJECT_KNOWLEDGE_PACK.md)
 
@@ -11043,6 +11043,32 @@ RU:
 - **Слой:** Brain — модуль `part` в `database_service.dart`.
 
 
+### `lib/data/plans/plan_stream_helpers.dart`
+
+EN:
+
+- **What this is:** Owns shared Planning day-stream hubs, refresh-event publication, and cache-first/network-pump coordination.
+- **Why needed:** Many PlanningPage instances stay alive under PageView; hubs must be ref-counted with no periodic polling and a single 400ms network debounce.
+- **What it contains:** `_PlanningDayStreamHub`; `planningStream`; `notifyPlanningRefresh`; `planningRefreshNotifications` / `planningRefreshEvents`.
+- **Key code names:** `PlanStreamRefreshExtension`
+- **Responsibilities:** Shared Planning day-stream hubs, refresh-event publication, ref-counted lifecycle, cache-first/network-pump coordination, 400ms refresh debounce
+- **When to open:** Plan/list save, Time View layout, recurrence, tags on plans, offline queue.
+- **Can it be deleted?** No — required for app runtime.
+- **Connected to:** UI calls via `DatabaseService.instance`; Plans tab, Lists tab, Time View; APP_STRUCTURE role: Shared Planning day-stream hubs, refresh-event publication, ref-counted lifecycle, cache-first/network-pump coordination
+- **Layer / owner:** Brain module — `part` file merged into `database_service.dart`.
+
+RU:
+
+- **Что это:** Модуль brain для plans and lists — файл `plan_stream_helpers`.
+- **Зачем:** Держит plans and lists согласованным с PocketBase и UI.
+- **Содержимое:** Dart-код (`PlanStreamRefreshExtension`).
+- **Обязанности:** Реализует в коде: Shared Planning day-stream hubs, refresh-event publication, ref-counted lifecycle, cache-first/network-pump coordination, 400ms refresh debounce.
+- **Когда открывать:** Планы/списки: сохранение, Time View, повтор, теги.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** UI вызывает `DatabaseService.instance`; Plans, Lists, Time View
+- **Слой:** Brain — модуль `part` в `database_service.dart`.
+
+
 ### `lib/data/plans/plan_tags_helpers.dart`
 
 EN:
@@ -20662,6 +20688,32 @@ RU:
 - **Содержимое:** Test cases для сценария `planning_snapshot_cache`.
 - **Обязанности:** Assert ожидаемого поведения `planning_snapshot_cache`.
 - **Когда открывать:** Падение CI или правка кода рядом с `planning_snapshot_cache`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
+- **Слой:** Автотест — не попадает пользователю в APK.
+
+
+### `test/planning_stream_hubs_test.dart`
+
+EN:
+
+- **What this is:** Automated test `planning_stream_hubs_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **What it contains:** Test cases (symbols: main).
+- **Key code names:** `main`
+- **Responsibilities:** Assert expected behavior for `planning_stream_hubs_test` scenario.
+- **When to open:** CI failure or changing code near `planning_stream_hubs`.
+- **Can it be deleted?** No — required for tests.
+- **Connected to:** Matching files under `lib/` with similar name.
+- **Layer / owner:** Test — not shipped to users.
+
+RU:
+
+- **Что это:** Автотест `planning_stream_hubs` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `planning_stream_hubs`.
+- **Обязанности:** Assert ожидаемого поведения `planning_stream_hubs`.
+- **Когда открывать:** Падение CI или правка кода рядом с `planning_stream_hubs`.
 - **Можно удалить?** Нет — нужен для тестов.
 - **Связано с:** Production files под `lib/` с похожим именем.
 - **Слой:** Автотест — не попадает пользователю в APK.

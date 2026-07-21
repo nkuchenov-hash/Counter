@@ -99,6 +99,11 @@ PLAN_PART: dict[str, tuple[str, str, str]] = {
         "Plans tab boot and day swipe must show cached bodies instantly without waiting on PocketBase or full-history scans.",
         "Warm window ±1/full DayWindow prep; body cache center/radius; disk restore/persist; `buildPlansDayRenderSnapshot` readiness.",
     ),
+    "plan_stream_helpers": (
+        "Owns shared Planning day-stream hubs, refresh-event publication, and cache-first/network-pump coordination.",
+        "Many PlanningPage instances stay alive under PageView; hubs must be ref-counted with no periodic polling and a single 400ms network debounce.",
+        "`_PlanningDayStreamHub`; `planningStream`; `notifyPlanningRefresh`; `planningRefreshNotifications` / `planningRefreshEvents`.",
+    ),
     "plan_ai_parse_helpers": (
         "Calls the AI parse-task backend and normalizes planning items from the response.",
         "Smart plan sheet and voice-ish plan drafts need one Brain entry for parse-task.",
