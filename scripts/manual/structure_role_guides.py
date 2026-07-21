@@ -65,9 +65,9 @@ RECORD_PART: dict[str, tuple[str, str, str]] = {
 
 PLAN_PART: dict[str, tuple[str, str, str]] = {
     "plan_projection_types": (
-        "Data shapes for how a plan looks on the clock in Time View.",
-        "Time View needs projected start/end times separate from raw PocketBase fields.",
-        "`TimeModeProjectedPlan`, timezone-aware projection types.",
+        "Owns Time Mode projected DTOs, UTC/profile-wall conversion, and wall-day visibility for Planning.",
+        "Plans must show correct wall times after profile timezone changes without mutating stored UTC instants.",
+        "`TimeModeProjectedPlan`; `PlanProfileTimezoneProjectionExtension`; `reprojectAllPlansForProfileTimezone`; `plansProjectionCacheSignature`.",
     ),
     "plan_recurrence_helpers": (
         "Expands repeating plans (daily/weekly RRULE) into visible day rows.",

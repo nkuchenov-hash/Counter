@@ -118,7 +118,7 @@ Re-export stubs remain at `core/navigation/shell_side_navigation.dart`, `feature
 | `records/record_ghost_cleanup.dart` | 404 deadletter prune against live cache *(part)* |
 | `records/record_cache_helpers.dart` | Per-day filter, `recordsStream`, display-time helpers *(part)* |
 | `plan_service.dart` | Plans/lists coordinator: CRUD, streams, wall-time projection, alarms *(part)* |
-| `plans/plan_projection_types.dart` | `TimeModeProjectedPlan`, `PlanTimeModeProjection` *(part)* |
+    | `plans/plan_projection_types.dart` | Time Mode projected DTO, UTC/profile-wall conversion, timezone reproject lifecycle, projection cache signature, wall-day visibility/filtering, projection diagnostics *(part)* |
 | `plans/plan_recurrence_helpers.dart` | RRULE JIT expansion, exception-date parse helpers *(part)* |
 | `plans/plan_time_cascade_helpers.dart` | Time View cascade, duration consts, `planningWallEstimateSeconds` *(part)* |
 | `plans/plan_tags_helpers.dart` | Plan/list tag catalog fetch + PB `tags_link` sync *(part)* |

@@ -210,5 +210,24 @@ void main() {
         closeTo(a.topPx + a.heightPx + kPlanTimeCardGapPx, 0.51),
       );
     });
+    test('G: DatabaseService UTC instant maps to profile wall day visibility', () {
+      final utc = DateTime.utc(2026, 6, 23, 7, 0);
+      final db = DatabaseService.instance;
+      expect(db.profileWallMinuteOfDayFromUtc(utc), 420);
+      expect(
+        db.planUtcInstantOnProfileWallDay(
+          startUtc: utc,
+          wallDay: DateTime(2026, 6, 23),
+        ),
+        isTrue,
+      );
+      expect(
+        db.planUtcInstantOnProfileWallDay(
+          startUtc: utc,
+          wallDay: DateTime(2026, 6, 24),
+        ),
+        isFalse,
+      );
+    });
   });
 }

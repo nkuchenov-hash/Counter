@@ -11,6 +11,10 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-21] - Plans: consolidate timezone projection [engineering]
+
+* **`plans/plan_projection_types.dart`:** Consolidated profile-timezone projection (`_profileTimezoneProjectionRevision`, wall/UTC coalesce + reproject, `reprojectAllPlansForProfileTimezone`, `plansProjectionCacheSignature`, `_filterPlansForWallDay`, `planningWallScheduleDateKey`) from `plan_service.dart` into `PlanProfileTimezoneProjectionExtension` (**3711 → 3434** / **101 → 381** Measure-Object lines). `TimeModeProjectedPlan` + `PlanTimeModeProjection` unchanged; TZ invalidation ordering and UTC-source-of-truth preserved. LARGE_FILE remains **1**.
+
 ## [2026-07-21] - Plans: extract optimistic overlay [engineering]
 
 * **`plans/plan_optimistic_helpers.dart`:** Extracted dated/backlog optimistic overlay state + merge/apply/clear/rekey (`_planningOptimisticByDateKey`, `applyOptimisticPlanningTask`, `clearOptimisticPlanningForPlanRow`, `_mergePlanningOptimistic`, `getBacklogPlansSnapshot`) from `plan_service.dart` into `PlanOptimisticOverlayExtension` (**3866 → 3711** Measure-Object lines; new part **159**). Cross-day hiding, overlay-wins merge, confirmed-row preference, backlog routing, and outbox cancel-on-clear unchanged. LARGE_FILE remains **1**.

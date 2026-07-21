@@ -2,7 +2,7 @@
 
 Owner-readable guide: every tracked folder and file in plain language (EN + RU).
 
-**Generated at git SHA `cd071af` on 2026-07-21.**
+**Generated at git SHA `d3ae1d0` on 2026-07-21.**
 
 Concise map: [`APP_STRUCTURE.md`](APP_STRUCTURE.md) · Upload checklist: [`PROJECT_KNOWLEDGE_PACK.md`](PROJECT_KNOWLEDGE_PACK.md)
 
@@ -10995,22 +10995,22 @@ RU:
 
 EN:
 
-- **What this is:** Data shapes for how a plan looks on the clock in Time View.
-- **Why needed:** Time View needs projected start/end times separate from raw PocketBase fields.
-- **What it contains:** `TimeModeProjectedPlan`, timezone-aware projection types.
-- **Key code names:** `TimeModeProjectedPlan`, `PlanTimeModeProjection`
-- **Responsibilities:** `TimeModeProjectedPlan`, `PlanTimeModeProjection`
+- **What this is:** Owns Time Mode projected DTOs, UTC/profile-wall conversion, and wall-day visibility for Planning.
+- **Why needed:** Plans must show correct wall times after profile timezone changes without mutating stored UTC instants.
+- **What it contains:** `TimeModeProjectedPlan`; `PlanProfileTimezoneProjectionExtension`; `reprojectAllPlansForProfileTimezone`; `plansProjectionCacheSignature`.
+- **Key code names:** `TimeModeProjectedPlan`, `PlanTimeModeProjection`, `PlanProfileTimezoneProjectionExtension`
+- **Responsibilities:** Time Mode projected DTO, UTC/profile-wall conversion, timezone reproject lifecycle, projection cache signature, wall-day visibility/filtering, projection diagnostics
 - **When to open:** Plan/list save, Time View layout, recurrence, tags on plans, offline queue.
 - **Can it be deleted?** No — required for app runtime.
-- **Connected to:** UI calls via `DatabaseService.instance`; Plans tab, Lists tab, Time View; APP_STRUCTURE role: `TimeModeProjectedPlan`, `PlanTimeModeProjection`
+- **Connected to:** UI calls via `DatabaseService.instance`; Plans tab, Lists tab, Time View; APP_STRUCTURE role: Time Mode projected DTO, UTC/profile-wall conversion, timezone reproject lifecycle, projection cache signature, wall-day
 - **Layer / owner:** Brain module — `part` file merged into `database_service.dart`.
 
 RU:
 
 - **Что это:** Модуль brain для plans and lists — файл `plan_projection_types`.
 - **Зачем:** Держит plans and lists согласованным с PocketBase и UI.
-- **Содержимое:** Dart-код (`TimeModeProjectedPlan`, `PlanTimeModeProjection`).
-- **Обязанности:** Реализует в коде: `TimeModeProjectedPlan`, `PlanTimeModeProjection`.
+- **Содержимое:** Dart-код (`TimeModeProjectedPlan`, `PlanTimeModeProjection`, `PlanProfileTimezoneProjectionExtension`).
+- **Обязанности:** Реализует в коде: Time Mode projected DTO, UTC/profile-wall conversion, timezone reproject lifecycle, projection cache signature, wall-day visibility/filtering, projection diagnostics.
 - **Когда открывать:** Планы/списки: сохранение, Time View, повтор, теги.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** UI вызывает `DatabaseService.instance`; Plans, Lists, Time View
