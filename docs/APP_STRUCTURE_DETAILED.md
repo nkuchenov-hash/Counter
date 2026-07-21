@@ -2,7 +2,7 @@
 
 Owner-readable guide: every tracked folder and file in plain language (EN + RU).
 
-**Generated at git SHA `4d4c769` on 2026-07-21.**
+**Generated at git SHA `9367479` on 2026-07-21.**
 
 Concise map: [`APP_STRUCTURE.md`](APP_STRUCTURE.md) · Upload checklist: [`PROJECT_KNOWLEDGE_PACK.md`](PROJECT_KNOWLEDGE_PACK.md)
 
@@ -4489,6 +4489,31 @@ RU:
 - **Можно удалить?** Нет — governing документация.
 - **Связано с:** `LARGE_FILE_DECOMPOSITION_PLAN_2026-07-06.md` §3.2, `planning_page.dart`, `time_view/*`.
 - **Слой:** Repo-only seam audit UI планирования.
+
+
+### `docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`
+
+EN:
+
+- **What this is:** Engineering report `REPOSITORY_HYGIENE_AUDIT_2026-07-21.md` — dated findings under `docs/reports/`.
+- **Why needed:** Preserves audit/parity decisions so later work does not re-litigate the same findings.
+- **What it contains:** Markdown report body for `REPOSITORY HYGIENE AUDIT 2026-07-21`.
+- **Responsibilities:** Document evidence and outcomes for this investigation topic.
+- **When to open:** Reviewing history related to `REPOSITORY HYGIENE AUDIT 2026-07-21` before repeating the work.
+- **Can it be deleted?** No — governing/current documentation.
+- **Connected to:** `docs/ROADMAP.md`, `CHANGELOG.md`, related governing docs.
+- **Layer / owner:** Repo-only engineering report — not Project Knowledge pack.
+
+RU:
+
+- **Что это:** Инженерный отчёт `REPOSITORY_HYGIENE_AUDIT_2026-07-21.md` — dated findings в `docs/reports/`.
+- **Зачем:** Сохраняет решения audit/parity, чтобы позже не переобсуждать те же findings.
+- **Содержимое:** Markdown-тело отчёта `REPOSITORY HYGIENE AUDIT 2026-07-21`.
+- **Обязанности:** Фиксирует evidence и итоги по теме этого расследования.
+- **Когда открывать:** Смотрите историю по `REPOSITORY HYGIENE AUDIT 2026-07-21` перед повторением той же работы.
+- **Можно удалить?** Нет — governing документация.
+- **Связано с:** `docs/ROADMAP.md`, `CHANGELOG.md`, связанные governing docs.
+- **Слой:** Документация — правила, не runtime.
 
 
 ### `docs/website/CONTENT_LIBRARY.md`
@@ -19372,231 +19397,6 @@ RU:
 - **Можно удалить?** Нет — нужен для тестов.
 - **Связано с:** Production files под `lib/` с похожим именем.
 - **Слой:** Автотест — не попадает пользователю в APK.
-
-
-### `test/fixtures/desktop_voice_wav/benchmark_reports/real_helper_latency_2026-07-11T00-01-52.686540Z.json`
-
-EN:
-
-- **What this is:** JSON golden/benchmark payload `real_helper_latency_2026-07-11T00-01-52.686540Z.json` for desktop voice STT regression.
-- **Why needed:** Desktop voice tests and benchmarks replay known captures instead of live mic input.
-- **What it contains:** Tracked fixture file `real_helper_latency_2026-07-11T00-01-52.686540Z.json` under `test/fixtures/desktop_voice_wav/`.
-- **Responsibilities:** Provide stable input/artifact for STT quality checks involving `real_helper_latency_2026-07-11T00-01-52.686540Z`.
-- **When to open:** Updating golden WAVs, manifests, or benchmark reports near `real_helper_latency_2026-07-11T00-01-52.686540Z.json`.
-- **Can it be deleted?** No — desktop voice tests/benchmarks reference this fixture.
-- **Connected to:** `test/desktop_voice_*_test.dart`, `scripts/manual/benchmark_desktop_voice_stt.ps1`.
-- **Layer / owner:** Test fixture — not shipped to users.
-
-RU:
-
-- **Что это:** JSON golden/benchmark payload `real_helper_latency_2026-07-11T00-01-52.686540Z.json` для регрессии desktop voice STT.
-- **Зачем:** Тесты и бенчмарки desktop voice проигрывают известные записи вместо живого микрофона.
-- **Содержимое:** Отслеживаемый fixture-файл `real_helper_latency_2026-07-11T00-01-52.686540Z.json` в `test/fixtures/desktop_voice_wav/`.
-- **Обязанности:** Даёт стабильный вход/артефакт для проверок STT вокруг `real_helper_latency_2026-07-11T00-01-52.686540Z`.
-- **Когда открывать:** Обновление golden WAV, манифестов или отчётов бенчмарка около `real_helper_latency_2026-07-11T00-01-52.686540Z.json`.
-- **Можно удалить?** Нет — нужен для тестов.
-- **Связано с:** `test/desktop_voice_*_test.dart`, `benchmark_desktop_voice_stt.ps1`.
-- **Слой:** Test fixture — не попадает к пользователю.
-
-
-### `test/fixtures/desktop_voice_wav/benchmark_reports/real_helper_latency_2026-07-11T00-06-30.043433Z.json`
-
-EN:
-
-- **What this is:** JSON golden/benchmark payload `real_helper_latency_2026-07-11T00-06-30.043433Z.json` for desktop voice STT regression.
-- **Why needed:** Desktop voice tests and benchmarks replay known captures instead of live mic input.
-- **What it contains:** Tracked fixture file `real_helper_latency_2026-07-11T00-06-30.043433Z.json` under `test/fixtures/desktop_voice_wav/`.
-- **Responsibilities:** Provide stable input/artifact for STT quality checks involving `real_helper_latency_2026-07-11T00-06-30.043433Z`.
-- **When to open:** Updating golden WAVs, manifests, or benchmark reports near `real_helper_latency_2026-07-11T00-06-30.043433Z.json`.
-- **Can it be deleted?** No — desktop voice tests/benchmarks reference this fixture.
-- **Connected to:** `test/desktop_voice_*_test.dart`, `scripts/manual/benchmark_desktop_voice_stt.ps1`.
-- **Layer / owner:** Test fixture — not shipped to users.
-
-RU:
-
-- **Что это:** JSON golden/benchmark payload `real_helper_latency_2026-07-11T00-06-30.043433Z.json` для регрессии desktop voice STT.
-- **Зачем:** Тесты и бенчмарки desktop voice проигрывают известные записи вместо живого микрофона.
-- **Содержимое:** Отслеживаемый fixture-файл `real_helper_latency_2026-07-11T00-06-30.043433Z.json` в `test/fixtures/desktop_voice_wav/`.
-- **Обязанности:** Даёт стабильный вход/артефакт для проверок STT вокруг `real_helper_latency_2026-07-11T00-06-30.043433Z`.
-- **Когда открывать:** Обновление golden WAV, манифестов или отчётов бенчмарка около `real_helper_latency_2026-07-11T00-06-30.043433Z.json`.
-- **Можно удалить?** Нет — нужен для тестов.
-- **Связано с:** `test/desktop_voice_*_test.dart`, `benchmark_desktop_voice_stt.ps1`.
-- **Слой:** Test fixture — не попадает к пользователю.
-
-
-### `test/fixtures/desktop_voice_wav/benchmark_reports/real_helper_latency_2026-07-11T00-21-36.195835Z.json`
-
-EN:
-
-- **What this is:** JSON golden/benchmark payload `real_helper_latency_2026-07-11T00-21-36.195835Z.json` for desktop voice STT regression.
-- **Why needed:** Desktop voice tests and benchmarks replay known captures instead of live mic input.
-- **What it contains:** Tracked fixture file `real_helper_latency_2026-07-11T00-21-36.195835Z.json` under `test/fixtures/desktop_voice_wav/`.
-- **Responsibilities:** Provide stable input/artifact for STT quality checks involving `real_helper_latency_2026-07-11T00-21-36.195835Z`.
-- **When to open:** Updating golden WAVs, manifests, or benchmark reports near `real_helper_latency_2026-07-11T00-21-36.195835Z.json`.
-- **Can it be deleted?** No — desktop voice tests/benchmarks reference this fixture.
-- **Connected to:** `test/desktop_voice_*_test.dart`, `scripts/manual/benchmark_desktop_voice_stt.ps1`.
-- **Layer / owner:** Test fixture — not shipped to users.
-
-RU:
-
-- **Что это:** JSON golden/benchmark payload `real_helper_latency_2026-07-11T00-21-36.195835Z.json` для регрессии desktop voice STT.
-- **Зачем:** Тесты и бенчмарки desktop voice проигрывают известные записи вместо живого микрофона.
-- **Содержимое:** Отслеживаемый fixture-файл `real_helper_latency_2026-07-11T00-21-36.195835Z.json` в `test/fixtures/desktop_voice_wav/`.
-- **Обязанности:** Даёт стабильный вход/артефакт для проверок STT вокруг `real_helper_latency_2026-07-11T00-21-36.195835Z`.
-- **Когда открывать:** Обновление golden WAV, манифестов или отчётов бенчмарка около `real_helper_latency_2026-07-11T00-21-36.195835Z.json`.
-- **Можно удалить?** Нет — нужен для тестов.
-- **Связано с:** `test/desktop_voice_*_test.dart`, `benchmark_desktop_voice_stt.ps1`.
-- **Слой:** Test fixture — не попадает к пользователю.
-
-
-### `test/fixtures/desktop_voice_wav/benchmark_reports/real_helper_latency_2026-07-11T00-30-11.646191Z.json`
-
-EN:
-
-- **What this is:** JSON golden/benchmark payload `real_helper_latency_2026-07-11T00-30-11.646191Z.json` for desktop voice STT regression.
-- **Why needed:** Desktop voice tests and benchmarks replay known captures instead of live mic input.
-- **What it contains:** Tracked fixture file `real_helper_latency_2026-07-11T00-30-11.646191Z.json` under `test/fixtures/desktop_voice_wav/`.
-- **Responsibilities:** Provide stable input/artifact for STT quality checks involving `real_helper_latency_2026-07-11T00-30-11.646191Z`.
-- **When to open:** Updating golden WAVs, manifests, or benchmark reports near `real_helper_latency_2026-07-11T00-30-11.646191Z.json`.
-- **Can it be deleted?** No — desktop voice tests/benchmarks reference this fixture.
-- **Connected to:** `test/desktop_voice_*_test.dart`, `scripts/manual/benchmark_desktop_voice_stt.ps1`.
-- **Layer / owner:** Test fixture — not shipped to users.
-
-RU:
-
-- **Что это:** JSON golden/benchmark payload `real_helper_latency_2026-07-11T00-30-11.646191Z.json` для регрессии desktop voice STT.
-- **Зачем:** Тесты и бенчмарки desktop voice проигрывают известные записи вместо живого микрофона.
-- **Содержимое:** Отслеживаемый fixture-файл `real_helper_latency_2026-07-11T00-30-11.646191Z.json` в `test/fixtures/desktop_voice_wav/`.
-- **Обязанности:** Даёт стабильный вход/артефакт для проверок STT вокруг `real_helper_latency_2026-07-11T00-30-11.646191Z`.
-- **Когда открывать:** Обновление golden WAV, манифестов или отчётов бенчмарка около `real_helper_latency_2026-07-11T00-30-11.646191Z.json`.
-- **Можно удалить?** Нет — нужен для тестов.
-- **Связано с:** `test/desktop_voice_*_test.dart`, `benchmark_desktop_voice_stt.ps1`.
-- **Слой:** Test fixture — не попадает к пользователю.
-
-
-### `test/fixtures/desktop_voice_wav/benchmark_reports/real_helper_latency_2026-07-11T00-33-19.252197Z.json`
-
-EN:
-
-- **What this is:** JSON golden/benchmark payload `real_helper_latency_2026-07-11T00-33-19.252197Z.json` for desktop voice STT regression.
-- **Why needed:** Desktop voice tests and benchmarks replay known captures instead of live mic input.
-- **What it contains:** Tracked fixture file `real_helper_latency_2026-07-11T00-33-19.252197Z.json` under `test/fixtures/desktop_voice_wav/`.
-- **Responsibilities:** Provide stable input/artifact for STT quality checks involving `real_helper_latency_2026-07-11T00-33-19.252197Z`.
-- **When to open:** Updating golden WAVs, manifests, or benchmark reports near `real_helper_latency_2026-07-11T00-33-19.252197Z.json`.
-- **Can it be deleted?** No — desktop voice tests/benchmarks reference this fixture.
-- **Connected to:** `test/desktop_voice_*_test.dart`, `scripts/manual/benchmark_desktop_voice_stt.ps1`.
-- **Layer / owner:** Test fixture — not shipped to users.
-
-RU:
-
-- **Что это:** JSON golden/benchmark payload `real_helper_latency_2026-07-11T00-33-19.252197Z.json` для регрессии desktop voice STT.
-- **Зачем:** Тесты и бенчмарки desktop voice проигрывают известные записи вместо живого микрофона.
-- **Содержимое:** Отслеживаемый fixture-файл `real_helper_latency_2026-07-11T00-33-19.252197Z.json` в `test/fixtures/desktop_voice_wav/`.
-- **Обязанности:** Даёт стабильный вход/артефакт для проверок STT вокруг `real_helper_latency_2026-07-11T00-33-19.252197Z`.
-- **Когда открывать:** Обновление golden WAV, манифестов или отчётов бенчмарка около `real_helper_latency_2026-07-11T00-33-19.252197Z.json`.
-- **Можно удалить?** Нет — нужен для тестов.
-- **Связано с:** `test/desktop_voice_*_test.dart`, `benchmark_desktop_voice_stt.ps1`.
-- **Слой:** Test fixture — не попадает к пользователю.
-
-
-### `test/fixtures/desktop_voice_wav/benchmark_reports/real_helper_latency_2026-07-11T00-36-40.392651Z.json`
-
-EN:
-
-- **What this is:** JSON golden/benchmark payload `real_helper_latency_2026-07-11T00-36-40.392651Z.json` for desktop voice STT regression.
-- **Why needed:** Desktop voice tests and benchmarks replay known captures instead of live mic input.
-- **What it contains:** Tracked fixture file `real_helper_latency_2026-07-11T00-36-40.392651Z.json` under `test/fixtures/desktop_voice_wav/`.
-- **Responsibilities:** Provide stable input/artifact for STT quality checks involving `real_helper_latency_2026-07-11T00-36-40.392651Z`.
-- **When to open:** Updating golden WAVs, manifests, or benchmark reports near `real_helper_latency_2026-07-11T00-36-40.392651Z.json`.
-- **Can it be deleted?** No — desktop voice tests/benchmarks reference this fixture.
-- **Connected to:** `test/desktop_voice_*_test.dart`, `scripts/manual/benchmark_desktop_voice_stt.ps1`.
-- **Layer / owner:** Test fixture — not shipped to users.
-
-RU:
-
-- **Что это:** JSON golden/benchmark payload `real_helper_latency_2026-07-11T00-36-40.392651Z.json` для регрессии desktop voice STT.
-- **Зачем:** Тесты и бенчмарки desktop voice проигрывают известные записи вместо живого микрофона.
-- **Содержимое:** Отслеживаемый fixture-файл `real_helper_latency_2026-07-11T00-36-40.392651Z.json` в `test/fixtures/desktop_voice_wav/`.
-- **Обязанности:** Даёт стабильный вход/артефакт для проверок STT вокруг `real_helper_latency_2026-07-11T00-36-40.392651Z`.
-- **Когда открывать:** Обновление golden WAV, манифестов или отчётов бенчмарка около `real_helper_latency_2026-07-11T00-36-40.392651Z.json`.
-- **Можно удалить?** Нет — нужен для тестов.
-- **Связано с:** `test/desktop_voice_*_test.dart`, `benchmark_desktop_voice_stt.ps1`.
-- **Слой:** Test fixture — не попадает к пользователю.
-
-
-### `test/fixtures/desktop_voice_wav/benchmark_reports/real_helper_latency_2026-07-11T00-41-23.611948Z.json`
-
-EN:
-
-- **What this is:** JSON golden/benchmark payload `real_helper_latency_2026-07-11T00-41-23.611948Z.json` for desktop voice STT regression.
-- **Why needed:** Desktop voice tests and benchmarks replay known captures instead of live mic input.
-- **What it contains:** Tracked fixture file `real_helper_latency_2026-07-11T00-41-23.611948Z.json` under `test/fixtures/desktop_voice_wav/`.
-- **Responsibilities:** Provide stable input/artifact for STT quality checks involving `real_helper_latency_2026-07-11T00-41-23.611948Z`.
-- **When to open:** Updating golden WAVs, manifests, or benchmark reports near `real_helper_latency_2026-07-11T00-41-23.611948Z.json`.
-- **Can it be deleted?** No — desktop voice tests/benchmarks reference this fixture.
-- **Connected to:** `test/desktop_voice_*_test.dart`, `scripts/manual/benchmark_desktop_voice_stt.ps1`.
-- **Layer / owner:** Test fixture — not shipped to users.
-
-RU:
-
-- **Что это:** JSON golden/benchmark payload `real_helper_latency_2026-07-11T00-41-23.611948Z.json` для регрессии desktop voice STT.
-- **Зачем:** Тесты и бенчмарки desktop voice проигрывают известные записи вместо живого микрофона.
-- **Содержимое:** Отслеживаемый fixture-файл `real_helper_latency_2026-07-11T00-41-23.611948Z.json` в `test/fixtures/desktop_voice_wav/`.
-- **Обязанности:** Даёт стабильный вход/артефакт для проверок STT вокруг `real_helper_latency_2026-07-11T00-41-23.611948Z`.
-- **Когда открывать:** Обновление golden WAV, манифестов или отчётов бенчмарка около `real_helper_latency_2026-07-11T00-41-23.611948Z.json`.
-- **Можно удалить?** Нет — нужен для тестов.
-- **Связано с:** `test/desktop_voice_*_test.dart`, `benchmark_desktop_voice_stt.ps1`.
-- **Слой:** Test fixture — не попадает к пользователю.
-
-
-### `test/fixtures/desktop_voice_wav/benchmark_reports/real_helper_latency_2026-07-11T00-47-14.369218Z.json`
-
-EN:
-
-- **What this is:** JSON golden/benchmark payload `real_helper_latency_2026-07-11T00-47-14.369218Z.json` for desktop voice STT regression.
-- **Why needed:** Desktop voice tests and benchmarks replay known captures instead of live mic input.
-- **What it contains:** Tracked fixture file `real_helper_latency_2026-07-11T00-47-14.369218Z.json` under `test/fixtures/desktop_voice_wav/`.
-- **Responsibilities:** Provide stable input/artifact for STT quality checks involving `real_helper_latency_2026-07-11T00-47-14.369218Z`.
-- **When to open:** Updating golden WAVs, manifests, or benchmark reports near `real_helper_latency_2026-07-11T00-47-14.369218Z.json`.
-- **Can it be deleted?** No — desktop voice tests/benchmarks reference this fixture.
-- **Connected to:** `test/desktop_voice_*_test.dart`, `scripts/manual/benchmark_desktop_voice_stt.ps1`.
-- **Layer / owner:** Test fixture — not shipped to users.
-
-RU:
-
-- **Что это:** JSON golden/benchmark payload `real_helper_latency_2026-07-11T00-47-14.369218Z.json` для регрессии desktop voice STT.
-- **Зачем:** Тесты и бенчмарки desktop voice проигрывают известные записи вместо живого микрофона.
-- **Содержимое:** Отслеживаемый fixture-файл `real_helper_latency_2026-07-11T00-47-14.369218Z.json` в `test/fixtures/desktop_voice_wav/`.
-- **Обязанности:** Даёт стабильный вход/артефакт для проверок STT вокруг `real_helper_latency_2026-07-11T00-47-14.369218Z`.
-- **Когда открывать:** Обновление golden WAV, манифестов или отчётов бенчмарка около `real_helper_latency_2026-07-11T00-47-14.369218Z.json`.
-- **Можно удалить?** Нет — нужен для тестов.
-- **Связано с:** `test/desktop_voice_*_test.dart`, `benchmark_desktop_voice_stt.ps1`.
-- **Слой:** Test fixture — не попадает к пользователю.
-
-
-### `test/fixtures/desktop_voice_wav/benchmark_reports/real_helper_latency_2026-07-11T00-51-32.668341Z.json`
-
-EN:
-
-- **What this is:** JSON golden/benchmark payload `real_helper_latency_2026-07-11T00-51-32.668341Z.json` for desktop voice STT regression.
-- **Why needed:** Desktop voice tests and benchmarks replay known captures instead of live mic input.
-- **What it contains:** Tracked fixture file `real_helper_latency_2026-07-11T00-51-32.668341Z.json` under `test/fixtures/desktop_voice_wav/`.
-- **Responsibilities:** Provide stable input/artifact for STT quality checks involving `real_helper_latency_2026-07-11T00-51-32.668341Z`.
-- **When to open:** Updating golden WAVs, manifests, or benchmark reports near `real_helper_latency_2026-07-11T00-51-32.668341Z.json`.
-- **Can it be deleted?** No — desktop voice tests/benchmarks reference this fixture.
-- **Connected to:** `test/desktop_voice_*_test.dart`, `scripts/manual/benchmark_desktop_voice_stt.ps1`.
-- **Layer / owner:** Test fixture — not shipped to users.
-
-RU:
-
-- **Что это:** JSON golden/benchmark payload `real_helper_latency_2026-07-11T00-51-32.668341Z.json` для регрессии desktop voice STT.
-- **Зачем:** Тесты и бенчмарки desktop voice проигрывают известные записи вместо живого микрофона.
-- **Содержимое:** Отслеживаемый fixture-файл `real_helper_latency_2026-07-11T00-51-32.668341Z.json` в `test/fixtures/desktop_voice_wav/`.
-- **Обязанности:** Даёт стабильный вход/артефакт для проверок STT вокруг `real_helper_latency_2026-07-11T00-51-32.668341Z`.
-- **Когда открывать:** Обновление golden WAV, манифестов или отчётов бенчмарка около `real_helper_latency_2026-07-11T00-51-32.668341Z.json`.
-- **Можно удалить?** Нет — нужен для тестов.
-- **Связано с:** `test/desktop_voice_*_test.dart`, `benchmark_desktop_voice_stt.ps1`.
-- **Слой:** Test fixture — не попадает к пользователю.
 
 
 ### `test/fixtures/desktop_voice_wav/benchmark_reports/real_helper_latency_latest.json`

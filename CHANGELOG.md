@@ -11,6 +11,10 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-21] - Repo: hygiene audit cleanup [engineering]
+
+* **Hygiene audit:** Removed nine tracked timestamped `real_helper_latency_2026-07-11T*.json` bench outputs (already `.gitignore`d; keep `real_helper_latency_latest.json`); dropped unused direct deps `table_calendar` and `cupertino_icons`. Report: `docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`. No production UI/behavior change; LARGE_FILE remains **0**.
+
 ## [2026-07-21] - Plans: consolidate cache identity [engineering]
 
 * **`plans/plan_cache_helpers.dart`:** Consolidated plan business/optimistic identity + in-memory cache mutation (`_planBusinessUuidFromTask`, `_isOptimisticPlanningTask`, `_purgeOptimisticPlanRowsFromUserCache`, `_upsertPlanInUserCache`, `_removePlanFromUserCache`, `_filterBacklogFromAll`) from `plan_service.dart` into `PlanCacheProjectionExtension` (**1877 → 1775** / **473 → 575** Measure-Object lines). Cache state fields stay in `plan_service`; fetch/CRUD/realtime untouched. Final justified `plan_service` decomposition pass. LARGE_FILE **1 → 0**.
