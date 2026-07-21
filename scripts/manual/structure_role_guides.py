@@ -109,6 +109,11 @@ PLAN_PART: dict[str, tuple[str, str, str]] = {
         "Cross-day edits must hide the row on the previous day, merge overlay-wins on the target day, and rekey after profile timezone changes without duplicating cache state.",
         "`_planningOptimisticByDateKey`; `applyOptimisticPlanningTask`; `clearOptimisticPlanningForPlanRow`; `_mergePlanningOptimistic`; `getBacklogPlansSnapshot`.",
     ),
+    "plan_order_helpers": (
+        "Owns Planning optimistic reorder, first-drag baseline tracking, and debounced diff-only PocketBase order sync.",
+        "Plan drag-reorder must update UI instantly, PATCH only changed `order` values after a 2s debounce, and roll back on total failure.",
+        "`persistPlanningTaskOrder`; `flushPlanningOrderSyncNow`; `_planReorderBaselineByPlanId`; rollback on all-patch failure.",
+    ),
     "plan_ai_parse_helpers": (
         "Calls the AI parse-task backend and normalizes planning items from the response.",
         "Smart plan sheet and voice-ish plan drafts need one Brain entry for parse-task.",

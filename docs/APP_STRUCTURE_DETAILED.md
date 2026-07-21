@@ -2,7 +2,7 @@
 
 Owner-readable guide: every tracked folder and file in plain language (EN + RU).
 
-**Generated at git SHA `9e04c91` on 2026-07-21.**
+**Generated at git SHA `306a193` on 2026-07-21.**
 
 Concise map: [`APP_STRUCTURE.md`](APP_STRUCTURE.md) · Upload checklist: [`PROJECT_KNOWLEDGE_PACK.md`](PROJECT_KNOWLEDGE_PACK.md)
 
@@ -10817,10 +10817,10 @@ EN:
 - **Why needed:** UI calls one plan entry point; this file delegates to focused modules in the subfolder.
 - **What it contains:** Coordinator extensions plus links to `part` files under `plans/` or `plan/`.
 - **Key code names:** `PlanServiceExtension`
-- **Responsibilities:** Plans/lists coordinator: cache fetch/realtime, CRUD entry points, plan reorder, stats and plan-record linkage
+- **Responsibilities:** Plans/lists coordinator: cache fetch/realtime, CRUD entry points, stats and plan-record linkage
 - **When to open:** When behavior tied to `plan_service.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
-- **Connected to:** UI calls via `DatabaseService.instance`; APP_STRUCTURE role: Plans/lists coordinator: cache fetch/realtime, CRUD entry points, plan reorder, stats and plan-record linkage
+- **Connected to:** UI calls via `DatabaseService.instance`; APP_STRUCTURE role: Plans/lists coordinator: cache fetch/realtime, CRUD entry points, stats and plan-record linkage
 - **Layer / owner:** Brain coordinator — entry point for this domain inside `database_service.dart`.
 
 RU:
@@ -10828,7 +10828,7 @@ RU:
 - **Что это:** Главный координатор для plans and backlog lists.
 - **Зачем:** UI вызывает один вход; детали — в модулях subfolder.
 - **Содержимое:** Extensions + `part` файлы для plan.
-- **Обязанности:** Координатор домена: Plans/lists coordinator: cache fetch/realtime, CRUD entry points, plan reorder, stats and plan-record linkage.
+- **Обязанности:** Координатор домена: Plans/lists coordinator: cache fetch/realtime, CRUD entry points, stats and plan-record linkage.
 - **Когда открывать:** Когда ломается поведение, связанное с `plan_service.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** UI вызывает `DatabaseService.instance`
@@ -10985,6 +10985,32 @@ RU:
 - **Зачем:** Держит plans and lists согласованным с PocketBase и UI.
 - **Содержимое:** Dart-код (`PlanOptimisticOverlayExtension`).
 - **Обязанности:** Реализует в коде: Dated/backlog optimistic overlay state, apply/clear lifecycle, cross-day hiding, server/cache overlay merge, timezone rekey.
+- **Когда открывать:** Планы/списки: сохранение, Time View, повтор, теги.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** UI вызывает `DatabaseService.instance`; Plans, Lists, Time View
+- **Слой:** Brain — модуль `part` в `database_service.dart`.
+
+
+### `lib/data/plans/plan_order_helpers.dart`
+
+EN:
+
+- **What this is:** Owns Planning optimistic reorder, first-drag baseline tracking, and debounced diff-only PocketBase order sync.
+- **Why needed:** Plan drag-reorder must update UI instantly, PATCH only changed `order` values after a 2s debounce, and roll back on total failure.
+- **What it contains:** `persistPlanningTaskOrder`; `flushPlanningOrderSyncNow`; `_planReorderBaselineByPlanId`; rollback on all-patch failure.
+- **Key code names:** `PlanOrderSyncExtension`, `PlanOrderSyncTestBridge`
+- **Responsibilities:** Planning optimistic reorder, first-drag baseline tracking, debounced diff-only PocketBase order synchronization, rollback, and lifecycle flush
+- **When to open:** Plan/list save, Time View layout, recurrence, tags on plans, offline queue.
+- **Can it be deleted?** No — required for app runtime.
+- **Connected to:** UI calls via `DatabaseService.instance`; Plans tab, Lists tab, Time View; APP_STRUCTURE role: Planning optimistic reorder, first-drag baseline tracking, debounced diff-only PocketBase order synchronization, rollbac
+- **Layer / owner:** Brain module — `part` file merged into `database_service.dart`.
+
+RU:
+
+- **Что это:** Модуль brain для plans and lists — файл `plan_order_helpers`.
+- **Зачем:** Держит plans and lists согласованным с PocketBase и UI.
+- **Содержимое:** Dart-код (`PlanOrderSyncExtension`, `PlanOrderSyncTestBridge`).
+- **Обязанности:** Реализует в коде: Planning optimistic reorder, first-drag baseline tracking, debounced diff-only PocketBase order synchronization, rollback, and lifecycle flush.
 - **Когда открывать:** Планы/списки: сохранение, Time View, повтор, теги.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** UI вызывает `DatabaseService.instance`; Plans, Lists, Time View
@@ -20350,6 +20376,32 @@ RU:
 - **Содержимое:** Test cases для сценария `perf_shell_date_settle`.
 - **Обязанности:** Assert ожидаемого поведения `perf_shell_date_settle`.
 - **Когда открывать:** Падение CI или правка кода рядом с `perf_shell_date_settle`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
+- **Слой:** Автотест — не попадает пользователю в APK.
+
+
+### `test/plan_order_sync_test.dart`
+
+EN:
+
+- **What this is:** Automated test `plan_order_sync_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **What it contains:** Test cases (symbols: main).
+- **Key code names:** `main`
+- **Responsibilities:** Assert expected behavior for `plan_order_sync_test` scenario.
+- **When to open:** CI failure or changing code near `plan_order_sync`.
+- **Can it be deleted?** No — required for tests.
+- **Connected to:** Matching files under `lib/` with similar name.
+- **Layer / owner:** Test — not shipped to users.
+
+RU:
+
+- **Что это:** Автотест `plan_order_sync` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `plan_order_sync`.
+- **Обязанности:** Assert ожидаемого поведения `plan_order_sync`.
+- **Когда открывать:** Падение CI или правка кода рядом с `plan_order_sync`.
 - **Можно удалить?** Нет — нужен для тестов.
 - **Связано с:** Production files под `lib/` с похожим именем.
 - **Слой:** Автотест — не попадает пользователю в APK.

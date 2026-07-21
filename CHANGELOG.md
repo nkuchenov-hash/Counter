@@ -11,6 +11,10 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-21] - Plans: extract order sync [engineering]
+
+* **`plans/plan_order_helpers.dart`:** Extracted Planning reorder state + sync (`_planOrderDebounce*`, baseline map, `persistPlanningTaskOrder`, `_persistPlanningTaskOrdersBulkNow`, rollback, `flushPlanningOrderSyncNow`) from `plan_service.dart` into `PlanOrderSyncExtension` (**3027 → 2848** / new part **204**). Optimistic-first UI, 2s debounce, diff-only `order` PATCH, virt hard-fail, and partial-success/rollback semantics unchanged; `plan_service` role no longer claims plan reorder. LARGE_FILE remains **1**.
+
 ## [2026-07-21] - Categories: extract order sync [engineering]
 
 * **`categories/category_order_helpers.dart`:** Extracted category sibling optimistic reorder + debounced PocketBase order sync (`applyLocalCategorySiblingOrder`, `persistCategorySiblingOrder`, `flushCategoryOrderSyncNow`, bulk force/now PATCH) from `plan_service.dart` into `CategoryOrderSyncExtension` (**3182 → 3027** / new part **159**). 2s debounce, baseline diff-only PATCH, root/child tree updates unchanged; `plan_service` role narrowed to plan reorder. LARGE_FILE remains **1**.
