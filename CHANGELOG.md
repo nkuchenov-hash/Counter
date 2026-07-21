@@ -11,6 +11,10 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-21] - Plans: consolidate cache identity [engineering]
+
+* **`plans/plan_cache_helpers.dart`:** Consolidated plan business/optimistic identity + in-memory cache mutation (`_planBusinessUuidFromTask`, `_isOptimisticPlanningTask`, `_purgeOptimisticPlanRowsFromUserCache`, `_upsertPlanInUserCache`, `_removePlanFromUserCache`, `_filterBacklogFromAll`) from `plan_service.dart` into `PlanCacheProjectionExtension` (**1877 → 1775** / **473 → 575** Measure-Object lines). Cache state fields stay in `plan_service`; fetch/CRUD/realtime untouched. Final justified `plan_service` decomposition pass. LARGE_FILE **1 → 0**.
+
 ## [2026-07-21] - Plans: consolidate recurrence mutations [engineering]
 
 * **`plans/plan_recurrence_helpers.dart`:** Consolidated recurring identity, exception_dates mutation, virtual completion/edit materialization, and recurrence edit/delete scope (`_isJitVirtualPlanningTask`…`deletePlanningTaskWithRecurrenceScope`) from `plan_service.dart` into `PlanRecurrenceExtension` (**2585 → 1877** / **178 → 886** Measure-Object lines). Ordinary CRUD (`updatePlanningTask` / `deletePlanningTasksBulk` / …) left in `plan_service`; thisAndFuture still unsupported; exception rollback on failed materialize unchanged. LARGE_FILE remains **1**.

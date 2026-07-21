@@ -38,94 +38,11 @@ extension PlanServiceExtension on DatabaseService {
   }
 
 
-  /// Stable business **plan_id** (UUID) for merge/dedupe — not PocketBase system id.
-  String? _planBusinessUuidFromTask(PlanningTask task) {
-    final row = task.planRowId?.trim() ?? '';
-    if (row.isNotEmpty) {
-      if (row.startsWith('optimistic-')) {
-        final id = row.substring('optimistic-'.length).trim();
-        return id.isEmpty ? null : id;
-      }
-      if (!row.startsWith('virt-')) return row;
-    }
-    final pr = task.pocketRecordId?.trim() ?? '';
-    if (pr.startsWith('optimistic-')) {
-      final id = pr.substring('optimistic-'.length).trim();
-      return id.isEmpty ? null : id;
-    }
-    return null;
-  }
-
-  bool _isOptimisticPlanningTask(PlanningTask task) {
-    final pr = task.pocketRecordId?.trim() ?? '';
-    if (pr.startsWith('optimistic-')) return true;
-    final row = task.planRowId?.trim() ?? '';
-    return row.startsWith('optimistic-');
-  }
-
-
   bool _wallScheduleMatches(PlanningTask a, PlanningTask b) {
     if (a.startTime != b.startTime) return false;
     return a.endDateTime == b.endDateTime;
   }
 
-
-  void _purgeOptimisticPlanRowsFromUserCache(String businessPlanId) {
-    final biz = businessPlanId.trim();
-    if (biz.isEmpty) return;
-    _allPlansUserCache = [
-      for (final t in _allPlansUserCache)
-        if (!(_isOptimisticPlanningTask(t) &&
-            _planBusinessUuidFromTask(t) == biz))
-          t,
-    ];
-  }
-
-  void _upsertPlanInUserCache(PlanningTask task) {
-    final pid = task.planRowIdForBackend.trim();
-    if (pid.isEmpty) return;
-    if (_isJitVirtualPlanningTask(task)) {
-      if (!kReleaseMode) {
-        planDupTrace(
-          'source=cache event=skipVirtUpsert key=$pid title=${task.title.trim()}',
-        );
-      }
-      return;
-    }
-    final bizId = _planBusinessUuidFromTask(task);
-    var i = -1;
-    for (var j = 0; j < _allPlansUserCache.length; j++) {
-      final t = _allPlansUserCache[j];
-      final tPid = t.planRowIdForBackend.trim();
-      if (tPid == pid) {
-        i = j;
-        break;
-      }
-      if (bizId != null &&
-          bizId.isNotEmpty &&
-          _planBusinessUuidFromTask(t) == bizId) {
-        i = j;
-        break;
-      }
-    }
-    if (i >= 0) {
-      _allPlansUserCache[i] = task;
-    } else {
-      _allPlansUserCache.add(task);
-    }
-    if (bizId != null && bizId.isNotEmpty && !_isOptimisticPlanningTask(task)) {
-      _purgeOptimisticPlanRowsFromUserCache(bizId);
-    }
-  }
-
-  void _removePlanFromUserCache(String planRowId) {
-    final p = planRowId.trim();
-    if (p.isEmpty) return;
-    _allPlansUserCache = [
-      for (final t in _allPlansUserCache)
-        if (t.planRowIdForBackend.trim() != p) t,
-    ];
-  }
 
   bool _planTagsEqual(List<Tag> a, List<Tag> b) {
     if (a.length != b.length) return false;
@@ -175,32 +92,6 @@ extension PlanServiceExtension on DatabaseService {
     if (changed) {
       notifyPlanningRefresh(scheduleNetworkRefresh: false);
     }
-  }
-
-  List<PlanningTask> _filterBacklogFromAll(
-    List<PlanningTask> all, {
-    int? categoryId,
-    bool includeCompleted = false,
-  }) {
-    final out = <PlanningTask>[];
-    for (final t in all) {
-      final pid = t.planRowIdForBackend.trim();
-      if (pid.startsWith('optimistic-') || pid.startsWith('virt-')) continue;
-      if (!includeCompleted && t.isDone) continue;
-      if (t.startTime != null) continue;
-      if (t.rrule != null && t.rrule!.trim().isNotEmpty) continue;
-      if (t.isBacklogChildItem) continue;
-      final dk = t.dateKey.trim();
-      if (dk.length >= 10) continue;
-      if (categoryId != null && t.categoryId != categoryId) continue;
-      out.add(t);
-    }
-    out.sort((a, b) {
-      final o = a.order.compareTo(b.order);
-      if (o != 0) return o;
-      return a.title.compareTo(b.title);
-    });
-    return out;
   }
 
   Future<void> _ensureAllPlansUserCacheFresh({bool force = false}) async {

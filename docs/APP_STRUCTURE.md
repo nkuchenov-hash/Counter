@@ -122,7 +122,7 @@ Re-export stubs remain at `core/navigation/shell_side_navigation.dart`, `feature
 | `plans/plan_recurrence_helpers.dart` | RRULE JIT expansion, virtual/materialized occurrence identity, exception-date mutation, concrete instance materialization, and recurrence edit/delete scope *(part)* |
 | `plans/plan_time_cascade_helpers.dart` | Duration/snap policy, collision avoidance, sequential Time View cascade, new-plan auto-scheduling, day/category overload evaluation *(part)* |
 | `plans/plan_tags_helpers.dart` | Plan/list tag catalog fetch + PB `tags_link` sync *(part)* |
-| `plans/plan_cache_helpers.dart` | Plan dedupe/scrub, offline day-cache codec + SharedPreferences persistence, title link scoring *(part)* |
+| `plans/plan_cache_helpers.dart` | Plan identity, confirmed-vs-optimistic dedupe, in-memory upsert/remove, backlog filter, scrub, offline day-cache + title link scoring *(part)* |
 | `plans/plan_outbox_helpers.dart` | Immediate update/delete network phase, offline enqueue, queued replay, mutation retry/auth classification *(part)* |
 | `plans/plan_snapshot_helpers.dart` | Planning warm snapshots, rendered day bodies, P0t render-snapshot pipeline, disk restore/persist *(part)* |
 | `plans/plan_stream_helpers.dart` | Shared Planning day-stream hubs, refresh-event publication, ref-counted lifecycle, cache-first/network-pump coordination, 400ms refresh debounce *(part)* |

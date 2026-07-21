@@ -85,9 +85,9 @@ PLAN_PART: dict[str, tuple[str, str, str]] = {
         "Tag catalog fetch, PB link sync for plans/lists.",
     ),
     "plan_cache_helpers": (
-        "Maintains the local plan list clean, persists/restores offline day caches, and scores title similarity for smart linking.",
-        "Duplicate plan rows, stale virt-* day-cache entries, or bad merges would break Planning and Lists tabs.",
-        "Plan dedupe/scrub; offline day-cache codec (`cache_plans_day_v1_*`); SharedPreferences day-cache persist/restore; title link scoring.",
+        "Owns stable plan identity, confirmed-vs-optimistic dedupe, in-memory cache upsert/remove, backlog filtering, scrub, offline day-cache, and title link scoring.",
+        "Duplicate plan rows, optimistic aliases left beside confirmed rows, stale virt-* day-cache entries, or bad merges would break Planning and Lists tabs.",
+        "Business/optimistic identity; cache upsert/remove/purge; backlog filter; dedupe/scrub; offline day-cache codec (`cache_plans_day_v1_*`); SharedPreferences day-cache persist/restore; title link scoring.",
     ),
     "plan_outbox_helpers": (
         "Runs immediate plan update/delete network phases and queues/replays mutations when offline or auth-paused.",

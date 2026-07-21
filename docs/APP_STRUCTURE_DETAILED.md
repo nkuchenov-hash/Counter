@@ -2,7 +2,7 @@
 
 Owner-readable guide: every tracked folder and file in plain language (EN + RU).
 
-**Generated at git SHA `4136849` on 2026-07-21.**
+**Generated at git SHA `4d4c769` on 2026-07-21.**
 
 Concise map: [`APP_STRUCTURE.md`](APP_STRUCTURE.md) · Upload checklist: [`PROJECT_KNOWLEDGE_PACK.md`](PROJECT_KNOWLEDGE_PACK.md)
 
@@ -10943,14 +10943,14 @@ RU:
 
 EN:
 
-- **What this is:** Maintains the local plan list clean, persists/restores offline day caches, and scores title similarity for smart linking.
-- **Why needed:** Duplicate plan rows, stale virt-* day-cache entries, or bad merges would break Planning and Lists tabs.
-- **What it contains:** Plan dedupe/scrub; offline day-cache codec (`cache_plans_day_v1_*`); SharedPreferences day-cache persist/restore; title link scoring.
+- **What this is:** Owns stable plan identity, confirmed-vs-optimistic dedupe, in-memory cache upsert/remove, backlog filtering, scrub, offline day-cache, and title link scoring.
+- **Why needed:** Duplicate plan rows, optimistic aliases left beside confirmed rows, stale virt-* day-cache entries, or bad merges would break Planning and Lists tabs.
+- **What it contains:** Business/optimistic identity; cache upsert/remove/purge; backlog filter; dedupe/scrub; offline day-cache codec (`cache_plans_day_v1_*`); SharedPreferences day-cache persist/restore; title link scoring.
 - **Key code names:** `PlanCacheProjectionExtension`
-- **Responsibilities:** Plan dedupe/scrub, offline day-cache codec + SharedPreferences persistence, title link scoring
+- **Responsibilities:** Plan identity, confirmed-vs-optimistic dedupe, in-memory upsert/remove, backlog filter, scrub, offline day-cache + title link scoring
 - **When to open:** Plan/list save, Time View layout, recurrence, tags on plans, offline queue.
 - **Can it be deleted?** No — required for app runtime.
-- **Connected to:** UI calls via `DatabaseService.instance`; Plans tab, Lists tab, Time View; APP_STRUCTURE role: Plan dedupe/scrub, offline day-cache codec + SharedPreferences persistence, title link scoring
+- **Connected to:** UI calls via `DatabaseService.instance`; Plans tab, Lists tab, Time View; APP_STRUCTURE role: Plan identity, confirmed-vs-optimistic dedupe, in-memory upsert/remove, backlog filter, scrub, offline day-cache + title
 - **Layer / owner:** Brain module — `part` file merged into `database_service.dart`.
 
 RU:
@@ -10958,7 +10958,7 @@ RU:
 - **Что это:** Модуль brain для plans and lists — файл `plan_cache_helpers`.
 - **Зачем:** Держит plans and lists согласованным с PocketBase и UI.
 - **Содержимое:** Dart-код (`PlanCacheProjectionExtension`).
-- **Обязанности:** Реализует в коде: Plan dedupe/scrub, offline day-cache codec + SharedPreferences persistence, title link scoring.
+- **Обязанности:** Реализует в коде: Plan identity, confirmed-vs-optimistic dedupe, in-memory upsert/remove, backlog filter, scrub, offline day-cache + title link scoring.
 - **Когда открывать:** Планы/списки: сохранение, Time View, повтор, теги.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** UI вызывает `DatabaseService.instance`; Plans, Lists, Time View
