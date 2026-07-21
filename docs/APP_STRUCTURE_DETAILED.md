@@ -2,7 +2,7 @@
 
 Owner-readable guide: every tracked folder and file in plain language (EN + RU).
 
-**Generated at git SHA `d3ae1d0` on 2026-07-21.**
+**Generated at git SHA `77250ec` on 2026-07-21.**
 
 Concise map: [`APP_STRUCTURE.md`](APP_STRUCTURE.md) · Upload checklist: [`PROJECT_KNOWLEDGE_PACK.md`](PROJECT_KNOWLEDGE_PACK.md)
 
@@ -10791,10 +10791,10 @@ EN:
 - **Why needed:** UI calls one plan entry point; this file delegates to focused modules in the subfolder.
 - **What it contains:** Coordinator extensions plus links to `part` files under `plans/` or `plan/`.
 - **Key code names:** `PlanServiceExtension`
-- **Responsibilities:** Plans/lists coordinator: CRUD, streams, wall-time projection, alarms
+- **Responsibilities:** Plans/lists coordinator: cache fetch/realtime, CRUD entry points, reorder, stats and plan-record linkage
 - **When to open:** When behavior tied to `plan_service.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
-- **Connected to:** UI calls via `DatabaseService.instance`; APP_STRUCTURE role: Plans/lists coordinator: CRUD, streams, wall-time projection, alarms
+- **Connected to:** UI calls via `DatabaseService.instance`; APP_STRUCTURE role: Plans/lists coordinator: cache fetch/realtime, CRUD entry points, reorder, stats and plan-record linkage
 - **Layer / owner:** Brain coordinator — entry point for this domain inside `database_service.dart`.
 
 RU:
@@ -10802,7 +10802,7 @@ RU:
 - **Что это:** Главный координатор для plans and backlog lists.
 - **Зачем:** UI вызывает один вход; детали — в модулях subfolder.
 - **Содержимое:** Extensions + `part` файлы для plan.
-- **Обязанности:** Координатор домена: Plans/lists coordinator: CRUD, streams, wall-time projection, alarms.
+- **Обязанности:** Координатор домена: Plans/lists coordinator: cache fetch/realtime, CRUD entry points, reorder, stats and plan-record linkage.
 - **Когда открывать:** Когда ломается поведение, связанное с `plan_service.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** UI вызывает `DatabaseService.instance`
@@ -11125,14 +11125,14 @@ RU:
 
 EN:
 
-- **What this is:** Calculates where plan blocks sit vertically in Time View when times overlap.
-- **Why needed:** Without cascade math, overlapping plans would draw on top of each other.
-- **What it contains:** Time View cascade layout, duration constants, wall-time estimates.
+- **What this is:** Owns Time View duration/snap policy, collision avoidance, sequential cascade, and new-plan auto-scheduling.
+- **Why needed:** Overlapping plans and new inserts must land in valid wall slots without blocking the Planning tap path.
+- **What it contains:** `normalizeSequentialPlanTimesForDay`; `resolveAutoPlanSchedule`; `evaluatePlanDayScheduleOverload`; overload constants.
 - **Key code names:** `PlanTimeCascadeExtension`
-- **Responsibilities:** Time View cascade, duration consts, `planningWallEstimateSeconds`
+- **Responsibilities:** Duration/snap policy, collision avoidance, sequential Time View cascade, new-plan auto-scheduling, day/category overload evaluation
 - **When to open:** Plan/list save, Time View layout, recurrence, tags on plans, offline queue.
 - **Can it be deleted?** No — required for app runtime.
-- **Connected to:** UI calls via `DatabaseService.instance`; Plans tab, Lists tab, Time View; APP_STRUCTURE role: Time View cascade, duration consts, `planningWallEstimateSeconds`
+- **Connected to:** UI calls via `DatabaseService.instance`; Plans tab, Lists tab, Time View; APP_STRUCTURE role: Duration/snap policy, collision avoidance, sequential Time View cascade, new-plan auto-scheduling, day/category overload
 - **Layer / owner:** Brain module — `part` file merged into `database_service.dart`.
 
 RU:
@@ -11140,7 +11140,7 @@ RU:
 - **Что это:** Модуль brain для plans and lists — файл `plan_time_cascade_helpers`.
 - **Зачем:** Держит plans and lists согласованным с PocketBase и UI.
 - **Содержимое:** Dart-код (`PlanTimeCascadeExtension`).
-- **Обязанности:** Реализует в коде: Time View cascade, duration consts, `planningWallEstimateSeconds`.
+- **Обязанности:** Реализует в коде: Duration/snap policy, collision avoidance, sequential Time View cascade, new-plan auto-scheduling, day/category overload evaluation.
 - **Когда открывать:** Планы/списки: сохранение, Time View, повтор, теги.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** UI вызывает `DatabaseService.instance`; Plans, Lists, Time View

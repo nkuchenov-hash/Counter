@@ -11,6 +11,10 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-21] - Plans: consolidate auto scheduling [engineering]
+
+* **`plans/plan_time_cascade_helpers.dart`:** Consolidated new-plan auto-scheduling + day/category overload evaluation (`resolveAutoPlanSchedule`, `profileDisplayWallsFromAutoSchedule`, `planningTaskWithAutoSchedule`, `evaluatePlanDayScheduleOverload`) from `plan_service.dart` into `PlanTimeCascadeExtension` (**3434 → 3182** / **196 → 448** Measure-Object lines). Explicit-range probe cascade, category-default UTC path, collision avoidance, and overload thresholds unchanged. `docs/APP_STRUCTURE.md` projection table row + `plan_service` role corrected. LARGE_FILE remains **1**.
+
 ## [2026-07-21] - Plans: consolidate timezone projection [engineering]
 
 * **`plans/plan_projection_types.dart`:** Consolidated profile-timezone projection (`_profileTimezoneProjectionRevision`, wall/UTC coalesce + reproject, `reprojectAllPlansForProfileTimezone`, `plansProjectionCacheSignature`, `_filterPlansForWallDay`, `planningWallScheduleDateKey`) from `plan_service.dart` into `PlanProfileTimezoneProjectionExtension` (**3711 → 3434** / **101 → 381** Measure-Object lines). `TimeModeProjectedPlan` + `PlanTimeModeProjection` unchanged; TZ invalidation ordering and UTC-source-of-truth preserved. LARGE_FILE remains **1**.

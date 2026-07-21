@@ -1,3 +1,4 @@
+import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/data/plan_time_sequential_cascade.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -410,6 +411,26 @@ void main() {
       );
       expect(result.accepted, isFalse);
       expect(result.blockedReason, 'fixedBarrier');
+    });
+  });
+
+  group('PlanTimeCascadeExtension auto scheduling', () {
+    test('resolveAutoPlanSchedule explicit range returns cascaded walls without UTC', () {
+      final schedule = DatabaseService.instance.resolveAutoPlanSchedule(
+        wallDay: DateTime(2026, 6, 15),
+        categoryId: 1,
+        tags: const [],
+        existingDayPlans: [
+          _task(id: 'a', order: 0, startH: 9, startM: 0, endH: 9, endM: 30),
+        ],
+        explicitStartWall: DateTime(2026, 6, 15, 10, 0),
+        explicitEndWall: DateTime(2026, 6, 15, 10, 30),
+        hasExplicitTimeRange: true,
+      );
+      expect(schedule.startUtcInstant, isNull);
+      expect(schedule.endUtcInstant, isNull);
+      expect(schedule.startWall, DateTime(2026, 6, 15, 10, 0));
+      expect(schedule.endWall, DateTime(2026, 6, 15, 10, 30));
     });
   });
 }

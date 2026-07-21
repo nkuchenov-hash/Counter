@@ -75,9 +75,9 @@ PLAN_PART: dict[str, tuple[str, str, str]] = {
         "RRULE JIT expansion, exception dates, virtual occurrence handling.",
     ),
     "plan_time_cascade_helpers": (
-        "Calculates where plan blocks sit vertically in Time View when times overlap.",
-        "Without cascade math, overlapping plans would draw on top of each other.",
-        "Time View cascade layout, duration constants, wall-time estimates.",
+        "Owns Time View duration/snap policy, collision avoidance, sequential cascade, and new-plan auto-scheduling.",
+        "Overlapping plans and new inserts must land in valid wall slots without blocking the Planning tap path.",
+        "`normalizeSequentialPlanTimesForDay`; `resolveAutoPlanSchedule`; `evaluatePlanDayScheduleOverload`; overload constants.",
     ),
     "plan_tags_helpers": (
         "Syncs tag chips on plan cards with PocketBase `tags_link` relations.",

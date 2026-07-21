@@ -117,10 +117,10 @@ Re-export stubs remain at `core/navigation/shell_side_navigation.dart`, `feature
 | `records/record_overlap_helpers.dart` | Highlander local apply, singleton reconcile, overlap probes *(part)* |
 | `records/record_ghost_cleanup.dart` | 404 deadletter prune against live cache *(part)* |
 | `records/record_cache_helpers.dart` | Per-day filter, `recordsStream`, display-time helpers *(part)* |
-| `plan_service.dart` | Plans/lists coordinator: CRUD, streams, wall-time projection, alarms *(part)* |
-    | `plans/plan_projection_types.dart` | Time Mode projected DTO, UTC/profile-wall conversion, timezone reproject lifecycle, projection cache signature, wall-day visibility/filtering, projection diagnostics *(part)* |
+| `plan_service.dart` | Plans/lists coordinator: cache fetch/realtime, CRUD entry points, reorder, stats and plan-record linkage *(part)* |
+| `plans/plan_projection_types.dart` | Time Mode projected DTO, UTC/profile-wall conversion, timezone reproject lifecycle, projection cache signature, wall-day visibility/filtering, projection diagnostics *(part)* |
 | `plans/plan_recurrence_helpers.dart` | RRULE JIT expansion, exception-date parse helpers *(part)* |
-| `plans/plan_time_cascade_helpers.dart` | Time View cascade, duration consts, `planningWallEstimateSeconds` *(part)* |
+| `plans/plan_time_cascade_helpers.dart` | Duration/snap policy, collision avoidance, sequential Time View cascade, new-plan auto-scheduling, day/category overload evaluation *(part)* |
 | `plans/plan_tags_helpers.dart` | Plan/list tag catalog fetch + PB `tags_link` sync *(part)* |
 | `plans/plan_cache_helpers.dart` | Plan dedupe/scrub, offline day-cache codec + SharedPreferences persistence, title link scoring *(part)* |
 | `plans/plan_outbox_helpers.dart` | Immediate update/delete network phase, offline enqueue, queued replay, mutation retry/auth classification *(part)* |
