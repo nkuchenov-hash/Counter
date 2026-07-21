@@ -11,6 +11,10 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-21] - Plans: extract record linkage [engineering]
+
+* **`plans/plan_record_link_helpers.dart`:** Extracted plan-to-record linkage + plan-vs-fact stats (`aggregateSourcePlanActualSecondsForWallCalendarDay`, `getBasicDayStats`, `suggestSourcePlanForFreeStart`, `resolveCurrentPlanCategoryForRecordStart`, category inheritance helpers) from `plan_service.dart` into `PlanRecordLinkExtension` (**2848 → 2585** / new part **267**). Actual-time bucketing, BasicDayStats fields, title-link threshold 0.42, and Brain-over-stale-UI category precedence unchanged; `plan_service` role narrowed to cache fetch/realtime and CRUD. LARGE_FILE remains **1**.
+
 ## [2026-07-21] - Plans: extract order sync [engineering]
 
 * **`plans/plan_order_helpers.dart`:** Extracted Planning reorder state + sync (`_planOrderDebounce*`, baseline map, `persistPlanningTaskOrder`, `_persistPlanningTaskOrdersBulkNow`, rollback, `flushPlanningOrderSyncNow`) from `plan_service.dart` into `PlanOrderSyncExtension` (**3027 → 2848** / new part **204**). Optimistic-first UI, 2s debounce, diff-only `order` PATCH, virt hard-fail, and partial-success/rollback semantics unchanged; `plan_service` role no longer claims plan reorder. LARGE_FILE remains **1**.

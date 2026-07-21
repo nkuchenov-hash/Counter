@@ -2,7 +2,7 @@
 
 Owner-readable guide: every tracked folder and file in plain language (EN + RU).
 
-**Generated at git SHA `306a193` on 2026-07-21.**
+**Generated at git SHA `ad503be` on 2026-07-21.**
 
 Concise map: [`APP_STRUCTURE.md`](APP_STRUCTURE.md) · Upload checklist: [`PROJECT_KNOWLEDGE_PACK.md`](PROJECT_KNOWLEDGE_PACK.md)
 
@@ -10817,10 +10817,10 @@ EN:
 - **Why needed:** UI calls one plan entry point; this file delegates to focused modules in the subfolder.
 - **What it contains:** Coordinator extensions plus links to `part` files under `plans/` or `plan/`.
 - **Key code names:** `PlanServiceExtension`
-- **Responsibilities:** Plans/lists coordinator: cache fetch/realtime, CRUD entry points, stats and plan-record linkage
+- **Responsibilities:** Plans/lists coordinator: cache fetch/realtime and CRUD entry points
 - **When to open:** When behavior tied to `plan_service.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
-- **Connected to:** UI calls via `DatabaseService.instance`; APP_STRUCTURE role: Plans/lists coordinator: cache fetch/realtime, CRUD entry points, stats and plan-record linkage
+- **Connected to:** UI calls via `DatabaseService.instance`; APP_STRUCTURE role: Plans/lists coordinator: cache fetch/realtime and CRUD entry points
 - **Layer / owner:** Brain coordinator — entry point for this domain inside `database_service.dart`.
 
 RU:
@@ -10828,7 +10828,7 @@ RU:
 - **Что это:** Главный координатор для plans and backlog lists.
 - **Зачем:** UI вызывает один вход; детали — в модулях subfolder.
 - **Содержимое:** Extensions + `part` файлы для plan.
-- **Обязанности:** Координатор домена: Plans/lists coordinator: cache fetch/realtime, CRUD entry points, stats and plan-record linkage.
+- **Обязанности:** Координатор домена: Plans/lists coordinator: cache fetch/realtime and CRUD entry points.
 - **Когда открывать:** Когда ломается поведение, связанное с `plan_service.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** UI вызывает `DatabaseService.instance`
@@ -11063,6 +11063,32 @@ RU:
 - **Зачем:** Держит plans and lists согласованным с PocketBase и UI.
 - **Содержимое:** Dart-код (`TimeModeProjectedPlan`, `PlanTimeModeProjection`, `PlanProfileTimezoneProjectionExtension`).
 - **Обязанности:** Реализует в коде: Time Mode projected DTO, UTC/profile-wall conversion, timezone reproject lifecycle, projection cache signature, wall-day visibility/filtering, projection diagnostics.
+- **Когда открывать:** Планы/списки: сохранение, Time View, повтор, теги.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** UI вызывает `DatabaseService.instance`; Plans, Lists, Time View
+- **Слой:** Brain — модуль `part` в `database_service.dart`.
+
+
+### `lib/data/plans/plan_record_link_helpers.dart`
+
+EN:
+
+- **What this is:** Owns plan-to-record source linkage, actual-time aggregation, and plan-vs-fact day statistics.
+- **Why needed:** Play/start-from-plan and Stats need Brain-owned source_plan_id inheritance and wall-day planned-vs-actual rollups.
+- **What it contains:** `aggregateSourcePlanActualSecondsForWallCalendarDay`; `getBasicDayStats`; `suggestSourcePlanForFreeStart`; `resolveCurrentPlanCategoryForRecordStart`.
+- **Key code names:** `PlanRecordLinkExtension`
+- **Responsibilities:** Plan-to-record source linkage, actual-time aggregation, plan-vs-fact day statistics, title-based source-plan suggestion, and category inheritance for record start
+- **When to open:** Plan/list save, Time View layout, recurrence, tags on plans, offline queue.
+- **Can it be deleted?** No — required for app runtime.
+- **Connected to:** UI calls via `DatabaseService.instance`; Plans tab, Lists tab, Time View; APP_STRUCTURE role: Plan-to-record source linkage, actual-time aggregation, plan-vs-fact day statistics, title-based source-plan suggestion,
+- **Layer / owner:** Brain module — `part` file merged into `database_service.dart`.
+
+RU:
+
+- **Что это:** Модуль brain для plans and lists — файл `plan_record_link_helpers`.
+- **Зачем:** Держит plans and lists согласованным с PocketBase и UI.
+- **Содержимое:** Dart-код (`PlanRecordLinkExtension`).
+- **Обязанности:** Реализует в коде: Plan-to-record source linkage, actual-time aggregation, plan-vs-fact day statistics, title-based source-plan suggestion, and category inheritance for record start.
 - **Когда открывать:** Планы/списки: сохранение, Time View, повтор, теги.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** UI вызывает `DatabaseService.instance`; Plans, Lists, Time View
@@ -20402,6 +20428,32 @@ RU:
 - **Содержимое:** Test cases для сценария `plan_order_sync`.
 - **Обязанности:** Assert ожидаемого поведения `plan_order_sync`.
 - **Когда открывать:** Падение CI или правка кода рядом с `plan_order_sync`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
+- **Слой:** Автотест — не попадает пользователю в APK.
+
+
+### `test/plan_record_link_helpers_test.dart`
+
+EN:
+
+- **What this is:** Automated test `plan_record_link_helpers_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **What it contains:** Test cases (symbols: main).
+- **Key code names:** `main`
+- **Responsibilities:** Assert expected behavior for `plan_record_link_helpers_test` scenario.
+- **When to open:** CI failure or changing code near `plan_record_link_helpers`.
+- **Can it be deleted?** No — required for tests.
+- **Connected to:** Matching files under `lib/` with similar name.
+- **Layer / owner:** Test — not shipped to users.
+
+RU:
+
+- **Что это:** Автотест `plan_record_link_helpers` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `plan_record_link_helpers`.
+- **Обязанности:** Assert ожидаемого поведения `plan_record_link_helpers`.
+- **Когда открывать:** Падение CI или правка кода рядом с `plan_record_link_helpers`.
 - **Можно удалить?** Нет — нужен для тестов.
 - **Связано с:** Production files под `lib/` с похожим именем.
 - **Слой:** Автотест — не попадает пользователю в APK.

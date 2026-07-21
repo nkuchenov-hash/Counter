@@ -58,6 +58,7 @@ part 'plans/plan_snapshot_helpers.dart';
 part 'plans/plan_stream_helpers.dart';
 part 'plans/plan_optimistic_helpers.dart';
 part 'plans/plan_order_helpers.dart';
+part 'plans/plan_record_link_helpers.dart';
 part 'plans/notes_brain_helpers.dart';
 part 'plans/plan_alarm_helpers.dart';
 part 'plans/plan_ai_parse_helpers.dart';

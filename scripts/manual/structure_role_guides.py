@@ -114,6 +114,11 @@ PLAN_PART: dict[str, tuple[str, str, str]] = {
         "Plan drag-reorder must update UI instantly, PATCH only changed `order` values after a 2s debounce, and roll back on total failure.",
         "`persistPlanningTaskOrder`; `flushPlanningOrderSyncNow`; `_planReorderBaselineByPlanId`; rollback on all-patch failure.",
     ),
+    "plan_record_link_helpers": (
+        "Owns plan-to-record source linkage, actual-time aggregation, and plan-vs-fact day statistics.",
+        "Play/start-from-plan and Stats need Brain-owned source_plan_id inheritance and wall-day planned-vs-actual rollups.",
+        "`aggregateSourcePlanActualSecondsForWallCalendarDay`; `getBasicDayStats`; `suggestSourcePlanForFreeStart`; `resolveCurrentPlanCategoryForRecordStart`.",
+    ),
     "plan_ai_parse_helpers": (
         "Calls the AI parse-task backend and normalizes planning items from the response.",
         "Smart plan sheet and voice-ish plan drafts need one Brain entry for parse-task.",

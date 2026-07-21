@@ -117,7 +117,7 @@ Re-export stubs remain at `core/navigation/shell_side_navigation.dart`, `feature
 | `records/record_overlap_helpers.dart` | Highlander local apply, singleton reconcile, overlap probes *(part)* |
 | `records/record_ghost_cleanup.dart` | 404 deadletter prune against live cache *(part)* |
 | `records/record_cache_helpers.dart` | Per-day filter, `recordsStream`, display-time helpers *(part)* |
-| `plan_service.dart` | Plans/lists coordinator: cache fetch/realtime, CRUD entry points, stats and plan-record linkage *(part)* |
+| `plan_service.dart` | Plans/lists coordinator: cache fetch/realtime and CRUD entry points *(part)* |
 | `plans/plan_projection_types.dart` | Time Mode projected DTO, UTC/profile-wall conversion, timezone reproject lifecycle, projection cache signature, wall-day visibility/filtering, projection diagnostics *(part)* |
 | `plans/plan_recurrence_helpers.dart` | RRULE JIT expansion, exception-date parse helpers *(part)* |
 | `plans/plan_time_cascade_helpers.dart` | Duration/snap policy, collision avoidance, sequential Time View cascade, new-plan auto-scheduling, day/category overload evaluation *(part)* |
@@ -128,6 +128,7 @@ Re-export stubs remain at `core/navigation/shell_side_navigation.dart`, `feature
 | `plans/plan_stream_helpers.dart` | Shared Planning day-stream hubs, refresh-event publication, ref-counted lifecycle, cache-first/network-pump coordination, 400ms refresh debounce *(part)* |
 | `plans/plan_optimistic_helpers.dart` | Dated/backlog optimistic overlay state, apply/clear lifecycle, cross-day hiding, server/cache overlay merge, timezone rekey *(part)* |
 | `plans/plan_order_helpers.dart` | Planning optimistic reorder, first-drag baseline tracking, debounced diff-only PocketBase order synchronization, rollback, and lifecycle flush *(part)* |
+| `plans/plan_record_link_helpers.dart` | Plan-to-record source linkage, actual-time aggregation, plan-vs-fact day statistics, title-based source-plan suggestion, and category inheritance for record start *(part)* |
 | `plans/plan_ai_parse_helpers.dart` | AI `parse-task` helpers: `parseTaskViaAiBackend`, `parsePlanningItemsViaAiBackend` *(part)* |
 | `plans/plan_alarm_helpers.dart` | Hydrated-cache plan reminder reconciliation and debounced OS alarm bridge *(part)* |
 | `plans/notes_brain_helpers.dart` | Notes Brain extension — parse/apply/pin/done + debounced `notes_delta` PATCH *(part)* |
