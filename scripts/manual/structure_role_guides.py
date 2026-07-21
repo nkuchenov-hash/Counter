@@ -94,6 +94,11 @@ PLAN_PART: dict[str, tuple[str, str, str]] = {
         "Checking off a list item or editing a plan offline must stick locally, then sync later without losing retry/auth classification.",
         "Immediate `_patchPlanUpdateNetworkPhase` / `_deletePlanNetworkPhase`; outbox enqueue/flush/replay; mutation retry and auth pause classification.",
     ),
+    "plan_snapshot_helpers": (
+        "Builds and caches Planning warm day snapshots, rendered day bodies, and P0t render snapshots for swipe-ready UI.",
+        "Plans tab boot and day swipe must show cached bodies instantly without waiting on PocketBase or full-history scans.",
+        "Warm window ±1/full DayWindow prep; body cache center/radius; disk restore/persist; `buildPlansDayRenderSnapshot` readiness.",
+    ),
     "plan_ai_parse_helpers": (
         "Calls the AI parse-task backend and normalizes planning items from the response.",
         "Smart plan sheet and voice-ish plan drafts need one Brain entry for parse-task.",

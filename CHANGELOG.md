@@ -11,6 +11,10 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-20] - Plans: extract snapshot cache pipeline [engineering]
+
+* **`plans/plan_snapshot_helpers.dart`:** Extracted Planning warm-snapshot / rendered-body / P0t render-snapshot pipeline (`planningDayTasksSnapshot` through `markPlansDayBodyRendered`) from `plan_service.dart` into `PlanSnapshotCacheExtension` (**4493 → 4065** Measure-Object lines; new part **431**). Warm-window gating, disk restore/persist JSON, bodyReady sources, and public APIs unchanged. LARGE_FILE remains **1**.
+
 ## [2026-07-20] - Plans: consolidate mutation network phase [engineering]
 
 * **`plans/plan_outbox_helpers.dart`:** Moved immediate update/delete network phase (`_planMutationRetriableHttpCode`, `_patchPlanUpdateNetworkPhase`, `_deletePlanNetworkPhase`) from `plan_service.dart` into `PlanOutboxSyncExtension` (**4663 → 4493** / **591 → 762** Measure-Object lines). Flush/replay left undeduplicated; AppSnack, 404/401/403/retriable enqueue, and `(ok, queued)` delete semantics unchanged. LARGE_FILE remains **1**.
