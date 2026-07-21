@@ -11,6 +11,10 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-21] - Plans: extract optimistic overlay [engineering]
+
+* **`plans/plan_optimistic_helpers.dart`:** Extracted dated/backlog optimistic overlay state + merge/apply/clear/rekey (`_planningOptimisticByDateKey`, `applyOptimisticPlanningTask`, `clearOptimisticPlanningForPlanRow`, `_mergePlanningOptimistic`, `getBacklogPlansSnapshot`) from `plan_service.dart` into `PlanOptimisticOverlayExtension` (**3866 → 3711** Measure-Object lines; new part **159**). Cross-day hiding, overlay-wins merge, confirmed-row preference, backlog routing, and outbox cancel-on-clear unchanged. LARGE_FILE remains **1**.
+
 ## [2026-07-20] - Plans: extract planning stream hubs [engineering]
 
 * **`plans/plan_stream_helpers.dart`:** Extracted shared Planning day-stream hubs + refresh orchestration (`_PlanningDayStreamHub`, `planningStream`, `notifyPlanningRefresh`, refresh getters, poke-from-cache) from `plan_service.dart` into `PlanStreamRefreshExtension` (**4065 → 3866** Measure-Object lines; new part **203**). Hub ref-count, cache-first emit, 400ms network debounce ordering, and no-polling contract unchanged. LARGE_FILE remains **1**.

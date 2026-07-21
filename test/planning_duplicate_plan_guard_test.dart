@@ -312,6 +312,59 @@ void main() {
     });
   });
 
+  group('optimistic overlay cross-day', () {
+    test('moving optimistic task hides on old day and shows once on new day', () async {
+      SharedPreferences.setMockInitialValues({});
+      final db = DatabaseService.instance;
+      const bizId = 'biz-cross-day-move';
+      const optimisticId = 'optimistic-$bizId';
+      final oldDay = DateTime(2026, 6, 23);
+      final newDay = DateTime(2026, 6, 24);
+
+      final onOldDay = _plan(
+        planRowId: optimisticId,
+        pocketRecordId: optimisticId,
+        startH: 10,
+        startM: 0,
+        endH: 11,
+        endM: 0,
+      );
+      db.applyOptimisticPlanningTask(onOldDay);
+
+      final moved = onOldDay.copyWith(
+        dateKey: '2026-06-24',
+        endDateKey: '2026-06-24',
+        startTime: DateTime(2026, 6, 24, 10, 0),
+        endDateTime: DateTime(2026, 6, 24, 11, 0),
+      );
+      db.applyOptimisticPlanningTask(moved);
+
+      final oldEmits = <List<PlanningTask>>[];
+      final newEmits = <List<PlanningTask>>[];
+      final subOld = db
+          .planningStream(oldDay, listenToGlobalPlanningRefresh: false)
+          .listen(oldEmits.add);
+      final subNew = db
+          .planningStream(newDay, listenToGlobalPlanningRefresh: false)
+          .listen(newEmits.add);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(oldEmits, isNotEmpty);
+      expect(newEmits, isNotEmpty);
+      expect(
+        oldEmits.last.where((t) => t.planRowIdForBackend == optimisticId),
+        isEmpty,
+      );
+      expect(
+        newEmits.last.where((t) => t.planRowIdForBackend == optimisticId),
+        hasLength(1),
+      );
+
+      await subOld.cancel();
+      await subNew.cancel();
+    });
+  });
+
   group('planningStableIdentityKey', () {
     test('uses pb id when present', () {
       final t = _plan(

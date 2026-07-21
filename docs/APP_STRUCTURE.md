@@ -126,6 +126,7 @@ Re-export stubs remain at `core/navigation/shell_side_navigation.dart`, `feature
 | `plans/plan_outbox_helpers.dart` | Immediate update/delete network phase, offline enqueue, queued replay, mutation retry/auth classification *(part)* |
 | `plans/plan_snapshot_helpers.dart` | Planning warm snapshots, rendered day bodies, P0t render-snapshot pipeline, disk restore/persist *(part)* |
 | `plans/plan_stream_helpers.dart` | Shared Planning day-stream hubs, refresh-event publication, ref-counted lifecycle, cache-first/network-pump coordination, 400ms refresh debounce *(part)* |
+| `plans/plan_optimistic_helpers.dart` | Dated/backlog optimistic overlay state, apply/clear lifecycle, cross-day hiding, server/cache overlay merge, timezone rekey *(part)* |
 | `plans/plan_ai_parse_helpers.dart` | AI `parse-task` helpers: `parseTaskViaAiBackend`, `parsePlanningItemsViaAiBackend` *(part)* |
 | `plans/plan_alarm_helpers.dart` | Hydrated-cache plan reminder reconciliation and debounced OS alarm bridge *(part)* |
 | `plans/notes_brain_helpers.dart` | Notes Brain extension — parse/apply/pin/done + debounced `notes_delta` PATCH *(part)* |

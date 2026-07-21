@@ -2,7 +2,7 @@
 
 Owner-readable guide: every tracked folder and file in plain language (EN + RU).
 
-**Generated at git SHA `5d4fbc6` on 2026-07-20.**
+**Generated at git SHA `cd071af` on 2026-07-21.**
 
 Concise map: [`APP_STRUCTURE.md`](APP_STRUCTURE.md) · Upload checklist: [`PROJECT_KNOWLEDGE_PACK.md`](PROJECT_KNOWLEDGE_PACK.md)
 
@@ -10933,6 +10933,32 @@ RU:
 - **Зачем:** Держит plans and lists согласованным с PocketBase и UI.
 - **Содержимое:** Dart-код (`PlanCacheProjectionExtension`).
 - **Обязанности:** Реализует в коде: Plan dedupe/scrub, offline day-cache codec + SharedPreferences persistence, title link scoring.
+- **Когда открывать:** Планы/списки: сохранение, Time View, повтор, теги.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** UI вызывает `DatabaseService.instance`; Plans, Lists, Time View
+- **Слой:** Brain — модуль `part` в `database_service.dart`.
+
+
+### `lib/data/plans/plan_optimistic_helpers.dart`
+
+EN:
+
+- **What this is:** Owns dated/backlog optimistic overlay state for Planning and Lists instant UI.
+- **Why needed:** Cross-day edits must hide the row on the previous day, merge overlay-wins on the target day, and rekey after profile timezone changes without duplicating cache state.
+- **What it contains:** `_planningOptimisticByDateKey`; `applyOptimisticPlanningTask`; `clearOptimisticPlanningForPlanRow`; `_mergePlanningOptimistic`; `getBacklogPlansSnapshot`.
+- **Key code names:** `PlanOptimisticOverlayExtension`
+- **Responsibilities:** Dated/backlog optimistic overlay state, apply/clear lifecycle, cross-day hiding, server/cache overlay merge, timezone rekey
+- **When to open:** Plan/list save, Time View layout, recurrence, tags on plans, offline queue.
+- **Can it be deleted?** No — required for app runtime.
+- **Connected to:** UI calls via `DatabaseService.instance`; Plans tab, Lists tab, Time View; APP_STRUCTURE role: Dated/backlog optimistic overlay state, apply/clear lifecycle, cross-day hiding, server/cache overlay merge, timezone re
+- **Layer / owner:** Brain module — `part` file merged into `database_service.dart`.
+
+RU:
+
+- **Что это:** Модуль brain для plans and lists — файл `plan_optimistic_helpers`.
+- **Зачем:** Держит plans and lists согласованным с PocketBase и UI.
+- **Содержимое:** Dart-код (`PlanOptimisticOverlayExtension`).
+- **Обязанности:** Реализует в коде: Dated/backlog optimistic overlay state, apply/clear lifecycle, cross-day hiding, server/cache overlay merge, timezone rekey.
 - **Когда открывать:** Планы/списки: сохранение, Time View, повтор, теги.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** UI вызывает `DatabaseService.instance`; Plans, Lists, Time View

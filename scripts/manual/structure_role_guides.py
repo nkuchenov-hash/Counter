@@ -104,6 +104,11 @@ PLAN_PART: dict[str, tuple[str, str, str]] = {
         "Many PlanningPage instances stay alive under PageView; hubs must be ref-counted with no periodic polling and a single 400ms network debounce.",
         "`_PlanningDayStreamHub`; `planningStream`; `notifyPlanningRefresh`; `planningRefreshNotifications` / `planningRefreshEvents`.",
     ),
+    "plan_optimistic_helpers": (
+        "Owns dated/backlog optimistic overlay state for Planning and Lists instant UI.",
+        "Cross-day edits must hide the row on the previous day, merge overlay-wins on the target day, and rekey after profile timezone changes without duplicating cache state.",
+        "`_planningOptimisticByDateKey`; `applyOptimisticPlanningTask`; `clearOptimisticPlanningForPlanRow`; `_mergePlanningOptimistic`; `getBacklogPlansSnapshot`.",
+    ),
     "plan_ai_parse_helpers": (
         "Calls the AI parse-task backend and normalizes planning items from the response.",
         "Smart plan sheet and voice-ish plan drafts need one Brain entry for parse-task.",
