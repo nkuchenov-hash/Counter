@@ -31,6 +31,16 @@ from structure_file_ru_curated import FILE_RU_CURATED
 from structure_role_guides import humanize_guide
 from structure_root_guides import ROOT_FILE_GUIDES
 from structure_ru_helpers import cyrillic_count, delete_en_to_ru, looks_english_prose
+from structure_evidence_index import (
+    VALID_CONFIDENCE,
+    VALID_NECESSITY,
+    EvidenceIndex,
+    EvidenceRecord,
+    build_evidence_index,
+    format_evidence_block,
+    WATCHLIST_PATHS,
+    HYGIENE_AUDIT,
+)
 
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / "docs" / "APP_STRUCTURE_DETAILED.md"
@@ -59,6 +69,12 @@ GENERIC_EN_MARKERS: tuple[str, ...] = (
     "Source file `",
     "Dart source `",
     "for the Life OS repository",
+    "possibly useful",
+    "support file",
+    "used by the app",
+    "cannot be deleted",
+    "matching files under lib",
+    "nearby files",
 )
 
 BANNED_EN_WRAPPER_IN_RU: tuple[str, ...] = (
@@ -124,6 +140,20 @@ class FileGuide:
     delete_ru: str = ""
     connected_ru: str = ""
     layer_ru: str = ""
+    # Evidence-backed fields (filled by enrich_with_evidence)
+    repo_role: str = ""
+    evidence_en: str = ""
+    evidence_ru: str = ""
+    necessity: str = ""
+    deletion_consequence_en: str = ""
+    deletion_consequence_ru: str = ""
+    confidence: str = ""
+    owner_en: str = ""
+    owner_ru: str = ""
+
+
+# Global evidence index set in main() before rendering.
+EVIDENCE: EvidenceIndex | None = None
 
 
 def tracked() -> list[str]:
@@ -1051,7 +1081,7 @@ def test_guide(path: str, syms: list[str]) -> FileGuide:
         responsibilities=f"Assert expected behavior for `{stem}` scenario.",
         when=f"CI failure or changing code near `{stem.replace('_test', '')}`.",
         delete="No — required for tests.",
-        connected="Matching files under `lib/` with similar name.",
+        connected=f"`test/` suite; production subject near `{stem.replace('_test', '')}`.",
         layer="Test — not shipped to users.",
         what_ru=f"Автотест `{stem}` — проверяет поведение без ручных нажатий.",
         why_ru="Ловит регрессии при правках связанного production-кода.",
@@ -1059,8 +1089,132 @@ def test_guide(path: str, syms: list[str]) -> FileGuide:
         responsibilities_ru=f"Проверяет ожидаемое поведение сценария `{stem}`.",
         when_ru=f"Падение CI или правка кода около `{stem.replace('_test', '')}`.",
         delete_ru="Нет — нужен для тестов.",
-        connected_ru="Соответствующие файлы под `lib/` с похожим именем.",
+        connected_ru=f"Набор `test/`; production-субъект около `{stem.replace('_test', '')}`.",
         layer_ru="Тест — не попадает пользователю.",
+    )
+
+
+def enrich_with_evidence(path: str, g: FileGuide) -> FileGuide:
+    """Attach deterministic evidence / necessity / confidence / owner fields."""
+    assert EVIDENCE is not None
+    rec = EVIDENCE.records.get(path)
+    if rec is None:
+        # Should not happen — every tracked path gets a record.
+        rec = EvidenceRecord(
+            path=path,
+            repo_role="developer tool",
+            necessity="REQUIRED_FOR_TEST_OR_TOOLING",
+            confidence="MEDIUM",
+            owner_en="repository root",
+            owner_ru="корень репозитория",
+            evidence_en=[f"Tracked path `{path}` in `git ls-files`."],
+            evidence_ru=[f"Путь `{path}` в `git ls-files`."],
+            deletion_en="Verify before delete.",
+            deletion_ru="Проверить перед удалением.",
+        )
+
+    evidence_en = format_evidence_block(rec.evidence_en)
+    evidence_ru = format_evidence_block(rec.evidence_ru)
+
+    # Prefer evidence-backed deletion wording for watchlist / necessity clarity.
+    delete_en = g.delete
+    delete_ru = g.delete_ru
+    if rec.necessity in (
+        "RETAINED_PRODUCT_WATCHLIST",
+        "COMPATIBILITY_LAYER",
+        "HISTORICAL_RECORD",
+    ):
+        delete_en = rec.deletion_en
+        delete_ru = rec.deletion_ru
+    elif not delete_en or is_generic_en(delete_en) or delete_en.startswith("No — required"):
+        delete_en = rec.deletion_en or delete_en
+        if not delete_ru or looks_english_prose(delete_ru):
+            delete_ru = rec.deletion_ru or delete_ru
+
+    contains = g.contains
+    contains_ru = g.contains_ru
+    if rec.contents_hint_en and (
+        not contains
+        or is_generic_en(contains)
+        or "Open `" in contains
+        or "Matching files" in contains
+    ):
+        contains = rec.contents_hint_en
+    if rec.contents_hint_ru and (
+        not contains_ru or has_banned_filler(contains_ru) or "matching" in contains_ru.lower()
+    ):
+        contains_ru = rec.contents_hint_ru
+
+    responsibilities = g.responsibilities
+    responsibilities_ru = g.responsibilities_ru
+    if not (responsibilities_ru or "").strip():
+        stem = Path(path).stem
+        responsibilities_ru = f"Поддерживает поведение модуля `{stem}` в своём слое."
+    if not (responsibilities or "").strip():
+        responsibilities = f"Owns the documented role of `{Path(path).name}`."
+
+    # Watchlist purpose must not claim runtime-required.
+    what = g.what
+    why = g.why
+    what_ru = g.what_ru
+    why_ru = g.why_ru
+    if path in WATCHLIST_PATHS:
+        reason = WATCHLIST_PATHS[path]
+        what = (
+            f"Intentionally retained product/compat file — {reason} "
+            f"(see `{HYGIENE_AUDIT}`)."
+        )
+        why = (
+            "Not reachable from current production `lib/main.dart` root; "
+            "kept until a product decision removes or rewires it."
+        )
+        what_ru = (
+            f"Намеренно сохранённый файл (watchlist) — см. hygiene-аудит. "
+            f"Файл: `{Path(path).name}`."
+        )
+        why_ru = (
+            "Сейчас не участвует в runtime из `lib/main.dart`; "
+            "сохранён до продуктового решения об удалении или переподключении."
+        )
+        responsibilities_ru = "Не считать обязательным для текущего runtime."
+
+    # Fill any remaining empty RU core fields.
+    if not (what_ru or "").strip():
+        what_ru = f"Файл `{Path(path).name}` в репозитории."
+    if not (why_ru or "").strip():
+        why_ru = "Нужен для сборки, тестов, документации или платформы — см. доказательства."
+    if not (contains_ru or "").strip():
+        contains_ru = rec.contents_hint_ru or f"Содержимое файла `{Path(path).name}`."
+
+    layer = rec.owner_en or g.layer
+    layer_ru = rec.owner_ru or g.layer_ru
+
+    return FileGuide(
+        what=what,
+        why=why,
+        contains=contains,
+        responsibilities=responsibilities,
+        when=g.when,
+        delete=delete_en,
+        connected=g.connected,
+        layer=layer,
+        what_ru=what_ru,
+        why_ru=why_ru,
+        contains_ru=contains_ru,
+        responsibilities_ru=responsibilities_ru,
+        when_ru=g.when_ru,
+        delete_ru=delete_ru,
+        connected_ru=g.connected_ru,
+        layer_ru=layer_ru,
+        repo_role=rec.repo_role,
+        evidence_en=evidence_en,
+        evidence_ru=evidence_ru,
+        necessity=rec.necessity,
+        deletion_consequence_en=rec.deletion_en,
+        deletion_consequence_ru=rec.deletion_ru,
+        confidence=rec.confidence,
+        owner_en=rec.owner_en,
+        owner_ru=rec.owner_ru,
     )
 
 
@@ -1214,6 +1368,15 @@ def finalize_file_guide(path: str, g: FileGuide) -> FileGuide:
         delete_ru=pick("delete_ru", del_fallback),
         connected_ru=pick("connected_ru"),
         layer_ru=pick("layer_ru", layer_fallback),
+        repo_role=g.repo_role,
+        evidence_en=g.evidence_en,
+        evidence_ru=g.evidence_ru,
+        necessity=g.necessity,
+        deletion_consequence_en=g.deletion_consequence_en,
+        deletion_consequence_ru=g.deletion_consequence_ru,
+        confidence=g.confidence,
+        owner_en=g.owner_en,
+        owner_ru=g.owner_ru,
     )
 
 
@@ -1357,23 +1520,35 @@ def render_file(path: str, g: FileGuide, syms: list[str]) -> str:
     return (
         f"### `{path}`\n\n"
         f"EN:\n\n"
+        f"- **Human purpose:** {g.what} {g.why}\n"
         f"- **What this is:** {g.what}\n"
         f"- **Why needed:** {g.why}\n"
-        f"- **What it contains:** {g.contains}{sym_line}\n"
+        f"- **Contents:** {g.contains}{sym_line}\n"
+        f"- **Repository role:** {g.repo_role}\n"
+        f"- **Evidence of use:** {g.evidence_en}\n"
+        f"- **Necessity status:** {g.necessity}\n"
+        f"- **Deletion consequence:** {g.deletion_consequence_en}\n"
+        f"- **Confidence:** {g.confidence}\n"
+        f"- **Owner / layer:** {g.owner_en or g.layer}\n"
         f"- **Responsibilities:** {g.responsibilities}\n"
         f"- **When to open:** {g.when}\n"
         f"- **Can it be deleted?** {g.delete}\n"
-        f"- **Connected to:** {g.connected}\n"
-        f"- **Layer / owner:** {g.layer}\n\n"
+        f"- **Connected to:** {g.connected}\n\n"
         f"RU:\n\n"
+        f"- **Зачем файл человеку:** {g.what_ru} {g.why_ru}\n"
         f"- **Что это:** {g.what_ru}\n"
         f"- **Зачем:** {g.why_ru}\n"
         f"- **Содержимое:** {g.contains_ru}\n"
+        f"- **Роль в репозитории:** {g.repo_role}\n"
+        f"- **Доказательства использования:** {g.evidence_ru}\n"
+        f"- **Статус необходимости:** {g.necessity}\n"
+        f"- **Что будет, если удалить:** {g.deletion_consequence_ru}\n"
+        f"- **Уверенность:** {g.confidence}\n"
+        f"- **Владелец / слой:** {g.owner_ru or g.layer_ru}\n"
         f"- **Обязанности:** {g.responsibilities_ru}\n"
         f"- **Когда открывать:** {g.when_ru}\n"
         f"- **Можно удалить?** {g.delete_ru}\n"
         f"- **Связано с:** {g.connected_ru}\n"
-        f"- **Слой:** {g.layer_ru}\n"
     )
 
 
@@ -1394,18 +1569,26 @@ def quality_check(text: str, paths: list[str], expected_sha: str) -> list[str]:
         ("- **Can it be deleted?**", "- **Можно удалить?**"),
         ("- **What this is:**", "- **Что это:**"),
         ("- **Why needed:**", "- **Зачем:**"),
+        ("- **Contents:**", "- **Содержимое:**"),
         ("- **What it contains:**", "- **Содержимое:**"),
         ("- **Responsibilities:**", "- **Обязанности:**"),
         ("- **When to open:**", "- **Когда открывать:**"),
         ("- **Connected to:**", "- **Связано с:**"),
+        ("- **Owner / layer:**", "- **Владелец / слой:**"),
         ("- **Layer / owner:**", "- **Слой:**"),
+        ("- **Evidence of use:**", "- **Доказательства использования:**"),
+        ("- **Deletion consequence:**", "- **Что будет, если удалить:**"),
     )
     en_by_ru = {ru: en for en, ru in en_ru_pairs}
 
     desc_prefixes = (
+        "- **Human purpose:**",
         "- **What this is:**",
         "- **Why needed:**",
+        "- **Contents:**",
         "- **What it contains:**",
+        "- **Evidence of use:**",
+        "- **Deletion consequence:**",
         "- **Responsibilities:**",
         "- **What this folder is:**",
         "- **Why it exists:**",
@@ -1413,6 +1596,7 @@ def quality_check(text: str, paths: list[str], expected_sha: str) -> list[str]:
         "- **What part of the app it affects:**",
         "- **When to open:**",
         "- **When to open it:**",
+        "- **Зачем файл человеку:**",
         "- **Что это:**",
         "- **Что это за папка:**",
         "- **Зачем:**",
@@ -1421,8 +1605,25 @@ def quality_check(text: str, paths: list[str], expected_sha: str) -> list[str]:
         "- **Что здесь лежит:**",
         "- **Обязанности:**",
         "- **На что влияет в приложении:**",
+        "- **Доказательства использования:**",
+        "- **Что будет, если удалить:**",
     )
-    ru_prefixes = ("- **Что", "- **Зачем", "- **Содержимое", "- **Обязанности", "- **На что", "- **Можно удалить", "- **Связано", "- **Слой", "- **Когда открывать")
+    ru_prefixes = (
+        "- **Что",
+        "- **Зачем",
+        "- **Содержимое",
+        "- **Обязанности",
+        "- **На что",
+        "- **Можно удалить",
+        "- **Связано",
+        "- **Слой",
+        "- **Владелец",
+        "- **Доказательства",
+        "- **Статус",
+        "- **Уверенность",
+        "- **Роль",
+        "- **Когда открывать",
+    )
 
     section_en: dict[str, str] = {}
     in_ru = False
@@ -1475,9 +1676,14 @@ def quality_check(text: str, paths: list[str], expected_sha: str) -> list[str]:
                 skip_prose = prefix in (
                     "- **Связано с:**",
                     "- **Слой:**",
+                    "- **Владелец / слой:**",
                     "- **Связанные пути:**",
                     "- **Содержимое:**",
                     "- **Что здесь лежит:**",
+                    "- **Доказательства использования:**",
+                    "- **Роль в репозитории:**",
+                    "- **Статус необходимости:**",
+                    "- **Уверенность:**",
                 ) or (cyrillic_count(val) >= 4 and "`" in val) or cyrillic_count(val) >= 8 or (
                     line.startswith("- **Содержимое:**") and "`" in val and len(val.strip()) >= 10
                 )
@@ -1673,53 +1879,164 @@ def _generic_platform_section_issues(section_title: str, fields: dict[str, str])
 
 
 def main() -> None:
+    global EVIDENCE
     all_files = tracked()
     roles = parse_app_structure_roles()
+    head_sha = sha()
 
-    # Unique folders deepest-first for section order
+    print(f"Building evidence index for {len(all_files)} tracked files...")
+    EVIDENCE = build_evidence_index(all_files)
+    print(
+        f"Evidence ready: dart={EVIDENCE.dart_total} "
+        f"watchlist={EVIDENCE.watchlist_count}"
+    )
+
     folders: set[str] = set()
     for f in all_files:
         parts = PurePosixPath(f).parts
         for i in range(len(parts)):
             folders.add("/".join(parts[:i]) if i else "")
-
     folder_order = sorted(folders, key=lambda x: (x.count("/"), x))
 
-    lines = [
-        "# APP_STRUCTURE_DETAILED",
-        "",
-        "Owner-readable guide: every tracked folder and file in plain language (EN + RU).",
-        "",
+    # Folder navigation groups
+    nav_groups: list[tuple[str, list[str]]] = [
+        ("Root / config", []),
+        ("lib/", []),
+        ("Tests", []),
+        ("Scripts", []),
+        ("Platform folders", []),
+        ("PocketBase", []),
+        ("CI / installer", []),
+        ("Documentation / assets", []),
     ]
-    head_sha = sha()
-    lines.extend(
-        [
-            f"**Generated at git SHA `{head_sha}` on {date.today().isoformat()}.**",
-            "",
-            "Concise map: [`APP_STRUCTURE.md`](APP_STRUCTURE.md) · Upload checklist: [`PROJECT_KNOWLEDGE_PACK.md`](PROJECT_KNOWLEDGE_PACK.md)",
-            "",
-            "Regenerate after tree changes:",
-            "",
-            "```powershell",
-            "python scripts/manual/generate_app_structure_detailed.py",
-            "```",
-            "",
-            "---",
-            "",
-            "## How to read this document",
-            "",
-            "Each **folder** section explains why that part of the repo exists. Each **file** section is unique — if two files did the same job, one of them would not belong in the repo.",
-            "",
-            "---",
-            "",
-        ]
+    for folder in folder_order:
+        if not folder:
+            continue
+        if not any(f == folder or f.startswith(folder + "/") for f in all_files):
+            continue
+        if folder.startswith("lib"):
+            nav_groups[1][1].append(folder)
+        elif folder.startswith("test") or folder.startswith("integration_test"):
+            nav_groups[2][1].append(folder)
+        elif folder.startswith("scripts"):
+            nav_groups[3][1].append(folder)
+        elif folder.split("/")[0] in (
+            "android",
+            "ios",
+            "macos",
+            "linux",
+            "windows",
+            "web",
+        ):
+            nav_groups[4][1].append(folder)
+        elif folder.startswith("pb_hooks"):
+            nav_groups[5][1].append(folder)
+        elif folder.startswith(".github") or folder.startswith("installer"):
+            nav_groups[6][1].append(folder)
+        elif folder.startswith("docs") or folder.startswith("assets") or folder.startswith(
+            ".cursor"
+        ):
+            nav_groups[7][1].append(folder)
+        else:
+            nav_groups[0][1].append(folder)
+
+    role_rows = "\n".join(
+        f"| `{k}` | {v} |"
+        for k, v in sorted(EVIDENCE.role_counts.items(), key=lambda x: (-x[1], x[0]))
+    )
+    nec_rows = "\n".join(
+        f"| `{k}` | {v} |"
+        for k, v in sorted(EVIDENCE.necessity_counts.items(), key=lambda x: (-x[1], x[0]))
+    )
+    conf_rows = "\n".join(
+        f"| `{k}` | {v} |"
+        for k, v in sorted(EVIDENCE.confidence_counts.items(), key=lambda x: (-x[1], x[0]))
     )
 
-    # Folder sections (skip empty root duplicate)
+    lines: list[str] = [
+        "# APP_STRUCTURE_DETAILED",
+        "",
+        "Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).",
+        "",
+        f"**Generated at git SHA `{head_sha}` on {date.today().isoformat()}.**",
+        "",
+        f"**Tracked files:** {len(all_files)} — each appears **exactly once** below.",
+        "",
+        "Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)",
+        f"Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)",
+        "Upload checklist: [`PROJECT_KNOWLEDGE_PACK.md`](PROJECT_KNOWLEDGE_PACK.md)",
+        "",
+        "Regenerate after tree changes:",
+        "",
+        "```powershell",
+        "python scripts/manual/generate_app_structure_detailed.py",
+        "```",
+        "",
+        "---",
+        "",
+        "## Summary counts",
+        "",
+        "### By repository role",
+        "",
+        "| Role | Count |",
+        "| :--- | ---: |",
+        role_rows,
+        "",
+        "### By necessity status",
+        "",
+        "| Necessity | Count |",
+        "| :--- | ---: |",
+        nec_rows,
+        "",
+        "### By confidence",
+        "",
+        "| Confidence | Count |",
+        "| :--- | ---: |",
+        conf_rows,
+        "",
+        "---",
+        "",
+        "## How to read evidence",
+        "",
+        "- **PROVEN_REQUIRED** — direct production import/`part`/entry/CI/installer inclusion with HIGH confidence.",
+        "- **REQUIRED_BY_PLATFORM_CONVENTION** — Flutter/native runner or asset-catalog inclusion.",
+        "- **REQUIRED_FOR_TEST_OR_TOOLING** — tests, fixtures, scripts, benchmarks.",
+        "- **GOVERNING_DOCUMENTATION** / **GENERATED_CANONICAL_OUTPUT** / **HISTORICAL_RECORD** — docs classes.",
+        "- **COMPATIBILITY_LAYER** / **RETAINED_PRODUCT_WATCHLIST** — not current runtime dependencies; "
+        "retained intentionally (see hygiene audit). Never treat these as proven runtime-required.",
+        "",
+        "Evidence is computed from Dart import/export/`part` graphs, bounded path references in tracked "
+        f"text files (excluding this generated document), platform conventions, and `{HYGIENE_AUDIT}`.",
+        "",
+        "---",
+        "",
+        "## Folder navigation",
+        "",
+    ]
+
+    for title, items in nav_groups:
+        if not items:
+            continue
+        lines.append(f"### {title}")
+        lines.append("")
+        for folder in items[:80]:
+            lines.append(f"- [`{folder}/`](#{_md_anchor_folder(folder)})")
+        if len(items) > 80:
+            lines.append(f"- …and {len(items) - 80} more folders in detailed sections below.")
+        lines.append("")
+
+    lines.extend(["---", ""])
+
+    rendered_paths: list[str] = []
+    guides: dict[str, FileGuide] = {}
+    generic_hits = 0
+    missing_evidence = 0
+    unclassified = 0
+    validation_issues: list[str] = []
+
     for folder in folder_order:
         if folder == "":
             continue
-        # Only emit folders that are prefixes of tracked files
         if not any(f == folder or f.startswith(folder + "/") for f in all_files):
             continue
         lines.append(render_folder(folder))
@@ -1729,26 +2046,105 @@ def main() -> None:
     lines.append("## All tracked files (alphabetical)")
     lines.append("")
 
-    what_samples: list[str] = []
     for path in all_files:
         syms = symbols(path)
         exp = dart_exports(path)
         g = finalize_file_guide(path, build_guide(path, roles, syms, exp))
-        what_samples.append(g.what)
+        g = enrich_with_evidence(path, g)
+        guides[path] = g
+        rendered_paths.append(path)
+
+        # Per-file validation
+        if not g.evidence_en or g.evidence_en == "(none)":
+            missing_evidence += 1
+            validation_issues.append(f"MISSING_EVIDENCE {path}")
+        if g.necessity not in VALID_NECESSITY:
+            validation_issues.append(f"INVALID_NECESSITY {path}={g.necessity}")
+        if g.confidence not in VALID_CONFIDENCE:
+            validation_issues.append(f"INVALID_CONFIDENCE {path}={g.confidence}")
+        if g.necessity == "PROVEN_REQUIRED" and g.confidence != "HIGH":
+            validation_issues.append(f"PROVEN_REQUIRED_WITHOUT_HIGH {path}")
+        if g.necessity == "RETAINED_PRODUCT_WATCHLIST" and (
+            "proven runtime" in g.what.lower() or "required for current app" in g.what.lower()
+        ):
+            validation_issues.append(f"WATCHLIST_MARKED_RUNTIME {path}")
+        if not g.repo_role:
+            unclassified += 1
+            validation_issues.append(f"UNCLASSIFIED_ROLE {path}")
+        blob = " ".join(
+            [
+                g.what,
+                g.why,
+                g.contains,
+                g.evidence_en,
+                g.responsibilities,
+            ]
+        )
+        if is_generic_en(blob) or any(
+            m in blob.lower()
+            for m in (
+                "matching files under lib",
+                "nearby files",
+                "see source file",
+                "possibly useful",
+                "support file",
+            )
+        ):
+            generic_hits += 1
+            validation_issues.append(f"GENERIC_FALLBACK {path}")
+
         lines.append(render_file(path, g, syms))
         lines.append("")
 
     body = "\n".join(lines)
+
+    # Structural validation
+    if len(rendered_paths) != len(all_files):
+        validation_issues.append(
+            f"COUNT_MISMATCH tracked={len(all_files)} rendered={len(rendered_paths)}"
+        )
+    if len(rendered_paths) != len(set(rendered_paths)):
+        validation_issues.append("DUPLICATE_RENDERED_PATH")
+    missing = sorted(set(all_files) - set(rendered_paths))
+    extra = sorted(set(rendered_paths) - set(all_files))
+    for m in missing:
+        validation_issues.append(f"MISSING_ENTRY {m}")
+    for e in extra:
+        validation_issues.append(f"EXTRA_ENTRY {e}")
+
     issues = quality_check(body, all_files, head_sha)
+    issues.extend(validation_issues)
+
     OUT.write_text(body, encoding="utf-8")
-    print(f"Wrote {OUT} ({len(all_files)} files, {len(folder_order)} folders, {len(body.splitlines())} lines)")
+    print(
+        f"Wrote {OUT} ({len(all_files)} files, {len(folder_order)} folders, "
+        f"{len(body.splitlines())} lines)"
+    )
+    print(
+        f"TRACKED_FILES={len(all_files)}\n"
+        f"RENDERED_FILES={len(rendered_paths)}\n"
+        f"UNIQUE_ENTRIES={len(set(rendered_paths))}\n"
+        f"MISSING_EVIDENCE={missing_evidence}\n"
+        f"GENERIC_FALLBACKS={generic_hits}\n"
+        f"UNCLASSIFIED={unclassified}\n"
+        f"WATCHLIST={EVIDENCE.watchlist_count}"
+    )
     if issues:
         print("QUALITY FAILURES:", file=sys.stderr)
-        for i in issues[:30]:
+        for i in issues[:40]:
             print(f"  - {i}", file=sys.stderr)
+        if len(issues) > 40:
+            print(f"  ... and {len(issues) - 40} more", file=sys.stderr)
         print(f"Quality check: {len(issues)} issue(s)", file=sys.stderr)
         sys.exit(1)
     print("Quality check: OK")
+    print("DETERMINISTIC_OK pending second-run hash compare by caller")
+
+
+def _md_anchor_folder(folder: str) -> str:
+    # GitHub-ish anchor: folder-path
+    slug = folder.lower().replace(" ", "-").replace("/", "").replace(".", "")
+    return f"folder-{slug or 'root'}"
 
 
 if __name__ == "__main__":

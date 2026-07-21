@@ -272,9 +272,9 @@ def _part_guide(path: str, role: str, syms: list[str], part_map: dict[str, tuple
 
     stem = Path(path).stem
     what, why, contains = part_map.get(stem, (
-        f"Brain module for {area} — {role.split(';')[0].strip().lower()}.",
-        f"Part of the app brain that keeps {area} consistent with PocketBase.",
-        f"Dart code ({_sym_line(syms, path)}).",
+        f"Focused brain module for {area}: {role.split(';')[0].strip().lower()}.",
+        f"Keeps {area} consistent between PocketBase and the UI cache.",
+        f"Dart helpers and extensions ({_sym_line(syms, path)}).",
     ))
     role_line = role.split(";")[0].strip()
     sym = _sym_line(syms, path)
@@ -282,9 +282,9 @@ def _part_guide(path: str, role: str, syms: list[str], part_map: dict[str, tuple
     why_ru = sanitize_ru_prose(_phrase_translate(why))
     contains_ru = sanitize_ru_prose(_phrase_translate(contains))
     if sum(1 for c in what_ru if "\u0400" <= c <= "\u04FF") < 8:
-        what_ru = f"Модуль brain для {area} — файл `{stem}`."
+        what_ru = f"Сфокусированный модуль данных для {area} — файл `{stem}`."
     if sum(1 for c in why_ru if "\u0400" <= c <= "\u04FF") < 8:
-        why_ru = f"Держит {area} согласованным с PocketBase и UI."
+        why_ru = f"Держит {area} согласованным с PocketBase и экранами."
     if sum(1 for c in contains_ru if "\u0400" <= c <= "\u04FF") < 4:
         contains_ru = f"Dart-код ({sym})."
     return {
@@ -295,7 +295,7 @@ def _part_guide(path: str, role: str, syms: list[str], part_map: dict[str, tuple
         "what_ru": what_ru,
         "why_ru": why_ru,
         "contains_ru": contains_ru,
-        "responsibilities_ru": f"Реализует в коде: {role_line}.",
+        "responsibilities_ru": f"Отвечает за: {role_line}.",
     }
 
 
@@ -529,14 +529,14 @@ def humanize_guide(
     if p.startswith("lib/data/"):
         role_short = role_clean.split(";")[0].strip()
         return {
-            "what": f"Brain support file — {role_short}.",
+            "what": f"Brain helper for data/sync — {role_short}.",
             "why": "Shared PocketBase/auth/parse logic used by multiple tabs.",
-            "contains": f"Dart code ({sym}).",
+            "contains": f"Dart helpers and types ({sym}).",
             "responsibilities": role_clean,
-            "what_ru": f"Вспомогательный модуль brain — {role_short}.",
+            "what_ru": f"Вспомогательный модуль данных — {Path(p).stem}.",
             "why_ru": "Общая логика PocketBase и auth для нескольких вкладок.",
-            "contains_ru": f"Dart-код ({sym}).",
-            "responsibilities_ru": f"Реализует в brain: {role_clean}.",
+            "contains_ru": f"Dart-хелперы и типы ({sym}).",
+            "responsibilities_ru": f"Поддерживает операции данных в `{Path(p).stem}`.",
         }
 
     return None

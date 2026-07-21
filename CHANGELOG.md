@@ -11,6 +11,10 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-21] - Docs: evidence-backed file map [engineering]
+
+* **`APP_STRUCTURE_DETAILED.md`:** Generator now attaches deterministic evidence (Dart import/export/`part`, path refs, platform conventions, hygiene watchlist), repository role, necessity status, deletion consequence, and confidence for every tracked file; new helper `scripts/manual/structure_evidence_index.py`. Watchlist files are labeled `RETAINED_PRODUCT_WATCHLIST` / `COMPATIBILITY_LAYER` (not runtime-required). Deterministic regenerate verified.
+
 ## [2026-07-21] - Repo: hygiene audit cleanup [engineering]
 
 * **Hygiene audit:** Removed nine tracked timestamped `real_helper_latency_2026-07-11T*.json` bench outputs (already `.gitignore`d; keep `real_helper_latency_latest.json`); dropped unused direct deps `table_calendar` and `cupertino_icons`. Report: `docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`. No production UI/behavior change; LARGE_FILE remains **0**.
