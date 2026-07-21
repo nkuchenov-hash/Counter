@@ -126,6 +126,14 @@ PLAN_PART: dict[str, tuple[str, str, str]] = {
     ),
 }
 
+CATEGORY_PART: dict[str, tuple[str, str, str]] = {
+    "category_order_helpers": (
+        "Owns category sibling optimistic reorder, baseline tracking, and debounced PocketBase order sync.",
+        "Category drag-reorder must update the tree instantly and PATCH only changed indices after a 2s debounce.",
+        "`applyLocalCategorySiblingOrder`; `persistCategorySiblingOrder`; `flushCategoryOrderSyncNow`; baseline bulk PATCH.",
+    ),
+}
+
 PROFILE_PART: dict[str, tuple[str, str, str]] = {
     "profile_hydration": (
         "Downloads your profile from PocketBase when the app starts or after login.",
@@ -331,6 +339,9 @@ def humanize_guide(
 
     if p.startswith("lib/data/plans/"):
         return _part_guide(p, role, syms, PLAN_PART, "plans and lists")
+
+    if p.startswith("lib/data/categories/"):
+        return _part_guide(p, role, syms, CATEGORY_PART, "categories")
 
     if p.startswith("lib/data/profile/"):
         return _part_guide(p, role, syms, PROFILE_PART, "profile and tags")

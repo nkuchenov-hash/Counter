@@ -77,6 +77,7 @@ part 'categories/category_stats.dart';
 part 'categories/category_record_bridge.dart';
 part 'categories/category_default_time.dart';
 part 'categories/category_cache_helpers.dart';
+part 'categories/category_order_helpers.dart';
 part 'category_service.dart';
 part 'db_core.dart';
 

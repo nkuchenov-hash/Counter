@@ -11,6 +11,10 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-21] - Categories: extract order sync [engineering]
+
+* **`categories/category_order_helpers.dart`:** Extracted category sibling optimistic reorder + debounced PocketBase order sync (`applyLocalCategorySiblingOrder`, `persistCategorySiblingOrder`, `flushCategoryOrderSyncNow`, bulk force/now PATCH) from `plan_service.dart` into `CategoryOrderSyncExtension` (**3182 → 3027** / new part **159**). 2s debounce, baseline diff-only PATCH, root/child tree updates unchanged; `plan_service` role narrowed to plan reorder. LARGE_FILE remains **1**.
+
 ## [2026-07-21] - Plans: consolidate auto scheduling [engineering]
 
 * **`plans/plan_time_cascade_helpers.dart`:** Consolidated new-plan auto-scheduling + day/category overload evaluation (`resolveAutoPlanSchedule`, `profileDisplayWallsFromAutoSchedule`, `planningTaskWithAutoSchedule`, `evaluatePlanDayScheduleOverload`) from `plan_service.dart` into `PlanTimeCascadeExtension` (**3434 → 3182** / **196 → 448** Measure-Object lines). Explicit-range probe cascade, category-default UTC path, collision avoidance, and overload thresholds unchanged. `docs/APP_STRUCTURE.md` projection table row + `plan_service` role corrected. LARGE_FILE remains **1**.

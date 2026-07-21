@@ -117,7 +117,7 @@ Re-export stubs remain at `core/navigation/shell_side_navigation.dart`, `feature
 | `records/record_overlap_helpers.dart` | Highlander local apply, singleton reconcile, overlap probes *(part)* |
 | `records/record_ghost_cleanup.dart` | 404 deadletter prune against live cache *(part)* |
 | `records/record_cache_helpers.dart` | Per-day filter, `recordsStream`, display-time helpers *(part)* |
-| `plan_service.dart` | Plans/lists coordinator: cache fetch/realtime, CRUD entry points, reorder, stats and plan-record linkage *(part)* |
+| `plan_service.dart` | Plans/lists coordinator: cache fetch/realtime, CRUD entry points, plan reorder, stats and plan-record linkage *(part)* |
 | `plans/plan_projection_types.dart` | Time Mode projected DTO, UTC/profile-wall conversion, timezone reproject lifecycle, projection cache signature, wall-day visibility/filtering, projection diagnostics *(part)* |
 | `plans/plan_recurrence_helpers.dart` | RRULE JIT expansion, exception-date parse helpers *(part)* |
 | `plans/plan_time_cascade_helpers.dart` | Duration/snap policy, collision avoidance, sequential Time View cascade, new-plan auto-scheduling, day/category overload evaluation *(part)* |
@@ -132,6 +132,7 @@ Re-export stubs remain at `core/navigation/shell_side_navigation.dart`, `feature
 | `plans/notes_brain_helpers.dart` | Notes Brain extension — parse/apply/pin/done + debounced `notes_delta` PATCH *(part)* |
 | `category_service.dart` | Category coordinator: flatten/PB bridge statics, stats duration helpers, local task prefs helpers *(part)* |
 | `categories/category_cache_helpers.dart` | Category fetch, slug reservation, `_loadRulesFromNoco` *(part)* |
+| `categories/category_order_helpers.dart` | Category sibling optimistic reorder, baseline tracking, debounced PocketBase order synchronization, immediate lifecycle flush *(part)* |
 | `categories/category_tree.dart` | Category hierarchy build/sort, parent/child, subtree record ids *(part)* |
 | `categories/category_lookup.dart` | Fuzzy/smart match, path resolution, business id ↔ PB id *(part)* |
 | `categories/category_crud.dart` | Category create/update/archive, PB payloads, ordering writes *(part)* |

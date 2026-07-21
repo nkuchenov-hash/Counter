@@ -294,6 +294,10 @@ def parse_app_structure_roles() -> dict[str, str]:
         "Per-category default plan start time and timezone inheritance for new plans",
     )
     roles.setdefault(
+        "lib/data/categories/category_order_helpers.dart",
+        "Category sibling optimistic reorder, baseline tracking, debounced PocketBase order synchronization, immediate lifecycle flush",
+    )
+    roles.setdefault(
         "lib/app_shell.dart",
         "Re-exports `shell/life_os_dashboard.dart` (thin entry)",
     )
@@ -453,6 +457,24 @@ CATEGORY_GUIDES: dict[str, FileGuide] = {
         when_ru="Время по умолчанию не подставляется в новый план.",
         delete_ru="Нет — нужен для работы приложения.",
         connected_ru="Создание/редактирование планов, Time View.",
+        layer_ru="Brain — часть `database_service.dart`.",
+    ),
+    "lib/data/categories/category_order_helpers.dart": FileGuide(
+        what="Optimistic category sibling reorder with debounced PocketBase `order` PATCH sync.",
+        why="Category drag-reorder must feel instant while uploading only changed indices after the 2s debounce window.",
+        contains="`applyLocalCategorySiblingOrder`, baseline map, bulk force/now PATCH, `flushCategoryOrderSyncNow`.",
+        responsibilities="Assign 0..n-1 locally; debounce sibling order; diff-only PATCH against baseline; lifecycle flush.",
+        when="Category list order wrong after drag, reorder not saved, duplicate PATCH on unchanged indices.",
+        delete="No — required for category manager reorder.",
+        connected="`category_list_view.dart`, `category_crud.dart`, `DatabaseService._categoryController`.",
+        layer="Brain — `part` of `database_service.dart` (category order sync).",
+        what_ru="Оптимистичная перестановка категорий с debounced PATCH поля `order`.",
+        why_ru="Drag-reorder должен быть мгновенным, а на сервер уходят только изменившиеся индексы.",
+        contains_ru="Локальный order 0..n-1, baseline, bulk PATCH, немедленный flush.",
+        responsibilities_ru="Локальный reorder; debounce 2с; diff-only PATCH; flush при уходе с экрана.",
+        when_ru="Порядок категорий не сохранился или PATCH шлёт лишние строки.",
+        delete_ru="Нет — нужен для reorder в менеджере категорий.",
+        connected_ru="Category list UI, category CRUD.",
         layer_ru="Brain — часть `database_service.dart`.",
     ),
 }

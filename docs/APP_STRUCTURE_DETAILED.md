@@ -2,7 +2,7 @@
 
 Owner-readable guide: every tracked folder and file in plain language (EN + RU).
 
-**Generated at git SHA `77250ec` on 2026-07-21.**
+**Generated at git SHA `9e04c91` on 2026-07-21.**
 
 Concise map: [`APP_STRUCTURE.md`](APP_STRUCTURE.md) · Upload checklist: [`PROJECT_KNOWLEDGE_PACK.md`](PROJECT_KNOWLEDGE_PACK.md)
 
@@ -10100,10 +10100,10 @@ EN:
 
 RU:
 
-- **Что это:** Вспомогательный модуль brain — Download categories.
-- **Зачем:** Общая логика PocketBase и auth для нескольких вкладок.
+- **Что это:** Модуль brain для categories — файл `category_cache_helpers`.
+- **Зачем:** Держит categories согласованным с PocketBase и UI.
 - **Содержимое:** HTTP-загрузка категорий и пересборка локальных правил.
-- **Обязанности:** Реализует в brain: Download categories; rebuild local rules; handle backoff when PocketBase is unreachable..
+- **Обязанности:** Реализует в коде: Download categories.
 - **Когда открывать:** Категории не появляются или не обновляются после правок.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Экран категорий, старт записи, карточки планов.
@@ -10126,10 +10126,10 @@ EN:
 
 RU:
 
-- **Что это:** Вспомогательный модуль brain — Add nested category.
-- **Зачем:** Общая логика PocketBase и auth для нескольких вкладок.
+- **Что это:** Модуль brain для categories — файл `category_crud`.
+- **Зачем:** Держит categories согласованным с PocketBase и UI.
 - **Содержимое:** POST/PATCH для коллекции categories.
-- **Обязанности:** Реализует в brain: Add nested category; update color/icon/name; archive/restore; write sibling order..
+- **Обязанности:** Реализует в коде: Add nested category.
 - **Когда открывать:** Категория не сохраняется или не архивируется.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** UI категорий.
@@ -10152,10 +10152,10 @@ EN:
 
 RU:
 
-- **Что это:** Вспомогательный модуль brain — Read/write `default_plan_time` fields.
-- **Зачем:** Общая логика PocketBase и auth для нескольких вкладок.
+- **Что это:** Модуль brain для categories — файл `category_default_time`.
+- **Зачем:** Держит categories согласованным с PocketBase и UI.
 - **Содержимое:** Валидация времени и timezone для категории.
-- **Обязанности:** Реализует в brain: Read/write `default_plan_time` fields; apply to new plan drafts; show short TZ label..
+- **Обязанности:** Реализует в коде: Read/write `default_plan_time` fields.
 - **Когда открывать:** Время по умолчанию не подставляется в новый план.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Создание/редактирование планов, Time View.
@@ -10178,13 +10178,39 @@ EN:
 
 RU:
 
-- **Что это:** Вспомогательный модуль brain — Score titles against category names.
-- **Зачем:** Общая логика PocketBase и auth для нескольких вкладок.
+- **Что это:** Модуль brain для categories — файл `category_lookup`.
+- **Зачем:** Держит categories согласованным с PocketBase и UI.
 - **Содержимое:** Fuzzy-match, scoring, сопоставление id.
-- **Обязанности:** Реализует в brain: Score titles against category names; pick deepest match; map legacy ids for saves..
+- **Обязанности:** Реализует в коде: Score titles against category names.
 - **Когда открывать:** Голос или автоподбор выбрал не ту категорию.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Голос, smart input, picker.
+- **Слой:** Brain — часть `database_service.dart`.
+
+
+### `lib/data/categories/category_order_helpers.dart`
+
+EN:
+
+- **What this is:** Optimistic category sibling reorder with debounced PocketBase `order` PATCH sync.
+- **Why needed:** Category drag-reorder must feel instant while uploading only changed indices after the 2s debounce window.
+- **What it contains:** `applyLocalCategorySiblingOrder`, baseline map, bulk force/now PATCH, `flushCategoryOrderSyncNow`.
+- **Key code names:** `CategoryOrderSyncExtension`
+- **Responsibilities:** Assign 0..n-1 locally; debounce sibling order; diff-only PATCH against baseline; lifecycle flush.
+- **When to open:** Category list order wrong after drag, reorder not saved, duplicate PATCH on unchanged indices.
+- **Can it be deleted?** No — required for category manager reorder.
+- **Connected to:** `category_list_view.dart`, `category_crud.dart`, `DatabaseService._categoryController`.
+- **Layer / owner:** Brain — `part` of `database_service.dart` (category order sync).
+
+RU:
+
+- **Что это:** Модуль brain для categories — файл `category_order_helpers`.
+- **Зачем:** Держит categories согласованным с PocketBase и UI.
+- **Содержимое:** Локальный order 0..n-1, baseline, bulk PATCH, немедленный flush.
+- **Обязанности:** Реализует в коде: Assign 0..n-1 locally.
+- **Когда открывать:** Порядок категорий не сохранился или PATCH шлёт лишние строки.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** Category list UI, category CRUD.
 - **Слой:** Brain — часть `database_service.dart`.
 
 
@@ -10204,10 +10230,10 @@ EN:
 
 RU:
 
-- **Что это:** Вспомогательный модуль brain — Translate record id for PATCH.
-- **Зачем:** Общая логика PocketBase и auth для нескольких вкладок.
+- **Что это:** Модуль brain для categories — файл `category_record_bridge`.
+- **Зачем:** Держит categories согласованным с PocketBase и UI.
 - **Содержимое:** Разрешение REST id, починка relation полей.
-- **Обязанности:** Реализует в brain: Translate record id for PATCH; map category_link fields; purge dead cache rows..
+- **Обязанности:** Реализует в коде: Translate record id for PATCH.
 - **Когда открывать:** Запись без категории или ошибка stop/delete по id.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Timeline, edit sheet, hooks на сервере.
@@ -10230,10 +10256,10 @@ EN:
 
 RU:
 
-- **Что это:** Вспомогательный модуль brain — Filter records by category subtree.
-- **Зачем:** Общая логика PocketBase и auth для нескольких вкладок.
+- **Что это:** Модуль brain для categories — файл `category_stats`.
+- **Зачем:** Держит categories согласованным с PocketBase и UI.
 - **Содержимое:** Суммирование секунд по id поддерева.
-- **Обязанности:** Реализует в brain: Filter records by category subtree; sum seconds for day or range..
+- **Обязанности:** Реализует в коде: Filter records by category subtree.
 - **Когда открывать:** Неверные часы в статистике по категории.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Stats во Timeline.
@@ -10256,10 +10282,10 @@ EN:
 
 RU:
 
-- **Что это:** Вспомогательный модуль brain — Sort siblings.
-- **Зачем:** Общая логика PocketBase и auth для нескольких вкладок.
+- **Что это:** Модуль brain для categories — файл `category_tree`.
+- **Зачем:** Держит categories согласованным с PocketBase и UI.
 - **Содержимое:** Обход дерева, сортировка, поиск узла по id.
-- **Обязанности:** Реализует в brain: Sort siblings; find node by PocketBase id; list all record ids under a branch..
+- **Обязанности:** Реализует в коде: Sort siblings.
 - **Когда открывать:** Неверный порядок или путь категории в UI.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Picker категорий, статистика.
@@ -10791,10 +10817,10 @@ EN:
 - **Why needed:** UI calls one plan entry point; this file delegates to focused modules in the subfolder.
 - **What it contains:** Coordinator extensions plus links to `part` files under `plans/` or `plan/`.
 - **Key code names:** `PlanServiceExtension`
-- **Responsibilities:** Plans/lists coordinator: cache fetch/realtime, CRUD entry points, reorder, stats and plan-record linkage
+- **Responsibilities:** Plans/lists coordinator: cache fetch/realtime, CRUD entry points, plan reorder, stats and plan-record linkage
 - **When to open:** When behavior tied to `plan_service.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
-- **Connected to:** UI calls via `DatabaseService.instance`; APP_STRUCTURE role: Plans/lists coordinator: cache fetch/realtime, CRUD entry points, reorder, stats and plan-record linkage
+- **Connected to:** UI calls via `DatabaseService.instance`; APP_STRUCTURE role: Plans/lists coordinator: cache fetch/realtime, CRUD entry points, plan reorder, stats and plan-record linkage
 - **Layer / owner:** Brain coordinator — entry point for this domain inside `database_service.dart`.
 
 RU:
@@ -10802,7 +10828,7 @@ RU:
 - **Что это:** Главный координатор для plans and backlog lists.
 - **Зачем:** UI вызывает один вход; детали — в модулях subfolder.
 - **Содержимое:** Extensions + `part` файлы для plan.
-- **Обязанности:** Координатор домена: Plans/lists coordinator: cache fetch/realtime, CRUD entry points, reorder, stats and plan-record linkage.
+- **Обязанности:** Координатор домена: Plans/lists coordinator: cache fetch/realtime, CRUD entry points, plan reorder, stats and plan-record linkage.
 - **Когда открывать:** Когда ломается поведение, связанное с `plan_service.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** UI вызывает `DatabaseService.instance`
@@ -18043,6 +18069,32 @@ RU:
 - **Содержимое:** Test cases для сценария `app_timezone_icon`.
 - **Обязанности:** Assert ожидаемого поведения `app_timezone_icon`.
 - **Когда открывать:** Падение CI или правка кода рядом с `app_timezone_icon`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
+- **Слой:** Автотест — не попадает пользователю в APK.
+
+
+### `test/category_order_sync_test.dart`
+
+EN:
+
+- **What this is:** Automated test `category_order_sync_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **What it contains:** Test cases (symbols: main).
+- **Key code names:** `main`
+- **Responsibilities:** Assert expected behavior for `category_order_sync_test` scenario.
+- **When to open:** CI failure or changing code near `category_order_sync`.
+- **Can it be deleted?** No — required for tests.
+- **Connected to:** Matching files under `lib/` with similar name.
+- **Layer / owner:** Test — not shipped to users.
+
+RU:
+
+- **Что это:** Автотест `category_order_sync` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `category_order_sync`.
+- **Обязанности:** Assert ожидаемого поведения `category_order_sync`.
+- **Когда открывать:** Падение CI или правка кода рядом с `category_order_sync`.
 - **Можно удалить?** Нет — нужен для тестов.
 - **Связано с:** Production files под `lib/` с похожим именем.
 - **Слой:** Автотест — не попадает пользователю в APK.
