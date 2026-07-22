@@ -2,7 +2,7 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `019ea16` on 2026-07-21.**
+**Generated from input HEAD `3bb8612` on 2026-07-21.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
@@ -27,7 +27,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | Role | Count |
 | :--- | ---: |
 | `production UI` | 139 |
-| `shared foundation` | 132 |
+| `shared foundation` | 125 |
 | `test` | 86 |
 | `platform build` | 82 |
 | `Brain/data` | 76 |
@@ -40,6 +40,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | `installer` | 11 |
 | `compatibility layer` | 10 |
 | `historical engineering record` | 9 |
+| `shared time` | 7 |
 | `package metadata` | 6 |
 | `CI/deployment` | 3 |
 | `PocketBase backend` | 3 |
@@ -93,13 +94,13 @@ Evidence is computed from Dart import/export/`part` graphs, bounded path referen
 - [`lib/features/`](#folder-libfeatures)
 - [`lib/l10n/`](#folder-libl10n)
 - [`lib/services/`](#folder-libservices)
+- [`lib/shared/`](#folder-libshared)
 - [`lib/app/shell/`](#folder-libappshell)
 - [`lib/core/diagnostics/`](#folder-libcorediagnostics)
 - [`lib/core/env/`](#folder-libcoreenv)
 - [`lib/core/navigation/`](#folder-libcorenavigation)
 - [`lib/core/performance/`](#folder-libcoreperformance)
 - [`lib/core/services/`](#folder-libcoreservices)
-- [`lib/core/time/`](#folder-libcoretime)
 - [`lib/core/widgets/`](#folder-libcorewidgets)
 - [`lib/data/cache/`](#folder-libdatacache)
 - [`lib/data/categories/`](#folder-libdatacategories)
@@ -116,11 +117,13 @@ Evidence is computed from Dart import/export/`part` graphs, bounded path referen
 - [`lib/features/notes/`](#folder-libfeaturesnotes)
 - [`lib/features/planning/`](#folder-libfeaturesplanning)
 - [`lib/features/profile/`](#folder-libfeaturesprofile)
+- [`lib/features/settings/`](#folder-libfeaturessettings)
 - [`lib/features/shared/`](#folder-libfeaturesshared)
 - [`lib/features/stats/`](#folder-libfeaturesstats)
 - [`lib/features/timeline/`](#folder-libfeaturestimeline)
 - [`lib/features/wear/`](#folder-libfeatureswear)
 - [`lib/l10n/langs/`](#folder-libl10nlangs)
+- [`lib/shared/time/`](#folder-libsharedtime)
 - [`lib/app/shell/desktop/`](#folder-libappshelldesktop)
 - [`lib/app/shell/phone/`](#folder-libappshellphone)
 - [`lib/app/shell/shared/`](#folder-libappshellshared)
@@ -919,23 +922,23 @@ RU:
 
 EN:
 
-- **What this folder is:** Foundation layer — theme colors, shared widgets, clock/time math, desktop voice services, diagnostics.
+- **What this folder is:** Foundation layer — theme colors, shared widgets, desktop voice services, diagnostics.
 - **Why it exists:** Feature screens must not duplicate buttons, date headers, or voice plumbing; this is the design-system and utility base.
-- **What lives here:** `theme.dart`, `core/widgets/` (AppButton, plan cards), `core/time/`, `core/services/` (desktop voice), `core/diagnostics/`.
-- **What part of the app it affects:** Look and feel on every tab; desktop voice/tray; header clock/timezone; perf debug flags.
-- **When to open it:** Button/card migration, timezone header wrong, desktop voice broken, theme token change.
+- **What lives here:** `theme.dart`, `core/widgets/` (AppButton, plan cards), `core/services/` (desktop voice), `core/diagnostics/`.
+- **What part of the app it affects:** Look and feel on every tab; desktop voice/tray; header chrome widgets; perf debug flags.
+- **When to open it:** Button/card migration, desktop voice broken, theme token change.
 - **Can it be deleted?** No — features import foundation code everywhere.
-- **Main related paths:** `docs/DESIGN_SYSTEM.md`, `lib/features/`, `lib/data/models.dart` (types only).
+- **Main related paths:** `docs/DESIGN_SYSTEM.md`, `lib/features/`, `lib/shared/time/`, `lib/data/models.dart` (types only).
 
 RU:
 
-- **Что это за папка:** Базовый слой: design system в коде, shared widgets, тема/цвета, time helpers, desktop voice, diagnostics.
+- **Что это за папка:** Базовый слой: design system в коде, shared widgets, тема/цвета, desktop voice, diagnostics.
 - **Зачем нужна:** Экраны не дублируют кнопки, date header и voice — общая foundation-база.
-- **Что здесь лежит:** `theme.dart`, каталог `core/widgets/`, `core/time/`, `core/services/` (desktop voice), diagnostics.
-- **На что влияет в приложении:** Внешний вид всех вкладок; desktop voice/tray; часы/timezone в header; perf debug flags.
-- **Когда открывать:** Миграция кнопок/карточек, неверный timezone header, сломан desktop voice, смена theme token.
+- **Что здесь лежит:** `theme.dart`, каталог `core/widgets/`, `core/services/` (desktop voice), diagnostics.
+- **На что влияет в приложении:** Внешний вид всех вкладок; desktop voice/tray; chrome header; perf debug flags.
+- **Когда открывать:** Миграция кнопок/карточек, сломан desktop voice, смена theme token.
 - **Можно удалить?** Нет — features import foundation code everywhere.
-- **Связанные пути:** `docs/DESIGN_SYSTEM.md`, `lib/features/`, `lib/data/models.dart`.
+- **Связанные пути:** `docs/DESIGN_SYSTEM.md`, `lib/features/`, `lib/shared/time/`, `lib/data/models.dart`.
 
 ---
 
@@ -1032,6 +1035,30 @@ RU:
 - **Когда открывать:** Plan alarm не срабатывает, permission notifications.
 - **Можно удалить?** Нет — plan alarms stop working.
 - **Связанные пути:** `lib/data/plan_service.dart` alarm reschedule.
+
+---
+
+## Folder: `lib/shared/`
+
+EN:
+
+- **What this folder is:** Cross-cutting shared code with multiple independent consumers — currently time only.
+- **Why it exists:** Avoid dumping single-feature helpers here; only multi-consumer ownership belongs under shared.
+- **What lives here:** `time/` — wall-clock, timezone catalog, app clock hooks, plan window/labels.
+- **What part of the app it affects:** Header clock, Brain projection, Plans Time View, settings timezone labels.
+- **When to open it:** Moving multi-consumer time, wrong today, DST labels.
+- **Can it be deleted?** No — Brain and UI need shared time.
+- **Main related paths:** `lib/shared/time/`, `docs/APP_STRUCTURE.md`.
+
+RU:
+
+- **Что это за папка:** Общий код с несколькими независимыми потребителями — сейчас только time.
+- **Зачем нужна:** Не складывать сюда всё подряд: только то, чем пользуются ≥2 секции продукта или shell + секция.
+- **Что здесь лежит:** `time/` — wall-clock, timezone catalog, app clock hooks, plan window/labels.
+- **На что влияет в приложении:** Часы в header, projection в Brain, Time View на Plans, подписи timezone в settings.
+- **Когда открывать:** Перенос multi-consumer time, неверный today, DST labels.
+- **Можно удалить?** Нет — Brain and UI need shared time.
+- **Связанные пути:** `lib/shared/time/`, `docs/APP_STRUCTURE.md`.
 
 ---
 
@@ -1803,30 +1830,6 @@ RU:
 
 ---
 
-## Folder: `lib/core/time/`
-
-EN:
-
-- **What this folder is:** Wall-clock and timezone math shared by header, Plans Time View, and profile ‘today’ line.
-- **Why it exists:** Time bucketing must follow profile timezone law — not device local time — across all tabs.
-- **What lives here:** `app_clock.dart`, `profile_timezone_catalog.dart`, `plan_time_visible_window.dart`, wall-clock formatters.
-- **What part of the app it affects:** Global header clock, Time View hour window (−3..27 h), timezone picker labels.
-- **When to open it:** Wrong ‘today’, header TZ label, Time View visible hours, DST label wrong.
-- **Can it be deleted?** No — timeline and planning time display breaks.
-- **Main related paths:** `lib/data/profile/profile_timezone.dart`, `lib/core/widgets/global_app_header.dart`.
-
-RU:
-
-- **Что это за папка:** Расчёт wall-clock и timezone для header, Time View на Plans и линии «today» в profile.
-- **Зачем нужна:** Границы дней и time bucketing следуют profile timezone law — не device local time — на всех вкладках.
-- **Что здесь лежит:** `app_clock.dart`, `profile_timezone_catalog.dart`, `plan_time_visible_window.dart`, форматтеры wall-clock.
-- **На что влияет в приложении:** Часы в global header, окно часов Time View (−3..27 h), подписи timezone picker.
-- **Когда открывать:** Неверный «today», label TZ в header, visible hours Time View, DST label.
-- **Можно удалить?** Нет — timeline and planning time display breaks.
-- **Связанные пути:** `lib/data/profile/profile_timezone.dart`, `lib/core/widgets/global_app_header.dart`.
-
----
-
 ## Folder: `lib/core/widgets/`
 
 EN:
@@ -2211,6 +2214,30 @@ RU:
 
 ---
 
+## Folder: `lib/features/settings/`
+
+EN:
+
+- **What this folder is:** Settings-owned timezone helpers and labels (not design-system widgets).
+- **Why it exists:** Profile timezone option lists and legacy offset helpers belong to settings, not core.
+- **What lives here:** `timezone_settings.dart` (re-exports shared catalog/options for settings UI).
+- **What part of the app it affects:** Profile timezone selection labels and Planning category-default TZ search imports.
+- **When to open it:** Timezone option list, offset label helpers.
+- **Can it be deleted?** No — settings timezone helpers break.
+- **Main related paths:** `lib/shared/time/`, `lib/features/profile/profile_view.dart`.
+
+RU:
+
+- **Что это за папка:** Helpers timezone для экрана настроек (не виджеты design system).
+- **Зачем нужна:** Списки timezone и legacy offset helpers принадлежат settings, не core.
+- **Что здесь лежит:** `timezone_settings.dart` (re-export shared catalog/options для settings UI).
+- **На что влияет в приложении:** Подписи выбора timezone в profile и imports Planning category-default TZ search.
+- **Когда открывать:** Список timezone options, helpers offset labels.
+- **Можно удалить?** Нет — settings timezone helpers break.
+- **Связанные пути:** `lib/shared/time/`, `lib/features/profile/profile_view.dart`.
+
+---
+
 ## Folder: `lib/features/shared/`
 
 EN:
@@ -2328,6 +2355,30 @@ RU:
 - **Когда открывать:** Пропал ключ перевода, неверная строка на выбранном языке.
 - **Можно удалить?** Нет — нужен для localization.
 - **Связанные пути:** `lib/l10n/dictionary.dart`, `scripts/sync_locales.dart`.
+
+---
+
+## Folder: `lib/shared/time/`
+
+EN:
+
+- **What this folder is:** Shared wall-clock and timezone math used by Brain, shell header, Plans, and settings.
+- **Why it exists:** Time bucketing must follow profile timezone law — not device local time — across multiple product sections.
+- **What lives here:** `app_clock.dart`, `profile_timezone_catalog.dart`, `wall_clock.dart`, `plan_time_visible_window.dart`, plan labels, category TZ options.
+- **What part of the app it affects:** Global header clock, Time View hour window (−3..27 h), timezone picker labels, plan wall projection.
+- **When to open it:** Wrong ‘today’, header TZ label, Time View visible hours, DST label wrong.
+- **Can it be deleted?** No — timeline and planning time display breaks.
+- **Main related paths:** `lib/data/profile/profile_timezone.dart`, `lib/core/widgets/global_app_header.dart`, `lib/features/settings/`.
+
+RU:
+
+- **Что это за папка:** Общий wall-clock и timezone math для Brain, shell header, Plans и settings.
+- **Зачем нужна:** Границы дней и time bucketing следуют profile timezone law — не device local time — в нескольких секциях.
+- **Что здесь лежит:** `app_clock.dart`, `profile_timezone_catalog.dart`, `wall_clock.dart`, `plan_time_visible_window.dart`, plan labels, category TZ options.
+- **На что влияет в приложении:** Часы в global header, окно часов Time View (−3..27 h), подписи timezone picker, plan wall projection.
+- **Когда открывать:** Неверный «today», label TZ в header, visible hours Time View, DST label.
+- **Можно удалить?** Нет — timeline and planning time display breaks.
+- **Связанные пути:** `lib/data/profile/profile_timezone.dart`, `lib/core/widgets/global_app_header.dart`, `lib/features/settings/`.
 
 ---
 
@@ -8643,7 +8694,7 @@ EN:
 - **Contents:** Primary symbols: `AppTimezoneIconKey`.
 - **Key code names:** `AppTimezoneIconKey`
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/core/time/profile_timezone_catalog.dart`, `lib/core/widgets/app_timezone_icon.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/core/widgets/app_timezone_icon.dart`, `lib/shared/time/profile_timezone_catalog.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -8660,7 +8711,7 @@ RU:
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
 - **Содержимое:** Dart-модуль `app_icons.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/core/time/profile_timezone_catalog.dart`, `lib/core/widgets/app_timezone_icon.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/core/widgets/app_timezone_icon.dart`, `lib/shared/time/profile_timezone_catalog.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -12181,270 +12232,6 @@ RU:
 - **Когда открывать:** Когда ломается поведение, связанное с `theme.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/`, `docs/APP_STRUCTURE.md`
-
-
-### `lib/core/time/app_clock.dart`
-
-EN:
-
-- **Human purpose:** Foundation module `app_clock.dart` (time) — Injectable wall clock + timezone label. Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What this is:** Foundation module `app_clock.dart` (time) — Injectable wall clock + timezone label.
-- **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **Contents:** Primary symbols: `WallNowFn`, `AppClock`.
-- **Key code names:** `WallNowFn`, `AppClock`
-- **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/core/widgets/app_bar_live_clock.dart`, `lib/main.dart`.
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
-- **Confidence:** HIGH
-- **Owner / layer:** shared foundation
-- **Responsibilities:** Injectable wall clock + timezone label
-- **When to open:** When behavior tied to `app_clock.dart` breaks or you need to change its documented role.
-- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: Injectable wall clock + timezone label
-
-RU:
-
-- **Зачем файл человеку:** Foundation-модуль `app_clock.dart` (time) — Injectable wall clock + timezone label. Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Что это:** Foundation-модуль `app_clock.dart` (time) — Injectable wall clock + timezone label.
-- **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-модуль `app_clock.dart` — классы и helpers в исходнике.
-- **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/core/widgets/app_bar_live_clock.dart`, `lib/main.dart`.
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
-- **Уверенность:** HIGH
-- **Владелец / слой:** общая foundation
-- **Обязанности:** Foundation-логика: Injectable wall clock + timezone label.
-- **Когда открывать:** Когда ломается поведение, связанное с `app_clock.dart`.
-- **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** `lib/core/time/`, `docs/APP_STRUCTURE.md`
-
-
-### `lib/core/time/category_timezone_options.dart`
-
-EN:
-
-- **Human purpose:** Foundation module `category_timezone_options.dart` (time) — Per-category timezone option list. Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What this is:** Foundation module `category_timezone_options.dart` (time) — Per-category timezone option list.
-- **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **Contents:** Primary symbols: `CategoryDefaultTimezoneOption`.
-- **Key code names:** `CategoryDefaultTimezoneOption`
-- **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/data/database_service.dart`, `lib/features/profile/timezone_settings.dart`.
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
-- **Confidence:** HIGH
-- **Owner / layer:** shared foundation
-- **Responsibilities:** Per-category timezone option list
-- **When to open:** When behavior tied to `category_timezone_options.dart` breaks or you need to change its documented role.
-- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: Per-category timezone option list
-
-RU:
-
-- **Зачем файл человеку:** Foundation-модуль `category_timezone_options.dart` (time) — Per-category timezone option list. Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Что это:** Foundation-модуль `category_timezone_options.dart` (time) — Per-category timezone option list.
-- **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-модуль `category_timezone_options.dart` — классы и helpers в исходнике.
-- **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/data/database_service.dart`, `lib/features/profile/timezone_settings.dart`.
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
-- **Уверенность:** HIGH
-- **Владелец / слой:** общая foundation
-- **Обязанности:** Foundation-логика: Per-category timezone option list.
-- **Когда открывать:** Когда ломается поведение, связанное с `category_timezone_options.dart`.
-- **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** `lib/core/time/`, `docs/APP_STRUCTURE.md`
-
-
-### `lib/core/time/plan_time_labels.dart`
-
-EN:
-
-- **Human purpose:** Foundation module `plan_time_labels.dart` (time) — Plan time label formatting. Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What this is:** Foundation module `plan_time_labels.dart` (time) — Plan time label formatting.
-- **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **Contents:** Dart module `plan_time_labels.dart` — open file for classes and helpers.
-- **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/core/widgets/plan_card.dart`, `lib/data/database_service.dart`, `lib/features/planning/widgets/planning_frozen_day_list.dart`.
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
-- **Confidence:** HIGH
-- **Owner / layer:** shared foundation
-- **Responsibilities:** Plan time label formatting
-- **When to open:** When behavior tied to `plan_time_labels.dart` breaks or you need to change its documented role.
-- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: Plan time label formatting
-
-RU:
-
-- **Зачем файл человеку:** Foundation-модуль `plan_time_labels.dart` (time) — Plan time label formatting. Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Что это:** Foundation-модуль `plan_time_labels.dart` (time) — Plan time label formatting.
-- **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-модуль `plan_time_labels.dart` — классы и helpers в исходнике.
-- **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/core/widgets/plan_card.dart`, `lib/data/database_service.dart`, `lib/features/planning/widgets/planning_frozen_day_list.dart`.
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
-- **Уверенность:** HIGH
-- **Владелец / слой:** общая foundation
-- **Обязанности:** Foundation-логика: Plan time label formatting.
-- **Когда открывать:** Когда ломается поведение, связанное с `plan_time_labels.dart`.
-- **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** `lib/core/time/`, `docs/APP_STRUCTURE.md`
-
-
-### `lib/core/time/plan_time_visible_window.dart`
-
-EN:
-
-- **Human purpose:** Foundation module `plan_time_visible_window.dart` (time) — Extended Time View day window math (−3..27 h). Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What this is:** Foundation module `plan_time_visible_window.dart` (time) — Extended Time View day window math (−3..27 h).
-- **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **Contents:** Primary symbols: `PlanTimeVisibleWindow`.
-- **Key code names:** `PlanTimeVisibleWindow`
-- **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/data/database_service.dart`, `lib/features/planning/planning_day_start_prefs.dart`.
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
-- **Confidence:** HIGH
-- **Owner / layer:** shared foundation
-- **Responsibilities:** Extended Time View day window math (−3..27 h)
-- **When to open:** When behavior tied to `plan_time_visible_window.dart` breaks or you need to change its documented role.
-- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: Extended Time View day window math (−3..27 h)
-
-RU:
-
-- **Зачем файл человеку:** Foundation-модуль `plan_time_visible_window.dart` (time) — Extended Time View day window math (−3..27 h). Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Что это:** Foundation-модуль `plan_time_visible_window.dart` (time) — Extended Time View day window math (−3..27 h).
-- **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-модуль `plan_time_visible_window.dart` — классы и helpers в исходнике.
-- **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/data/database_service.dart`, `lib/features/planning/planning_day_start_prefs.dart`.
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
-- **Уверенность:** HIGH
-- **Владелец / слой:** общая foundation
-- **Обязанности:** Foundation-логика: Extended Time View day window math (−3..27 h).
-- **Когда открывать:** Когда ломается поведение, связанное с `plan_time_visible_window.dart`.
-- **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** `lib/core/time/`, `docs/APP_STRUCTURE.md`
-
-
-### `lib/core/time/profile_timezone_actions.dart`
-
-EN:
-
-- **Human purpose:** Foundation module `profile_timezone_actions.dart` (time) — ProfileTimezoneActions. Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What this is:** Foundation module `profile_timezone_actions.dart` (time) — ProfileTimezoneActions.
-- **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **Contents:** Primary symbols: `ProfileTimezoneShortLabelFn`, `SaveProfileTimezoneFn`, `CurrentUserSettingsFn`, `ProfileTimezoneActions`.
-- **Key code names:** `ProfileTimezoneShortLabelFn`, `SaveProfileTimezoneFn`, `CurrentUserSettingsFn`, `ProfileTimezoneActions`
-- **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/core/widgets/timezone_quick_picker.dart`, `lib/main.dart`.
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
-- **Confidence:** HIGH
-- **Owner / layer:** shared foundation
-- **Responsibilities:** ProfileTimezoneActions
-- **When to open:** When behavior tied to `profile_timezone_actions.dart` breaks or you need to change its documented role.
-- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: Injectable profile timezone read/write hooks (`ProfileTimezoneActions`)
-
-RU:
-
-- **Зачем файл человеку:** Foundation-модуль `profile_timezone_actions.dart` (time) — ProfileTimezoneActions. Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Что это:** Foundation-модуль `profile_timezone_actions.dart` (time) — ProfileTimezoneActions.
-- **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-модуль `profile_timezone_actions.dart` — классы и helpers в исходнике.
-- **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/core/widgets/timezone_quick_picker.dart`, `lib/main.dart`.
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
-- **Уверенность:** HIGH
-- **Владелец / слой:** общая foundation
-- **Обязанности:** Foundation-логика: ProfileTimezoneActions.
-- **Когда открывать:** Когда ломается поведение, связанное с `profile_timezone_actions.dart`.
-- **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** `lib/core/time/`, `docs/APP_STRUCTURE.md`
-
-
-### `lib/core/time/profile_timezone_catalog.dart`
-
-EN:
-
-- **Human purpose:** Foundation module `profile_timezone_catalog.dart` (time) — Canonical profile timezone catalog, IANA IDs, DST labels. Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What this is:** Foundation module `profile_timezone_catalog.dart` (time) — Canonical profile timezone catalog, IANA IDs, DST labels.
-- **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **Contents:** Primary symbols: `ProfileTimezoneCatalogEntry`.
-- **Key code names:** `ProfileTimezoneCatalogEntry`
-- **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/core/time/wall_clock.dart`, `lib/core/widgets/timezone_quick_picker.dart`, `lib/data/database_service.dart`, `lib/features/profile/timezone_settings.dart`.
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
-- **Confidence:** HIGH
-- **Owner / layer:** shared foundation
-- **Responsibilities:** Canonical profile timezone catalog, IANA IDs, DST labels
-- **When to open:** When behavior tied to `profile_timezone_catalog.dart` breaks or you need to change its documented role.
-- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: Canonical profile timezone catalog, IANA IDs, DST labels
-
-RU:
-
-- **Зачем файл человеку:** Foundation-модуль `profile_timezone_catalog.dart` (time) — Canonical profile timezone catalog, IANA IDs, DST labels. Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Что это:** Foundation-модуль `profile_timezone_catalog.dart` (time) — Canonical profile timezone catalog, IANA IDs, DST labels.
-- **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-модуль `profile_timezone_catalog.dart` — классы и helpers в исходнике.
-- **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/core/time/wall_clock.dart`, `lib/core/widgets/timezone_quick_picker.dart`, `lib/data/database_service.dart`, `lib/features/profile/timezone_settings.dart`.
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
-- **Уверенность:** HIGH
-- **Владелец / слой:** общая foundation
-- **Обязанности:** Foundation-логика: Canonical profile timezone catalog, IANA IDs, DST labels.
-- **Когда открывать:** Когда ломается поведение, связанное с `profile_timezone_catalog.dart`.
-- **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** `lib/core/time/`, `docs/APP_STRUCTURE.md`
-
-
-### `lib/core/time/wall_clock.dart`
-
-EN:
-
-- **Human purpose:** Foundation module `wall_clock.dart` (time) — Wall-clock formatting helpers. Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What this is:** Foundation module `wall_clock.dart` (time) — Wall-clock formatting helpers.
-- **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **Contents:** Dart module `wall_clock.dart` — open file for classes and helpers.
-- **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/data/database_service.dart`, `lib/services/plan_alarm_schedule.dart`.
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
-- **Confidence:** HIGH
-- **Owner / layer:** shared foundation
-- **Responsibilities:** Wall-clock formatting helpers
-- **When to open:** When behavior tied to `wall_clock.dart` breaks or you need to change its documented role.
-- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: Wall-clock formatting helpers
-
-RU:
-
-- **Зачем файл человеку:** Foundation-модуль `wall_clock.dart` (time) — Wall-clock formatting helpers. Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Что это:** Foundation-модуль `wall_clock.dart` (time) — Wall-clock formatting helpers.
-- **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-модуль `wall_clock.dart` — классы и helpers в исходнике.
-- **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/data/database_service.dart`, `lib/services/plan_alarm_schedule.dart`.
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
-- **Уверенность:** HIGH
-- **Владелец / слой:** общая foundation
-- **Обязанности:** Foundation-логика: Wall-clock formatting helpers.
-- **Когда открывать:** Когда ломается поведение, связанное с `wall_clock.dart`.
-- **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** `lib/core/time/`, `docs/APP_STRUCTURE.md`
 
 
 ### `lib/core/url_strategy_stub.dart`
@@ -20211,8 +19998,8 @@ RU:
 
 EN:
 
-- **Human purpose:** `desktop_voice_attempt_dialog.dart` on More → Profile and settings — Profile & tag settings, timezone, desktop voice settings (Windows). Users see `desktop_voice_attempt_dialog.dart` when using More → Profile and settings.
-- **What this is:** `desktop_voice_attempt_dialog.dart` on More → Profile and settings — Profile & tag settings, timezone, desktop voice settings (Windows).
+- **Human purpose:** `desktop_voice_attempt_dialog.dart` on More → Profile and settings — Profile & tag settings, desktop voice settings (Windows). Users see `desktop_voice_attempt_dialog.dart` when using More → Profile and settings.
+- **What this is:** `desktop_voice_attempt_dialog.dart` on More → Profile and settings — Profile & tag settings, desktop voice settings (Windows).
 - **Why needed:** Users see `desktop_voice_attempt_dialog.dart` when using More → Profile and settings.
 - **Contents:** Primary symbols: `DesktopVoiceAttemptCopyFn`, `DesktopVoiceAttemptDialogTestHooks`, `_DesktopVoiceAttemptDialog`, `_DesktopVoiceAttemptDialogState`, `_AttemptView`, `_StatusHeader`.
 - **Key code names:** `DesktopVoiceAttemptCopyFn`, `DesktopVoiceAttemptDialogTestHooks`, `_DesktopVoiceAttemptDialog`, `_DesktopVoiceAttemptDialogState`, `_AttemptView`, `_StatusHeader`
@@ -20222,10 +20009,10 @@ EN:
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
 - **Owner / layer:** Profile UI
-- **Responsibilities:** Profile & tag settings, timezone, desktop voice settings (Windows)
+- **Responsibilities:** Profile & tag settings, desktop voice settings (Windows)
 - **When to open:** When behavior tied to `desktop_voice_attempt_dialog.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: Profile & tag settings, timezone, desktop voice settings (Windows)
+- **Connected to:** APP_STRUCTURE role: Profile & tag settings, desktop voice settings (Windows)
 
 RU:
 
@@ -20249,8 +20036,8 @@ RU:
 
 EN:
 
-- **Human purpose:** `desktop_voice_settings_desktop.dart` on More → Profile and settings — Profile & tag settings, timezone, desktop voice settings (Windows). Users see `desktop_voice_settings_desktop.dart` when using More → Profile and settings.
-- **What this is:** `desktop_voice_settings_desktop.dart` on More → Profile and settings — Profile & tag settings, timezone, desktop voice settings (Windows).
+- **Human purpose:** `desktop_voice_settings_desktop.dart` on More → Profile and settings — Profile & tag settings, desktop voice settings (Windows). Users see `desktop_voice_settings_desktop.dart` when using More → Profile and settings.
+- **What this is:** `desktop_voice_settings_desktop.dart` on More → Profile and settings — Profile & tag settings, desktop voice settings (Windows).
 - **Why needed:** Users see `desktop_voice_settings_desktop.dart` when using More → Profile and settings.
 - **Contents:** Primary symbols: `DesktopVoiceSettingsDesktopGrid`, `_DesktopVoiceSettingsDesktopGridState`.
 - **Key code names:** `DesktopVoiceSettingsDesktopGrid`, `_DesktopVoiceSettingsDesktopGridState`
@@ -20260,10 +20047,10 @@ EN:
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
 - **Owner / layer:** Profile UI
-- **Responsibilities:** Profile & tag settings, timezone, desktop voice settings (Windows)
+- **Responsibilities:** Profile & tag settings, desktop voice settings (Windows)
 - **When to open:** When behavior tied to `desktop_voice_settings_desktop.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: Profile & tag settings, timezone, desktop voice settings (Windows)
+- **Connected to:** APP_STRUCTURE role: Profile & tag settings, desktop voice settings (Windows)
 
 RU:
 
@@ -20287,8 +20074,8 @@ RU:
 
 EN:
 
-- **Human purpose:** `desktop_voice_settings_section.dart` on More → Profile and settings — Profile & tag settings, timezone, desktop voice settings (Windows). Users see `desktop_voice_settings_section.dart` when using More → Profile and settings.
-- **What this is:** `desktop_voice_settings_section.dart` on More → Profile and settings — Profile & tag settings, timezone, desktop voice settings (Windows).
+- **Human purpose:** `desktop_voice_settings_section.dart` on More → Profile and settings — Profile & tag settings, desktop voice settings (Windows). Users see `desktop_voice_settings_section.dart` when using More → Profile and settings.
+- **What this is:** `desktop_voice_settings_section.dart` on More → Profile and settings — Profile & tag settings, desktop voice settings (Windows).
 - **Why needed:** Users see `desktop_voice_settings_section.dart` when using More → Profile and settings.
 - **Contents:** Primary symbols: `DesktopVoiceSettingsSection`, `_DesktopVoiceSettingsSectionState`, `HotkeyCaptureDialog`, `_HotkeyCaptureDialogState`.
 - **Key code names:** `DesktopVoiceSettingsSection`, `_DesktopVoiceSettingsSectionState`, `HotkeyCaptureDialog`, `_HotkeyCaptureDialogState`
@@ -20298,10 +20085,10 @@ EN:
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
 - **Owner / layer:** Profile UI
-- **Responsibilities:** Profile & tag settings, timezone, desktop voice settings (Windows)
+- **Responsibilities:** Profile & tag settings, desktop voice settings (Windows)
 - **When to open:** When behavior tied to `desktop_voice_settings_section.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: Profile & tag settings, timezone, desktop voice settings (Windows)
+- **Connected to:** APP_STRUCTURE role: Profile & tag settings, desktop voice settings (Windows)
 
 RU:
 
@@ -20325,8 +20112,8 @@ RU:
 
 EN:
 
-- **Human purpose:** `profile_view.dart` on More → Profile and settings — Profile & tag settings, timezone, desktop voice settings (Windows). Users see `profile_view.dart` when using More → Profile and settings.
-- **What this is:** `profile_view.dart` on More → Profile and settings — Profile & tag settings, timezone, desktop voice settings (Windows).
+- **Human purpose:** `profile_view.dart` on More → Profile and settings — Profile & tag settings, desktop voice settings (Windows). Users see `profile_view.dart` when using More → Profile and settings.
+- **What this is:** `profile_view.dart` on More → Profile and settings — Profile & tag settings, desktop voice settings (Windows).
 - **Why needed:** Users see `profile_view.dart` when using More → Profile and settings.
 - **Contents:** Primary symbols: `ProfilePage`, `_ProfilePageState`.
 - **Key code names:** `ProfilePage`, `_ProfilePageState`
@@ -20336,10 +20123,10 @@ EN:
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
 - **Owner / layer:** Profile UI
-- **Responsibilities:** Profile & tag settings, timezone, desktop voice settings (Windows)
+- **Responsibilities:** Profile & tag settings, desktop voice settings (Windows)
 - **When to open:** When behavior tied to `profile_view.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: Profile & tag settings, timezone, desktop voice settings (Windows)
+- **Connected to:** APP_STRUCTURE role: Profile & tag settings, desktop voice settings (Windows)
 
 RU:
 
@@ -20514,8 +20301,8 @@ RU:
 
 EN:
 
-- **Human purpose:** `tag_default_duration_settings_view.dart` on More → Profile and settings — Profile & tag settings, timezone, desktop voice settings (Windows). Users see `tag_default_duration_settings_view.dart` when using More → Profile and settings.
-- **What this is:** `tag_default_duration_settings_view.dart` on More → Profile and settings — Profile & tag settings, timezone, desktop voice settings (Windows).
+- **Human purpose:** `tag_default_duration_settings_view.dart` on More → Profile and settings — Profile & tag settings, desktop voice settings (Windows). Users see `tag_default_duration_settings_view.dart` when using More → Profile and settings.
+- **What this is:** `tag_default_duration_settings_view.dart` on More → Profile and settings — Profile & tag settings, desktop voice settings (Windows).
 - **Why needed:** Users see `tag_default_duration_settings_view.dart` when using More → Profile and settings.
 - **Contents:** Primary symbols: `TagDefaultDurationSettingsView`, `_TagDefaultDurationSettingsViewState`.
 - **Key code names:** `TagDefaultDurationSettingsView`, `_TagDefaultDurationSettingsViewState`
@@ -20525,10 +20312,10 @@ EN:
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
 - **Owner / layer:** Profile UI
-- **Responsibilities:** Profile & tag settings, timezone, desktop voice settings (Windows)
+- **Responsibilities:** Profile & tag settings, desktop voice settings (Windows)
 - **When to open:** When behavior tied to `tag_default_duration_settings_view.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: Profile & tag settings, timezone, desktop voice settings (Windows)
+- **Connected to:** APP_STRUCTURE role: Profile & tag settings, desktop voice settings (Windows)
 
 RU:
 
@@ -20552,8 +20339,8 @@ RU:
 
 EN:
 
-- **Human purpose:** `tag_manager_page.dart` on More → Profile and settings — Profile & tag settings, timezone, desktop voice settings (Windows). Users see `tag_manager_page.dart` when using More → Profile and settings.
-- **What this is:** `tag_manager_page.dart` on More → Profile and settings — Profile & tag settings, timezone, desktop voice settings (Windows).
+- **Human purpose:** `tag_manager_page.dart` on More → Profile and settings — Profile & tag settings, desktop voice settings (Windows). Users see `tag_manager_page.dart` when using More → Profile and settings.
+- **What this is:** `tag_manager_page.dart` on More → Profile and settings — Profile & tag settings, desktop voice settings (Windows).
 - **Why needed:** Users see `tag_manager_page.dart` when using More → Profile and settings.
 - **Contents:** Primary symbols: `TagManagerPage`, `_TagManagerPageState`.
 - **Key code names:** `TagManagerPage`, `_TagManagerPageState`
@@ -20563,10 +20350,10 @@ EN:
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
 - **Owner / layer:** Profile UI
-- **Responsibilities:** Profile & tag settings, timezone, desktop voice settings (Windows)
+- **Responsibilities:** Profile & tag settings, desktop voice settings (Windows)
 - **When to open:** When behavior tied to `tag_manager_page.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: Profile & tag settings, timezone, desktop voice settings (Windows)
+- **Connected to:** APP_STRUCTURE role: Profile & tag settings, desktop voice settings (Windows)
 
 RU:
 
@@ -20590,8 +20377,8 @@ RU:
 
 EN:
 
-- **Human purpose:** `tag_settings_hub.dart` on More → Profile and settings — Profile & tag settings, timezone, desktop voice settings (Windows). Users see `tag_settings_hub.dart` when using More → Profile and settings.
-- **What this is:** `tag_settings_hub.dart` on More → Profile and settings — Profile & tag settings, timezone, desktop voice settings (Windows).
+- **Human purpose:** `tag_settings_hub.dart` on More → Profile and settings — Profile & tag settings, desktop voice settings (Windows). Users see `tag_settings_hub.dart` when using More → Profile and settings.
+- **What this is:** `tag_settings_hub.dart` on More → Profile and settings — Profile & tag settings, desktop voice settings (Windows).
 - **Why needed:** Users see `tag_settings_hub.dart` when using More → Profile and settings.
 - **Contents:** Primary symbols: `TagSettingsHub`, `_TagSettingsHubState`.
 - **Key code names:** `TagSettingsHub`, `_TagSettingsHubState`
@@ -20601,10 +20388,10 @@ EN:
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
 - **Owner / layer:** Profile UI
-- **Responsibilities:** Profile & tag settings, timezone, desktop voice settings (Windows)
+- **Responsibilities:** Profile & tag settings, desktop voice settings (Windows)
 - **When to open:** When behavior tied to `tag_settings_hub.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: Profile & tag settings, timezone, desktop voice settings (Windows)
+- **Connected to:** APP_STRUCTURE role: Profile & tag settings, desktop voice settings (Windows)
 
 RU:
 
@@ -20628,8 +20415,8 @@ RU:
 
 EN:
 
-- **Human purpose:** `tag_settings_view.dart` on More → Profile and settings — Profile & tag settings, timezone, desktop voice settings (Windows). Users see `tag_settings_view.dart` when using More → Profile and settings.
-- **What this is:** `tag_settings_view.dart` on More → Profile and settings — Profile & tag settings, timezone, desktop voice settings (Windows).
+- **Human purpose:** `tag_settings_view.dart` on More → Profile and settings — Profile & tag settings, desktop voice settings (Windows). Users see `tag_settings_view.dart` when using More → Profile and settings.
+- **What this is:** `tag_settings_view.dart` on More → Profile and settings — Profile & tag settings, desktop voice settings (Windows).
 - **Why needed:** Users see `tag_settings_view.dart` when using More → Profile and settings.
 - **Contents:** Primary symbols: `TagSettingsView`, `_TagSettingsViewState`.
 - **Key code names:** `TagSettingsView`, `_TagSettingsViewState`
@@ -20639,10 +20426,10 @@ EN:
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
 - **Owner / layer:** Profile UI
-- **Responsibilities:** Profile & tag settings, timezone, desktop voice settings (Windows)
+- **Responsibilities:** Profile & tag settings, desktop voice settings (Windows)
 - **When to open:** When behavior tied to `tag_settings_view.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: Profile & tag settings, timezone, desktop voice settings (Windows)
+- **Connected to:** APP_STRUCTURE role: Profile & tag settings, desktop voice settings (Windows)
 
 RU:
 
@@ -20662,13 +20449,13 @@ RU:
 - **Связано с:** `lib/features/profile/`, `docs/APP_STRUCTURE.md`
 
 
-### `lib/features/profile/timezone_settings.dart`
+### `lib/features/settings/timezone_settings.dart`
 
 EN:
 
-- **Human purpose:** `timezone_settings.dart` on More → Profile and settings — Profile & tag settings, timezone, desktop voice settings (Windows). Users see `timezone_settings.dart` when using More → Profile and settings.
-- **What this is:** `timezone_settings.dart` on More → Profile and settings — Profile & tag settings, timezone, desktop voice settings (Windows).
-- **Why needed:** Users see `timezone_settings.dart` when using More → Profile and settings.
+- **Human purpose:** `timezone_settings.dart` on settings area — Settings-owned timezone helpers/labels (profile catalog re-exports). Users see `timezone_settings.dart` when using settings area.
+- **What this is:** `timezone_settings.dart` on settings area — Settings-owned timezone helpers/labels (profile catalog re-exports).
+- **Why needed:** Users see `timezone_settings.dart` when using settings area.
 - **Contents:** Primary symbols: `TimezoneOption`.
 - **Key code names:** `TimezoneOption`
 - **Repository role:** production UI
@@ -20676,28 +20463,28 @@ EN:
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
-- **Owner / layer:** Profile UI
-- **Responsibilities:** Profile & tag settings, timezone, desktop voice settings (Windows)
+- **Owner / layer:** repository root
+- **Responsibilities:** Settings-owned timezone helpers/labels (profile catalog re-exports)
 - **When to open:** When behavior tied to `timezone_settings.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: Profile & tag settings, timezone, desktop voice settings (Windows)
+- **Connected to:** APP_STRUCTURE role: Settings-owned timezone helpers/labels (profile catalog re-exports)
 
 RU:
 
-- **Зачем файл человеку:** `timezone_settings.dart` на More → Profile и настройки — Поддерживает поведение `timezone_settings` в этой feature-зоне.. Пользователь видит UI из `timezone_settings.dart` на More → Profile и настройки.
-- **Что это:** `timezone_settings.dart` на More → Profile и настройки — Поддерживает поведение `timezone_settings` в этой feature-зоне..
-- **Зачем:** Пользователь видит UI из `timezone_settings.dart` на More → Profile и настройки.
+- **Зачем файл человеку:** `timezone_settings.dart` на settings — Поддерживает поведение `timezone_settings` в этой feature-зоне.. Пользователь видит UI из `timezone_settings.dart` на settings.
+- **Что это:** `timezone_settings.dart` на settings — Поддерживает поведение `timezone_settings` в этой feature-зоне..
+- **Зачем:** Пользователь видит UI из `timezone_settings.dart` на settings.
 - **Содержимое:** Dart-модуль `timezone_settings.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** production UI
 - **Доказательства использования:** Импортируется production Dart: `lib/features/planning/settings/default_plan_timezone_search.dart`, `lib/features/planning/time_view/time_view_search_delegate.dart`, `lib/features/profile/profile_view.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
-- **Владелец / слой:** UI профиля
+- **Владелец / слой:** корень репозитория
 - **Обязанности:** Поддерживает поведение `timezone_settings` в этой feature-зоне.
 - **Когда открывать:** Когда ломается поведение, связанное с `timezone_settings.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** `lib/features/profile/`, `docs/APP_STRUCTURE.md`
+- **Связано с:** `lib/features/settings/`, `docs/APP_STRUCTURE.md`
 
 
 ### `lib/features/shared/activity_detail_sheet.dart`
@@ -22613,6 +22400,270 @@ RU:
 - **Когда открывать:** Когда ломается поведение, связанное с `plan_alarm_schedule.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/data/plan_service.dart` — reschedule alarm
+
+
+### `lib/shared/time/app_clock.dart`
+
+EN:
+
+- **Human purpose:** Shared time ownership — Injectable wall clock + timezone label. UTC and profile wall-clock rules must stay identical for Brain, header, Plans, and settings.
+- **What this is:** Shared time ownership — Injectable wall clock + timezone label.
+- **Why needed:** UTC and profile wall-clock rules must stay identical for Brain, header, Plans, and settings.
+- **Contents:** Time helper or injectable clock hook (`WallNowFn`, `AppClock`).
+- **Key code names:** `WallNowFn`, `AppClock`
+- **Repository role:** shared time
+- **Evidence of use:** Imported/exported by production Dart: `lib/core/widgets/app_bar_live_clock.dart`, `lib/main.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** shared time
+- **Responsibilities:** Injectable wall clock + timezone label
+- **When to open:** When behavior tied to `app_clock.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** APP_STRUCTURE role: Injectable wall clock + timezone label
+
+RU:
+
+- **Зачем файл человеку:** Общий time-слой — Injectable wall clock + timezone label. UTC и profile wall-clock должны совпадать для Brain, header, Plans и settings.
+- **Что это:** Общий time-слой — Injectable wall clock + timezone label.
+- **Зачем:** UTC и profile wall-clock должны совпадать для Brain, header, Plans и settings.
+- **Содержимое:** Time helper или injectable clock hook (`WallNowFn`, `AppClock`).
+- **Роль в репозитории:** shared time
+- **Доказательства использования:** Импортируется production Dart: `lib/core/widgets/app_bar_live_clock.dart`, `lib/main.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** общий time-слой
+- **Обязанности:** Реализует в shared/time: Injectable wall clock + timezone label.
+- **Когда открывать:** Когда ломается поведение, связанное с `app_clock.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/shared/time/`, `docs/APP_STRUCTURE.md`
+
+
+### `lib/shared/time/category_timezone_options.dart`
+
+EN:
+
+- **Human purpose:** Shared time ownership — Per-category default plan-time IANA option list. UTC and profile wall-clock rules must stay identical for Brain, header, Plans, and settings.
+- **What this is:** Shared time ownership — Per-category default plan-time IANA option list.
+- **Why needed:** UTC and profile wall-clock rules must stay identical for Brain, header, Plans, and settings.
+- **Contents:** Time helper or injectable clock hook (`CategoryDefaultTimezoneOption`).
+- **Key code names:** `CategoryDefaultTimezoneOption`
+- **Repository role:** shared time
+- **Evidence of use:** Imported/exported by production Dart: `lib/data/database_service.dart`, `lib/features/settings/timezone_settings.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** shared time
+- **Responsibilities:** Per-category default plan-time IANA option list
+- **When to open:** When behavior tied to `category_timezone_options.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** APP_STRUCTURE role: Per-category default plan-time IANA option list
+
+RU:
+
+- **Зачем файл человеку:** Общий time-слой — Per-category default plan-time IANA option list. UTC и profile wall-clock должны совпадать для Brain, header, Plans и settings.
+- **Что это:** Общий time-слой — Per-category default plan-time IANA option list.
+- **Зачем:** UTC и profile wall-clock должны совпадать для Brain, header, Plans и settings.
+- **Содержимое:** Time helper или injectable clock hook (`CategoryDefaultTimezoneOption`).
+- **Роль в репозитории:** shared time
+- **Доказательства использования:** Импортируется production Dart: `lib/data/database_service.dart`, `lib/features/settings/timezone_settings.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** общий time-слой
+- **Обязанности:** Реализует в shared/time: Per-category default plan-time IANA option list.
+- **Когда открывать:** Когда ломается поведение, связанное с `category_timezone_options.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/shared/time/`, `docs/APP_STRUCTURE.md`
+
+
+### `lib/shared/time/plan_time_labels.dart`
+
+EN:
+
+- **Human purpose:** Shared time ownership — Plan wall-time label formatting (Brain + Planning + plan cards). UTC and profile wall-clock rules must stay identical for Brain, header, Plans, and settings.
+- **What this is:** Shared time ownership — Plan wall-time label formatting (Brain + Planning + plan cards).
+- **Why needed:** UTC and profile wall-clock rules must stay identical for Brain, header, Plans, and settings.
+- **Contents:** Time helper or injectable clock hook (logic in `plan_time_labels`).
+- **Repository role:** shared time
+- **Evidence of use:** Imported/exported by production Dart: `lib/core/widgets/plan_card.dart`, `lib/data/database_service.dart`, `lib/features/planning/widgets/planning_frozen_day_list.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** shared time
+- **Responsibilities:** Plan wall-time label formatting (Brain + Planning + plan cards)
+- **When to open:** When behavior tied to `plan_time_labels.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** APP_STRUCTURE role: Plan wall-time label formatting (Brain + Planning + plan cards)
+
+RU:
+
+- **Зачем файл человеку:** Общий time-слой — Plan wall-time label formatting (Brain + Planning + plan cards). UTC и profile wall-clock должны совпадать для Brain, header, Plans и settings.
+- **Что это:** Общий time-слой — Plan wall-time label formatting (Brain + Planning + plan cards).
+- **Зачем:** UTC и profile wall-clock должны совпадать для Brain, header, Plans и settings.
+- **Содержимое:** Time helper или injectable clock hook (logic in `plan_time_labels`).
+- **Роль в репозитории:** shared time
+- **Доказательства использования:** Импортируется production Dart: `lib/core/widgets/plan_card.dart`, `lib/data/database_service.dart`, `lib/features/planning/widgets/planning_frozen_day_list.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** общий time-слой
+- **Обязанности:** Реализует в shared/time: Plan wall-time label formatting (Brain + Planning + plan cards).
+- **Когда открывать:** Когда ломается поведение, связанное с `plan_time_labels.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/shared/time/`, `docs/APP_STRUCTURE.md`
+
+
+### `lib/shared/time/plan_time_visible_window.dart`
+
+EN:
+
+- **Human purpose:** Shared time ownership — Extended Time View day window math (−3..27 h); Brain cascade + Planning. UTC and profile wall-clock rules must stay identical for Brain, header, Plans, and settings.
+- **What this is:** Shared time ownership — Extended Time View day window math (−3..27 h); Brain cascade + Planning.
+- **Why needed:** UTC and profile wall-clock rules must stay identical for Brain, header, Plans, and settings.
+- **Contents:** Time helper or injectable clock hook (`PlanTimeVisibleWindow`).
+- **Key code names:** `PlanTimeVisibleWindow`
+- **Repository role:** shared time
+- **Evidence of use:** Imported/exported by production Dart: `lib/data/database_service.dart`, `lib/features/planning/planning_day_start_prefs.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** shared time
+- **Responsibilities:** Extended Time View day window math (−3..27 h); Brain cascade + Planning
+- **When to open:** When behavior tied to `plan_time_visible_window.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** APP_STRUCTURE role: Extended Time View day window math (−3..27 h)
+
+RU:
+
+- **Зачем файл человеку:** Общий time-слой — Extended Time View day window math (−3..27 h); Brain cascade + Planning. UTC и profile wall-clock должны совпадать для Brain, header, Plans и settings.
+- **Что это:** Общий time-слой — Extended Time View day window math (−3..27 h); Brain cascade + Planning.
+- **Зачем:** UTC и profile wall-clock должны совпадать для Brain, header, Plans и settings.
+- **Содержимое:** Time helper или injectable clock hook (`PlanTimeVisibleWindow`).
+- **Роль в репозитории:** shared time
+- **Доказательства использования:** Импортируется production Dart: `lib/data/database_service.dart`, `lib/features/planning/planning_day_start_prefs.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** общий time-слой
+- **Обязанности:** Реализует в shared/time: Extended Time View day window math (−3..27 h); Brain cascade + Planning.
+- **Когда открывать:** Когда ломается поведение, связанное с `plan_time_visible_window.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/shared/time/`, `docs/APP_STRUCTURE.md`
+
+
+### `lib/shared/time/profile_timezone_actions.dart`
+
+EN:
+
+- **Human purpose:** Shared time ownership — Injectable profile timezone read/write hooks (`ProfileTimezoneActions`). UTC and profile wall-clock rules must stay identical for Brain, header, Plans, and settings.
+- **What this is:** Shared time ownership — Injectable profile timezone read/write hooks (`ProfileTimezoneActions`).
+- **Why needed:** UTC and profile wall-clock rules must stay identical for Brain, header, Plans, and settings.
+- **Contents:** Time helper or injectable clock hook (`ProfileTimezoneShortLabelFn`, `SaveProfileTimezoneFn`, `CurrentUserSettingsFn`, `ProfileTimezoneActions`).
+- **Key code names:** `ProfileTimezoneShortLabelFn`, `SaveProfileTimezoneFn`, `CurrentUserSettingsFn`, `ProfileTimezoneActions`
+- **Repository role:** shared time
+- **Evidence of use:** Imported/exported by production Dart: `lib/core/widgets/timezone_quick_picker.dart`, `lib/main.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** shared time
+- **Responsibilities:** Injectable profile timezone read/write hooks (`ProfileTimezoneActions`)
+- **When to open:** When behavior tied to `profile_timezone_actions.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** APP_STRUCTURE role: Injectable profile timezone read/write hooks (`ProfileTimezoneActions`)
+
+RU:
+
+- **Зачем файл человеку:** Общий time-слой — Injectable profile timezone read/write hooks (`ProfileTimezoneActions`). UTC и profile wall-clock должны совпадать для Brain, header, Plans и settings.
+- **Что это:** Общий time-слой — Injectable profile timezone read/write hooks (`ProfileTimezoneActions`).
+- **Зачем:** UTC и profile wall-clock должны совпадать для Brain, header, Plans и settings.
+- **Содержимое:** Time helper или injectable clock hook (`ProfileTimezoneShortLabelFn`, `SaveProfileTimezoneFn`, `CurrentUserSettingsFn`, `ProfileTimezoneActions`).
+- **Роль в репозитории:** shared time
+- **Доказательства использования:** Импортируется production Dart: `lib/core/widgets/timezone_quick_picker.dart`, `lib/main.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** общий time-слой
+- **Обязанности:** Реализует в shared/time: Injectable profile timezone read/write hooks (`ProfileTimezoneActions`).
+- **Когда открывать:** Когда ломается поведение, связанное с `profile_timezone_actions.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/shared/time/`, `docs/APP_STRUCTURE.md`
+
+
+### `lib/shared/time/profile_timezone_catalog.dart`
+
+EN:
+
+- **Human purpose:** Shared time ownership — Canonical profile timezone catalog, IANA IDs, DST labels. UTC and profile wall-clock rules must stay identical for Brain, header, Plans, and settings.
+- **What this is:** Shared time ownership — Canonical profile timezone catalog, IANA IDs, DST labels.
+- **Why needed:** UTC and profile wall-clock rules must stay identical for Brain, header, Plans, and settings.
+- **Contents:** Time helper or injectable clock hook (`ProfileTimezoneCatalogEntry`).
+- **Key code names:** `ProfileTimezoneCatalogEntry`
+- **Repository role:** shared time
+- **Evidence of use:** Imported/exported by production Dart: `lib/core/widgets/timezone_quick_picker.dart`, `lib/data/database_service.dart`, `lib/features/settings/timezone_settings.dart`, `lib/shared/time/wall_clock.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** shared time
+- **Responsibilities:** Canonical profile timezone catalog, IANA IDs, DST labels
+- **When to open:** When behavior tied to `profile_timezone_catalog.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** APP_STRUCTURE role: Canonical profile timezone catalog, IANA IDs, DST labels
+
+RU:
+
+- **Зачем файл человеку:** Общий time-слой — Canonical profile timezone catalog, IANA IDs, DST labels. UTC и profile wall-clock должны совпадать для Brain, header, Plans и settings.
+- **Что это:** Общий time-слой — Canonical profile timezone catalog, IANA IDs, DST labels.
+- **Зачем:** UTC и profile wall-clock должны совпадать для Brain, header, Plans и settings.
+- **Содержимое:** Time helper или injectable clock hook (`ProfileTimezoneCatalogEntry`).
+- **Роль в репозитории:** shared time
+- **Доказательства использования:** Импортируется production Dart: `lib/core/widgets/timezone_quick_picker.dart`, `lib/data/database_service.dart`, `lib/features/settings/timezone_settings.dart`, `lib/shared/time/wall_clock.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** общий time-слой
+- **Обязанности:** Реализует в shared/time: Canonical profile timezone catalog, IANA IDs, DST labels.
+- **Когда открывать:** Когда ломается поведение, связанное с `profile_timezone_catalog.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/shared/time/`, `docs/APP_STRUCTURE.md`
+
+
+### `lib/shared/time/wall_clock.dart`
+
+EN:
+
+- **Human purpose:** Shared time ownership — UTC ↔ profile wall-clock conversion (no device TZ). UTC and profile wall-clock rules must stay identical for Brain, header, Plans, and settings.
+- **What this is:** Shared time ownership — UTC ↔ profile wall-clock conversion (no device TZ).
+- **Why needed:** UTC and profile wall-clock rules must stay identical for Brain, header, Plans, and settings.
+- **Contents:** Time helper or injectable clock hook (logic in `wall_clock`).
+- **Repository role:** shared time
+- **Evidence of use:** Imported/exported by production Dart: `lib/data/database_service.dart`, `lib/services/plan_alarm_schedule.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** shared time
+- **Responsibilities:** UTC ↔ profile wall-clock conversion (no device TZ)
+- **When to open:** When behavior tied to `wall_clock.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** APP_STRUCTURE role: UTC ↔ profile wall-clock conversion (no device TZ)
+
+RU:
+
+- **Зачем файл человеку:** Общий time-слой — UTC ↔ profile wall-clock conversion (no device TZ). UTC и profile wall-clock должны совпадать для Brain, header, Plans и settings.
+- **Что это:** Общий time-слой — UTC ↔ profile wall-clock conversion (no device TZ).
+- **Зачем:** UTC и profile wall-clock должны совпадать для Brain, header, Plans и settings.
+- **Содержимое:** Time helper или injectable clock hook (logic in `wall_clock`).
+- **Роль в репозитории:** shared time
+- **Доказательства использования:** Импортируется production Dart: `lib/data/database_service.dart`, `lib/services/plan_alarm_schedule.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** общий time-слой
+- **Обязанности:** Реализует в shared/time: UTC ↔ profile wall-clock conversion (no device TZ).
+- **Когда открывать:** Когда ломается поведение, связанное с `wall_clock.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/shared/time/`, `docs/APP_STRUCTURE.md`
 
 
 ### `linux/.gitignore`
@@ -29171,7 +29222,7 @@ EN:
 - **Contents:** Test cases (symbols: main).
 - **Key code names:** `main`
 - **Repository role:** test
-- **Evidence of use:** (1) Flutter test file; exercised via `flutter test test/plan_time_visible_window_test.dart` / CI when enabled. (2) Namesake production subject: `lib/core/time/plan_time_visible_window.dart`.
+- **Evidence of use:** (1) Flutter test file; exercised via `flutter test test/plan_time_visible_window_test.dart` / CI when enabled. (2) Namesake production subject: `lib/shared/time/plan_time_visible_window.dart`.
 - **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Deletion consequence:** Lost automated coverage for its contract.
 - **Confidence:** HIGH
@@ -29188,7 +29239,7 @@ RU:
 - **Зачем:** Ловит регрессии при изменении связанного production-кода.
 - **Содержимое:** Test cases для сценария `plan_time_visible_window`.
 - **Роль в репозитории:** test
-- **Доказательства использования:** (1) Файл теста Flutter; запускается через `flutter test test/plan_time_visible_window_test.dart`. (2) Парный production-файл: `lib/core/time/plan_time_visible_window.dart`.
+- **Доказательства использования:** (1) Файл теста Flutter; запускается через `flutter test test/plan_time_visible_window_test.dart`. (2) Парный production-файл: `lib/shared/time/plan_time_visible_window.dart`.
 - **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Что будет, если удалить:** Пропадёт автоматическая проверка своего контракта.
 - **Уверенность:** HIGH
@@ -29475,7 +29526,7 @@ EN:
 - **Contents:** Test cases (symbols: main).
 - **Key code names:** `main`
 - **Repository role:** test
-- **Evidence of use:** (1) Flutter test file; exercised via `flutter test test/profile_timezone_catalog_test.dart` / CI when enabled. (2) Namesake production subject: `lib/core/time/profile_timezone_catalog.dart`.
+- **Evidence of use:** (1) Flutter test file; exercised via `flutter test test/profile_timezone_catalog_test.dart` / CI when enabled. (2) Namesake production subject: `lib/shared/time/profile_timezone_catalog.dart`.
 - **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Deletion consequence:** Lost automated coverage for its contract.
 - **Confidence:** HIGH
@@ -29492,7 +29543,7 @@ RU:
 - **Зачем:** Ловит регрессии при изменении связанного production-кода.
 - **Содержимое:** Test cases для сценария `profile_timezone_catalog`.
 - **Роль в репозитории:** test
-- **Доказательства использования:** (1) Файл теста Flutter; запускается через `flutter test test/profile_timezone_catalog_test.dart`. (2) Парный production-файл: `lib/core/time/profile_timezone_catalog.dart`.
+- **Доказательства использования:** (1) Файл теста Flutter; запускается через `flutter test test/profile_timezone_catalog_test.dart`. (2) Парный production-файл: `lib/shared/time/profile_timezone_catalog.dart`.
 - **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Что будет, если удалить:** Пропадёт автоматическая проверка своего контракта.
 - **Уверенность:** HIGH

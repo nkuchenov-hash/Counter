@@ -3,7 +3,7 @@
 /// BANNED: DateTime.toLocal(), system timezone, browser/device timezone.
 library;
 
-import 'package:counter/core/time/profile_timezone_catalog.dart';
+import 'package:counter/shared/time/profile_timezone_catalog.dart';
 import 'package:timezone/timezone.dart' as tz;
 
 /// True when [preferredTzLabel] resolves to the New York IANA zone.

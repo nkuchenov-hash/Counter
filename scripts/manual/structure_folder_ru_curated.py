@@ -137,13 +137,13 @@ register_folder_ru(
 register_folder_ru(
     "lib/core",
     {
-        "what_ru": "Базовый слой: design system в коде, shared widgets, тема/цвета, time helpers, desktop voice, diagnostics.",
+        "what_ru": "Базовый слой: design system в коде, shared widgets, тема/цвета, desktop voice, diagnostics.",
         "why_ru": "Экраны не дублируют кнопки, date header и voice — общая foundation-база.",
-        "inside_ru": "`theme.dart`, каталог `core/widgets/`, `core/time/`, `core/services/` (desktop voice), diagnostics.",
-        "affects_ru": "Внешний вид всех вкладок; desktop voice/tray; часы/timezone в header; perf debug flags.",
-        "when_ru": "Миграция кнопок/карточек, неверный timezone header, сломан desktop voice, смена theme token.",
+        "inside_ru": "`theme.dart`, каталог `core/widgets/`, `core/services/` (desktop voice), diagnostics.",
+        "affects_ru": "Внешний вид всех вкладок; desktop voice/tray; chrome header; perf debug flags.",
+        "when_ru": "Миграция кнопок/карточек, сломан desktop voice, смена theme token.",
         "delete_ru": "Нет — features импортируют foundation повсюду.",
-        "related_ru": "`docs/DESIGN_SYSTEM.md`, `lib/features/`, `lib/data/models.dart`.",
+        "related_ru": "`docs/DESIGN_SYSTEM.md`, `lib/features/`, `lib/shared/time/`, `lib/data/models.dart`.",
     },
 )
 
@@ -157,6 +157,19 @@ register_folder_ru(
         "when_ru": "UI bug на вкладке, новый экран, edit sheet, voice sheet layout.",
         "delete_ru": "Нет — удаление убирает весь UI продукта.",
         "related_ru": "`lib/app/shell/`, `lib/data/`.",
+    },
+)
+
+register_folder_ru(
+    "lib/shared",
+    {
+        "what_ru": "Общий код с несколькими независимыми потребителями — сейчас только time.",
+        "why_ru": "Не складывать сюда всё подряд: только то, чем пользуются ≥2 секции продукта или shell + секция.",
+        "inside_ru": "`time/` — wall-clock, timezone catalog, app clock hooks, plan window/labels.",
+        "affects_ru": "Часы в header, projection в Brain, Time View на Plans, подписи timezone в settings.",
+        "when_ru": "Перенос multi-consumer time, неверный today, DST labels.",
+        "delete_ru": "Нет — shared time нужен Brain и UI.",
+        "related_ru": "`lib/shared/time/`, `docs/APP_STRUCTURE.md`.",
     },
 )
 

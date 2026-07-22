@@ -1,4 +1,4 @@
-import 'package:counter/core/time/plan_time_visible_window.dart';
+import 'package:counter/shared/time/plan_time_visible_window.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Local-only visible day window for the Planning Time View (-3..27 extended hours).

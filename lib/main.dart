@@ -41,8 +41,8 @@ import 'package:counter/core/diagnostics/platform_log.dart';
 import 'package:counter/core/diagnostics/startup_log.dart';
 import 'package:counter/core/performance/runtime_flags.dart';
 import 'package:counter/core/plan_category_lookup.dart';
-import 'package:counter/core/time/app_clock.dart';
-import 'package:counter/core/time/profile_timezone_actions.dart';
+import 'package:counter/shared/time/app_clock.dart';
+import 'package:counter/shared/time/profile_timezone_actions.dart';
 import 'package:counter/core/widgets/app_loading.dart';
 
 /// P0T stabilization: disable biometric gate until phone pass.

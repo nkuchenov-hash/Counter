@@ -29,7 +29,7 @@ Flutter time tracker. Owner: Nick (UX designer, not a developer). Goal: best tim
 
 ## Structure check (vs `docs/APP_STRUCTURE.md`)
 
-Verified 2026-06-10 (shell paths updated 2026-07-21). **Core layout matches** the documented map: `lib/data/` (Brain + part files), `lib/data/local_sync/` (offline outboxes), `lib/features/` (UI modules), `lib/core/` (theme + widgets), `lib/app/shell/` (form-factor shell), `lib/l10n/`, `lib/services/`, `app_shell.dart`, `main.dart`.
+Verified 2026-06-10 (shell paths 2026-07-21; time ownership 2026-07-21). **Core layout matches** the documented map: `lib/data/` (Brain + part files), `lib/data/local_sync/` (offline outboxes), `lib/features/` (UI modules), `lib/shared/time/` (multi-consumer time), `lib/core/` (theme + widgets), `lib/app/shell/` (form-factor shell), `lib/l10n/`, `lib/services/`, `app_shell.dart`, `main.dart`.
 
 **Known drift** (harmless; do not “fix” unless asked):
 

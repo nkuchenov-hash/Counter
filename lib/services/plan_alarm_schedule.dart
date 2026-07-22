@@ -1,4 +1,4 @@
-import 'package:counter/core/time/wall_clock.dart' as wall_clock;
+import 'package:counter/shared/time/wall_clock.dart' as wall_clock;
 
 /// Max OS-scheduled plan reminders per reconcile (7-day window).
 const int kPlanAlarmNotificationLimit = 50;

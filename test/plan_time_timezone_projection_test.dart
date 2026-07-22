@@ -1,4 +1,4 @@
-import 'package:counter/core/time/wall_clock.dart';
+import 'package:counter/shared/time/wall_clock.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/planning/plan_time_view_layout.dart';

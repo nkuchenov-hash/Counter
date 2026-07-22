@@ -11,6 +11,7 @@
 | `lib/data/models.dart` | **Data DNA** | Pure data classes. No DB/UI imports. |
 | `lib/data/database_service.dart` | **The Brain** | PocketBase SDK for profiles, categories, records, plans. Single place for server I/O. |
 | `lib/data/auth_bridge.dart` | **The Gate** | PocketBase `authWithPassword`, session + secure storage. |
+| `lib/shared/time/` | **Shared time** | UTC ↔ profile wall-clock, timezone catalog, `AppClock` / `ProfileTimezoneActions`. No feature or Brain I/O imports. |
 | `lib/app_shell.dart` | **The Navigator** | Thin entry re-export; canonical shell under `lib/app/shell/`. |
 | `lib/main.dart` | **The ignition** | Calls `ensurePocketBaseReady()`, then restores session and loads profile. |
 

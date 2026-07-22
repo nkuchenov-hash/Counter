@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:counter/core/time/app_clock.dart';
+import 'package:counter/shared/time/app_clock.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';

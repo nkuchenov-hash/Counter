@@ -1,5 +1,5 @@
-import 'package:counter/core/time/profile_timezone_catalog.dart';
-import 'package:counter/features/profile/timezone_settings.dart' as tz_settings;
+import 'package:counter/shared/time/profile_timezone_catalog.dart';
+import 'package:counter/features/settings/timezone_settings.dart' as tz_settings;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:timezone/data/latest.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;

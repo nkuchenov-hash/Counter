@@ -11,6 +11,10 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-21] - Time: assign ownership to shared/feature paths [engineering]
+
+* **`lib/shared/time/`:** Phase 2A — moved former `lib/core/time/` multi-consumer wall-clock, timezone catalog, app clock hooks, plan window/labels, and category TZ options out of `core/`; settings-only helpers → `lib/features/settings/timezone_settings.dart`. No UTC/DST/projection behavior change.
+
 ## [2026-07-21] - Shell: form-factor ownership split [engineering]
 
 * **`lib/app/shell/`:** Phase 1 feature-first shell restructure — moved former `lib/shell/` into `app/shell/{shared,phone,tablet,desktop}`; root `lib/app_shell.dart` remains a thin compatibility re-export; tab order, breakpoints, and chrome behavior unchanged (tablet currently shares phone compact chrome below 900px). Wear shell stays in `features/wear/` (no dead placeholders).

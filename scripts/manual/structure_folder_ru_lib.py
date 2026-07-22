@@ -70,15 +70,28 @@ register_folder_ru(
 )
 
 register_folder_ru(
-    "lib/core/time",
+    "lib/shared/time",
     {
-        "what_ru": "Расчёт wall-clock и timezone для header, Time View на Plans и линии «today» в profile.",
-        "why_ru": "Границы дней и time bucketing следуют profile timezone law — не device local time — на всех вкладках.",
-        "inside_ru": "`app_clock.dart`, `profile_timezone_catalog.dart`, `plan_time_visible_window.dart`, форматтеры wall-clock.",
-        "affects_ru": "Часы в global header, окно часов Time View (−3..27 h), подписи timezone picker.",
+        "what_ru": "Общий wall-clock и timezone math для Brain, shell header, Plans и settings.",
+        "why_ru": "Границы дней и time bucketing следуют profile timezone law — не device local time — в нескольких секциях.",
+        "inside_ru": "`app_clock.dart`, `profile_timezone_catalog.dart`, `wall_clock.dart`, `plan_time_visible_window.dart`, plan labels, category TZ options.",
+        "affects_ru": "Часы в global header, окно часов Time View (−3..27 h), подписи timezone picker, plan wall projection.",
         "when_ru": "Неверный «today», label TZ в header, visible hours Time View, DST label.",
         "delete_ru": "Нет — timeline и planning time display сломаются.",
-        "related_ru": "`lib/data/profile/profile_timezone.dart`, `lib/core/widgets/global_app_header.dart`.",
+        "related_ru": "`lib/data/profile/profile_timezone.dart`, `lib/core/widgets/global_app_header.dart`, `lib/features/settings/`.",
+    },
+)
+
+register_folder_ru(
+    "lib/features/settings",
+    {
+        "what_ru": "Helpers timezone для экрана настроек (не виджеты design system).",
+        "why_ru": "Списки timezone и legacy offset helpers принадлежат settings, не core.",
+        "inside_ru": "`timezone_settings.dart` (re-export shared catalog/options для settings UI).",
+        "affects_ru": "Подписи выбора timezone в profile и imports Planning category-default TZ search.",
+        "when_ru": "Список timezone options, helpers offset labels.",
+        "delete_ru": "Нет — сломаются settings timezone helpers.",
+        "related_ru": "`lib/shared/time/`, `lib/features/profile/profile_view.dart`.",
     },
 )
 
