@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
-import 'package:counter/core/diagnostics/desktop_voice_pipeline.dart';
+import 'package:counter/shared/voice/diagnostics/desktop_voice_pipeline.dart';
 import 'package:counter/core/services/desktop_voice_contamination_gate.dart';
 import 'package:counter/core/services/desktop_voice_session.dart';
 import 'package:counter/core/services/desktop_voice_transcript_merge.dart';

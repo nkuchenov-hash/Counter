@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:counter/core/performance/runtime_flags.dart';
+import 'package:counter/shared/diagnostics/performance/runtime_flags.dart';
 import 'package:counter/core/services/desktop_stt_engine.dart';
 import 'package:counter/core/services/desktop_voice_command_stt_policy.dart';
 import 'package:counter/core/services/desktop_voice_engine.dart';

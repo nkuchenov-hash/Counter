@@ -1,4 +1,4 @@
-import 'package:counter/core/performance/runtime_flags.dart';
+import 'package:counter/shared/diagnostics/performance/runtime_flags.dart';
 import 'package:counter/core/services/desktop_voice_hotkey_stub.dart'
     if (dart.library.io) 'package:counter/core/services/desktop_voice_hotkey_io.dart';
 import 'package:counter/core/services/desktop_voice_settings.dart';

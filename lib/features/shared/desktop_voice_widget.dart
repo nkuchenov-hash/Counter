@@ -1,7 +1,7 @@
 import 'dart:async';
 
-import 'package:counter/core/diagnostics/desktop_voice_log.dart';
-import 'package:counter/core/diagnostics/desktop_voice_pipeline.dart';
+import 'package:counter/shared/voice/diagnostics/desktop_voice_log.dart';
+import 'package:counter/shared/voice/diagnostics/desktop_voice_pipeline.dart';
 import 'package:counter/core/services/desktop_voice_confirmation_timer.dart';
 import 'package:counter/core/services/desktop_voice_contamination_gate.dart';
 import 'package:counter/core/services/desktop_voice_useful_candidate_evaluator.dart';

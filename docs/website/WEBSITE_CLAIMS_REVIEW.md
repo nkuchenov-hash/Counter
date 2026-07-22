@@ -20,8 +20,8 @@
 
 | Referenced path | Exists? | Note |
 | :--- | :--- | :--- |
-| `lib/core/performance/runtime_flags.dart` | ✅ Yes | Correct anchor for kill switches (`kDesktopVoiceCommandEnabled`, etc.) |
-| `lib/core/performance/shell_flags.dart` | ✅ Yes | Shell bisect flags |
+| `lib/shared/diagnostics/performance/runtime_flags.dart` | ✅ Yes | Correct anchor for kill switches (`kDesktopVoiceCommandEnabled`, etc.) |
+| `lib/shared/diagnostics/performance/shell_flags.dart` | ✅ Yes | Shell bisect flags |
 | `lib/core/perf_flags.dart` | ❌ No | Cited in `docs/ROADMAP.md` / `ARCHITECTURE.md` — migrated/removed June 2026 cleanup |
 | `lib/core/p0u_feature_flags.dart` | ❌ No | Same — flags moved to `runtime_flags.dart` per CHANGELOG 2026-06-23 |
 | `lib/core/p0u_diag.dart` | ❌ Not verified in this pass | Treat as internal if present; not for website |

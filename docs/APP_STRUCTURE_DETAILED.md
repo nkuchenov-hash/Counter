@@ -2,7 +2,7 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `3bb8612` on 2026-07-21.**
+**Generated from input HEAD `dac4601` on 2026-07-22.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
@@ -27,10 +27,10 @@ python scripts/manual/generate_app_structure_detailed.py
 | Role | Count |
 | :--- | ---: |
 | `production UI` | 139 |
-| `shared foundation` | 125 |
+| `shared foundation` | 116 |
 | `test` | 86 |
 | `platform build` | 82 |
-| `Brain/data` | 76 |
+| `Brain/data` | 77 |
 | `platform resource` | 44 |
 | `developer tool` | 42 |
 | `governing documentation` | 30 |
@@ -42,8 +42,10 @@ python scripts/manual/generate_app_structure_detailed.py
 | `historical engineering record` | 9 |
 | `shared time` | 7 |
 | `package metadata` | 6 |
+| `shared diagnostics` | 6 |
 | `CI/deployment` | 3 |
 | `PocketBase backend` | 3 |
+| `shared voice diagnostics` | 2 |
 | `audit tool` | 1 |
 | `generated documentation` | 1 |
 | `runtime entry point` | 1 |
@@ -96,10 +98,8 @@ Evidence is computed from Dart import/export/`part` graphs, bounded path referen
 - [`lib/services/`](#folder-libservices)
 - [`lib/shared/`](#folder-libshared)
 - [`lib/app/shell/`](#folder-libappshell)
-- [`lib/core/diagnostics/`](#folder-libcorediagnostics)
 - [`lib/core/env/`](#folder-libcoreenv)
 - [`lib/core/navigation/`](#folder-libcorenavigation)
-- [`lib/core/performance/`](#folder-libcoreperformance)
 - [`lib/core/services/`](#folder-libcoreservices)
 - [`lib/core/widgets/`](#folder-libcorewidgets)
 - [`lib/data/cache/`](#folder-libdatacache)
@@ -123,7 +123,9 @@ Evidence is computed from Dart import/export/`part` graphs, bounded path referen
 - [`lib/features/timeline/`](#folder-libfeaturestimeline)
 - [`lib/features/wear/`](#folder-libfeatureswear)
 - [`lib/l10n/langs/`](#folder-libl10nlangs)
+- [`lib/shared/diagnostics/`](#folder-libshareddiagnostics)
 - [`lib/shared/time/`](#folder-libsharedtime)
+- [`lib/shared/voice/`](#folder-libsharedvoice)
 - [`lib/app/shell/desktop/`](#folder-libappshelldesktop)
 - [`lib/app/shell/phone/`](#folder-libappshellphone)
 - [`lib/app/shell/shared/`](#folder-libappshellshared)
@@ -131,6 +133,7 @@ Evidence is computed from Dart import/export/`part` graphs, bounded path referen
 - [`lib/core/widgets/notes/`](#folder-libcorewidgetsnotes)
 - [`lib/core/widgets/plan_card/`](#folder-libcorewidgetsplan_card)
 - [`lib/core/widgets/plan_time_task_card/`](#folder-libcorewidgetsplan_time_task_card)
+- [`lib/data/plans/diagnostics/`](#folder-libdataplansdiagnostics)
 - [`lib/features/notes/widgets/`](#folder-libfeaturesnoteswidgets)
 - [`lib/features/planning/settings/`](#folder-libfeaturesplanningsettings)
 - [`lib/features/planning/time_view/`](#folder-libfeaturesplanningtime_view)
@@ -138,6 +141,8 @@ Evidence is computed from Dart import/export/`part` graphs, bounded path referen
 - [`lib/features/profile/settings/`](#folder-libfeaturesprofilesettings)
 - [`lib/features/shared/edit_sheet/`](#folder-libfeaturessharededit_sheet)
 - [`lib/features/shared/notes_editor/`](#folder-libfeaturessharednotes_editor)
+- [`lib/shared/diagnostics/performance/`](#folder-libshareddiagnosticsperformance)
+- [`lib/shared/voice/diagnostics/`](#folder-libsharedvoicediagnostics)
 
 ### Tests
 
@@ -922,23 +927,23 @@ RU:
 
 EN:
 
-- **What this folder is:** Foundation layer — theme colors, shared widgets, desktop voice services, diagnostics.
+- **What this folder is:** Foundation layer — theme colors, shared widgets, desktop voice services.
 - **Why it exists:** Feature screens must not duplicate buttons, date headers, or voice plumbing; this is the design-system and utility base.
-- **What lives here:** `theme.dart`, `core/widgets/` (AppButton, plan cards), `core/services/` (desktop voice), `core/diagnostics/`.
-- **What part of the app it affects:** Look and feel on every tab; desktop voice/tray; header chrome widgets; perf debug flags.
+- **What lives here:** `theme.dart`, `core/widgets/` (AppButton, plan cards), `core/services/` (desktop voice).
+- **What part of the app it affects:** Look and feel on every tab; desktop voice/tray; header chrome widgets.
 - **When to open it:** Button/card migration, desktop voice broken, theme token change.
 - **Can it be deleted?** No — features import foundation code everywhere.
-- **Main related paths:** `docs/DESIGN_SYSTEM.md`, `lib/features/`, `lib/shared/time/`, `lib/data/models.dart` (types only).
+- **Main related paths:** `docs/DESIGN_SYSTEM.md`, `lib/features/`, `lib/shared/`, `lib/data/models.dart` (types only).
 
 RU:
 
-- **Что это за папка:** Базовый слой: design system в коде, shared widgets, тема/цвета, desktop voice, diagnostics.
+- **Что это за папка:** Базовый слой: design system в коде, shared widgets, тема/цвета, desktop voice.
 - **Зачем нужна:** Экраны не дублируют кнопки, date header и voice — общая foundation-база.
-- **Что здесь лежит:** `theme.dart`, каталог `core/widgets/`, `core/services/` (desktop voice), diagnostics.
-- **На что влияет в приложении:** Внешний вид всех вкладок; desktop voice/tray; chrome header; perf debug flags.
+- **Что здесь лежит:** `theme.dart`, каталог `core/widgets/`, `core/services/` (desktop voice).
+- **На что влияет в приложении:** Внешний вид всех вкладок; desktop voice/tray; chrome header.
 - **Когда открывать:** Миграция кнопок/карточек, сломан desktop voice, смена theme token.
 - **Можно удалить?** Нет — features import foundation code everywhere.
-- **Связанные пути:** `docs/DESIGN_SYSTEM.md`, `lib/features/`, `lib/shared/time/`, `lib/data/models.dart`.
+- **Связанные пути:** `docs/DESIGN_SYSTEM.md`, `lib/features/`, `lib/shared/`, `lib/data/models.dart`.
 
 ---
 
@@ -1042,23 +1047,23 @@ RU:
 
 EN:
 
-- **What this folder is:** Cross-cutting shared code with multiple independent consumers — currently time only.
+- **What this folder is:** Cross-cutting shared code with multiple independent consumers — time, diagnostics, voice pipeline markers.
 - **Why it exists:** Avoid dumping single-feature helpers here; only multi-consumer ownership belongs under shared.
-- **What lives here:** `time/` — wall-clock, timezone catalog, app clock hooks, plan window/labels.
-- **What part of the app it affects:** Header clock, Brain projection, Plans Time View, settings timezone labels.
-- **When to open it:** Moving multi-consumer time, wrong today, DST labels.
-- **Can it be deleted?** No — Brain and UI need shared time.
-- **Main related paths:** `lib/shared/time/`, `docs/APP_STRUCTURE.md`.
+- **What lives here:** `time/` — wall-clock and timezone; `diagnostics/` — runtime logs + kill switches; `voice/diagnostics/` — desktop voice pipeline markers.
+- **What part of the app it affects:** Header clock, Brain projection, Plans Time View, settings timezone labels, kill switches, desktop voice tracing.
+- **When to open it:** Moving multi-consumer time/diagnostics, wrong today, DST labels, kill-switch toggles, voice pipeline tracing.
+- **Can it be deleted?** No — Brain and UI need shared time and diagnostics.
+- **Main related paths:** `lib/shared/time/`, `lib/shared/diagnostics/`, `lib/shared/voice/diagnostics/`, `docs/APP_STRUCTURE.md`.
 
 RU:
 
-- **Что это за папка:** Общий код с несколькими независимыми потребителями — сейчас только time.
+- **Что это за папка:** Общий код с несколькими независимыми потребителями — time, diagnostics, voice pipeline markers.
 - **Зачем нужна:** Не складывать сюда всё подряд: только то, чем пользуются ≥2 секции продукта или shell + секция.
-- **Что здесь лежит:** `time/` — wall-clock, timezone catalog, app clock hooks, plan window/labels.
-- **На что влияет в приложении:** Часы в header, projection в Brain, Time View на Plans, подписи timezone в settings.
-- **Когда открывать:** Перенос multi-consumer time, неверный today, DST labels.
-- **Можно удалить?** Нет — Brain and UI need shared time.
-- **Связанные пути:** `lib/shared/time/`, `docs/APP_STRUCTURE.md`.
+- **Что здесь лежит:** `time/` — wall-clock и timezone; `diagnostics/` — runtime logs + kill switches; `voice/diagnostics/` — desktop voice pipeline markers.
+- **На что влияет в приложении:** Часы в header, projection в Brain, Time View на Plans, timezone labels, kill switches, трассировка desktop voice.
+- **Когда открывать:** Перенос multi-consumer time/diagnostics, неверный today, DST labels, kill-switch toggles, voice pipeline tracing.
+- **Можно удалить?** Нет — Brain and UI need shared time and diagnostics.
+- **Связанные пути:** `lib/shared/time/`, `lib/shared/diagnostics/`, `lib/shared/voice/diagnostics/`, `docs/APP_STRUCTURE.md`.
 
 ---
 
@@ -1710,30 +1715,6 @@ RU:
 
 ---
 
-## Folder: `lib/core/diagnostics/`
-
-EN:
-
-- **What this folder is:** Debug-only logging helpers — startup, voice pipeline, duplicates.
-- **Why it exists:** Structured logs for diagnosing perf and desktop voice without spamming release builds.
-- **What lives here:** Small log wrapper files gated by debug/profile flags.
-- **What part of the app it affects:** Developer diagnostics only.
-- **When to open it:** Tracing desktop voice steps or startup timing.
-- **Can it be deleted?** No — used by debug/profile builds.
-- **Main related paths:** `lib/core/performance/`.
-
-RU:
-
-- **Что это за папка:** Debug-only логирование — startup, voice pipeline, duplicates.
-- **Зачем нужна:** Структурированные логи для perf и desktop voice без spam в release.
-- **Что здесь лежит:** Небольшие log wrapper, включаемые debug/profile flags.
-- **На что влияет в приложении:** Только диагностика разработчика — не UI пользователя.
-- **Когда открывать:** Трассировка шагов desktop voice или startup timing.
-- **Можно удалить?** Нет — используется debug/profile builds.
-- **Связанные пути:** `lib/core/performance/`.
-
----
-
 ## Folder: `lib/core/env/`
 
 EN:
@@ -1779,30 +1760,6 @@ RU:
 - **Когда открывать:** Desktop overlay не может push routes; неверный breakpoint side navigation.
 - **Можно удалить?** Нет — desktop layout and overlays break.
 - **Связанные пути:** `lib/app/shell/desktop/shell_side_navigation.dart`, `lib/core/shell_adaptive.dart`.
-
----
-
-## Folder: `lib/core/performance/`
-
-EN:
-
-- **What this folder is:** Runtime feature flags and optional perf metrics — date strip, warm window, rebuild counters.
-- **Why it exists:** Lets developers toggle expensive features or capture frame metrics without shipping debug code to all users.
-- **What lives here:** `runtime_flags.dart`, `shell_flags.dart`, `rebuild_metrics.dart` (`PERF_DIAG` gated).
-- **What part of the app it affects:** Perf-sensitive paths: date paging, shell tab stack, diagnostic builds.
-- **When to open it:** Investigating jank, toggling warm-window kill switch, perf capture tests.
-- **Can it be deleted?** No — perf tests and diagnostics reference these flags.
-- **Main related paths:** `test/perf_*`, `lib/data/cache/`.
-
-RU:
-
-- **Что это за папка:** Feature flags runtime и perf metrics — полоса дат, warm window, счётчики rebuild.
-- **Зачем нужна:** Позволяет включать дорогие features или capture frame metrics без debug code для всех users.
-- **Что здесь лежит:** Файлы `runtime_flags.dart`, `shell_flags.dart`, `rebuild_metrics.dart` (`PERF_DIAG` gated).
-- **На что влияет в приложении:** Perf: paging дат, tab stack оболочки, diagnostic builds.
-- **Когда открывать:** Расследование jank, warm-window kill switch, perf capture tests.
-- **Можно удалить?** Нет — perf tests and diagnostics reference these flags.
-- **Связанные пути:** `test/perf_*`, `lib/data/cache/`.
 
 ---
 
@@ -1864,7 +1821,7 @@ EN:
 - **What part of the app it affects:** Day swipe smoothness on Timeline and Planning; not user-visible data correctness.
 - **When to open it:** Jank swiping days, stale day content after edit, perf regression.
 - **Can it be deleted?** No — paging becomes slow or glitchy.
-- **Main related paths:** `lib/data/records/record_timeline_vm.dart`, `lib/core/performance/runtime_flags.dart`.
+- **Main related paths:** `lib/data/records/record_timeline_vm.dart`, `lib/shared/diagnostics/performance/runtime_flags.dart`.
 
 RU:
 
@@ -1874,7 +1831,7 @@ RU:
 - **На что влияет в приложении:** Плавность day swipe на Timeline и Planning; не влияет на корректность данных для пользователя.
 - **Когда открывать:** Jank при swipe дней, stale day content после edit, perf regression.
 - **Можно удалить?** Нет — paging becomes slow or glitchy.
-- **Связанные пути:** `lib/data/records/record_timeline_vm.dart`, `lib/core/performance/runtime_flags.dart`.
+- **Связанные пути:** `lib/data/records/record_timeline_vm.dart`, `lib/shared/diagnostics/performance/runtime_flags.dart`.
 
 ---
 
@@ -1956,7 +1913,7 @@ EN:
 
 - **What this folder is:** Plans and lists slice of the brain — scheduled tasks, backlog items, recurrence, tags on plans.
 - **Why it exists:** Planning tab, Lists tab, and calendar rows all read/write the same `plans` table through these modules.
-- **What lives here:** Projection for Time View, RRULE expansion, tag sync, plan cache, offline plan outbox.
+- **What lives here:** Projection for Time View, RRULE expansion, tag sync, plan cache, offline plan outbox, `diagnostics/`.
 - **What part of the app it affects:** Plans tab, Time View layout, Lists tab, plan edit sheets, plan alarms.
 - **When to open it:** Plans don’t save, recurrence wrong, Time View cards misplaced, list toggle offline.
 - **Can it be deleted?** No — planning and lists break.
@@ -1966,7 +1923,7 @@ RU:
 
 - **Что это за папка:** Срез мозга для Plans/Lists — задачи по расписанию, backlog, recurrence и теги.
 - **Зачем нужна:** Вкладки Plans и Lists читают/пишут одну таблицу `plans` через эти модули.
-- **Что здесь лежит:** Projection Time View, RRULE expansion, sync тегов, кэш, offline outbox.
+- **Что здесь лежит:** Projection Time View, RRULE expansion, sync тегов, кэш, offline outbox, `diagnostics/`.
 - **На что влияет в приложении:** Plans, Time View, Lists, edit sheets планов, plan alarms.
 - **Когда открывать:** Планы не сохраняются, recurrence неверна, карточки Time View не на месте.
 - **Можно удалить?** Нет — planning and lists break.
@@ -2358,6 +2315,30 @@ RU:
 
 ---
 
+## Folder: `lib/shared/diagnostics/`
+
+EN:
+
+- **What this folder is:** General runtime logs and the shared kill-switch / metrics registry.
+- **Why it exists:** Brain, shell, core, and features need one place for release-safe markers and compile-time performance toggles.
+- **What lives here:** `runtime_log.dart`, `platform_log.dart`, `startup_log.dart`, `performance/`.
+- **What part of the app it affects:** Developer diagnostics and kill switches only.
+- **When to open it:** Tracing startup timing or toggling perf kill switches.
+- **Can it be deleted?** No — used by Brain, shell, and diagnostic builds.
+- **Main related paths:** `lib/shared/diagnostics/performance/`.
+
+RU:
+
+- **Что это за папка:** Общие runtime logs и shared kill-switch / metrics registry.
+- **Зачем нужна:** Brain, shell, core и features нуждаются в одном месте для release-safe markers и compile-time performance toggles.
+- **Что здесь лежит:** `runtime_log.dart`, `platform_log.dart`, `startup_log.dart`, `performance/`.
+- **На что влияет в приложении:** Только диагностика разработчика и kill switches — не UI chrome.
+- **Когда открывать:** Startup timing, kill-switch bisect, release-safe runtime markers.
+- **Можно удалить?** Нет — used by Brain, shell, and diagnostic builds.
+- **Связанные пути:** `lib/shared/diagnostics/performance/`, `docs/ARCHITECTURE.md`.
+
+---
+
 ## Folder: `lib/shared/time/`
 
 EN:
@@ -2379,6 +2360,30 @@ RU:
 - **Когда открывать:** Неверный «today», label TZ в header, visible hours Time View, DST label.
 - **Можно удалить?** Нет — timeline and planning time display breaks.
 - **Связанные пути:** `lib/data/profile/profile_timezone.dart`, `lib/core/widgets/global_app_header.dart`, `lib/features/settings/`.
+
+---
+
+## Folder: `lib/shared/voice/`
+
+EN:
+
+- **What this folder is:** Shared voice helpers used by desktop STT/voice services and Brain voice parsing.
+- **Why it exists:** Voice pipeline markers must stay free of feature UI and Brain I/O while serving multiple consumers.
+- **What lives here:** `diagnostics/` — desktop voice log + pipeline step helpers.
+- **What part of the app it affects:** Desktop voice tracing and STT pipeline markers.
+- **When to open it:** Desktop voice pipeline steps missing or quiet in debug/profile.
+- **Can it be deleted?** No — desktop voice services import these markers.
+- **Main related paths:** `lib/shared/voice/diagnostics/`, `lib/core/services/desktop_voice_*.dart`.
+
+RU:
+
+- **Что это за папка:** Общие voice helpers для desktop STT/voice services и Brain voice parsing.
+- **Зачем нужна:** Markers voice pipeline должны оставаться без feature UI и Brain I/O при нескольких потребителях.
+- **Что здесь лежит:** `diagnostics/` — desktop voice log и pipeline step helpers.
+- **На что влияет в приложении:** Трассировка desktop voice и STT pipeline markers.
+- **Когда открывать:** Пропали шаги desktop voice pipeline в debug/profile.
+- **Можно удалить?** Нет — desktop voice services import these markers.
+- **Связанные пути:** `lib/shared/voice/diagnostics/`, `lib/core/services/desktop_voice_*.dart`.
 
 ---
 
@@ -2958,6 +2963,30 @@ RU:
 
 ---
 
+## Folder: `lib/data/plans/diagnostics/`
+
+EN:
+
+- **What this folder is:** Planning-domain diagnostics inside the Brain (duplicate plan / stream lifecycle markers).
+- **Why it exists:** Brain plan helpers emit these logs; must not live under feature UI or create data→features imports.
+- **What lives here:** `plan_duplicate_log.dart`.
+- **What part of the app it affects:** Plan duplicate / stream diagnostic markers only.
+- **When to open it:** Investigating duplicate plan rows or plan stream spam.
+- **Can it be deleted?** No — Brain plan helpers emit these markers.
+- **Main related paths:** `lib/shared/diagnostics/performance/runtime_flags.dart` for `kPlanStreamLifecycleDiag` only.
+
+RU:
+
+- **Что это за папка:** Planning-domain diagnostics внутри Brain (дубликаты планов / stream lifecycle markers).
+- **Зачем нужна:** Brain plan helpers эмитят эти логи; не должны жить в feature UI и создавать data→features imports.
+- **Что здесь лежит:** `plan_duplicate_log.dart`.
+- **На что влияет в приложении:** Только diagnostic markers дубликатов / stream планов.
+- **Когда открывать:** Расследование duplicate plan rows или spam plan stream.
+- **Можно удалить?** Нет — Brain plan helpers emit these markers.
+- **Связанные пути:** `lib/shared/diagnostics/performance/runtime_flags.dart` только для `kPlanStreamLifecycleDiag`.
+
+---
+
 ## Folder: `lib/features/notes/widgets/`
 
 EN:
@@ -3123,6 +3152,54 @@ RU:
 - **Когда открывать:** Маршрут редактора, автосохранение Quill, переход More → Edit details.
 - **Можно удалить?** Нет — shared Notes editor entry breaks.
 - **Связанные пути:** `lib/core/widgets/notes/`, `lib/features/shared/edit_sheet/`.
+
+---
+
+## Folder: `lib/shared/diagnostics/performance/`
+
+EN:
+
+- **What this folder is:** Kill-switch registry and optional rebuild metrics.
+- **Why it exists:** Compile-time toggles for date paging, shell stack, and Planning Time View canvas bisect.
+- **What lives here:** `runtime_flags.dart`, `shell_flags.dart`, `rebuild_metrics.dart`.
+- **What part of the app it affects:** Perf-sensitive paths and diagnostic builds.
+- **When to open it:** Investigating jank or toggling warm-window kill switch.
+- **Can it be deleted?** No — perf tests and diagnostics reference these flags.
+- **Main related paths:** `lib/shared/diagnostics/`, `test/perf_*`.
+
+RU:
+
+- **Что это за папка:** Feature flags runtime и perf metrics — полоса дат, warm window, счётчики rebuild.
+- **Зачем нужна:** Позволяет включать дорогие features или capture frame metrics без debug code для всех users.
+- **Что здесь лежит:** Файлы `runtime_flags.dart`, `shell_flags.dart`, `rebuild_metrics.dart` (`PERF_DIAG` gated).
+- **На что влияет в приложении:** Perf: paging дат, tab stack оболочки, canvas bisect Planning Time View, diagnostic builds.
+- **Когда открывать:** Расследование jank, warm-window kill switch, perf capture tests.
+- **Можно удалить?** Нет — perf tests and diagnostics reference these flags.
+- **Связанные пути:** `test/perf_*`, `lib/data/cache/`, `lib/shared/diagnostics/`.
+
+---
+
+## Folder: `lib/shared/voice/diagnostics/`
+
+EN:
+
+- **What this folder is:** Desktop voice pipeline markers — log + step helpers.
+- **Why it exists:** Structured logs for desktop voice without spamming release builds.
+- **What lives here:** `desktop_voice_log.dart`, `desktop_voice_pipeline.dart`.
+- **What part of the app it affects:** Developer diagnostics only.
+- **When to open it:** Tracing desktop voice steps.
+- **Can it be deleted?** No — used by debug/profile builds.
+- **Main related paths:** `lib/core/services/`, `lib/shared/diagnostics/`.
+
+RU:
+
+- **Что это за папка:** Маркеры desktop voice pipeline — log и step helpers.
+- **Зачем нужна:** Desktop STT/voice и Brain voice parsing делят один quiet release / verbose debug-profile sink.
+- **Что здесь лежит:** `desktop_voice_log.dart`, `desktop_voice_pipeline.dart`.
+- **На что влияет в приложении:** Только developer diagnostics для desktop voice.
+- **Когда открывать:** Трассировка capture, STT, overlay или submit шагов desktop voice.
+- **Можно удалить?** Нет — используется debug/profile builds.
+- **Связанные пути:** `lib/core/services/`, `lib/shared/diagnostics/`.
 
 ---
 
@@ -8910,232 +8987,6 @@ RU:
 - **Связано с:** `lib/core/`, `docs/APP_STRUCTURE.md`
 
 
-### `lib/core/diagnostics/desktop_voice_log.dart`
-
-EN:
-
-- **Human purpose:** Foundation module `desktop_voice_log.dart` (diagnostics) — DesktopVoiceLog. Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What this is:** Foundation module `desktop_voice_log.dart` (diagnostics) — DesktopVoiceLog.
-- **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **Contents:** Primary symbols: `DesktopVoiceLog`.
-- **Key code names:** `DesktopVoiceLog`
-- **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/core/diagnostics/desktop_voice_pipeline.dart`, `lib/core/services/desktop_stt_helper_service.dart`, `lib/core/services/desktop_voice_recognizer_io.dart`, `lib/core/services/desktop_voice_record_submit.dart`.
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
-- **Confidence:** HIGH
-- **Owner / layer:** shared foundation
-- **Responsibilities:** DesktopVoiceLog
-- **When to open:** When behavior tied to `desktop_voice_log.dart` breaks or you need to change its documented role.
-- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: `DesktopVoiceLog` — concise desktop-voice pipeline markers (debug/profile only
-
-RU:
-
-- **Зачем файл человеку:** Foundation-модуль `desktop_voice_log.dart` (diagnostics) — DesktopVoiceLog. Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Что это:** Foundation-модуль `desktop_voice_log.dart` (diagnostics) — DesktopVoiceLog.
-- **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-модуль `desktop_voice_log.dart` — классы и helpers в исходнике.
-- **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/core/diagnostics/desktop_voice_pipeline.dart`, `lib/core/services/desktop_stt_helper_service.dart`, `lib/core/services/desktop_voice_recognizer_io.dart`, `lib/core/services/desktop_voice_record_submit.dart`.
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
-- **Уверенность:** HIGH
-- **Владелец / слой:** общая foundation
-- **Обязанности:** Foundation-логика: DesktopVoiceLog.
-- **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_log.dart`.
-- **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** `lib/core/diagnostics/`, `docs/APP_STRUCTURE.md`
-
-
-### `lib/core/diagnostics/desktop_voice_pipeline.dart`
-
-EN:
-
-- **Human purpose:** Foundation module `desktop_voice_pipeline.dart` (diagnostics) — DesktopVoiceLog. Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What this is:** Foundation module `desktop_voice_pipeline.dart` (diagnostics) — DesktopVoiceLog.
-- **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **Contents:** Primary symbols: `DesktopVoicePipeline`.
-- **Key code names:** `DesktopVoicePipeline`
-- **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/core/services/desktop_main_window.dart`, `lib/core/services/desktop_stt_benchmark_harness.dart`, `lib/core/services/desktop_stt_cloud_service.dart`, `lib/core/services/desktop_stt_helper_service.dart`.
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
-- **Confidence:** HIGH
-- **Owner / layer:** shared foundation
-- **Responsibilities:** DesktopVoiceLog
-- **When to open:** When behavior tied to `desktop_voice_pipeline.dart` breaks or you need to change its documented role.
-- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: Desktop-voice pipeline step helpers built on `DesktopVoiceLog`
-
-RU:
-
-- **Зачем файл человеку:** Foundation-модуль `desktop_voice_pipeline.dart` (diagnostics) — DesktopVoiceLog. Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Что это:** Foundation-модуль `desktop_voice_pipeline.dart` (diagnostics) — DesktopVoiceLog.
-- **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-модуль `desktop_voice_pipeline.dart` — классы и helpers в исходнике.
-- **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/core/services/desktop_main_window.dart`, `lib/core/services/desktop_stt_benchmark_harness.dart`, `lib/core/services/desktop_stt_cloud_service.dart`, `lib/core/services/desktop_stt_helper_service.dart`.
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
-- **Уверенность:** HIGH
-- **Владелец / слой:** общая foundation
-- **Обязанности:** Foundation-логика: DesktopVoiceLog.
-- **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_pipeline.dart`.
-- **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** `lib/core/diagnostics/`, `docs/APP_STRUCTURE.md`
-
-
-### `lib/core/diagnostics/plan_duplicate_log.dart`
-
-EN:
-
-- **Human purpose:** Foundation module `plan_duplicate_log.dart` (diagnostics) — Plan duplicate detection logs. Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What this is:** Foundation module `plan_duplicate_log.dart` (diagnostics) — Plan duplicate detection logs.
-- **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **Contents:** Dart module `plan_duplicate_log.dart` — open file for classes and helpers.
-- **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/data/database_service.dart`.
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
-- **Confidence:** HIGH
-- **Owner / layer:** shared foundation
-- **Responsibilities:** Plan duplicate detection logs
-- **When to open:** When behavior tied to `plan_duplicate_log.dart` breaks or you need to change its documented role.
-- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: Plan duplicate detection logs
-
-RU:
-
-- **Зачем файл человеку:** Foundation-модуль `plan_duplicate_log.dart` (diagnostics) — Plan duplicate detection logs. Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Что это:** Foundation-модуль `plan_duplicate_log.dart` (diagnostics) — Plan duplicate detection logs.
-- **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-модуль `plan_duplicate_log.dart` — классы и helpers в исходнике.
-- **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/data/database_service.dart`.
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
-- **Уверенность:** HIGH
-- **Владелец / слой:** общая foundation
-- **Обязанности:** Foundation-логика: Plan duplicate detection logs.
-- **Когда открывать:** Когда ломается поведение, связанное с `plan_duplicate_log.dart`.
-- **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** `lib/core/diagnostics/`, `docs/APP_STRUCTURE.md`
-
-
-### `lib/core/diagnostics/platform_log.dart`
-
-EN:
-
-- **Human purpose:** Foundation module `platform_log.dart` (diagnostics) — Platform-specific log sinks. Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What this is:** Foundation module `platform_log.dart` (diagnostics) — Platform-specific log sinks.
-- **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **Contents:** Dart module `platform_log.dart` — open file for classes and helpers.
-- **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/planning/planning_page_shell.dart`, `lib/features/timeline/timeline_view.dart`, `lib/main.dart`.
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
-- **Confidence:** HIGH
-- **Owner / layer:** shared foundation
-- **Responsibilities:** Platform-specific log sinks
-- **When to open:** When behavior tied to `platform_log.dart` breaks or you need to change its documented role.
-- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: Platform-specific log sinks
-
-RU:
-
-- **Зачем файл человеку:** Foundation-модуль `platform_log.dart` (diagnostics) — Platform-specific log sinks. Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Что это:** Foundation-модуль `platform_log.dart` (diagnostics) — Platform-specific log sinks.
-- **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-модуль `platform_log.dart` — классы и helpers в исходнике.
-- **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/features/planning/planning_page_shell.dart`, `lib/features/timeline/timeline_view.dart`, `lib/main.dart`.
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
-- **Уверенность:** HIGH
-- **Владелец / слой:** общая foundation
-- **Обязанности:** Foundation-логика: Platform-specific log sinks.
-- **Когда открывать:** Когда ломается поведение, связанное с `platform_log.dart`.
-- **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** `lib/core/diagnostics/`, `docs/APP_STRUCTURE.md`
-
-
-### `lib/core/diagnostics/runtime_log.dart`
-
-EN:
-
-- **Human purpose:** Foundation module `runtime_log.dart` (diagnostics) — Uncaught error logging. Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What this is:** Foundation module `runtime_log.dart` (diagnostics) — Uncaught error logging.
-- **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **Contents:** Primary symbols: `RuntimeLog`.
-- **Key code names:** `RuntimeLog`
-- **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/data/database_service.dart`, `lib/features/planning/planning_page_shell.dart`, `lib/features/timeline/timeline_view.dart`, `lib/main.dart`.
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
-- **Confidence:** HIGH
-- **Owner / layer:** shared foundation
-- **Responsibilities:** Uncaught error logging
-- **When to open:** When behavior tied to `runtime_log.dart` breaks or you need to change its documented role.
-- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: Uncaught error logging
-
-RU:
-
-- **Зачем файл человеку:** Foundation-модуль `runtime_log.dart` (diagnostics) — Uncaught error logging. Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Что это:** Foundation-модуль `runtime_log.dart` (diagnostics) — Uncaught error logging.
-- **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-модуль `runtime_log.dart` — классы и helpers в исходнике.
-- **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/data/database_service.dart`, `lib/features/planning/planning_page_shell.dart`, `lib/features/timeline/timeline_view.dart`, `lib/main.dart`.
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
-- **Уверенность:** HIGH
-- **Владелец / слой:** общая foundation
-- **Обязанности:** Foundation-логика: Uncaught error logging.
-- **Когда открывать:** Когда ломается поведение, связанное с `runtime_log.dart`.
-- **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** `lib/core/diagnostics/`, `docs/APP_STRUCTURE.md`
-
-
-### `lib/core/diagnostics/startup_log.dart`
-
-EN:
-
-- **Human purpose:** Foundation module `startup_log.dart` (diagnostics) — Boot-phase structured logs. Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What this is:** Foundation module `startup_log.dart` (diagnostics) — Boot-phase structured logs.
-- **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **Contents:** Primary symbols: `StartupLog`.
-- **Key code names:** `StartupLog`
-- **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/core/widgets/lazy_indexed_stack.dart`, `lib/data/database_service.dart`, `lib/main.dart`.
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
-- **Confidence:** HIGH
-- **Owner / layer:** shared foundation
-- **Responsibilities:** Boot-phase structured logs
-- **When to open:** When behavior tied to `startup_log.dart` breaks or you need to change its documented role.
-- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: Boot-phase structured logs
-
-RU:
-
-- **Зачем файл человеку:** Foundation-модуль `startup_log.dart` (diagnostics) — Boot-phase structured logs. Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Что это:** Foundation-модуль `startup_log.dart` (diagnostics) — Boot-phase structured logs.
-- **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-модуль `startup_log.dart` — классы и helpers в исходнике.
-- **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/core/widgets/lazy_indexed_stack.dart`, `lib/data/database_service.dart`, `lib/main.dart`.
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
-- **Уверенность:** HIGH
-- **Владелец / слой:** общая foundation
-- **Обязанности:** Foundation-логика: Boot-phase structured logs.
-- **Когда открывать:** Когда ломается поведение, связанное с `startup_log.dart`.
-- **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** `lib/core/diagnostics/`, `docs/APP_STRUCTURE.md`
-
-
 ### `lib/core/env/env.dart.example`
 
 EN:
@@ -9282,119 +9133,6 @@ RU:
 - **Когда открывать:** Когда ломается поведение, связанное с `shell_side_navigation.dart`.
 - **Можно удалить?** Сейчас нет доказанного runtime-эффекта; перед удалением нужно продуктовое решение (обновить docs/imports или убрать файл).
 - **Связано с:** `lib/core/navigation/`, `docs/APP_STRUCTURE.md`
-
-
-### `lib/core/performance/rebuild_metrics.dart`
-
-EN:
-
-- **Human purpose:** Foundation module `rebuild_metrics.dart` (performance) — --dart-define=PERF_DIAG. Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What this is:** Foundation module `rebuild_metrics.dart` (performance) — --dart-define=PERF_DIAG.
-- **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **Contents:** Primary symbols: `RebuildMetrics`.
-- **Key code names:** `RebuildMetrics`
-- **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/core/widgets/global_app_header.dart`, `lib/core/widgets/plan_card.dart`, `lib/core/widgets/plan_time_task_card/plan_time_task_card.dart`, `lib/data/database_service.dart`.
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
-- **Confidence:** HIGH
-- **Owner / layer:** shared foundation
-- **Responsibilities:** --dart-define=PERF_DIAG
-- **When to open:** When behavior tied to `rebuild_metrics.dart` breaks or you need to change its documented role.
-- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: Rebuild/frame metrics (`--dart-define=PERF_DIAG` gated)
-
-RU:
-
-- **Зачем файл человеку:** Foundation-модуль `rebuild_metrics.dart` (performance) — --dart-define=PERF_DIAG. Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Что это:** Foundation-модуль `rebuild_metrics.dart` (performance) — --dart-define=PERF_DIAG.
-- **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-модуль `rebuild_metrics.dart` — классы и helpers в исходнике.
-- **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/core/widgets/global_app_header.dart`, `lib/core/widgets/plan_card.dart`, `lib/core/widgets/plan_time_task_card/plan_time_task_card.dart`, `lib/data/database_service.dart`.
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
-- **Уверенность:** HIGH
-- **Владелец / слой:** общая foundation
-- **Обязанности:** Foundation-логика: --dart-define=PERF_DIAG.
-- **Когда открывать:** Когда ломается поведение, связанное с `rebuild_metrics.dart`.
-- **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** `lib/core/performance/`, `docs/APP_STRUCTURE.md`
-
-
-### `lib/core/performance/runtime_flags.dart`
-
-EN:
-
-- **Human purpose:** Foundation module `runtime_flags.dart` (performance) — Feature kill switches (date strip, warm window, etc.). Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What this is:** Foundation module `runtime_flags.dart` (performance) — Feature kill switches (date strip, warm window, etc.).
-- **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **Contents:** Dart module `runtime_flags.dart` — open file for classes and helpers.
-- **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/core/diagnostics/plan_duplicate_log.dart`, `lib/core/diagnostics/runtime_log.dart`, `lib/core/services/desktop_voice_hotkey.dart`, `lib/core/services/desktop_voice_settings.dart`.
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
-- **Confidence:** HIGH
-- **Owner / layer:** shared foundation
-- **Responsibilities:** Feature kill switches (date strip, warm window, etc.)
-- **When to open:** When behavior tied to `runtime_flags.dart` breaks or you need to change its documented role.
-- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: Feature kill switches (date strip, warm window, etc.)
-
-RU:
-
-- **Зачем файл человеку:** Foundation-модуль `runtime_flags.dart` (performance) — Feature kill switches (date strip, warm window, etc.). Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Что это:** Foundation-модуль `runtime_flags.dart` (performance) — Feature kill switches (date strip, warm window, etc.).
-- **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-модуль `runtime_flags.dart` — классы и helpers в исходнике.
-- **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/core/diagnostics/plan_duplicate_log.dart`, `lib/core/diagnostics/runtime_log.dart`, `lib/core/services/desktop_voice_hotkey.dart`, `lib/core/services/desktop_voice_settings.dart`.
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
-- **Уверенность:** HIGH
-- **Владелец / слой:** общая foundation
-- **Обязанности:** Foundation-логика: Feature kill switches (date strip, warm window, etc.).
-- **Когда открывать:** Когда ломается поведение, связанное с `runtime_flags.dart`.
-- **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** `lib/core/performance/`, `docs/APP_STRUCTURE.md`
-
-
-### `lib/core/performance/shell_flags.dart`
-
-EN:
-
-- **Human purpose:** Foundation module `shell_flags.dart` (performance) — Shell tab stack behavior flags. Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What this is:** Foundation module `shell_flags.dart` (performance) — Shell tab stack behavior flags.
-- **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **Contents:** Primary symbols: `ShellFlags`.
-- **Key code names:** `ShellFlags`
-- **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/features/planning/time_view/time_view_canvas.dart`, `lib/features/planning/time_view/time_view_drag_controller.dart`, `lib/features/planning/time_view/time_view_drop_preview.dart`.
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
-- **Confidence:** HIGH
-- **Owner / layer:** shared foundation
-- **Responsibilities:** Shell tab stack behavior flags
-- **When to open:** When behavior tied to `shell_flags.dart` breaks or you need to change its documented role.
-- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: Shell tab stack behavior flags
-
-RU:
-
-- **Зачем файл человеку:** Foundation-модуль `shell_flags.dart` (performance) — Shell tab stack behavior flags. Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Что это:** Foundation-модуль `shell_flags.dart` (performance) — Shell tab stack behavior flags.
-- **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-модуль `shell_flags.dart` — классы и helpers в исходнике.
-- **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/features/planning/time_view/time_view_canvas.dart`, `lib/features/planning/time_view/time_view_drag_controller.dart`, `lib/features/planning/time_view/time_view_drop_preview.dart`.
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
-- **Уверенность:** HIGH
-- **Владелец / слой:** общая foundation
-- **Обязанности:** Foundation-логика: Shell tab stack behavior flags.
-- **Когда открывать:** Когда ломается поведение, связанное с `shell_flags.dart`.
-- **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** `lib/core/performance/`, `docs/APP_STRUCTURE.md`
 
 
 ### `lib/core/picker_entry_modes.dart`
@@ -15257,6 +14995,43 @@ RU:
 - **Когда открывать:** Когда ломается поведение, связанное с `plan_time_sequential_cascade.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** UI вызывает `DatabaseService.instance`
+
+
+### `lib/data/plans/diagnostics/plan_duplicate_log.dart`
+
+EN:
+
+- **Human purpose:** Planning-domain duplicate / stream lifecycle markers inside Brain (not shared diagnostics, not feature UI). Brain plan helpers emit these logs; must not live under feature UI or create data to features imports.
+- **What this is:** Planning-domain duplicate / stream lifecycle markers inside Brain (not shared diagnostics, not feature UI).
+- **Why needed:** Brain plan helpers emit these logs; must not live under feature UI or create data to features imports.
+- **Contents:** `planDuplicateLog`, stream lifecycle markers for plan duplicate investigation.
+- **Repository role:** Brain/data
+- **Evidence of use:** Imported/exported by production Dart: `lib/data/database_service.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** Brain Plans
+- **Responsibilities:** Planning-domain duplicate / stream lifecycle markers inside Brain (not shared diagnostics, not feature UI)
+- **When to open:** Plan/list save, Time View layout, recurrence, tags on plans, offline queue.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** UI calls via `DatabaseService.instance`; Plans tab, Lists tab, Time View; APP_STRUCTURE role: Planning-domain duplicate / stream lifecycle markers inside Brain (not shared diagnostics, not feature UI)
+
+RU:
+
+- **Зачем файл человеку:** Сфокусированный модуль данных для plans and lists — файл `plan_duplicate_log`. Держит plans and lists согласованным с PocketBase и экранами.
+- **Что это:** Сфокусированный модуль данных для plans and lists — файл `plan_duplicate_log`.
+- **Зачем:** Держит plans and lists согласованным с PocketBase и экранами.
+- **Содержимое:** Dart-код (logic in `plan_duplicate_log`).
+- **Роль в репозитории:** Brain/data
+- **Доказательства использования:** Импортируется production Dart: `lib/data/database_service.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** Brain — планы
+- **Обязанности:** Поддерживает поведение модуля `plan_duplicate_log` в своём слое.
+- **Когда открывать:** Планы/списки: сохранение, Time View, повтор, теги.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** UI вызывает `DatabaseService.instance`; Plans, Lists, Time View
 
 
 ### `lib/data/plans/notes_brain_helpers.dart`
@@ -22402,6 +22177,232 @@ RU:
 - **Связано с:** `lib/data/plan_service.dart` — reschedule alarm
 
 
+### `lib/shared/diagnostics/performance/rebuild_metrics.dart`
+
+EN:
+
+- **Human purpose:** Shared diagnostics ownership — Rebuild/frame metrics (`--dart-define=PERF_DIAG` gated). Runtime logs and kill switches must stay identical for Brain, shell, core, and features.
+- **What this is:** Shared diagnostics ownership — Rebuild/frame metrics (`--dart-define=PERF_DIAG` gated).
+- **Why needed:** Runtime logs and kill switches must stay identical for Brain, shell, core, and features.
+- **Contents:** Diagnostics helper or kill-switch flag (`RebuildMetrics`).
+- **Key code names:** `RebuildMetrics`
+- **Repository role:** shared diagnostics
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/core/widgets/global_app_header.dart`, `lib/core/widgets/plan_card.dart`, `lib/core/widgets/plan_time_task_card/plan_time_task_card.dart`, `lib/data/database_service.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** shared diagnostics
+- **Responsibilities:** Rebuild/frame metrics (`--dart-define=PERF_DIAG` gated)
+- **When to open:** When behavior tied to `rebuild_metrics.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** APP_STRUCTURE role: Rebuild/frame metrics (`--dart-define=PERF_DIAG` gated)
+
+RU:
+
+- **Зачем файл человеку:** Общий diagnostics-слой — Rebuild/frame metrics (`--dart-define=PERF_DIAG` gated). Runtime logs и kill switches должны совпадать для Brain, shell, core и features.
+- **Что это:** Общий diagnostics-слой — Rebuild/frame metrics (`--dart-define=PERF_DIAG` gated).
+- **Зачем:** Runtime logs и kill switches должны совпадать для Brain, shell, core и features.
+- **Содержимое:** Diagnostics helper или kill-switch flag (`RebuildMetrics`).
+- **Роль в репозитории:** shared diagnostics
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/core/widgets/global_app_header.dart`, `lib/core/widgets/plan_card.dart`, `lib/core/widgets/plan_time_task_card/plan_time_task_card.dart`, `lib/data/database_service.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** общая diagnostics
+- **Обязанности:** Реализует в shared/diagnostics: Rebuild/frame metrics (`--dart-define=PERF_DIAG` gated).
+- **Когда открывать:** Когда ломается поведение, связанное с `rebuild_metrics.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/shared/diagnostics/performance/`, `docs/APP_STRUCTURE.md`
+
+
+### `lib/shared/diagnostics/performance/runtime_flags.dart`
+
+EN:
+
+- **Human purpose:** Shared diagnostics ownership — Shared compile-time kill-switch registry (Brain / shell / features / voice) — kept intact, no split. Runtime logs and kill switches must stay identical for Brain, shell, core, and features.
+- **What this is:** Shared diagnostics ownership — Shared compile-time kill-switch registry (Brain / shell / features / voice) — kept intact, no split.
+- **Why needed:** Runtime logs and kill switches must stay identical for Brain, shell, core, and features.
+- **Contents:** Diagnostics helper or kill-switch flag (logic in `runtime_flags`).
+- **Repository role:** shared diagnostics
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/core/services/desktop_voice_hotkey.dart`, `lib/core/services/desktop_voice_settings.dart`, `lib/data/database_service.dart`, `lib/data/plans/diagnostics/plan_duplicate_log.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** shared diagnostics
+- **Responsibilities:** Shared compile-time kill-switch registry (Brain / shell / features / voice) — kept intact, no split
+- **When to open:** When behavior tied to `runtime_flags.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** APP_STRUCTURE role: Shared compile-time kill-switch registry (Brain / shell / features / voice) — kept intact, no split
+
+RU:
+
+- **Зачем файл человеку:** Общий diagnostics-слой — Shared compile-time kill-switch registry (Brain / shell / features / voice) — kept intact, no split. Runtime logs и kill switches должны совпадать для Brain, shell, core и features.
+- **Что это:** Общий diagnostics-слой — Shared compile-time kill-switch registry (Brain / shell / features / voice) — kept intact, no split.
+- **Зачем:** Runtime logs и kill switches должны совпадать для Brain, shell, core и features.
+- **Содержимое:** Diagnostics helper или kill-switch flag (logic in `runtime_flags`).
+- **Роль в репозитории:** shared diagnostics
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/core/services/desktop_voice_hotkey.dart`, `lib/core/services/desktop_voice_settings.dart`, `lib/data/database_service.dart`, `lib/data/plans/diagnostics/plan_duplicate_log.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** общая diagnostics
+- **Обязанности:** Реализует в shared/diagnostics: Shared compile-time kill-switch registry (Brain / shell / features / voice) — kept intact, no split.
+- **Когда открывать:** Когда ломается поведение, связанное с `runtime_flags.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/shared/diagnostics/performance/`, `docs/APP_STRUCTURE.md`
+
+
+### `lib/shared/diagnostics/performance/shell_flags.dart`
+
+EN:
+
+- **Human purpose:** Shared diagnostics ownership — Shell + Planning Time View canvas bisect toggles (stays under shared performance; not `app/shell`). Runtime logs and kill switches must stay identical for Brain, shell, core, and features.
+- **What this is:** Shared diagnostics ownership — Shell + Planning Time View canvas bisect toggles (stays under shared performance; not `app/shell`).
+- **Why needed:** Runtime logs and kill switches must stay identical for Brain, shell, core, and features.
+- **Contents:** Diagnostics helper or kill-switch flag (`ShellFlags`).
+- **Key code names:** `ShellFlags`
+- **Repository role:** shared diagnostics
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/features/planning/time_view/time_view_canvas.dart`, `lib/features/planning/time_view/time_view_drag_controller.dart`, `lib/features/planning/time_view/time_view_drop_preview.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** shared diagnostics
+- **Responsibilities:** Shell + Planning Time View canvas bisect toggles (stays under shared performance; not `app/shell`)
+- **When to open:** When behavior tied to `shell_flags.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** APP_STRUCTURE role: Shell + Planning Time View canvas bisect toggles (stays under shared performance
+
+RU:
+
+- **Зачем файл человеку:** Общий diagnostics-слой — Shell + Planning Time View canvas bisect toggles (stays under shared performance; not `app/shell`). Runtime logs и kill switches должны совпадать для Brain, shell, core и features.
+- **Что это:** Общий diagnostics-слой — Shell + Planning Time View canvas bisect toggles (stays under shared performance; not `app/shell`).
+- **Зачем:** Runtime logs и kill switches должны совпадать для Brain, shell, core и features.
+- **Содержимое:** Diagnostics helper или kill-switch flag (`ShellFlags`).
+- **Роль в репозитории:** shared diagnostics
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/features/planning/time_view/time_view_canvas.dart`, `lib/features/planning/time_view/time_view_drag_controller.dart`, `lib/features/planning/time_view/time_view_drop_preview.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** общая diagnostics
+- **Обязанности:** Реализует в shared/diagnostics: Shell + Planning Time View canvas bisect toggles (stays under shared performance; not `app/shell`).
+- **Когда открывать:** Когда ломается поведение, связанное с `shell_flags.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/shared/diagnostics/performance/`, `docs/APP_STRUCTURE.md`
+
+
+### `lib/shared/diagnostics/platform_log.dart`
+
+EN:
+
+- **Human purpose:** Shared diagnostics ownership — Platform-specific log sinks. Runtime logs and kill switches must stay identical for Brain, shell, core, and features.
+- **What this is:** Shared diagnostics ownership — Platform-specific log sinks.
+- **Why needed:** Runtime logs and kill switches must stay identical for Brain, shell, core, and features.
+- **Contents:** Diagnostics helper or kill-switch flag (logic in `platform_log`).
+- **Repository role:** shared diagnostics
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/planning/planning_page_shell.dart`, `lib/features/timeline/timeline_view.dart`, `lib/main.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** shared diagnostics
+- **Responsibilities:** Platform-specific log sinks
+- **When to open:** When behavior tied to `platform_log.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** APP_STRUCTURE role: Platform-specific log sinks
+
+RU:
+
+- **Зачем файл человеку:** Общий diagnostics-слой — Platform-specific log sinks. Runtime logs и kill switches должны совпадать для Brain, shell, core и features.
+- **Что это:** Общий diagnostics-слой — Platform-specific log sinks.
+- **Зачем:** Runtime logs и kill switches должны совпадать для Brain, shell, core и features.
+- **Содержимое:** Diagnostics helper или kill-switch flag (logic in `platform_log`).
+- **Роль в репозитории:** shared diagnostics
+- **Доказательства использования:** Импортируется production Dart: `lib/features/planning/planning_page_shell.dart`, `lib/features/timeline/timeline_view.dart`, `lib/main.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** общая diagnostics
+- **Обязанности:** Реализует в shared/diagnostics: Platform-specific log sinks.
+- **Когда открывать:** Когда ломается поведение, связанное с `platform_log.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/shared/diagnostics/`, `docs/APP_STRUCTURE.md`
+
+
+### `lib/shared/diagnostics/runtime_log.dart`
+
+EN:
+
+- **Human purpose:** Shared diagnostics ownership — Release-safe runtime markers / uncaught error logging. Runtime logs and kill switches must stay identical for Brain, shell, core, and features.
+- **What this is:** Shared diagnostics ownership — Release-safe runtime markers / uncaught error logging.
+- **Why needed:** Runtime logs and kill switches must stay identical for Brain, shell, core, and features.
+- **Contents:** Diagnostics helper or kill-switch flag (`RuntimeLog`).
+- **Key code names:** `RuntimeLog`
+- **Repository role:** shared diagnostics
+- **Evidence of use:** Imported/exported by production Dart: `lib/data/database_service.dart`, `lib/features/planning/planning_page_shell.dart`, `lib/features/timeline/timeline_view.dart`, `lib/main.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** shared diagnostics
+- **Responsibilities:** Release-safe runtime markers / uncaught error logging
+- **When to open:** When behavior tied to `runtime_log.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** APP_STRUCTURE role: Release-safe runtime markers / uncaught error logging
+
+RU:
+
+- **Зачем файл человеку:** Общий diagnostics-слой — Release-safe runtime markers / uncaught error logging. Runtime logs и kill switches должны совпадать для Brain, shell, core и features.
+- **Что это:** Общий diagnostics-слой — Release-safe runtime markers / uncaught error logging.
+- **Зачем:** Runtime logs и kill switches должны совпадать для Brain, shell, core и features.
+- **Содержимое:** Diagnostics helper или kill-switch flag (`RuntimeLog`).
+- **Роль в репозитории:** shared diagnostics
+- **Доказательства использования:** Импортируется production Dart: `lib/data/database_service.dart`, `lib/features/planning/planning_page_shell.dart`, `lib/features/timeline/timeline_view.dart`, `lib/main.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** общая diagnostics
+- **Обязанности:** Реализует в shared/diagnostics: Release-safe runtime markers / uncaught error logging.
+- **Когда открывать:** Когда ломается поведение, связанное с `runtime_log.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/shared/diagnostics/`, `docs/APP_STRUCTURE.md`
+
+
+### `lib/shared/diagnostics/startup_log.dart`
+
+EN:
+
+- **Human purpose:** Shared diagnostics ownership — Boot-phase structured logs. Runtime logs and kill switches must stay identical for Brain, shell, core, and features.
+- **What this is:** Shared diagnostics ownership — Boot-phase structured logs.
+- **Why needed:** Runtime logs and kill switches must stay identical for Brain, shell, core, and features.
+- **Contents:** Diagnostics helper or kill-switch flag (`StartupLog`).
+- **Key code names:** `StartupLog`
+- **Repository role:** shared diagnostics
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/core/widgets/lazy_indexed_stack.dart`, `lib/data/database_service.dart`, `lib/main.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** shared diagnostics
+- **Responsibilities:** Boot-phase structured logs
+- **When to open:** When behavior tied to `startup_log.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** APP_STRUCTURE role: Boot-phase structured logs
+
+RU:
+
+- **Зачем файл человеку:** Общий diagnostics-слой — Boot-phase structured logs. Runtime logs и kill switches должны совпадать для Brain, shell, core и features.
+- **Что это:** Общий diagnostics-слой — Boot-phase structured logs.
+- **Зачем:** Runtime logs и kill switches должны совпадать для Brain, shell, core и features.
+- **Содержимое:** Diagnostics helper или kill-switch flag (`StartupLog`).
+- **Роль в репозитории:** shared diagnostics
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/core/widgets/lazy_indexed_stack.dart`, `lib/data/database_service.dart`, `lib/main.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** общая diagnostics
+- **Обязанности:** Реализует в shared/diagnostics: Boot-phase structured logs.
+- **Когда открывать:** Когда ломается поведение, связанное с `startup_log.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/shared/diagnostics/`, `docs/APP_STRUCTURE.md`
+
+
 ### `lib/shared/time/app_clock.dart`
 
 EN:
@@ -22664,6 +22665,82 @@ RU:
 - **Когда открывать:** Когда ломается поведение, связанное с `wall_clock.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/shared/time/`, `docs/APP_STRUCTURE.md`
+
+
+### `lib/shared/voice/diagnostics/desktop_voice_log.dart`
+
+EN:
+
+- **Human purpose:** Shared voice diagnostics — `DesktopVoiceLog` — concise desktop-voice pipeline markers (debug/profile only; release quiet). Desktop voice pipeline markers must stay free of feature UI while serving STT services and Brain parsers.
+- **What this is:** Shared voice diagnostics — `DesktopVoiceLog` — concise desktop-voice pipeline markers (debug/profile only; release quiet).
+- **Why needed:** Desktop voice pipeline markers must stay free of feature UI while serving STT services and Brain parsers.
+- **Contents:** Voice pipeline marker helper (`DesktopVoiceLog`).
+- **Key code names:** `DesktopVoiceLog`
+- **Repository role:** shared voice diagnostics
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/core/services/desktop_stt_helper_service.dart`, `lib/core/services/desktop_voice_recognizer_io.dart`, `lib/core/services/desktop_voice_record_submit.dart`, `lib/core/services/desktop_voice_user_error.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** shared voice diagnostics
+- **Responsibilities:** `DesktopVoiceLog` — concise desktop-voice pipeline markers (debug/profile only; release quiet)
+- **When to open:** When behavior tied to `desktop_voice_log.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** APP_STRUCTURE role: `DesktopVoiceLog` — concise desktop-voice pipeline markers (debug/profile only
+
+RU:
+
+- **Зачем файл человеку:** Общая voice diagnostics — `DesktopVoiceLog` — concise desktop-voice pipeline markers (debug/profile only; release quiet). Маркеры desktop voice pipeline без feature UI для STT services и Brain parsers.
+- **Что это:** Общая voice diagnostics — `DesktopVoiceLog` — concise desktop-voice pipeline markers (debug/profile only; release quiet).
+- **Зачем:** Маркеры desktop voice pipeline без feature UI для STT services и Brain parsers.
+- **Содержимое:** Voice pipeline marker helper (`DesktopVoiceLog`).
+- **Роль в репозитории:** shared voice diagnostics
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/core/services/desktop_stt_helper_service.dart`, `lib/core/services/desktop_voice_recognizer_io.dart`, `lib/core/services/desktop_voice_record_submit.dart`, `lib/core/services/desktop_voice_user_error.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** общая voice diagnostics
+- **Обязанности:** Реализует в shared/voice: `DesktopVoiceLog` — concise desktop-voice pipeline markers (debug/profile only; release quiet).
+- **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_log.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/shared/voice/diagnostics/`, `docs/APP_STRUCTURE.md`
+
+
+### `lib/shared/voice/diagnostics/desktop_voice_pipeline.dart`
+
+EN:
+
+- **Human purpose:** Shared voice diagnostics — Desktop-voice pipeline step helpers built on `DesktopVoiceLog`. Desktop voice pipeline markers must stay free of feature UI while serving STT services and Brain parsers.
+- **What this is:** Shared voice diagnostics — Desktop-voice pipeline step helpers built on `DesktopVoiceLog`.
+- **Why needed:** Desktop voice pipeline markers must stay free of feature UI while serving STT services and Brain parsers.
+- **Contents:** Voice pipeline marker helper (`DesktopVoicePipeline`).
+- **Key code names:** `DesktopVoicePipeline`
+- **Repository role:** shared voice diagnostics
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/core/services/desktop_main_window.dart`, `lib/core/services/desktop_stt_benchmark_harness.dart`, `lib/core/services/desktop_stt_cloud_service.dart`, `lib/core/services/desktop_stt_helper_service.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** shared voice diagnostics
+- **Responsibilities:** Desktop-voice pipeline step helpers built on `DesktopVoiceLog`
+- **When to open:** When behavior tied to `desktop_voice_pipeline.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** APP_STRUCTURE role: Desktop-voice pipeline step helpers built on `DesktopVoiceLog`
+
+RU:
+
+- **Зачем файл человеку:** Общая voice diagnostics — Desktop-voice pipeline step helpers built on `DesktopVoiceLog`. Маркеры desktop voice pipeline без feature UI для STT services и Brain parsers.
+- **Что это:** Общая voice diagnostics — Desktop-voice pipeline step helpers built on `DesktopVoiceLog`.
+- **Зачем:** Маркеры desktop voice pipeline без feature UI для STT services и Brain parsers.
+- **Содержимое:** Voice pipeline marker helper (`DesktopVoicePipeline`).
+- **Роль в репозитории:** shared voice diagnostics
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/core/services/desktop_main_window.dart`, `lib/core/services/desktop_stt_benchmark_harness.dart`, `lib/core/services/desktop_stt_cloud_service.dart`, `lib/core/services/desktop_stt_helper_service.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** общая voice diagnostics
+- **Обязанности:** Реализует в shared/voice: Desktop-voice pipeline step helpers built on `DesktopVoiceLog`.
+- **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_pipeline.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/shared/voice/diagnostics/`, `docs/APP_STRUCTURE.md`
 
 
 ### `linux/.gitignore`

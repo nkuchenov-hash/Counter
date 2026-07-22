@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:io' show Platform;
 
-import 'package:counter/core/diagnostics/desktop_voice_log.dart';
+import 'package:counter/shared/voice/diagnostics/desktop_voice_log.dart';
 import 'package:counter/core/services/desktop_hotkey_codec.dart';
 import 'package:counter/core/services/desktop_voice_hotkey.dart';
 import 'package:counter/core/services/desktop_voice_settings.dart';

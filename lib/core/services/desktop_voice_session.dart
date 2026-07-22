@@ -1,4 +1,4 @@
-import 'package:counter/core/diagnostics/desktop_voice_pipeline.dart';
+import 'package:counter/shared/voice/diagnostics/desktop_voice_pipeline.dart';
 
 /// Immutable voice session identity for Desktop Voice hotkey recordings.
 ///

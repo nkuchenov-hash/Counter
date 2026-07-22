@@ -65,7 +65,72 @@ register_folder_ru(
         "affects_ru": "Плавность day swipe на Timeline и Planning; не влияет на корректность данных для пользователя.",
         "when_ru": "Jank при swipe дней, stale day content после edit, perf regression.",
         "delete_ru": "Нет — paging станет медленным или рваным.",
-        "related_ru": "`lib/data/records/record_timeline_vm.dart`, `lib/core/performance/runtime_flags.dart`.",
+        "related_ru": "`lib/data/records/record_timeline_vm.dart`, `lib/shared/diagnostics/performance/runtime_flags.dart`.",
+    },
+)
+
+register_folder_ru(
+    "lib/shared/diagnostics",
+    {
+        "what_ru": "Общие runtime logs и shared kill-switch / metrics registry.",
+        "why_ru": "Brain, shell, core и features нуждаются в одном месте для release-safe markers и compile-time performance toggles.",
+        "inside_ru": "`runtime_log.dart`, `platform_log.dart`, `startup_log.dart`, `performance/`.",
+        "affects_ru": "Только диагностика разработчика и kill switches — не UI chrome.",
+        "when_ru": "Startup timing, kill-switch bisect, release-safe runtime markers.",
+        "delete_ru": "Нет — Brain и shell импортируют эти пути.",
+        "related_ru": "`lib/shared/diagnostics/performance/`, `docs/ARCHITECTURE.md`.",
+    },
+)
+
+register_folder_ru(
+    "lib/shared/diagnostics/performance",
+    {
+        "what_ru": "Feature flags runtime и perf metrics — полоса дат, warm window, счётчики rebuild.",
+        "why_ru": "Позволяет включать дорогие features или capture frame metrics без debug code для всех users.",
+        "inside_ru": "Файлы `runtime_flags.dart`, `shell_flags.dart`, `rebuild_metrics.dart` (`PERF_DIAG` gated).",
+        "affects_ru": "Perf: paging дат, tab stack оболочки, canvas bisect Planning Time View, diagnostic builds.",
+        "when_ru": "Расследование jank, warm-window kill switch, perf capture tests.",
+        "delete_ru": "Нет — perf tests и diagnostics ссылаются на эти flags.",
+        "related_ru": "`test/perf_*`, `lib/data/cache/`, `lib/shared/diagnostics/`.",
+    },
+)
+
+register_folder_ru(
+    "lib/shared/voice",
+    {
+        "what_ru": "Общие voice helpers для desktop STT/voice services и Brain voice parsing.",
+        "why_ru": "Markers voice pipeline должны оставаться без feature UI и Brain I/O при нескольких потребителях.",
+        "inside_ru": "`diagnostics/` — desktop voice log и pipeline step helpers.",
+        "affects_ru": "Трассировка desktop voice и STT pipeline markers.",
+        "when_ru": "Пропали шаги desktop voice pipeline в debug/profile.",
+        "delete_ru": "Нет — desktop voice services импортируют эти markers.",
+        "related_ru": "`lib/shared/voice/diagnostics/`, `lib/core/services/desktop_voice_*.dart`.",
+    },
+)
+
+register_folder_ru(
+    "lib/shared/voice/diagnostics",
+    {
+        "what_ru": "Маркеры desktop voice pipeline — log и step helpers.",
+        "why_ru": "Desktop STT/voice и Brain voice parsing делят один quiet release / verbose debug-profile sink.",
+        "inside_ru": "`desktop_voice_log.dart`, `desktop_voice_pipeline.dart`.",
+        "affects_ru": "Только developer diagnostics для desktop voice.",
+        "when_ru": "Трассировка capture, STT, overlay или submit шагов desktop voice.",
+        "delete_ru": "Нет — используется в debug/profile desktop voice builds.",
+        "related_ru": "`lib/core/services/`, `lib/shared/diagnostics/`.",
+    },
+)
+
+register_folder_ru(
+    "lib/data/plans/diagnostics",
+    {
+        "what_ru": "Planning-domain diagnostics внутри Brain (дубликаты планов / stream lifecycle markers).",
+        "why_ru": "Brain plan helpers эмитят эти логи; не должны жить в feature UI и создавать data→features imports.",
+        "inside_ru": "`plan_duplicate_log.dart`.",
+        "affects_ru": "Только diagnostic markers дубликатов / stream планов.",
+        "when_ru": "Расследование duplicate plan rows или spam plan stream.",
+        "delete_ru": "Нет — Brain plan helpers эмитят эти markers.",
+        "related_ru": "`lib/shared/diagnostics/performance/runtime_flags.dart` только для `kPlanStreamLifecycleDiag`.",
     },
 )
 

@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:io' show Platform;
 
-import 'package:counter/core/diagnostics/desktop_voice_pipeline.dart';
+import 'package:counter/shared/voice/diagnostics/desktop_voice_pipeline.dart';
 import 'package:counter/core/services/desktop_voice_native_overlay.dart';
 import 'package:counter/core/services/desktop_voice_overlay_constants.dart';
 import 'package:counter/core/services/desktop_voice_overlay_host.dart';

@@ -1,6 +1,6 @@
 import 'dart:math' as math;
 
-import 'package:counter/core/diagnostics/desktop_voice_pipeline.dart';
+import 'package:counter/shared/voice/diagnostics/desktop_voice_pipeline.dart';
 import 'package:counter/core/services/desktop_voice_audio_presentation.dart';
 import 'package:counter/core/services/pcm_audio_utils.dart';
 

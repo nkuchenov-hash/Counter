@@ -1,4 +1,4 @@
-import 'package:counter/core/diagnostics/desktop_voice_pipeline.dart';
+import 'package:counter/shared/voice/diagnostics/desktop_voice_pipeline.dart';
 import 'package:counter/core/services/desktop_stt_engine.dart';
 import 'package:counter/core/services/desktop_stt_helper_service.dart';
 import 'package:counter/core/services/desktop_stt_quality_evaluation.dart';

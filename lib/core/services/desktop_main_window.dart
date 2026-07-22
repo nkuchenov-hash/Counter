@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:counter/core/diagnostics/desktop_voice_pipeline.dart';
+import 'package:counter/shared/voice/diagnostics/desktop_voice_pipeline.dart';
 import 'package:flutter/material.dart';
 import 'package:window_manager/window_manager.dart';
 

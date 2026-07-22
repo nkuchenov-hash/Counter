@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:counter/core/app_build_info.dart';
-import 'package:counter/core/diagnostics/desktop_voice_pipeline.dart';
+import 'package:counter/shared/voice/diagnostics/desktop_voice_pipeline.dart';
 
 /// Installed-app identity for Desktop Voice diagnostics and smoke scripts.
 abstract final class DesktopVoiceInstalledIdentity {

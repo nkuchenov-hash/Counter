@@ -3,12 +3,12 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:counter/core/app_snackbar.dart';
-import 'package:counter/core/diagnostics/plan_duplicate_log.dart';
-import 'package:counter/core/diagnostics/runtime_log.dart';
-import 'package:counter/core/diagnostics/startup_log.dart';
-import 'package:counter/core/performance/runtime_flags.dart';
+import 'package:counter/data/plans/diagnostics/plan_duplicate_log.dart';
+import 'package:counter/shared/diagnostics/runtime_log.dart';
+import 'package:counter/shared/diagnostics/startup_log.dart';
+import 'package:counter/shared/diagnostics/performance/runtime_flags.dart';
 import 'package:counter/core/widgets/day_window.dart';
-import 'package:counter/core/performance/rebuild_metrics.dart';
+import 'package:counter/shared/diagnostics/performance/rebuild_metrics.dart';
 import 'package:counter/core/link_scalar.dart';
 import 'package:counter/data/cache/day_snapshot_window.dart';
 import 'package:counter/data/cache/render_snapshot.dart';

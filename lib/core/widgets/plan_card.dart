@@ -4,7 +4,7 @@
 // ---------------------------------------------------------------------------
 
 import 'package:counter/core/widgets/plan_time_task_card.dart';
-import 'package:counter/core/performance/rebuild_metrics.dart';
+import 'package:counter/shared/diagnostics/performance/rebuild_metrics.dart';
 import 'package:counter/shared/time/plan_time_labels.dart';
 import 'package:counter/data/models.dart';
 import 'package:flutter/material.dart';

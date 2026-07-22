@@ -431,6 +431,10 @@ def _owner_for(path: str) -> tuple[str, str]:
         return "app shell", "оболочка приложения"
     if p.startswith("lib/shared/time/"):
         return "shared time", "общий time-слой"
+    if p.startswith("lib/shared/diagnostics/"):
+        return "shared diagnostics", "общая diagnostics"
+    if p.startswith("lib/shared/voice/"):
+        return "shared voice diagnostics", "общая voice diagnostics"
     if p.startswith("lib/l10n/"):
         return "localization", "локализация"
     if p.startswith("lib/services/"):
@@ -479,6 +483,10 @@ def _classify_role(path: str, rec_hints: dict) -> str:
         return "production UI"
     if p.startswith("lib/shared/time/"):
         return "shared time"
+    if p.startswith("lib/shared/diagnostics/"):
+        return "shared diagnostics"
+    if p.startswith("lib/shared/voice/"):
+        return "shared voice diagnostics"
     if p.startswith("lib/data/"):
         return "Brain/data"
     if p.startswith("lib/core/") or p.startswith("lib/services/"):

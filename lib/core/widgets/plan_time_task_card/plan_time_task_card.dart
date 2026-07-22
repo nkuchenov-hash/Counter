@@ -1,6 +1,6 @@
 import 'dart:math' as math;
 
-import 'package:counter/core/performance/rebuild_metrics.dart';
+import 'package:counter/shared/diagnostics/performance/rebuild_metrics.dart';
 import 'package:counter/core/plan_category_lookup.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/core/widgets/chip_component.dart';

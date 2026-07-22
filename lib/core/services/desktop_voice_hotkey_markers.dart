@@ -1,4 +1,4 @@
-import 'package:counter/core/diagnostics/desktop_voice_pipeline.dart';
+import 'package:counter/shared/voice/diagnostics/desktop_voice_pipeline.dart';
 import 'package:counter/core/services/desktop_voice_settings.dart';
 
 /// Structured hotkey registration markers for smoke scripts.

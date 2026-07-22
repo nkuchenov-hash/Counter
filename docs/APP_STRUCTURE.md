@@ -6,7 +6,7 @@ Physical map of the Flutter application: what exists, which layer owns it, who m
 
 ---
 
-## 0. Current status (2026-07-06)
+## 0. Current status (2026-07-22)
 
 | Item | Value |
 | :--- | :--- |
@@ -14,7 +14,8 @@ Physical map of the Flutter application: what exists, which layer owns it, who m
 | **Structure audit verdict** | **ACCEPTED WITH WATCHLIST** — see [`docs/reports/FINAL_STRUCTURE_AUDIT_2026-07-06.md`](reports/FINAL_STRUCTURE_AUDIT_2026-07-06.md) |
 | **UI decomposition** | Pass 3 / 3B complete (shell, planning, timeline, lists, shared edit sheets, plan card) |
 | **Brain decomposition** | Pass 4A–4D complete (`plans/*`, `records/*`, `categories/*`, `profile/*`) |
-| **Strict architecture guard** | Baseline 2026-07-17 cleanup **complete**: 63 → 0 (A=0, B=0); hygiene audit 2026-07-21 (`docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`); `APP_STRUCTURE_DETAILED` regenerated 2026-07-21 |
+| **Diagnostics ownership** | Phase 2B (2026-07-22): runtime logs + kill switches under `lib/shared/diagnostics/`; plan duplicate log under `lib/data/plans/diagnostics/` (Brain); desktop voice pipeline under `lib/shared/voice/diagnostics/` |
+| **Strict architecture guard** | Baseline 2026-07-17 cleanup **complete**: 63 → 0 (A=0, B=0); hygiene audit 2026-07-21 (`docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`); diagnostics ownership Phase 2B 2026-07-22 |
 | **Detailed file guide** | [`docs/APP_STRUCTURE_DETAILED.md`](APP_STRUCTURE_DETAILED.md) — owner-readable **evidence-backed** EN/RU entry per tracked folder and file (role, necessity, confidence, deletion consequence); regenerate via `generate_app_structure_detailed.py` |
 | **Project Knowledge pack** | [`docs/PROJECT_KNOWLEDGE_PACK.md`](PROJECT_KNOWLEDGE_PACK.md) — 14-doc upload checklist |
 | **Prior parity report** | [`docs/reports/FINAL_STRUCTURE_PARITY_AND_DOC_CLEANUP_2026-07-03.md`](reports/FINAL_STRUCTURE_PARITY_AND_DOC_CLEANUP_2026-07-03.md) |
@@ -33,9 +34,11 @@ python scripts/manual/generate_app_structure_detailed.py
 | Layer | Path | Owns | May import | Must NOT import |
 | :--- | :--- | :--- | :--- | :--- |
 | **Entry** | `lib/main.dart`, `lib/app_shell.dart`, `lib/app/shell/` | Boot, auth gate, form-factor shell navigation, cross-tab wiring | `data/`, `core/`, `shared/`, `features/`, `l10n/`, `services/` | — |
-| **Brain** | `lib/data/` | PocketBase I/O, in-memory cache, optimistic UI, offline outboxes, domain models | `core/` (utilities only), `shared/time/`, `services/` (device bridge), other `data/` | `features/` |
+| **Brain** | `lib/data/` | PocketBase I/O, in-memory cache, optimistic UI, offline outboxes, domain models; Planning-domain diagnostics under `plans/diagnostics/` | `core/` (utilities only), `shared/` (time + diagnostics), `services/` (device bridge), other `data/` | `features/` |
 | **Shared time** | `lib/shared/time/` | Multi-consumer UTC/wall-clock, timezone catalog, app clock hooks, shared plan-time math used by Brain + UI | `core/` (utilities), `data/models.dart` (types only) | `features/`, `data/database_service.dart` |
-| **Foundation** | `lib/core/` | Theme, tokens, shared widgets, diagnostics, performance flags | `core/`, `shared/time/`, `data/models.dart` (types only) | `features/`, `data/database_service.dart` |
+| **Shared diagnostics** | `lib/shared/diagnostics/` | General runtime logs (`runtime_log`, `platform_log`, `startup_log`); performance metrics + kill-switch registry under `performance/` | `core/` (utilities), `data/models.dart` (types only) | `features/`, `data/database_service.dart` |
+| **Shared voice diagnostics** | `lib/shared/voice/diagnostics/` | Desktop voice pipeline markers (`desktop_voice_log`, `desktop_voice_pipeline`) | `core/` (utilities), `shared/diagnostics/` | `features/`, `data/database_service.dart` |
+| **Foundation** | `lib/core/` | Theme, tokens, shared widgets, desktop voice services | `core/`, `shared/` (time + diagnostics + voice diagnostics), `data/models.dart` (types only) | `features/`, `data/database_service.dart` |
 | **UI modules** | `lib/features/` | Screens, sheets, feature-specific layout | `data/`, `core/`, `shared/`, `l10n/`, `features/shared/` | other features except via `shared/` or explicit shell routing |
 | **Voice** | `lib/l10n/` | Locale catalog and `t()` lookup | Flutter SDK only | `data/`, `features/` |
 | **Device bridge** | `lib/services/` | OS capabilities without UI | `data/models.dart`, `shared/time/`, Flutter/plugins | `features/` |
@@ -44,16 +47,16 @@ python scripts/manual/generate_app_structure_detailed.py
 
 ```
 features  →  data, core, shared, l10n, services   ✓
-data      →  core, shared/time, services, data    ✓
-data      →  features                            ✗
-shared/time → core, data/models.dart             ✓
-shared/time → features, database_service         ✗
-core      →  data/models.dart, shared/time, core ✓
+data      →  core, shared, services, data         ✓
+data      →  features                             ✗
+shared    →  core, data/models.dart, shared       ✓
+shared    →  features, database_service           ✗
+core      →  data/models.dart, shared, core       ✓
 core      →  features, database_service           ✗
-services  →  data/models, shared/time, plugins   ✓
-services  →  features                            ✗
-l10n      →  (self + langs)                      ✓
-main/app_shell → all layers                      ✓
+services  →  data/models, shared/time, plugins    ✓
+services  →  features                             ✗
+l10n      →  (self + langs)                       ✓
+main/app_shell → all layers                       ✓
 ```
 
 **Brain rule:** `lib/data/database_service.dart` is the only file that performs HTTP/PocketBase calls. Domain logic lives in `part of` extensions (`db_core.dart`, `record_service.dart`, `records/*`, `plan_service.dart`, `plans/*`, `category_service.dart`, `categories/*`, `profile_service.dart`, `profile/*`).
@@ -143,6 +146,7 @@ Compatibility re-exports (remove when callers migrate): root `lib/app_shell.dart
 | `plans/plan_ai_parse_helpers.dart` | AI `parse-task` helpers: `parseTaskViaAiBackend`, `parsePlanningItemsViaAiBackend` *(part)* |
 | `plans/plan_alarm_helpers.dart` | Hydrated-cache plan reminder reconciliation and debounced OS alarm bridge *(part)* |
 | `plans/notes_brain_helpers.dart` | Notes Brain extension — parse/apply/pin/done + debounced `notes_delta` PATCH *(part)* |
+| `plans/diagnostics/plan_duplicate_log.dart` | Planning-domain duplicate / stream lifecycle markers inside Brain (not shared diagnostics, not feature UI) |
 | `category_service.dart` | Category coordinator: flatten/PB bridge statics, stats duration helpers, local task prefs helpers *(part)* |
 | `categories/category_cache_helpers.dart` | Category fetch, slug reservation, `_loadRulesFromNoco` *(part)* |
 | `categories/category_order_helpers.dart` | Category sibling optimistic reorder, baseline tracking, debounced PocketBase order synchronization, immediate lifecycle flush *(part)* |
@@ -219,30 +223,11 @@ Compatibility re-exports (remove when callers migrate): root `lib/app_shell.dart
 | `url_strategy_stub.dart` | Web URL strategy conditional import |
 | `web_redirect.dart` | Production web OAuth redirect URI helper |
 
-**`core/diagnostics/`**
-
-| File | Role |
-| :--- | :--- |
-| `runtime_log.dart` | Uncaught error logging |
-| `platform_log.dart` | Platform-specific log sinks |
-| `startup_log.dart` | Boot-phase structured logs |
-| `plan_duplicate_log.dart` | Plan duplicate detection logs |
-| `desktop_voice_log.dart` | `DesktopVoiceLog` — concise desktop-voice pipeline markers (debug/profile only; release quiet) |
-| `desktop_voice_pipeline.dart` | Desktop-voice pipeline step helpers built on `DesktopVoiceLog` |
-
 **`core/navigation/`**
 
 | File | Role |
 | :--- | :--- |
 | `app_navigator.dart` | `appRootNavigatorKey` — root navigator for desktop overlays when main window is hidden |
-
-**`core/performance/`**
-
-| File | Role |
-| :--- | :--- |
-| `runtime_flags.dart` | Feature kill switches (date strip, warm window, etc.) |
-| `shell_flags.dart` | Shell tab stack behavior flags |
-| `rebuild_metrics.dart` | Rebuild/frame metrics (`--dart-define=PERF_DIAG` gated) |
 
 **`core/env/`**
 
@@ -392,6 +377,28 @@ UTC/wall-clock and timezone catalog code used by Brain plus more than one UI sur
 | `category_timezone_options.dart` | Per-category default plan-time IANA option list |
 
 Shell-selected date helpers stay under `app/shell/shared/`. Settings-only timezone helpers live in `features/settings/timezone_settings.dart`.
+
+### 3.36 `lib/shared/diagnostics/` — runtime logs + kill switches (Phase 2B)
+
+General runtime diagnostics and the compile-time kill-switch registry. Multi-consumer: Brain, shell, core widgets/services, and features. No feature UI and no `database_service` imports.
+
+| File | Role |
+| :--- | :--- |
+| `runtime_log.dart` | Release-safe runtime markers / uncaught error logging |
+| `platform_log.dart` | Platform-specific log sinks |
+| `startup_log.dart` | Boot-phase structured logs |
+| `performance/runtime_flags.dart` | Shared compile-time kill-switch registry (Brain / shell / features / voice) — kept intact, no split |
+| `performance/shell_flags.dart` | Shell + Planning Time View canvas bisect toggles (stays under shared performance; not `app/shell`) |
+| `performance/rebuild_metrics.dart` | Rebuild/frame metrics (`--dart-define=PERF_DIAG` gated) |
+
+### 3.37 `lib/shared/voice/diagnostics/` — desktop voice pipeline (Phase 2B)
+
+Voice-pipeline markers used by desktop STT/voice services and Brain voice parsing. No feature UI and no `database_service` imports.
+
+| File | Role |
+| :--- | :--- |
+| `desktop_voice_log.dart` | `DesktopVoiceLog` — concise desktop-voice pipeline markers (debug/profile only; release quiet) |
+| `desktop_voice_pipeline.dart` | Desktop-voice pipeline step helpers built on `DesktopVoiceLog` |
 
 ### 3.4 `lib/features/` — UI modules
 

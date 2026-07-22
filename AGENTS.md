@@ -50,8 +50,11 @@ Use `CHANGELOG.md` and `docs/ROADMAP.md` to understand what is already built bef
 - `lib/data/` is the Brain. It owns PocketBase I/O, domain models, in-memory cache, optimistic state, and offline outboxes.
 - `lib/data/database_service.dart` is the Brain root. Domain logic lives in its `part of` files: `db_core.dart`; coordinators `record_service.dart`, `plan_service.dart`, `category_service.dart`, `profile_service.dart`; and focused parts under `records/*`, `plans/*`, `categories/*`, `profile/*`.
 - `lib/data/` must not import `lib/features/`.
-- `lib/core/` owns theme, tokens, shared widgets, diagnostics, and performance flags. It must not import feature UI or `database_service.dart` except where the documented structure explicitly allows model-only types.
+- `lib/data/plans/diagnostics/` owns Planning-domain Brain diagnostics (`plan_duplicate_log.dart`) — not shared diagnostics, not feature UI. Brain plan helpers emit these logs.
+- `lib/core/` owns theme, tokens, shared widgets, and desktop voice services. It must not import feature UI or `database_service.dart` except where the documented structure explicitly allows model-only types.
 - `lib/shared/time/` owns multi-consumer wall-clock, timezone catalog, and injectable clock/timezone hooks. It must not import `features/` or `database_service.dart`. Feature-only time math belongs under the owning feature; shell date coordination stays in `lib/app/shell/`.
+- `lib/shared/diagnostics/` owns general runtime logs (`runtime_log`, `platform_log`, `startup_log`) and performance kill switches / metrics under `performance/` (`runtime_flags.dart`, `shell_flags.dart`, `rebuild_metrics.dart`). It must not import `features/` or `database_service.dart`.
+- `lib/shared/voice/diagnostics/` owns desktop voice pipeline markers (`desktop_voice_log`, `desktop_voice_pipeline`). It must not import `features/` or `database_service.dart`.
 - `lib/features/` owns screens, sheets, and feature-specific layout. It composes Brain APIs and canonical core/shared widgets.
 - `lib/l10n/langs/en.dart` and `lib/l10n/langs/ru.dart` are the canonical EN/RU locale sources.
 - `pb_hooks/` is server-side PocketBase hook code. Flutter client code does not import it.

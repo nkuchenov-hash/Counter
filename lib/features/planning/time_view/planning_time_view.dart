@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:math' as math;
 
-import 'package:counter/core/performance/rebuild_metrics.dart';
-import 'package:counter/core/performance/runtime_flags.dart';
+import 'package:counter/shared/diagnostics/performance/rebuild_metrics.dart';
+import 'package:counter/shared/diagnostics/performance/runtime_flags.dart';
 import 'package:counter/core/widgets/plan_time_task_card.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';

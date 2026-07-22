@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:io' show File, Platform, Process;
 
-import 'package:counter/core/diagnostics/desktop_voice_log.dart';
-import 'package:counter/core/diagnostics/desktop_voice_pipeline.dart';
+import 'package:counter/shared/voice/diagnostics/desktop_voice_log.dart';
+import 'package:counter/shared/voice/diagnostics/desktop_voice_pipeline.dart';
 import 'package:counter/core/services/desktop_stt_helper_service.dart';
 import 'package:counter/core/services/desktop_voice_acceptance_bridge.dart';
 import 'package:counter/core/services/desktop_tray_service.dart';

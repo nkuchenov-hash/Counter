@@ -1,4 +1,4 @@
-import 'package:counter/core/diagnostics/desktop_voice_pipeline.dart';
+import 'package:counter/shared/voice/diagnostics/desktop_voice_pipeline.dart';
 
 /// Raw STT quality evaluation — postprocess/alias must not count as recognition quality.
 abstract final class DesktopSttQualityEvaluation {

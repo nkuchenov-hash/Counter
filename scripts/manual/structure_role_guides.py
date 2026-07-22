@@ -134,6 +134,11 @@ PLAN_PART: dict[str, tuple[str, str, str]] = {
         "Notes editor/library must stay local-first: cache first, then one PATCH per debounce window.",
         "Parse/apply/pin/done helpers; `createEmptyNote`; optimistic NotesBrainExtension.",
     ),
+    "plan_duplicate_log": (
+        "Planning-domain duplicate / stream lifecycle markers inside Brain (not shared diagnostics, not feature UI).",
+        "Brain plan helpers emit these logs; must not live under feature UI or create data to features imports.",
+        "`planDuplicateLog`, stream lifecycle markers for plan duplicate investigation.",
+    ),
 }
 
 CATEGORY_PART: dict[str, tuple[str, str, str]] = {
@@ -273,7 +278,7 @@ def _part_guide(path: str, role: str, syms: list[str], part_map: dict[str, tuple
     stem = Path(path).stem
     what, why, contains = part_map.get(stem, (
         f"Focused brain module for {area}: {role.split(';')[0].strip().lower()}.",
-        f"Keeps {area} consistent between PocketBase and the UI cache.",
+        f"Maintains {area} consistency between PocketBase and the UI cache.",
         f"Dart helpers and extensions ({_sym_line(syms, path)}).",
     ))
     role_line = role.split(";")[0].strip()
@@ -469,6 +474,32 @@ def humanize_guide(
             "why_ru": "UTC и profile wall-clock должны совпадать для Brain, header, Plans и settings.",
             "contains_ru": f"Time helper или injectable clock hook ({sym}).",
             "responsibilities_ru": f"Реализует в shared/time: {role_clean}.",
+        }
+
+    if p.startswith("lib/shared/diagnostics/"):
+        role_short = role_clean.replace("*(part)*", "").strip()
+        return {
+            "what": f"Shared diagnostics ownership — {role_short}.",
+            "why": "Runtime logs and kill switches must stay identical for Brain, shell, core, and features.",
+            "contains": f"Diagnostics helper or kill-switch flag ({sym}).",
+            "responsibilities": role_clean,
+            "what_ru": f"Общий diagnostics-слой — {role_short}.",
+            "why_ru": "Runtime logs и kill switches должны совпадать для Brain, shell, core и features.",
+            "contains_ru": f"Diagnostics helper или kill-switch flag ({sym}).",
+            "responsibilities_ru": f"Реализует в shared/diagnostics: {role_clean}.",
+        }
+
+    if p.startswith("lib/shared/voice/"):
+        role_short = role_clean.replace("*(part)*", "").strip()
+        return {
+            "what": f"Shared voice diagnostics — {role_short}.",
+            "why": "Desktop voice pipeline markers must stay free of feature UI while serving STT services and Brain parsers.",
+            "contains": f"Voice pipeline marker helper ({sym}).",
+            "responsibilities": role_clean,
+            "what_ru": f"Общая voice diagnostics — {role_short}.",
+            "why_ru": "Маркеры desktop voice pipeline без feature UI для STT services и Brain parsers.",
+            "contains_ru": f"Voice pipeline marker helper ({sym}).",
+            "responsibilities_ru": f"Реализует в shared/voice: {role_clean}.",
         }
 
     if p.startswith("lib/core/widgets/"):

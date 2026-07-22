@@ -1,4 +1,4 @@
-import 'package:counter/core/diagnostics/desktop_voice_pipeline.dart';
+import 'package:counter/shared/voice/diagnostics/desktop_voice_pipeline.dart';
 import 'package:counter/data/category_fuzzy_match.dart';
 import 'package:counter/data/voice_command_parser.dart';
 

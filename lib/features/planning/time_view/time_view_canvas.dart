@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:counter/core/performance/shell_flags.dart';
+import 'package:counter/shared/diagnostics/performance/shell_flags.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/planning/planning_day_start_prefs.dart';
