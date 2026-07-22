@@ -763,11 +763,24 @@ register_folder_ru(
     {
         "what_ru": "Срез мозга для Plans/Lists — задачи по расписанию, backlog, recurrence и теги.",
         "why_ru": "Вкладки Plans и Lists читают/пишут одну таблицу `plans` через эти модули.",
-        "inside_ru": "Projection Time View, RRULE expansion, sync тегов, кэш, offline outbox.",
+        "inside_ru": "Projection Time View, RRULE expansion, sync тегов, кэш, offline outbox, `diagnostics/`.",
         "affects_ru": "Plans, Time View, Lists, edit sheets планов, plan alarms.",
         "when_ru": "Планы не сохраняются, recurrence неверна, карточки Time View не на месте.",
         "delete_ru": "Нет — сломаются Plans и Lists.",
         "related_ru": "`lib/data/plan_service.dart`, `lib/features/planning/`.",
+    },
+)
+
+register_folder_ru(
+    "lib/data/plans/diagnostics",
+    {
+        "what_ru": "Planning-domain diagnostics внутри Brain (дубликаты планов / stream lifecycle markers).",
+        "why_ru": "Brain plan helpers эмитят эти логи; не должны жить в feature UI и создавать data→features imports.",
+        "inside_ru": "`plan_duplicate_log.dart`.",
+        "affects_ru": "Только diagnostic markers дубликатов / stream планов.",
+        "when_ru": "Расследование duplicate plan rows или spam plan stream.",
+        "delete_ru": "Нет — Brain plan helpers эмитят эти markers.",
+        "related_ru": "`lib/shared/diagnostics/performance/runtime_flags.dart` только для `kPlanStreamLifecycleDiag`.",
     },
 )
 
@@ -924,19 +937,6 @@ register_folder_ru(
         "when_ru": "Трассировка capture, STT, overlay или submit шагов desktop voice.",
         "delete_ru": "Нет — используется в debug/profile desktop voice builds.",
         "related_ru": "`lib/core/services/`, `lib/shared/diagnostics/`.",
-    },
-)
-
-register_folder_ru(
-    "lib/features/planning/diagnostics",
-    {
-        "what_ru": "Marker-only log дубликатов / stream планов для Brain plan helpers.",
-        "why_ru": "Детекция дубликатов планов принадлежит Planning, но импортируется только из Brain — узкое исключение Brain→features.",
-        "inside_ru": "`plan_duplicate_log.dart`.",
-        "affects_ru": "Только diagnostic markers дубликатов / stream планов.",
-        "when_ru": "Расследование duplicate plan rows или spam plan stream.",
-        "delete_ru": "Нет — Brain plan helpers импортируют этот marker module.",
-        "related_ru": "`lib/data/plans/`, `lib/shared/diagnostics/performance/runtime_flags.dart`.",
     },
 )
 

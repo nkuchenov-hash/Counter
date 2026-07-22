@@ -134,6 +134,11 @@ PLAN_PART: dict[str, tuple[str, str, str]] = {
         "Notes editor/library must stay local-first: cache first, then one PATCH per debounce window.",
         "Parse/apply/pin/done helpers; `createEmptyNote`; optimistic NotesBrainExtension.",
     ),
+    "plan_duplicate_log": (
+        "Planning-domain duplicate / stream lifecycle markers inside Brain (not shared diagnostics, not feature UI).",
+        "Brain plan helpers emit these logs; must not live under feature UI or create data to features imports.",
+        "`planDuplicateLog`, stream lifecycle markers for plan duplicate investigation.",
+    ),
 }
 
 CATEGORY_PART: dict[str, tuple[str, str, str]] = {
@@ -273,7 +278,7 @@ def _part_guide(path: str, role: str, syms: list[str], part_map: dict[str, tuple
     stem = Path(path).stem
     what, why, contains = part_map.get(stem, (
         f"Focused brain module for {area}: {role.split(';')[0].strip().lower()}.",
-        f"Keeps {area} consistent between PocketBase and the UI cache.",
+        f"Maintains {area} consistency between PocketBase and the UI cache.",
         f"Dart helpers and extensions ({_sym_line(syms, path)}).",
     ))
     role_line = role.split(";")[0].strip()

@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:counter/core/app_snackbar.dart';
-import 'package:counter/features/planning/diagnostics/plan_duplicate_log.dart';
+import 'package:counter/data/plans/diagnostics/plan_duplicate_log.dart';
 import 'package:counter/shared/diagnostics/runtime_log.dart';
 import 'package:counter/shared/diagnostics/startup_log.dart';
 import 'package:counter/shared/diagnostics/performance/runtime_flags.dart';

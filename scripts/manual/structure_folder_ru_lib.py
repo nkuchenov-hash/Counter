@@ -122,15 +122,15 @@ register_folder_ru(
 )
 
 register_folder_ru(
-    "lib/features/planning/diagnostics",
+    "lib/data/plans/diagnostics",
     {
-        "what_ru": "Marker-only log дубликатов / stream планов для Brain plan helpers.",
-        "why_ru": "Детекция дубликатов планов принадлежит Planning, но импортируется только из Brain — узкое исключение Brain→features.",
+        "what_ru": "Planning-domain diagnostics внутри Brain (дубликаты планов / stream lifecycle markers).",
+        "why_ru": "Brain plan helpers эмитят эти логи; не должны жить в feature UI и создавать data→features imports.",
         "inside_ru": "`plan_duplicate_log.dart`.",
         "affects_ru": "Только diagnostic markers дубликатов / stream планов.",
         "when_ru": "Расследование duplicate plan rows или spam plan stream.",
-        "delete_ru": "Нет — Brain plan helpers импортируют этот marker module.",
-        "related_ru": "`lib/data/plans/`, `lib/shared/diagnostics/performance/runtime_flags.dart`.",
+        "delete_ru": "Нет — Brain plan helpers эмитят эти markers.",
+        "related_ru": "`lib/shared/diagnostics/performance/runtime_flags.dart` только для `kPlanStreamLifecycleDiag`.",
     },
 )
 

@@ -475,19 +475,24 @@ EXACT_EN_FIELD_RU: dict[str, str] = {
         "`desktop_voice_log.dart`, `desktop_voice_pipeline.dart`."
     ),
     "Tracing desktop voice steps.": "Трассировка шагов desktop voice.",
-    "Planning marker-only plan duplicate / stream log.": (
-        "Marker-only log дубликатов / stream планов."
+    "Planning-domain diagnostics inside the Brain (duplicate plan / stream lifecycle markers).": (
+        "Planning-domain diagnostics внутри Brain (дубликаты планов / stream lifecycle markers)."
     ),
-    "Owned by Planning; imported only by Brain plan helpers (narrow Brain→features exception).": (
-        "Принадлежит Planning; импортируется только Brain plan helpers (узкое исключение Brain→features)."
+    "Brain plan helpers emit these logs; must not live under feature UI or create data→features imports.": (
+        "Brain plan helpers эмитят эти логи; не должны жить в feature UI и создавать data→features imports."
     ),
     "`plan_duplicate_log.dart`.": "`plan_duplicate_log.dart`.",
-    "Plan duplicate diagnostic markers only.": (
-        "Только diagnostic markers дубликатов планов."
+    "Plan duplicate / stream diagnostic markers only.": (
+        "Только diagnostic markers дубликатов / stream планов."
     ),
-    "Investigating duplicate plan rows.": "Расследование duplicate plan rows.",
-    "No — Brain plan helpers import this module.": (
-        "Нет — Brain plan helpers импортируют этот module."
+    "Investigating duplicate plan rows or plan stream spam.": (
+        "Расследование duplicate plan rows или spam plan stream."
+    ),
+    "No — Brain plan helpers emit these markers.": (
+        "Нет — Brain plan helpers эмитят эти markers."
+    ),
+    "`lib/shared/diagnostics/performance/runtime_flags.dart` for `kPlanStreamLifecycleDiag` only.": (
+        "`lib/shared/diagnostics/performance/runtime_flags.dart` только для `kPlanStreamLifecycleDiag`."
     ),
     "Plans tab UI — day pager, plan list, Time View canvas, plan settings, bulk edit.": (
         "UI вкладки Plans — day pager, список планов, canvas Time View, settings, bulk edit."

@@ -204,7 +204,7 @@ Routing map for AI assistants: open these first instead of grepping. Update this
 | Render cache | `lib/data/cache/render_snapshot.dart`, `rendered_day_body_cache.dart` | Rendered day-body cache |
 | Structure guard | `scripts/audit/architecture_guard.ps1` | `-Strict` enforces `docs/APP_STRUCTURE.md` |
 | Structure guide (RU) | `docs/APP_STRUCTURE_DETAILED.md` | Bilingual EN/RU per-file guide |
-| Plan dup trace | `lib/core/plan_dup_trace.dart` | Duplicate plan trace |
+| Plan duplicate log | `lib/data/plans/diagnostics/plan_duplicate_log.dart` | Planning-domain Brain duplicate / stream lifecycle markers |
 | Warm snapshot data | `lib/data/warm_day_window.dart` | WarmSnapshotWindow |
 | Rendered body cache | `lib/data/rendered_day_body_cache.dart` | Day-body LRU |
 | Render snapshot | `lib/data/p0t_render_snapshot.dart` | Snapshot helpers |

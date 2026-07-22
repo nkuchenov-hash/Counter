@@ -44,7 +44,7 @@ Many `[wip]` entries 2026-06-15 — 2026-06-24:
 
 ### P0U / performance experiments
 
-- Kill switches in `lib/core/performance/runtime_flags.dart`, `shell_flags.dart`
+- Kill switches in `lib/shared/diagnostics/performance/runtime_flags.dart`, `shell_flags.dart`
 - `kShellDeferHiddenTabsUntilFirstFrame=false` (regressed first frame)
 - `kTimelineAdjacentRowVmWarmup=false`
 - `kPlanStreamLifecycleDiag=true` — diagnostic, not product

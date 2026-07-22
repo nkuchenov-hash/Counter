@@ -2,7 +2,7 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `3439760` on 2026-07-22.**
+**Generated from input HEAD `dac4601` on 2026-07-22.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
@@ -26,11 +26,11 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Role | Count |
 | :--- | ---: |
-| `production UI` | 140 |
+| `production UI` | 139 |
 | `shared foundation` | 116 |
 | `test` | 86 |
 | `platform build` | 82 |
-| `Brain/data` | 76 |
+| `Brain/data` | 77 |
 | `platform resource` | 44 |
 | `developer tool` | 42 |
 | `governing documentation` | 30 |
@@ -133,8 +133,8 @@ Evidence is computed from Dart import/export/`part` graphs, bounded path referen
 - [`lib/core/widgets/notes/`](#folder-libcorewidgetsnotes)
 - [`lib/core/widgets/plan_card/`](#folder-libcorewidgetsplan_card)
 - [`lib/core/widgets/plan_time_task_card/`](#folder-libcorewidgetsplan_time_task_card)
+- [`lib/data/plans/diagnostics/`](#folder-libdataplansdiagnostics)
 - [`lib/features/notes/widgets/`](#folder-libfeaturesnoteswidgets)
-- [`lib/features/planning/diagnostics/`](#folder-libfeaturesplanningdiagnostics)
 - [`lib/features/planning/settings/`](#folder-libfeaturesplanningsettings)
 - [`lib/features/planning/time_view/`](#folder-libfeaturesplanningtime_view)
 - [`lib/features/planning/widgets/`](#folder-libfeaturesplanningwidgets)
@@ -1913,7 +1913,7 @@ EN:
 
 - **What this folder is:** Plans and lists slice of the brain — scheduled tasks, backlog items, recurrence, tags on plans.
 - **Why it exists:** Planning tab, Lists tab, and calendar rows all read/write the same `plans` table through these modules.
-- **What lives here:** Projection for Time View, RRULE expansion, tag sync, plan cache, offline plan outbox.
+- **What lives here:** Projection for Time View, RRULE expansion, tag sync, plan cache, offline plan outbox, `diagnostics/`.
 - **What part of the app it affects:** Plans tab, Time View layout, Lists tab, plan edit sheets, plan alarms.
 - **When to open it:** Plans don’t save, recurrence wrong, Time View cards misplaced, list toggle offline.
 - **Can it be deleted?** No — planning and lists break.
@@ -1923,7 +1923,7 @@ RU:
 
 - **Что это за папка:** Срез мозга для Plans/Lists — задачи по расписанию, backlog, recurrence и теги.
 - **Зачем нужна:** Вкладки Plans и Lists читают/пишут одну таблицу `plans` через эти модули.
-- **Что здесь лежит:** Projection Time View, RRULE expansion, sync тегов, кэш, offline outbox.
+- **Что здесь лежит:** Projection Time View, RRULE expansion, sync тегов, кэш, offline outbox, `diagnostics/`.
 - **На что влияет в приложении:** Plans, Time View, Lists, edit sheets планов, plan alarms.
 - **Когда открывать:** Планы не сохраняются, recurrence неверна, карточки Time View не на месте.
 - **Можно удалить?** Нет — planning and lists break.
@@ -2963,6 +2963,30 @@ RU:
 
 ---
 
+## Folder: `lib/data/plans/diagnostics/`
+
+EN:
+
+- **What this folder is:** Planning-domain diagnostics inside the Brain (duplicate plan / stream lifecycle markers).
+- **Why it exists:** Brain plan helpers emit these logs; must not live under feature UI or create data→features imports.
+- **What lives here:** `plan_duplicate_log.dart`.
+- **What part of the app it affects:** Plan duplicate / stream diagnostic markers only.
+- **When to open it:** Investigating duplicate plan rows or plan stream spam.
+- **Can it be deleted?** No — Brain plan helpers emit these markers.
+- **Main related paths:** `lib/shared/diagnostics/performance/runtime_flags.dart` for `kPlanStreamLifecycleDiag` only.
+
+RU:
+
+- **Что это за папка:** Planning-domain diagnostics внутри Brain (дубликаты планов / stream lifecycle markers).
+- **Зачем нужна:** Brain plan helpers эмитят эти логи; не должны жить в feature UI и создавать data→features imports.
+- **Что здесь лежит:** `plan_duplicate_log.dart`.
+- **На что влияет в приложении:** Только diagnostic markers дубликатов / stream планов.
+- **Когда открывать:** Расследование duplicate plan rows или spam plan stream.
+- **Можно удалить?** Нет — Brain plan helpers emit these markers.
+- **Связанные пути:** `lib/shared/diagnostics/performance/runtime_flags.dart` только для `kPlanStreamLifecycleDiag`.
+
+---
+
 ## Folder: `lib/features/notes/widgets/`
 
 EN:
@@ -2984,30 +3008,6 @@ RU:
 - **Когда открывать:** Badges карточки, grid vs list, chrome GLM library shell.
 - **Можно удалить?** Нет — Notes library UI breaks.
 - **Связанные пути:** `lib/features/notes/`, `lists_view.dart`.
-
----
-
-## Folder: `lib/features/planning/diagnostics/`
-
-EN:
-
-- **What this folder is:** Planning marker-only plan duplicate / stream log.
-- **Why it exists:** Owned by Planning; imported only by Brain plan helpers (narrow Brain→features exception).
-- **What lives here:** `plan_duplicate_log.dart`.
-- **What part of the app it affects:** Plan duplicate diagnostic markers only.
-- **When to open it:** Investigating duplicate plan rows.
-- **Can it be deleted?** No — Brain plan helpers import this module.
-- **Main related paths:** `lib/data/plans/`.
-
-RU:
-
-- **Что это за папка:** Marker-only log дубликатов / stream планов для Brain plan helpers.
-- **Зачем нужна:** Детекция дубликатов планов принадлежит Planning, но импортируется только из Brain — узкое исключение Brain→features.
-- **Что здесь лежит:** `plan_duplicate_log.dart`.
-- **На что влияет в приложении:** Только diagnostic markers дубликатов / stream планов.
-- **Когда открывать:** Расследование duplicate plan rows или spam plan stream.
-- **Можно удалить?** Нет — Brain plan helpers import this module.
-- **Связанные пути:** `lib/data/plans/`, `lib/shared/diagnostics/performance/runtime_flags.dart`.
 
 ---
 
@@ -14997,6 +14997,43 @@ RU:
 - **Связано с:** UI вызывает `DatabaseService.instance`
 
 
+### `lib/data/plans/diagnostics/plan_duplicate_log.dart`
+
+EN:
+
+- **Human purpose:** Planning-domain duplicate / stream lifecycle markers inside Brain (not shared diagnostics, not feature UI). Brain plan helpers emit these logs; must not live under feature UI or create data to features imports.
+- **What this is:** Planning-domain duplicate / stream lifecycle markers inside Brain (not shared diagnostics, not feature UI).
+- **Why needed:** Brain plan helpers emit these logs; must not live under feature UI or create data to features imports.
+- **Contents:** `planDuplicateLog`, stream lifecycle markers for plan duplicate investigation.
+- **Repository role:** Brain/data
+- **Evidence of use:** Imported/exported by production Dart: `lib/data/database_service.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** Brain Plans
+- **Responsibilities:** Planning-domain duplicate / stream lifecycle markers inside Brain (not shared diagnostics, not feature UI)
+- **When to open:** Plan/list save, Time View layout, recurrence, tags on plans, offline queue.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** UI calls via `DatabaseService.instance`; Plans tab, Lists tab, Time View; APP_STRUCTURE role: Planning-domain duplicate / stream lifecycle markers inside Brain (not shared diagnostics, not feature UI)
+
+RU:
+
+- **Зачем файл человеку:** Сфокусированный модуль данных для plans and lists — файл `plan_duplicate_log`. Держит plans and lists согласованным с PocketBase и экранами.
+- **Что это:** Сфокусированный модуль данных для plans and lists — файл `plan_duplicate_log`.
+- **Зачем:** Держит plans and lists согласованным с PocketBase и экранами.
+- **Содержимое:** Dart-код (logic in `plan_duplicate_log`).
+- **Роль в репозитории:** Brain/data
+- **Доказательства использования:** Импортируется production Dart: `lib/data/database_service.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** Brain — планы
+- **Обязанности:** Поддерживает поведение модуля `plan_duplicate_log` в своём слое.
+- **Когда открывать:** Планы/списки: сохранение, Time View, повтор, теги.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** UI вызывает `DatabaseService.instance`; Plans, Lists, Time View
+
+
 ### `lib/data/plans/notes_brain_helpers.dart`
 
 EN:
@@ -18099,43 +18136,6 @@ RU:
 - **Уверенность:** HIGH
 - **Владелец / слой:** UI планов
 - **Обязанности:** Пользователь открывает sheet/dialog из entry `bulk_planning_edit_sheet`.
-- **Когда открывать:** Вкладка Plans: день, карточки, play.
-- **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Вкладка Plans (shell index 1)
-
-
-### `lib/features/planning/diagnostics/plan_duplicate_log.dart`
-
-EN:
-
-- **Human purpose:** `plan_duplicate_log.dart` on Plans tab (second bottom tab) — Plan duplicate / stream diagnostic markers (marker-only. Users see `plan_duplicate_log.dart` when using Plans tab (second bottom tab).
-- **What this is:** `plan_duplicate_log.dart` on Plans tab (second bottom tab) — Plan duplicate / stream diagnostic markers (marker-only.
-- **Why needed:** Users see `plan_duplicate_log.dart` when using Plans tab (second bottom tab).
-- **Contents:** Dart module `plan_duplicate_log.dart` — open file for classes and helpers.
-- **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/data/database_service.dart`.
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
-- **Confidence:** HIGH
-- **Owner / layer:** Planning UI
-- **Responsibilities:** Plan duplicate / stream diagnostic markers (marker-only
-- **When to open:** Plans tab: day swipe, plan cards, play/start plan, bulk edit.
-- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** Plans tab (shell index 1); APP_STRUCTURE role: Plan duplicate / stream diagnostic markers (marker-only
-
-RU:
-
-- **Зачем файл человеку:** `plan_duplicate_log.dart` на вкладка Plans (вторая снизу) — Поддерживает поведение `plan_duplicate_log` в этой feature-зоне.. Пользователь видит UI из `plan_duplicate_log.dart` на вкладка Plans (вторая снизу).
-- **Что это:** `plan_duplicate_log.dart` на вкладка Plans (вторая снизу) — Поддерживает поведение `plan_duplicate_log` в этой feature-зоне..
-- **Зачем:** Пользователь видит UI из `plan_duplicate_log.dart` на вкладка Plans (вторая снизу).
-- **Содержимое:** Dart-модуль `plan_duplicate_log.dart` — классы и helpers в исходнике.
-- **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/data/database_service.dart`.
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
-- **Уверенность:** HIGH
-- **Владелец / слой:** UI планов
-- **Обязанности:** Поддерживает поведение `plan_duplicate_log` в этой feature-зоне.
 - **Когда открывать:** Вкладка Plans: день, карточки, play.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Вкладка Plans (shell index 1)
@@ -22224,7 +22224,7 @@ EN:
 - **Why needed:** Runtime logs and kill switches must stay identical for Brain, shell, core, and features.
 - **Contents:** Diagnostics helper or kill-switch flag (logic in `runtime_flags`).
 - **Repository role:** shared diagnostics
-- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/core/services/desktop_voice_hotkey.dart`, `lib/core/services/desktop_voice_settings.dart`, `lib/data/database_service.dart`, `lib/features/planning/diagnostics/plan_duplicate_log.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/core/services/desktop_voice_hotkey.dart`, `lib/core/services/desktop_voice_settings.dart`, `lib/data/database_service.dart`, `lib/data/plans/diagnostics/plan_duplicate_log.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -22241,7 +22241,7 @@ RU:
 - **Зачем:** Runtime logs и kill switches должны совпадать для Brain, shell, core и features.
 - **Содержимое:** Diagnostics helper или kill-switch flag (logic in `runtime_flags`).
 - **Роль в репозитории:** shared diagnostics
-- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/core/services/desktop_voice_hotkey.dart`, `lib/core/services/desktop_voice_settings.dart`, `lib/data/database_service.dart`, `lib/features/planning/diagnostics/plan_duplicate_log.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/core/services/desktop_voice_hotkey.dart`, `lib/core/services/desktop_voice_settings.dart`, `lib/data/database_service.dart`, `lib/data/plans/diagnostics/plan_duplicate_log.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
