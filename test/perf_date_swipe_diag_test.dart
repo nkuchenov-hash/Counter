@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:counter/core/performance/rebuild_metrics.dart';
+import 'package:counter/shared/diagnostics/performance/rebuild_metrics.dart';
 import 'package:counter/core/shell_layout_state.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/planning/planning_view.dart';

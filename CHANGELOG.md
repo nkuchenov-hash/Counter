@@ -11,6 +11,10 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-22] - Diagnostics: assign ownership to real owners [engineering]
+
+* **Phase 2B:** Moved former `lib/core/diagnostics/` + `lib/core/performance/` into `lib/shared/diagnostics/` (runtime logs + kill switches), `lib/features/planning/diagnostics/` (plan duplicate log), and `lib/shared/voice/diagnostics/` (desktop voice pipeline). No behavior change.
+
 ## [2026-07-21] - Time: assign ownership to shared/feature paths [engineering]
 
 * **`lib/shared/time/`:** Phase 2A — moved former `lib/core/time/` multi-consumer wall-clock, timezone catalog, app clock hooks, plan window/labels, and category TZ options out of `core/`; settings-only helpers → `lib/features/settings/timezone_settings.dart`. No UTC/DST/projection behavior change.

@@ -471,6 +471,32 @@ def humanize_guide(
             "responsibilities_ru": f"Реализует в shared/time: {role_clean}.",
         }
 
+    if p.startswith("lib/shared/diagnostics/"):
+        role_short = role_clean.replace("*(part)*", "").strip()
+        return {
+            "what": f"Shared diagnostics ownership — {role_short}.",
+            "why": "Runtime logs and kill switches must stay identical for Brain, shell, core, and features.",
+            "contains": f"Diagnostics helper or kill-switch flag ({sym}).",
+            "responsibilities": role_clean,
+            "what_ru": f"Общий diagnostics-слой — {role_short}.",
+            "why_ru": "Runtime logs и kill switches должны совпадать для Brain, shell, core и features.",
+            "contains_ru": f"Diagnostics helper или kill-switch flag ({sym}).",
+            "responsibilities_ru": f"Реализует в shared/diagnostics: {role_clean}.",
+        }
+
+    if p.startswith("lib/shared/voice/"):
+        role_short = role_clean.replace("*(part)*", "").strip()
+        return {
+            "what": f"Shared voice diagnostics — {role_short}.",
+            "why": "Desktop voice pipeline markers must stay free of feature UI while serving STT services and Brain parsers.",
+            "contains": f"Voice pipeline marker helper ({sym}).",
+            "responsibilities": role_clean,
+            "what_ru": f"Общая voice diagnostics — {role_short}.",
+            "why_ru": "Маркеры desktop voice pipeline без feature UI для STT services и Brain parsers.",
+            "contains_ru": f"Voice pipeline marker helper ({sym}).",
+            "responsibilities_ru": f"Реализует в shared/voice: {role_clean}.",
+        }
+
     if p.startswith("lib/core/widgets/"):
         role_short = role_clean.split(";")[0].strip()
         return {

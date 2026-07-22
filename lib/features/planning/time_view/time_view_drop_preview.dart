@@ -1,6 +1,6 @@
 import 'dart:ui' show Offset;
 
-import 'package:counter/core/performance/shell_flags.dart';
+import 'package:counter/shared/diagnostics/performance/shell_flags.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/data/plan_time_sequential_cascade.dart';

@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:counter/core/app_build_info.dart';
-import 'package:counter/core/diagnostics/desktop_voice_pipeline.dart';
+import 'package:counter/shared/voice/diagnostics/desktop_voice_pipeline.dart';
 import 'package:counter/core/services/desktop_stt_diagnostics.dart';
 import 'package:counter/core/services/desktop_voice_installed_identity.dart';
 

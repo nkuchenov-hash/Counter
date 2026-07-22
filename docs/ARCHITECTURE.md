@@ -12,6 +12,9 @@
 | `lib/data/database_service.dart` | **The Brain** | PocketBase SDK for profiles, categories, records, plans. Single place for server I/O. |
 | `lib/data/auth_bridge.dart` | **The Gate** | PocketBase `authWithPassword`, session + secure storage. |
 | `lib/shared/time/` | **Shared time** | UTC ↔ profile wall-clock, timezone catalog, `AppClock` / `ProfileTimezoneActions`. No feature or Brain I/O imports. |
+| `lib/shared/diagnostics/` | **Shared diagnostics** | Runtime logs (`runtime_log`, `platform_log`, `startup_log`) + kill switches / metrics under `performance/` (`runtime_flags`, `shell_flags`, `rebuild_metrics`). No feature or Brain I/O imports. |
+| `lib/shared/voice/diagnostics/` | **Shared voice diagnostics** | Desktop voice pipeline markers (`desktop_voice_log`, `desktop_voice_pipeline`). No feature or Brain I/O imports. |
+| `lib/features/planning/diagnostics/` | **Planning diagnostics** | Marker-only plan duplicate / stream log (`plan_duplicate_log.dart`). Brain may import this path only among `features/`. |
 | `lib/app_shell.dart` | **The Navigator** | Thin entry re-export; canonical shell under `lib/app/shell/`. |
 | `lib/main.dart` | **The ignition** | Calls `ensurePocketBaseReady()`, then restores session and loads profile. |
 
@@ -71,7 +74,7 @@
 
   **Hot path rule:** Swipe, startup, text entry, record create/start/stop, plan create/update, and tab switch are hot paths. No full-history scan, full-plan projection, full widget mount window, network wait, or heavy rebuild may run **synchronously** on these paths.
 
-  **Code anchors:** `lib/core/perf_flags.dart`, `lib/core/p0u_feature_flags.dart` (`kUseP0tMountedStrip`, `kVerbosePlanTimeTzProjectionLogs`). Experimental preload/render paths default **off** until proven stable on **web and Android**.
+  **Code anchors:** `lib/shared/diagnostics/performance/runtime_flags.dart`, `lib/shared/diagnostics/performance/shell_flags.dart`. Experimental preload/render paths default **off** until proven stable on **web and Android**.
 - **STATE_RECONCILIATION:** 404 → purge ghost rows / revert optimistic state.
 
 ---

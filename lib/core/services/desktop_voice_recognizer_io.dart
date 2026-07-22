@@ -1,4 +1,4 @@
-import 'package:counter/core/diagnostics/desktop_voice_log.dart';
+import 'package:counter/shared/voice/diagnostics/desktop_voice_log.dart';
 import 'package:counter/core/services/desktop_stt_helper_service.dart';
 import 'package:counter/core/services/desktop_voice_recognizer.dart';
 import 'package:counter/core/services/desktop_voice_settings.dart';

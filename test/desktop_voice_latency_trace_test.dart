@@ -1,4 +1,4 @@
-import 'package:counter/core/diagnostics/desktop_voice_pipeline.dart';
+import 'package:counter/shared/voice/diagnostics/desktop_voice_pipeline.dart';
 import 'package:counter/core/services/desktop_voice_capture_ready_policy.dart';
 import 'package:counter/core/services/desktop_voice_install_smoke_policy.dart';
 import 'package:counter/core/services/desktop_voice_overlay_constants.dart';

@@ -1,5 +1,5 @@
-import 'package:counter/core/diagnostics/desktop_voice_log.dart';
-import 'package:counter/core/diagnostics/desktop_voice_pipeline.dart';
+import 'package:counter/shared/voice/diagnostics/desktop_voice_log.dart';
+import 'package:counter/shared/voice/diagnostics/desktop_voice_pipeline.dart';
 import 'package:counter/core/services/desktop_voice_delayed_transcribe.dart';
 
 /// Stage of the desktop voice overlay when an error occurred.

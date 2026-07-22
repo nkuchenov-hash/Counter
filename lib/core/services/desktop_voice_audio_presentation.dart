@@ -1,6 +1,6 @@
 import 'dart:math' as math;
 
-import 'package:counter/core/diagnostics/desktop_voice_pipeline.dart';
+import 'package:counter/shared/voice/diagnostics/desktop_voice_pipeline.dart';
 import 'package:counter/core/services/desktop_voice_capture_ready_policy.dart';
 
 /// Perceptual / command-latency / STT-gain helpers for Desktop Voice.

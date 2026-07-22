@@ -1,4 +1,4 @@
-import 'package:counter/core/diagnostics/startup_log.dart';
+import 'package:counter/shared/diagnostics/startup_log.dart';
 import 'package:flutter/material.dart';
 /// [IndexedStack] that lazily builds children on first visit and pauses
 /// off-screen tabs (no paint, no tickers) for smoother shell navigation.

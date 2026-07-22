@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:counter/core/diagnostics/desktop_voice_log.dart';
+import 'package:counter/shared/voice/diagnostics/desktop_voice_log.dart';
 import 'package:flutter/foundation.dart' show debugPrint, kDebugMode, kIsWeb;
 
 /// One-line desktop voice pipeline markers (installed-app acceptance tracing).

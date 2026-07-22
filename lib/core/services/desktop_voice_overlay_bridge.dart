@@ -1,4 +1,4 @@
-import 'package:counter/core/diagnostics/desktop_voice_pipeline.dart';
+import 'package:counter/shared/voice/diagnostics/desktop_voice_pipeline.dart';
 
 /// Hotkey ↔ desktop voice overlay bridge (finish-listening + cancel).
 abstract final class DesktopVoiceOverlayBridge {

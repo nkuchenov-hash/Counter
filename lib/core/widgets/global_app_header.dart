@@ -6,7 +6,7 @@
 import 'package:counter/core/picker_entry_modes.dart';
 import 'package:counter/core/widgets/app_bar_live_clock.dart';
 import 'package:counter/core/widgets/timezone_quick_picker.dart';
-import 'package:counter/core/performance/rebuild_metrics.dart';
+import 'package:counter/shared/diagnostics/performance/rebuild_metrics.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';

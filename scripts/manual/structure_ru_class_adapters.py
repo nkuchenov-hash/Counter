@@ -432,6 +432,63 @@ EXACT_EN_FIELD_RU: dict[str, str] = {
     "Developer diagnostics only.": "Только диагностика разработчика.",
     "Tracing desktop voice steps or startup timing.": "Трассировка шагов desktop voice или startup timing.",
     "No — used by debug/profile builds.": "Нет — используется в debug/profile builds.",
+    "General runtime logs and the shared kill-switch / metrics registry.": (
+        "Общие runtime logs и shared kill-switch / metrics registry."
+    ),
+    "Brain, shell, core, and features need one place for release-safe markers and compile-time performance toggles.": (
+        "Brain, shell, core и features нуждаются в одном месте для release-safe markers и compile-time performance toggles."
+    ),
+    "`runtime_log.dart`, `platform_log.dart`, `startup_log.dart`, `performance/`.": (
+        "`runtime_log.dart`, `platform_log.dart`, `startup_log.dart`, `performance/`."
+    ),
+    "Developer diagnostics and kill switches only.": (
+        "Только developer diagnostics и kill switches."
+    ),
+    "Tracing startup timing or toggling perf kill switches.": (
+        "Трассировка startup timing или переключение perf kill switches."
+    ),
+    "No — used by Brain, shell, and diagnostic builds.": (
+        "Нет — используется Brain, shell и diagnostic builds."
+    ),
+    "Kill-switch registry and optional rebuild metrics.": (
+        "Kill-switch registry и optional rebuild metrics."
+    ),
+    "Compile-time toggles for date paging, shell stack, and Planning Time View canvas bisect.": (
+        "Compile-time toggles для paging дат, shell stack и canvas bisect Planning Time View."
+    ),
+    "`runtime_flags.dart`, `shell_flags.dart`, `rebuild_metrics.dart`.": (
+        "`runtime_flags.dart`, `shell_flags.dart`, `rebuild_metrics.dart`."
+    ),
+    "Perf-sensitive paths and diagnostic builds.": (
+        "Perf-sensitive paths и diagnostic builds."
+    ),
+    "Investigating jank or toggling warm-window kill switch.": (
+        "Расследование jank или warm-window kill switch."
+    ),
+    "Desktop voice pipeline markers — log + step helpers.": (
+        "Маркеры desktop voice pipeline — log и step helpers."
+    ),
+    "Structured logs for desktop voice without spamming release builds.": (
+        "Структурированные логи для desktop voice без spam в release."
+    ),
+    "`desktop_voice_log.dart`, `desktop_voice_pipeline.dart`.": (
+        "`desktop_voice_log.dart`, `desktop_voice_pipeline.dart`."
+    ),
+    "Tracing desktop voice steps.": "Трассировка шагов desktop voice.",
+    "Planning marker-only plan duplicate / stream log.": (
+        "Marker-only log дубликатов / stream планов."
+    ),
+    "Owned by Planning; imported only by Brain plan helpers (narrow Brain→features exception).": (
+        "Принадлежит Planning; импортируется только Brain plan helpers (узкое исключение Brain→features)."
+    ),
+    "`plan_duplicate_log.dart`.": "`plan_duplicate_log.dart`.",
+    "Plan duplicate diagnostic markers only.": (
+        "Только diagnostic markers дубликатов планов."
+    ),
+    "Investigating duplicate plan rows.": "Расследование duplicate plan rows.",
+    "No — Brain plan helpers import this module.": (
+        "Нет — Brain plan helpers импортируют этот module."
+    ),
     "Plans tab UI — day pager, plan list, Time View canvas, plan settings, bulk edit.": (
         "UI вкладки Plans — day pager, список планов, canvas Time View, settings, bulk edit."
     ),

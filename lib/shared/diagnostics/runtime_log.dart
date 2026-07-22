@@ -1,4 +1,4 @@
-import 'package:counter/core/performance/runtime_flags.dart';
+import 'package:counter/shared/diagnostics/performance/runtime_flags.dart';
 import 'package:flutter/foundation.dart';
 
 /// P0U production-safe markers only (release guard, errors, kill-switch notices).

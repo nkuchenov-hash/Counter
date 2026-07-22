@@ -1,5 +1,5 @@
 import 'package:counter/core/app_snackbar.dart';
-import 'package:counter/core/diagnostics/desktop_voice_pipeline.dart';
+import 'package:counter/shared/voice/diagnostics/desktop_voice_pipeline.dart';
 import 'package:counter/core/services/desktop_voice_overlay_host.dart';
 import 'package:counter/services/notification_service.dart';
 

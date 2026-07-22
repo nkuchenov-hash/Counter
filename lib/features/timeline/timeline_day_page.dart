@@ -1,7 +1,7 @@
 import 'dart:async';
 
-import 'package:counter/core/performance/rebuild_metrics.dart';
-import 'package:counter/core/performance/runtime_flags.dart';
+import 'package:counter/shared/diagnostics/performance/rebuild_metrics.dart';
+import 'package:counter/shared/diagnostics/performance/runtime_flags.dart';
 import 'package:counter/core/widgets/app_state_views.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';

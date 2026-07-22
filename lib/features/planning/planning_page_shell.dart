@@ -3,10 +3,10 @@ import 'dart:async';
 
 import 'package:counter/core/date_pager_settle_gate.dart';
 import 'package:counter/core/date_swipe_physics.dart';
-import 'package:counter/core/performance/runtime_flags.dart';
-import 'package:counter/core/diagnostics/runtime_log.dart';
-import 'package:counter/core/diagnostics/platform_log.dart';
-import 'package:counter/core/performance/rebuild_metrics.dart';
+import 'package:counter/shared/diagnostics/performance/runtime_flags.dart';
+import 'package:counter/shared/diagnostics/runtime_log.dart';
+import 'package:counter/shared/diagnostics/platform_log.dart';
+import 'package:counter/shared/diagnostics/performance/rebuild_metrics.dart';
 import 'package:counter/core/widgets/app_state_views.dart';
 import 'package:counter/core/widgets/mouse_drag_scroll_behavior.dart';
 import 'package:counter/data/database_service.dart';

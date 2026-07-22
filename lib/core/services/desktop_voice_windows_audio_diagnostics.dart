@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:counter/core/diagnostics/desktop_voice_pipeline.dart';
+import 'package:counter/shared/voice/diagnostics/desktop_voice_pipeline.dart';
 
 /// Windows Core Audio endpoint snapshot for capture-path diagnostics.
 class DesktopVoiceEndpointSnapshot {

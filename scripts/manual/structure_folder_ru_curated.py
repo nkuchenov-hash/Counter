@@ -137,13 +137,13 @@ register_folder_ru(
 register_folder_ru(
     "lib/core",
     {
-        "what_ru": "Базовый слой: design system в коде, shared widgets, тема/цвета, desktop voice, diagnostics.",
+        "what_ru": "Базовый слой: design system в коде, shared widgets, тема/цвета, desktop voice.",
         "why_ru": "Экраны не дублируют кнопки, date header и voice — общая foundation-база.",
-        "inside_ru": "`theme.dart`, каталог `core/widgets/`, `core/services/` (desktop voice), diagnostics.",
-        "affects_ru": "Внешний вид всех вкладок; desktop voice/tray; chrome header; perf debug flags.",
+        "inside_ru": "`theme.dart`, каталог `core/widgets/`, `core/services/` (desktop voice).",
+        "affects_ru": "Внешний вид всех вкладок; desktop voice/tray; chrome header.",
         "when_ru": "Миграция кнопок/карточек, сломан desktop voice, смена theme token.",
         "delete_ru": "Нет — features импортируют foundation повсюду.",
-        "related_ru": "`docs/DESIGN_SYSTEM.md`, `lib/features/`, `lib/shared/time/`, `lib/data/models.dart`.",
+        "related_ru": "`docs/DESIGN_SYSTEM.md`, `lib/features/`, `lib/shared/`, `lib/data/models.dart`.",
     },
 )
 
@@ -163,13 +163,13 @@ register_folder_ru(
 register_folder_ru(
     "lib/shared",
     {
-        "what_ru": "Общий код с несколькими независимыми потребителями — сейчас только time.",
+        "what_ru": "Общий код с несколькими независимыми потребителями — time, diagnostics, voice pipeline markers.",
         "why_ru": "Не складывать сюда всё подряд: только то, чем пользуются ≥2 секции продукта или shell + секция.",
-        "inside_ru": "`time/` — wall-clock, timezone catalog, app clock hooks, plan window/labels.",
-        "affects_ru": "Часы в header, projection в Brain, Time View на Plans, подписи timezone в settings.",
-        "when_ru": "Перенос multi-consumer time, неверный today, DST labels.",
-        "delete_ru": "Нет — shared time нужен Brain и UI.",
-        "related_ru": "`lib/shared/time/`, `docs/APP_STRUCTURE.md`.",
+        "inside_ru": "`time/` — wall-clock и timezone; `diagnostics/` — runtime logs + kill switches; `voice/diagnostics/` — desktop voice pipeline markers.",
+        "affects_ru": "Часы в header, projection в Brain, Time View на Plans, timezone labels, kill switches, трассировка desktop voice.",
+        "when_ru": "Перенос multi-consumer time/diagnostics, неверный today, DST labels, kill-switch toggles, voice pipeline tracing.",
+        "delete_ru": "Нет — shared time и diagnostics нужны Brain и UI.",
+        "related_ru": "`lib/shared/time/`, `lib/shared/diagnostics/`, `lib/shared/voice/diagnostics/`, `docs/APP_STRUCTURE.md`.",
     },
 )
 
@@ -733,15 +733,15 @@ register_folder_ru(
 )
 
 register_folder_ru(
-    "lib/core/diagnostics",
+    "lib/shared/diagnostics",
     {
-        "what_ru": "Debug-only логирование — startup, voice pipeline, duplicates.",
-        "why_ru": "Структурированные логи для perf и desktop voice без spam в release.",
-        "inside_ru": "Небольшие log wrapper, включаемые debug/profile flags.",
-        "affects_ru": "Только диагностика разработчика — не UI пользователя.",
-        "when_ru": "Трассировка шагов desktop voice или startup timing.",
-        "delete_ru": "Нет — используется в debug/profile builds.",
-        "related_ru": "`lib/core/performance/`.",
+        "what_ru": "Общие runtime logs и shared kill-switch / metrics registry.",
+        "why_ru": "Brain, shell, core и features нуждаются в одном месте для release-safe markers и compile-time performance toggles.",
+        "inside_ru": "`runtime_log.dart`, `platform_log.dart`, `startup_log.dart`, `performance/`.",
+        "affects_ru": "Только диагностика разработчика и kill switches — не UI chrome.",
+        "when_ru": "Startup timing, kill-switch bisect, release-safe runtime markers.",
+        "delete_ru": "Нет — Brain и shell импортируют эти пути.",
+        "related_ru": "`lib/shared/diagnostics/performance/`, `docs/ARCHITECTURE.md`.",
     },
 )
 
@@ -889,15 +889,54 @@ register_folder_ru(
 )
 
 register_folder_ru(
-    "lib/core/performance",
+    "lib/shared/diagnostics/performance",
     {
         "what_ru": "Feature flags runtime и perf metrics — полоса дат, warm window, счётчики rebuild.",
-        "why_ru": "Позволяет включать дорогие features или capture frame metrics без debug code для всех users.",
+        "why_ru": "Позволяет включать дорогие features или capture frame metrics без debug code для всех users. Kill-switch registry без split.",
         "inside_ru": "Файлы `runtime_flags.dart`, `shell_flags.dart`, `rebuild_metrics.dart` (`PERF_DIAG` gated).",
-        "affects_ru": "Perf: paging дат, tab stack оболочки, diagnostic builds.",
+        "affects_ru": "Perf: paging дат, tab stack оболочки, canvas bisect Planning Time View, diagnostic builds.",
         "when_ru": "Расследование jank, warm-window kill switch, perf capture tests.",
         "delete_ru": "Нет — perf tests и diagnostics ссылаются на эти flags.",
-        "related_ru": "`test/perf_*`, `lib/data/cache/`.",
+        "related_ru": "`test/perf_*`, `lib/data/cache/`, `lib/shared/diagnostics/`.",
+    },
+)
+
+register_folder_ru(
+    "lib/shared/voice",
+    {
+        "what_ru": "Общие voice helpers для desktop STT/voice services и Brain voice parsing.",
+        "why_ru": "Markers voice pipeline должны оставаться без feature UI и Brain I/O при нескольких потребителях.",
+        "inside_ru": "`diagnostics/` — desktop voice log и pipeline step helpers.",
+        "affects_ru": "Трассировка desktop voice и STT pipeline markers.",
+        "when_ru": "Пропали шаги desktop voice pipeline в debug/profile.",
+        "delete_ru": "Нет — desktop voice services импортируют эти markers.",
+        "related_ru": "`lib/shared/voice/diagnostics/`, `lib/core/services/desktop_voice_*.dart`.",
+    },
+)
+
+register_folder_ru(
+    "lib/shared/voice/diagnostics",
+    {
+        "what_ru": "Маркеры desktop voice pipeline — log и step helpers.",
+        "why_ru": "Desktop STT/voice и Brain voice parsing делят один quiet release / verbose debug-profile sink.",
+        "inside_ru": "`desktop_voice_log.dart`, `desktop_voice_pipeline.dart`.",
+        "affects_ru": "Только developer diagnostics для desktop voice.",
+        "when_ru": "Трассировка capture, STT, overlay или submit шагов desktop voice.",
+        "delete_ru": "Нет — используется в debug/profile desktop voice builds.",
+        "related_ru": "`lib/core/services/`, `lib/shared/diagnostics/`.",
+    },
+)
+
+register_folder_ru(
+    "lib/features/planning/diagnostics",
+    {
+        "what_ru": "Marker-only log дубликатов / stream планов для Brain plan helpers.",
+        "why_ru": "Детекция дубликатов планов принадлежит Planning, но импортируется только из Brain — узкое исключение Brain→features.",
+        "inside_ru": "`plan_duplicate_log.dart`.",
+        "affects_ru": "Только diagnostic markers дубликатов / stream планов.",
+        "when_ru": "Расследование duplicate plan rows или spam plan stream.",
+        "delete_ru": "Нет — Brain plan helpers импортируют этот marker module.",
+        "related_ru": "`lib/data/plans/`, `lib/shared/diagnostics/performance/runtime_flags.dart`.",
     },
 )
 

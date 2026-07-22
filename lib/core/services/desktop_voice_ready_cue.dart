@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:counter/core/diagnostics/desktop_voice_pipeline.dart';
+import 'package:counter/shared/voice/diagnostics/desktop_voice_pipeline.dart';
 import 'package:counter/core/services/desktop_voice_capture_ready_policy.dart';
 import 'package:counter/core/services/desktop_voice_native_overlay.dart';
 import 'package:flutter/foundation.dart';

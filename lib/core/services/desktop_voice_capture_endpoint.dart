@@ -1,4 +1,4 @@
-import 'package:counter/core/diagnostics/desktop_voice_pipeline.dart';
+import 'package:counter/shared/voice/diagnostics/desktop_voice_pipeline.dart';
 
 /// Desktop Voice capture endpoint role selection (Windows WASAPI / MMDevice).
 abstract final class DesktopVoiceCaptureEndpointPolicy {

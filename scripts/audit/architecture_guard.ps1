@@ -48,8 +48,27 @@ foreach ($pat in $debtPatterns) {
 }
 
 # --- 1. Forbidden imports ---
+# data→features: Brain may import ONLY features/planning/diagnostics/ (marker-only).
+# All other features imports from lib/data remain violations.
+if (Test-Path 'lib\data') {
+    $dataFeatureFiles = @(rg -l "import 'package:counter/features/" lib\data --glob '*.dart' 2>$null)
+    foreach ($hit in $dataFeatureFiles) {
+        $badImport = $false
+        foreach ($line in (Get-Content -LiteralPath $hit)) {
+            if ($line -match "import 'package:counter/features/" -and
+                $line -notmatch 'features/planning/diagnostics/') {
+                $badImport = $true
+                break
+            }
+        }
+        if ($badImport) {
+            $rel = $hit.Replace('\', '/')
+            Add-Violation "FORBIDDEN_IMPORT (data->features) $rel"
+        }
+    }
+}
+
 $forbiddenImportRules = @(
-    @{ Label = 'data->features'; Path = 'lib\data'; Pattern = "import 'package:counter/features/" },
     @{ Label = 'core->features'; Path = 'lib\core'; Pattern = "import 'package:counter/features/" },
     @{ Label = 'services->features'; Path = 'lib\services'; Pattern = "import 'package:counter/features/" },
     @{ Label = 'core->database_service'; Path = 'lib\core'; Pattern = "import 'package:counter/data/database_service.dart'" },
@@ -111,6 +130,17 @@ $deletedMustStayGone = @(
   'lib/features/timeline/timeline_widgets.dart',
   'lib/shell',
   'lib/core/time',
+  'lib/core/diagnostics',
+  'lib/core/performance',
+  'lib/core/diagnostics/runtime_log.dart',
+  'lib/core/diagnostics/platform_log.dart',
+  'lib/core/diagnostics/startup_log.dart',
+  'lib/core/diagnostics/plan_duplicate_log.dart',
+  'lib/core/diagnostics/desktop_voice_log.dart',
+  'lib/core/diagnostics/desktop_voice_pipeline.dart',
+  'lib/core/performance/runtime_flags.dart',
+  'lib/core/performance/shell_flags.dart',
+  'lib/core/performance/rebuild_metrics.dart',
   'lib/deploy.ps1',
   'lib/notes',
   'lib/core/p0u_diag.dart',

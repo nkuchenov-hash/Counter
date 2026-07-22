@@ -1,7 +1,7 @@
 import 'package:counter/core/services/desktop_voice_command_normalize.dart';
 import 'package:counter/data/models.dart';
-import 'package:counter/core/diagnostics/desktop_voice_log.dart';
-import 'package:counter/core/diagnostics/desktop_voice_pipeline.dart';
+import 'package:counter/shared/voice/diagnostics/desktop_voice_log.dart';
+import 'package:counter/shared/voice/diagnostics/desktop_voice_pipeline.dart';
 import 'package:counter/data/voice_command_parser.dart';
 
 /// Arguments passed to the Brain [DatabaseService.writeRecord] boundary.

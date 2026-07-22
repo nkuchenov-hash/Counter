@@ -29,7 +29,7 @@ Flutter time tracker. Owner: Nick (UX designer, not a developer). Goal: best tim
 
 ## Structure check (vs `docs/APP_STRUCTURE.md`)
 
-Verified 2026-06-10 (shell paths 2026-07-21; time ownership 2026-07-21). **Core layout matches** the documented map: `lib/data/` (Brain + part files), `lib/data/local_sync/` (offline outboxes), `lib/features/` (UI modules), `lib/shared/time/` (multi-consumer time), `lib/core/` (theme + widgets), `lib/app/shell/` (form-factor shell), `lib/l10n/`, `lib/services/`, `app_shell.dart`, `main.dart`.
+Verified 2026-06-10 (shell paths 2026-07-21; time ownership 2026-07-21; diagnostics ownership 2026-07-22). **Core layout matches** the documented map: `lib/data/` (Brain + part files), `lib/data/local_sync/` (offline outboxes), `lib/features/` (UI modules), `lib/shared/time/` (multi-consumer time), `lib/shared/diagnostics/` (runtime logs + kill switches), `lib/shared/voice/diagnostics/` (desktop voice pipeline), `lib/core/` (theme + widgets), `lib/app/shell/` (form-factor shell), `lib/l10n/`, `lib/services/`, `app_shell.dart`, `main.dart`.
 
 **Known drift** (harmless; do not “fix” unless asked):
 
@@ -117,7 +117,7 @@ Routing map for AI assistants: open these first instead of grepping. Update this
 | Voice input dispatcher (routes by active tab) | `lib/app_shell.dart` | `_startVoiceInput` |
 | Desktop Price Reporter voice command (kill switch) | `lib/app_shell.dart` | `_toggleDesktopVoiceCommandPanel`, `_desktopVoiceSubmitParsed` |
 | Desktop voice command parser | `lib/data/voice_command_parser.dart` | `parsePriceReporterVoiceCommand`, `VoiceCommandCategoryIndex`, `parseVoiceCommand` |
-| Desktop voice pipeline log | `lib/core/diagnostics/desktop_voice_log.dart` | `DesktopVoiceLog` — debug/profile pipeline markers |
+| Desktop voice pipeline log | `lib/shared/voice/diagnostics/desktop_voice_log.dart` | `DesktopVoiceLog` — debug/profile pipeline markers |
 | Desktop voice widget UI (GOLOS STT) | `lib/features/shared/desktop_voice_widget.dart` | `DesktopVoiceWidget`, `showDesktopVoiceWidget` |
 | Desktop GOLOS STT helper | `lib/core/services/desktop_stt_helper_service.dart` | `DesktopSttHelperService` |
 | Desktop voice recognizer | `lib/core/services/desktop_voice_recognizer_factory.dart` | `createDesktopVoiceRecognizer` |
@@ -195,11 +195,11 @@ Routing map for AI assistants: open these first instead of grepping. Update this
 | :--- | :--- | :--- |
 | Master perf probe | `lib/core/perf_diag.dart` | `--dart-define=PERF_DIAG=true` |
 | Bisect toggles | `lib/core/perf_flags.dart` | LazyIndexedStack, pager sync |
-| Runtime diagnostics | `lib/core/diagnostics/runtime_log.dart` | Release-safe runtime markers |
-| Runtime flags | `lib/core/performance/runtime_flags.dart` | Kill switches (default off) |
-| Startup log | `lib/core/diagnostics/startup_log.dart` | Boot timing |
-| Rebuild metrics | `lib/core/performance/rebuild_metrics.dart` | `--dart-define=PERF_DIAG=true` only |
-| Shell flags | `lib/core/performance/shell_flags.dart` | Shell bisect toggles |
+| Runtime diagnostics | `lib/shared/diagnostics/runtime_log.dart` | Release-safe runtime markers |
+| Runtime flags | `lib/shared/diagnostics/performance/runtime_flags.dart` | Kill switches (default off) |
+| Startup log | `lib/shared/diagnostics/startup_log.dart` | Boot timing |
+| Rebuild metrics | `lib/shared/diagnostics/performance/rebuild_metrics.dart` | `--dart-define=PERF_DIAG=true` only |
+| Shell flags | `lib/shared/diagnostics/performance/shell_flags.dart` | Shell + Planning Time View canvas bisect toggles |
 | Day cache | `lib/data/cache/day_snapshot_window.dart` | Warm day snapshot window |
 | Render cache | `lib/data/cache/render_snapshot.dart`, `rendered_day_body_cache.dart` | Rendered day-body cache |
 | Structure guard | `scripts/audit/architecture_guard.ps1` | `-Strict` enforces `docs/APP_STRUCTURE.md` |
@@ -304,7 +304,7 @@ O1 offline-first, V1, and F1 Lists are **shipped** (`docs/ROADMAP.md`). F2A and 
 
 ## Architecture rules (from Iron Laws)
 
-- **Performance Kill Switch Law (P0V):** Speed, stability, and instant feedback are sacred. If any change causes slower startup, freeze/crash, swipe jank, broken optimistic UI, missing instant record/plan create, log spam, invisible-data projection storms, mounted-widget explosion, or network-before-UI — **stop all feature/preload/design work**, disable the offending experiment by default, restore stable behavior + live optimistic sources, remove hot-path overload, then continue. Full law: `docs/ARCHITECTURE.md` § PERFORMANCE_KILL_SWITCH_LAW. Flags: `lib/core/performance/runtime_flags.dart`, `lib/core/performance/shell_flags.dart`. **Banned:** “cache exists” / “snapshot ready” as excuses when the user sees lag or crash.
+- **Performance Kill Switch Law (P0V):** Speed, stability, and instant feedback are sacred. If any change causes slower startup, freeze/crash, swipe jank, broken optimistic UI, missing instant record/plan create, log spam, invisible-data projection storms, mounted-widget explosion, or network-before-UI — **stop all feature/preload/design work**, disable the offending experiment by default, restore stable behavior + live optimistic sources, remove hot-path overload, then continue. Full law: `docs/ARCHITECTURE.md` § PERFORMANCE_KILL_SWITCH_LAW. Flags: `lib/shared/diagnostics/performance/runtime_flags.dart`, `lib/shared/diagnostics/performance/shell_flags.dart`. **Banned:** “cache exists” / “snapshot ready” as excuses when the user sees lag or crash.
 - **Optimistic UI:** Start/Stop/Update/Delete on records and Planning/Lists CRUD must never block the UI. Apply local shadow first (<100ms), sync to PocketBase async. On **retriable** network failure → enqueue to `lib/data/local_sync/*_mutation_outbox.dart` and keep optimistic state; on **non-retriable** validation errors → roll back and snack.
 - **No `await` before UI update** for user-driven record/plan actions.
 - **Offline drain:** `flushPendingLocalMutations` on login (`loadInitialData`), reconnect (`SyncManager`), app resume, and tap-to-retry (`OfflineSyncStatusBar`). 401/403 sets `offlineSync.authPaused` until `resumeAfterAuthIfNeeded` + valid session.
