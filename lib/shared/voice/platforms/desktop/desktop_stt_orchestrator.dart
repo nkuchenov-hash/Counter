@@ -5,10 +5,30 @@ import 'package:counter/shared/voice/commands/desktop_stt_quality_evaluation.dar
 import 'package:counter/shared/voice/platforms/desktop/desktop_voice_audio_capture.dart';
 import 'package:counter/shared/voice/commands/desktop_voice_command_stt_policy.dart';
 import 'package:counter/shared/voice/commands/desktop_voice_engine.dart';
-import 'package:counter/data/voice/desktop_voice_glossary.dart';
-import 'package:counter/data/voice/desktop_voice_recognition_postprocess.dart';
+import 'package:counter/shared/voice/commands/desktop_voice_glossary_pack.dart';
 import 'package:counter/shared/voice/platforms/desktop/desktop_voice_settings.dart';
 import 'package:counter/shared/voice/platforms/desktop/desktop_win_speech_service.dart';
+
+/// Safety-only recognition postprocess snapshot (logged; not STT quality).
+class DesktopVoicePostprocessSnapshot {
+  const DesktopVoicePostprocessSnapshot({
+    required this.postprocessedText,
+    required this.rejected,
+    this.rejectReason,
+    this.appliedRules = const [],
+  });
+
+  final String postprocessedText;
+  final bool rejected;
+  final String? rejectReason;
+  final List<String> appliedRules;
+}
+
+/// Brain wires this from [DesktopVoiceRecognitionPostprocess.apply] in main.dart.
+typedef DesktopVoicePostprocessHook = DesktopVoicePostprocessSnapshot Function({
+  required String rawModelText,
+  required DesktopVoiceGlossaryPack glossary,
+});
 
 /// Full recognition pipeline result after STT + postprocess.
 class DesktopRecognitionPipelineResult {
@@ -37,6 +57,9 @@ class DesktopRecognitionPipelineResult {
 
 /// STT quality ladder — selects engine, transcribes, postprocesses.
 abstract final class DesktopSttOrchestrator {
+  /// Optional Brain postprocess hook (side-effect markers; final text stays raw).
+  static DesktopVoicePostprocessHook? postprocessHook;
+
   static Future<DesktopRecognitionPipelineResult?> transcribeCommand({
     required DesktopVoiceCaptureResult capture,
     required DesktopVoiceGlossaryPack glossary,
@@ -89,10 +112,16 @@ abstract final class DesktopSttOrchestrator {
     DesktopSttQualityEvaluation.logRawFinalSttText(rawText);
 
     // Safety-only postprocess — logged but NOT used as STT quality or command text.
-    final post = DesktopVoiceRecognitionPostprocess.apply(
-      rawModelText: rawText,
-      glossary: glossary,
-    );
+    final hook = postprocessHook;
+    final DesktopVoicePostprocessSnapshot post;
+    if (hook != null) {
+      post = hook(rawModelText: rawText, glossary: glossary);
+    } else {
+      post = DesktopVoicePostprocessSnapshot(
+        postprocessedText: rawText,
+        rejected: false,
+      );
+    }
     DesktopSttQualityEvaluation.logPostprocessDelta(
       rawModelText: rawText,
       postprocessedText: post.postprocessedText,

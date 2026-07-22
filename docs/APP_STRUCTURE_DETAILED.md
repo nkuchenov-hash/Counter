@@ -2,7 +2,7 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `c6a1b6a` on 2026-07-22.**
+**Generated from input HEAD `f5a6d72` on 2026-07-22.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
@@ -26,28 +26,27 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Role | Count |
 | :--- | ---: |
-| `production UI` | 134 |
+| `production UI` | 137 |
 | `test` | 86 |
 | `platform build` | 82 |
 | `Brain/data` | 71 |
 | `shared foundation` | 58 |
 | `platform resource` | 44 |
 | `developer tool` | 42 |
-| `Desktop Voice runtime` | 37 |
+| `Desktop Voice runtime` | 36 |
 | `governing documentation` | 30 |
 | `test fixture` | 24 |
-| `shared Voice system` | 21 |
+| `shared Voice system` | 20 |
 | `intentionally retained product watchlist` | 16 |
 | `localization` | 13 |
 | `installer` | 11 |
+| `Brain Voice` | 10 |
 | `compatibility layer` | 10 |
 | `historical engineering record` | 9 |
-| `Brain Voice` | 8 |
 | `shared time` | 7 |
 | `package metadata` | 6 |
 | `shared diagnostics` | 6 |
 | `CI/deployment` | 3 |
-| `Desktop Voice UI` | 3 |
 | `PocketBase backend` | 3 |
 | `mobile/web Voice adapters` | 2 |
 | `audit tool` | 1 |
@@ -126,6 +125,7 @@ Evidence is computed from Dart import/export/`part` graphs, bounded path referen
 - [`lib/features/shared/`](#folder-libfeaturesshared)
 - [`lib/features/stats/`](#folder-libfeaturesstats)
 - [`lib/features/timeline/`](#folder-libfeaturestimeline)
+- [`lib/features/voice/`](#folder-libfeaturesvoice)
 - [`lib/features/wear/`](#folder-libfeatureswear)
 - [`lib/l10n/langs/`](#folder-libl10nlangs)
 - [`lib/shared/diagnostics/`](#folder-libshareddiagnostics)
@@ -156,7 +156,6 @@ Evidence is computed from Dart import/export/`part` graphs, bounded path referen
 - [`lib/shared/voice/ui/`](#folder-libsharedvoiceui)
 - [`lib/shared/voice/platforms/desktop/`](#folder-libsharedvoiceplatformsdesktop)
 - [`lib/shared/voice/platforms/mobile/`](#folder-libsharedvoiceplatformsmobile)
-- [`lib/shared/voice/platforms/desktop/ui/`](#folder-libsharedvoiceplatformsdesktopui)
 
 ### Tests
 
@@ -1997,23 +1996,23 @@ RU:
 
 EN:
 
-- **What this folder is:** Brain Voice — parser, domain resolver, glossary, contamination/postprocess, cloud STT transport.
-- **Why it exists:** Live category index and PocketBase writes belong in Brain, not shared Voice.
-- **What lives here:** `voice_command_parser.dart`, domain resolver part, glossary, normalize, contamination, postprocess, cloud backend, Price Reporter client match.
-- **What part of the app it affects:** Voice command → category/record interpretation and cloud STT auth transport.
-- **When to open it:** Parser/domain match wrong, cloud STT auth, glossary postprocess.
+- **What this folder is:** Brain Voice — parser, domain resolver, normalize, record-submit, glossary builder, contamination/postprocess, cloud STT, parser-tied benchmarks.
+- **Why it exists:** Live category index, PocketBase writes, and command execution belong in Brain, not shared Voice.
+- **What lives here:** `voice_command_parser.dart`, domain resolver part, glossary, normalize, contamination, postprocess, record-submit, useful-speech evaluator, cloud backend, benchmarks, Price Reporter client match.
+- **What part of the app it affects:** Voice command → category/record interpretation, writeRecord, and cloud STT auth transport.
+- **When to open it:** Parser/domain match wrong, cloud STT auth, glossary postprocess, command execution.
 - **Can it be deleted?** No — Voice command execution breaks.
-- **Main related paths:** `lib/shared/voice/`, `lib/data/database_service.dart`.
+- **Main related paths:** `lib/shared/voice/`, `lib/features/voice/`, `lib/data/database_service.dart`.
 
 RU:
 
-- **Что это за папка:** Голосовой разбор в Brain — парсер, резолвер домена, глоссарий, фильтр загрязнения, облачный STT.
-- **Зачем нужна:** Живой индекс категорий и записи в PocketBase принадлежат Brain, а не shared Voice.
-- **Что здесь лежит:** `voice_command_parser.dart`, резолвер домена, глоссарий, нормализация, фильтр загрязнения, постобработка, облачный backend.
-- **На что влияет в приложении:** Интерпретация голосовых команд в категории и записи, а также транспорт облачного STT с авторизацией.
-- **Когда открывать:** Неверный разбор команды, ошибка авторизации облачного STT, постобработка глоссария.
+- **Что это за папка:** Голосовой разбор в Brain — парсер, резолвер домена, нормализация, record-submit, глоссарий, фильтр загрязнения, облачный STT, бенчмарки.
+- **Зачем нужна:** Живой индекс категорий, записи в PocketBase и выполнение команд принадлежат Brain, а не shared Voice.
+- **Что здесь лежит:** `voice_command_parser.dart`, резолвер домена, глоссарий, нормализация, фильтр загрязнения, постобработка, record-submit, облачный backend, бенчмарки.
+- **На что влияет в приложении:** Интерпретация голосовых команд в категории и записи, writeRecord, транспорт облачного STT.
+- **Когда открывать:** Неверный разбор команды, ошибка авторизации облачного STT, постобработка глоссария, выполнение команд.
 - **Можно удалить?** Нет — Voice command execution breaks.
-- **Связанные пути:** `lib/shared/voice/`, `lib/data/database_service.dart`.
+- **Связанные пути:** `lib/shared/voice/`, `lib/features/voice/`, `lib/data/database_service.dart`.
 
 ---
 
@@ -2191,7 +2190,7 @@ EN:
 
 - **What this folder is:** Profile and tag settings screens from the More menu.
 - **Why it exists:** Account, timezone, language, tag manager, desktop voice settings (Windows).
-- **What lives here:** Profile view, settings sections, tag manager pages, desktop voice diagnostics.
+- **What lives here:** Profile view, settings sections, tag manager pages.
 - **What part of the app it affects:** More → Profile, tag settings routes, desktop voice card.
 - **When to open it:** Login profile, change timezone, manage tags, desktop hotkey settings.
 - **Can it be deleted?** No — profile/settings unavailable.
@@ -2302,6 +2301,30 @@ RU:
 - **Когда открывать:** Records на неверном дне, now-line, swipe между днями, tap/edit record card.
 - **Можно удалить?** Нет — Timeline tab disappears.
 - **Связанные пути:** `lib/data/record_service.dart`, `ActivityDetailSheet`.
+
+---
+
+## Folder: `lib/features/voice/`
+
+EN:
+
+- **What this folder is:** Desktop Flutter Voice overlay UI — widget, capsule, correction sheet, command panel.
+- **Why it exists:** Desktop Voice chrome is feature UI; shared Voice stays Brain-free.
+- **What lives here:** `desktop_voice_widget.dart`, capsule, correction sheet, command panel.
+- **What part of the app it affects:** Desktop Voice overlay UI only.
+- **When to open it:** Desktop Voice capsule/overlay UI regressions.
+- **Can it be deleted?** No — desktop Voice UI breaks.
+- **Main related paths:** `lib/shared/voice/platforms/desktop/`, `lib/data/voice/`, `lib/app/shell/shared/shell_voice_routing.dart`.
+
+RU:
+
+- **Что это за папка:** Flutter UI голосового оверлея на компьютере — виджет, капсула, лист правки, панель команд.
+- **Зачем нужна:** Хром голосового ввода на компьютере — feature UI; shared Voice остаётся без Brain-импортов.
+- **Что здесь лежит:** `desktop_voice_widget.dart`, capsule, correction sheet, command panel.
+- **На что влияет в приложении:** Только desktop Voice overlay UI.
+- **Когда открывать:** Регрессии desktop Voice capsule/overlay UI.
+- **Можно удалить?** Нет — desktop Voice UI breaks.
+- **Связанные пути:** `lib/shared/voice/platforms/desktop/`, `lib/data/voice/`, `lib/app/shell/shared/shell_voice_routing.dart`.
 
 ---
 
@@ -3293,23 +3316,23 @@ RU:
 
 EN:
 
-- **What this folder is:** Platform Voice adapters — desktop runtime/UI and mobile/web audio helpers.
+- **What this folder is:** Platform Voice adapters — desktop runtime and mobile/web audio helpers.
 - **Why it exists:** Activation and recognition differ by OS; command semantics stay shared.
-- **What lives here:** `desktop/`, `desktop/ui/`, `mobile/`.
+- **What lives here:** `desktop/`, `mobile/`.
 - **What part of the app it affects:** Desktop hotkey/overlay/STT and web/mobile audio adapters.
 - **When to open it:** Platform-specific Voice activation or recognition changes.
 - **Can it be deleted?** No — platform Voice adapters break.
-- **Main related paths:** `lib/shared/voice/commands/`, `lib/data/voice/`.
+- **Main related paths:** `lib/shared/voice/commands/`, `lib/data/voice/`, `lib/features/voice/`.
 
 RU:
 
-- **Что это за папка:** Платформенные адаптеры голосового ввода — рантайм/UI компьютера и аудио для телефона/web.
+- **Что это за папка:** Платформенные адаптеры голосового ввода — рантайм компьютера и аудио для телефона/web.
 - **Зачем нужна:** Активация и распознавание отличаются по ОС; семантика команд остаётся общей.
-- **Что здесь лежит:** `desktop/`, `desktop/ui/`, `mobile/`.
+- **Что здесь лежит:** `desktop/`, `mobile/`.
 - **На что влияет в приложении:** Горячие клавиши и оверлей на компьютере, а также аудио-адаптеры телефона и web.
 - **Когда открывать:** Платформенные изменения активации или распознавания голоса.
 - **Можно удалить?** Нет — platform Voice adapters break.
-- **Связанные пути:** `lib/shared/voice/commands/`, `lib/data/voice/`.
+- **Связанные пути:** `lib/shared/voice/commands/`, `lib/data/voice/`, `lib/features/voice/`.
 
 ---
 
@@ -3341,23 +3364,23 @@ RU:
 
 EN:
 
-- **What this folder is:** Voice submit / acceptance contracts without owning app tab state.
-- **Why it exists:** Shell owns active section; Voice only exposes submit callbacks.
-- **What lives here:** `desktop_voice_record_submit.dart`, `desktop_voice_acceptance_bridge.dart`.
-- **What part of the app it affects:** Shell Voice routing and acceptance hooks.
-- **When to open it:** Parsed command → record write bridge or acceptance tests.
-- **Can it be deleted?** No — shell Voice submit path breaks.
-- **Main related paths:** `lib/app/shell/shared/shell_voice_routing.dart`.
+- **What this folder is:** Voice acceptance-test callback bridge only (no command execution).
+- **Why it exists:** Shell owns active section; Brain owns parse/normalize/writeRecord.
+- **What lives here:** `desktop_voice_acceptance_bridge.dart`.
+- **What part of the app it affects:** Acceptance hooks only.
+- **When to open it:** Acceptance-test wiring changes.
+- **Can it be deleted?** No — acceptance bridge breaks.
+- **Main related paths:** `lib/data/voice/desktop_voice_record_submit.dart`, `lib/app/shell/shared/shell_voice_routing.dart`.
 
 RU:
 
-- **Что это за папка:** Контракты отправки голосовых команд без владения состоянием вкладок.
-- **Зачем нужна:** Оболочка знает активный раздел; голосовой ввод только отдаёт колбэки отправки.
-- **Что здесь лежит:** `desktop_voice_record_submit.dart`, `desktop_voice_acceptance_bridge.dart`.
-- **На что влияет в приложении:** Маршрутизация голосового ввода в оболочке и хуки приёмки.
-- **Когда открывать:** Мост разобранной команды к записи или тесты приёмки.
-- **Можно удалить?** Нет — shell Voice submit path breaks.
-- **Связанные пути:** `lib/app/shell/shared/shell_voice_routing.dart`.
+- **Что это за папка:** Мост колбэков приёмки голосового ввода (без выполнения команд).
+- **Зачем нужна:** Оболочка знает активный раздел; Brain выполняет parse/normalize/writeRecord.
+- **Что здесь лежит:** `desktop_voice_acceptance_bridge.dart`.
+- **На что влияет в приложении:** Только хуки приёмки.
+- **Когда открывать:** Изменения проводки тестов приёмки.
+- **Можно удалить?** Нет — acceptance bridge breaks.
+- **Связанные пути:** `lib/data/voice/desktop_voice_record_submit.dart`, `lib/app/shell/shared/shell_voice_routing.dart`.
 
 ---
 
@@ -3533,23 +3556,23 @@ RU:
 
 EN:
 
-- **What this folder is:** Desktop Voice / STT runtime — hotkey, helper process, overlay, capture, prefs, benchmarks.
+- **What this folder is:** Desktop Voice / STT runtime — hotkey, helper process, overlay, capture, prefs.
 - **Why it exists:** Windows desktop activation is an implementation of the shared Voice system, not a separate product.
-- **What lives here:** STT helper + orchestrator, hotkey, overlay, capture, settings, diagnostics, benchmarks.
+- **What lives here:** STT helper + orchestrator, hotkey, overlay, capture, settings, diagnostics.
 - **What part of the app it affects:** Windows Voice hotkey, overlay, GOLOS STT, desktop prefs.
 - **When to open it:** Desktop Voice not recording, hotkey dead, overlay latency, STT helper failures.
 - **Can it be deleted?** No — desktop Voice feature.
-- **Main related paths:** `lib/shared/voice/platforms/desktop/ui/`, `lib/core/services/desktop_tray_service.dart`.
+- **Main related paths:** `lib/features/voice/`, `lib/core/services/desktop_tray_service.dart`.
 
 RU:
 
-- **Что это за папка:** Рантайм голосового ввода на компьютере — горячие клавиши, helper-процесс, оверлей, захват, настройки, бенчмарки.
+- **Что это за папка:** Рантайм голосового ввода на компьютере — горячие клавиши, helper-процесс, оверлей, захват, настройки.
 - **Зачем нужна:** Активация на Windows — реализация общей системы голосового ввода, а не отдельный продукт.
-- **Что здесь лежит:** STT helper и оркестратор, горячие клавиши, оверлей, захват, настройки, диагностика, бенчмарки.
+- **Что здесь лежит:** STT helper и оркестратор, горячие клавиши, оверлей, захват, настройки, диагностика.
 - **На что влияет в приложении:** Горячие клавиши, оверлей, локальный STT и настройки голосового ввода на Windows.
 - **Когда открывать:** Голосовой ввод на компьютере не пишет, горячая клавиша мертва, задержки оверлея, сбои STT helper.
 - **Можно удалить?** Нет — desktop Voice feature.
-- **Связанные пути:** `lib/shared/voice/platforms/desktop/ui/`, `lib/core/services/desktop_tray_service.dart`.
+- **Связанные пути:** `lib/features/voice/`, `lib/core/services/desktop_tray_service.dart`.
 
 ---
 
@@ -3814,30 +3837,6 @@ RU:
 - **Когда открывать:** Проблема с `values-night` при launch или иконке Android.
 - **Можно удалить?** Нет — нужен для сборки Android.
 - **Связанные пути:** `android/app/`.
-
----
-
-## Folder: `lib/shared/voice/platforms/desktop/ui/`
-
-EN:
-
-- **What this folder is:** Desktop-only Flutter Voice UI — widget, capsule, correction sheet, command panel.
-- **Why it exists:** Native overlay + Flutter Voice chrome are desktop-specific presentation.
-- **What lives here:** `desktop_voice_widget.dart`, capsule, correction sheet, command panel.
-- **What part of the app it affects:** Desktop Voice overlay UI only.
-- **When to open it:** Desktop Voice capsule/overlay UI regressions.
-- **Can it be deleted?** No — desktop Voice UI breaks.
-- **Main related paths:** `lib/shared/voice/platforms/desktop/`, `lib/app/shell/shared/shell_voice_routing.dart`.
-
-RU:
-
-- **Что это за папка:** Интерфейс голосового ввода только для компьютера — виджет, капсула, лист правки, панель команд.
-- **Зачем нужна:** Нативный оверлей и Flutter-хром голосового ввода — презентация только для компьютера.
-- **Что здесь лежит:** `desktop_voice_widget.dart`, capsule, correction sheet, command panel.
-- **На что влияет в приложении:** Только desktop Voice overlay UI.
-- **Когда открывать:** Регрессии desktop Voice capsule/overlay UI.
-- **Можно удалить?** Нет — desktop Voice UI breaks.
-- **Связанные пути:** `lib/shared/voice/platforms/desktop/`, `lib/app/shell/shared/shell_voice_routing.dart`.
 
 ---
 
@@ -9324,7 +9323,7 @@ EN:
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
 - **Contents:** Dart module `app_navigator.dart` — open file for classes and helpers.
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/main.dart`, `lib/shared/voice/platforms/desktop/ui/desktop_voice_widget.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/features/voice/desktop_voice_widget.dart`, `lib/main.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -9341,7 +9340,7 @@ RU:
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
 - **Содержимое:** Dart-модуль `app_navigator.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/main.dart`, `lib/shared/voice/platforms/desktop/ui/desktop_voice_widget.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/features/voice/desktop_voice_widget.dart`, `lib/main.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -14079,14 +14078,52 @@ RU:
 - **Связано с:** UI вызывает `DatabaseService.instance`
 
 
+### `lib/data/voice/desktop_stt_benchmark_harness.dart`
+
+EN:
+
+- **Human purpose:** Brain Voice — Golden text STT quality gate (no mic). Live category index, PocketBase cloud STT, and command parse belong in Brain.
+- **What this is:** Brain Voice — Golden text STT quality gate (no mic).
+- **Why needed:** Live category index, PocketBase cloud STT, and command parse belong in Brain.
+- **Contents:** Brain Voice helper (`DesktopVoiceSttGoldenCase`, `DesktopVoiceSttBenchmarkResult`, `DesktopSttBenchmarkHarness`).
+- **Key code names:** `DesktopVoiceSttGoldenCase`, `DesktopVoiceSttBenchmarkResult`, `DesktopSttBenchmarkHarness`
+- **Repository role:** shared foundation
+- **Evidence of use:** Referenced by tests/tooling: `test/desktop_voice_stt_quality_test.dart`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Missing test coverage or broken manual benchmark/smoke harness.
+- **Confidence:** HIGH
+- **Owner / layer:** Brain Voice
+- **Responsibilities:** Golden text STT quality gate (no mic)
+- **When to open:** When behavior tied to `desktop_stt_benchmark_harness.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Missing test coverage or broken manual benchmark/smoke harness.
+- **Connected to:** UI calls via `DatabaseService.instance`; APP_STRUCTURE role: Golden text STT quality gate (no mic)
+
+RU:
+
+- **Зачем файл человеку:** Голосовой разбор команд в Brain — файл `desktop_stt_benchmark_harness.dart`. Живой индекс категорий, облачный STT через PocketBase и разбор команд принадлежат Brain.
+- **Что это:** Голосовой разбор команд в Brain — файл `desktop_stt_benchmark_harness.dart`.
+- **Зачем:** Живой индекс категорий, облачный STT через PocketBase и разбор команд принадлежат Brain.
+- **Содержимое:** Вспомогательный модуль голосовых команд Brain (`desktop_stt_benchmark_harness.dart`).
+- **Роль в репозитории:** shared foundation
+- **Доказательства использования:** Нужен тестам/инструментам: `test/desktop_voice_stt_quality_test.dart`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Пропадёт покрытие тестами или сломается benchmark/smoke.
+- **Уверенность:** HIGH
+- **Владелец / слой:** Brain — Voice
+- **Обязанности:** Связывает распознанный текст с категориями и записью в Brain.
+- **Когда открывать:** Когда ломается поведение, связанное с `desktop_stt_benchmark_harness.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** UI вызывает `DatabaseService.instance`
+
+
 ### `lib/data/voice/desktop_stt_cloud_backend.dart`
 
 EN:
 
-- **Human purpose:** Brain Voice — PocketBase auth + `/api/ai/transcribe-command` transport. Live category index, PocketBase cloud STT, and command parse belong in Brain.
-- **What this is:** Brain Voice — PocketBase auth + `/api/ai/transcribe-command` transport.
-- **Why needed:** Live category index, PocketBase cloud STT, and command parse belong in Brain.
-- **Contents:** Brain Voice helper (`DesktopSttCloudBackend`).
+- **Human purpose:** Brain-owned cloud command STT transport — PocketBase auth, `/api/ai/transcribe-command` POST, 25s timeout. Core desktop STT must not import `database_service.dart`; Brain owns auth/token/HTTP for cloud fallback.
+- **What this is:** Brain-owned cloud command STT transport — PocketBase auth, `/api/ai/transcribe-command` POST, 25s timeout.
+- **Why needed:** Core desktop STT must not import `database_service.dart`; Brain owns auth/token/HTTP for cloud fallback.
+- **Contents:** `DesktopSttCloudBackend` hooks consumed by Core via `main.dart` injection (AppClock-style).
 - **Key code names:** `DesktopSttCloudBackend`
 - **Repository role:** Brain Voice
 - **Evidence of use:** Imported/exported by production Dart: `lib/main.dart`.
@@ -14094,24 +14131,24 @@ EN:
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
 - **Owner / layer:** Brain Voice
-- **Responsibilities:** PocketBase auth + `/api/ai/transcribe-command` transport
+- **Responsibilities:** Ready check, Authorization header, POST body, timeout — no WAV DSP.
 - **When to open:** When behavior tied to `desktop_stt_cloud_backend.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
 - **Connected to:** UI calls via `DatabaseService.instance`; APP_STRUCTURE role: PocketBase auth + `/api/ai/transcribe-command` transport
 
 RU:
 
-- **Зачем файл человеку:** Голосовой разбор команд в Brain — файл `desktop_stt_cloud_backend.dart`. Живой индекс категорий, облачный STT через PocketBase и разбор команд принадлежат Brain.
-- **Что это:** Голосовой разбор команд в Brain — файл `desktop_stt_cloud_backend.dart`.
-- **Зачем:** Живой индекс категорий, облачный STT через PocketBase и разбор команд принадлежат Brain.
-- **Содержимое:** Вспомогательный модуль голосовых команд Brain (`desktop_stt_cloud_backend.dart`).
+- **Зачем файл человеку:** Транспорт облачного command STT в Brain — авторизация PocketBase, POST `/api/ai/transcribe-command`, таймаут 25 с. Ядро desktop STT не должно импортировать `database_service.dart`; Brain владеет токеном и HTTP для облачного fallback.
+- **Что это:** Транспорт облачного command STT в Brain — авторизация PocketBase, POST `/api/ai/transcribe-command`, таймаут 25 с.
+- **Зачем:** Ядро desktop STT не должно импортировать `database_service.dart`; Brain владеет токеном и HTTP для облачного fallback.
+- **Содержимое:** Хуки `DesktopSttCloudBackend`, подключение из `main.dart` в стиле AppClock.
 - **Роль в репозитории:** Brain Voice
 - **Доказательства использования:** Импортируется production Dart: `lib/main.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
 - **Владелец / слой:** Brain — Voice
-- **Обязанности:** Связывает распознанный текст с категориями и записью в Brain.
+- **Обязанности:** Проверка готовности, заголовок Authorization, тело POST, таймаут — без обработки WAV.
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_stt_cloud_backend.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** UI вызывает `DatabaseService.instance`
@@ -14127,7 +14164,7 @@ EN:
 - **Contents:** Brain Voice helper (`DesktopVoiceNormalizedCommand`).
 - **Key code names:** `DesktopVoiceNormalizedCommand`
 - **Repository role:** Brain Voice
-- **Evidence of use:** Imported/exported by production Dart: `lib/shared/voice/platforms/desktop/desktop_voice_useful_candidate_evaluator.dart`, `lib/shared/voice/platforms/desktop/ui/desktop_voice_widget.dart`, `lib/shared/voice/routing/desktop_voice_record_submit.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/data/voice/desktop_voice_record_submit.dart`, `lib/data/voice/desktop_voice_useful_candidate_evaluator.dart`, `lib/features/voice/desktop_voice_widget.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -14144,7 +14181,7 @@ RU:
 - **Зачем:** Живой индекс категорий, облачный STT через PocketBase и разбор команд принадлежат Brain.
 - **Содержимое:** Вспомогательный модуль голосовых команд Brain (`desktop_voice_command_normalize.dart`).
 - **Роль в репозитории:** Brain Voice
-- **Доказательства использования:** Импортируется production Dart: `lib/shared/voice/platforms/desktop/desktop_voice_useful_candidate_evaluator.dart`, `lib/shared/voice/platforms/desktop/ui/desktop_voice_widget.dart`, `lib/shared/voice/routing/desktop_voice_record_submit.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/data/voice/desktop_voice_record_submit.dart`, `lib/data/voice/desktop_voice_useful_candidate_evaluator.dart`, `lib/features/voice/desktop_voice_widget.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -14165,7 +14202,7 @@ EN:
 - **Contents:** Brain Voice helper (`DesktopVoiceContaminationResult`, `DesktopVoiceContaminationGate`).
 - **Key code names:** `DesktopVoiceContaminationResult`, `DesktopVoiceContaminationGate`
 - **Repository role:** Brain Voice
-- **Evidence of use:** Imported/exported by production Dart: `lib/shared/voice/platforms/desktop/desktop_voice_real_helper_latency_benchmark.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_useful_candidate_evaluator.dart`, `lib/shared/voice/platforms/desktop/ui/desktop_voice_widget.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/data/voice/desktop_voice_real_helper_latency_benchmark.dart`, `lib/data/voice/desktop_voice_useful_candidate_evaluator.dart`, `lib/features/voice/desktop_voice_widget.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -14182,7 +14219,7 @@ RU:
 - **Зачем:** Живой индекс категорий, облачный STT через PocketBase и разбор команд принадлежат Brain.
 - **Содержимое:** Вспомогательный модуль голосовых команд Brain (`desktop_voice_contamination_gate.dart`).
 - **Роль в репозитории:** Brain Voice
-- **Доказательства использования:** Импортируется production Dart: `lib/shared/voice/platforms/desktop/desktop_voice_real_helper_latency_benchmark.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_useful_candidate_evaluator.dart`, `lib/shared/voice/platforms/desktop/ui/desktop_voice_widget.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/data/voice/desktop_voice_real_helper_latency_benchmark.dart`, `lib/data/voice/desktop_voice_useful_candidate_evaluator.dart`, `lib/features/voice/desktop_voice_widget.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -14197,21 +14234,20 @@ RU:
 
 EN:
 
-- **Human purpose:** Brain Voice — Live + static STT glossary pack. Live category index, PocketBase cloud STT, and command parse belong in Brain.
-- **What this is:** Brain Voice — Live + static STT glossary pack.
+- **Human purpose:** Brain Voice — Live glossary builder from category rules + register hook for shared pack. Live category index, PocketBase cloud STT, and command parse belong in Brain.
+- **What this is:** Brain Voice — Live glossary builder from category rules + register hook for shared pack.
 - **Why needed:** Live category index, PocketBase cloud STT, and command parse belong in Brain.
-- **Contents:** Brain Voice helper (`DesktopVoiceGlossaryPack`).
-- **Key code names:** `DesktopVoiceGlossaryPack`
+- **Contents:** Brain Voice helper (logic in `desktop_voice_glossary`).
 - **Repository role:** Brain Voice
-- **Evidence of use:** Imported/exported by production Dart: `lib/data/voice/desktop_voice_recognition_postprocess.dart`, `lib/shared/voice/platforms/desktop/desktop_stt_benchmark_harness.dart`, `lib/shared/voice/platforms/desktop/desktop_stt_helper_service.dart`, `lib/shared/voice/platforms/desktop/desktop_stt_orchestrator.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_real_helper_latency_benchmark.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/data/voice/desktop_stt_benchmark_harness.dart`, `lib/data/voice/desktop_voice_real_helper_latency_benchmark.dart`, `lib/data/voice/desktop_voice_useful_candidate_evaluator.dart`, `lib/features/voice/desktop_voice_widget.dart`, `lib/main.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
 - **Owner / layer:** Brain Voice
-- **Responsibilities:** Live + static STT glossary pack
+- **Responsibilities:** Live glossary builder from category rules + register hook for shared pack
 - **When to open:** When behavior tied to `desktop_voice_glossary.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** UI calls via `DatabaseService.instance`; APP_STRUCTURE role: Live + static STT glossary pack
+- **Connected to:** UI calls via `DatabaseService.instance`; APP_STRUCTURE role: Live glossary builder from category rules + register hook for shared pack
 
 RU:
 
@@ -14220,13 +14256,51 @@ RU:
 - **Зачем:** Живой индекс категорий, облачный STT через PocketBase и разбор команд принадлежат Brain.
 - **Содержимое:** Вспомогательный модуль голосовых команд Brain (`desktop_voice_glossary.dart`).
 - **Роль в репозитории:** Brain Voice
-- **Доказательства использования:** Импортируется production Dart: `lib/data/voice/desktop_voice_recognition_postprocess.dart`, `lib/shared/voice/platforms/desktop/desktop_stt_benchmark_harness.dart`, `lib/shared/voice/platforms/desktop/desktop_stt_helper_service.dart`, `lib/shared/voice/platforms/desktop/desktop_stt_orchestrator.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_real_helper_latency_benchmark.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/data/voice/desktop_stt_benchmark_harness.dart`, `lib/data/voice/desktop_voice_real_helper_latency_benchmark.dart`, `lib/data/voice/desktop_voice_useful_candidate_evaluator.dart`, `lib/features/voice/desktop_voice_widget.dart`, `lib/main.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
 - **Владелец / слой:** Brain — Voice
 - **Обязанности:** Связывает распознанный текст с категориями и записью в Brain.
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_glossary.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** UI вызывает `DatabaseService.instance`
+
+
+### `lib/data/voice/desktop_voice_real_helper_latency_benchmark.dart`
+
+EN:
+
+- **Human purpose:** Brain Voice — Per-iteration latency trace against installed helper. Live category index, PocketBase cloud STT, and command parse belong in Brain.
+- **What this is:** Brain Voice — Per-iteration latency trace against installed helper.
+- **Why needed:** Live category index, PocketBase cloud STT, and command parse belong in Brain.
+- **Contents:** Brain Voice helper (`DesktopVoiceLatencyIteration`, `DesktopVoiceLatencyBenchmarkReport`, `DesktopVoiceRealHelperLatencyBenchmark`).
+- **Key code names:** `DesktopVoiceLatencyIteration`, `DesktopVoiceLatencyBenchmarkReport`, `DesktopVoiceRealHelperLatencyBenchmark`
+- **Repository role:** shared foundation
+- **Evidence of use:** Referenced by tests/tooling: `test/desktop_voice_real_helper_latency_benchmark_test.dart`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Missing test coverage or broken manual benchmark/smoke harness.
+- **Confidence:** HIGH
+- **Owner / layer:** Brain Voice
+- **Responsibilities:** Per-iteration latency trace against installed helper
+- **When to open:** When behavior tied to `desktop_voice_real_helper_latency_benchmark.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Missing test coverage or broken manual benchmark/smoke harness.
+- **Connected to:** UI calls via `DatabaseService.instance`; APP_STRUCTURE role: Per-iteration latency trace against installed helper
+
+RU:
+
+- **Зачем файл человеку:** Голосовой разбор команд в Brain — файл `desktop_voice_real_helper_latency_benchmark.dart`. Живой индекс категорий, облачный STT через PocketBase и разбор команд принадлежат Brain.
+- **Что это:** Голосовой разбор команд в Brain — файл `desktop_voice_real_helper_latency_benchmark.dart`.
+- **Зачем:** Живой индекс категорий, облачный STT через PocketBase и разбор команд принадлежат Brain.
+- **Содержимое:** Вспомогательный модуль голосовых команд Brain (`desktop_voice_real_helper_latency_benchmark.dart`).
+- **Роль в репозитории:** shared foundation
+- **Доказательства использования:** Нужен тестам/инструментам: `test/desktop_voice_real_helper_latency_benchmark_test.dart`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Пропадёт покрытие тестами или сломается benchmark/smoke.
+- **Уверенность:** HIGH
+- **Владелец / слой:** Brain — Voice
+- **Обязанности:** Связывает распознанный текст с категориями и записью в Brain.
+- **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_real_helper_latency_benchmark.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** UI вызывает `DatabaseService.instance`
 
@@ -14241,7 +14315,7 @@ EN:
 - **Contents:** Brain Voice helper (`DesktopVoiceRecognitionPostprocessResult`, `DesktopVoiceRecognitionPostprocess`).
 - **Key code names:** `DesktopVoiceRecognitionPostprocessResult`, `DesktopVoiceRecognitionPostprocess`
 - **Repository role:** Brain Voice
-- **Evidence of use:** Imported/exported by production Dart: `lib/shared/voice/platforms/desktop/desktop_stt_benchmark_harness.dart`, `lib/shared/voice/platforms/desktop/desktop_stt_orchestrator.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_useful_candidate_evaluator.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/data/voice/desktop_stt_benchmark_harness.dart`, `lib/data/voice/desktop_voice_useful_candidate_evaluator.dart`, `lib/main.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -14258,13 +14332,89 @@ RU:
 - **Зачем:** Живой индекс категорий, облачный STT через PocketBase и разбор команд принадлежат Brain.
 - **Содержимое:** Вспомогательный модуль голосовых команд Brain (`desktop_voice_recognition_postprocess.dart`).
 - **Роль в репозитории:** Brain Voice
-- **Доказательства использования:** Импортируется production Dart: `lib/shared/voice/platforms/desktop/desktop_stt_benchmark_harness.dart`, `lib/shared/voice/platforms/desktop/desktop_stt_orchestrator.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_useful_candidate_evaluator.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/data/voice/desktop_stt_benchmark_harness.dart`, `lib/data/voice/desktop_voice_useful_candidate_evaluator.dart`, `lib/main.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
 - **Владелец / слой:** Brain — Voice
 - **Обязанности:** Связывает распознанный текст с категориями и записью в Brain.
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_recognition_postprocess.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** UI вызывает `DatabaseService.instance`
+
+
+### `lib/data/voice/desktop_voice_record_submit.dart`
+
+EN:
+
+- **Human purpose:** Brain Voice — Parsed command → normalize → injected `writeRecord` (command execution). Live category index, PocketBase cloud STT, and command parse belong in Brain.
+- **What this is:** Brain Voice — Parsed command → normalize → injected `writeRecord` (command execution).
+- **Why needed:** Live category index, PocketBase cloud STT, and command parse belong in Brain.
+- **Contents:** Brain Voice helper (`DesktopVoiceWriteRecordRequest`, `DesktopVoiceWriteRecordFn`, `DesktopVoiceSubmitOutcome`, `DesktopVoiceRecordSubmit`).
+- **Key code names:** `DesktopVoiceWriteRecordRequest`, `DesktopVoiceWriteRecordFn`, `DesktopVoiceSubmitOutcome`, `DesktopVoiceRecordSubmit`
+- **Repository role:** Brain Voice
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** Brain Voice
+- **Responsibilities:** Parsed command → normalize → injected `writeRecord` (command execution)
+- **When to open:** When behavior tied to `desktop_voice_record_submit.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** UI calls via `DatabaseService.instance`; APP_STRUCTURE role: Parsed command → normalize → injected `writeRecord` (command execution)
+
+RU:
+
+- **Зачем файл человеку:** Голосовой разбор команд в Brain — файл `desktop_voice_record_submit.dart`. Живой индекс категорий, облачный STT через PocketBase и разбор команд принадлежат Brain.
+- **Что это:** Голосовой разбор команд в Brain — файл `desktop_voice_record_submit.dart`.
+- **Зачем:** Живой индекс категорий, облачный STT через PocketBase и разбор команд принадлежат Brain.
+- **Содержимое:** Вспомогательный модуль голосовых команд Brain (`desktop_voice_record_submit.dart`).
+- **Роль в репозитории:** Brain Voice
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** Brain — Voice
+- **Обязанности:** Связывает распознанный текст с категориями и записью в Brain.
+- **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_record_submit.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** UI вызывает `DatabaseService.instance`
+
+
+### `lib/data/voice/desktop_voice_useful_candidate_evaluator.dart`
+
+EN:
+
+- **Human purpose:** Brain Voice — Useful-speech evaluation for widget/helper/benchmarks. Live category index, PocketBase cloud STT, and command parse belong in Brain.
+- **What this is:** Brain Voice — Useful-speech evaluation for widget/helper/benchmarks.
+- **Why needed:** Live category index, PocketBase cloud STT, and command parse belong in Brain.
+- **Contents:** Brain Voice helper (`DesktopVoiceUsefulCandidateEvaluation`).
+- **Key code names:** `DesktopVoiceUsefulCandidateEvaluation`
+- **Repository role:** Brain Voice
+- **Evidence of use:** Imported/exported by production Dart: `lib/data/voice/desktop_voice_real_helper_latency_benchmark.dart`, `lib/features/voice/desktop_voice_widget.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** Brain Voice
+- **Responsibilities:** Useful-speech evaluation for widget/helper/benchmarks
+- **When to open:** When behavior tied to `desktop_voice_useful_candidate_evaluator.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** UI calls via `DatabaseService.instance`; APP_STRUCTURE role: Useful-speech evaluation for widget/helper/benchmarks
+
+RU:
+
+- **Зачем файл человеку:** Голосовой разбор команд в Brain — файл `desktop_voice_useful_candidate_evaluator.dart`. Живой индекс категорий, облачный STT через PocketBase и разбор команд принадлежат Brain.
+- **Что это:** Голосовой разбор команд в Brain — файл `desktop_voice_useful_candidate_evaluator.dart`.
+- **Зачем:** Живой индекс категорий, облачный STT через PocketBase и разбор команд принадлежат Brain.
+- **Содержимое:** Вспомогательный модуль голосовых команд Brain (`desktop_voice_useful_candidate_evaluator.dart`).
+- **Роль в репозитории:** Brain Voice
+- **Доказательства использования:** Импортируется production Dart: `lib/data/voice/desktop_voice_real_helper_latency_benchmark.dart`, `lib/features/voice/desktop_voice_widget.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** Brain — Voice
+- **Обязанности:** Связывает распознанный текст с категориями и записью в Brain.
+- **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_useful_candidate_evaluator.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** UI вызывает `DatabaseService.instance`
 
@@ -14317,7 +14467,7 @@ EN:
 - **Contents:** Brain Voice helper (`VoiceCommandMatchConfidence`, `VoiceCommandParseResult`, `VoiceCommandCategoryCandidate`, `VoiceCommandCategoryIndex`, `VoiceCommandCategoryScope`).
 - **Key code names:** `VoiceCommandMatchConfidence`, `VoiceCommandParseResult`, `VoiceCommandCategoryCandidate`, `VoiceCommandCategoryIndex`, `VoiceCommandCategoryScope`
 - **Repository role:** Brain Voice
-- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/data/voice/desktop_voice_command_normalize.dart`, `lib/data/voice/desktop_voice_contamination_gate.dart`, `lib/data/voice/desktop_voice_glossary.dart`, `lib/data/voice/desktop_voice_recognition_postprocess.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/data/voice/desktop_stt_benchmark_harness.dart`, `lib/data/voice/desktop_voice_command_normalize.dart`, `lib/data/voice/desktop_voice_contamination_gate.dart`, `lib/data/voice/desktop_voice_glossary.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -14334,7 +14484,7 @@ RU:
 - **Зачем:** Живой индекс категорий, облачный STT через PocketBase и разбор команд принадлежат Brain.
 - **Содержимое:** Вспомогательный модуль голосовых команд Brain (`voice_command_parser.dart`).
 - **Роль в репозитории:** Brain Voice
-- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/data/voice/desktop_voice_command_normalize.dart`, `lib/data/voice/desktop_voice_contamination_gate.dart`, `lib/data/voice/desktop_voice_glossary.dart`, `lib/data/voice/desktop_voice_recognition_postprocess.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/data/voice/desktop_stt_benchmark_harness.dart`, `lib/data/voice/desktop_voice_command_normalize.dart`, `lib/data/voice/desktop_voice_contamination_gate.dart`, `lib/data/voice/desktop_voice_glossary.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -19035,6 +19185,158 @@ RU:
 - **Связано с:** Вкладка Timeline (shell index 0)
 
 
+### `lib/features/voice/desktop_voice_capsule.dart`
+
+EN:
+
+- **Human purpose:** `desktop_voice_capsule.dart` on voice area — Desktop Flutter Voice overlay UI (GOLOS STT capsule / correction / panel). Users see `desktop_voice_capsule.dart` when using voice area.
+- **What this is:** `desktop_voice_capsule.dart` on voice area — Desktop Flutter Voice overlay UI (GOLOS STT capsule / correction / panel).
+- **Why needed:** Users see `desktop_voice_capsule.dart` when using voice area.
+- **Contents:** Primary symbols: `DesktopVoiceCapsule`, `_LeadingIcon`.
+- **Key code names:** `DesktopVoiceCapsule`, `_LeadingIcon`
+- **Repository role:** production UI
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/voice/desktop_voice_widget.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** Desktop Voice UI
+- **Responsibilities:** Desktop Flutter Voice overlay UI (GOLOS STT capsule / correction / panel)
+- **When to open:** When behavior tied to `desktop_voice_capsule.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** APP_STRUCTURE role: Desktop Flutter Voice overlay UI (GOLOS STT capsule / correction / panel)
+
+RU:
+
+- **Зачем файл человеку:** `desktop_voice_capsule.dart` на voice — Поддерживает поведение `desktop_voice_capsule` в этой feature-зоне.. Пользователь видит UI из `desktop_voice_capsule.dart` на voice.
+- **Что это:** `desktop_voice_capsule.dart` на voice — Поддерживает поведение `desktop_voice_capsule` в этой feature-зоне..
+- **Зачем:** Пользователь видит UI из `desktop_voice_capsule.dart` на voice.
+- **Содержимое:** Dart-модуль `desktop_voice_capsule.dart` — классы и helpers в исходнике.
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Импортируется production Dart: `lib/features/voice/desktop_voice_widget.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** Desktop Voice UI
+- **Обязанности:** Поддерживает поведение `desktop_voice_capsule` в этой feature-зоне.
+- **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_capsule.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/features/voice/`, `docs/APP_STRUCTURE.md`
+
+
+### `lib/features/voice/desktop_voice_command_panel.dart`
+
+EN:
+
+- **Human purpose:** Intentionally retained product/compat file — Superseded desktop voice panel; shell uses desktop_voice_widget.dart. (see `docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`). Not reachable from current production `lib/main.dart` root; kept until a product decision removes or rewires it.
+- **What this is:** Intentionally retained product/compat file — Superseded desktop voice panel; shell uses desktop_voice_widget.dart. (see `docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`).
+- **Why needed:** Not reachable from current production `lib/main.dart` root; kept until a product decision removes or rewires it.
+- **Contents:** Primary symbols: `_DesktopVoicePanelPhase`, `DesktopVoiceCommandPanel`, `_DesktopVoiceCommandPanelState`.
+- **Key code names:** `_DesktopVoicePanelPhase`, `DesktopVoiceCommandPanel`, `_DesktopVoiceCommandPanelState`
+- **Repository role:** intentionally retained product watchlist
+- **Evidence of use:** (1) Hygiene audit watchlist (`docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`): Superseded desktop voice panel; shell uses desktop_voice_widget.dart. (2) Current production reachability from `lib/main.dart`: none (retained intentionally — not proven runtime-required).
+- **Necessity status:** RETAINED_PRODUCT_WATCHLIST
+- **Deletion consequence:** No current production consequence established; product decision required before deletion (replace docs/imports or remove).
+- **Confidence:** WATCHLIST
+- **Owner / layer:** Desktop Voice UI
+- **Responsibilities:** Desktop Flutter Voice overlay UI (GOLOS STT capsule / correction / panel)
+- **When to open:** When behavior tied to `desktop_voice_command_panel.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** No current production consequence established; product decision required before deletion (replace docs/imports or remove).
+- **Connected to:** APP_STRUCTURE role: Desktop Flutter Voice overlay UI (GOLOS STT capsule / correction / panel)
+
+RU:
+
+- **Зачем файл человеку:** Намеренно сохранённый файл (watchlist) — см. hygiene-аудит. Файл: `desktop_voice_command_panel.dart`. Сейчас не участвует в runtime из `lib/main.dart`; сохранён до продуктового решения об удалении или переподключении.
+- **Что это:** Намеренно сохранённый файл (watchlist) — см. hygiene-аудит. Файл: `desktop_voice_command_panel.dart`.
+- **Зачем:** Сейчас не участвует в runtime из `lib/main.dart`; сохранён до продуктового решения об удалении или переподключении.
+- **Содержимое:** Dart-модуль `desktop_voice_command_panel.dart` — классы и helpers в исходнике.
+- **Роль в репозитории:** intentionally retained product watchlist
+- **Доказательства использования:** (1) Список наблюдения hygiene-аудита (`docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`): Superseded desktop voice panel; shell uses desktop_voice_widget.dart. (2) Сейчас не достижим из `lib/main.dart`; сохранён намеренно, не считать runtime-обязательным.
+- **Статус необходимости:** RETAINED_PRODUCT_WATCHLIST
+- **Что будет, если удалить:** Сейчас нет доказанного runtime-эффекта; перед удалением нужно продуктовое решение (обновить docs/imports или убрать файл).
+- **Уверенность:** WATCHLIST
+- **Владелец / слой:** Desktop Voice UI
+- **Обязанности:** Не считать обязательным для текущего runtime.
+- **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_command_panel.dart`.
+- **Можно удалить?** Сейчас нет доказанного runtime-эффекта; перед удалением нужно продуктовое решение (обновить docs/imports или убрать файл).
+- **Связано с:** `lib/features/voice/`, `docs/APP_STRUCTURE.md`
+
+
+### `lib/features/voice/desktop_voice_correction_sheet.dart`
+
+EN:
+
+- **Human purpose:** `desktop_voice_correction_sheet.dart` on voice area — Desktop Flutter Voice overlay UI (GOLOS STT capsule / correction / panel). Users see `desktop_voice_correction_sheet.dart` when using voice area.
+- **What this is:** `desktop_voice_correction_sheet.dart` on voice area — Desktop Flutter Voice overlay UI (GOLOS STT capsule / correction / panel).
+- **Why needed:** Users see `desktop_voice_correction_sheet.dart` when using voice area.
+- **Contents:** Primary symbols: `DesktopVoiceCorrectionResult`, `_DesktopVoiceCorrectionSheetBody`, `_DesktopVoiceCorrectionSheetBodyState`.
+- **Key code names:** `DesktopVoiceCorrectionResult`, `_DesktopVoiceCorrectionSheetBody`, `_DesktopVoiceCorrectionSheetBodyState`
+- **Repository role:** production UI
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/voice/desktop_voice_widget.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** Desktop Voice UI
+- **Responsibilities:** Desktop Flutter Voice overlay UI (GOLOS STT capsule / correction / panel)
+- **When to open:** When behavior tied to `desktop_voice_correction_sheet.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** APP_STRUCTURE role: Desktop Flutter Voice overlay UI (GOLOS STT capsule / correction / panel)
+
+RU:
+
+- **Зачем файл человеку:** `desktop_voice_correction_sheet.dart` на voice — Пользователь открывает sheet/dialog из entry `desktop_voice_correction_sheet`.. Пользователь видит UI из `desktop_voice_correction_sheet.dart` на voice.
+- **Что это:** `desktop_voice_correction_sheet.dart` на voice — Пользователь открывает sheet/dialog из entry `desktop_voice_correction_sheet`..
+- **Зачем:** Пользователь видит UI из `desktop_voice_correction_sheet.dart` на voice.
+- **Содержимое:** Основные символы: `DesktopVoiceCorrectionResult`, `_DesktopVoiceCorrectionSheetBody`, `_DesktopVoiceCorrectionSheetBodyState`.
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Импортируется production Dart: `lib/features/voice/desktop_voice_widget.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** Desktop Voice UI
+- **Обязанности:** Пользователь открывает sheet/dialog из entry `desktop_voice_correction_sheet`.
+- **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_correction_sheet.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/features/voice/`, `docs/APP_STRUCTURE.md`
+
+
+### `lib/features/voice/desktop_voice_widget.dart`
+
+EN:
+
+- **Human purpose:** `desktop_voice_widget.dart` on voice area — Desktop Flutter Voice overlay UI (GOLOS STT capsule / correction / panel). Users see `desktop_voice_widget.dart` when using voice area.
+- **What this is:** `desktop_voice_widget.dart` on voice area — Desktop Flutter Voice overlay UI (GOLOS STT capsule / correction / panel).
+- **Why needed:** Users see `desktop_voice_widget.dart` when using voice area.
+- **Contents:** Primary symbols: `DesktopVoiceOverlayPhase`, `DesktopVoiceStartRecordFn`, `DesktopVoiceOverlay`, `_DesktopVoiceOverlayState`.
+- **Key code names:** `DesktopVoiceOverlayPhase`, `DesktopVoiceStartRecordFn`, `DesktopVoiceOverlay`, `_DesktopVoiceOverlayState`
+- **Repository role:** production UI
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** Desktop Voice UI
+- **Responsibilities:** Desktop Flutter Voice overlay UI (GOLOS STT capsule / correction / panel)
+- **When to open:** When behavior tied to `desktop_voice_widget.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** APP_STRUCTURE role: Desktop Flutter Voice overlay UI (GOLOS STT capsule / correction / panel)
+
+RU:
+
+- **Зачем файл человеку:** `desktop_voice_widget.dart` на voice — Поддерживает поведение `desktop_voice_widget` в этой feature-зоне.. Пользователь видит UI из `desktop_voice_widget.dart` на voice.
+- **Что это:** `desktop_voice_widget.dart` на voice — Поддерживает поведение `desktop_voice_widget` в этой feature-зоне..
+- **Зачем:** Пользователь видит UI из `desktop_voice_widget.dart` на voice.
+- **Содержимое:** Dart-модуль `desktop_voice_widget.dart` — классы и helpers в исходнике.
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** Desktop Voice UI
+- **Обязанности:** Поддерживает поведение `desktop_voice_widget` в этой feature-зоне.
+- **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_widget.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/features/voice/`, `docs/APP_STRUCTURE.md`
+
+
 ### `lib/features/wear/wear_main_wrapper.dart`
 
 EN:
@@ -19675,7 +19977,7 @@ EN:
 - **What this is:** Flutter app entry — `main()` bootstraps auth gate, brain load, and dashboard.
 - **Why needed:** OS launches this file first; it wires PocketBase session and initial data before tabs render.
 - **Contents:** `main()`, app widget tree, auth routing to dashboard or login.
-- **Key code names:** `main`, `DateTimeTrackerApp`, `_DateTimeTrackerAppState`, `RootAuthWrapper`, `_RootAuthWrapperState`
+- **Key code names:** `main`, `DateTimeTrackerApp`, `_DateTimeTrackerAppState`
 - **Repository role:** runtime entry point
 - **Evidence of use:** Production entry point: Flutter `main()` boots PocketBase, auth gate, and shell.
 - **Necessity status:** PROVEN_REQUIRED
@@ -20433,7 +20735,7 @@ EN:
 - **Contents:** Shared Voice module (`DesktopVoiceCorrectionFlow`, `DesktopVoiceCorrectionSession`).
 - **Key code names:** `DesktopVoiceCorrectionFlow`, `DesktopVoiceCorrectionSession`
 - **Repository role:** shared Voice system
-- **Evidence of use:** Imported/exported by production Dart: `lib/shared/voice/platforms/desktop/ui/desktop_voice_widget.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/voice/desktop_voice_widget.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -20450,7 +20752,7 @@ RU:
 - **Зачем:** Телефон, компьютер, web и Wear сходятся в один путь разбора команд.
 - **Содержимое:** Модуль общей системы голосового ввода (`desktop_voice_correction_flow.dart`).
 - **Роль в репозитории:** shared Voice system
-- **Доказательства использования:** Импортируется production Dart: `lib/shared/voice/platforms/desktop/ui/desktop_voice_widget.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/features/voice/desktop_voice_widget.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -20509,7 +20811,7 @@ EN:
 - **Contents:** Shared Voice module (`DesktopVoiceEngineId`, `DesktopVoiceEngineBenchmark`).
 - **Key code names:** `DesktopVoiceEngineId`, `DesktopVoiceEngineBenchmark`
 - **Repository role:** shared Voice system
-- **Evidence of use:** Imported/exported by production Dart: `lib/shared/voice/commands/desktop_stt_engine.dart`, `lib/shared/voice/commands/desktop_voice_command_stt_policy.dart`, `lib/shared/voice/platforms/desktop/desktop_stt_benchmark_harness.dart`, `lib/shared/voice/platforms/desktop/desktop_stt_helper_service.dart`, `lib/shared/voice/platforms/desktop/desktop_stt_orchestrator.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/data/voice/desktop_stt_benchmark_harness.dart`, `lib/shared/voice/commands/desktop_stt_engine.dart`, `lib/shared/voice/commands/desktop_voice_command_stt_policy.dart`, `lib/shared/voice/platforms/desktop/desktop_stt_helper_service.dart`, `lib/shared/voice/platforms/desktop/desktop_stt_orchestrator.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -20526,7 +20828,7 @@ RU:
 - **Зачем:** Телефон, компьютер, web и Wear сходятся в один путь разбора команд.
 - **Содержимое:** Модуль общей системы голосового ввода (`desktop_voice_engine.dart`).
 - **Роль в репозитории:** shared Voice system
-- **Доказательства использования:** Импортируется production Dart: `lib/shared/voice/commands/desktop_stt_engine.dart`, `lib/shared/voice/commands/desktop_voice_command_stt_policy.dart`, `lib/shared/voice/platforms/desktop/desktop_stt_benchmark_harness.dart`, `lib/shared/voice/platforms/desktop/desktop_stt_helper_service.dart`, `lib/shared/voice/platforms/desktop/desktop_stt_orchestrator.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/data/voice/desktop_stt_benchmark_harness.dart`, `lib/shared/voice/commands/desktop_stt_engine.dart`, `lib/shared/voice/commands/desktop_voice_command_stt_policy.dart`, `lib/shared/voice/platforms/desktop/desktop_stt_helper_service.dart`, `lib/shared/voice/platforms/desktop/desktop_stt_orchestrator.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -20585,7 +20887,7 @@ EN:
 - **Contents:** Shared Voice module (`DesktopVoiceTranscriptMerge`).
 - **Key code names:** `DesktopVoiceTranscriptMerge`
 - **Repository role:** shared Voice system
-- **Evidence of use:** Imported/exported by production Dart: `lib/data/voice/desktop_voice_contamination_gate.dart`, `lib/shared/voice/platforms/desktop/desktop_stt_helper_service.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_real_helper_latency_benchmark.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/data/voice/desktop_voice_contamination_gate.dart`, `lib/data/voice/desktop_voice_real_helper_latency_benchmark.dart`, `lib/shared/voice/platforms/desktop/desktop_stt_helper_service.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -20602,7 +20904,7 @@ RU:
 - **Зачем:** Телефон, компьютер, web и Wear сходятся в один путь разбора команд.
 - **Содержимое:** Модуль общей системы голосового ввода (`desktop_voice_transcript_merge.dart`).
 - **Роль в репозитории:** shared Voice system
-- **Доказательства использования:** Импортируется production Dart: `lib/data/voice/desktop_voice_contamination_gate.dart`, `lib/shared/voice/platforms/desktop/desktop_stt_helper_service.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_real_helper_latency_benchmark.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/data/voice/desktop_voice_contamination_gate.dart`, `lib/data/voice/desktop_voice_real_helper_latency_benchmark.dart`, `lib/shared/voice/platforms/desktop/desktop_stt_helper_service.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -20623,7 +20925,7 @@ EN:
 - **Contents:** Shared Voice module (`DesktopVoiceLog`).
 - **Key code names:** `DesktopVoiceLog`
 - **Repository role:** shared Voice system
-- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/features/settings/voice/desktop_voice_settings_desktop.dart`, `lib/features/settings/voice/desktop_voice_settings_section.dart`, `lib/shared/voice/diagnostics/desktop_voice_pipeline.dart`, `lib/shared/voice/platforms/desktop/desktop_stt_helper_service.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/data/voice/desktop_voice_record_submit.dart`, `lib/features/settings/voice/desktop_voice_settings_desktop.dart`, `lib/features/settings/voice/desktop_voice_settings_section.dart`, `lib/features/voice/desktop_voice_widget.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -20640,7 +20942,7 @@ RU:
 - **Зачем:** Телефон, компьютер, web и Wear сходятся в один путь разбора команд.
 - **Содержимое:** Модуль общей системы голосового ввода (`desktop_voice_log.dart`).
 - **Роль в репозитории:** shared Voice system
-- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/features/settings/voice/desktop_voice_settings_desktop.dart`, `lib/features/settings/voice/desktop_voice_settings_section.dart`, `lib/shared/voice/diagnostics/desktop_voice_pipeline.dart`, `lib/shared/voice/platforms/desktop/desktop_stt_helper_service.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/data/voice/desktop_voice_record_submit.dart`, `lib/features/settings/voice/desktop_voice_settings_desktop.dart`, `lib/features/settings/voice/desktop_voice_settings_section.dart`, `lib/features/voice/desktop_voice_widget.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -20661,7 +20963,7 @@ EN:
 - **Contents:** Shared Voice module (`DesktopVoicePipeline`).
 - **Key code names:** `DesktopVoicePipeline`
 - **Repository role:** shared Voice system
-- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/core/services/desktop_main_window.dart`, `lib/data/voice/desktop_voice_command_normalize.dart`, `lib/data/voice/desktop_voice_contamination_gate.dart`, `lib/data/voice/desktop_voice_glossary.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/core/services/desktop_main_window.dart`, `lib/data/voice/desktop_stt_benchmark_harness.dart`, `lib/data/voice/desktop_voice_command_normalize.dart`, `lib/data/voice/desktop_voice_contamination_gate.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -20678,7 +20980,7 @@ RU:
 - **Зачем:** Телефон, компьютер, web и Wear сходятся в один путь разбора команд.
 - **Содержимое:** Модуль общей системы голосового ввода (`desktop_voice_pipeline.dart`).
 - **Роль в репозитории:** shared Voice system
-- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/core/services/desktop_main_window.dart`, `lib/data/voice/desktop_voice_command_normalize.dart`, `lib/data/voice/desktop_voice_contamination_gate.dart`, `lib/data/voice/desktop_voice_glossary.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/core/services/desktop_main_window.dart`, `lib/data/voice/desktop_stt_benchmark_harness.dart`, `lib/data/voice/desktop_voice_command_normalize.dart`, `lib/data/voice/desktop_voice_contamination_gate.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -20723,44 +21025,6 @@ RU:
 - **Владелец / слой:** Desktop Voice runtime
 - **Обязанности:** Реализует активацию, распознавание или оверлей голосового ввода на компьютере.
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_hotkey_codec.dart`.
-- **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** `lib/shared/voice/platforms/desktop/`, `docs/APP_STRUCTURE.md`
-
-
-### `lib/shared/voice/platforms/desktop/desktop_stt_benchmark_harness.dart`
-
-EN:
-
-- **Human purpose:** Desktop Voice runtime — Golden text STT quality gate (no mic). Hotkey, STT helper, overlay, and capture are desktop adapters of one Voice system.
-- **What this is:** Desktop Voice runtime — Golden text STT quality gate (no mic).
-- **Why needed:** Hotkey, STT helper, overlay, and capture are desktop adapters of one Voice system.
-- **Contents:** Desktop Voice runtime module (`DesktopVoiceSttGoldenCase`, `DesktopVoiceSttBenchmarkResult`, `DesktopSttBenchmarkHarness`).
-- **Key code names:** `DesktopVoiceSttGoldenCase`, `DesktopVoiceSttBenchmarkResult`, `DesktopSttBenchmarkHarness`
-- **Repository role:** shared foundation
-- **Evidence of use:** Referenced by tests/tooling: `test/desktop_voice_stt_quality_test.dart`.
-- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
-- **Deletion consequence:** Missing test coverage or broken manual benchmark/smoke harness.
-- **Confidence:** HIGH
-- **Owner / layer:** Desktop Voice runtime
-- **Responsibilities:** Golden text STT quality gate (no mic)
-- **When to open:** When behavior tied to `desktop_stt_benchmark_harness.dart` breaks or you need to change its documented role.
-- **Can it be deleted?** Missing test coverage or broken manual benchmark/smoke harness.
-- **Connected to:** APP_STRUCTURE role: Golden text STT quality gate (no mic)
-
-RU:
-
-- **Зачем файл человеку:** Рантайм голосового ввода на компьютере — файл `desktop_stt_benchmark_harness.dart`. Горячие клавиши, STT helper, оверлей и захват микрофона — адаптеры одной системы голосового ввода.
-- **Что это:** Рантайм голосового ввода на компьютере — файл `desktop_stt_benchmark_harness.dart`.
-- **Зачем:** Горячие клавиши, STT helper, оверлей и захват микрофона — адаптеры одной системы голосового ввода.
-- **Содержимое:** Рантайм-модуль голосового ввода на компьютере (`desktop_stt_benchmark_harness.dart`).
-- **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Нужен тестам/инструментам: `test/desktop_voice_stt_quality_test.dart`.
-- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
-- **Что будет, если удалить:** Пропадёт покрытие тестами или сломается benchmark/smoke.
-- **Уверенность:** HIGH
-- **Владелец / слой:** Desktop Voice runtime
-- **Обязанности:** Реализует активацию, распознавание или оверлей голосового ввода на компьютере.
-- **Когда открывать:** Когда ломается поведение, связанное с `desktop_stt_benchmark_harness.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/shared/voice/platforms/desktop/`, `docs/APP_STRUCTURE.md`
 
@@ -20927,7 +21191,7 @@ EN:
 - **Contents:** Desktop Voice runtime module (`DesktopSttHelperService`).
 - **Key code names:** `DesktopSttHelperService`
 - **Repository role:** Desktop Voice runtime
-- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/features/settings/voice/desktop_voice_settings_desktop.dart`, `lib/shared/voice/platforms/desktop/desktop_stt_orchestrator.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_benchmark_service.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_recognizer_io.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/features/settings/voice/desktop_voice_settings_desktop.dart`, `lib/features/voice/desktop_voice_widget.dart`, `lib/shared/voice/platforms/desktop/desktop_stt_orchestrator.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_benchmark_service.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -20944,7 +21208,7 @@ RU:
 - **Зачем:** Горячие клавиши, STT helper, оверлей и захват микрофона — адаптеры одной системы голосового ввода.
 - **Содержимое:** Рантайм-модуль голосового ввода на компьютере (`desktop_stt_helper_service.dart`).
 - **Роль в репозитории:** Desktop Voice runtime
-- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/features/settings/voice/desktop_voice_settings_desktop.dart`, `lib/shared/voice/platforms/desktop/desktop_stt_orchestrator.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_benchmark_service.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_recognizer_io.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/features/settings/voice/desktop_voice_settings_desktop.dart`, `lib/features/voice/desktop_voice_widget.dart`, `lib/shared/voice/platforms/desktop/desktop_stt_orchestrator.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_benchmark_service.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -20959,21 +21223,21 @@ RU:
 
 EN:
 
-- **Human purpose:** Desktop Voice runtime — STT quality ladder: engine select → transcribe → postprocess. Hotkey, STT helper, overlay, and capture are desktop adapters of one Voice system.
-- **What this is:** Desktop Voice runtime — STT quality ladder: engine select → transcribe → postprocess.
+- **Human purpose:** Desktop Voice runtime — STT quality ladder: engine select → transcribe → optional Brain postprocess hook. Hotkey, STT helper, overlay, and capture are desktop adapters of one Voice system.
+- **What this is:** Desktop Voice runtime — STT quality ladder: engine select → transcribe → optional Brain postprocess hook.
 - **Why needed:** Hotkey, STT helper, overlay, and capture are desktop adapters of one Voice system.
-- **Contents:** Desktop Voice runtime module (`DesktopRecognitionPipelineResult`, `DesktopSttOrchestrator`).
-- **Key code names:** `DesktopRecognitionPipelineResult`, `DesktopSttOrchestrator`
+- **Contents:** Desktop Voice runtime module (`DesktopVoicePostprocessSnapshot`, `DesktopVoicePostprocessHook`, `DesktopRecognitionPipelineResult`, `DesktopSttOrchestrator`).
+- **Key code names:** `DesktopVoicePostprocessSnapshot`, `DesktopVoicePostprocessHook`, `DesktopRecognitionPipelineResult`, `DesktopSttOrchestrator`
 - **Repository role:** Desktop Voice runtime
-- **Evidence of use:** Imported/exported by production Dart: `lib/shared/voice/platforms/desktop/desktop_stt_helper_service.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/main.dart`, `lib/shared/voice/platforms/desktop/desktop_stt_helper_service.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
 - **Owner / layer:** Desktop Voice runtime
-- **Responsibilities:** STT quality ladder: engine select → transcribe → postprocess
+- **Responsibilities:** STT quality ladder: engine select → transcribe → optional Brain postprocess hook
 - **When to open:** When behavior tied to `desktop_stt_orchestrator.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: STT quality ladder: engine select → transcribe → postprocess
+- **Connected to:** APP_STRUCTURE role: STT quality ladder: engine select → transcribe → optional Brain postprocess hook
 
 RU:
 
@@ -20982,7 +21246,7 @@ RU:
 - **Зачем:** Горячие клавиши, STT helper, оверлей и захват микрофона — адаптеры одной системы голосового ввода.
 - **Содержимое:** Рантайм-модуль голосового ввода на компьютере (`desktop_stt_orchestrator.dart`).
 - **Роль в репозитории:** Desktop Voice runtime
-- **Доказательства использования:** Импортируется production Dart: `lib/shared/voice/platforms/desktop/desktop_stt_helper_service.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/main.dart`, `lib/shared/voice/platforms/desktop/desktop_stt_helper_service.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -21003,7 +21267,7 @@ EN:
 - **Contents:** Desktop Voice runtime module (`DesktopVoiceAttemptStatus`, `DesktopVoiceAttempt`, `DesktopVoiceAttemptLog`).
 - **Key code names:** `DesktopVoiceAttemptStatus`, `DesktopVoiceAttempt`, `DesktopVoiceAttemptLog`
 - **Repository role:** Desktop Voice runtime
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/settings/voice/desktop_voice_attempt_dialog.dart`, `lib/features/settings/voice/desktop_voice_settings_desktop.dart`, `lib/shared/voice/platforms/desktop/ui/desktop_voice_widget.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/settings/voice/desktop_voice_attempt_dialog.dart`, `lib/features/settings/voice/desktop_voice_settings_desktop.dart`, `lib/features/voice/desktop_voice_widget.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -21020,7 +21284,7 @@ RU:
 - **Зачем:** Горячие клавиши, STT helper, оверлей и захват микрофона — адаптеры одной системы голосового ввода.
 - **Содержимое:** Рантайм-модуль голосового ввода на компьютере (`desktop_voice_attempt_log.dart`).
 - **Роль в репозитории:** Desktop Voice runtime
-- **Доказательства использования:** Импортируется production Dart: `lib/features/settings/voice/desktop_voice_attempt_dialog.dart`, `lib/features/settings/voice/desktop_voice_settings_desktop.dart`, `lib/shared/voice/platforms/desktop/ui/desktop_voice_widget.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/features/settings/voice/desktop_voice_attempt_dialog.dart`, `lib/features/settings/voice/desktop_voice_settings_desktop.dart`, `lib/features/voice/desktop_voice_widget.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -21041,7 +21305,7 @@ EN:
 - **Contents:** Desktop Voice runtime module (`DesktopVoiceAudioCapture`).
 - **Key code names:** `DesktopVoiceAudioCapture`
 - **Repository role:** Desktop Voice runtime
-- **Evidence of use:** Imported/exported by production Dart: `lib/shared/voice/platforms/desktop/desktop_stt_helper_service.dart`, `lib/shared/voice/platforms/desktop/desktop_stt_orchestrator.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_benchmark_service.dart`, `lib/shared/voice/platforms/desktop/ui/desktop_voice_widget.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/voice/desktop_voice_widget.dart`, `lib/shared/voice/platforms/desktop/desktop_stt_helper_service.dart`, `lib/shared/voice/platforms/desktop/desktop_stt_orchestrator.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_benchmark_service.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -21058,7 +21322,7 @@ RU:
 - **Зачем:** Горячие клавиши, STT helper, оверлей и захват микрофона — адаптеры одной системы голосового ввода.
 - **Содержимое:** Рантайм-модуль голосового ввода на компьютере (`desktop_voice_audio_capture.dart`).
 - **Роль в репозитории:** Desktop Voice runtime
-- **Доказательства использования:** Импортируется production Dart: `lib/shared/voice/platforms/desktop/desktop_stt_helper_service.dart`, `lib/shared/voice/platforms/desktop/desktop_stt_orchestrator.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_benchmark_service.dart`, `lib/shared/voice/platforms/desktop/ui/desktop_voice_widget.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/features/voice/desktop_voice_widget.dart`, `lib/shared/voice/platforms/desktop/desktop_stt_helper_service.dart`, `lib/shared/voice/platforms/desktop/desktop_stt_orchestrator.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_benchmark_service.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -21231,7 +21495,7 @@ EN:
 - **Contents:** Desktop Voice runtime module (`DesktopVoiceConfirmationTimer`, `VoidCallback`).
 - **Key code names:** `DesktopVoiceConfirmationTimer`, `VoidCallback`
 - **Repository role:** Desktop Voice runtime
-- **Evidence of use:** Imported/exported by production Dart: `lib/shared/voice/platforms/desktop/ui/desktop_voice_widget.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/voice/desktop_voice_widget.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -21248,7 +21512,7 @@ RU:
 - **Зачем:** Горячие клавиши, STT helper, оверлей и захват микрофона — адаптеры одной системы голосового ввода.
 - **Содержимое:** Рантайм-модуль голосового ввода на компьютере (`desktop_voice_confirmation_timer.dart`).
 - **Роль в репозитории:** Desktop Voice runtime
-- **Доказательства использования:** Импортируется production Dart: `lib/shared/voice/platforms/desktop/ui/desktop_voice_widget.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/features/voice/desktop_voice_widget.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -21533,7 +21797,7 @@ EN:
 - **Contents:** Desktop Voice runtime module (`DesktopVoiceReadyCuePlayResult`, `DesktopVoiceNativeOverlay`).
 - **Key code names:** `DesktopVoiceReadyCuePlayResult`, `DesktopVoiceNativeOverlay`
 - **Repository role:** Desktop Voice runtime
-- **Evidence of use:** Imported/exported by production Dart: `lib/shared/voice/platforms/desktop/desktop_stt_helper_service.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_overlay_host_io.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_overlay_service.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_ready_cue.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_smoke_bridge.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/voice/desktop_voice_widget.dart`, `lib/shared/voice/platforms/desktop/desktop_stt_helper_service.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_overlay_host_io.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_overlay_service.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_ready_cue.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -21550,7 +21814,7 @@ RU:
 - **Зачем:** Горячие клавиши, STT helper, оверлей и захват микрофона — адаптеры одной системы голосового ввода.
 - **Содержимое:** Рантайм-модуль голосового ввода на компьютере (`desktop_voice_native_overlay.dart`).
 - **Роль в репозитории:** Desktop Voice runtime
-- **Доказательства использования:** Импортируется production Dart: `lib/shared/voice/platforms/desktop/desktop_stt_helper_service.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_overlay_host_io.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_overlay_service.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_ready_cue.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_smoke_bridge.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/features/voice/desktop_voice_widget.dart`, `lib/shared/voice/platforms/desktop/desktop_stt_helper_service.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_overlay_host_io.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_overlay_service.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_ready_cue.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -21571,7 +21835,7 @@ EN:
 - **Contents:** Desktop Voice runtime module (`DesktopVoiceOverlayBridge`).
 - **Key code names:** `DesktopVoiceOverlayBridge`
 - **Repository role:** Desktop Voice runtime
-- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/shared/voice/platforms/desktop/ui/desktop_voice_widget.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/features/voice/desktop_voice_widget.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -21588,7 +21852,7 @@ RU:
 - **Зачем:** Горячие клавиши, STT helper, оверлей и захват микрофона — адаптеры одной системы голосового ввода.
 - **Содержимое:** Рантайм-модуль голосового ввода на компьютере (`desktop_voice_overlay_bridge.dart`).
 - **Роль в репозитории:** Desktop Voice runtime
-- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/shared/voice/platforms/desktop/ui/desktop_voice_widget.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/features/voice/desktop_voice_widget.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -21759,7 +22023,7 @@ EN:
 - **Contents:** Desktop Voice runtime module (`DesktopVoiceOverlayService`).
 - **Key code names:** `DesktopVoiceOverlayService`
 - **Repository role:** Desktop Voice runtime
-- **Evidence of use:** Imported/exported by production Dart: `lib/shared/voice/platforms/desktop/desktop_stt_helper_service.dart`, `lib/shared/voice/platforms/desktop/ui/desktop_voice_widget.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/voice/desktop_voice_widget.dart`, `lib/shared/voice/platforms/desktop/desktop_stt_helper_service.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -21776,7 +22040,7 @@ RU:
 - **Зачем:** Горячие клавиши, STT helper, оверлей и захват микрофона — адаптеры одной системы голосового ввода.
 - **Содержимое:** Рантайм-модуль голосового ввода на компьютере (`desktop_voice_overlay_service.dart`).
 - **Роль в репозитории:** Desktop Voice runtime
-- **Доказательства использования:** Импортируется production Dart: `lib/shared/voice/platforms/desktop/desktop_stt_helper_service.dart`, `lib/shared/voice/platforms/desktop/ui/desktop_voice_widget.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/features/voice/desktop_voice_widget.dart`, `lib/shared/voice/platforms/desktop/desktop_stt_helper_service.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -21863,44 +22127,6 @@ RU:
 - **Связано с:** `lib/shared/voice/platforms/desktop/`, `docs/APP_STRUCTURE.md`
 
 
-### `lib/shared/voice/platforms/desktop/desktop_voice_real_helper_latency_benchmark.dart`
-
-EN:
-
-- **Human purpose:** Desktop Voice runtime — Per-iteration latency trace against installed helper. Hotkey, STT helper, overlay, and capture are desktop adapters of one Voice system.
-- **What this is:** Desktop Voice runtime — Per-iteration latency trace against installed helper.
-- **Why needed:** Hotkey, STT helper, overlay, and capture are desktop adapters of one Voice system.
-- **Contents:** Desktop Voice runtime module (`DesktopVoiceLatencyIteration`, `DesktopVoiceLatencyBenchmarkReport`, `DesktopVoiceRealHelperLatencyBenchmark`).
-- **Key code names:** `DesktopVoiceLatencyIteration`, `DesktopVoiceLatencyBenchmarkReport`, `DesktopVoiceRealHelperLatencyBenchmark`
-- **Repository role:** shared foundation
-- **Evidence of use:** Referenced by tests/tooling: `test/desktop_voice_real_helper_latency_benchmark_test.dart`.
-- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
-- **Deletion consequence:** Missing test coverage or broken manual benchmark/smoke harness.
-- **Confidence:** HIGH
-- **Owner / layer:** Desktop Voice runtime
-- **Responsibilities:** Per-iteration latency trace against installed helper
-- **When to open:** When behavior tied to `desktop_voice_real_helper_latency_benchmark.dart` breaks or you need to change its documented role.
-- **Can it be deleted?** Missing test coverage or broken manual benchmark/smoke harness.
-- **Connected to:** APP_STRUCTURE role: Per-iteration latency trace against installed helper
-
-RU:
-
-- **Зачем файл человеку:** Рантайм голосового ввода на компьютере — файл `desktop_voice_real_helper_latency_benchmark.dart`. Горячие клавиши, STT helper, оверлей и захват микрофона — адаптеры одной системы голосового ввода.
-- **Что это:** Рантайм голосового ввода на компьютере — файл `desktop_voice_real_helper_latency_benchmark.dart`.
-- **Зачем:** Горячие клавиши, STT helper, оверлей и захват микрофона — адаптеры одной системы голосового ввода.
-- **Содержимое:** Рантайм-модуль голосового ввода на компьютере (`desktop_voice_real_helper_latency_benchmark.dart`).
-- **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Нужен тестам/инструментам: `test/desktop_voice_real_helper_latency_benchmark_test.dart`.
-- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
-- **Что будет, если удалить:** Пропадёт покрытие тестами или сломается benchmark/smoke.
-- **Уверенность:** HIGH
-- **Владелец / слой:** Desktop Voice runtime
-- **Обязанности:** Реализует активацию, распознавание или оверлей голосового ввода на компьютере.
-- **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_real_helper_latency_benchmark.dart`.
-- **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** `lib/shared/voice/platforms/desktop/`, `docs/APP_STRUCTURE.md`
-
-
 ### `lib/shared/voice/platforms/desktop/desktop_voice_recognizer_io.dart`
 
 EN:
@@ -21911,7 +22137,7 @@ EN:
 - **Contents:** Desktop Voice runtime module (`DesktopVoiceRecognizerGolosHelper`).
 - **Key code names:** `DesktopVoiceRecognizerGolosHelper`
 - **Repository role:** shared foundation
-- **Evidence of use:** Referenced by tests/tooling: `lib/shared/voice/commands/desktop_voice_install_smoke_policy.dart`, `lib/shared/voice/platforms/desktop/desktop_stt_benchmark_harness.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_real_helper_latency_benchmark.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_recognizer_io.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_wav_stt_benchmark.dart`.
+- **Evidence of use:** Referenced by tests/tooling: `lib/data/voice/desktop_stt_benchmark_harness.dart`, `lib/data/voice/desktop_voice_real_helper_latency_benchmark.dart`, `lib/shared/voice/commands/desktop_voice_install_smoke_policy.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_recognizer_io.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_wav_stt_benchmark.dart`.
 - **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Deletion consequence:** Missing test coverage or broken manual benchmark/smoke harness.
 - **Confidence:** HIGH
@@ -21928,7 +22154,7 @@ RU:
 - **Зачем:** Горячие клавиши, STT helper, оверлей и захват микрофона — адаптеры одной системы голосового ввода.
 - **Содержимое:** Рантайм-модуль голосового ввода на компьютере (`desktop_voice_recognizer_io.dart`).
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Нужен тестам/инструментам: `lib/shared/voice/commands/desktop_voice_install_smoke_policy.dart`, `lib/shared/voice/platforms/desktop/desktop_stt_benchmark_harness.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_real_helper_latency_benchmark.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_recognizer_io.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_wav_stt_benchmark.dart`.
+- **Доказательства использования:** Нужен тестам/инструментам: `lib/data/voice/desktop_stt_benchmark_harness.dart`, `lib/data/voice/desktop_voice_real_helper_latency_benchmark.dart`, `lib/shared/voice/commands/desktop_voice_install_smoke_policy.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_recognizer_io.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_wav_stt_benchmark.dart`.
 - **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Что будет, если удалить:** Пропадёт покрытие тестами или сломается benchmark/smoke.
 - **Уверенность:** HIGH
@@ -21949,7 +22175,7 @@ EN:
 - **Contents:** Desktop Voice runtime module (`DesktopVoiceSession`, `DesktopVoiceSessionRegistry`).
 - **Key code names:** `DesktopVoiceSession`, `DesktopVoiceSessionRegistry`
 - **Repository role:** Desktop Voice runtime
-- **Evidence of use:** Imported/exported by production Dart: `lib/shared/voice/platforms/desktop/desktop_stt_helper_service.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_real_helper_latency_benchmark.dart`, `lib/shared/voice/platforms/desktop/ui/desktop_voice_widget.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/data/voice/desktop_voice_real_helper_latency_benchmark.dart`, `lib/features/voice/desktop_voice_widget.dart`, `lib/shared/voice/platforms/desktop/desktop_stt_helper_service.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -21966,7 +22192,7 @@ RU:
 - **Зачем:** Горячие клавиши, STT helper, оверлей и захват микрофона — адаптеры одной системы голосового ввода.
 - **Содержимое:** Рантайм-модуль голосового ввода на компьютере (`desktop_voice_session.dart`).
 - **Роль в репозитории:** Desktop Voice runtime
-- **Доказательства использования:** Импортируется production Dart: `lib/shared/voice/platforms/desktop/desktop_stt_helper_service.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_real_helper_latency_benchmark.dart`, `lib/shared/voice/platforms/desktop/ui/desktop_voice_widget.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/data/voice/desktop_voice_real_helper_latency_benchmark.dart`, `lib/features/voice/desktop_voice_widget.dart`, `lib/shared/voice/platforms/desktop/desktop_stt_helper_service.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -22063,7 +22289,7 @@ EN:
 - **Contents:** Desktop Voice runtime module (`DesktopVoiceSttProcessingVariant`, `DesktopVoiceSttProcessingPolicy`, `DesktopVoiceSttProcessingResult`).
 - **Key code names:** `DesktopVoiceSttProcessingVariant`, `DesktopVoiceSttProcessingPolicy`, `DesktopVoiceSttProcessingResult`
 - **Repository role:** Desktop Voice runtime
-- **Evidence of use:** Imported/exported by production Dart: `lib/shared/voice/platforms/desktop/desktop_stt_helper_service.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_real_helper_latency_benchmark.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/data/voice/desktop_voice_real_helper_latency_benchmark.dart`, `lib/shared/voice/platforms/desktop/desktop_stt_helper_service.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -22080,51 +22306,13 @@ RU:
 - **Зачем:** Горячие клавиши, STT helper, оверлей и захват микрофона — адаптеры одной системы голосового ввода.
 - **Содержимое:** Рантайм-модуль голосового ввода на компьютере (`desktop_voice_stt_processing.dart`).
 - **Роль в репозитории:** Desktop Voice runtime
-- **Доказательства использования:** Импортируется production Dart: `lib/shared/voice/platforms/desktop/desktop_stt_helper_service.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_real_helper_latency_benchmark.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/data/voice/desktop_voice_real_helper_latency_benchmark.dart`, `lib/shared/voice/platforms/desktop/desktop_stt_helper_service.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
 - **Владелец / слой:** Desktop Voice runtime
 - **Обязанности:** Реализует активацию, распознавание или оверлей голосового ввода на компьютере.
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_stt_processing.dart`.
-- **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** `lib/shared/voice/platforms/desktop/`, `docs/APP_STRUCTURE.md`
-
-
-### `lib/shared/voice/platforms/desktop/desktop_voice_useful_candidate_evaluator.dart`
-
-EN:
-
-- **Human purpose:** Desktop Voice runtime — Useful-speech evaluation for widget/helper/benchmarks. Hotkey, STT helper, overlay, and capture are desktop adapters of one Voice system.
-- **What this is:** Desktop Voice runtime — Useful-speech evaluation for widget/helper/benchmarks.
-- **Why needed:** Hotkey, STT helper, overlay, and capture are desktop adapters of one Voice system.
-- **Contents:** Desktop Voice runtime module (`DesktopVoiceUsefulCandidateEvaluation`).
-- **Key code names:** `DesktopVoiceUsefulCandidateEvaluation`
-- **Repository role:** Desktop Voice runtime
-- **Evidence of use:** Imported/exported by production Dart: `lib/shared/voice/platforms/desktop/desktop_voice_real_helper_latency_benchmark.dart`, `lib/shared/voice/platforms/desktop/ui/desktop_voice_widget.dart`.
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
-- **Confidence:** HIGH
-- **Owner / layer:** Desktop Voice runtime
-- **Responsibilities:** Useful-speech evaluation for widget/helper/benchmarks
-- **When to open:** When behavior tied to `desktop_voice_useful_candidate_evaluator.dart` breaks or you need to change its documented role.
-- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: Useful-speech evaluation for widget/helper/benchmarks
-
-RU:
-
-- **Зачем файл человеку:** Рантайм голосового ввода на компьютере — файл `desktop_voice_useful_candidate_evaluator.dart`. Горячие клавиши, STT helper, оверлей и захват микрофона — адаптеры одной системы голосового ввода.
-- **Что это:** Рантайм голосового ввода на компьютере — файл `desktop_voice_useful_candidate_evaluator.dart`.
-- **Зачем:** Горячие клавиши, STT helper, оверлей и захват микрофона — адаптеры одной системы голосового ввода.
-- **Содержимое:** Рантайм-модуль голосового ввода на компьютере (`desktop_voice_useful_candidate_evaluator.dart`).
-- **Роль в репозитории:** Desktop Voice runtime
-- **Доказательства использования:** Импортируется production Dart: `lib/shared/voice/platforms/desktop/desktop_voice_real_helper_latency_benchmark.dart`, `lib/shared/voice/platforms/desktop/ui/desktop_voice_widget.dart`.
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
-- **Уверенность:** HIGH
-- **Владелец / слой:** Desktop Voice runtime
-- **Обязанности:** Реализует активацию, распознавание или оверлей голосового ввода на компьютере.
-- **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_useful_candidate_evaluator.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/shared/voice/platforms/desktop/`, `docs/APP_STRUCTURE.md`
 
@@ -22290,7 +22478,7 @@ EN:
 - **Contents:** Desktop Voice runtime module (`CalibratedSttGainResult`, `WavHeaderInfo`).
 - **Key code names:** `CalibratedSttGainResult`, `WavHeaderInfo`
 - **Repository role:** Desktop Voice runtime
-- **Evidence of use:** Imported/exported by production Dart: `lib/shared/voice/platforms/desktop/desktop_stt_helper_service.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_audio_capture.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_real_helper_latency_benchmark.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_stt_processing.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_wav_stt_benchmark.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/data/voice/desktop_voice_real_helper_latency_benchmark.dart`, `lib/shared/voice/platforms/desktop/desktop_stt_helper_service.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_audio_capture.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_stt_processing.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_wav_stt_benchmark.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -22307,7 +22495,7 @@ RU:
 - **Зачем:** Горячие клавиши, STT helper, оверлей и захват микрофона — адаптеры одной системы голосового ввода.
 - **Содержимое:** Рантайм-модуль голосового ввода на компьютере (`pcm_audio_utils.dart`).
 - **Роль в репозитории:** Desktop Voice runtime
-- **Доказательства использования:** Импортируется production Dart: `lib/shared/voice/platforms/desktop/desktop_stt_helper_service.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_audio_capture.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_real_helper_latency_benchmark.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_stt_processing.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_wav_stt_benchmark.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/data/voice/desktop_voice_real_helper_latency_benchmark.dart`, `lib/shared/voice/platforms/desktop/desktop_stt_helper_service.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_audio_capture.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_stt_processing.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_wav_stt_benchmark.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -22316,158 +22504,6 @@ RU:
 - **Когда открывать:** Когда ломается поведение, связанное с `pcm_audio_utils.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/shared/voice/platforms/desktop/`, `docs/APP_STRUCTURE.md`
-
-
-### `lib/shared/voice/platforms/desktop/ui/desktop_voice_capsule.dart`
-
-EN:
-
-- **Human purpose:** Desktop Voice UI — Mic-level capsule. Desktop overlay Flutter chrome is platform presentation of the shared Voice system.
-- **What this is:** Desktop Voice UI — Mic-level capsule.
-- **Why needed:** Desktop overlay Flutter chrome is platform presentation of the shared Voice system.
-- **Contents:** Desktop Voice Flutter widget (`DesktopVoiceCapsule`, `_LeadingIcon`).
-- **Key code names:** `DesktopVoiceCapsule`, `_LeadingIcon`
-- **Repository role:** Desktop Voice UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/shared/voice/platforms/desktop/ui/desktop_voice_widget.dart`.
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
-- **Confidence:** HIGH
-- **Owner / layer:** Desktop Voice UI
-- **Responsibilities:** Mic-level capsule
-- **When to open:** When behavior tied to `desktop_voice_capsule.dart` breaks or you need to change its documented role.
-- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: Mic-level capsule
-
-RU:
-
-- **Зачем файл человеку:** Интерфейс голосового ввода на компьютере — файл `desktop_voice_capsule.dart`. Оверлей и виджеты на Windows — презентация общей системы голосового ввода.
-- **Что это:** Интерфейс голосового ввода на компьютере — файл `desktop_voice_capsule.dart`.
-- **Зачем:** Оверлей и виджеты на Windows — презентация общей системы голосового ввода.
-- **Содержимое:** Flutter-виджет голосового ввода на компьютере (`desktop_voice_capsule.dart`).
-- **Роль в репозитории:** Desktop Voice UI
-- **Доказательства использования:** Импортируется production Dart: `lib/shared/voice/platforms/desktop/ui/desktop_voice_widget.dart`.
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
-- **Уверенность:** HIGH
-- **Владелец / слой:** Desktop Voice UI
-- **Обязанности:** Рисует капсулу, лист правки или оверлей голосового ввода на компьютере.
-- **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_capsule.dart`.
-- **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** `lib/shared/voice/platforms/desktop/ui/`, `docs/APP_STRUCTURE.md`
-
-
-### `lib/shared/voice/platforms/desktop/ui/desktop_voice_command_panel.dart`
-
-EN:
-
-- **Human purpose:** Intentionally retained product/compat file — Superseded desktop voice panel; shell uses desktop_voice_widget.dart. (see `docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`). Not reachable from current production `lib/main.dart` root; kept until a product decision removes or rewires it.
-- **What this is:** Intentionally retained product/compat file — Superseded desktop voice panel; shell uses desktop_voice_widget.dart. (see `docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`).
-- **Why needed:** Not reachable from current production `lib/main.dart` root; kept until a product decision removes or rewires it.
-- **Contents:** Desktop Voice Flutter widget (`_DesktopVoicePanelPhase`, `DesktopVoiceCommandPanel`, `_DesktopVoiceCommandPanelState`).
-- **Key code names:** `_DesktopVoicePanelPhase`, `DesktopVoiceCommandPanel`, `_DesktopVoiceCommandPanelState`
-- **Repository role:** intentionally retained product watchlist
-- **Evidence of use:** (1) Hygiene audit watchlist (`docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`): Superseded desktop voice panel; shell uses desktop_voice_widget.dart. (2) Current production reachability from `lib/main.dart`: none (retained intentionally — not proven runtime-required).
-- **Necessity status:** RETAINED_PRODUCT_WATCHLIST
-- **Deletion consequence:** No current production consequence established; product decision required before deletion (replace docs/imports or remove).
-- **Confidence:** WATCHLIST
-- **Owner / layer:** Desktop Voice UI
-- **Responsibilities:** Alternate STT panel (unused by current shell; retained)
-- **When to open:** When behavior tied to `desktop_voice_command_panel.dart` breaks or you need to change its documented role.
-- **Can it be deleted?** No current production consequence established; product decision required before deletion (replace docs/imports or remove).
-- **Connected to:** APP_STRUCTURE role: Alternate STT panel (unused by current shell
-
-RU:
-
-- **Зачем файл человеку:** Намеренно сохранённый файл (watchlist) — см. hygiene-аудит. Файл: `desktop_voice_command_panel.dart`. Сейчас не участвует в runtime из `lib/main.dart`; сохранён до продуктового решения об удалении или переподключении.
-- **Что это:** Намеренно сохранённый файл (watchlist) — см. hygiene-аудит. Файл: `desktop_voice_command_panel.dart`.
-- **Зачем:** Сейчас не участвует в runtime из `lib/main.dart`; сохранён до продуктового решения об удалении или переподключении.
-- **Содержимое:** Flutter-виджет голосового ввода на компьютере (`desktop_voice_command_panel.dart`).
-- **Роль в репозитории:** intentionally retained product watchlist
-- **Доказательства использования:** (1) Список наблюдения hygiene-аудита (`docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`): Superseded desktop voice panel; shell uses desktop_voice_widget.dart. (2) Сейчас не достижим из `lib/main.dart`; сохранён намеренно, не считать runtime-обязательным.
-- **Статус необходимости:** RETAINED_PRODUCT_WATCHLIST
-- **Что будет, если удалить:** Сейчас нет доказанного runtime-эффекта; перед удалением нужно продуктовое решение (обновить docs/imports или убрать файл).
-- **Уверенность:** WATCHLIST
-- **Владелец / слой:** Desktop Voice UI
-- **Обязанности:** Не считать обязательным для текущего runtime.
-- **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_command_panel.dart`.
-- **Можно удалить?** Сейчас нет доказанного runtime-эффекта; перед удалением нужно продуктовое решение (обновить docs/imports или убрать файл).
-- **Связано с:** `lib/shared/voice/platforms/desktop/ui/`, `docs/APP_STRUCTURE.md`
-
-
-### `lib/shared/voice/platforms/desktop/ui/desktop_voice_correction_sheet.dart`
-
-EN:
-
-- **Human purpose:** Desktop Voice UI — Pending-command correction sheet. Desktop overlay Flutter chrome is platform presentation of the shared Voice system.
-- **What this is:** Desktop Voice UI — Pending-command correction sheet.
-- **Why needed:** Desktop overlay Flutter chrome is platform presentation of the shared Voice system.
-- **Contents:** Desktop Voice Flutter widget (`DesktopVoiceCorrectionResult`, `_DesktopVoiceCorrectionSheetBody`, `_DesktopVoiceCorrectionSheetBodyState`).
-- **Key code names:** `DesktopVoiceCorrectionResult`, `_DesktopVoiceCorrectionSheetBody`, `_DesktopVoiceCorrectionSheetBodyState`
-- **Repository role:** Desktop Voice UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/shared/voice/platforms/desktop/ui/desktop_voice_widget.dart`.
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
-- **Confidence:** HIGH
-- **Owner / layer:** Desktop Voice UI
-- **Responsibilities:** Pending-command correction sheet
-- **When to open:** When behavior tied to `desktop_voice_correction_sheet.dart` breaks or you need to change its documented role.
-- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: Pending-command correction sheet
-
-RU:
-
-- **Зачем файл человеку:** Интерфейс голосового ввода на компьютере — файл `desktop_voice_correction_sheet.dart`. Оверлей и виджеты на Windows — презентация общей системы голосового ввода.
-- **Что это:** Интерфейс голосового ввода на компьютере — файл `desktop_voice_correction_sheet.dart`.
-- **Зачем:** Оверлей и виджеты на Windows — презентация общей системы голосового ввода.
-- **Содержимое:** Flutter-виджет голосового ввода на компьютере (`desktop_voice_correction_sheet.dart`).
-- **Роль в репозитории:** Desktop Voice UI
-- **Доказательства использования:** Импортируется production Dart: `lib/shared/voice/platforms/desktop/ui/desktop_voice_widget.dart`.
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
-- **Уверенность:** HIGH
-- **Владелец / слой:** Desktop Voice UI
-- **Обязанности:** Рисует капсулу, лист правки или оверлей голосового ввода на компьютере.
-- **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_correction_sheet.dart`.
-- **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** `lib/shared/voice/platforms/desktop/ui/`, `docs/APP_STRUCTURE.md`
-
-
-### `lib/shared/voice/platforms/desktop/ui/desktop_voice_widget.dart`
-
-EN:
-
-- **Human purpose:** Desktop Voice UI — Desktop Voice overlay widget (GOLOS STT). Desktop overlay Flutter chrome is platform presentation of the shared Voice system.
-- **What this is:** Desktop Voice UI — Desktop Voice overlay widget (GOLOS STT).
-- **Why needed:** Desktop overlay Flutter chrome is platform presentation of the shared Voice system.
-- **Contents:** Desktop Voice Flutter widget (`DesktopVoiceOverlayPhase`, `DesktopVoiceStartRecordFn`, `DesktopVoiceOverlay`, `_DesktopVoiceOverlayState`).
-- **Key code names:** `DesktopVoiceOverlayPhase`, `DesktopVoiceStartRecordFn`, `DesktopVoiceOverlay`, `_DesktopVoiceOverlayState`
-- **Repository role:** Desktop Voice UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`.
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
-- **Confidence:** HIGH
-- **Owner / layer:** Desktop Voice UI
-- **Responsibilities:** Desktop Voice overlay widget (GOLOS STT)
-- **When to open:** When behavior tied to `desktop_voice_widget.dart` breaks or you need to change its documented role.
-- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: Desktop Voice overlay widget (GOLOS STT)
-
-RU:
-
-- **Зачем файл человеку:** Интерфейс голосового ввода на компьютере — файл `desktop_voice_widget.dart`. Оверлей и виджеты на Windows — презентация общей системы голосового ввода.
-- **Что это:** Интерфейс голосового ввода на компьютере — файл `desktop_voice_widget.dart`.
-- **Зачем:** Оверлей и виджеты на Windows — презентация общей системы голосового ввода.
-- **Содержимое:** Flutter-виджет голосового ввода на компьютере (`desktop_voice_widget.dart`).
-- **Роль в репозитории:** Desktop Voice UI
-- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`.
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
-- **Уверенность:** HIGH
-- **Владелец / слой:** Desktop Voice UI
-- **Обязанности:** Рисует капсулу, лист правки или оверлей голосового ввода на компьютере.
-- **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_widget.dart`.
-- **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** `lib/shared/voice/platforms/desktop/ui/`, `docs/APP_STRUCTURE.md`
 
 
 ### `lib/shared/voice/platforms/mobile/voice_audio_stub.dart`
@@ -22628,7 +22664,7 @@ EN:
 - **Why needed:** Phone, desktop, web, and Wear activation share one command interpretation path.
 - **Contents:** Shared Voice module (logic in `desktop_voice_recognizer_factory`).
 - **Repository role:** shared Voice system
-- **Evidence of use:** Imported/exported by production Dart: `lib/shared/voice/platforms/desktop/ui/desktop_voice_widget.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/voice/desktop_voice_widget.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -22645,7 +22681,7 @@ RU:
 - **Зачем:** Телефон, компьютер, web и Wear сходятся в один путь разбора команд.
 - **Содержимое:** Модуль общей системы голосового ввода (`desktop_voice_recognizer_factory.dart`).
 - **Роль в репозитории:** shared Voice system
-- **Доказательства использования:** Импортируется production Dart: `lib/shared/voice/platforms/desktop/ui/desktop_voice_widget.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/features/voice/desktop_voice_widget.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -22704,7 +22740,7 @@ EN:
 - **Contents:** Shared Voice module (`DesktopVoiceErrorStage`, `DesktopVoiceFailureKind`, `DesktopVoiceUserError`).
 - **Key code names:** `DesktopVoiceErrorStage`, `DesktopVoiceFailureKind`, `DesktopVoiceUserError`
 - **Repository role:** shared Voice system
-- **Evidence of use:** Imported/exported by production Dart: `lib/shared/voice/platforms/desktop/desktop_voice_attempt_log.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_recognizer_io.dart`, `lib/shared/voice/platforms/desktop/ui/desktop_voice_widget.dart`, `lib/shared/voice/recognition/desktop_voice_error_classification.dart`, `lib/shared/voice/recognition/desktop_voice_recognizer.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/voice/desktop_voice_widget.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_attempt_log.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_recognizer_io.dart`, `lib/shared/voice/recognition/desktop_voice_error_classification.dart`, `lib/shared/voice/recognition/desktop_voice_recognizer.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -22721,7 +22757,7 @@ RU:
 - **Зачем:** Телефон, компьютер, web и Wear сходятся в один путь разбора команд.
 - **Содержимое:** Модуль общей системы голосового ввода (`desktop_voice_user_error.dart`).
 - **Роль в репозитории:** shared Voice system
-- **Доказательства использования:** Импортируется production Dart: `lib/shared/voice/platforms/desktop/desktop_voice_attempt_log.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_recognizer_io.dart`, `lib/shared/voice/platforms/desktop/ui/desktop_voice_widget.dart`, `lib/shared/voice/recognition/desktop_voice_error_classification.dart`, `lib/shared/voice/recognition/desktop_voice_recognizer.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/features/voice/desktop_voice_widget.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_attempt_log.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_recognizer_io.dart`, `lib/shared/voice/recognition/desktop_voice_error_classification.dart`, `lib/shared/voice/recognition/desktop_voice_recognizer.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -22741,7 +22777,7 @@ EN:
 - **Why needed:** Phone, desktop, web, and Wear activation share one command interpretation path.
 - **Contents:** Shared Voice module (logic in `speech_engine_handle`).
 - **Repository role:** shared Voice system
-- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/shared/voice/platforms/desktop/ui/desktop_voice_command_panel.dart`, `lib/shared/voice/ui/voice_input_sheet.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/features/voice/desktop_voice_command_panel.dart`, `lib/shared/voice/ui/voice_input_sheet.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -22758,7 +22794,7 @@ RU:
 - **Зачем:** Телефон, компьютер, web и Wear сходятся в один путь разбора команд.
 - **Содержимое:** Модуль общей системы голосового ввода (`speech_engine_handle.dart`).
 - **Роль в репозитории:** shared Voice system
-- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/shared/voice/platforms/desktop/ui/desktop_voice_command_panel.dart`, `lib/shared/voice/ui/voice_input_sheet.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/features/voice/desktop_voice_command_panel.dart`, `lib/shared/voice/ui/voice_input_sheet.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -22779,7 +22815,7 @@ EN:
 - **Contents:** Shared Voice module (`SpeechListenLocale`).
 - **Key code names:** `SpeechListenLocale`
 - **Repository role:** shared Voice system
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/planning/smart_plan_sheet.dart`, `lib/shared/voice/platforms/desktop/ui/desktop_voice_command_panel.dart`, `lib/shared/voice/ui/voice_input_sheet.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/planning/smart_plan_sheet.dart`, `lib/features/voice/desktop_voice_command_panel.dart`, `lib/shared/voice/ui/voice_input_sheet.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -22796,7 +22832,7 @@ RU:
 - **Зачем:** Телефон, компьютер, web и Wear сходятся в один путь разбора команд.
 - **Содержимое:** Модуль общей системы голосового ввода (`speech_listen_locale.dart`).
 - **Роль в репозитории:** shared Voice system
-- **Доказательства использования:** Импортируется production Dart: `lib/features/planning/smart_plan_sheet.dart`, `lib/shared/voice/platforms/desktop/ui/desktop_voice_command_panel.dart`, `lib/shared/voice/ui/voice_input_sheet.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/features/planning/smart_plan_sheet.dart`, `lib/features/voice/desktop_voice_command_panel.dart`, `lib/shared/voice/ui/voice_input_sheet.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -22811,8 +22847,8 @@ RU:
 
 EN:
 
-- **Human purpose:** Shared Voice system — Acceptance-test hooks. Phone, desktop, web, and Wear activation share one command interpretation path.
-- **What this is:** Shared Voice system — Acceptance-test hooks.
+- **Human purpose:** Shared Voice system — Acceptance-test hooks (pure callback bridge). Phone, desktop, web, and Wear activation share one command interpretation path.
+- **What this is:** Shared Voice system — Acceptance-test hooks (pure callback bridge).
 - **Why needed:** Phone, desktop, web, and Wear activation share one command interpretation path.
 - **Contents:** Shared Voice module (`DesktopVoiceAcceptanceBridge`).
 - **Key code names:** `DesktopVoiceAcceptanceBridge`
@@ -22822,10 +22858,10 @@ EN:
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
 - **Owner / layer:** shared Voice system
-- **Responsibilities:** Acceptance-test hooks
+- **Responsibilities:** Acceptance-test hooks (pure callback bridge)
 - **When to open:** When behavior tied to `desktop_voice_acceptance_bridge.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: Acceptance-test hooks
+- **Connected to:** APP_STRUCTURE role: Acceptance-test hooks (pure callback bridge)
 
 RU:
 
@@ -22845,44 +22881,6 @@ RU:
 - **Связано с:** `lib/shared/voice/routing/`, `docs/APP_STRUCTURE.md`
 
 
-### `lib/shared/voice/routing/desktop_voice_record_submit.dart`
-
-EN:
-
-- **Human purpose:** Shared Voice system — Parsed command → injected `writeRecord` bridge. Phone, desktop, web, and Wear activation share one command interpretation path.
-- **What this is:** Shared Voice system — Parsed command → injected `writeRecord` bridge.
-- **Why needed:** Phone, desktop, web, and Wear activation share one command interpretation path.
-- **Contents:** Shared Voice module (`DesktopVoiceWriteRecordRequest`, `DesktopVoiceWriteRecordFn`, `DesktopVoiceSubmitOutcome`, `DesktopVoiceRecordSubmit`).
-- **Key code names:** `DesktopVoiceWriteRecordRequest`, `DesktopVoiceWriteRecordFn`, `DesktopVoiceSubmitOutcome`, `DesktopVoiceRecordSubmit`
-- **Repository role:** shared Voice system
-- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`.
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
-- **Confidence:** HIGH
-- **Owner / layer:** shared Voice system
-- **Responsibilities:** Parsed command → injected `writeRecord` bridge
-- **When to open:** When behavior tied to `desktop_voice_record_submit.dart` breaks or you need to change its documented role.
-- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: Parsed command → injected `writeRecord` bridge
-
-RU:
-
-- **Зачем файл человеку:** Общая система голосового ввода — файл `desktop_voice_record_submit.dart`. Телефон, компьютер, web и Wear сходятся в один путь разбора команд.
-- **Что это:** Общая система голосового ввода — файл `desktop_voice_record_submit.dart`.
-- **Зачем:** Телефон, компьютер, web и Wear сходятся в один путь разбора команд.
-- **Содержимое:** Модуль общей системы голосового ввода (`desktop_voice_record_submit.dart`).
-- **Роль в репозитории:** shared Voice system
-- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`.
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
-- **Уверенность:** HIGH
-- **Владелец / слой:** общий Voice system
-- **Обязанности:** Держит контракт, интерфейс или диагностику общей системы голосового ввода.
-- **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_record_submit.dart`.
-- **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** `lib/shared/voice/routing/`, `docs/APP_STRUCTURE.md`
-
-
 ### `lib/shared/voice/ui/app_mic_level_bars.dart`
 
 EN:
@@ -22893,7 +22891,7 @@ EN:
 - **Contents:** Shared Voice module (`AppMicLevelBars`).
 - **Key code names:** `AppMicLevelBars`
 - **Repository role:** shared Voice system
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/settings/voice/desktop_voice_settings_desktop.dart`, `lib/shared/voice/platforms/desktop/ui/desktop_voice_capsule.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/settings/voice/desktop_voice_settings_desktop.dart`, `lib/features/voice/desktop_voice_capsule.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -22910,7 +22908,7 @@ RU:
 - **Зачем:** Телефон, компьютер, web и Wear сходятся в один путь разбора команд.
 - **Содержимое:** Модуль общей системы голосового ввода (`app_mic_level_bars.dart`).
 - **Роль в репозитории:** shared Voice system
-- **Доказательства использования:** Импортируется production Dart: `lib/features/settings/voice/desktop_voice_settings_desktop.dart`, `lib/shared/voice/platforms/desktop/ui/desktop_voice_capsule.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/features/settings/voice/desktop_voice_settings_desktop.dart`, `lib/features/voice/desktop_voice_capsule.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -22977,7 +22975,7 @@ EN:
 - **Responsibilities:** Listen/transcribe user speech; return text to shell voice routing.
 - **When to open:** When behavior tied to `voice_input_sheet.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: Mobile/web mic bottom sheet
+- **Connected to:** APP_STRUCTURE role: Mobile/web mic sheet — speech-to-text via VoiceCaptureConfig
 
 RU:
 
@@ -27449,7 +27447,7 @@ EN:
 - **Contents:** Test cases (symbols: main).
 - **Key code names:** `main`
 - **Repository role:** test
-- **Evidence of use:** (1) Flutter test file; exercised via `flutter test test/desktop_voice_real_helper_latency_benchmark_test.dart` / CI when enabled. (2) Namesake production subject: `lib/shared/voice/platforms/desktop/desktop_voice_real_helper_latency_benchmark.dart`.
+- **Evidence of use:** (1) Flutter test file; exercised via `flutter test test/desktop_voice_real_helper_latency_benchmark_test.dart` / CI when enabled. (2) Namesake production subject: `lib/data/voice/desktop_voice_real_helper_latency_benchmark.dart`.
 - **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Deletion consequence:** Lost automated coverage for its contract.
 - **Confidence:** HIGH
@@ -27466,7 +27464,7 @@ RU:
 - **Зачем:** Ловит регрессии при изменении связанного production-кода.
 - **Содержимое:** Test cases для сценария `desktop_voice_real_helper_latency_benchmark`.
 - **Роль в репозитории:** test
-- **Доказательства использования:** (1) Файл теста Flutter; запускается через `flutter test test/desktop_voice_real_helper_latency_benchmark_test.dart`. (2) Парный production-файл: `lib/shared/voice/platforms/desktop/desktop_voice_real_helper_latency_benchmark.dart`.
+- **Доказательства использования:** (1) Файл теста Flutter; запускается через `flutter test test/desktop_voice_real_helper_latency_benchmark_test.dart`. (2) Парный production-файл: `lib/data/voice/desktop_voice_real_helper_latency_benchmark.dart`.
 - **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Что будет, если удалить:** Пропадёт автоматическая проверка своего контракта.
 - **Уверенность:** HIGH
@@ -27942,7 +27940,7 @@ EN:
 - **Why needed:** Desktop voice tests and benchmarks replay known captures instead of live mic input.
 - **Contents:** Tracked fixture file `real_helper_latency_latest.json` under `test/fixtures/desktop_voice_wav/`.
 - **Repository role:** test fixture
-- **Evidence of use:** (1) Read/referenced by: `CHANGELOG.md`, `docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`, `lib/shared/voice/platforms/desktop/desktop_voice_real_helper_latency_benchmark.dart`, `scripts/manual/run_desktop_voice_real_helper_latency_benchmark.ps1`, `scripts/manual/structure_evidence_index.py`. (2) Canonical benchmark output written by `lib/shared/voice/platforms/desktop/desktop_voice_real_helper_latency_benchmark.dart`.
+- **Evidence of use:** (1) Read/referenced by: `CHANGELOG.md`, `docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`, `lib/data/voice/desktop_voice_real_helper_latency_benchmark.dart`, `scripts/manual/run_desktop_voice_real_helper_latency_benchmark.ps1`, `scripts/manual/structure_evidence_index.py`. (2) Canonical benchmark output written by `lib/data/voice/desktop_voice_real_helper_latency_benchmark.dart`.
 - **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Deletion consequence:** Broken fixture-backed test or missing diagnostic sample.
 - **Confidence:** HIGH
@@ -27959,7 +27957,7 @@ RU:
 - **Зачем:** Тесты и бенчмарки desktop voice проигрывают известные записи вместо живого микрофона.
 - **Содержимое:** Отслеживаемый fixture-файл `real_helper_latency_latest.json` в `test/fixtures/desktop_voice_wav/`.
 - **Роль в репозитории:** test fixture
-- **Доказательства использования:** (1) Читается/упоминается: `CHANGELOG.md`, `docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`, `lib/shared/voice/platforms/desktop/desktop_voice_real_helper_latency_benchmark.dart`, `scripts/manual/run_desktop_voice_real_helper_latency_benchmark.ps1`, `scripts/manual/structure_evidence_index.py`. (2) Канонический отчёт бенчмарка из `desktop_voice_real_helper_latency_benchmark.dart`.
+- **Доказательства использования:** (1) Читается/упоминается: `CHANGELOG.md`, `docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`, `lib/data/voice/desktop_voice_real_helper_latency_benchmark.dart`, `scripts/manual/run_desktop_voice_real_helper_latency_benchmark.ps1`, `scripts/manual/structure_evidence_index.py`. (2) Канонический отчёт бенчмарка из `desktop_voice_real_helper_latency_benchmark.dart`.
 - **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Что будет, если удалить:** Сломается тест на fixture или пропадёт диагностический образец.
 - **Уверенность:** HIGH
@@ -28164,7 +28162,7 @@ EN:
 - **Why needed:** Desktop voice tests and benchmarks replay known captures instead of live mic input.
 - **Contents:** Tracked fixture file `scw_contaminated_67ea8eb_contaminated_2026_07_10.wav` under `test/fixtures/desktop_voice_wav/`.
 - **Repository role:** test fixture
-- **Evidence of use:** Read/referenced by: `lib/shared/voice/platforms/desktop/desktop_voice_real_helper_latency_benchmark.dart`, `test/fixtures/desktop_voice_wav/benchmark_reports/real_helper_latency_latest.json`, `test/fixtures/desktop_voice_wav/golden_manifest.json`.
+- **Evidence of use:** Read/referenced by: `lib/data/voice/desktop_voice_real_helper_latency_benchmark.dart`, `test/fixtures/desktop_voice_wav/benchmark_reports/real_helper_latency_latest.json`, `test/fixtures/desktop_voice_wav/golden_manifest.json`.
 - **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Deletion consequence:** Broken fixture-backed test or missing diagnostic sample.
 - **Confidence:** HIGH
@@ -28181,7 +28179,7 @@ RU:
 - **Зачем:** Тесты и бенчмарки desktop voice проигрывают известные записи вместо живого микрофона.
 - **Содержимое:** Отслеживаемый fixture-файл `scw_contaminated_67ea8eb_contaminated_2026_07_10.wav` в `test/fixtures/desktop_voice_wav/`.
 - **Роль в репозитории:** test fixture
-- **Доказательства использования:** Читается/упоминается: `lib/shared/voice/platforms/desktop/desktop_voice_real_helper_latency_benchmark.dart`, `test/fixtures/desktop_voice_wav/benchmark_reports/real_helper_latency_latest.json`, `test/fixtures/desktop_voice_wav/golden_manifest.json`.
+- **Доказательства использования:** Читается/упоминается: `lib/data/voice/desktop_voice_real_helper_latency_benchmark.dart`, `test/fixtures/desktop_voice_wav/benchmark_reports/real_helper_latency_latest.json`, `test/fixtures/desktop_voice_wav/golden_manifest.json`.
 - **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Что будет, если удалить:** Сломается тест на fixture или пропадёт диагностический образец.
 - **Уверенность:** HIGH
@@ -28423,7 +28421,7 @@ EN:
 - **Why needed:** Desktop voice tests and benchmarks replay known captures instead of live mic input.
 - **Contents:** Tracked fixture file `scw_delmod_submit_cpal_4f9c984.wav` under `test/fixtures/desktop_voice_wav/`.
 - **Repository role:** test fixture
-- **Evidence of use:** Read/referenced by: `lib/shared/voice/platforms/desktop/desktop_voice_real_helper_latency_benchmark.dart`, `test/desktop_voice_local_engine_benchmark_test.dart`, `test/fixtures/desktop_voice_wav/benchmark_reports/real_helper_latency_latest.json`, `test/fixtures/desktop_voice_wav/golden_manifest.json`.
+- **Evidence of use:** Read/referenced by: `lib/data/voice/desktop_voice_real_helper_latency_benchmark.dart`, `test/desktop_voice_local_engine_benchmark_test.dart`, `test/fixtures/desktop_voice_wav/benchmark_reports/real_helper_latency_latest.json`, `test/fixtures/desktop_voice_wav/golden_manifest.json`.
 - **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Deletion consequence:** Broken fixture-backed test or missing diagnostic sample.
 - **Confidence:** HIGH
@@ -28440,7 +28438,7 @@ RU:
 - **Зачем:** Тесты и бенчмарки desktop voice проигрывают известные записи вместо живого микрофона.
 - **Содержимое:** Отслеживаемый fixture-файл `scw_delmod_submit_cpal_4f9c984.wav` в `test/fixtures/desktop_voice_wav/`.
 - **Роль в репозитории:** test fixture
-- **Доказательства использования:** Читается/упоминается: `lib/shared/voice/platforms/desktop/desktop_voice_real_helper_latency_benchmark.dart`, `test/desktop_voice_local_engine_benchmark_test.dart`, `test/fixtures/desktop_voice_wav/benchmark_reports/real_helper_latency_latest.json`, `test/fixtures/desktop_voice_wav/golden_manifest.json`.
+- **Доказательства использования:** Читается/упоминается: `lib/data/voice/desktop_voice_real_helper_latency_benchmark.dart`, `test/desktop_voice_local_engine_benchmark_test.dart`, `test/fixtures/desktop_voice_wav/benchmark_reports/real_helper_latency_latest.json`, `test/fixtures/desktop_voice_wav/golden_manifest.json`.
 - **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Что будет, если удалить:** Сломается тест на fixture или пропадёт диагностический образец.
 - **Уверенность:** HIGH
@@ -28460,7 +28458,7 @@ EN:
 - **Why needed:** Desktop voice tests and benchmarks replay known captures instead of live mic input.
 - **Contents:** Tracked fixture file `scw_delmod_submit_df696fc_live_quiet.wav` under `test/fixtures/desktop_voice_wav/`.
 - **Repository role:** test fixture
-- **Evidence of use:** Read/referenced by: `lib/shared/voice/platforms/desktop/desktop_voice_audio_presentation.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_real_helper_latency_benchmark.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_stt_processing.dart`, `scripts/manual/benchmark_df696fc_quiet_whisper.ps1`, `test/desktop_voice_audio_pipeline_test.dart`.
+- **Evidence of use:** Read/referenced by: `lib/data/voice/desktop_voice_real_helper_latency_benchmark.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_audio_presentation.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_stt_processing.dart`, `scripts/manual/benchmark_df696fc_quiet_whisper.ps1`, `test/desktop_voice_audio_pipeline_test.dart`.
 - **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Deletion consequence:** Broken fixture-backed test or missing diagnostic sample.
 - **Confidence:** HIGH
@@ -28477,7 +28475,7 @@ RU:
 - **Зачем:** Тесты и бенчмарки desktop voice проигрывают известные записи вместо живого микрофона.
 - **Содержимое:** Отслеживаемый fixture-файл `scw_delmod_submit_df696fc_live_quiet.wav` в `test/fixtures/desktop_voice_wav/`.
 - **Роль в репозитории:** test fixture
-- **Доказательства использования:** Читается/упоминается: `lib/shared/voice/platforms/desktop/desktop_voice_audio_presentation.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_real_helper_latency_benchmark.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_stt_processing.dart`, `scripts/manual/benchmark_df696fc_quiet_whisper.ps1`, `test/desktop_voice_audio_pipeline_test.dart`.
+- **Доказательства использования:** Читается/упоминается: `lib/data/voice/desktop_voice_real_helper_latency_benchmark.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_audio_presentation.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_stt_processing.dart`, `scripts/manual/benchmark_df696fc_quiet_whisper.ps1`, `test/desktop_voice_audio_pipeline_test.dart`.
 - **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Что будет, если удалить:** Сломается тест на fixture или пропадёт диагностический образец.
 - **Уверенность:** HIGH
@@ -28534,7 +28532,7 @@ EN:
 - **Why needed:** Desktop voice tests and benchmarks replay known captures instead of live mic input.
 - **Contents:** Tracked fixture file `scw_delmod_submit_fefb502_live_quiet.wav` under `test/fixtures/desktop_voice_wav/`.
 - **Repository role:** test fixture
-- **Evidence of use:** Read/referenced by: `lib/shared/voice/platforms/desktop/desktop_voice_real_helper_latency_benchmark.dart`, `test/fixtures/desktop_voice_wav/benchmark_reports/real_helper_latency_latest.json`, `test/fixtures/desktop_voice_wav/golden_manifest.json`.
+- **Evidence of use:** Read/referenced by: `lib/data/voice/desktop_voice_real_helper_latency_benchmark.dart`, `test/fixtures/desktop_voice_wav/benchmark_reports/real_helper_latency_latest.json`, `test/fixtures/desktop_voice_wav/golden_manifest.json`.
 - **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Deletion consequence:** Broken fixture-backed test or missing diagnostic sample.
 - **Confidence:** HIGH
@@ -28551,7 +28549,7 @@ RU:
 - **Зачем:** Тесты и бенчмарки desktop voice проигрывают известные записи вместо живого микрофона.
 - **Содержимое:** Отслеживаемый fixture-файл `scw_delmod_submit_fefb502_live_quiet.wav` в `test/fixtures/desktop_voice_wav/`.
 - **Роль в репозитории:** test fixture
-- **Доказательства использования:** Читается/упоминается: `lib/shared/voice/platforms/desktop/desktop_voice_real_helper_latency_benchmark.dart`, `test/fixtures/desktop_voice_wav/benchmark_reports/real_helper_latency_latest.json`, `test/fixtures/desktop_voice_wav/golden_manifest.json`.
+- **Доказательства использования:** Читается/упоминается: `lib/data/voice/desktop_voice_real_helper_latency_benchmark.dart`, `test/fixtures/desktop_voice_wav/benchmark_reports/real_helper_latency_latest.json`, `test/fixtures/desktop_voice_wav/golden_manifest.json`.
 - **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Что будет, если удалить:** Сломается тест на fixture или пропадёт диагностический образец.
 - **Уверенность:** HIGH

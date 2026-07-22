@@ -22,9 +22,9 @@
 // deploy/state-changing operations.
 
 import 'package:counter/data/voice/desktop_voice_command_normalize.dart';
-import 'package:counter/shared/voice/routing/desktop_voice_record_submit.dart';
+import 'package:counter/data/voice/desktop_voice_record_submit.dart';
 import 'package:counter/data/models.dart';
-import 'package:counter/shared/voice/platforms/desktop/ui/desktop_voice_capsule.dart';
+import 'package:counter/features/voice/desktop_voice_capsule.dart';
 import 'package:counter/data/voice/voice_command_parser.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';

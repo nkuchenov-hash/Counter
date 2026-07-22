@@ -18,7 +18,7 @@ void main() {
 
     test('widget opens native overlay with showListening not showPreparing', () {
       final src =
-          File('lib/shared/voice/platforms/desktop/ui/desktop_voice_widget.dart').readAsStringSync();
+          File('lib/features/voice/desktop_voice_widget.dart').readAsStringSync();
       expect(src.contains('showPreparing()'), isFalse);
       expect(src.contains('showListening('), isTrue);
       expect(src.contains('desktop_voice_overlay_stt_warming'), isFalse);

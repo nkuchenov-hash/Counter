@@ -9,7 +9,7 @@ import 'package:counter/shared/voice/platforms/desktop/desktop_voice_session.dar
 import 'package:counter/shared/voice/commands/desktop_voice_transcript_merge.dart';
 import 'package:counter/data/voice/desktop_voice_glossary.dart';
 import 'package:counter/shared/voice/platforms/desktop/desktop_voice_stt_processing.dart';
-import 'package:counter/shared/voice/platforms/desktop/desktop_voice_useful_candidate_evaluator.dart';
+import 'package:counter/data/voice/desktop_voice_useful_candidate_evaluator.dart';
 import 'package:counter/shared/voice/platforms/desktop/pcm_audio_utils.dart';
 import 'package:counter/data/models.dart';
 import 'package:http/http.dart' as http;

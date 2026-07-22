@@ -1,4 +1,4 @@
-import 'package:counter/shared/voice/platforms/desktop/desktop_stt_benchmark_harness.dart';
+import 'package:counter/data/voice/desktop_stt_benchmark_harness.dart';
 import 'package:counter/shared/voice/platforms/desktop/desktop_stt_cloud_service.dart';
 import 'package:counter/shared/voice/commands/desktop_stt_engine.dart';
 import 'package:counter/shared/voice/commands/desktop_stt_quality_evaluation.dart';

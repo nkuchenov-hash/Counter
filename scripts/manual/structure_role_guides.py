@@ -513,14 +513,14 @@ def humanize_guide(
             "responsibilities_ru": "Показывает и сохраняет пользовательские настройки голосового ввода.",
         }
 
-    if p.startswith("lib/shared/voice/platforms/desktop/ui/"):
+    if p.startswith("lib/features/voice/"):
         return {
             "what": f"Desktop Voice UI — {role_clean}.",
-            "why": "Desktop overlay Flutter chrome is platform presentation of the shared Voice system.",
+            "why": "Desktop overlay Flutter chrome is feature presentation of the shared Voice system.",
             "contains": f"Desktop Voice Flutter widget ({sym}).",
             "responsibilities": role_clean,
             "what_ru": f"Интерфейс голосового ввода на компьютере — файл `{Path(p).name}`.",
-            "why_ru": "Оверлей и виджеты на Windows — презентация общей системы голосового ввода.",
+            "why_ru": "Оверлей и виджеты на Windows — feature UI общей системы голосового ввода.",
             "contains_ru": f"Flutter-виджет голосового ввода на компьютере (`{Path(p).name}`).",
             "responsibilities_ru": "Рисует капсулу, лист правки или оверлей голосового ввода на компьютере.",
         }

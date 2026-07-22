@@ -18,7 +18,7 @@ import 'package:counter/shared/voice/platforms/desktop/desktop_voice_confirmatio
 import 'package:counter/shared/voice/platforms/desktop/desktop_voice_installed_identity.dart';
 import 'package:counter/shared/voice/platforms/desktop/desktop_voice_overlay_bridge.dart';
 import 'package:counter/shared/voice/platforms/desktop/desktop_voice_overlay_host.dart';
-import 'package:counter/shared/voice/routing/desktop_voice_record_submit.dart';
+import 'package:counter/data/voice/desktop_voice_record_submit.dart';
 import 'package:counter/shared/voice/platforms/desktop/desktop_voice_hotkey.dart';
 import 'package:counter/shared/voice/platforms/desktop/desktop_voice_hotkey_markers.dart';
 import 'package:counter/shared/voice/platforms/desktop/desktop_voice_settings.dart';
@@ -39,7 +39,7 @@ import 'package:counter/features/lists/lists_view.dart';
 import 'package:counter/features/planning/planning_view.dart';
 import 'package:counter/features/settings/voice/desktop_voice_attempt_dialog.dart';
 import 'package:counter/features/profile/profile_view.dart';
-import 'package:counter/shared/voice/platforms/desktop/ui/desktop_voice_widget.dart';
+import 'package:counter/features/voice/desktop_voice_widget.dart';
 import 'package:counter/features/shared/shared_widgets.dart';
 import 'package:counter/shared/voice/ui/voice_capture_config.dart';
 import 'package:counter/shared/voice/ui/voice_input_sheet.dart';

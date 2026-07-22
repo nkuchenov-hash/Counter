@@ -105,7 +105,7 @@ LIB_FILE_GUIDES: dict[str, dict[str, str]] = {
         "contains_ru": "Константы `AppColors`; фабрики `lightColorScheme()` / `darkColorScheme()`.",
         "responsibilities_ru": "Единый источник цветов UI — не цвета данных категорий.",
     },
-    "lib/data/desktop_stt_cloud_backend.dart": {
+    "lib/data/voice/desktop_stt_cloud_backend.dart": {
         "what": "Brain-owned cloud command STT transport — PocketBase auth, `/api/ai/transcribe-command` POST, 25s timeout.",
         "why": "Core desktop STT must not import `database_service.dart`; Brain owns auth/token/HTTP for cloud fallback.",
         "contains": "`DesktopSttCloudBackend` hooks consumed by Core via `main.dart` injection (AppClock-style).",

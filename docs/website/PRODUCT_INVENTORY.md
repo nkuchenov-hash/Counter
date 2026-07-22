@@ -150,7 +150,7 @@
 | Field | Detail |
 | :--- | :--- |
 | **User-facing capability** | Desktop-only panel: parse “Price Reporter / {client} / {task}” into a timeline record. Global hotkey Ctrl+Shift+Space when enabled. |
-| **Proof** | `lib/data/voice/voice_command_parser.dart`, `lib/shared/voice/platforms/desktop/ui/desktop_voice_command_panel.dart`; `lib/shared/voice/platforms/desktop/desktop_voice_hotkey.dart`; `kDesktopVoiceCommandEnabled` default **false** |
+| **Proof** | `lib/data/voice/voice_command_parser.dart`, `lib/features/voice/desktop_voice_command_panel.dart`; `lib/shared/voice/platforms/desktop/desktop_voice_hotkey.dart`; `kDesktopVoiceCommandEnabled` default **false** |
 | **User value** | Power-user billing/time entry for one workflow |
 | **Status** | **do-not-market-yet** (kill switch off by default; niche; June 2026 MVP) |
 | **Risks / caveats** | Requires `--dart-define=DESKTOP_VOICE_COMMAND=true`. Not general-audience. |

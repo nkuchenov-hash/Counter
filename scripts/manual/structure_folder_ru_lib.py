@@ -150,13 +150,13 @@ register_folder_ru(
 register_folder_ru(
     "lib/shared/voice/routing",
     {
-        "what_ru": "Контракты отправки голосовых команд без владения состоянием вкладок.",
-        "why_ru": "Оболочка знает активный раздел; голосовой ввод только отдаёт колбэки отправки.",
-        "inside_ru": "`desktop_voice_record_submit.dart`, `desktop_voice_acceptance_bridge.dart`.",
-        "affects_ru": "Маршрутизация голосового ввода в оболочке и хуки приёмки.",
-        "when_ru": "Мост разобранной команды к записи или тесты приёмки.",
-        "delete_ru": "Нет — путь отправки голосовых команд в оболочке сломается.",
-        "related_ru": "`lib/app/shell/shared/shell_voice_routing.dart`.",
+        "what_ru": "Мост колбэков приёмки голосового ввода (без выполнения команд).",
+        "why_ru": "Оболочка знает активный раздел; Brain выполняет parse/normalize/writeRecord.",
+        "inside_ru": "`desktop_voice_acceptance_bridge.dart`.",
+        "affects_ru": "Только хуки приёмки.",
+        "when_ru": "Изменения проводки тестов приёмки.",
+        "delete_ru": "Нет — мост приёмки сломается.",
+        "related_ru": "`lib/data/voice/desktop_voice_record_submit.dart`, `lib/app/shell/shared/shell_voice_routing.dart`.",
     },
 )
 
@@ -176,39 +176,26 @@ register_folder_ru(
 register_folder_ru(
     "lib/shared/voice/platforms",
     {
-        "what_ru": "Платформенные адаптеры голосового ввода — рантайм/UI компьютера и аудио для телефона/web.",
+        "what_ru": "Платформенные адаптеры голосового ввода — рантайм компьютера и аудио для телефона/web.",
         "why_ru": "Активация и распознавание отличаются по ОС; семантика команд остаётся общей.",
-        "inside_ru": "`desktop/`, `desktop/ui/`, `mobile/`.",
+        "inside_ru": "`desktop/`, `mobile/`.",
         "affects_ru": "Горячие клавиши и оверлей на компьютере, а также аудио-адаптеры телефона и web.",
         "when_ru": "Платформенные изменения активации или распознавания голоса.",
         "delete_ru": "Нет — платформенные адаптеры голосового ввода сломаются.",
-        "related_ru": "`lib/shared/voice/commands/`, `lib/data/voice/`.",
+        "related_ru": "`lib/shared/voice/commands/`, `lib/data/voice/`, `lib/features/voice/`.",
     },
 )
 
 register_folder_ru(
     "lib/shared/voice/platforms/desktop",
     {
-        "what_ru": "Рантайм голосового ввода на компьютере — горячие клавиши, helper-процесс, оверлей, захват, настройки, бенчмарки.",
+        "what_ru": "Рантайм голосового ввода на компьютере — горячие клавиши, helper-процесс, оверлей, захват, настройки.",
         "why_ru": "Активация на Windows — реализация общей системы голосового ввода, а не отдельный продукт.",
-        "inside_ru": "STT helper и оркестратор, горячие клавиши, оверлей, захват, настройки, диагностика, бенчмарки.",
+        "inside_ru": "STT helper и оркестратор, горячие клавиши, оверлей, захват, настройки, диагностика.",
         "affects_ru": "Горячие клавиши, оверлей, локальный STT и настройки голосового ввода на Windows.",
         "when_ru": "Голосовой ввод на компьютере не пишет, горячая клавиша мертва, задержки оверлея, сбои STT helper.",
         "delete_ru": "Нет — функция голосового ввода на компьютере.",
-        "related_ru": "`lib/shared/voice/platforms/desktop/ui/`, `lib/core/services/desktop_tray_service.dart`.",
-    },
-)
-
-register_folder_ru(
-    "lib/shared/voice/platforms/desktop/ui",
-    {
-        "what_ru": "Интерфейс голосового ввода только для компьютера — виджет, капсула, лист правки, панель команд.",
-        "why_ru": "Нативный оверлей и Flutter-хром голосового ввода — презентация только для компьютера.",
-        "inside_ru": "`desktop_voice_widget.dart`, capsule, correction sheet, command panel.",
-        "affects_ru": "Только desktop Voice overlay UI.",
-        "when_ru": "Регрессии desktop Voice capsule/overlay UI.",
-        "delete_ru": "Нет — desktop Voice UI сломается.",
-        "related_ru": "`lib/shared/voice/platforms/desktop/`, `lib/app/shell/shared/shell_voice_routing.dart`.",
+        "related_ru": "`lib/features/voice/`, `lib/core/services/desktop_tray_service.dart`.",
     },
 )
 
@@ -228,13 +215,26 @@ register_folder_ru(
 register_folder_ru(
     "lib/data/voice",
     {
-        "what_ru": "Голосовой разбор в Brain — парсер, резолвер домена, глоссарий, фильтр загрязнения, облачный STT.",
-        "why_ru": "Живой индекс категорий и записи в PocketBase принадлежат Brain, а не shared Voice.",
-        "inside_ru": "`voice_command_parser.dart`, резолвер домена, глоссарий, нормализация, фильтр загрязнения, постобработка, облачный backend.",
-        "affects_ru": "Интерпретация голосовых команд в категории и записи, а также транспорт облачного STT с авторизацией.",
-        "when_ru": "Неверный разбор команды, ошибка авторизации облачного STT, постобработка глоссария.",
+        "what_ru": "Голосовой разбор в Brain — парсер, резолвер домена, нормализация, record-submit, глоссарий, фильтр загрязнения, облачный STT, бенчмарки.",
+        "why_ru": "Живой индекс категорий, записи в PocketBase и выполнение команд принадлежат Brain, а не shared Voice.",
+        "inside_ru": "`voice_command_parser.dart`, резолвер домена, глоссарий, нормализация, фильтр загрязнения, постобработка, record-submit, облачный backend, бенчмарки.",
+        "affects_ru": "Интерпретация голосовых команд в категории и записи, writeRecord, транспорт облачного STT.",
+        "when_ru": "Неверный разбор команды, ошибка авторизации облачного STT, постобработка глоссария, выполнение команд.",
         "delete_ru": "Нет — выполнение голосовых команд сломается.",
-        "related_ru": "`lib/shared/voice/`, `lib/data/database_service.dart`.",
+        "related_ru": "`lib/shared/voice/`, `lib/features/voice/`, `lib/data/database_service.dart`.",
+    },
+)
+
+register_folder_ru(
+    "lib/features/voice",
+    {
+        "what_ru": "Flutter UI голосового оверлея на компьютере — виджет, капсула, лист правки, панель команд.",
+        "why_ru": "Хром голосового ввода на компьютере — feature UI; shared Voice остаётся без Brain-импортов.",
+        "inside_ru": "`desktop_voice_widget.dart`, capsule, correction sheet, command panel.",
+        "affects_ru": "Только desktop Voice overlay UI.",
+        "when_ru": "Регрессии desktop Voice capsule/overlay UI.",
+        "delete_ru": "Нет — desktop Voice UI сломается.",
+        "related_ru": "`lib/shared/voice/platforms/desktop/`, `lib/data/voice/`, `lib/app/shell/shared/shell_voice_routing.dart`.",
     },
 )
 

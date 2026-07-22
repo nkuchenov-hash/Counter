@@ -117,7 +117,7 @@ WATCHLIST_PATHS: dict[str, str] = {
     "lib/features/notes/notes_library_page.dart": (
         "Superseded Notes library page; Lists uses notes_library_production_shell instead."
     ),
-    "lib/shared/voice/platforms/desktop/ui/desktop_voice_command_panel.dart": (
+    "lib/features/voice/desktop_voice_command_panel.dart": (
         "Superseded desktop voice panel; shell uses desktop_voice_widget.dart."
     ),
     "lib/features/shared/notes_editor/notes_editor_launcher.dart": (
@@ -161,9 +161,9 @@ WATCHLIST_PATHS: dict[str, str] = {
 # Test/bench-only modules that are not production-reachable but are tooling-required.
 TEST_TOOLING_LIB: frozenset[str] = frozenset(
     {
-        "lib/shared/voice/platforms/desktop/desktop_stt_benchmark_harness.dart",
+        "lib/data/voice/desktop_stt_benchmark_harness.dart",
         "lib/shared/voice/commands/desktop_voice_install_smoke_policy.dart",
-        "lib/shared/voice/platforms/desktop/desktop_voice_real_helper_latency_benchmark.dart",
+        "lib/data/voice/desktop_voice_real_helper_latency_benchmark.dart",
         "lib/shared/voice/platforms/desktop/desktop_voice_wav_stt_benchmark.dart",
         "lib/shared/voice/platforms/desktop/desktop_voice_recognizer_io.dart",
     }
@@ -431,7 +431,7 @@ def _owner_for(path: str) -> tuple[str, str]:
         return "shared time", "общий time-слой"
     if p.startswith("lib/shared/diagnostics/"):
         return "shared diagnostics", "общая diagnostics"
-    if p.startswith("lib/shared/voice/platforms/desktop/ui/"):
+    if p.startswith("lib/features/voice/"):
         return "Desktop Voice UI", "Desktop Voice UI"
     if p.startswith("lib/shared/voice/platforms/desktop/"):
         return "Desktop Voice runtime", "Desktop Voice runtime"
@@ -489,7 +489,7 @@ def _classify_role(path: str, rec_hints: dict) -> str:
         return "shared time"
     if p.startswith("lib/shared/diagnostics/"):
         return "shared diagnostics"
-    if p.startswith("lib/shared/voice/platforms/desktop/ui/"):
+    if p.startswith("lib/features/voice/"):
         return "Desktop Voice UI"
     if p.startswith("lib/shared/voice/platforms/desktop/"):
         return "Desktop Voice runtime"
@@ -828,7 +828,7 @@ def build_evidence_index(files: list[str] | None = None) -> EvidenceIndex:
             if path.endswith("real_helper_latency_latest.json"):
                 evidence_en.append(
                     "Canonical benchmark output written by "
-                    "`lib/shared/voice/platforms/desktop/desktop_voice_real_helper_latency_benchmark.dart`."
+                    "`lib/data/voice/desktop_voice_real_helper_latency_benchmark.dart`."
                 )
                 evidence_ru.append(
                     "Канонический отчёт бенчмарка из "

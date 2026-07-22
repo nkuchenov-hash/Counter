@@ -1,5 +1,5 @@
 import 'package:counter/shared/voice/diagnostics/desktop_voice_pipeline.dart';
-import 'package:counter/data/voice/desktop_voice_glossary.dart';
+import 'package:counter/shared/voice/commands/desktop_voice_glossary_pack.dart';
 import 'package:counter/data/voice/voice_command_parser.dart';
 
 /// Outcome of glossary-biased recognition postprocess (after raw STT).

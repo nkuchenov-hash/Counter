@@ -14,6 +14,9 @@ import 'package:counter/features/auth/auth_screen.dart';
 import 'package:counter/features/auth/oauth_session.dart';
 import 'package:counter/data/auth_bridge.dart';
 import 'package:counter/data/voice/desktop_stt_cloud_backend.dart';
+import 'package:counter/data/voice/desktop_voice_glossary.dart';
+import 'package:counter/data/voice/desktop_voice_recognition_postprocess.dart';
+import 'package:counter/shared/voice/platforms/desktop/desktop_stt_orchestrator.dart';
 import 'package:counter/data/local_sync/offline_sync_state.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/services/notification_service.dart';
@@ -83,6 +86,25 @@ void _wireDesktopSttCloudBackend() {
       DesktopSttCloudBackend.postTranscribeCommand;
 }
 
+void _wireDesktopVoiceBrainHooks() {
+  registerDesktopVoiceGlossaryBuilder();
+  DesktopSttOrchestrator.postprocessHook = ({
+    required rawModelText,
+    required glossary,
+  }) {
+    final post = DesktopVoiceRecognitionPostprocess.apply(
+      rawModelText: rawModelText,
+      glossary: glossary,
+    );
+    return DesktopVoicePostprocessSnapshot(
+      postprocessedText: post.postprocessedText,
+      rejected: post.rejected,
+      rejectReason: post.rejectReason,
+      appliedRules: post.appliedRules,
+    );
+  };
+}
+
 void main() {
   runZonedGuarded(
     () {
@@ -147,6 +169,7 @@ Future<void> _mainAsync() async {
     );
   } catch (_) {}
   _wireDesktopSttCloudBackend();
+  _wireDesktopVoiceBrainHooks();
   final bootLocale =
       materialLocaleForUiLanguage(currentLocale.value).toString();
   try {
@@ -363,6 +386,7 @@ class _RootAuthWrapperState extends State<RootAuthWrapper> {
       _wireProfileTimezoneActions();
       _wirePlanCategoryLookup();
       _wireDesktopSttCloudBackend();
+      _wireDesktopVoiceBrainHooks();
       setState(() {
         _profileId = id;
         _checked = true;

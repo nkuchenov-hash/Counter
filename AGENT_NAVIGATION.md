@@ -117,8 +117,9 @@ Routing map for AI assistants: open these first instead of grepping. Update this
 | Voice input dispatcher (routes by active tab) | `lib/app/shell/shared/shell_voice_routing.dart` | Shell Voice routing mixin (via `app_shell.dart`) |
 | Desktop Price Reporter voice command (kill switch) | `lib/app/shell/shared/shell_voice_routing.dart` | Desktop Voice submit / toggle wiring |
 | Voice command parser (one system) | `lib/data/voice/voice_command_parser.dart` | `parsePriceReporterVoiceCommand`, `VoiceCommandCategoryIndex`, `parseVoiceCommand` |
+| Voice record submit (Brain) | `lib/data/voice/desktop_voice_record_submit.dart` | `DesktopVoiceRecordSubmit` — parse → normalize → `writeRecord` |
 | Desktop voice pipeline log | `lib/shared/voice/diagnostics/desktop_voice_log.dart` | `DesktopVoiceLog` — debug/profile pipeline markers |
-| Desktop voice widget UI (GOLOS STT) | `lib/shared/voice/platforms/desktop/ui/desktop_voice_widget.dart` | `DesktopVoiceWidget`, `showDesktopVoiceWidget` |
+| Desktop voice widget UI (GOLOS STT) | `lib/features/voice/desktop_voice_widget.dart` | `DesktopVoiceWidget`, `showDesktopVoiceWidget` |
 | Desktop GOLOS STT helper | `lib/shared/voice/platforms/desktop/desktop_stt_helper_service.dart` | `DesktopSttHelperService` |
 | Desktop voice recognizer | `lib/shared/voice/recognition/desktop_voice_recognizer_factory.dart` | `createDesktopVoiceRecognizer` |
 | Desktop tray | `lib/core/services/desktop_tray_service.dart` | `DesktopTrayService` |

@@ -10,7 +10,7 @@ import 'package:counter/shared/voice/platforms/desktop/desktop_voice_audio_prese
 import 'package:counter/shared/voice/commands/desktop_voice_delayed_transcribe.dart';
 import 'package:counter/shared/voice/platforms/desktop/desktop_stt_orchestrator.dart';
 import 'package:counter/shared/voice/commands/desktop_voice_engine.dart';
-import 'package:counter/data/voice/desktop_voice_glossary.dart';
+import 'package:counter/shared/voice/commands/desktop_voice_glossary_pack.dart';
 import 'package:counter/shared/voice/platforms/desktop/desktop_voice_last_attempt_store.dart';
 import 'package:counter/shared/voice/platforms/desktop/desktop_voice_overlay_service.dart';
 import 'package:counter/shared/voice/platforms/desktop/desktop_voice_capture_endpoint.dart';
