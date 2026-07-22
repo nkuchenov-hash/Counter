@@ -2,9 +2,9 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
 
-import 'package:counter/core/services/desktop_stt_quality_evaluation.dart';
-import 'package:counter/core/services/desktop_voice_wav_stt_benchmark.dart';
-import 'package:counter/core/services/pcm_audio_utils.dart';
+import 'package:counter/shared/voice/commands/desktop_stt_quality_evaluation.dart';
+import 'package:counter/shared/voice/platforms/desktop/desktop_voice_wav_stt_benchmark.dart';
+import 'package:counter/shared/voice/platforms/desktop/pcm_audio_utils.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

@@ -1,5 +1,5 @@
-import 'package:counter/core/services/desktop_voice_audio_presentation.dart';
-import 'package:counter/core/services/desktop_voice_capture_ready_policy.dart';
+import 'package:counter/shared/voice/platforms/desktop/desktop_voice_audio_presentation.dart';
+import 'package:counter/shared/voice/commands/desktop_voice_capture_ready_policy.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

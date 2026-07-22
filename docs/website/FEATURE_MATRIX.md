@@ -50,9 +50,9 @@
 | Header timezone quick switch | Global header | `timezone_quick_picker.dart`, `global_app_header.dart` | Fast TZ change | wip | Profile | nice-to-have | CHANGELOG [wip] |
 | Theme + language | Profile | `profile_view.dart` | Personalization | public-ready | — | nice-to-have | |
 | Biometric lock | Profile | `profile_view.dart`, `auth_bridge.dart` | App security | public-ready | Security | nice-to-have | Mobile only |
-| Voice input sheet | FAB all tabs | `voice_input_sheet.dart`, `app_shell.dart` | Hands-free capture | public-ready | Voice | must-have | Tab-routed |
+| Voice input sheet | FAB all tabs | `lib/shared/voice/ui/voice_input_sheet.dart`, `shell_voice_routing.dart` | Hands-free capture | public-ready | Voice | must-have | Tab-routed |
 | Bilingual STT toggle | Voice sheet | `voice_input_sheet.dart`, ARCHITECTURE §9 | EN ↔ app language | public-ready | Voice | nice-to-have | |
-| Desktop Price Reporter voice | Desktop only | `desktop_voice_command_panel.dart`, `runtime_flags.dart` | Niche billing entry | do-not-market-yet | — | no | Kill switch default off |
+| Desktop Price Reporter voice | Desktop only | `desktop_voice_command_panel.dart` (under `shared/voice/platforms/desktop/ui/`), `runtime_flags.dart` | Niche billing entry | do-not-market-yet | — | no | Kill switch default off |
 | Offline record mutations | Global | `record_mutation_outbox.dart` | Works offline | public-ready | Offline | must-have | O1 |
 | Offline plan/list mutations | Global | `plan_mutation_outbox.dart` | Works offline | public-ready | Offline | must-have | O1 |
 | Sync / offline banner | Shell top | `app_shell.dart`, `offline_sync_state.dart` | Pending visibility | public-ready | Offline | must-have | Tap to retry |

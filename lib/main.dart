@@ -6,14 +6,14 @@ import 'package:counter/core/navigation/app_navigator.dart';
 
 import 'package:counter/core/app_build_info.dart';
 import 'package:counter/core/services/desktop_main_window.dart';
-import 'package:counter/core/services/desktop_stt_cloud_service.dart';
+import 'package:counter/shared/voice/platforms/desktop/desktop_stt_cloud_service.dart';
 import 'package:counter/shared/diagnostics/performance/rebuild_metrics.dart';
 import 'package:counter/core/app_snackbar.dart';
 import 'package:counter/app_shell.dart';
 import 'package:counter/features/auth/auth_screen.dart';
 import 'package:counter/features/auth/oauth_session.dart';
 import 'package:counter/data/auth_bridge.dart';
-import 'package:counter/data/desktop_stt_cloud_backend.dart';
+import 'package:counter/data/voice/desktop_stt_cloud_backend.dart';
 import 'package:counter/data/local_sync/offline_sync_state.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/services/notification_service.dart';

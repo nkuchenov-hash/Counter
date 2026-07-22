@@ -102,7 +102,7 @@ WATCHLIST_PATHS: dict[str, str] = {
     "lib/features/profile/settings/settings_page.dart": (
         "Compatibility re-export of shell/settings_page.dart; zero current Dart importers of this path."
     ),
-    "lib/core/services/desktop_voice_error_classification.dart": (
+    "lib/shared/voice/recognition/desktop_voice_error_classification.dart": (
         "Compatibility re-export of DesktopVoiceFailureKind; zero current Dart importers of this path."
     ),
     "lib/features/shared/profile_hydration_status_bar.dart": (
@@ -117,7 +117,7 @@ WATCHLIST_PATHS: dict[str, str] = {
     "lib/features/notes/notes_library_page.dart": (
         "Superseded Notes library page; Lists uses notes_library_production_shell instead."
     ),
-    "lib/features/shared/desktop_voice_command_panel.dart": (
+    "lib/shared/voice/platforms/desktop/ui/desktop_voice_command_panel.dart": (
         "Superseded desktop voice panel; shell uses desktop_voice_widget.dart."
     ),
     "lib/features/shared/notes_editor/notes_editor_launcher.dart": (
@@ -129,10 +129,10 @@ WATCHLIST_PATHS: dict[str, str] = {
     "lib/features/lists/lists_inline_add.dart": (
         "ListsInlineAddRow unused; production shell embeds its own quick-add row."
     ),
-    "lib/core/services/desktop_voice_window_flags.dart": (
+    "lib/shared/voice/platforms/desktop/desktop_voice_window_flags.dart": (
         "setDesktopVoiceOverlayActive helper with zero Dart callers."
     ),
-    "lib/core/services/desktop_voice_benchmark_service.dart": (
+    "lib/shared/voice/platforms/desktop/desktop_voice_benchmark_service.dart": (
         "Side-by-side recognizer benchmark service with zero Dart callers."
     ),
     "lib/core/widgets/notes/notes.dart": (
@@ -161,11 +161,11 @@ WATCHLIST_PATHS: dict[str, str] = {
 # Test/bench-only modules that are not production-reachable but are tooling-required.
 TEST_TOOLING_LIB: frozenset[str] = frozenset(
     {
-        "lib/core/services/desktop_stt_benchmark_harness.dart",
-        "lib/core/services/desktop_voice_install_smoke_policy.dart",
-        "lib/core/services/desktop_voice_real_helper_latency_benchmark.dart",
-        "lib/core/services/desktop_voice_wav_stt_benchmark.dart",
-        "lib/core/services/desktop_voice_recognizer_io.dart",
+        "lib/shared/voice/platforms/desktop/desktop_stt_benchmark_harness.dart",
+        "lib/shared/voice/commands/desktop_voice_install_smoke_policy.dart",
+        "lib/shared/voice/platforms/desktop/desktop_voice_real_helper_latency_benchmark.dart",
+        "lib/shared/voice/platforms/desktop/desktop_voice_wav_stt_benchmark.dart",
+        "lib/shared/voice/platforms/desktop/desktop_voice_recognizer_io.dart",
     }
 )
 
@@ -397,10 +397,10 @@ def _owner_for(path: str) -> tuple[str, str]:
         return "Calendar UI", "UI календаря"
     if p.startswith("lib/features/categories/"):
         return "Categories UI", "UI категорий"
+    if p.startswith("lib/features/settings/voice/"):
+        return "Voice settings UI", "UI настроек Voice"
     if p.startswith("lib/features/profile/"):
         return "Profile UI", "UI профиля"
-    if p.startswith("lib/features/shared/") and "desktop_voice" in p:
-        return "Desktop Voice", "Desktop Voice"
     if p.startswith("lib/features/shared/"):
         return "shared edit sheets", "общие edit sheets"
     if p.startswith("lib/features/dev/"):
@@ -409,6 +409,8 @@ def _owner_for(path: str) -> tuple[str, str]:
         return "Auth UI", "UI входа"
     if p.startswith("lib/features/wear/"):
         return "Wear OS UI", "UI Wear OS"
+    if p.startswith("lib/data/voice/"):
+        return "Brain Voice", "Brain — Voice"
     if p.startswith("lib/data/plans/") or p.endswith("plan_service.dart"):
         return "Brain Plans", "Brain — планы"
     if p.startswith("lib/data/records/") or p.endswith("record_service.dart"):
@@ -419,10 +421,6 @@ def _owner_for(path: str) -> tuple[str, str]:
         return "Brain Profile", "Brain — профиль"
     if p.startswith("lib/data/"):
         return "Brain/data", "Brain/data"
-    if p.startswith("lib/core/services/") and (
-        "desktop_voice" in p or "desktop_stt" in p
-    ):
-        return "Desktop Voice", "Desktop Voice"
     if p.startswith("lib/core/widgets/"):
         return "shared design system", "общий design system"
     if p.startswith("lib/core/"):
@@ -433,8 +431,14 @@ def _owner_for(path: str) -> tuple[str, str]:
         return "shared time", "общий time-слой"
     if p.startswith("lib/shared/diagnostics/"):
         return "shared diagnostics", "общая diagnostics"
+    if p.startswith("lib/shared/voice/platforms/desktop/ui/"):
+        return "Desktop Voice UI", "Desktop Voice UI"
+    if p.startswith("lib/shared/voice/platforms/desktop/"):
+        return "Desktop Voice runtime", "Desktop Voice runtime"
+    if p.startswith("lib/shared/voice/platforms/mobile/"):
+        return "mobile/web Voice adapters", "mobile/web Voice adapters"
     if p.startswith("lib/shared/voice/"):
-        return "shared voice diagnostics", "общая voice diagnostics"
+        return "shared Voice system", "общий Voice system"
     if p.startswith("lib/l10n/"):
         return "localization", "локализация"
     if p.startswith("lib/services/"):
@@ -485,8 +489,18 @@ def _classify_role(path: str, rec_hints: dict) -> str:
         return "shared time"
     if p.startswith("lib/shared/diagnostics/"):
         return "shared diagnostics"
+    if p.startswith("lib/shared/voice/platforms/desktop/ui/"):
+        return "Desktop Voice UI"
+    if p.startswith("lib/shared/voice/platforms/desktop/"):
+        return "Desktop Voice runtime"
+    if p.startswith("lib/shared/voice/platforms/mobile/"):
+        return "mobile/web Voice adapters"
+    if p.startswith("lib/data/voice/"):
+        return "Brain Voice"
+    if p.startswith("lib/features/settings/voice/"):
+        return "Voice settings UI"
     if p.startswith("lib/shared/voice/"):
-        return "shared voice diagnostics"
+        return "shared Voice system"
     if p.startswith("lib/data/"):
         return "Brain/data"
     if p.startswith("lib/core/") or p.startswith("lib/services/"):
@@ -814,7 +828,7 @@ def build_evidence_index(files: list[str] | None = None) -> EvidenceIndex:
             if path.endswith("real_helper_latency_latest.json"):
                 evidence_en.append(
                     "Canonical benchmark output written by "
-                    "`lib/core/services/desktop_voice_real_helper_latency_benchmark.dart`."
+                    "`lib/shared/voice/platforms/desktop/desktop_voice_real_helper_latency_benchmark.dart`."
                 )
                 evidence_ru.append(
                     "Канонический отчёт бенчмарка из "

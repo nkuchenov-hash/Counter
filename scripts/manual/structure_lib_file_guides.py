@@ -15,7 +15,7 @@ GENERIC_ROLE_MARKERS: tuple[str, ...] = (
 
 # Full guides keyed by repo path (forward slashes).
 LIB_FILE_GUIDES: dict[str, dict[str, str]] = {
-    "lib/core/services/desktop_stt_helper_process_lifecycle.dart": {
+    "lib/shared/voice/platforms/desktop/desktop_stt_helper_process_lifecycle.dart": {
         "what": "`DesktopSttHelperProcessLifecycle` — spawns, restarts, and kills the GOLOS STT helper process; resolves helper/model/settings paths.",
         "why": "Isolates process install/lifecycle from HTTP readiness interpretation and transcription without duplicating `_process` / `_ready` ownership.",
         "contains": "`part of desktop_stt_helper_service.dart`; `helperPath`, `modelPathFor`, `ensureStarted`, `_ensureHelperRunning`, `_restartHelper`, `_killHelperProcess`, stdout/stderr tails.",
@@ -25,7 +25,7 @@ LIB_FILE_GUIDES: dict[str, dict[str, str]] = {
         "contains_ru": "`part of desktop_stt_helper_service.dart`; `helperPath`, `modelPathFor`, `ensureStarted`, `_ensureHelperRunning`, `_restartHelper`, `_killHelperProcess`, хвосты stdout/stderr.",
         "responsibilities_ru": "Находит exe; start/restart/kill; ждёт ping; вызывает `_configureAndWaitReady`; маркеры spawn и restart policy.",
     },
-    "lib/core/services/desktop_stt_helper_diagnostics_builder.dart": {
+    "lib/shared/voice/platforms/desktop/desktop_stt_helper_diagnostics_builder.dart": {
         "what": "`DesktopSttHelperDiagnosticsBuilder` — assembles `DesktopSttDiagnostics`, WAV duration fallbacks, and last-attempt persistence for the GOLOS STT helper.",
         "why": "Isolates diagnostics/reporting from helper spawn, capture, and transcribe orchestration without duplicating `_lastDiagnostics` ownership.",
         "contains": "`part of desktop_stt_helper_service.dart`; `_updateDiagnostics`, `_resolveRawWavDurationMs`, `_resolveWavDurationMs`, `fetchDiagnostics`, capture-mix/ms helpers.",
@@ -75,7 +75,7 @@ LIB_FILE_GUIDES: dict[str, dict[str, str]] = {
         "contains_ru": "`TimelineSwipeWrapper`, `_TimelineSwipeWrapperState`; подключает day page, header controls, stats.",
         "responsibilities_ru": "Собирает UI Timeline; day keys по profile timezone; warm-window paging.",
     },
-    "lib/features/shared/voice_input_sheet.dart": {
+    "lib/shared/voice/ui/voice_input_sheet.dart": {
         "what": "Mobile/web mic bottom sheet — speech-to-text capture routed by `VoiceCaptureConfig`.",
         "why": "Voice submit on Timeline, Plans, and Lists opens this sheet; must not block main thread.",
         "contains": "`VoiceInputSheet`, `_VoiceInputSheetState`; STT engine handle, permission prompts.",
@@ -115,7 +115,7 @@ LIB_FILE_GUIDES: dict[str, dict[str, str]] = {
         "contains_ru": "Хуки `DesktopSttCloudBackend`, подключение из `main.dart` в стиле AppClock.",
         "responsibilities_ru": "Проверка готовности, заголовок Authorization, тело POST, таймаут — без обработки WAV.",
     },
-    "lib/data/voice_domain_resolver.dart": {
+    "lib/data/voice/voice_domain_resolver.dart": {
         "what": "`VoiceDomainResolver` — fuzzy voice-domain match against the live category index (`part` of `voice_command_parser.dart`).",
         "why": "Price Reporter and scoped voice commands must resolve spoken domains to category system IDs with confidence gates.",
         "contains": "`VoiceDomainMatchCandidate`, `VoiceDomainResolution`, accept/reject status, diagnostic snapshots.",

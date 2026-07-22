@@ -1,9 +1,9 @@
 import 'dart:io';
 
-import 'package:counter/core/services/desktop_voice_audio_presentation.dart';
-import 'package:counter/core/services/desktop_voice_command_stt_policy.dart';
-import 'package:counter/core/services/desktop_voice_engine.dart';
-import 'package:counter/core/services/pcm_audio_utils.dart';
+import 'package:counter/shared/voice/platforms/desktop/desktop_voice_audio_presentation.dart';
+import 'package:counter/shared/voice/commands/desktop_voice_command_stt_policy.dart';
+import 'package:counter/shared/voice/commands/desktop_voice_engine.dart';
+import 'package:counter/shared/voice/platforms/desktop/pcm_audio_utils.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// Offline local-engine selection proof (no live mic).

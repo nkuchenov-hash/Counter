@@ -13,7 +13,9 @@
 | `lib/data/auth_bridge.dart` | **The Gate** | PocketBase `authWithPassword`, session + secure storage. |
 | `lib/shared/time/` | **Shared time** | UTC ↔ profile wall-clock, timezone catalog, `AppClock` / `ProfileTimezoneActions`. No feature or Brain I/O imports. |
 | `lib/shared/diagnostics/` | **Shared diagnostics** | Runtime logs (`runtime_log`, `platform_log`, `startup_log`) + kill switches / metrics under `performance/` (`runtime_flags`, `shell_flags`, `rebuild_metrics`). No feature or Brain I/O imports. |
-| `lib/shared/voice/diagnostics/` | **Shared voice diagnostics** | Desktop voice pipeline markers (`desktop_voice_log`, `desktop_voice_pipeline`). No feature or Brain I/O imports. |
+| `lib/shared/voice/` | **Shared Voice (one system)** | Commands, recognition, routing, UI, platform adapters (`platforms/desktop`, `platforms/mobile`), and diagnostics. Phone/desktop/web/Wear activation paths converge on the same command interpretation. No `features/`, `database_service.dart`, or shell tab-state ownership. |
+| `lib/data/voice/` | **Brain Voice** | Parser, live category/domain resolution, glossary, contamination/postprocess, PocketBase cloud STT backend. |
+| `lib/features/settings/voice/` | **Voice settings UI** | Microphone / hotkey / recognizer / diagnostics settings pages. |
 | `lib/data/plans/diagnostics/` | **Brain plans diagnostics** | Planning-domain duplicate / stream lifecycle log (`plan_duplicate_log.dart`). Lives inside Brain; not shared diagnostics and not feature UI. |
 | `lib/app_shell.dart` | **The Navigator** | Thin entry re-export; canonical shell under `lib/app/shell/`. |
 | `lib/main.dart` | **The ignition** | Calls `ensurePocketBaseReady()`, then restores session and loads profile. |

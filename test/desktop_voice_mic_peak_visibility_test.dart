@@ -8,7 +8,7 @@
 
 import 'dart:typed_data';
 
-import 'package:counter/core/services/pcm_audio_utils.dart';
+import 'package:counter/shared/voice/platforms/desktop/pcm_audio_utils.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

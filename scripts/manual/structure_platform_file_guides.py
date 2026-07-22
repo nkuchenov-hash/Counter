@@ -60,7 +60,7 @@ PLATFORM_PATH_GUIDES: dict[str, dict[str, str]] = {
         "contains": "Скомпилированный GOLOS STT helper (English) для subprocess voice pipeline.",
         "responsibilities": "Transcription subprocess для desktop voice после установки через setup.",
         "when": "Installed app: voice mic работает, но transcription пустая или helper not found.",
-        "connected": "`lib/core/services/desktop_stt_helper_service.dart`, `prepare_stt_payload.ps1`.",
+        "connected": "`lib/shared/voice/platforms/desktop/desktop_stt_helper_service.dart`, `prepare_stt_payload.ps1`.",
         "layer": "Windows STT binary — не Dart UI.",
         "delete": "Нет — удаление ломает voice в installed app.",
     },

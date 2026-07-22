@@ -1,5 +1,5 @@
-import 'package:counter/core/services/desktop_stt_cloud_service.dart';
-import 'package:counter/core/services/desktop_stt_engine.dart';
+import 'package:counter/shared/voice/platforms/desktop/desktop_stt_cloud_service.dart';
+import 'package:counter/shared/voice/commands/desktop_stt_engine.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

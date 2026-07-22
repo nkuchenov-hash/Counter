@@ -1,6 +1,6 @@
-import 'package:counter/core/services/desktop_voice_confirmation_timer.dart';
+import 'package:counter/shared/voice/platforms/desktop/desktop_voice_confirmation_timer.dart';
 import 'package:counter/data/models.dart';
-import 'package:counter/data/voice_command_parser.dart';
+import 'package:counter/data/voice/voice_command_parser.dart';
 import 'package:fake_async/fake_async.dart';
 import 'package:flutter_test/flutter_test.dart';
 

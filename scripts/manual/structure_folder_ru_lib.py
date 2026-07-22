@@ -98,26 +98,156 @@ register_folder_ru(
 register_folder_ru(
     "lib/shared/voice",
     {
-        "what_ru": "Общие voice helpers для desktop STT/voice services и Brain voice parsing.",
-        "why_ru": "Markers voice pipeline должны оставаться без feature UI и Brain I/O при нескольких потребителях.",
-        "inside_ru": "`diagnostics/` — desktop voice log и pipeline step helpers.",
-        "affects_ru": "Трассировка desktop voice и STT pipeline markers.",
-        "when_ru": "Пропали шаги desktop voice pipeline в debug/profile.",
-        "delete_ru": "Нет — desktop voice services импортируют эти markers.",
-        "related_ru": "`lib/shared/voice/diagnostics/`, `lib/core/services/desktop_voice_*.dart`.",
+        "what_ru": "Одна система голосового ввода — команды, распознавание, маршрутизация, UI, платформенные адаптеры, диагностика.",
+        "why_ru": "Микрофон телефона, горячая клавиша на компьютере, web и Wear должны сходиться в один путь разбора команд.",
+        "inside_ru": "`commands/`, `recognition/`, `routing/`, `ui/`, `platforms/desktop/`, `platforms/mobile/`, `diagnostics/`.",
+        "affects_ru": "Вся активация голосового ввода, распознавание, оверлеи и общий UI микрофона — без прямой записи в PocketBase.",
+        "when_ru": "Перенос владения голосовым вводом, нарушения границ импортов, расхождение путей активации между платформами.",
+        "delete_ru": "Нет — это продуктовая функция голосового ввода.",
+        "related_ru": "`lib/data/voice/`, `lib/features/settings/voice/`, `lib/app/shell/shared/shell_voice_routing.dart`.",
     },
 )
 
 register_folder_ru(
     "lib/shared/voice/diagnostics",
     {
-        "what_ru": "Маркеры desktop voice pipeline — log и step helpers.",
+        "what_ru": "Маркеры Voice pipeline — log и step helpers.",
         "why_ru": "Desktop STT/voice и Brain voice parsing делят один quiet release / verbose debug-profile sink.",
         "inside_ru": "`desktop_voice_log.dart`, `desktop_voice_pipeline.dart`.",
-        "affects_ru": "Только developer diagnostics для desktop voice.",
-        "when_ru": "Трассировка capture, STT, overlay или submit шагов desktop voice.",
-        "delete_ru": "Нет — используется в debug/profile desktop voice builds.",
-        "related_ru": "`lib/core/services/`, `lib/shared/diagnostics/`.",
+        "affects_ru": "Только developer diagnostics для Voice.",
+        "when_ru": "Трассировка capture, STT, overlay или submit шагов Voice.",
+        "delete_ru": "Нет — используется в debug/profile Voice builds.",
+        "related_ru": "`lib/shared/voice/platforms/desktop/`, `lib/shared/diagnostics/`.",
+    },
+)
+
+register_folder_ru(
+    "lib/shared/voice/commands",
+    {
+        "what_ru": "Платформенно-нейтральные Voice command / policy contracts.",
+        "why_ru": "Семантика команд не должна ветвиться по способу активации (phone vs desktop vs web).",
+        "inside_ru": "Transcript merge, delayed transcribe, capture-ready policy, engine/STT types, quality, correction flow.",
+        "affects_ru": "Общие правила Voice interpretation для desktop runtime и Brain gates.",
+        "when_ru": "Смена merge/quality/policy без redesign UX.",
+        "delete_ru": "Нет — shared Voice contracts сломаются.",
+        "related_ru": "`lib/shared/voice/platforms/desktop/`, `lib/data/voice/`.",
+    },
+)
+
+register_folder_ru(
+    "lib/shared/voice/recognition",
+    {
+        "what_ru": "Платформенно-нейтральные контракты распознавания речи.",
+        "why_ru": "Адаптеры распознавания отличаются по ОС; общие контракты остаются едиными.",
+        "inside_ru": "`speech_engine_handle.dart`, `speech_listen_locale.dart`, фабрика/заглушка распознавателя, таксономия ошибок.",
+        "affects_ru": "Лист микрофона на телефоне и web, а также проводка распознавателя на компьютере.",
+        "when_ru": "Выбор распознавателя, разрешение локали, отображение ошибок.",
+        "delete_ru": "Нет — контракты распознавания сломаются.",
+        "related_ru": "`lib/shared/voice/ui/`, `lib/shared/voice/platforms/desktop/`.",
+    },
+)
+
+register_folder_ru(
+    "lib/shared/voice/routing",
+    {
+        "what_ru": "Контракты отправки голосовых команд без владения состоянием вкладок.",
+        "why_ru": "Оболочка знает активный раздел; голосовой ввод только отдаёт колбэки отправки.",
+        "inside_ru": "`desktop_voice_record_submit.dart`, `desktop_voice_acceptance_bridge.dart`.",
+        "affects_ru": "Маршрутизация голосового ввода в оболочке и хуки приёмки.",
+        "when_ru": "Мост разобранной команды к записи или тесты приёмки.",
+        "delete_ru": "Нет — путь отправки голосовых команд в оболочке сломается.",
+        "related_ru": "`lib/app/shell/shared/shell_voice_routing.dart`.",
+    },
+)
+
+register_folder_ru(
+    "lib/shared/voice/ui",
+    {
+        "what_ru": "Переиспользуемый интерфейс голосового ввода — лист микрофона, конфиг захвата, индикаторы уровня.",
+        "why_ru": "UI активации микрофона общий для вкладок; это не UI отдельного продуктового раздела.",
+        "inside_ru": "`voice_input_sheet.dart`, `voice_capture_config.dart`, `app_mic_level_bars.dart`.",
+        "affects_ru": "Лист микрофона на телефоне и web и общая визуализация уровня сигнала.",
+        "when_ru": "Маршрутизация листа микрофона, UI прослушивания, индикаторы уровня.",
+        "delete_ru": "Нет — общий UI голосового ввода сломается.",
+        "related_ru": "`lib/app/shell/shared/shell_voice_routing.dart`.",
+    },
+)
+
+register_folder_ru(
+    "lib/shared/voice/platforms",
+    {
+        "what_ru": "Платформенные адаптеры голосового ввода — рантайм/UI компьютера и аудио для телефона/web.",
+        "why_ru": "Активация и распознавание отличаются по ОС; семантика команд остаётся общей.",
+        "inside_ru": "`desktop/`, `desktop/ui/`, `mobile/`.",
+        "affects_ru": "Горячие клавиши и оверлей на компьютере, а также аудио-адаптеры телефона и web.",
+        "when_ru": "Платформенные изменения активации или распознавания голоса.",
+        "delete_ru": "Нет — платформенные адаптеры голосового ввода сломаются.",
+        "related_ru": "`lib/shared/voice/commands/`, `lib/data/voice/`.",
+    },
+)
+
+register_folder_ru(
+    "lib/shared/voice/platforms/desktop",
+    {
+        "what_ru": "Рантайм голосового ввода на компьютере — горячие клавиши, helper-процесс, оверлей, захват, настройки, бенчмарки.",
+        "why_ru": "Активация на Windows — реализация общей системы голосового ввода, а не отдельный продукт.",
+        "inside_ru": "STT helper и оркестратор, горячие клавиши, оверлей, захват, настройки, диагностика, бенчмарки.",
+        "affects_ru": "Горячие клавиши, оверлей, локальный STT и настройки голосового ввода на Windows.",
+        "when_ru": "Голосовой ввод на компьютере не пишет, горячая клавиша мертва, задержки оверлея, сбои STT helper.",
+        "delete_ru": "Нет — функция голосового ввода на компьютере.",
+        "related_ru": "`lib/shared/voice/platforms/desktop/ui/`, `lib/core/services/desktop_tray_service.dart`.",
+    },
+)
+
+register_folder_ru(
+    "lib/shared/voice/platforms/desktop/ui",
+    {
+        "what_ru": "Интерфейс голосового ввода только для компьютера — виджет, капсула, лист правки, панель команд.",
+        "why_ru": "Нативный оверлей и Flutter-хром голосового ввода — презентация только для компьютера.",
+        "inside_ru": "`desktop_voice_widget.dart`, capsule, correction sheet, command panel.",
+        "affects_ru": "Только desktop Voice overlay UI.",
+        "when_ru": "Регрессии desktop Voice capsule/overlay UI.",
+        "delete_ru": "Нет — desktop Voice UI сломается.",
+        "related_ru": "`lib/shared/voice/platforms/desktop/`, `lib/app/shell/shared/shell_voice_routing.dart`.",
+    },
+)
+
+register_folder_ru(
+    "lib/shared/voice/platforms/mobile",
+    {
+        "what_ru": "Аудио-адаптеры голосового ввода для телефона и web, используемые общим листом микрофона.",
+        "why_ru": "Web Audio и заглушка отличаются по платформе; адаптеры живут рядом с владением голосовым вводом.",
+        "inside_ru": "`voice_audio_web.dart`, `voice_audio_stub.dart`.",
+        "affects_ru": "Звук и тон листа микрофона на web и остальных платформах.",
+        "when_ru": "Несовпадение web-аудио заглушки голосового ввода.",
+        "delete_ru": "Нет — условный импорт аудио голосового ввода сломается.",
+        "related_ru": "`lib/shared/voice/ui/voice_input_sheet.dart`.",
+    },
+)
+
+register_folder_ru(
+    "lib/data/voice",
+    {
+        "what_ru": "Голосовой разбор в Brain — парсер, резолвер домена, глоссарий, фильтр загрязнения, облачный STT.",
+        "why_ru": "Живой индекс категорий и записи в PocketBase принадлежат Brain, а не shared Voice.",
+        "inside_ru": "`voice_command_parser.dart`, резолвер домена, глоссарий, нормализация, фильтр загрязнения, постобработка, облачный backend.",
+        "affects_ru": "Интерпретация голосовых команд в категории и записи, а также транспорт облачного STT с авторизацией.",
+        "when_ru": "Неверный разбор команды, ошибка авторизации облачного STT, постобработка глоссария.",
+        "delete_ru": "Нет — выполнение голосовых команд сломается.",
+        "related_ru": "`lib/shared/voice/`, `lib/data/database_service.dart`.",
+    },
+)
+
+register_folder_ru(
+    "lib/features/settings/voice",
+    {
+        "what_ru": "Интерфейс настроек голосового ввода — горячие клавиши, микрофон, распознаватель, диагностика попыток.",
+        "why_ru": "Настройки голоса принадлежат settings, а не только chrome профиля.",
+        "inside_ru": "`desktop_voice_settings_section.dart`, `desktop_voice_settings_desktop.dart`, `desktop_voice_attempt_dialog.dart`.",
+        "affects_ru": "Элементы управления голосовым вводом в профиле и настройках на компьютере.",
+        "when_ru": "UI горячих клавиш, диалог попытки, инструменты разработчика голосового ввода.",
+        "delete_ru": "Нет — UI настроек голосового ввода станет недоступен.",
+        "related_ru": "`lib/shared/voice/platforms/desktop/desktop_voice_settings.dart`, `lib/features/profile/profile_view.dart`.",
     },
 )
 
@@ -150,13 +280,13 @@ register_folder_ru(
 register_folder_ru(
     "lib/features/settings",
     {
-        "what_ru": "Helpers timezone для экрана настроек (не виджеты design system).",
-        "why_ru": "Списки timezone и legacy offset helpers принадлежат settings, не core.",
-        "inside_ru": "`timezone_settings.dart` (re-export shared catalog/options для settings UI).",
-        "affects_ru": "Подписи выбора timezone в profile и imports Planning category-default TZ search.",
-        "when_ru": "Список timezone options, helpers offset labels.",
-        "delete_ru": "Нет — сломаются settings timezone helpers.",
-        "related_ru": "`lib/shared/time/`, `lib/features/profile/profile_view.dart`.",
+        "what_ru": "Settings-owned helpers — timezone labels и UI настроек Voice.",
+        "why_ru": "Списки timezone и Voice settings принадлежат settings, не core и не только profile chrome.",
+        "inside_ru": "`timezone_settings.dart`, `voice/` (desktop Voice settings section/desktop/attempt dialog).",
+        "affects_ru": "Подписи timezone в profile и desktop Voice settings controls.",
+        "when_ru": "Список timezone options, UI hotkey/mic Voice.",
+        "delete_ru": "Нет — сломаются settings timezone/Voice helpers.",
+        "related_ru": "`lib/shared/time/`, `lib/shared/voice/`, `lib/features/profile/profile_view.dart`.",
     },
 )
 
@@ -371,13 +501,13 @@ register_folder_ru(
 register_folder_ru(
     "lib/core/services",
     {
-        "what_ru": "Сервисы устройства — speech-to-text, desktop voice, tray, global hotkeys.",
-        "why_ru": "Platform voice и tray не могут жить в PocketBase brain code.",
-        "inside_ru": "Модули `desktop_voice_*.dart` и STT helper subprocess client.",
-        "affects_ru": "Windows desktop voice, иконка tray, global hotkey; mobile STT locale.",
-        "when_ru": "Desktop voice не пишет, hotkey мёртв, tray пропал.",
-        "delete_ru": "Нет — desktop voice product feature.",
-        "related_ru": "`lib/features/shared/desktop_voice_*.dart`.",
+        "what_ru": "Инфраструктура окна и трея на компьютере (не владение голосовым вводом).",
+        "why_ru": "Главное окно и трей — общая desktop-оболочка; голосовой ввод живёт в `lib/shared/voice/`.",
+        "inside_ru": "`desktop_tray_service*.dart`, `desktop_main_window.dart`.",
+        "affects_ru": "Иконка трея Windows и размер главного окна.",
+        "when_ru": "Пропал трей, сломаны hide/show главного окна.",
+        "delete_ru": "Нет — инфраструктура трея и окна на компьютере.",
+        "related_ru": "`lib/shared/voice/platforms/desktop/`, `lib/app/shell/`.",
     },
 )
 

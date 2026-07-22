@@ -1,4 +1,4 @@
-import 'package:counter/core/services/desktop_voice_hotkey.dart';
+import 'package:counter/shared/voice/platforms/desktop/desktop_voice_hotkey.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

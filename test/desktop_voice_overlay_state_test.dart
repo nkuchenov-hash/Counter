@@ -1,8 +1,8 @@
-import 'package:counter/core/services/desktop_stt_helper_service.dart';
-import 'package:counter/core/services/desktop_voice_delayed_transcribe.dart';
-import 'package:counter/core/services/desktop_voice_hotkey.dart';
-import 'package:counter/core/services/desktop_voice_overlay_bridge.dart';
-import 'package:counter/core/services/desktop_voice_overlay_constants.dart';
+import 'package:counter/shared/voice/platforms/desktop/desktop_stt_helper_service.dart';
+import 'package:counter/shared/voice/commands/desktop_voice_delayed_transcribe.dart';
+import 'package:counter/shared/voice/platforms/desktop/desktop_voice_hotkey.dart';
+import 'package:counter/shared/voice/platforms/desktop/desktop_voice_overlay_bridge.dart';
+import 'package:counter/shared/voice/platforms/desktop/desktop_voice_overlay_constants.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

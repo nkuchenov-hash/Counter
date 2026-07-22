@@ -5,8 +5,8 @@
 // injection point so the test never touches the flutter/platform method
 // channel (which has no default handler on the test binding and would hang).
 
-import 'package:counter/core/services/desktop_voice_attempt_log.dart';
-import 'package:counter/features/profile/desktop_voice_attempt_dialog.dart';
+import 'package:counter/shared/voice/platforms/desktop/desktop_voice_attempt_log.dart';
+import 'package:counter/features/settings/voice/desktop_voice_attempt_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 

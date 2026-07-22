@@ -6,7 +6,7 @@
 //   - Price Reporter "Planning" must keep working unchanged.
 
 import 'package:counter/data/models.dart';
-import 'package:counter/data/voice_command_parser.dart';
+import 'package:counter/data/voice/voice_command_parser.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 CategoryRule _priceReporterTree() {

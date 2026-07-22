@@ -1,4 +1,4 @@
-import 'package:counter/core/services/desktop_voice_transcript_merge.dart';
+import 'package:counter/shared/voice/commands/desktop_voice_transcript_merge.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

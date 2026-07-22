@@ -923,7 +923,7 @@ register_folder_ru(
         "affects_ru": "Трассировка desktop voice и STT pipeline markers.",
         "when_ru": "Пропали шаги desktop voice pipeline в debug/profile.",
         "delete_ru": "Нет — desktop voice services импортируют эти markers.",
-        "related_ru": "`lib/shared/voice/diagnostics/`, `lib/core/services/desktop_voice_*.dart`.",
+        "related_ru": "`lib/shared/voice/`, `lib/shared/voice/platforms/desktop/`.",
     },
 )
 

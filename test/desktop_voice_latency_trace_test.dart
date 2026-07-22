@@ -1,8 +1,8 @@
 import 'package:counter/shared/voice/diagnostics/desktop_voice_pipeline.dart';
-import 'package:counter/core/services/desktop_voice_capture_ready_policy.dart';
-import 'package:counter/core/services/desktop_voice_install_smoke_policy.dart';
-import 'package:counter/core/services/desktop_voice_overlay_constants.dart';
-import 'package:counter/core/services/desktop_voice_stt_processing.dart';
+import 'package:counter/shared/voice/commands/desktop_voice_capture_ready_policy.dart';
+import 'package:counter/shared/voice/commands/desktop_voice_install_smoke_policy.dart';
+import 'package:counter/shared/voice/platforms/desktop/desktop_voice_overlay_constants.dart';
+import 'package:counter/shared/voice/platforms/desktop/desktop_voice_stt_processing.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
