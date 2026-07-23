@@ -9,21 +9,15 @@ void main() {
     heightPx: 50,
   );
 
-  test('one pixel overlap while moving down inserts after target', () {
-    final intent = resolveTimeViewOnePixelOverlapIntent(
+  test('edge overlap only clamps next to target without reorder', () {
+    final movingDown = resolveTimeViewCollisionAndInsertion(
       draggedTopPx: 51,
       draggedHeightPx: 50,
       verticalDeltaPx: 1,
       scheduledCardLayouts: const [target],
       draggedPlanId: 'dragged',
     );
-
-    expect(intent?.kind, TimeViewDropIntentKind.targetCardAfter);
-    expect(intent?.targetPlanId, 'target');
-  });
-
-  test('one pixel overlap while moving up inserts before target', () {
-    final intent = resolveTimeViewOnePixelOverlapIntent(
+    final movingUp = resolveTimeViewCollisionAndInsertion(
       draggedTopPx: 149,
       draggedHeightPx: 50,
       verticalDeltaPx: -1,
@@ -31,12 +25,42 @@ void main() {
       draggedPlanId: 'dragged',
     );
 
-    expect(intent?.kind, TimeViewDropIntentKind.targetCardBefore);
-    expect(intent?.targetPlanId, 'target');
+    expect(movingDown.resolvedTopPx, 50);
+    expect(movingDown.insertionIntent, isNull);
+    expect(movingDown.contactPlanId, 'target');
+    expect(movingUp.resolvedTopPx, 150);
+    expect(movingUp.insertionIntent, isNull);
+    expect(movingUp.contactPlanId, 'target');
   });
 
-  test('edge contact without overlap does not reorder', () {
-    final intent = resolveTimeViewOnePixelOverlapIntent(
+  test('crossing target center creates directional reorder intent', () {
+    final movingDown = resolveTimeViewCollisionAndInsertion(
+      draggedTopPx: 100,
+      draggedHeightPx: 50,
+      verticalDeltaPx: 50,
+      scheduledCardLayouts: const [target],
+      draggedPlanId: 'dragged',
+    );
+    final movingUp = resolveTimeViewCollisionAndInsertion(
+      draggedTopPx: 100,
+      draggedHeightPx: 50,
+      verticalDeltaPx: -50,
+      scheduledCardLayouts: const [target],
+      draggedPlanId: 'dragged',
+    );
+
+    expect(
+      movingDown.insertionIntent?.kind,
+      TimeViewDropIntentKind.targetCardAfter,
+    );
+    expect(
+      movingUp.insertionIntent?.kind,
+      TimeViewDropIntentKind.targetCardBefore,
+    );
+  });
+
+  test('exact edge contact keeps raw position and has no contact target', () {
+    final resolution = resolveTimeViewCollisionAndInsertion(
       draggedTopPx: 50,
       draggedHeightPx: 50,
       verticalDeltaPx: 1,
@@ -44,6 +68,8 @@ void main() {
       draggedPlanId: 'dragged',
     );
 
-    expect(intent, isNull);
+    expect(resolution.resolvedTopPx, 50);
+    expect(resolution.insertionIntent, isNull);
+    expect(resolution.contactPlanId, isNull);
   });
 }
