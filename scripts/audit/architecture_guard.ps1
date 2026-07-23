@@ -5,16 +5,26 @@
 #
 # Compares lib/ Dart files against docs/APP_STRUCTURE.md manifest keywords.
 # Does NOT modify files.
+# Cross-platform: Windows PowerShell / pwsh and Ubuntu GitHub Actions pwsh.
 
 param(
     [switch]$Strict
 )
 
 $ErrorActionPreference = 'Stop'
-$repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
+
+# Nested Join-Path — do not use Windows-only '..\..' literals (backslash is not a
+# path separator on Linux / Ubuntu pwsh).
+$repoRoot = (
+    Resolve-Path (
+        Join-Path (
+            Join-Path $PSScriptRoot '..'
+        ) '..'
+    )
+).Path
 Set-Location $repoRoot
 
-$appStructurePath = Join-Path $repoRoot 'docs\APP_STRUCTURE.md'
+$appStructurePath = Join-Path (Join-Path $repoRoot 'docs') 'APP_STRUCTURE.md'
 $appStructure = Get-Content $appStructurePath -Raw
 
 $violations = [System.Collections.Generic.List[string]]::new()
@@ -22,6 +32,43 @@ $warnings = [System.Collections.Generic.List[string]]::new()
 
 function Add-Violation([string]$msg) { $violations.Add($msg) }
 function Add-Warning([string]$msg) { $warnings.Add($msg) }
+
+function Get-RepoRelativePath([string]$fullPath) {
+    $full = [System.IO.Path]::GetFullPath($fullPath)
+    $root = [System.IO.Path]::GetFullPath($repoRoot)
+    $rootPrefix = $root.TrimEnd([char[]]@('\', '/'))
+    if ($full.Length -ge $rootPrefix.Length -and
+        ($full.StartsWith($rootPrefix, [System.StringComparison]::OrdinalIgnoreCase) -or
+         $full.StartsWith($rootPrefix, [System.StringComparison]::Ordinal))) {
+        $rel = $full.Substring($rootPrefix.Length).TrimStart([char[]]@('\', '/'))
+        return $rel.Replace('\', '/')
+    }
+    return $full.Replace('\', '/')
+}
+
+function Get-RepoPath([string[]]$segments) {
+    $p = $repoRoot
+    foreach ($s in $segments) {
+        $p = Join-Path $p $s
+    }
+    return $p
+}
+
+# List dart files under a repo-relative directory whose contents match [regex] $pattern.
+function Find-DartFilesMatching([string]$repoRelativeDir, [string]$pattern) {
+    $searchRoot = Get-RepoPath ($repoRelativeDir -split '/')
+    if (-not (Test-Path -LiteralPath $searchRoot)) {
+        return @()
+    }
+    $hits = [System.Collections.Generic.List[string]]::new()
+    Get-ChildItem -LiteralPath $searchRoot -Recurse -Filter '*.dart' -File -ErrorAction SilentlyContinue |
+        ForEach-Object {
+            if (Select-String -LiteralPath $_.FullName -Pattern $pattern -Quiet) {
+                $hits.Add((Get-RepoRelativePath $_.FullName))
+            }
+        }
+    return $hits
+}
 
 # --- 0. APP_STRUCTURE debt wording (strict manifest hygiene) ---
 $debtPatterns = @(
@@ -48,33 +95,31 @@ foreach ($pat in $debtPatterns) {
 }
 
 # --- 1. Forbidden imports ---
+# Path values use forward-slash repo-relative segments (resolved via Join-Path).
 $forbiddenImportRules = @(
-    @{ Label = 'data->features'; Path = 'lib\data'; Pattern = "import 'package:counter/features/" },
-    @{ Label = 'core->features'; Path = 'lib\core'; Pattern = "import 'package:counter/features/" },
-    @{ Label = 'services->features'; Path = 'lib\services'; Pattern = "import 'package:counter/features/" },
-    @{ Label = 'core->database_service'; Path = 'lib\core'; Pattern = "import 'package:counter/data/database_service.dart'" },
-    @{ Label = 'shared->features'; Path = 'lib\shared'; Pattern = "import 'package:counter/features/" },
-    @{ Label = 'shared->database_service'; Path = 'lib\shared'; Pattern = "import 'package:counter/data/database_service.dart'" },
-    @{ Label = 'shared/voice->data/voice'; Path = 'lib\shared\voice'; Pattern = "import 'package:counter/data/voice/" },
-    @{ Label = 'shared/categories->features'; Path = 'lib\shared\categories'; Pattern = "import 'package:counter/features/" },
-    @{ Label = 'shared/categories->database_service'; Path = 'lib\shared\categories'; Pattern = "import 'package:counter/data/database_service.dart'" },
-    @{ Label = 'shared/categories->app/shell'; Path = 'lib\shared\categories'; Pattern = "import 'package:counter/app/shell/" }
+    @{ Label = 'data->features'; Path = 'lib/data'; Pattern = "import 'package:counter/features/" },
+    @{ Label = 'core->features'; Path = 'lib/core'; Pattern = "import 'package:counter/features/" },
+    @{ Label = 'services->features'; Path = 'lib/services'; Pattern = "import 'package:counter/features/" },
+    @{ Label = 'core->database_service'; Path = 'lib/core'; Pattern = "import 'package:counter/data/database_service.dart'" },
+    @{ Label = 'shared->features'; Path = 'lib/shared'; Pattern = "import 'package:counter/features/" },
+    @{ Label = 'shared->database_service'; Path = 'lib/shared'; Pattern = "import 'package:counter/data/database_service.dart'" },
+    @{ Label = 'shared/voice->data/voice'; Path = 'lib/shared/voice'; Pattern = "import 'package:counter/data/voice/" },
+    @{ Label = 'shared/categories->features'; Path = 'lib/shared/categories'; Pattern = "import 'package:counter/features/" },
+    @{ Label = 'shared/categories->database_service'; Path = 'lib/shared/categories'; Pattern = "import 'package:counter/data/database_service.dart'" },
+    @{ Label = 'shared/categories->app/shell'; Path = 'lib/shared/categories'; Pattern = "import 'package:counter/app/shell/" }
 )
 
 foreach ($rule in $forbiddenImportRules) {
-    $hits = @()
-    if (Test-Path $rule.Path) {
-        $hits = rg -l $rule.Pattern $rule.Path --glob '*.dart' 2>$null
-    }
-    foreach ($hit in $hits) {
-        $rel = $hit.Replace('\', '/')
+    $hits = Find-DartFilesMatching $rule.Path $rule.Pattern
+    foreach ($rel in $hits) {
         Add-Violation "FORBIDDEN_IMPORT ($($rule.Label)) $rel"
     }
 }
 
 # --- 2. Root lib/*.dart allowlist (only entry files) ---
 $rootLibAllow = @('main.dart', 'app_shell.dart')
-Get-ChildItem lib -Filter '*.dart' -File -ErrorAction SilentlyContinue | ForEach-Object {
+$libRoot = Get-RepoPath @('lib')
+Get-ChildItem -LiteralPath $libRoot -Filter '*.dart' -File -ErrorAction SilentlyContinue | ForEach-Object {
     if ($rootLibAllow -notcontains $_.Name) {
         Add-Violation "UNEXPECTED_ROOT_LIB lib/$($_.Name) (allowed: $($rootLibAllow -join ', '))"
     }
@@ -82,18 +127,18 @@ Get-ChildItem lib -Filter '*.dart' -File -ErrorAction SilentlyContinue | ForEach
 
 # --- 3. Experiment / diag filenames in lib/ ---
 $experimentNamePattern = '^(p0|p1|pj|pk|diag|debug|probe|tmp|old|backup|hotfix)|_(diag|debug|probe|tmp|hotfix)\.dart$'
-Get-ChildItem lib -Recurse -Filter '*.dart' -File | ForEach-Object {
+Get-ChildItem -LiteralPath $libRoot -Recurse -Filter '*.dart' -File | ForEach-Object {
     $name = $_.Name
     if ($name -match $experimentNamePattern) {
-        $rel = $_.FullName.Replace($repoRoot + '\', '').Replace('\', '/')
+        $rel = Get-RepoRelativePath $_.FullName
         Add-Violation "EXPERIMENT_FILENAME $rel"
     }
 }
 
 # --- 4. lib/ Dart files missing from APP_STRUCTURE.md ---
-$libDart = Get-ChildItem lib -Recurse -Filter '*.dart' -File
+$libDart = Get-ChildItem -LiteralPath $libRoot -Recurse -Filter '*.dart' -File
 foreach ($f in $libDart) {
-    $rel = $f.FullName.Replace($repoRoot + '\', '').Replace('\', '/')
+    $rel = Get-RepoRelativePath $f.FullName
     $needle = $rel -replace '^lib/', ''
     if ($appStructure -notmatch [regex]::Escape($f.Name) -and
         $appStructure -notmatch [regex]::Escape($needle)) {
@@ -172,7 +217,8 @@ $deletedMustStayGone = @(
   'lib/data/rendered_day_body_cache.dart'
 )
 foreach ($gone in $deletedMustStayGone) {
-    if (Test-Path (Join-Path $repoRoot $gone)) {
+    $gonePath = Get-RepoPath ($gone -split '/')
+    if (Test-Path -LiteralPath $gonePath) {
         Add-Violation "DELETED_FILE_REGRESSION $gone exists again"
     }
 }
@@ -203,20 +249,29 @@ catch {
 }
 
 # --- 7. Large file warnings (>1800 lines) — warning mode only ---
-Get-ChildItem lib -Recurse -Filter '*.dart' -File | ForEach-Object {
-    $lines = (Get-Content $_.FullName | Measure-Object -Line).Lines
+Get-ChildItem -LiteralPath $libRoot -Recurse -Filter '*.dart' -File | ForEach-Object {
+    $lines = (Get-Content -LiteralPath $_.FullName | Measure-Object -Line).Lines
     if ($lines -gt 1800) {
-        $rel = $_.FullName.Replace($repoRoot + '\', '').Replace('\', '/')
+        $rel = Get-RepoRelativePath $_.FullName
         Add-Warning "LARGE_FILE $rel lines=$lines (review mixed responsibilities; do not split by line count alone)"
     }
 }
 
 # --- 8. Raw UI primitives in features (informational warning) ---
 $rawUi = @('ElevatedButton', 'FilledButton', 'OutlinedButton', 'TextButton', 'IconButton')
+$featuresRoot = Get-RepoPath @('lib', 'features')
 foreach ($w in $rawUi) {
-    $count = (rg -c $w lib\features --glob '*.dart' 2>$null | Measure-Object).Count
-    if ($count -gt 0) {
-        Add-Warning "RAW_UI $w present in $count feature file(s) - migrate to AppButton/AppIconButton per DESIGN_SYSTEM"
+    $fileCount = 0
+    if (Test-Path -LiteralPath $featuresRoot) {
+        Get-ChildItem -LiteralPath $featuresRoot -Recurse -Filter '*.dart' -File -ErrorAction SilentlyContinue |
+            ForEach-Object {
+                if (Select-String -LiteralPath $_.FullName -Pattern $w -SimpleMatch -Quiet) {
+                    $fileCount++
+                }
+            }
+    }
+    if ($fileCount -gt 0) {
+        Add-Warning "RAW_UI $w present in $fileCount feature file(s) - migrate to AppButton/AppIconButton per DESIGN_SYSTEM"
     }
 }
 
