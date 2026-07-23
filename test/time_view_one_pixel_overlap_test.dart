@@ -1,5 +1,5 @@
 import 'package:counter/data/plan_time_sequential_cascade.dart';
-import 'package:counter/features/planning/time_view/time_view_overlap_resolver.dart';
+import 'package:counter/features/planning/time_view/time_view_drop_preview.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
