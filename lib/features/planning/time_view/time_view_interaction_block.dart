@@ -8,8 +8,9 @@ import 'package:flutter/material.dart';
 /// Pointer routing for proportional Time View cards.
 ///
 /// The top and bottom edge strips own duration resize across the full card
-/// width. The remaining center body immediately owns moving on pointer down.
-/// A release without meaningful movement is treated as a short click.
+/// width. The center body captures the pointer immediately, but the visible
+/// drag state starts only on the first real movement. A release without any
+/// movement remains a short click and never flashes a drag preview.
 class TimelinePlanInteractionBlock extends StatefulWidget {
   const TimelinePlanInteractionBlock({
     required this.canMove,
@@ -28,6 +29,7 @@ class TimelinePlanInteractionBlock extends StatefulWidget {
     this.onVerticalDragEnd,
     this.onVerticalDragCancel,
     this.onMovePointerDown,
+    this.onMovePointerRelease,
     this.onResizeStart,
     this.onResizeUpdate,
     this.onResizeEnd,
@@ -50,6 +52,7 @@ class TimelinePlanInteractionBlock extends StatefulWidget {
   final VoidCallback? onVerticalDragEnd;
   final VoidCallback? onVerticalDragCancel;
   final VoidCallback? onMovePointerDown;
+  final VoidCallback? onMovePointerRelease;
   final void Function(TimelineResizeEdge edge)? onResizeStart;
   final void Function(double deltaPx, double globalDy)? onResizeUpdate;
   final VoidCallback? onResizeEnd;
@@ -63,7 +66,6 @@ class TimelinePlanInteractionBlock extends StatefulWidget {
 class TimelinePlanInteractionBlockState
     extends State<TimelinePlanInteractionBlock> {
   double _moveAccumulatedDy = 0;
-  double _maxPointerTravelPx = 0;
   bool _resizing = false;
   bool _bodyDragActive = false;
   int? _activePointer;
@@ -73,7 +75,6 @@ class TimelinePlanInteractionBlockState
   int _lastVelocityMicros = 0;
   double _smoothedVerticalVelocity = 0;
 
-  double _shortClickTolerancePx = kPlanTimeDragThresholdTouchPx;
   bool _useImmediatePointerDrag = false;
 
   double get _resizeHandleHeight {
@@ -88,7 +89,6 @@ class TimelinePlanInteractionBlockState
   void _resetMoveGesture() {
     _bodyDragActive = false;
     _moveAccumulatedDy = 0;
-    _maxPointerTravelPx = 0;
     _pointerDownGlobal = null;
     _activePointer = null;
     _lastVelocityGlobalDy = null;
@@ -119,32 +119,39 @@ class TimelinePlanInteractionBlockState
     widget.onVerticalDragVelocityChanged?.call(_smoothedVerticalVelocity);
   }
 
-  void _beginMove(PointerDownEvent event, double resizeInset) {
+  void _captureMovePointer(PointerDownEvent event, double resizeInset) {
     if (_activePointer != null) return;
     _resetMoveGesture();
-    _bodyDragActive = true;
     _activePointer = event.pointer;
     _pendingGrabOffsetCanvasPx = event.localPosition.dy + resizeInset;
     _pointerDownGlobal = event.position;
-    _startVelocityTracking();
     if (kDebugMode) {
-      debugPrint('[TIME_VIEW_DRAG_CAPTURED_ON_POINTER_DOWN]');
+      debugPrint('[TIME_VIEW_POINTER_CAPTURED_WITHOUT_VISUAL_JUMP]');
     }
     widget.onMovePointerDown?.call();
+  }
+
+  void _startVisibleMove() {
+    if (_bodyDragActive) return;
+    _bodyDragActive = true;
+    _startVelocityTracking();
+    if (kDebugMode) {
+      debugPrint('[TIME_VIEW_DRAG_STARTED_ON_FIRST_MOVEMENT]');
+    }
     widget.onVerticalDragStart?.call(_pendingGrabOffsetCanvasPx);
   }
 
   void _updateMove(PointerMoveEvent event) {
-    if (_activePointer != event.pointer || !_bodyDragActive) return;
+    if (_activePointer != event.pointer) return;
     final down = _pointerDownGlobal;
-    if (down != null) {
-      _maxPointerTravelPx = math.max(
-        _maxPointerTravelPx,
-        (event.position - down).distance,
-      );
+    if (down == null) return;
+    final totalDelta = event.position - down;
+    if (!_bodyDragActive) {
+      if (totalDelta.distanceSquared == 0) return;
+      _startVisibleMove();
     }
     _trackVerticalVelocity(event.position.dy);
-    _moveAccumulatedDy += event.delta.dy;
+    _moveAccumulatedDy = totalDelta.dy;
     widget.onVerticalDragUpdate?.call(
       _moveAccumulatedDy,
       event.position.dy,
@@ -152,10 +159,11 @@ class TimelinePlanInteractionBlockState
   }
 
   void _finishMove(PointerUpEvent event) {
-    if (_activePointer != event.pointer || !_bodyDragActive) return;
-    final isShortClick = _maxPointerTravelPx < _shortClickTolerancePx;
-    if (isShortClick) {
-      widget.onVerticalDragCancel?.call();
+    if (_activePointer != event.pointer) return;
+    if (_bodyDragActive) {
+      widget.onVerticalDragEnd?.call();
+    } else {
+      widget.onMovePointerRelease?.call();
       if (kDebugMode) {
         debugPrint(
           widget.bulkSelectMode
@@ -164,15 +172,17 @@ class TimelinePlanInteractionBlockState
         );
       }
       widget.onBodyTap?.call();
-    } else {
-      widget.onVerticalDragEnd?.call();
     }
     _resetMoveGesture();
   }
 
   void _cancelMove(PointerCancelEvent event) {
-    if (_activePointer != event.pointer || !_bodyDragActive) return;
-    widget.onVerticalDragCancel?.call();
+    if (_activePointer != event.pointer) return;
+    if (_bodyDragActive) {
+      widget.onVerticalDragCancel?.call();
+    } else {
+      widget.onMovePointerRelease?.call();
+    }
     _resetMoveGesture();
   }
 
@@ -190,7 +200,7 @@ class TimelinePlanInteractionBlockState
             : SystemMouseCursors.grab,
         child: Listener(
           behavior: HitTestBehavior.translucent,
-          onPointerDown: (event) => _beginMove(event, resizeInset),
+          onPointerDown: (event) => _captureMovePointer(event, resizeInset),
           onPointerMove: _updateMove,
           onPointerUp: _finishMove,
           onPointerCancel: _cancelMove,
@@ -244,8 +254,6 @@ class TimelinePlanInteractionBlockState
   Widget build(BuildContext context) {
     if (!widget.canMove && !widget.canResize) return widget.child;
     final viewportWidth = MediaQuery.sizeOf(context).width;
-    _shortClickTolerancePx =
-        planTimeViewDragMovementThresholdForViewport(viewportWidth);
     _useImmediatePointerDrag =
         planTimeViewUsesImmediatePointerDrag(viewportWidth);
     final scheme = Theme.of(context).colorScheme;

@@ -61,208 +61,224 @@ extension PlanningTimeViewTimeViewCardLayer on PlanningTimeViewCoordinator {
         : timelineVerticalDragTimeLabel;
     final blockDensity = layout.density;
     final resizeHeightPx = math.max(heightPx, kPlanTimeCardMinHeightPx);
+    final reduceMotion = MediaQuery.disableAnimationsOf(host.context);
+    final settleDuration = isInteracting || reduceMotion
+        ? Duration.zero
+        : const Duration(milliseconds: 140);
 
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        if (isInteracting)
-          Positioned(
-            top: layout.topPx,
+    return KeyedSubtree(
+      key: ValueKey<String>('time-view-card-layer-$planKey'),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          if (isInteracting)
+            Positioned(
+              top: layout.topPx,
+              left: 0,
+              right: 0,
+              height: layout.heightPx,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal:
+                      PlanningTimeViewCoordinator.kTimelineBlockHorizontalPadPx,
+                ),
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: scheme.primaryContainer.withValues(alpha: 0.16),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: scheme.outlineVariant.withValues(alpha: 0.38),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          if (isInteracting && (interactionLabel ?? '').isNotEmpty)
+            Positioned(
+              top: (topPx - 22).clamp(0, canvasHeight - 20),
+              left: horizontalPad,
+              child: Material(
+                elevation: 1,
+                borderRadius: BorderRadius.circular(6),
+                color: scheme.primary.withValues(alpha: 0.92),
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  child: Text(
+                    interactionLabel!,
+                    style:
+                        Theme.of(host.context).textTheme.labelSmall?.copyWith(
+                              color: scheme.onPrimary,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 11,
+                            ),
+                  ),
+                ),
+              ),
+            ),
+          if (isInteracting)
+            Positioned(
+              top: topPx + heightPx - 2,
+              left: horizontalPad,
+              right: horizontalPad,
+              child: Container(
+                height: 2,
+                decoration: BoxDecoration(
+                  color: scheme.primary.withValues(alpha: 0.75),
+                  borderRadius: BorderRadius.circular(1),
+                ),
+              ),
+            ),
+          AnimatedPositioned(
+            key: ValueKey<String>('time-view-card-position-$planKey'),
+            duration: settleDuration,
+            curve: Curves.easeOutCubic,
+            top: topPx,
             left: 0,
             right: 0,
-            height: layout.heightPx,
+            height: resizeHeightPx,
             child: Padding(
               padding: const EdgeInsets.symmetric(
                 horizontal:
                     PlanningTimeViewCoordinator.kTimelineBlockHorizontalPadPx,
               ),
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: scheme.primaryContainer.withValues(alpha: 0.16),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: scheme.outlineVariant.withValues(alpha: 0.38),
+              child: RepaintBoundary(
+                child: TimelinePlanInteractionBlock(
+                  canMove: canMove,
+                  canResize: canResize,
+                  bulkSelectMode: host.planSelectMode,
+                  resizeHandlePx:
+                      PlanningTimeViewCoordinator.kTimelineResizeHandlePx,
+                  blockHeightPx: resizeHeightPx,
+                  controlsLeftInset: planCardBodyGestureLeftInsetPx(
+                    blockDensity,
+                    timeline: true,
                   ),
-                ),
-              ),
-            ),
-          ),
-        if (isInteracting && (interactionLabel ?? '').isNotEmpty)
-          Positioned(
-            top: (topPx - 22).clamp(0, canvasHeight - 20),
-            left: horizontalPad,
-            child: Material(
-              elevation: 1,
-              borderRadius: BorderRadius.circular(6),
-              color: scheme.primary.withValues(alpha: 0.92),
-              child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                child: Text(
-                  interactionLabel!,
-                  style: Theme.of(host.context).textTheme.labelSmall?.copyWith(
-                        color: scheme.onPrimary,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 11,
+                  controlsRightInset: planCardBodyGestureRightInsetPx(),
+                  onMovePointerDown: canMove
+                      ? () {
+                          setTimelineInteractionLock(true);
+                        }
+                      : null,
+                  onMovePointerRelease: canMove
+                      ? () {
+                          setTimelineInteractionLock(false);
+                        }
+                      : null,
+                  onBodyTap: () {
+                    if (host.planSelectMode) {
+                      if (kDebugMode) {
+                        debugPrint(
+                          '[TIME_VIEW_BULK_SELECTION_TOGGLED] key=$planKey',
+                        );
+                      }
+                      host.toggleKeySelection(planKey);
+                    } else {
+                      if (kDebugMode) {
+                        debugPrint('[TIME_VIEW_TAP_OPEN_EDIT] key=$planKey');
+                      }
+                      host.openEditDialog(layout.task);
+                    }
+                  },
+                  onVerticalDragStart: canMove
+                      ? (fingerGrabOffset) => beginTimelineVerticalDrag(
+                            task: layout.task,
+                            planKey: planKey,
+                            originTopPx: layout.topPx,
+                            originCardHeightPx: layout.heightPx,
+                            durationMin: durMin,
+                            hadEnd: hadEnd,
+                            planWallDay: planWallDay,
+                            rangeStart: rangeStart,
+                            rangeEnd: rangeEnd,
+                            selectedDayKey: selectedDayKey,
+                            fingerGrabOffsetCanvasPx: fingerGrabOffset,
+                            scheduledInRange: scheduledInRange,
+                          )
+                      : null,
+                  onVerticalDragVelocityChanged: canMove
+                      ? (velocity) {
+                          timelineVerticalDragVisualVelocityPxPerSec = velocity;
+                        }
+                      : null,
+                  onVerticalDragUpdate: canMove
+                      ? (delta, globalDy) => updateTimelineVerticalDrag(
+                            deltaPx: delta,
+                            globalDy: globalDy,
+                            planWallDay: planWallDay,
+                            rangeStart: rangeStart,
+                            rangeEnd: rangeEnd,
+                            canvasHeight: canvasHeight,
+                            scheduledInRange: scheduledInRange,
+                            planActualByPbId: planActualByPbId,
+                          )
+                      : null,
+                  onVerticalDragEnd: canMove
+                      ? () => commitTimelineVerticalDrag(
+                            planWallDay: planWallDay,
+                            rangeStart: rangeStart,
+                            rangeEnd: rangeEnd,
+                            scheduledInRange: scheduledInRange,
+                          )
+                      : null,
+                  onVerticalDragCancel:
+                      canMove ? cancelTimelineVerticalDrag : null,
+                  onResizeStart: canResize
+                      ? (edge) => beginTimelineResize(
+                            edge: edge,
+                            task: layout.task,
+                            planKey: planKey,
+                            originTopPx: layout.topPx,
+                            originHeightPx: layout.heightPx,
+                            originStartMin: times.startMin,
+                            originEndMin: times.endMin,
+                            planWallDay: planWallDay,
+                            rangeStart: rangeStart,
+                          )
+                      : null,
+                  onResizeUpdate: canResize
+                      ? (delta, globalDy) => updateTimelineResize(
+                            deltaPx: delta,
+                            globalDy: globalDy,
+                            planWallDay: planWallDay,
+                            rangeStart: rangeStart,
+                            rangeEnd: rangeEnd,
+                          )
+                      : null,
+                  onResizeEnd: canResize
+                      ? () => commitTimelineResize(
+                            planWallDay: planWallDay,
+                            rangeStart: rangeStart,
+                          )
+                      : null,
+                  onResizeCancel: canResize ? cancelTimelineResize : null,
+                  isInteracting: isInteracting,
+                  child: Align(
+                    alignment: Alignment.topCenter,
+                    child: SizedBox(
+                      height: resizeHeightPx,
+                      child: host.planCardRow(
+                        context: host.context,
+                        task: layout.task,
+                        key: planKey,
+                        displayDone:
+                            host.planDoneOverride[planKey] ?? layout.task.isDone,
+                        isSelected: host.selectedPlanKeys.contains(planKey),
+                        planActualByPbId: planActualByPbId,
+                        timelineEmbedded: true,
+                        timelineInteracting: isInteracting,
+                        timelineScheduleConflict: false,
+                        timelineTimeLabel: layout.projection?.plannedTimeLabel,
+                        timelineBlockHeightPx: resizeHeightPx,
                       ),
-                ),
-              ),
-            ),
-          ),
-        if (isInteracting)
-          Positioned(
-            top: topPx + heightPx - 2,
-            left: horizontalPad,
-            right: horizontalPad,
-            child: Container(
-              height: 2,
-              decoration: BoxDecoration(
-                color: scheme.primary.withValues(alpha: 0.75),
-                borderRadius: BorderRadius.circular(1),
-              ),
-            ),
-          ),
-        Positioned(
-          top: topPx,
-          left: 0,
-          right: 0,
-          height: resizeHeightPx,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal:
-                  PlanningTimeViewCoordinator.kTimelineBlockHorizontalPadPx,
-            ),
-            child: RepaintBoundary(
-              child: TimelinePlanInteractionBlock(
-                canMove: canMove,
-                canResize: canResize,
-                bulkSelectMode: host.planSelectMode,
-                resizeHandlePx:
-                    PlanningTimeViewCoordinator.kTimelineResizeHandlePx,
-                blockHeightPx: resizeHeightPx,
-                controlsLeftInset: planCardBodyGestureLeftInsetPx(
-                  blockDensity,
-                  timeline: true,
-                ),
-                controlsRightInset: planCardBodyGestureRightInsetPx(),
-                onMovePointerDown: canMove
-                    ? () {
-                        setTimelineInteractionLock(true);
-                      }
-                    : null,
-                onBodyTap: () {
-                  if (host.planSelectMode) {
-                    if (kDebugMode) {
-                      debugPrint(
-                        '[TIME_VIEW_BULK_SELECTION_TOGGLED] key=$planKey',
-                      );
-                    }
-                    host.toggleKeySelection(planKey);
-                  } else {
-                    if (kDebugMode) {
-                      debugPrint('[TIME_VIEW_TAP_OPEN_EDIT] key=$planKey');
-                    }
-                    host.openEditDialog(layout.task);
-                  }
-                },
-                onVerticalDragStart: canMove
-                    ? (fingerGrabOffset) => beginTimelineVerticalDrag(
-                          task: layout.task,
-                          planKey: planKey,
-                          originTopPx: layout.topPx,
-                          originCardHeightPx: layout.heightPx,
-                          durationMin: durMin,
-                          hadEnd: hadEnd,
-                          planWallDay: planWallDay,
-                          rangeStart: rangeStart,
-                          rangeEnd: rangeEnd,
-                          selectedDayKey: selectedDayKey,
-                          fingerGrabOffsetCanvasPx: fingerGrabOffset,
-                          scheduledInRange: scheduledInRange,
-                        )
-                    : null,
-                onVerticalDragVelocityChanged: canMove
-                    ? (velocity) {
-                        timelineVerticalDragVisualVelocityPxPerSec = velocity;
-                      }
-                    : null,
-                onVerticalDragUpdate: canMove
-                    ? (delta, globalDy) => updateTimelineVerticalDrag(
-                          deltaPx: delta,
-                          globalDy: globalDy,
-                          planWallDay: planWallDay,
-                          rangeStart: rangeStart,
-                          rangeEnd: rangeEnd,
-                          canvasHeight: canvasHeight,
-                          scheduledInRange: scheduledInRange,
-                          planActualByPbId: planActualByPbId,
-                        )
-                    : null,
-                onVerticalDragEnd: canMove
-                    ? () => commitTimelineVerticalDrag(
-                          planWallDay: planWallDay,
-                          rangeStart: rangeStart,
-                          rangeEnd: rangeEnd,
-                          scheduledInRange: scheduledInRange,
-                        )
-                    : null,
-                onVerticalDragCancel:
-                    canMove ? cancelTimelineVerticalDrag : null,
-                onResizeStart: canResize
-                    ? (edge) => beginTimelineResize(
-                          edge: edge,
-                          task: layout.task,
-                          planKey: planKey,
-                          originTopPx: layout.topPx,
-                          originHeightPx: layout.heightPx,
-                          originStartMin: times.startMin,
-                          originEndMin: times.endMin,
-                          planWallDay: planWallDay,
-                          rangeStart: rangeStart,
-                        )
-                    : null,
-                onResizeUpdate: canResize
-                    ? (delta, globalDy) => updateTimelineResize(
-                          deltaPx: delta,
-                          globalDy: globalDy,
-                          planWallDay: planWallDay,
-                          rangeStart: rangeStart,
-                          rangeEnd: rangeEnd,
-                        )
-                    : null,
-                onResizeEnd: canResize
-                    ? () => commitTimelineResize(
-                          planWallDay: planWallDay,
-                          rangeStart: rangeStart,
-                        )
-                    : null,
-                onResizeCancel: canResize ? cancelTimelineResize : null,
-                isInteracting: isInteracting,
-                child: Align(
-                  alignment: Alignment.topCenter,
-                  child: SizedBox(
-                    height: resizeHeightPx,
-                    child: host.planCardRow(
-                      context: host.context,
-                      task: layout.task,
-                      key: planKey,
-                      displayDone:
-                          host.planDoneOverride[planKey] ?? layout.task.isDone,
-                      isSelected: host.selectedPlanKeys.contains(planKey),
-                      planActualByPbId: planActualByPbId,
-                      timelineEmbedded: true,
-                      timelineInteracting: isInteracting,
-                      timelineScheduleConflict: false,
-                      timelineTimeLabel: layout.projection?.plannedTimeLabel,
-                      timelineBlockHeightPx: resizeHeightPx,
                     ),
                   ),
                 ),
               ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

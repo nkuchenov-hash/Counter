@@ -9,6 +9,8 @@ Widget _testHarness({
   VoidCallback? onResizeEnd,
   VoidCallback? onResizeCancel,
   VoidCallback? onBodyTap,
+  VoidCallback? onMovePointerDown,
+  VoidCallback? onMovePointerRelease,
   void Function(double fingerGrabOffsetCanvasPx)? onMoveStart,
   void Function(double deltaPx, double globalDy)? onMoveUpdate,
   VoidCallback? onMoveEnd,
@@ -33,6 +35,8 @@ Widget _testHarness({
               onResizeEnd: onResizeEnd,
               onResizeCancel: onResizeCancel,
               onBodyTap: onBodyTap,
+              onMovePointerDown: onMovePointerDown,
+              onMovePointerRelease: onMovePointerRelease,
               onVerticalDragStart: onMoveStart,
               onVerticalDragUpdate: onMoveUpdate,
               onVerticalDragEnd: onMoveEnd,
@@ -72,15 +76,15 @@ void main() {
     expect(ended, isTrue);
   });
 
-  testWidgets('center body captures drag immediately on pointer down',
+  testWidgets('pointer down captures without visual drag; first move starts it',
       (tester) async {
+    var captured = false;
     var moveStarted = false;
     var moveUpdates = 0;
     var moveEnded = false;
-    var tapped = false;
     await tester.pumpWidget(
       _testHarness(
-        onBodyTap: () => tapped = true,
+        onMovePointerDown: () => captured = true,
         onMoveStart: (_) => moveStarted = true,
         onMoveUpdate: (_, __) => moveUpdates += 1,
         onMoveEnd: () => moveEnded = true,
@@ -91,28 +95,31 @@ void main() {
     final topLeft = tester.getTopLeft(block);
     final gesture = await tester.startGesture(topLeft + const Offset(130, 50));
 
-    expect(moveStarted, isTrue);
+    expect(captured, isTrue);
+    expect(moveStarted, isFalse);
 
-    await gesture.moveBy(const Offset(0, 5));
+    await gesture.moveBy(const Offset(0, 1));
+    expect(moveStarted, isTrue);
+    expect(moveUpdates, greaterThan(0));
+
     await gesture.up();
     await tester.pump();
-
-    expect(moveUpdates, greaterThan(0));
     expect(moveEnded, isTrue);
-    expect(tapped, isFalse);
   });
 
-  testWidgets('short click cancels captured drag and opens the card',
+  testWidgets('short click releases capture and opens without drag flash',
       (tester) async {
+    var captured = false;
+    var released = false;
     var moveStarted = false;
-    var moveEnded = false;
     var moveCanceled = false;
     var tapped = false;
     await tester.pumpWidget(
       _testHarness(
+        onMovePointerDown: () => captured = true,
+        onMovePointerRelease: () => released = true,
         onBodyTap: () => tapped = true,
         onMoveStart: (_) => moveStarted = true,
-        onMoveEnd: () => moveEnded = true,
         onMoveCancel: () => moveCanceled = true,
       ),
     );
@@ -123,9 +130,10 @@ void main() {
     await gesture.up();
     await tester.pump();
 
-    expect(moveStarted, isTrue);
-    expect(moveCanceled, isTrue);
-    expect(moveEnded, isFalse);
+    expect(captured, isTrue);
+    expect(released, isTrue);
+    expect(moveStarted, isFalse);
+    expect(moveCanceled, isFalse);
     expect(tapped, isTrue);
   });
 }
