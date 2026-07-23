@@ -63,11 +63,9 @@ extension PlanningTimeViewTimeViewCardLayer on PlanningTimeViewCoordinator {
         : timelineVerticalDragTimeLabel;
     final blockDensity = layout.density;
     final resizeHeightPx = math.max(heightPx, kPlanTimeCardMinHeightPx);
-    final physicalPhase = isResizing
-        ? AppPhysicalCardPhase.resizing
-        : isDragging
-            ? AppPhysicalCardPhase.dragging
-            : AppPhysicalCardPhase.idle;
+    final physicalPhase = isDragging
+        ? AppPhysicalCardPhase.dragging
+        : AppPhysicalCardPhase.idle;
     final resizeAlignment = timelineResizeEdge == TimelineResizeEdge.top
         ? Alignment.bottomCenter
         : Alignment.topCenter;
