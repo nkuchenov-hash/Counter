@@ -29,6 +29,7 @@ class TimelinePlanInteractionBlock extends StatefulWidget {
     this.onVerticalDragEnd,
     this.onVerticalDragCancel,
     this.onMovePointerDown,
+    this.onMovePointerRelease,
     this.onResizeStart,
     this.onResizeUpdate,
     this.onResizeEnd,
@@ -51,6 +52,7 @@ class TimelinePlanInteractionBlock extends StatefulWidget {
   final VoidCallback? onVerticalDragEnd;
   final VoidCallback? onVerticalDragCancel;
   final VoidCallback? onMovePointerDown;
+  final VoidCallback? onMovePointerRelease;
   final void Function(TimelineResizeEdge edge)? onResizeStart;
   final void Function(double deltaPx, double globalDy)? onResizeUpdate;
   final VoidCallback? onResizeEnd;
@@ -161,7 +163,7 @@ class TimelinePlanInteractionBlockState
     if (_bodyDragActive) {
       widget.onVerticalDragEnd?.call();
     } else {
-      widget.onVerticalDragCancel?.call();
+      widget.onMovePointerRelease?.call();
       if (kDebugMode) {
         debugPrint(
           widget.bulkSelectMode
@@ -176,7 +178,11 @@ class TimelinePlanInteractionBlockState
 
   void _cancelMove(PointerCancelEvent event) {
     if (_activePointer != event.pointer) return;
-    widget.onVerticalDragCancel?.call();
+    if (_bodyDragActive) {
+      widget.onVerticalDragCancel?.call();
+    } else {
+      widget.onMovePointerRelease?.call();
+    }
     _resetMoveGesture();
   }
 
