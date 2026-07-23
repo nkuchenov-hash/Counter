@@ -29,7 +29,7 @@ Flutter time tracker. Owner: Nick (UX designer, not a developer). Goal: best tim
 
 ## Structure check (vs `docs/APP_STRUCTURE.md`)
 
-Verified 2026-06-10 (shell paths 2026-07-21; time ownership 2026-07-21; diagnostics ownership 2026-07-22; voice ownership 2026-07-22; categories ownership 2026-07-23). **Core layout matches** the documented map: `lib/data/` (Brain + part files + `data/voice/` + `data/categories/`), `lib/data/local_sync/` (offline outboxes), `lib/features/` (UI modules + `settings/voice/` + `settings/categories/`), `lib/shared/time/`, `lib/shared/diagnostics/`, `lib/shared/voice/`, `lib/shared/categories/`, `lib/core/` (theme + widgets + tray/window), `lib/app/shell/` (form-factor shell), `lib/l10n/`, `lib/services/`, `app_shell.dart`, `main.dart`.
+Verified 2026-06-10 (shell paths 2026-07-21; time/diagnostics/voice/categories ownership 2026-07-21–23; Stage B drift audit 2026-07-23). **Core layout matches** the documented map: `lib/data/` (Brain + part files + `data/voice/` + `data/categories/`), `lib/data/local_sync/` (offline outboxes), `lib/features/` (UI modules + `settings/voice/` + `settings/categories/`), `lib/shared/time/`, `lib/shared/diagnostics/`, `lib/shared/voice/`, `lib/shared/categories/`, `lib/core/` (theme + widgets + tray/window), `lib/app/shell/` (form-factor shell), `lib/l10n/`, `lib/services/`, `app_shell.dart`, `main.dart`.
 
 **Known drift** (harmless; do not “fix” unless asked):
 
@@ -39,8 +39,7 @@ Verified 2026-06-10 (shell paths 2026-07-21; time ownership 2026-07-21; diagnost
 | Models import path | `package:counter/data/models.dart` | canonical — no root barrel |
 | Planning widget name | `PlanningPage` / `PlanningSwipeWrapper` in `planning_view.dart` | file name only (no `PlanningView` class) |
 | Lists widget name | `ListsPage` in `lists_view.dart` | file name only |
-| Extra at `lib/` root | `auth_service.dart`, `auth_screen.dart` (OAuth legacy) | only `features/auth/` listed |
-| Extra data files | `base_database.dart`, `voice_audio_web.dart` | stubs only in doc |
+| Root `lib/*.dart` | Only `main.dart` + `app_shell.dart` (compat re-export); former `auth_*` / root barrels stay gone (guard) | matches `APP_STRUCTURE` + guard allowlist |
 | Local sync (O1) | `lib/data/local_sync/*.dart` | not in older `APP_STRUCTURE.md` tree — see **Local sync** section below |
 | Governing docs path | `counter/docs/*.md` | some older refs say `lib/DATA_MAP.md` |
 

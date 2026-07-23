@@ -11,6 +11,10 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-23] - Structure: close Stage B drift audit [engineering]
+
+* **Phase 2F:** Audited Roadmap Stage B (root barrels, `Archive/`, duplicate l10n). Only `lib/main.dart` + `lib/app_shell.dart` at root; `Archive/` already gone (guard enforced); l10n remains single `dictionary.dart` + `langs/` SSOT. No production Dart changes. Report: `docs/reports/STAGE_B_STRUCTURE_DRIFT_AUDIT_2026-07-23.md`.
+
 ## [2026-07-23] - CI: enforce strict architecture guard [engineering]
 
 * **Phase 2E:** Added `.github/workflows/architecture-guard.yml` (`Architecture Guard` / `strict-structure`) for PRs to `main`; wired `scripts/audit/architecture_guard.ps1 -Strict` after checkout in `deploy.yml` and `windows-desktop-build.yml` before Flutter. No production Dart or app behavior changes.
