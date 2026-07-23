@@ -43,7 +43,7 @@ Widget _testHarness({
 }
 
 void main() {
-  testWidgets('top-right grip owns pointer through resize completion',
+  testWidgets('top edge resizes from the left side of the card',
       (tester) async {
     TimelineResizeEdge? edge;
     var updates = 0;
@@ -58,7 +58,7 @@ void main() {
 
     final block = find.byType(TimelinePlanInteractionBlock);
     final topLeft = tester.getTopLeft(block);
-    final gesture = await tester.startGesture(topLeft + const Offset(230, 4));
+    final gesture = await tester.startGesture(topLeft + const Offset(20, 4));
     await gesture.moveBy(const Offset(0, 24));
     await gesture.up();
     await tester.pump();
@@ -68,7 +68,7 @@ void main() {
     expect(ended, isTrue);
   });
 
-  testWidgets('bottom-right grip cancels without leaving resize active',
+  testWidgets('bottom edge resizes from the center and cancels cleanly',
       (tester) async {
     TimelineResizeEdge? edge;
     var ended = false;
@@ -85,7 +85,7 @@ void main() {
     final block = find.byType(TimelinePlanInteractionBlock);
     final bottomLeft = tester.getBottomLeft(block);
     final gesture =
-        await tester.startGesture(bottomLeft + const Offset(230, -4));
+        await tester.startGesture(bottomLeft + const Offset(130, -4));
     await gesture.moveBy(const Offset(0, -24));
     await gesture.cancel();
     await tester.pump();
@@ -95,8 +95,7 @@ void main() {
     expect(ended, isFalse);
   });
 
-  testWidgets('center pickup starts move after small desktop movement',
-      (tester) async {
+  testWidgets('center body starts move without entering resize', (tester) async {
     TimelineResizeEdge? resizeEdge;
     var moveStarted = false;
     var moveUpdates = 0;
