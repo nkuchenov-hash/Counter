@@ -1,0 +1,38 @@
+name: Temporary Physical Card Motion Check
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'lib/core/widgets/life_card.dart'
+      - 'lib/features/planning/time_view/**'
+      - 'lib/features/planning/widgets/plan_card_reorder_settle.dart'
+      - 'lib/features/planning/widgets/planning_list_helpers.dart'
+      - 'test/app_physical_drag_surface_test.dart'
+      - '.github/workflows/_temporary_physical_card_motion_check.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  analyze-and-focused-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Analyze
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+
+      - name: Run three physical-motion tests
+        run: flutter test test/app_physical_drag_surface_test.dart
