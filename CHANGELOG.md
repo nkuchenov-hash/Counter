@@ -15,6 +15,7 @@
 
 * **Phase 2E:** Added `.github/workflows/architecture-guard.yml` (`Architecture Guard` / `strict-structure`) for PRs to `main`; wired `scripts/audit/architecture_guard.ps1 -Strict` after checkout in `deploy.yml` and `windows-desktop-build.yml` before Flutter. No production Dart or app behavior changes.
 * **Phase 2E correction:** Architecture Guard checkout uses `fetch-depth: 0`; `git diff --check` runs against the PR base…HEAD range (or `origin/main...HEAD` on `workflow_dispatch`) so committed whitespace errors are caught.
+* **Phase 2E correction:** `architecture_guard.ps1` path resolution is cross-platform (no Windows-only `..\..` / `lib\…` literals); forbidden-import scans use PowerShell `Select-String` so Ubuntu Actions does not need `rg`.
 
 ## [2026-07-23] - Categories: assign code to real owners [engineering]
 
