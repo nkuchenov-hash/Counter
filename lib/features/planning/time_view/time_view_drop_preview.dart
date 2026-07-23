@@ -10,17 +10,42 @@ import 'package:flutter/material.dart';
 
 import 'package:counter/features/planning/time_view/planning_time_view.dart';
 
-/// List-like reorder trigger based on the dragged card rectangle, not cursor Y.
-/// Exact edge contact is not enough; one physical pixel of overlap is.
-TimeViewDropIntent? resolveTimeViewOnePixelOverlapIntent({
+/// Separates physical edge collision from a deliberate reorder.
+///
+/// [resolvedTopPx] is the active card's collision-safe position. A non-null
+/// [insertionIntent] exists only after the dragged card's center crosses the
+/// contacted card's center. Mere edge overlap never creates an insertion.
+class TimeViewDragGeometryResolution {
+  const TimeViewDragGeometryResolution({
+    required this.resolvedTopPx,
+    this.insertionIntent,
+    this.contactPlanId,
+  });
+
+  final double resolvedTopPx;
+  final TimeViewDropIntent? insertionIntent;
+  final String? contactPlanId;
+
+  bool get isContactOnly =>
+      contactPlanId != null && insertionIntent == null;
+}
+
+/// Physical Time View collision law.
+///
+/// - Edge contact/overlap clamps the dragged card next to the stationary card.
+/// - No stationary card moves at that stage.
+/// - Reorder begins only when the dragged card's center crosses the target
+///   card's center in the current movement direction.
+TimeViewDragGeometryResolution resolveTimeViewCollisionAndInsertion({
   required double draggedTopPx,
   required double draggedHeightPx,
   required double verticalDeltaPx,
   required List<TimeViewCardLayout> scheduledCardLayouts,
   required String draggedPlanId,
-  double minimumOverlapPx = 1.0,
 }) {
-  if (verticalDeltaPx == 0 || draggedHeightPx <= 0) return null;
+  if (verticalDeltaPx == 0 || draggedHeightPx <= 0) {
+    return TimeViewDragGeometryResolution(resolvedTopPx: draggedTopPx);
+  }
 
   final draggedBottomPx = draggedTopPx + draggedHeightPx;
   final candidates = <TimeViewCardLayout>[];
@@ -28,17 +53,44 @@ TimeViewDropIntent? resolveTimeViewOnePixelOverlapIntent({
     if (layout.planId == draggedPlanId) continue;
     final overlapPx = math.min(draggedBottomPx, layout.bottomPx) -
         math.max(draggedTopPx, layout.topPx);
-    if (overlapPx >= minimumOverlapPx) candidates.add(layout);
+    if (overlapPx > 0) candidates.add(layout);
   }
-  if (candidates.isEmpty) return null;
+  if (candidates.isEmpty) {
+    return TimeViewDragGeometryResolution(resolvedTopPx: draggedTopPx);
+  }
 
+  final draggedCenterPx = draggedTopPx + draggedHeightPx / 2;
   if (verticalDeltaPx > 0) {
     candidates.sort((a, b) => a.topPx.compareTo(b.topPx));
-    return TimeViewDropIntent.targetCardAfter(candidates.last.planId);
+    final target = candidates.first;
+    final targetCenterPx = target.topPx + target.heightPx / 2;
+    if (draggedCenterPx >= targetCenterPx) {
+      return TimeViewDragGeometryResolution(
+        resolvedTopPx: draggedTopPx,
+        insertionIntent: TimeViewDropIntent.targetCardAfter(target.planId),
+        contactPlanId: target.planId,
+      );
+    }
+    return TimeViewDragGeometryResolution(
+      resolvedTopPx: target.topPx - draggedHeightPx,
+      contactPlanId: target.planId,
+    );
   }
 
   candidates.sort((a, b) => a.bottomPx.compareTo(b.bottomPx));
-  return TimeViewDropIntent.targetCardBefore(candidates.first.planId);
+  final target = candidates.last;
+  final targetCenterPx = target.topPx + target.heightPx / 2;
+  if (draggedCenterPx <= targetCenterPx) {
+    return TimeViewDragGeometryResolution(
+      resolvedTopPx: draggedTopPx,
+      insertionIntent: TimeViewDropIntent.targetCardBefore(target.planId),
+      contactPlanId: target.planId,
+    );
+  }
+  return TimeViewDragGeometryResolution(
+    resolvedTopPx: target.bottomPx,
+    contactPlanId: target.planId,
+  );
 }
 
 extension PlanningTimeViewTimeViewDropPreview on PlanningTimeViewCoordinator {
@@ -111,16 +163,27 @@ extension PlanningTimeViewTimeViewDropPreview on PlanningTimeViewCoordinator {
     );
   }
 
-  void _stageOnePixelOverlapCascade({
-    required TimeViewDropIntent overlapIntent,
+  bool get _isLiveTimelineDragUpdateFrame =>
+      (timelineFingerDragDeltaPx - timelineVerticalDragDeltaPx).abs() > 0.001;
+
+  void _stageCollisionOnlyPreview({
+    required String draggedPlanId,
+    required double resolvedTopPx,
+  }) {
+    if (!_isLiveTimelineDragUpdateFrame) return;
+    stageTimelineOverlapCascadePreview(
+      <String, double>{draggedPlanId: resolvedTopPx},
+    );
+  }
+
+  void _stageTargetInsertionCascade({
+    required TimeViewDropIntent insertionDropIntent,
     required List<TimeViewCardLayout> cardLayouts,
     required String draggedPlanId,
     required DateTime planWallDay,
     required PlanTimeViewDurationGrid grid,
   }) {
-    final isLiveUpdateFrame =
-        (timelineFingerDragDeltaPx - timelineVerticalDragDeltaPx).abs() > 0.001;
-    if (!isLiveUpdateFrame) return;
+    if (!_isLiveTimelineDragUpdateFrame) return;
 
     final scheduledInRange = cachedTimeModeProjections
         .map((projection) => projection.projectedTask)
@@ -128,7 +191,7 @@ extension PlanningTimeViewTimeViewDropPreview on PlanningTimeViewCoordinator {
     if (scheduledInRange.isEmpty) return;
 
     var insertionIntent = buildTimeViewInsertionIntentFromDropIntent(
-      drop: overlapIntent,
+      drop: insertionDropIntent,
       scheduledCardLayouts: cardLayouts,
       draggedPlanId: draggedPlanId,
       draggedDurationMinutes: timelineVerticalDragDurationMin,
@@ -181,33 +244,47 @@ extension PlanningTimeViewTimeViewDropPreview on PlanningTimeViewCoordinator {
         (timelineVerticalDragOriginTopPx + timelineFingerDragDeltaPx)
             .clamp(0.0, maxTopPx)
             .toDouble();
-    final overlapIntent = resolveTimeViewOnePixelOverlapIntent(
+    final resolution = resolveTimeViewCollisionAndInsertion(
       draggedTopPx: draggedTopPx,
       draggedHeightPx: timelineVerticalDragCardHeightPx,
       verticalDeltaPx: timelineFingerDragDeltaPx,
       scheduledCardLayouts: cardLayouts,
       draggedPlanId: draggedPlanId,
     );
+    final insertionDropIntent = resolution.insertionIntent;
 
-    if (overlapIntent != null) {
-      _stageOnePixelOverlapCascade(
-        overlapIntent: overlapIntent,
+    if (insertionDropIntent != null) {
+      _stageTargetInsertionCascade(
+        insertionDropIntent: insertionDropIntent,
         cardLayouts: cardLayouts,
         draggedPlanId: draggedPlanId,
         planWallDay: planWallDay,
         grid: grid,
       );
       logTimeDropGuard(
-        'phase=resolve source=onePixelOverlap '
-        'position=${overlapIntent.insertBefore ? 'before' : 'after'} '
-        'dragged=$draggedPlanId target=${overlapIntent.targetPlanId}',
+        'phase=resolve source=centerCrossing '
+        'position=${insertionDropIntent.insertBefore ? 'before' : 'after'} '
+        'dragged=$draggedPlanId target=${insertionDropIntent.targetPlanId}',
       );
-      return overlapIntent;
+      return insertionDropIntent;
     }
 
-    final minute = snapTimelineMinutes(grid.minutesFromY(draggedTopPx));
+    if (resolution.isContactOnly) {
+      _stageCollisionOnlyPreview(
+        draggedPlanId: draggedPlanId,
+        resolvedTopPx: resolution.resolvedTopPx,
+      );
+      logTimeDropGuard(
+        'phase=resolve source=edgeCollision noReorder=true '
+        'dragged=$draggedPlanId target=${resolution.contactPlanId} '
+        'top=${resolution.resolvedTopPx.toStringAsFixed(1)}',
+      );
+    }
+
+    final minute =
+        snapTimelineMinutes(grid.minutesFromY(resolution.resolvedTopPx));
     logTimeDropGuard(
-      'phase=resolve source=emptyCanvas top=${draggedTopPx.toStringAsFixed(1)} '
+      'phase=resolve source=emptyCanvas top=${resolution.resolvedTopPx.toStringAsFixed(1)} '
       'finger=${fingerCanvasY.toStringAsFixed(1)} '
       'minute=${minute.toStringAsFixed(1)}',
     );
