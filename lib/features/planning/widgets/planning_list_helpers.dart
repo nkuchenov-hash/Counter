@@ -1,8 +1,7 @@
-import 'dart:ui' show lerpDouble;
-
+import 'package:counter/core/widgets/app_physical_drag_surface.dart';
 import 'package:flutter/material.dart';
 
-/// Shared elevation proxy for Planning reorderable lists.
+/// Shared physical proxy for Planning reorderable lists.
 Widget planningReorderProxyDecorator(
   Widget child,
   int index,
@@ -10,16 +9,14 @@ Widget planningReorderProxyDecorator(
 ) {
   return AnimatedBuilder(
     animation: animation,
-    builder: (context, c) {
-      final v = Curves.easeInOut.transform(animation.value);
-      return Material(
-        elevation: lerpDouble(0, 10, v) ?? 0,
-        shadowColor: Colors.black38,
-        borderRadius: BorderRadius.circular(12),
-        clipBehavior: Clip.antiAlias,
-        child: c,
+    child: child,
+    builder: (context, proxyChild) {
+      final progress = Curves.easeOutCubic.transform(animation.value);
+      return AppPhysicalDragVisual(
+        phase: AppPhysicalCardPhase.dragging,
+        progress: progress,
+        child: proxyChild!,
       );
     },
-    child: child,
   );
 }
