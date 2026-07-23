@@ -43,7 +43,8 @@ Widget _testHarness({
 }
 
 void main() {
-  testWidgets('top grip owns pointer through resize completion', (tester) async {
+  testWidgets('top-right grip owns pointer through resize completion',
+      (tester) async {
     TimelineResizeEdge? edge;
     var updates = 0;
     var ended = false;
@@ -57,7 +58,7 @@ void main() {
 
     final block = find.byType(TimelinePlanInteractionBlock);
     final topLeft = tester.getTopLeft(block);
-    final gesture = await tester.startGesture(topLeft + const Offset(130, 4));
+    final gesture = await tester.startGesture(topLeft + const Offset(230, 4));
     await gesture.moveBy(const Offset(0, 24));
     await gesture.up();
     await tester.pump();
@@ -67,7 +68,7 @@ void main() {
     expect(ended, isTrue);
   });
 
-  testWidgets('bottom grip cancels resize without leaving interaction active',
+  testWidgets('bottom-right grip cancels without leaving resize active',
       (tester) async {
     TimelineResizeEdge? edge;
     var ended = false;
@@ -84,7 +85,7 @@ void main() {
     final block = find.byType(TimelinePlanInteractionBlock);
     final bottomLeft = tester.getBottomLeft(block);
     final gesture =
-        await tester.startGesture(bottomLeft + const Offset(130, -4));
+        await tester.startGesture(bottomLeft + const Offset(230, -4));
     await gesture.moveBy(const Offset(0, -24));
     await gesture.cancel();
     await tester.pump();
@@ -94,7 +95,7 @@ void main() {
     expect(ended, isFalse);
   });
 
-  testWidgets('card edge outside centered grip starts move, not resize',
+  testWidgets('center pickup starts move after small desktop movement',
       (tester) async {
     TimelineResizeEdge? resizeEdge;
     var moveStarted = false;
@@ -111,8 +112,8 @@ void main() {
 
     final block = find.byType(TimelinePlanInteractionBlock);
     final topLeft = tester.getTopLeft(block);
-    final gesture = await tester.startGesture(topLeft + const Offset(20, 4));
-    await gesture.moveBy(const Offset(0, 24));
+    final gesture = await tester.startGesture(topLeft + const Offset(130, 50));
+    await gesture.moveBy(const Offset(0, 4));
     await gesture.up();
     await tester.pump();
 
