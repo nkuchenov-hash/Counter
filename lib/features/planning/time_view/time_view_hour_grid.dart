@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:counter/core/widgets/app_physical_drag_surface.dart';
+import 'package:counter/core/widgets/life_card.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/planning/planning_day_start_prefs.dart';
