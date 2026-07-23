@@ -5,7 +5,7 @@ import 'package:counter/features/planning/time_view/time_view_drag_state.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
-/// Invisible move/resize gesture zones for proportional timeline plan blocks.
+/// Move and resize gesture zones for proportional timeline plan blocks.
 class TimelinePlanInteractionBlock extends StatefulWidget {
   const TimelinePlanInteractionBlock({
     required this.canMove,
@@ -75,10 +75,11 @@ class TimelinePlanInteractionBlockState
 
   double get _resizeZoneInset {
     final h = widget.blockHeightPx ?? widget.resizeHandlePx * 2;
-    if (h < 48) {
-      return math.max(6.0, (h - 6) / 2);
-    }
-    return widget.resizeHandlePx;
+    final preferred = _useImmediatePointerDrag
+        ? widget.resizeHandlePx
+        : math.max(widget.resizeHandlePx, 22.0);
+    final maxInset = math.max(6.0, (h - 8.0) / 2);
+    return preferred.clamp(6.0, maxInset).toDouble();
   }
 
   void _resetMoveGesture() {
@@ -256,7 +257,7 @@ class TimelinePlanInteractionBlockState
     return TimelineResizeEdgeHandle(
       isTop: isTop,
       height: _resizeZoneInset,
-      active: _resizing || widget.isInteracting,
+      active: _resizing,
       onResizeStart: widget.canResize
           ? () {
               setState(() {
@@ -358,7 +359,8 @@ class TimelineResizeEdgeHandleState extends State<TimelineResizeEdgeHandle> {
   @override
   Widget build(BuildContext context) {
     final scheme = widget.scheme;
-    final showHairline = _hover || _dragging;
+    final emphasized = _hover || _dragging || widget.active;
+    final gripAlpha = emphasized ? 0.82 : 0.38;
     return MouseRegion(
       onEnter: (_) => setState(() => _hover = true),
       onExit: (_) => setState(() => _hover = false),
@@ -388,44 +390,38 @@ class TimelineResizeEdgeHandleState extends State<TimelineResizeEdgeHandle> {
         child: SizedBox(
           height: widget.height,
           width: double.infinity,
-          child: showHairline
-              ? Stack(
-                  alignment: widget.isTop
-                      ? Alignment.topCenter
-                      : Alignment.bottomCenter,
-                  children: [
-                    Container(
-                      height: 2,
-                      margin: const EdgeInsets.symmetric(horizontal: 12),
-                      decoration: BoxDecoration(
-                        color: scheme.primary.withValues(alpha: 0.38),
-                        borderRadius: BorderRadius.circular(1),
-                      ),
-                    ),
-                    Padding(
-                      padding: EdgeInsets.only(
-                        top: widget.isTop ? 4 : 0,
-                        bottom: widget.isTop ? 0 : 4,
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: List.generate(
-                          3,
-                          (_) => Container(
-                            width: 4,
-                            height: 4,
-                            margin: const EdgeInsets.symmetric(horizontal: 2),
-                            decoration: BoxDecoration(
-                              color: scheme.primary.withValues(alpha: 0.5),
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                )
-              : null,
+          child: Stack(
+            alignment:
+                widget.isTop ? Alignment.topCenter : Alignment.bottomCenter,
+            children: [
+              AnimatedOpacity(
+                opacity: emphasized ? 1 : 0,
+                duration: const Duration(milliseconds: 90),
+                child: Container(
+                  height: 2,
+                  margin: const EdgeInsets.symmetric(horizontal: 12),
+                  decoration: BoxDecoration(
+                    color: scheme.primary.withValues(alpha: 0.42),
+                    borderRadius: BorderRadius.circular(1),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: EdgeInsets.only(
+                  top: widget.isTop ? 4 : 0,
+                  bottom: widget.isTop ? 0 : 4,
+                ),
+                child: Container(
+                  width: 30,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: scheme.primary.withValues(alpha: gripAlpha),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
