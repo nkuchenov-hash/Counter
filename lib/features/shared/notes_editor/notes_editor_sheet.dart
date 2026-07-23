@@ -22,7 +22,7 @@ import 'package:counter/core/app_snackbar.dart';
 import 'package:counter/core/widgets/notes/notes.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
-import 'package:counter/features/categories/category_recursive_tree.dart';
+import 'package:counter/shared/categories/picker/category_tree_picker.dart';
 import 'package:counter/features/shared/edit_sheet/sheet_autosave_gate.dart';
 import 'package:counter/l10n/category_db_display.dart';
 import 'package:counter/l10n/dictionary.dart';

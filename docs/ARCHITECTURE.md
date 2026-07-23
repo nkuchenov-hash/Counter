@@ -14,9 +14,11 @@
 | `lib/shared/time/` | **Shared time** | UTC ↔ profile wall-clock, timezone catalog, `AppClock` / `ProfileTimezoneActions`. No feature or Brain I/O imports. |
 | `lib/shared/diagnostics/` | **Shared diagnostics** | Runtime logs (`runtime_log`, `platform_log`, `startup_log`) + kill switches / metrics under `performance/` (`runtime_flags`, `shell_flags`, `rebuild_metrics`). No feature or Brain I/O imports. |
 | `lib/shared/voice/` | **Shared Voice (one system)** | Commands, recognition, acceptance routing bridge, reusable UI, platform adapters (`platforms/desktop`, `platforms/mobile`), and diagnostics. Phone/desktop/web/Wear activation paths converge on the same command interpretation. Must not import `features/`, `data/voice/`, `database_service.dart`, or shell tab-state ownership. |
+| `lib/shared/categories/` | **Shared Categories** | Presentation lookup, tree helpers/body, picker sheet/form/create dialog, local visibility prefs. Narrow injected contracts only — no `database_service` / `features` / shell imports. |
 | `lib/data/voice/` | **Brain Voice** | Parser, domain resolution, normalize, record-submit / command execution, glossary builder, contamination/postprocess, PocketBase cloud STT backend, parser-tied benchmarks. |
 | `lib/features/voice/` | **Desktop Voice UI** | Flutter overlay widget, capsule, correction sheet, command panel. |
 | `lib/features/settings/voice/` | **Voice settings UI** | Microphone / hotkey / recognizer / diagnostics settings pages. |
+| `lib/features/settings/categories/` | **Categories manager UI** | More → Categories band grid, editor/appearance sheets, create dialog, browse panel. |
 | `lib/data/plans/diagnostics/` | **Brain plans diagnostics** | Planning-domain duplicate / stream lifecycle log (`plan_duplicate_log.dart`). Lives inside Brain; not shared diagnostics and not feature UI. |
 | `lib/app_shell.dart` | **The Navigator** | Thin entry re-export; canonical shell under `lib/app/shell/`. |
 | `lib/main.dart` | **The ignition** | Calls `ensurePocketBaseReady()`, then restores session and loads profile. |

@@ -3,20 +3,20 @@ import 'dart:async';
 import 'package:counter/core/widgets/app_icon_button.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
-import 'package:counter/features/categories/category_appearance_sheet.dart';
-import 'package:counter/features/categories/category_editor_sheet.dart';
-import 'package:counter/features/categories/category_row_widget.dart';
-import 'package:counter/features/categories/category_visibility_prefs.dart';
-import 'package:counter/features/categories/create_category_dialog.dart';
+import 'package:counter/features/settings/categories/category_appearance_sheet.dart';
+import 'package:counter/features/settings/categories/category_editor_sheet.dart';
+import 'package:counter/features/settings/categories/category_row_widget.dart';
+import 'package:counter/shared/categories/visibility/category_visibility_prefs.dart';
+import 'package:counter/features/settings/categories/create_category_dialog.dart';
 import 'package:counter/features/shared/shared_widgets.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
 
-export 'package:counter/features/categories/category_editor_sheet.dart'
+export 'package:counter/features/settings/categories/category_editor_sheet.dart'
     show CategoryEditorSheet;
-export 'package:counter/features/categories/category_row_widget.dart'
+export 'package:counter/features/settings/categories/category_row_widget.dart'
     show CategoryBandLayout, CategoryRowWidget;
-export 'package:counter/features/categories/category_tag_input_field.dart'
+export 'package:counter/features/settings/categories/category_tag_input_field.dart'
     show TagInputField;
 
 // ---------------------------------------------------------------------------

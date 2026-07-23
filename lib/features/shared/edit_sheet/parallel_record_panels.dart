@@ -6,7 +6,6 @@ import 'package:counter/core/widgets/compact_nav_controls.dart';
 import 'package:counter/core/widgets/omni_date_time_picker_dialog.dart';
 import 'package:counter/core/picker_entry_modes.dart';
 import 'package:counter/core/theme.dart';
-import 'package:counter/features/categories/category_recursive_tree.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/data/recurrence_edit_scope.dart';

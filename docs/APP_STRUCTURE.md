@@ -6,7 +6,7 @@ Physical map of the Flutter application: what exists, which layer owns it, who m
 
 ---
 
-## 0. Current status (2026-07-22)
+## 0. Current status (2026-07-23)
 
 | Item | Value |
 | :--- | :--- |
@@ -15,8 +15,9 @@ Physical map of the Flutter application: what exists, which layer owns it, who m
 | **UI decomposition** | Pass 3 / 3B complete (shell, planning, timeline, lists, shared edit sheets, plan card) |
 | **Brain decomposition** | Pass 4A–4D complete (`plans/*`, `records/*`, `categories/*`, `profile/*`) |
 | **Diagnostics ownership** | Phase 2B (2026-07-22): runtime logs + kill switches under `lib/shared/diagnostics/`; plan duplicate log under `lib/data/plans/diagnostics/` (Brain); desktop voice pipeline under `lib/shared/voice/diagnostics/` |
-| **Voice ownership** | Phase 2C (2026-07-22): shared Voice contracts/adapters under `lib/shared/voice/`; Brain execution under `lib/data/voice/` (parser, normalize, record-submit); desktop Flutter Voice UI under `lib/features/voice/`; settings under `lib/features/settings/voice/`; Shell keeps `shell_voice_routing` |
-| **Strict architecture guard** | Baseline 2026-07-17 cleanup **complete**: 63 → 0 (A=0, B=0); hygiene audit 2026-07-21 (`docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`); diagnostics Phase 2B + voice ownership Phase 2C 2026-07-22 |
+| **Voice ownership** | Phase 2C (2026-07-22): shared Voice contracts/adapters under `lib/shared/voice/`; Brain execution under `lib/data/voice/`; desktop Flutter Voice UI under `lib/features/voice/`; settings under `lib/features/settings/voice/`; Shell keeps `shell_voice_routing` |
+| **Categories ownership** | Phase 2D (2026-07-23): shared presentation/tree/picker/visibility under `lib/shared/categories/`; Brain CRUD remains `lib/data/categories/`; manager UI under `lib/features/settings/categories/`; Lists owns `category_filter_tree_field.dart`; plan/record draft helpers under `features/shared/edit_sheet/category_edit_draft.dart` |
+| **Strict architecture guard** | Baseline 2026-07-17 cleanup **complete**: 63 → 0 (A=0, B=0); hygiene audit 2026-07-21; diagnostics Phase 2B + voice Phase 2C 2026-07-22; categories Phase 2D 2026-07-23 |
 | **Detailed file guide** | [`docs/APP_STRUCTURE_DETAILED.md`](APP_STRUCTURE_DETAILED.md) — owner-readable **evidence-backed** EN/RU entry per tracked folder and file (role, necessity, confidence, deletion consequence); regenerate via `generate_app_structure_detailed.py` |
 | **Project Knowledge pack** | [`docs/PROJECT_KNOWLEDGE_PACK.md`](PROJECT_KNOWLEDGE_PACK.md) — 14-doc upload checklist |
 | **Prior parity report** | [`docs/reports/FINAL_STRUCTURE_PARITY_AND_DOC_CLEANUP_2026-07-03.md`](reports/FINAL_STRUCTURE_PARITY_AND_DOC_CLEANUP_2026-07-03.md) |
@@ -35,12 +36,13 @@ python scripts/manual/generate_app_structure_detailed.py
 | Layer | Path | Owns | May import | Must NOT import |
 | :--- | :--- | :--- | :--- | :--- |
 | **Entry** | `lib/main.dart`, `lib/app_shell.dart`, `lib/app/shell/` | Boot, auth gate, form-factor shell navigation, cross-tab wiring | `data/`, `core/`, `shared/`, `features/`, `l10n/`, `services/` | — |
-| **Brain** | `lib/data/` | PocketBase I/O, in-memory cache, optimistic UI, offline outboxes, domain models; Planning-domain diagnostics under `plans/diagnostics/`; Voice parser/domain/cloud STT under `voice/` | `core/` (utilities only), `shared/` (time + diagnostics + voice contracts), `services/` (device bridge), other `data/` | `features/` |
+| **Brain** | `lib/data/` | PocketBase I/O, in-memory cache, optimistic UI, offline outboxes, domain models; Planning-domain diagnostics under `plans/diagnostics/`; Voice parser/domain/cloud STT under `voice/` | `core/` (utilities only), `shared/` (time + diagnostics + voice + categories contracts), `services/` (device bridge), other `data/` | `features/` |
 | **Shared time** | `lib/shared/time/` | Multi-consumer UTC/wall-clock, timezone catalog, app clock hooks, shared plan-time math used by Brain + UI | `core/` (utilities), `data/models.dart` (types only) | `features/`, `data/database_service.dart` |
 | **Shared diagnostics** | `lib/shared/diagnostics/` | General runtime logs (`runtime_log`, `platform_log`, `startup_log`); performance metrics + kill-switch registry under `performance/` | `core/` (utilities), `data/models.dart` (types only) | `features/`, `data/database_service.dart` |
 | **Shared Voice** | `lib/shared/voice/` | One Voice system: commands, recognition, routing contracts, reusable UI, platform adapters (desktop/mobile), diagnostics | `core/` (utilities), `shared/`, `data/models.dart` (types only where contracts need them) | `features/`, `data/voice/`, `data/database_service.dart`, `app/shell/` |
-| **Foundation** | `lib/core/` | Theme, tokens, shared widgets, desktop tray/main-window infrastructure | `core/`, `shared/` (time + diagnostics + voice), `data/models.dart` (types only) | `features/`, `data/database_service.dart` |
-| **UI modules** | `lib/features/` | Screens, sheets, feature-specific layout; desktop Voice overlay UI under `voice/`; Voice settings under `settings/voice/` | `data/`, `core/`, `shared/`, `l10n/`, `features/shared/` | other features except via `shared/` or explicit shell routing |
+| **Shared Categories** | `lib/shared/categories/` | Reusable category presentation, tree, picker UI/models, local visibility prefs; narrow injected tree/create contracts | `core/` (utilities), `shared/`, `data/models.dart` (`CategoryRule` type only) | `features/`, `data/database_service.dart`, `app/shell/` |
+| **Foundation** | `lib/core/` | Theme, tokens, shared widgets, desktop tray/main-window infrastructure | `core/`, `shared/` (time + diagnostics + voice + categories), `data/models.dart` (types only) | `features/`, `data/database_service.dart` |
+| **UI modules** | `lib/features/` | Screens, sheets, feature-specific layout; desktop Voice overlay UI under `voice/`; Voice + Categories settings under `settings/` | `data/`, `core/`, `shared/`, `l10n/`, `features/shared/` | other features except via `shared/` or explicit shell routing |
 | **Localization** | `lib/l10n/` | Locale catalog and `t()` lookup | Flutter SDK only | `data/`, `features/` |
 | **Device bridge** | `lib/services/` | OS capabilities without UI | `data/models.dart`, `shared/time/`, Flutter/plugins | `features/` |
 
@@ -66,7 +68,7 @@ main/app_shell → all layers                       ✓
 
 ---
 
-## 2. Shell injection (main → shared time / core)
+## 2. Shell injection (main → shared time / categories / core)
 
 These abstractions stay free of Brain imports in the UI layer; `main.dart` and `app_shell.dart` wire them at runtime:
 
@@ -74,7 +76,8 @@ These abstractions stay free of Brain imports in the UI layer; `main.dart` and `
 | :--- | :--- | :--- | :--- |
 | `AppClock` | `shared/time/app_clock.dart` | `main.dart` `_wireAppClock()` | Profile-timezone wall clock and tick stream for headers |
 | `ProfileTimezoneActions` | `shared/time/profile_timezone_actions.dart` | `main.dart` `_wireProfileTimezoneActions()` | Profile timezone label, settings stream, and save hook for header picker |
-| `PlanCategoryLookup` | `core/plan_category_lookup.dart` | `main.dart` `_wirePlanCategoryLookup()` | Category color, icon, breadcrumb for plan cards without importing Brain in widgets |
+| `PlanCategoryLookup` | `shared/categories/presentation/plan_category_lookup.dart` | `main.dart` `_wirePlanCategoryLookup()` | Category color, icon, breadcrumb for plan cards without importing Brain in widgets |
+| `CategoryTreeSource` / `CategoryPickerActions` | `shared/categories/picker/category_picker_contracts.dart` | `main.dart` `_wireCategorySharedContracts()` | Tree reads + picker create mutation for shared picker/tree/visibility |
 | `TagDisplayModeScope` | `core/widgets/tag_display_mode_scope.dart` | `app_shell.dart` | Inherited tag display mode from profile settings |
 
 ---
@@ -212,7 +215,6 @@ Compatibility re-exports (remove when callers migrate): root `lib/app_shell.dart
 | `date_swipe_physics.dart` | Date swipe physics |
 | `link_scalar.dart` | Plan link scalar helper |
 | `picker_entry_modes.dart` | Platform-aware picker entry (keyboard vs touch) |
-| `plan_category_lookup.dart` | Category presentation lookup (shell-injected) |
 | `shell_adaptive.dart` | Side vs bottom navigation breakpoint |
 | `shell_layout_state.dart` | `ShellLayoutController` / FAB clearance |
 | `tag_contrast.dart` | Tag foreground/background contrast |
@@ -320,6 +322,23 @@ General runtime diagnostics and the compile-time kill-switch registry. Multi-con
 | `performance/runtime_flags.dart` | Shared compile-time kill-switch registry (Brain / shell / features / voice) — kept intact, no split |
 | `performance/shell_flags.dart` | Shell + Planning Time View canvas bisect toggles (stays under shared performance; not `app/shell`) |
 | `performance/rebuild_metrics.dart` | Rebuild/frame metrics (`--dart-define=PERF_DIAG` gated) |
+
+### 3.38 `lib/shared/categories/` — reusable category UI contracts (Phase 2D)
+
+Multi-feature category presentation, tree, picker, and local visibility prefs. Brain keeps PocketBase CRUD under `lib/data/categories/`. Settings manager UI lives under `lib/features/settings/categories/`.
+
+Must not import `features/`, `database_service.dart`, or `app/shell/`. Composition root wires `CategoryTreeSource` / `CategoryPickerActions` / `PlanCategoryLookup` from `main.dart`.
+
+| Path | Role |
+| :--- | :--- |
+| `presentation/plan_category_lookup.dart` | Injected `PlanCategoryLookup` / `PlanCategoryPresentation` for plan cards |
+| `tree/category_tree_filter.dart` | Pure search filter + selection-path opacity helpers |
+| `tree/category_tree_body.dart` | Reusable `CategoryTreeBody` (picker + settings browse) |
+| `picker/category_picker_contracts.dart` | `CategoryTreeSource`, `CategoryPickerActions` |
+| `picker/category_picker_models.dart` | Create targets, sheet results, chrome keys/helpers |
+| `picker/create_category_from_picker.dart` | Create dialog + submit via injected actions |
+| `picker/category_tree_picker.dart` | `showCategoryTreePicker`, `CategoryTreeFormField`, picker sheet |
+| `visibility/category_visibility_prefs.dart` | Local hidden ids (`hidden_category_ids_json`) |
 
 ### 3.37 `lib/shared/voice/` — one Voice system (Phase 2C)
 
@@ -460,16 +479,15 @@ Parser, live category/domain resolution, normalization, command execution (`writ
 | `timeline/` | `timeline_view.dart`, `timeline_header_controls.dart`, `timeline_day_page.dart`, `timeline_record_card.dart`, `timeline_helpers.dart` | `TimelineSwipeWrapper`, `TimelinePage`; header controls + day list + record cards |
 | `stats/` | `stats_view.dart`, `plan_vs_fact_tab.dart` | Productivity stats (embedded in Timeline) |
 | `planning/` | `planning_view.dart` (barrel), **`planning_page.dart`**, **`planning_quick_add_tags_controller.dart`**, **`planning_page_shell.dart`**, **`planning_sort_mode.dart`**, `plan_time_view_layout.dart`, `plan_time_gesture_contract.dart`, `planning_day_start_prefs.dart`, `bulk_planning_edit_sheet.dart`, `recurrence_scope_dialog.dart`, `smart_plan_sheet.dart`, **`time_view/`**, **`settings/`**, **`widgets/`** | Plans tab: date pager shell + day page body, quick-add tag controller, Time View modules, settings, bulk edit |
-| `lists/` | `lists_view.dart`, `lists_filters.dart`, `lists_bulk_actions.dart`, `lists_inline_add.dart`, `lists_empty_state.dart`, `lists_card.dart`, `lists_export.dart` | Lists/backlog coordinator + filter/bulk/inline/empty modules + card + export |
+| `lists/` | `lists_view.dart`, `lists_filters.dart`, `lists_bulk_actions.dart`, `lists_inline_add.dart`, `lists_empty_state.dart`, `lists_card.dart`, `lists_export.dart`, `category_filter_tree_field.dart` | Lists/backlog coordinator + filter/bulk/inline/empty modules + card + export + Lists-only “All categories” filter field |
 | `notes/` | `drawing_canvas_page.dart`, `notes_glm_surface.dart`, `notes_library_page.dart`, `notes_visual_tokens.dart`, `note_editor_page.dart`, **`widgets/`** (`notes_library_body.dart`, `notes_library_production_shell.dart`, `note_card.dart`, `note_editor_block_widgets.dart`) | Notes library/editor/drawing feature UI (GLM v3); exact roles in §3.4 Notes below |
 | `calendar/` | `calendar_view.dart` (orchestrator), `calendar_chrome_header.dart`, `calendar_month_grid.dart`, `calendar_week_grid.dart`, `calendar_day_panel.dart`, `calendar_day_events.dart`, `calendar_helpers.dart` | Calendar tab: month/week grids, chrome header, focused-day task panel |
-| `categories/` | `category_list_view.dart` (orchestrator), `category_row_widget.dart`, `category_editor_sheet.dart`, `category_appearance_sheet.dart`, `category_tag_input_field.dart`, `category_helpers.dart`, `category_recursive_tree.dart`, `category_visibility_prefs.dart`, `create_category_dialog.dart`, `create_category_from_picker.dart` | Category manager (More menu): band grid, editor/appearance sheets, tree picker, picker create flow |
 | `profile/` | `profile_view.dart`, **`settings/`** (account, notification, security sections), `tag_manager_page.dart`, `tag_settings_hub.dart`, `tag_settings_view.dart`, `tag_default_duration_settings_view.dart` | Profile & tag settings |
-| `settings/` | `timezone_settings.dart`, **`voice/`** (`desktop_voice_settings_section.dart`, `desktop_voice_settings_desktop.dart`, `desktop_voice_attempt_dialog.dart`) | Settings-owned timezone helpers + Voice settings UI |
+| `settings/` | `timezone_settings.dart`, **`voice/`** (`desktop_voice_settings_section.dart`, `desktop_voice_settings_desktop.dart`, `desktop_voice_attempt_dialog.dart`), **`categories/`** (`category_list_view.dart`, `category_row_widget.dart`, `category_editor_sheet.dart`, `category_appearance_sheet.dart`, `category_tag_input_field.dart`, `category_helpers.dart`, `create_category_dialog.dart`, `category_recursive_browse_panel.dart`) | Settings-owned timezone helpers + Voice settings + Categories manager UI (More → Categories) |
 | `voice/` | `desktop_voice_widget.dart`, `desktop_voice_capsule.dart`, `desktop_voice_correction_sheet.dart`, `desktop_voice_command_panel.dart` | Desktop Flutter Voice overlay UI (GOLOS STT capsule / correction / panel) |
 | `dev/` | `component_lab_view.dart`, `component_lab_cards_demo.dart` | Admin-only Component Lab |
 | `wear/` | `wear_timer_screen.dart`, `wear_main_wrapper.dart`, `wear_platform.dart`, `wear_runtime.dart` | Wear OS companion |
-| `shared/` | `shared_widgets.dart` (barrel), `activity_detail_sheet.dart`, `planning_task_edit_sheet.dart`, `timeline_record_edit_sheet.dart`, `empty_state_placeholder.dart`, **`edit_sheet/`** (autosave gate, time helpers/picker, checklist, repeat RRULE helpers, quill toolbar, parallel record panels), **`notes_editor/`** (`notes_editor_launcher.dart`, `notes_editor_sheet.dart`), `offline_sync_status_bar.dart` | Activity edit sheets, Notes launch/sheet routing, Omni-Picker entry, offline sync banner |
+| `shared/` | `shared_widgets.dart` (barrel), `activity_detail_sheet.dart`, `planning_task_edit_sheet.dart`, `timeline_record_edit_sheet.dart`, `empty_state_placeholder.dart`, **`edit_sheet/`** (autosave gate, time helpers/picker, checklist, repeat RRULE helpers, quill toolbar, parallel record panels, **`category_edit_draft.dart`**), **`notes_editor/`** (`notes_editor_launcher.dart`, `notes_editor_sheet.dart`), `offline_sync_status_bar.dart` | Activity edit sheets, Notes launch/sheet routing, Omni-Picker entry, offline sync banner, plan/record category draft helpers |
 
 **Key symbols:** `ActivityDetailSheet` router → `features/shared/activity_detail_sheet.dart`; `PlanningTaskEditSheet` / `TimelineRecordSheetContent` in dedicated files; `showAppDateTimePicker` / `EditSheetAutosaveGate` in `features/shared/edit_sheet/`; re-exported via `shared_widgets.dart`.
 
@@ -640,7 +658,8 @@ Explicit manifest entries for `architecture_guard.ps1 -Strict`:
 | `shared/edit_sheet/quill_toolbar_config.dart` | Planning edit Quill toolbar config |
 | `shared/edit_sheet/parallel_record_panels.dart` | Backlog sub-items + parallel child panels |
 | `shared/edit_sheet/record_edit_save_policy.dart` | `validateRecordEditSave` / `RecordEditSaveMode` — Timeline record edit Save classify/validate policy |
-| `categories/create_category_from_picker.dart` | `showCreateCategoryFromPickerDialog` — explicit-parent create flow from category picker |
+| `shared/edit_sheet/category_edit_draft.dart` | Plan/record category draft resolve + plan PATCH category relation gate |
+| `shared/categories/picker/create_category_from_picker.dart` | `showCreateCategoryFromPickerDialog` — explicit-parent create flow from category picker |
 
 ---
 

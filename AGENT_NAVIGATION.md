@@ -29,7 +29,7 @@ Flutter time tracker. Owner: Nick (UX designer, not a developer). Goal: best tim
 
 ## Structure check (vs `docs/APP_STRUCTURE.md`)
 
-Verified 2026-06-10 (shell paths 2026-07-21; time ownership 2026-07-21; diagnostics ownership 2026-07-22; voice ownership 2026-07-22). **Core layout matches** the documented map: `lib/data/` (Brain + part files + `data/voice/`), `lib/data/local_sync/` (offline outboxes), `lib/features/` (UI modules + `settings/voice/`), `lib/shared/time/` (multi-consumer time), `lib/shared/diagnostics/` (runtime logs + kill switches), `lib/shared/voice/` (one Voice system), `lib/core/` (theme + widgets + tray/window), `lib/app/shell/` (form-factor shell), `lib/l10n/`, `lib/services/`, `app_shell.dart`, `main.dart`.
+Verified 2026-06-10 (shell paths 2026-07-21; time ownership 2026-07-21; diagnostics ownership 2026-07-22; voice ownership 2026-07-22; categories ownership 2026-07-23). **Core layout matches** the documented map: `lib/data/` (Brain + part files + `data/voice/` + `data/categories/`), `lib/data/local_sync/` (offline outboxes), `lib/features/` (UI modules + `settings/voice/` + `settings/categories/`), `lib/shared/time/`, `lib/shared/diagnostics/`, `lib/shared/voice/`, `lib/shared/categories/`, `lib/core/` (theme + widgets + tray/window), `lib/app/shell/` (form-factor shell), `lib/l10n/`, `lib/services/`, `app_shell.dart`, `main.dart`.
 
 **Known drift** (harmless; do not “fix” unless asked):
 
@@ -82,9 +82,9 @@ Short routing map for Cursor / AI. Symbols in backticks.
 | **Omni-Picker / autosave** | `lib/features/shared/edit_sheet/sheet_time_picker.dart`, `sheet_autosave_gate.dart` | `showAppDateTimePicker`, `EditSheetAutosaveGate` |
 | **Bulk plan edit** | `lib/features/planning/bulk_planning_edit_sheet.dart` | bulk date/time moves (also uses `showAppDateTimePicker`) |
 | **Sheet host (modal)** | `lib/app_shell.dart` | `_openEditDialog` / `_showEditRecordSheetForTimeline` → `showModalBottomSheet` + `ActivityDetailSheet` |
-| **Category create** | `lib/features/categories/create_category_dialog.dart` | dialog; calls `DatabaseService.addNestedCategory` |
-| **Category edit** | `lib/features/categories/category_list_view.dart` | `CategoryEditorSheet`, `_showCategoryEditorSheet`; appearance quick sheet `_showCategoryAppearanceSheet` |
-| **Category tree picker** | `lib/features/categories/category_recursive_tree.dart` | `showCategoryTreePicker` |
+| **Category create** | `lib/features/settings/categories/create_category_dialog.dart` | dialog; calls `DatabaseService.addNestedCategory` |
+| **Category edit** | `lib/features/settings/categories/category_list_view.dart` | `CategoryEditorSheet`, `_showCategoryEditorSheet`; appearance quick sheet `_showCategoryAppearanceSheet` |
+| **Category tree picker** | `lib/shared/categories/picker/category_tree_picker.dart` | `showCategoryTreePicker` |
 | **Tag data (Brain)** | `lib/data/profile/tag_catalog.dart` | `fetchTagsForCurrentUser`, `createTagForCurrentUser`, `patchTagForCurrentUser`, `deleteTagByPocketRecordId`, `notifyTagsCatalogChanged` |
 | **Tag model** | `lib/data/models/tag.dart` | `Tag`, `TagCatalogScope` |
 | **Tag UI — manager** | `lib/features/profile/tag_manager_page.dart` | `TagManagerPage` (`pocketTagDomain: 'plan'` or `'list'`) |

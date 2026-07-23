@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `f5a6d72` on 2026-07-22.**
+**Generated from input HEAD `34bbac7` on 2026-07-23.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 729 — each appears **exactly once** below.
+**Tracked files:** 737 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -30,13 +30,13 @@ python scripts/manual/generate_app_structure_detailed.py
 | `test` | 86 |
 | `platform build` | 82 |
 | `Brain/data` | 71 |
-| `shared foundation` | 58 |
+| `shared foundation` | 57 |
+| `developer tool` | 50 |
 | `platform resource` | 44 |
-| `developer tool` | 42 |
 | `Desktop Voice runtime` | 36 |
 | `governing documentation` | 30 |
 | `test fixture` | 24 |
-| `shared Voice system` | 20 |
+| `shared Voice system` | 21 |
 | `intentionally retained product watchlist` | 16 |
 | `localization` | 13 |
 | `installer` | 11 |
@@ -57,8 +57,8 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 377 |
-| `REQUIRED_FOR_TEST_OR_TOOLING` | 160 |
+| `PROVEN_REQUIRED` | 383 |
+| `REQUIRED_FOR_TEST_OR_TOOLING` | 162 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 126 |
 | `GOVERNING_DOCUMENTATION` | 30 |
 | `RETAINED_PRODUCT_WATCHLIST` | 16 |
@@ -70,9 +70,9 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 678 |
+| `HIGH` | 684 |
+| `MEDIUM` | 27 |
 | `WATCHLIST` | 26 |
-| `MEDIUM` | 25 |
 
 ---
 
@@ -115,7 +115,6 @@ Evidence is computed from Dart import/export/`part` graphs, bounded path referen
 - [`lib/data/voice/`](#folder-libdatavoice)
 - [`lib/features/auth/`](#folder-libfeaturesauth)
 - [`lib/features/calendar/`](#folder-libfeaturescalendar)
-- [`lib/features/categories/`](#folder-libfeaturescategories)
 - [`lib/features/dev/`](#folder-libfeaturesdev)
 - [`lib/features/lists/`](#folder-libfeatureslists)
 - [`lib/features/notes/`](#folder-libfeaturesnotes)
@@ -128,6 +127,7 @@ Evidence is computed from Dart import/export/`part` graphs, bounded path referen
 - [`lib/features/voice/`](#folder-libfeaturesvoice)
 - [`lib/features/wear/`](#folder-libfeatureswear)
 - [`lib/l10n/langs/`](#folder-libl10nlangs)
+- [`lib/shared/categories/`](#folder-libsharedcategories)
 - [`lib/shared/diagnostics/`](#folder-libshareddiagnostics)
 - [`lib/shared/time/`](#folder-libsharedtime)
 - [`lib/shared/voice/`](#folder-libsharedvoice)
@@ -144,9 +144,14 @@ Evidence is computed from Dart import/export/`part` graphs, bounded path referen
 - [`lib/features/planning/time_view/`](#folder-libfeaturesplanningtime_view)
 - [`lib/features/planning/widgets/`](#folder-libfeaturesplanningwidgets)
 - [`lib/features/profile/settings/`](#folder-libfeaturesprofilesettings)
+- [`lib/features/settings/categories/`](#folder-libfeaturessettingscategories)
 - [`lib/features/settings/voice/`](#folder-libfeaturessettingsvoice)
 - [`lib/features/shared/edit_sheet/`](#folder-libfeaturessharededit_sheet)
 - [`lib/features/shared/notes_editor/`](#folder-libfeaturessharednotes_editor)
+- [`lib/shared/categories/picker/`](#folder-libsharedcategoriespicker)
+- [`lib/shared/categories/presentation/`](#folder-libsharedcategoriespresentation)
+- [`lib/shared/categories/tree/`](#folder-libsharedcategoriestree)
+- [`lib/shared/categories/visibility/`](#folder-libsharedcategoriesvisibility)
 - [`lib/shared/diagnostics/performance/`](#folder-libshareddiagnosticsperformance)
 - [`lib/shared/voice/commands/`](#folder-libsharedvoicecommands)
 - [`lib/shared/voice/diagnostics/`](#folder-libsharedvoicediagnostics)
@@ -1062,11 +1067,11 @@ EN:
 
 - **What this folder is:** Cross-cutting shared code with multiple independent consumers — time, diagnostics, Voice system.
 - **Why it exists:** Avoid dumping single-feature helpers here; only multi-consumer ownership belongs under shared.
-- **What lives here:** `time/` — wall-clock and timezone; `diagnostics/` — runtime logs + kill switches; `voice/` — one Voice system (commands/recognition/routing/ui/platforms/diagnostics).
-- **What part of the app it affects:** Header clock, Brain projection, Plans Time View, settings timezone labels, kill switches, Voice activation across platforms.
-- **When to open it:** Moving multi-consumer time/diagnostics/voice, wrong today, DST labels, kill-switch toggles, Voice pipeline tracing.
-- **Can it be deleted?** No — Brain and UI need shared time, diagnostics, and Voice.
-- **Main related paths:** `lib/shared/time/`, `lib/shared/diagnostics/`, `lib/shared/voice/`, `docs/APP_STRUCTURE.md`.
+- **What lives here:** `time/` — wall-clock and timezone; `diagnostics/` — runtime logs + kill switches; `voice/` — one Voice system; `categories/` — reusable presentation/tree/picker/visibility.
+- **What part of the app it affects:** Header clock, Brain projection, Plans Time View, settings timezone labels, kill switches, Voice activation across platforms, shared category pickers.
+- **When to open it:** Moving multi-consumer time/diagnostics/voice/categories, wrong today, DST labels, kill-switch toggles, Voice pipeline tracing, category picker ownership.
+- **Can it be deleted?** No — Brain and UI need shared time, diagnostics, Voice, and Categories.
+- **Main related paths:** `lib/shared/time/`, `lib/shared/diagnostics/`, `lib/shared/voice/`, `lib/shared/categories/`, `docs/APP_STRUCTURE.md`.
 
 RU:
 
@@ -1075,7 +1080,7 @@ RU:
 - **Что здесь лежит:** `time/` — wall-clock и timezone; `diagnostics/` — runtime logs + kill switches; `voice/diagnostics/` — desktop voice pipeline markers.
 - **На что влияет в приложении:** Часы в header, projection в Brain, Time View на Plans, timezone labels, kill switches, трассировка desktop voice.
 - **Когда открывать:** Перенос multi-consumer time/diagnostics, неверный today, DST labels, kill-switch toggles, voice pipeline tracing.
-- **Можно удалить?** Нет — Brain and UI need shared time, diagnostics, and Voice.
+- **Можно удалить?** Нет — Brain and UI need shared time, diagnostics, Voice, and Categories.
 - **Связанные пути:** `lib/shared/time/`, `lib/shared/diagnostics/`, `lib/shared/voice/diagnostics/`, `docs/APP_STRUCTURE.md`.
 
 ---
@@ -1858,7 +1863,7 @@ EN:
 - **What part of the app it affects:** Category picker, category manager screen, record category on start/stop, plan category chips, stats by category.
 - **When to open it:** Categories missing, wrong color/icon, fuzzy match picks wrong client, records saved without category.
 - **Can it be deleted?** No — category features stop working.
-- **Main related paths:** `lib/data/category_service.dart`, `lib/features/categories/`.
+- **Main related paths:** `lib/data/category_service.dart`, `lib/features/settings/categories/`, `lib/shared/categories/`.
 
 RU:
 
@@ -1868,7 +1873,7 @@ RU:
 - **На что влияет в приложении:** Category picker, экран Categories, category на start/stop записи, chips на планах, stats по категориям.
 - **Когда открывать:** Категории пропали, неверный color/icon, fuzzy match выбрал не того клиента, запись без category.
 - **Можно удалить?** Нет — category features stop working.
-- **Связанные пути:** `lib/data/category_service.dart`, `lib/features/categories/`.
+- **Связанные пути:** `lib/data/category_service.dart`, `lib/features/settings/categories/`, `lib/shared/categories/`.
 
 ---
 
@@ -2061,30 +2066,6 @@ RU:
 - **Когда открывать:** Calendar month layout, plan dots на dates, calendar navigation.
 - **Можно удалить?** Возможно — if calendar tab removed from shell; keep while route exists.
 - **Связанные пути:** `lib/features/planning/`, plan card widgets в `core/widgets/`.
-
----
-
-## Folder: `lib/features/categories/`
-
-EN:
-
-- **What this folder is:** Category manager UI — tree, create/edit, visibility preferences.
-- **Why it exists:** Users organize work/personal/client categories from More → Categories.
-- **What lives here:** List view, recursive tree picker, create dialog, visibility prefs.
-- **What part of the app it affects:** More → Categories; category pickers elsewhere call into these widgets.
-- **When to open it:** Create category, reorder, archive, pick category in tree dialog.
-- **Can it be deleted?** No — category management UI gone.
-- **Main related paths:** `lib/data/categories/`.
-
-RU:
-
-- **Что это за папка:** UI менеджера категорий — дерево, создание/редактирование, настройки видимости.
-- **Зачем нужна:** Пользователь организует work/personal/client categories из More → Categories.
-- **Что здесь лежит:** List view, recursive tree picker, create dialog, visibility prefs.
-- **На что влияет в приложении:** More → Categories; category pickers в других экранах используют эти widgets.
-- **Когда открывать:** Create category, reorder, archive, pick category в tree dialog.
-- **Можно удалить?** Нет — category management UI gone.
-- **Связанные пути:** `lib/data/categories/`.
 
 ---
 
@@ -2373,6 +2354,30 @@ RU:
 - **Когда открывать:** Пропал ключ перевода, неверная строка на выбранном языке.
 - **Можно удалить?** Нет — нужен для localization.
 - **Связанные пути:** `lib/l10n/dictionary.dart`, `scripts/sync_locales.dart`.
+
+---
+
+## Folder: `lib/shared/categories/`
+
+EN:
+
+- **What this folder is:** Reusable category presentation, tree, picker, and local visibility preferences.
+- **Why it exists:** Multiple independent UI features share category pickers without owning Brain mutation or Settings manager chrome.
+- **What lives here:** `presentation/`, `tree/`, `picker/`, `visibility/`.
+- **What part of the app it affects:** Category tree pickers, form fields, create-from-picker dialog, hidden-category prefs — not PocketBase CRUD.
+- **When to open it:** Category picker/create ownership moves, shared tree chrome, visibility prefs key.
+- **Can it be deleted?** No — Notes/Planning/Timeline/Lists category pickers break.
+- **Main related paths:** `lib/data/categories/`, `lib/features/settings/categories/`, `lib/features/lists/`.
+
+RU:
+
+- **Что это за папка:** Переиспользуемые presentation/tree/picker/visibility для категорий без Brain I/O.
+- **Зачем нужна:** Несколько UI-фич делят category pickers; CRUD остаётся в Brain, менеджер — в Settings.
+- **Что здесь лежит:** `presentation/`, `tree/`, `picker/`, `visibility/`.
+- **На что влияет в приложении:** Shared category pickers, form fields, create-from-picker, local hide prefs.
+- **Когда открывать:** Ownership picker/create, tree chrome, visibility key.
+- **Можно удалить?** Нет — Notes/Planning/Timeline/Lists category pickers break.
+- **Связанные пути:** `lib/data/categories/`, `lib/features/settings/categories/`.
 
 ---
 
@@ -3168,6 +3173,30 @@ RU:
 
 ---
 
+## Folder: `lib/features/settings/categories/`
+
+EN:
+
+- **What this folder is:** Category manager UI — band grid, editor/appearance sheets, create dialog, browse panel.
+- **Why it exists:** Users organize work/personal/client categories from More → Categories (Settings ownership).
+- **What lives here:** List view, row widget, editor/appearance sheets, helpers, create dialog, recursive browse panel.
+- **What part of the app it affects:** More → Categories route only; shared pickers live under `lib/shared/categories/`.
+- **When to open it:** Create category, reorder, archive, edit keywords/appearance.
+- **Can it be deleted?** No — category management UI gone.
+- **Main related paths:** `lib/data/categories/`, `lib/shared/categories/`.
+
+RU:
+
+- **Что это за папка:** UI менеджера категорий — band grid, editor/appearance sheets, create dialog, browse panel.
+- **Зачем нужна:** Пользователь организует work/personal/client categories из More → Categories (Settings ownership).
+- **Что здесь лежит:** List view, row widget, editor/appearance sheets, helpers, create dialog, recursive browse panel.
+- **На что влияет в приложении:** Только маршрут More → Categories; shared pickers живут в `lib/shared/categories/`.
+- **Когда открывать:** Create category, reorder, archive, edit keywords/appearance.
+- **Можно удалить?** Нет — category management UI gone.
+- **Связанные пути:** `lib/data/categories/`, `lib/shared/categories/`.
+
+---
+
 ## Folder: `lib/features/settings/voice/`
 
 EN:
@@ -3237,6 +3266,102 @@ RU:
 - **Когда открывать:** Маршрут редактора, автосохранение Quill, переход More → Edit details.
 - **Можно удалить?** Нет — shared Notes editor entry breaks.
 - **Связанные пути:** `lib/core/widgets/notes/`, `lib/features/shared/edit_sheet/`.
+
+---
+
+## Folder: `lib/shared/categories/picker/`
+
+EN:
+
+- **What this folder is:** Category tree picker sheet, form field, create dialog, and narrow Brain injection contracts.
+- **Why it exists:** Picker create/select is multi-feature UI; mutation stays injected from composition root.
+- **What lives here:** `category_picker_contracts.dart`, models, create dialog, `category_tree_picker.dart`.
+- **What part of the app it affects:** Notes/Planning/Timeline/Wear category pickers and create-from-picker.
+- **When to open it:** Picker create root/child semantics, sheet chrome, form field.
+- **Can it be deleted?** No — category pickers break.
+- **Main related paths:** `lib/main.dart` `_wireCategorySharedContracts()`, `lib/features/lists/category_filter_tree_field.dart`.
+
+RU:
+
+- **Что это за папка:** Sheet picker дерева категорий, form field, create dialog и узкие Brain injection contracts.
+- **Зачем нужна:** Picker create/select — multi-feature UI; mutation приходит через composition root.
+- **Что здесь лежит:** `category_picker_contracts.dart`, models, create dialog, `category_tree_picker.dart`.
+- **На что влияет в приложении:** Category pickers Notes/Planning/Timeline/Wear и create-from-picker.
+- **Когда открывать:** Семантика create root/child, chrome sheet, form field.
+- **Можно удалить?** Нет — category pickers break.
+- **Связанные пути:** `lib/main.dart` `_wireCategorySharedContracts()`.
+
+---
+
+## Folder: `lib/shared/categories/presentation/`
+
+EN:
+
+- **What this folder is:** Injected category presentation lookup for plan cards (color/icon/breadcrumb).
+- **Why it exists:** Plan cards must resolve category chrome without importing Brain.
+- **What lives here:** `plan_category_lookup.dart` (`PlanCategoryLookup`, `PlanCategoryPresentation`).
+- **What part of the app it affects:** Plan card category color/icon/breadcrumb display.
+- **When to open it:** Category presentation wiring or plan card category chrome.
+- **Can it be deleted?** No — plan cards lose category presentation.
+- **Main related paths:** `lib/main.dart` `_wirePlanCategoryLookup()`, `lib/core/widgets/plan_time_task_card/`.
+
+RU:
+
+- **Что это за папка:** Injected lookup presentation категории для plan cards (цвет/иконка/breadcrumb).
+- **Зачем нужна:** Plan cards должны получать chrome категории без импорта Brain.
+- **Что здесь лежит:** `plan_category_lookup.dart` (`PlanCategoryLookup`, `PlanCategoryPresentation`).
+- **На что влияет в приложении:** Отображение color/icon/breadcrumb категории на plan cards.
+- **Когда открывать:** Wiring presentation или chrome категории на plan card.
+- **Можно удалить?** Нет — plan cards lose category presentation.
+- **Связанные пути:** `lib/main.dart` `_wirePlanCategoryLookup()`, `lib/core/widgets/plan_time_task_card/`.
+
+---
+
+## Folder: `lib/shared/categories/tree/`
+
+EN:
+
+- **What this folder is:** Pure category-tree filter/opacity helpers and reusable tree body UI.
+- **Why it exists:** Picker and settings browse share one tree body without Brain imports.
+- **What lives here:** `category_tree_filter.dart`, `category_tree_body.dart`.
+- **What part of the app it affects:** Shared tree rendering and search filtering.
+- **When to open it:** Tree opacity, expand path, picker search filter.
+- **Can it be deleted?** No — shared category tree UI breaks.
+- **Main related paths:** `lib/shared/categories/picker/`, `lib/features/settings/categories/`.
+
+RU:
+
+- **Что это за папка:** Чистые helpers фильтра/opacity дерева категорий и reusable tree body UI.
+- **Зачем нужна:** Picker и settings browse делят один tree body без импорта Brain.
+- **Что здесь лежит:** `category_tree_filter.dart`, `category_tree_body.dart`.
+- **На что влияет в приложении:** Shared tree rendering и search filtering.
+- **Когда открывать:** Opacity дерева, expand path, filter поиска picker.
+- **Можно удалить?** Нет — shared category tree UI breaks.
+- **Связанные пути:** `lib/shared/categories/picker/`, `lib/features/settings/categories/`.
+
+---
+
+## Folder: `lib/shared/categories/visibility/`
+
+EN:
+
+- **What this folder is:** Local-only hidden category preference storage (SharedPreferences).
+- **Why it exists:** Hide unused categories client-side without schema changes; reusable across Lists/shell/manager.
+- **What lives here:** `category_visibility_prefs.dart` (key `hidden_category_ids_json`).
+- **What part of the app it affects:** Hidden category filtering in pickers, Lists chips, Categories manager.
+- **When to open it:** Hidden prefs, ancestor hide, edit-mode show-all.
+- **Can it be deleted?** No — local hide behavior breaks.
+- **Main related paths:** `CategoryTreeSource.pathFromRoot` injection.
+
+RU:
+
+- **Что это за папка:** Локальное хранение скрытых категорий (SharedPreferences).
+- **Зачем нужна:** Скрывать неиспользуемые категории на клиенте без смены схемы.
+- **Что здесь лежит:** `category_visibility_prefs.dart` (ключ `hidden_category_ids_json`).
+- **На что влияет в приложении:** Фильтрация скрытых категорий в pickers, Lists chips, Categories manager.
+- **Когда открывать:** Hidden prefs, hide предков, edit-mode show-all.
+- **Можно удалить?** Нет — local hide behavior breaks.
+- **Связанные пути:** `CategoryTreeSource.pathFromRoot` injection.
 
 ---
 
@@ -5860,7 +5985,7 @@ EN:
 - **Why needed:** Preserves audit/parity decisions so later work does not re-litigate the same findings.
 - **Contents:** Markdown report body for `REPOSITORY HYGIENE AUDIT 2026-07-21`.
 - **Repository role:** historical engineering record
-- **Evidence of use:** (1) Dated engineering report retained as decision history; linked from structure/changelog audits — not runtime code. (2) Referenced by: `CHANGELOG.md`, `docs/APP_STRUCTURE.md`, `scripts/manual/generate_app_structure_detailed.py`, `scripts/manual/structure_evidence_index.py`.
+- **Evidence of use:** (1) Dated engineering report retained as decision history; linked from structure/changelog audits — not runtime code. (2) Referenced by: `CHANGELOG.md`, `scripts/manual/generate_app_structure_detailed.py`, `scripts/manual/structure_evidence_index.py`.
 - **Necessity status:** HISTORICAL_RECORD
 - **Deletion consequence:** Lost historical decision evidence for that investigation.
 - **Confidence:** MEDIUM
@@ -8986,7 +9111,7 @@ EN:
 - **Contents:** `AppColors` constants; `lightColorScheme()` / `darkColorScheme()` factories.
 - **Key code names:** `AppColors`
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/core/app_snackbar.dart`, `lib/core/theme.dart`, `lib/core/widgets/life_card.dart`, `lib/features/calendar/calendar_month_grid.dart`, `lib/features/categories/category_row_widget.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/core/app_snackbar.dart`, `lib/core/theme.dart`, `lib/core/widgets/life_card.dart`, `lib/features/calendar/calendar_month_grid.dart`, `lib/features/settings/categories/category_row_widget.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -9003,7 +9128,7 @@ RU:
 - **Зачем:** Смена `actionPrimary` перекрашивает кнопки, tabs и nav chrome во всём приложении.
 - **Содержимое:** Константы `AppColors`; фабрики `lightColorScheme()` / `darkColorScheme()`.
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/core/app_snackbar.dart`, `lib/core/theme.dart`, `lib/core/widgets/life_card.dart`, `lib/features/calendar/calendar_month_grid.dart`, `lib/features/categories/category_row_widget.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/core/app_snackbar.dart`, `lib/core/theme.dart`, `lib/core/widgets/life_card.dart`, `lib/features/calendar/calendar_month_grid.dart`, `lib/features/settings/categories/category_row_widget.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -9062,7 +9187,7 @@ EN:
 - **Contents:** Primary symbols: `AppSnack`.
 - **Key code names:** `AppSnack`
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/core/widgets/timezone_quick_picker.dart`, `lib/data/database_service.dart`, `lib/features/categories/create_category_from_picker.dart`, `lib/features/lists/lists_export.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/core/widgets/timezone_quick_picker.dart`, `lib/data/database_service.dart`, `lib/features/lists/lists_export.dart`, `lib/features/lists/lists_view.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -9079,7 +9204,7 @@ RU:
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
 - **Содержимое:** Dart-модуль `app_snackbar.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/core/widgets/timezone_quick_picker.dart`, `lib/data/database_service.dart`, `lib/features/categories/create_category_from_picker.dart`, `lib/features/lists/lists_export.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/core/widgets/timezone_quick_picker.dart`, `lib/data/database_service.dart`, `lib/features/lists/lists_export.dart`, `lib/features/lists/lists_view.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -9099,7 +9224,7 @@ EN:
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
 - **Contents:** Dart module `category_color_palette.dart` — open file for classes and helpers.
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/categories/category_appearance_sheet.dart`, `lib/features/categories/category_editor_sheet.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/settings/categories/category_appearance_sheet.dart`, `lib/features/settings/categories/category_editor_sheet.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -9116,7 +9241,7 @@ RU:
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
 - **Содержимое:** Dart-модуль `category_color_palette.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/features/categories/category_appearance_sheet.dart`, `lib/features/categories/category_editor_sheet.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/features/settings/categories/category_appearance_sheet.dart`, `lib/features/settings/categories/category_editor_sheet.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -9421,44 +9546,6 @@ RU:
 - **Владелец / слой:** общая foundation
 - **Обязанности:** Foundation-логика: Platform-aware picker entry (keyboard vs touch).
 - **Когда открывать:** Когда ломается поведение, связанное с `picker_entry_modes.dart`.
-- **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** `lib/core/`, `docs/APP_STRUCTURE.md`
-
-
-### `lib/core/plan_category_lookup.dart`
-
-EN:
-
-- **Human purpose:** Foundation module `plan_category_lookup.dart` (core) — Category presentation lookup (shell-injected). Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What this is:** Foundation module `plan_category_lookup.dart` (core) — Category presentation lookup (shell-injected).
-- **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **Contents:** Primary symbols: `PlanCategoryPresentation`, `PlanCategoryLookup`.
-- **Key code names:** `PlanCategoryPresentation`, `PlanCategoryLookup`
-- **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/core/widgets/plan_time_task_card/plan_time_task_card.dart`, `lib/main.dart`.
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
-- **Confidence:** HIGH
-- **Owner / layer:** shared foundation
-- **Responsibilities:** Category presentation lookup (shell-injected)
-- **When to open:** When behavior tied to `plan_category_lookup.dart` breaks or you need to change its documented role.
-- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: Category presentation lookup (shell-injected)
-
-RU:
-
-- **Зачем файл человеку:** Foundation-модуль `plan_category_lookup.dart` (core) — Category presentation lookup (shell-injected). Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Что это:** Foundation-модуль `plan_category_lookup.dart` (core) — Category presentation lookup (shell-injected).
-- **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-модуль `plan_category_lookup.dart` — классы и helpers в исходнике.
-- **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/core/widgets/plan_time_task_card/plan_time_task_card.dart`, `lib/main.dart`.
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
-- **Уверенность:** HIGH
-- **Владелец / слой:** общая foundation
-- **Обязанности:** Foundation-логика: Category presentation lookup (shell-injected).
-- **Когда открывать:** Когда ломается поведение, связанное с `plan_category_lookup.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/`, `docs/APP_STRUCTURE.md`
 
@@ -9885,7 +9972,7 @@ EN:
 - **Contents:** Canonical Flutter widget (`AppButtonVariant`, `AppButtonSize`, `AppButton`).
 - **Key code names:** `AppButtonVariant`, `AppButtonSize`, `AppButton`
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/core/widgets/app_state_views.dart`, `lib/core/widgets/confirm_dialog.dart`, `lib/features/calendar/calendar_day_panel.dart`, `lib/features/categories/create_category_from_picker.dart`, `lib/features/dev/component_lab_view.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/core/widgets/app_state_views.dart`, `lib/core/widgets/confirm_dialog.dart`, `lib/features/calendar/calendar_day_panel.dart`, `lib/features/dev/component_lab_view.dart`, `lib/features/planning/time_view/time_view_search_delegate.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -9902,7 +9989,7 @@ RU:
 - **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
 - **Содержимое:** Канонический Flutter-виджет (logic in `app_button`).
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/core/widgets/app_state_views.dart`, `lib/core/widgets/confirm_dialog.dart`, `lib/features/calendar/calendar_day_panel.dart`, `lib/features/categories/create_category_from_picker.dart`, `lib/features/dev/component_lab_view.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/core/widgets/app_state_views.dart`, `lib/core/widgets/confirm_dialog.dart`, `lib/features/calendar/calendar_day_panel.dart`, `lib/features/dev/component_lab_view.dart`, `lib/features/planning/time_view/time_view_search_delegate.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -9923,7 +10010,7 @@ EN:
 - **Contents:** Canonical Flutter widget (`AppIconButtonVariant`, `AppIconButtonSize`, `AppIconButton`).
 - **Key code names:** `AppIconButtonVariant`, `AppIconButtonSize`, `AppIconButton`
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/categories/category_list_view.dart`, `lib/features/categories/category_recursive_tree.dart`, `lib/features/dev/component_lab_view.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/dev/component_lab_view.dart`, `lib/features/settings/categories/category_list_view.dart`, `lib/shared/categories/tree/category_tree_body.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -9940,7 +10027,7 @@ RU:
 - **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
 - **Содержимое:** Канонический Flutter-виджет (logic in `app_icon_button`).
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/features/categories/category_list_view.dart`, `lib/features/categories/category_recursive_tree.dart`, `lib/features/dev/component_lab_view.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/features/dev/component_lab_view.dart`, `lib/features/settings/categories/category_list_view.dart`, `lib/shared/categories/tree/category_tree_body.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -9961,7 +10048,7 @@ EN:
 - **Contents:** Canonical Flutter widget (`AppLoadingSize`, `AppLoading`).
 - **Key code names:** `AppLoadingSize`, `AppLoading`
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/calendar/calendar_day_panel.dart`, `lib/features/categories/category_appearance_sheet.dart`, `lib/features/categories/category_editor_sheet.dart`, `lib/features/categories/create_category_dialog.dart`, `lib/features/dev/component_lab_view.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/calendar/calendar_day_panel.dart`, `lib/features/dev/component_lab_view.dart`, `lib/features/lists/lists_empty_state.dart`, `lib/features/lists/lists_view.dart`, `lib/features/planning/smart_plan_sheet.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -9978,7 +10065,7 @@ RU:
 - **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
 - **Содержимое:** Канонический Flutter-виджет (logic in `app_loading`).
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/features/calendar/calendar_day_panel.dart`, `lib/features/categories/category_appearance_sheet.dart`, `lib/features/categories/category_editor_sheet.dart`, `lib/features/categories/create_category_dialog.dart`, `lib/features/dev/component_lab_view.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/features/calendar/calendar_day_panel.dart`, `lib/features/dev/component_lab_view.dart`, `lib/features/lists/lists_empty_state.dart`, `lib/features/lists/lists_view.dart`, `lib/features/planning/smart_plan_sheet.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -11669,7 +11756,7 @@ EN:
 - **Responsibilities:** Add nested category; update color/icon/name; archive/restore; write sibling order.
 - **When to open:** Category save fails, archive doesn’t stick, drag-reorder not persisted.
 - **Can it be deleted?** Brain/library compile failure in `lib/data/database_service.dart` and broken related UI/data ops.
-- **Connected to:** `lib/features/categories/`, category manager sheets.
+- **Connected to:** `lib/features/settings/categories/`, category manager sheets.
 
 RU:
 
@@ -15024,385 +15111,6 @@ RU:
 - **Связано с:** `lib/features/calendar/`, `docs/APP_STRUCTURE.md`
 
 
-### `lib/features/categories/category_appearance_sheet.dart`
-
-EN:
-
-- **Human purpose:** `category_appearance_sheet.dart` on More → Categories manager — Category manager (More menu): band grid, editor/appearance sheets, tree picker, picker create flow. Users see `category_appearance_sheet.dart` when using More → Categories manager.
-- **What this is:** `category_appearance_sheet.dart` on More → Categories manager — Category manager (More menu): band grid, editor/appearance sheets, tree picker, picker create flow.
-- **Why needed:** Users see `category_appearance_sheet.dart` when using More → Categories manager.
-- **Contents:** Primary symbols: `CategoryAppearanceSheet`, `_CategoryAppearanceSheetState`.
-- **Key code names:** `CategoryAppearanceSheet`, `_CategoryAppearanceSheetState`
-- **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/categories/category_list_view.dart`.
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
-- **Confidence:** HIGH
-- **Owner / layer:** Categories UI
-- **Responsibilities:** Category manager (More menu): band grid, editor/appearance sheets, tree picker, picker create flow
-- **When to open:** When behavior tied to `category_appearance_sheet.dart` breaks or you need to change its documented role.
-- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: Category manager (More menu): band grid, editor/appearance sheets, tree picker, picker create flow
-
-RU:
-
-- **Зачем файл человеку:** `category_appearance_sheet.dart` на More → Categories — Пользователь открывает sheet/dialog из entry `category_appearance_sheet`.. Пользователь видит UI из `category_appearance_sheet.dart` на More → Categories.
-- **Что это:** `category_appearance_sheet.dart` на More → Categories — Пользователь открывает sheet/dialog из entry `category_appearance_sheet`..
-- **Зачем:** Пользователь видит UI из `category_appearance_sheet.dart` на More → Categories.
-- **Содержимое:** Основные символы: `CategoryAppearanceSheet`, `_CategoryAppearanceSheetState`.
-- **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/features/categories/category_list_view.dart`.
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
-- **Уверенность:** HIGH
-- **Владелец / слой:** UI категорий
-- **Обязанности:** Пользователь открывает sheet/dialog из entry `category_appearance_sheet`.
-- **Когда открывать:** Когда ломается поведение, связанное с `category_appearance_sheet.dart`.
-- **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** `lib/features/categories/`, `docs/APP_STRUCTURE.md`
-
-
-### `lib/features/categories/category_editor_sheet.dart`
-
-EN:
-
-- **Human purpose:** `category_editor_sheet.dart` on More → Categories manager — Category manager (More menu): band grid, editor/appearance sheets, tree picker, picker create flow. Users see `category_editor_sheet.dart` when using More → Categories manager.
-- **What this is:** `category_editor_sheet.dart` on More → Categories manager — Category manager (More menu): band grid, editor/appearance sheets, tree picker, picker create flow.
-- **Why needed:** Users see `category_editor_sheet.dart` when using More → Categories manager.
-- **Contents:** Primary symbols: `CategoryEditorSheet`, `_CategoryEditorSheetState`.
-- **Key code names:** `CategoryEditorSheet`, `_CategoryEditorSheetState`
-- **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/categories/category_list_view.dart`.
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
-- **Confidence:** HIGH
-- **Owner / layer:** Categories UI
-- **Responsibilities:** Category manager (More menu): band grid, editor/appearance sheets, tree picker, picker create flow
-- **When to open:** When behavior tied to `category_editor_sheet.dart` breaks or you need to change its documented role.
-- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: Category manager (More menu): band grid, editor/appearance sheets, tree picker, picker create flow
-
-RU:
-
-- **Зачем файл человеку:** `category_editor_sheet.dart` на More → Categories — Пользователь открывает sheet/dialog из entry `category_editor_sheet`.. Пользователь видит UI из `category_editor_sheet.dart` на More → Categories.
-- **Что это:** `category_editor_sheet.dart` на More → Categories — Пользователь открывает sheet/dialog из entry `category_editor_sheet`..
-- **Зачем:** Пользователь видит UI из `category_editor_sheet.dart` на More → Categories.
-- **Содержимое:** Основные символы: `CategoryEditorSheet`, `_CategoryEditorSheetState`.
-- **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/features/categories/category_list_view.dart`.
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
-- **Уверенность:** HIGH
-- **Владелец / слой:** UI категорий
-- **Обязанности:** Пользователь открывает sheet/dialog из entry `category_editor_sheet`.
-- **Когда открывать:** Когда ломается поведение, связанное с `category_editor_sheet.dart`.
-- **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** `lib/features/categories/`, `docs/APP_STRUCTURE.md`
-
-
-### `lib/features/categories/category_helpers.dart`
-
-EN:
-
-- **Human purpose:** `category_helpers.dart` on More → Categories manager — Category manager (More menu): band grid, editor/appearance sheets, tree picker, picker create flow. Users see `category_helpers.dart` when using More → Categories manager.
-- **What this is:** `category_helpers.dart` on More → Categories manager — Category manager (More menu): band grid, editor/appearance sheets, tree picker, picker create flow.
-- **Why needed:** Users see `category_helpers.dart` when using More → Categories manager.
-- **Contents:** Dart module `category_helpers.dart` — open file for classes and helpers.
-- **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/categories/category_appearance_sheet.dart`, `lib/features/categories/category_editor_sheet.dart`.
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
-- **Confidence:** HIGH
-- **Owner / layer:** Categories UI
-- **Responsibilities:** Category manager (More menu): band grid, editor/appearance sheets, tree picker, picker create flow
-- **When to open:** When behavior tied to `category_helpers.dart` breaks or you need to change its documented role.
-- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: Category manager (More menu): band grid, editor/appearance sheets, tree picker, picker create flow
-
-RU:
-
-- **Зачем файл человеку:** `category_helpers.dart` на More → Categories — Поддерживает поведение `category_helpers` в этой feature-зоне.. Пользователь видит UI из `category_helpers.dart` на More → Categories.
-- **Что это:** `category_helpers.dart` на More → Categories — Поддерживает поведение `category_helpers` в этой feature-зоне..
-- **Зачем:** Пользователь видит UI из `category_helpers.dart` на More → Categories.
-- **Содержимое:** Dart-модуль `category_helpers.dart` — классы и helpers в исходнике.
-- **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/features/categories/category_appearance_sheet.dart`, `lib/features/categories/category_editor_sheet.dart`.
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
-- **Уверенность:** HIGH
-- **Владелец / слой:** UI категорий
-- **Обязанности:** Поддерживает поведение `category_helpers` в этой feature-зоне.
-- **Когда открывать:** Когда ломается поведение, связанное с `category_helpers.dart`.
-- **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** `lib/features/categories/`, `docs/APP_STRUCTURE.md`
-
-
-### `lib/features/categories/category_list_view.dart`
-
-EN:
-
-- **Human purpose:** `category_list_view.dart` on More → Categories manager — Category manager (More menu): band grid, editor/appearance sheets, tree picker, picker create flow. Users see `category_list_view.dart` when using More → Categories manager.
-- **What this is:** `category_list_view.dart` on More → Categories manager — Category manager (More menu): band grid, editor/appearance sheets, tree picker, picker create flow.
-- **Why needed:** Users see `category_list_view.dart` when using More → Categories manager.
-- **Contents:** Primary symbols: `CategoriesPage`, `_CategoriesPageState`.
-- **Key code names:** `CategoriesPage`, `_CategoriesPageState`
-- **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`.
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
-- **Confidence:** HIGH
-- **Owner / layer:** Categories UI
-- **Responsibilities:** Category manager (More menu): band grid, editor/appearance sheets, tree picker, picker create flow
-- **When to open:** When behavior tied to `category_list_view.dart` breaks or you need to change its documented role.
-- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: Category manager (More menu): band grid, editor/appearance sheets, tree picker, picker create flow
-
-RU:
-
-- **Зачем файл человеку:** `category_list_view.dart` на More → Categories — Отвечает за видимый UI, собранный в `category_list_view.dart`.. Пользователь видит UI из `category_list_view.dart` на More → Categories.
-- **Что это:** `category_list_view.dart` на More → Categories — Отвечает за видимый UI, собранный в `category_list_view.dart`..
-- **Зачем:** Пользователь видит UI из `category_list_view.dart` на More → Categories.
-- **Содержимое:** Компоновка экрана и state в `category_list_view.dart`.
-- **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`.
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
-- **Уверенность:** HIGH
-- **Владелец / слой:** UI категорий
-- **Обязанности:** Отвечает за видимый UI, собранный в `category_list_view.dart`.
-- **Когда открывать:** Когда ломается поведение, связанное с `category_list_view.dart`.
-- **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** `lib/features/categories/`, `docs/APP_STRUCTURE.md`
-
-
-### `lib/features/categories/category_recursive_tree.dart`
-
-EN:
-
-- **Human purpose:** `category_recursive_tree.dart` on More → Categories manager — Category manager (More menu): band grid, editor/appearance sheets, tree picker, picker create flow. Users see `category_recursive_tree.dart` when using More → Categories manager.
-- **What this is:** `category_recursive_tree.dart` on More → Categories manager — Category manager (More menu): band grid, editor/appearance sheets, tree picker, picker create flow.
-- **Why needed:** Users see `category_recursive_tree.dart` when using More → Categories manager.
-- **Contents:** Primary symbols: `CategoryTreeSheetPicked`, `CategoryTreeSheetAll`, `_CategoryTreePickerSheet`, `_CategoryTreePickerSheetState`, `CategoryFilterTreeField`.
-- **Key code names:** `CategoryTreeSheetPicked`, `CategoryTreeSheetAll`, `_CategoryTreePickerSheet`, `_CategoryTreePickerSheetState`, `CategoryFilterTreeField`
-- **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/notes/note_editor_page.dart`, `lib/features/shared/edit_sheet/parallel_record_panels.dart`, `lib/features/shared/notes_editor/notes_editor_sheet.dart`, `lib/features/shared/planning_task_edit_sheet.dart`, `lib/features/shared/timeline_record_edit_sheet.dart`.
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
-- **Confidence:** HIGH
-- **Owner / layer:** Categories UI
-- **Responsibilities:** Category manager (More menu): band grid, editor/appearance sheets, tree picker, picker create flow
-- **When to open:** When behavior tied to `category_recursive_tree.dart` breaks or you need to change its documented role.
-- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: Category manager (More menu): band grid, editor/appearance sheets, tree picker, picker create flow
-
-RU:
-
-- **Зачем файл человеку:** `category_recursive_tree.dart` на More → Categories — Поддерживает поведение `category_recursive_tree` в этой feature-зоне.. Пользователь видит UI из `category_recursive_tree.dart` на More → Categories.
-- **Что это:** `category_recursive_tree.dart` на More → Categories — Поддерживает поведение `category_recursive_tree` в этой feature-зоне..
-- **Зачем:** Пользователь видит UI из `category_recursive_tree.dart` на More → Categories.
-- **Содержимое:** Dart-модуль `category_recursive_tree.dart` — классы и helpers в исходнике.
-- **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/features/notes/note_editor_page.dart`, `lib/features/shared/edit_sheet/parallel_record_panels.dart`, `lib/features/shared/notes_editor/notes_editor_sheet.dart`, `lib/features/shared/planning_task_edit_sheet.dart`, `lib/features/shared/timeline_record_edit_sheet.dart`.
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
-- **Уверенность:** HIGH
-- **Владелец / слой:** UI категорий
-- **Обязанности:** Поддерживает поведение `category_recursive_tree` в этой feature-зоне.
-- **Когда открывать:** Когда ломается поведение, связанное с `category_recursive_tree.dart`.
-- **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** `lib/features/categories/`, `docs/APP_STRUCTURE.md`
-
-
-### `lib/features/categories/category_row_widget.dart`
-
-EN:
-
-- **Human purpose:** `category_row_widget.dart` on More → Categories manager — Category manager (More menu): band grid, editor/appearance sheets, tree picker, picker create flow. Users see `category_row_widget.dart` when using More → Categories manager.
-- **What this is:** `category_row_widget.dart` on More → Categories manager — Category manager (More menu): band grid, editor/appearance sheets, tree picker, picker create flow.
-- **Why needed:** Users see `category_row_widget.dart` when using More → Categories manager.
-- **Contents:** Primary symbols: `CategoryDepthLayout`, `CategoryBandLayout`, `CategoryRowWidget`.
-- **Key code names:** `CategoryDepthLayout`, `CategoryBandLayout`, `CategoryRowWidget`
-- **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/categories/category_list_view.dart`.
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
-- **Confidence:** HIGH
-- **Owner / layer:** Categories UI
-- **Responsibilities:** Category manager (More menu): band grid, editor/appearance sheets, tree picker, picker create flow
-- **When to open:** When behavior tied to `category_row_widget.dart` breaks or you need to change its documented role.
-- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: Category manager (More menu): band grid, editor/appearance sheets, tree picker, picker create flow
-
-RU:
-
-- **Зачем файл человеку:** `category_row_widget.dart` на More → Categories — Поддерживает поведение `category_row_widget` в этой feature-зоне.. Пользователь видит UI из `category_row_widget.dart` на More → Categories.
-- **Что это:** `category_row_widget.dart` на More → Categories — Поддерживает поведение `category_row_widget` в этой feature-зоне..
-- **Зачем:** Пользователь видит UI из `category_row_widget.dart` на More → Categories.
-- **Содержимое:** Dart-модуль `category_row_widget.dart` — классы и helpers в исходнике.
-- **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/features/categories/category_list_view.dart`.
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
-- **Уверенность:** HIGH
-- **Владелец / слой:** UI категорий
-- **Обязанности:** Поддерживает поведение `category_row_widget` в этой feature-зоне.
-- **Когда открывать:** Когда ломается поведение, связанное с `category_row_widget.dart`.
-- **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** `lib/features/categories/`, `docs/APP_STRUCTURE.md`
-
-
-### `lib/features/categories/category_tag_input_field.dart`
-
-EN:
-
-- **Human purpose:** `category_tag_input_field.dart` on More → Categories manager — Category manager (More menu): band grid, editor/appearance sheets, tree picker, picker create flow. Users see `category_tag_input_field.dart` when using More → Categories manager.
-- **What this is:** `category_tag_input_field.dart` on More → Categories manager — Category manager (More menu): band grid, editor/appearance sheets, tree picker, picker create flow.
-- **Why needed:** Users see `category_tag_input_field.dart` when using More → Categories manager.
-- **Contents:** Primary symbols: `TagInputField`, `_TagInputFieldState`.
-- **Key code names:** `TagInputField`, `_TagInputFieldState`
-- **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/categories/category_editor_sheet.dart`, `lib/features/categories/category_list_view.dart`.
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
-- **Confidence:** HIGH
-- **Owner / layer:** Categories UI
-- **Responsibilities:** Category manager (More menu): band grid, editor/appearance sheets, tree picker, picker create flow
-- **When to open:** When behavior tied to `category_tag_input_field.dart` breaks or you need to change its documented role.
-- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: Category manager (More menu): band grid, editor/appearance sheets, tree picker, picker create flow
-
-RU:
-
-- **Зачем файл человеку:** `category_tag_input_field.dart` на More → Categories — Поддерживает поведение `category_tag_input_field` в этой feature-зоне.. Пользователь видит UI из `category_tag_input_field.dart` на More → Categories.
-- **Что это:** `category_tag_input_field.dart` на More → Categories — Поддерживает поведение `category_tag_input_field` в этой feature-зоне..
-- **Зачем:** Пользователь видит UI из `category_tag_input_field.dart` на More → Categories.
-- **Содержимое:** Dart-модуль `category_tag_input_field.dart` — классы и helpers в исходнике.
-- **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/features/categories/category_editor_sheet.dart`, `lib/features/categories/category_list_view.dart`.
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
-- **Уверенность:** HIGH
-- **Владелец / слой:** UI категорий
-- **Обязанности:** Поддерживает поведение `category_tag_input_field` в этой feature-зоне.
-- **Когда открывать:** Когда ломается поведение, связанное с `category_tag_input_field.dart`.
-- **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** `lib/features/categories/`, `docs/APP_STRUCTURE.md`
-
-
-### `lib/features/categories/category_visibility_prefs.dart`
-
-EN:
-
-- **Human purpose:** `category_visibility_prefs.dart` on More → Categories manager — Category manager (More menu): band grid, editor/appearance sheets, tree picker, picker create flow. Users see `category_visibility_prefs.dart` when using More → Categories manager.
-- **What this is:** `category_visibility_prefs.dart` on More → Categories manager — Category manager (More menu): band grid, editor/appearance sheets, tree picker, picker create flow.
-- **Why needed:** Users see `category_visibility_prefs.dart` when using More → Categories manager.
-- **Contents:** Primary symbols: `CategoryVisibilityPrefs`.
-- **Key code names:** `CategoryVisibilityPrefs`
-- **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/features/categories/category_list_view.dart`, `lib/features/categories/category_recursive_tree.dart`, `lib/features/categories/category_row_widget.dart`, `lib/features/lists/lists_filters.dart`.
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
-- **Confidence:** HIGH
-- **Owner / layer:** Categories UI
-- **Responsibilities:** Category manager (More menu): band grid, editor/appearance sheets, tree picker, picker create flow
-- **When to open:** When behavior tied to `category_visibility_prefs.dart` breaks or you need to change its documented role.
-- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: Category manager (More menu): band grid, editor/appearance sheets, tree picker, picker create flow
-
-RU:
-
-- **Зачем файл человеку:** `category_visibility_prefs.dart` на More → Categories — Поддерживает поведение `category_visibility_prefs` в этой feature-зоне.. Пользователь видит UI из `category_visibility_prefs.dart` на More → Categories.
-- **Что это:** `category_visibility_prefs.dart` на More → Categories — Поддерживает поведение `category_visibility_prefs` в этой feature-зоне..
-- **Зачем:** Пользователь видит UI из `category_visibility_prefs.dart` на More → Categories.
-- **Содержимое:** Dart-модуль `category_visibility_prefs.dart` — классы и helpers в исходнике.
-- **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/features/categories/category_list_view.dart`, `lib/features/categories/category_recursive_tree.dart`, `lib/features/categories/category_row_widget.dart`, `lib/features/lists/lists_filters.dart`.
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
-- **Уверенность:** HIGH
-- **Владелец / слой:** UI категорий
-- **Обязанности:** Поддерживает поведение `category_visibility_prefs` в этой feature-зоне.
-- **Когда открывать:** Когда ломается поведение, связанное с `category_visibility_prefs.dart`.
-- **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** `lib/features/categories/`, `docs/APP_STRUCTURE.md`
-
-
-### `lib/features/categories/create_category_dialog.dart`
-
-EN:
-
-- **Human purpose:** `create_category_dialog.dart` on More → Categories manager — Category manager (More menu): band grid, editor/appearance sheets, tree picker, picker create flow. Users see `create_category_dialog.dart` when using More → Categories manager.
-- **What this is:** `create_category_dialog.dart` on More → Categories manager — Category manager (More menu): band grid, editor/appearance sheets, tree picker, picker create flow.
-- **Why needed:** Users see `create_category_dialog.dart` when using More → Categories manager.
-- **Contents:** Primary symbols: `_CreateCategoryDialog`, `_CreateCategoryDialogState`.
-- **Key code names:** `_CreateCategoryDialog`, `_CreateCategoryDialogState`
-- **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/categories/category_list_view.dart`.
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
-- **Confidence:** HIGH
-- **Owner / layer:** Categories UI
-- **Responsibilities:** Category manager (More menu): band grid, editor/appearance sheets, tree picker, picker create flow
-- **When to open:** When behavior tied to `create_category_dialog.dart` breaks or you need to change its documented role.
-- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: Category manager (More menu): band grid, editor/appearance sheets, tree picker, picker create flow
-
-RU:
-
-- **Зачем файл человеку:** `create_category_dialog.dart` на More → Categories — Пользователь открывает sheet/dialog из entry `create_category_dialog`.. Пользователь видит UI из `create_category_dialog.dart` на More → Categories.
-- **Что это:** `create_category_dialog.dart` на More → Categories — Пользователь открывает sheet/dialog из entry `create_category_dialog`..
-- **Зачем:** Пользователь видит UI из `create_category_dialog.dart` на More → Categories.
-- **Содержимое:** Основные символы: `_CreateCategoryDialog`, `_CreateCategoryDialogState`.
-- **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/features/categories/category_list_view.dart`.
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
-- **Уверенность:** HIGH
-- **Владелец / слой:** UI категорий
-- **Обязанности:** Пользователь открывает sheet/dialog из entry `create_category_dialog`.
-- **Когда открывать:** Когда ломается поведение, связанное с `create_category_dialog.dart`.
-- **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** `lib/features/categories/`, `docs/APP_STRUCTURE.md`
-
-
-### `lib/features/categories/create_category_from_picker.dart`
-
-EN:
-
-- **Human purpose:** `showCreateCategoryFromPickerDialog` — explicit-parent create flow from category tree pickers. Edit sheets and recursive tree must create a child under a known parent without inferring from search UI.
-- **What this is:** `showCreateCategoryFromPickerDialog` — explicit-parent create flow from category tree pickers.
-- **Why needed:** Edit sheets and recursive tree must create a child under a known parent without inferring from search UI.
-- **Contents:** `CategoryPickerCreateTarget`, submit helper, create dialog widget.
-- **Key code names:** `CategoryPickerCreateTarget`, `CategoryPickerCreateResult`, `_CreateCategoryFromPickerDialog`, `_CreateCategoryFromPickerDialogState`
-- **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/categories/category_recursive_tree.dart`, `lib/features/planning/settings/default_plan_category_search.dart`, `lib/features/shared/planning_task_edit_sheet.dart`, `lib/features/shared/timeline_record_edit_sheet.dart`, `lib/features/wear/wear_timer_screen.dart`.
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
-- **Confidence:** HIGH
-- **Owner / layer:** Categories UI
-- **Responsibilities:** Collect name/parent; call Brain create; return new local category id.
-- **When to open:** When behavior tied to `create_category_from_picker.dart` breaks or you need to change its documented role.
-- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: `showCreateCategoryFromPickerDialog` — explicit-parent create flow from category picker
-
-RU:
-
-- **Зачем файл человеку:** `showCreateCategoryFromPickerDialog` — создание категории с явным родителем из дерева выбора. Edit sheets и recursive tree создают потомка под известным родителем без угадывания из поиска.
-- **Что это:** `showCreateCategoryFromPickerDialog` — создание категории с явным родителем из дерева выбора.
-- **Зачем:** Edit sheets и recursive tree создают потомка под известным родителем без угадывания из поиска.
-- **Содержимое:** `CategoryPickerCreateTarget`, хелпер submit, виджет диалога создания.
-- **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/features/categories/category_recursive_tree.dart`, `lib/features/planning/settings/default_plan_category_search.dart`, `lib/features/shared/planning_task_edit_sheet.dart`, `lib/features/shared/timeline_record_edit_sheet.dart`, `lib/features/wear/wear_timer_screen.dart`.
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
-- **Уверенность:** HIGH
-- **Владелец / слой:** UI категорий
-- **Обязанности:** Собирает имя и родителя; вызывает создание в Brain; возвращает новый local id категории.
-- **Когда открывать:** Когда ломается поведение, связанное с `create_category_from_picker.dart`.
-- **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** `lib/features/categories/`, `docs/APP_STRUCTURE.md`
-
-
 ### `lib/features/dev/component_lab_cards_demo.dart`
 
 EN:
@@ -15477,6 +15185,44 @@ RU:
 - **Когда открывать:** Когда ломается поведение, связанное с `component_lab_view.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/features/dev/`, `docs/APP_STRUCTURE.md`
+
+
+### `lib/features/lists/category_filter_tree_field.dart`
+
+EN:
+
+- **Human purpose:** `category_filter_tree_field.dart` on Lists tab (fourth bottom tab) — Lists/backlog coordinator + filter/bulk/inline/empty modules + card + export + Lists-only “All categories” filter field. Users see `category_filter_tree_field.dart` when using Lists tab (fourth bottom tab).
+- **What this is:** `category_filter_tree_field.dart` on Lists tab (fourth bottom tab) — Lists/backlog coordinator + filter/bulk/inline/empty modules + card + export + Lists-only “All categories” filter field.
+- **Why needed:** Users see `category_filter_tree_field.dart` when using Lists tab (fourth bottom tab).
+- **Contents:** Primary symbols: `CategoryFilterTreeField`.
+- **Key code names:** `CategoryFilterTreeField`
+- **Repository role:** production UI
+- **Evidence of use:** Mentioned by tracked docs/scripts: `AGENTS.md`, `CHANGELOG.md`, `docs/APP_STRUCTURE.md`, `scripts/manual/structure_guide_data.py`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Removing it breaks a required repository capability.
+- **Confidence:** MEDIUM
+- **Owner / layer:** Lists UI
+- **Responsibilities:** Lists/backlog coordinator + filter/bulk/inline/empty modules + card + export + Lists-only “All categories” filter field
+- **When to open:** Lists tab: filters, done checkbox, bulk actions, export.
+- **Can it be deleted?** Removing it breaks a required repository capability.
+- **Connected to:** Lists tab (shell index 3); APP_STRUCTURE role: Lists/backlog coordinator + filter/bulk/inline/empty modules + card + export + Lists-only “All categories” filter field
+
+RU:
+
+- **Зачем файл человеку:** `category_filter_tree_field.dart` на вкладка Lists (четвёртая снизу) — Поддерживает поведение `category_filter_tree_field` в этой feature-зоне.. Пользователь видит UI из `category_filter_tree_field.dart` на вкладка Lists (четвёртая снизу).
+- **Что это:** `category_filter_tree_field.dart` на вкладка Lists (четвёртая снизу) — Поддерживает поведение `category_filter_tree_field` в этой feature-зоне..
+- **Зачем:** Пользователь видит UI из `category_filter_tree_field.dart` на вкладка Lists (четвёртая снизу).
+- **Содержимое:** Dart-модуль `category_filter_tree_field.dart` — классы и helpers в исходнике.
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Упоминается в docs/scripts: `AGENTS.md`, `CHANGELOG.md`, `docs/APP_STRUCTURE.md`, `scripts/manual/structure_guide_data.py`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Удаление ломает нужную возможность репозитория.
+- **Уверенность:** MEDIUM
+- **Владелец / слой:** UI списков
+- **Обязанности:** Поддерживает поведение `category_filter_tree_field` в этой feature-зоне.
+- **Когда открывать:** Вкладка Lists: фильтры, done, экспорт.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** Вкладка Lists (shell index 3)
 
 
 ### `lib/features/lists/lists_bulk_actions.dart`
@@ -15710,8 +15456,8 @@ RU:
 
 EN:
 
-- **Human purpose:** `lists_view.dart` on Lists tab (fourth bottom tab) — Lists/backlog coordinator + filter/bulk/inline/empty modules + card + export. Users see `lists_view.dart` when using Lists tab (fourth bottom tab).
-- **What this is:** `lists_view.dart` on Lists tab (fourth bottom tab) — Lists/backlog coordinator + filter/bulk/inline/empty modules + card + export.
+- **Human purpose:** `lists_view.dart` on Lists tab (fourth bottom tab) — Lists/backlog coordinator + filter/bulk/inline/empty modules + card + export + Lists-only “All categories” filter field. Users see `lists_view.dart` when using Lists tab (fourth bottom tab).
+- **What this is:** `lists_view.dart` on Lists tab (fourth bottom tab) — Lists/backlog coordinator + filter/bulk/inline/empty modules + card + export + Lists-only “All categories” filter field.
 - **Why needed:** Users see `lists_view.dart` when using Lists tab (fourth bottom tab).
 - **Contents:** Primary symbols: `ListsPage`, `_ListsPageState`.
 - **Key code names:** `ListsPage`, `_ListsPageState`
@@ -15721,10 +15467,10 @@ EN:
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
 - **Owner / layer:** Lists UI
-- **Responsibilities:** Lists/backlog coordinator + filter/bulk/inline/empty modules + card + export
+- **Responsibilities:** Lists/backlog coordinator + filter/bulk/inline/empty modules + card + export + Lists-only “All categories” filter field
 - **When to open:** Lists tab: filters, done checkbox, bulk actions, export.
 - **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** Lists tab (shell index 3); APP_STRUCTURE role: Lists/backlog coordinator + filter/bulk/inline/empty modules + card + export
+- **Connected to:** Lists tab (shell index 3); APP_STRUCTURE role: Lists/backlog coordinator + filter/bulk/inline/empty modules + card + export + Lists-only “All categories” filter field
 
 RU:
 
@@ -18092,12 +17838,315 @@ RU:
 - **Связано с:** `lib/features/profile/`, `docs/APP_STRUCTURE.md`
 
 
+### `lib/features/settings/categories/category_appearance_sheet.dart`
+
+EN:
+
+- **Human purpose:** `category_appearance_sheet.dart` on settings area — Settings-owned timezone helpers + Voice settings + Categories manager UI (More → Categories). Users see `category_appearance_sheet.dart` when using settings area.
+- **What this is:** `category_appearance_sheet.dart` on settings area — Settings-owned timezone helpers + Voice settings + Categories manager UI (More → Categories).
+- **Why needed:** Users see `category_appearance_sheet.dart` when using settings area.
+- **Contents:** Primary symbols: `CategoryAppearanceSheet`, `_CategoryAppearanceSheetState`.
+- **Key code names:** `CategoryAppearanceSheet`, `_CategoryAppearanceSheetState`
+- **Repository role:** production UI
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/settings/categories/category_list_view.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** Categories settings UI
+- **Responsibilities:** Settings-owned timezone helpers + Voice settings + Categories manager UI (More → Categories)
+- **When to open:** When behavior tied to `category_appearance_sheet.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** APP_STRUCTURE role: Settings-owned timezone helpers + Voice settings + Categories manager UI (More → Categories)
+
+RU:
+
+- **Зачем файл человеку:** `category_appearance_sheet.dart` на settings — Пользователь открывает sheet/dialog из entry `category_appearance_sheet`.. Пользователь видит UI из `category_appearance_sheet.dart` на settings.
+- **Что это:** `category_appearance_sheet.dart` на settings — Пользователь открывает sheet/dialog из entry `category_appearance_sheet`..
+- **Зачем:** Пользователь видит UI из `category_appearance_sheet.dart` на settings.
+- **Содержимое:** Основные символы: `CategoryAppearanceSheet`, `_CategoryAppearanceSheetState`.
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Импортируется production Dart: `lib/features/settings/categories/category_list_view.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** UI настроек категорий
+- **Обязанности:** Пользователь открывает sheet/dialog из entry `category_appearance_sheet`.
+- **Когда открывать:** Когда ломается поведение, связанное с `category_appearance_sheet.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/features/settings/categories/`, `docs/APP_STRUCTURE.md`
+
+
+### `lib/features/settings/categories/category_editor_sheet.dart`
+
+EN:
+
+- **Human purpose:** `category_editor_sheet.dart` on settings area — Settings-owned timezone helpers + Voice settings + Categories manager UI (More → Categories). Users see `category_editor_sheet.dart` when using settings area.
+- **What this is:** `category_editor_sheet.dart` on settings area — Settings-owned timezone helpers + Voice settings + Categories manager UI (More → Categories).
+- **Why needed:** Users see `category_editor_sheet.dart` when using settings area.
+- **Contents:** Primary symbols: `CategoryEditorSheet`, `_CategoryEditorSheetState`.
+- **Key code names:** `CategoryEditorSheet`, `_CategoryEditorSheetState`
+- **Repository role:** production UI
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/settings/categories/category_list_view.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** Categories settings UI
+- **Responsibilities:** Settings-owned timezone helpers + Voice settings + Categories manager UI (More → Categories)
+- **When to open:** When behavior tied to `category_editor_sheet.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** APP_STRUCTURE role: Settings-owned timezone helpers + Voice settings + Categories manager UI (More → Categories)
+
+RU:
+
+- **Зачем файл человеку:** `category_editor_sheet.dart` на settings — Пользователь открывает sheet/dialog из entry `category_editor_sheet`.. Пользователь видит UI из `category_editor_sheet.dart` на settings.
+- **Что это:** `category_editor_sheet.dart` на settings — Пользователь открывает sheet/dialog из entry `category_editor_sheet`..
+- **Зачем:** Пользователь видит UI из `category_editor_sheet.dart` на settings.
+- **Содержимое:** Основные символы: `CategoryEditorSheet`, `_CategoryEditorSheetState`.
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Импортируется production Dart: `lib/features/settings/categories/category_list_view.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** UI настроек категорий
+- **Обязанности:** Пользователь открывает sheet/dialog из entry `category_editor_sheet`.
+- **Когда открывать:** Когда ломается поведение, связанное с `category_editor_sheet.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/features/settings/categories/`, `docs/APP_STRUCTURE.md`
+
+
+### `lib/features/settings/categories/category_helpers.dart`
+
+EN:
+
+- **Human purpose:** `category_helpers.dart` on settings area — Settings-owned timezone helpers + Voice settings + Categories manager UI (More → Categories). Users see `category_helpers.dart` when using settings area.
+- **What this is:** `category_helpers.dart` on settings area — Settings-owned timezone helpers + Voice settings + Categories manager UI (More → Categories).
+- **Why needed:** Users see `category_helpers.dart` when using settings area.
+- **Contents:** Dart module `category_helpers.dart` — open file for classes and helpers.
+- **Repository role:** production UI
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/settings/categories/category_appearance_sheet.dart`, `lib/features/settings/categories/category_editor_sheet.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** Categories settings UI
+- **Responsibilities:** Settings-owned timezone helpers + Voice settings + Categories manager UI (More → Categories)
+- **When to open:** When behavior tied to `category_helpers.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** APP_STRUCTURE role: Settings-owned timezone helpers + Voice settings + Categories manager UI (More → Categories)
+
+RU:
+
+- **Зачем файл человеку:** `category_helpers.dart` на settings — Поддерживает поведение `category_helpers` в этой feature-зоне.. Пользователь видит UI из `category_helpers.dart` на settings.
+- **Что это:** `category_helpers.dart` на settings — Поддерживает поведение `category_helpers` в этой feature-зоне..
+- **Зачем:** Пользователь видит UI из `category_helpers.dart` на settings.
+- **Содержимое:** Dart-модуль `category_helpers.dart` — классы и helpers в исходнике.
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Импортируется production Dart: `lib/features/settings/categories/category_appearance_sheet.dart`, `lib/features/settings/categories/category_editor_sheet.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** UI настроек категорий
+- **Обязанности:** Поддерживает поведение `category_helpers` в этой feature-зоне.
+- **Когда открывать:** Когда ломается поведение, связанное с `category_helpers.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/features/settings/categories/`, `docs/APP_STRUCTURE.md`
+
+
+### `lib/features/settings/categories/category_list_view.dart`
+
+EN:
+
+- **Human purpose:** `category_list_view.dart` on settings area — Settings-owned timezone helpers + Voice settings + Categories manager UI (More → Categories). Users see `category_list_view.dart` when using settings area.
+- **What this is:** `category_list_view.dart` on settings area — Settings-owned timezone helpers + Voice settings + Categories manager UI (More → Categories).
+- **Why needed:** Users see `category_list_view.dart` when using settings area.
+- **Contents:** Primary symbols: `CategoriesPage`, `_CategoriesPageState`.
+- **Key code names:** `CategoriesPage`, `_CategoriesPageState`
+- **Repository role:** production UI
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** Categories settings UI
+- **Responsibilities:** Settings-owned timezone helpers + Voice settings + Categories manager UI (More → Categories)
+- **When to open:** When behavior tied to `category_list_view.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** APP_STRUCTURE role: Settings-owned timezone helpers + Voice settings + Categories manager UI (More → Categories)
+
+RU:
+
+- **Зачем файл человеку:** `category_list_view.dart` на settings — Отвечает за видимый UI, собранный в `category_list_view.dart`.. Пользователь видит UI из `category_list_view.dart` на settings.
+- **Что это:** `category_list_view.dart` на settings — Отвечает за видимый UI, собранный в `category_list_view.dart`..
+- **Зачем:** Пользователь видит UI из `category_list_view.dart` на settings.
+- **Содержимое:** Компоновка экрана и state в `category_list_view.dart`.
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** UI настроек категорий
+- **Обязанности:** Отвечает за видимый UI, собранный в `category_list_view.dart`.
+- **Когда открывать:** Когда ломается поведение, связанное с `category_list_view.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/features/settings/categories/`, `docs/APP_STRUCTURE.md`
+
+
+### `lib/features/settings/categories/category_recursive_browse_panel.dart`
+
+EN:
+
+- **Human purpose:** `category_recursive_browse_panel.dart` on settings area — Settings-owned timezone helpers + Voice settings + Categories manager UI (More → Categories). Users see `category_recursive_browse_panel.dart` when using settings area.
+- **What this is:** `category_recursive_browse_panel.dart` on settings area — Settings-owned timezone helpers + Voice settings + Categories manager UI (More → Categories).
+- **Why needed:** Users see `category_recursive_browse_panel.dart` when using settings area.
+- **Contents:** Primary symbols: `CategoryRecursiveBrowsePanel`.
+- **Key code names:** `CategoryRecursiveBrowsePanel`
+- **Repository role:** production UI
+- **Evidence of use:** Mentioned by tracked docs/scripts: `docs/APP_STRUCTURE.md`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Removing it breaks a required repository capability.
+- **Confidence:** MEDIUM
+- **Owner / layer:** Categories settings UI
+- **Responsibilities:** Settings-owned timezone helpers + Voice settings + Categories manager UI (More → Categories)
+- **When to open:** When behavior tied to `category_recursive_browse_panel.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Removing it breaks a required repository capability.
+- **Connected to:** APP_STRUCTURE role: Settings-owned timezone helpers + Voice settings + Categories manager UI (More → Categories)
+
+RU:
+
+- **Зачем файл человеку:** `category_recursive_browse_panel.dart` на settings — Поддерживает поведение `category_recursive_browse_panel` в этой feature-зоне.. Пользователь видит UI из `category_recursive_browse_panel.dart` на settings.
+- **Что это:** `category_recursive_browse_panel.dart` на settings — Поддерживает поведение `category_recursive_browse_panel` в этой feature-зоне..
+- **Зачем:** Пользователь видит UI из `category_recursive_browse_panel.dart` на settings.
+- **Содержимое:** Dart-модуль `category_recursive_browse_panel.dart` — классы и helpers в исходнике.
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Упоминается в docs/scripts: `docs/APP_STRUCTURE.md`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Удаление ломает нужную возможность репозитория.
+- **Уверенность:** MEDIUM
+- **Владелец / слой:** UI настроек категорий
+- **Обязанности:** Поддерживает поведение `category_recursive_browse_panel` в этой feature-зоне.
+- **Когда открывать:** Когда ломается поведение, связанное с `category_recursive_browse_panel.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/features/settings/categories/`, `docs/APP_STRUCTURE.md`
+
+
+### `lib/features/settings/categories/category_row_widget.dart`
+
+EN:
+
+- **Human purpose:** `category_row_widget.dart` on settings area — Settings-owned timezone helpers + Voice settings + Categories manager UI (More → Categories). Users see `category_row_widget.dart` when using settings area.
+- **What this is:** `category_row_widget.dart` on settings area — Settings-owned timezone helpers + Voice settings + Categories manager UI (More → Categories).
+- **Why needed:** Users see `category_row_widget.dart` when using settings area.
+- **Contents:** Primary symbols: `CategoryDepthLayout`, `CategoryBandLayout`, `CategoryRowWidget`.
+- **Key code names:** `CategoryDepthLayout`, `CategoryBandLayout`, `CategoryRowWidget`
+- **Repository role:** production UI
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/settings/categories/category_list_view.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** Categories settings UI
+- **Responsibilities:** Settings-owned timezone helpers + Voice settings + Categories manager UI (More → Categories)
+- **When to open:** When behavior tied to `category_row_widget.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** APP_STRUCTURE role: Settings-owned timezone helpers + Voice settings + Categories manager UI (More → Categories)
+
+RU:
+
+- **Зачем файл человеку:** `category_row_widget.dart` на settings — Поддерживает поведение `category_row_widget` в этой feature-зоне.. Пользователь видит UI из `category_row_widget.dart` на settings.
+- **Что это:** `category_row_widget.dart` на settings — Поддерживает поведение `category_row_widget` в этой feature-зоне..
+- **Зачем:** Пользователь видит UI из `category_row_widget.dart` на settings.
+- **Содержимое:** Dart-модуль `category_row_widget.dart` — классы и helpers в исходнике.
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Импортируется production Dart: `lib/features/settings/categories/category_list_view.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** UI настроек категорий
+- **Обязанности:** Поддерживает поведение `category_row_widget` в этой feature-зоне.
+- **Когда открывать:** Когда ломается поведение, связанное с `category_row_widget.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/features/settings/categories/`, `docs/APP_STRUCTURE.md`
+
+
+### `lib/features/settings/categories/category_tag_input_field.dart`
+
+EN:
+
+- **Human purpose:** `category_tag_input_field.dart` on settings area — Settings-owned timezone helpers + Voice settings + Categories manager UI (More → Categories). Users see `category_tag_input_field.dart` when using settings area.
+- **What this is:** `category_tag_input_field.dart` on settings area — Settings-owned timezone helpers + Voice settings + Categories manager UI (More → Categories).
+- **Why needed:** Users see `category_tag_input_field.dart` when using settings area.
+- **Contents:** Primary symbols: `TagInputField`, `_TagInputFieldState`.
+- **Key code names:** `TagInputField`, `_TagInputFieldState`
+- **Repository role:** production UI
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/settings/categories/category_editor_sheet.dart`, `lib/features/settings/categories/category_list_view.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** Categories settings UI
+- **Responsibilities:** Settings-owned timezone helpers + Voice settings + Categories manager UI (More → Categories)
+- **When to open:** When behavior tied to `category_tag_input_field.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** APP_STRUCTURE role: Settings-owned timezone helpers + Voice settings + Categories manager UI (More → Categories)
+
+RU:
+
+- **Зачем файл человеку:** `category_tag_input_field.dart` на settings — Поддерживает поведение `category_tag_input_field` в этой feature-зоне.. Пользователь видит UI из `category_tag_input_field.dart` на settings.
+- **Что это:** `category_tag_input_field.dart` на settings — Поддерживает поведение `category_tag_input_field` в этой feature-зоне..
+- **Зачем:** Пользователь видит UI из `category_tag_input_field.dart` на settings.
+- **Содержимое:** Dart-модуль `category_tag_input_field.dart` — классы и helpers в исходнике.
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Импортируется production Dart: `lib/features/settings/categories/category_editor_sheet.dart`, `lib/features/settings/categories/category_list_view.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** UI настроек категорий
+- **Обязанности:** Поддерживает поведение `category_tag_input_field` в этой feature-зоне.
+- **Когда открывать:** Когда ломается поведение, связанное с `category_tag_input_field.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/features/settings/categories/`, `docs/APP_STRUCTURE.md`
+
+
+### `lib/features/settings/categories/create_category_dialog.dart`
+
+EN:
+
+- **Human purpose:** `create_category_dialog.dart` on settings area — Settings-owned timezone helpers + Voice settings + Categories manager UI (More → Categories). Users see `create_category_dialog.dart` when using settings area.
+- **What this is:** `create_category_dialog.dart` on settings area — Settings-owned timezone helpers + Voice settings + Categories manager UI (More → Categories).
+- **Why needed:** Users see `create_category_dialog.dart` when using settings area.
+- **Contents:** Primary symbols: `_CreateCategoryDialog`, `_CreateCategoryDialogState`.
+- **Key code names:** `_CreateCategoryDialog`, `_CreateCategoryDialogState`
+- **Repository role:** production UI
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/settings/categories/category_list_view.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** Categories settings UI
+- **Responsibilities:** Settings-owned timezone helpers + Voice settings + Categories manager UI (More → Categories)
+- **When to open:** When behavior tied to `create_category_dialog.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** APP_STRUCTURE role: Settings-owned timezone helpers + Voice settings + Categories manager UI (More → Categories)
+
+RU:
+
+- **Зачем файл человеку:** `create_category_dialog.dart` на settings — Пользователь открывает sheet/dialog из entry `create_category_dialog`.. Пользователь видит UI из `create_category_dialog.dart` на settings.
+- **Что это:** `create_category_dialog.dart` на settings — Пользователь открывает sheet/dialog из entry `create_category_dialog`..
+- **Зачем:** Пользователь видит UI из `create_category_dialog.dart` на settings.
+- **Содержимое:** Основные символы: `_CreateCategoryDialog`, `_CreateCategoryDialogState`.
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Импортируется production Dart: `lib/features/settings/categories/category_list_view.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** UI настроек категорий
+- **Обязанности:** Пользователь открывает sheet/dialog из entry `create_category_dialog`.
+- **Когда открывать:** Когда ломается поведение, связанное с `create_category_dialog.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/features/settings/categories/`, `docs/APP_STRUCTURE.md`
+
+
 ### `lib/features/settings/timezone_settings.dart`
 
 EN:
 
-- **Human purpose:** `timezone_settings.dart` on settings area — Settings-owned timezone helpers + Voice settings UI. Users see `timezone_settings.dart` when using settings area.
-- **What this is:** `timezone_settings.dart` on settings area — Settings-owned timezone helpers + Voice settings UI.
+- **Human purpose:** `timezone_settings.dart` on settings area — Settings-owned timezone helpers + Voice settings + Categories manager UI (More → Categories). Users see `timezone_settings.dart` when using settings area.
+- **What this is:** `timezone_settings.dart` on settings area — Settings-owned timezone helpers + Voice settings + Categories manager UI (More → Categories).
 - **Why needed:** Users see `timezone_settings.dart` when using settings area.
 - **Contents:** Primary symbols: `TimezoneOption`.
 - **Key code names:** `TimezoneOption`
@@ -18107,10 +18156,10 @@ EN:
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
 - **Owner / layer:** repository root
-- **Responsibilities:** Settings-owned timezone helpers + Voice settings UI
+- **Responsibilities:** Settings-owned timezone helpers + Voice settings + Categories manager UI (More → Categories)
 - **When to open:** When behavior tied to `timezone_settings.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: Settings-owned timezone helpers + Voice settings UI
+- **Connected to:** APP_STRUCTURE role: Settings-owned timezone helpers + Voice settings + Categories manager UI (More → Categories)
 
 RU:
 
@@ -18134,8 +18183,8 @@ RU:
 
 EN:
 
-- **Human purpose:** `desktop_voice_attempt_dialog.dart` on settings area — Settings-owned timezone helpers + Voice settings UI. Users see `desktop_voice_attempt_dialog.dart` when using settings area.
-- **What this is:** `desktop_voice_attempt_dialog.dart` on settings area — Settings-owned timezone helpers + Voice settings UI.
+- **Human purpose:** `desktop_voice_attempt_dialog.dart` on settings area — Settings-owned timezone helpers + Voice settings + Categories manager UI (More → Categories). Users see `desktop_voice_attempt_dialog.dart` when using settings area.
+- **What this is:** `desktop_voice_attempt_dialog.dart` on settings area — Settings-owned timezone helpers + Voice settings + Categories manager UI (More → Categories).
 - **Why needed:** Users see `desktop_voice_attempt_dialog.dart` when using settings area.
 - **Contents:** Primary symbols: `DesktopVoiceAttemptCopyFn`, `DesktopVoiceAttemptDialogTestHooks`, `_DesktopVoiceAttemptDialog`, `_DesktopVoiceAttemptDialogState`, `_AttemptView`, `_StatusHeader`.
 - **Key code names:** `DesktopVoiceAttemptCopyFn`, `DesktopVoiceAttemptDialogTestHooks`, `_DesktopVoiceAttemptDialog`, `_DesktopVoiceAttemptDialogState`, `_AttemptView`, `_StatusHeader`
@@ -18145,10 +18194,10 @@ EN:
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
 - **Owner / layer:** Voice settings UI
-- **Responsibilities:** Settings-owned timezone helpers + Voice settings UI
+- **Responsibilities:** Settings-owned timezone helpers + Voice settings + Categories manager UI (More → Categories)
 - **When to open:** When behavior tied to `desktop_voice_attempt_dialog.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: Settings-owned timezone helpers + Voice settings UI
+- **Connected to:** APP_STRUCTURE role: Settings-owned timezone helpers + Voice settings + Categories manager UI (More → Categories)
 
 RU:
 
@@ -18172,8 +18221,8 @@ RU:
 
 EN:
 
-- **Human purpose:** `desktop_voice_settings_desktop.dart` on settings area — Settings-owned timezone helpers + Voice settings UI. Users see `desktop_voice_settings_desktop.dart` when using settings area.
-- **What this is:** `desktop_voice_settings_desktop.dart` on settings area — Settings-owned timezone helpers + Voice settings UI.
+- **Human purpose:** `desktop_voice_settings_desktop.dart` on settings area — Settings-owned timezone helpers + Voice settings + Categories manager UI (More → Categories). Users see `desktop_voice_settings_desktop.dart` when using settings area.
+- **What this is:** `desktop_voice_settings_desktop.dart` on settings area — Settings-owned timezone helpers + Voice settings + Categories manager UI (More → Categories).
 - **Why needed:** Users see `desktop_voice_settings_desktop.dart` when using settings area.
 - **Contents:** Primary symbols: `DesktopVoiceSettingsDesktopGrid`, `_DesktopVoiceSettingsDesktopGridState`.
 - **Key code names:** `DesktopVoiceSettingsDesktopGrid`, `_DesktopVoiceSettingsDesktopGridState`
@@ -18183,10 +18232,10 @@ EN:
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
 - **Owner / layer:** Voice settings UI
-- **Responsibilities:** Settings-owned timezone helpers + Voice settings UI
+- **Responsibilities:** Settings-owned timezone helpers + Voice settings + Categories manager UI (More → Categories)
 - **When to open:** When behavior tied to `desktop_voice_settings_desktop.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: Settings-owned timezone helpers + Voice settings UI
+- **Connected to:** APP_STRUCTURE role: Settings-owned timezone helpers + Voice settings + Categories manager UI (More → Categories)
 
 RU:
 
@@ -18210,8 +18259,8 @@ RU:
 
 EN:
 
-- **Human purpose:** `desktop_voice_settings_section.dart` on settings area — Settings-owned timezone helpers + Voice settings UI. Users see `desktop_voice_settings_section.dart` when using settings area.
-- **What this is:** `desktop_voice_settings_section.dart` on settings area — Settings-owned timezone helpers + Voice settings UI.
+- **Human purpose:** `desktop_voice_settings_section.dart` on settings area — Settings-owned timezone helpers + Voice settings + Categories manager UI (More → Categories). Users see `desktop_voice_settings_section.dart` when using settings area.
+- **What this is:** `desktop_voice_settings_section.dart` on settings area — Settings-owned timezone helpers + Voice settings + Categories manager UI (More → Categories).
 - **Why needed:** Users see `desktop_voice_settings_section.dart` when using settings area.
 - **Contents:** Primary symbols: `DesktopVoiceSettingsSection`, `_DesktopVoiceSettingsSectionState`, `HotkeyCaptureDialog`, `_HotkeyCaptureDialogState`.
 - **Key code names:** `DesktopVoiceSettingsSection`, `_DesktopVoiceSettingsSectionState`, `HotkeyCaptureDialog`, `_HotkeyCaptureDialogState`
@@ -18221,10 +18270,10 @@ EN:
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
 - **Owner / layer:** Voice settings UI
-- **Responsibilities:** Settings-owned timezone helpers + Voice settings UI
+- **Responsibilities:** Settings-owned timezone helpers + Voice settings + Categories manager UI (More → Categories)
 - **When to open:** When behavior tied to `desktop_voice_settings_section.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: Settings-owned timezone helpers + Voice settings UI
+- **Connected to:** APP_STRUCTURE role: Settings-owned timezone helpers + Voice settings + Categories manager UI (More → Categories)
 
 RU:
 
@@ -18277,6 +18326,43 @@ RU:
 - **Уверенность:** HIGH
 - **Владелец / слой:** общие edit sheets
 - **Обязанности:** Пользователь открывает sheet/dialog из entry `activity_detail_sheet`.
+- **Когда открывать:** Шторка редактирования, picker, voice, offline banner.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** Edit sheets и voice UI на всех вкладках
+
+
+### `lib/features/shared/edit_sheet/category_edit_draft.dart`
+
+EN:
+
+- **Human purpose:** Plan/record category draft resolve + plan PATCH category relation gate. Explicit picker/create id must own edit Save without stale pair fallback.
+- **What this is:** Plan/record category draft resolve + plan PATCH category relation gate.
+- **Why needed:** Explicit picker/create id must own edit Save without stale pair fallback.
+- **Contents:** `resolvePlanningEditDraftCategoryId`, `planPatchShouldIncludeCategoryRelation`, edit field resolvers.
+- **Repository role:** production UI
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/shared/planning_task_edit_sheet.dart`, `lib/features/shared/timeline_record_edit_sheet.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** shared edit sheets
+- **Responsibilities:** Pure draft/PATCH decisions for edit sheets.
+- **When to open:** Edit sheet, date/time picker, tags strip, voice sheet, offline banner UI.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** Edit sheets and voice UI on every tab; APP_STRUCTURE role: Plan/record category draft resolve + plan PATCH category relation gate
+
+RU:
+
+- **Зачем файл человеку:** Resolve черновика category для plan/record + gate relation в plan PATCH. Явный id из picker/create владеет Save без stale pair fallback.
+- **Что это:** Resolve черновика category для plan/record + gate relation в plan PATCH.
+- **Зачем:** Явный id из picker/create владеет Save без stale pair fallback.
+- **Содержимое:** `resolvePlanningEditDraftCategoryId`, `planPatchShouldIncludeCategoryRelation`, resolvers edit field.
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Импортируется production Dart: `lib/features/shared/planning_task_edit_sheet.dart`, `lib/features/shared/timeline_record_edit_sheet.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** общие edit sheets
+- **Обязанности:** Чистые решения draft/PATCH для edit sheets.
 - **Когда открывать:** Шторка редактирования, picker, voice, offline banner.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Edit sheets и voice UI на всех вкладках
@@ -18854,15 +18940,15 @@ EN:
 - **Why needed:** Users see `shared_widgets.dart` when using edit sheets and voice UI on every tab.
 - **Contents:** Barrel `export` lines: `activity_detail_sheet.dart`, `empty_state_placeholder.dart`, `planning_task_edit_sheet.dart`, `timeline_record_edit_sheet.dart`, `checklist_helpers.dart`.
 - **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/features/categories/category_list_view.dart`, `lib/features/planning/bulk_planning_edit_sheet.dart`, `lib/features/planning/widgets/planning_empty_states.dart`, `lib/features/timeline/timeline_day_page.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/features/planning/bulk_planning_edit_sheet.dart`, `lib/features/planning/widgets/planning_empty_states.dart`, `lib/features/settings/categories/category_list_view.dart`, `lib/features/timeline/timeline_day_page.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
 - **Owner / layer:** shared edit sheets
-- **Responsibilities:** Activity edit sheets, Notes launch/sheet routing, Omni-Picker entry, offline sync banner
+- **Responsibilities:** Activity edit sheets, Notes launch/sheet routing, Omni-Picker entry, offline sync banner, plan/record category draft helpers
 - **When to open:** Edit sheet, date/time picker, tags strip, voice sheet, offline banner UI.
 - **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** Edit sheets and voice UI on every tab; APP_STRUCTURE role: Activity edit sheets, Notes launch/sheet routing, Omni-Picker entry, offline sync banner
+- **Connected to:** Edit sheets and voice UI on every tab; APP_STRUCTURE role: Activity edit sheets, Notes launch/sheet routing, Omni-Picker entry, offline sync banner, plan/record category draft hel
 
 RU:
 
@@ -18871,7 +18957,7 @@ RU:
 - **Зачем:** Пользователь видит UI из `shared_widgets.dart` на edit sheets и voice UI на всех вкладках.
 - **Содержимое:** Dart-модуль `shared_widgets.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/features/categories/category_list_view.dart`, `lib/features/planning/bulk_planning_edit_sheet.dart`, `lib/features/planning/widgets/planning_empty_states.dart`, `lib/features/timeline/timeline_day_page.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/features/planning/bulk_planning_edit_sheet.dart`, `lib/features/planning/widgets/planning_empty_states.dart`, `lib/features/settings/categories/category_list_view.dart`, `lib/features/timeline/timeline_day_page.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -19534,7 +19620,7 @@ EN:
 - **Why needed:** UI labels resolve through l10n maps instead of hard-coded strings in widgets.
 - **Contents:** Dart maps/keys in `category_db_display.dart`.
 - **Repository role:** localization
-- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/core/widgets/chip_component.dart`, `lib/core/widgets/plan_time_task_card/plan_card_sections.dart`, `lib/core/widgets/plan_time_task_card/plan_time_task_card.dart`, `lib/features/categories/category_recursive_tree.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/core/widgets/chip_component.dart`, `lib/core/widgets/plan_time_task_card/plan_card_sections.dart`, `lib/core/widgets/plan_time_task_card/plan_time_task_card.dart`, `lib/features/lists/lists_card.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -19551,7 +19637,7 @@ RU:
 - **Зачем:** Подписи UI берутся из l10n maps, а не из hard-coded строк в виджетах.
 - **Содержимое:** Dart-карты ключей в `category_db_display.dart`.
 - **Роль в репозитории:** localization
-- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/core/widgets/chip_component.dart`, `lib/core/widgets/plan_time_task_card/plan_card_sections.dart`, `lib/core/widgets/plan_time_task_card/plan_time_task_card.dart`, `lib/features/categories/category_recursive_tree.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/core/widgets/chip_component.dart`, `lib/core/widgets/plan_time_task_card/plan_card_sections.dart`, `lib/core/widgets/plan_time_task_card/plan_time_task_card.dart`, `lib/features/lists/lists_card.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -20081,6 +20167,309 @@ RU:
 - **Когда открывать:** Когда ломается поведение, связанное с `plan_alarm_schedule.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/data/plan_service.dart` — reschedule alarm
+
+
+### `lib/shared/categories/picker/category_picker_contracts.dart`
+
+EN:
+
+- **Human purpose:** Source file `category_picker_contracts.dart` — `CategoryTreeSource`, `CategoryPickerActions`. Part of `lib/shared/categories/picker`; see `docs/APP_STRUCTURE.md` for ownership.
+- **What this is:** Source file `category_picker_contracts.dart` — `CategoryTreeSource`, `CategoryPickerActions`.
+- **Why needed:** Part of `lib/shared/categories/picker`; see `docs/APP_STRUCTURE.md` for ownership.
+- **Contents:** Implementation in `category_picker_contracts.dart` (`CategoryTreeSource`, `CategoryPickerActions`).
+- **Key code names:** `CategoryTreeSource`, `CategoryPickerActions`
+- **Repository role:** developer tool
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/lists/category_filter_tree_field.dart`, `lib/features/settings/categories/category_recursive_browse_panel.dart`, `lib/main.dart`, `lib/shared/categories/picker/category_tree_picker.dart`, `lib/shared/categories/picker/create_category_from_picker.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** Shared Categories
+- **Responsibilities:** `CategoryTreeSource`, `CategoryPickerActions`
+- **When to open:** When behavior tied to `category_picker_contracts.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** APP_STRUCTURE role: `CategoryTreeSource`, `CategoryPickerActions`
+
+RU:
+
+- **Зачем файл человеку:** Исходный файл `category_picker_contracts.dart` — `CategoryTreeSource`, `CategoryPickerActions`. Нужен для сборки, тестов, документации или платформы — см. доказательства.
+- **Что это:** Исходный файл `category_picker_contracts.dart` — `CategoryTreeSource`, `CategoryPickerActions`.
+- **Зачем:** Нужен для сборки, тестов, документации или платформы — см. доказательства.
+- **Содержимое:** Основные символы: `CategoryTreeSource`, `CategoryPickerActions`
+- **Роль в репозитории:** developer tool
+- **Доказательства использования:** Импортируется production Dart: `lib/features/lists/category_filter_tree_field.dart`, `lib/features/settings/categories/category_recursive_browse_panel.dart`, `lib/main.dart`, `lib/shared/categories/picker/category_tree_picker.dart`, `lib/shared/categories/picker/create_category_from_picker.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** Shared Categories
+- **Обязанности:** Поддерживает поведение модуля `category_picker_contracts` в своём слое.
+- **Когда открывать:** Когда ломается поведение, связанное с `category_picker_contracts.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/shared/categories/picker/`, `docs/APP_STRUCTURE.md`
+
+
+### `lib/shared/categories/picker/category_picker_models.dart`
+
+EN:
+
+- **Human purpose:** Source file `category_picker_models.dart` — Create targets, sheet results, chrome keys/helpers. Part of `lib/shared/categories/picker`; see `docs/APP_STRUCTURE.md` for ownership.
+- **What this is:** Source file `category_picker_models.dart` — Create targets, sheet results, chrome keys/helpers.
+- **Why needed:** Part of `lib/shared/categories/picker`; see `docs/APP_STRUCTURE.md` for ownership.
+- **Contents:** Implementation in `category_picker_models.dart` (`CategoryPickerCreateTarget`, `CategoryPickerCreateResult`, `CategoryTreeSheetPicked`, `CategoryTreeSheetAll`).
+- **Key code names:** `CategoryPickerCreateTarget`, `CategoryPickerCreateResult`, `CategoryTreeSheetPicked`, `CategoryTreeSheetAll`
+- **Repository role:** developer tool
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/shared/edit_sheet/category_edit_draft.dart`, `lib/shared/categories/picker/category_tree_picker.dart`, `lib/shared/categories/picker/create_category_from_picker.dart`, `lib/shared/categories/tree/category_tree_body.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** Shared Categories
+- **Responsibilities:** Create targets, sheet results, chrome keys/helpers
+- **When to open:** When behavior tied to `category_picker_models.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** APP_STRUCTURE role: Create targets, sheet results, chrome keys/helpers
+
+RU:
+
+- **Зачем файл человеку:** Исходный файл `category_picker_models.dart` — Create targets, sheet results, chrome keys/helpers. Нужен для сборки, тестов, документации или платформы — см. доказательства.
+- **Что это:** Исходный файл `category_picker_models.dart` — Create targets, sheet results, chrome keys/helpers.
+- **Зачем:** Нужен для сборки, тестов, документации или платформы — см. доказательства.
+- **Содержимое:** Основные символы: `CategoryPickerCreateTarget`, `CategoryPickerCreateResult`, `CategoryTreeSheetPicked`, `CategoryTreeSheetAll`
+- **Роль в репозитории:** developer tool
+- **Доказательства использования:** Импортируется production Dart: `lib/features/shared/edit_sheet/category_edit_draft.dart`, `lib/shared/categories/picker/category_tree_picker.dart`, `lib/shared/categories/picker/create_category_from_picker.dart`, `lib/shared/categories/tree/category_tree_body.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** Shared Categories
+- **Обязанности:** Поддерживает поведение модуля `category_picker_models` в своём слое.
+- **Когда открывать:** Когда ломается поведение, связанное с `category_picker_models.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/shared/categories/picker/`, `docs/APP_STRUCTURE.md`
+
+
+### `lib/shared/categories/picker/category_tree_picker.dart`
+
+EN:
+
+- **Human purpose:** Source file `category_tree_picker.dart` — `showCategoryTreePicker`, `CategoryTreeFormField`, picker sheet. Part of `lib/shared/categories/picker`; see `docs/APP_STRUCTURE.md` for ownership.
+- **What this is:** Source file `category_tree_picker.dart` — `showCategoryTreePicker`, `CategoryTreeFormField`, picker sheet.
+- **Why needed:** Part of `lib/shared/categories/picker`; see `docs/APP_STRUCTURE.md` for ownership.
+- **Contents:** Implementation in `category_tree_picker.dart` (`_CategoryTreePickerSheet`, `_CategoryTreePickerSheetState`, `CategoryTreeFormField`).
+- **Key code names:** `_CategoryTreePickerSheet`, `_CategoryTreePickerSheetState`, `CategoryTreeFormField`
+- **Repository role:** developer tool
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/lists/category_filter_tree_field.dart`, `lib/features/notes/note_editor_page.dart`, `lib/features/shared/notes_editor/notes_editor_sheet.dart`, `lib/features/shared/planning_task_edit_sheet.dart`, `lib/features/shared/timeline_record_edit_sheet.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** Shared Categories
+- **Responsibilities:** `showCategoryTreePicker`, `CategoryTreeFormField`, picker sheet
+- **When to open:** When behavior tied to `category_tree_picker.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** APP_STRUCTURE role: `showCategoryTreePicker`, `CategoryTreeFormField`, picker sheet
+
+RU:
+
+- **Зачем файл человеку:** Исходный файл `category_tree_picker.dart` — `showCategoryTreePicker`, `CategoryTreeFormField`, picker sheet. Нужен для сборки, тестов, документации или платформы — см. доказательства.
+- **Что это:** Исходный файл `category_tree_picker.dart` — `showCategoryTreePicker`, `CategoryTreeFormField`, picker sheet.
+- **Зачем:** Нужен для сборки, тестов, документации или платформы — см. доказательства.
+- **Содержимое:** Основные символы: `_CategoryTreePickerSheet`, `_CategoryTreePickerSheetState`, `CategoryTreeFormField`
+- **Роль в репозитории:** developer tool
+- **Доказательства использования:** Импортируется production Dart: `lib/features/lists/category_filter_tree_field.dart`, `lib/features/notes/note_editor_page.dart`, `lib/features/shared/notes_editor/notes_editor_sheet.dart`, `lib/features/shared/planning_task_edit_sheet.dart`, `lib/features/shared/timeline_record_edit_sheet.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** Shared Categories
+- **Обязанности:** Поддерживает поведение модуля `category_tree_picker` в своём слое.
+- **Когда открывать:** Когда ломается поведение, связанное с `category_tree_picker.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/shared/categories/picker/`, `docs/APP_STRUCTURE.md`
+
+
+### `lib/shared/categories/picker/create_category_from_picker.dart`
+
+EN:
+
+- **Human purpose:** `showCreateCategoryFromPickerDialog` — explicit-parent create flow from category tree pickers. Edit sheets and shared tree must create a child under a known parent without inferring from search UI.
+- **What this is:** `showCreateCategoryFromPickerDialog` — explicit-parent create flow from category tree pickers.
+- **Why needed:** Edit sheets and shared tree must create a child under a known parent without inferring from search UI.
+- **Contents:** `CategoryPickerCreateTarget`, submit helper, create dialog widget.
+- **Key code names:** `_CreateCategoryFromPickerDialog`, `_CreateCategoryFromPickerDialogState`
+- **Repository role:** developer tool
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/planning/settings/default_plan_category_search.dart`, `lib/features/wear/wear_timer_screen.dart`, `lib/shared/categories/picker/category_tree_picker.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** Shared Categories
+- **Responsibilities:** Collect name/parent; call injected Brain create; return new local category id.
+- **When to open:** When behavior tied to `create_category_from_picker.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** APP_STRUCTURE role: `showCreateCategoryFromPickerDialog` — explicit-parent create flow from category picker
+
+RU:
+
+- **Зачем файл человеку:** `showCreateCategoryFromPickerDialog` — создание категории с явным родителем из дерева выбора. Edit sheets и shared tree создают потомка под известным родителем без угадывания из поиска.
+- **Что это:** `showCreateCategoryFromPickerDialog` — создание категории с явным родителем из дерева выбора.
+- **Зачем:** Edit sheets и shared tree создают потомка под известным родителем без угадывания из поиска.
+- **Содержимое:** `CategoryPickerCreateTarget`, хелпер submit, виджет диалога создания.
+- **Роль в репозитории:** developer tool
+- **Доказательства использования:** Импортируется production Dart: `lib/features/planning/settings/default_plan_category_search.dart`, `lib/features/wear/wear_timer_screen.dart`, `lib/shared/categories/picker/category_tree_picker.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** Shared Categories
+- **Обязанности:** Собирает имя и родителя; вызывает создание через injected Brain; возвращает новый local id категории.
+- **Когда открывать:** Когда ломается поведение, связанное с `create_category_from_picker.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/shared/categories/picker/`, `docs/APP_STRUCTURE.md`
+
+
+### `lib/shared/categories/presentation/plan_category_lookup.dart`
+
+EN:
+
+- **Human purpose:** `PlanCategoryLookup` / `PlanCategoryPresentation` — injected category color/icon/breadcrumb for plan cards. Plan cards must resolve category chrome without importing Brain.
+- **What this is:** `PlanCategoryLookup` / `PlanCategoryPresentation` — injected category color/icon/breadcrumb for plan cards.
+- **Why needed:** Plan cards must resolve category chrome without importing Brain.
+- **Contents:** Presentation DTO + static resolve hook wired from `main.dart`.
+- **Key code names:** `PlanCategoryPresentation`, `PlanCategoryLookup`
+- **Repository role:** developer tool
+- **Evidence of use:** Imported/exported by production Dart: `lib/core/widgets/plan_time_task_card/plan_time_task_card.dart`, `lib/main.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** Shared Categories
+- **Responsibilities:** Hold injected lookup; no PocketBase I/O.
+- **When to open:** When behavior tied to `plan_category_lookup.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** APP_STRUCTURE role: Injected `PlanCategoryLookup` / `PlanCategoryPresentation` for plan cards
+
+RU:
+
+- **Зачем файл человеку:** `PlanCategoryLookup` / `PlanCategoryPresentation` — injected цвет/иконка/breadcrumb категории для plan cards. Plan cards получают chrome категории без импорта Brain.
+- **Что это:** `PlanCategoryLookup` / `PlanCategoryPresentation` — injected цвет/иконка/breadcrumb категории для plan cards.
+- **Зачем:** Plan cards получают chrome категории без импорта Brain.
+- **Содержимое:** DTO презентации + static resolve hook из `main.dart`.
+- **Роль в репозитории:** developer tool
+- **Доказательства использования:** Импортируется production Dart: `lib/core/widgets/plan_time_task_card/plan_time_task_card.dart`, `lib/main.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** Shared Categories
+- **Обязанности:** Хранит injected lookup; без PocketBase I/O.
+- **Когда открывать:** Когда ломается поведение, связанное с `plan_category_lookup.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/shared/categories/presentation/`, `docs/APP_STRUCTURE.md`
+
+
+### `lib/shared/categories/tree/category_tree_body.dart`
+
+EN:
+
+- **Human purpose:** Source file `category_tree_body.dart` — Reusable `CategoryTreeBody` (picker + settings browse). Part of `lib/shared/categories/tree`; see `docs/APP_STRUCTURE.md` for ownership.
+- **What this is:** Source file `category_tree_body.dart` — Reusable `CategoryTreeBody` (picker + settings browse).
+- **Why needed:** Part of `lib/shared/categories/tree`; see `docs/APP_STRUCTURE.md` for ownership.
+- **Contents:** Implementation in `category_tree_body.dart` (`CategoryTreeBody`, `_CategoryTreeBodyState`, `_CategoryTreeNode`).
+- **Key code names:** `CategoryTreeBody`, `_CategoryTreeBodyState`, `_CategoryTreeNode`
+- **Repository role:** developer tool
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/settings/categories/category_recursive_browse_panel.dart`, `lib/shared/categories/picker/category_tree_picker.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** Shared Categories
+- **Responsibilities:** Reusable `CategoryTreeBody` (picker + settings browse)
+- **When to open:** When behavior tied to `category_tree_body.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** APP_STRUCTURE role: Reusable `CategoryTreeBody` (picker + settings browse)
+
+RU:
+
+- **Зачем файл человеку:** Исходный файл `category_tree_body.dart` — Reusable `CategoryTreeBody` (picker + settings browse). Нужен для сборки, тестов, документации или платформы — см. доказательства.
+- **Что это:** Исходный файл `category_tree_body.dart` — Reusable `CategoryTreeBody` (picker + settings browse).
+- **Зачем:** Нужен для сборки, тестов, документации или платформы — см. доказательства.
+- **Содержимое:** Основные символы: `CategoryTreeBody`, `_CategoryTreeBodyState`, `_CategoryTreeNode`
+- **Роль в репозитории:** developer tool
+- **Доказательства использования:** Импортируется production Dart: `lib/features/settings/categories/category_recursive_browse_panel.dart`, `lib/shared/categories/picker/category_tree_picker.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** Shared Categories
+- **Обязанности:** Поддерживает поведение модуля `category_tree_body` в своём слое.
+- **Когда открывать:** Когда ломается поведение, связанное с `category_tree_body.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/shared/categories/tree/`, `docs/APP_STRUCTURE.md`
+
+
+### `lib/shared/categories/tree/category_tree_filter.dart`
+
+EN:
+
+- **Human purpose:** Source file `category_tree_filter.dart` — Pure search filter + selection-path opacity helpers. Part of `lib/shared/categories/tree`; see `docs/APP_STRUCTURE.md` for ownership.
+- **What this is:** Source file `category_tree_filter.dart` — Pure search filter + selection-path opacity helpers.
+- **Why needed:** Part of `lib/shared/categories/tree`; see `docs/APP_STRUCTURE.md` for ownership.
+- **Contents:** Implementation in `category_tree_filter.dart` (implementation in source).
+- **Repository role:** developer tool
+- **Evidence of use:** Imported/exported by production Dart: `lib/shared/categories/picker/category_tree_picker.dart`, `lib/shared/categories/tree/category_tree_body.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** Shared Categories
+- **Responsibilities:** Pure search filter + selection-path opacity helpers
+- **When to open:** When behavior tied to `category_tree_filter.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** APP_STRUCTURE role: Pure search filter + selection-path opacity helpers
+
+RU:
+
+- **Зачем файл человеку:** Исходный файл `category_tree_filter.dart` — Pure search filter + selection-path opacity helpers. Нужен для сборки, тестов, документации или платформы — см. доказательства.
+- **Что это:** Исходный файл `category_tree_filter.dart` — Pure search filter + selection-path opacity helpers.
+- **Зачем:** Нужен для сборки, тестов, документации или платформы — см. доказательства.
+- **Содержимое:** Содержимое файла `category_tree_filter.dart`.
+- **Роль в репозитории:** developer tool
+- **Доказательства использования:** Импортируется production Dart: `lib/shared/categories/picker/category_tree_picker.dart`, `lib/shared/categories/tree/category_tree_body.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** Shared Categories
+- **Обязанности:** Поддерживает поведение модуля `category_tree_filter` в своём слое.
+- **Когда открывать:** Когда ломается поведение, связанное с `category_tree_filter.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/shared/categories/tree/`, `docs/APP_STRUCTURE.md`
+
+
+### `lib/shared/categories/visibility/category_visibility_prefs.dart`
+
+EN:
+
+- **Human purpose:** `CategoryVisibilityPrefs` — local hidden-category ids (`hidden_category_ids_json`). Hide unused categories client-side without schema changes.
+- **What this is:** `CategoryVisibilityPrefs` — local hidden-category ids (`hidden_category_ids_json`).
+- **Why needed:** Hide unused categories client-side without schema changes.
+- **Contents:** SharedPreferences load/persist, ancestor hide, filterPairs.
+- **Key code names:** `CategoryVisibilityPrefs`
+- **Repository role:** developer tool
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/features/lists/lists_filters.dart`, `lib/features/lists/lists_view.dart`, `lib/features/settings/categories/category_list_view.dart`, `lib/features/settings/categories/category_row_widget.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** Shared Categories
+- **Responsibilities:** Local-only quarantine; path ancestry via `CategoryTreeSource`.
+- **When to open:** When behavior tied to `category_visibility_prefs.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** APP_STRUCTURE role: Local hidden ids (`hidden_category_ids_json`)
+
+RU:
+
+- **Зачем файл человеку:** `CategoryVisibilityPrefs` — локальные скрытые id категорий (`hidden_category_ids_json`). Скрывает неиспользуемые категории на клиенте без смены схемы.
+- **Что это:** `CategoryVisibilityPrefs` — локальные скрытые id категорий (`hidden_category_ids_json`).
+- **Зачем:** Скрывает неиспользуемые категории на клиенте без смены схемы.
+- **Содержимое:** SharedPreferences load/persist, hide предков, filterPairs.
+- **Роль в репозитории:** developer tool
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/features/lists/lists_filters.dart`, `lib/features/lists/lists_view.dart`, `lib/features/settings/categories/category_list_view.dart`, `lib/features/settings/categories/category_row_widget.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** Shared Categories
+- **Обязанности:** Только локальный quarantine; ancestry через `CategoryTreeSource`.
+- **Когда открывать:** Когда ломается поведение, связанное с `category_visibility_prefs.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/shared/categories/visibility/`, `docs/APP_STRUCTURE.md`
 
 
 ### `lib/shared/diagnostics/performance/rebuild_metrics.dart`
@@ -20835,6 +21224,44 @@ RU:
 - **Владелец / слой:** общий Voice system
 - **Обязанности:** Держит контракт, интерфейс или диагностику общей системы голосового ввода.
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_engine.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/shared/voice/commands/`, `docs/APP_STRUCTURE.md`
+
+
+### `lib/shared/voice/commands/desktop_voice_glossary_pack.dart`
+
+EN:
+
+- **Human purpose:** Shared Voice system — Neutral glossary pack data + `toSttPrompt`; Brain registers live builder. Phone, desktop, web, and Wear activation share one command interpretation path.
+- **What this is:** Shared Voice system — Neutral glossary pack data + `toSttPrompt`; Brain registers live builder.
+- **Why needed:** Phone, desktop, web, and Wear activation share one command interpretation path.
+- **Contents:** Shared Voice module (`DesktopVoiceGlossaryPack`).
+- **Key code names:** `DesktopVoiceGlossaryPack`
+- **Repository role:** shared Voice system
+- **Evidence of use:** Imported/exported by production Dart: `lib/data/voice/desktop_voice_glossary.dart`, `lib/data/voice/desktop_voice_recognition_postprocess.dart`, `lib/shared/voice/platforms/desktop/desktop_stt_helper_service.dart`, `lib/shared/voice/platforms/desktop/desktop_stt_orchestrator.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** shared Voice system
+- **Responsibilities:** Neutral glossary pack data + `toSttPrompt`; Brain registers live builder
+- **When to open:** When behavior tied to `desktop_voice_glossary_pack.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** APP_STRUCTURE role: Neutral glossary pack data + `toSttPrompt`
+
+RU:
+
+- **Зачем файл человеку:** Общая система голосового ввода — файл `desktop_voice_glossary_pack.dart`. Телефон, компьютер, web и Wear сходятся в один путь разбора команд.
+- **Что это:** Общая система голосового ввода — файл `desktop_voice_glossary_pack.dart`.
+- **Зачем:** Телефон, компьютер, web и Wear сходятся в один путь разбора команд.
+- **Содержимое:** Модуль общей системы голосового ввода (`desktop_voice_glossary_pack.dart`).
+- **Роль в репозитории:** shared Voice system
+- **Доказательства использования:** Импортируется production Dart: `lib/data/voice/desktop_voice_glossary.dart`, `lib/data/voice/desktop_voice_recognition_postprocess.dart`, `lib/shared/voice/platforms/desktop/desktop_stt_helper_service.dart`, `lib/shared/voice/platforms/desktop/desktop_stt_orchestrator.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** общий Voice system
+- **Обязанности:** Держит контракт, интерфейс или диагностику общей системы голосового ввода.
+- **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_glossary_pack.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/shared/voice/commands/`, `docs/APP_STRUCTURE.md`
 

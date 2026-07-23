@@ -40,9 +40,9 @@
 | Calendar month view | Calendar tab | `calendar_view.dart` | Month overview | public-ready | Calendar | must-have | |
 | Calendar week view | Calendar | `calendar_view.dart` | Week overview | public-ready | Calendar | nice-to-have | |
 | Start from calendar task | Calendar | `calendar_view.dart`, `app_shell.dart` | Track from plan | public-ready | Calendar | nice-to-have | |
-| Nested categories | More → Categories | `category_list_view.dart`, `category_recursive_tree.dart` | Life/work structure | public-ready | Categories | must-have | |
+| Nested categories | More → Categories | `settings/categories/category_list_view.dart`, shared `category_tree_picker.dart` | Life/work structure | public-ready | Categories | must-have | |
 | Category create/edit/archive | Categories | `create_category_dialog.dart` | Manage taxonomy | public-ready | Categories | must-have | |
-| Category visibility prefs | Categories | `category_visibility_prefs.dart` | Hide unused | public-ready | Categories | nice-to-have | |
+| Category visibility prefs | Categories | `shared/categories/visibility/category_visibility_prefs.dart` | Hide unused | public-ready | Categories | nice-to-have | |
 | Tag manager (plan/list) | Profile | `tag_manager_page.dart` | CRUD tags | public-ready | Tags | must-have | |
 | Tag display modes | Profile | `tag_settings_view.dart` | Visual preference | public-ready | Tags | nice-to-have | |
 | Tag default duration | Profile | `tag_default_duration_settings_view.dart` | Auto block length | public-ready | Tags | nice-to-have | |

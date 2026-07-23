@@ -5,7 +5,7 @@ import 'package:counter/features/notes/notes_glm_surface.dart';
 import 'package:counter/core/tag_contrast.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
-import 'package:counter/features/categories/category_visibility_prefs.dart';
+import 'package:counter/shared/categories/visibility/category_visibility_prefs.dart';
 import 'package:counter/features/lists/lists_card.dart';
 import 'package:counter/features/lists/lists_export.dart';
 import 'package:counter/features/profile/tag_manager_page.dart';

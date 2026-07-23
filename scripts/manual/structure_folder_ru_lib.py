@@ -13,7 +13,7 @@ register_folder_ru(
         "affects_ru": "Category picker, экран Categories, category на start/stop записи, chips на планах, stats по категориям.",
         "when_ru": "Категории пропали, неверный color/icon, fuzzy match выбрал не того клиента, запись без category.",
         "delete_ru": "Нет — category features перестанут работать.",
-        "related_ru": "`lib/data/category_service.dart`, `lib/features/categories/`.",
+        "related_ru": "`lib/data/category_service.dart`, `lib/features/settings/categories/`, `lib/shared/categories/`.",
     },
 )
 
@@ -408,15 +408,15 @@ register_folder_ru(
 )
 
 register_folder_ru(
-    "lib/features/categories",
+    "lib/features/settings/categories",
     {
-        "what_ru": "UI менеджера категорий — дерево, создание/редактирование, настройки видимости.",
-        "why_ru": "Пользователь организует work/personal/client categories из More → Categories.",
-        "inside_ru": "List view, recursive tree picker, create dialog, visibility prefs.",
-        "affects_ru": "More → Categories; category pickers в других экранах используют эти widgets.",
-        "when_ru": "Create category, reorder, archive, pick category в tree dialog.",
+        "what_ru": "UI менеджера категорий — band grid, editor/appearance sheets, create dialog, browse panel.",
+        "why_ru": "Пользователь организует work/personal/client categories из More → Categories (Settings ownership).",
+        "inside_ru": "List view, row widget, editor/appearance sheets, helpers, create dialog, recursive browse panel.",
+        "affects_ru": "Только маршрут More → Categories; shared pickers живут в `lib/shared/categories/`.",
+        "when_ru": "Create category, reorder, archive, edit keywords/appearance.",
         "delete_ru": "Нет — UI category management исчезнет.",
-        "related_ru": "`lib/data/categories/`.",
+        "related_ru": "`lib/data/categories/`, `lib/shared/categories/`.",
     },
 )
 
