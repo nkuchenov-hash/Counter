@@ -1,8 +1,8 @@
-﻿import 'dart:async';
+import 'dart:async';
 import 'dart:io';
 
 import 'package:counter/core/services/desktop_main_window.dart';
-import 'package:counter/core/services/desktop_voice_settings.dart';
+import 'package:counter/shared/voice/platforms/desktop/desktop_voice_settings.dart';
 import 'package:flutter/foundation.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';

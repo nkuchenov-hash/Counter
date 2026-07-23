@@ -15,7 +15,8 @@ Physical map of the Flutter application: what exists, which layer owns it, who m
 | **UI decomposition** | Pass 3 / 3B complete (shell, planning, timeline, lists, shared edit sheets, plan card) |
 | **Brain decomposition** | Pass 4A–4D complete (`plans/*`, `records/*`, `categories/*`, `profile/*`) |
 | **Diagnostics ownership** | Phase 2B (2026-07-22): runtime logs + kill switches under `lib/shared/diagnostics/`; plan duplicate log under `lib/data/plans/diagnostics/` (Brain); desktop voice pipeline under `lib/shared/voice/diagnostics/` |
-| **Strict architecture guard** | Baseline 2026-07-17 cleanup **complete**: 63 → 0 (A=0, B=0); hygiene audit 2026-07-21 (`docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`); diagnostics ownership Phase 2B 2026-07-22 |
+| **Voice ownership** | Phase 2C (2026-07-22): shared Voice contracts/adapters under `lib/shared/voice/`; Brain execution under `lib/data/voice/` (parser, normalize, record-submit); desktop Flutter Voice UI under `lib/features/voice/`; settings under `lib/features/settings/voice/`; Shell keeps `shell_voice_routing` |
+| **Strict architecture guard** | Baseline 2026-07-17 cleanup **complete**: 63 → 0 (A=0, B=0); hygiene audit 2026-07-21 (`docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`); diagnostics Phase 2B + voice ownership Phase 2C 2026-07-22 |
 | **Detailed file guide** | [`docs/APP_STRUCTURE_DETAILED.md`](APP_STRUCTURE_DETAILED.md) — owner-readable **evidence-backed** EN/RU entry per tracked folder and file (role, necessity, confidence, deletion consequence); regenerate via `generate_app_structure_detailed.py` |
 | **Project Knowledge pack** | [`docs/PROJECT_KNOWLEDGE_PACK.md`](PROJECT_KNOWLEDGE_PACK.md) — 14-doc upload checklist |
 | **Prior parity report** | [`docs/reports/FINAL_STRUCTURE_PARITY_AND_DOC_CLEANUP_2026-07-03.md`](reports/FINAL_STRUCTURE_PARITY_AND_DOC_CLEANUP_2026-07-03.md) |
@@ -34,13 +35,13 @@ python scripts/manual/generate_app_structure_detailed.py
 | Layer | Path | Owns | May import | Must NOT import |
 | :--- | :--- | :--- | :--- | :--- |
 | **Entry** | `lib/main.dart`, `lib/app_shell.dart`, `lib/app/shell/` | Boot, auth gate, form-factor shell navigation, cross-tab wiring | `data/`, `core/`, `shared/`, `features/`, `l10n/`, `services/` | — |
-| **Brain** | `lib/data/` | PocketBase I/O, in-memory cache, optimistic UI, offline outboxes, domain models; Planning-domain diagnostics under `plans/diagnostics/` | `core/` (utilities only), `shared/` (time + diagnostics), `services/` (device bridge), other `data/` | `features/` |
+| **Brain** | `lib/data/` | PocketBase I/O, in-memory cache, optimistic UI, offline outboxes, domain models; Planning-domain diagnostics under `plans/diagnostics/`; Voice parser/domain/cloud STT under `voice/` | `core/` (utilities only), `shared/` (time + diagnostics + voice contracts), `services/` (device bridge), other `data/` | `features/` |
 | **Shared time** | `lib/shared/time/` | Multi-consumer UTC/wall-clock, timezone catalog, app clock hooks, shared plan-time math used by Brain + UI | `core/` (utilities), `data/models.dart` (types only) | `features/`, `data/database_service.dart` |
 | **Shared diagnostics** | `lib/shared/diagnostics/` | General runtime logs (`runtime_log`, `platform_log`, `startup_log`); performance metrics + kill-switch registry under `performance/` | `core/` (utilities), `data/models.dart` (types only) | `features/`, `data/database_service.dart` |
-| **Shared voice diagnostics** | `lib/shared/voice/diagnostics/` | Desktop voice pipeline markers (`desktop_voice_log`, `desktop_voice_pipeline`) | `core/` (utilities), `shared/diagnostics/` | `features/`, `data/database_service.dart` |
-| **Foundation** | `lib/core/` | Theme, tokens, shared widgets, desktop voice services | `core/`, `shared/` (time + diagnostics + voice diagnostics), `data/models.dart` (types only) | `features/`, `data/database_service.dart` |
-| **UI modules** | `lib/features/` | Screens, sheets, feature-specific layout | `data/`, `core/`, `shared/`, `l10n/`, `features/shared/` | other features except via `shared/` or explicit shell routing |
-| **Voice** | `lib/l10n/` | Locale catalog and `t()` lookup | Flutter SDK only | `data/`, `features/` |
+| **Shared Voice** | `lib/shared/voice/` | One Voice system: commands, recognition, routing contracts, reusable UI, platform adapters (desktop/mobile), diagnostics | `core/` (utilities), `shared/`, `data/models.dart` (types only where contracts need them) | `features/`, `data/voice/`, `data/database_service.dart`, `app/shell/` |
+| **Foundation** | `lib/core/` | Theme, tokens, shared widgets, desktop tray/main-window infrastructure | `core/`, `shared/` (time + diagnostics + voice), `data/models.dart` (types only) | `features/`, `data/database_service.dart` |
+| **UI modules** | `lib/features/` | Screens, sheets, feature-specific layout; desktop Voice overlay UI under `voice/`; Voice settings under `settings/voice/` | `data/`, `core/`, `shared/`, `l10n/`, `features/shared/` | other features except via `shared/` or explicit shell routing |
+| **Localization** | `lib/l10n/` | Locale catalog and `t()` lookup | Flutter SDK only | `data/`, `features/` |
 | **Device bridge** | `lib/services/` | OS capabilities without UI | `data/models.dart`, `shared/time/`, Flutter/plugins | `features/` |
 
 ### Import boundary summary
@@ -177,10 +178,7 @@ Compatibility re-exports (remove when callers migrate): root `lib/app_shell.dart
 | `pb_config.dart` | PocketBase URL, collection names, expand constants |
 | `auth_bridge.dart` | Session check, OAuth routing |
 | `category_fuzzy_match.dart` | Category name scoring |
-| `price_reporter_client_match.dart` | Price Reporter client-category token guard for voice parse |
-| `voice_command_parser.dart` | Deterministic desktop/mobile voice command parse (`parsePriceReporterVoiceCommand`, `VoiceCommandCategoryIndex`) |
-| `voice_domain_resolver.dart` | `VoiceDomainResolver` — fuzzy voice-domain match against live category index *(part of `voice_command_parser.dart`)* |
-| `desktop_stt_cloud_backend.dart` | Brain-owned cloud command STT transport: PocketBase auth, `/api/ai/transcribe-command` POST, 25s timeout |
+| `voice/` | Brain Voice: parser, domain resolver, glossary, contamination gate, command normalize, recognition postprocess, Price Reporter client match, PocketBase cloud STT backend |
 | `smart_input_parser.dart` | Natural-language plan/list parse (client + AI backend hook) |
 | `recurrence_edit_scope.dart` | `RecurrenceEditScope` enum for recurring plan edit/delete scope |
 | `plan_time_sequential_cascade.dart` | Plan time sequential layout math + `computeTimeViewInsertionCascade` |
@@ -193,8 +191,6 @@ Compatibility re-exports (remove when callers migrate): root `lib/app_shell.dart
 | `local_sync/plan_create_outbox.dart` | Re-export of `plan_mutation_outbox.dart` |
 | `local_sync/offline_sync_state.dart` | Pending count, syncing, auth-paused UI state |
 | `local_sync/sync_manager.dart` | Connectivity / resume → flush trigger |
-| `voice_audio_stub.dart` | Non-web voice audio stub |
-| `voice_audio_web.dart` | Web voice audio implementation |
 | `web_history.dart` | Web history API conditional export |
 | `web_history_stub.dart` | Non-web history stub |
 | `web_history_web.dart` | Web history implementation |
@@ -237,79 +233,14 @@ Compatibility re-exports (remove when callers migrate): root `lib/app_shell.dart
 
 **`core/services/`**
 
-| File / pattern | Role |
+Desktop window/tray infrastructure only. Voice/STT production modules live under `lib/shared/voice/` (Phase 2C).
+
+| File | Role |
 | :--- | :--- |
-| `speech_engine_handle.dart` | Speech-to-text engine lifecycle |
-| `speech_listen_locale.dart` | STT locale resolution |
-| `pcm_audio_utils.dart` | PCM/WAV audio helpers for desktop STT |
-| `desktop_hotkey_codec.dart` | Desktop hotkey string encode/decode |
-| `desktop_stt_diagnostics.dart` | STT helper diagnostics markers |
-| `desktop_stt_helper_service.dart` | Desktop GOLOS STT helper subprocess and HTTP transcribe |
-| `desktop_stt_helper_diagnostics_builder.dart` | Assembles `DesktopSttDiagnostics`, WAV duration fallbacks, and last-attempt persistence *(part of `desktop_stt_helper_service.dart`)* |
-| `desktop_stt_helper_process_lifecycle.dart` | Spawns, restarts, and kills the GOLOS STT helper process; resolves helper/model paths *(part of `desktop_stt_helper_service.dart`)* |
 | `desktop_tray_service.dart` | System tray entry (conditional export) |
 | `desktop_tray_service_io.dart` | Windows tray implementation |
 | `desktop_tray_service_stub.dart` | Non-desktop tray stub |
-| `desktop_voice_settings.dart` | Local desktop voice prefs (SharedPreferences) |
-| `desktop_voice_hotkey.dart` | Global desktop voice hotkey coordinator |
-| `desktop_voice_hotkey_io.dart` | Windows hotkey registration |
-| `desktop_voice_hotkey_stub.dart` | Non-desktop hotkey stub |
-| `desktop_voice_hotkey_markers.dart` | Hotkey self-test / acceptance markers |
-| `desktop_voice_recognizer.dart` | Desktop voice recognizer interface |
-| `desktop_voice_recognizer_factory.dart` | Platform recognizer factory |
-| `desktop_voice_recognizer_io.dart` | Windows recognizer implementation |
-| `desktop_voice_recognizer_stub.dart` | Non-desktop recognizer stub |
-| `desktop_voice_engine.dart` | Desktop voice engine lifecycle |
-| `desktop_voice_audio_capture.dart` | Mic capture for desktop voice |
-| `desktop_voice_overlay_service.dart` | Native overlay state machine |
-| `desktop_voice_native_overlay.dart` | Native overlay channel bridge |
-| `desktop_voice_overlay_bridge.dart` | Overlay ↔ Flutter bridge |
-| `desktop_voice_overlay_host.dart` | Overlay host conditional export |
-| `desktop_voice_overlay_host_io.dart` | Windows overlay host |
-| `desktop_voice_overlay_host_stub.dart` | Non-desktop overlay host stub |
-| `desktop_voice_window_flags.dart` | Desktop window visibility flags |
-| `desktop_voice_confirmation.dart` | Start/stop voice confirmation copy |
-| `desktop_voice_command_normalize.dart` | Transcript normalization before parse/submit |
-| `desktop_voice_record_submit.dart` | Parsed voice command → `writeRecord` bridge |
-| `desktop_voice_user_error.dart` | Friendly desktop voice error mapping |
-| `desktop_voice_attempt_log.dart` | Persisted voice attempt history for profile UI |
-| `desktop_voice_acceptance_bridge.dart` | Acceptance-test hooks for desktop voice |
-| `desktop_voice_smoke_bridge.dart` | Smoke-test hooks for desktop voice |
-| `desktop_voice_benchmark_service.dart` | Desktop voice benchmark harness |
-| `desktop_win_speech_service.dart` | Windows speech platform adapter |
 | `desktop_main_window.dart` | Main Counter desktop window sizing (separate from voice overlay bounds) |
-| `desktop_stt_engine.dart` | STT engine contract: quality tiers, modes, context, and `DesktopSttEngine` result types |
-| `desktop_stt_cloud_service.dart` | Core cloud STT adapter + `DesktopSttCloudBackendHooks` injection surface (no Brain imports) |
-| `desktop_stt_orchestrator.dart` | STT quality ladder: engine select → transcribe → postprocess pipeline |
-| `desktop_stt_quality_evaluation.dart` | Raw-transcript quality markers; postprocess/alias must not count as STT quality |
-| `desktop_stt_benchmark_harness.dart` | Golden text STT quality gate (postprocess + parser, no mic) |
-| `desktop_voice_audio_presentation.dart` | Perceptual level meters + calibrated STT gain (RMS target, no blind peak-norm) |
-| `desktop_voice_capture_endpoint.dart` | Windows WASAPI / MMDevice capture endpoint role selection |
-| `desktop_voice_capture_ready_policy.dart` | Capture-ready cue + pre-roll / start-trim contracts (cue not counted as STT latency) |
-| `desktop_voice_command_stt_policy.dart` | Evidence-based command STT primary (whisper-tiny) vs Parakeet fallback policy |
-| `desktop_voice_confirmation_timer.dart` | Three-second visual commit countdown before `writeRecord` |
-| `desktop_voice_contamination_gate.dart` | Pre-confirm/pre-write gate blocking multi-client / stale / duplicate segments |
-| `desktop_voice_correction_flow.dart` | Single-instance correction state machine (UI-free; blocks duplicate panels) |
-| `desktop_voice_delayed_transcribe.dart` | Delayed helper transcription after cold-start without forcing re-speak |
-| `desktop_voice_dev_tools.dart` | Release-safe gate for Desktop Voice developer / acceptance tooling |
-| `desktop_voice_error_classification.dart` | Re-export of `DesktopVoiceFailureKind` for classification call sites |
-| `desktop_voice_glossary.dart` | Live + static STT glossary pack for context and postprocess validation |
-| `desktop_voice_installed_identity.dart` | Installed-app identity for Desktop Voice diagnostics and smoke scripts |
-| `desktop_voice_install_smoke_policy.dart` | Pure installed-app smoke / identity check rules (unit-tested) |
-| `desktop_voice_last_attempt_store.dart` | On-disk last voice-attempt diagnostics for post-capture pull |
-| `desktop_voice_overlay_constants.dart` | Native overlay size/font contracts (min 16pt; mirrors Win32 runner) |
-| `desktop_voice_overlay_transparency.dart` | Overlay layered color-key / alpha contracts (no black rectangular backdrop) |
-| `desktop_voice_ready_cue.dart` | Non-blocking Win32 ready click after capture ready (not STT latency) |
-| `desktop_voice_real_helper_latency_benchmark.dart` | Per-iteration latency trace against the real installed STT helper |
-| `desktop_voice_recognition_postprocess.dart` | Glossary-biased postprocess after raw STT (before parser/resolver) |
-| `desktop_voice_session.dart` | Immutable hotkey session identity + generation for async result discard |
-| `desktop_voice_stt_processing.dart` | STT-only PCM processing variants for quiet command WAVs (raw WAV untouched) |
-| `desktop_voice_transcript_merge.dart` | Transcript hypothesis merge rules — replace, never concatenate full phrases |
-| `desktop_voice_useful_candidate_evaluator.dart` | Shared useful-speech evaluation for widget, helper, and benchmarks |
-| `desktop_voice_wav_stt_benchmark.dart` | Real WAV → local STT helper benchmark (raw transcript quality, no postprocess) |
-| `desktop_voice_windows_audio_diagnostics.dart` | Windows Core Audio capture-endpoint volume/diagnostics snapshot |
-
-Every Desktop Voice / STT production module under `core/services/` must be listed by exact filename above (no wildcard substitutes).
 
 **`core/widgets/`** — canonical shared UI
 
@@ -318,7 +249,6 @@ Every Desktop Voice / STT production module under `core/services/` must be liste
 | `app_button.dart` | `AppButton` |
 | `app_settings_layout.dart` | `AppSettingsPageBody`, `AppSettingsSectionCard`, settings row helpers |
 | `app_icon_button.dart` | `AppIconButton` |
-| `app_mic_level_bars.dart` | Mic level visualization bars for voice UI |
 | `app_timezone_icon.dart` | Canonical solid timezone icon family |
 | `app_loading.dart` | `AppLoading` |
 | `app_state_views.dart` | `AppErrorState`, `AppEmptyState` |
@@ -391,14 +321,136 @@ General runtime diagnostics and the compile-time kill-switch registry. Multi-con
 | `performance/shell_flags.dart` | Shell + Planning Time View canvas bisect toggles (stays under shared performance; not `app/shell`) |
 | `performance/rebuild_metrics.dart` | Rebuild/frame metrics (`--dart-define=PERF_DIAG` gated) |
 
-### 3.37 `lib/shared/voice/diagnostics/` — desktop voice pipeline (Phase 2B)
+### 3.37 `lib/shared/voice/` — one Voice system (Phase 2C)
 
-Voice-pipeline markers used by desktop STT/voice services and Brain voice parsing. No feature UI and no `database_service` imports.
+Phone mic, desktop hotkey, web mic, and Wear adapters feed the **same** command interpretation path. Platform adapters may produce transcripts differently; command semantics are not duplicated per activation method.
+
+Must not import `features/`, `data/voice/`, `database_service.dart`, or `app/shell/`. Shell keeps active-tab routing in `lib/app/shell/shared/shell_voice_routing.dart`. Brain wires glossary builder + postprocess hooks from `main.dart`.
+
+#### `commands/` — platform-neutral command / policy contracts
 
 | File | Role |
 | :--- | :--- |
-| `desktop_voice_log.dart` | `DesktopVoiceLog` — concise desktop-voice pipeline markers (debug/profile only; release quiet) |
-| `desktop_voice_pipeline.dart` | Desktop-voice pipeline step helpers built on `DesktopVoiceLog` |
+| `desktop_voice_transcript_merge.dart` | Transcript hypothesis merge — replace, never concatenate full phrases |
+| `desktop_voice_delayed_transcribe.dart` | Delayed helper transcription after cold-start |
+| `desktop_voice_capture_ready_policy.dart` | Capture-ready cue + pre-roll / start-trim contracts |
+| `desktop_voice_install_smoke_policy.dart` | Pure installed-app smoke / identity check rules |
+| `desktop_voice_correction_flow.dart` | Single-instance correction state machine (UI-free) |
+| `desktop_voice_engine.dart` | Voice engine IDs / selection types |
+| `desktop_stt_engine.dart` | STT engine contract: quality tiers, modes, context, result types |
+| `desktop_stt_quality_evaluation.dart` | Raw-transcript quality markers |
+| `desktop_voice_command_stt_policy.dart` | Evidence-based command STT primary vs fallback policy |
+| `desktop_voice_glossary_pack.dart` | Neutral glossary pack data + `toSttPrompt`; Brain registers live builder |
+
+#### `recognition/` — platform-neutral recognition contracts
+
+| File | Role |
+| :--- | :--- |
+| `speech_engine_handle.dart` | Speech-to-text engine holder |
+| `speech_listen_locale.dart` | STT locale resolution |
+| `desktop_voice_recognizer.dart` | Recognizer interface + result types |
+| `desktop_voice_recognizer_factory.dart` | Platform-conditional recognizer factory |
+| `desktop_voice_recognizer_stub.dart` | Non-IO recognizer stub |
+| `desktop_voice_user_error.dart` | Friendly Voice error taxonomy / mapping |
+| `desktop_voice_error_classification.dart` | Re-export of `DesktopVoiceFailureKind` |
+
+#### `routing/` — acceptance bridge only (not tab state, not command execution)
+
+| File | Role |
+| :--- | :--- |
+| `desktop_voice_acceptance_bridge.dart` | Acceptance-test hooks (pure callback bridge) |
+
+Command execution (`parse` → `normalize` → `writeRecord`) lives in Brain: `lib/data/voice/desktop_voice_record_submit.dart`.
+
+#### `ui/` — reusable Voice UI
+
+| File | Role |
+| :--- | :--- |
+| `voice_input_sheet.dart` | Mobile/web mic bottom sheet |
+| `voice_capture_config.dart` | Submit-intent config for the sheet |
+| `app_mic_level_bars.dart` | Mic level visualization bars |
+
+#### `platforms/mobile/` — mobile/web audio adapters
+
+| File | Role |
+| :--- | :--- |
+| `voice_audio_stub.dart` | Non-web voice audio stub |
+| `voice_audio_web.dart` | Web voice audio implementation |
+
+#### `platforms/desktop/` — desktop Voice / STT runtime
+
+Desktop-specific hotkey, STT helper, overlay, capture, settings storage, benchmarks, and diagnostics. Filenames may still say `desktop_*`; ownership is desktop-specific behavior, not the prefix alone.
+
+| File | Role |
+| :--- | :--- |
+| `desktop_hotkey_codec.dart` | Hotkey string encode/decode |
+| `desktop_stt_benchmark_harness.dart` | Golden text STT quality gate (no mic) |
+| `desktop_stt_cloud_service.dart` | Desktop cloud STT client + DesktopSttCloudBackendHooks injection (no Brain imports) |
+| `desktop_stt_diagnostics.dart` | STT helper diagnostics snapshot model |
+| `desktop_stt_helper_diagnostics_builder.dart` | Assembles DesktopSttDiagnostics + last-attempt persistence *(part)* |
+| `desktop_stt_helper_process_lifecycle.dart` | Spawns/restarts/kills GOLOS helper; resolves helper/model paths *(part)* |
+| `desktop_stt_helper_service.dart` | Desktop GOLOS STT helper subprocess and HTTP transcribe |
+| `desktop_stt_orchestrator.dart` | STT quality ladder: engine select → transcribe → optional Brain postprocess hook |
+| `desktop_voice_attempt_log.dart` | Persisted Voice attempt history for settings UI |
+| `desktop_voice_audio_capture.dart` | Mic capture for desktop Voice |
+| `desktop_voice_audio_presentation.dart` | Perceptual level meters + calibrated STT gain |
+| `desktop_voice_benchmark_service.dart` | Desktop Voice benchmark harness |
+| `desktop_voice_capture_endpoint.dart` | Windows WASAPI / MMDevice capture endpoint selection |
+| `desktop_voice_confirmation.dart` | Desktop start/stop confirmation feedback |
+| `desktop_voice_confirmation_timer.dart` | Three-second visual commit countdown before writeRecord |
+| `desktop_voice_dev_tools.dart` | Release-safe gate for developer / acceptance tooling |
+| `desktop_voice_hotkey.dart` | Global/in-app Voice hotkey facade |
+| `desktop_voice_hotkey_io.dart` | Windows hotkey registration |
+| `desktop_voice_hotkey_markers.dart` | Hotkey self-test / acceptance markers |
+| `desktop_voice_hotkey_stub.dart` | Non-desktop hotkey stub |
+| `desktop_voice_installed_identity.dart` | Installed-app identity for diagnostics/smoke |
+| `desktop_voice_last_attempt_store.dart` | On-disk last attempt diagnostics |
+| `desktop_voice_native_overlay.dart` | Native overlay MethodChannel bridge |
+| `desktop_voice_overlay_bridge.dart` | Overlay ↔ Flutter bridge markers |
+| `desktop_voice_overlay_constants.dart` | Native overlay size/font contracts |
+| `desktop_voice_overlay_host.dart` | Overlay host conditional export |
+| `desktop_voice_overlay_host_io.dart` | Windows overlay host (window_manager) |
+| `desktop_voice_overlay_host_stub.dart` | Non-desktop overlay host stub |
+| `desktop_voice_overlay_service.dart` | Native overlay state machine |
+| `desktop_voice_overlay_transparency.dart` | Overlay layered color-key / alpha contracts |
+| `desktop_voice_ready_cue.dart` | Non-blocking Win32 ready click after capture ready |
+| `desktop_voice_recognizer_io.dart` | IO desktop recognizer implementation |
+| `desktop_voice_session.dart` | Immutable hotkey session identity + generation |
+| `desktop_voice_settings.dart` | Local desktop Voice prefs (SharedPreferences) |
+| `desktop_voice_smoke_bridge.dart` | Smoke-test bridge for CI |
+| `desktop_voice_stt_processing.dart` | STT-only PCM processing variants for quiet WAVs |
+| `desktop_voice_wav_stt_benchmark.dart` | Real WAV → local STT helper benchmark |
+| `desktop_voice_window_flags.dart` | Desktop window always-on-top helper |
+| `desktop_voice_windows_audio_diagnostics.dart` | Windows Core Audio capture-endpoint diagnostics |
+| `desktop_win_speech_service.dart` | Windows System.Speech fallback adapter |
+| `pcm_audio_utils.dart` | PCM/WAV byte helpers (desktop consumers only) |
+
+#### `diagnostics/` — Voice pipeline markers (Phase 2B)
+
+| File | Role |
+| :--- | :--- |
+| `desktop_voice_log.dart` | `DesktopVoiceLog` — concise pipeline markers (debug/profile only; release quiet) |
+| `desktop_voice_pipeline.dart` | Pipeline step helpers built on `DesktopVoiceLog` |
+
+### 3.37b `lib/data/voice/` — Brain Voice (Phase 2C)
+
+Parser, live category/domain resolution, normalization, command execution (`writeRecord`), contamination/postprocess, benchmarks tied to parser results, and PocketBase-backed cloud STT. Brain may import neutral `shared/voice/` contracts. Shared Voice must not import this folder.
+
+| File | Role |
+| :--- | :--- |
+| `voice_command_parser.dart` | Deterministic voice command parse (`parsePriceReporterVoiceCommand`, `VoiceCommandCategoryIndex`) |
+| `voice_domain_resolver.dart` | `VoiceDomainResolver` — fuzzy domain match against live category index *(part)* |
+| `price_reporter_client_match.dart` | Price Reporter client-category token guard |
+| `desktop_stt_cloud_backend.dart` | PocketBase auth + `/api/ai/transcribe-command` transport |
+| `desktop_voice_command_normalize.dart` | Transcript normalization before parse/submit |
+| `desktop_voice_glossary.dart` | Live glossary builder from category rules + register hook for shared pack |
+| `desktop_voice_contamination_gate.dart` | Pre-confirm multi-client / stale / duplicate gate |
+| `desktop_voice_recognition_postprocess.dart` | Glossary-biased postprocess before parser |
+| `desktop_voice_record_submit.dart` | Parsed command → normalize → injected `writeRecord` (command execution) |
+| `desktop_voice_useful_candidate_evaluator.dart` | Useful-speech evaluation for widget/helper/benchmarks |
+| `desktop_stt_benchmark_harness.dart` | Golden text STT quality gate (no mic) |
+| `desktop_voice_real_helper_latency_benchmark.dart` | Per-iteration latency trace against installed helper |
+
 
 ### 3.4 `lib/features/` — UI modules
 
@@ -412,11 +464,12 @@ Voice-pipeline markers used by desktop STT/voice services and Brain voice parsin
 | `notes/` | `drawing_canvas_page.dart`, `notes_glm_surface.dart`, `notes_library_page.dart`, `notes_visual_tokens.dart`, `note_editor_page.dart`, **`widgets/`** (`notes_library_body.dart`, `notes_library_production_shell.dart`, `note_card.dart`, `note_editor_block_widgets.dart`) | Notes library/editor/drawing feature UI (GLM v3); exact roles in §3.4 Notes below |
 | `calendar/` | `calendar_view.dart` (orchestrator), `calendar_chrome_header.dart`, `calendar_month_grid.dart`, `calendar_week_grid.dart`, `calendar_day_panel.dart`, `calendar_day_events.dart`, `calendar_helpers.dart` | Calendar tab: month/week grids, chrome header, focused-day task panel |
 | `categories/` | `category_list_view.dart` (orchestrator), `category_row_widget.dart`, `category_editor_sheet.dart`, `category_appearance_sheet.dart`, `category_tag_input_field.dart`, `category_helpers.dart`, `category_recursive_tree.dart`, `category_visibility_prefs.dart`, `create_category_dialog.dart`, `create_category_from_picker.dart` | Category manager (More menu): band grid, editor/appearance sheets, tree picker, picker create flow |
-| `profile/` | `profile_view.dart`, **`settings/`** (account, notification, security sections), `tag_manager_page.dart`, `tag_settings_hub.dart`, `tag_settings_view.dart`, `tag_default_duration_settings_view.dart`, `desktop_voice_settings_section.dart`, `desktop_voice_settings_desktop.dart`, `desktop_voice_attempt_dialog.dart` | Profile & tag settings, desktop voice settings (Windows) |
-| `settings/` | `timezone_settings.dart` | Settings-owned timezone helpers/labels (profile catalog re-exports) |
+| `profile/` | `profile_view.dart`, **`settings/`** (account, notification, security sections), `tag_manager_page.dart`, `tag_settings_hub.dart`, `tag_settings_view.dart`, `tag_default_duration_settings_view.dart` | Profile & tag settings |
+| `settings/` | `timezone_settings.dart`, **`voice/`** (`desktop_voice_settings_section.dart`, `desktop_voice_settings_desktop.dart`, `desktop_voice_attempt_dialog.dart`) | Settings-owned timezone helpers + Voice settings UI |
+| `voice/` | `desktop_voice_widget.dart`, `desktop_voice_capsule.dart`, `desktop_voice_correction_sheet.dart`, `desktop_voice_command_panel.dart` | Desktop Flutter Voice overlay UI (GOLOS STT capsule / correction / panel) |
 | `dev/` | `component_lab_view.dart`, `component_lab_cards_demo.dart` | Admin-only Component Lab |
 | `wear/` | `wear_timer_screen.dart`, `wear_main_wrapper.dart`, `wear_platform.dart`, `wear_runtime.dart` | Wear OS companion |
-| `shared/` | `shared_widgets.dart` (barrel), `activity_detail_sheet.dart`, `planning_task_edit_sheet.dart`, `timeline_record_edit_sheet.dart`, `empty_state_placeholder.dart`, **`edit_sheet/`** (autosave gate, time helpers/picker, checklist, repeat RRULE helpers, quill toolbar, parallel record panels), **`notes_editor/`** (`notes_editor_launcher.dart`, `notes_editor_sheet.dart`), `offline_sync_status_bar.dart`, `voice_input_sheet.dart`, `voice_capture_config.dart`, `desktop_voice_widget.dart`, `desktop_voice_capsule.dart`, `desktop_voice_command_panel.dart`, `desktop_voice_correction_sheet.dart` | Activity edit sheets, Notes launch/sheet routing, Omni-Picker entry, offline sync banner, mobile/web voice sheet, desktop Price Reporter voice UI + compact correction sheet |
+| `shared/` | `shared_widgets.dart` (barrel), `activity_detail_sheet.dart`, `planning_task_edit_sheet.dart`, `timeline_record_edit_sheet.dart`, `empty_state_placeholder.dart`, **`edit_sheet/`** (autosave gate, time helpers/picker, checklist, repeat RRULE helpers, quill toolbar, parallel record panels), **`notes_editor/`** (`notes_editor_launcher.dart`, `notes_editor_sheet.dart`), `offline_sync_status_bar.dart` | Activity edit sheets, Notes launch/sheet routing, Omni-Picker entry, offline sync banner |
 
 **Key symbols:** `ActivityDetailSheet` router → `features/shared/activity_detail_sheet.dart`; `PlanningTaskEditSheet` / `TimelineRecordSheetContent` in dedicated files; `showAppDateTimePicker` / `EditSheetAutosaveGate` in `features/shared/edit_sheet/`; re-exported via `shared_widgets.dart`.
 

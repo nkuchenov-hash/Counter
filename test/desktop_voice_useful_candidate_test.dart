@@ -1,8 +1,8 @@
-import 'package:counter/core/services/desktop_stt_helper_service.dart';
-import 'package:counter/core/services/desktop_voice_audio_capture.dart';
-import 'package:counter/core/services/desktop_voice_contamination_gate.dart';
+import 'package:counter/shared/voice/platforms/desktop/desktop_stt_helper_service.dart';
+import 'package:counter/shared/voice/platforms/desktop/desktop_voice_audio_capture.dart';
+import 'package:counter/data/voice/desktop_voice_contamination_gate.dart';
 import 'package:counter/data/models.dart';
-import 'package:counter/data/voice_command_parser.dart';
+import 'package:counter/data/voice/voice_command_parser.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

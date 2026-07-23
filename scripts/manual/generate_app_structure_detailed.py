@@ -354,7 +354,7 @@ def parse_app_structure_roles() -> dict[str, str]:
         "Planning feature barrel — re-exports planning_page, planning_page_shell, planning_sort_mode",
     )
     roles.setdefault(
-        "lib/features/shared/voice_input_sheet.dart",
+        "lib/shared/voice/ui/voice_input_sheet.dart",
         "Mobile/web mic sheet — speech-to-text via VoiceCaptureConfig",
     )
     roles.setdefault(

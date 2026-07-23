@@ -73,7 +73,7 @@ Many `[wip]` entries 2026-06-15 — 2026-06-24:
 
 - Shipped 2026-06-24 but `kDesktopVoiceCommandEnabled` default **false**
 - Requires `--dart-define=DESKTOP_VOICE_COMMAND=true`
-- Niche parser: `parsePriceReporterVoiceCommand`, `price_reporter_client_match.dart`
+- Niche parser: `parsePriceReporterVoiceCommand`, `lib/data/voice/price_reporter_client_match.dart` (one Voice command system; desktop is activation-only)
 - Export script `scripts/manual/export_price_reporter_timesheet.dart` — **internal billing**, not end-user feature
 - **Never** use Price Reporter export CSVs in marketing assets
 

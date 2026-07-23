@@ -29,7 +29,7 @@ Flutter time tracker. Owner: Nick (UX designer, not a developer). Goal: best tim
 
 ## Structure check (vs `docs/APP_STRUCTURE.md`)
 
-Verified 2026-06-10 (shell paths 2026-07-21; time ownership 2026-07-21; diagnostics ownership 2026-07-22). **Core layout matches** the documented map: `lib/data/` (Brain + part files), `lib/data/local_sync/` (offline outboxes), `lib/features/` (UI modules), `lib/shared/time/` (multi-consumer time), `lib/shared/diagnostics/` (runtime logs + kill switches), `lib/shared/voice/diagnostics/` (desktop voice pipeline), `lib/core/` (theme + widgets), `lib/app/shell/` (form-factor shell), `lib/l10n/`, `lib/services/`, `app_shell.dart`, `main.dart`.
+Verified 2026-06-10 (shell paths 2026-07-21; time ownership 2026-07-21; diagnostics ownership 2026-07-22; voice ownership 2026-07-22). **Core layout matches** the documented map: `lib/data/` (Brain + part files + `data/voice/`), `lib/data/local_sync/` (offline outboxes), `lib/features/` (UI modules + `settings/voice/`), `lib/shared/time/` (multi-consumer time), `lib/shared/diagnostics/` (runtime logs + kill switches), `lib/shared/voice/` (one Voice system), `lib/core/` (theme + widgets + tray/window), `lib/app/shell/` (form-factor shell), `lib/l10n/`, `lib/services/`, `app_shell.dart`, `main.dart`.
 
 **Known drift** (harmless; do not “fix” unless asked):
 
@@ -114,18 +114,19 @@ Routing map for AI assistants: open these first instead of grepping. Update this
 
 | Concept | File | Symbol |
 | :--- | :--- | :--- |
-| Voice input dispatcher (routes by active tab) | `lib/app_shell.dart` | `_startVoiceInput` |
-| Desktop Price Reporter voice command (kill switch) | `lib/app_shell.dart` | `_toggleDesktopVoiceCommandPanel`, `_desktopVoiceSubmitParsed` |
-| Desktop voice command parser | `lib/data/voice_command_parser.dart` | `parsePriceReporterVoiceCommand`, `VoiceCommandCategoryIndex`, `parseVoiceCommand` |
+| Voice input dispatcher (routes by active tab) | `lib/app/shell/shared/shell_voice_routing.dart` | Shell Voice routing mixin (via `app_shell.dart`) |
+| Desktop Price Reporter voice command (kill switch) | `lib/app/shell/shared/shell_voice_routing.dart` | Desktop Voice submit / toggle wiring |
+| Voice command parser (one system) | `lib/data/voice/voice_command_parser.dart` | `parsePriceReporterVoiceCommand`, `VoiceCommandCategoryIndex`, `parseVoiceCommand` |
+| Voice record submit (Brain) | `lib/data/voice/desktop_voice_record_submit.dart` | `DesktopVoiceRecordSubmit` — parse → normalize → `writeRecord` |
 | Desktop voice pipeline log | `lib/shared/voice/diagnostics/desktop_voice_log.dart` | `DesktopVoiceLog` — debug/profile pipeline markers |
-| Desktop voice widget UI (GOLOS STT) | `lib/features/shared/desktop_voice_widget.dart` | `DesktopVoiceWidget`, `showDesktopVoiceWidget` |
-| Desktop GOLOS STT helper | `lib/core/services/desktop_stt_helper_service.dart` | `DesktopSttHelperService` |
-| Desktop voice recognizer | `lib/core/services/desktop_voice_recognizer_factory.dart` | `createDesktopVoiceRecognizer` |
+| Desktop voice widget UI (GOLOS STT) | `lib/features/voice/desktop_voice_widget.dart` | `DesktopVoiceWidget`, `showDesktopVoiceWidget` |
+| Desktop GOLOS STT helper | `lib/shared/voice/platforms/desktop/desktop_stt_helper_service.dart` | `DesktopSttHelperService` |
+| Desktop voice recognizer | `lib/shared/voice/recognition/desktop_voice_recognizer_factory.dart` | `createDesktopVoiceRecognizer` |
 | Desktop tray | `lib/core/services/desktop_tray_service.dart` | `DesktopTrayService` |
-| Desktop voice settings (local) | `lib/core/services/desktop_voice_settings.dart` | `DesktopVoiceSettings` |
-| Desktop voice hotkey | `lib/core/services/desktop_voice_hotkey.dart` | `DesktopVoiceHotkey` |
-| Profile desktop voice settings UI | `lib/features/profile/desktop_voice_settings_section.dart` | `DesktopVoiceSettingsSection` |
-| Desktop voice shell wiring | `lib/app_shell.dart` | `_toggleDesktopVoiceWidget`, `_desktopVoiceSubmitParsed`, `_initDesktopVoiceLayer` |
+| Desktop voice settings (local prefs) | `lib/shared/voice/platforms/desktop/desktop_voice_settings.dart` | `DesktopVoiceSettings` |
+| Desktop voice hotkey | `lib/shared/voice/platforms/desktop/desktop_voice_hotkey.dart` | `DesktopVoiceHotkey` |
+| Voice settings UI | `lib/features/settings/voice/desktop_voice_settings_section.dart` | `DesktopVoiceSettingsSection` |
+| Desktop voice shell wiring | `lib/app/shell/shared/shell_voice_routing.dart` | `toggleDesktopVoiceWidget`, submit parsed, init layer |
 | UI dispatch wrappers (shell-side, debounced) | `lib/app_shell.dart` | `_stopRecordByDocId` / `_deleteRecordByDocId` / `_startTaskFromInput` |
 | Start a record (user taps Start) | `lib/data/records/record_crud.dart` | `DatabaseService.writeRecord` (`RecordCrudExtension`) |
 | Stop a record (user taps Stop) | `lib/data/records/record_crud.dart` | `DatabaseService.stopRecordByDocId` (`RecordCrudExtension`) |
@@ -164,9 +165,9 @@ Routing map for AI assistants: open these first instead of grepping. Update this
 | Timeline render (list) | `lib/features/timeline/timeline_view.dart` | `TimelinePage` |
 | Timeline edit sheet | `lib/features/shared/timeline_record_edit_sheet.dart` | `TimelineRecordSheetContent`; entry via `ActivityDetailSheet` |
 | Inline edit widget (child / parallel record) | `lib/features/shared/edit_sheet/parallel_record_panels.dart` | `ChildParallelEditBar` |
-| Voice input → record submission | `lib/app_shell.dart` | `_LifeOSDashboardState._voiceSubmitTimeline` |
-| Voice input → planning task submission | `lib/app_shell.dart` | `_LifeOSDashboardState._voiceSubmitPlanning` |
-| Voice input → backlog submission | `lib/app_shell.dart` | `_LifeOSDashboardState._voiceSubmitBacklog` |
+| Voice input → record submission | `lib/app/shell/shared/shell_voice_routing.dart` | Voice → Timeline record submit |
+| Voice input → planning task submission | `lib/app/shell/shared/shell_voice_routing.dart` | Voice → Planning task submit |
+| Voice input → backlog submission | `lib/app/shell/shared/shell_voice_routing.dart` | Voice → Lists/backlog submit |
 | Auth / session bootstrap | `lib/data/auth_bridge.dart` | `AuthBridge.checkSession` |
 | Profile timezone resolution | `lib/data/profile/profile_timezone.dart` | `DatabaseService.getProjectedToday` (`ProfileTimezoneExtension`) |
 | Profile settings getter | `lib/data/profile_service.dart` | `DatabaseService.settings` (`ProfileServiceExtension`) |

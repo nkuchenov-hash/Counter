@@ -11,6 +11,14 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-22] - Voice: keep command execution in Brain [engineering]
+
+* **Phase 2C correction:** Moved `desktop_voice_record_submit.dart` to `lib/data/voice/`; desktop Flutter Voice UI to `lib/features/voice/`; parser-tied evaluator/benchmarks to Brain. Shared Voice must not import `data/voice/`. Glossary pack data stays shared; live builder + postprocess wired from `main.dart`.
+
+## [2026-07-22] - Voice: unify ownership across platforms [engineering]
+
+* **Phase 2C:** One Voice system — moved production Voice/STT out of `lib/core/services/`, `lib/features/shared/`, and `lib/features/profile/` into `lib/shared/voice/` (commands/recognition/routing/ui/platforms/diagnostics), Brain `lib/data/voice/`, and `lib/features/settings/voice/`. Shell keeps `shell_voice_routing`. Tray/main-window stay in `core/services/`. No intentional Voice UX, parser, preference-key, or flag-default changes.
+
 ## [2026-07-22] - Diagnostics: assign ownership to real owners [engineering]
 
 * **Phase 2B:** Moved former `lib/core/diagnostics/` + `lib/core/performance/` into `lib/shared/diagnostics/` (runtime logs + kill switches), `lib/data/plans/diagnostics/` (plan duplicate log — Brain), and `lib/shared/voice/diagnostics/` (desktop voice pipeline). No behavior change.

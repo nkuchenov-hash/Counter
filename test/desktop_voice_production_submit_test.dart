@@ -1,6 +1,6 @@
-import 'package:counter/core/services/desktop_voice_record_submit.dart';
+import 'package:counter/data/voice/desktop_voice_record_submit.dart';
 import 'package:counter/data/models.dart';
-import 'package:counter/data/voice_command_parser.dart';
+import 'package:counter/data/voice/voice_command_parser.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 CategoryRule _fixtureTree() {

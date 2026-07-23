@@ -489,17 +489,76 @@ def humanize_guide(
             "responsibilities_ru": f"Реализует в shared/diagnostics: {role_clean}.",
         }
 
-    if p.startswith("lib/shared/voice/"):
-        role_short = role_clean.replace("*(part)*", "").strip()
+    if p.startswith("lib/data/voice/"):
         return {
-            "what": f"Shared voice diagnostics — {role_short}.",
-            "why": "Desktop voice pipeline markers must stay free of feature UI while serving STT services and Brain parsers.",
-            "contains": f"Voice pipeline marker helper ({sym}).",
+            "what": f"Brain Voice — {role_clean}.",
+            "why": "Live category index, PocketBase cloud STT, and command parse belong in Brain.",
+            "contains": f"Brain Voice helper ({sym}).",
             "responsibilities": role_clean,
-            "what_ru": f"Общая voice diagnostics — {role_short}.",
-            "why_ru": "Маркеры desktop voice pipeline без feature UI для STT services и Brain parsers.",
-            "contains_ru": f"Voice pipeline marker helper ({sym}).",
-            "responsibilities_ru": f"Реализует в shared/voice: {role_clean}.",
+            "what_ru": f"Голосовой разбор команд в Brain — файл `{Path(p).name}`.",
+            "why_ru": "Живой индекс категорий, облачный STT через PocketBase и разбор команд принадлежат Brain.",
+            "contains_ru": f"Вспомогательный модуль голосовых команд Brain (`{Path(p).name}`).",
+            "responsibilities_ru": "Связывает распознанный текст с категориями и записью в Brain.",
+        }
+
+    if p.startswith("lib/features/settings/voice/"):
+        return {
+            "what": f"Voice settings UI — {role_clean}.",
+            "why": "Hotkey, mic, and attempt diagnostics belong under settings ownership.",
+            "contains": f"Settings Voice widget ({sym}).",
+            "responsibilities": role_clean,
+            "what_ru": f"Экран настроек голосового ввода — файл `{Path(p).name}`.",
+            "why_ru": "Горячие клавиши, микрофон и история попыток принадлежат настройкам, а не только профилю.",
+            "contains_ru": f"Виджет настроек голосового ввода (`{Path(p).name}`).",
+            "responsibilities_ru": "Показывает и сохраняет пользовательские настройки голосового ввода.",
+        }
+
+    if p.startswith("lib/features/voice/"):
+        return {
+            "what": f"Desktop Voice UI — {role_clean}.",
+            "why": "Desktop overlay Flutter chrome is feature presentation of the shared Voice system.",
+            "contains": f"Desktop Voice Flutter widget ({sym}).",
+            "responsibilities": role_clean,
+            "what_ru": f"Интерфейс голосового ввода на компьютере — файл `{Path(p).name}`.",
+            "why_ru": "Оверлей и виджеты на Windows — feature UI общей системы голосового ввода.",
+            "contains_ru": f"Flutter-виджет голосового ввода на компьютере (`{Path(p).name}`).",
+            "responsibilities_ru": "Рисует капсулу, лист правки или оверлей голосового ввода на компьютере.",
+        }
+
+    if p.startswith("lib/shared/voice/platforms/desktop/"):
+        return {
+            "what": f"Desktop Voice runtime — {role_clean}.",
+            "why": "Hotkey, STT helper, overlay, and capture are desktop adapters of one Voice system.",
+            "contains": f"Desktop Voice runtime module ({sym}).",
+            "responsibilities": role_clean,
+            "what_ru": f"Рантайм голосового ввода на компьютере — файл `{Path(p).name}`.",
+            "why_ru": "Горячие клавиши, STT helper, оверлей и захват микрофона — адаптеры одной системы голосового ввода.",
+            "contains_ru": f"Рантайм-модуль голосового ввода на компьютере (`{Path(p).name}`).",
+            "responsibilities_ru": "Реализует активацию, распознавание или оверлей голосового ввода на компьютере.",
+        }
+
+    if p.startswith("lib/shared/voice/platforms/mobile/"):
+        return {
+            "what": f"Mobile/web Voice adapter — {role_clean}.",
+            "why": "Web Audio vs stub differs by platform; keep adapters under Voice ownership.",
+            "contains": f"Voice audio adapter ({sym}).",
+            "responsibilities": role_clean,
+            "what_ru": f"Адаптер звука голосового ввода для телефона и web — файл `{Path(p).name}`.",
+            "why_ru": "Web Audio и заглушка отличаются по платформе; адаптеры живут рядом с голосовым вводом.",
+            "contains_ru": f"Аудио-адаптер голосового ввода (`{Path(p).name}`).",
+            "responsibilities_ru": "Даёт тон или звук для листа микрофона на web и остальных платформах.",
+        }
+
+    if p.startswith("lib/shared/voice/"):
+        return {
+            "what": f"Shared Voice system — {role_clean}.",
+            "why": "Phone, desktop, web, and Wear activation share one command interpretation path.",
+            "contains": f"Shared Voice module ({sym}).",
+            "responsibilities": role_clean,
+            "what_ru": f"Общая система голосового ввода — файл `{Path(p).name}`.",
+            "why_ru": "Телефон, компьютер, web и Wear сходятся в один путь разбора команд.",
+            "contains_ru": f"Модуль общей системы голосового ввода (`{Path(p).name}`).",
+            "responsibilities_ru": "Держит контракт, интерфейс или диагностику общей системы голосового ввода.",
         }
 
     if p.startswith("lib/core/widgets/"):

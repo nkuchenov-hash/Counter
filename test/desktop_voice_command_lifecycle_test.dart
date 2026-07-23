@@ -1,7 +1,7 @@
-import 'package:counter/core/services/desktop_voice_correction_flow.dart';
-import 'package:counter/core/services/desktop_voice_install_smoke_policy.dart';
+import 'package:counter/shared/voice/commands/desktop_voice_correction_flow.dart';
+import 'package:counter/shared/voice/commands/desktop_voice_install_smoke_policy.dart';
 import 'package:counter/data/models.dart';
-import 'package:counter/data/voice_command_parser.dart';
+import 'package:counter/data/voice/voice_command_parser.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 CategoryRule _scwTree() {

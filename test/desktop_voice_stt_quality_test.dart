@@ -1,10 +1,10 @@
-import 'package:counter/core/services/desktop_stt_benchmark_harness.dart';
-import 'package:counter/core/services/desktop_stt_cloud_service.dart';
-import 'package:counter/core/services/desktop_stt_engine.dart';
-import 'package:counter/core/services/desktop_stt_quality_evaluation.dart';
-import 'package:counter/core/services/desktop_voice_glossary.dart';
-import 'package:counter/core/services/desktop_voice_recognition_postprocess.dart';
-import 'package:counter/core/services/desktop_voice_wav_stt_benchmark.dart';
+import 'package:counter/data/voice/desktop_stt_benchmark_harness.dart';
+import 'package:counter/shared/voice/platforms/desktop/desktop_stt_cloud_service.dart';
+import 'package:counter/shared/voice/commands/desktop_stt_engine.dart';
+import 'package:counter/shared/voice/commands/desktop_stt_quality_evaluation.dart';
+import 'package:counter/data/voice/desktop_voice_glossary.dart';
+import 'package:counter/data/voice/desktop_voice_recognition_postprocess.dart';
+import 'package:counter/shared/voice/platforms/desktop/desktop_voice_wav_stt_benchmark.dart';
 import 'package:counter/data/models.dart';
 import 'package:flutter_test/flutter_test.dart';
 

@@ -1,7 +1,7 @@
-import 'package:counter/core/services/desktop_voice_acceptance_bridge.dart';
-import 'package:counter/core/services/desktop_voice_hotkey.dart';
-import 'package:counter/core/services/desktop_voice_settings.dart';
-import 'package:counter/data/voice_command_parser.dart';
+import 'package:counter/shared/voice/routing/desktop_voice_acceptance_bridge.dart';
+import 'package:counter/shared/voice/platforms/desktop/desktop_voice_hotkey.dart';
+import 'package:counter/shared/voice/platforms/desktop/desktop_voice_settings.dart';
+import 'package:counter/data/voice/voice_command_parser.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

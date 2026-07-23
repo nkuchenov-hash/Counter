@@ -5,7 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   group('Desktop voice no-preparing UI', () {
     test('overlay service redirects showPreparing to showListening', () {
-      final src = File('lib/core/services/desktop_voice_overlay_service.dart')
+      final src = File('lib/shared/voice/platforms/desktop/desktop_voice_overlay_service.dart')
           .readAsStringSync();
       expect(src.contains('desktop_voice_overlay_stt_warming'), isFalse);
       expect(src.contains("state: 'preparing'"), isFalse);
@@ -18,7 +18,7 @@ void main() {
 
     test('widget opens native overlay with showListening not showPreparing', () {
       final src =
-          File('lib/features/shared/desktop_voice_widget.dart').readAsStringSync();
+          File('lib/features/voice/desktop_voice_widget.dart').readAsStringSync();
       expect(src.contains('showPreparing()'), isFalse);
       expect(src.contains('showListening('), isTrue);
       expect(src.contains('desktop_voice_overlay_stt_warming'), isFalse);

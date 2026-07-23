@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:counter/core/services/desktop_voice_dev_tools.dart';
+import 'package:counter/shared/voice/platforms/desktop/desktop_voice_dev_tools.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -18,7 +18,7 @@ void main() {
     });
 
     test('settings desktop gates simulate/test buttons', () {
-      final src = File('lib/features/profile/desktop_voice_settings_desktop.dart')
+      final src = File('lib/features/settings/voice/desktop_voice_settings_desktop.dart')
           .readAsStringSync();
       expect(src.contains('DesktopVoiceDevTools.visible'), isTrue);
       expect(src.contains('DESKTOP_VOICE_RELEASE_DEV_BUTTONS_HIDDEN'), isTrue);

@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:counter/core/services/desktop_voice_real_helper_latency_benchmark.dart';
+import 'package:counter/data/voice/desktop_voice_real_helper_latency_benchmark.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

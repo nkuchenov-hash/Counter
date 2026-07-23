@@ -1,5 +1,5 @@
 import 'package:counter/core/widgets/app_button.dart';
-import 'package:counter/core/widgets/app_mic_level_bars.dart';
+import 'package:counter/shared/voice/ui/app_mic_level_bars.dart';
 import 'package:counter/core/widgets/app_settings_layout.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';

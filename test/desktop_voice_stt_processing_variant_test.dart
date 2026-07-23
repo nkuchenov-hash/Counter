@@ -1,7 +1,7 @@
 import 'dart:io';
 
-import 'package:counter/core/services/desktop_voice_stt_processing.dart';
-import 'package:counter/core/services/pcm_audio_utils.dart';
+import 'package:counter/shared/voice/platforms/desktop/desktop_voice_stt_processing.dart';
+import 'package:counter/shared/voice/platforms/desktop/pcm_audio_utils.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

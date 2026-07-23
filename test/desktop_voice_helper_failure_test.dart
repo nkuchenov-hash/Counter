@@ -1,5 +1,5 @@
-import 'package:counter/core/services/desktop_voice_hotkey.dart';
-import 'package:counter/core/services/desktop_voice_user_error.dart';
+import 'package:counter/shared/voice/platforms/desktop/desktop_voice_hotkey.dart';
+import 'package:counter/shared/voice/recognition/desktop_voice_user_error.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' show ClientException;
 

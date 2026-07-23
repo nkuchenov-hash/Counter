@@ -1,7 +1,7 @@
 // In-app Desktop Voice diagnostics — attempt log lifecycle + plain-text copy.
 // Exercises the same `DesktopVoiceAttemptLog` API the live widget updates.
 
-import 'package:counter/core/services/desktop_voice_attempt_log.dart';
+import 'package:counter/shared/voice/platforms/desktop/desktop_voice_attempt_log.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

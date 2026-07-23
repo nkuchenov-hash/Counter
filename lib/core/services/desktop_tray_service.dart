@@ -3,7 +3,7 @@ import 'dart:io';
 
 import 'package:counter/core/services/desktop_tray_service_stub.dart'
     if (dart.library.io) 'package:counter/core/services/desktop_tray_service_io.dart';
-import 'package:counter/core/services/desktop_voice_settings.dart';
+import 'package:counter/shared/voice/platforms/desktop/desktop_voice_settings.dart';
 import 'package:flutter/foundation.dart';
 
 /// Windows desktop tray + minimize-to-tray behavior.

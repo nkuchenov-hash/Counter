@@ -1,6 +1,6 @@
-import 'package:counter/core/services/desktop_voice_command_stt_policy.dart';
-import 'package:counter/core/services/desktop_voice_engine.dart';
-import 'package:counter/core/services/desktop_voice_settings.dart';
+import 'package:counter/shared/voice/commands/desktop_voice_command_stt_policy.dart';
+import 'package:counter/shared/voice/commands/desktop_voice_engine.dart';
+import 'package:counter/shared/voice/platforms/desktop/desktop_voice_settings.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 

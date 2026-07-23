@@ -16,7 +16,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:counter/shared/time/wall_clock.dart';
-import 'package:counter/data/price_reporter_client_match.dart';
+import 'package:counter/data/voice/price_reporter_client_match.dart';
 import 'package:csv/csv.dart';
 import 'package:intl/intl.dart';
 import 'package:pocketbase/pocketbase.dart';
@@ -286,7 +286,7 @@ Future<void> main() async {
   stderr.writeln('PB: $baseUrl');
   stderr.writeln('User email: $userEmail');
   stderr.writeln('Category match helper: $kPriceReporterClientMatchSource');
-  stderr.writeln('Helper extracted: lib/data/price_reporter_client_match.dart');
+  stderr.writeln('Helper extracted: lib/data/voice/price_reporter_client_match.dart');
 
   final pb = await _authenticatedPb(baseUrl);
   final profile = pb.authStore.record;
