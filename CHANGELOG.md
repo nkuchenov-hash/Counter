@@ -11,6 +11,10 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-23] - Structure: final repository completeness audit [engineering]
+
+* **Phase 2G:** Final completeness audit after Phases 1–2F — 9 large Dart files reviewed (LARGE_FILE 0), 14 zero-ref candidates classified (KEEP/DEFER/tooling; none deleted), no architecture drift, no accidental tracked artifacts. Docs-only closure; ordinary repository cleanup formally complete with deferred feature scopes. Report: `docs/reports/FINAL_REPOSITORY_COMPLETENESS_AUDIT_2026-07-23.md`.
+
 ## [2026-07-23] - Structure: close Stage B drift audit [engineering]
 
 * **Phase 2F:** Audited Roadmap Stage B (root barrels, `Archive/`, duplicate l10n). Only `lib/main.dart` + `lib/app_shell.dart` at root; `Archive/` already gone (guard enforced); l10n remains single `dictionary.dart` + `langs/` SSOT. No production Dart changes. Report: `docs/reports/STAGE_B_STRUCTURE_DRIFT_AUDIT_2026-07-23.md`.

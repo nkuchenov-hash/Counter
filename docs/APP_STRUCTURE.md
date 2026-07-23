@@ -21,6 +21,7 @@ Physical map of the Flutter application: what exists, which layer owns it, who m
 | **Detailed file guide** | [`docs/APP_STRUCTURE_DETAILED.md`](APP_STRUCTURE_DETAILED.md) — owner-readable **evidence-backed** EN/RU entry per tracked folder and file (role, necessity, confidence, deletion consequence); regenerate via `generate_app_structure_detailed.py` |
 | **Project Knowledge pack** | [`docs/PROJECT_KNOWLEDGE_PACK.md`](PROJECT_KNOWLEDGE_PACK.md) — 14-doc upload checklist |
 | **Prior parity report** | [`docs/reports/FINAL_STRUCTURE_PARITY_AND_DOC_CLEANUP_2026-07-03.md`](reports/FINAL_STRUCTURE_PARITY_AND_DOC_CLEANUP_2026-07-03.md) |
+| **Final completeness (2G)** | [`docs/reports/FINAL_REPOSITORY_COMPLETENESS_AUDIT_2026-07-23.md`](reports/FINAL_REPOSITORY_COMPLETENESS_AUDIT_2026-07-23.md) — ordinary repo cleanup formally closed (docs-only; deferred feature scopes remain) |
 
 Regenerate the detailed guide after large tree changes:
 
