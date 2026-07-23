@@ -165,12 +165,12 @@ Low severity (defer): `auth_service.dart:134, 163` — non-deterministic UID fal
 | **Repo cleanup** | Non-project junk + accidental exports removed | ✅ 2026-07-03 |
 | **Final parity** | Tree/doc dedupe — `docs/reports/FINAL_STRUCTURE_PARITY_AND_DOC_CLEANUP_2026-07-03.md` | ✅ 2026-07-03 |
 | **D** | Architecture guard **-Strict** in CI (`.github/workflows/architecture-guard.yml`; also pre-Flutter in deploy + Windows installer workflows) | ✅ 2026-07-23 |
-| **B** | Safe renames/moves (root barrels, Archive/, duplicate l10n) | ⏸ after D |
+| **B** | Safe renames/moves (root barrels, Archive/, duplicate l10n) — audited; items already gone or intentionally kept (`lib/main.dart` + `lib/app_shell.dart` only); see `docs/reports/STAGE_B_STRUCTURE_DRIFT_AUDIT_2026-07-23.md` | ✅ 2026-07-23 audited / superseded |
 | **E** | Further large-file splits | ⏸ — **never by line count alone**; Pass 3–4D complete |
 
 **Remaining:** 3 runtime test failures (`perf_shell_date_settle_test`, `widget_test` smoke, related perf harness). Not compile blockers.
 
-Reports: `docs/reports/FINAL_STRUCTURE_PARITY_AND_DOC_CLEANUP_2026-07-03.md`, `docs/PROJECT_KNOWLEDGE_PACK.md`.
+Reports: `docs/reports/FINAL_STRUCTURE_PARITY_AND_DOC_CLEANUP_2026-07-03.md`, `docs/reports/STAGE_B_STRUCTURE_DRIFT_AUDIT_2026-07-23.md`, `docs/PROJECT_KNOWLEDGE_PACK.md`.
 
 ---
 
@@ -265,7 +265,7 @@ Status: `database_service.dart` ~720 lines. All domains extracted to part files.
 ### V6. Tooling cleanup & technical debt
 **Not urgent. Later cleanup — not F1/F2.**
 
-- **`Archive/tool/test_smart_parse.dart`** — dev-only smart-parse probe; `avoid_print` suppressed. Former repo-root `tool/` lives under `Archive/tool/` after June 2026 cleanup.
+- ~~**`Archive/tool/test_smart_parse.dart`**~~ — removed with `Archive/` (June 2026); guard keeps `Archive` deleted. See Stage B audit 2026-07-23.
 - **Replace dynamic IconData with fixed icon registry** — Flutter web release builds need `--no-tree-shake-icons` because category icons are created dynamically from stored `icon_code_point` values (`CategoryRule.iconCodePoint` → `IconData(...)`). **Current workaround:** `update.ps1` / `scripts/manual/td.ps1` and GitHub Actions CI pass `--no-tree-shake-icons`. **Proper fix:** persist stable icon keys/names (e.g. `'work'`, `'home'`) instead of arbitrary code points; resolve through a const registry, e.g. `const Map<String, IconData> appIcons = { 'work': Icons.work, 'home': Icons.home, ... }`. **Scope:** category model, category create/edit UI, `category_service.dart`, migration/backward compatibility for existing `icon_code_point` rows, `docs/DATA_MAP.md` / `docs/POCKETBASE_MANIFEST.md` if field meaning changes.
 
 ---
