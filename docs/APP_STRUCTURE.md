@@ -548,8 +548,9 @@ Every production Notes feature/shared editor module above must be listed by exac
 | `exports/` | Script output (e.g. Price Reporter CSV) | **Gitignored** — local only |
 | `.dart_tool/` | Dart/Flutter tool cache | **Gitignored** — must not be tracked |
 | `update.ps1` | Deploy wrapper | Calls `scripts/manual/td.ps1` |
-| `.github/workflows/deploy.yml` | CI web deploy | Push `main` → `gh-pages` |
-| `.github/workflows/windows-desktop-build.yml` | CI Windows installer | Manual `workflow_dispatch` → `CounterSetup.exe` |
+| `.github/workflows/architecture-guard.yml` | CI structure gate | PRs to `main` (+ `workflow_dispatch`): `architecture_guard.ps1 -Strict` + `git diff --check` (no Flutter) |
+| `.github/workflows/deploy.yml` | CI web deploy | Push `main` → strict guard → Flutter web → `gh-pages` |
+| `.github/workflows/windows-desktop-build.yml` | CI Windows installer | Manual `workflow_dispatch` → strict guard → Flutter/Inno → `CounterSetup.exe` |
 | `pubspec.yaml` | Flutter package manifest | |
 | `analysis_options.yaml` | Analyzer rules | |
 
@@ -689,6 +690,8 @@ Run from repo root:
 .\scripts\audit\architecture_guard.ps1 -Strict   # fail on any violation
 .\scripts\manual\structure_scan.ps1              # optional tree snapshot to docs/reports/
 ```
+
+**CI:** PRs to `main` run `.github/workflows/architecture-guard.yml` (`Architecture Guard` / `strict-structure`). Web deploy and manual Windows installer workflows also run `-Strict` after checkout, before Flutter. Policy remains `scripts/audit/architecture_guard.ps1` only.
 
 ---
 

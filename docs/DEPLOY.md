@@ -28,12 +28,25 @@ First time on Unix, if needed: `chmod +x scripts/manual/td`
 
 Push to `main` triggers [`.github/workflows/deploy.yml`](../.github/workflows/deploy.yml):
 
+- CI runs the strict architecture guard (`scripts/audit/architecture_guard.ps1 -Strict`) **before** Flutter setup/build
 - CI runs `flutter build web --release --base-href="/Counter/" --no-tree-shake-icons`
 - [JamesIves/github-pages-deploy-action](https://github.com/JamesIves/github-pages-deploy-action) publishes `build/web` to the **`gh-pages`** branch
 
 **Live URL:** https://nkuchenov-hash.github.io/Counter/
 
 The deploy scripts do **not** push to `gh-pages` directly; Actions owns that step.
+
+## Architecture Guard (structure CI)
+
+Executable policy source: [`scripts/audit/architecture_guard.ps1`](../scripts/audit/architecture_guard.ps1) (do not duplicate rules in YAML).
+
+| Trigger | Workflow | When the guard runs |
+| :--- | :--- | :--- |
+| Pull request targeting `main` (and manual `workflow_dispatch`) | [`.github/workflows/architecture-guard.yml`](../.github/workflows/architecture-guard.yml) (`Architecture Guard` / `strict-structure`) | Dedicated job: strict guard + `git diff --check` (no Flutter) |
+| Push to `main` / `master` | [`.github/workflows/deploy.yml`](../.github/workflows/deploy.yml) | Immediately after checkout, before Flutter setup |
+| Manual Windows installer | [`.github/workflows/windows-desktop-build.yml`](../.github/workflows/windows-desktop-build.yml) | Immediately after checkout, before Flutter setup |
+
+Making `Architecture Guard / strict-structure` a **required** branch-protection check is a repository settings step (not configured by this workflow file alone).
 
 ## Why `--no-tree-shake-icons`
 
