@@ -14,6 +14,7 @@
 ## [2026-07-23] - CI: enforce strict architecture guard [engineering]
 
 * **Phase 2E:** Added `.github/workflows/architecture-guard.yml` (`Architecture Guard` / `strict-structure`) for PRs to `main`; wired `scripts/audit/architecture_guard.ps1 -Strict` after checkout in `deploy.yml` and `windows-desktop-build.yml` before Flutter. No production Dart or app behavior changes.
+* **Phase 2E correction:** Architecture Guard checkout uses `fetch-depth: 0`; `git diff --check` runs against the PR base…HEAD range (or `origin/main...HEAD` on `workflow_dispatch`) so committed whitespace errors are caught.
 
 ## [2026-07-23] - Categories: assign code to real owners [engineering]
 

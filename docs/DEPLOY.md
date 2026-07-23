@@ -42,7 +42,7 @@ Executable policy source: [`scripts/audit/architecture_guard.ps1`](../scripts/au
 
 | Trigger | Workflow | When the guard runs |
 | :--- | :--- | :--- |
-| Pull request targeting `main` (and manual `workflow_dispatch`) | [`.github/workflows/architecture-guard.yml`](../.github/workflows/architecture-guard.yml) (`Architecture Guard` / `strict-structure`) | Dedicated job: strict guard + `git diff --check` (no Flutter) |
+| Pull request targeting `main` (and manual `workflow_dispatch`) | [`.github/workflows/architecture-guard.yml`](../.github/workflows/architecture-guard.yml) (`Architecture Guard` / `strict-structure`) | Dedicated job: strict guard + `git diff --check` on the PR/`main` range (full history checkout; no Flutter) |
 | Push to `main` / `master` | [`.github/workflows/deploy.yml`](../.github/workflows/deploy.yml) | Immediately after checkout, before Flutter setup |
 | Manual Windows installer | [`.github/workflows/windows-desktop-build.yml`](../.github/workflows/windows-desktop-build.yml) | Immediately after checkout, before Flutter setup |
 
