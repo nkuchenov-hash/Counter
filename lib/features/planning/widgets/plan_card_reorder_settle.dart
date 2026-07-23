@@ -1,4 +1,8 @@
-import 'package:flutter/material.dart';/// One-shot slide settle when a completed card is allowed to reorder.
+import 'package:counter/core/widgets/life_card.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/physics.dart';
+
+/// One-shot spring settle when a card is allowed to move to its new order.
 class PlanCardReorderSettle extends StatefulWidget {
   const PlanCardReorderSettle({
     required this.animate,
@@ -15,23 +19,15 @@ class PlanCardReorderSettle extends StatefulWidget {
 class PlanCardReorderSettleState extends State<PlanCardReorderSettle>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
-  late final Animation<Offset> _slide;
   bool _wasAnimating = false;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 280),
-    );
-    _slide = Tween<Offset>(
-      begin: const Offset(0, -0.035),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
+    _controller = AnimationController.unbounded(vsync: this, value: 1);
     if (widget.animate) {
       _wasAnimating = true;
-      _controller.forward();
+      _startSettle();
     }
   }
 
@@ -40,8 +36,21 @@ class PlanCardReorderSettleState extends State<PlanCardReorderSettle>
     super.didUpdateWidget(oldWidget);
     if (!oldWidget.animate && widget.animate) {
       _wasAnimating = true;
-      _controller.forward(from: 0);
+      _startSettle();
     }
+  }
+
+  void _startSettle() {
+    _controller.value = 0;
+    _controller.animateWith(
+      SpringSimulation(
+        kAppPhysicalCardSpring,
+        0,
+        1,
+        0,
+        snapToEnd: true,
+      ),
+    );
   }
 
   @override
@@ -53,6 +62,22 @@ class PlanCardReorderSettleState extends State<PlanCardReorderSettle>
   @override
   Widget build(BuildContext context) {
     if (!_wasAnimating && !widget.animate) return widget.child;
-    return SlideTransition(position: _slide, child: widget.child);
+    return AnimatedBuilder(
+      animation: _controller,
+      child: widget.child,
+      builder: (context, child) {
+        final progress = _controller.value.clamp(0.0, 1.0).toDouble();
+        final remaining = 1 - progress;
+        return Transform.translate(
+          offset: Offset(0, -4 * remaining),
+          transformHitTests: false,
+          child: Transform.scale(
+            scale: 1 + (0.008 * remaining),
+            transformHitTests: false,
+            child: child,
+          ),
+        );
+      },
+    );
   }
 }

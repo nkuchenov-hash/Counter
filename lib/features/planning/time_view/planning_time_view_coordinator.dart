@@ -31,6 +31,7 @@ class PlanningTimeViewCoordinator {
   double timelineVerticalDragCardHeightPx = 0;
   String? timelineVerticalDragPlanKey;
   double timelineVerticalDragDeltaPx = 0;
+  double timelineVerticalDragVisualVelocityPxPerSec = 0;
   double timelineVerticalDragOriginTopPx = 0;
   int timelineVerticalDragDurationMin = kTimelineDefaultBlockMinutes;
   PlanningTask? timelineVerticalDragTask;

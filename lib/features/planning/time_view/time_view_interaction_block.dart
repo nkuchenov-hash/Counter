@@ -1,4 +1,11 @@
-import 'dart:math' as math;import 'package:counter/features/planning/plan_time_gesture_contract.dart';import 'package:counter/features/planning/time_view/time_view_drag_state.dart';import 'package:flutter/foundation.dart';import 'package:flutter/material.dart';/// Invisible move/resize gesture zones for proportional timeline plan blocks.
+import 'dart:math' as math;
+
+import 'package:counter/features/planning/plan_time_gesture_contract.dart';
+import 'package:counter/features/planning/time_view/time_view_drag_state.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+
+/// Invisible move/resize gesture zones for proportional timeline plan blocks.
 class TimelinePlanInteractionBlock extends StatefulWidget {
   const TimelinePlanInteractionBlock({
     required this.canMove,
@@ -13,6 +20,7 @@ class TimelinePlanInteractionBlock extends StatefulWidget {
     this.onBodyTap,
     this.onVerticalDragStart,
     this.onVerticalDragUpdate,
+    this.onVerticalDragVelocityChanged,
     this.onVerticalDragEnd,
     this.onVerticalDragCancel,
     this.onMovePointerDown,
@@ -34,6 +42,7 @@ class TimelinePlanInteractionBlock extends StatefulWidget {
   final VoidCallback? onBodyTap;
   final void Function(double fingerGrabOffsetCanvasPx)? onVerticalDragStart;
   final void Function(double deltaPx, double globalDy)? onVerticalDragUpdate;
+  final ValueChanged<double>? onVerticalDragVelocityChanged;
   final VoidCallback? onVerticalDragEnd;
   final VoidCallback? onVerticalDragCancel;
   final VoidCallback? onMovePointerDown;
@@ -56,6 +65,9 @@ class TimelinePlanInteractionBlockState
   TimelinePointerGesturePhase _gesturePhase = TimelinePointerGesturePhase.idle;
   double _pendingGrabOffsetCanvasPx = 0;
   Offset? _pointerDownGlobal;
+  double? _lastVelocityGlobalDy;
+  int _lastVelocityMicros = 0;
+  double _smoothedVerticalVelocity = 0;
 
   /// Cached from last [build] — phone-width shell uses APK touch thresholds.
   double _viewportDragThreshold = kPlanTimeDragThresholdTouchPx;
@@ -75,6 +87,32 @@ class TimelinePlanInteractionBlockState
     _moveAccumulatedDy = 0;
     _pointerDownGlobal = null;
     _activePointer = null;
+    _lastVelocityGlobalDy = null;
+    _lastVelocityMicros = 0;
+    _smoothedVerticalVelocity = 0;
+  }
+
+  void _startVelocityTracking() {
+    _lastVelocityGlobalDy = _pointerDownGlobal?.dy;
+    _lastVelocityMicros = DateTime.now().microsecondsSinceEpoch;
+    _smoothedVerticalVelocity = 0;
+    widget.onVerticalDragVelocityChanged?.call(0);
+  }
+
+  void _trackVerticalVelocity(double globalDy) {
+    final nowMicros = DateTime.now().microsecondsSinceEpoch;
+    final previousDy = _lastVelocityGlobalDy;
+    final previousMicros = _lastVelocityMicros;
+    _lastVelocityGlobalDy = globalDy;
+    _lastVelocityMicros = nowMicros;
+    if (previousDy == null || previousMicros == 0) return;
+    final dtSeconds = (nowMicros - previousMicros) / 1000000.0;
+    if (dtSeconds <= 0 || dtSeconds > 0.2) return;
+    final instantVelocity = (globalDy - previousDy) / dtSeconds;
+    _smoothedVerticalVelocity = _smoothedVerticalVelocity == 0
+        ? instantVelocity
+        : (_smoothedVerticalVelocity * 0.68) + (instantVelocity * 0.32);
+    widget.onVerticalDragVelocityChanged?.call(_smoothedVerticalVelocity);
   }
 
   void _maybeStartDragFromPending() {
@@ -82,6 +120,7 @@ class TimelinePlanInteractionBlockState
     if (_bodyDragActive) return;
     _gesturePhase = TimelinePointerGesturePhase.draggingMove;
     _bodyDragActive = true;
+    _startVelocityTracking();
     if (kDebugMode) {
       debugPrint('[TIME_VIEW_DRAG_STARTED_AFTER_THRESHOLD]');
     }
@@ -100,6 +139,7 @@ class TimelinePlanInteractionBlockState
       }
     }
     if (!_bodyDragActive) return;
+    _trackVerticalVelocity(globalPosition.dy);
     _moveAccumulatedDy += deltaDy;
     widget.onVerticalDragUpdate?.call(
       _moveAccumulatedDy,
@@ -189,6 +229,7 @@ class TimelinePlanInteractionBlockState
                     }
                   }
                   if (!_bodyDragActive) return;
+                  _trackVerticalVelocity(details.globalPosition.dy);
                   widget.onVerticalDragUpdate?.call(
                     details.offsetFromOrigin.dy,
                     details.globalPosition.dy,
@@ -200,9 +241,7 @@ class TimelinePlanInteractionBlockState
                   }
                   _resetMoveGesture();
                 },
-                onLongPressCancel: () {
-                  _cancelPointerGesture();
-                },
+                onLongPressCancel: _cancelPointerGesture,
                 child: const SizedBox.expand(),
               ),
       ),

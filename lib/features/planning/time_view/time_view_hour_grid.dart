@@ -1,11 +1,13 @@
 import 'dart:async';
 
+import 'package:counter/core/widgets/life_card.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/planning/planning_day_start_prefs.dart';
 import 'package:counter/features/planning/time_view/planning_time_view_coordinator.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'package:counter/features/planning/time_view/planning_time_view.dart';
 import 'package:counter/features/planning/time_view/time_view_canvas.dart';
@@ -53,6 +55,64 @@ extension PlanningTimeViewTimeViewHourGrid on PlanningTimeViewCoordinator {
         host.context,
       ).showSnackBar(SnackBar(content: Text(t(loc, 'plan_save_failed'))));
     }
+  }
+
+  Widget buildPhysicalUnscheduledPlanDrag({
+    required PlanningTask task,
+    required String key,
+    required bool displayDone,
+    required bool isSelected,
+    required Map<String, int> planActualByPbId,
+  }) {
+    Widget buildCard({required bool dragFeedback}) {
+      return host.planCardRow(
+        context: host.context,
+        task: task,
+        key: key,
+        displayDone: displayDone,
+        isSelected: isSelected,
+        planActualByPbId: planActualByPbId,
+        omitLongPressForReorder: dragFeedback,
+      );
+    }
+
+    final maxFeedbackWidth = MediaQuery.sizeOf(host.context).width * 0.9;
+    return LongPressDraggable<PlanningTask>(
+      delay: const Duration(milliseconds: 300),
+      data: task,
+      dragAnchorStrategy: childDragAnchorStrategy,
+      onDragStarted: () {
+        unawaited(HapticFeedback.selectionClick());
+        setTimelineInteractionLock(true);
+      },
+      onDragUpdate: (details) {
+        handleHourGridDragUpdateForEdgeScroll(details.globalPosition.dy);
+      },
+      onDragEnd: (_) {
+        stopHourGridEdgeScroll();
+        setTimelineInteractionLock(false);
+      },
+      onDraggableCanceled: (_, _) {
+        stopHourGridEdgeScroll();
+        setTimelineInteractionLock(false);
+      },
+      feedback: Material(
+        type: MaterialType.transparency,
+        child: AppPhysicalDragVisual(
+          phase: AppPhysicalCardPhase.dragging,
+          progress: 1,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: maxFeedbackWidth),
+            child: AbsorbPointer(child: buildCard(dragFeedback: true)),
+          ),
+        ),
+      ),
+      childWhenDragging: Opacity(
+        opacity: 0.28,
+        child: buildCard(dragFeedback: true),
+      ),
+      child: buildCard(dragFeedback: true),
+    );
   }
 
   Widget buildHourGridView(
@@ -141,16 +201,12 @@ extension PlanningTimeViewTimeViewHourGrid on PlanningTimeViewCoordinator {
         final key = host.planKey(task);
         final displayDone = host.planDoneOverride[key] ?? task.isDone;
         children.add(
-          host.planCardRow(
-            context: host.context,
+          buildPhysicalUnscheduledPlanDrag(
             task: task,
             key: key,
             displayDone: displayDone,
             isSelected: host.selectedPlanKeys.contains(key),
             planActualByPbId: planActualByPbId,
-            enableLongPressDrag: true,
-            onHourGridDragGlobalDy: handleHourGridDragUpdateForEdgeScroll,
-            onHourGridDragEnded: stopHourGridEdgeScroll,
           ),
         );
       }
