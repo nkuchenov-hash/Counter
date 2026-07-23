@@ -8,8 +8,8 @@ import 'package:flutter/material.dart';
 /// Pointer routing for proportional Time View cards.
 ///
 /// The top and bottom edge strips own duration resize across the full card
-/// width. The remaining center body exclusively owns moving, so the gestures
-/// do not compete for the same pointer.
+/// width. The remaining center body immediately owns moving on pointer down.
+/// A release without meaningful movement is treated as a short click.
 class TimelinePlanInteractionBlock extends StatefulWidget {
   const TimelinePlanInteractionBlock({
     required this.canMove,
@@ -63,17 +63,17 @@ class TimelinePlanInteractionBlock extends StatefulWidget {
 class TimelinePlanInteractionBlockState
     extends State<TimelinePlanInteractionBlock> {
   double _moveAccumulatedDy = 0;
+  double _maxPointerTravelPx = 0;
   bool _resizing = false;
   bool _bodyDragActive = false;
   int? _activePointer;
-  TimelinePointerGesturePhase _gesturePhase = TimelinePointerGesturePhase.idle;
   double _pendingGrabOffsetCanvasPx = 0;
   Offset? _pointerDownGlobal;
   double? _lastVelocityGlobalDy;
   int _lastVelocityMicros = 0;
   double _smoothedVerticalVelocity = 0;
 
-  double _viewportDragThreshold = kPlanTimeDragThresholdTouchPx;
+  double _shortClickTolerancePx = kPlanTimeDragThresholdTouchPx;
   bool _useImmediatePointerDrag = false;
 
   double get _resizeHandleHeight {
@@ -86,9 +86,9 @@ class TimelinePlanInteractionBlockState
   }
 
   void _resetMoveGesture() {
-    _gesturePhase = TimelinePointerGesturePhase.idle;
     _bodyDragActive = false;
     _moveAccumulatedDy = 0;
+    _maxPointerTravelPx = 0;
     _pointerDownGlobal = null;
     _activePointer = null;
     _lastVelocityGlobalDy = null;
@@ -119,59 +119,60 @@ class TimelinePlanInteractionBlockState
     widget.onVerticalDragVelocityChanged?.call(_smoothedVerticalVelocity);
   }
 
-  void _maybeStartDragFromPending() {
-    if (_gesturePhase != TimelinePointerGesturePhase.tapCandidate) return;
-    if (_bodyDragActive) return;
-    _gesturePhase = TimelinePointerGesturePhase.draggingMove;
+  void _beginMove(PointerDownEvent event, double resizeInset) {
+    if (_activePointer != null) return;
+    _resetMoveGesture();
     _bodyDragActive = true;
+    _activePointer = event.pointer;
+    _pendingGrabOffsetCanvasPx = event.localPosition.dy + resizeInset;
+    _pointerDownGlobal = event.position;
     _startVelocityTracking();
     if (kDebugMode) {
-      debugPrint('[TIME_VIEW_DRAG_STARTED_AFTER_THRESHOLD]');
+      debugPrint('[TIME_VIEW_DRAG_CAPTURED_ON_POINTER_DOWN]');
     }
     widget.onMovePointerDown?.call();
     widget.onVerticalDragStart?.call(_pendingGrabOffsetCanvasPx);
   }
 
-  void _onPointerMoveUpdate(Offset globalPosition, double deltaDy) {
-    if (_gesturePhase == TimelinePointerGesturePhase.tapCandidate) {
-      final down = _pointerDownGlobal;
-      if (down != null &&
-          (globalPosition - down).distance >= _viewportDragThreshold) {
-        _maybeStartDragFromPending();
-      }
+  void _updateMove(PointerMoveEvent event) {
+    if (_activePointer != event.pointer || !_bodyDragActive) return;
+    final down = _pointerDownGlobal;
+    if (down != null) {
+      _maxPointerTravelPx = math.max(
+        _maxPointerTravelPx,
+        (event.position - down).distance,
+      );
     }
-    if (!_bodyDragActive) return;
-    _trackVerticalVelocity(globalPosition.dy);
-    _moveAccumulatedDy += deltaDy;
+    _trackVerticalVelocity(event.position.dy);
+    _moveAccumulatedDy += event.delta.dy;
     widget.onVerticalDragUpdate?.call(
       _moveAccumulatedDy,
-      globalPosition.dy,
+      event.position.dy,
     );
   }
 
-  void _finishPointerGesture() {
-    if (_gesturePhase == TimelinePointerGesturePhase.tapCandidate) {
+  void _finishMove(PointerUpEvent event) {
+    if (_activePointer != event.pointer || !_bodyDragActive) return;
+    final isShortClick = _maxPointerTravelPx < _shortClickTolerancePx;
+    if (isShortClick) {
+      widget.onVerticalDragCancel?.call();
       if (kDebugMode) {
         debugPrint(
           widget.bulkSelectMode
-              ? '[TIME_VIEW_BULK_TOGGLE_SELECTION]'
-              : '[TIME_VIEW_TAP_OPEN_EDIT]',
+              ? '[TIME_VIEW_SHORT_CLICK_TOGGLE_SELECTION]'
+              : '[TIME_VIEW_SHORT_CLICK_OPEN_EDIT]',
         );
       }
       widget.onBodyTap?.call();
-      _resetMoveGesture();
-      return;
-    }
-    if (_bodyDragActive) {
+    } else {
       widget.onVerticalDragEnd?.call();
     }
     _resetMoveGesture();
   }
 
-  void _cancelPointerGesture() {
-    if (_bodyDragActive) {
-      widget.onVerticalDragCancel?.call();
-    }
+  void _cancelMove(PointerCancelEvent event) {
+    if (_activePointer != event.pointer || !_bodyDragActive) return;
+    widget.onVerticalDragCancel?.call();
     _resetMoveGesture();
   }
 
@@ -187,67 +188,14 @@ class TimelinePlanInteractionBlockState
         cursor: _bodyDragActive
             ? SystemMouseCursors.grabbing
             : SystemMouseCursors.grab,
-        child: _useImmediatePointerDrag
-            ? Listener(
-                behavior: HitTestBehavior.translucent,
-                onPointerDown: (event) {
-                  _resetMoveGesture();
-                  _gesturePhase = TimelinePointerGesturePhase.tapCandidate;
-                  _pendingGrabOffsetCanvasPx =
-                      event.localPosition.dy + resizeInset;
-                  _pointerDownGlobal = event.position;
-                  _activePointer = event.pointer;
-                },
-                onPointerMove: (event) {
-                  if (_activePointer != event.pointer) return;
-                  _onPointerMoveUpdate(event.position, event.delta.dy);
-                },
-                onPointerUp: (event) {
-                  if (_activePointer != event.pointer) return;
-                  _finishPointerGesture();
-                },
-                onPointerCancel: (event) {
-                  if (_activePointer != event.pointer) return;
-                  _cancelPointerGesture();
-                },
-                child: const SizedBox.expand(),
-              )
-            : GestureDetector(
-                behavior: HitTestBehavior.translucent,
-                onTap: widget.onBodyTap,
-                onLongPressStart: (details) {
-                  _resetMoveGesture();
-                  _gesturePhase = TimelinePointerGesturePhase.tapCandidate;
-                  _pendingGrabOffsetCanvasPx =
-                      details.localPosition.dy + resizeInset;
-                  _pointerDownGlobal = details.globalPosition;
-                },
-                onLongPressMoveUpdate: (details) {
-                  if (_gesturePhase ==
-                      TimelinePointerGesturePhase.tapCandidate) {
-                    final down = _pointerDownGlobal;
-                    if (down != null &&
-                        (details.globalPosition - down).distance >=
-                            _viewportDragThreshold) {
-                      _maybeStartDragFromPending();
-                    }
-                  }
-                  if (!_bodyDragActive) return;
-                  _trackVerticalVelocity(details.globalPosition.dy);
-                  widget.onVerticalDragUpdate?.call(
-                    details.offsetFromOrigin.dy,
-                    details.globalPosition.dy,
-                  );
-                },
-                onLongPressEnd: (_) {
-                  if (_bodyDragActive) {
-                    widget.onVerticalDragEnd?.call();
-                  }
-                  _resetMoveGesture();
-                },
-                onLongPressCancel: _cancelPointerGesture,
-                child: const SizedBox.expand(),
-              ),
+        child: Listener(
+          behavior: HitTestBehavior.translucent,
+          onPointerDown: (event) => _beginMove(event, resizeInset),
+          onPointerMove: _updateMove,
+          onPointerUp: _finishMove,
+          onPointerCancel: _cancelMove,
+          child: const SizedBox.expand(),
+        ),
       ),
     );
   }
@@ -296,7 +244,7 @@ class TimelinePlanInteractionBlockState
   Widget build(BuildContext context) {
     if (!widget.canMove && !widget.canResize) return widget.child;
     final viewportWidth = MediaQuery.sizeOf(context).width;
-    _viewportDragThreshold =
+    _shortClickTolerancePx =
         planTimeViewDragMovementThresholdForViewport(viewportWidth);
     _useImmediatePointerDrag =
         planTimeViewUsesImmediatePointerDrag(viewportWidth);
