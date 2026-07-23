@@ -1,4 +1,4 @@
-import 'package:counter/core/widgets/app_physical_drag_surface.dart';
+import 'package:counter/core/widgets/life_card.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
