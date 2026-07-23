@@ -178,6 +178,8 @@ For structure/import-boundary work, also consider:
 .\scripts\audit\architecture_guard.ps1 -Strict
 ```
 
+Before merge, architecture-changing branches must pass the GitHub Actions `Architecture Guard / strict-structure` check.
+
 For documentation-only changes to `AGENTS.md`, do not run Flutter builds. Lightweight validation is enough:
 
 ```powershell

@@ -11,6 +11,12 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-23] - CI: enforce strict architecture guard [engineering]
+
+* **Phase 2E:** Added `.github/workflows/architecture-guard.yml` (`Architecture Guard` / `strict-structure`) for PRs to `main`; wired `scripts/audit/architecture_guard.ps1 -Strict` after checkout in `deploy.yml` and `windows-desktop-build.yml` before Flutter. No production Dart or app behavior changes.
+* **Phase 2E correction:** Architecture Guard checkout uses `fetch-depth: 0`; `git diff --check` runs against the PR base…HEAD range (or `origin/main...HEAD` on `workflow_dispatch`) so committed whitespace errors are caught.
+* **Phase 2E correction:** `architecture_guard.ps1` path resolution is cross-platform (no Windows-only `..\..` / `lib\…` literals); forbidden-import scans use PowerShell `Select-String` so Ubuntu Actions does not need `rg`.
+
 ## [2026-07-23] - Categories: assign code to real owners [engineering]
 
 * **Phase 2D:** Moved category manager UI to `lib/features/settings/categories/`; reusable presentation/tree/picker/visibility to `lib/shared/categories/` with `CategoryTreeSource` / `CategoryPickerActions` wired from `main.dart`; Lists owns `category_filter_tree_field.dart`; plan/record draft helpers to `features/shared/edit_sheet/category_edit_draft.dart`. Brain `lib/data/categories/` and `CategoryRule` in models unchanged. No intentional category UX, schema, save, or `hidden_category_ids_json` changes.

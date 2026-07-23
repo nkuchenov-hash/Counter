@@ -164,7 +164,7 @@ Low severity (defer): `auth_service.dart:134, 163` — non-deterministic UID fal
 | **E.2 Brain decomposition** | Pass 4A–4D — `plans/*`, `records/*`, `categories/*`, `profile/*` | ✅ 2026-07-03 |
 | **Repo cleanup** | Non-project junk + accidental exports removed | ✅ 2026-07-03 |
 | **Final parity** | Tree/doc dedupe — `docs/reports/FINAL_STRUCTURE_PARITY_AND_DOC_CLEANUP_2026-07-03.md` | ✅ 2026-07-03 |
-| **D** | Architecture guard **-Strict** in CI | ⏸ next |
+| **D** | Architecture guard **-Strict** in CI (`.github/workflows/architecture-guard.yml`; also pre-Flutter in deploy + Windows installer workflows) | ✅ 2026-07-23 |
 | **B** | Safe renames/moves (root barrels, Archive/, duplicate l10n) | ⏸ after D |
 | **E** | Further large-file splits | ⏸ — **never by line count alone**; Pass 3–4D complete |
 
