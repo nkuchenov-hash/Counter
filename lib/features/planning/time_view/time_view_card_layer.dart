@@ -144,6 +144,7 @@ extension PlanningTimeViewTimeViewCardLayer on PlanningTimeViewCoordinator {
             ),
             child: AppPhysicalDragSurface(
               phase: physicalPhase,
+              verticalVelocity: timelineVerticalDragVisualVelocityPxPerSec,
               resizeAlignment: resizeAlignment,
               child: TimelinePlanInteractionBlock(
                 canMove: canMove,
@@ -192,6 +193,11 @@ extension PlanningTimeViewTimeViewCardLayer on PlanningTimeViewCoordinator {
                           fingerGrabOffsetCanvasPx: fingerGrabOffset,
                           scheduledInRange: scheduledInRange,
                         )
+                    : null,
+                onVerticalDragVelocityChanged: canMove
+                    ? (velocity) {
+                        timelineVerticalDragVisualVelocityPxPerSec = velocity;
+                      }
                     : null,
                 onVerticalDragUpdate: canMove
                     ? (delta, globalDy) => updateTimelineVerticalDrag(
