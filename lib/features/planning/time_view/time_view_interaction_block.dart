@@ -7,8 +7,9 @@ import 'package:flutter/material.dart';
 
 /// Pointer routing for proportional Time View cards.
 ///
-/// The whole body is reserved for moving. Duration resize is available only
-/// from small top-right and bottom-right grips, outside the natural pickup area.
+/// The top and bottom edge strips own duration resize across the full card
+/// width. The remaining center body exclusively owns moving, so the gestures
+/// do not compete for the same pointer.
 class TimelinePlanInteractionBlock extends StatefulWidget {
   const TimelinePlanInteractionBlock({
     required this.canMove,
@@ -83,9 +84,6 @@ class TimelinePlanInteractionBlockState
     final maxHeight = math.max(8.0, (h - 8.0) / 2);
     return preferred.clamp(8.0, maxHeight).toDouble();
   }
-
-  double get _resizeHandleWidth =>
-      _useImmediatePointerDrag ? 56.0 : 72.0;
 
   void _resetMoveGesture() {
     _gesturePhase = TimelinePointerGesturePhase.idle;
@@ -179,9 +177,10 @@ class TimelinePlanInteractionBlockState
 
   Widget _moveZone() {
     if (!widget.canMove) return const SizedBox.shrink();
+    final resizeInset = widget.canResize ? _resizeHandleHeight : 0.0;
     return Positioned(
-      top: 0,
-      bottom: 0,
+      top: resizeInset,
+      bottom: resizeInset,
       left: widget.controlsLeftInset,
       right: widget.controlsRightInset,
       child: MouseRegion(
@@ -194,7 +193,8 @@ class TimelinePlanInteractionBlockState
                 onPointerDown: (event) {
                   _resetMoveGesture();
                   _gesturePhase = TimelinePointerGesturePhase.tapCandidate;
-                  _pendingGrabOffsetCanvasPx = event.localPosition.dy;
+                  _pendingGrabOffsetCanvasPx =
+                      event.localPosition.dy + resizeInset;
                   _pointerDownGlobal = event.position;
                   _activePointer = event.pointer;
                 },
@@ -218,7 +218,8 @@ class TimelinePlanInteractionBlockState
                 onLongPressStart: (details) {
                   _resetMoveGesture();
                   _gesturePhase = TimelinePointerGesturePhase.tapCandidate;
-                  _pendingGrabOffsetCanvasPx = details.localPosition.dy;
+                  _pendingGrabOffsetCanvasPx =
+                      details.localPosition.dy + resizeInset;
                   _pointerDownGlobal = details.globalPosition;
                 },
                 onLongPressMoveUpdate: (details) {
@@ -255,42 +256,39 @@ class TimelinePlanInteractionBlockState
     required bool isTop,
     required ColorScheme scheme,
   }) {
-    return SizedBox(
-      width: _resizeHandleWidth,
-      child: TimelineResizeEdgeHandle(
-        isTop: isTop,
-        height: _resizeHandleHeight,
-        active: _resizing,
-        onResizeStart: widget.canResize
-            ? () {
-                setState(() => _resizing = true);
-                if (kDebugMode) {
-                  debugPrint('[TIME_VIEW_RESIZE_STARTED_FROM_GRIP]');
-                }
-                widget.onResizeStart?.call(
-                  isTop ? TimelineResizeEdge.top : TimelineResizeEdge.bottom,
-                );
+    return TimelineResizeEdgeHandle(
+      isTop: isTop,
+      height: _resizeHandleHeight,
+      active: _resizing,
+      onResizeStart: widget.canResize
+          ? () {
+              setState(() => _resizing = true);
+              if (kDebugMode) {
+                debugPrint('[TIME_VIEW_RESIZE_STARTED_FROM_FULL_EDGE]');
               }
-            : null,
-        onResizeUpdate: widget.canResize
-            ? (delta, globalDy) {
-                widget.onResizeUpdate?.call(delta, globalDy);
-              }
-            : null,
-        onResizeEnd: widget.canResize
-            ? () {
-                setState(() => _resizing = false);
-                widget.onResizeEnd?.call();
-              }
-            : null,
-        onResizeCancel: widget.canResize
-            ? () {
-                setState(() => _resizing = false);
-                widget.onResizeCancel?.call();
-              }
-            : null,
-        scheme: scheme,
-      ),
+              widget.onResizeStart?.call(
+                isTop ? TimelineResizeEdge.top : TimelineResizeEdge.bottom,
+              );
+            }
+          : null,
+      onResizeUpdate: widget.canResize
+          ? (delta, globalDy) {
+              widget.onResizeUpdate?.call(delta, globalDy);
+            }
+          : null,
+      onResizeEnd: widget.canResize
+          ? () {
+              setState(() => _resizing = false);
+              widget.onResizeEnd?.call();
+            }
+          : null,
+      onResizeCancel: widget.canResize
+          ? () {
+              setState(() => _resizing = false);
+              widget.onResizeCancel?.call();
+            }
+          : null,
+      scheme: scheme,
     );
   }
 
@@ -312,24 +310,16 @@ class TimelinePlanInteractionBlockState
         if (widget.canResize)
           Positioned(
             top: 0,
-            left: widget.controlsLeftInset,
-            right: widget.controlsRightInset + 10,
-            child: Align(
-              alignment: Alignment.topRight,
-              heightFactor: 1,
-              child: _resizeEdge(isTop: true, scheme: scheme),
-            ),
+            left: 0,
+            right: 0,
+            child: _resizeEdge(isTop: true, scheme: scheme),
           ),
         if (widget.canResize)
           Positioned(
             bottom: 0,
-            left: widget.controlsLeftInset,
-            right: widget.controlsRightInset + 10,
-            child: Align(
-              alignment: Alignment.bottomRight,
-              heightFactor: 1,
-              child: _resizeEdge(isTop: false, scheme: scheme),
-            ),
+            left: 0,
+            right: 0,
+            child: _resizeEdge(isTop: false, scheme: scheme),
           ),
       ],
     );
@@ -402,7 +392,7 @@ class TimelineResizeEdgeHandleState extends State<TimelineResizeEdgeHandle> {
   Widget build(BuildContext context) {
     final scheme = widget.scheme;
     final emphasized = _hover || _dragging || widget.active;
-    final gripAlpha = emphasized ? 0.82 : 0.28;
+    final gripAlpha = emphasized ? 0.82 : 0.34;
 
     return MouseRegion(
       onEnter: (_) => setState(() => _hover = true),
@@ -417,24 +407,34 @@ class TimelineResizeEdgeHandleState extends State<TimelineResizeEdgeHandle> {
         child: SizedBox(
           height: widget.height,
           width: double.infinity,
-          child: Align(
+          child: Stack(
             alignment:
-                widget.isTop ? Alignment.topRight : Alignment.bottomRight,
-            child: Padding(
-              padding: EdgeInsets.only(
-                top: widget.isTop ? 3 : 0,
-                bottom: widget.isTop ? 0 : 3,
-                right: 4,
-              ),
-              child: Container(
-                width: 24,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: scheme.primary.withValues(alpha: gripAlpha),
-                  borderRadius: BorderRadius.circular(999),
+                widget.isTop ? Alignment.topCenter : Alignment.bottomCenter,
+            children: [
+              AnimatedOpacity(
+                opacity: emphasized ? 1 : 0,
+                duration: const Duration(milliseconds: 80),
+                child: Container(
+                  height: 2,
+                  width: double.infinity,
+                  color: scheme.primary.withValues(alpha: 0.38),
                 ),
               ),
-            ),
+              Padding(
+                padding: EdgeInsets.only(
+                  top: widget.isTop ? 3 : 0,
+                  bottom: widget.isTop ? 0 : 3,
+                ),
+                child: Container(
+                  width: 34,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: scheme.primary.withValues(alpha: gripAlpha),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),
