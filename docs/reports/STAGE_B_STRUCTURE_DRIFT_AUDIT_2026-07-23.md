@@ -133,8 +133,8 @@ Architecture guard script: **unchanged** (allowlist and `Archive` regression lis
 | Check | Result |
 | :--- | :--- |
 | Preflight `architecture_guard.ps1 -Strict` | Exit 0 |
-| Post-edit `architecture_guard.ps1 -Strict` | (run after docs) |
-| `git diff --check origin/main...HEAD` | (run after commit) |
+| Post-edit `architecture_guard.ps1 -Strict` | Exit 0 (0 violations) |
+| `git diff --check origin/main...HEAD` | Exit 0 |
 | `flutter analyze` | **Skipped** (docs-only) |
 | Tests | **None** (docs-only) |
 
