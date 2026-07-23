@@ -6,6 +6,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 /// Move and resize gesture zones for proportional timeline plan blocks.
+///
+/// Moving owns the whole card body. Resizing is available only from the two
+/// explicit centered grips so the gestures never compete for the same pointer.
 class TimelinePlanInteractionBlock extends StatefulWidget {
   const TimelinePlanInteractionBlock({
     required this.canMove,
@@ -73,14 +76,17 @@ class TimelinePlanInteractionBlockState
   double _viewportDragThreshold = kPlanTimeDragThresholdTouchPx;
   bool _useImmediatePointerDrag = false;
 
-  double get _resizeZoneInset {
+  double get _resizeHandleHeight {
     final h = widget.blockHeightPx ?? widget.resizeHandlePx * 2;
     final preferred = _useImmediatePointerDrag
-        ? widget.resizeHandlePx
-        : math.max(widget.resizeHandlePx, 22.0);
-    final maxInset = math.max(6.0, (h - 8.0) / 2);
-    return preferred.clamp(6.0, maxInset).toDouble();
+        ? math.min(widget.resizeHandlePx, 14.0)
+        : math.max(widget.resizeHandlePx, 20.0);
+    final maxHeight = math.max(8.0, (h - 8.0) / 2);
+    return preferred.clamp(8.0, maxHeight).toDouble();
   }
+
+  double get _resizeHandleWidth =>
+      _useImmediatePointerDrag ? 64.0 : 88.0;
 
   void _resetMoveGesture() {
     _gesturePhase = TimelinePointerGesturePhase.idle;
@@ -176,10 +182,9 @@ class TimelinePlanInteractionBlockState
 
   Widget _moveZone() {
     if (!widget.canMove) return const SizedBox.shrink();
-    final inset = widget.canResize ? _resizeZoneInset : 0.0;
-    final zone = Positioned(
-      top: inset,
-      bottom: inset,
+    return Positioned(
+      top: 0,
+      bottom: 0,
       left: widget.controlsLeftInset,
       right: widget.controlsRightInset,
       child: MouseRegion(
@@ -189,23 +194,23 @@ class TimelinePlanInteractionBlockState
         child: _useImmediatePointerDrag
             ? Listener(
                 behavior: HitTestBehavior.translucent,
-                onPointerDown: (e) {
+                onPointerDown: (event) {
                   _resetMoveGesture();
                   _gesturePhase = TimelinePointerGesturePhase.tapCandidate;
-                  _pendingGrabOffsetCanvasPx = inset + e.localPosition.dy;
-                  _pointerDownGlobal = e.position;
-                  _activePointer = e.pointer;
+                  _pendingGrabOffsetCanvasPx = event.localPosition.dy;
+                  _pointerDownGlobal = event.position;
+                  _activePointer = event.pointer;
                 },
-                onPointerMove: (e) {
-                  if (_activePointer != e.pointer) return;
-                  _onPointerMoveUpdate(e.position, e.delta.dy);
+                onPointerMove: (event) {
+                  if (_activePointer != event.pointer) return;
+                  _onPointerMoveUpdate(event.position, event.delta.dy);
                 },
-                onPointerUp: (e) {
-                  if (_activePointer != e.pointer) return;
+                onPointerUp: (event) {
+                  if (_activePointer != event.pointer) return;
                   _finishPointerGesture();
                 },
-                onPointerCancel: (e) {
-                  if (_activePointer != e.pointer) return;
+                onPointerCancel: (event) {
+                  if (_activePointer != event.pointer) return;
                   _cancelPointerGesture();
                 },
                 child: const SizedBox.expand(),
@@ -216,12 +221,12 @@ class TimelinePlanInteractionBlockState
                 onLongPressStart: (details) {
                   _resetMoveGesture();
                   _gesturePhase = TimelinePointerGesturePhase.tapCandidate;
-                  _pendingGrabOffsetCanvasPx =
-                      inset + details.localPosition.dy;
+                  _pendingGrabOffsetCanvasPx = details.localPosition.dy;
                   _pointerDownGlobal = details.globalPosition;
                 },
                 onLongPressMoveUpdate: (details) {
-                  if (_gesturePhase == TimelinePointerGesturePhase.tapCandidate) {
+                  if (_gesturePhase ==
+                      TimelinePointerGesturePhase.tapCandidate) {
                     final down = _pointerDownGlobal;
                     if (down != null &&
                         (details.globalPosition - down).distance >=
@@ -247,48 +252,48 @@ class TimelinePlanInteractionBlockState
               ),
       ),
     );
-    return zone;
   }
 
   Widget _resizeEdge({
     required bool isTop,
     required ColorScheme scheme,
   }) {
-    return TimelineResizeEdgeHandle(
-      isTop: isTop,
-      height: _resizeZoneInset,
-      active: _resizing,
-      onResizeStart: widget.canResize
-          ? () {
-              setState(() {
-                _resizing = true;
-              });
-              if (kDebugMode) {
-                debugPrint('[TIME_VIEW_RESIZE_STARTED_FROM_ZONE]');
+    return SizedBox(
+      width: _resizeHandleWidth,
+      child: TimelineResizeEdgeHandle(
+        isTop: isTop,
+        height: _resizeHandleHeight,
+        active: _resizing,
+        onResizeStart: widget.canResize
+            ? () {
+                setState(() => _resizing = true);
+                if (kDebugMode) {
+                  debugPrint('[TIME_VIEW_RESIZE_STARTED_FROM_GRIP]');
+                }
+                widget.onResizeStart?.call(
+                  isTop ? TimelineResizeEdge.top : TimelineResizeEdge.bottom,
+                );
               }
-              widget.onResizeStart?.call(
-                isTop ? TimelineResizeEdge.top : TimelineResizeEdge.bottom,
-              );
-            }
-          : null,
-      onResizeUpdate: widget.canResize
-          ? (delta, globalDy) {
-              widget.onResizeUpdate?.call(delta, globalDy);
-            }
-          : null,
-      onResizeEnd: widget.canResize
-          ? () {
-              setState(() => _resizing = false);
-              widget.onResizeEnd?.call();
-            }
-          : null,
-      onResizeCancel: widget.canResize
-          ? () {
-              setState(() => _resizing = false);
-              widget.onResizeCancel?.call();
-            }
-          : null,
-      scheme: scheme,
+            : null,
+        onResizeUpdate: widget.canResize
+            ? (delta, globalDy) {
+                widget.onResizeUpdate?.call(delta, globalDy);
+              }
+            : null,
+        onResizeEnd: widget.canResize
+            ? () {
+                setState(() => _resizing = false);
+                widget.onResizeEnd?.call();
+              }
+            : null,
+        onResizeCancel: widget.canResize
+            ? () {
+                setState(() => _resizing = false);
+                widget.onResizeCancel?.call();
+              }
+            : null,
+        scheme: scheme,
+      ),
     );
   }
 
@@ -311,14 +316,22 @@ class TimelinePlanInteractionBlockState
             top: 0,
             left: widget.controlsLeftInset,
             right: widget.controlsRightInset,
-            child: _resizeEdge(isTop: true, scheme: scheme),
+            child: Align(
+              alignment: Alignment.topCenter,
+              heightFactor: 1,
+              child: _resizeEdge(isTop: true, scheme: scheme),
+            ),
           ),
         if (widget.canResize)
           Positioned(
             bottom: 0,
             left: widget.controlsLeftInset,
             right: widget.controlsRightInset,
-            child: _resizeEdge(isTop: false, scheme: scheme),
+            child: Align(
+              alignment: Alignment.bottomCenter,
+              heightFactor: 1,
+              child: _resizeEdge(isTop: false, scheme: scheme),
+            ),
           ),
       ],
     );
@@ -354,39 +367,54 @@ class TimelineResizeEdgeHandle extends StatefulWidget {
 class TimelineResizeEdgeHandleState extends State<TimelineResizeEdgeHandle> {
   bool _hover = false;
   bool _dragging = false;
-  double _accumulatedDy = 0;
+  int? _activePointer;
+  double _startGlobalDy = 0;
+
+  void _beginResize(PointerDownEvent event) {
+    if (_activePointer != null) return;
+    _activePointer = event.pointer;
+    _startGlobalDy = event.position.dy;
+    setState(() => _dragging = true);
+    widget.onResizeStart?.call();
+  }
+
+  void _updateResize(PointerMoveEvent event) {
+    if (_activePointer != event.pointer) return;
+    widget.onResizeUpdate?.call(
+      event.position.dy - _startGlobalDy,
+      event.position.dy,
+    );
+  }
+
+  void _endResize(PointerUpEvent event) {
+    if (_activePointer != event.pointer) return;
+    _activePointer = null;
+    setState(() => _dragging = false);
+    widget.onResizeEnd?.call();
+  }
+
+  void _cancelResize(PointerCancelEvent event) {
+    if (_activePointer != event.pointer) return;
+    _activePointer = null;
+    setState(() => _dragging = false);
+    widget.onResizeCancel?.call();
+  }
 
   @override
   Widget build(BuildContext context) {
     final scheme = widget.scheme;
     final emphasized = _hover || _dragging || widget.active;
-    final gripAlpha = emphasized ? 0.82 : 0.38;
+    final gripAlpha = emphasized ? 0.82 : 0.34;
     return MouseRegion(
       onEnter: (_) => setState(() => _hover = true),
       onExit: (_) => setState(() => _hover = false),
       cursor: SystemMouseCursors.resizeUpDown,
-      child: GestureDetector(
-        behavior: HitTestBehavior.translucent,
-        onVerticalDragStart: (_) {
-          _accumulatedDy = 0;
-          setState(() => _dragging = true);
-          widget.onResizeStart?.call();
-        },
-        onVerticalDragUpdate: (details) {
-          _accumulatedDy += details.delta.dy;
-          widget.onResizeUpdate?.call(
-            _accumulatedDy,
-            details.globalPosition.dy,
-          );
-        },
-        onVerticalDragEnd: (_) {
-          setState(() => _dragging = false);
-          widget.onResizeEnd?.call();
-        },
-        onVerticalDragCancel: () {
-          setState(() => _dragging = false);
-          widget.onResizeCancel?.call();
-        },
+      child: Listener(
+        behavior: HitTestBehavior.opaque,
+        onPointerDown: _beginResize,
+        onPointerMove: _updateResize,
+        onPointerUp: _endResize,
+        onPointerCancel: _cancelResize,
         child: SizedBox(
           height: widget.height,
           width: double.infinity,
@@ -399,7 +427,6 @@ class TimelineResizeEdgeHandleState extends State<TimelineResizeEdgeHandle> {
                 duration: const Duration(milliseconds: 90),
                 child: Container(
                   height: 2,
-                  margin: const EdgeInsets.symmetric(horizontal: 12),
                   decoration: BoxDecoration(
                     color: scheme.primary.withValues(alpha: 0.42),
                     borderRadius: BorderRadius.circular(1),
