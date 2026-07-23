@@ -13,25 +13,28 @@ Widget _testHarness({
   VoidCallback? onMoveEnd,
 }) {
   return MaterialApp(
-    home: Scaffold(
-      body: Center(
-        child: SizedBox(
-          width: 260,
-          height: 100,
-          child: TimelinePlanInteractionBlock(
-            canMove: true,
-            canResize: true,
-            bulkSelectMode: false,
-            resizeHandlePx: 16,
-            isInteracting: false,
-            onResizeStart: onResizeStart,
-            onResizeUpdate: onResizeUpdate,
-            onResizeEnd: onResizeEnd,
-            onResizeCancel: onResizeCancel,
-            onVerticalDragStart: onMoveStart,
-            onVerticalDragUpdate: onMoveUpdate,
-            onVerticalDragEnd: onMoveEnd,
-            child: const ColoredBox(color: Colors.white),
+    home: MediaQuery(
+      data: const MediaQueryData(size: Size(1280, 800)),
+      child: Scaffold(
+        body: Center(
+          child: SizedBox(
+            width: 260,
+            height: 100,
+            child: TimelinePlanInteractionBlock(
+              canMove: true,
+              canResize: true,
+              bulkSelectMode: false,
+              resizeHandlePx: 16,
+              isInteracting: false,
+              onResizeStart: onResizeStart,
+              onResizeUpdate: onResizeUpdate,
+              onResizeEnd: onResizeEnd,
+              onResizeCancel: onResizeCancel,
+              onVerticalDragStart: onMoveStart,
+              onVerticalDragUpdate: onMoveUpdate,
+              onVerticalDragEnd: onMoveEnd,
+              child: const ColoredBox(color: Colors.white),
+            ),
           ),
         ),
       ),
