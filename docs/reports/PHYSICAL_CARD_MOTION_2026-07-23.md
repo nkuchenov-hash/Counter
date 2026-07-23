@@ -38,7 +38,7 @@ No PocketBase schema, Brain mutation, recurrence, snap, collision, cascade, or o
 
 ## Verification
 
-Minimal automated coverage: `test/app_physical_drag_surface_test.dart` contains three focused tests for bounded velocity tilt, uniform drag lift, and restrained resize geometry.
+Minimal automated coverage: `test/app_physical_drag_surface_test.dart` contains exactly three focused tests for bounded velocity tilt, uniform drag lift, and restrained resize geometry.
 
 Manual acceptance should check desktop mouse and phone touch for:
 
