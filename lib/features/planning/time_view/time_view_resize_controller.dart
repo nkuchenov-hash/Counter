@@ -74,52 +74,56 @@ extension PlanningTimeViewTimeViewResizeController on PlanningTimeViewCoordinato
     final minDur = PlanningSheetTimelinePrefs.timelineMinDurationMinutes;
     final maxEndMin = timelineMaxVisibleMinutes(rangeStart, rangeEnd);
 
-    double heightForSpan(int start, int end) {
-      final top = grid.yForMinutesFromRangeStart(start.toDouble());
-      final bottom = grid.yForMinutesFromRangeStart(end.toDouble());
-      return math.max(bottom - top, kPlanTimeCardMinHeightPx);
-    }
-
     var previewTop = timelineResizeOriginTopPx;
     var previewHeight = timelineResizeOriginHeightPx;
     var startMin = timelineResizeOriginStartMin;
     var endMin = timelineResizeOriginEndMin;
 
     if (edge == TimelineResizeEdge.top) {
-      final fixedEndMin = timelineResizeOriginEndMin;
-      final maxTopForDur = grid.yForMinutesFromRangeStart(
-        math.max(0, fixedEndMin - minDur).toDouble(),
+      final fixedBottomPx =
+          timelineResizeOriginTopPx + timelineResizeOriginHeightPx;
+      final maxTopForDuration = grid.yForMinutesFromRangeStart(
+        math.max(0, timelineResizeOriginEndMin - minDur).toDouble(),
       );
-      previewTop = (timelineResizeOriginTopPx + deltaPx).clamp(
-        0.0,
-        maxTopForDur,
-      );
+      final maxTopForCardHeight =
+          fixedBottomPx - kPlanTimeCardMinHeightPx;
+      final maxTop = math.min(maxTopForDuration, maxTopForCardHeight);
+
+      previewTop = (timelineResizeOriginTopPx + deltaPx)
+          .clamp(0.0, math.max(0.0, maxTop))
+          .toDouble();
+      previewHeight =
+          math.max(kPlanTimeCardMinHeightPx, fixedBottomPx - previewTop);
+
       startMin = snapTimelineMinutes(grid.minutesFromY(previewTop)).round();
-      endMin = fixedEndMin;
+      endMin = timelineResizeOriginEndMin;
       if (endMin - startMin < minDur) {
         startMin = endMin - minDur;
       }
       if (startMin < 0) {
         startMin = 0;
-        endMin = math.max(endMin, minDur);
       }
-      previewTop = grid.yForMinutesFromRangeStart(startMin.toDouble());
-      previewHeight = heightForSpan(startMin, endMin);
     } else {
       previewTop = timelineResizeOriginTopPx;
       startMin = timelineResizeOriginStartMin;
-      final originBottom = timelineResizeOriginTopPx + timelineResizeOriginHeightPx;
-      final minBottom = grid.yForMinutesFromRangeStart(
+      final originBottom =
+          timelineResizeOriginTopPx + timelineResizeOriginHeightPx;
+      final minBottomForDuration = grid.yForMinutesFromRangeStart(
         (startMin + minDur).toDouble(),
       );
-      final newBottom = (originBottom + deltaPx).clamp(
-        minBottom,
-        grid.totalHeightPx,
-      );
-      endMin = snapTimelineMinutes(grid.minutesFromY(newBottom)).round();
+      final minBottomForCardHeight =
+          previewTop + kPlanTimeCardMinHeightPx;
+      final minBottom =
+          math.max(minBottomForDuration, minBottomForCardHeight);
+      final rawBottom = (originBottom + deltaPx)
+          .clamp(minBottom, grid.totalHeightPx)
+          .toDouble();
+
+      previewHeight =
+          math.max(kPlanTimeCardMinHeightPx, rawBottom - previewTop);
+      endMin = snapTimelineMinutes(grid.minutesFromY(rawBottom)).round();
       if (endMin > maxEndMin) endMin = maxEndMin;
       if (endMin - startMin < minDur) endMin = startMin + minDur;
-      previewHeight = heightForSpan(startMin, endMin);
     }
 
     final newStartWall = wallTimeFromTimelineMinutes(
