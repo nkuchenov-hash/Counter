@@ -1,11 +1,9 @@
 import 'dart:math' as math;
 
-import 'package:counter/core/widgets/life_card.dart';
 import 'package:counter/core/widgets/plan_time_task_card.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/planning/plan_time_view_layout.dart';
 import 'package:counter/features/planning/time_view/planning_time_view_coordinator.dart';
-import 'package:counter/features/planning/time_view/time_view_drag_state.dart';
 import 'package:counter/features/planning/time_view/time_view_interaction_block.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -63,12 +61,6 @@ extension PlanningTimeViewTimeViewCardLayer on PlanningTimeViewCoordinator {
         : timelineVerticalDragTimeLabel;
     final blockDensity = layout.density;
     final resizeHeightPx = math.max(heightPx, kPlanTimeCardMinHeightPx);
-    final physicalPhase = isDragging
-        ? AppPhysicalCardPhase.dragging
-        : AppPhysicalCardPhase.idle;
-    final resizeAlignment = timelineResizeEdge == TimelineResizeEdge.top
-        ? Alignment.bottomCenter
-        : Alignment.topCenter;
 
     return Stack(
       clipBehavior: Clip.none,
@@ -86,10 +78,10 @@ extension PlanningTimeViewTimeViewCardLayer on PlanningTimeViewCoordinator {
               ),
               child: DecoratedBox(
                 decoration: BoxDecoration(
-                  color: scheme.primaryContainer.withValues(alpha: 0.22),
+                  color: scheme.primaryContainer.withValues(alpha: 0.16),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: scheme.outlineVariant.withValues(alpha: 0.45),
+                    color: scheme.outlineVariant.withValues(alpha: 0.38),
                   ),
                 ),
               ),
@@ -100,7 +92,7 @@ extension PlanningTimeViewTimeViewCardLayer on PlanningTimeViewCoordinator {
             top: (topPx - 22).clamp(0, canvasHeight - 20),
             left: horizontalPad,
             child: Material(
-              elevation: 3,
+              elevation: 1,
               borderRadius: BorderRadius.circular(6),
               color: scheme.primary.withValues(alpha: 0.92),
               child: Padding(
@@ -140,10 +132,7 @@ extension PlanningTimeViewTimeViewCardLayer on PlanningTimeViewCoordinator {
               horizontal:
                   PlanningTimeViewCoordinator.kTimelineBlockHorizontalPadPx,
             ),
-            child: AppPhysicalDragSurface(
-              phase: physicalPhase,
-              verticalVelocity: timelineVerticalDragVisualVelocityPxPerSec,
-              resizeAlignment: resizeAlignment,
+            child: RepaintBoundary(
               child: TimelinePlanInteractionBlock(
                 canMove: canMove,
                 canResize: canResize,

@@ -5,10 +5,10 @@ import 'package:counter/features/planning/time_view/time_view_drag_state.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
-/// Move and resize gesture zones for proportional timeline plan blocks.
+/// Pointer routing for proportional Time View cards.
 ///
-/// Moving owns the whole card body. Resizing is available only from the two
-/// explicit centered grips so the gestures never compete for the same pointer.
+/// The whole body is reserved for moving. Duration resize is available only
+/// from small top-right and bottom-right grips, outside the natural pickup area.
 class TimelinePlanInteractionBlock extends StatefulWidget {
   const TimelinePlanInteractionBlock({
     required this.canMove,
@@ -72,21 +72,20 @@ class TimelinePlanInteractionBlockState
   int _lastVelocityMicros = 0;
   double _smoothedVerticalVelocity = 0;
 
-  /// Cached from last [build] — phone-width shell uses APK touch thresholds.
   double _viewportDragThreshold = kPlanTimeDragThresholdTouchPx;
   bool _useImmediatePointerDrag = false;
 
   double get _resizeHandleHeight {
     final h = widget.blockHeightPx ?? widget.resizeHandlePx * 2;
     final preferred = _useImmediatePointerDrag
-        ? math.min(widget.resizeHandlePx, 14.0)
+        ? math.min(widget.resizeHandlePx, 12.0)
         : math.max(widget.resizeHandlePx, 20.0);
     final maxHeight = math.max(8.0, (h - 8.0) / 2);
     return preferred.clamp(8.0, maxHeight).toDouble();
   }
 
   double get _resizeHandleWidth =>
-      _useImmediatePointerDrag ? 64.0 : 88.0;
+      _useImmediatePointerDrag ? 56.0 : 72.0;
 
   void _resetMoveGesture() {
     _gesturePhase = TimelinePointerGesturePhase.idle;
@@ -138,11 +137,9 @@ class TimelinePlanInteractionBlockState
   void _onPointerMoveUpdate(Offset globalPosition, double deltaDy) {
     if (_gesturePhase == TimelinePointerGesturePhase.tapCandidate) {
       final down = _pointerDownGlobal;
-      if (down != null) {
-        final moved = (globalPosition - down).distance;
-        if (moved >= _viewportDragThreshold) {
-          _maybeStartDragFromPending();
-        }
+      if (down != null &&
+          (globalPosition - down).distance >= _viewportDragThreshold) {
+        _maybeStartDragFromPending();
       }
     }
     if (!_bodyDragActive) return;
@@ -156,12 +153,12 @@ class TimelinePlanInteractionBlockState
 
   void _finishPointerGesture() {
     if (_gesturePhase == TimelinePointerGesturePhase.tapCandidate) {
-      if (widget.bulkSelectMode) {
-        if (kDebugMode) {
-          debugPrint('[TIME_VIEW_BULK_TOGGLE_SELECTION]');
-        }
-      } else if (kDebugMode) {
-        debugPrint('[TIME_VIEW_TAP_OPEN_EDIT]');
+      if (kDebugMode) {
+        debugPrint(
+          widget.bulkSelectMode
+              ? '[TIME_VIEW_BULK_TOGGLE_SELECTION]'
+              : '[TIME_VIEW_TAP_OPEN_EDIT]',
+        );
       }
       widget.onBodyTap?.call();
       _resetMoveGesture();
@@ -306,6 +303,7 @@ class TimelinePlanInteractionBlockState
     _useImmediatePointerDrag =
         planTimeViewUsesImmediatePointerDrag(viewportWidth);
     final scheme = Theme.of(context).colorScheme;
+
     return Stack(
       fit: StackFit.expand,
       children: [
@@ -315,9 +313,9 @@ class TimelinePlanInteractionBlockState
           Positioned(
             top: 0,
             left: widget.controlsLeftInset,
-            right: widget.controlsRightInset,
+            right: widget.controlsRightInset + 10,
             child: Align(
-              alignment: Alignment.topCenter,
+              alignment: Alignment.topRight,
               heightFactor: 1,
               child: _resizeEdge(isTop: true, scheme: scheme),
             ),
@@ -326,9 +324,9 @@ class TimelinePlanInteractionBlockState
           Positioned(
             bottom: 0,
             left: widget.controlsLeftInset,
-            right: widget.controlsRightInset,
+            right: widget.controlsRightInset + 10,
             child: Align(
-              alignment: Alignment.bottomCenter,
+              alignment: Alignment.bottomRight,
               heightFactor: 1,
               child: _resizeEdge(isTop: false, scheme: scheme),
             ),
@@ -404,7 +402,8 @@ class TimelineResizeEdgeHandleState extends State<TimelineResizeEdgeHandle> {
   Widget build(BuildContext context) {
     final scheme = widget.scheme;
     final emphasized = _hover || _dragging || widget.active;
-    final gripAlpha = emphasized ? 0.82 : 0.34;
+    final gripAlpha = emphasized ? 0.82 : 0.28;
+
     return MouseRegion(
       onEnter: (_) => setState(() => _hover = true),
       onExit: (_) => setState(() => _hover = false),
@@ -418,36 +417,24 @@ class TimelineResizeEdgeHandleState extends State<TimelineResizeEdgeHandle> {
         child: SizedBox(
           height: widget.height,
           width: double.infinity,
-          child: Stack(
+          child: Align(
             alignment:
-                widget.isTop ? Alignment.topCenter : Alignment.bottomCenter,
-            children: [
-              AnimatedOpacity(
-                opacity: emphasized ? 1 : 0,
-                duration: const Duration(milliseconds: 90),
-                child: Container(
-                  height: 2,
-                  decoration: BoxDecoration(
-                    color: scheme.primary.withValues(alpha: 0.42),
-                    borderRadius: BorderRadius.circular(1),
-                  ),
+                widget.isTop ? Alignment.topRight : Alignment.bottomRight,
+            child: Padding(
+              padding: EdgeInsets.only(
+                top: widget.isTop ? 3 : 0,
+                bottom: widget.isTop ? 0 : 3,
+                right: 4,
+              ),
+              child: Container(
+                width: 24,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: scheme.primary.withValues(alpha: gripAlpha),
+                  borderRadius: BorderRadius.circular(999),
                 ),
               ),
-              Padding(
-                padding: EdgeInsets.only(
-                  top: widget.isTop ? 4 : 0,
-                  bottom: widget.isTop ? 0 : 4,
-                ),
-                child: Container(
-                  width: 30,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: scheme.primary.withValues(alpha: gripAlpha),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),

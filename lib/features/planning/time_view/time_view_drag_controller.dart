@@ -109,7 +109,8 @@ extension PlanningTimeViewTimeViewDragController on PlanningTimeViewCoordinator 
       timelineVerticalDragDeltaPx = 0;
       timelineFingerDragDeltaPx = 0;
       timelineFingerGrabOffsetCanvasPx = fingerGrabOffsetCanvasPx;
-      timelineVerticalDragSequenceId = ++PlanningTimeViewCoordinator.timelineNextDragSequenceId;
+      timelineVerticalDragSequenceId =
+          ++PlanningTimeViewCoordinator.timelineNextDragSequenceId;
       timelineVerticalDragOriginTopPx = originTopPx;
       timelineVerticalDragCardHeightPx = originCardHeightPx;
       timelineVerticalDragDurationMin = durationMin;
@@ -138,14 +139,18 @@ extension PlanningTimeViewTimeViewDragController on PlanningTimeViewCoordinator 
   }) {
     final grid = activeTimelineDurationGrid;
     if (grid == null) return;
+
     timelineFingerDragDeltaPx = deltaPx;
     final durMin = timelineVerticalDragDurationMin.toDouble();
     final maxTopPx = grid.yForMinutesFromRangeStart(
       math.max(0, grid.totalMinutes - durMin),
     );
     final fingerCanvasY = timelineFingerCanvasY(deltaPx);
-    final pointerAnchoredTopPx = (fingerCanvasY - timelineFingerGrabOffsetCanvasPx)
-        .clamp(0.0, maxTopPx);
+    final pointerAnchoredTopPx =
+        (fingerCanvasY - timelineFingerGrabOffsetCanvasPx)
+            .clamp(0.0, maxTopPx)
+            .toDouble();
+
     final selectedDayKey = host.pageWidget.selectedDateString.length >= 10
         ? host.pageWidget.selectedDateString.substring(0, 10)
         : DatabaseService.instance.getProjectedTodayDateKey();
@@ -168,11 +173,9 @@ extension PlanningTimeViewTimeViewDragController on PlanningTimeViewCoordinator 
       maxTopPx: maxTopPx,
     );
 
-    double previewTop;
     String? insertKey;
     var insertBefore = false;
     double? markerTop;
-    String? previewLabel;
     TimeViewInsertionIntent? storedIntent;
 
     if (dropIntent.isTargetCard) {
@@ -194,145 +197,38 @@ extension PlanningTimeViewTimeViewDragController on PlanningTimeViewCoordinator 
               resolveDurationMinutes:
                   DatabaseService.instance.resolvePlanDurationMinutesFromTags,
             );
-      if (storedIntent != null) {
-        final cascadeResult = timelineCascadeForDrag(
-          scheduledInRange: scheduledInRange,
-          dragPlanId: dragPlanId,
-          dragIds: timelineBulkDragPlanIds.isEmpty
-              ? {dragPlanId}
-              : timelineBulkDragPlanIds,
-          bulkOffsets: timelineBulkDragRelativeOffsetMin,
-          targetIntent: storedIntent,
-          emptyCanvasStartWall: null,
-          hadEnd: timelineVerticalDragHadEnd,
-          durationMin: timelineVerticalDragDurationMin,
-        );
-        if (cascadeResult.accepted &&
-            cascadeResult.draggedStartWall != null) {
-          applyTimelineCascadePreviewTops(
-            cascadeResult: cascadeResult,
-            dragPlanId: dragPlanId,
-            grid: grid,
-            planWallDay: planWallDay,
-            rangeStart: rangeStart,
-            maxTopPx: maxTopPx,
-          );
-          previewTop = timelineBulkDragPreviewTopPxByPlanId[dragPlanId] ??
-              timelinePreviewTopPxForStartWall(
-                startWall: cascadeResult.draggedStartWall!,
-                grid: grid,
-                planWallDay: planWallDay,
-                startExtended: rangeStart,
-                maxTopPx: maxTopPx,
-              );
-          previewLabel = formatTimelineWallRangeLabel(
-            cascadeResult.draggedStartWall!,
-            cascadeResult.draggedEndWall,
-          );
-        } else {
-          storedIntent = null;
-          insertKey = null;
-          timelineBulkDragPreviewTopPxByPlanId = {};
-          final snappedMin = snapTimelineMinutes(
-            grid.minutesFromY(pointerAnchoredTopPx),
-          );
-          previewTop = grid.yForMinutesFromRangeStart(snappedMin);
-          previewLabel = timelineDragLabelForTopPx(
-            previewTop,
-            planWallDay,
-            rangeStart,
-            timelineVerticalDragDurationMin,
-            timelineVerticalDragHadEnd,
-          );
-        }
+      if (storedIntent == null) {
+        insertKey = null;
+      } else {
         final targetLayout = timelineLayoutForPlanId(
           layouts,
           dropIntent.targetPlanId,
         );
         if (targetLayout != null) {
-          if (insertBefore) {
-            markerTop = targetLayout.topPx.clamp(0.0, canvasHeight);
-          } else {
-            markerTop = (targetLayout.topPx + targetLayout.heightPx).clamp(
-              0.0,
-              canvasHeight,
-            );
-          }
+          markerTop = insertBefore
+              ? targetLayout.topPx.clamp(0.0, canvasHeight).toDouble()
+              : (targetLayout.topPx + targetLayout.heightPx)
+                  .clamp(0.0, canvasHeight)
+                  .toDouble();
         }
-      } else {
-        storedIntent = null;
-        insertKey = null;
-        timelineBulkDragPreviewTopPxByPlanId = {};
-        final snappedMin = snapTimelineMinutes(
-          grid.minutesFromY(pointerAnchoredTopPx),
-        );
-        previewTop = grid.yForMinutesFromRangeStart(snappedMin);
-        previewLabel = timelineDragLabelForTopPx(
-          previewTop,
-          planWallDay,
-          rangeStart,
-          timelineVerticalDragDurationMin,
-          timelineVerticalDragHadEnd,
-        );
-      }
-    } else {
-      storedIntent = null;
-      final snappedMin = dropIntent.wallStartMinute ??
-          snapTimelineMinutes(grid.minutesFromY(pointerAnchoredTopPx));
-      final emptyStart = wallTimeFromTimelineMinutes(
-        snappedMin,
-        planWallDay,
-        rangeStart,
-      );
-      final cascadeResult = timelineCascadeForDrag(
-        scheduledInRange: scheduledInRange,
-        dragPlanId: dragPlanId,
-        dragIds: timelineBulkDragPlanIds.isEmpty
-            ? {dragPlanId}
-            : timelineBulkDragPlanIds,
-        bulkOffsets: timelineBulkDragRelativeOffsetMin,
-        targetIntent: null,
-        emptyCanvasStartWall: emptyStart,
-        hadEnd: timelineVerticalDragHadEnd,
-        durationMin: timelineVerticalDragDurationMin,
-      );
-      if (cascadeResult.accepted && cascadeResult.draggedStartWall != null) {
-        applyTimelineCascadePreviewTops(
-          cascadeResult: cascadeResult,
-          dragPlanId: dragPlanId,
-          grid: grid,
-          planWallDay: planWallDay,
-          rangeStart: rangeStart,
-          maxTopPx: maxTopPx,
-        );
-        previewTop = timelineBulkDragPreviewTopPxByPlanId[dragPlanId] ??
-            timelinePreviewTopPxForStartWall(
-              startWall: cascadeResult.draggedStartWall!,
-              grid: grid,
-              planWallDay: planWallDay,
-              startExtended: rangeStart,
-              maxTopPx: maxTopPx,
-            );
-        previewLabel = formatTimelineWallRangeLabel(
-          cascadeResult.draggedStartWall!,
-          cascadeResult.draggedEndWall,
-        );
-      } else {
-        timelineBulkDragPreviewTopPxByPlanId = {};
-        previewTop = grid.yForMinutesFromRangeStart(snappedMin);
-        previewLabel = timelineDragLabelForTopPx(
-          previewTop,
-          planWallDay,
-          rangeStart,
-          timelineVerticalDragDurationMin,
-          timelineVerticalDragHadEnd,
-        );
       }
     }
 
+    final snappedMin = dropIntent.wallStartMinute ??
+        snapTimelineMinutes(grid.minutesFromY(pointerAnchoredTopPx));
+    final snappedTopPx = grid.yForMinutesFromRangeStart(snappedMin);
+    final previewLabel = timelineDragLabelForTopPx(
+      snappedTopPx,
+      planWallDay,
+      rangeStart,
+      timelineVerticalDragDurationMin,
+      timelineVerticalDragHadEnd,
+    );
+
     host.notifySetState(() {
       timelineVerticalDragDeltaPx =
-          previewTop - timelineVerticalDragOriginTopPx;
+          pointerAnchoredTopPx - timelineVerticalDragOriginTopPx;
+      timelineBulkDragPreviewTopPxByPlanId = {};
       timelineDragInsertTargetKey = insertKey;
       timelineDragInsertBefore = insertBefore;
       timelineDragInsertMarkerTopPx = markerTop;
@@ -378,8 +274,9 @@ extension PlanningTimeViewTimeViewDragController on PlanningTimeViewCoordinator 
       math.max(0, grid.totalMinutes - durMin),
     );
     final fingerCanvasY = timelineFingerCanvasY(timelineFingerDragDeltaPx);
-    final pointerAnchoredTopPx = (fingerCanvasY - timelineFingerGrabOffsetCanvasPx)
-        .clamp(0.0, maxTopPx);
+    final pointerAnchoredTopPx =
+        (fingerCanvasY - timelineFingerGrabOffsetCanvasPx)
+            .clamp(0.0, maxTopPx);
     final selectedDayKey = host.pageWidget.selectedDateString.length >= 10
         ? host.pageWidget.selectedDateString.substring(0, 10)
         : DatabaseService.instance.getProjectedTodayDateKey();

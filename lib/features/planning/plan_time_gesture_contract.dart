@@ -2,7 +2,10 @@ import 'package:counter/core/shell_adaptive.dart';
 import 'package:flutter/foundation.dart';
 
 /// Desktop / side-nav pointer drag starts after this movement (px).
-const double kPlanTimeDragThresholdDesktopPx = 8;
+///
+/// Three pixels filters click jitter without making a deliberate pickup feel
+/// sticky or fall through into an edit tap.
+const double kPlanTimeDragThresholdDesktopPx = 3;
 
 /// Touch long-press drag starts after this movement (px).
 const double kPlanTimeDragThresholdTouchPx = 12;
