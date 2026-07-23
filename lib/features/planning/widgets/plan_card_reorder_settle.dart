@@ -66,7 +66,7 @@ class PlanCardReorderSettleState extends State<PlanCardReorderSettle>
       animation: _controller,
       child: widget.child,
       builder: (context, child) {
-        final progress = _controller.value.clamp(0.0, 1.0);
+        final progress = _controller.value.clamp(0.0, 1.0).toDouble();
         final remaining = 1 - progress;
         return Transform.translate(
           offset: Offset(0, -4 * remaining),
