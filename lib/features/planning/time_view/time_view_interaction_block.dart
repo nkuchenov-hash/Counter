@@ -316,7 +316,9 @@ class TimelinePlanInteractionBlockState
             top: 0,
             left: widget.controlsLeftInset,
             right: widget.controlsRightInset,
-            child: Center(
+            child: Align(
+              alignment: Alignment.topCenter,
+              heightFactor: 1,
               child: _resizeEdge(isTop: true, scheme: scheme),
             ),
           ),
@@ -325,7 +327,9 @@ class TimelinePlanInteractionBlockState
             bottom: 0,
             left: widget.controlsLeftInset,
             right: widget.controlsRightInset,
-            child: Center(
+            child: Align(
+              alignment: Alignment.bottomCenter,
+              heightFactor: 1,
               child: _resizeEdge(isTop: false, scheme: scheme),
             ),
           ),
