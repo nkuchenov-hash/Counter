@@ -147,9 +147,9 @@ Low severity (defer): `auth_service.dart:134, 163` — non-deterministic UID fal
 
 ## 🟢 Velocity Track
 
-### Codebase cleanup (2026-06-22 — 2026-07-03)
+### Codebase cleanup (2026-06-22 — 2026-07-23)
 
-**Status:** Complete. UI decomposition (Pass 3/3B), Brain decomposition (Pass 4A–4D), repo junk cleanup, and final structure/doc parity pass shipped 2026-07-03.
+**Status:** Repository cleanup complete with explicitly deferred feature work. Ordinary repository-structure cleanup is **formally closed** as of Phase 2G (2026-07-23). Do not open another generic structure-cleanup pass; remaining items need separate product/design approval (V7 adoption, Phase 2D wiring, Notes/Lists/Voice watchlist orphans, Stage E seams, notifications/alarms — not cleanup).
 
 | Stage | Scope | Status |
 | :--- | :--- | :--- |
@@ -166,11 +166,14 @@ Low severity (defer): `auth_service.dart:134, 163` — non-deterministic UID fal
 | **Final parity** | Tree/doc dedupe — `docs/reports/FINAL_STRUCTURE_PARITY_AND_DOC_CLEANUP_2026-07-03.md` | ✅ 2026-07-03 |
 | **D** | Architecture guard **-Strict** in CI (`.github/workflows/architecture-guard.yml`; also pre-Flutter in deploy + Windows installer workflows) | ✅ 2026-07-23 |
 | **B** | Safe renames/moves (root barrels, Archive/, duplicate l10n) — audited; items already gone or intentionally kept (`lib/main.dart` + `lib/app_shell.dart` only); see `docs/reports/STAGE_B_STRUCTURE_DRIFT_AUDIT_2026-07-23.md` | ✅ 2026-07-23 audited / superseded |
-| **E** | Further large-file splits | ⏸ — **never by line count alone**; Pass 3–4D complete |
+| **2G** | Final repository completeness audit — no high-confidence production cleanup remaining | ✅ 2026-07-23 docs-only closure |
+| **E** | Further large-file splits | ⏸ deferred — **never by line count alone**; Pass 3–4D complete; not ordinary cleanup |
 
-**Remaining:** 3 runtime test failures (`perf_shell_date_settle_test`, `widget_test` smoke, related perf harness). Not compile blockers.
+**Not cleanup (separate scopes):** V3/V7 design-system adoption; Phase 2D category wrapper wiring; hygiene watchlist UI orphans; notifications / alarm scheduler / autosave / visual redesign.
 
-Reports: `docs/reports/FINAL_STRUCTURE_PARITY_AND_DOC_CLEANUP_2026-07-03.md`, `docs/reports/STAGE_B_STRUCTURE_DRIFT_AUDIT_2026-07-23.md`, `docs/PROJECT_KNOWLEDGE_PACK.md`.
+**Test debt (not structure):** 3 runtime test failures (`perf_shell_date_settle_test`, `widget_test` smoke, related perf harness). Not compile blockers.
+
+Reports: `docs/reports/FINAL_REPOSITORY_COMPLETENESS_AUDIT_2026-07-23.md`, `docs/reports/FINAL_STRUCTURE_PARITY_AND_DOC_CLEANUP_2026-07-03.md`, `docs/reports/STAGE_B_STRUCTURE_DRIFT_AUDIT_2026-07-23.md`, `docs/PROJECT_KNOWLEDGE_PACK.md`.
 
 ---
 
