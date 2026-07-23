@@ -15,7 +15,7 @@ import 'dart:convert';
 
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
-import 'package:counter/features/categories/category_recursive_tree.dart';
+import 'package:counter/shared/categories/picker/category_tree_picker.dart';
 import 'package:counter/features/notes/drawing_canvas_page.dart';
 import 'package:counter/features/notes/notes_glm_surface.dart';
 import 'package:counter/features/notes/notes_visual_tokens.dart';

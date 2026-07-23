@@ -13,7 +13,7 @@ class PlanCategoryPresentation {
   final String breadcrumbPath;
 }
 
-/// Injected once after [DatabaseService] bootstrap — keeps core cards free of Brain imports.
+/// Injected once after [DatabaseService] bootstrap — keeps plan cards free of Brain imports.
 abstract final class PlanCategoryLookup {
   static PlanCategoryPresentation Function(int categoryId)? resolve;
 }

@@ -2,7 +2,7 @@
 
 import 'dart:convert';
 
-import 'package:counter/data/database_service.dart';
+import 'package:counter/shared/categories/picker/category_picker_contracts.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -43,7 +43,7 @@ class CategoryVisibilityPrefs {
   static bool isHiddenOrAncestor(int categoryId) {
     final h = hiddenIds.value.toSet();
     if (h.isEmpty) return false;
-    final path = DatabaseService.instance.categoryPathFromRootToLocalId(categoryId);
+    final path = CategoryTreeSource.pathFromRoot(categoryId);
     if (path.isEmpty) return false;
     for (final id in path) {
       if (h.contains(id)) return true;

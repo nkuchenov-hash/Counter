@@ -55,7 +55,10 @@ $forbiddenImportRules = @(
     @{ Label = 'core->database_service'; Path = 'lib\core'; Pattern = "import 'package:counter/data/database_service.dart'" },
     @{ Label = 'shared->features'; Path = 'lib\shared'; Pattern = "import 'package:counter/features/" },
     @{ Label = 'shared->database_service'; Path = 'lib\shared'; Pattern = "import 'package:counter/data/database_service.dart'" },
-    @{ Label = 'shared/voice->data/voice'; Path = 'lib\shared\voice'; Pattern = "import 'package:counter/data/voice/" }
+    @{ Label = 'shared/voice->data/voice'; Path = 'lib\shared\voice'; Pattern = "import 'package:counter/data/voice/" },
+    @{ Label = 'shared/categories->features'; Path = 'lib\shared\categories'; Pattern = "import 'package:counter/features/" },
+    @{ Label = 'shared/categories->database_service'; Path = 'lib\shared\categories'; Pattern = "import 'package:counter/data/database_service.dart'" },
+    @{ Label = 'shared/categories->app/shell'; Path = 'lib\shared\categories'; Pattern = "import 'package:counter/app/shell/" }
 )
 
 foreach ($rule in $forbiddenImportRules) {
@@ -153,6 +156,8 @@ $deletedMustStayGone = @(
   'lib/shared/voice/platforms/desktop/desktop_voice_useful_candidate_evaluator.dart',
   'lib/shared/voice/platforms/desktop/desktop_stt_benchmark_harness.dart',
   'lib/shared/voice/platforms/desktop/desktop_voice_real_helper_latency_benchmark.dart',
+  'lib/features/categories',
+  'lib/core/plan_category_lookup.dart',
   'lib/deploy.ps1',
   'lib/notes',
   'lib/core/p0u_diag.dart',

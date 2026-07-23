@@ -1,7 +1,8 @@
 import 'package:counter/data/models.dart';
-import 'package:counter/features/categories/category_recursive_tree.dart';
-import 'package:counter/features/categories/create_category_from_picker.dart';
+import 'package:counter/features/shared/edit_sheet/category_edit_draft.dart';
 import 'package:counter/features/shared/edit_sheet/sheet_autosave_gate.dart';
+import 'package:counter/shared/categories/picker/category_tree_picker.dart';
+import 'package:counter/shared/categories/picker/create_category_from_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 

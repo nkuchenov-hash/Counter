@@ -395,10 +395,12 @@ def _owner_for(path: str) -> tuple[str, str]:
         return "Lists UI", "UI списков"
     if p.startswith("lib/features/calendar/"):
         return "Calendar UI", "UI календаря"
-    if p.startswith("lib/features/categories/"):
-        return "Categories UI", "UI категорий"
+    if p.startswith("lib/features/settings/categories/"):
+        return "Categories settings UI", "UI настроек категорий"
     if p.startswith("lib/features/settings/voice/"):
         return "Voice settings UI", "UI настроек Voice"
+    if p.startswith("lib/shared/categories/"):
+        return "Shared Categories", "Shared Categories"
     if p.startswith("lib/features/profile/"):
         return "Profile UI", "UI профиля"
     if p.startswith("lib/features/shared/"):

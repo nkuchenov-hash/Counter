@@ -43,7 +43,8 @@ import 'package:counter/shared/diagnostics/runtime_log.dart';
 import 'package:counter/shared/diagnostics/platform_log.dart';
 import 'package:counter/shared/diagnostics/startup_log.dart';
 import 'package:counter/shared/diagnostics/performance/runtime_flags.dart';
-import 'package:counter/core/plan_category_lookup.dart';
+import 'package:counter/shared/categories/picker/category_picker_contracts.dart';
+import 'package:counter/shared/categories/presentation/plan_category_lookup.dart';
 import 'package:counter/shared/time/app_clock.dart';
 import 'package:counter/shared/time/profile_timezone_actions.dart';
 import 'package:counter/core/widgets/app_loading.dart';
@@ -77,6 +78,30 @@ void _wirePlanCategoryLookup() {
         icon: db.getCategoryRuleById(categoryId)?.iconOrDefault,
         breadcrumbPath: db.getCategoryPath(categoryId),
       );
+}
+
+void _wireCategorySharedContracts() {
+  final db = DatabaseService.instance;
+  CategoryTreeSource.getChildrenOf = db.getChildrenOf;
+  CategoryTreeSource.categoryStream = () => db.categoryStream;
+  CategoryTreeSource.pathFromRootToLocalId = db.categoryPathFromRootToLocalId;
+  CategoryTreeSource.categoryExists = db.categoryExists;
+  CategoryTreeSource.getCategoryPath = db.getCategoryPath;
+  CategoryTreeSource.newLocalId = db.newId;
+  CategoryTreeSource.getParentId = db.getParentId;
+  CategoryPickerActions.isCreateAllowed = () {
+    if (!db.isInitialized) return false;
+    if (db.offlineSync.isOffline) return false;
+    final ownerPbId = db.currentProfileId;
+    return ownerPbId?.isNotEmpty ?? false;
+  };
+  CategoryPickerActions.findCreatedUnderParent =
+      ({required parentLocalId, required displayName}) =>
+          db.findCreatedCategoryLocalIdUnderParent(
+            parentLocalId: parentLocalId,
+            displayName: displayName,
+          );
+  CategoryPickerActions.addNestedCategory = db.addNestedCategory;
 }
 
 void _wireDesktopSttCloudBackend() {
@@ -385,6 +410,7 @@ class _RootAuthWrapperState extends State<RootAuthWrapper> {
       _wireAppClock();
       _wireProfileTimezoneActions();
       _wirePlanCategoryLookup();
+      _wireCategorySharedContracts();
       _wireDesktopSttCloudBackend();
       _wireDesktopVoiceBrainHooks();
       setState(() {

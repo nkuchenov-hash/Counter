@@ -1,10 +1,11 @@
 import 'package:counter/data/models.dart';
-import 'package:counter/features/categories/create_category_from_picker.dart';
+import 'package:counter/features/shared/edit_sheet/category_edit_draft.dart';
 import 'package:counter/features/shared/edit_sheet/record_edit_save_policy.dart';
+import 'package:counter/shared/categories/picker/create_category_from_picker.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 // resolvePlanningEditDraftCategoryId / planPatchShouldIncludeCategoryRelation
-// live in create_category_from_picker.dart (imported above).
+// live in category_edit_draft.dart; picker create lives in shared/categories/picker.
 
 void main() {
   group('classifyRecordEditSaveMode', () {

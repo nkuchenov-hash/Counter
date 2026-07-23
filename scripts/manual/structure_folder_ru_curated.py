@@ -915,6 +915,71 @@ register_folder_ru(
 )
 
 register_folder_ru(
+    "lib/shared/categories",
+    {
+        "what_ru": "Переиспользуемые presentation/tree/picker/visibility для категорий без Brain I/O.",
+        "why_ru": "Несколько UI-фич делят category pickers; CRUD остаётся в Brain, менеджер — в Settings.",
+        "inside_ru": "`presentation/`, `tree/`, `picker/`, `visibility/`.",
+        "affects_ru": "Shared category pickers, form fields, create-from-picker, local hide prefs.",
+        "when_ru": "Ownership picker/create, tree chrome, visibility key.",
+        "delete_ru": "Нет — pickers Notes/Planning/Timeline/Lists сломаются.",
+        "related_ru": "`lib/data/categories/`, `lib/features/settings/categories/`.",
+    },
+)
+
+register_folder_ru(
+    "lib/shared/categories/presentation",
+    {
+        "what_ru": "Injected lookup presentation категории для plan cards (цвет/иконка/breadcrumb).",
+        "why_ru": "Plan cards должны получать chrome категории без импорта Brain.",
+        "inside_ru": "`plan_category_lookup.dart` (`PlanCategoryLookup`, `PlanCategoryPresentation`).",
+        "affects_ru": "Отображение color/icon/breadcrumb категории на plan cards.",
+        "when_ru": "Wiring presentation или chrome категории на plan card.",
+        "delete_ru": "Нет — plan cards потеряют presentation категории.",
+        "related_ru": "`lib/main.dart` `_wirePlanCategoryLookup()`, `lib/core/widgets/plan_time_task_card/`.",
+    },
+)
+
+register_folder_ru(
+    "lib/shared/categories/tree",
+    {
+        "what_ru": "Чистые helpers фильтра/opacity дерева категорий и reusable tree body UI.",
+        "why_ru": "Picker и settings browse делят один tree body без импорта Brain.",
+        "inside_ru": "`category_tree_filter.dart`, `category_tree_body.dart`.",
+        "affects_ru": "Shared tree rendering и search filtering.",
+        "when_ru": "Opacity дерева, expand path, filter поиска picker.",
+        "delete_ru": "Нет — shared category tree UI сломается.",
+        "related_ru": "`lib/shared/categories/picker/`, `lib/features/settings/categories/`.",
+    },
+)
+
+register_folder_ru(
+    "lib/shared/categories/picker",
+    {
+        "what_ru": "Sheet picker дерева категорий, form field, create dialog и узкие Brain injection contracts.",
+        "why_ru": "Picker create/select — multi-feature UI; mutation приходит через composition root.",
+        "inside_ru": "`category_picker_contracts.dart`, models, create dialog, `category_tree_picker.dart`.",
+        "affects_ru": "Category pickers Notes/Planning/Timeline/Wear и create-from-picker.",
+        "when_ru": "Семантика create root/child, chrome sheet, form field.",
+        "delete_ru": "Нет — category pickers сломаются.",
+        "related_ru": "`lib/main.dart` `_wireCategorySharedContracts()`.",
+    },
+)
+
+register_folder_ru(
+    "lib/shared/categories/visibility",
+    {
+        "what_ru": "Локальное хранение скрытых категорий (SharedPreferences).",
+        "why_ru": "Скрывать неиспользуемые категории на клиенте без смены схемы.",
+        "inside_ru": "`category_visibility_prefs.dart` (ключ `hidden_category_ids_json`).",
+        "affects_ru": "Фильтрация скрытых категорий в pickers, Lists chips, Categories manager.",
+        "when_ru": "Hidden prefs, hide предков, edit-mode show-all.",
+        "delete_ru": "Нет — local hide поведение сломается.",
+        "related_ru": "`CategoryTreeSource.pathFromRoot` injection.",
+    },
+)
+
+register_folder_ru(
     "lib/shared/voice",
     {
         "what_ru": "Общие voice helpers для desktop STT/voice services и Brain voice parsing.",

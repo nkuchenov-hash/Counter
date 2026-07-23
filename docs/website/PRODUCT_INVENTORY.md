@@ -98,7 +98,7 @@
 | Field | Detail |
 | :--- | :--- |
 | **User-facing capability** | Nested category tree. Custom color, icon, order. Archive. Per-category default plan start time and optional timezone. Visibility prefs. Fuzzy title match when starting records. Breadcrumb display on cards. |
-| **Proof** | `lib/features/categories/category_list_view.dart`, `category_recursive_tree.dart`, `create_category_dialog.dart`; `lib/data/category_service.dart`; `categories.default_plan_time` in `docs/DATA_MAP.md` |
+| **Proof** | `lib/features/settings/categories/category_list_view.dart`, `create_category_dialog.dart`; `lib/shared/categories/picker/category_tree_picker.dart`; `lib/data/category_service.dart`; `categories.default_plan_time` in `docs/DATA_MAP.md` |
 | **User value** | Structure life/work projects; consistent color language across timeline and plans |
 | **Status** | **public-ready** |
 | **Risks / caveats** | Category hash collision bug fixed — no need to mention. Cold-start category map drops are logged, not user-facing. |
