@@ -1,4 +1,3 @@
-
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/data/plan_time_sequential_cascade.dart';
@@ -25,7 +24,8 @@ class PlanningTimeViewCoordinator {
   Set<String> timelineDragExcludedPlanIds = {};
   Set<String> timelineBulkDragPlanIds = {};
   Map<String, int> timelineBulkDragRelativeOffsetMin = {};
-  Map<String, double> timelineBulkDragPreviewTopPxByPlanId = {};
+  Map<String, double> _timelineBulkDragPreviewTopPxByPlanId = {};
+  bool _preserveOverlapPreviewOnNextEmptyAssignment = false;
   PlanTimeViewDurationGrid? activeTimelineDurationGrid;
   bool timeModeDidAutoScrollToNow = false;
   double timelineVerticalDragCardHeightPx = 0;
@@ -66,6 +66,23 @@ class PlanningTimeViewCoordinator {
   DateTime? lastTimeResizePreviewLogAt;
   String? lastPlanTimeNowLineLogKey;
   DateTime? lastPlanTimeNowLineLogAt;
+
+  Map<String, double> get timelineBulkDragPreviewTopPxByPlanId =>
+      _timelineBulkDragPreviewTopPxByPlanId;
+
+  set timelineBulkDragPreviewTopPxByPlanId(Map<String, double> value) {
+    if (value.isEmpty && _preserveOverlapPreviewOnNextEmptyAssignment) {
+      _preserveOverlapPreviewOnNextEmptyAssignment = false;
+      return;
+    }
+    _timelineBulkDragPreviewTopPxByPlanId = value;
+    _preserveOverlapPreviewOnNextEmptyAssignment = false;
+  }
+
+  void stageTimelineOverlapCascadePreview(Map<String, double> value) {
+    _timelineBulkDragPreviewTopPxByPlanId = value;
+    _preserveOverlapPreviewOnNextEmptyAssignment = true;
+  }
 
   static const int kTimelineDefaultBlockMinutes = 30;
   static const double kTimelineHourHeightMinPx = 120;
