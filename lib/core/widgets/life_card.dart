@@ -18,14 +18,20 @@ const SpringDescription kAppPhysicalCardSpring = SpringDescription(
 const double kAppPhysicalCardMaxTiltRadians = 0.012;
 const double kAppPhysicalCardVelocityForMaxTilt = 1800;
 
+double _clampMotionDouble(double value, double min, double max) =>
+    value.clamp(min, max).toDouble();
+
 /// Maps pointer velocity to a restrained card tilt.
 ///
 /// This affects presentation only. Drag geometry and saved positions remain
 /// controlled by the owning feature.
 double appPhysicalCardTiltForVelocity(double verticalVelocity) {
   if (!verticalVelocity.isFinite) return 0;
-  final normalized =
-      (verticalVelocity / kAppPhysicalCardVelocityForMaxTilt).clamp(-1.0, 1.0);
+  final normalized = _clampMotionDouble(
+    verticalVelocity / kAppPhysicalCardVelocityForMaxTilt,
+    -1,
+    1,
+  );
   return normalized * kAppPhysicalCardMaxTiltRadians;
 }
 
@@ -33,7 +39,7 @@ double appPhysicalCardScaleX(
   AppPhysicalCardPhase phase,
   double progress,
 ) {
-  final p = progress.clamp(0.0, 1.0);
+  final p = _clampMotionDouble(progress, 0, 1);
   return switch (phase) {
     AppPhysicalCardPhase.idle => 1,
     AppPhysicalCardPhase.dragging => 1 + (0.018 * p),
@@ -45,7 +51,7 @@ double appPhysicalCardScaleY(
   AppPhysicalCardPhase phase,
   double progress,
 ) {
-  final p = progress.clamp(0.0, 1.0);
+  final p = _clampMotionDouble(progress, 0, 1);
   return switch (phase) {
     AppPhysicalCardPhase.idle => 1,
     AppPhysicalCardPhase.dragging => 1 + (0.018 * p),
@@ -75,7 +81,7 @@ class AppPhysicalDragVisual extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final reduceMotion = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
-    final p = progress.clamp(0.0, 1.08);
+    final p = _clampMotionDouble(progress, 0, 1.08);
     final effectiveP = reduceMotion ? (p > 0 ? 1.0 : 0.0) : p;
     final alignment = phase == AppPhysicalCardPhase.resizing
         ? resizeAlignment
@@ -90,7 +96,7 @@ class AppPhysicalDragVisual extends StatelessWidget {
         ? 1.0
         : appPhysicalCardScaleY(phase, effectiveP);
     final shadowColor = Theme.of(context).shadowColor.withValues(
-          alpha: 0.18 * effectiveP.clamp(0.0, 1.0),
+          alpha: 0.18 * _clampMotionDouble(effectiveP, 0, 1),
         );
 
     return RepaintBoundary(
