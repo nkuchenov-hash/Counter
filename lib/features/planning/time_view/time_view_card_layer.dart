@@ -28,13 +28,21 @@ extension PlanningTimeViewTimeViewCardLayer on PlanningTimeViewCoordinator {
     required List<PlanningTask> scheduledInRange,
   }) {
     final planKey = host.planKey(layout.task);
+    final planId = layout.task.planRowIdForBackend;
     final inBulkDragPreview = timelineVerticalDragPlanKey != null &&
-        timelineBulkDragPlanIds.contains(layout.task.planRowIdForBackend);
+        timelineBulkDragPlanIds.contains(planId);
     final isDragging = inBulkDragPreview;
+    final isPrimaryDraggedCard = isDragging &&
+        timelineVerticalDragTask?.planRowIdForBackend == planId;
     final isResizing = timelineResizePlanKey == planKey;
     final isInteracting = isDragging || isResizing;
-    final bulkPreviewTop =
-        timelineBulkDragPreviewTopPxByPlanId[layout.task.planRowIdForBackend];
+
+    // The card held by the pointer must always follow raw pointer geometry.
+    // Preview/cascade positions may move neighboring or secondary bulk cards,
+    // but must never turn contact with another card into a physical barrier.
+    final bulkPreviewTop = isPrimaryDraggedCard
+        ? null
+        : timelineBulkDragPreviewTopPxByPlanId[planId];
     final topPx = bulkPreviewTop ??
         (isDragging
             ? layout.topPx + timelineVerticalDragDeltaPx
