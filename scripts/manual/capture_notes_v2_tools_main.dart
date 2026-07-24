@@ -1,7 +1,6 @@
 // Temporary real-runtime capture for Notes v2 tool panels.
 // Run with: flutter run -d windows -t scripts/manual/capture_notes_v2_tools_main.dart --release
 
-import 'dart:async';
 import 'dart:io';
 import 'dart:ui' as ui;
 
@@ -17,7 +16,6 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await windowManager.ensureInitialized();
 
-  final ready = Completer<void>();
   final options = WindowOptions(
     size: Size(
       kNotesV2ToolsViewport.width + 24,
@@ -31,13 +29,6 @@ Future<void> main() async {
     backgroundColor: Colors.transparent,
     titleBarStyle: TitleBarStyle.hidden,
   );
-
-  await windowManager.waitUntilReadyToShow(options, () async {
-    await windowManager.show();
-    await windowManager.focus();
-    if (!ready.isCompleted) ready.complete();
-  });
-  await ready.future;
 
   runApp(
     MaterialApp(
@@ -55,25 +46,31 @@ Future<void> main() async {
     ),
   );
 
-  WidgetsBinding.instance.addPostFrameCallback((_) async {
-    await Future<void>.delayed(const Duration(milliseconds: 900));
-    final boundary =
-        _captureKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
-    if (boundary == null) {
-      stderr.writeln('Missing Notes v2 capture boundary');
-      exit(1);
-    }
-    final image = await boundary.toImage(pixelRatio: 1.0);
-    final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-    if (byteData == null) {
-      stderr.writeln('Failed to encode Notes v2 capture');
-      exit(1);
-    }
-    final file = File('test/fixtures/notes_v2_tools_capture.png');
-    await file.parent.create(recursive: true);
-    await file.writeAsBytes(byteData.buffer.asUint8List());
-    stdout.writeln('Wrote ${file.path} (${image.width}x${image.height})');
-    await windowManager.close();
-    exit(0);
+  await windowManager.waitUntilReadyToShow(options, () async {
+    await windowManager.show();
+    await windowManager.focus();
   });
+
+  await WidgetsBinding.instance.endOfFrame;
+  await Future<void>.delayed(const Duration(milliseconds: 900));
+  await WidgetsBinding.instance.endOfFrame;
+
+  final boundary =
+      _captureKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+  if (boundary == null) {
+    stderr.writeln('Missing Notes v2 capture boundary');
+    exit(1);
+  }
+  final image = await boundary.toImage(pixelRatio: 1.0);
+  final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+  if (byteData == null) {
+    stderr.writeln('Failed to encode Notes v2 capture');
+    exit(1);
+  }
+  final file = File('test/fixtures/notes_v2_tools_capture.png');
+  await file.parent.create(recursive: true);
+  await file.writeAsBytes(byteData.buffer.asUint8List());
+  stdout.writeln('Wrote ${file.path} (${image.width}x${image.height})');
+  await windowManager.close();
+  exit(0);
 }
