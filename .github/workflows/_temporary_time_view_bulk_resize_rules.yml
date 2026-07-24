@@ -1,0 +1,68 @@
+name: Temporary Time View bulk and resize rules
+
+on:
+  push:
+    branches:
+      - fix/time-view-bulk-relative-time-and-resize-cascade
+    paths:
+      - '.github/workflows/_temporary_time_view_bulk_resize_rules.yml'
+      - 'tools/apply_time_view_bulk_resize_rules.py'
+
+permissions:
+  contents: write
+
+jobs:
+  patch-and-verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Check out branch
+        uses: actions/checkout@v4
+        with:
+          ref: fix/time-view-bulk-relative-time-and-resize-cascade
+
+      - name: Apply scheduling rules
+        run: python3 tools/apply_time_view_bulk_resize_rules.py
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Resolve dependencies
+        run: flutter pub get
+
+      - name: Format changed Dart
+        run: |
+          dart format \
+            lib/data/plan_time_sequential_cascade.dart \
+            lib/features/planning/time_view/time_view_resize_controller.dart \
+            lib/features/planning/time_view/time_view_card_layer.dart \
+            test/time_view_bulk_resize_rules_test.dart
+
+      - name: Analyze
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+
+      - name: Run three focused tests
+        run: flutter test test/time_view_bulk_resize_rules_test.dart
+
+      - name: Check whitespace
+        run: git diff --check
+
+      - name: Commit verified fix
+        shell: bash
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add \
+            lib/data/plan_time_sequential_cascade.dart \
+            lib/features/planning/time_view/time_view_resize_controller.dart \
+            lib/features/planning/time_view/time_view_card_layer.dart \
+            test/time_view_bulk_resize_rules_test.dart
+          if git diff --cached --quiet; then
+            echo 'No production changes to commit.'
+            exit 0
+          fi
+          git commit -m 'fix: preserve bulk times and cascade resize overlaps'
+          git push origin HEAD:fix/time-view-bulk-relative-time-and-resize-cascade
