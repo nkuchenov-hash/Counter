@@ -29,11 +29,12 @@ extension PlanningTimeViewTimeViewCardLayer on PlanningTimeViewCoordinator {
   }) {
     final planKey = host.planKey(layout.task);
     final planId = layout.task.planRowIdForBackend;
-    final inBulkDragPreview = timelineVerticalDragPlanKey != null &&
+    final inBulkDragPreview =
+        timelineVerticalDragPlanKey != null &&
         timelineBulkDragPlanIds.contains(planId);
     final isDragging = inBulkDragPreview;
-    final isPrimaryDraggedCard = isDragging &&
-        timelineVerticalDragTask?.planRowIdForBackend == planId;
+    final isPrimaryDraggedCard =
+        isDragging && timelineVerticalDragTask?.planRowIdForBackend == planId;
     final isResizing = timelineResizePlanKey == planKey;
     final isInteracting = isDragging || isResizing;
 
@@ -43,12 +44,13 @@ extension PlanningTimeViewTimeViewCardLayer on PlanningTimeViewCoordinator {
     final bulkPreviewTop = isPrimaryDraggedCard
         ? null
         : timelineBulkDragPreviewTopPxByPlanId[planId];
-    final topPx = bulkPreviewTop ??
+    final topPx =
+        bulkPreviewTop ??
         (isDragging
             ? layout.topPx + timelineVerticalDragDeltaPx
             : isResizing
-                ? timelineResizePreviewTopPx
-                : layout.topPx);
+            ? timelineResizePreviewTopPx
+            : layout.topPx);
     final heightPx = isResizing
         ? math.max(1.0, timelineResizePreviewHeightPx)
         : layout.heightPx;
@@ -110,16 +112,18 @@ extension PlanningTimeViewTimeViewCardLayer on PlanningTimeViewCoordinator {
                 borderRadius: BorderRadius.circular(6),
                 color: scheme.primary.withValues(alpha: 0.92),
                 child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
                   child: Text(
                     interactionLabel!,
-                    style:
-                        Theme.of(host.context).textTheme.labelSmall?.copyWith(
-                              color: scheme.onPrimary,
-                              fontWeight: FontWeight.w700,
-                              fontSize: 11,
-                            ),
+                    style: Theme.of(host.context).textTheme.labelSmall
+                        ?.copyWith(
+                          color: scheme.onPrimary,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 11,
+                        ),
                   ),
                 ),
               ),
@@ -190,19 +194,19 @@ extension PlanningTimeViewTimeViewCardLayer on PlanningTimeViewCoordinator {
                   },
                   onVerticalDragStart: canMove
                       ? (fingerGrabOffset) => beginTimelineVerticalDrag(
-                            task: layout.task,
-                            planKey: planKey,
-                            originTopPx: layout.topPx,
-                            originCardHeightPx: layout.heightPx,
-                            durationMin: durMin,
-                            hadEnd: hadEnd,
-                            planWallDay: planWallDay,
-                            rangeStart: rangeStart,
-                            rangeEnd: rangeEnd,
-                            selectedDayKey: selectedDayKey,
-                            fingerGrabOffsetCanvasPx: fingerGrabOffset,
-                            scheduledInRange: scheduledInRange,
-                          )
+                          task: layout.task,
+                          planKey: planKey,
+                          originTopPx: layout.topPx,
+                          originCardHeightPx: layout.heightPx,
+                          durationMin: durMin,
+                          hadEnd: hadEnd,
+                          planWallDay: planWallDay,
+                          rangeStart: rangeStart,
+                          rangeEnd: rangeEnd,
+                          selectedDayKey: selectedDayKey,
+                          fingerGrabOffsetCanvasPx: fingerGrabOffset,
+                          scheduledInRange: scheduledInRange,
+                        )
                       : null,
                   onVerticalDragVelocityChanged: canMove
                       ? (velocity) {
@@ -211,53 +215,55 @@ extension PlanningTimeViewTimeViewCardLayer on PlanningTimeViewCoordinator {
                       : null,
                   onVerticalDragUpdate: canMove
                       ? (delta, globalDy) => updateTimelineVerticalDrag(
-                            deltaPx: delta,
-                            globalDy: globalDy,
-                            planWallDay: planWallDay,
-                            rangeStart: rangeStart,
-                            rangeEnd: rangeEnd,
-                            canvasHeight: canvasHeight,
-                            scheduledInRange: scheduledInRange,
-                            planActualByPbId: planActualByPbId,
-                          )
+                          deltaPx: delta,
+                          globalDy: globalDy,
+                          planWallDay: planWallDay,
+                          rangeStart: rangeStart,
+                          rangeEnd: rangeEnd,
+                          canvasHeight: canvasHeight,
+                          scheduledInRange: scheduledInRange,
+                          planActualByPbId: planActualByPbId,
+                        )
                       : null,
                   onVerticalDragEnd: canMove
                       ? () => commitTimelineVerticalDrag(
-                            planWallDay: planWallDay,
-                            rangeStart: rangeStart,
-                            rangeEnd: rangeEnd,
-                            scheduledInRange: scheduledInRange,
-                          )
+                          planWallDay: planWallDay,
+                          rangeStart: rangeStart,
+                          rangeEnd: rangeEnd,
+                          scheduledInRange: scheduledInRange,
+                        )
                       : null,
-                  onVerticalDragCancel:
-                      canMove ? cancelTimelineVerticalDrag : null,
+                  onVerticalDragCancel: canMove
+                      ? cancelTimelineVerticalDrag
+                      : null,
                   onResizeStart: canResize
                       ? (edge) => beginTimelineResize(
-                            edge: edge,
-                            task: layout.task,
-                            planKey: planKey,
-                            originTopPx: layout.topPx,
-                            originHeightPx: layout.heightPx,
-                            originStartMin: times.startMin,
-                            originEndMin: times.endMin,
-                            planWallDay: planWallDay,
-                            rangeStart: rangeStart,
-                          )
+                          edge: edge,
+                          task: layout.task,
+                          planKey: planKey,
+                          originTopPx: layout.topPx,
+                          originHeightPx: layout.heightPx,
+                          originStartMin: times.startMin,
+                          originEndMin: times.endMin,
+                          planWallDay: planWallDay,
+                          rangeStart: rangeStart,
+                        )
                       : null,
                   onResizeUpdate: canResize
                       ? (delta, globalDy) => updateTimelineResize(
-                            deltaPx: delta,
-                            globalDy: globalDy,
-                            planWallDay: planWallDay,
-                            rangeStart: rangeStart,
-                            rangeEnd: rangeEnd,
-                          )
+                          deltaPx: delta,
+                          globalDy: globalDy,
+                          planWallDay: planWallDay,
+                          rangeStart: rangeStart,
+                          rangeEnd: rangeEnd,
+                        )
                       : null,
                   onResizeEnd: canResize
                       ? () => commitTimelineResize(
-                            planWallDay: planWallDay,
-                            rangeStart: rangeStart,
-                          )
+                          planWallDay: planWallDay,
+                          rangeStart: rangeStart,
+                          scheduledInRange: scheduledInRange,
+                        )
                       : null,
                   onResizeCancel: canResize ? cancelTimelineResize : null,
                   isInteracting: isInteracting,
@@ -270,7 +276,8 @@ extension PlanningTimeViewTimeViewCardLayer on PlanningTimeViewCoordinator {
                         task: layout.task,
                         key: planKey,
                         displayDone:
-                            host.planDoneOverride[planKey] ?? layout.task.isDone,
+                            host.planDoneOverride[planKey] ??
+                            layout.task.isDone,
                         isSelected: host.selectedPlanKeys.contains(planKey),
                         planActualByPbId: planActualByPbId,
                         timelineEmbedded: true,
