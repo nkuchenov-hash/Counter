@@ -16,7 +16,7 @@ permissions:
 jobs:
   capture:
     if: ${{ github.actor != 'github-actions[bot]' }}
-    runs-on: windows-latest
+    runs-on: windows-2022
     timeout-minutes: 20
     steps:
       - name: Checkout feature branch
