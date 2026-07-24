@@ -26,9 +26,7 @@ jobs:
           channel: stable
 
       - name: Create env.dart
-        run: |
-          mkdir -p lib/core/env
-          printf '%s\n' 'abstract final class Env {' '  static const String placeholder = '\''\'';' '}' > lib/core/env/env.dart
+        run: cp lib/core/env/env.dart.example lib/core/env/env.dart
 
       - name: Install dependencies
         run: flutter pub get
