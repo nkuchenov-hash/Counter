@@ -95,13 +95,14 @@ void main() {
     );
   });
 
-  test('manual resize pushes the full following overlap chain', () {
+  test('manual resize pushes only the connected overlap chain', () {
     final resized = _task('a', 9, 0, 11, 0);
     final before = [
       _task('a', 9, 0, 10, 0),
       _task('b', 10, 15, 10, 45, order: 1),
       _task('c', 10, 40, 11, 10, order: 2),
       _task('d', 13, 0, 13, 30, order: 3),
+      _task('e', 13, 15, 13, 45, order: 4),
     ];
 
     final result = cascadeScheduledPlansAfterManualResize(
@@ -116,5 +117,6 @@ void main() {
     expect(_byId(result, 'c').startTime, DateTime(2026, 7, 24, 11, 30));
     expect(_byId(result, 'c').endDateTime, DateTime(2026, 7, 24, 12));
     expect(_byId(result, 'd').startTime, DateTime(2026, 7, 24, 13));
+    expect(_byId(result, 'e').startTime, DateTime(2026, 7, 24, 13, 15));
   });
 }
