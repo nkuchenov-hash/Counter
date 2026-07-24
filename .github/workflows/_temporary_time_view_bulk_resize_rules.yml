@@ -1,6 +1,12 @@
 name: Temporary Time View bulk and resize rules
 
 on:
+  push:
+    branches:
+      - fix/time-view-bulk-relative-time-and-resize-cascade
+    paths:
+      - '.github/workflows/_temporary_time_view_bulk_resize_rules.yml'
+      - 'tools/apply_time_view_bulk_resize_rules.py'
   pull_request:
     branches:
       - main
