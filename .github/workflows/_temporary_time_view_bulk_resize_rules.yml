@@ -1,12 +1,16 @@
 name: Temporary Time View bulk and resize rules
 
 on:
-  push:
+  pull_request:
     branches:
-      - fix/time-view-bulk-relative-time-and-resize-cascade
+      - main
     paths:
       - '.github/workflows/_temporary_time_view_bulk_resize_rules.yml'
       - 'tools/apply_time_view_bulk_resize_rules.py'
+      - 'lib/data/plan_time_sequential_cascade.dart'
+      - 'lib/features/planning/time_view/time_view_resize_controller.dart'
+      - 'lib/features/planning/time_view/time_view_card_layer.dart'
+      - 'test/time_view_bulk_resize_rules_test.dart'
 
 permissions:
   contents: write
