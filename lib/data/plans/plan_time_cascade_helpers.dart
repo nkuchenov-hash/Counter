@@ -4,7 +4,13 @@ part of '../database_service.dart';
 const int kDefaultPlanDurationMinutes = 30;
 
 /// Keep in sync with [PlanningSheetTimelinePrefs.timelineSnapMinutes].
-const int kPlanScheduleSnapMinutes = 10;
+const int kPlanScheduleSnapMinutes = 5;
+
+enum PlanAutoPlacementMode { nearestFreeSlot, afterLastPlan }
+
+const String _keyPlanAutoPlacementMode = 'plan_auto_placement_mode';
+PlanAutoPlacementMode _planAutoPlacementMode =
+    PlanAutoPlacementMode.nearestFreeSlot;
 
 const int kPlanDayOverloadTotalMinutes = 12 * 60;
 
@@ -20,6 +26,23 @@ int? planningWallEstimateSeconds(PlanningTask task) {
 }
 
 extension PlanTimeCascadeExtension on DatabaseService {
+  PlanAutoPlacementMode get planAutoPlacementMode => _planAutoPlacementMode;
+
+  Future<void> loadPlanAutoPlacementMode() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_keyPlanAutoPlacementMode);
+    _planAutoPlacementMode = PlanAutoPlacementMode.values.firstWhere(
+      (mode) => mode.name == raw,
+      orElse: () => PlanAutoPlacementMode.nearestFreeSlot,
+    );
+  }
+
+  Future<void> setPlanAutoPlacementMode(PlanAutoPlacementMode mode) async {
+    _planAutoPlacementMode = mode;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_keyPlanAutoPlacementMode, mode.name);
+  }
+
   int? sanitizeTagDefaultPlanDurationMinutes(dynamic raw) {
     if (raw == null) return null;
     if (raw is int) {
@@ -92,6 +115,46 @@ extension PlanTimeCascadeExtension on DatabaseService {
       snapped ~/ 60,
       snapped % 60,
     );
+  }
+
+  DateTime _ceilPlanWallDateTime(DateTime wall) {
+    final dayStart = DateTime(wall.year, wall.month, wall.day);
+    final elapsed = wall.difference(dayStart);
+    var wholeMinutes = elapsed.inMinutes;
+    if (elapsed > Duration(minutes: wholeMinutes)) wholeMinutes++;
+    final snap = kPlanScheduleSnapMinutes;
+    final snapped = ((wholeMinutes + snap - 1) ~/ snap) * snap;
+    return dayStart.add(Duration(minutes: snapped));
+  }
+
+  bool _samePlanWallDay(DateTime a, DateTime b) =>
+      a.year == b.year && a.month == b.month && a.day == b.day;
+
+  DateTime _firstAvailablePlanWallStart({
+    required DateTime earliestStartWall,
+    required int durationMin,
+    required List<PlanningTask> existingDayPlans,
+  }) {
+    final intervals = <({DateTime start, DateTime end})>[];
+    for (final plan in existingDayPlans) {
+      final start = plan.startTime;
+      final end = _resolvedPlanWallEnd(plan);
+      if (start == null || end == null || !end.isAfter(start)) continue;
+      intervals.add((start: start, end: end));
+    }
+    intervals.sort((a, b) => a.start.compareTo(b.start));
+
+    var candidate = _ceilPlanWallDateTime(earliestStartWall);
+    for (final interval in intervals) {
+      if (!interval.end.isAfter(candidate)) continue;
+      final candidateEnd = candidate.add(Duration(minutes: durationMin));
+      if (!interval.start.isBefore(candidateEnd)) return candidate;
+      if (interval.start.isBefore(candidateEnd) &&
+          interval.end.isAfter(candidate)) {
+        candidate = _ceilPlanWallDateTime(interval.end);
+      }
+    }
+    return candidate;
   }
 
   DateTime? _resolvedPlanWallEnd(PlanningTask task) {
@@ -230,6 +293,7 @@ extension PlanTimeCascadeExtension on DatabaseService {
     bool hasExplicitTimeRange = false,
     int timelineDayStartHour = 0,
     int? explicitDurationMinutes,
+    DateTime? currentWall,
   }) {
     if (hasExplicitTimeRange &&
         explicitStartWall != null &&
@@ -271,6 +335,23 @@ extension PlanTimeCascadeExtension on DatabaseService {
     late final DateTime startWall;
     if (explicitStartWall != null) {
       startWall = explicitStartWall;
+    } else if (_planAutoPlacementMode ==
+        PlanAutoPlacementMode.nearestFreeSlot) {
+      final windowStart = PlanTimeVisibleWindow.windowStartWall(
+        wallDay,
+        timelineDayStartHour,
+      );
+      final profileNow = currentWall ?? applyUserOffset(getPlanetaryNow());
+      final earliestStart =
+          _samePlanWallDay(profileNow, wallDay) &&
+              profileNow.isAfter(windowStart)
+          ? profileNow
+          : windowStart;
+      startWall = _firstAvailablePlanWallStart(
+        earliestStartWall: earliestStart,
+        durationMin: durationMin,
+        existingDayPlans: existingDayPlans,
+      );
     } else {
       DateTime? latestEnd;
       for (final p in existingDayPlans) {

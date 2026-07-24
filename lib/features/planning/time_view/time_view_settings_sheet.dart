@@ -28,6 +28,7 @@ extension PlanningTimeViewTimeViewSettingsSheet on PlanningTimeViewCoordinator {
 
   Future<void> loadPlanningTimelineBounds() async {
     final range = await PlanningSheetTimelinePrefs.loadVisibleDayRange();
+    await DatabaseService.instance.loadPlanAutoPlacementMode();
     if (host.mounted) {
       host.notifySetState(() {
         timelineHourStart = range.start;
@@ -42,16 +43,19 @@ extension PlanningTimeViewTimeViewSettingsSheet on PlanningTimeViewCoordinator {
       timelineHourStart = range.start;
       timelineHourEnd = range.end;
     });
-    unawaited(PlanningSheetTimelinePrefs.saveVisibleDayRange(range.start, range.end));
+    unawaited(
+      PlanningSheetTimelinePrefs.saveVisibleDayRange(range.start, range.end),
+    );
   }
 
   String formatDayLengthValueSummary(int start, int end) {
     final loc = currentLocale.value;
     final hours = PlanningSheetTimelinePrefs.visibleDurationHours(start, end);
-    final startClock = PlanningSheetTimelinePrefs.formatExtendedHourClock(start);
+    final startClock = PlanningSheetTimelinePrefs.formatExtendedHourClock(
+      start,
+    );
     final endClock = PlanningSheetTimelinePrefs.formatExtendedHourClock(end);
-    final startSuffix =
-        start < 0 ? ' ${t(loc, 'day_length_prev_day')}' : '';
+    final startSuffix = start < 0 ? ' ${t(loc, 'day_length_prev_day')}' : '';
     final endSuffix = end > 24 ? ' ${t(loc, 'day_length_next_day')}' : '';
     if (loc == 'ru') {
       return '$startClock$startSuffix — $endClock$endSuffix · $hours ч';
@@ -98,8 +102,12 @@ extension PlanningTimeViewTimeViewSettingsSheet on PlanningTimeViewCoordinator {
             String statusText({
               required String? own,
               required String? ownTz,
-              required ({String? hhmm, String? timezoneIana, int? sourceCategoryId})?
-                  effective,
+              required ({
+                String? hhmm,
+                String? timezoneIana,
+                int? sourceCategoryId,
+              })?
+              effective,
             }) {
               if (own != null) {
                 return t(loc, 'plan_default_time_own').replaceFirst(
@@ -148,19 +156,25 @@ extension PlanningTimeViewTimeViewSettingsSheet on PlanningTimeViewCoordinator {
                     const SizedBox(height: 4),
                     Text(
                       t(loc, 'plan_default_times_subtitle'),
-                      style: Theme.of(host.context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(host.context).colorScheme.onSurfaceVariant,
-                      ),
+                      style: Theme.of(host.context).textTheme.bodySmall
+                          ?.copyWith(
+                            color: Theme.of(
+                              host.context,
+                            ).colorScheme.onSurfaceVariant,
+                          ),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      t(loc, 'plan_default_times_profile_tz_notice').replaceFirst(
-                        '%s',
-                        db.profileTimezoneShortLabel(),
-                      ),
-                      style: Theme.of(host.context).textTheme.labelMedium?.copyWith(
-                        color: Theme.of(host.context).colorScheme.onSurfaceVariant,
-                      ),
+                      t(
+                        loc,
+                        'plan_default_times_profile_tz_notice',
+                      ).replaceFirst('%s', db.profileTimezoneShortLabel()),
+                      style: Theme.of(host.context).textTheme.labelMedium
+                          ?.copyWith(
+                            color: Theme.of(
+                              host.context,
+                            ).colorScheme.onSurfaceVariant,
+                          ),
                     ),
                     const SizedBox(height: 8),
                     OutlinedButton.icon(
@@ -251,7 +265,8 @@ extension PlanningTimeViewTimeViewSettingsSheet on PlanningTimeViewCoordinator {
                     const SizedBox(height: 8),
                     ConstrainedBox(
                       constraints: BoxConstraints(
-                        maxHeight: MediaQuery.sizeOf(host.context).height * 0.45,
+                        maxHeight:
+                            MediaQuery.sizeOf(host.context).height * 0.45,
                       ),
                       child: configuredPairs.isEmpty
                           ? Align(
@@ -330,9 +345,10 @@ extension PlanningTimeViewTimeViewSettingsSheet on PlanningTimeViewCoordinator {
                     // TODO(F2C): remove sanity marker after web + APK verification.
                     Text(
                       'F2C selector UI',
-                      style: Theme.of(host.context).textTheme.labelSmall?.copyWith(
-                        color: Theme.of(host.context).colorScheme.outline,
-                      ),
+                      style: Theme.of(host.context).textTheme.labelSmall
+                          ?.copyWith(
+                            color: Theme.of(host.context).colorScheme.outline,
+                          ),
                       textAlign: TextAlign.center,
                     ),
                   ],
@@ -382,6 +398,12 @@ extension PlanningTimeViewTimeViewSettingsSheet on PlanningTimeViewCoordinator {
                   const Divider(height: 1),
                   const PlanRecordLinkSuggestionSettingsBlock(),
                   const Divider(height: 24),
+                  PlanAutoPlacementSettingsBlock(
+                    initialMode: DatabaseService.instance.planAutoPlacementMode,
+                    onChanged:
+                        DatabaseService.instance.setPlanAutoPlacementMode,
+                  ),
+                  const Divider(height: 24),
                   TimeViewFixedTagsSettingsBlock(
                     initialSelectedIds: timeViewFixedTagIds,
                     onSave: (ids) async {
@@ -420,9 +442,8 @@ extension PlanningTimeViewTimeViewSettingsSheet on PlanningTimeViewCoordinator {
                       Navigator.of(sheetCtx).pop();
                       Navigator.of(host.context).push<void>(
                         MaterialPageRoute<void>(
-                          builder: (_) => const TagSettingsHub(
-                            initialTabIndex: 2,
-                          ),
+                          builder: (_) =>
+                              const TagSettingsHub(initialTabIndex: 2),
                         ),
                       );
                     },
@@ -452,6 +473,82 @@ extension PlanningTimeViewTimeViewSettingsSheet on PlanningTimeViewCoordinator {
           ),
         );
       },
+    );
+  }
+}
+
+class PlanAutoPlacementSettingsBlock extends StatefulWidget {
+  const PlanAutoPlacementSettingsBlock({
+    super.key,
+    required this.initialMode,
+    required this.onChanged,
+  });
+
+  final PlanAutoPlacementMode initialMode;
+  final Future<void> Function(PlanAutoPlacementMode mode) onChanged;
+
+  @override
+  State<PlanAutoPlacementSettingsBlock> createState() =>
+      _PlanAutoPlacementSettingsBlockState();
+}
+
+class _PlanAutoPlacementSettingsBlockState
+    extends State<PlanAutoPlacementSettingsBlock> {
+  late PlanAutoPlacementMode _mode = widget.initialMode;
+
+  Future<void> _select(PlanAutoPlacementMode mode) async {
+    if (_mode == mode) return;
+    setState(() => _mode = mode);
+    await widget.onChanged(mode);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final loc = currentLocale.value;
+    final helperKey = _mode == PlanAutoPlacementMode.nearestFreeSlot
+        ? 'plan_auto_placement_nearest_helper'
+        : 'plan_auto_placement_after_last_helper';
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          t(loc, 'plan_auto_placement_title'),
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        const SizedBox(height: 4),
+        Text(
+          t(loc, 'plan_auto_placement_subtitle'),
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(height: 10),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            ChoiceChip(
+              label: Text(t(loc, 'plan_auto_placement_nearest')),
+              selected: _mode == PlanAutoPlacementMode.nearestFreeSlot,
+              onSelected: (_) =>
+                  unawaited(_select(PlanAutoPlacementMode.nearestFreeSlot)),
+            ),
+            ChoiceChip(
+              label: Text(t(loc, 'plan_auto_placement_after_last')),
+              selected: _mode == PlanAutoPlacementMode.afterLastPlan,
+              onSelected: (_) =>
+                  unawaited(_select(PlanAutoPlacementMode.afterLastPlan)),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Text(
+          t(loc, helperKey),
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ],
     );
   }
 }
