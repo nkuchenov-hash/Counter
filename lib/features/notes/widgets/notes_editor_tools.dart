@@ -126,61 +126,61 @@ class _NotesEditorToolsDockState extends State<NotesEditorToolsDock> {
             duration: const Duration(milliseconds: 180),
             child: switch (_panel) {
               NotesToolsPanel.format => _NotesFormatPanel(
-                key: const ValueKey('format'),
-                activeBlock: widget.activeBlock,
-                loc: widget.loc,
-                onHeading: widget.onHeading,
-                onSetBlockType: widget.onSetBlockType,
-                onToggleFormat: widget.onToggleFormat,
-                onSetColor: widget.onSetColor,
-              ),
+                  key: const ValueKey('format'),
+                  activeBlock: widget.activeBlock,
+                  loc: widget.loc,
+                  onHeading: widget.onHeading,
+                  onSetBlockType: widget.onSetBlockType,
+                  onToggleFormat: widget.onToggleFormat,
+                  onSetColor: widget.onSetColor,
+                ),
               NotesToolsPanel.insert => _NotesInsertPanel(
-                key: const ValueKey('insert'),
-                loc: widget.loc,
-                onText: () => _insert(NoteBlockType.paragraph),
-                onChecklist: () => _insert(NoteBlockType.checklist),
-                onBullets: () => _insert(NoteBlockType.bulletedList),
-                onNumbers: () => _insert(NoteBlockType.numberedList),
-                onQuote: () => _insert(NoteBlockType.quote),
-                onCallout: () {
-                  widget.onInsert(
-                    const NotesInsertRequest(
-                      type: NoteBlockType.callout,
-                      callout: NoteCalloutData(type: NoteCalloutType.idea),
-                    ),
-                  );
-                  _closePanel();
-                },
-                onDivider: () => _insert(NoteBlockType.divider),
-                onCode: () {
-                  widget.onInsert(
-                    const NotesInsertRequest(
-                      type: NoteBlockType.codeBlock,
-                      codeLanguage: 'plain',
-                    ),
-                  );
-                  _closePanel();
-                },
-                onCollapsible: () => _insert(NoteBlockType.collapsible),
-                onTable: _insertTable,
-                onImage: () {
-                  widget.onImage();
-                  _closePanel();
-                },
-                onDraw: () {
-                  widget.onDraw();
-                  _closePanel();
-                },
-                onLink: _insertLinkCard,
-              ),
+                  key: const ValueKey('insert'),
+                  loc: widget.loc,
+                  onText: () => _insert(NoteBlockType.paragraph),
+                  onChecklist: () => _insert(NoteBlockType.checklist),
+                  onBullets: () => _insert(NoteBlockType.bulletedList),
+                  onNumbers: () => _insert(NoteBlockType.numberedList),
+                  onQuote: () => _insert(NoteBlockType.quote),
+                  onCallout: () {
+                    widget.onInsert(
+                      const NotesInsertRequest(
+                        type: NoteBlockType.callout,
+                        callout: NoteCalloutData(type: NoteCalloutType.idea),
+                      ),
+                    );
+                    _closePanel();
+                  },
+                  onDivider: () => _insert(NoteBlockType.divider),
+                  onCode: () {
+                    widget.onInsert(
+                      const NotesInsertRequest(
+                        type: NoteBlockType.codeBlock,
+                        codeLanguage: 'plain',
+                      ),
+                    );
+                    _closePanel();
+                  },
+                  onCollapsible: () => _insert(NoteBlockType.collapsible),
+                  onTable: _insertTable,
+                  onImage: () {
+                    widget.onImage();
+                    _closePanel();
+                  },
+                  onDraw: () {
+                    widget.onDraw();
+                    _closePanel();
+                  },
+                  onLink: _insertLinkCard,
+                ),
               NotesToolsPanel.more => _NotesMorePanel(
-                key: const ValueKey('more'),
-                loc: widget.loc,
-                onClose: _closePanel,
-              ),
+                  key: const ValueKey('more'),
+                  loc: widget.loc,
+                  onClose: _closePanel,
+                ),
               NotesToolsPanel.none => const SizedBox.shrink(
-                key: ValueKey('none'),
-              ),
+                  key: ValueKey('none'),
+                ),
             },
           ),
           Container(
@@ -226,8 +226,7 @@ class _NotesEditorToolsDockState extends State<NotesEditorToolsDock> {
                     icon: Icons.format_list_bulleted_rounded,
                     tooltip: t(widget.loc, 'notes_tools_lists'),
                     selected:
-                        widget.activeBlock?.type ==
-                            NoteBlockType.bulletedList ||
+                        widget.activeBlock?.type == NoteBlockType.bulletedList ||
                         widget.activeBlock?.type == NoteBlockType.numberedList,
                     onTap: () => _toggle(NotesToolsPanel.format),
                   ),
@@ -351,7 +350,7 @@ class _NotesFormatPanel extends StatelessWidget {
                 icon: Icons.format_strikethrough_rounded,
                 selected:
                     activeBlock?.effectiveRuns.any((run) => run.marks.strike) ==
-                    true,
+                        true,
                 onTap: () => onToggleFormat('strike'),
               ),
               _PanelIconButton(
@@ -429,7 +428,7 @@ class _NotesInsertPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     return _ToolsPanelSurface(
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxHeight: 360),
+        constraints: const BoxConstraints(maxHeight: 430),
         child: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -621,21 +620,13 @@ class _PrimaryToolButton extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
-                      color: selected
-                          ? scheme.onPrimary
-                          : onTap == null
-                          ? scheme.onSurfaceVariant.withValues(alpha: 0.35)
-                          : scheme.onSurfaceVariant,
+                      color: selected ? scheme.onPrimary : scheme.onSurface,
                     ),
                   )
                 : Icon(
                     icon,
                     size: 18,
-                    color: selected
-                        ? scheme.onPrimary
-                        : onTap == null
-                        ? scheme.onSurfaceVariant.withValues(alpha: 0.35)
-                        : scheme.onSurfaceVariant,
+                    color: selected ? scheme.onPrimary : scheme.onSurfaceVariant,
                   ),
           ),
         ),
@@ -648,12 +639,14 @@ class _ToolsDivider extends StatelessWidget {
   const _ToolsDivider();
 
   @override
-  Widget build(BuildContext context) => Container(
-    width: 1,
-    height: 20,
-    margin: const EdgeInsets.symmetric(horizontal: 4),
-    color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.72),
-  );
+  Widget build(BuildContext context) {
+    return Container(
+      width: 1,
+      height: 22,
+      margin: const EdgeInsets.symmetric(horizontal: 5),
+      color: Theme.of(context).colorScheme.outlineVariant,
+    );
+  }
 }
 
 class _PanelLabel extends StatelessWidget {
@@ -661,29 +654,31 @@ class _PanelLabel extends StatelessWidget {
   final String text;
 
   @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(bottom: 7),
-    child: Text(
-      text,
-      style: TextStyle(
-        fontSize: 11,
-        fontWeight: FontWeight.w700,
-        color: Theme.of(context).colorScheme.onSurfaceVariant,
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 7),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
       ),
-    ),
-  );
+    );
+  }
 }
 
 class _PanelPill extends StatelessWidget {
   const _PanelPill({
     required this.label,
-    required this.selected,
     required this.onTap,
+    this.selected = false,
   });
 
   final String label;
-  final bool selected;
   final VoidCallback onTap;
+  final bool selected;
 
   @override
   Widget build(BuildContext context) {
@@ -691,17 +686,19 @@ class _PanelPill extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(999),
-      child: Ink(
-        padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
+      child: Container(
+        constraints: const BoxConstraints(minHeight: 32),
+        padding: const EdgeInsets.symmetric(horizontal: 11),
+        alignment: Alignment.center,
         decoration: BoxDecoration(
           color: selected
               ? scheme.primary
-              : scheme.surfaceContainerHighest.withValues(alpha: 0.56),
+              : scheme.surfaceContainerHighest.withValues(alpha: 0.78),
           borderRadius: BorderRadius.circular(999),
           border: Border.all(
             color: selected
                 ? scheme.primary
-                : scheme.outlineVariant.withValues(alpha: 0.72),
+                : scheme.outlineVariant.withValues(alpha: 0.65),
           ),
         ),
         child: Text(
@@ -709,7 +706,7 @@ class _PanelPill extends StatelessWidget {
           style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w600,
-            color: selected ? scheme.onPrimary : scheme.onSurfaceVariant,
+            color: selected ? scheme.onPrimary : scheme.onSurface,
           ),
         ),
       ),
@@ -720,13 +717,13 @@ class _PanelPill extends StatelessWidget {
 class _PanelIconButton extends StatelessWidget {
   const _PanelIconButton({
     required this.icon,
-    required this.selected,
     required this.onTap,
+    this.selected = false,
   });
 
   final IconData icon;
-  final bool selected;
   final VoidCallback onTap;
+  final bool selected;
 
   @override
   Widget build(BuildContext context) {
@@ -767,37 +764,41 @@ class _ColorDot extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final parsed = _parseColor(color);
+    final parsed = _parseHexColor(color) ?? Colors.black;
     return InkWell(
       onTap: onTap,
       customBorder: const CircleBorder(),
       child: Container(
-        width: 30,
-        height: 30,
+        width: 28,
+        height: 28,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           color: parsed,
           border: Border.all(
             color: selected
                 ? Theme.of(context).colorScheme.primary
-                : Theme.of(context).colorScheme.outlineVariant,
-            width: selected ? 3 : 1,
+                : Colors.transparent,
+            width: 3,
           ),
+          boxShadow: selected
+              ? [
+                  BoxShadow(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.primary.withValues(alpha: 0.24),
+                    blurRadius: 8,
+                  ),
+                ]
+              : null,
         ),
       ),
     );
   }
 }
 
-class _InsertItemData {
-  const _InsertItemData(this.icon, this.label, this.onTap);
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-}
-
 class _InsertSection extends StatelessWidget {
   const _InsertSection({required this.title, required this.items});
+
   final String title;
   final List<_InsertItemData> items;
 
@@ -813,39 +814,65 @@ class _InsertSection extends StatelessWidget {
             spacing: 8,
             runSpacing: 8,
             children: [
-              for (final item in items)
-                InkWell(
-                  onTap: item.onTap,
-                  borderRadius: BorderRadius.circular(10),
-                  child: Container(
-                    width: 96,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 10,
-                    ),
-                    decoration: notesGlmGlassPillDecoration(),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(item.icon, size: 20),
-                        const SizedBox(height: 6),
-                        Text(
-                          item.label,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+              for (final item in items) _InsertItem(item: item),
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _InsertItemData {
+  const _InsertItemData(this.icon, this.label, this.onTap);
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+}
+
+class _InsertItem extends StatelessWidget {
+  const _InsertItem({required this.item});
+
+  final _InsertItemData item;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return InkWell(
+      onTap: item.onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        constraints: const BoxConstraints(minWidth: 94, minHeight: 62),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: scheme.surfaceContainerLow.withValues(alpha: 0.72),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.7)),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x0D0F172A),
+              blurRadius: 8,
+              offset: Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(item.icon, size: 19, color: scheme.onSurfaceVariant),
+            const SizedBox(height: 6),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 86),
+              child: Text(
+                item.label,
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 11, height: 1.15),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -864,55 +891,37 @@ class _NotesTableSizeDialogState extends State<_NotesTableSizeDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final loc = currentLocale.value;
     return AlertDialog(
-      title: Text(t(loc, 'notes_tools_table_size')),
+      title: Text(t('en', 'notes_tools_table')),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          for (var row = 1; row <= 5; row++)
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                for (var column = 1; column <= 6; column++)
-                  InkWell(
-                    onTap: () => setState(() {
-                      _rows = row;
-                      _columns = column;
-                    }),
-                    child: Container(
-                      width: 30,
-                      height: 30,
-                      margin: const EdgeInsets.all(2),
-                      decoration: BoxDecoration(
-                        color: row <= _rows && column <= _columns
-                            ? Theme.of(context).colorScheme.primaryContainer
-                            : Theme.of(context).colorScheme.surface,
-                        border: Border.all(
-                          color: row <= _rows && column <= _columns
-                              ? Theme.of(context).colorScheme.primary
-                              : Theme.of(context).colorScheme.outlineVariant,
-                        ),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          const SizedBox(height: 12),
-          Text('$_rows × $_columns'),
+          _StepperRow(
+            label: t('en', 'notes_tools_rows'),
+            value: _rows,
+            min: 1,
+            max: 20,
+            onChanged: (value) => setState(() => _rows = value),
+          ),
+          _StepperRow(
+            label: t('en', 'notes_tools_columns'),
+            value: _columns,
+            min: 1,
+            max: 6,
+            onChanged: (value) => setState(() => _columns = value),
+          ),
         ],
       ),
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: Text(t(loc, 'cancel')),
+          child: Text(t('en', 'cancel')),
         ),
         FilledButton(
-          onPressed: () => Navigator.of(
-            context,
-          ).pop(NoteTableData.empty(rows: _rows, columns: _columns)),
-          child: Text(t(loc, 'add')),
+          onPressed: () => Navigator.of(context).pop(
+            NoteTableData.empty(rows: _rows, columns: _columns),
+          ),
+          child: Text(t('en', 'insert')),
         ),
       ],
     );
@@ -928,13 +937,13 @@ class _NotesLinkDialog extends StatefulWidget {
 }
 
 class _NotesLinkDialogState extends State<_NotesLinkDialog> {
-  final _urlController = TextEditingController();
-  final _titleController = TextEditingController();
+  final _url = TextEditingController();
+  final _title = TextEditingController();
 
   @override
   void dispose() {
-    _urlController.dispose();
-    _titleController.dispose();
+    _url.dispose();
+    _title.dispose();
     super.dispose();
   }
 
@@ -946,17 +955,17 @@ class _NotesLinkDialogState extends State<_NotesLinkDialog> {
         mainAxisSize: MainAxisSize.min,
         children: [
           TextField(
-            controller: _titleController,
-            decoration: InputDecoration(
-              labelText: t(widget.loc, 'title_label'),
-            ),
-          ),
-          const SizedBox(height: 8),
-          TextField(
-            controller: _urlController,
+            controller: _url,
             keyboardType: TextInputType.url,
             autofocus: true,
             decoration: const InputDecoration(labelText: 'URL'),
+          ),
+          const SizedBox(height: 10),
+          TextField(
+            controller: _title,
+            decoration: InputDecoration(
+              labelText: t(widget.loc, 'notes_tools_link_title'),
+            ),
           ),
         ],
       ),
@@ -967,25 +976,54 @@ class _NotesLinkDialogState extends State<_NotesLinkDialog> {
         ),
         FilledButton(
           onPressed: () {
-            final url = _urlController.text.trim();
+            final url = _url.text.trim();
             if (url.isEmpty) return;
             Navigator.of(context).pop(
-              NoteLinkData(
-                url: url,
-                title: _titleController.text.trim().isEmpty
-                    ? null
-                    : _titleController.text.trim(),
-              ),
+              NoteLinkData(url: url, title: _title.text.trim()),
             );
           },
-          child: Text(t(widget.loc, 'add')),
+          child: Text(t(widget.loc, 'insert')),
         ),
       ],
     );
   }
 }
 
-const List<String> _notesTextColors = [
+class _StepperRow extends StatelessWidget {
+  const _StepperRow({
+    required this.label,
+    required this.value,
+    required this.min,
+    required this.max,
+    required this.onChanged,
+  });
+
+  final String label;
+  final int value;
+  final int min;
+  final int max;
+  final ValueChanged<int> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(child: Text(label)),
+        IconButton(
+          onPressed: value > min ? () => onChanged(value - 1) : null,
+          icon: const Icon(Icons.remove_rounded),
+        ),
+        Text('$value'),
+        IconButton(
+          onPressed: value < max ? () => onChanged(value + 1) : null,
+          icon: const Icon(Icons.add_rounded),
+        ),
+      ],
+    );
+  }
+}
+
+const _notesTextColors = <String>[
   '#0F172A',
   '#EF4444',
   '#F59E0B',
@@ -996,8 +1034,12 @@ const List<String> _notesTextColors = [
   '#94A3B8',
 ];
 
-Color _parseColor(String value) {
-  var raw = value.replaceFirst('#', '');
-  if (raw.length == 6) raw = 'FF$raw';
-  return Color(int.parse(raw, radix: 16));
+Color? _parseHexColor(String? hex) {
+  if (hex == null) return null;
+  var value = hex.trim();
+  if (value.isEmpty) return null;
+  if (value.startsWith('#')) value = value.substring(1);
+  if (value.length == 6) value = 'FF$value';
+  final parsed = int.tryParse(value, radix: 16);
+  return parsed == null ? null : Color(parsed);
 }
