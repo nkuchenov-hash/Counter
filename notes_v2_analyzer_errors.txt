@@ -1,0 +1,3 @@
+  error • Expected to find ';' • lib/core/env/env.dart:2:37 • expected_token
+  error • Unterminated string literal • lib/core/env/env.dart:2:39 • unterminated_string_literal
+252 issues found. (ran in 28.8s)
