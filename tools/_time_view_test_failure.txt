@@ -1,0 +1,27 @@
+
+::group::❌ bulk empty-canvas move preserves every original relative time (failed)
+[TIME_VIEW_INSERTION_CASCADE_STARTED] dragged=3 fixed=0
+Expected: true
+  Actual: <false>
+
+package:matcher                                     expect
+package:flutter_test/src/widget_tester.dart 473:18  expect
+test/time_view_bulk_resize_rules_test.dart 52:5     main.<fn>
+::endgroup::
+::group::❌ bulk target insertion never normalizes selected cards to one time (failed)
+[TIME_VIEW_INSERTION_CASCADE_STARTED] dragged=2 fixed=0
+Expected: true
+  Actual: <false>
+
+package:matcher                                     expect
+package:flutter_test/src/widget_tester.dart 473:18  expect
+test/time_view_bulk_resize_rules_test.dart 86:5     main.<fn>
+::endgroup::
+::group::❌ manual resize pushes the full following overlap chain (failed)
+Bad state: No element
+dart:collection                                    ListBase.firstWhere
+test/time_view_bulk_resize_rules_test.dart 31:11   _byId
+test/time_view_bulk_resize_rules_test.dart 112:12  main.<fn>
+::endgroup::
+
+::error::0 tests passed, 3 failed.
