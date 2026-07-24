@@ -18,7 +18,7 @@ Future<void> main() async {
   await windowManager.ensureInitialized();
 
   final ready = Completer<void>();
-  const options = WindowOptions(
+  final options = WindowOptions(
     size: Size(
       kNotesV2ToolsViewport.width + 24,
       kNotesV2ToolsViewport.height + 48,
