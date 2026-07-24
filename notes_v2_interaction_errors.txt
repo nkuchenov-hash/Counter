@@ -1,1 +1,1 @@
-Retry marker: production loop target corrected; rerun Notes v2 interaction integration.
+Trigger marker: temporary Architecture Guard now owns the verified interaction apply.
