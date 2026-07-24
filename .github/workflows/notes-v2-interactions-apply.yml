@@ -33,8 +33,15 @@ jobs:
         run: flutter pub get
 
       - name: Apply interaction patch
+        id: patch
+        continue-on-error: true
         run: |
-          python scripts/manual/apply_notes_v2_interactions.py
+          python scripts/manual/apply_notes_v2_interactions.py > interactions_patch.log 2>&1
+          status=$?
+          if [ "$status" -ne 0 ]; then
+            tail -120 interactions_patch.log > notes_v2_interaction_errors.txt
+            exit "$status"
+          fi
           python - <<'PY'
           from pathlib import Path
           p = Path('lib/features/notes/widgets/note_editor_block_widgets.dart')
@@ -48,6 +55,16 @@ jobs:
           )
           p.write_text(s, encoding='utf-8')
           PY
+
+      - name: Commit patch diagnostics on failure
+        if: ${{ steps.patch.outcome == 'failure' }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add notes_v2_interaction_errors.txt
+          git commit -m "Capture Notes v2 interaction patch errors [notes-v2-interaction-errors]"
+          git push origin HEAD:feature/notes-editor-tools-v2
+          exit 1
 
       - name: Format changed Dart
         run: |
@@ -73,6 +90,7 @@ jobs:
         run: |
           rm scripts/manual/apply_notes_v2_interactions.py
           rm .github/workflows/notes-v2-interactions-apply.yml
+          rm -f notes_v2_interaction_errors.txt
 
       - name: Commit verified interactions
         run: |
