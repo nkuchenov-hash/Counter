@@ -341,7 +341,8 @@ extension PlanTimeCascadeExtension on DatabaseService {
         wallDay,
         timelineDayStartHour,
       );
-      final profileNow = currentWall ?? applyUserOffset(getPlanetaryNow());
+      final profileNow =
+          currentWall ?? applyUserOffset(DatabaseService.getPlanetaryNow());
       final earliestStart =
           _samePlanWallDay(profileNow, wallDay) &&
               profileNow.isAfter(windowStart)

@@ -494,7 +494,13 @@ class PlanAutoPlacementSettingsBlock extends StatefulWidget {
 
 class _PlanAutoPlacementSettingsBlockState
     extends State<PlanAutoPlacementSettingsBlock> {
-  late PlanAutoPlacementMode _mode = widget.initialMode;
+  late PlanAutoPlacementMode _mode;
+
+  @override
+  void initState() {
+    super.initState();
+    _mode = widget.initialMode;
+  }
 
   Future<void> _select(PlanAutoPlacementMode mode) async {
     if (_mode == mode) return;
