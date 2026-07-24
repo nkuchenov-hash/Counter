@@ -29,7 +29,9 @@ void main() {
         home: const Scaffold(body: NotesV2ToolsFixture()),
       ),
     );
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 250));
+    await tester.pump(const Duration(milliseconds: 250));
 
     expect(find.byKey(kNotesV2ToolsCaptureKey), findsOneWidget);
     expect(find.text('Aa · text and block formatting'), findsOneWidget);
