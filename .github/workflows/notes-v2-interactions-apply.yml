@@ -36,12 +36,14 @@ jobs:
         id: patch
         continue-on-error: true
         run: |
+          set +e
           python scripts/manual/apply_notes_v2_interactions.py > interactions_patch.log 2>&1
           status=$?
           if [ "$status" -ne 0 ]; then
             tail -120 interactions_patch.log > notes_v2_interaction_errors.txt
             exit "$status"
           fi
+          set -e
           python - <<'PY'
           from pathlib import Path
           p = Path('lib/features/notes/widgets/note_editor_block_widgets.dart')
