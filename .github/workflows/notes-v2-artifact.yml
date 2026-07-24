@@ -6,6 +6,10 @@ on:
       - main
   workflow_dispatch:
 
+concurrency:
+  group: notes-v2-real-font-capture-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: write
 
@@ -30,7 +34,6 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y fonts-dejavu-core fonts-liberation2
-          fc-list | head -20
           echo "FLUTTER_ROOT=$FLUTTER_ROOT"
           find "$FLUTTER_ROOT/bin/cache/artifacts" -name 'MaterialIcons-Regular.otf' -print
 
@@ -40,8 +43,11 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Format capture test
-        run: dart format test/notes_v2_tools_visual_test.dart
+      - name: Format capture files
+        run: |
+          dart format \
+            test/notes_v2_tools_visual_test.dart \
+            test/notes/fixtures/notes_v2_tools_fixture.dart
 
       - name: Regenerate capture with real fonts
         id: capture
@@ -49,7 +55,7 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          flutter test --update-goldens test/notes_v2_tools_visual_test.dart 2>&1 | tee notes_v2_capture.log
+          timeout 180s flutter test --update-goldens test/notes_v2_tools_visual_test.dart 2>&1 | tee notes_v2_capture.log
 
       - name: Upload capture diagnostics
         if: always()
@@ -67,7 +73,7 @@ jobs:
         run: exit 1
 
       - name: Verify capture
-        run: flutter test test/notes_v2_tools_visual_test.dart
+        run: timeout 180s flutter test test/notes_v2_tools_visual_test.dart
 
       - name: Remove temporary capture workflow
         run: rm .github/workflows/notes-v2-artifact.yml
