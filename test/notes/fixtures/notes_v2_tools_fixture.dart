@@ -5,7 +5,7 @@ import 'package:counter/features/notes/widgets/notes_editor_tools.dart';
 import 'package:counter/features/notes/widgets/notes_special_block_widgets.dart';
 import 'package:flutter/material.dart';
 
-const Size kNotesV2ToolsViewport = Size(1156, 900);
+const Size kNotesV2ToolsViewport = Size(1156, 1200);
 const Key kNotesV2ToolsCaptureKey = Key('notes_v2_tools_capture');
 
 class NotesV2ToolsFixture extends StatelessWidget {
