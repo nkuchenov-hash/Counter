@@ -32,6 +32,45 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Align patch with current production loop
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('scripts/manual/apply_notes_v2_interactions.py')
+          s = p.read_text(encoding='utf-8')
+          old = """                  onMoveDown: () => _moveBlock(b.id, 1),
+                  onEditDrawing: () => _openDrawing(editBlockId: b.id),
+                  onEnter: () {
+"""
+          new = """              onMoveDown: () => _moveBlock(_doc.blocks[i].id, 1),
+              onEditDrawing: () => _openDrawing(editBlockId: _doc.blocks[i].id),
+              onEnter: () {
+"""
+          replacement = """              onMoveDown: () => _moveBlock(_doc.blocks[i].id, 1),
+              onDuplicate: () => _duplicateBlock(_doc.blocks[i].id),
+              onCreatePlanFromText: _createPlanFromText,
+              onAddImage: _pickImage,
+              onAddDrawing: () => _openDrawing(),
+              onEditDrawing: () => _openDrawing(editBlockId: _doc.blocks[i].id),
+              onEnter: () {
+"""
+          if old not in s:
+              raise SystemExit('interaction source snippet not found')
+          s = s.replace(old, new, 1)
+          old_replacement = """                  onMoveDown: () => _moveBlock(b.id, 1),
+                  onDuplicate: () => _duplicateBlock(b.id),
+                  onCreatePlanFromText: _createPlanFromText,
+                  onAddImage: _pickImage,
+                  onAddDrawing: () => _openDrawing(),
+                  onEditDrawing: () => _openDrawing(editBlockId: b.id),
+                  onEnter: () {
+"""
+          if old_replacement not in s:
+              raise SystemExit('interaction replacement snippet not found')
+          s = s.replace(old_replacement, replacement, 1)
+          p.write_text(s, encoding='utf-8')
+          PY
+
       - name: Apply interaction patch
         id: patch
         continue-on-error: true
