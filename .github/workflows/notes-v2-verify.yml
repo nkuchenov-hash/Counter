@@ -1,4 +1,4 @@
-name: Notes v2 verification
+name: Notes v2 final verification
 
 on:
   pull_request:
@@ -7,14 +7,18 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   verify:
+    if: ${{ github.actor != 'github-actions[bot]' }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+      - name: Checkout feature branch
         uses: actions/checkout@v4
+        with:
+          ref: feature/notes-editor-tools-v2
+          fetch-depth: 0
 
       - name: Set up Flutter 3.41.6
         uses: subosito/flutter-action@v2
@@ -28,6 +32,23 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Apply final Notes actions
+        run: python scripts/manual/apply_notes_v2_final_actions.py
+
+      - name: Format changed Dart
+        run: |
+          dart format \
+            lib/features/notes/widgets/note_editor_block_widgets.dart \
+            lib/features/notes/widgets/notes_editor_tools.dart \
+            lib/l10n/langs/en.dart \
+            lib/l10n/langs/ru.dart
+
+      - name: Strict architecture guard
+        run: pwsh -NoProfile -NonInteractive -File ./scripts/audit/architecture_guard.ps1 -Strict
+
+      - name: Check whitespace
+        run: git diff --check
+
       - name: Analyze
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
 
@@ -38,3 +59,16 @@ jobs:
 
       - name: Build web
         run: flutter build web --release --base-href="/Counter/" --no-tree-shake-icons --no-wasm-dry-run --pwa-strategy=none
+
+      - name: Remove temporary verification tooling
+        run: |
+          rm scripts/manual/apply_notes_v2_final_actions.py
+          rm .github/workflows/notes-v2-verify.yml
+
+      - name: Commit verified final actions
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Add Notes selection plans and active undo redo [notes-v2-final-actions]"
+          git push origin HEAD:feature/notes-editor-tools-v2
