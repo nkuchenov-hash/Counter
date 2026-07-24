@@ -1,44 +1,42 @@
-// Part of lib/data/models.dart — Note block document model (Life OS Notes v1).
+// Part of lib/data/models.dart — Life OS Notes block document model (v2).
 //
-// A versioned block-document envelope serialized into the existing
-// `plans.notes_delta` JSON field. Every note is an ordered list of typed
-// blocks (paragraph / checklist / heading / image / drawing). Legacy Quill
-// Delta notes are converted on read; the new format is written back on the
-// first successful user edit.
+// Serialized into the existing `plans.notes_delta` JSON field. V2 separates
+// block structure from inline text marks while preserving the v1 public API so
+// the current production editor and legacy notes continue to work during the
+// staged editor-tools rollout.
 //
-// Pure data/serialization code. No Flutter, no PocketBase, no UI imports.
+// Pure data/serialization code. No Flutter widgets, PocketBase, or UI imports.
 
 part of '../models.dart';
 
-/// Versioned block-document envelope format identifier.
-const String kLifeOsNotesBlocksFormat = 'lifeos_notes_blocks_v1';
+const String kLifeOsNotesBlocksV1Format = 'lifeos_notes_blocks_v1';
+const String kLifeOsNotesBlocksFormat = 'lifeos_notes_blocks_v2';
+const int kLifeOsNotesBlocksVersion = 2;
 
-/// Current document version. Bump when the block schema changes in a way the
-/// parser cannot safely ignore.
-const int kLifeOsNotesBlocksVersion = 1;
+/// Guards against runaway base64 image/drawing payloads.
+const int kLifeOsNotesMaxPayloadBytes = 4 * 1024 * 1024;
+const int kLifeOsNotesMaxAssetBytes = 2 * 1024 * 1024;
 
-/// Maximum total payload size (encoded JSON string) we allow for a single
-/// note's notes_delta. Guards against runaway base64 image/drawing blobs
-/// bricking PocketBase rows or the local cache.
-const int kLifeOsNotesMaxPayloadBytes = 4 * 1024 * 1024; // 4 MiB
-
-/// Soft per-asset (image or drawing) size cap on the raw base64 data URL.
-/// Assets larger than this are rejected before insertion.
-const int kLifeOsNotesMaxAssetBytes = 2 * 1024 * 1024; // 2 MiB
-
-String _generateBlockId() {
-  final ms = DateTime.now().microsecondsSinceEpoch;
-  final r = math.Random().nextInt(0xFFFFFF);
-  return 'blk_${ms.toRadixString(16)}_${r.toRadixString(16)}';
-}
-
-/// Block kind. Each block carries only the fields relevant to its type.
+/// Every document block has a stable id and a single structural type.
 enum NoteBlockType {
   paragraph,
   checklist,
   heading,
+  bulletedList,
+  numberedList,
+  quote,
+  callout,
+  divider,
+  table,
   image,
-  drawing;
+  drawing,
+  linkCard,
+  codeBlock,
+  collapsible,
+  planReference,
+  recordReference,
+  noteReference,
+  categoryReference;
 
   static NoteBlockType fromString(String? raw) {
     switch (raw) {
@@ -48,88 +46,188 @@ enum NoteBlockType {
         return NoteBlockType.checklist;
       case 'heading':
         return NoteBlockType.heading;
+      case 'bulletedList':
+      case 'bulleted_list':
+      case 'bullet':
+        return NoteBlockType.bulletedList;
+      case 'numberedList':
+      case 'numbered_list':
+      case 'ordered':
+        return NoteBlockType.numberedList;
+      case 'quote':
+        return NoteBlockType.quote;
+      case 'callout':
+        return NoteBlockType.callout;
+      case 'divider':
+        return NoteBlockType.divider;
+      case 'table':
+        return NoteBlockType.table;
       case 'image':
         return NoteBlockType.image;
       case 'drawing':
         return NoteBlockType.drawing;
+      case 'linkCard':
+      case 'link_card':
+      case 'link':
+        return NoteBlockType.linkCard;
+      case 'codeBlock':
+      case 'code_block':
+      case 'code':
+        return NoteBlockType.codeBlock;
+      case 'collapsible':
+      case 'toggle':
+        return NoteBlockType.collapsible;
+      case 'planReference':
+      case 'plan_reference':
+        return NoteBlockType.planReference;
+      case 'recordReference':
+      case 'record_reference':
+        return NoteBlockType.recordReference;
+      case 'noteReference':
+      case 'note_reference':
+        return NoteBlockType.noteReference;
+      case 'categoryReference':
+      case 'category_reference':
+        return NoteBlockType.categoryReference;
       default:
         return NoteBlockType.paragraph;
     }
   }
 
   String get wire => name;
+
+  bool get isTextual {
+    switch (this) {
+      case NoteBlockType.paragraph:
+      case NoteBlockType.checklist:
+      case NoteBlockType.heading:
+      case NoteBlockType.bulletedList:
+      case NoteBlockType.numberedList:
+      case NoteBlockType.quote:
+      case NoteBlockType.callout:
+      case NoteBlockType.codeBlock:
+      case NoteBlockType.collapsible:
+        return true;
+      case NoteBlockType.divider:
+      case NoteBlockType.table:
+      case NoteBlockType.image:
+      case NoteBlockType.drawing:
+      case NoteBlockType.linkCard:
+      case NoteBlockType.planReference:
+      case NoteBlockType.recordReference:
+      case NoteBlockType.noteReference:
+      case NoteBlockType.categoryReference:
+        return false;
+    }
+  }
 }
 
-/// A single block inside a note document.
-///
-/// Ids are stable across edits/reorders so the editor can track focus and
-/// animate block moves without relying on list indices.
+/// A single block. Legacy whole-block formatting remains readable/writable
+/// during the transition; v2 editors should use [runs] for inline marks.
 @immutable
 class NoteBlock {
   const NoteBlock({
     required this.id,
     required this.type,
     this.text = '',
+    this.runs = const <NoteTextRun>[],
     this.checked = false,
     this.level = 2,
+    this.indent = 0,
+    this.alignment,
     this.bold = false,
     this.italic = false,
     this.underline = false,
     this.color,
     this.imageData,
     this.drawingData,
+    this.caption,
+    this.mediaAlignment,
+    this.callout,
+    this.table,
+    this.linkData,
+    this.reference,
+    this.codeLanguage,
+    this.collapsed = false,
   });
 
   final String id;
   final NoteBlockType type;
-
-  /// Paragraph / checklist / heading text.
   final String text;
-
-  /// Checklist only.
+  final List<NoteTextRun> runs;
   final bool checked;
-
-  /// Heading only (1/2/3).
   final int level;
+  final int indent;
+  final String? alignment;
 
-  /// Whole-block formatting (v1 — matches GLM source model).
+  /// V1 compatibility fields. New inline formatting belongs in [runs].
   final bool bold;
   final bool italic;
   final bool underline;
-
-  /// Whole-block text color. `null` = auto/default theme color.
   final String? color;
 
-  /// Image only — base64 data URL (e.g. `data:image/jpeg;base64,...`).
   final String? imageData;
-
-  /// Drawing only — base64 PNG data URL.
   final String? drawingData;
+  final String? caption;
+  final String? mediaAlignment;
+  final NoteCalloutData? callout;
+  final NoteTableData? table;
+  final NoteLinkData? linkData;
+  final NoteReferenceData? reference;
+  final String? codeLanguage;
+  final bool collapsed;
 
-  /// Whether this block carries any user-visible text content.
-  bool get hasText =>
-      type == NoteBlockType.paragraph ||
-      type == NoteBlockType.checklist ||
-      type == NoteBlockType.heading;
+  bool get hasText => type.isTextual;
+  String get effectiveText =>
+      runs.isEmpty ? text : runs.map((run) => run.text).join();
+
+  List<NoteTextRun> get effectiveRuns {
+    if (runs.isNotEmpty) return runs;
+    if (text.isEmpty) return const <NoteTextRun>[];
+    final marks = NoteInlineMarks(
+      bold: bold,
+      italic: italic,
+      underline: underline,
+      textColor: color,
+    );
+    return <NoteTextRun>[NoteTextRun(text: text, marks: marks)];
+  }
 
   NoteBlock copyWith({
     NoteBlockType? type,
     String? text,
+    List<NoteTextRun>? runs,
     bool? checked,
     int? level,
+    int? indent,
+    Object? alignment = _sentinel,
     bool? bold,
     bool? italic,
     bool? underline,
     Object? color = _sentinel,
     Object? imageData = _sentinel,
     Object? drawingData = _sentinel,
+    Object? caption = _sentinel,
+    Object? mediaAlignment = _sentinel,
+    Object? callout = _sentinel,
+    Object? table = _sentinel,
+    Object? linkData = _sentinel,
+    Object? reference = _sentinel,
+    Object? codeLanguage = _sentinel,
+    bool? collapsed,
   }) {
+    final nextRuns = runs ?? (text != null ? const <NoteTextRun>[] : this.runs);
     return NoteBlock(
       id: id,
       type: type ?? this.type,
       text: text ?? this.text,
+      runs: nextRuns,
       checked: checked ?? this.checked,
       level: level ?? this.level,
+      indent: indent ?? this.indent,
+      alignment: identical(alignment, _sentinel)
+          ? this.alignment
+          : alignment as String?,
       bold: bold ?? this.bold,
       italic: italic ?? this.italic,
       underline: underline ?? this.underline,
@@ -140,54 +238,130 @@ class NoteBlock {
       drawingData: identical(drawingData, _sentinel)
           ? this.drawingData
           : drawingData as String?,
+      caption:
+          identical(caption, _sentinel) ? this.caption : caption as String?,
+      mediaAlignment: identical(mediaAlignment, _sentinel)
+          ? this.mediaAlignment
+          : mediaAlignment as String?,
+      callout: identical(callout, _sentinel)
+          ? this.callout
+          : callout as NoteCalloutData?,
+      table: identical(table, _sentinel)
+          ? this.table
+          : table as NoteTableData?,
+      linkData: identical(linkData, _sentinel)
+          ? this.linkData
+          : linkData as NoteLinkData?,
+      reference: identical(reference, _sentinel)
+          ? this.reference
+          : reference as NoteReferenceData?,
+      codeLanguage: identical(codeLanguage, _sentinel)
+          ? this.codeLanguage
+          : codeLanguage as String?,
+      collapsed: collapsed ?? this.collapsed,
     );
   }
 
   Map<String, dynamic> toJson() {
-    final m = <String, dynamic>{
-      'id': id,
-      'type': type.wire,
-    };
-    switch (type) {
-      case NoteBlockType.paragraph:
-      case NoteBlockType.checklist:
-      case NoteBlockType.heading:
-        m['text'] = text;
-        if (type == NoteBlockType.checklist) m['checked'] = checked;
-        if (type == NoteBlockType.heading) m['level'] = level.clamp(1, 3);
-        if (bold) m['bold'] = true;
-        if (italic) m['italic'] = true;
-        if (underline) m['underline'] = true;
-        if (color != null) m['color'] = color;
-        break;
-      case NoteBlockType.image:
-        if (imageData != null) m['imageData'] = imageData;
-        break;
-      case NoteBlockType.drawing:
-        if (drawingData != null) m['drawingData'] = drawingData;
-        break;
+    final json = <String, dynamic>{'id': id, 'type': type.wire};
+    if (hasText) {
+      final encodedRuns = effectiveRuns;
+      if (encodedRuns.isNotEmpty) {
+        json['runs'] = encodedRuns.map((run) => run.toJson()).toList();
+        json['text'] = effectiveText;
+      } else {
+        json['text'] = text;
+      }
+      if (type == NoteBlockType.checklist) json['checked'] = checked;
+      if (type == NoteBlockType.heading) json['level'] = level.clamp(1, 3);
+      if (indent > 0) json['indent'] = indent;
+      if (alignment != null) json['alignment'] = alignment;
+      if (type == NoteBlockType.callout && callout != null) {
+        json['callout'] = callout!.toJson();
+      }
+      if (type == NoteBlockType.codeBlock && codeLanguage != null) {
+        json['codeLanguage'] = codeLanguage;
+      }
+      if (type == NoteBlockType.collapsible) json['collapsed'] = collapsed;
     }
-    return m;
+    if (type == NoteBlockType.image && imageData != null) {
+      json['imageData'] = imageData;
+    }
+    if (type == NoteBlockType.drawing && drawingData != null) {
+      json['drawingData'] = drawingData;
+    }
+    if ((type == NoteBlockType.image || type == NoteBlockType.drawing) &&
+        caption != null) {
+      json['caption'] = caption;
+    }
+    if ((type == NoteBlockType.image || type == NoteBlockType.drawing) &&
+        mediaAlignment != null) {
+      json['mediaAlignment'] = mediaAlignment;
+    }
+    if (type == NoteBlockType.table && table != null) {
+      json['table'] = table!.toJson();
+    }
+    if (type == NoteBlockType.linkCard && linkData != null) {
+      json['link'] = linkData!.toJson();
+    }
+    if (_isReferenceType(type) && reference != null) {
+      json['reference'] = reference!.toJson();
+    }
+    return json;
   }
 
   factory NoteBlock.fromJson(Map<String, dynamic> json) {
     final type = NoteBlockType.fromString(json['type']?.toString());
+    final runs = <NoteTextRun>[];
+    final rawRuns = json['runs'];
+    if (rawRuns is List) {
+      for (final rawRun in rawRuns) {
+        if (rawRun is Map<String, dynamic>) {
+          runs.add(NoteTextRun.fromJson(rawRun));
+        }
+      }
+    }
+    final legacyText = json['text']?.toString() ?? '';
+    final text = runs.isEmpty
+        ? legacyText
+        : runs.map((run) => run.text).join();
+    final calloutRaw = json['callout'];
+    final tableRaw = json['table'];
+    final linkRaw = json['link'];
+    final referenceRaw = json['reference'];
     return NoteBlock(
       id: (json['id']?.toString().trim().isNotEmpty ?? false)
           ? json['id'].toString()
           : generateNoteBlockId(),
       type: type,
-      text: (json['text']?.toString() ?? ''),
+      text: text,
+      runs: runs,
       checked: _jsonBool(json['checked'], false),
-      level: (_jsonInt(json['level'], 2)).clamp(1, 3),
+      level: _jsonInt(json['level'], 2).clamp(1, 3),
+      indent: _jsonInt(json['indent'], 0).clamp(0, 8),
+      alignment: _cleanJsonString(json['alignment']),
       bold: _jsonBool(json['bold'], false),
       italic: _jsonBool(json['italic'], false),
       underline: _jsonBool(json['underline'], false),
-      color: json['color']?.toString().trim().isEmpty == true
-          ? null
-          : json['color']?.toString(),
-      imageData: json['imageData']?.toString(),
-      drawingData: json['drawingData']?.toString(),
+      color: _cleanJsonString(json['color']),
+      imageData: _cleanJsonString(json['imageData']),
+      drawingData: _cleanJsonString(json['drawingData']),
+      caption: _cleanJsonString(json['caption']),
+      mediaAlignment: _cleanJsonString(json['mediaAlignment']),
+      callout: calloutRaw is Map<String, dynamic>
+          ? NoteCalloutData.fromJson(calloutRaw)
+          : null,
+      table: tableRaw is Map<String, dynamic>
+          ? NoteTableData.fromJson(tableRaw)
+          : null,
+      linkData: linkRaw is Map<String, dynamic>
+          ? NoteLinkData.fromJson(linkRaw)
+          : null,
+      reference: referenceRaw is Map<String, dynamic>
+          ? NoteReferenceData.fromJson(referenceRaw)
+          : null,
+      codeLanguage: _cleanJsonString(json['codeLanguage']),
+      collapsed: _jsonBool(json['collapsed'], false),
     );
   }
 
@@ -201,7 +375,6 @@ class NoteBlock {
 
 const Object _sentinel = Object();
 
-/// Per-note metadata stored in the document envelope.
 @immutable
 class NoteDocumentMeta {
   const NoteDocumentMeta({this.pinned = false});
@@ -217,11 +390,6 @@ class NoteDocumentMeta {
       NoteDocumentMeta(pinned: _jsonBool(json['pinned'], false));
 }
 
-/// Versioned block-document envelope.
-///
-/// Serialized into `plans.notes_delta`. The Brain owns the lifecycle; the
-/// editor/library parse via [NoteDocument.tryParse] once and then operate on
-/// the typed model.
 @immutable
 class NoteDocument {
   const NoteDocument({
@@ -236,53 +404,61 @@ class NoteDocument {
   final NoteDocumentMeta meta;
   final List<NoteBlock> blocks;
 
-  bool get isEmpty => blocks.isEmpty || blocks.every((b) => _isBlank(b));
+  bool get isEmpty => blocks.isEmpty || blocks.every(_isBlank);
 
-  static bool _isBlank(NoteBlock b) {
-    switch (b.type) {
+  static bool _isBlank(NoteBlock block) {
+    if (block.hasText) return block.effectiveText.trim().isEmpty;
+    switch (block.type) {
+      case NoteBlockType.divider:
+        return false;
+      case NoteBlockType.table:
+        return block.table == null || block.table!.cells.isEmpty;
+      case NoteBlockType.image:
+        return (block.imageData ?? '').isEmpty;
+      case NoteBlockType.drawing:
+        return (block.drawingData ?? '').isEmpty;
+      case NoteBlockType.linkCard:
+        return (block.linkData?.url ?? '').isEmpty;
+      case NoteBlockType.planReference:
+      case NoteBlockType.recordReference:
+      case NoteBlockType.noteReference:
+      case NoteBlockType.categoryReference:
+        return (block.reference?.targetId ?? '').isEmpty;
       case NoteBlockType.paragraph:
       case NoteBlockType.checklist:
       case NoteBlockType.heading:
-        return b.text.trim().isEmpty;
-      case NoteBlockType.image:
-        return (b.imageData ?? '').isEmpty;
-      case NoteBlockType.drawing:
-        return (b.drawingData ?? '').isEmpty;
+      case NoteBlockType.bulletedList:
+      case NoteBlockType.numberedList:
+      case NoteBlockType.quote:
+      case NoteBlockType.callout:
+      case NoteBlockType.codeBlock:
+      case NoteBlockType.collapsible:
+        return block.effectiveText.trim().isEmpty;
     }
   }
 
   NoteDocument copyWith({
     List<NoteBlock>? blocks,
     NoteDocumentMeta? meta,
-  }) {
-    return NoteDocument(
-      format: format,
-      version: version,
-      meta: meta ?? this.meta,
-      blocks: blocks ?? this.blocks,
-    );
-  }
+    String? format,
+    int? version,
+  }) =>
+      NoteDocument(
+        format: format ?? this.format,
+        version: version ?? this.version,
+        meta: meta ?? this.meta,
+        blocks: blocks ?? this.blocks,
+      );
 
   Map<String, dynamic> toJson() => {
-        'format': format,
-        'version': version,
+        'format': kLifeOsNotesBlocksFormat,
+        'version': kLifeOsNotesBlocksVersion,
         'meta': meta.toJson(),
-        'blocks': blocks.map((b) => b.toJson()).toList(),
+        'blocks': blocks.map((block) => block.toJson()).toList(),
       };
 
-  /// Encodes the document to a JSON string suitable for `plans.notes_delta`.
   String encode() => jsonEncode(toJson());
 
-  /// Attempts to parse a `notes_delta` payload into a NoteDocument.
-  ///
-  /// Accepts:
-  ///  - the new `lifeos_notes_blocks_v1` envelope;
-  ///  - a legacy Quill Delta (ops list) — converted into paragraph/checklist/
-  ///    heading blocks;
-  ///  - `null` / empty / malformed — returns an empty document.
-  ///
-  /// Also accepts the legacy `notes_plain` string and a legacy `checklist` so
-  /// the caller can fold them in when the delta alone is empty.
   factory NoteDocument.tryParse({
     String? notesDeltaJson,
     String? notesPlain,
@@ -299,38 +475,34 @@ class NoteDocument {
       return _fromLegacyPlainAndChecklist(notesPlain, checklist);
     }
 
-    // New envelope?
     if (decoded is Map<String, dynamic> &&
-        decoded['format'] == kLifeOsNotesBlocksFormat) {
-      final blocksRaw = decoded['blocks'];
+        (decoded['format'] == kLifeOsNotesBlocksFormat ||
+            decoded['format'] == kLifeOsNotesBlocksV1Format)) {
       final blocks = <NoteBlock>[];
-      if (blocksRaw is List) {
-        for (final b in blocksRaw) {
-          if (b is Map<String, dynamic>) {
-            blocks.add(NoteBlock.fromJson(b));
+      final rawBlocks = decoded['blocks'];
+      if (rawBlocks is List) {
+        for (final rawBlock in rawBlocks) {
+          if (rawBlock is Map<String, dynamic>) {
+            blocks.add(NoteBlock.fromJson(rawBlock));
           }
         }
       }
-      final metaRaw = decoded['meta'];
-      final meta = metaRaw is Map<String, dynamic>
-          ? NoteDocumentMeta.fromJson(metaRaw)
-          : const NoteDocumentMeta();
+      final rawMeta = decoded['meta'];
       return NoteDocument(
         format: kLifeOsNotesBlocksFormat,
-        version: _jsonInt(decoded['version'], kLifeOsNotesBlocksVersion),
-        meta: meta,
+        version: kLifeOsNotesBlocksVersion,
+        meta: rawMeta is Map<String, dynamic>
+            ? NoteDocumentMeta.fromJson(rawMeta)
+            : const NoteDocumentMeta(),
         blocks: blocks,
       );
     }
 
-    // Legacy Quill Delta: a list (or {"ops": [...]}) of ops.
     if (decoded is List || (decoded is Map && decoded['ops'] is List)) {
-      final doc = _fromLegacyQuillDelta(decoded);
-      // Fold in checklist/plain if the delta produced nothing useful.
-      if (doc.blocks.isEmpty) {
-        return _fromLegacyPlainAndChecklist(notesPlain, checklist);
-      }
-      return doc;
+      final document = _fromLegacyQuillDelta(decoded);
+      return document.blocks.isEmpty
+          ? _fromLegacyPlainAndChecklist(notesPlain, checklist)
+          : document;
     }
 
     return _fromLegacyPlainAndChecklist(notesPlain, checklist);
@@ -341,9 +513,9 @@ class NoteDocument {
     List<Map<String, dynamic>>? checklist,
   ) {
     final blocks = <NoteBlock>[];
-    if (checklist != null && checklist.isNotEmpty) {
+    if (checklist != null) {
       for (final item in checklist) {
-        final text = (item['text']?.toString() ?? '').trim();
+        final text = item['text']?.toString().trim() ?? '';
         final checked = _jsonBool(item['done'], false);
         if (text.isEmpty && !checked) continue;
         blocks.add(NoteBlock(
@@ -354,39 +526,34 @@ class NoteDocument {
         ));
       }
     }
-    final plain = (notesPlain ?? '').trim();
-    if (plain.isNotEmpty) {
-      // Strip the backlog-idea link prefix and split into paragraph blocks
-      // by line so multi-line notes round-trip cleanly.
-      var body = plain;
-      const prefix = 'LIFEOS_LINK::';
-      if (body.startsWith(prefix)) {
-        body = body.substring(prefix.length).trim();
-        final nl = body.indexOf('\n');
-        if (nl >= 0) {
-          final firstLine = body.substring(0, nl).trim();
-          if (firstLine.startsWith('http://') ||
-              firstLine.startsWith('https://')) {
-            body = body.substring(nl + 1).trim();
-          }
+
+    var body = notesPlain?.trim() ?? '';
+    const linkPrefix = 'LIFEOS_LINK::';
+    if (body.startsWith(linkPrefix)) {
+      body = body.substring(linkPrefix.length).trim();
+      final newline = body.indexOf('\n');
+      if (newline >= 0) {
+        final firstLine = body.substring(0, newline).trim();
+        if (firstLine.startsWith('http://') ||
+            firstLine.startsWith('https://')) {
+          body = body.substring(newline + 1).trim();
         }
       }
-      for (final line in body.split('\n')) {
-        final t = line.trim();
-        if (t.isEmpty) continue;
-        blocks.add(NoteBlock(
-          id: generateNoteBlockId(),
-          type: NoteBlockType.paragraph,
-          text: t,
-        ));
-      }
+    }
+    for (final line in body.split('\n')) {
+      final text = line.trim();
+      if (text.isEmpty) continue;
+      blocks.add(NoteBlock(
+        id: generateNoteBlockId(),
+        type: NoteBlockType.paragraph,
+        text: text,
+      ));
     }
     return NoteDocument(blocks: blocks);
   }
 
-  /// Best-effort conversion of a legacy Quill Delta into NoteBlocks.
   static NoteDocument _fromLegacyQuillDelta(dynamic decoded) {
-    List ops;
+    final List ops;
     if (decoded is List) {
       ops = decoded;
     } else if (decoded is Map && decoded['ops'] is List) {
@@ -397,168 +564,144 @@ class NoteDocument {
 
     final blocks = <NoteBlock>[];
     final buffer = StringBuffer();
-    bool bold = false;
-    bool italic = false;
-    bool underline = false;
-    String? color;
-    String? blockType; // 'list' bullet/ordered, 'header' level
+    final runs = <NoteTextRun>[];
+    String? lineBlockType;
+    int headingLevel = 2;
+
+    void appendRun(String text, Map? attributes) {
+      if (text.isEmpty) return;
+      final marks = NoteInlineMarks(
+        bold: attributes?['bold'] == true,
+        italic: attributes?['italic'] == true,
+        underline: attributes?['underline'] == true,
+        strike: attributes?['strike'] == true,
+        textColor: _cleanJsonString(attributes?['color']),
+        highlightColor: _cleanJsonString(attributes?['background']),
+        link: _cleanJsonString(attributes?['link']),
+        inlineCode: attributes?['code'] == true,
+      );
+      buffer.write(text);
+      runs.add(NoteTextRun(text: text, marks: marks));
+    }
 
     void flush() {
       final text = buffer.toString();
-      if (text.isEmpty && blockType == null) {
-        buffer.clear();
+      if (text.isEmpty && lineBlockType == null) {
+        runs.clear();
         return;
       }
-      if (blockType == 'list') {
+      var type = NoteBlockType.paragraph;
+      if (lineBlockType == 'checklist') type = NoteBlockType.checklist;
+      if (lineBlockType == 'bulleted') type = NoteBlockType.bulletedList;
+      if (lineBlockType == 'numbered') type = NoteBlockType.numberedList;
+      if (lineBlockType == 'heading') type = NoteBlockType.heading;
+      if (lineBlockType == 'quote') type = NoteBlockType.quote;
+      if (lineBlockType == 'code') type = NoteBlockType.codeBlock;
+      if (text.isNotEmpty || type != NoteBlockType.paragraph) {
         blocks.add(NoteBlock(
           id: generateNoteBlockId(),
-          type: NoteBlockType.checklist,
+          type: type,
           text: text,
-          checked: false,
-          bold: bold,
-          italic: italic,
-          underline: underline,
-          color: color,
+          runs: List<NoteTextRun>.unmodifiable(runs),
+          level: headingLevel,
         ));
-      } else if (blockType == 'header') {
-        blocks.add(NoteBlock(
-          id: generateNoteBlockId(),
-          type: NoteBlockType.heading,
-          text: text,
-          level: 2,
-          bold: bold,
-          italic: italic,
-          underline: underline,
-          color: color,
-        ));
-      } else {
-        if (text.isNotEmpty) {
-          blocks.add(NoteBlock(
-            id: generateNoteBlockId(),
-            type: NoteBlockType.paragraph,
-            text: text,
-            bold: bold,
-            italic: italic,
-            underline: underline,
-            color: color,
-          ));
-        }
       }
       buffer.clear();
-      bold = false;
-      italic = false;
-      underline = false;
-      color = null;
-      blockType = null;
+      runs.clear();
+      lineBlockType = null;
+      headingLevel = 2;
     }
 
     for (final rawOp in ops) {
       if (rawOp is! Map) continue;
       final insert = rawOp['insert'];
-      if (insert == null) {
-        // Pure format op (rare). Apply attributes to the buffer state.
-        final attrs = rawOp['attributes'];
-        if (attrs is Map) {
-          if (attrs['bold'] == true) bold = true;
-          if (attrs['italic'] == true) italic = true;
-          if (attrs['underline'] == true) underline = true;
-          if (attrs['color'] is String) color = attrs['color'].toString();
-        }
-        continue;
+      if (insert is! String) continue;
+      final attributes = rawOp['attributes'] is Map
+          ? rawOp['attributes'] as Map
+          : null;
+      final list = attributes?['list']?.toString();
+      if (list == 'checked' || list == 'unchecked') {
+        lineBlockType = 'checklist';
+      } else if (list == 'bullet') {
+        lineBlockType = 'bulleted';
+      } else if (list == 'ordered') {
+        lineBlockType = 'numbered';
       }
-      final s = insert.toString();
-      final attrs = rawOp['attributes'];
-      bool lineBold = bold;
-      bool lineItalic = italic;
-      bool lineUnderline = underline;
-      String? lineColor = color;
-      String? lineBlockType = blockType;
-      if (attrs is Map) {
-        if (attrs['bold'] == true) lineBold = true;
-        if (attrs['italic'] == true) lineItalic = true;
-        if (attrs['underline'] == true) lineUnderline = true;
-        if (attrs['color'] is String) lineColor = attrs['color'].toString();
-        final listAttr = attrs['list'];
-        if (listAttr is String && listAttr.isNotEmpty) {
-          lineBlockType = 'list';
-        }
-        final headerAttr = attrs['header'];
-        if (headerAttr is int && headerAttr > 0) {
-          lineBlockType = 'header';
-        }
+      final header = attributes?['header'];
+      if (header is int && header >= 1 && header <= 3) {
+        lineBlockType = 'heading';
+        headingLevel = header;
       }
+      if (attributes?['blockquote'] == true) lineBlockType = 'quote';
+      if (attributes?['code-block'] == true) lineBlockType = 'code';
 
-      if (s.contains('\n')) {
-        // Split on newlines: each segment before a \n is a block.
-        final parts = s.split('\n');
-        for (var i = 0; i < parts.length - 1; i++) {
-          buffer.write(parts[i]);
-          bold = lineBold;
-          italic = lineItalic;
-          underline = lineUnderline;
-          color = lineColor;
-          blockType = lineBlockType;
-          flush();
-        }
-        final last = parts.last;
-        if (last.isNotEmpty) {
-          buffer.write(last);
-        }
-      } else {
-        buffer.write(s);
+      final parts = insert.split('\n');
+      for (var index = 0; index < parts.length; index++) {
+        appendRun(parts[index], attributes);
+        if (index < parts.length - 1) flush();
       }
     }
     flush();
     return NoteDocument(blocks: blocks);
   }
 
-  // ---- Projections (deterministic mirrors) -------------------------------
-
-  /// Plain-text projection of title + text blocks, used to keep
-  /// `plans.notes_plain` synchronized for search and legacy display.
-  /// [title] is optional and prepended on its own line when non-empty.
   String toPlainText({String? title}) {
-    final buf = StringBuffer();
-    final t = (title ?? '').trim();
-    if (t.isNotEmpty) {
-      buf.write(t);
-      buf.write('\n');
+    final buffer = StringBuffer();
+    final cleanTitle = title?.trim() ?? '';
+    if (cleanTitle.isNotEmpty) buffer.writeln(cleanTitle);
+    for (final block in blocks) {
+      String text = '';
+      if (block.hasText) {
+        text = block.effectiveText.trim();
+      } else if (block.type == NoteBlockType.table && block.table != null) {
+        text = block.table!.cells
+            .map(
+              (row) => row
+                  .map((cell) => cell.trim())
+                  .where((cell) => cell.isNotEmpty)
+                  .join(' | '),
+            )
+            .where((row) => row.isNotEmpty)
+            .join('\n');
+      } else if (block.type == NoteBlockType.linkCard) {
+        text = <String?>[block.linkData?.title, block.linkData?.url]
+            .whereType<String>()
+            .where((value) => value.trim().isNotEmpty)
+            .join(' — ');
+      } else if (_isReferenceType(block.type)) {
+        text = block.reference?.label ?? block.reference?.targetId ?? '';
+      } else if (block.caption != null) {
+        text = block.caption!.trim();
+      }
+      if (text.isEmpty) continue;
+      if (buffer.isNotEmpty && !buffer.toString().endsWith('\n')) {
+        buffer.writeln();
+      }
+      buffer.writeln(text);
     }
-    for (final b in blocks) {
-      if (!b.hasText) continue;
-      final txt = b.text.trim();
-      if (txt.isEmpty) continue;
-      if (buf.isNotEmpty) buf.write('\n');
-      buf.write(txt);
-    }
-    return buf.toString().trim();
+    return buffer.toString().trim();
   }
 
-  /// Compatibility projection of checklist blocks into the legacy
-  /// `plans.checklist` JSON array shape (`[{text, done}]`).
-  List<Map<String, dynamic>> toChecklistProjection() {
-    final out = <Map<String, dynamic>>[];
-    for (final b in blocks) {
-      if (b.type != NoteBlockType.checklist) continue;
-      out.add({'text': b.text, 'done': b.checked});
-    }
-    return out;
-  }
+  List<Map<String, dynamic>> toChecklistProjection() => blocks
+      .where((block) => block.type == NoteBlockType.checklist)
+      .map((block) => <String, dynamic>{
+            'text': block.effectiveText,
+            'done': block.checked,
+          })
+      .toList();
 
-  /// Quick stats for library card previews. Computed once per card build,
-  /// never inside scroll hot paths.
   NoteDocumentStats computeStats() {
-    int checklistTotal = 0;
-    int checklistChecked = 0;
-    bool hasImage = false;
-    bool hasDrawing = false;
-    for (final b in blocks) {
-      if (b.type == NoteBlockType.checklist) {
+    var checklistTotal = 0;
+    var checklistChecked = 0;
+    var hasImage = false;
+    var hasDrawing = false;
+    for (final block in blocks) {
+      if (block.type == NoteBlockType.checklist) {
         checklistTotal++;
-        if (b.checked) checklistChecked++;
-      } else if (b.type == NoteBlockType.image) {
+        if (block.checked) checklistChecked++;
+      } else if (block.type == NoteBlockType.image) {
         hasImage = true;
-      } else if (b.type == NoteBlockType.drawing) {
+      } else if (block.type == NoteBlockType.drawing) {
         hasDrawing = true;
       }
     }
@@ -592,13 +735,21 @@ class NoteDocumentStats {
   bool get isEmpty => blockCount == 0;
 }
 
-/// Generates a short, stable, unique-enough block id for local use.
-/// Format: `b-<base36 millis>-<base36 random>`. Stable across the note's
-/// lifetime; only regenerated when a brand-new block is created.
+bool _isReferenceType(NoteBlockType type) =>
+    type == NoteBlockType.planReference ||
+    type == NoteBlockType.recordReference ||
+    type == NoteBlockType.noteReference ||
+    type == NoteBlockType.categoryReference;
+
+String? _cleanJsonString(Object? value) {
+  final text = value?.toString().trim() ?? '';
+  return text.isEmpty ? null : text;
+}
+
 String generateNoteBlockId() {
   final ms = DateTime.now().millisecondsSinceEpoch;
-  final r = _blockIdCounter.nextInt(0x100000);
-  return 'b-${ms.toRadixString(36)}-${r.toRadixString(36).padLeft(4, '0')}';
+  final random = _blockIdCounter.nextInt(0x100000);
+  return 'b-${ms.toRadixString(36)}-${random.toRadixString(36).padLeft(4, '0')}';
 }
 
 final math.Random _blockIdCounter = math.Random();
