@@ -1,14 +1,17 @@
 import 'dart:math' as math;
 
 import 'package:counter/core/widgets/plan_time_task_card.dart';
+import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
+import 'package:counter/data/plan_time_sequential_cascade.dart';
 import 'package:counter/features/planning/planning_day_start_prefs.dart';
 import 'package:counter/features/planning/time_view/planning_time_view_coordinator.dart';
 import 'package:counter/features/planning/time_view/time_view_drag_state.dart';
 
 import 'package:counter/features/planning/time_view/planning_time_view.dart';
 
-extension PlanningTimeViewTimeViewResizeController on PlanningTimeViewCoordinator {
+extension PlanningTimeViewTimeViewResizeController
+    on PlanningTimeViewCoordinator {
   void updateTimelineResizeLabel({
     required int startMin,
     required int endMin,
@@ -85,15 +88,16 @@ extension PlanningTimeViewTimeViewResizeController on PlanningTimeViewCoordinato
       final maxTopForDuration = grid.yForMinutesFromRangeStart(
         math.max(0, timelineResizeOriginEndMin - minDur).toDouble(),
       );
-      final maxTopForCardHeight =
-          fixedBottomPx - kPlanTimeCardMinHeightPx;
+      final maxTopForCardHeight = fixedBottomPx - kPlanTimeCardMinHeightPx;
       final maxTop = math.min(maxTopForDuration, maxTopForCardHeight);
 
       previewTop = (timelineResizeOriginTopPx + deltaPx)
           .clamp(0.0, math.max(0.0, maxTop))
           .toDouble();
-      previewHeight =
-          math.max(kPlanTimeCardMinHeightPx, fixedBottomPx - previewTop);
+      previewHeight = math.max(
+        kPlanTimeCardMinHeightPx,
+        fixedBottomPx - previewTop,
+      );
 
       startMin = snapTimelineMinutes(grid.minutesFromY(previewTop)).round();
       endMin = timelineResizeOriginEndMin;
@@ -111,16 +115,16 @@ extension PlanningTimeViewTimeViewResizeController on PlanningTimeViewCoordinato
       final minBottomForDuration = grid.yForMinutesFromRangeStart(
         (startMin + minDur).toDouble(),
       );
-      final minBottomForCardHeight =
-          previewTop + kPlanTimeCardMinHeightPx;
-      final minBottom =
-          math.max(minBottomForDuration, minBottomForCardHeight);
+      final minBottomForCardHeight = previewTop + kPlanTimeCardMinHeightPx;
+      final minBottom = math.max(minBottomForDuration, minBottomForCardHeight);
       final rawBottom = (originBottom + deltaPx)
           .clamp(minBottom, grid.totalHeightPx)
           .toDouble();
 
-      previewHeight =
-          math.max(kPlanTimeCardMinHeightPx, rawBottom - previewTop);
+      previewHeight = math.max(
+        kPlanTimeCardMinHeightPx,
+        rawBottom - previewTop,
+      );
       endMin = snapTimelineMinutes(grid.minutesFromY(rawBottom)).round();
       if (endMin > maxEndMin) endMin = maxEndMin;
       if (endMin - startMin < minDur) endMin = startMin + minDur;
@@ -169,6 +173,7 @@ extension PlanningTimeViewTimeViewResizeController on PlanningTimeViewCoordinato
   void commitTimelineResize({
     required DateTime planWallDay,
     required int rangeStart,
+    required List<PlanningTask> scheduledInRange,
   }) {
     final task = timelineResizeTask;
     stopHourGridEdgeScroll();
@@ -199,11 +204,22 @@ extension PlanningTimeViewTimeViewResizeController on PlanningTimeViewCoordinato
       planWallDay,
       rangeStart,
     );
+    final resizedTask = task.copyWith(
+      startTime: newStartWall,
+      endDateTime: newEndWall,
+      clearEnd: false,
+    );
+    final resolved = cascadeScheduledPlansAfterManualResize(
+      scheduledTasks: scheduledInRange,
+      resizedTask: resizedTask,
+      resolveDurationMinutes:
+          DatabaseService.instance.resolvePlanDurationMinutesFromTags,
+    );
     host.notifySetState(clearTimelineInteractionState);
-    persistTimelineScheduleChange(
-      task: task,
-      newStartWall: newStartWall,
-      newEndWall: newEndWall,
+    persistTimeViewCascadePatches(
+      resolved: resolved,
+      scheduledBefore: scheduledInRange,
+      commitSource: 'resizeCascade',
     );
   }
 }
