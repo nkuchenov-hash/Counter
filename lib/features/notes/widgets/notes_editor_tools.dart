@@ -45,6 +45,7 @@ class NotesEditorToolsDock extends StatefulWidget {
     required this.onDraw,
     this.onUndo,
     this.onRedo,
+    this.initialPanel = NotesToolsPanel.none,
   });
 
   final NoteBlock? activeBlock;
@@ -59,13 +60,20 @@ class NotesEditorToolsDock extends StatefulWidget {
   final VoidCallback onDraw;
   final VoidCallback? onUndo;
   final VoidCallback? onRedo;
+  final NotesToolsPanel initialPanel;
 
   @override
   State<NotesEditorToolsDock> createState() => _NotesEditorToolsDockState();
 }
 
 class _NotesEditorToolsDockState extends State<NotesEditorToolsDock> {
-  NotesToolsPanel _panel = NotesToolsPanel.none;
+  late NotesToolsPanel _panel;
+
+  @override
+  void initState() {
+    super.initState();
+    _panel = widget.initialPanel;
+  }
 
   void _toggle(NotesToolsPanel panel) {
     setState(() => _panel = _panel == panel ? NotesToolsPanel.none : panel);

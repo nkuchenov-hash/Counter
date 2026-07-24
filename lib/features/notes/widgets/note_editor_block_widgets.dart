@@ -148,13 +148,17 @@ class _NoteEditorBlockRowState extends State<NoteEditorBlockRow> {
   late UndoHistoryController _undoController;
   TextSelection _selection = const TextSelection.collapsed(offset: -1);
   String _slashQuery = '';
+  late String _editingText;
+  late List<NoteTextRun> _editingRuns;
 
   @override
   void initState() {
     super.initState();
+    _editingText = widget.block.effectiveText;
+    _editingRuns = List<NoteTextRun>.unmodifiable(widget.block.effectiveRuns);
     _textController = _NoteRichTextController(
-      text: widget.block.effectiveText,
-      runs: widget.block.effectiveRuns,
+      text: _editingText,
+      runs: _editingRuns,
     )..addListener(_handleControllerState);
     _undoController = UndoHistoryController();
     _focusNode = FocusNode();
@@ -185,14 +189,22 @@ class _NoteEditorBlockRowState extends State<NoteEditorBlockRow> {
   void didUpdateWidget(covariant NoteEditorBlockRow oldWidget) {
     super.didUpdateWidget(oldWidget);
     final nextText = widget.block.effectiveText;
-    final oldText = oldWidget.block.effectiveText;
-    _textController.setRuns(widget.block.effectiveRuns);
-    if (oldWidget.block.id != widget.block.id) {
+    final nextRuns = widget.block.effectiveRuns;
+    final blockChanged = oldWidget.block.id != widget.block.id;
+    final contentChanged =
+        nextText != _editingText ||
+        !_noteRunsEquivalent(nextRuns, _editingRuns);
+    if (blockChanged || contentChanged) {
+      _editingText = nextText;
+      _editingRuns = List<NoteTextRun>.unmodifiable(nextRuns);
+      _textController.setRuns(_editingRuns);
+    }
+    if (blockChanged) {
       _textController.value = TextEditingValue(
         text: nextText,
         selection: TextSelection.collapsed(offset: nextText.length),
       );
-    } else if (nextText != _textController.text && nextText != oldText) {
+    } else if (nextText != _textController.text) {
       final offset = _textController.selection.extentOffset
           .clamp(0, nextText.length)
           .toInt();
@@ -221,10 +233,8 @@ class _NoteEditorBlockRowState extends State<NoteEditorBlockRow> {
       _selection.end <= _textController.text.length;
 
   List<NoteTextRun> _sourceRuns() {
-    final runs = widget.block.effectiveRuns;
-    if (runs.isNotEmpty &&
-        runs.map((run) => run.text).join() == _textController.text) {
-      return runs;
+    if (_editingRuns.map((run) => run.text).join() == _textController.text) {
+      return _editingRuns;
     }
     if (_textController.text.isEmpty) return const <NoteTextRun>[];
     return <NoteTextRun>[NoteTextRun(text: _textController.text)];
@@ -318,8 +328,10 @@ class _NoteEditorBlockRowState extends State<NoteEditorBlockRow> {
         ),
       },
     );
+    _editingRuns = List<NoteTextRun>.unmodifiable(runs);
+    _textController.setRuns(_editingRuns);
     widget.onUpdate(
-      NoteEditorBlockPatch(text: _textController.text, runs: runs),
+      NoteEditorBlockPatch(text: _textController.text, runs: _editingRuns),
     );
   }
 
@@ -362,8 +374,10 @@ class _NoteEditorBlockRowState extends State<NoteEditorBlockRow> {
     final runs = _transformSelection(
       (marks) => marks.copyWith(link: result.isEmpty ? null : result),
     );
+    _editingRuns = List<NoteTextRun>.unmodifiable(runs);
+    _textController.setRuns(_editingRuns);
     widget.onUpdate(
-      NoteEditorBlockPatch(text: _textController.text, runs: runs),
+      NoteEditorBlockPatch(text: _textController.text, runs: _editingRuns),
     );
   }
 
@@ -510,7 +524,7 @@ class _NoteEditorBlockRowState extends State<NoteEditorBlockRow> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (widget.isActive && _hasTextSelection)
-          _SelectionToolbar(
+          NotesSelectionToolbar(
             selectedRuns: _selectedRuns(),
             onBold: () => _toggleInlineMark(_InlineMarkAction.bold),
             onItalic: () => _toggleInlineMark(_InlineMarkAction.italic),
@@ -661,12 +675,19 @@ class _NoteEditorBlockRowState extends State<NoteEditorBlockRow> {
                       contentPadding: EdgeInsets.zero,
                       filled: false,
                     ),
-                    onChanged: (value) => widget.onUpdate(
-                      NoteEditorBlockPatch(
-                        text: value,
-                        runs: const <NoteTextRun>[],
-                      ),
-                    ),
+                    onChanged: (value) {
+                      final nextRuns = applyNoteTextEditToRuns(
+                        oldText: _editingText,
+                        oldRuns: _editingRuns,
+                        newText: value,
+                      );
+                      _editingText = value;
+                      _editingRuns = nextRuns;
+                      _textController.setRuns(nextRuns);
+                      widget.onUpdate(
+                        NoteEditorBlockPatch(text: value, runs: nextRuns),
+                      );
+                    },
                     onSubmitted: (_) => widget.onEnter(),
                   ),
                 ),
@@ -700,8 +721,8 @@ class _NoteEditorBlockRowState extends State<NoteEditorBlockRow> {
 
 enum _InlineMarkAction { bold, italic, underline, strike, highlight }
 
-class _SelectionToolbar extends StatelessWidget {
-  const _SelectionToolbar({
+class NotesSelectionToolbar extends StatelessWidget {
+  const NotesSelectionToolbar({
     required this.selectedRuns,
     required this.onBold,
     required this.onItalic,
@@ -1285,6 +1306,18 @@ TextStyle _styleForMarks(TextStyle base, NoteInlineMarks marks) {
         ? base.decoration
         : TextDecoration.combine(decorations),
   );
+}
+
+bool _noteRunsEquivalent(List<NoteTextRun> a, List<NoteTextRun> b) {
+  if (a.length != b.length) return false;
+  for (var index = 0; index < a.length; index++) {
+    if (a[index].text != b[index].text ||
+        a[index].marks.toJson().toString() !=
+            b[index].marks.toJson().toString()) {
+      return false;
+    }
+  }
+  return true;
 }
 
 List<NoteTextRun> _mergeRuns(List<NoteTextRun> source) {

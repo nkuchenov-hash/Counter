@@ -78,6 +78,19 @@ void main() {
       expect(block.runs.last.marks.underline, isTrue);
       expect(block.runs.last.marks.link, 'https://example.com');
       expect(block.runs.last.marks.highlightColor, '#FFF2A8');
+
+      final editedRuns = applyNoteTextEditToRuns(
+        oldText: block.effectiveText,
+        oldRuns: block.runs,
+        newText: 'Read the verified source',
+      );
+      expect(
+        editedRuns.map((run) => run.text).join(),
+        'Read the verified source',
+      );
+      expect(editedRuns.first.marks.bold, isTrue);
+      expect(editedRuns.last.marks.underline, isTrue);
+      expect(editedRuns.last.marks.link, 'https://example.com');
     });
 
     test('persists table, callout, link, and Life OS references', () {

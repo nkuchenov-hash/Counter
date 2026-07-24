@@ -273,6 +273,112 @@ class NoteReferenceData {
       );
 }
 
+/// Applies a plain-text insertion/deletion/replacement while preserving
+/// unaffected inline marks. Inserted text inherits the marks at the edit point.
+List<NoteTextRun> applyNoteTextEditToRuns({
+  required String oldText,
+  required List<NoteTextRun> oldRuns,
+  required String newText,
+}) {
+  if (oldText == newText) return List<NoteTextRun>.unmodifiable(oldRuns);
+  if (newText.isEmpty) return const <NoteTextRun>[];
+
+  final normalizedRuns =
+      oldRuns.isNotEmpty && oldRuns.map((run) => run.text).join() == oldText
+      ? oldRuns
+      : oldText.isEmpty
+      ? const <NoteTextRun>[]
+      : <NoteTextRun>[NoteTextRun(text: oldText)];
+
+  var prefix = 0;
+  final sharedLength = math.min(oldText.length, newText.length);
+  while (prefix < sharedLength && oldText[prefix] == newText[prefix]) {
+    prefix++;
+  }
+
+  var suffix = 0;
+  while (suffix < oldText.length - prefix &&
+      suffix < newText.length - prefix &&
+      oldText[oldText.length - 1 - suffix] ==
+          newText[newText.length - 1 - suffix]) {
+    suffix++;
+  }
+
+  final oldEditEnd = oldText.length - suffix;
+  final newEditEnd = newText.length - suffix;
+  final inserted = newText.substring(prefix, newEditEnd);
+  final result = <NoteTextRun>[..._sliceNoteRuns(normalizedRuns, 0, prefix)];
+
+  if (inserted.isNotEmpty) {
+    final inheritedOffset = oldEditEnd > prefix
+        ? prefix
+        : prefix > 0
+        ? prefix - 1
+        : oldEditEnd < oldText.length
+        ? oldEditEnd
+        : -1;
+    result.add(
+      NoteTextRun(
+        text: inserted,
+        marks: _noteMarksAt(normalizedRuns, inheritedOffset),
+      ),
+    );
+  }
+
+  result.addAll(_sliceNoteRuns(normalizedRuns, oldEditEnd, oldText.length));
+  return List<NoteTextRun>.unmodifiable(_mergeNoteRuns(result));
+}
+
+List<NoteTextRun> _sliceNoteRuns(List<NoteTextRun> runs, int start, int end) {
+  if (start >= end) return const <NoteTextRun>[];
+  final result = <NoteTextRun>[];
+  var offset = 0;
+  for (final run in runs) {
+    final runStart = offset;
+    final runEnd = offset + run.text.length;
+    final sliceStart = start.clamp(runStart, runEnd).toInt();
+    final sliceEnd = end.clamp(runStart, runEnd).toInt();
+    if (sliceStart < sliceEnd) {
+      result.add(
+        NoteTextRun(
+          text: run.text.substring(sliceStart - runStart, sliceEnd - runStart),
+          marks: run.marks,
+        ),
+      );
+    }
+    offset = runEnd;
+  }
+  return result;
+}
+
+NoteInlineMarks _noteMarksAt(List<NoteTextRun> runs, int offset) {
+  if (offset < 0) return const NoteInlineMarks();
+  var cursor = 0;
+  for (final run in runs) {
+    final end = cursor + run.text.length;
+    if (offset >= cursor && offset < end) return run.marks;
+    cursor = end;
+  }
+  return runs.isEmpty ? const NoteInlineMarks() : runs.last.marks;
+}
+
+List<NoteTextRun> _mergeNoteRuns(List<NoteTextRun> runs) {
+  final result = <NoteTextRun>[];
+  for (final run in runs.where((item) => item.text.isNotEmpty)) {
+    if (result.isNotEmpty &&
+        result.last.marks.toJson().toString() ==
+            run.marks.toJson().toString()) {
+      final previous = result.removeLast();
+      result.add(
+        NoteTextRun(text: '${previous.text}${run.text}', marks: run.marks),
+      );
+    } else {
+      result.add(run);
+    }
+  }
+  return result;
+}
+
 const Object _noteRichUnset = Object();
 
 String? _cleanNoteRichString(Object? value) {
