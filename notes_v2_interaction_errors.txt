@@ -1,0 +1,6 @@
+Traceback (most recent call last):
+  File "/home/runner/work/Counter/Counter/scripts/manual/apply_notes_v2_interactions.py", line 143, in <module>
+    replace(
+  File "/home/runner/work/Counter/Counter/scripts/manual/apply_notes_v2_interactions.py", line 12, in replace
+    raise RuntimeError(f"Expected snippet not found in {path}: {old[:140]!r}")
+RuntimeError: Expected snippet not found in lib/features/notes/note_editor_page.dart: '                  onMoveDown: () => _moveBlock(b.id, 1),\n                  onEditDrawing: () => _openDrawing(editBlockId: b.id),\n           '
