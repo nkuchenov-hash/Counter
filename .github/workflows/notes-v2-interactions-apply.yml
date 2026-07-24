@@ -1,0 +1,83 @@
+name: Apply Notes v2 interactions
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: ${{ github.event_name == 'pull_request' && github.actor != 'github-actions[bot]' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout feature branch
+        uses: actions/checkout@v4
+        with:
+          ref: feature/notes-editor-tools-v2
+          fetch-depth: 0
+
+      - name: Set up Flutter 3.41.6
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.6'
+          channel: stable
+
+      - name: Create env.dart
+        run: cp lib/core/env/env.dart.example lib/core/env/env.dart
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Apply interaction patch
+        run: |
+          python scripts/manual/apply_notes_v2_interactions.py
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('lib/features/notes/widgets/note_editor_block_widgets.dart')
+          s = p.read_text(encoding='utf-8')
+          s = s.replace(
+              'selection.start.clamp(0, _textController.text.length),',
+              'selection.start.clamp(0, _textController.text.length).toInt(),',
+          ).replace(
+              'selection.end.clamp(0, _textController.text.length),',
+              'selection.end.clamp(0, _textController.text.length).toInt(),',
+          )
+          p.write_text(s, encoding='utf-8')
+          PY
+
+      - name: Format changed Dart
+        run: |
+          dart format \
+            lib/features/notes/note_editor_page.dart \
+            lib/features/notes/widgets/note_editor_block_widgets.dart
+
+      - name: Strict architecture guard
+        run: pwsh -NoProfile -NonInteractive -File ./scripts/audit/architecture_guard.ps1 -Strict
+
+      - name: Analyze
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+
+      - name: Focused Notes tests
+        run: |
+          flutter test test/note_document_test.dart
+          flutter test test/note_document_v2_test.dart
+
+      - name: Web build
+        run: flutter build web --release --base-href="/Counter/" --no-tree-shake-icons --no-wasm-dry-run --pwa-strategy=none
+
+      - name: Remove one-shot tooling
+        run: |
+          rm scripts/manual/apply_notes_v2_interactions.py
+          rm .github/workflows/notes-v2-interactions-apply.yml
+
+      - name: Commit verified interactions
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Add Notes v2 undo slash commands and plan actions [notes-v2-interactions]"
+          git push origin HEAD:feature/notes-editor-tools-v2
