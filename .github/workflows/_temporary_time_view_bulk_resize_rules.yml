@@ -28,6 +28,22 @@ jobs:
       - name: Apply scheduling rules
         run: python3 tools/apply_time_view_bulk_resize_rules.py
 
+      - name: Give test plans stable backend ids
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('test/time_view_bulk_resize_rules_test.dart')
+          text = path.read_text(encoding='utf-8')
+          old = "    planRowId: id,\n"
+          new = "    planRowId: id,\n    pocketRecordId: id,\n"
+          if new not in text:
+              if text.count(old) != 1:
+                  raise SystemExit('test fixture planRowId anchor mismatch')
+              text = text.replace(old, new, 1)
+          path.write_text(text, encoding='utf-8', newline='\n')
+          PY
+
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
