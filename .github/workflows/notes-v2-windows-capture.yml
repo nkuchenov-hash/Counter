@@ -1,0 +1,75 @@
+name: Notes v2 Windows runtime capture
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: notes-v2-windows-capture-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  capture:
+    if: ${{ github.actor != 'github-actions[bot]' }}
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout feature branch
+        uses: actions/checkout@v4
+        with:
+          ref: feature/notes-editor-tools-v2
+          fetch-depth: 0
+
+      - name: Set up Flutter 3.41.6
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.6'
+          channel: stable
+
+      - name: Prepare Windows Flutter build
+        shell: pwsh
+        run: |
+          flutter config --enable-windows-desktop
+          Copy-Item lib/core/env/env.dart.example lib/core/env/env.dart
+          flutter pub get
+          dart format scripts/manual/capture_notes_v2_tools_main.dart test/notes/fixtures/notes_v2_tools_fixture.dart
+
+      - name: Capture production Notes tools
+        shell: pwsh
+        run: flutter run -d windows -t scripts/manual/capture_notes_v2_tools_main.dart --release
+
+      - name: Verify PNG
+        shell: pwsh
+        run: |
+          $file = Get-Item test/fixtures/notes_v2_tools_capture.png
+          if ($file.Length -lt 50000) { throw "Capture PNG is unexpectedly small: $($file.Length) bytes" }
+          Write-Host "Capture: $($file.FullName) — $($file.Length) bytes"
+
+      - name: Upload capture
+        uses: actions/upload-artifact@v4
+        with:
+          name: notes-v2-windows-runtime-capture
+          path: test/fixtures/notes_v2_tools_capture.png
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Remove temporary capture tooling
+        shell: pwsh
+        run: |
+          Remove-Item scripts/manual/capture_notes_v2_tools_main.dart
+          Remove-Item .github/workflows/notes-v2-windows-capture.yml
+
+      - name: Commit real-runtime capture
+        shell: pwsh
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --check
+          git commit -m "Capture Notes v2 tools in real Windows runtime [notes-v2-windows-capture]"
+          git push origin HEAD:feature/notes-editor-tools-v2
