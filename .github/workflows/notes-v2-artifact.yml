@@ -1,4 +1,4 @@
-name: Notes v2 capture artifact
+name: Notes v2 real-font capture
 
 on:
   pull_request:
@@ -7,19 +7,55 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  upload:
+  capture:
+    if: ${{ github.actor != 'github-actions[bot]' }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+      - name: Checkout feature branch
         uses: actions/checkout@v4
+        with:
+          ref: feature/notes-editor-tools-v2
+          fetch-depth: 0
 
-      - name: Upload Notes tools capture
+      - name: Set up Flutter 3.41.6
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.6'
+          channel: stable
+
+      - name: Create env.dart
+        run: cp lib/core/env/env.dart.example lib/core/env/env.dart
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Format capture test
+        run: dart format test/notes_v2_tools_visual_test.dart
+
+      - name: Regenerate capture with real fonts
+        run: flutter test --update-goldens test/notes_v2_tools_visual_test.dart
+
+      - name: Verify capture
+        run: flutter test test/notes_v2_tools_visual_test.dart
+
+      - name: Upload real-font capture
         uses: actions/upload-artifact@v4
         with:
-          name: notes-v2-tools-capture
+          name: notes-v2-tools-real-font-capture
           path: test/fixtures/notes_v2_tools_capture.png
           if-no-files-found: error
           retention-days: 1
+
+      - name: Remove temporary capture workflow
+        run: rm .github/workflows/notes-v2-artifact.yml
+
+      - name: Commit corrected capture
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Regenerate Notes tools capture with real fonts [notes-v2-capture]"
+          git push origin HEAD:feature/notes-editor-tools-v2
