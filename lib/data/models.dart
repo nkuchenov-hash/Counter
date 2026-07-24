@@ -30,4 +30,5 @@ part 'models/record.dart';
 part 'models/planning.dart';
 part 'models/tag.dart';
 part 'models/stats.dart';
+part 'models/note_rich_types.dart';
 part 'models/note_document.dart';
