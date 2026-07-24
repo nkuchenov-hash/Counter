@@ -1,0 +1,53 @@
+name: Temporary materialize auto-plan implementation
+
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - synchronize
+
+permissions:
+  contents: write
+
+jobs:
+  materialize:
+    if: github.event.pull_request.head.ref == 'feat/auto-plan-nearest-free-slot'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout feature branch
+        uses: actions/checkout@v4
+        with:
+          ref: feat/auto-plan-nearest-free-slot
+
+      - name: Apply implementation
+        run: python3 tool/_temporary_apply_auto_plan_placement.py
+
+      - name: Set up Flutter 3.41.6
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.6'
+          channel: stable
+
+      - name: Format implementation
+        run: |
+          dart format \
+            lib/data/plans/plan_time_cascade_helpers.dart \
+            lib/features/planning/time_view/time_view_settings_sheet.dart \
+            lib/l10n/dictionary.dart \
+            test/auto_plan_nearest_free_slot_test.dart
+
+      - name: Commit implementation
+        run: |
+          if git diff --quiet -- lib test; then
+            echo 'Implementation already committed.'
+            exit 0
+          fi
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add lib/data/plans/plan_time_cascade_helpers.dart \
+                  lib/features/planning/time_view/time_view_settings_sheet.dart \
+                  lib/l10n/dictionary.dart \
+                  test/auto_plan_nearest_free_slot_test.dart
+          git commit -m 'Schedule new plans in the nearest free slot'
+          git push origin HEAD:feat/auto-plan-nearest-free-slot
