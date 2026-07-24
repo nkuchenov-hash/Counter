@@ -1,0 +1,25 @@
+name: Notes v2 capture artifact
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Upload Notes tools capture
+        uses: actions/upload-artifact@v4
+        with:
+          name: notes-v2-tools-capture
+          path: test/fixtures/notes_v2_tools_capture.png
+          if-no-files-found: error
+          retention-days: 1
