@@ -17,8 +17,8 @@ class PlanningSheetTimelinePrefs {
   static const int defaultEndExtended = PlanTimeVisibleWindow.defaultEndExtended;
   static const int rangeSliderDivisions = 30;
 
-  /// Default vertical drag snap for Planning Time timeline (minutes).
-  static const int timelineSnapMinutes = 10;
+  /// Shared drag and resize snap for Planning Time timeline (minutes).
+  static const int timelineSnapMinutes = 5;
 
   /// Minimum scheduled block duration when resizing (minutes).
   static const int timelineMinDurationMinutes = 10;
