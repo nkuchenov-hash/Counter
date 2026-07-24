@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   apply:
-    if: ${{ github.event_name == 'pull_request' }}
+    if: ${{ github.event_name == 'pull_request' && github.actor != 'github-actions[bot]' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout feature branch
@@ -53,7 +53,28 @@ jobs:
         run: pwsh -NoProfile -NonInteractive -File ./scripts/audit/architecture_guard.ps1 -Strict
 
       - name: Analyze
-        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+        id: analyze
+        continue-on-error: true
+        shell: bash
+        run: |
+          set +e
+          flutter analyze --no-fatal-infos --no-fatal-warnings > analyze.log 2>&1
+          status=$?
+          if [ "$status" -ne 0 ]; then
+            grep -E "error •|error -|[0-9]+ issues? found" analyze.log > notes_v2_analyzer_errors.txt || tail -120 analyze.log > notes_v2_analyzer_errors.txt
+            exit "$status"
+          fi
+          tail -20 analyze.log
+
+      - name: Commit analyzer diagnostics on failure
+        if: ${{ steps.analyze.outcome == 'failure' }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add notes_v2_analyzer_errors.txt
+          git commit -m "Capture Notes v2 analyzer errors [notes-v2-errors]"
+          git push origin HEAD:feature/notes-editor-tools-v2
+          exit 1
 
       - name: Focused Notes tests
         run: |
@@ -67,6 +88,7 @@ jobs:
         run: |
           rm scripts/manual/apply_notes_v2_integration.py
           rm .github/workflows/notes-v2-apply.yml
+          rm -f notes_v2_analyzer_errors.txt
 
       - name: Commit verified integration
         run: |
