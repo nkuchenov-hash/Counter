@@ -1,6 +1,8 @@
 import 'package:counter/data/models.dart';
 import 'package:counter/features/notes/notes_glm_surface.dart';
 import 'package:counter/features/notes/notes_visual_tokens.dart';
+import 'package:counter/features/notes/widgets/note_editor_block_widgets.dart'
+    show NotesTextUndoBridge;
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
 
@@ -191,12 +193,12 @@ class _NotesEditorToolsDockState extends State<NotesEditorToolsDock> {
                   _PrimaryToolButton(
                     icon: Icons.undo_rounded,
                     tooltip: t(widget.loc, 'undo'),
-                    onTap: widget.onUndo,
+                    onTap: widget.onUndo ?? NotesTextUndoBridge.undo,
                   ),
                   _PrimaryToolButton(
                     icon: Icons.redo_rounded,
                     tooltip: t(widget.loc, 'notes_tools_redo'),
-                    onTap: widget.onRedo,
+                    onTap: widget.onRedo ?? NotesTextUndoBridge.redo,
                   ),
                   const _ToolsDivider(),
                   _PrimaryToolButton(
