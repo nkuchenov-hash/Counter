@@ -9,6 +9,7 @@ import 'dart:typed_data';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/notes/notes_glm_surface.dart';
 import 'package:counter/features/notes/notes_visual_tokens.dart';
+import 'package:counter/features/notes/widgets/notes_special_block_widgets.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
 
@@ -25,6 +26,13 @@ class NoteEditorBlockPatch {
     this.color = _unset,
     this.imageData = _unset,
     this.drawingData = _unset,
+    this.runs,
+    this.callout = _unset,
+    this.table = _unset,
+    this.linkData = _unset,
+    this.reference = _unset,
+    this.codeLanguage = _unset,
+    this.collapsed,
   });
 
   static const Object _unset = Object();
@@ -39,22 +47,45 @@ class NoteEditorBlockPatch {
   final Object? color;
   final Object? imageData;
   final Object? drawingData;
+  final List<NoteTextRun>? runs;
+  final Object? callout;
+  final Object? table;
+  final Object? linkData;
+  final Object? reference;
+  final Object? codeLanguage;
+  final bool? collapsed;
 
   NoteBlock applyTo(NoteBlock b) => b.copyWith(
-        type: type ?? b.type,
-        text: text ?? b.text,
-        checked: checked ?? b.checked,
-        level: level ?? b.level,
-        bold: bold ?? b.bold,
-        italic: italic ?? b.italic,
-        underline: underline ?? b.underline,
-        color: identical(color, _unset) ? b.color : color as String?,
-        imageData:
-            identical(imageData, _unset) ? b.imageData : imageData as String?,
-        drawingData: identical(drawingData, _unset)
-            ? b.drawingData
-            : drawingData as String?,
-      );
+    type: type ?? b.type,
+    text: text ?? b.text,
+    checked: checked ?? b.checked,
+    level: level ?? b.level,
+    bold: bold ?? b.bold,
+    italic: italic ?? b.italic,
+    underline: underline ?? b.underline,
+    color: identical(color, _unset) ? b.color : color as String?,
+    imageData: identical(imageData, _unset)
+        ? b.imageData
+        : imageData as String?,
+    drawingData: identical(drawingData, _unset)
+        ? b.drawingData
+        : drawingData as String?,
+    runs: runs ?? b.runs,
+    callout: identical(callout, _unset)
+        ? b.callout
+        : callout as NoteCalloutData?,
+    table: identical(table, _unset) ? b.table : table as NoteTableData?,
+    linkData: identical(linkData, _unset)
+        ? b.linkData
+        : linkData as NoteLinkData?,
+    reference: identical(reference, _unset)
+        ? b.reference
+        : reference as NoteReferenceData?,
+    codeLanguage: identical(codeLanguage, _unset)
+        ? b.codeLanguage
+        : codeLanguage as String?,
+    collapsed: collapsed ?? b.collapsed,
+  );
 }
 
 /// One note block in the editor scroll body (text / checklist / heading / media).
@@ -99,7 +130,7 @@ class _NoteEditorBlockRowState extends State<NoteEditorBlockRow> {
   @override
   void initState() {
     super.initState();
-    _textController = TextEditingController(text: widget.block.text);
+    _textController = TextEditingController(text: widget.block.effectiveText);
     _focusNode = FocusNode();
     _focusNode.addListener(() {
       if (_focusNode.hasFocus) widget.onActivate();
@@ -109,11 +140,12 @@ class _NoteEditorBlockRowState extends State<NoteEditorBlockRow> {
   @override
   void didUpdateWidget(covariant NoteEditorBlockRow oldWidget) {
     super.didUpdateWidget(oldWidget);
+    final nextText = widget.block.effectiveText;
+    final oldText = oldWidget.block.effectiveText;
     if (oldWidget.block.id != widget.block.id) {
-      _textController.text = widget.block.text;
-    } else if (widget.block.text != _textController.text &&
-        widget.block.text != oldWidget.block.text) {
-      _textController.text = widget.block.text;
+      _textController.text = nextText;
+    } else if (nextText != _textController.text && nextText != oldText) {
+      _textController.text = nextText;
     }
   }
 
@@ -147,24 +179,46 @@ class _NoteEditorBlockRowState extends State<NoteEditorBlockRow> {
         onDelete: widget.onDelete,
       );
     }
+    if (!block.hasText) {
+      return NotesSpecialBlockView(
+        block: block,
+        isActive: widget.isActive,
+        loc: loc,
+        onActivate: widget.onActivate,
+        onDelete: widget.onDelete,
+        onTableChanged: (table) =>
+            widget.onUpdate(NoteEditorBlockPatch(table: table)),
+      );
+    }
 
     final isChecklist = block.type == NoteBlockType.checklist;
     final isHeading = block.type == NoteBlockType.heading;
+    final isBullet = block.type == NoteBlockType.bulletedList;
+    final isNumbered = block.type == NoteBlockType.numberedList;
+    final isQuote = block.type == NoteBlockType.quote;
+    final isCallout = block.type == NoteBlockType.callout;
+    final isCode = block.type == NoteBlockType.codeBlock;
+    final isCollapsible = block.type == NoteBlockType.collapsible;
+    final hasStrike = block.effectiveRuns.any((run) => run.marks.strike);
     final headingSize = block.level == 1
         ? 24.0
         : block.level == 3
-            ? 18.0
-            : 20.0;
-    final headingWeight =
-        block.level == 3 ? FontWeight.w600 : FontWeight.w700;
+        ? 18.0
+        : 20.0;
+    final headingWeight = block.level == 3 ? FontWeight.w600 : FontWeight.w700;
     final textStyle = TextStyle(
       fontSize: isHeading ? headingSize : kGlmBodySize,
       fontWeight: isHeading
           ? headingWeight
           : (block.bold ? FontWeight.w700 : FontWeight.w400),
       fontStyle: block.italic ? FontStyle.italic : null,
-      decoration: block.underline ? TextDecoration.underline : null,
-      color: _parseHexColor(block.color) ??
+      decoration: hasStrike
+          ? TextDecoration.lineThrough
+          : block.underline
+          ? TextDecoration.underline
+          : null,
+      color:
+          _parseHexColor(block.color) ??
           (isChecklist && block.checked
               ? kGlmMetaColor
               : const Color(0xFF1E293B)),
@@ -178,6 +232,24 @@ class _NoteEditorBlockRowState extends State<NoteEditorBlockRow> {
         decoration: widget.isActive
             ? BoxDecoration(
                 color: notesBlockActiveFill(scheme),
+                borderRadius: BorderRadius.circular(8),
+              )
+            : isQuote
+            ? BoxDecoration(
+                color: scheme.primaryContainer.withValues(alpha: 0.24),
+                border: Border(
+                  left: BorderSide(color: scheme.primary, width: 3),
+                ),
+                borderRadius: BorderRadius.circular(8),
+              )
+            : isCallout
+            ? BoxDecoration(
+                color: scheme.tertiaryContainer.withValues(alpha: 0.4),
+                borderRadius: BorderRadius.circular(10),
+              )
+            : isCode
+            ? BoxDecoration(
+                color: scheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(8),
               )
             : null,
@@ -207,13 +279,35 @@ class _NoteEditorBlockRowState extends State<NoteEditorBlockRow> {
                       color: block.checked ? const Color(0xFF6366F1) : null,
                     ),
                     child: block.checked
-                        ? const Icon(Icons.check_rounded,
-                            size: 12, color: Colors.white)
+                        ? const Icon(
+                            Icons.check_rounded,
+                            size: 12,
+                            color: Colors.white,
+                          )
                         : null,
                   ),
                 ),
               ),
             if (isChecklist) const SizedBox(width: 8),
+            if (isBullet || isNumbered || isQuote || isCallout || isCollapsible)
+              Padding(
+                padding: const EdgeInsets.only(top: 5, right: 8),
+                child: Icon(
+                  isBullet
+                      ? Icons.circle
+                      : isNumbered
+                      ? Icons.format_list_numbered_rounded
+                      : isQuote
+                      ? Icons.format_quote_rounded
+                      : isCallout
+                      ? Icons.lightbulb_outline_rounded
+                      : block.collapsed
+                      ? Icons.chevron_right_rounded
+                      : Icons.expand_more_rounded,
+                  size: isBullet ? 7 : 16,
+                  color: isCallout ? scheme.tertiary : scheme.primary,
+                ),
+              ),
             Expanded(
               child: TextField(
                 controller: _textController,
@@ -233,8 +327,8 @@ class _NoteEditorBlockRowState extends State<NoteEditorBlockRow> {
                   hintText: isChecklist
                       ? t(loc, 'notes_v3_editor_list_item_hint')
                       : isHeading
-                          ? t(loc, 'notes_v3_editor_heading_hint')
-                          : t(loc, 'notes_v3_editor_start_writing'),
+                      ? t(loc, 'notes_v3_editor_heading_hint')
+                      : t(loc, 'notes_v3_editor_start_writing'),
                   hintStyle: TextStyle(
                     fontSize: isHeading ? headingSize : kNotesBodySize,
                     fontWeight: isHeading ? headingWeight : FontWeight.w400,
@@ -375,8 +469,7 @@ class _NoteEditorImageBlock extends StatelessWidget {
                   height: 80,
                   color: scheme.errorContainer.withValues(alpha: 0.3),
                   alignment: Alignment.center,
-                  child: Icon(Icons.broken_image_outlined,
-                      color: scheme.error),
+                  child: Icon(Icons.broken_image_outlined, color: scheme.error),
                 ),
               ),
             ),
@@ -431,8 +524,10 @@ class _NoteEditorDrawingBlock extends StatelessWidget {
                     height: 80,
                     color: scheme.errorContainer.withValues(alpha: 0.3),
                     alignment: Alignment.center,
-                    child: Icon(Icons.broken_image_outlined,
-                        color: scheme.error),
+                    child: Icon(
+                      Icons.broken_image_outlined,
+                      color: scheme.error,
+                    ),
                   ),
                 ),
               ),

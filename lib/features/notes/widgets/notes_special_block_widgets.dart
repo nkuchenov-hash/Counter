@@ -25,34 +25,34 @@ class NotesSpecialBlockView extends StatelessWidget {
   Widget build(BuildContext context) {
     return switch (block.type) {
       NoteBlockType.divider => _DividerBlock(
-          isActive: isActive,
-          onActivate: onActivate,
-          onDelete: onDelete,
-        ),
+        isActive: isActive,
+        onActivate: onActivate,
+        onDelete: onDelete,
+      ),
       NoteBlockType.table => _TableBlock(
-          data: block.table ?? NoteTableData.empty(),
-          isActive: isActive,
-          loc: loc,
-          onActivate: onActivate,
-          onDelete: onDelete,
-          onChanged: onTableChanged,
-        ),
+        data: block.table ?? NoteTableData.empty(),
+        isActive: isActive,
+        loc: loc,
+        onActivate: onActivate,
+        onDelete: onDelete,
+        onChanged: onTableChanged,
+      ),
       NoteBlockType.linkCard => _LinkCardBlock(
-          data: block.linkData ?? const NoteLinkData(url: ''),
-          isActive: isActive,
-          onActivate: onActivate,
-          onDelete: onDelete,
-        ),
+        data: block.linkData ?? const NoteLinkData(url: ''),
+        isActive: isActive,
+        onActivate: onActivate,
+        onDelete: onDelete,
+      ),
       NoteBlockType.planReference ||
       NoteBlockType.recordReference ||
       NoteBlockType.noteReference ||
       NoteBlockType.categoryReference => _ReferenceBlock(
-          type: block.type,
-          data: block.reference ?? const NoteReferenceData(targetId: ''),
-          isActive: isActive,
-          onActivate: onActivate,
-          onDelete: onDelete,
-        ),
+        type: block.type,
+        data: block.reference ?? const NoteReferenceData(targetId: ''),
+        isActive: isActive,
+        onActivate: onActivate,
+        onDelete: onDelete,
+      ),
       _ => const SizedBox.shrink(),
     };
   }
@@ -124,7 +124,7 @@ class _TableBlock extends StatelessWidget {
   }
 
   void _addRow() {
-    final columns = data.columnCount.clamp(1, 6);
+    final columns = data.columnCount.clamp(1, 6).toInt();
     if (data.rowCount >= 20) return;
     onChanged(
       data.copyWith(
@@ -138,7 +138,9 @@ class _TableBlock extends StatelessWidget {
 
   void _addColumn() {
     if (data.columnCount >= 6) return;
-    final source = data.cells.isEmpty ? NoteTableData.empty().cells : data.cells;
+    final source = data.cells.isEmpty
+        ? NoteTableData.empty().cells
+        : data.cells;
     onChanged(
       data.copyWith(
         cells: source
@@ -204,23 +206,24 @@ class _TableBlock extends StatelessWidget {
                     TableRow(
                       decoration: data.hasHeader && row == 0
                           ? BoxDecoration(
-                              color: scheme.surfaceContainerHighest
-                                  .withValues(alpha: 0.72),
+                              color: scheme.surfaceContainerHighest.withValues(
+                                alpha: 0.72,
+                              ),
                             )
                           : null,
                       children: [
-                        for (var column = 0;
-                            column < cells[row].length;
-                            column++)
+                        for (
+                          var column = 0;
+                          column < cells[row].length;
+                          column++
+                        )
                           Padding(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 8,
                               vertical: 4,
                             ),
                             child: TextFormField(
-                              key: ValueKey(
-                                'table-${row}_$column-${cells[row][column]}',
-                              ),
+                              key: ValueKey('table-${row}_$column'),
                               initialValue: cells[row][column],
                               maxLines: null,
                               style: TextStyle(
@@ -232,8 +235,9 @@ class _TableBlock extends StatelessWidget {
                               decoration: const InputDecoration(
                                 isDense: true,
                                 border: InputBorder.none,
-                                contentPadding:
-                                    EdgeInsets.symmetric(vertical: 7),
+                                contentPadding: EdgeInsets.symmetric(
+                                  vertical: 7,
+                                ),
                               ),
                               onTap: onActivate,
                               onChanged: (value) =>
@@ -249,9 +253,7 @@ class _TableBlock extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.fromLTRB(8, 5, 8, 7),
                 decoration: BoxDecoration(
-                  border: Border(
-                    top: BorderSide(color: scheme.outlineVariant),
-                  ),
+                  border: Border(top: BorderSide(color: scheme.outlineVariant)),
                 ),
                 child: Wrap(
                   spacing: 4,
@@ -400,12 +402,12 @@ class _ReferenceBlock extends StatelessWidget {
   final VoidCallback onDelete;
 
   IconData get _icon => switch (type) {
-        NoteBlockType.planReference => Icons.event_note_outlined,
-        NoteBlockType.recordReference => Icons.timer_outlined,
-        NoteBlockType.noteReference => Icons.sticky_note_2_outlined,
-        NoteBlockType.categoryReference => Icons.folder_outlined,
-        _ => Icons.link_rounded,
-      };
+    NoteBlockType.planReference => Icons.event_note_outlined,
+    NoteBlockType.recordReference => Icons.timer_outlined,
+    NoteBlockType.noteReference => Icons.sticky_note_2_outlined,
+    NoteBlockType.categoryReference => Icons.folder_outlined,
+    _ => Icons.link_rounded,
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -495,8 +497,8 @@ class _TableAction extends StatelessWidget {
             color: onTap == null
                 ? scheme.onSurfaceVariant.withValues(alpha: 0.3)
                 : danger
-                    ? scheme.error
-                    : scheme.onSurfaceVariant,
+                ? scheme.error
+                : scheme.onSurfaceVariant,
           ),
         ),
       ),
@@ -511,9 +513,9 @@ class _OverlayAction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => IconButton(
-        visualDensity: VisualDensity.compact,
-        tooltip: t(currentLocale.value, 'notes_v3_editor_delete_block'),
-        onPressed: onTap,
-        icon: Icon(icon, size: 17),
-      );
+    visualDensity: VisualDensity.compact,
+    tooltip: t(currentLocale.value, 'notes_v3_editor_delete_block'),
+    onPressed: onTap,
+    icon: Icon(icon, size: 17),
+  );
 }

@@ -20,6 +20,7 @@ import 'package:counter/features/notes/drawing_canvas_page.dart';
 import 'package:counter/features/notes/notes_glm_surface.dart';
 import 'package:counter/features/notes/notes_visual_tokens.dart';
 import 'package:counter/features/notes/widgets/note_editor_block_widgets.dart';
+import 'package:counter/features/notes/widgets/notes_editor_tools.dart';
 import 'package:counter/features/shared/edit_sheet/sheet_autosave_gate.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:file_selector/file_selector.dart';
@@ -116,8 +117,7 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
 
   Future<void> _loadTags() async {
     try {
-      final tags =
-          await DatabaseService.instance.fetchTagsForCurrentUser(
+      final tags = await DatabaseService.instance.fetchTagsForCurrentUser(
         scope: TagCatalogScope.list,
       );
       if (!mounted) return;
@@ -133,13 +133,20 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
 
   // ---- Local-first mutation helpers --------------------------------------
 
-  void _mutate(NoteDocument next, {String? title, int? categoryId, List<Tag>? tags, bool? isDone}) {
+  void _mutate(
+    NoteDocument next, {
+    String? title,
+    int? categoryId,
+    List<Tag>? tags,
+    bool? isDone,
+  }) {
     setState(() {
       _doc = next;
-      if (title != null) _titleController.value = TextEditingValue(
-        text: title,
-        selection: TextSelection.collapsed(offset: title.length),
-      );
+      if (title != null)
+        _titleController.value = TextEditingValue(
+          text: title,
+          selection: TextSelection.collapsed(offset: title.length),
+        );
     });
     _status = _SaveStatus.editing;
     _gate.schedule(_syncToBrain);
@@ -175,25 +182,70 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
   NoteBlock? get _activeBlock =>
       _doc.blocks.where((b) => b.id == _activeBlockId).firstOrNull;
 
-  void _addBlock(NoteBlockType type, {String? afterId, String? imageData, String? drawingData, int? level}) {
+  void _addBlock(
+    NoteBlockType type, {
+    String? afterId,
+    String? imageData,
+    String? drawingData,
+    int? level,
+    NoteTableData? table,
+    NoteCalloutData? callout,
+    NoteLinkData? linkData,
+    NoteReferenceData? reference,
+    String? codeLanguage,
+  }) {
     final base = NoteBlock(
       id: generateNoteBlockId(),
       type: type,
       text: '',
-      checked: type == NoteBlockType.checklist ? false : false,
-      level: level ?? (type == NoteBlockType.heading ? 2 : 2),
+      checked: false,
+      level: level ?? 2,
       imageData: imageData,
       drawingData: drawingData,
+      table: table,
+      callout: callout,
+      linkData: linkData,
+      reference: reference,
+      codeLanguage: codeLanguage,
     );
     final blocks = List<NoteBlock>.from(_doc.blocks);
-    int insertIdx = blocks.length;
+    var insertIndex = blocks.length;
     if (afterId != null) {
-      final i = blocks.indexWhere((b) => b.id == afterId);
-      if (i >= 0) insertIdx = i + 1;
+      final index = blocks.indexWhere((block) => block.id == afterId);
+      if (index >= 0) insertIndex = index + 1;
     }
-    blocks.insert(insertIdx, base);
+    blocks.insert(insertIndex, base);
     _mutate(_doc.copyWith(blocks: blocks));
     setState(() => _activeBlockId = base.id);
+  }
+
+  void _insertRequest(NotesInsertRequest request) {
+    _addBlock(
+      request.type,
+      afterId: _activeBlockId,
+      table: request.table,
+      callout: request.callout,
+      linkData: request.linkData,
+      codeLanguage: request.codeLanguage,
+    );
+  }
+
+  void _setBlockType(NoteBlockType type) {
+    final block = _activeBlock;
+    if (block == null || (!block.hasText && type.isTextual)) return;
+    _updateBlock(
+      block.id,
+      (current) => current.copyWith(
+        type: type,
+        callout: type == NoteBlockType.callout
+            ? current.callout ??
+                  const NoteCalloutData(type: NoteCalloutType.idea)
+            : null,
+        codeLanguage: type == NoteBlockType.codeBlock
+            ? current.codeLanguage ?? 'plain'
+            : null,
+      ),
+    );
   }
 
   void _updateBlock(String id, NoteBlock Function(NoteBlock) patch) {
@@ -238,6 +290,17 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
           return x.copyWith(italic: !x.italic);
         case 'underline':
           return x.copyWith(underline: !x.underline);
+        case 'strike':
+          final effective = x.effectiveRuns;
+          final enabled = effective.any((run) => run.marks.strike);
+          return x.copyWith(
+            runs: effective
+                .map(
+                  (run) =>
+                      run.copyWith(marks: run.marks.copyWith(strike: !enabled)),
+                )
+                .toList(growable: false),
+          );
         default:
           return x;
       }
@@ -250,7 +313,10 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
     if (b.type == NoteBlockType.heading && b.level == level) {
       _updateBlock(b.id, (x) => x.copyWith(type: NoteBlockType.paragraph));
     } else {
-      _updateBlock(b.id, (x) => x.copyWith(type: NoteBlockType.heading, level: level));
+      _updateBlock(
+        b.id,
+        (x) => x.copyWith(type: NoteBlockType.heading, level: level),
+      );
     }
   }
 
@@ -260,7 +326,10 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
     if (b.type == NoteBlockType.checklist) {
       _updateBlock(b.id, (x) => x.copyWith(type: NoteBlockType.paragraph));
     } else {
-      _updateBlock(b.id, (x) => x.copyWith(type: NoteBlockType.checklist, checked: false));
+      _updateBlock(
+        b.id,
+        (x) => x.copyWith(type: NoteBlockType.checklist, checked: false),
+      );
     }
   }
 
@@ -284,7 +353,11 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
     if (bytes.lengthInBytes > kLifeOsNotesMaxAssetBytes) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(t(currentLocale.value, 'notes_v3_editor_image_too_large'))),
+        SnackBar(
+          content: Text(
+            t(currentLocale.value, 'notes_v3_editor_image_too_large'),
+          ),
+        ),
       );
       return;
     }
@@ -300,26 +373,30 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
       final b = _doc.blocks.where((x) => x.id == editBlockId).firstOrNull;
       initial = b?.drawingData;
     }
-    unawaited(showDrawingCanvas(
-      context: context,
-      initialData: initial,
-      onSave: (png) {
-        if (editBlockId != null) {
-          _updateBlock(editBlockId, (x) => x.copyWith(drawingData: png));
-        } else {
-          _addBlock(NoteBlockType.drawing, afterId: _activeBlockId, drawingData: png);
-        }
-      },
-    ));
+    unawaited(
+      showDrawingCanvas(
+        context: context,
+        initialData: initial,
+        onSave: (png) {
+          if (editBlockId != null) {
+            _updateBlock(editBlockId, (x) => x.copyWith(drawingData: png));
+          } else {
+            _addBlock(
+              NoteBlockType.drawing,
+              afterId: _activeBlockId,
+              drawingData: png,
+            );
+          }
+        },
+      ),
+    );
   }
 
   // ---- Pin / done / delete ----------------------------------------------
 
   void _togglePin() {
     final nextPinned = !_doc.meta.pinned;
-    final next = _doc.copyWith(
-      meta: _doc.meta.copyWith(pinned: nextPinned),
-    );
+    final next = _doc.copyWith(meta: _doc.meta.copyWith(pinned: nextPinned));
     _mutate(next);
     DatabaseService.instance.applyNoteEdit(
       planRowIdForBackend: _task.planRowIdForBackend,
@@ -396,8 +473,10 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
   }
 
   Future<void> _openFullCategoryPicker() async {
-    final next =
-        await showCategoryTreePicker(context, initialCategoryId: _task.categoryId);
+    final next = await showCategoryTreePicker(
+      context,
+      initialCategoryId: _task.categoryId,
+    );
     if (next == null) return;
     await _selectCategory(next);
   }
@@ -487,8 +566,7 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
             cat: cat,
             catColor: catColor,
             onPickCategory: _toggleCategoryPicker,
-            onPickTags: () =>
-                setState(() => _showTagPicker = !_showTagPicker),
+            onPickTags: () => setState(() => _showTagPicker = !_showTagPicker),
             loc: loc,
             parityPreview: widget.parityPreview,
           ),
@@ -496,7 +574,9 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
             _CategoryPickerSheet(
               currentCategoryId: _task.categoryId,
               onSelect: _selectCategory,
-              onOpenFullPicker: widget.parityPreview ? null : _openFullCategoryPicker,
+              onOpenFullPicker: widget.parityPreview
+                  ? null
+                  : _openFullCategoryPicker,
             ),
           ],
           if (_showTagPicker && !widget.parityPreview) ...[
@@ -520,25 +600,24 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
               canMoveDown: i < _doc.blocks.length - 1,
               onActivate: () =>
                   setState(() => _activeBlockId = _doc.blocks[i].id),
-              onUpdate: (patch) => _updateBlock(
-                _doc.blocks[i].id,
-                patch.applyTo,
-              ),
+              onUpdate: (patch) =>
+                  _updateBlock(_doc.blocks[i].id, patch.applyTo),
               onDelete: () => _deleteBlock(_doc.blocks[i].id),
               onMoveUp: () => _moveBlock(_doc.blocks[i].id, -1),
               onMoveDown: () => _moveBlock(_doc.blocks[i].id, 1),
-              onEditDrawing: () =>
-                  _openDrawing(editBlockId: _doc.blocks[i].id),
+              onEditDrawing: () => _openDrawing(editBlockId: _doc.blocks[i].id),
               onEnter: () {
                 final b = _doc.blocks[i];
-                if (b.type == NoteBlockType.checklist ||
-                    b.type == NoteBlockType.paragraph) {
-                  _addBlock(
-                    b.type == NoteBlockType.checklist
-                        ? NoteBlockType.checklist
-                        : NoteBlockType.paragraph,
-                    afterId: b.id,
-                  );
+                if (b.hasText) {
+                  final nextType = switch (b.type) {
+                    NoteBlockType.heading => NoteBlockType.paragraph,
+                    NoteBlockType.quote => NoteBlockType.paragraph,
+                    NoteBlockType.callout => NoteBlockType.paragraph,
+                    NoteBlockType.codeBlock => NoteBlockType.codeBlock,
+                    NoteBlockType.collapsible => NoteBlockType.paragraph,
+                    _ => b.type,
+                  };
+                  _addBlock(nextType, afterId: b.id);
                 }
               },
               loc: loc,
@@ -563,25 +642,24 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
         topBar: _TopBar(
           status: _status,
           pinned: pinned,
-          canDelete: !widget.parityPreview &&
-              _task.planRowIdForBackend.isNotEmpty,
+          canDelete:
+              !widget.parityPreview && _task.planRowIdForBackend.isNotEmpty,
           onDone: () => Navigator.of(context).pop(),
           onTogglePin: _togglePin,
           onDelete: _confirmDelete,
         ),
         body: editorBody,
-        toolbar: _EditorToolbar(
+        toolbar: NotesEditorToolsDock(
           activeBlock: _activeBlock,
-          showColorPicker: _showColorPicker,
+          loc: loc,
           onToggleChecklist: _toggleChecklist,
           onHeading: _setHeading,
+          onSetBlockType: _setBlockType,
           onToggleFormat: _toggleFormat,
-          onToggleColorPicker: () =>
-              setState(() => _showColorPicker = !_showColorPicker),
           onSetColor: _setColor,
+          onInsert: _insertRequest,
           onImage: _pickImage,
           onDraw: () => _openDrawing(),
-          loc: loc,
         ),
       ),
     );
@@ -704,9 +782,7 @@ class _TopBar extends StatelessWidget {
               tooltip: pinned
                   ? t(loc, 'notes_v3_editor_unpin')
                   : t(loc, 'notes_v3_editor_pin'),
-              icon: pinned
-                  ? Icons.push_pin
-                  : Icons.push_pin_outlined,
+              icon: pinned ? Icons.push_pin : Icons.push_pin_outlined,
               color: pinned ? scheme.primary : kGlmMetaColor,
               onTap: onTogglePin,
             ),
@@ -857,8 +933,10 @@ class _MetaDataRow extends StatelessWidget {
             children: [
               for (final tag in tags.take(3))
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: notesTintBackground(
                       _parseHexColor(tag.color) ?? scheme.primary,
@@ -994,11 +1072,11 @@ class _CategoryPickerPill extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: selected ? c : const Color(0xFFFFFFFF).withValues(alpha: 0.72),
+            color: selected
+                ? c
+                : const Color(0xFFFFFFFF).withValues(alpha: 0.72),
             borderRadius: BorderRadius.circular(999),
-            border: Border.all(
-              color: selected ? c : const Color(0xFFE2E8F0),
-            ),
+            border: Border.all(color: selected ? c : const Color(0xFFE2E8F0)),
           ),
           child: Text(
             text,
@@ -1144,7 +1222,8 @@ class _EditorToolbar extends StatelessWidget {
                   _ToolBtn(
                     icon: Icons.title_rounded,
                     label: t(loc, 'notes_v3_editor_h1'),
-                    active: activeBlock?.type == NoteBlockType.heading &&
+                    active:
+                        activeBlock?.type == NoteBlockType.heading &&
                         activeBlock?.level == 1,
                     onTap: () => onHeading(1),
                     scheme: scheme,
@@ -1152,7 +1231,8 @@ class _EditorToolbar extends StatelessWidget {
                   _ToolBtn(
                     icon: Icons.text_fields_rounded,
                     label: t(loc, 'notes_v3_editor_h2'),
-                    active: activeBlock?.type == NoteBlockType.heading &&
+                    active:
+                        activeBlock?.type == NoteBlockType.heading &&
                         activeBlock?.level == 2,
                     onTap: () => onHeading(2),
                     scheme: scheme,
@@ -1160,7 +1240,8 @@ class _EditorToolbar extends StatelessWidget {
                   _ToolBtn(
                     icon: Icons.format_size_rounded,
                     label: t(loc, 'notes_v3_editor_h3'),
-                    active: activeBlock?.type == NoteBlockType.heading &&
+                    active:
+                        activeBlock?.type == NoteBlockType.heading &&
                         activeBlock?.level == 3,
                     onTap: () => onHeading(3),
                     scheme: scheme,
@@ -1196,11 +1277,10 @@ class _EditorToolbar extends StatelessWidget {
                       height: 16,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: _parseHexColor(activeBlock?.color) ??
+                        color:
+                            _parseHexColor(activeBlock?.color) ??
                             const Color(0xFF0F172A),
-                        border: Border.all(
-                          color: const Color(0xFFE2E8F0),
-                        ),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
                       ),
                     ),
                     onTap: onToggleColorPicker,
@@ -1228,10 +1308,7 @@ class _EditorToolbar extends StatelessWidget {
               left: 0,
               right: 0,
               child: Center(
-                child: _ColorPickerPopover(
-                  onSetColor: onSetColor,
-                  loc: loc,
-                ),
+                child: _ColorPickerPopover(onSetColor: onSetColor, loc: loc),
               ),
             ),
         ],
@@ -1241,10 +1318,7 @@ class _EditorToolbar extends StatelessWidget {
 }
 
 class _ColorPickerPopover extends StatelessWidget {
-  const _ColorPickerPopover({
-    required this.onSetColor,
-    required this.loc,
-  });
+  const _ColorPickerPopover({required this.onSetColor, required this.loc});
 
   final void Function(String?) onSetColor;
   final String loc;
@@ -1284,8 +1358,10 @@ class _ColorPickerPopover extends StatelessWidget {
                 onTap: () => onSetColor(null),
                 borderRadius: BorderRadius.circular(999),
                 child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
                   decoration: notesGlmGlassPillDecoration(),
                   child: Text(
                     t(loc, 'notes_v3_editor_color_auto'),
@@ -1342,7 +1418,8 @@ class _ToolBtn extends StatelessWidget {
               borderRadius: BorderRadius.circular(8),
             ),
             alignment: Alignment.center,
-            child: customChild ??
+            child:
+                customChild ??
                 Icon(
                   icon,
                   size: 16,

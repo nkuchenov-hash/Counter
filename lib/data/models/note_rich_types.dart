@@ -97,8 +97,9 @@ class NoteInlineMarks {
         underline: _jsonBool(json['underline'], false),
         strike: _jsonBool(json['strike'], false),
         textColor: _cleanNoteRichString(json['textColor'] ?? json['color']),
-        highlightColor:
-            _cleanNoteRichString(json['highlightColor'] ?? json['highlight']),
+        highlightColor: _cleanNoteRichString(
+          json['highlightColor'] ?? json['highlight'],
+        ),
         link: _cleanNoteRichString(json['link']),
         inlineCode: _jsonBool(json['inlineCode'], false),
       );
@@ -106,23 +107,18 @@ class NoteInlineMarks {
 
 @immutable
 class NoteTextRun {
-  const NoteTextRun({
-    required this.text,
-    this.marks = const NoteInlineMarks(),
-  });
+  const NoteTextRun({required this.text, this.marks = const NoteInlineMarks()});
 
   final String text;
   final NoteInlineMarks marks;
 
-  NoteTextRun copyWith({String? text, NoteInlineMarks? marks}) => NoteTextRun(
-        text: text ?? this.text,
-        marks: marks ?? this.marks,
-      );
+  NoteTextRun copyWith({String? text, NoteInlineMarks? marks}) =>
+      NoteTextRun(text: text ?? this.text, marks: marks ?? this.marks);
 
   Map<String, dynamic> toJson() => {
-        'text': text,
-        if (!marks.isEmpty) 'marks': marks.toJson(),
-      };
+    'text': text,
+    if (!marks.isEmpty) 'marks': marks.toJson(),
+  };
 
   factory NoteTextRun.fromJson(Map<String, dynamic> json) {
     final marksRaw = json['marks'];
@@ -148,10 +144,10 @@ class NoteCalloutData {
   final String? color;
 
   Map<String, dynamic> toJson() => {
-        'type': type.name,
-        if (icon != null) 'icon': icon,
-        if (color != null) 'color': color,
-      };
+    'type': type.name,
+    if (icon != null) 'icon': icon,
+    if (color != null) 'color': color,
+  };
 
   factory NoteCalloutData.fromJson(Map<String, dynamic> json) =>
       NoteCalloutData(
@@ -180,19 +176,17 @@ class NoteTableData {
     List<List<String>>? cells,
     bool? hasHeader,
     List<String>? columnAlignments,
-  }) =>
-      NoteTableData(
-        cells: cells ?? this.cells,
-        hasHeader: hasHeader ?? this.hasHeader,
-        columnAlignments: columnAlignments ?? this.columnAlignments,
-      );
+  }) => NoteTableData(
+    cells: cells ?? this.cells,
+    hasHeader: hasHeader ?? this.hasHeader,
+    columnAlignments: columnAlignments ?? this.columnAlignments,
+  );
 
   Map<String, dynamic> toJson() => {
-        'cells': cells,
-        'hasHeader': hasHeader,
-        if (columnAlignments.isNotEmpty)
-          'columnAlignments': columnAlignments,
-      };
+    'cells': cells,
+    'hasHeader': hasHeader,
+    if (columnAlignments.isNotEmpty) 'columnAlignments': columnAlignments,
+  };
 
   factory NoteTableData.fromJson(Map<String, dynamic> json) {
     final rows = <List<String>>[];
@@ -243,37 +237,33 @@ class NoteLinkData {
   final String? previewImage;
 
   Map<String, dynamic> toJson() => {
-        'url': url,
-        if (title != null) 'title': title,
-        if (description != null) 'description': description,
-        if (previewImage != null) 'previewImage': previewImage,
-      };
+    'url': url,
+    if (title != null) 'title': title,
+    if (description != null) 'description': description,
+    if (previewImage != null) 'previewImage': previewImage,
+  };
 
   factory NoteLinkData.fromJson(Map<String, dynamic> json) => NoteLinkData(
-        url: json['url']?.toString() ?? '',
-        title: _cleanNoteRichString(json['title']),
-        description: _cleanNoteRichString(json['description']),
-        previewImage: _cleanNoteRichString(json['previewImage']),
-      );
+    url: json['url']?.toString() ?? '',
+    title: _cleanNoteRichString(json['title']),
+    description: _cleanNoteRichString(json['description']),
+    previewImage: _cleanNoteRichString(json['previewImage']),
+  );
 }
 
 @immutable
 class NoteReferenceData {
-  const NoteReferenceData({
-    required this.targetId,
-    this.label,
-    this.subtitle,
-  });
+  const NoteReferenceData({required this.targetId, this.label, this.subtitle});
 
   final String targetId;
   final String? label;
   final String? subtitle;
 
   Map<String, dynamic> toJson() => {
-        'targetId': targetId,
-        if (label != null) 'label': label,
-        if (subtitle != null) 'subtitle': subtitle,
-      };
+    'targetId': targetId,
+    if (label != null) 'label': label,
+    if (subtitle != null) 'subtitle': subtitle,
+  };
 
   factory NoteReferenceData.fromJson(Map<String, dynamic> json) =>
       NoteReferenceData(

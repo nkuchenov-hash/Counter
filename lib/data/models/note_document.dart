@@ -238,17 +238,16 @@ class NoteBlock {
       drawingData: identical(drawingData, _sentinel)
           ? this.drawingData
           : drawingData as String?,
-      caption:
-          identical(caption, _sentinel) ? this.caption : caption as String?,
+      caption: identical(caption, _sentinel)
+          ? this.caption
+          : caption as String?,
       mediaAlignment: identical(mediaAlignment, _sentinel)
           ? this.mediaAlignment
           : mediaAlignment as String?,
       callout: identical(callout, _sentinel)
           ? this.callout
           : callout as NoteCalloutData?,
-      table: identical(table, _sentinel)
-          ? this.table
-          : table as NoteTableData?,
+      table: identical(table, _sentinel) ? this.table : table as NoteTableData?,
       linkData: identical(linkData, _sentinel)
           ? this.linkData
           : linkData as NoteLinkData?,
@@ -274,6 +273,12 @@ class NoteBlock {
       }
       if (type == NoteBlockType.checklist) json['checked'] = checked;
       if (type == NoteBlockType.heading) json['level'] = level.clamp(1, 3);
+      // V1 compatibility while existing editor controls still expose
+      // whole-block formatting. V2 readers also receive equivalent runs.
+      if (bold) json['bold'] = true;
+      if (italic) json['italic'] = true;
+      if (underline) json['underline'] = true;
+      if (color != null) json['color'] = color;
       if (indent > 0) json['indent'] = indent;
       if (alignment != null) json['alignment'] = alignment;
       if (type == NoteBlockType.callout && callout != null) {
@@ -322,9 +327,7 @@ class NoteBlock {
       }
     }
     final legacyText = json['text']?.toString() ?? '';
-    final text = runs.isEmpty
-        ? legacyText
-        : runs.map((run) => run.text).join();
+    final text = runs.isEmpty ? legacyText : runs.map((run) => run.text).join();
     final calloutRaw = json['callout'];
     final tableRaw = json['table'];
     final linkRaw = json['link'];
@@ -442,20 +445,19 @@ class NoteDocument {
     NoteDocumentMeta? meta,
     String? format,
     int? version,
-  }) =>
-      NoteDocument(
-        format: format ?? this.format,
-        version: version ?? this.version,
-        meta: meta ?? this.meta,
-        blocks: blocks ?? this.blocks,
-      );
+  }) => NoteDocument(
+    format: format ?? this.format,
+    version: version ?? this.version,
+    meta: meta ?? this.meta,
+    blocks: blocks ?? this.blocks,
+  );
 
   Map<String, dynamic> toJson() => {
-        'format': kLifeOsNotesBlocksFormat,
-        'version': kLifeOsNotesBlocksVersion,
-        'meta': meta.toJson(),
-        'blocks': blocks.map((block) => block.toJson()).toList(),
-      };
+    'format': kLifeOsNotesBlocksFormat,
+    'version': kLifeOsNotesBlocksVersion,
+    'meta': meta.toJson(),
+    'blocks': blocks.map((block) => block.toJson()).toList(),
+  };
 
   String encode() => jsonEncode(toJson());
 
@@ -518,12 +520,14 @@ class NoteDocument {
         final text = item['text']?.toString().trim() ?? '';
         final checked = _jsonBool(item['done'], false);
         if (text.isEmpty && !checked) continue;
-        blocks.add(NoteBlock(
-          id: generateNoteBlockId(),
-          type: NoteBlockType.checklist,
-          text: text,
-          checked: checked,
-        ));
+        blocks.add(
+          NoteBlock(
+            id: generateNoteBlockId(),
+            type: NoteBlockType.checklist,
+            text: text,
+            checked: checked,
+          ),
+        );
       }
     }
 
@@ -543,11 +547,13 @@ class NoteDocument {
     for (final line in body.split('\n')) {
       final text = line.trim();
       if (text.isEmpty) continue;
-      blocks.add(NoteBlock(
-        id: generateNoteBlockId(),
-        type: NoteBlockType.paragraph,
-        text: text,
-      ));
+      blocks.add(
+        NoteBlock(
+          id: generateNoteBlockId(),
+          type: NoteBlockType.paragraph,
+          text: text,
+        ),
+      );
     }
     return NoteDocument(blocks: blocks);
   }
@@ -598,13 +604,15 @@ class NoteDocument {
       if (lineBlockType == 'quote') type = NoteBlockType.quote;
       if (lineBlockType == 'code') type = NoteBlockType.codeBlock;
       if (text.isNotEmpty || type != NoteBlockType.paragraph) {
-        blocks.add(NoteBlock(
-          id: generateNoteBlockId(),
-          type: type,
-          text: text,
-          runs: List<NoteTextRun>.unmodifiable(runs),
-          level: headingLevel,
-        ));
+        blocks.add(
+          NoteBlock(
+            id: generateNoteBlockId(),
+            type: type,
+            text: text,
+            runs: List<NoteTextRun>.unmodifiable(runs),
+            level: headingLevel,
+          ),
+        );
       }
       buffer.clear();
       runs.clear();
@@ -684,10 +692,12 @@ class NoteDocument {
 
   List<Map<String, dynamic>> toChecklistProjection() => blocks
       .where((block) => block.type == NoteBlockType.checklist)
-      .map((block) => <String, dynamic>{
-            'text': block.effectiveText,
-            'done': block.checked,
-          })
+      .map(
+        (block) => <String, dynamic>{
+          'text': block.effectiveText,
+          'done': block.checked,
+        },
+      )
       .toList();
 
   NoteDocumentStats computeStats() {

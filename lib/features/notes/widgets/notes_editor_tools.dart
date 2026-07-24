@@ -81,7 +81,9 @@ class _NotesEditorToolsDockState extends State<NotesEditorToolsDock> {
       builder: (context) => const _NotesTableSizeDialog(),
     );
     if (table == null) return;
-    widget.onInsert(NotesInsertRequest(type: NoteBlockType.table, table: table));
+    widget.onInsert(
+      NotesInsertRequest(type: NoteBlockType.table, table: table),
+    );
     _closePanel();
   }
 
@@ -114,61 +116,61 @@ class _NotesEditorToolsDockState extends State<NotesEditorToolsDock> {
             duration: const Duration(milliseconds: 180),
             child: switch (_panel) {
               NotesToolsPanel.format => _NotesFormatPanel(
-                  key: const ValueKey('format'),
-                  activeBlock: widget.activeBlock,
-                  loc: widget.loc,
-                  onHeading: widget.onHeading,
-                  onSetBlockType: widget.onSetBlockType,
-                  onToggleFormat: widget.onToggleFormat,
-                  onSetColor: widget.onSetColor,
-                ),
+                key: const ValueKey('format'),
+                activeBlock: widget.activeBlock,
+                loc: widget.loc,
+                onHeading: widget.onHeading,
+                onSetBlockType: widget.onSetBlockType,
+                onToggleFormat: widget.onToggleFormat,
+                onSetColor: widget.onSetColor,
+              ),
               NotesToolsPanel.insert => _NotesInsertPanel(
-                  key: const ValueKey('insert'),
-                  loc: widget.loc,
-                  onText: () => _insert(NoteBlockType.paragraph),
-                  onChecklist: () => _insert(NoteBlockType.checklist),
-                  onBullets: () => _insert(NoteBlockType.bulletedList),
-                  onNumbers: () => _insert(NoteBlockType.numberedList),
-                  onQuote: () => _insert(NoteBlockType.quote),
-                  onCallout: () {
-                    widget.onInsert(
-                      const NotesInsertRequest(
-                        type: NoteBlockType.callout,
-                        callout: NoteCalloutData(type: NoteCalloutType.idea),
-                      ),
-                    );
-                    _closePanel();
-                  },
-                  onDivider: () => _insert(NoteBlockType.divider),
-                  onCode: () {
-                    widget.onInsert(
-                      const NotesInsertRequest(
-                        type: NoteBlockType.codeBlock,
-                        codeLanguage: 'plain',
-                      ),
-                    );
-                    _closePanel();
-                  },
-                  onCollapsible: () => _insert(NoteBlockType.collapsible),
-                  onTable: _insertTable,
-                  onImage: () {
-                    widget.onImage();
-                    _closePanel();
-                  },
-                  onDraw: () {
-                    widget.onDraw();
-                    _closePanel();
-                  },
-                  onLink: _insertLinkCard,
-                ),
+                key: const ValueKey('insert'),
+                loc: widget.loc,
+                onText: () => _insert(NoteBlockType.paragraph),
+                onChecklist: () => _insert(NoteBlockType.checklist),
+                onBullets: () => _insert(NoteBlockType.bulletedList),
+                onNumbers: () => _insert(NoteBlockType.numberedList),
+                onQuote: () => _insert(NoteBlockType.quote),
+                onCallout: () {
+                  widget.onInsert(
+                    const NotesInsertRequest(
+                      type: NoteBlockType.callout,
+                      callout: NoteCalloutData(type: NoteCalloutType.idea),
+                    ),
+                  );
+                  _closePanel();
+                },
+                onDivider: () => _insert(NoteBlockType.divider),
+                onCode: () {
+                  widget.onInsert(
+                    const NotesInsertRequest(
+                      type: NoteBlockType.codeBlock,
+                      codeLanguage: 'plain',
+                    ),
+                  );
+                  _closePanel();
+                },
+                onCollapsible: () => _insert(NoteBlockType.collapsible),
+                onTable: _insertTable,
+                onImage: () {
+                  widget.onImage();
+                  _closePanel();
+                },
+                onDraw: () {
+                  widget.onDraw();
+                  _closePanel();
+                },
+                onLink: _insertLinkCard,
+              ),
               NotesToolsPanel.more => _NotesMorePanel(
-                  key: const ValueKey('more'),
-                  loc: widget.loc,
-                  onClose: _closePanel,
-                ),
+                key: const ValueKey('more'),
+                loc: widget.loc,
+                onClose: _closePanel,
+              ),
               NotesToolsPanel.none => const SizedBox.shrink(
-                  key: ValueKey('none'),
-                ),
+                key: ValueKey('none'),
+              ),
             },
           ),
           Container(
@@ -213,10 +215,10 @@ class _NotesEditorToolsDockState extends State<NotesEditorToolsDock> {
                   _PrimaryToolButton(
                     icon: Icons.format_list_bulleted_rounded,
                     tooltip: t(widget.loc, 'notes_tools_lists'),
-                    selected: widget.activeBlock?.type ==
-                            NoteBlockType.bulletedList ||
+                    selected:
                         widget.activeBlock?.type ==
-                            NoteBlockType.numberedList,
+                            NoteBlockType.bulletedList ||
+                        widget.activeBlock?.type == NoteBlockType.numberedList,
                     onTap: () => _toggle(NotesToolsPanel.format),
                   ),
                   const _ToolsDivider(),
@@ -278,19 +280,22 @@ class _NotesFormatPanel extends StatelessWidget {
               ),
               _PanelPill(
                 label: 'H1',
-                selected: activeBlock?.type == NoteBlockType.heading &&
+                selected:
+                    activeBlock?.type == NoteBlockType.heading &&
                     activeBlock?.level == 1,
                 onTap: () => onHeading(1),
               ),
               _PanelPill(
                 label: 'H2',
-                selected: activeBlock?.type == NoteBlockType.heading &&
+                selected:
+                    activeBlock?.type == NoteBlockType.heading &&
                     activeBlock?.level == 2,
                 onTap: () => onHeading(2),
               ),
               _PanelPill(
                 label: 'H3',
-                selected: activeBlock?.type == NoteBlockType.heading &&
+                selected:
+                    activeBlock?.type == NoteBlockType.heading &&
                     activeBlock?.level == 3,
                 onTap: () => onHeading(3),
               ),
@@ -334,22 +339,19 @@ class _NotesFormatPanel extends StatelessWidget {
               ),
               _PanelIconButton(
                 icon: Icons.format_strikethrough_rounded,
-                selected: activeBlock?.effectiveRuns.any(
-                      (run) => run.marks.strike,
-                    ) ==
+                selected:
+                    activeBlock?.effectiveRuns.any((run) => run.marks.strike) ==
                     true,
                 onTap: () => onToggleFormat('strike'),
               ),
               _PanelIconButton(
                 icon: Icons.format_list_bulleted_rounded,
-                selected:
-                    activeBlock?.type == NoteBlockType.bulletedList,
+                selected: activeBlock?.type == NoteBlockType.bulletedList,
                 onTap: () => onSetBlockType(NoteBlockType.bulletedList),
               ),
               _PanelIconButton(
                 icon: Icons.format_list_numbered_rounded,
-                selected:
-                    activeBlock?.type == NoteBlockType.numberedList,
+                selected: activeBlock?.type == NoteBlockType.numberedList,
                 onTap: () => onSetBlockType(NoteBlockType.numberedList),
               ),
             ],
@@ -425,47 +427,86 @@ class _NotesInsertPanel extends StatelessWidget {
               _InsertSection(
                 title: t(loc, 'notes_tools_media'),
                 items: [
-                  _InsertItemData(Icons.image_outlined,
-                      t(loc, 'notes_v3_editor_add_image'), onImage),
-                  _InsertItemData(Icons.draw_outlined,
-                      t(loc, 'notes_v3_editor_add_draw'), onDraw),
+                  _InsertItemData(
+                    Icons.image_outlined,
+                    t(loc, 'notes_v3_editor_add_image'),
+                    onImage,
+                  ),
+                  _InsertItemData(
+                    Icons.draw_outlined,
+                    t(loc, 'notes_v3_editor_add_draw'),
+                    onDraw,
+                  ),
                 ],
               ),
               _InsertSection(
                 title: t(loc, 'notes_tools_structure'),
                 items: [
-                  _InsertItemData(Icons.text_fields_rounded,
-                      t(loc, 'notes_v3_editor_add_text'), onText),
-                  _InsertItemData(Icons.checklist_rounded,
-                      t(loc, 'notes_v3_editor_add_checklist'), onChecklist),
-                  _InsertItemData(Icons.format_list_bulleted_rounded,
-                      t(loc, 'notes_tools_bullets'), onBullets),
-                  _InsertItemData(Icons.format_list_numbered_rounded,
-                      t(loc, 'notes_tools_numbers'), onNumbers),
-                  _InsertItemData(Icons.horizontal_rule_rounded,
-                      t(loc, 'notes_tools_divider'), onDivider),
+                  _InsertItemData(
+                    Icons.text_fields_rounded,
+                    t(loc, 'notes_v3_editor_add_text'),
+                    onText,
+                  ),
+                  _InsertItemData(
+                    Icons.checklist_rounded,
+                    t(loc, 'notes_v3_editor_add_checklist'),
+                    onChecklist,
+                  ),
+                  _InsertItemData(
+                    Icons.format_list_bulleted_rounded,
+                    t(loc, 'notes_tools_bullets'),
+                    onBullets,
+                  ),
+                  _InsertItemData(
+                    Icons.format_list_numbered_rounded,
+                    t(loc, 'notes_tools_numbers'),
+                    onNumbers,
+                  ),
+                  _InsertItemData(
+                    Icons.horizontal_rule_rounded,
+                    t(loc, 'notes_tools_divider'),
+                    onDivider,
+                  ),
                 ],
               ),
               _InsertSection(
                 title: t(loc, 'notes_tools_special_blocks'),
                 items: [
-                  _InsertItemData(Icons.format_quote_rounded,
-                      t(loc, 'notes_tools_quote'), onQuote),
-                  _InsertItemData(Icons.lightbulb_outline_rounded,
-                      t(loc, 'notes_tools_callout'), onCallout),
-                  _InsertItemData(Icons.code_rounded,
-                      t(loc, 'notes_tools_code_block'), onCode),
-                  _InsertItemData(Icons.expand_more_rounded,
-                      t(loc, 'notes_tools_collapsible'), onCollapsible),
+                  _InsertItemData(
+                    Icons.format_quote_rounded,
+                    t(loc, 'notes_tools_quote'),
+                    onQuote,
+                  ),
+                  _InsertItemData(
+                    Icons.lightbulb_outline_rounded,
+                    t(loc, 'notes_tools_callout'),
+                    onCallout,
+                  ),
+                  _InsertItemData(
+                    Icons.code_rounded,
+                    t(loc, 'notes_tools_code_block'),
+                    onCode,
+                  ),
+                  _InsertItemData(
+                    Icons.expand_more_rounded,
+                    t(loc, 'notes_tools_collapsible'),
+                    onCollapsible,
+                  ),
                 ],
               ),
               _InsertSection(
                 title: t(loc, 'notes_tools_data_links'),
                 items: [
-                  _InsertItemData(Icons.table_chart_outlined,
-                      t(loc, 'notes_tools_table'), onTable),
-                  _InsertItemData(Icons.link_rounded,
-                      t(loc, 'notes_tools_link_card'), onLink),
+                  _InsertItemData(
+                    Icons.table_chart_outlined,
+                    t(loc, 'notes_tools_table'),
+                    onTable,
+                  ),
+                  _InsertItemData(
+                    Icons.link_rounded,
+                    t(loc, 'notes_tools_link_card'),
+                    onLink,
+                  ),
                 ],
               ),
             ],
@@ -477,11 +518,7 @@ class _NotesInsertPanel extends StatelessWidget {
 }
 
 class _NotesMorePanel extends StatelessWidget {
-  const _NotesMorePanel({
-    super.key,
-    required this.loc,
-    required this.onClose,
-  });
+  const _NotesMorePanel({super.key, required this.loc, required this.onClose});
 
   final String loc;
   final VoidCallback onClose;
@@ -524,10 +561,9 @@ class _ToolsPanelSurface extends StatelessWidget {
         color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.98),
         border: Border(
           top: BorderSide(
-            color: Theme.of(context)
-                .colorScheme
-                .outlineVariant
-                .withValues(alpha: 0.72),
+            color: Theme.of(
+              context,
+            ).colorScheme.outlineVariant.withValues(alpha: 0.72),
           ),
         ),
       ),
@@ -578,8 +614,8 @@ class _PrimaryToolButton extends StatelessWidget {
                       color: selected
                           ? scheme.onPrimary
                           : onTap == null
-                              ? scheme.onSurfaceVariant.withValues(alpha: 0.35)
-                              : scheme.onSurfaceVariant,
+                          ? scheme.onSurfaceVariant.withValues(alpha: 0.35)
+                          : scheme.onSurfaceVariant,
                     ),
                   )
                 : Icon(
@@ -588,8 +624,8 @@ class _PrimaryToolButton extends StatelessWidget {
                     color: selected
                         ? scheme.onPrimary
                         : onTap == null
-                            ? scheme.onSurfaceVariant.withValues(alpha: 0.35)
-                            : scheme.onSurfaceVariant,
+                        ? scheme.onSurfaceVariant.withValues(alpha: 0.35)
+                        : scheme.onSurfaceVariant,
                   ),
           ),
         ),
@@ -603,14 +639,11 @@ class _ToolsDivider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        width: 1,
-        height: 20,
-        margin: const EdgeInsets.symmetric(horizontal: 4),
-        color: Theme.of(context)
-            .colorScheme
-            .outlineVariant
-            .withValues(alpha: 0.72),
-      );
+    width: 1,
+    height: 20,
+    margin: const EdgeInsets.symmetric(horizontal: 4),
+    color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.72),
+  );
 }
 
 class _PanelLabel extends StatelessWidget {
@@ -619,16 +652,16 @@ class _PanelLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(bottom: 7),
-        child: Text(
-          text,
-          style: TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w700,
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
-        ),
-      );
+    padding: const EdgeInsets.only(bottom: 7),
+    child: Text(
+      text,
+      style: TextStyle(
+        fontSize: 11,
+        fontWeight: FontWeight.w700,
+        color: Theme.of(context).colorScheme.onSurfaceVariant,
+      ),
+    ),
+  );
 }
 
 class _PanelPill extends StatelessWidget {
@@ -686,11 +719,29 @@ class _PanelIconButton extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) => _PanelPill(
-        label: String.fromCharCode(icon.codePoint),
-        selected: selected,
-        onTap: onTap,
-      );
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(
+          color: selected ? scheme.primary : scheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: selected ? scheme.primary : scheme.outlineVariant,
+          ),
+        ),
+        child: Icon(
+          icon,
+          size: 18,
+          color: selected ? scheme.onPrimary : scheme.onSurfaceVariant,
+        ),
+      ),
+    );
+  }
 }
 
 class _ColorDot extends StatelessWidget {
@@ -794,8 +845,7 @@ class _NotesTableSizeDialog extends StatefulWidget {
   const _NotesTableSizeDialog();
 
   @override
-  State<_NotesTableSizeDialog> createState() =>
-      _NotesTableSizeDialogState();
+  State<_NotesTableSizeDialog> createState() => _NotesTableSizeDialogState();
 }
 
 class _NotesTableSizeDialogState extends State<_NotesTableSizeDialog> {
@@ -826,9 +876,7 @@ class _NotesTableSizeDialogState extends State<_NotesTableSizeDialog> {
                       margin: const EdgeInsets.all(2),
                       decoration: BoxDecoration(
                         color: row <= _rows && column <= _columns
-                            ? Theme.of(context)
-                                .colorScheme
-                                .primaryContainer
+                            ? Theme.of(context).colorScheme.primaryContainer
                             : Theme.of(context).colorScheme.surface,
                         border: Border.all(
                           color: row <= _rows && column <= _columns
@@ -851,9 +899,9 @@ class _NotesTableSizeDialogState extends State<_NotesTableSizeDialog> {
           child: Text(t(loc, 'cancel')),
         ),
         FilledButton(
-          onPressed: () => Navigator.of(context).pop(
-            NoteTableData.empty(rows: _rows, columns: _columns),
-          ),
+          onPressed: () => Navigator.of(
+            context,
+          ).pop(NoteTableData.empty(rows: _rows, columns: _columns)),
           child: Text(t(loc, 'add')),
         ),
       ],

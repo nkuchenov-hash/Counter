@@ -29,9 +29,7 @@ void main() {
       });
 
       final migrated = NoteDocument.tryParse(notesDeltaJson: v1);
-      final reparsed = NoteDocument.tryParse(
-        notesDeltaJson: migrated.encode(),
-      );
+      final reparsed = NoteDocument.tryParse(notesDeltaJson: migrated.encode());
 
       expect(migrated.format, kLifeOsNotesBlocksFormat);
       expect(migrated.version, kLifeOsNotesBlocksVersion);
@@ -56,10 +54,7 @@ void main() {
             type: NoteBlockType.quote,
             text: 'Read the source',
             runs: const [
-              NoteTextRun(
-                text: 'Read ',
-                marks: NoteInlineMarks(bold: true),
-              ),
+              NoteTextRun(text: 'Read ', marks: NoteInlineMarks(bold: true)),
               NoteTextRun(
                 text: 'the source',
                 marks: NoteInlineMarks(
@@ -73,9 +68,7 @@ void main() {
         ],
       );
 
-      final parsed = NoteDocument.tryParse(
-        notesDeltaJson: document.encode(),
-      );
+      final parsed = NoteDocument.tryParse(notesDeltaJson: document.encode());
       final block = parsed.blocks.single;
 
       expect(block.type, NoteBlockType.quote);
@@ -129,9 +122,7 @@ void main() {
         ],
       );
 
-      final parsed = NoteDocument.tryParse(
-        notesDeltaJson: document.encode(),
-      );
+      final parsed = NoteDocument.tryParse(notesDeltaJson: document.encode());
 
       expect(parsed.blocks[0].callout?.type, NoteCalloutType.idea);
       expect(parsed.blocks[1].table?.cells[1][1], 'Deep work');
