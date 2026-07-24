@@ -160,19 +160,15 @@ List<PlanningTask> cascadeScheduledPlansAfterManualResize({
       task,
       resolveDurationMinutes: resolveDurationMinutes,
     );
+    if (!originalStart.isBefore(cursorEnd)) break;
     final hadExplicitEnd = task.endDateTime != null;
-    final shiftedStart = originalStart.isBefore(cursorEnd)
-        ? cursorEnd
-        : originalStart;
+    final shiftedStart = cursorEnd;
     final effectiveEnd = shiftedStart.add(Duration(minutes: duration));
-
-    if (shiftedStart != originalStart) {
-      changedById[task.planRowIdForBackend] = task.copyWith(
-        startTime: shiftedStart,
-        endDateTime: hadExplicitEnd ? effectiveEnd : null,
-        clearEnd: !hadExplicitEnd,
-      );
-    }
+    changedById[task.planRowIdForBackend] = task.copyWith(
+      startTime: shiftedStart,
+      endDateTime: hadExplicitEnd ? effectiveEnd : null,
+      clearEnd: !hadExplicitEnd,
+    );
     cursorEnd = effectiveEnd;
   }
 
