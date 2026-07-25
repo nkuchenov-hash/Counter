@@ -1,0 +1,85 @@
+name: Notes seamless editor capture
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: notes-seamless-editor-capture
+  cancel-in-progress: true
+
+jobs:
+  capture:
+    if: ${{ github.actor != 'github-actions[bot]' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout fix branch
+        uses: actions/checkout@v4
+        with:
+          ref: fix/notes-seamless-editor
+          fetch-depth: 0
+
+      - name: Set up Flutter 3.41.6
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.6'
+          channel: stable
+
+      - name: Prepare capture build
+        run: |
+          cp lib/core/env/env.dart.example lib/core/env/env.dart
+          flutter pub get
+          dart format scripts/manual/capture_notes_seamless_web_main.dart
+          flutter build web --release \
+            -t scripts/manual/capture_notes_seamless_web_main.dart \
+            --base-href="/" \
+            --no-tree-shake-icons \
+            --no-wasm-dry-run \
+            --pwa-strategy=none
+
+      - name: Start local server
+        run: |
+          python3 -m http.server 4173 --directory build/web > /tmp/notes-seamless-server.log 2>&1 &
+          echo $! > /tmp/notes-seamless-server.pid
+          sleep 2
+
+      - name: Capture real Chrome runtime
+        run: |
+          google-chrome \
+            --headless=new \
+            --no-sandbox \
+            --disable-dev-shm-usage \
+            --hide-scrollbars \
+            --window-size=1156,1200 \
+            --virtual-time-budget=9000 \
+            --screenshot=notes_seamless_editor_capture.png \
+            http://127.0.0.1:4173/
+          test $(stat -c%s notes_seamless_editor_capture.png) -gt 50000
+
+      - name: Upload capture
+        uses: actions/upload-artifact@v4
+        with:
+          name: notes-seamless-editor-capture
+          path: notes_seamless_editor_capture.png
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Remove temporary capture tooling
+        run: |
+          rm scripts/manual/capture_notes_seamless_web_main.dart
+          rm .github/workflows/notes-seamless-capture.yml
+
+      - name: Commit clean branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --check
+          git commit -m "Remove temporary Notes seamless capture tooling"
+          git push origin HEAD:fix/notes-seamless-editor
