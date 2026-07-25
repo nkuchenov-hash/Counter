@@ -92,11 +92,7 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
     final body = _bodyController.text;
     if (body.isNotEmpty || _retainedLegacyBlocks.isEmpty) {
       blocks.add(
-        NoteBlock(
-          id: _bodyBlockId,
-          type: NoteBlockType.paragraph,
-          text: body,
-        ),
+        NoteBlock(id: _bodyBlockId, type: NoteBlockType.paragraph, text: body),
       );
     }
     blocks.addAll(_retainedLegacyBlocks);
