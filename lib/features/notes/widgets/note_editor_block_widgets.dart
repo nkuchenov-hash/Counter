@@ -117,20 +117,26 @@ class NoteEditorBlockRow extends StatefulWidget {
     required this.canMoveDown,
     required this.onActivate,
     required this.onUpdate,
+    required this.onTextChanged,
+    required this.onTableChanged,
     required this.onDelete,
     required this.onMoveUp,
     required this.onMoveDown,
     required this.onEditDrawing,
     required this.onEnter,
     required this.loc,
+    this.listOrdinal = 1,
   });
 
   final NoteBlock block;
   final bool isActive;
+  final int listOrdinal;
   final bool canMoveUp;
   final bool canMoveDown;
   final VoidCallback onActivate;
   final void Function(NoteEditorBlockPatch) onUpdate;
+  final void Function(NoteEditorBlockPatch) onTextChanged;
+  final ValueChanged<NoteTableData> onTableChanged;
   final VoidCallback onDelete;
   final VoidCallback onMoveUp;
   final VoidCallback onMoveDown;
@@ -177,12 +183,15 @@ class _NoteEditorBlockRowState extends State<NoteEditorBlockRow> {
     final selection = _textController.selection;
     final text = _textController.text;
     final slashQuery = text.startsWith('/') ? text.substring(1) : '';
-    if (selection == _selection && slashQuery == _slashQuery) return;
-    if (!mounted) return;
-    setState(() {
-      _selection = selection;
-      _slashQuery = slashQuery;
-    });
+    final hadSelection = _selection.isValid && !_selection.isCollapsed;
+    final hasSelection = selection.isValid && !selection.isCollapsed;
+    final needsRebuild =
+        slashQuery != _slashQuery ||
+        hadSelection != hasSelection ||
+        (hasSelection && selection != _selection);
+    _selection = selection;
+    _slashQuery = slashQuery;
+    if (needsRebuild && mounted) setState(() {});
   }
 
   @override
@@ -197,21 +206,20 @@ class _NoteEditorBlockRowState extends State<NoteEditorBlockRow> {
     if (blockChanged || contentChanged) {
       _editingText = nextText;
       _editingRuns = List<NoteTextRun>.unmodifiable(nextRuns);
-      _textController.setRuns(_editingRuns);
-    }
-    if (blockChanged) {
-      _textController.value = TextEditingValue(
-        text: nextText,
-        selection: TextSelection.collapsed(offset: nextText.length),
-      );
-    } else if (nextText != _textController.text) {
-      final offset = _textController.selection.extentOffset
-          .clamp(0, nextText.length)
-          .toInt();
-      _textController.value = TextEditingValue(
-        text: nextText,
-        selection: TextSelection.collapsed(offset: offset),
-      );
+      if (blockChanged || nextText != _textController.text) {
+        final offset = blockChanged
+            ? nextText.length
+            : _textController.selection.extentOffset
+                  .clamp(0, nextText.length)
+                  .toInt();
+        _textController.syncDocument(
+          text: nextText,
+          runs: _editingRuns,
+          selection: TextSelection.collapsed(offset: offset),
+        );
+      } else {
+        _textController.setRuns(_editingRuns);
+      }
     }
   }
 
@@ -470,8 +478,7 @@ class _NoteEditorBlockRowState extends State<NoteEditorBlockRow> {
         loc: loc,
         onActivate: widget.onActivate,
         onDelete: widget.onDelete,
-        onTableChanged: (table) =>
-            widget.onUpdate(NoteEditorBlockPatch(table: table)),
+        onTableChanged: widget.onTableChanged,
       );
     }
 
@@ -538,31 +545,31 @@ class _NoteEditorBlockRowState extends State<NoteEditorBlockRow> {
           behavior: HitTestBehavior.opaque,
           onTap: widget.onActivate,
           child: Container(
-            decoration: widget.isActive
+            decoration: isQuote
                 ? BoxDecoration(
-                    color: notesBlockActiveFill(scheme),
-                    borderRadius: BorderRadius.circular(8),
-                  )
-                : isQuote
-                ? BoxDecoration(
-                    color: scheme.primaryContainer.withValues(alpha: 0.24),
                     border: Border(
-                      left: BorderSide(color: scheme.primary, width: 3),
+                      left: BorderSide(color: scheme.primary, width: 2),
                     ),
-                    borderRadius: BorderRadius.circular(8),
                   )
                 : isCallout
                 ? BoxDecoration(
-                    color: scheme.tertiaryContainer.withValues(alpha: 0.4),
-                    borderRadius: BorderRadius.circular(10),
+                    border: Border(
+                      left: BorderSide(color: scheme.tertiary, width: 2),
+                    ),
                   )
                 : isCode
                 ? BoxDecoration(
-                    color: scheme.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(8),
+                    border: Border(
+                      left: BorderSide(color: scheme.outlineVariant, width: 2),
+                    ),
                   )
                 : null,
-            padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 4),
+            padding: EdgeInsets.fromLTRB(
+              isQuote || isCallout || isCode ? 10 : 0,
+              1,
+              0,
+              1,
+            ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -578,7 +585,7 @@ class _NoteEditorBlockRowState extends State<NoteEditorBlockRow> {
                         width: kNotesCheckCircleSize,
                         height: kNotesCheckCircleSize,
                         decoration: BoxDecoration(
-                          shape: BoxShape.circle,
+                          borderRadius: BorderRadius.circular(5),
                           border: Border.all(
                             color: block.checked
                                 ? const Color(0xFF6366F1)
@@ -607,11 +614,20 @@ class _NoteEditorBlockRowState extends State<NoteEditorBlockRow> {
                     padding: const EdgeInsets.only(top: 5, right: 8),
                     child: isNumbered
                         ? Text(
-                            '1.',
+                            '${widget.listOrdinal}.',
                             style: TextStyle(
-                              color: scheme.primary,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
+                              color: scheme.onSurfaceVariant,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          )
+                        : isBullet
+                        ? Text(
+                            '•',
+                            style: TextStyle(
+                              color: scheme.onSurfaceVariant,
+                              fontSize: 18,
+                              height: 1,
                             ),
                           )
                         : InkWell(
@@ -624,16 +640,14 @@ class _NoteEditorBlockRowState extends State<NoteEditorBlockRow> {
                                 : null,
                             borderRadius: BorderRadius.circular(6),
                             child: Icon(
-                              isBullet
-                                  ? Icons.circle
-                                  : isQuote
+                              isQuote
                                   ? Icons.format_quote_rounded
                                   : isCallout
                                   ? Icons.lightbulb_outline_rounded
                                   : block.collapsed
                                   ? Icons.chevron_right_rounded
                                   : Icons.expand_more_rounded,
-                              size: isBullet ? 7 : 16,
+                              size: 16,
                               color: isCallout
                                   ? scheme.tertiary
                                   : scheme.primary,
@@ -676,15 +690,10 @@ class _NoteEditorBlockRowState extends State<NoteEditorBlockRow> {
                       filled: false,
                     ),
                     onChanged: (value) {
-                      final nextRuns = applyNoteTextEditToRuns(
-                        oldText: _editingText,
-                        oldRuns: _editingRuns,
-                        newText: value,
-                      );
+                      final nextRuns = _textController.runs;
                       _editingText = value;
                       _editingRuns = nextRuns;
-                      _textController.setRuns(nextRuns);
-                      widget.onUpdate(
+                      widget.onTextChanged(
                         NoteEditorBlockPatch(text: value, runs: nextRuns),
                       );
                     },
@@ -1129,15 +1138,12 @@ class _NoteEditorImageBlock extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 4),
         child: Stack(
           children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: Image.memory(
-                _bytesFromDataUrl(block.imageData)!,
-                fit: BoxFit.contain,
-                errorBuilder: (_, __, ___) => Container(
-                  height: 80,
-                  color: scheme.errorContainer.withValues(alpha: 0.3),
-                  alignment: Alignment.center,
+            Image.memory(
+              _bytesFromDataUrl(block.imageData)!,
+              fit: BoxFit.contain,
+              errorBuilder: (_, __, ___) => SizedBox(
+                height: 80,
+                child: Center(
                   child: Icon(Icons.broken_image_outlined, color: scheme.error),
                 ),
               ),
@@ -1182,22 +1188,13 @@ class _NoteEditorDrawingBlock extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 4),
         child: Stack(
           children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: Container(
-                color: Colors.white,
-                child: Image.memory(
-                  _bytesFromDataUrl(block.drawingData)!,
-                  fit: BoxFit.contain,
-                  errorBuilder: (_, __, ___) => Container(
-                    height: 80,
-                    color: scheme.errorContainer.withValues(alpha: 0.3),
-                    alignment: Alignment.center,
-                    child: Icon(
-                      Icons.broken_image_outlined,
-                      color: scheme.error,
-                    ),
-                  ),
+            Image.memory(
+              _bytesFromDataUrl(block.drawingData)!,
+              fit: BoxFit.contain,
+              errorBuilder: (_, __, ___) => SizedBox(
+                height: 80,
+                child: Center(
+                  child: Icon(Icons.broken_image_outlined, color: scheme.error),
                 ),
               ),
             ),
@@ -1255,14 +1252,42 @@ class _NoteRichTextController extends TextEditingController {
   _NoteRichTextController({
     required String text,
     required List<NoteTextRun> runs,
-  }) : _runs = runs,
+  }) : _runs = List<NoteTextRun>.unmodifiable(runs),
        super(text: text);
 
   List<NoteTextRun> _runs;
+  bool _syncingDocument = false;
   TextStyle? baseStyle;
 
+  List<NoteTextRun> get runs => List<NoteTextRun>.unmodifiable(_runs);
+
   void setRuns(List<NoteTextRun> runs) {
-    _runs = runs;
+    _runs = List<NoteTextRun>.unmodifiable(runs);
+  }
+
+  void syncDocument({
+    required String text,
+    required List<NoteTextRun> runs,
+    required TextSelection selection,
+  }) {
+    _syncingDocument = true;
+    _runs = List<NoteTextRun>.unmodifiable(runs);
+    super.value = TextEditingValue(text: text, selection: selection);
+    _syncingDocument = false;
+  }
+
+  @override
+  set value(TextEditingValue newValue) {
+    if (!_syncingDocument && newValue.text != text) {
+      _runs = List<NoteTextRun>.unmodifiable(
+        applyNoteTextEditToRuns(
+          oldText: text,
+          oldRuns: _runs,
+          newText: newValue.text,
+        ),
+      );
+    }
+    super.value = newValue;
   }
 
   @override

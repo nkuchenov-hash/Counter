@@ -50,10 +50,7 @@ class NotesGlmBackground extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFFF8F9FD),
-              Color(0xFFF5F6FC),
-            ],
+            colors: [Color(0xFFF8F9FD), Color(0xFFF5F6FC)],
             stops: [0.0, 0.55],
           ),
         ),
@@ -65,10 +62,7 @@ class NotesGlmBackground extends StatelessWidget {
                 gradient: RadialGradient(
                   center: Alignment(-0.85, 0.95),
                   radius: 1.1,
-                  colors: [
-                    Color(0x38EEF0FF),
-                    Color(0x00EEF0FF),
-                  ],
+                  colors: [Color(0x38EEF0FF), Color(0x00EEF0FF)],
                 ),
               ),
             ),
@@ -77,10 +71,7 @@ class NotesGlmBackground extends StatelessWidget {
                 gradient: RadialGradient(
                   center: Alignment(0.9, 0.92),
                   radius: 1.0,
-                  colors: [
-                    Color(0x30FFF1F5),
-                    Color(0x00FFF1F5),
-                  ],
+                  colors: [Color(0x30FFF1F5), Color(0x00FFF1F5)],
                 ),
               ),
             ),
@@ -153,18 +144,34 @@ class NotesGlmEditorFrame extends StatelessWidget {
             final columnWidth = constraints.maxWidth < kGlmEditorMaxWidth
                 ? constraints.maxWidth
                 : kGlmEditorMaxWidth;
+            final scheme = Theme.of(context).colorScheme;
+            final hasOuterCanvas = constraints.maxWidth > kGlmEditorMaxWidth;
             return Center(
               child: SizedBox(
                 width: columnWidth,
                 height: constraints.maxHeight,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    topBar,
-                    Expanded(child: body),
-                    if (keyboardInset > 0) SizedBox(height: keyboardInset),
-                    toolbar,
-                  ],
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: scheme.surface,
+                    border: hasOuterCanvas
+                        ? Border.symmetric(
+                            vertical: BorderSide(
+                              color: scheme.outlineVariant.withValues(
+                                alpha: 0.45,
+                              ),
+                            ),
+                          )
+                        : null,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      topBar,
+                      Expanded(child: body),
+                      if (keyboardInset > 0) SizedBox(height: keyboardInset),
+                      toolbar,
+                    ],
+                  ),
                 ),
               ),
             );
@@ -199,7 +206,11 @@ InputDecoration notesGlmSearchDecoration({
   return InputDecoration(
     hintText: hintText,
     hintStyle: const TextStyle(fontSize: 14, color: kGlmMetaColor),
-    prefixIcon: const Icon(Icons.search_rounded, size: 18, color: kGlmMetaColor),
+    prefixIcon: const Icon(
+      Icons.search_rounded,
+      size: 18,
+      color: kGlmMetaColor,
+    ),
     suffixIcon: suffixIcon,
     filled: true,
     fillColor: const Color(0xFFFFFFFF).withValues(alpha: 0.75),
@@ -207,15 +218,21 @@ InputDecoration notesGlmSearchDecoration({
     contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
     enabledBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(12),
-      borderSide: BorderSide(color: const Color(0xFFE2E8F0).withValues(alpha: 0.95)),
+      borderSide: BorderSide(
+        color: const Color(0xFFE2E8F0).withValues(alpha: 0.95),
+      ),
     ),
     focusedBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(12),
-      borderSide: BorderSide(color: const Color(0xFF6366F1).withValues(alpha: 0.55)),
+      borderSide: BorderSide(
+        color: const Color(0xFF6366F1).withValues(alpha: 0.55),
+      ),
     ),
     border: OutlineInputBorder(
       borderRadius: BorderRadius.circular(12),
-      borderSide: BorderSide(color: const Color(0xFFE2E8F0).withValues(alpha: 0.95)),
+      borderSide: BorderSide(
+        color: const Color(0xFFE2E8F0).withValues(alpha: 0.95),
+      ),
     ),
   );
 }
