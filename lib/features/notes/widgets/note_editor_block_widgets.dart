@@ -117,20 +117,26 @@ class NoteEditorBlockRow extends StatefulWidget {
     required this.canMoveDown,
     required this.onActivate,
     required this.onUpdate,
+    required this.onTextChanged,
+    required this.onTableChanged,
     required this.onDelete,
     required this.onMoveUp,
     required this.onMoveDown,
     required this.onEditDrawing,
     required this.onEnter,
     required this.loc,
+    this.listOrdinal = 1,
   });
 
   final NoteBlock block;
   final bool isActive;
+  final int listOrdinal;
   final bool canMoveUp;
   final bool canMoveDown;
   final VoidCallback onActivate;
   final void Function(NoteEditorBlockPatch) onUpdate;
+  final void Function(NoteEditorBlockPatch) onTextChanged;
+  final ValueChanged<NoteTableData> onTableChanged;
   final VoidCallback onDelete;
   final VoidCallback onMoveUp;
   final VoidCallback onMoveDown;
@@ -177,12 +183,15 @@ class _NoteEditorBlockRowState extends State<NoteEditorBlockRow> {
     final selection = _textController.selection;
     final text = _textController.text;
     final slashQuery = text.startsWith('/') ? text.substring(1) : '';
-    if (selection == _selection && slashQuery == _slashQuery) return;
-    if (!mounted) return;
-    setState(() {
-      _selection = selection;
-      _slashQuery = slashQuery;
-    });
+    final hadSelection = _selection.isValid && !_selection.isCollapsed;
+    final hasSelection = selection.isValid && !selection.isCollapsed;
+    final needsRebuild =
+        slashQuery != _slashQuery ||
+        hadSelection != hasSelection ||
+        (hasSelection && selection != _selection);
+    _selection = selection;
+    _slashQuery = slashQuery;
+    if (needsRebuild && mounted) setState(() {});
   }
 
   @override
@@ -197,21 +206,20 @@ class _NoteEditorBlockRowState extends State<NoteEditorBlockRow> {
     if (blockChanged || contentChanged) {
       _editingText = nextText;
       _editingRuns = List<NoteTextRun>.unmodifiable(nextRuns);
-      _textController.setRuns(_editingRuns);
-    }
-    if (blockChanged) {
-      _textController.value = TextEditingValue(
-        text: nextText,
-        selection: TextSelection.collapsed(offset: nextText.length),
-      );
-    } else if (nextText != _textController.text) {
-      final offset = _textController.selection.extentOffset
-          .clamp(0, nextText.length)
-          .toInt();
-      _textController.value = TextEditingValue(
-        text: nextText,
-        selection: TextSelection.collapsed(offset: offset),
-      );
+      if (blockChanged || nextText != _textController.text) {
+        final offset = blockChanged
+            ? nextText.length
+            : _textController.selection.extentOffset
+                  .clamp(0, nextText.length)
+                  .toInt();
+        _textController.syncDocument(
+          text: nextText,
+          runs: _editingRuns,
+          selection: TextSelection.collapsed(offset: offset),
+        );
+      } else {
+        _textController.setRuns(_editingRuns);
+      }
     }
   }
 
@@ -470,8 +478,7 @@ class _NoteEditorBlockRowState extends State<NoteEditorBlockRow> {
         loc: loc,
         onActivate: widget.onActivate,
         onDelete: widget.onDelete,
-        onTableChanged: (table) =>
-            widget.onUpdate(NoteEditorBlockPatch(table: table)),
+        onTableChanged: widget.onTableChanged,
       );
     }
 
@@ -538,31 +545,31 @@ class _NoteEditorBlockRowState extends State<NoteEditorBlockRow> {
           behavior: HitTestBehavior.opaque,
           onTap: widget.onActivate,
           child: Container(
-            decoration: widget.isActive
+            decoration: isQuote
                 ? BoxDecoration(
-                    color: notesBlockActiveFill(scheme),
-                    borderRadius: BorderRadius.circular(8),
-                  )
-                : isQuote
-                ? BoxDecoration(
-                    color: scheme.primaryContainer.withValues(alpha: 0.24),
                     border: Border(
-                      left: BorderSide(color: scheme.primary, width: 3),
+                      left: BorderSide(color: scheme.primary, width: 2),
                     ),
-                    borderRadius: BorderRadius.circular(8),
                   )
                 : isCallout
                 ? BoxDecoration(
-                    color: scheme.tertiaryContainer.withValues(alpha: 0.4),
-                    borderRadius: BorderRadius.circular(10),
+                    border: Border(
+                      left: BorderSide(color: scheme.tertiary, width: 2),
+                    ),
                   )
                 : isCode
                 ? BoxDecoration(
-                    color: scheme.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(8),
+                    border: Border(
+                      left: BorderSide(color: scheme.outlineVariant, width: 2),
+                    ),
                   )
                 : null,
-            padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 4),
+            padding: EdgeInsets.fromLTRB(
+              isQuote || isCallout || isCode ? 10 : 0,
+              1,
+              0,
+              1,
+            ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -578,7 +585,7 @@ class _NoteEditorBlockRowState extends State<NoteEditorBlockRow> {
                         width: kNotesCheckCircleSize,
                         height: kNotesCheckCircleSize,
                         decoration: BoxDecoration(
-                          shape: BoxShape.circle,
+                          borderRadius: BorderRadius.circular(5),
                           border: Border.all(
                             color: block.checked
                                 ? const Color(0xFF6366F1)
@@ -607,11 +614,20 @@ class _NoteEditorBlockRowState extends State<NoteEditorBlockRow> {
                     padding: const EdgeInsets.only(top: 5, right: 8),
                     child: isNumbered
                         ? Text(
-                            '1.',
+                            '${widget.listOrdinal}.',
                             style: TextStyle(
-                              color: scheme.primary,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
+                              color: scheme.onSurfaceVariant,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          )
+                        : isBullet
+                        ? Text(
+                            '•',
+                            style: TextStyle(
+                              color: scheme.onSurfaceVariant,
+                              fontSize: 18,
+                              height: 1,
                             ),
                           )
                         : InkWell(
@@ -624,16 +640,14 @@ class _NoteEditorBlockRowState extends State<NoteEditorBlockRow> {
                                 : null,
                             borderRadius: BorderRadius.circular(6),
                             child: Icon(
-                              isBullet
-                                  ? Icons.circle
-                                  : isQuote
+                              isQuote
                                   ? Icons.format_quote_rounded
                                   : isCallout
                                   ? Icons.lightbulb_outline_rounded
                                   : block.collapsed
                                   ? Icons.chevron_right_rounded
                                   : Icons.expand_more_rounded,
-                              size: isBullet ? 7 : 16,
+                              size: 16,
                               color: isCallout
                                   ? scheme.tertiary
                                   : scheme.primary,
@@ -676,33 +690,32 @@ class _NoteEditorBlockRowState extends State<NoteEditorBlockRow> {
                       filled: false,
                     ),
                     onChanged: (value) {
-                      final nextRuns = applyNoteTextEditToRuns(
-                        oldText: _editingText,
-                        oldRuns: _editingRuns,
-                        newText: value,
-                      );
+                      final nextRuns = _textController.runs;
                       _editingText = value;
                       _editingRuns = nextRuns;
-                      _textController.setRuns(nextRuns);
-                      widget.onUpdate(
+                      widget.onTextChanged(
                         NoteEditorBlockPatch(text: value, runs: nextRuns),
                       );
                     },
                     onSubmitted: (_) => widget.onEnter(),
                   ),
                 ),
-                if (widget.isActive)
-                  _NoteEditorBlockActiveControls(
-                    block: block,
-                    canMoveUp: widget.canMoveUp,
-                    canMoveDown: widget.canMoveDown,
-                    onMoveUp: widget.onMoveUp,
-                    onMoveDown: widget.onMoveDown,
-                    onConvert: _convertBlock,
-                    onCreatePlan: _createPlanFromSelectionOrBlock,
-                    onDelete: widget.onDelete,
-                    loc: loc,
-                  ),
+                SizedBox(
+                  width: 32,
+                  child: widget.isActive
+                      ? _NoteEditorBlockActiveControls(
+                          block: block,
+                          canMoveUp: widget.canMoveUp,
+                          canMoveDown: widget.canMoveDown,
+                          onMoveUp: widget.onMoveUp,
+                          onMoveDown: widget.onMoveDown,
+                          onConvert: _convertBlock,
+                          onCreatePlan: _createPlanFromSelectionOrBlock,
+                          onDelete: widget.onDelete,
+                          loc: loc,
+                        )
+                      : null,
+                ),
               ],
             ),
           ),
@@ -1003,105 +1016,111 @@ class _NoteEditorBlockActiveControls extends StatelessWidget {
   final VoidCallback onDelete;
   final String loc;
 
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        if (canMoveUp)
-          _NoteEditorBlockControlBtn(
-            icon: Icons.keyboard_arrow_up_rounded,
-            tooltip: t(loc, 'notes_v3_editor_move_up'),
-            onTap: onMoveUp,
+  PopupMenuItem<void> _item({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+    bool enabled = true,
+    bool danger = false,
+  }) {
+    return PopupMenuItem<void>(
+      enabled: enabled,
+      onTap: enabled ? onTap : null,
+      child: Row(
+        children: [
+          Icon(icon, size: 17, color: danger ? const Color(0xFFDC2626) : null),
+          const SizedBox(width: 10),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 13,
+              color: danger ? const Color(0xFFDC2626) : null,
+            ),
           ),
-        if (canMoveDown)
-          _NoteEditorBlockControlBtn(
-            icon: Icons.keyboard_arrow_down_rounded,
-            tooltip: t(loc, 'notes_v3_editor_move_down'),
-            onTap: onMoveDown,
-          ),
-        PopupMenuButton<NoteBlockType>(
-          tooltip: t(loc, 'notes_tools_block_style'),
-          icon: const Icon(Icons.swap_horiz_rounded, size: 14),
-          padding: EdgeInsets.zero,
-          constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
-          onSelected: onConvert,
-          itemBuilder: (context) => <PopupMenuEntry<NoteBlockType>>[
-            _convertItem(NoteBlockType.paragraph, t(loc, 'notes_tools_body')),
-            _convertItem(NoteBlockType.heading, 'H2'),
-            _convertItem(
-              NoteBlockType.checklist,
-              t(loc, 'notes_v3_editor_add_checklist'),
-            ),
-            _convertItem(
-              NoteBlockType.bulletedList,
-              t(loc, 'notes_tools_bullets'),
-            ),
-            _convertItem(
-              NoteBlockType.numberedList,
-              t(loc, 'notes_tools_numbers'),
-            ),
-            _convertItem(NoteBlockType.quote, t(loc, 'notes_tools_quote')),
-            _convertItem(NoteBlockType.callout, t(loc, 'notes_tools_callout')),
-            _convertItem(
-              NoteBlockType.codeBlock,
-              t(loc, 'notes_tools_code_block'),
-            ),
-            _convertItem(
-              NoteBlockType.collapsible,
-              t(loc, 'notes_tools_collapsible'),
-            ),
-          ],
-        ),
-        _NoteEditorBlockControlBtn(
-          icon: Icons.event_note_outlined,
-          tooltip: t(loc, 'notes_tools_create_plan'),
-          onTap: onCreatePlan,
-        ),
-        _NoteEditorBlockControlBtn(
-          icon: Icons.delete_outline_rounded,
-          tooltip: t(loc, 'notes_v3_editor_delete_block'),
-          onTap: onDelete,
-        ),
-      ],
+        ],
+      ),
     );
   }
 
-  PopupMenuItem<NoteBlockType> _convertItem(NoteBlockType type, String label) {
-    return PopupMenuItem<NoteBlockType>(
-      value: type,
-      enabled: type != block.type,
-      child: Text(label, style: const TextStyle(fontSize: 13)),
-    );
-  }
-}
-
-class _NoteEditorBlockControlBtn extends StatelessWidget {
-  const _NoteEditorBlockControlBtn({
-    required this.icon,
-    required this.tooltip,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String tooltip;
-  final VoidCallback onTap;
-
   @override
   Widget build(BuildContext context) {
-    return Tooltip(
-      message: tooltip,
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(999),
-          child: SizedBox(
-            width: 24,
-            height: 24,
-            child: Icon(icon, size: 14, color: kGlmMetaColor),
+    return SizedBox(
+      width: 32,
+      height: 32,
+      child: PopupMenuButton<void>(
+        tooltip: t(loc, 'notes_editor_more_tooltip'),
+        padding: EdgeInsets.zero,
+        constraints: const BoxConstraints(minWidth: 210),
+        icon: const Icon(Icons.more_horiz_rounded, size: 18),
+        itemBuilder: (context) => <PopupMenuEntry<void>>[
+          if (canMoveUp)
+            _item(
+              icon: Icons.keyboard_arrow_up_rounded,
+              label: t(loc, 'notes_v3_editor_move_up'),
+              onTap: onMoveUp,
+            ),
+          if (canMoveDown)
+            _item(
+              icon: Icons.keyboard_arrow_down_rounded,
+              label: t(loc, 'notes_v3_editor_move_down'),
+              onTap: onMoveDown,
+            ),
+          if (canMoveUp || canMoveDown) const PopupMenuDivider(),
+          _item(
+            icon: Icons.text_fields_rounded,
+            label: t(loc, 'notes_tools_body'),
+            enabled: block.type != NoteBlockType.paragraph,
+            onTap: () => onConvert(NoteBlockType.paragraph),
           ),
-        ),
+          _item(
+            icon: Icons.title_rounded,
+            label: 'H2',
+            enabled: block.type != NoteBlockType.heading,
+            onTap: () => onConvert(NoteBlockType.heading),
+          ),
+          _item(
+            icon: Icons.checklist_rounded,
+            label: t(loc, 'notes_v3_editor_add_checklist'),
+            enabled: block.type != NoteBlockType.checklist,
+            onTap: () => onConvert(NoteBlockType.checklist),
+          ),
+          _item(
+            icon: Icons.format_list_bulleted_rounded,
+            label: t(loc, 'notes_tools_bullets'),
+            enabled: block.type != NoteBlockType.bulletedList,
+            onTap: () => onConvert(NoteBlockType.bulletedList),
+          ),
+          _item(
+            icon: Icons.format_list_numbered_rounded,
+            label: t(loc, 'notes_tools_numbers'),
+            enabled: block.type != NoteBlockType.numberedList,
+            onTap: () => onConvert(NoteBlockType.numberedList),
+          ),
+          _item(
+            icon: Icons.format_quote_rounded,
+            label: t(loc, 'notes_tools_quote'),
+            enabled: block.type != NoteBlockType.quote,
+            onTap: () => onConvert(NoteBlockType.quote),
+          ),
+          _item(
+            icon: Icons.lightbulb_outline_rounded,
+            label: t(loc, 'notes_tools_callout'),
+            enabled: block.type != NoteBlockType.callout,
+            onTap: () => onConvert(NoteBlockType.callout),
+          ),
+          const PopupMenuDivider(),
+          _item(
+            icon: Icons.event_note_outlined,
+            label: t(loc, 'notes_tools_create_plan'),
+            onTap: onCreatePlan,
+          ),
+          _item(
+            icon: Icons.delete_outline_rounded,
+            label: t(loc, 'notes_v3_editor_delete_block'),
+            onTap: onDelete,
+            danger: true,
+          ),
+        ],
       ),
     );
   }
@@ -1129,15 +1148,12 @@ class _NoteEditorImageBlock extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 4),
         child: Stack(
           children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: Image.memory(
-                _bytesFromDataUrl(block.imageData)!,
-                fit: BoxFit.contain,
-                errorBuilder: (_, __, ___) => Container(
-                  height: 80,
-                  color: scheme.errorContainer.withValues(alpha: 0.3),
-                  alignment: Alignment.center,
+            Image.memory(
+              _bytesFromDataUrl(block.imageData)!,
+              fit: BoxFit.contain,
+              errorBuilder: (_, __, ___) => SizedBox(
+                height: 80,
+                child: Center(
                   child: Icon(Icons.broken_image_outlined, color: scheme.error),
                 ),
               ),
@@ -1182,22 +1198,13 @@ class _NoteEditorDrawingBlock extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 4),
         child: Stack(
           children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: Container(
-                color: Colors.white,
-                child: Image.memory(
-                  _bytesFromDataUrl(block.drawingData)!,
-                  fit: BoxFit.contain,
-                  errorBuilder: (_, __, ___) => Container(
-                    height: 80,
-                    color: scheme.errorContainer.withValues(alpha: 0.3),
-                    alignment: Alignment.center,
-                    child: Icon(
-                      Icons.broken_image_outlined,
-                      color: scheme.error,
-                    ),
-                  ),
+            Image.memory(
+              _bytesFromDataUrl(block.drawingData)!,
+              fit: BoxFit.contain,
+              errorBuilder: (_, __, ___) => SizedBox(
+                height: 80,
+                child: Center(
+                  child: Icon(Icons.broken_image_outlined, color: scheme.error),
                 ),
               ),
             ),
@@ -1255,14 +1262,42 @@ class _NoteRichTextController extends TextEditingController {
   _NoteRichTextController({
     required String text,
     required List<NoteTextRun> runs,
-  }) : _runs = runs,
+  }) : _runs = List<NoteTextRun>.unmodifiable(runs),
        super(text: text);
 
   List<NoteTextRun> _runs;
+  bool _syncingDocument = false;
   TextStyle? baseStyle;
 
+  List<NoteTextRun> get runs => List<NoteTextRun>.unmodifiable(_runs);
+
   void setRuns(List<NoteTextRun> runs) {
-    _runs = runs;
+    _runs = List<NoteTextRun>.unmodifiable(runs);
+  }
+
+  void syncDocument({
+    required String text,
+    required List<NoteTextRun> runs,
+    required TextSelection selection,
+  }) {
+    _syncingDocument = true;
+    _runs = List<NoteTextRun>.unmodifiable(runs);
+    super.value = TextEditingValue(text: text, selection: selection);
+    _syncingDocument = false;
+  }
+
+  @override
+  set value(TextEditingValue newValue) {
+    if (!_syncingDocument && newValue.text != text) {
+      _runs = List<NoteTextRun>.unmodifiable(
+        applyNoteTextEditToRuns(
+          oldText: text,
+          oldRuns: _runs,
+          newText: newValue.text,
+        ),
+      );
+    }
+    super.value = newValue;
   }
 
   @override

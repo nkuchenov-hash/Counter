@@ -155,7 +155,7 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
   void _syncToBrain() {
     if (widget.parityPreview) return;
     final title = _titleController.text.trim();
-    setState(() => _status = _SaveStatus.saving);
+    _status = _SaveStatus.saving;
     final doc = _doc;
     DatabaseService.instance.applyNoteEdit(
       planRowIdForBackend: _task.planRowIdForBackend,
@@ -165,14 +165,12 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
       tags: _task.tags,
       isDone: _task.isDone,
     );
-    setState(() {
-      _status = _SaveStatus.saved;
-      _task = _task.copyWith(
-        title: title,
-        notesDeltaJson: doc.encode(),
-        updatedAt: DateTime.now(),
-      );
-    });
+    _status = _SaveStatus.saved;
+    _task = _task.copyWith(
+      title: title,
+      notesDeltaJson: doc.encode(),
+      updatedAt: DateTime.now(),
+    );
   }
 
   void _flushSync() {
@@ -256,6 +254,16 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
     _mutate(_doc.copyWith(blocks: blocks));
   }
 
+  void _updateBlockDraft(String id, NoteBlock Function(NoteBlock) patch) {
+    final blocks = List<NoteBlock>.from(_doc.blocks);
+    final i = blocks.indexWhere((b) => b.id == id);
+    if (i < 0) return;
+    blocks[i] = patch(blocks[i]);
+    _doc = _doc.copyWith(blocks: blocks);
+    _status = _SaveStatus.editing;
+    _gate.schedule(_syncToBrain);
+  }
+
   void _deleteBlock(String id) {
     final blocks = List<NoteBlock>.from(_doc.blocks)
       ..removeWhere((b) => b.id == id);
@@ -275,6 +283,16 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
     blocks[i] = blocks[j];
     blocks[j] = tmp;
     _mutate(_doc.copyWith(blocks: blocks));
+  }
+
+  int _numberedOrdinalAt(int index) {
+    if (_doc.blocks[index].type != NoteBlockType.numberedList) return 1;
+    var start = index;
+    while (start > 0 &&
+        _doc.blocks[start - 1].type == NoteBlockType.numberedList) {
+      start--;
+    }
+    return index - start + 1;
   }
 
   // ---- Toolbar actions on active block -----------------------------------
@@ -591,17 +609,24 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
           ],
           const SizedBox(height: 16),
           for (int i = 0; i < _doc.blocks.length; i++) ...[
-            if (i > 0) const SizedBox(height: kNotesBlockGap),
+            if (i > 0) const SizedBox(height: 2),
             NoteEditorBlockRow(
               key: ValueKey(_doc.blocks[i].id),
               block: _doc.blocks[i],
               isActive: _doc.blocks[i].id == _activeBlockId,
+              listOrdinal: _numberedOrdinalAt(i),
               canMoveUp: i > 0,
               canMoveDown: i < _doc.blocks.length - 1,
               onActivate: () =>
                   setState(() => _activeBlockId = _doc.blocks[i].id),
               onUpdate: (patch) =>
                   _updateBlock(_doc.blocks[i].id, patch.applyTo),
+              onTextChanged: (patch) =>
+                  _updateBlockDraft(_doc.blocks[i].id, patch.applyTo),
+              onTableChanged: (table) => _updateBlockDraft(
+                _doc.blocks[i].id,
+                (current) => current.copyWith(table: table),
+              ),
               onDelete: () => _deleteBlock(_doc.blocks[i].id),
               onMoveUp: () => _moveBlock(_doc.blocks[i].id, -1),
               onMoveDown: () => _moveBlock(_doc.blocks[i].id, 1),

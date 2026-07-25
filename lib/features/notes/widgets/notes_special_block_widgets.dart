@@ -99,7 +99,7 @@ class _DividerBlock extends StatelessWidget {
   }
 }
 
-class _TableBlock extends StatelessWidget {
+class _TableBlock extends StatefulWidget {
   const _TableBlock({
     required this.data,
     required this.isActive,
@@ -116,20 +116,48 @@ class _TableBlock extends StatelessWidget {
   final VoidCallback onDelete;
   final ValueChanged<NoteTableData> onChanged;
 
+  @override
+  State<_TableBlock> createState() => _TableBlockState();
+}
+
+class _TableBlockState extends State<_TableBlock> {
+  late NoteTableData _data;
+
+  @override
+  void initState() {
+    super.initState();
+    _data = widget.data;
+  }
+
+  @override
+  void didUpdateWidget(covariant _TableBlock oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.data, widget.data)) _data = widget.data;
+  }
+
+  void _emit(NoteTableData next, {bool rebuild = true}) {
+    if (rebuild) {
+      setState(() => _data = next);
+    } else {
+      _data = next;
+    }
+    widget.onChanged(next);
+  }
+
   void _changeCell(int row, int column, String value) {
-    final cells = data.cells.map((item) => List<String>.from(item)).toList();
+    final cells = _data.cells.map((item) => List<String>.from(item)).toList();
     if (row >= cells.length || column >= cells[row].length) return;
     cells[row][column] = value;
-    onChanged(data.copyWith(cells: cells));
+    _emit(_data.copyWith(cells: cells), rebuild: false);
   }
 
   void _addRow() {
-    final columns = data.columnCount.clamp(1, 6).toInt();
-    if (data.rowCount >= 20) return;
-    onChanged(
-      data.copyWith(
+    final columns = _data.columnCount.clamp(1, 6).toInt();
+    if (_data.rowCount >= 20) return;
+    _emit(
+      _data.copyWith(
         cells: [
-          ...data.cells.map((row) => List<String>.from(row)),
+          ..._data.cells.map((row) => List<String>.from(row)),
           List<String>.filled(columns, ''),
         ],
       ),
@@ -137,12 +165,12 @@ class _TableBlock extends StatelessWidget {
   }
 
   void _addColumn() {
-    if (data.columnCount >= 6) return;
-    final source = data.cells.isEmpty
+    if (_data.columnCount >= 6) return;
+    final source = _data.cells.isEmpty
         ? NoteTableData.empty().cells
-        : data.cells;
-    onChanged(
-      data.copyWith(
+        : _data.cells;
+    _emit(
+      _data.copyWith(
         cells: source
             .map((row) => <String>[...row, ''])
             .toList(growable: false),
@@ -151,11 +179,11 @@ class _TableBlock extends StatelessWidget {
   }
 
   void _removeRow() {
-    if (data.rowCount <= 1) return;
-    onChanged(
-      data.copyWith(
-        cells: data.cells
-            .take(data.rowCount - 1)
+    if (_data.rowCount <= 1) return;
+    _emit(
+      _data.copyWith(
+        cells: _data.cells
+            .take(_data.rowCount - 1)
             .map((row) => List<String>.from(row))
             .toList(),
       ),
@@ -163,10 +191,10 @@ class _TableBlock extends StatelessWidget {
   }
 
   void _removeColumn() {
-    if (data.columnCount <= 1) return;
-    onChanged(
-      data.copyWith(
-        cells: data.cells
+    if (_data.columnCount <= 1) return;
+    _emit(
+      _data.copyWith(
+        cells: _data.cells
             .map((row) => row.take(row.length - 1).toList())
             .toList(),
       ),
@@ -176,20 +204,13 @@ class _TableBlock extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final cells = data.cells.isEmpty ? NoteTableData.empty().cells : data.cells;
+    final cells = _data.cells.isEmpty
+        ? NoteTableData.empty().cells
+        : _data.cells;
     return GestureDetector(
-      onTap: onActivate,
-      child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 6),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isActive ? scheme.primary : scheme.outlineVariant,
-            width: isActive ? 1.5 : 1,
-          ),
-          color: scheme.surface.withValues(alpha: 0.8),
-        ),
-        clipBehavior: Clip.antiAlias,
+      onTap: widget.onActivate,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -197,20 +218,15 @@ class _TableBlock extends StatelessWidget {
               scrollDirection: Axis.horizontal,
               child: Table(
                 defaultColumnWidth: const FixedColumnWidth(142),
-                border: TableBorder(
-                  horizontalInside: BorderSide(color: scheme.outlineVariant),
-                  verticalInside: BorderSide(color: scheme.outlineVariant),
+                border: TableBorder.all(
+                  color: widget.isActive
+                      ? scheme.primary.withValues(alpha: 0.65)
+                      : scheme.outlineVariant,
+                  width: widget.isActive ? 1.1 : 0.8,
                 ),
                 children: [
                   for (var row = 0; row < cells.length; row++)
                     TableRow(
-                      decoration: data.hasHeader && row == 0
-                          ? BoxDecoration(
-                              color: scheme.surfaceContainerHighest.withValues(
-                                alpha: 0.72,
-                              ),
-                            )
-                          : null,
                       children: [
                         for (
                           var column = 0;
@@ -228,7 +244,7 @@ class _TableBlock extends StatelessWidget {
                               maxLines: null,
                               style: TextStyle(
                                 fontSize: 13,
-                                fontWeight: data.hasHeader && row == 0
+                                fontWeight: _data.hasHeader && row == 0
                                     ? FontWeight.w700
                                     : FontWeight.w400,
                               ),
@@ -239,7 +255,7 @@ class _TableBlock extends StatelessWidget {
                                   vertical: 7,
                                 ),
                               ),
-                              onTap: onActivate,
+                              onTap: widget.onActivate,
                               onChanged: (value) =>
                                   _changeCell(row, column, value),
                             ),
@@ -249,49 +265,46 @@ class _TableBlock extends StatelessWidget {
                 ],
               ),
             ),
-            if (isActive)
-              Container(
-                padding: const EdgeInsets.fromLTRB(8, 5, 8, 7),
-                decoration: BoxDecoration(
-                  border: Border(top: BorderSide(color: scheme.outlineVariant)),
-                ),
+            if (widget.isActive)
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
                 child: Wrap(
                   spacing: 4,
                   runSpacing: 4,
                   children: [
                     _TableAction(
                       icon: Icons.add_rounded,
-                      label: t(loc, 'notes_tools_add_row'),
+                      label: t(widget.loc, 'notes_tools_add_row'),
                       onTap: _addRow,
                     ),
                     _TableAction(
                       icon: Icons.view_column_outlined,
-                      label: t(loc, 'notes_tools_add_column'),
+                      label: t(widget.loc, 'notes_tools_add_column'),
                       onTap: _addColumn,
                     ),
                     _TableAction(
-                      icon: data.hasHeader
+                      icon: _data.hasHeader
                           ? Icons.table_rows_rounded
                           : Icons.table_rows_outlined,
-                      label: t(loc, 'notes_tools_header_row'),
+                      label: t(widget.loc, 'notes_tools_header_row'),
                       onTap: () =>
-                          onChanged(data.copyWith(hasHeader: !data.hasHeader)),
+                          _emit(_data.copyWith(hasHeader: !_data.hasHeader)),
                     ),
                     _TableAction(
                       icon: Icons.remove_rounded,
-                      label: t(loc, 'notes_tools_remove_row'),
-                      onTap: data.rowCount > 1 ? _removeRow : null,
+                      label: t(widget.loc, 'notes_tools_remove_row'),
+                      onTap: _data.rowCount > 1 ? _removeRow : null,
                     ),
                     _TableAction(
                       icon: Icons.view_column_rounded,
-                      label: t(loc, 'notes_tools_remove_column'),
-                      onTap: data.columnCount > 1 ? _removeColumn : null,
+                      label: t(widget.loc, 'notes_tools_remove_column'),
+                      onTap: _data.columnCount > 1 ? _removeColumn : null,
                     ),
                     _TableAction(
                       icon: Icons.delete_outline_rounded,
-                      label: t(loc, 'notes_v3_editor_delete_block'),
+                      label: t(widget.loc, 'notes_v3_editor_delete_block'),
                       danger: true,
-                      onTap: onDelete,
+                      onTap: widget.onDelete,
                     ),
                   ],
                 ),
@@ -321,28 +334,11 @@ class _LinkCardBlock extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     return InkWell(
       onTap: onActivate,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 5),
-        padding: const EdgeInsets.all(13),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          color: scheme.surfaceContainerHighest.withValues(alpha: 0.45),
-          border: Border.all(
-            color: isActive ? scheme.primary : scheme.outlineVariant,
-          ),
-        ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
         child: Row(
           children: [
-            Container(
-              width: 38,
-              height: 38,
-              decoration: BoxDecoration(
-                color: scheme.primaryContainer,
-                borderRadius: BorderRadius.circular(9),
-              ),
-              child: Icon(Icons.link_rounded, color: scheme.primary),
-            ),
+            Icon(Icons.link_rounded, size: 20, color: scheme.primary),
             const SizedBox(width: 11),
             Expanded(
               child: Column(
@@ -414,17 +410,8 @@ class _ReferenceBlock extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     return InkWell(
       onTap: onActivate,
-      borderRadius: BorderRadius.circular(10),
-      child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 4),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(10),
-          color: scheme.primaryContainer.withValues(alpha: 0.34),
-          border: Border.all(
-            color: isActive ? scheme.primary : scheme.outlineVariant,
-          ),
-        ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
         child: Row(
           children: [
             Icon(_icon, size: 18, color: scheme.primary),
