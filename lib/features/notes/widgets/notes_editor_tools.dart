@@ -126,61 +126,61 @@ class _NotesEditorToolsDockState extends State<NotesEditorToolsDock> {
             duration: const Duration(milliseconds: 180),
             child: switch (_panel) {
               NotesToolsPanel.format => _NotesFormatPanel(
-                  key: const ValueKey('format'),
-                  activeBlock: widget.activeBlock,
-                  loc: widget.loc,
-                  onHeading: widget.onHeading,
-                  onSetBlockType: widget.onSetBlockType,
-                  onToggleFormat: widget.onToggleFormat,
-                  onSetColor: widget.onSetColor,
-                ),
+                key: const ValueKey('format'),
+                activeBlock: widget.activeBlock,
+                loc: widget.loc,
+                onHeading: widget.onHeading,
+                onSetBlockType: widget.onSetBlockType,
+                onToggleFormat: widget.onToggleFormat,
+                onSetColor: widget.onSetColor,
+              ),
               NotesToolsPanel.insert => _NotesInsertPanel(
-                  key: const ValueKey('insert'),
-                  loc: widget.loc,
-                  onText: () => _insert(NoteBlockType.paragraph),
-                  onChecklist: () => _insert(NoteBlockType.checklist),
-                  onBullets: () => _insert(NoteBlockType.bulletedList),
-                  onNumbers: () => _insert(NoteBlockType.numberedList),
-                  onQuote: () => _insert(NoteBlockType.quote),
-                  onCallout: () {
-                    widget.onInsert(
-                      const NotesInsertRequest(
-                        type: NoteBlockType.callout,
-                        callout: NoteCalloutData(type: NoteCalloutType.idea),
-                      ),
-                    );
-                    _closePanel();
-                  },
-                  onDivider: () => _insert(NoteBlockType.divider),
-                  onCode: () {
-                    widget.onInsert(
-                      const NotesInsertRequest(
-                        type: NoteBlockType.codeBlock,
-                        codeLanguage: 'plain',
-                      ),
-                    );
-                    _closePanel();
-                  },
-                  onCollapsible: () => _insert(NoteBlockType.collapsible),
-                  onTable: _insertTable,
-                  onImage: () {
-                    widget.onImage();
-                    _closePanel();
-                  },
-                  onDraw: () {
-                    widget.onDraw();
-                    _closePanel();
-                  },
-                  onLink: _insertLinkCard,
-                ),
+                key: const ValueKey('insert'),
+                loc: widget.loc,
+                onText: () => _insert(NoteBlockType.paragraph),
+                onChecklist: () => _insert(NoteBlockType.checklist),
+                onBullets: () => _insert(NoteBlockType.bulletedList),
+                onNumbers: () => _insert(NoteBlockType.numberedList),
+                onQuote: () => _insert(NoteBlockType.quote),
+                onCallout: () {
+                  widget.onInsert(
+                    const NotesInsertRequest(
+                      type: NoteBlockType.callout,
+                      callout: NoteCalloutData(type: NoteCalloutType.idea),
+                    ),
+                  );
+                  _closePanel();
+                },
+                onDivider: () => _insert(NoteBlockType.divider),
+                onCode: () {
+                  widget.onInsert(
+                    const NotesInsertRequest(
+                      type: NoteBlockType.codeBlock,
+                      codeLanguage: 'plain',
+                    ),
+                  );
+                  _closePanel();
+                },
+                onCollapsible: () => _insert(NoteBlockType.collapsible),
+                onTable: _insertTable,
+                onImage: () {
+                  widget.onImage();
+                  _closePanel();
+                },
+                onDraw: () {
+                  widget.onDraw();
+                  _closePanel();
+                },
+                onLink: _insertLinkCard,
+              ),
               NotesToolsPanel.more => _NotesMorePanel(
-                  key: const ValueKey('more'),
-                  loc: widget.loc,
-                  onClose: _closePanel,
-                ),
+                key: const ValueKey('more'),
+                loc: widget.loc,
+                onClose: _closePanel,
+              ),
               NotesToolsPanel.none => const SizedBox.shrink(
-                  key: ValueKey('none'),
-                ),
+                key: ValueKey('none'),
+              ),
             },
           ),
           Container(
@@ -226,7 +226,8 @@ class _NotesEditorToolsDockState extends State<NotesEditorToolsDock> {
                     icon: Icons.format_list_bulleted_rounded,
                     tooltip: t(widget.loc, 'notes_tools_lists'),
                     selected:
-                        widget.activeBlock?.type == NoteBlockType.bulletedList ||
+                        widget.activeBlock?.type ==
+                            NoteBlockType.bulletedList ||
                         widget.activeBlock?.type == NoteBlockType.numberedList,
                     onTap: () => _toggle(NotesToolsPanel.format),
                   ),
@@ -350,7 +351,7 @@ class _NotesFormatPanel extends StatelessWidget {
                 icon: Icons.format_strikethrough_rounded,
                 selected:
                     activeBlock?.effectiveRuns.any((run) => run.marks.strike) ==
-                        true,
+                    true,
                 onTap: () => onToggleFormat('strike'),
               ),
               _PanelIconButton(
@@ -626,7 +627,9 @@ class _PrimaryToolButton extends StatelessWidget {
                 : Icon(
                     icon,
                     size: 18,
-                    color: selected ? scheme.onPrimary : scheme.onSurfaceVariant,
+                    color: selected
+                        ? scheme.onPrimary
+                        : scheme.onSurfaceVariant,
                   ),
           ),
         ),
@@ -813,9 +816,7 @@ class _InsertSection extends StatelessWidget {
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: [
-              for (final item in items) _InsertItem(item: item),
-            ],
+            children: [for (final item in items) _InsertItem(item: item)],
           ),
         ],
       ),
@@ -847,7 +848,9 @@ class _InsertItem extends StatelessWidget {
         decoration: BoxDecoration(
           color: scheme.surfaceContainerLow.withValues(alpha: 0.72),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.7)),
+          border: Border.all(
+            color: scheme.outlineVariant.withValues(alpha: 0.7),
+          ),
           boxShadow: const [
             BoxShadow(
               color: Color(0x0D0F172A),
@@ -918,9 +921,9 @@ class _NotesTableSizeDialogState extends State<_NotesTableSizeDialog> {
           child: Text(t('en', 'cancel')),
         ),
         FilledButton(
-          onPressed: () => Navigator.of(context).pop(
-            NoteTableData.empty(rows: _rows, columns: _columns),
-          ),
+          onPressed: () => Navigator.of(
+            context,
+          ).pop(NoteTableData.empty(rows: _rows, columns: _columns)),
           child: Text(t('en', 'insert')),
         ),
       ],
@@ -978,9 +981,9 @@ class _NotesLinkDialogState extends State<_NotesLinkDialog> {
           onPressed: () {
             final url = _url.text.trim();
             if (url.isEmpty) return;
-            Navigator.of(context).pop(
-              NoteLinkData(url: url, title: _title.text.trim()),
-            );
+            Navigator.of(
+              context,
+            ).pop(NoteLinkData(url: url, title: _title.text.trim()));
           },
           child: Text(t(widget.loc, 'insert')),
         ),
