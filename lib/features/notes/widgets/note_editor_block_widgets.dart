@@ -3,14 +3,34 @@
 // Receives [NoteBlock] data + callbacks from [NoteEditorPage]. Does not own
 // document state, autosave, or DatabaseService calls.
 
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/notes/notes_glm_surface.dart';
 import 'package:counter/features/notes/notes_visual_tokens.dart';
+import 'package:counter/features/notes/widgets/notes_special_block_widgets.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
+
+/// Bridges the fixed primary toolbar to Flutter's active text undo stack.
+/// Structural block history remains owned by the document/page coordinator.
+abstract final class NotesTextUndoBridge {
+  static UndoHistoryController? _active;
+
+  static void attach(UndoHistoryController controller) {
+    _active = controller;
+  }
+
+  static void detach(UndoHistoryController controller) {
+    if (identical(_active, controller)) _active = null;
+  }
+
+  static void undo() => _active?.undo();
+  static void redo() => _active?.redo();
+}
 
 /// Partial update for a single [NoteBlock], applied by the editor page.
 class NoteEditorBlockPatch {
@@ -25,6 +45,13 @@ class NoteEditorBlockPatch {
     this.color = _unset,
     this.imageData = _unset,
     this.drawingData = _unset,
+    this.runs,
+    this.callout = _unset,
+    this.table = _unset,
+    this.linkData = _unset,
+    this.reference = _unset,
+    this.codeLanguage = _unset,
+    this.collapsed,
   });
 
   static const Object _unset = Object();
@@ -39,25 +66,48 @@ class NoteEditorBlockPatch {
   final Object? color;
   final Object? imageData;
   final Object? drawingData;
+  final List<NoteTextRun>? runs;
+  final Object? callout;
+  final Object? table;
+  final Object? linkData;
+  final Object? reference;
+  final Object? codeLanguage;
+  final bool? collapsed;
 
-  NoteBlock applyTo(NoteBlock b) => b.copyWith(
-        type: type ?? b.type,
-        text: text ?? b.text,
-        checked: checked ?? b.checked,
-        level: level ?? b.level,
-        bold: bold ?? b.bold,
-        italic: italic ?? b.italic,
-        underline: underline ?? b.underline,
-        color: identical(color, _unset) ? b.color : color as String?,
-        imageData:
-            identical(imageData, _unset) ? b.imageData : imageData as String?,
-        drawingData: identical(drawingData, _unset)
-            ? b.drawingData
-            : drawingData as String?,
-      );
+  NoteBlock applyTo(NoteBlock block) => block.copyWith(
+    type: type ?? block.type,
+    text: text ?? block.text,
+    checked: checked ?? block.checked,
+    level: level ?? block.level,
+    bold: bold ?? block.bold,
+    italic: italic ?? block.italic,
+    underline: underline ?? block.underline,
+    color: identical(color, _unset) ? block.color : color as String?,
+    imageData: identical(imageData, _unset)
+        ? block.imageData
+        : imageData as String?,
+    drawingData: identical(drawingData, _unset)
+        ? block.drawingData
+        : drawingData as String?,
+    runs: runs ?? block.runs,
+    callout: identical(callout, _unset)
+        ? block.callout
+        : callout as NoteCalloutData?,
+    table: identical(table, _unset) ? block.table : table as NoteTableData?,
+    linkData: identical(linkData, _unset)
+        ? block.linkData
+        : linkData as NoteLinkData?,
+    reference: identical(reference, _unset)
+        ? block.reference
+        : reference as NoteReferenceData?,
+    codeLanguage: identical(codeLanguage, _unset)
+        ? block.codeLanguage
+        : codeLanguage as String?,
+    collapsed: collapsed ?? block.collapsed,
+  );
 }
 
-/// One note block in the editor scroll body (text / checklist / heading / media).
+/// One note block in the editor scroll body.
 class NoteEditorBlockRow extends StatefulWidget {
   const NoteEditorBlockRow({
     super.key,
@@ -93,35 +143,301 @@ class NoteEditorBlockRow extends StatefulWidget {
 }
 
 class _NoteEditorBlockRowState extends State<NoteEditorBlockRow> {
-  late TextEditingController _textController;
+  late _NoteRichTextController _textController;
   late FocusNode _focusNode;
+  late UndoHistoryController _undoController;
+  TextSelection _selection = const TextSelection.collapsed(offset: -1);
+  String _slashQuery = '';
+  late String _editingText;
+  late List<NoteTextRun> _editingRuns;
 
   @override
   void initState() {
     super.initState();
-    _textController = TextEditingController(text: widget.block.text);
+    _editingText = widget.block.effectiveText;
+    _editingRuns = List<NoteTextRun>.unmodifiable(widget.block.effectiveRuns);
+    _textController = _NoteRichTextController(
+      text: _editingText,
+      runs: _editingRuns,
+    )..addListener(_handleControllerState);
+    _undoController = UndoHistoryController();
     _focusNode = FocusNode();
     _focusNode.addListener(() {
-      if (_focusNode.hasFocus) widget.onActivate();
+      if (_focusNode.hasFocus) {
+        widget.onActivate();
+        NotesTextUndoBridge.attach(_undoController);
+      } else {
+        NotesTextUndoBridge.detach(_undoController);
+      }
+      if (mounted) setState(() {});
+    });
+  }
+
+  void _handleControllerState() {
+    final selection = _textController.selection;
+    final text = _textController.text;
+    final slashQuery = text.startsWith('/') ? text.substring(1) : '';
+    if (selection == _selection && slashQuery == _slashQuery) return;
+    if (!mounted) return;
+    setState(() {
+      _selection = selection;
+      _slashQuery = slashQuery;
     });
   }
 
   @override
   void didUpdateWidget(covariant NoteEditorBlockRow oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.block.id != widget.block.id) {
-      _textController.text = widget.block.text;
-    } else if (widget.block.text != _textController.text &&
-        widget.block.text != oldWidget.block.text) {
-      _textController.text = widget.block.text;
+    final nextText = widget.block.effectiveText;
+    final nextRuns = widget.block.effectiveRuns;
+    final blockChanged = oldWidget.block.id != widget.block.id;
+    final contentChanged =
+        nextText != _editingText ||
+        !_noteRunsEquivalent(nextRuns, _editingRuns);
+    if (blockChanged || contentChanged) {
+      _editingText = nextText;
+      _editingRuns = List<NoteTextRun>.unmodifiable(nextRuns);
+      _textController.setRuns(_editingRuns);
+    }
+    if (blockChanged) {
+      _textController.value = TextEditingValue(
+        text: nextText,
+        selection: TextSelection.collapsed(offset: nextText.length),
+      );
+    } else if (nextText != _textController.text) {
+      final offset = _textController.selection.extentOffset
+          .clamp(0, nextText.length)
+          .toInt();
+      _textController.value = TextEditingValue(
+        text: nextText,
+        selection: TextSelection.collapsed(offset: offset),
+      );
     }
   }
 
   @override
   void dispose() {
-    _textController.dispose();
+    _textController
+      ..removeListener(_handleControllerState)
+      ..dispose();
+    NotesTextUndoBridge.detach(_undoController);
+    _undoController.dispose();
     _focusNode.dispose();
     super.dispose();
+  }
+
+  bool get _hasTextSelection =>
+      _selection.isValid &&
+      !_selection.isCollapsed &&
+      _selection.start >= 0 &&
+      _selection.end <= _textController.text.length;
+
+  List<NoteTextRun> _sourceRuns() {
+    if (_editingRuns.map((run) => run.text).join() == _textController.text) {
+      return _editingRuns;
+    }
+    if (_textController.text.isEmpty) return const <NoteTextRun>[];
+    return <NoteTextRun>[NoteTextRun(text: _textController.text)];
+  }
+
+  List<NoteTextRun> _selectedRuns() {
+    if (!_hasTextSelection) return const <NoteTextRun>[];
+    final result = <NoteTextRun>[];
+    var offset = 0;
+    for (final run in _sourceRuns()) {
+      final runStart = offset;
+      final runEnd = offset + run.text.length;
+      final start = _selection.start.clamp(runStart, runEnd).toInt();
+      final end = _selection.end.clamp(runStart, runEnd).toInt();
+      if (start < end) {
+        result.add(
+          NoteTextRun(
+            text: run.text.substring(start - runStart, end - runStart),
+            marks: run.marks,
+          ),
+        );
+      }
+      offset = runEnd;
+    }
+    return result;
+  }
+
+  List<NoteTextRun> _transformSelection(
+    NoteInlineMarks Function(NoteInlineMarks marks) transform,
+  ) {
+    if (!_hasTextSelection) return _sourceRuns();
+    final result = <NoteTextRun>[];
+    var offset = 0;
+    for (final run in _sourceRuns()) {
+      final runStart = offset;
+      final runEnd = offset + run.text.length;
+      final selectedStart = _selection.start.clamp(runStart, runEnd).toInt();
+      final selectedEnd = _selection.end.clamp(runStart, runEnd).toInt();
+
+      if (selectedStart >= selectedEnd) {
+        result.add(run);
+      } else {
+        final localStart = selectedStart - runStart;
+        final localEnd = selectedEnd - runStart;
+        if (localStart > 0) {
+          result.add(
+            NoteTextRun(
+              text: run.text.substring(0, localStart),
+              marks: run.marks,
+            ),
+          );
+        }
+        result.add(
+          NoteTextRun(
+            text: run.text.substring(localStart, localEnd),
+            marks: transform(run.marks),
+          ),
+        );
+        if (localEnd < run.text.length) {
+          result.add(
+            NoteTextRun(text: run.text.substring(localEnd), marks: run.marks),
+          );
+        }
+      }
+      offset = runEnd;
+    }
+    return _mergeRuns(result);
+  }
+
+  void _toggleInlineMark(_InlineMarkAction action) {
+    if (!_hasTextSelection) return;
+    final selected = _selectedRuns();
+    if (selected.isEmpty) return;
+    final allEnabled = selected.every(
+      (run) => switch (action) {
+        _InlineMarkAction.bold => run.marks.bold,
+        _InlineMarkAction.italic => run.marks.italic,
+        _InlineMarkAction.underline => run.marks.underline,
+        _InlineMarkAction.strike => run.marks.strike,
+        _InlineMarkAction.highlight => run.marks.highlightColor != null,
+      },
+    );
+    final runs = _transformSelection(
+      (marks) => switch (action) {
+        _InlineMarkAction.bold => marks.copyWith(bold: !allEnabled),
+        _InlineMarkAction.italic => marks.copyWith(italic: !allEnabled),
+        _InlineMarkAction.underline => marks.copyWith(underline: !allEnabled),
+        _InlineMarkAction.strike => marks.copyWith(strike: !allEnabled),
+        _InlineMarkAction.highlight => marks.copyWith(
+          highlightColor: allEnabled ? null : '#FFF2A8',
+        ),
+      },
+    );
+    _editingRuns = List<NoteTextRun>.unmodifiable(runs);
+    _textController.setRuns(_editingRuns);
+    widget.onUpdate(
+      NoteEditorBlockPatch(text: _textController.text, runs: _editingRuns),
+    );
+  }
+
+  Future<void> _editInlineLink() async {
+    if (!_hasTextSelection) return;
+    final current = _selectedRuns()
+        .map((run) => run.marks.link)
+        .whereType<String>()
+        .firstOrNull;
+    final controller = TextEditingController(text: current ?? '');
+    final result = await showDialog<String?>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(t(widget.loc, 'notes_tools_link_card')),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          keyboardType: TextInputType.url,
+          decoration: const InputDecoration(labelText: 'URL'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(null),
+            child: Text(t(widget.loc, 'cancel')),
+          ),
+          if (current != null)
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(''),
+              child: Text(t(widget.loc, 'delete')),
+            ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(controller.text.trim()),
+            child: Text(t(widget.loc, 'save')),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (!mounted || result == null) return;
+    final runs = _transformSelection(
+      (marks) => marks.copyWith(link: result.isEmpty ? null : result),
+    );
+    _editingRuns = List<NoteTextRun>.unmodifiable(runs);
+    _textController.setRuns(_editingRuns);
+    widget.onUpdate(
+      NoteEditorBlockPatch(text: _textController.text, runs: _editingRuns),
+    );
+  }
+
+  void _createPlanFromSelectionOrBlock() {
+    final selection = _textController.selection;
+    final text = selection.isValid && !selection.isCollapsed
+        ? _textController.text.substring(
+            selection.start.clamp(0, _textController.text.length).toInt(),
+            selection.end.clamp(0, _textController.text.length).toInt(),
+          )
+        : _textController.text;
+    final title = text.trim();
+    if (title.isEmpty) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(t(widget.loc, 'notes_tools_plan_created'))),
+    );
+    unawaited(
+      DatabaseService.instance.addPlanningTaskFromVoiceText(
+        rawText: title,
+        wallDay: DateTime.now(),
+        isBacklog: true,
+      ),
+    );
+  }
+
+  void _applySlashCommand(_SlashCommand command) {
+    setState(() => _slashQuery = '');
+    final table = command.type == NoteBlockType.table
+        ? NoteTableData.empty(rows: 3, columns: 3)
+        : null;
+    final callout = command.type == NoteBlockType.callout
+        ? const NoteCalloutData(type: NoteCalloutType.idea)
+        : null;
+    widget.onUpdate(
+      NoteEditorBlockPatch(
+        type: command.type,
+        text: '',
+        runs: const <NoteTextRun>[],
+        level: command.headingLevel,
+        table: table,
+        callout: callout,
+        codeLanguage: command.type == NoteBlockType.codeBlock ? 'plain' : null,
+        collapsed: command.type == NoteBlockType.collapsible ? false : null,
+      ),
+    );
+  }
+
+  void _convertBlock(NoteBlockType type) {
+    widget.onUpdate(
+      NoteEditorBlockPatch(
+        type: type,
+        level: type == NoteBlockType.heading ? 2 : null,
+        checked: type == NoteBlockType.checklist ? false : null,
+        callout: type == NoteBlockType.callout
+            ? const NoteCalloutData(type: NoteCalloutType.idea)
+            : null,
+        codeLanguage: type == NoteBlockType.codeBlock ? 'plain' : null,
+        collapsed: type == NoteBlockType.collapsible ? false : null,
+      ),
+    );
   }
 
   @override
@@ -147,121 +463,347 @@ class _NoteEditorBlockRowState extends State<NoteEditorBlockRow> {
         onDelete: widget.onDelete,
       );
     }
+    if (!block.hasText) {
+      return NotesSpecialBlockView(
+        block: block,
+        isActive: widget.isActive,
+        loc: loc,
+        onActivate: widget.onActivate,
+        onDelete: widget.onDelete,
+        onTableChanged: (table) =>
+            widget.onUpdate(NoteEditorBlockPatch(table: table)),
+      );
+    }
 
     final isChecklist = block.type == NoteBlockType.checklist;
     final isHeading = block.type == NoteBlockType.heading;
+    final isBullet = block.type == NoteBlockType.bulletedList;
+    final isNumbered = block.type == NoteBlockType.numberedList;
+    final isQuote = block.type == NoteBlockType.quote;
+    final isCallout = block.type == NoteBlockType.callout;
+    final isCode = block.type == NoteBlockType.codeBlock;
+    final isCollapsible = block.type == NoteBlockType.collapsible;
+    final hasStrike = block.effectiveRuns.any((run) => run.marks.strike);
     final headingSize = block.level == 1
         ? 24.0
         : block.level == 3
-            ? 18.0
-            : 20.0;
-    final headingWeight =
-        block.level == 3 ? FontWeight.w600 : FontWeight.w700;
+        ? 18.0
+        : 20.0;
+    final headingWeight = block.level == 3 ? FontWeight.w600 : FontWeight.w700;
     final textStyle = TextStyle(
       fontSize: isHeading ? headingSize : kGlmBodySize,
       fontWeight: isHeading
           ? headingWeight
           : (block.bold ? FontWeight.w700 : FontWeight.w400),
       fontStyle: block.italic ? FontStyle.italic : null,
-      decoration: block.underline ? TextDecoration.underline : null,
-      color: _parseHexColor(block.color) ??
+      decoration: hasStrike
+          ? TextDecoration.lineThrough
+          : block.underline
+          ? TextDecoration.underline
+          : null,
+      color:
+          _parseHexColor(block.color) ??
           (isChecklist && block.checked
               ? kGlmMetaColor
               : const Color(0xFF1E293B)),
       height: isHeading ? 1.25 : 1.45,
+      fontFamily: isCode ? 'monospace' : null,
     );
+    _textController.baseStyle = textStyle;
 
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: widget.onActivate,
-      child: Container(
-        decoration: widget.isActive
-            ? BoxDecoration(
-                color: notesBlockActiveFill(scheme),
-                borderRadius: BorderRadius.circular(8),
-              )
-            : null,
-        padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 4),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (isChecklist)
-              Padding(
-                padding: const EdgeInsets.only(top: 4, right: 0),
-                child: InkWell(
-                  onTap: () => widget.onUpdate(
-                    NoteEditorBlockPatch(checked: !block.checked),
-                  ),
-                  borderRadius: BorderRadius.circular(999),
-                  child: Container(
-                    width: kNotesCheckCircleSize,
-                    height: kNotesCheckCircleSize,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: block.checked
-                            ? const Color(0xFF6366F1)
-                            : const Color(0xFFE2E8F0),
-                        width: 2,
-                      ),
-                      color: block.checked ? const Color(0xFF6366F1) : null,
+    final slashCommands = _slashCommands(loc)
+        .where(
+          (command) =>
+              _slashQuery.isEmpty ||
+              command.command.contains(_slashQuery.toLowerCase()) ||
+              command.label.toLowerCase().contains(_slashQuery.toLowerCase()),
+        )
+        .toList(growable: false);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (widget.isActive && _hasTextSelection)
+          NotesSelectionToolbar(
+            selectedRuns: _selectedRuns(),
+            onBold: () => _toggleInlineMark(_InlineMarkAction.bold),
+            onItalic: () => _toggleInlineMark(_InlineMarkAction.italic),
+            onUnderline: () => _toggleInlineMark(_InlineMarkAction.underline),
+            onStrike: () => _toggleInlineMark(_InlineMarkAction.strike),
+            onHighlight: () => _toggleInlineMark(_InlineMarkAction.highlight),
+            onLink: _editInlineLink,
+            onCreatePlan: _createPlanFromSelectionOrBlock,
+          ),
+        GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: widget.onActivate,
+          child: Container(
+            decoration: widget.isActive
+                ? BoxDecoration(
+                    color: notesBlockActiveFill(scheme),
+                    borderRadius: BorderRadius.circular(8),
+                  )
+                : isQuote
+                ? BoxDecoration(
+                    color: scheme.primaryContainer.withValues(alpha: 0.24),
+                    border: Border(
+                      left: BorderSide(color: scheme.primary, width: 3),
                     ),
-                    child: block.checked
-                        ? const Icon(Icons.check_rounded,
-                            size: 12, color: Colors.white)
-                        : null,
+                    borderRadius: BorderRadius.circular(8),
+                  )
+                : isCallout
+                ? BoxDecoration(
+                    color: scheme.tertiaryContainer.withValues(alpha: 0.4),
+                    borderRadius: BorderRadius.circular(10),
+                  )
+                : isCode
+                ? BoxDecoration(
+                    color: scheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(8),
+                  )
+                : null,
+            padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 4),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (isChecklist)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: InkWell(
+                      onTap: () => widget.onUpdate(
+                        NoteEditorBlockPatch(checked: !block.checked),
+                      ),
+                      borderRadius: BorderRadius.circular(999),
+                      child: Container(
+                        width: kNotesCheckCircleSize,
+                        height: kNotesCheckCircleSize,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: block.checked
+                                ? const Color(0xFF6366F1)
+                                : const Color(0xFFE2E8F0),
+                            width: 2,
+                          ),
+                          color: block.checked ? const Color(0xFF6366F1) : null,
+                        ),
+                        child: block.checked
+                            ? const Icon(
+                                Icons.check_rounded,
+                                size: 12,
+                                color: Colors.white,
+                              )
+                            : null,
+                      ),
+                    ),
                   ),
-                ),
-              ),
-            if (isChecklist) const SizedBox(width: 8),
-            Expanded(
-              child: TextField(
-                controller: _textController,
-                focusNode: _focusNode,
-                minLines: 1,
-                maxLines: null,
-                textCapitalization: TextCapitalization.sentences,
-                style: textStyle.copyWith(
-                  decoration: (isChecklist && block.checked)
-                      ? TextDecoration.lineThrough
-                      : textStyle.decoration,
-                  color: (isChecklist && block.checked)
-                      ? kGlmMetaColor
-                      : textStyle.color,
-                ),
-                decoration: InputDecoration(
-                  hintText: isChecklist
-                      ? t(loc, 'notes_v3_editor_list_item_hint')
-                      : isHeading
+                if (isChecklist) const SizedBox(width: 8),
+                if (isBullet ||
+                    isNumbered ||
+                    isQuote ||
+                    isCallout ||
+                    isCollapsible)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 5, right: 8),
+                    child: isNumbered
+                        ? Text(
+                            '1.',
+                            style: TextStyle(
+                              color: scheme.primary,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          )
+                        : InkWell(
+                            onTap: isCollapsible
+                                ? () => widget.onUpdate(
+                                    NoteEditorBlockPatch(
+                                      collapsed: !block.collapsed,
+                                    ),
+                                  )
+                                : null,
+                            borderRadius: BorderRadius.circular(6),
+                            child: Icon(
+                              isBullet
+                                  ? Icons.circle
+                                  : isQuote
+                                  ? Icons.format_quote_rounded
+                                  : isCallout
+                                  ? Icons.lightbulb_outline_rounded
+                                  : block.collapsed
+                                  ? Icons.chevron_right_rounded
+                                  : Icons.expand_more_rounded,
+                              size: isBullet ? 7 : 16,
+                              color: isCallout
+                                  ? scheme.tertiary
+                                  : scheme.primary,
+                            ),
+                          ),
+                  ),
+                Expanded(
+                  child: TextField(
+                    controller: _textController,
+                    focusNode: _focusNode,
+                    minLines: 1,
+                    maxLines: null,
+                    textCapitalization: TextCapitalization.sentences,
+                    undoController: _undoController,
+                    style: textStyle.copyWith(
+                      decoration: isChecklist && block.checked
+                          ? TextDecoration.lineThrough
+                          : textStyle.decoration,
+                      color: isChecklist && block.checked
+                          ? kGlmMetaColor
+                          : textStyle.color,
+                    ),
+                    decoration: InputDecoration(
+                      hintText: isChecklist
+                          ? t(loc, 'notes_v3_editor_list_item_hint')
+                          : isHeading
                           ? t(loc, 'notes_v3_editor_heading_hint')
                           : t(loc, 'notes_v3_editor_start_writing'),
-                  hintStyle: TextStyle(
-                    fontSize: isHeading ? headingSize : kNotesBodySize,
-                    fontWeight: isHeading ? headingWeight : FontWeight.w400,
-                    color: kGlmMetaColor.withValues(alpha: 0.65),
-                    height: isHeading ? 1.25 : 1.45,
+                      hintStyle: TextStyle(
+                        fontSize: isHeading ? headingSize : kNotesBodySize,
+                        fontWeight: isHeading ? headingWeight : FontWeight.w400,
+                        color: kGlmMetaColor.withValues(alpha: 0.65),
+                        height: isHeading ? 1.25 : 1.45,
+                      ),
+                      border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      isDense: true,
+                      contentPadding: EdgeInsets.zero,
+                      filled: false,
+                    ),
+                    onChanged: (value) {
+                      final nextRuns = applyNoteTextEditToRuns(
+                        oldText: _editingText,
+                        oldRuns: _editingRuns,
+                        newText: value,
+                      );
+                      _editingText = value;
+                      _editingRuns = nextRuns;
+                      _textController.setRuns(nextRuns);
+                      widget.onUpdate(
+                        NoteEditorBlockPatch(text: value, runs: nextRuns),
+                      );
+                    },
+                    onSubmitted: (_) => widget.onEnter(),
                   ),
-                  border: InputBorder.none,
-                  enabledBorder: InputBorder.none,
-                  focusedBorder: InputBorder.none,
-                  isDense: true,
-                  contentPadding: EdgeInsets.zero,
-                  filled: false,
                 ),
-                onChanged: (v) =>
-                    widget.onUpdate(NoteEditorBlockPatch(text: v)),
-                onSubmitted: (_) => widget.onEnter(),
-              ),
+                if (widget.isActive)
+                  _NoteEditorBlockActiveControls(
+                    block: block,
+                    canMoveUp: widget.canMoveUp,
+                    canMoveDown: widget.canMoveDown,
+                    onMoveUp: widget.onMoveUp,
+                    onMoveDown: widget.onMoveDown,
+                    onConvert: _convertBlock,
+                    onCreatePlan: _createPlanFromSelectionOrBlock,
+                    onDelete: widget.onDelete,
+                    loc: loc,
+                  ),
+              ],
             ),
-            if (widget.isActive)
-              _NoteEditorBlockActiveControls(
-                canMoveUp: widget.canMoveUp,
-                canMoveDown: widget.canMoveDown,
-                onMoveUp: widget.onMoveUp,
-                onMoveDown: widget.onMoveDown,
-                onDelete: widget.onDelete,
-                loc: loc,
-              ),
+          ),
+        ),
+        if (_focusNode.hasFocus &&
+            _textController.text.startsWith('/') &&
+            slashCommands.isNotEmpty)
+          _SlashCommandMenu(
+            commands: slashCommands,
+            onSelect: _applySlashCommand,
+          ),
+      ],
+    );
+  }
+}
+
+enum _InlineMarkAction { bold, italic, underline, strike, highlight }
+
+class NotesSelectionToolbar extends StatelessWidget {
+  const NotesSelectionToolbar({
+    required this.selectedRuns,
+    required this.onBold,
+    required this.onItalic,
+    required this.onUnderline,
+    required this.onStrike,
+    required this.onHighlight,
+    required this.onLink,
+    required this.onCreatePlan,
+  });
+
+  final List<NoteTextRun> selectedRuns;
+  final VoidCallback onBold;
+  final VoidCallback onItalic;
+  final VoidCallback onUnderline;
+  final VoidCallback onStrike;
+  final VoidCallback onHighlight;
+  final VoidCallback onLink;
+  final VoidCallback onCreatePlan;
+
+  bool _all(bool Function(NoteInlineMarks marks) test) =>
+      selectedRuns.isNotEmpty && selectedRuns.every((run) => test(run.marks));
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 4, left: 4),
+        padding: const EdgeInsets.all(4),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: Theme.of(context).colorScheme.outlineVariant,
+          ),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x1A0F172A),
+              blurRadius: 14,
+              offset: Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _SelectionToolButton(
+              icon: Icons.format_bold_rounded,
+              selected: _all((marks) => marks.bold),
+              onTap: onBold,
+            ),
+            _SelectionToolButton(
+              icon: Icons.format_italic_rounded,
+              selected: _all((marks) => marks.italic),
+              onTap: onItalic,
+            ),
+            _SelectionToolButton(
+              icon: Icons.format_underlined_rounded,
+              selected: _all((marks) => marks.underline),
+              onTap: onUnderline,
+            ),
+            _SelectionToolButton(
+              icon: Icons.format_strikethrough_rounded,
+              selected: _all((marks) => marks.strike),
+              onTap: onStrike,
+            ),
+            _SelectionToolButton(
+              icon: Icons.format_color_fill_rounded,
+              selected: _all((marks) => marks.highlightColor != null),
+              onTap: onHighlight,
+            ),
+            _SelectionToolButton(
+              icon: Icons.link_rounded,
+              selected: _all((marks) => marks.link != null),
+              onTap: onLink,
+            ),
+            _SelectionToolButton(
+              icon: Icons.event_note_outlined,
+              selected: false,
+              onTap: onCreatePlan,
+            ),
           ],
         ),
       ),
@@ -269,20 +811,195 @@ class _NoteEditorBlockRowState extends State<NoteEditorBlockRow> {
   }
 }
 
+class _SelectionToolButton extends StatelessWidget {
+  const _SelectionToolButton({
+    required this.icon,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(7),
+      child: Container(
+        width: 34,
+        height: 34,
+        decoration: BoxDecoration(
+          color: selected ? scheme.primary : Colors.transparent,
+          borderRadius: BorderRadius.circular(7),
+        ),
+        child: Icon(
+          icon,
+          size: 17,
+          color: selected ? scheme.onPrimary : scheme.onSurfaceVariant,
+        ),
+      ),
+    );
+  }
+}
+
+class _SlashCommand {
+  const _SlashCommand({
+    required this.command,
+    required this.label,
+    required this.icon,
+    required this.type,
+    this.headingLevel,
+  });
+
+  final String command;
+  final String label;
+  final IconData icon;
+  final NoteBlockType type;
+  final int? headingLevel;
+}
+
+List<_SlashCommand> _slashCommands(String loc) => <_SlashCommand>[
+  _SlashCommand(
+    command: 'text',
+    label: t(loc, 'notes_tools_body'),
+    icon: Icons.text_fields_rounded,
+    type: NoteBlockType.paragraph,
+  ),
+  const _SlashCommand(
+    command: 'heading',
+    label: 'H2',
+    icon: Icons.title_rounded,
+    type: NoteBlockType.heading,
+    headingLevel: 2,
+  ),
+  _SlashCommand(
+    command: 'checklist',
+    label: t(loc, 'notes_v3_editor_add_checklist'),
+    icon: Icons.checklist_rounded,
+    type: NoteBlockType.checklist,
+  ),
+  _SlashCommand(
+    command: 'bullets',
+    label: t(loc, 'notes_tools_bullets'),
+    icon: Icons.format_list_bulleted_rounded,
+    type: NoteBlockType.bulletedList,
+  ),
+  _SlashCommand(
+    command: 'numbers',
+    label: t(loc, 'notes_tools_numbers'),
+    icon: Icons.format_list_numbered_rounded,
+    type: NoteBlockType.numberedList,
+  ),
+  _SlashCommand(
+    command: 'quote',
+    label: t(loc, 'notes_tools_quote'),
+    icon: Icons.format_quote_rounded,
+    type: NoteBlockType.quote,
+  ),
+  _SlashCommand(
+    command: 'callout',
+    label: t(loc, 'notes_tools_callout'),
+    icon: Icons.lightbulb_outline_rounded,
+    type: NoteBlockType.callout,
+  ),
+  _SlashCommand(
+    command: 'table',
+    label: t(loc, 'notes_tools_table'),
+    icon: Icons.table_chart_outlined,
+    type: NoteBlockType.table,
+  ),
+  _SlashCommand(
+    command: 'code',
+    label: t(loc, 'notes_tools_code_block'),
+    icon: Icons.code_rounded,
+    type: NoteBlockType.codeBlock,
+  ),
+  _SlashCommand(
+    command: 'collapse',
+    label: t(loc, 'notes_tools_collapsible'),
+    icon: Icons.expand_more_rounded,
+    type: NoteBlockType.collapsible,
+  ),
+  _SlashCommand(
+    command: 'divider',
+    label: t(loc, 'notes_tools_divider'),
+    icon: Icons.horizontal_rule_rounded,
+    type: NoteBlockType.divider,
+  ),
+];
+
+class _SlashCommandMenu extends StatelessWidget {
+  const _SlashCommandMenu({required this.commands, required this.onSelect});
+
+  final List<_SlashCommand> commands;
+  final ValueChanged<_SlashCommand> onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      margin: const EdgeInsets.fromLTRB(24, 4, 24, 8),
+      constraints: const BoxConstraints(maxHeight: 280),
+      decoration: BoxDecoration(
+        color: scheme.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: scheme.outlineVariant),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x1A0F172A),
+            blurRadius: 18,
+            offset: Offset(0, 8),
+          ),
+        ],
+      ),
+      child: ListView.builder(
+        shrinkWrap: true,
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        itemCount: commands.length,
+        itemBuilder: (context, index) {
+          final command = commands[index];
+          return ListTile(
+            dense: true,
+            leading: Icon(command.icon, size: 18),
+            title: Text(
+              command.label,
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+            ),
+            trailing: Text(
+              '/${command.command}',
+              style: TextStyle(fontSize: 11, color: scheme.onSurfaceVariant),
+            ),
+            onTap: () => onSelect(command),
+          );
+        },
+      ),
+    );
+  }
+}
+
 class _NoteEditorBlockActiveControls extends StatelessWidget {
   const _NoteEditorBlockActiveControls({
+    required this.block,
     required this.canMoveUp,
     required this.canMoveDown,
     required this.onMoveUp,
     required this.onMoveDown,
+    required this.onConvert,
+    required this.onCreatePlan,
     required this.onDelete,
     required this.loc,
   });
 
+  final NoteBlock block;
   final bool canMoveUp;
   final bool canMoveDown;
   final VoidCallback onMoveUp;
   final VoidCallback onMoveDown;
+  final ValueChanged<NoteBlockType> onConvert;
+  final VoidCallback onCreatePlan;
   final VoidCallback onDelete;
   final String loc;
 
@@ -303,12 +1020,58 @@ class _NoteEditorBlockActiveControls extends StatelessWidget {
             tooltip: t(loc, 'notes_v3_editor_move_down'),
             onTap: onMoveDown,
           ),
+        PopupMenuButton<NoteBlockType>(
+          tooltip: t(loc, 'notes_tools_block_style'),
+          icon: const Icon(Icons.swap_horiz_rounded, size: 14),
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
+          onSelected: onConvert,
+          itemBuilder: (context) => <PopupMenuEntry<NoteBlockType>>[
+            _convertItem(NoteBlockType.paragraph, t(loc, 'notes_tools_body')),
+            _convertItem(NoteBlockType.heading, 'H2'),
+            _convertItem(
+              NoteBlockType.checklist,
+              t(loc, 'notes_v3_editor_add_checklist'),
+            ),
+            _convertItem(
+              NoteBlockType.bulletedList,
+              t(loc, 'notes_tools_bullets'),
+            ),
+            _convertItem(
+              NoteBlockType.numberedList,
+              t(loc, 'notes_tools_numbers'),
+            ),
+            _convertItem(NoteBlockType.quote, t(loc, 'notes_tools_quote')),
+            _convertItem(NoteBlockType.callout, t(loc, 'notes_tools_callout')),
+            _convertItem(
+              NoteBlockType.codeBlock,
+              t(loc, 'notes_tools_code_block'),
+            ),
+            _convertItem(
+              NoteBlockType.collapsible,
+              t(loc, 'notes_tools_collapsible'),
+            ),
+          ],
+        ),
+        _NoteEditorBlockControlBtn(
+          icon: Icons.event_note_outlined,
+          tooltip: t(loc, 'notes_tools_create_plan'),
+          onTap: onCreatePlan,
+        ),
         _NoteEditorBlockControlBtn(
           icon: Icons.delete_outline_rounded,
           tooltip: t(loc, 'notes_v3_editor_delete_block'),
           onTap: onDelete,
         ),
       ],
+    );
+  }
+
+  PopupMenuItem<NoteBlockType> _convertItem(NoteBlockType type, String label) {
+    return PopupMenuItem<NoteBlockType>(
+      value: type,
+      enabled: type != block.type,
+      child: Text(label, style: const TextStyle(fontSize: 13)),
     );
   }
 }
@@ -375,8 +1138,7 @@ class _NoteEditorImageBlock extends StatelessWidget {
                   height: 80,
                   color: scheme.errorContainer.withValues(alpha: 0.3),
                   alignment: Alignment.center,
-                  child: Icon(Icons.broken_image_outlined,
-                      color: scheme.error),
+                  child: Icon(Icons.broken_image_outlined, color: scheme.error),
                 ),
               ),
             ),
@@ -431,8 +1193,10 @@ class _NoteEditorDrawingBlock extends StatelessWidget {
                     height: 80,
                     color: scheme.errorContainer.withValues(alpha: 0.3),
                     alignment: Alignment.center,
-                    child: Icon(Icons.broken_image_outlined,
-                        color: scheme.error),
+                    child: Icon(
+                      Icons.broken_image_outlined,
+                      color: scheme.error,
+                    ),
                   ),
                 ),
               ),
@@ -487,6 +1251,92 @@ class _NoteEditorMediaOverlayBtn extends StatelessWidget {
   }
 }
 
+class _NoteRichTextController extends TextEditingController {
+  _NoteRichTextController({
+    required String text,
+    required List<NoteTextRun> runs,
+  }) : _runs = runs,
+       super(text: text);
+
+  List<NoteTextRun> _runs;
+  TextStyle? baseStyle;
+
+  void setRuns(List<NoteTextRun> runs) {
+    _runs = runs;
+  }
+
+  @override
+  TextSpan buildTextSpan({
+    required BuildContext context,
+    TextStyle? style,
+    required bool withComposing,
+  }) {
+    final effectiveStyle = baseStyle ?? style ?? const TextStyle();
+    if (_runs.isEmpty || _runs.map((run) => run.text).join() != text) {
+      return TextSpan(style: effectiveStyle, text: text);
+    }
+    return TextSpan(
+      style: effectiveStyle,
+      children: [
+        for (final run in _runs)
+          TextSpan(
+            text: run.text,
+            style: _styleForMarks(effectiveStyle, run.marks),
+          ),
+      ],
+    );
+  }
+}
+
+TextStyle _styleForMarks(TextStyle base, NoteInlineMarks marks) {
+  final decorations = <TextDecoration>[];
+  if (marks.underline || marks.link != null) {
+    decorations.add(TextDecoration.underline);
+  }
+  if (marks.strike) decorations.add(TextDecoration.lineThrough);
+  return base.copyWith(
+    fontWeight: marks.bold ? FontWeight.w700 : null,
+    fontStyle: marks.italic ? FontStyle.italic : null,
+    fontFamily: marks.inlineCode ? 'monospace' : base.fontFamily,
+    color: marks.link != null
+        ? const Color(0xFF4F46E5)
+        : _parseHexColor(marks.textColor) ?? base.color,
+    backgroundColor: _parseHexColor(marks.highlightColor),
+    decoration: decorations.isEmpty
+        ? base.decoration
+        : TextDecoration.combine(decorations),
+  );
+}
+
+bool _noteRunsEquivalent(List<NoteTextRun> a, List<NoteTextRun> b) {
+  if (a.length != b.length) return false;
+  for (var index = 0; index < a.length; index++) {
+    if (a[index].text != b[index].text ||
+        a[index].marks.toJson().toString() !=
+            b[index].marks.toJson().toString()) {
+      return false;
+    }
+  }
+  return true;
+}
+
+List<NoteTextRun> _mergeRuns(List<NoteTextRun> source) {
+  final result = <NoteTextRun>[];
+  for (final run in source.where((item) => item.text.isNotEmpty)) {
+    if (result.isNotEmpty &&
+        result.last.marks.toJson().toString() ==
+            run.marks.toJson().toString()) {
+      final previous = result.removeLast();
+      result.add(
+        NoteTextRun(text: '${previous.text}${run.text}', marks: run.marks),
+      );
+    } else {
+      result.add(run);
+    }
+  }
+  return result;
+}
+
 Uint8List? _bytesFromDataUrl(String? dataUrl) {
   if (dataUrl == null) return null;
   final comma = dataUrl.indexOf(',');
@@ -500,12 +1350,12 @@ Uint8List? _bytesFromDataUrl(String? dataUrl) {
 
 Color? _parseHexColor(String? hex) {
   if (hex == null) return null;
-  var h = hex.trim();
-  if (h.isEmpty) return null;
-  if (h.startsWith('#')) h = h.substring(1);
-  if (h.length == 6) h = 'FF$h';
-  final v = int.tryParse(h, radix: 16);
-  return v == null ? null : Color(v);
+  var value = hex.trim();
+  if (value.isEmpty) return null;
+  if (value.startsWith('#')) value = value.substring(1);
+  if (value.length == 6) value = 'FF$value';
+  final parsed = int.tryParse(value, radix: 16);
+  return parsed == null ? null : Color(parsed);
 }
 
 /// Add Text / Checklist / Heading / Image / Drawing row under the block list.
