@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - fix/notes-text-only-editor
+  pull_request:
+    branches:
+      - main
 
 permissions:
   contents: read
