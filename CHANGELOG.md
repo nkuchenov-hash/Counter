@@ -11,6 +11,11 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-24] - Notes: contextual rich editor tools v2 [engineering]
+
+* **`lib/features/notes/` + `lib/data/models/note_*`:** Added backward-compatible `lifeos_notes_blocks_v2`, inline text marks, contextual `Aa`/Insert/selection tools, slash commands, lists, quote, callout, divider, code, collapsible, link-card and editable table blocks; legacy Notes migration, autosave, PocketBase schema, optimistic/offline paths, and existing library/editor shell remain compatible.
+* **Verification:** strict architecture guard, analyzer, two focused Notes tests, production web release build, and real Chrome runtime capture passed; final capture is `test/fixtures/notes_v2_tools_capture.png`.
+
 ## [2026-07-23] - Structure: final repository completeness audit [engineering]
 
 * **Phase 2G:** Final completeness audit after Phases 1–2F — 9 large Dart files reviewed (LARGE_FILE 0), 14 zero-ref candidates classified (KEEP/DEFER/tooling; none deleted), no architecture drift, no accidental tracked artifacts. Docs-only closure; ordinary repository cleanup formally complete with deferred feature scopes. Report: `docs/reports/FINAL_REPOSITORY_COMPLETENESS_AUDIT_2026-07-23.md`.
