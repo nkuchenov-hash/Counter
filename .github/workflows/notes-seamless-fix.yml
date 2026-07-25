@@ -1,9 +1,10 @@
 name: Notes seamless editor fix
 
 on:
-  push:
+  pull_request:
     branches:
-      - fix/notes-seamless-editor
+      - main
+  workflow_dispatch:
 
 permissions:
   contents: write
