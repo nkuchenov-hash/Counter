@@ -1,0 +1,57 @@
+name: Notes text-only verification
+
+on:
+  push:
+    branches:
+      - fix/notes-text-only-editor
+
+permissions:
+  contents: read
+
+concurrency:
+  group: notes-text-only-verification
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+
+      - name: Confirm removed editor tools have no references
+        shell: bash
+        run: |
+          if git grep -n -E 'notes_editor_tools|note_editor_block_widgets|notes_special_block_widgets|drawing_canvas_page|NotesEditorToolsDock|NoteEditorAddBlockRow|showDrawingCanvas' -- '*.dart'; then
+            echo 'Removed Notes tool references remain.' >&2
+            exit 1
+          fi
+
+      - name: Set up Flutter 3.41.6
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.6'
+          channel: stable
+
+      - name: Prepare environment
+        run: |
+          cp lib/core/env/env.dart.example lib/core/env/env.dart
+          flutter pub get
+
+      - name: Format check
+        run: dart format --output=none --set-exit-if-changed lib/features/notes/note_editor_page.dart
+
+      - name: Strict architecture guard
+        run: pwsh -NoProfile -NonInteractive -File ./scripts/audit/architecture_guard.ps1 -Strict
+
+      - name: Analyze
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+
+      - name: Focused Notes tests
+        run: |
+          flutter test test/note_document_test.dart
+          flutter test test/notes_glm_editor_parity_test.dart
+
+      - name: Build production web
+        run: flutter build web --release --base-href="/Counter/" --no-tree-shake-icons --no-wasm-dry-run --pwa-strategy=none
