@@ -1,0 +1,116 @@
+name: Notes v2 final capture and verification
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: notes-v2-final-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    if: ${{ github.actor != 'github-actions[bot]' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout feature branch
+        uses: actions/checkout@v4
+        with:
+          ref: feature/notes-editor-tools-v2
+          fetch-depth: 0
+
+      - name: Set up Flutter 3.41.6
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.6'
+          channel: stable
+
+      - name: Prepare environment
+        run: |
+          cp lib/core/env/env.dart.example lib/core/env/env.dart
+          flutter pub get
+          dart format \
+            lib/features/notes/widgets/notes_editor_tools.dart \
+            scripts/manual/capture_notes_v2_tools_web_main.dart \
+            test/notes/fixtures/notes_v2_tools_fixture.dart
+
+      - name: Strict architecture guard
+        run: pwsh -NoProfile -NonInteractive -File ./scripts/audit/architecture_guard.ps1 -Strict
+
+      - name: Check whitespace
+        run: git diff --check
+
+      - name: Analyze
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+
+      - name: Focused Notes tests
+        run: |
+          flutter test test/note_document_test.dart
+          flutter test test/note_document_v2_test.dart
+
+      - name: Build production web
+        run: flutter build web --release --base-href="/Counter/" --no-tree-shake-icons --no-wasm-dry-run --pwa-strategy=none
+
+      - name: Build capture web
+        run: |
+          flutter build web --release \
+            -t scripts/manual/capture_notes_v2_tools_web_main.dart \
+            --base-href="/" \
+            --no-tree-shake-icons \
+            --no-wasm-dry-run \
+            --pwa-strategy=none
+
+      - name: Start local capture server
+        run: |
+          python3 -m http.server 8000 --directory build/web > "$RUNNER_TEMP/notes_v2_web_server.log" 2>&1 &
+          echo $! > "$RUNNER_TEMP/notes_v2_web_server.pid"
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:8000/ > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat "$RUNNER_TEMP/notes_v2_web_server.log"
+          exit 1
+
+      - name: Capture final Notes tools UI
+        run: |
+          google-chrome \
+            --headless=new \
+            --no-sandbox \
+            --disable-gpu \
+            --hide-scrollbars \
+            --run-all-compositor-stages-before-draw \
+            --virtual-time-budget=6000 \
+            --window-size=1156,1200 \
+            --screenshot=test/fixtures/notes_v2_tools_capture.png \
+            http://127.0.0.1:8000/
+          test "$(stat -c%s test/fixtures/notes_v2_tools_capture.png)" -gt 50000
+
+      - name: Upload final capture
+        uses: actions/upload-artifact@v4
+        with:
+          name: notes-v2-final-capture
+          path: test/fixtures/notes_v2_tools_capture.png
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Remove temporary capture tooling
+        run: |
+          rm scripts/manual/capture_notes_v2_tools_web_main.dart
+          rm .github/workflows/notes-v2-final-capture.yml
+
+      - name: Commit verified final state
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --check
+          git commit -m "Finalize Notes v2 tools UI and capture [notes-v2-final]"
+          git push origin HEAD:feature/notes-editor-tools-v2
