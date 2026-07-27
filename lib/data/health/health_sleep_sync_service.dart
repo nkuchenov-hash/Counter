@@ -284,26 +284,15 @@ class HealthSleepSyncService with WidgetsBindingObserver {
       final wall = db.applyUserOffset(session.startUtc);
       final dateKey =
           '${wall.year}-${wall.month.toString().padLeft(2, '0')}-${wall.day.toString().padLeft(2, '0')}';
-      final businessId = await db.writeRecord(
+      final createdId = await db.writeRecord(
         dateKey,
         title,
         categoryId: categoryId,
         explicitStartTime: session.startUtc,
+        explicitEndTime: session.endUtc,
       );
-      if (businessId == null || businessId.isEmpty) {
+      if (createdId == null || createdId.isEmpty) {
         throw StateError('Sleep record could not be created');
-      }
-      await db.primaryRecordWriteNetworkChain.timeout(
-        const Duration(seconds: 20),
-      );
-      final updated = await db.updateRecord(
-        recordId: businessId,
-        endTime: session.endUtc,
-        categoryId: categoryId,
-        bypassConflictCheck: true,
-      );
-      if (updated == null) {
-        throw StateError('Sleep record could not be finalized');
       }
     }
 

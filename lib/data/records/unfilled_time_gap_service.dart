@@ -157,23 +157,13 @@ class UnfilledTimeGapService with WidgetsBindingObserver {
     final wall = db.applyUserOffset(gap.startUtc);
     final dateKey =
         '${wall.year}-${wall.month.toString().padLeft(2, '0')}-${wall.day.toString().padLeft(2, '0')}';
-    final businessId = await db.writeRecord(
+    final createdId = await db.writeRecord(
       dateKey,
       cleanTitle,
       explicitStartTime: gap.startUtc,
+      explicitEndTime: gap.endUtc,
     );
-    if (businessId == null || businessId.isEmpty) return false;
-    try {
-      await db.primaryRecordWriteNetworkChain.timeout(
-        const Duration(seconds: 20),
-      );
-    } catch (_) {}
-    final updated = await db.updateRecord(
-      recordId: businessId,
-      endTime: gap.endUtc,
-      bypassConflictCheck: true,
-    );
-    if (updated == null) return false;
+    if (createdId == null || createdId.isEmpty) return false;
     await refresh();
     return true;
   }
