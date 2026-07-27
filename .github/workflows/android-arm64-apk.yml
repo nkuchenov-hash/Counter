@@ -39,7 +39,7 @@ jobs:
       - name: Build arm64 release APK
         run: |
           BUILD_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-          flutter build apk --release --split-per-abi \
+          flutter build apk --release --split-per-abi --no-tree-shake-icons \
             --dart-define=GIT_COMMIT="078b0c1" \
             --dart-define=BUILD_TIME="$BUILD_TIME"
           cp build/app/outputs/flutter-apk/app-arm64-v8a-release.apk LifeOS-Android-arm64-078b0c1.apk
