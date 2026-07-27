@@ -40,7 +40,6 @@ jobs:
               if cleaned != raw:
                   path.write_text(cleaned, encoding='utf-8')
           PY
-          git diff --check origin/main...HEAD
 
       - name: Commit cleanup
         run: |
@@ -53,3 +52,6 @@ jobs:
             git commit -m "Fix Health integration whitespace"
             git push origin HEAD:feature/health-connect-sleep
           fi
+
+      - name: Verify diff whitespace
+        run: git diff --check origin/main...HEAD
