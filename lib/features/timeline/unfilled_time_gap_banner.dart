@@ -1,5 +1,6 @@
 import 'package:counter/core/app_snackbar.dart';
 import 'package:counter/core/widgets/app_button.dart';
+import 'package:counter/data/database_service.dart';
 import 'package:counter/data/records/unfilled_time_gap_policy.dart';
 import 'package:counter/data/records/unfilled_time_gap_service.dart';
 import 'package:counter/l10n/dictionary.dart';
@@ -9,8 +10,9 @@ class UnfilledTimeGapBanner extends StatelessWidget {
   const UnfilledTimeGapBanner({super.key});
 
   String _time(BuildContext context, DateTime utc) {
+    final wall = DatabaseService.instance.applyUserOffset(utc.toUtc());
     return MaterialLocalizations.of(context).formatTimeOfDay(
-      TimeOfDay.fromDateTime(utc.toLocal()),
+      TimeOfDay.fromDateTime(wall),
       alwaysUse24HourFormat: MediaQuery.of(context).alwaysUse24HourFormat,
     );
   }
