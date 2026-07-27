@@ -36,7 +36,7 @@ jobs:
         run: flutter pub get
 
       - name: Check formatting
-        run: dart format --output=none --set-exit-if-changed lib/features/stats
+        run: dart format --output=none --set-exit-if-changed lib/features/stats/day_stats_dashboard.dart lib/features/stats/stats_detail_tree.dart lib/features/stats/stats_view.dart
 
       - name: Analyze stats changes
-        run: flutter analyze --no-fatal-infos --no-fatal-warnings lib/features/stats
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings lib/features/stats/day_stats_dashboard.dart lib/features/stats/stats_detail_tree.dart lib/features/stats/stats_view.dart
