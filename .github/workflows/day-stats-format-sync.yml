@@ -1,0 +1,38 @@
+name: Day stats format sync
+
+on:
+  push:
+    branches:
+      - feature/day-stats-dashboard
+    paths:
+      - '.github/workflows/day-stats-format-sync.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout feature branch
+        uses: actions/checkout@v4
+        with:
+          ref: feature/day-stats-dashboard
+
+      - name: Set up Flutter 3.41.6
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.6'
+          channel: stable
+
+      - name: Format stats files
+        run: dart format lib/features/stats/day_stats_dashboard.dart lib/features/stats/stats_detail_tree.dart lib/features/stats/stats_view.dart
+
+      - name: Commit formatting
+        run: |
+          if git diff --quiet; then exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add lib/features/stats/day_stats_dashboard.dart lib/features/stats/stats_detail_tree.dart lib/features/stats/stats_view.dart
+          git commit -m "Format day stats dashboard"
+          git push origin HEAD:feature/day-stats-dashboard
