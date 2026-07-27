@@ -35,8 +35,10 @@ jobs:
                   raw = path.read_text(encoding='utf-8')
               except (UnicodeDecodeError, OSError):
                   continue
-              lines = raw.splitlines()
-              cleaned = '\n'.join(line.rstrip(' \t') for line in lines) + '\n'
+              lines = [line.rstrip(' \t') for line in raw.splitlines()]
+              while lines and not lines[-1]:
+                  lines.pop()
+              cleaned = '\n'.join(lines) + '\n'
               if cleaned != raw:
                   path.write_text(cleaned, encoding='utf-8')
           PY
