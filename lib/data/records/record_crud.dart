@@ -205,6 +205,7 @@ extension RecordCrudExtension on DatabaseService {
     String taskText, {
     int? categoryId,
     DateTime? explicitStartTime,
+    DateTime? explicitEndTime,
     int? parentId,
     String? parentRecordId,
     String? sourcePlanPocketRecordId,
@@ -215,7 +216,8 @@ extension RecordCrudExtension on DatabaseService {
     var deferWriteRecordMutationRelease = false;
     try {
       final parsed = getCleanTitleAndTags(taskText);
-      final sourcePlanForPayloadEarly = !((parentRecordId?.trim().isNotEmpty ?? false) || parentId != null)
+      final sourcePlanForPayloadEarly =
+          !((parentRecordId?.trim().isNotEmpty ?? false) || parentId != null)
           ? DatabaseService.pocketRelationIdOrNull(sourcePlanPocketRecordId)
           : null;
       int? cid = categoryId;
@@ -249,11 +251,23 @@ extension RecordCrudExtension on DatabaseService {
       }
       final now = DatabaseService.getPlanetaryNow();
       final start = explicitStartTime ?? now;
-      final isStartingNow = explicitStartTime != null;
-      final status = isStartingNow
+      final explicitEnd = explicitEndTime?.toUtc();
+      if (explicitEnd != null && !explicitEnd.isAfter(start.toUtc())) {
+        DatabaseService._log(
+          'writeRecord: explicit completed interval must have end after start',
+        );
+        return null;
+      }
+      final isExplicitCompleted = explicitEnd != null;
+      final isStartingNow = explicitStartTime != null && !isExplicitCompleted;
+      final status = isExplicitCompleted
+          ? 'completed'
+          : isStartingNow
           ? 'running'
           : (dateKey == _todayKey ? 'running' : 'completed');
-      DateTime? endTime = isStartingNow
+      DateTime? endTime = isExplicitCompleted
+          ? explicitEnd
+          : isStartingNow
           ? null
           : (dateKey == _todayKey ? null : start);
       final startIso = start.toUtc().toIso8601String();
@@ -669,7 +683,10 @@ extension RecordCrudExtension on DatabaseService {
 
   void _applyCachedRecordCategoryAt(int index, int categoryId) {
     if (index < 0 || index >= _cachedFlatRecords.length) return;
-    _applyLocalRecordCategoryDualityToRow(_cachedFlatRecords[index], categoryId);
+    _applyLocalRecordCategoryDualityToRow(
+      _cachedFlatRecords[index],
+      categoryId,
+    );
   }
 
   void _propagatePlanAutoCategoryToLoadedLinkedRecords({

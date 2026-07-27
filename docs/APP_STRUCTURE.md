@@ -750,3 +750,20 @@ Pass 4 regex/line Brain split scripts (`pass4_brain_split.py`, `pass4_split_fast
 From `docs/ROADMAP.md` — active velocity track is **V3 UX_CONTRACT / V7 Design System** (canonical components, Component Lab). Feature work (F2B plan category filter, list pin schema, etc.) remains paused unless explicitly requested.
 
 ---
+
+### Health Connect sleep and Timeline gap integrity (2026-07-27)
+
+| File | Role |
+| :--- | :--- |
+| `services/health_connect/health_connect_sleep_models.dart` | Pure Health Connect sleep-session transport model. |
+| `services/health_connect/health_connect_sleep_service.dart` | Conditional Android/stub export for Health Connect sleep reads. |
+| `services/health_connect/health_connect_sleep_service_io.dart` | Android Health Connect permission and `SLEEP_SESSION` reader. |
+| `services/health_connect/health_connect_sleep_service_stub.dart` | Safe unsupported-platform implementation. |
+| `services/unfilled_time_notification_service.dart` | Android local notification bridge for Timeline gaps. |
+| `data/health/health_sleep_policy.dart` | Pure dedupe and authoritative sleep-overlap policy. |
+| `data/health/health_sleep_sync_service.dart` | Health sleep import coordinator using existing record/category Brain APIs. |
+| `data/records/unfilled_time_gap_policy.dart` | Pure interval merge and unfilled-time detection. |
+| `data/records/unfilled_time_gap_service.dart` | Gap lifecycle, settings, fill action, and notification eligibility. |
+| `features/settings/health/health_connect_settings_section.dart` | Health Connect permission, enable, status, and manual sync UI. |
+| `features/settings/notifications/unfilled_time_notifications_section.dart` | Generic gap notification controls. |
+| `features/timeline/unfilled_time_gap_banner.dart` | Persistent in-app gap prompt and fill sheet. |
