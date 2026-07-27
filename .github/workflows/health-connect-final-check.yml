@@ -1,0 +1,70 @@
+name: Health Connect final check
+
+on:
+  push:
+    branches:
+      - feature/health-connect-sleep
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    if: ${{ !contains(github.event.head_commit.message, '[health-final-ci]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/health-connect-sleep
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.6'
+          channel: stable
+
+      - name: Create env.dart
+        run: |
+          mkdir -p lib/core/env
+          printf '%s\n' 'abstract final class Env {' '  static const String placeholder = '\'''\'';' '}' > lib/core/env/env.dart
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Finalize wording and format
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('CHANGELOG.md')
+          text = p.read_text(encoding='utf-8')
+          text = text.replace(
+              '* **PocketBase schema:** No migration required; external Health Connect identity is stored as an internal marker in the existing record note field.',
+              '* **PocketBase schema:** No migration required; sleep sessions are reconciled against existing `Sleep` / `Сон` records by interval, while user notes remain untouched.',
+          )
+          p.write_text(text, encoding='utf-8')
+          PY
+          dart format \
+            lib/data/health/health_sleep_policy.dart \
+            lib/data/health/health_sleep_sync_service.dart \
+            lib/features/timeline/unfilled_time_gap_banner.dart \
+            test/data/health_sleep_policy_test.dart
+
+      - name: Strict architecture guard
+        run: pwsh -NoProfile -NonInteractive -File ./scripts/audit/architecture_guard.ps1 -Strict
+
+      - name: Analyze
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+
+      - name: Run three focused policy tests
+        run: flutter test test/data/health_sleep_policy_test.dart test/data/unfilled_time_gap_policy_test.dart
+
+      - name: Commit formatting and changelog
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add CHANGELOG.md lib/data/health lib/features/timeline/unfilled_time_gap_banner.dart test/data/health_sleep_policy_test.dart
+          if git diff --cached --quiet; then
+            echo "No generated changes"
+          else
+            git commit -m "[health-final-ci] Finalize Health Connect sync"
+            git push origin HEAD:feature/health-connect-sleep
+          fi
