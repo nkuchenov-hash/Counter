@@ -1,0 +1,53 @@
+name: Android APK Health Connect build
+
+on:
+  push:
+    branches:
+      - feature/health-connect-sleep
+
+permissions:
+  contents: read
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout merged feature code
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Flutter 3.41.6
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.6'
+          channel: stable
+          cache: true
+
+      - name: Create env.dart
+        run: |
+          mkdir -p lib/core/env
+          printf '%s\n' 'abstract final class Env {' '  static const String placeholder = '\'''\'';' '}' > lib/core/env/env.dart
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build release APK
+        run: |
+          BUILD_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          flutter build apk --release --no-tree-shake-icons \
+            --dart-define=GIT_COMMIT="078b0c1" \
+            --dart-define=BUILD_TIME="$BUILD_TIME"
+          cp build/app/outputs/flutter-apk/app-release.apk LifeOS-Android-078b0c1.apk
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: LifeOS-Android-078b0c1
+          path: LifeOS-Android-078b0c1.apk
+          if-no-files-found: error
+          retention-days: 30
