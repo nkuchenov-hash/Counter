@@ -1,0 +1,42 @@
+name: Day stats PR check
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'lib/features/stats/**'
+      - '.github/workflows/day-stats-pr-check.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run strict architecture guard
+        run: pwsh -NoProfile -NonInteractive -File ./scripts/audit/architecture_guard.ps1 -Strict
+
+      - name: Set up Flutter 3.41.6
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.6'
+          channel: stable
+
+      - name: Create env.dart
+        run: |
+          mkdir -p lib/core/env
+          printf '%s\n' 'abstract final class Env {' '  static const String placeholder = '\''\'';' '}' > lib/core/env/env.dart
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Check formatting
+        run: dart format --output=none --set-exit-if-changed lib/features/stats
+
+      - name: Analyze stats changes
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings lib/features/stats
