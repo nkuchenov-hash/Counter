@@ -34,6 +34,66 @@ const Map<String, String> _planningAutoPlacementRu = {
       'Сохраняет прежнее поведение. На пустом дне используется время категории, если оно настроено.',
 };
 
+const Map<String, String> _healthAndGapEn = {
+  'health_connect_title': 'Health Connect',
+  'health_connect_subtitle':
+      'Import completed sleep sessions into the Life OS timeline.',
+  'health_connect_enable': 'Synchronize sleep',
+  'health_connect_sync_now': 'Sync now',
+  'health_connect_status_disabled': 'Disabled',
+  'health_connect_status_unavailable': 'Available on Android only',
+  'health_connect_status_permission': 'Sleep permission is required',
+  'health_connect_status_idle': 'Ready to synchronize',
+  'health_connect_status_syncing': 'Synchronizing sleep…',
+  'health_connect_status_synced': 'Synchronized',
+  'health_connect_status_error': 'Synchronization failed',
+  'health_sleep_record_title': 'Sleep',
+  'unfilled_time_notifications_title': 'Unfilled time',
+  'unfilled_time_notifications_subtitle':
+      'Optional notifications for gaps anywhere in the timeline.',
+  'unfilled_time_notifications_enable': 'Notify about unfilled gaps',
+  'unfilled_time_min_gap': 'Minimum gap',
+  'unfilled_time_delay': 'Notification delay',
+  'unfilled_time_delay_immediately': 'Immediately',
+  'unfilled_time_minutes': '%s min',
+  'unfilled_time_banner': 'Unfilled time',
+  'unfilled_time_fill': 'Fill',
+  'unfilled_time_sheet_title': 'What happened during this time?',
+  'unfilled_time_activity_hint': 'Activity or event',
+  'unfilled_time_notification_title': 'Life OS: unfilled time',
+  'unfilled_time_notification_body': '%s minutes are missing from your timeline.',
+};
+
+const Map<String, String> _healthAndGapRu = {
+  'health_connect_title': 'Health Connect',
+  'health_connect_subtitle':
+      'Импорт завершённых сессий сна в Timeline Life OS.',
+  'health_connect_enable': 'Синхронизировать сон',
+  'health_connect_sync_now': 'Синхронизировать сейчас',
+  'health_connect_status_disabled': 'Выключено',
+  'health_connect_status_unavailable': 'Доступно только на Android',
+  'health_connect_status_permission': 'Нужно разрешение на чтение сна',
+  'health_connect_status_idle': 'Готово к синхронизации',
+  'health_connect_status_syncing': 'Синхронизация сна…',
+  'health_connect_status_synced': 'Синхронизировано',
+  'health_connect_status_error': 'Ошибка синхронизации',
+  'health_sleep_record_title': 'Сон',
+  'unfilled_time_notifications_title': 'Незаполненное время',
+  'unfilled_time_notifications_subtitle':
+      'Необязательные уведомления о любых пробелах в Timeline.',
+  'unfilled_time_notifications_enable': 'Уведомлять о пробелах',
+  'unfilled_time_min_gap': 'Минимальный промежуток',
+  'unfilled_time_delay': 'Задержка уведомления',
+  'unfilled_time_delay_immediately': 'Сразу',
+  'unfilled_time_minutes': '%s мин',
+  'unfilled_time_banner': 'Не заполнено',
+  'unfilled_time_fill': 'Заполнить',
+  'unfilled_time_sheet_title': 'Что происходило в это время?',
+  'unfilled_time_activity_hint': 'Действие или событие',
+  'unfilled_time_notification_title': 'Life OS: время не заполнено',
+  'unfilled_time_notification_body': 'В Timeline пропущено %s минут.',
+};
+
 /// Voice Vault: locale state + assembled translation catalog.
 /// Canonical EN/RU strings live in [kEnL10n] / [kRuL10n] (`lib/l10n/langs/`).
 /// Other locales layer on English via [_layerOnEnglish].
@@ -43,11 +103,13 @@ final ValueNotifier<String> currentLocale = ValueNotifier<String>('en');
 final Map<String, String> _englishCatalog = Map<String, String>.unmodifiable({
   ...kEnL10n,
   ..._planningAutoPlacementEn,
+  ..._healthAndGapEn,
 });
 
 final Map<String, String> _russianCatalog = Map<String, String>.unmodifiable({
   ...kRuL10n,
   ..._planningAutoPlacementRu,
+  ..._healthAndGapRu,
 });
 
 Map<String, String> _layerOnEnglish(Map<String, String> partial) {
