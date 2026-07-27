@@ -1,12 +1,29 @@
-import 'package:counter/features/shared/offline_sync_status_bar.dart';
+import 'dart:async';
+
 import 'package:counter/app/shell/shared/profile_hydration_status_bar.dart';
+import 'package:counter/data/health/health_sleep_sync_service.dart';
+import 'package:counter/data/records/unfilled_time_gap_service.dart';
+import 'package:counter/features/shared/offline_sync_status_bar.dart';
+import 'package:counter/features/timeline/unfilled_time_gap_banner.dart';
 import 'package:flutter/material.dart';
 
-/// Top-of-shell status strip: profile hydration + offline sync banner.
-class ShellTopStatusBars extends StatelessWidget {
+/// Top-of-shell status strip: profile hydration, sync state, and missing time.
+class ShellTopStatusBars extends StatefulWidget {
   const ShellTopStatusBars({super.key, required this.routeTab});
 
   final String routeTab;
+
+  @override
+  State<ShellTopStatusBars> createState() => _ShellTopStatusBarsState();
+}
+
+class _ShellTopStatusBarsState extends State<ShellTopStatusBars> {
+  @override
+  void initState() {
+    super.initState();
+    unawaited(HealthSleepSyncService.instance.start());
+    unawaited(UnfilledTimeGapService.instance.start());
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -14,7 +31,8 @@ class ShellTopStatusBars extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         const ProfileHydrationStatusBar(),
-        OfflineSyncStatusBar(routeTab: routeTab),
+        OfflineSyncStatusBar(routeTab: widget.routeTab),
+        const UnfilledTimeGapBanner(),
       ],
     );
   }
