@@ -767,4 +767,3 @@ From `docs/ROADMAP.md` — active velocity track is **V3 UX_CONTRACT / V7 Design
 | `features/settings/health/health_connect_settings_section.dart` | Health Connect permission, enable, status, and manual sync UI. |
 | `features/settings/notifications/unfilled_time_notifications_section.dart` | Generic gap notification controls. |
 | `features/timeline/unfilled_time_gap_banner.dart` | Persistent in-app gap prompt and fill sheet. |
-
