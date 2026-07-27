@@ -1,15 +1,3 @@
-import 'dart:convert';
-
-const String kHealthSleepMarkerPrefix = '[[lifeos-health-connect-sleep:';
-
-String healthSleepMarker(String externalId) =>
-    '$kHealthSleepMarkerPrefix${base64Url.encode(utf8.encode(externalId))}]]';
-
-bool isImportedHealthSleepRecord(Map<String, dynamic> row) {
-  final note = (row['note'] ?? row['notes'] ?? '').toString();
-  return note.contains(kHealthSleepMarkerPrefix);
-}
-
 bool isSleepTitle(dynamic raw) {
   final title = (raw ?? '').toString().trim().toLowerCase();
   return title == 'sleep' || title == 'сон';
@@ -53,7 +41,6 @@ List<SleepConflictAction> planSleepConflictActions({
   for (final row in records) {
     final key = recordIdentityKey(row);
     if (key.isEmpty || key == existingSleepRecordKey) continue;
-    if (isImportedHealthSleepRecord(row)) continue;
 
     final rowStart = recordUtc(row['start_time'] ?? row['startTime']);
     if (rowStart == null || !rowStart.isBefore(end)) continue;
@@ -74,41 +61,38 @@ List<SleepConflictAction> planSleepConflictActions({
 
 Map<String, dynamic>? findExistingSleepRecord({
   required Iterable<Map<String, dynamic>> records,
-  required String externalId,
   required DateTime sleepStartUtc,
   required DateTime sleepEndUtc,
 }) {
-  final marker = healthSleepMarker(externalId);
-  for (final row in records) {
-    final note = (row['note'] ?? row['notes'] ?? '').toString();
-    if (note.contains(marker)) return row;
-  }
+  final targetStart = sleepStartUtc.toUtc();
+  final targetEnd = sleepEndUtc.toUtc();
+  if (!targetEnd.isAfter(targetStart)) return null;
 
   Map<String, dynamic>? best;
-  var bestOverlap = Duration.zero;
+  int? bestScore;
   for (final row in records) {
     if (!isSleepTitle(row['title'])) continue;
     final start = recordUtc(row['start_time'] ?? row['startTime']);
     final end = recordUtc(row['end_time'] ?? row['endTime']);
     if (start == null || end == null || !end.isAfter(start)) continue;
-    final overlapStart = start.isAfter(sleepStartUtc) ? start : sleepStartUtc;
-    final overlapEnd = end.isBefore(sleepEndUtc) ? end : sleepEndUtc;
-    if (!overlapEnd.isAfter(overlapStart)) continue;
-    final overlap = overlapEnd.difference(overlapStart);
-    if (overlap > bestOverlap) {
-      bestOverlap = overlap;
+
+    final overlapStart = start.isAfter(targetStart) ? start : targetStart;
+    final overlapEnd = end.isBefore(targetEnd) ? end : targetEnd;
+    final overlapSeconds = overlapEnd.isAfter(overlapStart)
+        ? overlapEnd.difference(overlapStart).inSeconds
+        : 0;
+    final startDrift = start.difference(targetStart).inSeconds.abs();
+    final endDrift = end.difference(targetEnd).inSeconds.abs();
+    final boundaryMatch =
+        startDrift <= const Duration(hours: 3).inSeconds &&
+        endDrift <= const Duration(hours: 3).inSeconds;
+    if (overlapSeconds == 0 && !boundaryMatch) continue;
+
+    final score = overlapSeconds * 10 - startDrift - endDrift;
+    if (bestScore == null || score > bestScore) {
+      bestScore = score;
       best = row;
     }
   }
-  if (best == null) return null;
-  final sleepDuration = sleepEndUtc.difference(sleepStartUtc);
-  return bestOverlap.inSeconds * 5 >= sleepDuration.inSeconds * 4 ? best : null;
-}
-
-String noteWithHealthSleepMarker(dynamic existingNote, String externalId) {
-  final note = existingNote?.toString().trim() ?? '';
-  final marker = healthSleepMarker(externalId);
-  if (note.contains(marker)) return note;
-  if (note.isEmpty) return marker;
-  return '$note\n$marker';
+  return best;
 }
