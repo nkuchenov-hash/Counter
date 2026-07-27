@@ -31,20 +31,14 @@ class HealthConnectSleepService {
   Future<bool> hasAuthorization() async {
     if (!isSupported) return false;
     await _ensureConfigured();
-    return await _health.hasPermissions(
-          _types,
-          permissions: _permissions,
-        ) ??
+    return await _health.hasPermissions(_types, permissions: _permissions) ??
         false;
   }
 
   Future<bool> requestAuthorization() async {
     if (!isSupported) return false;
     await _ensureConfigured();
-    return _health.requestAuthorization(
-      _types,
-      permissions: _permissions,
-    );
+    return _health.requestAuthorization(_types, permissions: _permissions);
   }
 
   Future<List<HealthSleepSession>> readSessions({

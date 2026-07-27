@@ -46,8 +46,9 @@ class _UnfilledTimeNotificationsSectionState
               title: Text(t(locale, 'unfilled_time_notifications_enable')),
               value: settings.notificationsEnabled,
               onChanged: (enabled) => unawaited(
-                UnfilledTimeGapService.instance
-                    .setNotificationsEnabled(enabled),
+                UnfilledTimeGapService.instance.setNotificationsEnabled(
+                  enabled,
+                ),
               ),
             ),
             const SizedBox(height: 8),
@@ -62,16 +63,17 @@ class _UnfilledTimeNotificationsSectionState
                   DropdownMenuItem<int>(
                     value: minutes,
                     child: Text(
-                      t(locale, 'unfilled_time_minutes')
-                          .replaceAll('%s', '$minutes'),
+                      t(
+                        locale,
+                        'unfilled_time_minutes',
+                      ).replaceAll('%s', '$minutes'),
                     ),
                   ),
               ],
               onChanged: (minutes) {
                 if (minutes == null) return;
                 unawaited(
-                  UnfilledTimeGapService.instance
-                      .setMinimumGapMinutes(minutes),
+                  UnfilledTimeGapService.instance.setMinimumGapMinutes(minutes),
                 );
               },
             ),
@@ -89,16 +91,19 @@ class _UnfilledTimeNotificationsSectionState
                     child: Text(
                       minutes == 0
                           ? t(locale, 'unfilled_time_delay_immediately')
-                          : t(locale, 'unfilled_time_minutes')
-                              .replaceAll('%s', '$minutes'),
+                          : t(
+                              locale,
+                              'unfilled_time_minutes',
+                            ).replaceAll('%s', '$minutes'),
                     ),
                   ),
               ],
               onChanged: (minutes) {
                 if (minutes == null) return;
                 unawaited(
-                  UnfilledTimeGapService.instance
-                      .setNotificationDelayMinutes(minutes),
+                  UnfilledTimeGapService.instance.setNotificationDelayMinutes(
+                    minutes,
+                  ),
                 );
               },
             ),

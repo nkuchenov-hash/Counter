@@ -61,7 +61,8 @@ const Map<String, String> _healthAndGapEn = {
   'unfilled_time_sheet_title': 'What happened during this time?',
   'unfilled_time_activity_hint': 'Activity or event',
   'unfilled_time_notification_title': 'Life OS: unfilled time',
-  'unfilled_time_notification_body': '%s minutes are missing from your timeline.',
+  'unfilled_time_notification_body':
+      '%s minutes are missing from your timeline.',
 };
 
 const Map<String, String> _healthAndGapRu = {

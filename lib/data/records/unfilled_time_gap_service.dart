@@ -18,9 +18,9 @@ class UnfilledTimeGapSettings {
   });
 
   const UnfilledTimeGapSettings.defaults()
-      : notificationsEnabled = false,
-        minimumGapMinutes = 15,
-        notificationDelayMinutes = 30;
+    : notificationsEnabled = false,
+      minimumGapMinutes = 15,
+      notificationDelayMinutes = 30;
 
   final bool notificationsEnabled;
   final int minimumGapMinutes;
@@ -32,8 +32,7 @@ class UnfilledTimeGapSettings {
     int? notificationDelayMinutes,
   }) {
     return UnfilledTimeGapSettings(
-      notificationsEnabled:
-          notificationsEnabled ?? this.notificationsEnabled,
+      notificationsEnabled: notificationsEnabled ?? this.notificationsEnabled,
       minimumGapMinutes: minimumGapMinutes ?? this.minimumGapMinutes,
       notificationDelayMinutes:
           notificationDelayMinutes ?? this.notificationDelayMinutes,
@@ -55,8 +54,9 @@ class UnfilledTimeGapService with WidgetsBindingObserver {
   static const String _lastNotifiedGapKey =
       'unfilled_time_last_notified_gap_v1';
 
-  final ValueNotifier<TimelineGap?> currentGap =
-      ValueNotifier<TimelineGap?>(null);
+  final ValueNotifier<TimelineGap?> currentGap = ValueNotifier<TimelineGap?>(
+    null,
+  );
   final ValueNotifier<UnfilledTimeGapSettings> settings =
       ValueNotifier<UnfilledTimeGapSettings>(
         const UnfilledTimeGapSettings.defaults(),
@@ -85,8 +85,7 @@ class UnfilledTimeGapService with WidgetsBindingObserver {
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
     settings.value = UnfilledTimeGapSettings(
-      notificationsEnabled:
-          prefs.getBool(_notificationsEnabledKey) ?? false,
+      notificationsEnabled: prefs.getBool(_notificationsEnabledKey) ?? false,
       minimumGapMinutes: prefs.getInt(_minimumGapMinutesKey) ?? 15,
       notificationDelayMinutes:
           prefs.getInt(_notificationDelayMinutesKey) ?? 30,
@@ -96,7 +95,8 @@ class UnfilledTimeGapService with WidgetsBindingObserver {
   Future<void> setNotificationsEnabled(bool enabled) async {
     await start();
     if (enabled) {
-      final permission = await NotificationService.instance.requestPermissions();
+      final permission = await NotificationService.instance
+          .requestPermissions();
       if (permission != PlanAlarmPermissionStatus.allowed) return;
     }
     final prefs = await SharedPreferences.getInstance();
@@ -119,9 +119,7 @@ class UnfilledTimeGapService with WidgetsBindingObserver {
     final safe = minutes.clamp(0, 720).toInt();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt(_notificationDelayMinutesKey, safe);
-    settings.value = settings.value.copyWith(
-      notificationDelayMinutes: safe,
-    );
+    settings.value = settings.value.copyWith(notificationDelayMinutes: safe);
     unawaited(refresh());
   }
 
@@ -138,9 +136,7 @@ class UnfilledTimeGapService with WidgetsBindingObserver {
         records: rows,
         windowStartUtc: now.subtract(const Duration(hours: 24)),
         windowEndUtc: now,
-        minimumDuration: Duration(
-          minutes: settings.value.minimumGapMinutes,
-        ),
+        minimumDuration: Duration(minutes: settings.value.minimumGapMinutes),
       );
       currentGap.value = gaps.isEmpty ? null : gaps.last;
       final gap = currentGap.value;
@@ -197,8 +193,10 @@ class UnfilledTimeGapService with WidgetsBindingObserver {
     final shown = await UnfilledTimeNotificationService.instance.show(
       gapKey: gap.key,
       title: t(locale, 'unfilled_time_notification_title'),
-      body: t(locale, 'unfilled_time_notification_body')
-          .replaceAll('%s', '$minutes'),
+      body: t(
+        locale,
+        'unfilled_time_notification_body',
+      ).replaceAll('%s', '$minutes'),
     );
     if (shown) await prefs.setString(_lastNotifiedGapKey, gap.key);
   }

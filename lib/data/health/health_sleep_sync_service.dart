@@ -32,12 +32,12 @@ class HealthSleepSyncState {
   });
 
   const HealthSleepSyncState.initial()
-      : enabled = false,
-        phase = HealthSleepSyncPhase.disabled,
-        lastSyncUtc = null,
-        lastImportedStartUtc = null,
-        lastImportedEndUtc = null,
-        error = null;
+    : enabled = false,
+      phase = HealthSleepSyncPhase.disabled,
+      lastSyncUtc = null,
+      lastImportedStartUtc = null,
+      lastImportedEndUtc = null,
+      error = null;
 
   final bool enabled;
   final HealthSleepSyncPhase phase;
@@ -59,8 +59,7 @@ class HealthSleepSyncState {
       enabled: enabled ?? this.enabled,
       phase: phase ?? this.phase,
       lastSyncUtc: lastSyncUtc ?? this.lastSyncUtc,
-      lastImportedStartUtc:
-          lastImportedStartUtc ?? this.lastImportedStartUtc,
+      lastImportedStartUtc: lastImportedStartUtc ?? this.lastImportedStartUtc,
       lastImportedEndUtc: lastImportedEndUtc ?? this.lastImportedEndUtc,
       error: clearError ? null : (error ?? this.error),
     );
@@ -77,9 +76,7 @@ class HealthSleepSyncService with WidgetsBindingObserver {
   static const Duration _automaticSyncThrottle = Duration(minutes: 10);
 
   final ValueNotifier<HealthSleepSyncState> state =
-      ValueNotifier<HealthSleepSyncState>(
-        const HealthSleepSyncState.initial(),
-      );
+      ValueNotifier<HealthSleepSyncState>(const HealthSleepSyncState.initial());
 
   bool _started = false;
   bool _syncing = false;
@@ -102,8 +99,8 @@ class HealthSleepSyncService with WidgetsBindingObserver {
       phase: !isSupported
           ? HealthSleepSyncPhase.unsupported
           : enabled
-              ? HealthSleepSyncPhase.idle
-              : HealthSleepSyncPhase.disabled,
+          ? HealthSleepSyncPhase.idle
+          : HealthSleepSyncPhase.disabled,
       lastSyncUtc: lastSync,
     );
     if (enabled && isSupported) unawaited(sync());
@@ -127,8 +124,8 @@ class HealthSleepSyncService with WidgetsBindingObserver {
       return false;
     }
     try {
-      final granted =
-          await HealthConnectSleepService.instance.requestAuthorization();
+      final granted = await HealthConnectSleepService.instance
+          .requestAuthorization();
       if (!granted) {
         state.value = state.value.copyWith(
           enabled: false,
@@ -159,8 +156,8 @@ class HealthSleepSyncService with WidgetsBindingObserver {
       phase: !isSupported
           ? HealthSleepSyncPhase.unsupported
           : enabled
-              ? HealthSleepSyncPhase.idle
-              : HealthSleepSyncPhase.disabled,
+          ? HealthSleepSyncPhase.idle
+          : HealthSleepSyncPhase.disabled,
       clearError: true,
     );
     if (enabled && syncNow && isSupported) {
@@ -187,8 +184,8 @@ class HealthSleepSyncService with WidgetsBindingObserver {
       clearError: true,
     );
     try {
-      final authorized =
-          await HealthConnectSleepService.instance.hasAuthorization();
+      final authorized = await HealthConnectSleepService.instance
+          .hasAuthorization();
       if (!authorized) {
         state.value = state.value.copyWith(
           phase: HealthSleepSyncPhase.needsPermission,
@@ -324,11 +321,7 @@ class HealthSleepSyncService with WidgetsBindingObserver {
     final tempId = -DateTime.now().microsecondsSinceEpoch;
     return db.addNestedCategory(
       null,
-      CategoryRule(
-        id: tempId,
-        name: name,
-        normalizedId: 'sleep',
-      ),
+      CategoryRule(id: tempId, name: name, normalizedId: 'sleep'),
     );
   }
 }

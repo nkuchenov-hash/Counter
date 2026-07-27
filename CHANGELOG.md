@@ -11,6 +11,14 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-27] - Health Connect sleep sync [implemented]
+
+* **Android Health Connect:** Added read-only `SLEEP_SESSION` permission flow and Mi Fitness-compatible sleep import.
+* **Timeline Brain:** Imported sleep is authoritative: prior activity stops at sleep start, conflicting rows inside sleep are removed, and repeat sync updates instead of duplicating. Existing record/category optimistic and offline paths remain the only PocketBase write route.
+* **Unfilled time:** Added generic Timeline gap detection, persistent fill prompt, and optional notification settings independent of sleep.
+* **PocketBase schema:** No migration required; external Health Connect identity is stored as an internal marker in the existing record note field.
+* **Verification:** Strict architecture guard, analyzer, and three focused policy tests run in the branch check.
+
 ## [2026-07-24] - Notes: contextual rich editor tools v2 [engineering]
 
 * **`lib/features/notes/` + `lib/data/models/note_*`:** Added backward-compatible `lifeos_notes_blocks_v2`, inline text marks, contextual `Aa`/Insert/selection tools, slash commands, lists, quote, callout, divider, code, collapsible, link-card and editable table blocks; legacy Notes migration, autosave, PocketBase schema, optimistic/offline paths, and existing library/editor shell remain compatible.

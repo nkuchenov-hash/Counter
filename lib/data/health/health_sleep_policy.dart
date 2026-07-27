@@ -1,7 +1,6 @@
 import 'dart:convert';
 
-const String kHealthSleepMarkerPrefix =
-    '[[lifeos-health-connect-sleep:';
+const String kHealthSleepMarkerPrefix = '[[lifeos-health-connect-sleep:';
 
 String healthSleepMarker(String externalId) =>
     '$kHealthSleepMarkerPrefix${base64Url.encode(utf8.encode(externalId))}]]';
@@ -34,10 +33,7 @@ DateTime? recordUtc(dynamic raw) {
 enum SleepConflictKind { trimToSleepStart, delete }
 
 class SleepConflictAction {
-  const SleepConflictAction({
-    required this.recordKey,
-    required this.kind,
-  });
+  const SleepConflictAction({required this.recordKey, required this.kind});
 
   final String recordKey;
   final SleepConflictKind kind;
@@ -106,9 +102,7 @@ Map<String, dynamic>? findExistingSleepRecord({
   }
   if (best == null) return null;
   final sleepDuration = sleepEndUtc.difference(sleepStartUtc);
-  return bestOverlap.inSeconds * 5 >= sleepDuration.inSeconds * 4
-      ? best
-      : null;
+  return bestOverlap.inSeconds * 5 >= sleepDuration.inSeconds * 4 ? best : null;
 }
 
 String noteWithHealthSleepMarker(dynamic existingNote, String externalId) {

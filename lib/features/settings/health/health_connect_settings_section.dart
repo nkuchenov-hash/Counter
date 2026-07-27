@@ -91,8 +91,8 @@ class _HealthConnectSettingsSectionState
               loading: busy,
               onPressed: state.enabled && !busy
                   ? () => unawaited(
-                        HealthSleepSyncService.instance.sync(force: true),
-                      )
+                      HealthSleepSyncService.instance.sync(force: true),
+                    )
                   : null,
             ),
             if (state.error?.trim().isNotEmpty == true) ...[

@@ -10,8 +10,7 @@ void main() {
           'end_time': DateTime.utc(2026, 7, 27, 8).toIso8601String(),
         },
         <String, dynamic>{
-          'start_time':
-              DateTime.utc(2026, 7, 27, 8, 30).toIso8601String(),
+          'start_time': DateTime.utc(2026, 7, 27, 8, 30).toIso8601String(),
           'end_time': DateTime.utc(2026, 7, 27, 9).toIso8601String(),
         },
       ],
@@ -35,13 +34,11 @@ void main() {
           'end_time': DateTime.utc(2026, 7, 27, 8).toIso8601String(),
         },
         <String, dynamic>{
-          'start_time':
-              DateTime.utc(2026, 7, 27, 7, 30).toIso8601String(),
+          'start_time': DateTime.utc(2026, 7, 27, 7, 30).toIso8601String(),
           'end_time': DateTime.utc(2026, 7, 27, 9).toIso8601String(),
         },
         <String, dynamic>{
-          'start_time':
-              DateTime.utc(2026, 7, 27, 9, 30).toIso8601String(),
+          'start_time': DateTime.utc(2026, 7, 27, 9, 30).toIso8601String(),
           'end_time': null,
         },
       ],

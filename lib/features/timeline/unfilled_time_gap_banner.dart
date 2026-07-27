@@ -119,13 +119,13 @@ class UnfilledTimeGapBanner extends StatelessWidget {
                       onPressed: saving
                           ? null
                           : () => _saveGap(
-                                sheetContext,
-                                gap,
-                                controller,
-                                setSheetState,
-                                () => saving,
-                                (value) => saving = value,
-                              ),
+                              sheetContext,
+                              gap,
+                              controller,
+                              setSheetState,
+                              () => saving,
+                              (value) => saving = value,
+                            ),
                     ),
                   ],
                 ),

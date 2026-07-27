@@ -16,10 +16,8 @@ void main() {
         <String, dynamic>{
           'id': 'inside',
           'title': 'Morning routine',
-          'start_time':
-              DateTime.utc(2026, 7, 27, 6, 30).toIso8601String(),
-          'end_time':
-              DateTime.utc(2026, 7, 27, 7, 30).toIso8601String(),
+          'start_time': DateTime.utc(2026, 7, 27, 6, 30).toIso8601String(),
+          'end_time': DateTime.utc(2026, 7, 27, 7, 30).toIso8601String(),
         },
         <String, dynamic>{
           'id': 'before',
