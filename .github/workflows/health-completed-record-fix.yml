@@ -1,0 +1,95 @@
+name: Health completed-record safety fix
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  patch-and-verify:
+    if: ${{ !contains(github.event.pull_request.head.sha, 'never') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/health-connect-sleep
+          fetch-depth: 0
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.6'
+          channel: stable
+
+      - name: Create env.dart
+        run: |
+          mkdir -p lib/core/env
+          printf '%s\n' 'abstract final class Env {' '  static const String placeholder = '\'''\'';' '}' > lib/core/env/env.dart
+
+      - name: Patch completed record API and callers
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          record = Path('lib/data/records/record_crud.dart')
+          text = record.read_text(encoding='utf-8')
+          old_sig = '''    int? categoryId,\n    DateTime? explicitStartTime,\n    int? parentId,'''
+          new_sig = '''    int? categoryId,\n    DateTime? explicitStartTime,\n    DateTime? explicitEndTime,\n    int? parentId,'''
+          if old_sig not in text and new_sig not in text:
+              raise SystemExit('writeRecord signature anchor missing')
+          text = text.replace(old_sig, new_sig, 1)
+
+          old_block = '''      final now = DatabaseService.getPlanetaryNow();\n      final start = explicitStartTime ?? now;\n      final isStartingNow = explicitStartTime != null;\n      final status = isStartingNow\n          ? 'running'\n          : (dateKey == _todayKey ? 'running' : 'completed');\n      DateTime? endTime = isStartingNow\n          ? null\n          : (dateKey == _todayKey ? null : start);'''
+          new_block = '''      final now = DatabaseService.getPlanetaryNow();\n      final start = explicitStartTime ?? now;\n      final explicitEnd = explicitEndTime?.toUtc();\n      if (explicitEnd != null && !explicitEnd.isAfter(start.toUtc())) {\n        DatabaseService._log(\n          'writeRecord: explicit completed interval must have end after start',\n        );\n        return null;\n      }\n      final isExplicitCompleted = explicitEnd != null;\n      final isStartingNow = explicitStartTime != null && !isExplicitCompleted;\n      final status = isExplicitCompleted\n          ? 'completed'\n          : isStartingNow\n          ? 'running'\n          : (dateKey == _todayKey ? 'running' : 'completed');\n      DateTime? endTime = isExplicitCompleted\n          ? explicitEnd\n          : isStartingNow\n          ? null\n          : (dateKey == _todayKey ? null : start);'''
+          if old_block not in text and new_block not in text:
+              raise SystemExit('writeRecord status anchor missing')
+          text = text.replace(old_block, new_block, 1)
+          record.write_text(text, encoding='utf-8')
+
+          health = Path('lib/data/health/health_sleep_sync_service.dart')
+          text = health.read_text(encoding='utf-8')
+          old = '''      final businessId = await db.writeRecord(\n        dateKey,\n        title,\n        categoryId: categoryId,\n        explicitStartTime: session.startUtc,\n      );\n      if (businessId == null || businessId.isEmpty) {\n        throw StateError('Sleep record could not be created');\n      }\n      await db.primaryRecordWriteNetworkChain.timeout(\n        const Duration(seconds: 20),\n      );\n      final updated = await db.updateRecord(\n        recordId: businessId,\n        endTime: session.endUtc,\n        categoryId: categoryId,\n        bypassConflictCheck: true,\n      );\n      if (updated == null) {\n        throw StateError('Sleep record could not be finalized');\n      }'''
+          new = '''      final createdId = await db.writeRecord(\n        dateKey,\n        title,\n        categoryId: categoryId,\n        explicitStartTime: session.startUtc,\n        explicitEndTime: session.endUtc,\n      );\n      if (createdId == null || createdId.isEmpty) {\n        throw StateError('Sleep record could not be created');\n      }'''
+          if old not in text and new not in text:
+              raise SystemExit('health create anchor missing')
+          text = text.replace(old, new, 1)
+          health.write_text(text, encoding='utf-8')
+
+          gaps = Path('lib/data/records/unfilled_time_gap_service.dart')
+          text = gaps.read_text(encoding='utf-8')
+          old = '''    final businessId = await db.writeRecord(\n      dateKey,\n      cleanTitle,\n      explicitStartTime: gap.startUtc,\n    );\n    if (businessId == null || businessId.isEmpty) return false;\n    try {\n      await db.primaryRecordWriteNetworkChain.timeout(\n        const Duration(seconds: 20),\n      );\n    } catch (_) {}\n    final updated = await db.updateRecord(\n      recordId: businessId,\n      endTime: gap.endUtc,\n      bypassConflictCheck: true,\n    );\n    if (updated == null) return false;'''
+          new = '''    final createdId = await db.writeRecord(\n      dateKey,\n      cleanTitle,\n      explicitStartTime: gap.startUtc,\n      explicitEndTime: gap.endUtc,\n    );\n    if (createdId == null || createdId.isEmpty) return false;'''
+          if old not in text and new not in text:
+              raise SystemExit('gap create anchor missing')
+          text = text.replace(old, new, 1)
+          gaps.write_text(text, encoding='utf-8')
+          PY
+
+      - name: Install dependencies and format
+        run: |
+          flutter pub get
+          dart format \
+            lib/data/records/record_crud.dart \
+            lib/data/health/health_sleep_sync_service.dart \
+            lib/data/records/unfilled_time_gap_service.dart
+
+      - name: Verify
+        run: |
+          pwsh -NoProfile -NonInteractive -File ./scripts/audit/architecture_guard.ps1 -Strict
+          flutter analyze --no-fatal-infos --no-fatal-warnings
+          flutter test test/data/health_sleep_policy_test.dart test/data/unfilled_time_gap_policy_test.dart
+          git diff --check origin/main...HEAD
+
+      - name: Commit safety fix
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add lib/data/records/record_crud.dart lib/data/health/health_sleep_sync_service.dart lib/data/records/unfilled_time_gap_service.dart
+          if git diff --cached --quiet; then
+            echo "Safety fix already present"
+          else
+            git commit -m "Fix historical completed record creation"
+            git push origin HEAD:feature/health-connect-sleep
+          fi
