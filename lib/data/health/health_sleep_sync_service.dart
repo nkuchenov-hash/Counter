@@ -74,6 +74,8 @@ class HealthSleepSyncService with WidgetsBindingObserver {
   static const String _enabledKey = 'health_sleep_sync_enabled_v1';
   static const String _lastSyncKey = 'health_sleep_last_sync_utc_v1';
   static const Duration _automaticSyncThrottle = Duration(minutes: 10);
+  static const Duration _firstSyncLookback = Duration(days: 14);
+  static const Duration _correctionLookback = Duration(days: 2);
 
   final ValueNotifier<HealthSleepSyncState> state =
       ValueNotifier<HealthSleepSyncState>(const HealthSleepSyncState.initial());
@@ -194,15 +196,20 @@ class HealthSleepSyncService with WidgetsBindingObserver {
         return;
       }
 
+      final previousSync = state.value.lastSyncUtc;
+      final readStart = previousSync == null
+          ? now.subtract(_firstSyncLookback)
+          : previousSync.subtract(_correctionLookback);
       final sessions = await HealthConnectSleepService.instance.readSessions(
-        startUtc: now.subtract(const Duration(days: 7)),
+        startUtc: readStart,
         endUtc: now,
       );
       final finished = sessions
           .where((session) => !session.endUtc.isAfter(now))
-          .toList(growable: false);
-      if (finished.isNotEmpty) {
-        await _importSession(finished.last);
+          .toList(growable: false)
+        ..sort((a, b) => a.endUtc.compareTo(b.endUtc));
+      for (final session in finished) {
+        await _importSession(session);
       }
 
       final prefs = await SharedPreferences.getInstance();
@@ -228,7 +235,6 @@ class HealthSleepSyncService with WidgetsBindingObserver {
     final records = await db.fetchRecords(forceNetwork: false);
     final existing = findExistingSleepRecord(
       records: records,
-      externalId: session.externalId,
       sleepStartUtc: session.startUtc,
       sleepEndUtc: session.endUtc,
     );
@@ -260,10 +266,6 @@ class HealthSleepSyncService with WidgetsBindingObserver {
       throw StateError('Sleep category could not be resolved');
     }
     final title = t(currentLocale.value, 'health_sleep_record_title');
-    final markerNote = noteWithHealthSleepMarker(
-      existing?['note'] ?? existing?['notes'],
-      session.externalId,
-    );
 
     if (existingKey != null && existingKey.isNotEmpty) {
       final updated = await db.updateRecord(
@@ -272,7 +274,6 @@ class HealthSleepSyncService with WidgetsBindingObserver {
         startTime: session.startUtc,
         endTime: session.endUtc,
         categoryId: categoryId,
-        note: markerNote,
         bypassConflictCheck: true,
       );
       if (updated == null) {
@@ -298,7 +299,6 @@ class HealthSleepSyncService with WidgetsBindingObserver {
         recordId: businessId,
         endTime: session.endUtc,
         categoryId: categoryId,
-        note: markerNote,
         bypassConflictCheck: true,
       );
       if (updated == null) {
