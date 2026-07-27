@@ -52,12 +52,14 @@ class StatsDetailTree extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Text(
-            t(currentLocale.value, 'total_time_format')
-                .replaceFirst('%s', _formatDuration(totalDuration)),
+            t(
+              currentLocale.value,
+              'total_time_format',
+            ).replaceFirst('%s', _formatDuration(totalDuration)),
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: scheme.primary,
-                ),
+              fontWeight: FontWeight.bold,
+              color: scheme.primary,
+            ),
           ),
         ),
         const Divider(height: 1),
@@ -80,8 +82,9 @@ class StatsDetailTree extends StatelessWidget {
     int depth,
     String pathPrefix,
   ) {
-    final pathKey =
-        pathPrefix.isEmpty ? node.label : '$pathPrefix > ${node.label}';
+    final pathKey = pathPrefix.isEmpty
+        ? node.label
+        : '$pathPrefix > ${node.label}';
     final indent = depth * 16.0;
 
     if (node.children.isNotEmpty) {
@@ -97,18 +100,17 @@ class StatsDetailTree extends StatelessWidget {
               title: Text(
                 node.label,
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      fontWeight:
-                          depth == 0 ? FontWeight.bold : FontWeight.w600,
-                      fontSize: depth == 0 ? 16 : 14,
-                    ),
+                  fontWeight: depth == 0 ? FontWeight.bold : FontWeight.w600,
+                  fontSize: depth == 0 ? 16 : 14,
+                ),
                 overflow: TextOverflow.ellipsis,
               ),
               trailing: Text(
                 _formatDuration(node.total),
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: scheme.primary,
-                    ),
+                  fontWeight: FontWeight.w600,
+                  color: scheme.primary,
+                ),
               ),
             ),
           ),
@@ -118,15 +120,15 @@ class StatsDetailTree extends StatelessWidget {
                   _buildStatsNode(context, scheme, child, depth + 1, pathKey),
             ),
             ...node.sessionGroups.asMap().entries.map(
-                  (entry) => _buildGroupRow(
-                    context,
-                    scheme,
-                    pathKey,
-                    entry.value,
-                    (depth + 1) * 16.0 - 16,
-                    entry.key,
-                  ),
-                ),
+              (entry) => _buildGroupRow(
+                context,
+                scheme,
+                pathKey,
+                entry.value,
+                (depth + 1) * 16.0 - 16,
+                entry.key,
+              ),
+            ),
           ],
         ],
       );
@@ -137,17 +139,16 @@ class StatsDetailTree extends StatelessWidget {
         contentPadding: EdgeInsets.only(left: indent, right: 16),
         title: Text(
           node.label,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
           overflow: TextOverflow.ellipsis,
         ),
         trailing: Text(
           _formatDuration(node.total),
-          style: Theme.of(context)
-              .textTheme
-              .bodySmall
-              ?.copyWith(color: scheme.primary),
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(color: scheme.primary),
         ),
       );
     }
@@ -163,31 +164,30 @@ class StatsDetailTree extends StatelessWidget {
             contentPadding: EdgeInsets.only(left: indent, right: 16),
             title: Text(
               node.label,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
               overflow: TextOverflow.ellipsis,
             ),
             trailing: Text(
               _formatDuration(node.total),
-              style: Theme.of(context)
-                  .textTheme
-                  .bodySmall
-                  ?.copyWith(color: scheme.primary),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: scheme.primary),
             ),
           ),
         ),
         if (isExpanded)
           ...node.sessionGroups.asMap().entries.map(
-                (entry) => _buildGroupRow(
-                  context,
-                  scheme,
-                  pathKey,
-                  entry.value,
-                  indent,
-                  entry.key,
-                ),
-              ),
+            (entry) => _buildGroupRow(
+              context,
+              scheme,
+              pathKey,
+              entry.value,
+              indent,
+              entry.key,
+            ),
+          ),
       ],
     );
   }
@@ -216,17 +216,16 @@ class StatsDetailTree extends StatelessWidget {
             contentPadding: EdgeInsets.only(left: indent + 16, right: 16),
             title: Text(
               totalText,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    fontWeight: FontWeight.w500,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w500),
               overflow: TextOverflow.ellipsis,
             ),
           ),
         ),
         if (isExpanded)
           ...group.records.map(
-            (record) =>
-                _buildSessionTile(context, scheme, record, indent + 32),
+            (record) => _buildSessionTile(context, scheme, record, indent + 32),
           ),
       ],
     );
@@ -241,19 +240,22 @@ class StatsDetailTree extends StatelessWidget {
     final startUtc = CategoryServiceExtension.startTimeFromRecord(record);
     final endUtc = CategoryServiceExtension.endTimeFromRecord(record);
     final status = (record['status'] as String? ?? '').toLowerCase();
-    final endUtcOrNow = endUtc ??
+    final endUtcOrNow =
+        endUtc ??
         (status == 'running' ? DatabaseService.getPlanetaryNow() : null);
     final seconds =
         CategoryServiceExtension.recordDurationSecondsWithinDayFromTimestamps(
-      record,
-      selectedDate,
-      DatabaseService.instance.settings.timezoneOffsetHours,
-      DatabaseService.instance.settings.preferredTimeZone,
-    );
-    final startText =
-        startUtc != null ? _formatTimeOfDay(_utcToDisplay(startUtc)) : '–';
-    final endText =
-        endUtcOrNow != null ? _formatTimeOfDay(_utcToDisplay(endUtcOrNow)) : '–';
+          record,
+          selectedDate,
+          DatabaseService.instance.settings.timezoneOffsetHours,
+          DatabaseService.instance.settings.preferredTimeZone,
+        );
+    final startText = startUtc != null
+        ? _formatTimeOfDay(_utcToDisplay(startUtc))
+        : '–';
+    final endText = endUtcOrNow != null
+        ? _formatTimeOfDay(_utcToDisplay(endUtcOrNow))
+        : '–';
     final rawTitle = (record['title'] as String?)?.trim();
     final title = rawTitle != null && rawTitle.isNotEmpty
         ? rawTitle
@@ -270,10 +272,10 @@ class StatsDetailTree extends StatelessWidget {
       title: Text(
         sessionText,
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: scheme.onSurfaceVariant,
-              fontWeight: FontWeight.normal,
-              fontSize: 12,
-            ),
+          color: scheme.onSurfaceVariant,
+          fontWeight: FontWeight.normal,
+          fontSize: 12,
+        ),
       ),
     );
   }

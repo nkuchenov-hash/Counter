@@ -110,8 +110,11 @@ class DayStatsDashboardData {
         })
         .toList(growable: false);
 
-    final dayStart =
-        DateTime(selectedDate.year, selectedDate.month, selectedDate.day);
+    final dayStart = DateTime(
+      selectedDate.year,
+      selectedDate.month,
+      selectedDate.day,
+    );
     final dayEnd = dayStart.add(const Duration(days: 1));
     final sessions = <DayStatsSession>[];
 
@@ -121,17 +124,18 @@ class DayStatsDashboardData {
 
       final status = (record['status'] as String? ?? '').toLowerCase();
       final isRunning = status == 'running';
-      final endUtc = CategoryServiceExtension.endTimeFromRecord(record) ??
+      final endUtc =
+          CategoryServiceExtension.endTimeFromRecord(record) ??
           (isRunning ? DatabaseService.getPlanetaryNow() : null);
       if (endUtc == null) continue;
 
       final seconds =
           CategoryServiceExtension.recordDurationSecondsWithinDayFromTimestamps(
-        record,
-        selectedDate,
-        DatabaseService.instance.settings.timezoneOffsetHours,
-        DatabaseService.instance.settings.preferredTimeZone,
-      );
+            record,
+            selectedDate,
+            DatabaseService.instance.settings.timezoneOffsetHours,
+            DatabaseService.instance.settings.preferredTimeZone,
+          );
       if (seconds <= 0) continue;
 
       var startWall = DatabaseService.instance.applyUserOffset(startUtc);
@@ -155,10 +159,7 @@ class DayStatsDashboardData {
         DayStatsSession(
           title: title,
           categoryLabel: root != null
-              ? localizeCategoryBreadcrumbPath(
-                  root.name,
-                  currentLocale.value,
-                )
+              ? localizeCategoryBreadcrumbPath(root.name, currentLocale.value)
               : t(currentLocale.value, 'uncategorized'),
           startWall: startWall,
           endWall: endWall,
@@ -171,8 +172,10 @@ class DayStatsDashboardData {
     }
 
     sessions.sort((a, b) => a.startWall.compareTo(b.startWall));
-    final totalSeconds =
-        aggregated.fold<int>(0, (sum, node) => sum + node.totalSeconds);
+    final totalSeconds = aggregated.fold<int>(
+      0,
+      (sum, node) => sum + node.totalSeconds,
+    );
 
     return DayStatsDashboardData(
       selectedDate: dayStart,
@@ -284,7 +287,9 @@ class _OverviewView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final topCategory = data.categories.isNotEmpty ? data.categories.first : null;
+    final topCategory = data.categories.isNotEmpty
+        ? data.categories.first
+        : null;
     final longest = data.longestSession;
 
     return ListView(
@@ -327,8 +332,9 @@ class _OverviewView extends StatelessWidget {
                   child: _MetricCard(
                     icon: Icons.timelapse_rounded,
                     label: t(currentLocale.value, 'long_duration'),
-                    value:
-                        longest != null ? _formatDuration(longest.seconds) : '—',
+                    value: longest != null
+                        ? _formatDuration(longest.seconds)
+                        : '—',
                     supporting: longest?.title,
                     accent: longest?.color,
                   ),
@@ -386,9 +392,9 @@ class _MetricCard extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w800,
-                  color: scheme.onSurface,
-                ),
+              fontWeight: FontWeight.w800,
+              color: scheme.onSurface,
+            ),
           ),
           const SizedBox(height: 2),
           Text(
@@ -396,9 +402,9 @@ class _MetricCard extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: scheme.onSurfaceVariant,
-                  fontWeight: FontWeight.w600,
-                ),
+              color: scheme.onSurfaceVariant,
+              fontWeight: FontWeight.w600,
+            ),
           ),
           if (supporting != null && supporting!.trim().isNotEmpty) ...[
             const SizedBox(height: 4),
@@ -406,9 +412,9 @@ class _MetricCard extends StatelessWidget {
               supporting!,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: scheme.onSurfaceVariant,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant),
             ),
           ],
         ],
@@ -442,9 +448,9 @@ class _DayMapCard extends StatelessWidget {
         children: [
           Text(
             t(currentLocale.value, 'timeline'),
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 14),
           Row(
@@ -488,7 +494,9 @@ class _DayMapCard extends StatelessWidget {
                           final left =
                               constraints.maxWidth * start / totalDaySeconds;
                           final rawWidth =
-                              constraints.maxWidth * (end - start) / totalDaySeconds;
+                              constraints.maxWidth *
+                              (end - start) /
+                              totalDaySeconds;
                           final width = math.max(3.0, rawWidth);
                           return Positioned(
                             left: left,
@@ -548,9 +556,9 @@ class _CategoryShareCard extends StatelessWidget {
         children: [
           Text(
             t(currentLocale.value, 'stats_pvf_by_category'),
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 12),
           _ShareBar(categories: data.categories),
@@ -612,8 +620,8 @@ class _TimelineView extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                              fontWeight: FontWeight.w700,
-                            ),
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                       const SizedBox(height: 4),
                       Text(
@@ -621,8 +629,8 @@ class _TimelineView extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: scheme.onSurfaceVariant,
-                            ),
+                          color: scheme.onSurfaceVariant,
+                        ),
                       ),
                       const SizedBox(height: 3),
                       Text(
@@ -630,8 +638,8 @@ class _TimelineView extends StatelessWidget {
                         '${formatter.format(session.endWall)}'
                         '${session.isRunning ? ' · ${t(loc, 'running_label')}' : ''}',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: scheme.onSurfaceVariant,
-                            ),
+                          color: scheme.onSurfaceVariant,
+                        ),
                       ),
                     ],
                   ),
@@ -643,9 +651,9 @@ class _TimelineView extends StatelessWidget {
                 child: Text(
                   _formatDuration(session.seconds),
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: session.color,
-                      ),
+                    fontWeight: FontWeight.w700,
+                    color: session.color,
+                  ),
                 ),
               ),
             ],
@@ -682,10 +690,7 @@ class _CategoriesView extends StatelessWidget {
 }
 
 class _CategoryCard extends StatelessWidget {
-  const _CategoryCard({
-    required this.category,
-    required this.totalSeconds,
-  });
+  const _CategoryCard({required this.category, required this.totalSeconds});
 
   final DayStatsCategorySlice category;
   final int totalSeconds;
@@ -715,24 +720,24 @@ class _CategoryCard extends StatelessWidget {
                   category.label,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w700),
                 ),
               ),
               Text(
                 _formatDuration(category.seconds),
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: category.color,
-                    ),
+                  fontWeight: FontWeight.w700,
+                  color: category.color,
+                ),
               ),
               const SizedBox(width: 8),
               Text(
                 '${(share * 100).round()}%',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: scheme.onSurfaceVariant,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
               ),
             ],
           ),
@@ -858,9 +863,9 @@ class _CategorySummaryRow extends StatelessWidget {
         ),
         Text(
           _formatDuration(category.seconds),
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
         ),
         const SizedBox(width: 8),
         SizedBox(

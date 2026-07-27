@@ -47,8 +47,9 @@ class _StatsViewState extends State<StatsView> {
       DateTime(value.year, value.month, value.day);
 
   int _pageIndexForDate(DateTime day) {
-    final today =
-        _dateOnly(DatabaseService.instance.getTimelineDeviceLocalToday());
+    final today = _dateOnly(
+      DatabaseService.instance.getTimelineDeviceLocalToday(),
+    );
     return _statsPageCenter + _dateOnly(day).difference(today).inDays;
   }
 
@@ -88,8 +89,9 @@ class _StatsViewState extends State<StatsView> {
   void initState() {
     super.initState();
     if (widget.onDayChanged != null) {
-      _dayPageController =
-          PageController(initialPage: _pageIndexForDate(widget.selectedDate));
+      _dayPageController = PageController(
+        initialPage: _pageIndexForDate(widget.selectedDate),
+      );
     }
   }
 
@@ -104,10 +106,10 @@ class _StatsViewState extends State<StatsView> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.onDayChanged == null && widget.onDayChanged != null) {
       _dayPageController?.dispose();
-      _dayPageController =
-          PageController(initialPage: _pageIndexForDate(widget.selectedDate));
-    } else if (oldWidget.onDayChanged != null &&
-        widget.onDayChanged == null) {
+      _dayPageController = PageController(
+        initialPage: _pageIndexForDate(widget.selectedDate),
+      );
+    } else if (oldWidget.onDayChanged != null && widget.onDayChanged == null) {
       _dayPageController?.dispose();
       _dayPageController = null;
     }
@@ -145,9 +147,9 @@ class _StatsViewState extends State<StatsView> {
       return Center(
         child: Text(
           t(currentLocale.value, 'add_categories_auditor'),
-          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: scheme.onSurfaceVariant,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.bodyLarge?.copyWith(color: scheme.onSurfaceVariant),
         ),
       );
     }
@@ -182,8 +184,10 @@ class _StatsViewState extends State<StatsView> {
   }
 
   Widget _buildTrackerTab(BuildContext context) {
-    final aggregatedKey =
-        _aggregatedCacheKey(widget.records, widget.selectedDate);
+    final aggregatedKey = _aggregatedCacheKey(
+      widget.records,
+      widget.selectedDate,
+    );
     final List<StatsNode> aggregated;
     if (aggregatedKey == _lastAggregatedKey && _cachedAggregated != null) {
       aggregated = _cachedAggregated!;
@@ -223,19 +227,23 @@ class _StatsViewState extends State<StatsView> {
       controller: controller,
       itemCount: 10000,
       onPageChanged: (index) {
-        final anchor =
-            _dateOnly(DatabaseService.instance.getTimelineDeviceLocalToday());
-        final next =
-            _dateOnly(anchor.add(Duration(days: index - _statsPageCenter)));
+        final anchor = _dateOnly(
+          DatabaseService.instance.getTimelineDeviceLocalToday(),
+        );
+        final next = _dateOnly(
+          anchor.add(Duration(days: index - _statsPageCenter)),
+        );
         final selected = _dateOnly(widget.selectedDate);
         if (next == selected) return;
         navigate(next);
       },
       itemBuilder: (context, index) {
-        final anchor =
-            _dateOnly(DatabaseService.instance.getTimelineDeviceLocalToday());
-        final pageDay =
-            _dateOnly(anchor.add(Duration(days: index - _statsPageCenter)));
+        final anchor = _dateOnly(
+          DatabaseService.instance.getTimelineDeviceLocalToday(),
+        );
+        final pageDay = _dateOnly(
+          anchor.add(Duration(days: index - _statsPageCenter)),
+        );
         if (pageDay != _dateOnly(widget.selectedDate)) {
           return ColoredBox(
             color: Theme.of(context).scaffoldBackgroundColor,
@@ -259,9 +267,9 @@ class _StatsViewState extends State<StatsView> {
           widget.isFutureDate
               ? t(currentLocale.value, 'no_planned_tasks')
               : t(currentLocale.value, 'no_records_yet'),
-          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: scheme.onSurfaceVariant,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.bodyLarge?.copyWith(color: scheme.onSurfaceVariant),
         ),
       );
     }
