@@ -204,10 +204,11 @@ class HealthSleepSyncService with WidgetsBindingObserver {
         startUtc: readStart,
         endUtc: now,
       );
-      final finished = sessions
-          .where((session) => !session.endUtc.isAfter(now))
-          .toList(growable: false)
-        ..sort((a, b) => a.endUtc.compareTo(b.endUtc));
+      final finished =
+          sessions
+              .where((session) => !session.endUtc.isAfter(now))
+              .toList(growable: false)
+            ..sort((a, b) => a.endUtc.compareTo(b.endUtc));
       for (final session in finished) {
         await _importSession(session);
       }

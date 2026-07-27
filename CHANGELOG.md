@@ -16,7 +16,7 @@
 * **Android Health Connect:** Added read-only `SLEEP_SESSION` permission flow and Mi Fitness-compatible sleep import.
 * **Timeline Brain:** Imported sleep is authoritative: prior activity stops at sleep start, conflicting rows inside sleep are removed, and repeat sync updates instead of duplicating. Existing record/category optimistic and offline paths remain the only PocketBase write route.
 * **Unfilled time:** Added generic Timeline gap detection, persistent fill prompt, and optional notification settings independent of sleep.
-* **PocketBase schema:** No migration required; external Health Connect identity is stored as an internal marker in the existing record note field.
+* **PocketBase schema:** No migration required; sleep sessions are reconciled against existing `Sleep` / `Сон` records by interval, while user notes remain untouched.
 * **Verification:** Strict architecture guard, analyzer, and three focused policy tests run in the branch check.
 
 ## [2026-07-24] - Notes: contextual rich editor tools v2 [engineering]
