@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:counter/core/widgets/plan_time_task_card.dart';
+import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/planning/plan_time_view_layout.dart';
 import 'package:counter/features/planning/time_view/planning_time_view_coordinator.dart';
@@ -10,6 +11,7 @@ import 'package:flutter/material.dart';
 
 import 'package:counter/features/planning/time_view/planning_time_view.dart';
 import 'package:counter/features/planning/time_view/time_view_drag_controller.dart';
+import 'package:counter/features/planning/time_view/time_view_recurring_interaction_controller.dart';
 import 'package:counter/features/planning/time_view/time_view_resize_controller.dart';
 
 extension PlanningTimeViewTimeViewCardLayer on PlanningTimeViewCoordinator {
@@ -56,9 +58,14 @@ extension PlanningTimeViewTimeViewCardLayer on PlanningTimeViewCoordinator {
         : layout.heightPx;
     const horizontalPad =
         PlanningTimeViewCoordinator.kTimelineBlockHorizontalPadPx;
-    final canMove = planCanMoveInTimeView(layout.task, planKey);
+    final isRecurring = DatabaseService.instance
+        .planningTaskIsRecurringForScope(layout.task);
+    final canMove =
+        planCanMoveInTimeView(layout.task, planKey) ||
+        (isRecurring && !host.planSelectMode);
     final canResize =
-        planIsTimelineScheduledDraggable(layout.task) && !host.planSelectMode;
+        (planIsTimelineScheduledDraggable(layout.task) || isRecurring) &&
+        !host.planSelectMode;
     final durMin = timelineBlockDurationMinutes(layout.task);
     final hadEnd = layout.task.endDateTime != null;
     final times = timelineStartEndMinutesFromTask(
@@ -226,12 +233,13 @@ extension PlanningTimeViewTimeViewCardLayer on PlanningTimeViewCoordinator {
                         )
                       : null,
                   onVerticalDragEnd: canMove
-                      ? () => commitTimelineVerticalDrag(
-                          planWallDay: planWallDay,
-                          rangeStart: rangeStart,
-                          rangeEnd: rangeEnd,
-                          scheduledInRange: scheduledInRange,
-                        )
+                      ? () =>
+                          commitTimelineVerticalDragWithOptionalRecurrenceScope(
+                            planWallDay: planWallDay,
+                            rangeStart: rangeStart,
+                            rangeEnd: rangeEnd,
+                            scheduledInRange: scheduledInRange,
+                          )
                       : null,
                   onVerticalDragCancel: canMove
                       ? cancelTimelineVerticalDrag
@@ -259,7 +267,7 @@ extension PlanningTimeViewTimeViewCardLayer on PlanningTimeViewCoordinator {
                         )
                       : null,
                   onResizeEnd: canResize
-                      ? () => commitTimelineResize(
+                      ? () => commitTimelineResizeWithOptionalRecurrenceScope(
                           planWallDay: planWallDay,
                           rangeStart: rangeStart,
                           scheduledInRange: scheduledInRange,
