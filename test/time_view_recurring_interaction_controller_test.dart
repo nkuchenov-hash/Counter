@@ -1,6 +1,6 @@
 import 'package:counter/data/models.dart';
 import 'package:counter/data/recurrence_edit_scope.dart';
-import 'package:counter/features/planning/time_view/time_view_recurring_interaction_controller.dart';
+import 'package:counter/features/planning/time_view/time_view_card_layer.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
