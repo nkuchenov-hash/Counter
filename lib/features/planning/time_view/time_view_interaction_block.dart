@@ -11,6 +11,9 @@ import 'package:flutter/material.dart';
 /// width. The center body captures the pointer immediately, but the visible
 /// drag state starts only on the first real movement. A release without any
 /// movement remains a short click and never flashes a drag preview.
+///
+/// Cards that cannot move or resize still keep a tap-only body zone so virtual
+/// recurring occurrences can open the standard edit sheet.
 class TimelinePlanInteractionBlock extends StatefulWidget {
   const TimelinePlanInteractionBlock({
     required this.canMove,
@@ -158,19 +161,22 @@ class TimelinePlanInteractionBlockState
     );
   }
 
+  void _logBodyTap() {
+    if (!kDebugMode) return;
+    debugPrint(
+      widget.bulkSelectMode
+          ? '[TIME_VIEW_SHORT_CLICK_TOGGLE_SELECTION]'
+          : '[TIME_VIEW_SHORT_CLICK_OPEN_EDIT]',
+    );
+  }
+
   void _finishMove(PointerUpEvent event) {
     if (_activePointer != event.pointer) return;
     if (_bodyDragActive) {
       widget.onVerticalDragEnd?.call();
     } else {
       widget.onMovePointerRelease?.call();
-      if (kDebugMode) {
-        debugPrint(
-          widget.bulkSelectMode
-              ? '[TIME_VIEW_SHORT_CLICK_TOGGLE_SELECTION]'
-              : '[TIME_VIEW_SHORT_CLICK_OPEN_EDIT]',
-        );
-      }
+      _logBodyTap();
       widget.onBodyTap?.call();
     }
     _resetMoveGesture();
@@ -206,6 +212,27 @@ class TimelinePlanInteractionBlockState
           onPointerCancel: _cancelMove,
           child: const SizedBox.expand(),
         ),
+      ),
+    );
+  }
+
+  Widget _tapZone() {
+    if (widget.canMove || widget.onBodyTap == null) {
+      return const SizedBox.shrink();
+    }
+    final resizeInset = widget.canResize ? _resizeHandleHeight : 0.0;
+    return Positioned(
+      top: resizeInset,
+      bottom: resizeInset,
+      left: widget.controlsLeftInset,
+      right: widget.controlsRightInset,
+      child: GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onTap: () {
+          _logBodyTap();
+          widget.onBodyTap?.call();
+        },
+        child: const SizedBox.expand(),
       ),
     );
   }
@@ -252,7 +279,11 @@ class TimelinePlanInteractionBlockState
 
   @override
   Widget build(BuildContext context) {
-    if (!widget.canMove && !widget.canResize) return widget.child;
+    if (!widget.canMove &&
+        !widget.canResize &&
+        widget.onBodyTap == null) {
+      return widget.child;
+    }
     final viewportWidth = MediaQuery.sizeOf(context).width;
     _useImmediatePointerDrag =
         planTimeViewUsesImmediatePointerDrag(viewportWidth);
@@ -263,6 +294,7 @@ class TimelinePlanInteractionBlockState
       children: [
         widget.child,
         _moveZone(),
+        _tapZone(),
         if (widget.canResize)
           Positioned(
             top: 0,
