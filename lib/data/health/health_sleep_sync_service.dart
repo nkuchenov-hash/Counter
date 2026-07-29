@@ -224,7 +224,7 @@ class HealthSleepSyncService {
           : DateTime.tryParse(lastSyncRaw)?.toUtc();
       final storedMinutes =
           prefs.getInt(_dailySyncMinutesKey) ?? defaultDailySyncMinutes;
-      final dailySyncMinutes = storedMinutes.clamp(0, 1439);
+      final dailySyncMinutes = storedMinutes.clamp(0, 1439).toInt();
       state.value = HealthSleepSyncState(
         enabled: enabled,
         phase: !isSupported
@@ -402,7 +402,7 @@ class HealthSleepSyncService {
 
   Future<void> setDailySyncMinutes(int minutes) async {
     await start();
-    final normalized = minutes.clamp(0, 1439);
+    final normalized = minutes.clamp(0, 1439).toInt();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt(_dailySyncMinutesKey, normalized);
     state.value = state.value.copyWith(dailySyncMinutes: normalized);
@@ -411,7 +411,7 @@ class HealthSleepSyncService {
 
   Duration _delayUntilNextDailyRun() {
     final now = DateTime.now();
-    final minutes = state.value.dailySyncMinutes.clamp(0, 1439);
+    final minutes = state.value.dailySyncMinutes.clamp(0, 1439).toInt();
     var target = DateTime(
       now.year,
       now.month,
