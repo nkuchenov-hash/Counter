@@ -23,9 +23,7 @@ class _SleepSyncSettingsSectionState extends State<SleepSyncSettingsSection> {
   }
 
   String _withValues(String template, Object first, Object second) {
-    return template
-        .replaceFirst('%s', '$first')
-        .replaceFirst('%s', '$second');
+    return template.replaceFirst('%s', '$first').replaceFirst('%s', '$second');
   }
 
   String _statusText(String locale, HealthSleepSyncState state) {
@@ -51,11 +49,8 @@ class _SleepSyncSettingsSectionState extends State<SleepSyncSettingsSection> {
     }
     if (state.lastReadSessionCount != null &&
         state.lastImportedSessionCount != null) {
-      text = '$text\n${_withValues(
-        t(locale, 'health_connect_result'),
-        state.lastReadSessionCount!,
-        state.lastImportedSessionCount!,
-      )}';
+      text =
+          '$text\n${_withValues(t(locale, 'health_connect_result'), state.lastReadSessionCount!, state.lastImportedSessionCount!)}';
     }
     if (state.enabled && state.backgroundReadAvailable) {
       final backgroundKey = state.backgroundReadAuthorized
@@ -81,10 +76,7 @@ class _SleepSyncSettingsSectionState extends State<SleepSyncSettingsSection> {
     final normalized = state.dailySyncMinutes.clamp(0, 1439).toInt();
     final selected = await showTimePicker(
       context: context,
-      initialTime: TimeOfDay(
-        hour: normalized ~/ 60,
-        minute: normalized % 60,
-      ),
+      initialTime: TimeOfDay(hour: normalized ~/ 60, minute: normalized % 60),
     );
     if (selected == null) return;
     await HealthSleepSyncService.instance.setDailySyncMinutes(
@@ -152,8 +144,10 @@ class _SleepSyncSettingsSectionState extends State<SleepSyncSettingsSection> {
                   : null,
             ),
             Text(
-              t(locale, 'sleep_sync_device_source')
-                  .replaceFirst('%s', deviceSource),
+              t(
+                locale,
+                'sleep_sync_device_source',
+              ).replaceFirst('%s', deviceSource),
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),

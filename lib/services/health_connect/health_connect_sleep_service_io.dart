@@ -10,8 +10,7 @@ import 'health_connect_sleep_models.dart';
 class DeviceHealthSleepService {
   DeviceHealthSleepService._();
 
-  static final DeviceHealthSleepService instance =
-      DeviceHealthSleepService._();
+  static final DeviceHealthSleepService instance = DeviceHealthSleepService._();
 
   final Health _health = Health();
   bool _configured = false;
@@ -26,10 +25,10 @@ class DeviceHealthSleepService {
       : const <HealthDataType>[HealthDataType.SLEEP_SESSION];
 
   List<HealthDataAccess> get _permissions => List<HealthDataAccess>.filled(
-        _types.length,
-        HealthDataAccess.READ,
-        growable: false,
-      );
+    _types.length,
+    HealthDataAccess.READ,
+    growable: false,
+  );
 
   bool get isSupported => Platform.isAndroid || Platform.isIOS;
 
@@ -107,9 +106,7 @@ class DeviceHealthSleepService {
     return out;
   }
 
-  List<HealthSleepSession> _appleHealthSessions(
-    List<HealthDataPoint> points,
-  ) {
+  List<HealthSleepSession> _appleHealthSessions(List<HealthDataPoint> points) {
     final inBed = points
         .where((point) => point.type == HealthDataType.SLEEP_IN_BED)
         .map((point) => _sessionFromPoint(point, idPrefix: 'apple-health'))
@@ -121,12 +118,15 @@ class DeviceHealthSleepService {
       return out;
     }
 
-    final stages = points.where((point) {
-      return point.type == HealthDataType.SLEEP_ASLEEP ||
-          point.type == HealthDataType.SLEEP_DEEP ||
-          point.type == HealthDataType.SLEEP_REM;
-    }).toList(growable: false)
-      ..sort((a, b) => a.dateFrom.compareTo(b.dateFrom));
+    final stages =
+        points
+            .where((point) {
+              return point.type == HealthDataType.SLEEP_ASLEEP ||
+                  point.type == HealthDataType.SLEEP_DEEP ||
+                  point.type == HealthDataType.SLEEP_REM;
+            })
+            .toList(growable: false)
+          ..sort((a, b) => a.dateFrom.compareTo(b.dateFrom));
 
     final out = <HealthSleepSession>[];
     DateTime? currentStart;
@@ -159,10 +159,12 @@ class DeviceHealthSleepService {
       if (!to.isAfter(from)) continue;
       final sourceId = point.sourceId.trim();
       final sourceName = point.sourceName.trim();
-      final sameSource = currentStart != null &&
+      final sameSource =
+          currentStart != null &&
           sourceId == currentSourceId &&
           sourceName == currentSourceName;
-      final joinsCurrent = sameSource &&
+      final joinsCurrent =
+          sameSource &&
           currentEnd != null &&
           !from.isAfter(currentEnd!.add(const Duration(minutes: 30)));
       if (!joinsCurrent) {

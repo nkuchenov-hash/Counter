@@ -119,11 +119,9 @@ class HealthSleepSyncState {
       backgroundReadAuthorized:
           backgroundReadAuthorized ?? this.backgroundReadAuthorized,
       lastSyncUtc: lastSyncUtc ?? this.lastSyncUtc,
-      lastImportedStartUtc:
-          lastImportedStartUtc ?? this.lastImportedStartUtc,
+      lastImportedStartUtc: lastImportedStartUtc ?? this.lastImportedStartUtc,
       lastImportedEndUtc: lastImportedEndUtc ?? this.lastImportedEndUtc,
-      lastReadSessionCount:
-          lastReadSessionCount ?? this.lastReadSessionCount,
+      lastReadSessionCount: lastReadSessionCount ?? this.lastReadSessionCount,
       lastImportedSessionCount:
           lastImportedSessionCount ?? this.lastImportedSessionCount,
       lastSourceSummary: lastSourceSummary ?? this.lastSourceSummary,
@@ -371,12 +369,13 @@ class HealthSleepSyncService {
         importedCount++;
       }
 
-      final sourceNames = finished
-          .map((session) => session.sourceName.trim())
-          .where((name) => name.isNotEmpty)
-          .toSet()
-          .toList(growable: false)
-        ..sort();
+      final sourceNames =
+          finished
+              .map((session) => session.sourceName.trim())
+              .where((name) => name.isNotEmpty)
+              .toSet()
+              .toList(growable: false)
+            ..sort();
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_lastSyncKey, now.toIso8601String());
       state.value = state.value.copyWith(
@@ -434,17 +433,14 @@ class HealthSleepSyncService {
   }
 
   Future<void> _refreshBackgroundAccessAndSchedule() async {
-    if (!isSupported ||
-        kIsWeb ||
-        !(Platform.isAndroid || Platform.isIOS)) {
+    if (!isSupported || kIsWeb || !(Platform.isAndroid || Platform.isIOS)) {
       return;
     }
     try {
       final available = await DeviceHealthSleepService.instance
           .isBackgroundReadAvailable();
       final authorized = available
-          ? await DeviceHealthSleepService.instance
-                .hasBackgroundAuthorization()
+          ? await DeviceHealthSleepService.instance.hasBackgroundAuthorization()
           : false;
       state.value = state.value.copyWith(
         backgroundReadAvailable: available,

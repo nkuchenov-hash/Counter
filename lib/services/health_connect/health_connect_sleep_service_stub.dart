@@ -3,8 +3,7 @@ import 'health_connect_sleep_models.dart';
 class DeviceHealthSleepService {
   DeviceHealthSleepService._();
 
-  static final DeviceHealthSleepService instance =
-      DeviceHealthSleepService._();
+  static final DeviceHealthSleepService instance = DeviceHealthSleepService._();
 
   bool get isSupported => false;
 
