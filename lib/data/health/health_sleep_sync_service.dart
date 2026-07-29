@@ -133,6 +133,7 @@ void healthSleepBackgroundCallbackDispatcher() {
       await HealthSleepSyncService.instance.start(
         observeLifecycle: false,
         manageBackgroundSchedule: false,
+        triggerInitialSync: false,
       );
       await HealthSleepSyncService.instance.sync(force: true);
       return HealthSleepSyncService.instance.state.value.phase !=
@@ -173,6 +174,7 @@ class HealthSleepSyncService with WidgetsBindingObserver {
   Future<void> start({
     bool observeLifecycle = true,
     bool manageBackgroundSchedule = true,
+    bool triggerInitialSync = true,
   }) async {
     if (!_started) {
       _started = true;
@@ -207,7 +209,9 @@ class HealthSleepSyncService with WidgetsBindingObserver {
       await _refreshBackgroundAccessAndSchedule();
     }
 
-    if (state.value.enabled && isSupported) unawaited(sync());
+    if (triggerInitialSync && state.value.enabled && isSupported) {
+      unawaited(sync());
+    }
   }
 
   @override
@@ -219,7 +223,7 @@ class HealthSleepSyncService with WidgetsBindingObserver {
   }
 
   Future<bool> requestAuthorizationAndEnable() async {
-    await start();
+    await start(triggerInitialSync: false);
     if (!isSupported) {
       state.value = state.value.copyWith(
         enabled: false,
@@ -255,7 +259,7 @@ class HealthSleepSyncService with WidgetsBindingObserver {
   }
 
   Future<bool> requestBackgroundAuthorizationAndSchedule() async {
-    await start();
+    await start(triggerInitialSync: false);
     if (!isSupported || !state.value.enabled) return false;
     try {
       final available = await HealthConnectSleepService.instance
@@ -279,7 +283,7 @@ class HealthSleepSyncService with WidgetsBindingObserver {
   }
 
   Future<void> setEnabled(bool enabled, {bool syncNow = true}) async {
-    await start();
+    await start(triggerInitialSync: false);
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(enabledPrefsKey, enabled);
     state.value = state.value.copyWith(
@@ -298,7 +302,10 @@ class HealthSleepSyncService with WidgetsBindingObserver {
   }
 
   Future<void> sync({bool force = false}) async {
-    await start(manageBackgroundSchedule: false);
+    await start(
+      manageBackgroundSchedule: false,
+      triggerInitialSync: false,
+    );
     if (_syncing || !state.value.enabled || !isSupported) return;
     final now = DateTime.now().toUtc();
     if (!force &&
