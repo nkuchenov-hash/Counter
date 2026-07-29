@@ -1,0 +1,88 @@
+name: Verify scheduled sleep sources
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  analyze-and-android:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Flutter 3.41.6
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.6'
+          channel: stable
+          cache: true
+
+      - name: Create env.dart
+        run: |
+          mkdir -p lib/core/env
+          cat > lib/core/env/env.dart <<'EOF'
+          abstract final class Env {
+            static const String placeholder = '';
+          }
+          EOF
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Check Dart formatting
+        run: |
+          dart format --output=none --set-exit-if-changed \
+            lib/data/health/health_sleep_sync_service.dart \
+            lib/features/settings/health/health_connect_settings_section.dart \
+            lib/services/health_connect/health_connect_sleep_service_io.dart \
+            lib/services/health_connect/health_connect_sleep_service_stub.dart
+
+      - name: Analyze
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+
+      - name: Build Android arm64 release
+        run: flutter build apk --release --split-per-abi --target-platform android-arm64 --no-tree-shake-icons
+
+  ios-release:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter 3.41.6
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.6'
+          channel: stable
+          cache: true
+
+      - name: Create env.dart
+        run: |
+          mkdir -p lib/core/env
+          cat > lib/core/env/env.dart <<'EOF'
+          abstract final class Env {
+            static const String placeholder = '';
+          }
+          EOF
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Validate property lists
+        run: |
+          plutil -lint ios/Runner/Info.plist
+          plutil -lint ios/Runner/Runner.entitlements
+
+      - name: Build iOS release without signing
+        run: flutter build ios --release --no-codesign
