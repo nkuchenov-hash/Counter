@@ -1,12 +1,14 @@
 import 'health_connect_sleep_models.dart';
 
-class HealthConnectSleepService {
-  HealthConnectSleepService._();
+class DeviceHealthSleepService {
+  DeviceHealthSleepService._();
 
-  static final HealthConnectSleepService instance =
-      HealthConnectSleepService._();
+  static final DeviceHealthSleepService instance =
+      DeviceHealthSleepService._();
 
   bool get isSupported => false;
+
+  String get sourceName => 'Device health';
 
   Future<bool> hasAuthorization() async => false;
 
@@ -23,3 +25,6 @@ class HealthConnectSleepService {
     required DateTime endUtc,
   }) async => const <HealthSleepSession>[];
 }
+
+@Deprecated('Use DeviceHealthSleepService')
+typedef HealthConnectSleepService = DeviceHealthSleepService;
