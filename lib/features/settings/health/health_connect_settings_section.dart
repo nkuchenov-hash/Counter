@@ -5,19 +5,20 @@ import 'package:counter/data/health/health_sleep_sync_service.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
 
-class HealthConnectSettingsSection extends StatefulWidget {
-  const HealthConnectSettingsSection({super.key});
+class SleepSyncSettingsSection extends StatefulWidget {
+  const SleepSyncSettingsSection({super.key});
 
   @override
-  State<HealthConnectSettingsSection> createState() =>
-      _HealthConnectSettingsSectionState();
+  State<SleepSyncSettingsSection> createState() =>
+      _SleepSyncSettingsSectionState();
 }
 
-class _HealthConnectSettingsSectionState
-    extends State<HealthConnectSettingsSection> {
+class _SleepSyncSettingsSectionState extends State<SleepSyncSettingsSection> {
   @override
   void initState() {
     super.initState();
+    // Loads saved state and registers the daily OS schedule. It deliberately
+    // does not import sleep merely because Settings was opened.
     unawaited(HealthSleepSyncService.instance.start());
   }
 
@@ -65,6 +66,32 @@ class _HealthConnectSettingsSectionState
     return text;
   }
 
+  String _formattedDailyTime(BuildContext context, int minutes) {
+    final normalized = minutes.clamp(0, 1439).toInt();
+    return MaterialLocalizations.of(context).formatTimeOfDay(
+      TimeOfDay(hour: normalized ~/ 60, minute: normalized % 60),
+      alwaysUse24HourFormat: MediaQuery.alwaysUse24HourFormatOf(context),
+    );
+  }
+
+  Future<void> _pickDailyTime(
+    BuildContext context,
+    HealthSleepSyncState state,
+  ) async {
+    final normalized = state.dailySyncMinutes.clamp(0, 1439).toInt();
+    final selected = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay(
+        hour: normalized ~/ 60,
+        minute: normalized % 60,
+      ),
+    );
+    if (selected == null) return;
+    await HealthSleepSyncService.instance.setDailySyncMinutes(
+      selected.hour * 60 + selected.minute,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final locale = currentLocale.value;
@@ -73,6 +100,8 @@ class _HealthConnectSettingsSectionState
       builder: (context, state, _) {
         final busy = state.phase == HealthSleepSyncPhase.syncing;
         final source = state.lastSourceSummary?.trim() ?? '';
+        final deviceSource =
+            HealthSleepSyncService.instance.activeDeviceSourceName;
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -107,6 +136,34 @@ class _HealthConnectSettingsSectionState
                         );
                       }
                     },
+            ),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              enabled: state.enabled && !busy,
+              leading: const Icon(Icons.schedule_rounded),
+              title: Text(t(locale, 'sleep_sync_daily_time')),
+              subtitle: Text(t(locale, 'sleep_sync_daily_time_hint')),
+              trailing: Text(
+                _formattedDailyTime(context, state.dailySyncMinutes),
+                style: Theme.of(context).textTheme.titleSmall,
+              ),
+              onTap: state.enabled && !busy
+                  ? () => unawaited(_pickDailyTime(context, state))
+                  : null,
+            ),
+            Text(
+              t(locale, 'sleep_sync_device_source')
+                  .replaceFirst('%s', deviceSource),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              t(locale, 'sleep_sync_cloud_note'),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
             if (state.enabled &&
                 state.backgroundReadAvailable &&
@@ -158,3 +215,6 @@ class _HealthConnectSettingsSectionState
     );
   }
 }
+
+@Deprecated('Use SleepSyncSettingsSection')
+typedef HealthConnectSettingsSection = SleepSyncSettingsSection;
