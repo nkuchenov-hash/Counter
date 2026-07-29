@@ -1,0 +1,35 @@
+name: Patch scheduled multi-source sleep sync
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - name: Apply scheduled source patch
+        run: python scripts/patch_sleep_sync_scheduled_sources.py
+
+      - name: Commit product changes
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add lib/data/health/health_sleep_sync_service.dart \
+            lib/l10n/dictionary.dart \
+            ios/Runner/Info.plist \
+            ios/Runner/AppDelegate.swift \
+            ios/Runner.xcodeproj/project.pbxproj
+          git commit -m "Schedule sleep sync across device sources"
+          git push origin HEAD:${{ github.head_ref }}
