@@ -41,6 +41,24 @@ class HealthConnectSleepService {
     return _health.requestAuthorization(_types, permissions: _permissions);
   }
 
+  Future<bool> isBackgroundReadAvailable() async {
+    if (!isSupported) return false;
+    await _ensureConfigured();
+    return _health.isHealthDataInBackgroundAvailable();
+  }
+
+  Future<bool> hasBackgroundAuthorization() async {
+    if (!isSupported) return false;
+    await _ensureConfigured();
+    return _health.isHealthDataInBackgroundAuthorized();
+  }
+
+  Future<bool> requestBackgroundAuthorization() async {
+    if (!isSupported) return false;
+    await _ensureConfigured();
+    return _health.requestHealthDataInBackgroundAuthorization();
+  }
+
   Future<List<HealthSleepSession>> readSessions({
     required DateTime startUtc,
     required DateTime endUtc,
