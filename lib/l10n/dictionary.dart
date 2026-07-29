@@ -46,9 +46,10 @@ const Map<String, String> _healthAndGapEn = {
       'Runs without opening the app. The operating system may delay it to save battery.',
   'sleep_sync_device_source': 'Device source: %s',
   'sleep_sync_cloud_note':
-      'Cloud sources are synchronized by the server scheduler.',
+      'Connected cloud providers can use the server scheduler.',
   'health_connect_status_disabled': 'Disabled',
-  'health_connect_status_unavailable': 'No supported local sleep source on this device',
+  'health_connect_status_unavailable':
+      'No supported local sleep source on this device',
   'health_connect_status_permission': 'Sleep permission is required',
   'health_connect_status_idle': 'Ready to synchronize',
   'health_connect_status_syncing': 'Synchronizing sleep…',
@@ -91,9 +92,10 @@ const Map<String, String> _healthAndGapRu = {
       'Запускается без открытия приложения. ОС может выполнить задачу позже для экономии батареи.',
   'sleep_sync_device_source': 'Локальный источник: %s',
   'sleep_sync_cloud_note':
-      'Облачные источники синхронизируются серверным планировщиком.',
+      'Подключённые облачные провайдеры могут использовать серверный планировщик.',
   'health_connect_status_disabled': 'Выключено',
-  'health_connect_status_unavailable': 'На этом устройстве нет поддерживаемого локального источника сна',
+  'health_connect_status_unavailable':
+      'На этом устройстве нет поддерживаемого локального источника сна',
   'health_connect_status_permission': 'Нужно разрешение на чтение сна',
   'health_connect_status_idle': 'Готово к синхронизации',
   'health_connect_status_syncing': 'Синхронизация сна…',
@@ -101,7 +103,8 @@ const Map<String, String> _healthAndGapRu = {
   'health_connect_status_no_data':
       'В подключённых источниках нет завершённых сессий сна',
   'health_connect_status_error': 'Ошибка синхронизации',
-  'health_connect_background_active': 'Ежедневная синхронизация по расписанию включена',
+  'health_connect_background_active':
+      'Ежедневная синхронизация по расписанию включена',
   'health_connect_background_permission':
       'Нет разрешения на синхронизацию по расписанию',
   'health_connect_result': 'Найдено: %s · импортировано: %s',
