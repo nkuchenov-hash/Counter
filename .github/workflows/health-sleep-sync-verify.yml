@@ -31,7 +31,11 @@ jobs:
       - name: Create env.dart
         run: |
           mkdir -p lib/core/env
-          printf '%s\n' 'abstract final class Env {' '  static const String placeholder = '\'''\';' '}' > lib/core/env/env.dart
+          cat > lib/core/env/env.dart <<'DART'
+          abstract final class Env {
+            static const String placeholder = '';
+          }
+          DART
 
       - name: Install dependencies
         run: flutter pub get
