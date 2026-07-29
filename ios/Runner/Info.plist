@@ -68,5 +68,17 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSHealthShareUsageDescription</key>
+	<string>Import your sleep sessions into the Life OS timeline.</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>Life OS requests Health access only to synchronize your sleep timeline.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>processing</string>
+	</array>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>com.example.counter.sleep-sync</string>
+	</array>
 </dict>
 </plist>
