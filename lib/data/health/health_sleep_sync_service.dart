@@ -158,7 +158,7 @@ class HealthSleepSyncService with WidgetsBindingObserver {
   static const Duration _automaticSyncThrottle = Duration(minutes: 10);
   static const Duration _firstSyncLookback = Duration(days: 14);
   static const Duration _correctionLookback = Duration(days: 2);
-  static const Duration _backgroundFrequency = Duration(minutes: 30);
+  static const Duration _backgroundFrequency = Duration(days: 1);
 
   final ValueNotifier<HealthSleepSyncState> state =
       ValueNotifier<HealthSleepSyncState>(const HealthSleepSyncState.initial());
