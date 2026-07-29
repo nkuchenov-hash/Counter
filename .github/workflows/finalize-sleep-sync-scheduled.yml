@@ -1,0 +1,54 @@
+name: Finalize scheduled sleep sync patch
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - name: Fix Dart integer normalization
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('lib/data/health/health_sleep_sync_service.dart')
+          text = path.read_text(encoding='utf-8')
+          replacements = {
+              'final dailySyncMinutes = storedMinutes.clamp(0, 1439);':
+                  'final dailySyncMinutes = storedMinutes.clamp(0, 1439).toInt();',
+              'final normalized = minutes.clamp(0, 1439);':
+                  'final normalized = minutes.clamp(0, 1439).toInt();',
+              'final minutes = state.value.dailySyncMinutes.clamp(0, 1439);':
+                  'final minutes = state.value.dailySyncMinutes.clamp(0, 1439).toInt();',
+          }
+          for old, new in replacements.items():
+              if text.count(old) != 1:
+                  raise SystemExit(f'Expected one match: {old}')
+              text = text.replace(old, new, 1)
+          path.write_text(text, encoding='utf-8')
+          PY
+
+      - name: Remove temporary helpers
+        run: |
+          rm -f scripts/patch_sleep_sync_scheduled_sources.py
+          rm -f .github/workflows/finalize-sleep-sync-scheduled.yml
+
+      - name: Commit final product diff
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -A
+          git commit -m "Finalize scheduled sleep sync sources"
+          git push origin HEAD:${{ github.head_ref }}
