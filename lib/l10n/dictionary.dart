@@ -40,13 +40,21 @@ const Map<String, String> _healthAndGapEn = {
       'Import completed sleep sessions into the Life OS timeline.',
   'health_connect_enable': 'Synchronize sleep',
   'health_connect_sync_now': 'Sync now',
+  'health_connect_enable_background': 'Enable background sync',
   'health_connect_status_disabled': 'Disabled',
   'health_connect_status_unavailable': 'Available on Android only',
   'health_connect_status_permission': 'Sleep permission is required',
   'health_connect_status_idle': 'Ready to synchronize',
   'health_connect_status_syncing': 'Synchronizing sleep…',
   'health_connect_status_synced': 'Synchronized',
+  'health_connect_status_no_data':
+      'No completed sleep sessions found in Health Connect',
   'health_connect_status_error': 'Synchronization failed',
+  'health_connect_background_active': 'Background sync active',
+  'health_connect_background_permission':
+      'Background access has not been granted',
+  'health_connect_result': '%s found · %s imported',
+  'health_connect_source': 'Source: %s',
   'health_sleep_record_title': 'Sleep',
   'unfilled_time_notifications_title': 'Unfilled time',
   'unfilled_time_notifications_subtitle':
@@ -71,13 +79,21 @@ const Map<String, String> _healthAndGapRu = {
       'Импорт завершённых сессий сна в Timeline Life OS.',
   'health_connect_enable': 'Синхронизировать сон',
   'health_connect_sync_now': 'Синхронизировать сейчас',
+  'health_connect_enable_background': 'Включить фоновую синхронизацию',
   'health_connect_status_disabled': 'Выключено',
   'health_connect_status_unavailable': 'Доступно только на Android',
   'health_connect_status_permission': 'Нужно разрешение на чтение сна',
   'health_connect_status_idle': 'Готово к синхронизации',
   'health_connect_status_syncing': 'Синхронизация сна…',
   'health_connect_status_synced': 'Синхронизировано',
+  'health_connect_status_no_data':
+      'В Health Connect нет завершённых сессий сна',
   'health_connect_status_error': 'Ошибка синхронизации',
+  'health_connect_background_active': 'Фоновая синхронизация включена',
+  'health_connect_background_permission':
+      'Нет разрешения на фоновый доступ',
+  'health_connect_result': 'Найдено: %s · импортировано: %s',
+  'health_connect_source': 'Источник: %s',
   'health_sleep_record_title': 'Сон',
   'unfilled_time_notifications_title': 'Незаполненное время',
   'unfilled_time_notifications_subtitle':
