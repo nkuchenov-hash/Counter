@@ -15,6 +15,31 @@ import 'package:flutter/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:workmanager/workmanager.dart';
 
+enum SleepSyncSourceTransport {
+  deviceHealth,
+  cloudOAuth,
+  webhook,
+  fileImport,
+  manual,
+}
+
+/// Stable adapter identifiers. New brands plug into one of the transports
+/// above without changing Timeline persistence or the daily scheduler.
+const Set<String> knownSleepSourceAdapterIds = <String>{
+  'health_connect',
+  'apple_health',
+  'oura',
+  'fitbit',
+  'garmin',
+  'whoop',
+  'polar',
+  'withings',
+  'samsung_health',
+  'huawei_health',
+  'zepp',
+  'mi_fitness',
+};
+
 enum HealthSleepSyncPhase {
   disabled,
   unsupported,
@@ -31,6 +56,7 @@ class HealthSleepSyncState {
   const HealthSleepSyncState({
     required this.enabled,
     required this.phase,
+    this.dailySyncMinutes = 600,
     this.backgroundReadAvailable = false,
     this.backgroundReadAuthorized = false,
     this.lastSyncUtc,
@@ -45,6 +71,7 @@ class HealthSleepSyncState {
   const HealthSleepSyncState.initial()
     : enabled = false,
       phase = HealthSleepSyncPhase.disabled,
+      dailySyncMinutes = 600,
       backgroundReadAvailable = false,
       backgroundReadAuthorized = false,
       lastSyncUtc = null,
@@ -57,6 +84,7 @@ class HealthSleepSyncState {
 
   final bool enabled;
   final HealthSleepSyncPhase phase;
+  final int dailySyncMinutes;
   final bool backgroundReadAvailable;
   final bool backgroundReadAuthorized;
   final DateTime? lastSyncUtc;
@@ -70,6 +98,7 @@ class HealthSleepSyncState {
   HealthSleepSyncState copyWith({
     bool? enabled,
     HealthSleepSyncPhase? phase,
+    int? dailySyncMinutes,
     bool? backgroundReadAvailable,
     bool? backgroundReadAuthorized,
     DateTime? lastSyncUtc,
@@ -84,16 +113,15 @@ class HealthSleepSyncState {
     return HealthSleepSyncState(
       enabled: enabled ?? this.enabled,
       phase: phase ?? this.phase,
+      dailySyncMinutes: dailySyncMinutes ?? this.dailySyncMinutes,
       backgroundReadAvailable:
           backgroundReadAvailable ?? this.backgroundReadAvailable,
       backgroundReadAuthorized:
           backgroundReadAuthorized ?? this.backgroundReadAuthorized,
       lastSyncUtc: lastSyncUtc ?? this.lastSyncUtc,
-      lastImportedStartUtc:
-          lastImportedStartUtc ?? this.lastImportedStartUtc,
+      lastImportedStartUtc: lastImportedStartUtc ?? this.lastImportedStartUtc,
       lastImportedEndUtc: lastImportedEndUtc ?? this.lastImportedEndUtc,
-      lastReadSessionCount:
-          lastReadSessionCount ?? this.lastReadSessionCount,
+      lastReadSessionCount: lastReadSessionCount ?? this.lastReadSessionCount,
       lastImportedSessionCount:
           lastImportedSessionCount ?? this.lastImportedSessionCount,
       lastSourceSummary: lastSourceSummary ?? this.lastSourceSummary,
@@ -105,7 +133,10 @@ class HealthSleepSyncState {
 @pragma('vm:entry-point')
 void healthSleepBackgroundCallbackDispatcher() {
   Workmanager().executeTask((taskName, inputData) async {
-    if (taskName != HealthSleepSyncService.backgroundTaskName) return true;
+    if (taskName != HealthSleepSyncService.backgroundTaskName &&
+        taskName != Workmanager.iOSBackgroundTask) {
+      return true;
+    }
 
     WidgetsFlutterBinding.ensureInitialized();
     DartPluginRegistrant.ensureInitialized();
@@ -131,9 +162,7 @@ void healthSleepBackgroundCallbackDispatcher() {
       }
 
       await HealthSleepSyncService.instance.start(
-        observeLifecycle: false,
         manageBackgroundSchedule: false,
-        triggerInitialSync: false,
       );
       await HealthSleepSyncService.instance.sync(force: true);
       return HealthSleepSyncService.instance.state.value.phase !=
@@ -144,15 +173,20 @@ void healthSleepBackgroundCallbackDispatcher() {
   });
 }
 
-class HealthSleepSyncService with WidgetsBindingObserver {
+class HealthSleepSyncService {
   HealthSleepSyncService._();
 
   static final HealthSleepSyncService instance = HealthSleepSyncService._();
 
   static const String enabledPrefsKey = 'health_sleep_sync_enabled_v1';
   static const String _lastSyncKey = 'health_sleep_last_sync_utc_v1';
+  static const String _dailySyncMinutesKey =
+      'health_sleep_daily_sync_minutes_v1';
+  static const int defaultDailySyncMinutes = 10 * 60;
+  static const String iosBackgroundTaskIdentifier =
+      'com.example.counter.sleep-sync';
   static const String backgroundTaskName = 'health_sleep_background_sync_v1';
-  static const String _backgroundTaskUniqueName =
+  static const String _androidBackgroundTaskUniqueName =
       'health_sleep_background_periodic_v1';
   static const String _backgroundTaskTag = 'health_sleep_background_tag_v1';
   static const Duration _automaticSyncThrottle = Duration(minutes: 10);
@@ -165,29 +199,30 @@ class HealthSleepSyncService with WidgetsBindingObserver {
 
   bool _started = false;
   bool _syncing = false;
-  bool _observingLifecycle = false;
   bool _workmanagerInitialized = false;
   DateTime? _lastAttemptAt;
 
-  bool get isSupported => HealthConnectSleepService.instance.isSupported;
+  bool get isSupported => DeviceHealthSleepService.instance.isSupported;
 
-  Future<void> start({
-    bool observeLifecycle = true,
-    bool manageBackgroundSchedule = true,
-    bool triggerInitialSync = true,
-  }) async {
+  String get activeDeviceSourceName =>
+      DeviceHealthSleepService.instance.sourceName;
+
+  String get _backgroundTaskUniqueName => Platform.isIOS
+      ? iosBackgroundTaskIdentifier
+      : _androidBackgroundTaskUniqueName;
+
+  Future<void> start({bool manageBackgroundSchedule = true}) async {
     if (!_started) {
       _started = true;
-      if (observeLifecycle) {
-        WidgetsBinding.instance.addObserver(this);
-        _observingLifecycle = true;
-      }
       final prefs = await SharedPreferences.getInstance();
       final enabled = prefs.getBool(enabledPrefsKey) ?? false;
       final lastSyncRaw = prefs.getString(_lastSyncKey);
       final lastSync = lastSyncRaw == null
           ? null
           : DateTime.tryParse(lastSyncRaw)?.toUtc();
+      final storedMinutes =
+          prefs.getInt(_dailySyncMinutesKey) ?? defaultDailySyncMinutes;
+      final dailySyncMinutes = storedMinutes.clamp(0, 1439).toInt();
       state.value = HealthSleepSyncState(
         enabled: enabled,
         phase: !isSupported
@@ -195,35 +230,19 @@ class HealthSleepSyncService with WidgetsBindingObserver {
             : enabled
             ? HealthSleepSyncPhase.idle
             : HealthSleepSyncPhase.disabled,
+        dailySyncMinutes: dailySyncMinutes,
         lastSyncUtc: lastSync,
       );
-    }
-
-    if (observeLifecycle && !_observingLifecycle) {
-      WidgetsBinding.instance.addObserver(this);
-      _observingLifecycle = true;
     }
 
     if (manageBackgroundSchedule && isSupported) {
       await _ensureWorkmanagerInitialized();
       await _refreshBackgroundAccessAndSchedule();
     }
-
-    if (triggerInitialSync && state.value.enabled && isSupported) {
-      unawaited(sync());
-    }
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState appState) {
-    if (appState == AppLifecycleState.resumed && state.value.enabled) {
-      unawaited(_refreshBackgroundAccessAndSchedule());
-      unawaited(sync());
-    }
   }
 
   Future<bool> requestAuthorizationAndEnable() async {
-    await start(triggerInitialSync: false);
+    await start();
     if (!isSupported) {
       state.value = state.value.copyWith(
         enabled: false,
@@ -233,7 +252,7 @@ class HealthSleepSyncService with WidgetsBindingObserver {
       return false;
     }
     try {
-      final granted = await HealthConnectSleepService.instance
+      final granted = await DeviceHealthSleepService.instance
           .requestAuthorization();
       if (!granted) {
         state.value = state.value.copyWith(
@@ -259,14 +278,14 @@ class HealthSleepSyncService with WidgetsBindingObserver {
   }
 
   Future<bool> requestBackgroundAuthorizationAndSchedule() async {
-    await start(triggerInitialSync: false);
+    await start();
     if (!isSupported || !state.value.enabled) return false;
     try {
-      final available = await HealthConnectSleepService.instance
+      final available = await DeviceHealthSleepService.instance
           .isBackgroundReadAvailable();
       var authorized = false;
       if (available) {
-        authorized = await HealthConnectSleepService.instance
+        authorized = await DeviceHealthSleepService.instance
             .requestBackgroundAuthorization();
       }
       state.value = state.value.copyWith(
@@ -282,8 +301,8 @@ class HealthSleepSyncService with WidgetsBindingObserver {
     }
   }
 
-  Future<void> setEnabled(bool enabled, {bool syncNow = true}) async {
-    await start(triggerInitialSync: false);
+  Future<void> setEnabled(bool enabled, {bool syncNow = false}) async {
+    await start();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(enabledPrefsKey, enabled);
     state.value = state.value.copyWith(
@@ -302,10 +321,7 @@ class HealthSleepSyncService with WidgetsBindingObserver {
   }
 
   Future<void> sync({bool force = false}) async {
-    await start(
-      manageBackgroundSchedule: false,
-      triggerInitialSync: false,
-    );
+    await start(manageBackgroundSchedule: false);
     if (_syncing || !state.value.enabled || !isSupported) return;
     final now = DateTime.now().toUtc();
     if (!force &&
@@ -323,7 +339,7 @@ class HealthSleepSyncService with WidgetsBindingObserver {
       clearError: true,
     );
     try {
-      final authorized = await HealthConnectSleepService.instance
+      final authorized = await DeviceHealthSleepService.instance
           .hasAuthorization();
       if (!authorized) {
         state.value = state.value.copyWith(
@@ -337,7 +353,7 @@ class HealthSleepSyncService with WidgetsBindingObserver {
       final readStart = previousSync == null
           ? now.subtract(_firstSyncLookback)
           : previousSync.subtract(_correctionLookback);
-      final sessions = await HealthConnectSleepService.instance.readSessions(
+      final sessions = await DeviceHealthSleepService.instance.readSessions(
         startUtc: readStart,
         endUtc: now,
       );
@@ -353,12 +369,13 @@ class HealthSleepSyncService with WidgetsBindingObserver {
         importedCount++;
       }
 
-      final sourceNames = finished
-          .map((session) => session.sourceName.trim())
-          .where((name) => name.isNotEmpty)
-          .toSet()
-          .toList(growable: false)
-        ..sort();
+      final sourceNames =
+          finished
+              .map((session) => session.sourceName.trim())
+              .where((name) => name.isNotEmpty)
+              .toSet()
+              .toList(growable: false)
+            ..sort();
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_lastSyncKey, now.toIso8601String());
       state.value = state.value.copyWith(
@@ -382,20 +399,48 @@ class HealthSleepSyncService with WidgetsBindingObserver {
     }
   }
 
+  Future<void> setDailySyncMinutes(int minutes) async {
+    await start();
+    final normalized = minutes.clamp(0, 1439).toInt();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_dailySyncMinutesKey, normalized);
+    state.value = state.value.copyWith(dailySyncMinutes: normalized);
+    await _applyBackgroundSchedule();
+  }
+
+  Duration _delayUntilNextDailyRun() {
+    final now = DateTime.now();
+    final minutes = state.value.dailySyncMinutes.clamp(0, 1439).toInt();
+    var target = DateTime(
+      now.year,
+      now.month,
+      now.day,
+      minutes ~/ 60,
+      minutes % 60,
+    );
+    if (!target.isAfter(now)) target = target.add(const Duration(days: 1));
+    return target.difference(now);
+  }
+
   Future<void> _ensureWorkmanagerInitialized() async {
-    if (_workmanagerInitialized || kIsWeb || !Platform.isAndroid) return;
+    if (_workmanagerInitialized ||
+        kIsWeb ||
+        !(Platform.isAndroid || Platform.isIOS)) {
+      return;
+    }
     await Workmanager().initialize(healthSleepBackgroundCallbackDispatcher);
     _workmanagerInitialized = true;
   }
 
   Future<void> _refreshBackgroundAccessAndSchedule() async {
-    if (!isSupported || kIsWeb || !Platform.isAndroid) return;
+    if (!isSupported || kIsWeb || !(Platform.isAndroid || Platform.isIOS)) {
+      return;
+    }
     try {
-      final available = await HealthConnectSleepService.instance
+      final available = await DeviceHealthSleepService.instance
           .isBackgroundReadAvailable();
       final authorized = available
-          ? await HealthConnectSleepService.instance
-                .hasBackgroundAuthorization()
+          ? await DeviceHealthSleepService.instance.hasBackgroundAuthorization()
           : false;
       state.value = state.value.copyWith(
         backgroundReadAvailable: available,
@@ -408,12 +453,17 @@ class HealthSleepSyncService with WidgetsBindingObserver {
   }
 
   Future<void> _applyBackgroundSchedule() async {
-    if (kIsWeb || !Platform.isAndroid || !_workmanagerInitialized) return;
+    if (kIsWeb ||
+        !(Platform.isAndroid || Platform.isIOS) ||
+        !_workmanagerInitialized) {
+      return;
+    }
     if (state.value.enabled && state.value.backgroundReadAuthorized) {
       await Workmanager().registerPeriodicTask(
         _backgroundTaskUniqueName,
         backgroundTaskName,
         frequency: _backgroundFrequency,
+        initialDelay: _delayUntilNextDailyRun(),
         tag: _backgroundTaskTag,
         existingWorkPolicy: ExistingPeriodicWorkPolicy.update,
         constraints: Constraints(networkType: NetworkType.connected),

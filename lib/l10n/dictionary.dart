@@ -35,24 +35,31 @@ const Map<String, String> _planningAutoPlacementRu = {
 };
 
 const Map<String, String> _healthAndGapEn = {
-  'health_connect_title': 'Health Connect',
+  'health_connect_title': 'Sleep synchronization',
   'health_connect_subtitle':
-      'Import completed sleep sessions into the Life OS timeline.',
+      'Import sleep from connected device and cloud sources on a daily schedule.',
   'health_connect_enable': 'Synchronize sleep',
   'health_connect_sync_now': 'Sync now',
-  'health_connect_enable_background': 'Enable background sync',
+  'health_connect_enable_background': 'Enable scheduled sync',
+  'sleep_sync_daily_time': 'Daily synchronization time',
+  'sleep_sync_daily_time_hint':
+      'Runs without opening the app. The operating system may delay it to save battery.',
+  'sleep_sync_device_source': 'Device source: %s',
+  'sleep_sync_cloud_note':
+      'Connected cloud providers can use the server scheduler.',
   'health_connect_status_disabled': 'Disabled',
-  'health_connect_status_unavailable': 'Available on Android only',
+  'health_connect_status_unavailable':
+      'No supported local sleep source on this device',
   'health_connect_status_permission': 'Sleep permission is required',
   'health_connect_status_idle': 'Ready to synchronize',
   'health_connect_status_syncing': 'Synchronizing sleep…',
   'health_connect_status_synced': 'Synchronized',
   'health_connect_status_no_data':
-      'No completed sleep sessions found in Health Connect',
+      'No completed sleep sessions found in connected sources',
   'health_connect_status_error': 'Synchronization failed',
-  'health_connect_background_active': 'Background sync active',
+  'health_connect_background_active': 'Daily scheduled sync active',
   'health_connect_background_permission':
-      'Background access has not been granted',
+      'Scheduled background access has not been granted',
   'health_connect_result': '%s found · %s imported',
   'health_connect_source': 'Source: %s',
   'health_sleep_record_title': 'Sleep',
@@ -74,24 +81,32 @@ const Map<String, String> _healthAndGapEn = {
 };
 
 const Map<String, String> _healthAndGapRu = {
-  'health_connect_title': 'Health Connect',
+  'health_connect_title': 'Синхронизация сна',
   'health_connect_subtitle':
-      'Импорт завершённых сессий сна в Timeline Life OS.',
+      'Импорт сна из подключённых локальных и облачных источников по ежедневному расписанию.',
   'health_connect_enable': 'Синхронизировать сон',
   'health_connect_sync_now': 'Синхронизировать сейчас',
-  'health_connect_enable_background': 'Включить фоновую синхронизацию',
+  'health_connect_enable_background': 'Включить синхронизацию по расписанию',
+  'sleep_sync_daily_time': 'Время ежедневной синхронизации',
+  'sleep_sync_daily_time_hint':
+      'Запускается без открытия приложения. ОС может выполнить задачу позже для экономии батареи.',
+  'sleep_sync_device_source': 'Локальный источник: %s',
+  'sleep_sync_cloud_note':
+      'Подключённые облачные провайдеры могут использовать серверный планировщик.',
   'health_connect_status_disabled': 'Выключено',
-  'health_connect_status_unavailable': 'Доступно только на Android',
+  'health_connect_status_unavailable':
+      'На этом устройстве нет поддерживаемого локального источника сна',
   'health_connect_status_permission': 'Нужно разрешение на чтение сна',
   'health_connect_status_idle': 'Готово к синхронизации',
   'health_connect_status_syncing': 'Синхронизация сна…',
   'health_connect_status_synced': 'Синхронизировано',
   'health_connect_status_no_data':
-      'В Health Connect нет завершённых сессий сна',
+      'В подключённых источниках нет завершённых сессий сна',
   'health_connect_status_error': 'Ошибка синхронизации',
-  'health_connect_background_active': 'Фоновая синхронизация включена',
+  'health_connect_background_active':
+      'Ежедневная синхронизация по расписанию включена',
   'health_connect_background_permission':
-      'Нет разрешения на фоновый доступ',
+      'Нет разрешения на синхронизацию по расписанию',
   'health_connect_result': 'Найдено: %s · импортировано: %s',
   'health_connect_source': 'Источник: %s',
   'health_sleep_record_title': 'Сон',
