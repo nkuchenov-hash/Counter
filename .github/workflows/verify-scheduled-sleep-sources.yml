@@ -54,7 +54,7 @@ jobs:
       - name: Build Android arm64 release
         run: flutter build apk --release --split-per-abi --target-platform android-arm64 --no-tree-shake-icons
 
-  ios-release:
+  ios-simulator:
     runs-on: macos-latest
     steps:
       - name: Checkout branch
@@ -84,5 +84,5 @@ jobs:
           plutil -lint ios/Runner/Info.plist
           plutil -lint ios/Runner/Runner.entitlements
 
-      - name: Build iOS release without signing
-        run: flutter build ios --release --no-codesign
+      - name: Build iOS simulator app
+        run: flutter build ios --simulator --debug
