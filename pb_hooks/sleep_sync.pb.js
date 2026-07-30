@@ -5,7 +5,7 @@
 var __sleepSyncCollection = "sleep_sync_connections";
 var __sleepSyncProvider = "google_health";
 var __sleepSyncDefaultMinutes = 21 * 60;
-var __sleepSyncLookbackDays = 7;
+var __sleepSyncLookbackDays = 14;
 var __sleepSyncGoogleScope = "https://www.googleapis.com/auth/googlehealth.sleep.readonly";
 
 function __sleepSyncEnv(name) {
