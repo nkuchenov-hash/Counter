@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - agent/fix-server-sleep-google-fit
+  pull_request:
+    branches:
+      - main
 
 permissions:
   contents: write
@@ -120,7 +123,6 @@ jobs:
           )
           docs.write_text(text, encoding='utf-8')
 
-          # All source and route names must now be Google Fit only.
           stale = []
           for path in files:
               text = path.read_text(encoding='utf-8')
@@ -161,6 +163,7 @@ jobs:
           grep -R "activityType=72" pb_hooks/sleep_sync.pb.js
 
       - name: Commit correction and remove temporary workflow
+        if: github.event_name == 'push'
         run: |
           rm .github/workflows/fix-google-fit-sleep-sync.yml
           git config user.name "github-actions[bot]"
