@@ -44,7 +44,7 @@ The V2 widgets are not restored wholesale. Their behavior is re-expressed throug
 - Collapsed caret movement does not trigger row `setState` on every keystroke.
 - Autosave status changes do not rebuild the document.
 - The editor remains one continuous sheet with zero screen-level block gap.
-- Ordinary text, list, checklist, image, drawing, and table blocks do not gain independent decorative card backgrounds.
+- Ordinary text, list, checklist, image, drawing, and table rows do not gain an extra outer block card solely because they are active.
 - Numbered ordinals are derived from contiguous numbered blocks.
 - Block actions reserve stable geometry and do not reflow text when activated.
 
@@ -69,23 +69,25 @@ Compatibility parsing for out-of-scope block types remains intact so opening and
 
 ## Canonical component mapping
 
-| Figma / specification component | Flutter canonical component | Ownership |
+Public import: `lib/features/notes/widgets/notes_canonical_components.dart`.
+
+| Figma / specification component | Flutter canonical component | Focused implementation part |
 | :--- | :--- | :--- |
-| `Notes/Block/Text` | `NotesTextBlock` | `lib/features/notes/widgets/notes_canonical_components.dart` |
-| `Notes/Block/List` | `NotesListBlock` | same file |
-| `Notes/Block/Checklist` | `NotesChecklistBlock` | same file |
-| `Notes/Block/Quote` | `NotesQuoteBlock` | same file |
-| `Notes/Block/Divider` | `NotesDividerBlock` | same file |
-| `Notes/Block/Table` | `NotesTableBlock` | same file |
-| `Notes/Table Size Picker` | `NotesTableSizePicker` | same file; compact/extended range is parameterized |
-| `Notes/Block/Image` / `Drawing` | `NotesMediaBlock` | same file; media child and kind are parameters |
-| `Notes/Block/Audio` | `NotesAudioBlock` | same file; state is a parameter |
-| `Notes/Toolbar/Button` | `NotesToolbarButton` | same file |
-| `Notes/Toolbar` | `NotesEditorToolbar` | same file |
-| `Notes/Menus/*` shell | `NotesFloatingMenuSurface` | same file |
-| `Notes/Menus/Text Formatting` | `NotesTextFormattingMenu` | same file |
-| `Notes/Menus/Heading Styles` | `NotesHeadingStylesMenu` | same file |
-| Empty-line insert menu | `NotesInsertMenu` | same file |
+| `Notes/Block/Text` | `NotesTextBlock` | `notes_component_text_blocks.dart` |
+| `Notes/Block/List` | `NotesListBlock` | `notes_component_text_blocks.dart` |
+| `Notes/Block/Checklist` | `NotesChecklistBlock` | `notes_component_text_blocks.dart` |
+| `Notes/Block/Quote` | `NotesQuoteBlock` | `notes_component_structural_blocks.dart` |
+| `Notes/Block/Divider` | `NotesDividerBlock` | `notes_component_structural_blocks.dart` |
+| `Notes/Block/Table` | `NotesTableBlock` | `notes_component_structural_blocks.dart` |
+| `Notes/Table Size Picker` | `NotesTableSizePicker` | `notes_component_structural_blocks.dart`; compact/extended range is parameterized |
+| `Notes/Block/Image` / `Drawing` | `NotesMediaBlock` | `notes_component_media_blocks.dart`; media child and kind are parameters |
+| `Notes/Block/Audio` | `NotesAudioBlock` | `notes_component_media_blocks.dart`; state is a parameter |
+| `Notes/Toolbar/Button` | `NotesToolbarButton` | `notes_component_tools.dart` |
+| `Notes/Toolbar` | `NotesEditorToolbar` | `notes_component_tools.dart` |
+| `Notes/Menus/*` shell | `NotesFloatingMenuSurface` | `notes_component_tools.dart` |
+| `Notes/Menus/Text Formatting` | `NotesTextFormattingMenu` | `notes_component_tools.dart` |
+| `Notes/Menus/Heading Styles` | `NotesHeadingStylesMenu` | `notes_component_tools.dart` |
+| Empty-line insert menu | `NotesInsertMenu` | `notes_component_tools.dart` |
 
 ## Component rules established by the first implementation slice
 
@@ -100,6 +102,7 @@ Compatibility parsing for out-of-scope block types remains intact so opening and
 - The toolbar tool enum intentionally has no Link member.
 - The table size picker defaults to 5 × 5 and accepts a larger configured range without introducing a desktop class.
 - All colors are derived from `ColorScheme`.
+- The canonical library is split into focused Dart parts; the public import remains one barrel.
 
 ## Deferred to the next implementation slice
 
