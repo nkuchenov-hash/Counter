@@ -4,8 +4,6 @@
 // ids, canonical Notes components, and local-first debounced persistence.
 
 import 'dart:async';
-import 'dart:convert';
-
 import 'package:counter/core/widgets/notes/notes_context_row.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
@@ -13,12 +11,12 @@ import 'package:counter/features/notes/drawing_canvas_page.dart';
 import 'package:counter/features/notes/notes_audio_controller.dart';
 import 'package:counter/features/notes/notes_editor_document_controller.dart';
 import 'package:counter/features/notes/notes_glm_surface.dart';
+import 'package:counter/features/notes/notes_image_tools.dart';
 import 'package:counter/features/notes/widgets/note_editor_block_widgets.dart';
 import 'package:counter/features/notes/widgets/notes_canonical_components.dart';
 import 'package:counter/features/notes/widgets/notes_editor_tools.dart';
 import 'package:counter/features/shared/edit_sheet/sheet_autosave_gate.dart';
 import 'package:counter/l10n/dictionary.dart';
-import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -472,42 +470,90 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
   Future<void> _pickImage({String? replaceBlockId}) async {
     if (widget.parityPreview) return;
     try {
-      final file = await openFile(
-        acceptedTypeGroups: const [
-          XTypeGroup(
-            label: 'Images',
-            extensions: ['png', 'jpg', 'jpeg', 'webp'],
-          ),
-        ],
-      );
-      if (file == null) return;
-      final bytes = await file.readAsBytes();
-      if (!mounted) return;
-      if (bytes.lengthInBytes > kLifeOsNotesMaxAssetBytes) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              t(currentLocale.value, 'notes_v3_editor_image_too_large'),
-            ),
-          ),
-        );
-        return;
-      }
-      final dataUrl =
-          'data:${_imageMimeType(file.name)};base64,${base64Encode(bytes)}';
+      final picked = await pickNotesImage(context: context);
+      if (!mounted || picked == null) return;
       final mutation = replaceBlockId == null
           ? _editor.insertAfter(
               _editor.activeBlockId,
               NoteBlockType.image,
-              imageData: dataUrl,
+              imageData: picked.dataUrl,
             )
-          : _editor.updateMedia(replaceBlockId, imageData: dataUrl);
+          : _editor.updateMedia(replaceBlockId, imageData: picked.dataUrl);
       _applyMutation(mutation);
+    } on NotesImageTooLargeException {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            t(currentLocale.value, 'notes_v3_editor_image_too_large'),
+          ),
+        ),
+      );
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(t(currentLocale.value, 'notes_v3_editor_load_failed')),
+        ),
+      );
+    }
+  }
+
+  Future<void> _cropImage(String blockId) async {
+    final dataUrl = _editor.blockById(blockId)?.imageData;
+    if (dataUrl == null || dataUrl.isEmpty) return;
+    final cropped = await showNotesImageCropper(
+      context: context,
+      dataUrl: dataUrl,
+    );
+    if (!mounted || cropped == null) return;
+    _applyMutation(_editor.updateMedia(blockId, imageData: cropped));
+  }
+
+  Future<void> _editImageCaption(String blockId) async {
+    final block = _editor.blockById(blockId);
+    if (block == null || block.type != NoteBlockType.image) return;
+    final result = await showNotesImageCaptionDialog(
+      context: context,
+      currentCaption: block.caption,
+    );
+    if (!mounted || result == null) return;
+    _applyMutation(_editor.updateCaption(blockId, result.caption ?? ''));
+  }
+
+  Future<void> _copyImage(String blockId) async {
+    final dataUrl = _editor.blockById(blockId)?.imageData;
+    if (dataUrl == null || dataUrl.isEmpty) return;
+    try {
+      await copyNotesImage(dataUrl);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(t(currentLocale.value, 'notes_image_copied'))),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(t(currentLocale.value, 'notes_image_copy_failed')),
+        ),
+      );
+    }
+  }
+
+  Future<void> _saveImage(String blockId) async {
+    final dataUrl = _editor.blockById(blockId)?.imageData;
+    if (dataUrl == null || dataUrl.isEmpty) return;
+    try {
+      await saveNotesImage(dataUrl);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(t(currentLocale.value, 'notes_image_saved'))),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(t(currentLocale.value, 'notes_image_save_failed')),
         ),
       );
     }
@@ -642,6 +688,18 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
         NoteBlockType.drawing => () => _openDrawing(editBlockId: block.id),
         _ => null,
       },
+      onCropImage: block.type == NoteBlockType.image
+          ? () => _cropImage(block.id)
+          : null,
+      onEditImageCaption: block.type == NoteBlockType.image
+          ? () => _editImageCaption(block.id)
+          : null,
+      onCopyImage: block.type == NoteBlockType.image
+          ? () => _copyImage(block.id)
+          : null,
+      onSaveImage: block.type == NoteBlockType.image
+          ? () => _saveImage(block.id)
+          : null,
     );
   }
 
@@ -849,13 +907,6 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
       ),
     );
   }
-}
-
-String _imageMimeType(String name) {
-  final lower = name.toLowerCase();
-  if (lower.endsWith('.png')) return 'image/png';
-  if (lower.endsWith('.webp')) return 'image/webp';
-  return 'image/jpeg';
 }
 
 bool _sameRuns(List<NoteTextRun> left, List<NoteTextRun> right) {

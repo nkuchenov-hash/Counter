@@ -61,6 +61,10 @@
 	</array>
 	<key>NSFaceIDUsageDescription</key>
 	<string>Unlock the app with Face ID</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Select images to add to Life OS notes.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Take photos to add to Life OS notes.</string>
 	<key>UISupportedInterfaceOrientations~ipad</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>

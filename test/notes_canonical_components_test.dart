@@ -1,7 +1,9 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:counter/data/models.dart';
 import 'package:counter/features/notes/notes_editor_document_controller.dart';
+import 'package:counter/features/notes/notes_image_tools.dart';
 import 'package:counter/features/notes/widgets/notes_canonical_components.dart';
 import 'package:counter/features/notes/widgets/notes_editor_tools.dart';
 import 'package:flutter/material.dart';
@@ -49,6 +51,12 @@ void main() {
   test(
     'editor core handles H1 enter, formatting, table edits, delete, and preservation',
     () {
+      expect(
+        decodeNotesImageDataUrl('data:image/png;base64,AQID'),
+        Uint8List.fromList([1, 2, 3]),
+      );
+      expect(notesImageMimeType('photo.webp'), 'image/webp');
+
       final legacy = NoteBlock(
         id: 'legacy-reference',
         type: NoteBlockType.noteReference,

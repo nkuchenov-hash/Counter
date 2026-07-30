@@ -393,6 +393,10 @@ Future<void> showNotesBlockOptionsMenu({
   required VoidCallback onDeleteBlock,
   ValueChanged<NotesTableEditCommand>? onTableCommand,
   VoidCallback? onEditMedia,
+  VoidCallback? onCropImage,
+  VoidCallback? onEditImageCaption,
+  VoidCallback? onCopyImage,
+  VoidCallback? onSaveImage,
 }) {
   return showModalBottomSheet<void>(
     context: context,
@@ -412,6 +416,36 @@ Future<void> showNotesBlockOptionsMenu({
                   : 'Replace image',
               onEditMedia,
             ),
+          if (block.type == NoteBlockType.image) ...[
+            if (onCropImage != null)
+              _sheetAction(
+                sheetContext,
+                Icons.crop_rounded,
+                'Crop',
+                onCropImage,
+              ),
+            if (onEditImageCaption != null)
+              _sheetAction(
+                sheetContext,
+                Icons.closed_caption_outlined,
+                'Add or edit caption',
+                onEditImageCaption,
+              ),
+            if (onCopyImage != null)
+              _sheetAction(
+                sheetContext,
+                Icons.copy_rounded,
+                'Copy image',
+                onCopyImage,
+              ),
+            if (onSaveImage != null)
+              _sheetAction(
+                sheetContext,
+                Icons.download_rounded,
+                'Save to device',
+                onSaveImage,
+              ),
+          ],
           if (block.type == NoteBlockType.table && onTableCommand != null) ...[
             _sheetAction(
               sheetContext,

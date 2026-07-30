@@ -979,6 +979,22 @@ const Map<String, String> kRuL10n = {
   'notes_v3_pin_indicator': 'Закреплено',
   'notes_v3_checklist_progress': '{done}/{total}',
 
+  'notes_image_source_title': 'Добавить изображение',
+  'notes_image_source_files': 'Выбрать из файлов',
+  'notes_image_source_gallery': 'Выбрать из галереи',
+  'notes_image_source_camera': 'Сделать фото',
+  'notes_image_crop_title': 'Кадрирование',
+  'notes_image_crop_apply': 'Применить',
+  'notes_image_crop_hint':
+      'Масштабируйте и перемещайте изображение внутри рамки.',
+  'notes_image_crop_failed': 'Не удалось обрезать изображение.',
+  'notes_image_caption_title': 'Подпись к изображению',
+  'notes_image_caption_hint': 'Добавьте подпись…',
+  'notes_image_copied': 'Изображение скопировано',
+  'notes_image_copy_failed': 'Не удалось скопировать изображение.',
+  'notes_image_saved': 'Изображение сохранено',
+  'notes_image_save_failed': 'Не удалось сохранить изображение.',
+
   'notes_audio_title': 'Аудиозапись',
   'notes_audio_ready': 'Готово',
   'notes_audio_recording': 'Идёт запись…',
