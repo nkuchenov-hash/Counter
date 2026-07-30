@@ -69,14 +69,9 @@ jobs:
           python - <<'PY'
           from pathlib import Path
 
-          pubspec = Path('pubspec.yaml')
-          pubspec_text = pubspec.read_text(encoding='utf-8')
-          if 'audioplayers: ^6.8.1' not in pubspec_text:
-              raise SystemExit('audioplayers production anchor missing')
-          pubspec.write_text(
-              pubspec_text.replace('audioplayers: ^6.8.1', 'audioplayers: ^6.7.1', 1),
-              encoding='utf-8',
-          )
+          pubspec_text = Path('pubspec.yaml').read_text(encoding='utf-8')
+          if 'audioplayers: ^6.7.1' not in pubspec_text:
+              raise SystemExit('production audioplayers constraint missing')
 
           path = Path('scripts/manual/apply_notes_image_phase.py')
           source = path.read_text(encoding='utf-8')
@@ -85,12 +80,12 @@ jobs:
               "import 'package:clipboard/clipboard.dart';",
           )
           source = source.replace(
-              "  super_clipboard: ^0.9.1",
-              "  clipboard: ^3.0.14",
+              "super_clipboard: ^0.9.1",
+              "clipboard: ^3.0.14",
           )
           source = source.replace(
-              "  audioplayers: ^6.8.1\\n  tray_manager:",
-              "  audioplayers: ^6.7.1\\n  tray_manager:",
+              "audioplayers: ^6.8.1",
+              "audioplayers: ^6.7.1",
           )
           old_copy = """Future<void> copyNotesImage(String dataUrl) async {
             final clipboard = SystemClipboard.instance;
