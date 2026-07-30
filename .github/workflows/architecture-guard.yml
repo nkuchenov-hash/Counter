@@ -11,7 +11,7 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   strict-structure:
@@ -35,82 +35,51 @@ jobs:
             git diff --check "origin/main...HEAD"
           fi
 
-  notes-component-lab:
-    name: notes-component-lab
+  notes-v3-verify:
+    name: notes-v3-verify
     if: github.event_name == 'pull_request' && github.head_ref == 'feature/notes-v3-design-system'
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout feature branch
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          ref: feature/notes-v3-design-system
           fetch-depth: 0
 
-      - name: Check whether implementation is needed
-        id: needed
-        run: |
-          if [ -f lib/features/dev/component_lab_notes_demo.dart ]; then
-            echo "value=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "value=true" >> "$GITHUB_OUTPUT"
-          fi
-
       - name: Set up production Flutter 3.41.6
-        if: steps.needed.outputs.value == 'true'
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.41.6'
           channel: stable
           cache: true
 
-      - name: Apply Notes Component Lab scenarios
-        if: steps.needed.outputs.value == 'true'
-        run: python scripts/manual/apply_notes_component_lab.py
-
       - name: Resolve dependencies
-        if: steps.needed.outputs.value == 'true'
         run: flutter pub get
 
-      - name: Format changed Dart files
-        if: steps.needed.outputs.value == 'true'
+      - name: Check Notes formatting
         run: |
-          dart format \
+          dart format --output=none --set-exit-if-changed \
+            lib/data/models.dart \
+            lib/data/models/note_audio_types.dart \
+            lib/data/models/note_document.dart \
+            lib/data/plans/notes_brain_helpers.dart \
             lib/features/dev/component_lab_view.dart \
-            lib/features/dev/component_lab_notes_demo.dart
+            lib/features/dev/component_lab_notes_demo.dart \
+            lib/features/notes/notes_audio_controller.dart \
+            lib/features/notes/notes_image_tools.dart \
+            lib/features/notes/note_editor_page.dart \
+            lib/features/notes/notes_editor_document_controller.dart \
+            lib/features/notes/widgets/note_editor_block_widgets.dart \
+            lib/features/notes/widgets/notes_component_media_blocks.dart \
+            lib/features/notes/widgets/notes_editor_tools.dart \
+            lib/l10n/langs/en.dart \
+            lib/l10n/langs/ru.dart \
+            test/notes_canonical_components_test.dart
 
       - name: Analyze
-        if: steps.needed.outputs.value == 'true'
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
 
       - name: Run three focused Notes tests
-        if: steps.needed.outputs.value == 'true'
         run: flutter test test/notes_canonical_components_test.dart
 
       - name: Build production web release
-        if: steps.needed.outputs.value == 'true'
         run: flutter build web --release --base-href="/Counter/" --no-tree-shake-icons --no-wasm-dry-run --pwa-strategy=none
-
-      - name: Verify architecture and whitespace
-        if: steps.needed.outputs.value == 'true'
-        shell: pwsh
-        run: |
-          ./scripts/audit/architecture_guard.ps1 -Strict
-          git diff --check
-
-      - name: Commit verified Component Lab scenarios
-        if: steps.needed.outputs.value == 'true'
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add \
-            docs/APP_STRUCTURE.md \
-            lib/features/dev/component_lab_view.dart \
-            lib/features/dev/component_lab_notes_demo.dart \
-            pubspec.yaml pubspec.lock \
-            linux/flutter/generated_plugin_registrant.cc \
-            linux/flutter/generated_plugins.cmake \
-            macos/Flutter/GeneratedPluginRegistrant.swift \
-            windows/flutter/generated_plugin_registrant.cc \
-            windows/flutter/generated_plugins.cmake
-          git commit -m "Add Notes V3 Component Lab scenarios"
-          git push origin HEAD:feature/notes-v3-design-system
