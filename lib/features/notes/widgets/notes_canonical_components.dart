@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:counter/core/widgets/app_button.dart';
 import 'package:counter/core/widgets/app_icon_button.dart';
 import 'package:counter/data/models.dart';
 import 'package:flutter/material.dart';
@@ -8,6 +9,7 @@ part 'notes_component_text_blocks.dart';
 part 'notes_component_structural_blocks.dart';
 part 'notes_component_media_blocks.dart';
 part 'notes_component_tools.dart';
+part 'notes_component_creation_tools.dart';
 
 /// Canonical Notes components shared by mobile, desktop, and web.
 ///
