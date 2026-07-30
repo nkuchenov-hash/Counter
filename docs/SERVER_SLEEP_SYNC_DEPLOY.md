@@ -4,9 +4,9 @@ This module makes completed sleep appear in the Life OS Timeline without opening
 
 ## Data path
 
-`Mi Band → Mi Fitness → Health Connect → Google Health account → Google Health API → PocketBase cron → records → all Life OS clients`
+`Mi Band → Mi Fitness → Google Fit → Google Fit REST API → PocketBase cron → records → all Life OS clients`
 
-The Life OS phone app is not part of this path. A Bluetooth-only wearable still needs a gateway that uploads its data. For Xiaomi wearables, Google requires the watch or tracker to sync regularly with Mi Fitness; Google Health does not communicate directly with Xiaomi devices.
+The Life OS phone app is not part of this path. Life OS reads the sleep that is already visible in the user's Google Fit account. Mi Fitness remains responsible for uploading the Mi Band data to Google Fit.
 
 ## Production files
 
@@ -20,24 +20,24 @@ Restart PocketBase so the migration creates `sleep_sync_connections` and adds `r
 ## Google Cloud setup
 
 1. Create or select a Google Cloud project.
-2. Enable **Google Health API**.
+2. Enable **Google Fit REST API**.
 3. Configure an External OAuth consent screen.
 4. Add the restricted scope:
-   - `https://www.googleapis.com/auth/googlehealth.sleep.readonly`
+   - `https://www.googleapis.com/auth/fitness.sleep.read`
 5. Create a **Web application** OAuth client.
 6. Add this exact redirect URI:
-   - `https://217-114-0-201.sslip.io/api/sleep-sync/google-health/callback`
+   - `https://217-114-0-201.sslip.io/api/sleep-sync/google-fit/callback`
 7. During private testing, add the Life OS Google account as a test user. Public use for more than 100 users requires Google OAuth verification.
 
-Do not configure the retired Google Fit REST API.
+Enable the Google Fitness API.
 
 ## Required PocketBase process environment
 
 Set these environment variables on the PocketBase service, not in Flutter or Git:
 
 ```text
-SLEEP_SYNC_GOOGLE_HEALTH_CLIENT_ID=<Google OAuth web client id>
-SLEEP_SYNC_GOOGLE_HEALTH_CLIENT_SECRET=<Google OAuth web client secret>
+SLEEP_SYNC_GOOGLE_FIT_CLIENT_ID=<Google OAuth web client id>
+SLEEP_SYNC_GOOGLE_FIT_CLIENT_SECRET=<Google OAuth web client secret>
 SLEEP_SYNC_TOKEN_KEY=<exactly 32 random characters>
 SLEEP_SYNC_PUBLIC_BASE_URL=https://217-114-0-201.sslip.io
 SLEEP_SYNC_RETURN_URL=https://nkuchenov-hash.github.io/Counter/
@@ -49,8 +49,8 @@ Example systemd drop-in:
 
 ```ini
 [Service]
-Environment="SLEEP_SYNC_GOOGLE_HEALTH_CLIENT_ID=..."
-Environment="SLEEP_SYNC_GOOGLE_HEALTH_CLIENT_SECRET=..."
+Environment="SLEEP_SYNC_GOOGLE_FIT_CLIENT_ID=..."
+Environment="SLEEP_SYNC_GOOGLE_FIT_CLIENT_SECRET=..."
 Environment="SLEEP_SYNC_TOKEN_KEY=12345678901234567890123456789012"
 Environment="SLEEP_SYNC_PUBLIC_BASE_URL=https://217-114-0-201.sslip.io"
 Environment="SLEEP_SYNC_RETURN_URL=https://nkuchenov-hash.github.io/Counter/"
@@ -67,7 +67,7 @@ sudo systemctl restart <pocketbase-service-name>
 
 1. Open Life OS web.
 2. Go to Settings → Sleep synchronization → Server synchronization.
-3. Select **Connect Google Health** and grant sleep read access.
+3. Select **Connect Google Fit** and grant sleep read access.
 4. Return to Life OS and run **Sync now**.
 5. Confirm that the status reports found/imported sessions.
 6. Confirm that an ordinary completed `Sleep` / `Сон` Timeline record appears in web.
@@ -92,4 +92,4 @@ Check:
 - PocketBase logs for `sleep sync failed`;
 - `sleep_sync_connections.status` and `last_error` in PocketBase Admin;
 - Google Cloud API and OAuth dashboards;
-- whether Mi Fitness has recently synchronized the Xiaomi device and is connected to Google Health through Health Connect.
+- whether the expected sleep session is already visible in Google Fit.

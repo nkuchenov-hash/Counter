@@ -1,12 +1,12 @@
 /// <reference path="../pb_data/types.d.ts" />
 // Server-owned sleep synchronization.
-// Google Health is the first cloud adapter. The cron runs without any Life OS client.
+// Google Fit is the first cloud adapter. The cron runs without any Life OS client.
 
 var __sleepSyncCollection = "sleep_sync_connections";
-var __sleepSyncProvider = "google_health";
+var __sleepSyncProvider = "google_fit";
 var __sleepSyncDefaultMinutes = 21 * 60;
 var __sleepSyncLookbackDays = 14;
-var __sleepSyncGoogleScope = "https://www.googleapis.com/auth/googlehealth.sleep.readonly";
+var __sleepSyncGoogleScope = "https://www.googleapis.com/auth/fitness.sleep.read";
 
 function __sleepSyncEnv(name) {
     try { return String($os.getenv(name) || "").trim(); } catch (_) { return ""; }
@@ -27,13 +27,13 @@ function __sleepSyncTokenKey() {
 }
 
 function __sleepSyncGoogleConfig() {
-    var clientId = __sleepSyncEnv("SLEEP_SYNC_GOOGLE_HEALTH_CLIENT_ID");
-    var clientSecret = __sleepSyncEnv("SLEEP_SYNC_GOOGLE_HEALTH_CLIENT_SECRET");
-    if (!clientId || !clientSecret) throw new Error("Google Health OAuth is not configured");
+    var clientId = __sleepSyncEnv("SLEEP_SYNC_GOOGLE_FIT_CLIENT_ID");
+    var clientSecret = __sleepSyncEnv("SLEEP_SYNC_GOOGLE_FIT_CLIENT_SECRET");
+    if (!clientId || !clientSecret) throw new Error("Google Fit OAuth is not configured");
     return {
         clientId: clientId,
         clientSecret: clientSecret,
-        redirectUri: __sleepSyncPublicBaseUrl() + "/api/sleep-sync/google-health/callback",
+        redirectUri: __sleepSyncPublicBaseUrl() + "/api/sleep-sync/google-fit/callback",
     };
 }
 
@@ -132,7 +132,7 @@ function __sleepSyncRefreshAccess(app, connection) {
         return String($security.decrypt(currentEnc, key));
     }
     var refreshEnc = String(connection.get("refresh_token_enc") || "");
-    if (!refreshEnc) throw new Error("Google Health refresh token is missing");
+    if (!refreshEnc) throw new Error("Google Fit refresh token is missing");
     var cfg = __sleepSyncGoogleConfig();
     var refreshToken = String($security.decrypt(refreshEnc, key));
     var res = $http.send({
@@ -158,50 +158,47 @@ function __sleepSyncRefreshAccess(app, connection) {
 }
 
 function __sleepSyncGoogleSessions(accessToken, start, end) {
-    var filter = 'sleep.interval.end_time >= "' + start.toISOString() + '" AND sleep.interval.end_time < "' + end.toISOString() + '"';
-    var pageToken = "";
+    var url = "https://www.googleapis.com/fitness/v1/users/me/sessions" +
+        "?startTime=" + encodeURIComponent(start.toISOString()) +
+        "&endTime=" + encodeURIComponent(end.toISOString()) +
+        "&activityType=72";
+    var res = $http.send({
+        url: url,
+        method: "GET",
+        headers: {
+            "authorization": "Bearer " + accessToken,
+            "accept": "application/json",
+        },
+        timeout: 45,
+    });
+    if (res.statusCode < 200 || res.statusCode >= 300 || !res.json) {
+        throw new Error("Google Fit sleep request failed: HTTP " + res.statusCode);
+    }
+    var rows = res.json.session || [];
     var out = [];
-    var pages = 0;
-    do {
-        var url = "https://health.googleapis.com/v4/users/me/dataTypes/sleep/dataPoints:reconcile" +
-            "?dataSourceFamily=" + encodeURIComponent("users/me/dataSourceFamilies/all-sources") +
-            "&pageSize=25" +
-            "&filter=" + encodeURIComponent(filter) +
-            (pageToken ? "&pageToken=" + encodeURIComponent(pageToken) : "");
-        var res = $http.send({
-            url: url,
-            method: "GET",
-            headers: {
-                "authorization": "Bearer " + accessToken,
-                "accept": "application/json",
-            },
-            timeout: 45,
+    for (var i = 0; i < rows.length; i++) {
+        var row = rows[i] || {};
+        if (Number(row.activityType || 0) !== 72) continue;
+        var startMillis = Number(row.startTimeMillis || 0);
+        var endMillis = Number(row.endTimeMillis || 0);
+        if (!isFinite(startMillis) || !isFinite(endMillis) || endMillis <= startMillis) continue;
+        var startDate = new Date(startMillis);
+        var endDate = new Date(endMillis);
+        if (isNaN(startDate.getTime()) || isNaN(endDate.getTime()) || endDate.getTime() > Date.now()) continue;
+        var application = row.application || {};
+        var appIdentity = String(application.packageName || application.name || "unknown");
+        var sessionId = String(row.id || "");
+        var externalId = "google-fit|" + appIdentity + "|" +
+            (sessionId || (startDate.toISOString() + "|" + endDate.toISOString()));
+        out.push({
+            externalId: externalId,
+            start: startDate,
+            end: endDate,
         });
-        if (res.statusCode < 200 || res.statusCode >= 300 || !res.json) {
-            throw new Error("Google Health sleep request failed: HTTP " + res.statusCode);
-        }
-        var rows = res.json.dataPoints || [];
-        for (var i = 0; i < rows.length; i++) {
-            var row = rows[i] || {};
-            var sleep = row.sleep || {};
-            var interval = sleep.interval || {};
-            var startDate = __sleepSyncDate(interval.startTime);
-            var endDate = __sleepSyncDate(interval.endTime);
-            if (!startDate || !endDate || endDate.getTime() <= startDate.getTime() || endDate.getTime() > Date.now()) continue;
-            var externalId = String(row.dataPointName || row.name || ("google-health|" + startDate.toISOString() + "|" + endDate.toISOString()));
-            out.push({
-                externalId: externalId,
-                start: startDate,
-                end: endDate,
-            });
-        }
-        pageToken = String(res.json.nextPageToken || "");
-        pages++;
-    } while (pageToken && pages < 10);
+    }
     out.sort(function(a, b) { return a.end.getTime() - b.end.getTime(); });
     return out;
 }
-
 function __sleepSyncProfile(app, userId) {
     return app.findRecordById("profiles", userId);
 }
@@ -252,7 +249,7 @@ function __sleepSyncFindExisting(app, userId, externalId, start, end) {
     try {
         return app.findFirstRecordByFilter(
             "records",
-            "user_id = {:uid} && sleep_source = 'google_health' && sleep_external_id = {:external}",
+            "user_id = {:uid} && sleep_source = 'google_fit' && sleep_external_id = {:external}",
             { uid: userId, external: externalId }
         );
     } catch (_) {}
@@ -306,7 +303,7 @@ function __sleepSyncImportSession(app, userId, profile, category, session) {
     record.set("category_link", category.id);
     record.set("type", "record");
     record.set("checklist", "[]");
-    record.set("sleep_source", "google_health");
+    record.set("sleep_source", "google_fit");
     record.set("sleep_external_id", session.externalId);
     app.save(record);
     return existing ? 0 : 1;
@@ -366,7 +363,7 @@ routerAdd("GET", "/api/sleep-sync/status", function(e) {
     return e.json(200, __sleepSyncStatusPayload(connection));
 }, $apis.requireAuth("profiles"));
 
-routerAdd("POST", "/api/sleep-sync/google-health/connect", function(e) {
+routerAdd("POST", "/api/sleep-sync/google-fit/connect", function(e) {
     var cfg = __sleepSyncGoogleConfig();
     __sleepSyncTokenKey();
     var connection = __sleepSyncGetConnection(e.app, e.auth.id, true);
@@ -389,7 +386,7 @@ routerAdd("POST", "/api/sleep-sync/google-health/connect", function(e) {
     return e.json(200, { authorization_url: url });
 }, $apis.requireAuth("profiles"));
 
-routerAdd("GET", "/api/sleep-sync/google-health/callback", function(e) {
+routerAdd("GET", "/api/sleep-sync/google-fit/callback", function(e) {
     var query = e.requestInfo().query || {};
     var state = String(query.state || "");
     var code = String(query.code || "");
@@ -418,7 +415,7 @@ routerAdd("GET", "/api/sleep-sync/google-health/callback", function(e) {
         e.app.save(connection);
         try { __sleepSyncRunSafe(e.app, connection); } catch (_) {}
         var returnUrl = __sleepSyncReturnUrl();
-        return e.html(200, "<!doctype html><meta charset='utf-8'><meta http-equiv='refresh' content='2;url=" + returnUrl + "'><title>Life OS</title><h1>Google Health connected</h1><p>Sleep will now synchronize on the server every evening. You can return to Life OS.</p>");
+        return e.html(200, "<!doctype html><meta charset='utf-8'><meta http-equiv='refresh' content='2;url=" + returnUrl + "'><title>Life OS</title><h1>Google Fit connected</h1><p>Sleep will now synchronize on the server every evening. You can return to Life OS.</p>");
     } catch (err) {
         connection.set("status", "error");
         connection.set("last_error", String(err));
@@ -459,7 +456,7 @@ routerAdd("DELETE", "/api/sleep-sync/connection", function(e) {
 cronAdd("lifeos_sleep_sync", "*/15 * * * *", function() {
     var connections = [];
     try {
-        connections = $app.findRecordsByFilter(__sleepSyncCollection, "enabled = true && provider = 'google_health'", "updated", 500, 0);
+        connections = $app.findRecordsByFilter(__sleepSyncCollection, "enabled = true && provider = 'google_fit'", "updated", 500, 0);
     } catch (_) { return; }
     var now = new Date();
     for (var i = 0; i < connections.length; i++) {

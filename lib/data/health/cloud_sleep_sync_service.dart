@@ -162,7 +162,7 @@ class CloudSleepSyncService {
     }
   }
 
-  Future<bool> connectGoogleHealth() async {
+  Future<bool> connectGoogleFit() async {
     final headers = _headers(json: true);
     if (headers == null) return false;
     state.value = state.value.copyWith(
@@ -172,14 +172,14 @@ class CloudSleepSyncService {
     try {
       final response = await http
           .post(
-            _uri(PbAppApiRoutes.sleepSyncGoogleHealthConnect),
+            _uri(PbAppApiRoutes.sleepSyncGoogleFitConnect),
             headers: headers,
             body: '{}',
           )
           .timeout(const Duration(seconds: 20));
       if (response.statusCode < 200 || response.statusCode >= 300) {
         throw StateError(
-          'Google Health connection failed (${response.statusCode})',
+          'Google Fit connection failed (${response.statusCode})',
         );
       }
       final authorizationUrl =

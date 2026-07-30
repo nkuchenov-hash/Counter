@@ -41,8 +41,8 @@ const Map<String, String> _healthAndGapEn = {
   'sleep_cloud_title': 'Server synchronization',
   'sleep_cloud_subtitle':
       'Runs on the Life OS server even when web, desktop and mobile apps are closed.',
-  'sleep_cloud_google_health': 'Google Health',
-  'sleep_cloud_connect_google': 'Connect Google Health',
+  'sleep_cloud_google_fit': 'Google Fit',
+  'sleep_cloud_connect_google': 'Connect Google Fit',
   'sleep_cloud_enable': 'Automatic server synchronization',
   'sleep_cloud_enable_hint':
       'PocketBase checks for completed sleep every evening.',
@@ -109,8 +109,8 @@ const Map<String, String> _healthAndGapRu = {
   'sleep_cloud_title': 'Серверная синхронизация',
   'sleep_cloud_subtitle':
       'Работает на сервере Life OS, даже когда web, desktop и мобильное приложение закрыты.',
-  'sleep_cloud_google_health': 'Google Health',
-  'sleep_cloud_connect_google': 'Подключить Google Health',
+  'sleep_cloud_google_fit': 'Google Fit',
+  'sleep_cloud_connect_google': 'Подключить Google Fit',
   'sleep_cloud_enable': 'Автоматическая серверная синхронизация',
   'sleep_cloud_enable_hint':
       'PocketBase каждый вечер проверяет завершённые сессии сна.',

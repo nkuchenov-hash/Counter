@@ -176,7 +176,7 @@ class _SleepSyncSettingsSectionState extends State<SleepSyncSettingsSection>
             ListTile(
               contentPadding: EdgeInsets.zero,
               leading: const Icon(Icons.cloud_sync_rounded),
-              title: Text(t(locale, 'sleep_cloud_google_health')),
+              title: Text(t(locale, 'sleep_cloud_google_fit')),
               subtitle: Text(_cloudStatusText(locale, state)),
               trailing: state.configured
                   ? Icon(
@@ -193,7 +193,7 @@ class _SleepSyncSettingsSectionState extends State<SleepSyncSettingsSection>
                 onPressed: busy
                     ? null
                     : () => unawaited(
-                        CloudSleepSyncService.instance.connectGoogleHealth(),
+                        CloudSleepSyncService.instance.connectGoogleFit(),
                       ),
               ),
             ] else ...[
