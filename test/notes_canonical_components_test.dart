@@ -1,160 +1,154 @@
+import 'dart:convert';
+
 import 'package:counter/data/models.dart';
+import 'package:counter/features/notes/note_editor_page.dart';
 import 'package:counter/features/notes/widgets/notes_canonical_components.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('v1 note migration round-trips rich and unsupported blocks', () {
+    final source = jsonEncode({
+      'format': kLifeOsNotesBlocksV1Format,
+      'version': 1,
+      'blocks': [
+        {
+          'id': 'rich',
+          'type': 'paragraph',
+          'runs': [
+            {
+              'text': 'Keep bold',
+              'marks': {'bold': true},
+            },
+          ],
+        },
+        {
+          'id': 'legacy-callout',
+          'type': 'callout',
+          'text': 'Preserve me',
+          'callout': {'type': 'info'},
+        },
+      ],
+    });
+
+    final migrated = NoteDocument.tryParse(notesDeltaJson: source);
+    expect(migrated.format, kLifeOsNotesBlocksFormat);
+    expect(migrated.version, kLifeOsNotesBlocksVersion);
+    expect(migrated.blocks.first.effectiveRuns.single.marks.bold, isTrue);
+
+    final roundTrip = NoteDocument.tryParse(
+      notesDeltaJson: migrated.encode(),
+    );
+    expect(roundTrip.blocks.map((block) => block.id), [
+      'rich',
+      'legacy-callout',
+    ]);
+    expect(roundTrip.blocks.last.type, NoteBlockType.callout);
+    expect(roundTrip.blocks.last.effectiveText, 'Preserve me');
+  });
+
+  test('editor core handles H1 enter, insert, reorder, and preservation', () {
+    final empty = NotesEditorDocumentController(const NoteDocument());
+    final first = empty.blocks.single;
+    expect(first.type, NoteBlockType.heading);
+    expect(first.level, 1);
+
+    empty.applyTextInput(
+      first.id,
+      'Heading',
+      const TextSelection.collapsed(offset: 7),
+    );
+    final enter = empty.handleEnter(
+      first.id,
+      const TextSelection.collapsed(offset: 7),
+    );
+    expect(enter.changed, isTrue);
+    expect(empty.blocks.map((block) => block.type), [
+      NoteBlockType.heading,
+      NoteBlockType.paragraph,
+    ]);
+
+    final bodyId = empty.blocks.last.id;
+    empty.insertAfter(
+      bodyId,
+      NoteBlockType.table,
+      table: NoteTableData.empty(rows: 2, columns: 3),
+    );
+    final tableIndex = empty.blocks.indexWhere(
+      (block) => block.type == NoteBlockType.table,
+    );
+    empty.reorder(tableIndex, 0);
+    expect(empty.blocks.first.type, NoteBlockType.table);
+
+    final legacy = NoteBlock(
+      id: 'legacy-reference',
+      type: NoteBlockType.noteReference,
+      reference: const NoteReferenceData(targetId: 'note-42'),
+    );
+    final withLegacy = NotesEditorDocumentController(
+      empty.document.copyWith(blocks: [...empty.blocks, legacy]),
+    );
+    final saved = NoteDocument.tryParse(
+      notesDeltaJson: withLegacy.document.encode(),
+    );
+    expect(
+      saved.blocks.singleWhere((block) => block.id == legacy.id).reference?.targetId,
+      'note-42',
+    );
+  });
+
   testWidgets(
-    'text block keeps dynamic active indicator on mobile and desktop',
+    'canonical editor components stay aligned and responsive at both widths',
     (tester) async {
-      final controller = TextEditingController(
-        text: 'A multiline heading that wraps naturally without a fixed height',
+      final headingController = TextEditingController(
+        text: 'A multiline heading that wraps without a fixed height',
       );
-      addTearDown(controller.dispose);
+      final listController = TextEditingController(
+        text: 'A list item that wraps onto another line on mobile',
+      );
+      final checklistController = TextEditingController(
+        text: 'A checklist item that wraps onto another line on mobile',
+      );
+      addTearDown(headingController.dispose);
+      addTearDown(listController.dispose);
+      addTearDown(checklistController.dispose);
       addTearDown(() {
         tester.view.resetPhysicalSize();
         tester.view.resetDevicePixelRatio();
       });
 
+      var tablePressed = false;
+      NoteTableData? selectedTable;
       tester.view.devicePixelRatio = 1;
       tester.view.physicalSize = const Size(390, 844);
       await tester.pumpWidget(
         _host(
-          NotesTextBlock(
-            controller: controller,
-            style: NotesTextBlockStyle.h1,
-            state: NotesBlockState.active,
+          _responsiveHarness(
+            headingController: headingController,
+            listController: listController,
+            checklistController: checklistController,
+            maxRows: 5,
+            maxColumns: 5,
+            onTablePressed: () => tablePressed = true,
+            onTableSelected: (table) => selectedTable = table,
           ),
         ),
       );
 
-      expect(find.byKey(const ValueKey('notes-active-indicator')), findsOneWidget);
+      final listOrigin = tester.getTopLeft(
+        find.byKey(const ValueKey('list-text-field')),
+      );
+      final checklistOrigin = tester.getTopLeft(
+        find.byKey(const ValueKey('checklist-text-field')),
+      );
+      expect(listOrigin.dx, closeTo(50, 0.1));
+      expect((listOrigin.dx - checklistOrigin.dx).abs(), lessThan(0.1));
       expect(
         tester.getSize(
           find.byKey(const ValueKey('notes-active-indicator')),
         ).height,
         greaterThan(20),
       );
-      expect(tester.takeException(), isNull);
-
-      tester.view.physicalSize = const Size(1200, 900);
-      await tester.pumpWidget(
-        _host(
-          Center(
-            child: SizedBox(
-              width: 768,
-              child: NotesTextBlock(
-                controller: controller,
-                style: NotesTextBlockStyle.h1,
-                state: NotesBlockState.active,
-              ),
-            ),
-          ),
-        ),
-      );
-
-      expect(find.byType(NotesTextBlock), findsOneWidget);
-      expect(find.byKey(const ValueKey('notes-active-indicator')), findsOneWidget);
-      expect(tester.takeException(), isNull);
-    },
-  );
-
-  testWidgets('list and checklist share the same leading text geometry', (
-    tester,
-  ) async {
-    final listController = TextEditingController(
-      text: 'A list item that wraps onto a second line on the mobile width',
-    );
-    final checklistController = TextEditingController(
-      text: 'A checklist item that wraps onto a second line on the mobile width',
-    );
-    addTearDown(listController.dispose);
-    addTearDown(checklistController.dispose);
-    addTearDown(() {
-      tester.view.resetPhysicalSize();
-      tester.view.resetDevicePixelRatio();
-    });
-
-    tester.view.devicePixelRatio = 1;
-    tester.view.physicalSize = const Size(390, 844);
-    await tester.pumpWidget(
-      _host(
-        Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            NotesListBlock(
-              controller: listController,
-              listStyle: NotesListStyle.numbered,
-              ordinal: 3,
-              textFieldKey: const ValueKey('list-text-field'),
-            ),
-            NotesChecklistBlock(
-              controller: checklistController,
-              checked: false,
-              onCheckedChanged: (_) {},
-              textFieldKey: const ValueKey('checklist-text-field'),
-            ),
-          ],
-        ),
-      ),
-    );
-
-    final listOrigin = tester.getTopLeft(
-      find.byKey(const ValueKey('list-text-field')),
-    );
-    final checklistOrigin = tester.getTopLeft(
-      find.byKey(const ValueKey('checklist-text-field')),
-    );
-    expect((listOrigin.dx - checklistOrigin.dx).abs(), lessThan(0.1));
-    expect(listOrigin.dx, closeTo(50, 0.1));
-    expect(
-      tester.getSize(find.byKey(const ValueKey('list-text-field'))).height,
-      greaterThan(24),
-    );
-    expect(tester.takeException(), isNull);
-  });
-
-  testWidgets(
-    'shared toolbar and table picker handle compact and extended widths',
-    (tester) async {
-      var tablePressed = false;
-      NoteTableData? selectedTable;
-      addTearDown(() {
-        tester.view.resetPhysicalSize();
-        tester.view.resetDevicePixelRatio();
-      });
-
-      tester.view.devicePixelRatio = 1;
-      tester.view.physicalSize = const Size(390, 844);
-      await tester.pumpWidget(
-        _host(
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              NotesEditorToolbar(
-                actions: [
-                  for (final tool in NotesToolbarTool.values)
-                    NotesToolbarAction(
-                      tool: tool,
-                      icon: _iconFor(tool),
-                      tooltip: tool.name,
-                      selected: tool == NotesToolbarTool.text,
-                      onPressed: () {
-                        if (tool == NotesToolbarTool.table) {
-                          tablePressed = true;
-                        }
-                      },
-                    ),
-                ],
-              ),
-              NotesTableSizePicker(
-                onSelected: (table) => selectedTable = table,
-              ),
-            ],
-          ),
-        ),
-      );
-
       await tester.tap(find.byKey(const ValueKey('notes-toolbar-table')));
       expect(tablePressed, isTrue);
       await tester.tap(find.byKey(const ValueKey('notes-table-size-5-5')));
@@ -167,10 +161,17 @@ void main() {
       await tester.pumpWidget(
         _host(
           Center(
-            child: NotesTableSizePicker(
-              maxRows: 8,
-              maxColumns: 6,
-              onSelected: (table) => selectedTable = table,
+            child: SizedBox(
+              width: 768,
+              child: _responsiveHarness(
+                headingController: headingController,
+                listController: listController,
+                checklistController: checklistController,
+                maxRows: 8,
+                maxColumns: 6,
+                onTablePressed: () {},
+                onTableSelected: (table) => selectedTable = table,
+              ),
             ),
           ),
         ),
@@ -181,6 +182,60 @@ void main() {
       expect(find.byType(NotesTableSizePicker), findsOneWidget);
       expect(tester.takeException(), isNull);
     },
+  );
+}
+
+Widget _responsiveHarness({
+  required TextEditingController headingController,
+  required TextEditingController listController,
+  required TextEditingController checklistController,
+  required int maxRows,
+  required int maxColumns,
+  required VoidCallback onTablePressed,
+  required ValueChanged<NoteTableData> onTableSelected,
+}) {
+  return SingleChildScrollView(
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        NotesTextBlock(
+          controller: headingController,
+          style: NotesTextBlockStyle.h1,
+          state: NotesBlockState.active,
+        ),
+        NotesListBlock(
+          controller: listController,
+          listStyle: NotesListStyle.numbered,
+          ordinal: 3,
+          textFieldKey: const ValueKey('list-text-field'),
+        ),
+        NotesChecklistBlock(
+          controller: checklistController,
+          checked: false,
+          onCheckedChanged: (_) {},
+          textFieldKey: const ValueKey('checklist-text-field'),
+        ),
+        NotesEditorToolbar(
+          actions: [
+            for (final tool in NotesToolbarTool.values)
+              NotesToolbarAction(
+                tool: tool,
+                icon: _iconFor(tool),
+                tooltip: tool.name,
+                selected: tool == NotesToolbarTool.text,
+                onPressed: tool == NotesToolbarTool.table
+                    ? onTablePressed
+                    : () {},
+              ),
+          ],
+        ),
+        NotesTableSizePicker(
+          maxRows: maxRows,
+          maxColumns: maxColumns,
+          onSelected: onTableSelected,
+        ),
+      ],
+    ),
   );
 }
 
