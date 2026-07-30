@@ -118,7 +118,7 @@ class NotesDrawingControls extends StatelessWidget {
                 for (final option in colors)
                   _NotesDrawingColorButton(
                     option: option,
-                    selected: option.color.toARGB32() == selectedColor.toARGB32(),
+                    selected: option.color == selectedColor,
                     onPressed: () => onColorSelected(option.color),
                   ),
               ],
@@ -136,7 +136,7 @@ class NotesDrawingControls extends StatelessWidget {
                   ),
                   Expanded(
                     child: Slider(
-                      value: strokeWidth.clamp(1, 24),
+                      value: strokeWidth.clamp(1.0, 24.0).toDouble(),
                       min: 1,
                       max: 24,
                       divisions: 23,
