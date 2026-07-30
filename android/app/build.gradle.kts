@@ -27,10 +27,8 @@ android {
     defaultConfig {
         // Must match Google Cloud Console → Android OAuth client (package name + SHA-1).
         applicationId = "com.example.counter"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
-        // Wear OS 3+ / current watch emulators: floor API 30.
-        minSdk = 30
+        // Phone builds support Android 6.0+; Wear OS 3+ devices remain compatible.
+        minSdk = 23
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
