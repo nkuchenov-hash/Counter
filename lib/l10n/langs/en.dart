@@ -1008,4 +1008,5 @@ const Map<String, String> kEnL10n = {
 
   'notes_tools_create_plan': 'Create plan from selection',
   'notes_tools_plan_created': 'Plan added to Lists',
+  'plan_schedule_adjusted': 'Overlapped another task — moved to %s',
 };

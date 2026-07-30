@@ -122,6 +122,9 @@ Performance, responsiveness, and stability are **P0 correctness**, not polish. S
 
 ## Planning Time Mode
 
+- **Selected-time stability:** typing or editing a task title, notes, checklist, category, or tags must not change a start time selected on the Time View grid. Start/end changes require an explicit time control or drag/resize gesture.
+- **Create anti-overlap:** a newly created scheduled task that intersects another task moves forward to the first free slot, preserves duration, treats touching boundaries as valid, and shows one concise adjustment notice. Existing tasks are not moved by this create correction.
+- **Editor hot-path:** text and rich-note typing must not rebuild the full Planning surface or emit global planning refreshes per keystroke; expensive draft merge/sync work is debounced.
 - **Timezone / storage:** Plan and record instants are stored as **UTC ISO**. Time mode projects them into the **profile timezone** for day filter, block placement, labels, and drag/resize math. User-entered wall time at create/edit belongs to the **current profile timezone**.
 - **Current-time line:** Uses profile-projected “now”; renders **above** plan cards (`IgnorePointer`); must not sit behind blocks.
 - **Visible range:** No “outside visible range” / out-of-hours fallback bucket. Scheduled cards outside the selected wall day or visible hour range are **not shown**.
