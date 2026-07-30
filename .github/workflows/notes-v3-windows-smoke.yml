@@ -14,7 +14,7 @@ permissions:
 jobs:
   build-notes-windows:
     if: github.event_name == 'push' || github.head_ref == 'feature/notes-v3-design-system'
-    runs-on: windows-latest
+    runs-on: windows-2022
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
