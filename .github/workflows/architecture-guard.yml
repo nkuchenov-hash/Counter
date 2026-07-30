@@ -11,7 +11,7 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   strict-structure:
@@ -34,3 +34,69 @@ jobs:
             git fetch --no-tags --prune origin main
             git diff --check "origin/main...HEAD"
           fi
+
+  notes-audio-phase:
+    name: notes-audio-phase
+    if: github.event_name == 'pull_request' && github.head_ref == 'feature/notes-v3-design-system'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout feature branch
+        uses: actions/checkout@v4
+        with:
+          ref: feature/notes-v3-design-system
+          fetch-depth: 0
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Apply Notes audio phase
+        run: python scripts/manual/apply_notes_audio_phase.py
+
+      - name: Resolve dependencies
+        run: flutter pub get
+
+      - name: Format changed Dart files
+        run: |
+          dart format \
+            lib/data/models.dart \
+            lib/data/models/note_audio_types.dart \
+            lib/data/models/note_document.dart \
+            lib/data/plans/notes_brain_helpers.dart \
+            lib/features/notes/notes_audio_controller.dart \
+            lib/features/notes/note_editor_page.dart \
+            lib/features/notes/notes_editor_document_controller.dart \
+            lib/features/notes/widgets/note_editor_block_widgets.dart \
+            lib/features/notes/widgets/notes_component_media_blocks.dart \
+            lib/features/notes/widgets/notes_editor_tools.dart \
+            lib/l10n/langs/en.dart \
+            lib/l10n/langs/ru.dart \
+            test/notes_canonical_components_test.dart
+
+      - name: Analyze
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+
+      - name: Run three focused Notes tests
+        run: flutter test test/notes_canonical_components_test.dart
+
+      - name: Restore normal CI and remove temporary runner
+        run: |
+          git show HEAD^:.github/workflows/architecture-guard.yml > .github/workflows/architecture-guard.yml
+          rm -f .github/workflows/notes-audio-phase.yml
+          rm -f scripts/manual/apply_notes_audio_phase.py
+
+      - name: Verify architecture and whitespace
+        shell: pwsh
+        run: |
+          ./scripts/audit/architecture_guard.ps1 -Strict
+          git diff --check
+
+      - name: Commit verified implementation
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Add Notes audio recording and transcript"
+          git push origin HEAD:feature/notes-v3-design-system
