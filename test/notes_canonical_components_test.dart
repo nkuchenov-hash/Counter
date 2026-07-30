@@ -39,7 +39,7 @@ void main() {
     final roundTrip = NoteDocument.tryParse(
       notesDeltaJson: migrated.encode(),
     );
-    expect(roundTrip.blocks.map((block) => block.id), [
+    expect(roundTrip.blocks.map((block) => block.id).toList(), [
       'rich',
       'legacy-callout',
     ]);
@@ -63,7 +63,7 @@ void main() {
       const TextSelection.collapsed(offset: 7),
     );
     expect(enter.changed, isTrue);
-    expect(empty.blocks.map((block) => block.type), [
+    expect(empty.blocks.map((block) => block.type).toList(), [
       NoteBlockType.heading,
       NoteBlockType.paragraph,
     ]);
@@ -92,7 +92,10 @@ void main() {
       notesDeltaJson: withLegacy.document.encode(),
     );
     expect(
-      saved.blocks.singleWhere((block) => block.id == legacy.id).reference?.targetId,
+      saved.blocks
+          .singleWhere((block) => block.id == legacy.id)
+          .reference
+          ?.targetId,
       'note-42',
     );
   });
@@ -151,7 +154,11 @@ void main() {
       );
       await tester.tap(find.byKey(const ValueKey('notes-toolbar-table')));
       expect(tablePressed, isTrue);
-      await tester.tap(find.byKey(const ValueKey('notes-table-size-5-5')));
+      final compactCell = find.byKey(
+        const ValueKey('notes-table-size-5-5'),
+      );
+      await tester.ensureVisible(compactCell);
+      await tester.tap(compactCell);
       expect(selectedTable?.rowCount, 5);
       expect(selectedTable?.columnCount, 5);
       expect(tester.takeException(), isNull);
@@ -176,7 +183,11 @@ void main() {
           ),
         ),
       );
-      await tester.tap(find.byKey(const ValueKey('notes-table-size-8-6')));
+      final extendedCell = find.byKey(
+        const ValueKey('notes-table-size-8-6'),
+      );
+      await tester.ensureVisible(extendedCell);
+      await tester.tap(extendedCell);
       expect(selectedTable?.rowCount, 8);
       expect(selectedTable?.columnCount, 6);
       expect(find.byType(NotesTableSizePicker), findsOneWidget);
