@@ -762,6 +762,7 @@ From `docs/ROADMAP.md` — active velocity track is **V3 UX_CONTRACT / V7 Design
 | `services/unfilled_time_notification_service.dart` | Android local notification bridge for Timeline gaps. |
 | `data/health/health_sleep_policy.dart` | Pure dedupe and authoritative sleep-overlap policy. |
 | `data/health/health_sleep_sync_service.dart` | Health sleep import coordinator using existing record/category Brain APIs. |
+| `data/health/cloud_sleep_sync_service.dart` | Authenticated client for server-owned cloud sleep status, OAuth connection, schedule settings, manual sync, and disconnect routes. |
 | `data/records/unfilled_time_gap_policy.dart` | Pure interval merge and unfilled-time detection. |
 | `data/records/unfilled_time_gap_service.dart` | Gap lifecycle, settings, fill action, and notification eligibility. |
 | `features/settings/health/health_connect_settings_section.dart` | Health Connect permission, enable, status, and manual sync UI. |
