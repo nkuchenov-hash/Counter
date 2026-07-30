@@ -27,7 +27,7 @@ Restart PocketBase so the migration creates `sleep_sync_connections` and adds `r
 5. Create a **Web application** OAuth client.
 6. Add this exact redirect URI:
    - `https://217-114-0-201.sslip.io/api/sleep-sync/google-health/callback`
-7. During private testing, add the Life OS Google account as a test user. Public use beyond the test-user limit requires Google OAuth verification.
+7. During private testing, add the Life OS Google account as a test user. Public use for more than 100 users requires Google OAuth verification.
 
 Do not configure the retired Google Fit REST API.
 
