@@ -37,10 +37,32 @@ const Map<String, String> _planningAutoPlacementRu = {
 const Map<String, String> _healthAndGapEn = {
   'health_connect_title': 'Sleep synchronization',
   'health_connect_subtitle':
-      'Import sleep from connected device and cloud sources on a daily schedule.',
-  'health_connect_enable': 'Synchronize sleep',
+      'Import completed sleep into Timeline from server and device sources.',
+  'sleep_cloud_title': 'Server synchronization',
+  'sleep_cloud_subtitle':
+      'Runs on the Life OS server even when web, desktop and mobile apps are closed.',
+  'sleep_cloud_google_health': 'Google Health',
+  'sleep_cloud_connect_google': 'Connect Google Health',
+  'sleep_cloud_enable': 'Automatic server synchronization',
+  'sleep_cloud_enable_hint':
+      'PocketBase checks for completed sleep every evening.',
+  'sleep_cloud_daily_time_hint':
+      'Server time in your Life OS profile timezone. Default: 21:00.',
+  'sleep_cloud_disconnect': 'Disconnect',
+  'sleep_cloud_status_disconnected': 'Not connected',
+  'sleep_cloud_status_connecting': 'Waiting for Google authorization',
+  'sleep_cloud_status_active': 'Automatic synchronization active',
+  'sleep_cloud_status_paused': 'Connected, automatic synchronization paused',
+  'sleep_cloud_status_syncing': 'Server is synchronizing sleep…',
+  'sleep_cloud_status_error': 'Server synchronization failed',
+  'sleep_cloud_server_not_deployed':
+      'The server sleep-sync module has not been deployed yet.',
+  'sleep_local_title': 'Device synchronization',
+  'sleep_local_subtitle':
+      'Optional local source for Health Connect on Android or Apple Health on iPhone.',
+  'health_connect_enable': 'Synchronize sleep from this device',
   'health_connect_sync_now': 'Sync now',
-  'health_connect_enable_background': 'Enable scheduled sync',
+  'health_connect_enable_background': 'Enable scheduled device sync',
   'sleep_sync_daily_time': 'Daily synchronization time',
   'sleep_sync_daily_time_hint':
       'Runs without opening the app. The operating system may delay it to save battery.',
@@ -57,9 +79,9 @@ const Map<String, String> _healthAndGapEn = {
   'health_connect_status_no_data':
       'No completed sleep sessions found in connected sources',
   'health_connect_status_error': 'Synchronization failed',
-  'health_connect_background_active': 'Daily scheduled sync active',
+  'health_connect_background_active': 'Daily device sync active',
   'health_connect_background_permission':
-      'Scheduled background access has not been granted',
+      'Scheduled device access has not been granted',
   'health_connect_result': '%s found · %s imported',
   'health_connect_source': 'Source: %s',
   'health_sleep_record_title': 'Sleep',
@@ -83,10 +105,34 @@ const Map<String, String> _healthAndGapEn = {
 const Map<String, String> _healthAndGapRu = {
   'health_connect_title': 'Синхронизация сна',
   'health_connect_subtitle':
-      'Импорт сна из подключённых локальных и облачных источников по ежедневному расписанию.',
-  'health_connect_enable': 'Синхронизировать сон',
+      'Импорт завершённого сна в Timeline из серверных и локальных источников.',
+  'sleep_cloud_title': 'Серверная синхронизация',
+  'sleep_cloud_subtitle':
+      'Работает на сервере Life OS, даже когда web, desktop и мобильное приложение закрыты.',
+  'sleep_cloud_google_health': 'Google Health',
+  'sleep_cloud_connect_google': 'Подключить Google Health',
+  'sleep_cloud_enable': 'Автоматическая серверная синхронизация',
+  'sleep_cloud_enable_hint':
+      'PocketBase каждый вечер проверяет завершённые сессии сна.',
+  'sleep_cloud_daily_time_hint':
+      'Сервер использует часовой пояс профиля Life OS. По умолчанию — 21:00.',
+  'sleep_cloud_disconnect': 'Отключить',
+  'sleep_cloud_status_disconnected': 'Не подключено',
+  'sleep_cloud_status_connecting': 'Ожидание авторизации Google',
+  'sleep_cloud_status_active': 'Автоматическая синхронизация включена',
+  'sleep_cloud_status_paused':
+      'Источник подключён, автоматическая синхронизация приостановлена',
+  'sleep_cloud_status_syncing': 'Сервер синхронизирует сон…',
+  'sleep_cloud_status_error': 'Ошибка серверной синхронизации',
+  'sleep_cloud_server_not_deployed':
+      'Серверный модуль синхронизации сна ещё не развёрнут.',
+  'sleep_local_title': 'Синхронизация через устройство',
+  'sleep_local_subtitle':
+      'Дополнительный локальный источник: Health Connect на Android или Apple Health на iPhone.',
+  'health_connect_enable': 'Синхронизировать сон с этого устройства',
   'health_connect_sync_now': 'Синхронизировать сейчас',
-  'health_connect_enable_background': 'Включить синхронизацию по расписанию',
+  'health_connect_enable_background':
+      'Включить синхронизацию устройства по расписанию',
   'sleep_sync_daily_time': 'Время ежедневной синхронизации',
   'sleep_sync_daily_time_hint':
       'Запускается без открытия приложения. ОС может выполнить задачу позже для экономии батареи.',
@@ -104,9 +150,9 @@ const Map<String, String> _healthAndGapRu = {
       'В подключённых источниках нет завершённых сессий сна',
   'health_connect_status_error': 'Ошибка синхронизации',
   'health_connect_background_active':
-      'Ежедневная синхронизация по расписанию включена',
+      'Ежедневная синхронизация устройства включена',
   'health_connect_background_permission':
-      'Нет разрешения на синхронизацию по расписанию',
+      'Нет разрешения на синхронизацию устройства по расписанию',
   'health_connect_result': 'Найдено: %s · импортировано: %s',
   'health_connect_source': 'Источник: %s',
   'health_sleep_record_title': 'Сон',
