@@ -84,9 +84,10 @@ class _SleepSyncSettingsSectionState extends State<SleepSyncSettingsSection>
     final key = switch (state.phase) {
       CloudSleepSyncPhase.disconnected => 'sleep_cloud_status_disconnected',
       CloudSleepSyncPhase.connecting => 'sleep_cloud_status_connecting',
-      CloudSleepSyncPhase.connected => state.enabled
-          ? 'sleep_cloud_status_active'
-          : 'sleep_cloud_status_paused',
+      CloudSleepSyncPhase.connected =>
+        state.enabled
+            ? 'sleep_cloud_status_active'
+            : 'sleep_cloud_status_paused',
       CloudSleepSyncPhase.syncing => 'sleep_cloud_status_syncing',
       CloudSleepSyncPhase.error => 'sleep_cloud_status_error',
     };
@@ -154,7 +155,8 @@ class _SleepSyncSettingsSectionState extends State<SleepSyncSettingsSection>
     return ValueListenableBuilder<CloudSleepSyncState>(
       valueListenable: CloudSleepSyncService.instance.state,
       builder: (context, state, _) {
-        final busy = state.phase == CloudSleepSyncPhase.connecting ||
+        final busy =
+            state.phase == CloudSleepSyncPhase.connecting ||
             state.phase == CloudSleepSyncPhase.syncing;
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,

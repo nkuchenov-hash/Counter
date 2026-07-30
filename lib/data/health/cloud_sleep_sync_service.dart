@@ -6,13 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 
-enum CloudSleepSyncPhase {
-  disconnected,
-  connecting,
-  connected,
-  syncing,
-  error,
-}
+enum CloudSleepSyncPhase { disconnected, connecting, connected, syncing, error }
 
 @immutable
 class CloudSleepSyncState {
@@ -105,9 +99,10 @@ class CloudSleepSyncService {
       'syncing' => CloudSleepSyncPhase.syncing,
       'error' => CloudSleepSyncPhase.error,
       'connected' => CloudSleepSyncPhase.connected,
-      _ => configured
-          ? CloudSleepSyncPhase.connected
-          : CloudSleepSyncPhase.disconnected,
+      _ =>
+        configured
+            ? CloudSleepSyncPhase.connected
+            : CloudSleepSyncPhase.disconnected,
     };
   }
 
@@ -232,9 +227,7 @@ class CloudSleepSyncService {
           )
           .timeout(const Duration(seconds: 20));
       if (response.statusCode < 200 || response.statusCode >= 300) {
-        throw StateError(
-          'Sleep sync settings failed (${response.statusCode})',
-        );
+        throw StateError('Sleep sync settings failed (${response.statusCode})');
       }
       _applyStatus(_decode(response));
       return true;
@@ -256,11 +249,7 @@ class CloudSleepSyncService {
     );
     try {
       final response = await http
-          .post(
-            _uri(PbAppApiRoutes.sleepSyncRun),
-            headers: headers,
-            body: '{}',
-          )
+          .post(_uri(PbAppApiRoutes.sleepSyncRun), headers: headers, body: '{}')
           .timeout(const Duration(seconds: 60));
       if (response.statusCode < 200 || response.statusCode >= 300) {
         throw StateError(
