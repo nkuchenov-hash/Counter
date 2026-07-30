@@ -63,11 +63,21 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Use compatible image clipboard package
+      - name: Align new plugins with production toolchain
         if: steps.needed.outputs.value == 'true'
         run: |
           python - <<'PY'
           from pathlib import Path
+
+          pubspec = Path('pubspec.yaml')
+          pubspec_text = pubspec.read_text(encoding='utf-8')
+          if 'audioplayers: ^6.8.1' not in pubspec_text:
+              raise SystemExit('audioplayers production anchor missing')
+          pubspec.write_text(
+              pubspec_text.replace('audioplayers: ^6.8.1', 'audioplayers: ^6.7.1', 1),
+              encoding='utf-8',
+          )
+
           path = Path('scripts/manual/apply_notes_image_phase.py')
           source = path.read_text(encoding='utf-8')
           source = source.replace(
@@ -77,6 +87,10 @@ jobs:
           source = source.replace(
               "  super_clipboard: ^0.9.1",
               "  clipboard: ^3.0.14",
+          )
+          source = source.replace(
+              "  audioplayers: ^6.8.1\\n  tray_manager:",
+              "  audioplayers: ^6.7.1\\n  tray_manager:",
           )
           old_copy = """Future<void> copyNotesImage(String dataUrl) async {
             final clipboard = SystemClipboard.instance;
