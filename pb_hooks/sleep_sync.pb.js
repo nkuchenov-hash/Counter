@@ -20,15 +20,32 @@ function __sleepSyncReturnUrl() {
     return __sleepSyncEnv("SLEEP_SYNC_RETURN_URL") || "https://nkuchenov-hash.github.io/Counter/";
 }
 
-function __sleepSyncTokenKey() {
+function __sleepSyncTokenKey(app) {
     var key = __sleepSyncEnv("SLEEP_SYNC_TOKEN_KEY");
-    if (key.length !== 32) throw new Error("SLEEP_SYNC_TOKEN_KEY must be exactly 32 characters");
-    return key;
+    if (key.length === 32) return key;
+    try {
+        var encryptionEnv = String(app.encryptionEnv() || "").trim();
+        var inherited = encryptionEnv ? __sleepSyncEnv(encryptionEnv) : "";
+        if (inherited.length === 32) return inherited;
+    } catch (_) {}
+    throw new Error("PocketBase encryption key is not configured");
 }
 
-function __sleepSyncGoogleConfig() {
+function __sleepSyncGoogleConfig(app) {
     var clientId = __sleepSyncEnv("SLEEP_SYNC_GOOGLE_FIT_CLIENT_ID");
     var clientSecret = __sleepSyncEnv("SLEEP_SYNC_GOOGLE_FIT_CLIENT_SECRET");
+    if (!clientId || !clientSecret) {
+        try {
+            var profiles = app.findCollectionByNameOrId("profiles");
+            var result = profiles.oauth2.getProviderConfig("google");
+            var provider = result[0];
+            var found = result[1];
+            if (found && provider) {
+                clientId = clientId || String(provider.clientId || "").trim();
+                clientSecret = clientSecret || String(provider.clientSecret || "").trim();
+            }
+        } catch (_) {}
+    }
     if (!clientId || !clientSecret) throw new Error("Google Fit OAuth is not configured");
     return {
         clientId: clientId,
@@ -103,8 +120,8 @@ function __sleepSyncStatusPayload(connection) {
     };
 }
 
-function __sleepSyncExchangeCode(code) {
-    var cfg = __sleepSyncGoogleConfig();
+function __sleepSyncExchangeCode(app, code) {
+    var cfg = __sleepSyncGoogleConfig(app);
     var res = $http.send({
         url: "https://oauth2.googleapis.com/token",
         method: "POST",
@@ -125,7 +142,7 @@ function __sleepSyncExchangeCode(code) {
 }
 
 function __sleepSyncRefreshAccess(app, connection) {
-    var key = __sleepSyncTokenKey();
+    var key = __sleepSyncTokenKey(app);
     var currentEnc = String(connection.get("access_token_enc") || "");
     var expiresAt = __sleepSyncDate(connection.get("access_token_expires_at"));
     if (currentEnc && expiresAt && expiresAt.getTime() > Date.now() + 120000) {
@@ -133,7 +150,7 @@ function __sleepSyncRefreshAccess(app, connection) {
     }
     var refreshEnc = String(connection.get("refresh_token_enc") || "");
     if (!refreshEnc) throw new Error("Google Fit refresh token is missing");
-    var cfg = __sleepSyncGoogleConfig();
+    var cfg = __sleepSyncGoogleConfig(app);
     var refreshToken = String($security.decrypt(refreshEnc, key));
     var res = $http.send({
         url: "https://oauth2.googleapis.com/token",
@@ -364,8 +381,8 @@ routerAdd("GET", "/api/sleep-sync/status", function(e) {
 }, $apis.requireAuth("profiles"));
 
 routerAdd("POST", "/api/sleep-sync/google-fit/connect", function(e) {
-    var cfg = __sleepSyncGoogleConfig();
-    __sleepSyncTokenKey();
+    var cfg = __sleepSyncGoogleConfig(e.app);
+    __sleepSyncTokenKey(e.app);
     var connection = __sleepSyncGetConnection(e.app, e.auth.id, true);
     var state = $security.randomStringWithAlphabet(48, "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ");
     connection.set("oauth_state", state);
@@ -401,8 +418,8 @@ routerAdd("GET", "/api/sleep-sync/google-fit/callback", function(e) {
     var expires = __sleepSyncDate(connection.get("oauth_state_expires_at"));
     if (!expires || expires.getTime() < Date.now()) return e.html(400, "<h1>Sleep synchronization failed</h1><p>Authorization expired.</p>");
     try {
-        var token = __sleepSyncExchangeCode(code);
-        var key = __sleepSyncTokenKey();
+        var token = __sleepSyncExchangeCode(e.app, code);
+        var key = __sleepSyncTokenKey(e.app);
         if (!token.refresh_token) throw new Error("Google did not return a refresh token");
         connection.set("refresh_token_enc", $security.encrypt(String(token.refresh_token), key));
         connection.set("access_token_enc", $security.encrypt(String(token.access_token || ""), key));
