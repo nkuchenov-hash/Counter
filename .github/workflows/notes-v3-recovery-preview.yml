@@ -1,4 +1,4 @@
-name: Notes V3 Recovery Preview
+name: Notes V3 Android Recovery
 
 on:
   pull_request:
@@ -7,14 +7,14 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: notes-v3-recovery-preview
+  group: notes-v3-android-recovery
   cancel-in-progress: true
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  build-and-publish:
+  build-and-verify-apk:
     if: github.event_name == 'workflow_dispatch' || github.head_ref == 'feature/notes-v3-design-system'
     runs-on: ubuntu-latest
     steps:
@@ -41,8 +41,10 @@ jobs:
         run: |
           APK=build/app/outputs/flutter-apk/app-release.apk
           test -s "$APK"
-          "$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)/apksigner" verify --verbose --print-certs "$APK"
-          "$ANDROID_HOME/cmdline-tools/latest/bin/apkanalyzer" manifest min-sdk "$APK"
+          BUILD_TOOLS=$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)
+          "$ANDROID_HOME/build-tools/$BUILD_TOOLS/apksigner" verify --verbose --print-certs "$APK"
+          MIN_SDK=$("$ANDROID_HOME/cmdline-tools/latest/bin/apkanalyzer" manifest min-sdk "$APK")
+          test "$MIN_SDK" = "26"
           "$ANDROID_HOME/cmdline-tools/latest/bin/apkanalyzer" apk summary "$APK"
           sha256sum "$APK" | tee build/app/outputs/flutter-apk/app-release.apk.sha256
 
@@ -55,49 +57,3 @@ jobs:
             build/app/outputs/flutter-apk/app-release.apk.sha256
           if-no-files-found: error
           retention-days: 14
-
-      - name: Build browser preview
-        run: flutter build web --release --base-href="/Counter/notes-v3-preview/" --no-tree-shake-icons --no-wasm-dry-run --pwa-strategy=none
-
-      - name: Checkout published site
-        uses: actions/checkout@v4
-        with:
-          ref: gh-pages
-          path: published
-          fetch-depth: 0
-
-      - name: Install preview without changing production root
-        run: |
-          rm -rf published/notes-v3-preview
-          mkdir -p published/notes-v3-preview
-          cp -R build/web/. published/notes-v3-preview/
-          printf '%s\n' "${GITHUB_SHA}" > published/notes-v3-preview/PREVIEW_SOURCE_SHA.txt
-          touch published/.nojekyll
-
-      - name: Publish preview subdirectory
-        working-directory: published
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add .nojekyll notes-v3-preview
-          if git diff --cached --quiet; then
-            echo "Preview already matches this build."
-          else
-            git commit -m "Deploy verified Notes V3 browser preview from ${GITHUB_SHA}"
-            git push origin HEAD:gh-pages
-          fi
-
-      - name: Verify published preview over HTTPS
-        run: |
-          URL="https://nkuchenov-hash.github.io/Counter/notes-v3-preview/"
-          for attempt in $(seq 1 30); do
-            code=$(curl -L -sS -o /tmp/preview.html -w '%{http_code}' "$URL" || true)
-            if [ "$code" = "200" ] && grep -q '/Counter/notes-v3-preview/' /tmp/preview.html; then
-              echo "Verified $URL"
-              exit 0
-            fi
-            echo "Attempt $attempt: HTTP $code"
-            sleep 10
-          done
-          echo "Preview URL did not become available"
-          exit 1
