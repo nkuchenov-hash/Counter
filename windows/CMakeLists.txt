@@ -57,11 +57,26 @@ add_subdirectory("runner")
 # them to the application.
 include(flutter/generated_plugins.cmake)
 
-# clipboard 3.0.14 enables /WX through Flutter's standard settings but contains
-# one harmless unused local variable on Windows. Keep warnings-as-errors for the
-# app and every other plugin while suppressing only that upstream warning.
+# clipboard 3.0.14 enables /WX through its own CMake settings but contains one
+# harmless unused local variable on Windows. Keep warnings-as-errors everywhere
+# else and suppress only that upstream warning on that target.
 if(TARGET clipboard_plugin)
   target_compile_options(clipboard_plugin PRIVATE /wd4189)
+
+  # The plugin's generated registrant expects <clipboard/clipboard_plugin.h>,
+  # while the published package stores the header at windows/clipboard_plugin.h.
+  # Create a build-only include shim instead of editing the dependency cache.
+  set(CLIPBOARD_PLUGIN_WINDOWS_DIR
+    "${FLUTTER_MANAGED_DIR}/ephemeral/.plugin_symlinks/clipboard/windows")
+  set(CLIPBOARD_COMPAT_INCLUDE_DIR
+    "${CMAKE_CURRENT_BINARY_DIR}/clipboard_compat_include")
+  file(MAKE_DIRECTORY "${CLIPBOARD_COMPAT_INCLUDE_DIR}/clipboard")
+  configure_file(
+    "${CLIPBOARD_PLUGIN_WINDOWS_DIR}/clipboard_plugin.h"
+    "${CLIPBOARD_COMPAT_INCLUDE_DIR}/clipboard/clipboard_plugin.h"
+    COPYONLY)
+  target_include_directories(${BINARY_NAME} PRIVATE
+    "${CLIPBOARD_COMPAT_INCLUDE_DIR}")
 endif()
 
 
