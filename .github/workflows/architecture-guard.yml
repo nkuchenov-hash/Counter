@@ -35,8 +35,8 @@ jobs:
             git diff --check "origin/main...HEAD"
           fi
 
-  notes-image-phase:
-    name: notes-image-phase
+  notes-component-lab:
+    name: notes-component-lab
     if: github.event_name == 'pull_request' && github.head_ref == 'feature/notes-v3-design-system'
     runs-on: ubuntu-latest
     steps:
@@ -49,7 +49,7 @@ jobs:
       - name: Check whether implementation is needed
         id: needed
         run: |
-          if [ -f lib/features/notes/notes_image_tools.dart ]; then
+          if [ -f lib/features/dev/component_lab_notes_demo.dart ]; then
             echo "value=false" >> "$GITHUB_OUTPUT"
           else
             echo "value=true" >> "$GITHUB_OUTPUT"
@@ -63,56 +63,9 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Align new plugins with production toolchain
+      - name: Apply Notes Component Lab scenarios
         if: steps.needed.outputs.value == 'true'
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-
-          pubspec_text = Path('pubspec.yaml').read_text(encoding='utf-8')
-          if 'audioplayers: ^6.7.1' not in pubspec_text:
-              raise SystemExit('production audioplayers constraint missing')
-
-          path = Path('scripts/manual/apply_notes_image_phase.py')
-          source = path.read_text(encoding='utf-8')
-          source = source.replace(
-              "import 'package:super_clipboard/super_clipboard.dart';",
-              "import 'package:clipboard/clipboard.dart';",
-          )
-          source = source.replace(
-              "super_clipboard: ^0.9.1",
-              "clipboard: ^3.0.14",
-          )
-          source = source.replace(
-              "audioplayers: ^6.8.1",
-              "audioplayers: ^6.7.1",
-          )
-          old_copy = """Future<void> copyNotesImage(String dataUrl) async {
-            final clipboard = SystemClipboard.instance;
-            if (clipboard == null) throw StateError('clipboard_unavailable');
-            final bytes = await notesImagePngBytes(dataUrl);
-            final item = DataWriterItem(suggestedName: 'life-os-note.png');
-            item.add(Formats.png(bytes));
-            await clipboard.write([item]);
-          }
-          """
-          new_copy = """Future<void> copyNotesImage(String dataUrl) async {
-            final bytes = await notesImagePngBytes(dataUrl);
-            await FlutterClipboard.copyImage(bytes);
-          }
-          """
-          if old_copy not in source:
-              raise SystemExit('clipboard function anchor missing')
-          source = source.replace(old_copy, new_copy, 1)
-          start = source.index('# Android rich-image clipboard provider.')
-          end = source.index('# iOS picker permissions.')
-          source = source[:start] + source[end:]
-          path.write_text(source, encoding='utf-8')
-          PY
-
-      - name: Apply Notes image phase
-        if: steps.needed.outputs.value == 'true'
-        run: python scripts/manual/apply_notes_image_phase.py
+        run: python scripts/manual/apply_notes_component_lab.py
 
       - name: Resolve dependencies
         if: steps.needed.outputs.value == 'true'
@@ -122,12 +75,8 @@ jobs:
         if: steps.needed.outputs.value == 'true'
         run: |
           dart format \
-            lib/features/notes/notes_image_tools.dart \
-            lib/features/notes/note_editor_page.dart \
-            lib/features/notes/widgets/notes_editor_tools.dart \
-            lib/l10n/langs/en.dart \
-            lib/l10n/langs/ru.dart \
-            test/notes_canonical_components_test.dart
+            lib/features/dev/component_lab_view.dart \
+            lib/features/dev/component_lab_notes_demo.dart
 
       - name: Analyze
         if: steps.needed.outputs.value == 'true'
@@ -141,10 +90,6 @@ jobs:
         if: steps.needed.outputs.value == 'true'
         run: flutter build web --release --base-href="/Counter/" --no-tree-shake-icons --no-wasm-dry-run --pwa-strategy=none
 
-      - name: Build Android arm64 debug APK
-        if: steps.needed.outputs.value == 'true'
-        run: flutter build apk --debug --target-platform android-arm64
-
       - name: Verify architecture and whitespace
         if: steps.needed.outputs.value == 'true'
         shell: pwsh
@@ -152,20 +97,20 @@ jobs:
           ./scripts/audit/architecture_guard.ps1 -Strict
           git diff --check
 
-      - name: Commit verified implementation
+      - name: Commit verified Component Lab scenarios
         if: steps.needed.outputs.value == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add \
-            pubspec.yaml pubspec.lock \
-            ios/Runner/Info.plist \
             docs/APP_STRUCTURE.md \
-            lib/features/notes/notes_image_tools.dart \
-            lib/features/notes/note_editor_page.dart \
-            lib/features/notes/widgets/notes_editor_tools.dart \
-            lib/l10n/langs/en.dart \
-            lib/l10n/langs/ru.dart \
-            test/notes_canonical_components_test.dart
-          git commit -m "Add Notes image sources and editing options"
+            lib/features/dev/component_lab_view.dart \
+            lib/features/dev/component_lab_notes_demo.dart \
+            pubspec.yaml pubspec.lock \
+            linux/flutter/generated_plugin_registrant.cc \
+            linux/flutter/generated_plugins.cmake \
+            macos/Flutter/GeneratedPluginRegistrant.swift \
+            windows/flutter/generated_plugin_registrant.cc \
+            windows/flutter/generated_plugins.cmake
+          git commit -m "Add Notes V3 Component Lab scenarios"
           git push origin HEAD:feature/notes-v3-design-system
