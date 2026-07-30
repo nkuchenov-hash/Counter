@@ -7,7 +7,6 @@ import 'package:flutter/material.dart';
 ///
 /// Width, overlay placement, and table range may change through constraints or
 /// parameters. Component identity must not branch by platform.
-
 enum NotesBlockState { defaultState, active }
 
 enum NotesTextBlockStyle { body, h1, h2, h3 }
@@ -39,6 +38,8 @@ const double kNotesLeadingGap = 10;
 const double kNotesToolbarButtonSize = 40;
 const double kNotesMenuRadius = 16;
 
+/// Text controller that renders the existing v2 inline runs before the editable
+/// receives a changed value. This keeps rich text from flashing as plain text.
 class NotesTextEditingController extends TextEditingController {
   NotesTextEditingController({
     String? text,
@@ -221,54 +222,18 @@ class NotesListBlock extends StatelessWidget {
         : Text(
             '$ordinal.',
             textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              fontSize: 16,
-              height: 1.45,
-              color: scheme.onSurface,
-            ),
+            style: const TextStyle(fontSize: 16, height: 1.45),
           );
     return _NotesActiveIndicatorFrame(
       state: state,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(
-          kNotesContentInset,
-          kNotesBlockVerticalPadding,
-          kNotesContentInset,
-          kNotesBlockVerticalPadding,
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(
-              width: kNotesLeadingSize,
-              height: 24,
-              child: Center(child: marker),
-            ),
-            const SizedBox(width: kNotesLeadingGap),
-            Expanded(
-              child: TextField(
-                key: textFieldKey,
-                controller: controller,
-                focusNode: focusNode,
-                minLines: 1,
-                maxLines: null,
-                keyboardType: TextInputType.multiline,
-                textCapitalization: TextCapitalization.sentences,
-                onChanged: onChanged,
-                onTap: onTap,
-                style: _notesTextStyle(context, NotesTextBlockStyle.body),
-                decoration: InputDecoration(
-                  hintText: hintText,
-                  border: InputBorder.none,
-                  enabledBorder: InputBorder.none,
-                  focusedBorder: InputBorder.none,
-                  isDense: true,
-                  contentPadding: EdgeInsets.zero,
-                ),
-              ),
-            ),
-          ],
-        ),
+      child: _NotesLeadingTextRow(
+        leading: marker,
+        controller: controller,
+        focusNode: focusNode,
+        hintText: hintText,
+        onChanged: onChanged,
+        onTap: onTap,
+        textFieldKey: textFieldKey,
       ),
     );
   }
@@ -300,59 +265,22 @@ class NotesChecklistBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final baseStyle = _notesTextStyle(context, NotesTextBlockStyle.body);
     return _NotesActiveIndicatorFrame(
       state: state,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(
-          kNotesContentInset,
-          kNotesBlockVerticalPadding,
-          kNotesContentInset,
-          kNotesBlockVerticalPadding,
+      child: _NotesLeadingTextRow(
+        leading: Checkbox(
+          value: checked,
+          onChanged: (value) => onCheckedChanged(value ?? false),
+          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          visualDensity: VisualDensity.compact,
         ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(
-              width: kNotesLeadingSize,
-              height: 24,
-              child: Checkbox(
-                value: checked,
-                onChanged: (value) => onCheckedChanged(value ?? false),
-                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                visualDensity: VisualDensity.compact,
-              ),
-            ),
-            const SizedBox(width: kNotesLeadingGap),
-            Expanded(
-              child: TextField(
-                key: textFieldKey,
-                controller: controller,
-                focusNode: focusNode,
-                minLines: 1,
-                maxLines: null,
-                keyboardType: TextInputType.multiline,
-                textCapitalization: TextCapitalization.sentences,
-                onChanged: onChanged,
-                onTap: onTap,
-                style: checked
-                    ? baseStyle.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        decoration: TextDecoration.lineThrough,
-                      )
-                    : baseStyle,
-                decoration: InputDecoration(
-                  hintText: hintText,
-                  border: InputBorder.none,
-                  enabledBorder: InputBorder.none,
-                  focusedBorder: InputBorder.none,
-                  isDense: true,
-                  contentPadding: EdgeInsets.zero,
-                ),
-              ),
-            ),
-          ],
-        ),
+        controller: controller,
+        focusNode: focusNode,
+        hintText: hintText,
+        onChanged: onChanged,
+        onTap: onTap,
+        textFieldKey: textFieldKey,
+        checked: checked,
       ),
     );
   }
@@ -545,9 +473,7 @@ class _NotesTableBlockState extends State<NotesTableBlock> {
         List<String>.from(sourceRow),
     ];
     cells[row][column] = text;
-    widget.onChanged(
-      widget.data.copyWith(cells: cells),
-    );
+    widget.onChanged(widget.data.copyWith(cells: cells));
   }
 
   @override
@@ -644,6 +570,8 @@ class _NotesTableBlockState extends State<NotesTableBlock> {
   }
 }
 
+/// One shared size picker. Compact mobile defaults to 5 x 5; desktop may pass
+/// a larger range without introducing a desktop-only component.
 class NotesTableSizePicker extends StatefulWidget {
   const NotesTableSizePicker({
     super.key,
@@ -667,17 +595,58 @@ class _NotesTableSizePickerState extends State<NotesTableSizePicker> {
   int _columns = 1;
 
   void _select(int row, int column) {
+    final nextRows = row + 1;
+    final nextColumns = column + 1;
+    if (_rows == nextRows && _columns == nextColumns) return;
     setState(() {
-      _rows = row + 1;
-      _columns = column + 1;
+      _rows = nextRows;
+      _columns = nextColumns;
     });
   }
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final rows = widget.maxRows.clamp(1, 20);
-    final columns = widget.maxColumns.clamp(1, 12);
+    final rows = widget.maxRows.clamp(1, 20).toInt();
+    final columns = widget.maxColumns.clamp(1, 12).toInt();
+    final gridWidth = columns * widget.cellSize;
+    final gridHeight = rows * widget.cellSize;
+    final grid = Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (var row = 0; row < rows; row++)
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (var column = 0; column < columns; column++)
+                MouseRegion(
+                  onEnter: (_) => _select(row, column),
+                  child: GestureDetector(
+                    key: ValueKey('notes-table-size-${row + 1}-${column + 1}'),
+                    onTap: () => widget.onSelected(
+                      NoteTableData.empty(rows: row + 1, columns: column + 1),
+                    ),
+                    child: SizedBox.square(
+                      dimension: widget.cellSize,
+                      child: Padding(
+                        padding: const EdgeInsets.all(2),
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: row < _rows && column < _columns
+                                ? scheme.primaryContainer
+                                : scheme.surface,
+                            border: Border.all(color: scheme.outlineVariant),
+                            borderRadius: BorderRadius.circular(3),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+      ],
+    );
     return NotesFloatingMenuSurface(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -689,41 +658,13 @@ class _NotesTableSizePickerState extends State<NotesTableSizePicker> {
           ),
           const SizedBox(height: 10),
           SizedBox(
-            width: columns * widget.cellSize,
-            height: rows * widget.cellSize,
-            child: GridView.builder(
-              physics: const NeverScrollableScrollPhysics(),
-              padding: EdgeInsets.zero,
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: columns,
+            width: math.min(gridWidth, 280),
+            height: math.min(gridHeight, 280),
+            child: SingleChildScrollView(
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: grid,
               ),
-              itemCount: rows * columns,
-              itemBuilder: (context, index) {
-                final row = index ~/ columns;
-                final column = index % columns;
-                final selected = row < _rows && column < _columns;
-                return MouseRegion(
-                  onEnter: (_) => _select(row, column),
-                  child: GestureDetector(
-                    key: ValueKey('notes-table-size-${row + 1}-${column + 1}'),
-                    onTap: () => widget.onSelected(
-                      NoteTableData.empty(rows: row + 1, columns: column + 1),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(2),
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          color: selected
-                              ? scheme.primaryContainer
-                              : scheme.surface,
-                          border: Border.all(color: scheme.outlineVariant),
-                          borderRadius: BorderRadius.circular(3),
-                        ),
-                      ),
-                    ),
-                  ),
-                );
-              },
             ),
           ),
         ],
@@ -816,6 +757,9 @@ class NotesAudioBlock extends StatelessWidget {
     required this.state,
     required this.title,
     required this.statusLabel,
+    required this.playTooltip,
+    required this.pauseTooltip,
+    required this.transcriptTooltip,
     this.durationLabel,
     this.onPlayPause,
     this.onOpenTranscript,
@@ -824,6 +768,9 @@ class NotesAudioBlock extends StatelessWidget {
   final NotesAudioState state;
   final String title;
   final String statusLabel;
+  final String playTooltip;
+  final String pauseTooltip;
+  final String transcriptTooltip;
   final String? durationLabel;
   final VoidCallback? onPlayPause;
   final VoidCallback? onOpenTranscript;
@@ -849,7 +796,7 @@ class NotesAudioBlock extends StatelessWidget {
           child: Row(
             children: [
               IconButton(
-                tooltip: playing ? 'Pause' : 'Play',
+                tooltip: playing ? pauseTooltip : playTooltip,
                 onPressed: onPlayPause,
                 icon: Icon(
                   playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
@@ -884,7 +831,7 @@ class NotesAudioBlock extends StatelessWidget {
                 ),
               if (onOpenTranscript != null)
                 IconButton(
-                  tooltip: 'Transcript',
+                  tooltip: transcriptTooltip,
                   onPressed: onOpenTranscript,
                   icon: const Icon(Icons.notes_rounded),
                 ),
@@ -1162,6 +1109,79 @@ class NotesInsertMenu extends StatelessWidget {
   }
 }
 
+class _NotesLeadingTextRow extends StatelessWidget {
+  const _NotesLeadingTextRow({
+    required this.leading,
+    required this.controller,
+    this.focusNode,
+    this.hintText,
+    this.onChanged,
+    this.onTap,
+    this.textFieldKey,
+    this.checked = false,
+  });
+
+  final Widget leading;
+  final TextEditingController controller;
+  final FocusNode? focusNode;
+  final String? hintText;
+  final ValueChanged<String>? onChanged;
+  final VoidCallback? onTap;
+  final Key? textFieldKey;
+  final bool checked;
+
+  @override
+  Widget build(BuildContext context) {
+    final baseStyle = _notesTextStyle(context, NotesTextBlockStyle.body);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        kNotesContentInset,
+        kNotesBlockVerticalPadding,
+        kNotesContentInset,
+        kNotesBlockVerticalPadding,
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: kNotesLeadingSize,
+            height: 24,
+            child: Center(child: leading),
+          ),
+          const SizedBox(width: kNotesLeadingGap),
+          Expanded(
+            child: TextField(
+              key: textFieldKey,
+              controller: controller,
+              focusNode: focusNode,
+              minLines: 1,
+              maxLines: null,
+              keyboardType: TextInputType.multiline,
+              textCapitalization: TextCapitalization.sentences,
+              onChanged: onChanged,
+              onTap: onTap,
+              style: checked
+                  ? baseStyle.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      decoration: TextDecoration.lineThrough,
+                    )
+                  : baseStyle,
+              decoration: InputDecoration(
+                hintText: hintText,
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                isDense: true,
+                contentPadding: EdgeInsets.zero,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _NotesActiveIndicatorFrame extends StatelessWidget {
   const _NotesActiveIndicatorFrame({
     required this.state,
@@ -1224,7 +1244,8 @@ class _NotesMenuRow extends StatelessWidget {
           child: Row(
             children: [
               Expanded(child: Text(label, style: previewStyle)),
-              if (selected) Icon(Icons.check_rounded, size: 18, color: scheme.primary),
+              if (selected)
+                Icon(Icons.check_rounded, size: 18, color: scheme.primary),
             ],
           ),
         ),
