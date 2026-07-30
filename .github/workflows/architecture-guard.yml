@@ -52,6 +52,49 @@ jobs:
           channel: stable
           cache: true
 
+      - name: Correct focused-test patch anchors
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('scripts/manual/apply_notes_audio_phase.py')
+          source = path.read_text(encoding='utf-8')
+          marker = '# Extend the existing editor/model test, preserving exactly three tests total.'
+          tail = """# Extend the existing editor/model test, preserving exactly three tests total.
+          replace_once(
+              \"test/notes_canonical_components_test.dart\",
+              \"      final deleted = editor.deleteBlock(bodyId);\",
+              dedent(
+                  r'''      const audio = NoteAudioData(
+                  dataUrl: 'data:audio/wav;base64,UklGRg==',
+                  durationMs: 1250,
+                  transcript: 'Recorded thought',
+                  transcriptStatus: NoteAudioTranscriptStatus.ready,
+                );
+                editor.insertAfter(
+                  editor.visibleBlocks.last.id,
+                  NoteBlockType.audio,
+                  audio: audio,
+                );
+                final audioBlock = editor.visibleBlocks.singleWhere(
+                  (block) => block.type == NoteBlockType.audio,
+                );
+                expect(audioBlock.audio?.durationMs, 1250);
+
+                final deleted = editor.deleteBlock(bodyId);
+          '''
+              ),
+          )
+          replace_once(
+              \"test/notes_canonical_components_test.dart\",
+              \"      expect(\\n        saved.blocks\\n            .singleWhere((block) => block.id == legacy.id)\",
+              \"      expect(\\n        saved.blocks\\n            .singleWhere((block) => block.type == NoteBlockType.audio)\\n            .audio\\n            ?.transcript,\\n        'Recorded thought',\\n      );\\n      expect(\\n        saved.blocks\\n            .singleWhere((block) => block.id == legacy.id)\",
+          )
+
+          print('Notes audio phase patched successfully.')
+          """
+          path.write_text(source[:source.index(marker)] + tail, encoding='utf-8')
+          PY
+
       - name: Apply Notes audio phase
         run: python scripts/manual/apply_notes_audio_phase.py
 
