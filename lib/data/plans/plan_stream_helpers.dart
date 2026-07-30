@@ -6,6 +6,8 @@ part of '../database_service.dart';
 final StreamController<void> _planningRefreshController =
     StreamController<void>.broadcast();
 
+Timer? _planningLocalRefreshDebounceTimer;
+Timer? _planningHeavySideEffectsDebounceTimer;
 Timer? _planningNotifyNetworkDebounceTimer;
 
 bool _planningRefreshWantsNetworkPump = false;
@@ -143,12 +145,33 @@ extension PlanStreamRefreshExtension on DatabaseService {
     if (pumpNetworkNow) {
       _planningRefreshWantsNetworkPump = true;
     }
-    if (!_planningRefreshController.isClosed) {
-      _planningRefreshController.add(null);
-    }
-    _requestPlanAlarmReschedule();
-    _refreshPlansWarmSnapshotsAfterCacheMutation();
-    persistPlansWarmSnapshotsToDisk();
+
+    // A rich-text/title edit can call this once per key. Coalesce the visible
+    // stream poke within the 100 ms interaction budget instead of rebuilding
+    // the whole Planning surface for every keyboard event.
+    _planningLocalRefreshDebounceTimer?.cancel();
+    _planningLocalRefreshDebounceTimer = Timer(
+      const Duration(milliseconds: 50),
+      () {
+        if (!_planningRefreshController.isClosed) {
+          _planningRefreshController.add(null);
+        }
+      },
+    );
+
+    // Alarm rescheduling, warm-snapshot projection and disk persistence are
+    // expensive on web. They are correctness-neutral during active typing and
+    // only need the latest state after the edit burst settles.
+    _planningHeavySideEffectsDebounceTimer?.cancel();
+    _planningHeavySideEffectsDebounceTimer = Timer(
+      const Duration(milliseconds: 450),
+      () {
+        _requestPlanAlarmReschedule();
+        _refreshPlansWarmSnapshotsAfterCacheMutation();
+        persistPlansWarmSnapshotsToDisk();
+      },
+    );
+
     if (scheduleNetworkRefresh) {
       _planningNotifyNetworkDebounceTimer?.cancel();
       _planningNotifyNetworkDebounceTimer = Timer(
