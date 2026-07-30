@@ -495,6 +495,51 @@ extension PlanTimeCascadeExtension on DatabaseService {
     );
   }
 
+  /// Resolves a newly created scheduled task into the first valid free slot.
+  /// Existing plans are never moved; the new task keeps its requested duration.
+  ({PlanningTask task, bool adjusted}) resolvePlanningCreateCollision({
+    required PlanningTask task,
+    required DateTime wallDay,
+    required List<PlanningTask> existingDayPlans,
+  }) {
+    final requestedStart = task.startTime;
+    if (requestedStart == null) {
+      return (task: task, adjusted: false);
+    }
+
+    final requestedEnd = task.endDateTime;
+    final explicitDurationMinutes =
+        requestedEnd != null && requestedEnd.isAfter(requestedStart)
+        ? requestedEnd.difference(requestedStart).inMinutes
+        : resolvePlanDurationMinutesFromTags(task.tags);
+    final schedule = resolveAutoPlanSchedule(
+      wallDay: DateTime(wallDay.year, wallDay.month, wallDay.day),
+      categoryId: task.categoryId,
+      tags: task.tags,
+      existingDayPlans: existingDayPlans,
+      explicitStartWall: requestedStart,
+      explicitEndWall: requestedEnd,
+      hasExplicitTimeRange:
+          requestedEnd != null && requestedEnd.isAfter(requestedStart),
+      explicitDurationMinutes: explicitDurationMinutes,
+    );
+    final walls = profileDisplayWallsFromAutoSchedule(schedule);
+    final dayKey =
+        '${wallDay.year}-${_two(wallDay.month)}-${_two(wallDay.day)}';
+
+    return (
+      task: task.copyWith(
+        dateKey: dayKey,
+        date: DateTime.utc(wallDay.year, wallDay.month, wallDay.day),
+        startTime: walls.startWall,
+        endDateTime: walls.endWall,
+        endDateKey: dayKey,
+        clearEnd: false,
+      ),
+      adjusted: walls.startWall != requestedStart,
+    );
+  }
+
   /// Non-blocking overload hints after scheduling plans on a day.
   PlanDayOverloadReport evaluatePlanDayScheduleOverload({
     required List<PlanningTask> dayPlans,

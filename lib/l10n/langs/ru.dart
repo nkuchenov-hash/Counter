@@ -1019,4 +1019,5 @@ const Map<String, String> kRuL10n = {
 
   'notes_tools_create_plan': 'Создать план из выделения',
   'notes_tools_plan_created': 'План добавлен в Списки',
+  'plan_schedule_adjusted': 'Пересекается с другой задачей — перенесено на %s',
 };

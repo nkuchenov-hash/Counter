@@ -11,7 +11,6 @@ import 'package:counter/shared/categories/picker/category_tree_picker.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/data/recurrence_edit_scope.dart';
-import 'package:counter/data/smart_input_parser.dart';
 import 'package:counter/features/planning/recurrence_scope_dialog.dart';
 import 'package:counter/features/profile/tag_settings_hub.dart';
 import 'package:counter/core/widgets/chip_component.dart';
@@ -22,8 +21,16 @@ import 'package:intl/intl.dart';
 import 'package:omni_datetime_picker/omni_datetime_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import 'package:counter/features/shared/edit_sheet/checklist_helpers.dart';import 'package:counter/features/shared/edit_sheet/parallel_record_panels.dart';
-import 'package:counter/features/shared/edit_sheet/plan_repeat_helpers.dart';import 'package:counter/features/shared/edit_sheet/quill_link_launcher.dart';import 'package:counter/features/shared/edit_sheet/quill_toolbar_config.dart';import 'package:counter/features/shared/edit_sheet/sheet_autosave_gate.dart';import 'package:counter/features/shared/edit_sheet/sheet_time_helpers.dart';import 'package:counter/features/shared/edit_sheet/sheet_time_picker.dart';class PlanningTaskEditSheet extends StatefulWidget {
+import 'package:counter/features/shared/edit_sheet/checklist_helpers.dart';
+import 'package:counter/features/shared/edit_sheet/parallel_record_panels.dart';
+import 'package:counter/features/shared/edit_sheet/plan_repeat_helpers.dart';
+import 'package:counter/features/shared/edit_sheet/quill_link_launcher.dart';
+import 'package:counter/features/shared/edit_sheet/quill_toolbar_config.dart';
+import 'package:counter/features/shared/edit_sheet/sheet_autosave_gate.dart';
+import 'package:counter/features/shared/edit_sheet/sheet_time_helpers.dart';
+import 'package:counter/features/shared/edit_sheet/sheet_time_picker.dart';
+
+class PlanningTaskEditSheet extends StatefulWidget {
   const PlanningTaskEditSheet({
     required this.task,
     required this.dateKey,
@@ -79,8 +86,10 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
   RecurrenceEditScope? _recurrenceEditScopeChosen;
   bool _recurrenceScopePromptOpen = false;
   StreamSubscription<DocChange>? _planQuillChangesSub;
+  Timer? _titleAssistDebounce;
 
-  bool get _isPersistedPlan => widget.task.planRowIdForBackend.trim().isNotEmpty;
+  bool get _isPersistedPlan =>
+      widget.task.planRowIdForBackend.trim().isNotEmpty;
 
   @override
   void initState() {
@@ -171,17 +180,15 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
   @override
   void dispose() {
     if (_isPersistedPlan) {
-      _planAutosaveGate.flush(
-        () {
-          final latest = _buildDraftTask();
-          if (latest != null) {
-            unawaited(_syncPlanDraftToNetwork(latest));
-          }
-        },
-        force: _planAutosaveGate.isDirty,
-      );
+      _planAutosaveGate.flush(() {
+        final latest = _buildDraftTask();
+        if (latest != null) {
+          unawaited(_syncPlanDraftToNetwork(latest));
+        }
+      }, force: _planAutosaveGate.isDirty);
     }
     unawaited(_planQuillChangesSub?.cancel());
+    _titleAssistDebounce?.cancel();
     _planAutosaveGate.dispose();
     _tabController?.dispose();
     _planTabController?.dispose();
@@ -204,32 +211,16 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
     }
   }
 
-  void _onTitleChangedForSmartTime(String raw) {
-    _applyFuzzyCategoryFromTitle(
-      raw.trim().isEmpty ? _titleController.text : raw,
-    );
-    if (_startedAsUndatedBacklog) {
-      _onPlanFieldChanged();
-      return;
-    }
-    final range = SmartInputParser.parseTitleForTimeRange(raw);
-    if (range != null) {
+  void _onTitleChanged(String raw) {
+    // Title input owns title/category only. A time selected on the Time View
+    // grid may change only through an explicit time control. Debounce fuzzy
+    // category matching so typing does not scan the category tree per key.
+    _titleAssistDebounce?.cancel();
+    _titleAssistDebounce = Timer(const Duration(milliseconds: 450), () {
       if (!mounted) return;
-      setState(() {
-        _scheduledTime = range.startWallOn(_date);
-        _endTime = range.endWallOn(_date);
-      });
-      _onPlanFieldChanged();
-      return;
-    }
-    final parsed = SmartInputParser.parseTitleForScheduledTime(raw);
-    if (parsed == null) {
-      _onPlanFieldChanged();
-      return;
-    }
-    if (!mounted) return;
-    setState(() {
-      _scheduledTime = parsed.wallDateTimeOn(_date);
+      _applyFuzzyCategoryFromTitle(
+        raw.trim().isEmpty ? _titleController.text : raw,
+      );
     });
     _onPlanFieldChanged();
   }
@@ -278,7 +269,9 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
 
   Future<void> _syncPlanDraftToNetwork(PlanningTask draft) async {
     if (!_isPersistedPlan) return;
-    if (DatabaseService.instance.planningTaskIsRecurringForScope(_baselineTask)) {
+    if (DatabaseService.instance.planningTaskIsRecurringForScope(
+      _baselineTask,
+    )) {
       if (_recurrenceEditScopeChosen == null) {
         if (_recurrenceScopePromptOpen || !mounted) return;
         _recurrenceScopePromptOpen = true;
@@ -317,8 +310,7 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
         );
     await DatabaseService.instance.updatePlanningTaskWithRecurrenceScope(
       draft.planRowIdForBackend,
-      scope:
-          _recurrenceEditScopeChosen ?? RecurrenceEditScope.singleOccurrence,
+      scope: _recurrenceEditScopeChosen ?? RecurrenceEditScope.singleOccurrence,
       planBusinessId: draft.planRowId,
       title: draft.title,
       categoryId: draft.categoryId,
@@ -332,7 +324,9 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
       clearEnd: draft.endDateTime == null,
       tags: draft.tags,
       suppressAppSnack: true,
-      planInitialDateKey: initForPatch.length >= minKeyLen ? initForPatch : null,
+      planInitialDateKey: initForPatch.length >= minKeyLen
+          ? initForPatch
+          : null,
       planIsPostponed: postponed,
       patchPlanAlarmRecurrence: true,
       planRrule: draft.rrule,
@@ -348,22 +342,31 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
   }
 
   void _onPlanFieldChanged({bool immediate = false}) {
-    final draft = _buildDraftTask();
-    if (draft == null) return;
-    _applyPlanDraftLocally(draft);
+    // New drafts are committed once by the shell on explicit Save. Building a
+    // Quill/checklist draft on every keypress is wasted work on web.
     if (!_isPersistedPlan) return;
-    _planAutosaveGate.markDirty();
-    void syncLatestDraft() {
+
+    void applyAndSync(PlanningTask draft) {
+      _applyPlanDraftLocally(draft);
+      unawaited(_syncPlanDraftToNetwork(draft));
+    }
+
+    if (immediate) {
+      final draft = _buildDraftTask();
+      if (draft == null) return;
+      _planAutosaveGate.markDirty();
+      _planAutosaveGate.flush(() => applyAndSync(draft));
+      return;
+    }
+
+    // Text/notes/checklist typing updates the visible field immediately, but
+    // coalesces the expensive global optimistic merge + Planning refresh.
+    _planAutosaveGate.schedule(() {
       final latest = _buildDraftTask();
       if (latest != null) {
-        unawaited(_syncPlanDraftToNetwork(latest));
+        applyAndSync(latest);
       }
-    }
-    if (immediate) {
-      _planAutosaveGate.flush(syncLatestDraft);
-    } else {
-      _planAutosaveGate.schedule(syncLatestDraft);
-    }
+    });
   }
 
   bool _planDraftsSemanticallyEqual(PlanningTask a, PlanningTask b) {
@@ -460,21 +463,16 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
   void _commitSave() {
     final updated = _buildDraftTask();
     if (updated == null) {
-      AppSnack.warning(
-        t(currentLocale.value, 'edit_save_title_required'),
-      );
+      AppSnack.warning(t(currentLocale.value, 'edit_save_title_required'));
       return;
     }
     // Explicit Save owns this draft snapshot (incl. newly created category).
     // Do not rebuild inside flush — autosave must not race with an older snapshot.
     _applyPlanDraftLocally(updated);
     if (_isPersistedPlan) {
-      _planAutosaveGate.flush(
-        () {
-          unawaited(_syncPlanDraftToNetwork(updated));
-        },
-        force: true,
-      );
+      _planAutosaveGate.flush(() {
+        unawaited(_syncPlanDraftToNetwork(updated));
+      }, force: true);
     }
     AppSnack.changesSaved();
     if (widget.onSaved != null) {
@@ -491,8 +489,9 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
       draftCategoryId: _categoryId,
       originalTaskCategoryId: widget.task.categoryId,
       existsInTree: DatabaseService.instance.categoryExists(_categoryId),
-      knownPairIds:
-          DatabaseService.instance.allCategoryIdPathPairs.map((p) => p.id),
+      knownPairIds: DatabaseService.instance.allCategoryIdPathPairs.map(
+        (p) => p.id,
+      ),
     );
     final newDateKey = _dateKeyFromDate(_date);
     syncChecklistDoneLength(_checklistControllers, _checklistDone);
@@ -625,7 +624,7 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
                       isDense: true,
                       contentPadding: EdgeInsets.zero,
                     ),
-                    onChanged: _onTitleChangedForSmartTime,
+                    onChanged: _onTitleChanged,
                   ),
                 ),
                 IconButton(

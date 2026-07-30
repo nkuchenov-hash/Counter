@@ -175,7 +175,16 @@ mixin ShellEditHosts on ShellCoreLogic {
             DatabaseService.instance.getTimelineDeviceLocalToday();
         final nextOrder = await DatabaseService.instance
             .nextPlanningOrderForDate(day);
-        final toCreate = result.copyWith(order: nextOrder);
+        final collision = DatabaseService.instance
+            .resolvePlanningCreateCollision(
+              task: result.copyWith(order: nextOrder),
+              wallDay: day,
+              existingDayPlans: DatabaseService.instance
+                  .planningDayTasksSnapshot(day)
+                  .where((candidate) => candidate.startTime != null)
+                  .toList(),
+            );
+        final toCreate = collision.task;
         final ok = await DatabaseService.instance.addPlanningTask(toCreate);
         if (!mounted) return;
         if (!ok) {
@@ -183,6 +192,14 @@ mixin ShellEditHosts on ShellCoreLogic {
             context,
           ).showSnackBar(SnackBar(content: Text(t(loc, 'plan_save_failed'))));
           return;
+        }
+        if (collision.adjusted && toCreate.startTime != null) {
+          final movedTo =
+              '${toCreate.startTime!.hour.toString().padLeft(2, '0')}:'
+              '${toCreate.startTime!.minute.toString().padLeft(2, '0')}';
+          AppSnack.warning(
+            t(loc, 'plan_schedule_adjusted').replaceFirst('%s', movedTo),
+          );
         }
         HapticFeedback.heavyImpact();
       } else {
@@ -255,7 +272,8 @@ mixin ShellEditHosts on ShellCoreLogic {
             ? edited.exceptionDates
             : const <String>[],
         recurrenceInstanceDateKey:
-            edited.recurrenceInstanceDateKey ?? baseline.recurrenceInstanceDateKey,
+            edited.recurrenceInstanceDateKey ??
+            baseline.recurrenceInstanceDateKey,
       );
       if (!mounted) return;
       if (!ok) {

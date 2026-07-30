@@ -11,6 +11,12 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-30] - P0 Planning selected-time stability and web editor load [shipped]
+
+* **`planning_task_edit_sheet.dart`:** [shipped] Task-title typing no longer parses or overwrites the start time selected on the Time View grid; fuzzy category matching is debounced.
+* **Planning edit hot path:** [shipped] New drafts no longer serialize rich notes/checklists on every keypress; persisted draft optimistic merge + global Planning refresh is coalesced behind the existing autosave debounce.
+* **New scheduled plans:** [shipped] Creation now reuses Brain collision resolution, moves only the new task to the first free slot, preserves duration, and shows one localized adjustment notice.
+
 ## [2026-07-27] - Health Connect sleep sync [implemented]
 
 * **Android Health Connect:** Added read-only `SLEEP_SESSION` permission flow and Mi Fitness-compatible sleep import.
