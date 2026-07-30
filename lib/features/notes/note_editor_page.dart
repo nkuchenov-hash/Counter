@@ -3,12 +3,14 @@
 // The production surface uses the versioned Life OS note document, stable block
 // ids, canonical Notes components, and local-first debounced persistence.
 
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:counter/core/widgets/notes/notes_context_row.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/notes/drawing_canvas_page.dart';
+import 'package:counter/features/notes/notes_audio_controller.dart';
 import 'package:counter/features/notes/notes_editor_document_controller.dart';
 import 'package:counter/features/notes/notes_glm_surface.dart';
 import 'package:counter/features/notes/widgets/note_editor_block_widgets.dart';
@@ -60,6 +62,8 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
   final Map<String, TextEditingController> _captionControllers = {};
   final Map<String, FocusNode> _focusNodes = {};
   final Map<String, TextSelection> _lastSelections = {};
+  late final NotesAudioPlaybackController _audioPlayback;
+  final Set<String> _transcribingAudioIds = <String>{};
   bool _dirty = false;
 
   @override
@@ -70,6 +74,8 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
     _editor = NotesEditorDocumentController(_sourceDocument);
     _titleController = TextEditingController(text: _task.title);
     _gate = EditSheetAutosaveGate();
+    _audioPlayback = NotesAudioPlaybackController()
+      ..addListener(_onAudioPlaybackChanged);
     _syncEditorsWithDocument();
 
     if (_editor.activeBlockId != null &&
@@ -94,6 +100,9 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
       _gate.flush(_syncToBrain, force: true);
     }
     _gate.dispose();
+    _audioPlayback
+      ..removeListener(_onAudioPlaybackChanged)
+      ..dispose();
     _titleController.dispose();
     for (final controller in _textControllers.values) {
       controller.dispose();
@@ -106,6 +115,10 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
     }
     widget.onClosed?.call();
     super.dispose();
+  }
+
+  void _onAudioPlaybackChanged() {
+    if (mounted) setState(() {});
   }
 
   void _scheduleSave([String? _]) {
@@ -442,17 +455,17 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
   Future<void> _showInsertMenu(String anchorId) {
     return showNotesInsertMenu(
       context: context,
-      onHeading: () =>
-          _insertAfter(anchorId, NoteBlockType.heading, level: 1),
+      onHeading: () => _insertAfter(anchorId, NoteBlockType.heading, level: 1),
       onText: () => _insertAfter(anchorId, NoteBlockType.paragraph),
       onQuote: () => _insertAfter(anchorId, NoteBlockType.quote),
-      onBulletedList: () =>
-          _insertAfter(anchorId, NoteBlockType.bulletedList),
-      onNumberedList: () =>
-          _insertAfter(anchorId, NoteBlockType.numberedList),
+      onBulletedList: () => _insertAfter(anchorId, NoteBlockType.bulletedList),
+      onNumberedList: () => _insertAfter(anchorId, NoteBlockType.numberedList),
       onChecklist: () => _insertAfter(anchorId, NoteBlockType.checklist),
       onTable: () => _showTablePicker(anchorId: anchorId),
       onDivider: () => _insertAfter(anchorId, NoteBlockType.divider),
+      onDrawing: widget.parityPreview ? null : () => _openDrawing(),
+      onImage: widget.parityPreview ? null : () => _pickImage(),
+      onAudio: widget.parityPreview ? null : _recordAudio,
     );
   }
 
@@ -521,6 +534,97 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
     );
   }
 
+  Future<void> _recordAudio() async {
+    if (widget.parityPreview) return;
+    final audio = await showNotesAudioRecorder(context: context);
+    if (!mounted || audio == null) return;
+    final mutation = _editor.insertAfter(
+      _editor.activeBlockId,
+      NoteBlockType.audio,
+      audio: audio,
+    );
+    _applyMutation(mutation);
+    final blockId = _editor.activeBlockId;
+    if (blockId != null) unawaited(_transcribeAudio(blockId));
+  }
+
+  Future<void> _toggleAudio(String blockId) async {
+    final audio = _editor.blockById(blockId)?.audio;
+    if (audio == null) return;
+    try {
+      await _audioPlayback.toggle(blockId, audio);
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(t(currentLocale.value, 'notes_audio_play_failed')),
+        ),
+      );
+    }
+  }
+
+  NotesAudioState _audioState(String blockId) {
+    if (_transcribingAudioIds.contains(blockId)) {
+      return NotesAudioState.transcribing;
+    }
+    if (_audioPlayback.isPlaying(blockId)) return NotesAudioState.playing;
+    final audio = _editor.blockById(blockId)?.audio;
+    if (audio?.transcriptStatus == NoteAudioTranscriptStatus.error) {
+      return NotesAudioState.transcriptError;
+    }
+    return NotesAudioState.ready;
+  }
+
+  Future<void> _transcribeAudio(String blockId) async {
+    final audio = _editor.blockById(blockId)?.audio;
+    if (audio == null || _transcribingAudioIds.contains(blockId)) return;
+    setState(() => _transcribingAudioIds.add(blockId));
+    try {
+      final transcript = await DatabaseService.instance.transcribeNoteAudio(
+        audio,
+      );
+      if (!mounted) return;
+      _applyMutation(
+        _editor.updateAudio(
+          blockId,
+          audio.copyWith(
+            transcript: transcript,
+            transcriptStatus: NoteAudioTranscriptStatus.ready,
+            transcriptError: null,
+          ),
+        ),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      _applyMutation(
+        _editor.updateAudio(
+          blockId,
+          audio.copyWith(
+            transcriptStatus: NoteAudioTranscriptStatus.error,
+            transcriptError: error.toString(),
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _transcribingAudioIds.remove(blockId));
+    }
+  }
+
+  Future<void> _openAudioTranscript(String blockId) async {
+    final audio = _editor.blockById(blockId)?.audio;
+    if (audio == null) return;
+    await showNotesTranscriptDialog(
+      context: context,
+      audio: audio,
+      playbackState: _audioState(blockId),
+      onPlayPause: () => _toggleAudio(blockId),
+      onRetry: () {
+        Navigator.of(context).pop();
+        _transcribeAudio(blockId);
+      },
+    );
+  }
+
   Future<void> _showActiveBlockOptions() {
     final block = _editor.activeBlock;
     if (block == null) return Future<void>.value();
@@ -530,8 +634,8 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
       onDeleteBlock: () => _applyMutation(_editor.deleteBlock(block.id)),
       onTableCommand: block.type == NoteBlockType.table
           ? (command) => _applyMutation(
-                _editor.editTable(block.id, command, row: 0, column: 0),
-              )
+              _editor.editTable(block.id, command, row: 0, column: 0),
+            )
           : null,
       onEditMedia: switch (block.type) {
         NoteBlockType.image => () => _pickImage(replaceBlockId: block.id),
@@ -544,7 +648,8 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
   int _numberedOrdinal(int index) {
     var ordinal = 1;
     for (var cursor = index - 1; cursor >= 0; cursor--) {
-      if (_editor.visibleBlocks[cursor].type != NoteBlockType.numberedList) break;
+      if (_editor.visibleBlocks[cursor].type != NoteBlockType.numberedList)
+        break;
       ordinal++;
     }
     return ordinal;
@@ -561,7 +666,8 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
       textController: editable ? _textControllerFor(block) : null,
       focusNode: editable ? _focusNodeFor(block) : null,
       captionController:
-          block.type == NoteBlockType.image || block.type == NoteBlockType.drawing
+          block.type == NoteBlockType.image ||
+              block.type == NoteBlockType.drawing
           ? _captionControllerFor(block)
           : null,
       onTap: () => _selectBlock(block.id),
@@ -577,12 +683,22 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
           ? (table) => _applyMutation(_editor.updateTable(block.id, table))
           : null,
       onCaptionChanged:
-          block.type == NoteBlockType.image || block.type == NoteBlockType.drawing
+          block.type == NoteBlockType.image ||
+              block.type == NoteBlockType.drawing
           ? (caption) =>
                 _applyMutation(_editor.updateCaption(block.id, caption))
           : null,
       onEmptyLongPress: editable && block.effectiveText.isEmpty
           ? () => _showInsertMenu(block.id)
+          : null,
+      audioState: block.type == NoteBlockType.audio
+          ? _audioState(block.id)
+          : NotesAudioState.ready,
+      onAudioPlayPause: block.type == NoteBlockType.audio
+          ? () => _toggleAudio(block.id)
+          : null,
+      onOpenTranscript: block.type == NoteBlockType.audio
+          ? () => _openAudioTranscript(block.id)
           : null,
     );
   }
@@ -617,8 +733,7 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
                   ? NotesBlockConversion.numberedList
                   : NotesBlockConversion.bulletedList,
             ),
-            onChecklist: () =>
-                _convertActive(NotesBlockConversion.checklist),
+            onChecklist: () => _convertActive(NotesBlockConversion.checklist),
             onTable: () => _showTablePicker(),
             onDrawing: widget.parityPreview
                 ? null
@@ -630,6 +745,7 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
                           : null,
                     );
                   },
+            onAudio: widget.parityPreview ? null : _recordAudio,
             onImage: widget.parityPreview
                 ? null
                 : () {

@@ -37,9 +37,7 @@ void main() {
     expect(migrated.version, kLifeOsNotesBlocksVersion);
     expect(migrated.blocks.first.effectiveRuns.single.marks.bold, isTrue);
 
-    final roundTrip = NoteDocument.tryParse(
-      notesDeltaJson: migrated.encode(),
-    );
+    final roundTrip = NoteDocument.tryParse(notesDeltaJson: migrated.encode());
     expect(roundTrip.blocks.map((block) => block.id).toList(), [
       'rich',
       'legacy-callout',
@@ -119,12 +117,36 @@ void main() {
       editor.reorderVisible(tableIndex, 0);
       expect(editor.visibleBlocks.first.type, NoteBlockType.table);
 
+      const audio = NoteAudioData(
+        dataUrl: 'data:audio/wav;base64,UklGRg==',
+        durationMs: 1250,
+        transcript: 'Recorded thought',
+        transcriptStatus: NoteAudioTranscriptStatus.ready,
+      );
+      editor.insertAfter(
+        editor.visibleBlocks.last.id,
+        NoteBlockType.audio,
+        audio: audio,
+      );
+      final audioBlock = editor.visibleBlocks.singleWhere(
+        (block) => block.type == NoteBlockType.audio,
+      );
+      expect(audioBlock.audio?.durationMs, 1250);
+
       final deleted = editor.deleteBlock(bodyId);
+
       expect(deleted.changed, isTrue);
       expect(editor.visibleBlocks.any((block) => block.id == bodyId), isFalse);
 
       final saved = NoteDocument.tryParse(
         notesDeltaJson: editor.document.encode(),
+      );
+      expect(
+        saved.blocks
+            .singleWhere((block) => block.type == NoteBlockType.audio)
+            .audio
+            ?.transcript,
+        'Recorded thought',
       );
       expect(
         saved.blocks
@@ -183,16 +205,14 @@ void main() {
       expect(listOrigin.dx, closeTo(50, 0.1));
       expect((listOrigin.dx - checklistOrigin.dx).abs(), lessThan(0.1));
       expect(
-        tester.getSize(
-          find.byKey(const ValueKey('notes-active-indicator')),
-        ).height,
+        tester
+            .getSize(find.byKey(const ValueKey('notes-active-indicator')))
+            .height,
         greaterThan(20),
       );
       await tester.tap(find.byKey(const ValueKey('notes-toolbar-table')));
       expect(tablePressed, isTrue);
-      final compactCell = find.byKey(
-        const ValueKey('notes-table-size-5-5'),
-      );
+      final compactCell = find.byKey(const ValueKey('notes-table-size-5-5'));
       await tester.ensureVisible(compactCell);
       await tester.tap(compactCell);
       expect(selectedTable?.rowCount, 5);
@@ -219,9 +239,7 @@ void main() {
           ),
         ),
       );
-      final extendedCell = find.byKey(
-        const ValueKey('notes-table-size-8-6'),
-      );
+      final extendedCell = find.byKey(const ValueKey('notes-table-size-8-6'));
       await tester.ensureVisible(extendedCell);
       await tester.tap(extendedCell);
       expect(selectedTable?.rowCount, 8);

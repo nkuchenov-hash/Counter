@@ -94,7 +94,8 @@ class NotesEditorToolbarHost extends StatelessWidget {
           tooltip: type == NoteBlockType.bulletedList
               ? 'Numbered list'
               : 'Bulleted list',
-          selected: type == NoteBlockType.bulletedList ||
+          selected:
+              type == NoteBlockType.bulletedList ||
               type == NoteBlockType.numberedList,
           enabled: convertible,
           onPressed: onList,
@@ -137,7 +138,10 @@ class NotesEditorToolbarHost extends StatelessWidget {
         NotesToolbarAction(
           tool: NotesToolbarTool.audio,
           icon: Icons.mic_rounded,
-          tooltip: 'Record audio',
+          tooltip: type == NoteBlockType.audio
+              ? 'Record another audio'
+              : 'Record audio',
+          selected: type == NoteBlockType.audio,
           enabled: onAudio != null,
           onPressed: onAudio ?? _noop,
         ),
@@ -299,6 +303,9 @@ Future<void> showNotesInsertMenu({
   required VoidCallback onChecklist,
   required VoidCallback onTable,
   required VoidCallback onDivider,
+  VoidCallback? onDrawing,
+  VoidCallback? onImage,
+  VoidCallback? onAudio,
 }) {
   return showDialog<void>(
     context: context,
@@ -309,13 +316,27 @@ Future<void> showNotesInsertMenu({
         padding: const EdgeInsets.all(20),
         child: NotesInsertMenu(
           actions: [
-            _menuAction(dialogContext, Icons.title_rounded, 'Heading', onHeading),
+            _menuAction(
+              dialogContext,
+              Icons.title_rounded,
+              'Heading',
+              onHeading,
+            ),
             _menuAction(
               dialogContext,
               Icons.text_fields_rounded,
               'Text',
               onText,
             ),
+            if (onDrawing != null)
+              _menuAction(
+                dialogContext,
+                Icons.draw_rounded,
+                'Drawing',
+                onDrawing,
+              ),
+            if (onImage != null)
+              _menuAction(dialogContext, Icons.image_rounded, 'Image', onImage),
             _menuAction(
               dialogContext,
               Icons.format_quote_rounded,
@@ -346,6 +367,13 @@ Future<void> showNotesInsertMenu({
               'Table',
               onTable,
             ),
+            if (onAudio != null)
+              _menuAction(
+                dialogContext,
+                Icons.mic_rounded,
+                'Audio record',
+                onAudio,
+              ),
             _menuAction(
               dialogContext,
               Icons.horizontal_rule_rounded,
@@ -429,10 +457,10 @@ Future<void> showNotesBlockOptionsMenu({
               color: Theme.of(sheetContext).colorScheme.error,
             ),
             title: Text(
-              block.type == NoteBlockType.table ? 'Delete table' : 'Delete block',
-              style: TextStyle(
-                color: Theme.of(sheetContext).colorScheme.error,
-              ),
+              block.type == NoteBlockType.table
+                  ? 'Delete table'
+                  : 'Delete block',
+              style: TextStyle(color: Theme.of(sheetContext).colorScheme.error),
             ),
             onTap: () {
               Navigator.of(sheetContext).pop();

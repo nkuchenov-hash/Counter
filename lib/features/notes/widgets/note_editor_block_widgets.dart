@@ -2,7 +2,9 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:counter/data/models.dart';
+import 'package:counter/features/notes/notes_audio_controller.dart';
 import 'package:counter/features/notes/widgets/notes_canonical_components.dart';
+import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -27,6 +29,9 @@ class NotesEditorBlockItem extends StatelessWidget {
     this.onTableChanged,
     this.onCaptionChanged,
     this.onEmptyLongPress,
+    this.audioState = NotesAudioState.ready,
+    this.onAudioPlayPause,
+    this.onOpenTranscript,
   });
 
   final NoteBlock block;
@@ -43,6 +48,9 @@ class NotesEditorBlockItem extends StatelessWidget {
   final ValueChanged<NoteTableData>? onTableChanged;
   final ValueChanged<String>? onCaptionChanged;
   final VoidCallback? onEmptyLongPress;
+  final NotesAudioState audioState;
+  final VoidCallback? onAudioPlayPause;
+  final VoidCallback? onOpenTranscript;
 
   @override
   Widget build(BuildContext context) {
@@ -147,6 +155,32 @@ class NotesEditorBlockItem extends StatelessWidget {
           onCaptionChanged: onCaptionChanged,
           onTap: onTap,
         );
+      case NoteBlockType.audio:
+        final loc = currentLocale.value;
+        final audio = block.audio;
+        final statusLabel = switch (audioState) {
+          NotesAudioState.playing => t(loc, 'notes_audio_playing'),
+          NotesAudioState.transcribing => t(loc, 'notes_audio_transcribing'),
+          NotesAudioState.transcriptError => t(
+            loc,
+            'notes_audio_transcript_error',
+          ),
+          NotesAudioState.ready =>
+            audio?.transcriptStatus == NoteAudioTranscriptStatus.ready
+                ? t(loc, 'notes_audio_transcript_ready')
+                : t(loc, 'notes_audio_ready'),
+        };
+        return NotesAudioBlock(
+          state: audioState,
+          title: t(loc, 'notes_audio_title'),
+          statusLabel: statusLabel,
+          playTooltip: t(loc, 'notes_audio_play'),
+          pauseTooltip: t(loc, 'notes_audio_pause'),
+          transcriptTooltip: t(loc, 'notes_audio_transcript_title'),
+          durationLabel: formatNotesAudioDuration(audio?.durationMs ?? 0),
+          onPlayPause: onAudioPlayPause,
+          onOpenTranscript: onOpenTranscript,
+        );
       case NoteBlockType.callout:
       case NoteBlockType.linkCard:
       case NoteBlockType.codeBlock:
@@ -214,7 +248,8 @@ bool _isVisibleProductionBlock(NoteBlockType type) {
       type == NoteBlockType.divider ||
       type == NoteBlockType.table ||
       type == NoteBlockType.image ||
-      type == NoteBlockType.drawing;
+      type == NoteBlockType.drawing ||
+      type == NoteBlockType.audio;
 }
 
 Uint8List? _decodeImagePayload(String? raw) {

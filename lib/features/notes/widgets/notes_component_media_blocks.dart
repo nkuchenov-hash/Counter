@@ -128,9 +128,7 @@ class NotesAudioBlock extends StatelessWidget {
                 size: AppIconButtonSize.s,
                 variant: AppIconButtonVariant.subtle,
                 selected: playing,
-                icon: playing
-                    ? Icons.pause_rounded
-                    : Icons.play_arrow_rounded,
+                icon: playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
               ),
               Expanded(
                 child: Column(
@@ -390,9 +388,7 @@ class NotesRecorderControls extends StatelessWidget {
       color: scheme.surfaceContainerLow,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(
-          color: blocked ? scheme.error : scheme.outlineVariant,
-        ),
+        side: BorderSide(color: blocked ? scheme.error : scheme.outlineVariant),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -425,11 +421,7 @@ class NotesRecorderControls extends StatelessWidget {
               levelIndicator!,
             ],
             const SizedBox(height: 14),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: _actionsForState(),
-            ),
+            Wrap(spacing: 8, runSpacing: 8, children: _actionsForState()),
           ],
         ),
       ),
@@ -439,61 +431,61 @@ class NotesRecorderControls extends StatelessWidget {
   List<Widget> _actionsForState() {
     return switch (state) {
       NotesRecorderState.ready => [
-          AppButton.primary(
-            label: startLabel,
-            icon: Icons.mic_rounded,
-            size: AppButtonSize.s,
-            onPressed: onStart,
-          ),
-        ],
+        AppButton.primary(
+          label: startLabel,
+          icon: Icons.mic_rounded,
+          size: AppButtonSize.s,
+          onPressed: onStart,
+        ),
+      ],
       NotesRecorderState.recording => [
-          AppButton.secondary(
-            label: pauseLabel,
-            icon: Icons.pause_rounded,
-            size: AppButtonSize.s,
-            onPressed: onPause,
-          ),
-          AppButton.primary(
-            label: stopLabel,
-            icon: Icons.stop_rounded,
-            size: AppButtonSize.s,
-            onPressed: onStop,
-          ),
-          AppButton.ghost(
-            label: discardLabel,
-            icon: Icons.delete_outline_rounded,
-            size: AppButtonSize.s,
-            onPressed: onDiscard,
-          ),
-        ],
+        AppButton.secondary(
+          label: pauseLabel,
+          icon: Icons.pause_rounded,
+          size: AppButtonSize.s,
+          onPressed: onPause,
+        ),
+        AppButton.primary(
+          label: stopLabel,
+          icon: Icons.stop_rounded,
+          size: AppButtonSize.s,
+          onPressed: onStop,
+        ),
+        AppButton.ghost(
+          label: discardLabel,
+          icon: Icons.delete_outline_rounded,
+          size: AppButtonSize.s,
+          onPressed: onDiscard,
+        ),
+      ],
       NotesRecorderState.paused => [
-          AppButton.secondary(
-            label: resumeLabel,
-            icon: Icons.play_arrow_rounded,
-            size: AppButtonSize.s,
-            onPressed: onResume,
-          ),
-          AppButton.primary(
-            label: stopLabel,
-            icon: Icons.stop_rounded,
-            size: AppButtonSize.s,
-            onPressed: onStop,
-          ),
-          AppButton.ghost(
-            label: discardLabel,
-            icon: Icons.delete_outline_rounded,
-            size: AppButtonSize.s,
-            onPressed: onDiscard,
-          ),
-        ],
+        AppButton.secondary(
+          label: resumeLabel,
+          icon: Icons.play_arrow_rounded,
+          size: AppButtonSize.s,
+          onPressed: onResume,
+        ),
+        AppButton.primary(
+          label: stopLabel,
+          icon: Icons.stop_rounded,
+          size: AppButtonSize.s,
+          onPressed: onStop,
+        ),
+        AppButton.ghost(
+          label: discardLabel,
+          icon: Icons.delete_outline_rounded,
+          size: AppButtonSize.s,
+          onPressed: onDiscard,
+        ),
+      ],
       NotesRecorderState.permissionBlocked => [
-          AppButton.outlined(
-            label: openSettingsLabel,
-            icon: Icons.settings_rounded,
-            size: AppButtonSize.s,
-            onPressed: onOpenSettings,
-          ),
-        ],
+        AppButton.outlined(
+          label: openSettingsLabel,
+          icon: Icons.settings_rounded,
+          size: AppButtonSize.s,
+          onPressed: onOpenSettings,
+        ),
+      ],
     };
   }
 }
@@ -509,6 +501,8 @@ class NotesTranscriptSurface extends StatelessWidget {
     required this.onDone,
     this.playbackContext,
     this.emptyLabel,
+    this.retryLabel,
+    this.onRetry,
   });
 
   final String title;
@@ -519,6 +513,8 @@ class NotesTranscriptSurface extends StatelessWidget {
   final VoidCallback onDone;
   final Widget? playbackContext;
   final String? emptyLabel;
+  final String? retryLabel;
+  final VoidCallback? onRetry;
 
   @override
   Widget build(BuildContext context) {
@@ -584,6 +580,13 @@ class NotesTranscriptSurface extends StatelessWidget {
                 spacing: 8,
                 runSpacing: 8,
                 children: [
+                  if (retryLabel != null && onRetry != null)
+                    AppButton.outlined(
+                      label: retryLabel!,
+                      icon: Icons.refresh_rounded,
+                      size: AppButtonSize.s,
+                      onPressed: onRetry,
+                    ),
                   AppButton.secondary(
                     label: copyLabel,
                     icon: Icons.copy_rounded,

@@ -201,8 +201,7 @@ class NotesEditorDocumentController {
     }
 
     var previousIndex = index - 1;
-    while (previousIndex >= 0 &&
-        !isEditableText(blocks[previousIndex].type)) {
+    while (previousIndex >= 0 && !isEditableText(blocks[previousIndex].type)) {
       previousIndex--;
     }
     if (previousIndex < 0) return const NotesEditorMutation();
@@ -212,10 +211,7 @@ class NotesEditorDocumentController {
     final nextBlocks = List<NoteBlock>.from(blocks)
       ..[previousIndex] = previous.copyWith(
         text: '${previous.effectiveText}${block.effectiveText}',
-        runs: _mergeRuns([
-          ...previous.effectiveRuns,
-          ...block.effectiveRuns,
-        ]),
+        runs: _mergeRuns([...previous.effectiveRuns, ...block.effectiveRuns]),
       )
       ..removeAt(index);
     _document = _document.copyWith(blocks: nextBlocks);
@@ -224,10 +220,7 @@ class NotesEditorDocumentController {
     return _focusMutation(previous.id, activeSelection!);
   }
 
-  NotesEditorMutation convertBlock(
-    String id,
-    NotesBlockConversion conversion,
-  ) {
+  NotesEditorMutation convertBlock(String id, NotesBlockConversion conversion) {
     final block = blockById(id);
     if (block == null || !isEditableText(block.type)) {
       return const NotesEditorMutation();
@@ -266,6 +259,7 @@ class NotesEditorDocumentController {
     NoteTableData? table,
     String? imageData,
     String? drawingData,
+    NoteAudioData? audio,
     String? caption,
   }) {
     final anchorIndex = anchorId == null ? -1 : _indexOf(anchorId);
@@ -273,9 +267,12 @@ class NotesEditorDocumentController {
       id: generateNoteBlockId(),
       type: type,
       level: level,
-      table: type == NoteBlockType.table ? table ?? NoteTableData.empty() : null,
+      table: type == NoteBlockType.table
+          ? table ?? NoteTableData.empty()
+          : null,
       imageData: type == NoteBlockType.image ? imageData : null,
       drawingData: type == NoteBlockType.drawing ? drawingData : null,
+      audio: type == NoteBlockType.audio ? audio : null,
       caption: caption,
     );
     final insertAt = anchorIndex >= 0
@@ -311,10 +308,17 @@ class NotesEditorDocumentController {
         : block.copyWith(drawingData: drawingData);
     _replaceBlock(replacement);
     activeBlockId = id;
-    return const NotesEditorMutation(
-      changed: true,
-      requiresRebuild: true,
-    );
+    return const NotesEditorMutation(changed: true, requiresRebuild: true);
+  }
+
+  NotesEditorMutation updateAudio(String id, NoteAudioData audio) {
+    final block = blockById(id);
+    if (block == null || block.type != NoteBlockType.audio) {
+      return const NotesEditorMutation();
+    }
+    _replaceBlock(block.copyWith(audio: audio));
+    activeBlockId = id;
+    return const NotesEditorMutation(changed: true, requiresRebuild: true);
   }
 
   NotesEditorMutation deleteBlock(String id) {
@@ -363,10 +367,7 @@ class NotesEditorDocumentController {
     if (block.checked == checked) return const NotesEditorMutation();
     _replaceBlock(block.copyWith(checked: checked));
     activeBlockId = id;
-    return const NotesEditorMutation(
-      changed: true,
-      requiresRebuild: true,
-    );
+    return const NotesEditorMutation(changed: true, requiresRebuild: true);
   }
 
   NotesEditorMutation updateTable(String id, NoteTableData table) {
@@ -403,7 +404,10 @@ class NotesEditorDocumentController {
         break;
       case NotesTableEditCommand.addRowBelow:
         if (cells.length < 20) {
-          cells.insert(safeRow + 1, List<String>.filled(cells.first.length, ''));
+          cells.insert(
+            safeRow + 1,
+            List<String>.filled(cells.first.length, ''),
+          );
           changed = true;
         }
         break;
@@ -441,10 +445,7 @@ class NotesEditorDocumentController {
     if (!changed) return const NotesEditorMutation();
     _replaceBlock(block.copyWith(table: data.copyWith(cells: cells)));
     activeBlockId = id;
-    return const NotesEditorMutation(
-      changed: true,
-      requiresRebuild: true,
-    );
+    return const NotesEditorMutation(changed: true, requiresRebuild: true);
   }
 
   NotesEditorMutation updateCaption(String id, String caption) {
@@ -486,10 +487,7 @@ class NotesEditorDocumentController {
     }
     _document = _document.copyWith(blocks: nextBlocks);
     activeBlockId = moving.id;
-    return const NotesEditorMutation(
-      changed: true,
-      requiresRebuild: true,
-    );
+    return const NotesEditorMutation(changed: true, requiresRebuild: true);
   }
 
   Set<NotesInlineFormat> formatsForSelection(
@@ -557,8 +555,8 @@ class NotesEditorDocumentController {
         NotesInlineFormat.underline => marks.copyWith(underline: !remove),
         NotesInlineFormat.strike => marks.copyWith(strike: !remove),
         NotesInlineFormat.highlight => marks.copyWith(
-            highlightColor: remove ? null : '#FFF59D',
-          ),
+          highlightColor: remove ? null : '#FFF59D',
+        ),
         NotesInlineFormat.link => marks.copyWith(link: link),
       },
     );
@@ -568,10 +566,7 @@ class NotesEditorDocumentController {
     return const NotesEditorMutation(changed: true);
   }
 
-  NotesEditorMutation _focusMutation(
-    String blockId,
-    TextSelection? selection,
-  ) {
+  NotesEditorMutation _focusMutation(String blockId, TextSelection? selection) {
     return NotesEditorMutation(
       changed: true,
       requiresRebuild: true,
@@ -601,7 +596,8 @@ class NotesEditorDocumentController {
         type == NoteBlockType.divider ||
         type == NoteBlockType.table ||
         type == NoteBlockType.image ||
-        type == NoteBlockType.drawing;
+        type == NoteBlockType.drawing ||
+        type == NoteBlockType.audio;
   }
 
   static bool isEditableText(NoteBlockType type) {
@@ -684,10 +680,7 @@ List<NoteTextRun> _transformRuns(
     final localEnd = (end - runStart).clamp(0, run.text.length).toInt();
     if (localStart > 0) {
       result.add(
-        NoteTextRun(
-          text: run.text.substring(0, localStart),
-          marks: run.marks,
-        ),
+        NoteTextRun(text: run.text.substring(0, localStart), marks: run.marks),
       );
     }
     if (localStart < localEnd) {
@@ -700,10 +693,7 @@ List<NoteTextRun> _transformRuns(
     }
     if (localEnd < run.text.length) {
       result.add(
-        NoteTextRun(
-          text: run.text.substring(localEnd),
-          marks: run.marks,
-        ),
+        NoteTextRun(text: run.text.substring(localEnd), marks: run.marks),
       );
     }
     offset = runEnd;
@@ -754,7 +744,8 @@ List<NoteTextRun> _mergeRuns(List<NoteTextRun> runs) {
   final result = <NoteTextRun>[];
   for (final run in runs.where((item) => item.text.isNotEmpty)) {
     if (result.isNotEmpty &&
-        result.last.marks.toJson().toString() == run.marks.toJson().toString()) {
+        result.last.marks.toJson().toString() ==
+            run.marks.toJson().toString()) {
       final previous = result.removeLast();
       result.add(
         NoteTextRun(text: '${previous.text}${run.text}', marks: run.marks),

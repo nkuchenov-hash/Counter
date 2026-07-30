@@ -7,6 +7,7 @@ This file is the **single source of truth** for how this app talks to **PocketBa
 **App-owned HTTP (same host):**
 
 - `POST /api/ai/parse-task` — optional structured parsing for voice/plan text; implemented behind the reverse proxy. Client calls `DatabaseService.parseTaskViaAiBackend` only (no vendor-specific SDKs).
+- `POST /api/ai/transcribe-command` — authenticated audio transcription. `command_mode: true` serves Desktop Voice; `command_mode: false` serves freeform Notes audio and returns `raw_transcript` or `transcript`. Audio remains stored/playable if transcription fails.
 - `POST /api/auth/request-password-reset` — safe password-reset lookup/send route implemented in `pb_hooks/auth.request_password_reset.pb.js`. Body: `{ "email": "..." }`. Response exposes only `{ "exists": false }` or `{ "exists": true, "sent": true }`; SMTP failure returns a generic mail-unavailable error. The route must never return profile ids, user ids, or private fields.
 
 ---

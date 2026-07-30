@@ -44,8 +44,15 @@ extension NotesBrainExtension on DatabaseService {
     final task = _findCachedPlanningTaskForEdit(planRowIdForBackend);
     if (task == null) return;
     final doc = parseNoteDocument(task);
-    final next = doc.copyWith(meta: doc.meta.copyWith(pinned: !doc.meta.pinned));
-    _applyNoteDocument(task, next, title: task.title, categoryId: task.categoryId);
+    final next = doc.copyWith(
+      meta: doc.meta.copyWith(pinned: !doc.meta.pinned),
+    );
+    _applyNoteDocument(
+      task,
+      next,
+      title: task.title,
+      categoryId: task.categoryId,
+    );
   }
 
   /// Toggle a note's whole-note done state. Local-first.
@@ -138,7 +145,55 @@ extension NotesBrainExtension on DatabaseService {
     );
   }
 
+  /// Sends a persisted WAV audio block to the app-owned transcription route.
+  /// No client vendor SDK or secret is used. The original audio stays playable
+  /// when this method throws or the server returns an empty transcript.
+  Future<String> transcribeNoteAudio(NoteAudioData audio) async {
+    final payload = audio.dataUrl.trim();
+    final comma = payload.indexOf(',');
+    final audioBase64 = payload.startsWith('data:') && comma >= 0
+        ? payload.substring(comma + 1)
+        : payload;
+    if (audioBase64.isEmpty) throw StateError('audio_missing');
+
+    await ensurePocketBaseReady();
+    final token = pocketBase.authStore.token.trim();
+    if (token.isEmpty) throw StateError('auth_required');
+
+    final base = kPocketBaseUrl.replaceAll(RegExp(r'/$'), '');
+    final uri = Uri.parse('$base${PbAppApiRoutes.aiTranscribeCommand}');
+    final response = await http
+        .post(
+          uri,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+          body: jsonEncode({
+            'audio_base64': audioBase64,
+            'language_hint': currentLocale.value,
+            'command_mode': false,
+            'glossary_terms': const <String>[],
+          }),
+        )
+        .timeout(const Duration(seconds: 40));
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw StateError('transcript_http_${response.statusCode}');
+    }
+    final decoded = jsonDecode(response.body);
+    if (decoded is! Map) throw StateError('transcript_invalid_response');
+    final map = Map<String, dynamic>.from(decoded);
+    final serverError = map['error']?.toString().trim() ?? '';
+    if (serverError.isNotEmpty) throw StateError(serverError);
+    final transcript = (map['raw_transcript'] ?? map['transcript'] ?? '')
+        .toString()
+        .trim();
+    if (transcript.isEmpty) throw StateError('empty_transcript');
+    return transcript;
+  }
+
   /// Creates a new empty note (plan) and returns the row id for editing.
+
   /// Local-first: inserts an optimistic row immediately so the editor can
   /// open without waiting for PocketBase.
   ///

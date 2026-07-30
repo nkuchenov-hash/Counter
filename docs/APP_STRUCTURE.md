@@ -179,6 +179,7 @@ Compatibility re-exports (remove when callers migrate): root `lib/app_shell.dart
 | `models/tag.dart` | `Tag`, `TagCatalogScope` *(part)* |
 | `models/stats.dart` | Stats aggregates *(part)* |
 | `models/note_rich_types.dart` | Notes v2 inline marks, text runs, table/callout/link/reference value objects (pure data) *(part)* |
+| `models/note_audio_types.dart` | Persisted Notes audio payload, duration, transcript status/error value object *(part)* |
 | `models/note_document.dart` | `NoteDocument` / `NoteBlock` — backward-compatible `lifeos_notes_blocks_v2` envelope in existing `plans.notes_delta` *(part)* |
 | `pb_config.dart` | PocketBase URL, collection names, expand constants |
 | `auth_bridge.dart` | Session check, OAuth routing |
@@ -482,7 +483,7 @@ Parser, live category/domain resolution, normalization, command execution (`writ
 | `stats/` | `stats_view.dart`, `plan_vs_fact_tab.dart` | Productivity stats (embedded in Timeline) |
 | `planning/` | `planning_view.dart` (barrel), **`planning_page.dart`**, **`planning_quick_add_tags_controller.dart`**, **`planning_page_shell.dart`**, **`planning_sort_mode.dart`**, `plan_time_view_layout.dart`, `plan_time_gesture_contract.dart`, `planning_day_start_prefs.dart`, `bulk_planning_edit_sheet.dart`, `recurrence_scope_dialog.dart`, `smart_plan_sheet.dart`, **`time_view/`**, **`settings/`**, **`widgets/`** | Plans tab: date pager shell + day page body, quick-add tag controller, Time View modules, settings, bulk edit |
 | `lists/` | `lists_view.dart`, `lists_filters.dart`, `lists_bulk_actions.dart`, `lists_inline_add.dart`, `lists_empty_state.dart`, `lists_card.dart`, `lists_export.dart`, `category_filter_tree_field.dart` | Lists/backlog coordinator + filter/bulk/inline/empty modules + card + export + Lists-only “All categories” filter field |
-| `notes/` | `drawing_canvas_page.dart`, `notes_editor_document_controller.dart`, `notes_glm_surface.dart`, `notes_library_page.dart`, `notes_visual_tokens.dart`, `note_editor_page.dart`, **`widgets/`** (`notes_library_body.dart`, `notes_library_production_shell.dart`, `note_card.dart`, `note_editor_block_widgets.dart`, `notes_editor_tools.dart`, `notes_special_block_widgets.dart`, `notes_canonical_components.dart`, `notes_component_text_blocks.dart`, `notes_component_structural_blocks.dart`, `notes_component_media_blocks.dart`, `notes_component_tools.dart`) | Notes library/editor/drawing feature UI; exact roles in §3.4 Notes below |
+| `notes/` | `drawing_canvas_page.dart`, `notes_audio_controller.dart`, `notes_editor_document_controller.dart`, `notes_glm_surface.dart`, `notes_library_page.dart`, `notes_visual_tokens.dart`, `note_editor_page.dart`, **`widgets/`** (`notes_library_body.dart`, `notes_library_production_shell.dart`, `note_card.dart`, `note_editor_block_widgets.dart`, `notes_editor_tools.dart`, `notes_special_block_widgets.dart`, `notes_canonical_components.dart`, `notes_component_text_blocks.dart`, `notes_component_structural_blocks.dart`, `notes_component_media_blocks.dart`, `notes_component_tools.dart`) | Notes library/editor/drawing feature UI; exact roles in §3.4 Notes below |
 | `calendar/` | `calendar_view.dart` (orchestrator), `calendar_chrome_header.dart`, `calendar_month_grid.dart`, `calendar_week_grid.dart`, `calendar_day_panel.dart`, `calendar_day_events.dart`, `calendar_helpers.dart` | Calendar tab: month/week grids, chrome header, focused-day task panel |
 | `profile/` | `profile_view.dart`, **`settings/`** (account, notification, security sections), `tag_manager_page.dart`, `tag_settings_hub.dart`, `tag_settings_view.dart`, `tag_default_duration_settings_view.dart` | Profile & tag settings |
 | `settings/` | `timezone_settings.dart`, **`voice/`** (`desktop_voice_settings_section.dart`, `desktop_voice_settings_desktop.dart`, `desktop_voice_attempt_dialog.dart`), **`categories/`** (`category_list_view.dart`, `category_row_widget.dart`, `category_editor_sheet.dart`, `category_appearance_sheet.dart`, `category_tag_input_field.dart`, `category_helpers.dart`, `create_category_dialog.dart`, `category_recursive_browse_panel.dart`) | Settings-owned timezone helpers + Voice settings + Categories manager UI (More → Categories) |
@@ -498,6 +499,7 @@ Parser, live category/domain resolution, normalization, command execution (`writ
 | File | Role |
 | :--- | :--- |
 | `notes/drawing_canvas_page.dart` | Full-screen drawing canvas for image/drawing blocks (PNG data URL in/out) |
+| `notes/notes_audio_controller.dart` | Cross-platform in-memory PCM recorder, WAV codec, byte playback, recorder/transcript modal orchestration |
 | `notes/notes_editor_document_controller.dart` | Stable-ID local document, selection, conversion, reorder, table/media mutation, and compatibility-preservation controller |
 | `notes/notes_glm_surface.dart` | GLM background + centered library/editor column frames |
 | `notes/notes_library_page.dart` | Standalone Notes library page (search, chips, grid/list, sort) |
