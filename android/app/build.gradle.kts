@@ -27,8 +27,8 @@ android {
     defaultConfig {
         // Must match Google Cloud Console → Android OAuth client (package name + SHA-1).
         applicationId = "com.example.counter"
-        // Phone builds support Android 6.0+; Wear OS 3+ devices remain compatible.
-        minSdk = 23
+        // Health integration requires API 26; Wear OS 3+ devices remain compatible.
+        minSdk = 26
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
