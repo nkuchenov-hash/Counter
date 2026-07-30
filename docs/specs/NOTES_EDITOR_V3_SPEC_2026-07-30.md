@@ -1,8 +1,8 @@
 # Notes Editor V3 — Product and Engineering Specification
 
-Status: implementation source of truth  
-Date: 2026-07-30  
-Repository: `nkuchenov-hash/Counter`  
+Status: implementation source of truth
+Date: 2026-07-30
+Repository: `nkuchenov-hash/Counter`
 Implementation branch: `feature/notes-v3-design-system`
 
 ## 1. Source of truth
