@@ -1,21 +1,18 @@
 name: Validate server sleep sync
 
 on:
-  push:
+  pull_request:
     branches:
-      - agent/server-sleep-sync-google-fit
+      - main
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: agent/server-sleep-sync-google-fit
-          fetch-depth: 0
 
       - uses: subosito/flutter-action@v2
         with:
@@ -30,15 +27,6 @@ jobs:
       - name: Format and analyze Flutter
         run: |
           flutter pub get
-          dart format lib/data/health/cloud_sleep_sync_service.dart lib/data/pb_config.dart lib/features/settings/health/health_connect_settings_section.dart lib/l10n/dictionary.dart
+          dart format --output=none --set-exit-if-changed lib/data/health/cloud_sleep_sync_service.dart lib/data/pb_config.dart lib/features/settings/health/health_connect_settings_section.dart lib/l10n/dictionary.dart
           flutter analyze --no-fatal-infos --no-fatal-warnings
           git diff --check
-
-      - name: Commit formatting and remove temporary workflow
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git rm .github/workflows/server-sleep-sync-check.yml
-          git add lib/data/health/cloud_sleep_sync_service.dart lib/data/pb_config.dart lib/features/settings/health/health_connect_settings_section.dart lib/l10n/dictionary.dart
-          git commit -m "Validate server-owned sleep synchronization"
-          git push origin HEAD:agent/server-sleep-sync-google-fit
