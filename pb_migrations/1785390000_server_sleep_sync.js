@@ -14,7 +14,7 @@ migrate(function(app) {
         deleteRule: null,
         fields: [
             { name: "user_id", type: "relation", required: true, maxSelect: 1, collectionId: profiles.id, cascadeDelete: true },
-            { name: "provider", type: "select", required: true, maxSelect: 1, values: ["google_health"] },
+            { name: "provider", type: "select", required: true, maxSelect: 1, values: ["google_fit"] },
             { name: "enabled", type: "bool" },
             { name: "daily_sync_minutes", type: "number", min: 0, max: 1439, onlyInt: true },
             { name: "status", type: "select", maxSelect: 1, values: ["disconnected", "connecting", "connected", "syncing", "error"] },

@@ -50,8 +50,8 @@ abstract class PbAppApiRoutes {
 
   /// Authenticated cloud sleep-sync routes served by PocketBase hooks.
   static const String sleepSyncStatus = '/api/sleep-sync/status';
-  static const String sleepSyncGoogleHealthConnect =
-      '/api/sleep-sync/google-health/connect';
+  static const String sleepSyncGoogleFitConnect =
+      '/api/sleep-sync/google-fit/connect';
   static const String sleepSyncSettings = '/api/sleep-sync/settings';
   static const String sleepSyncRun = '/api/sleep-sync/run';
   static const String sleepSyncConnection = '/api/sleep-sync/connection';
