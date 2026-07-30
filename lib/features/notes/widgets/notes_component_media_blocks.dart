@@ -122,12 +122,15 @@ class NotesAudioBlock extends StatelessWidget {
           padding: const EdgeInsets.all(12),
           child: Row(
             children: [
-              IconButton(
+              AppIconButton(
                 tooltip: playing ? pauseTooltip : playTooltip,
-                onPressed: onPlayPause,
-                icon: Icon(
-                  playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
-                ),
+                onPressed: busy ? null : onPlayPause,
+                size: AppIconButtonSize.s,
+                variant: AppIconButtonVariant.subtle,
+                selected: playing,
+                icon: playing
+                    ? Icons.pause_rounded
+                    : Icons.play_arrow_rounded,
               ),
               Expanded(
                 child: Column(
@@ -157,10 +160,12 @@ class NotesAudioBlock extends StatelessWidget {
                   style: Theme.of(context).textTheme.labelMedium,
                 ),
               if (onOpenTranscript != null)
-                IconButton(
+                AppIconButton(
                   tooltip: transcriptTooltip,
                   onPressed: onOpenTranscript,
-                  icon: const Icon(Icons.notes_rounded),
+                  size: AppIconButtonSize.s,
+                  variant: AppIconButtonVariant.subtle,
+                  icon: Icons.notes_rounded,
                 ),
             ],
           ),
