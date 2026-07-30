@@ -50,7 +50,9 @@ class NotesTextBlock extends StatelessWidget {
       decoration: InputDecoration(
         hintText: hintText,
         hintStyle: _notesTextStyle(context, style).copyWith(
-          color: scheme.onSurfaceVariant.withValues(alpha: 0.55),
+          color: NotesFigmaTokens.textSecondary(
+            context,
+          ).withValues(alpha: 0.55),
         ),
         border: InputBorder.none,
         enabledBorder: InputBorder.none,
@@ -64,7 +66,7 @@ class NotesTextBlock extends StatelessWidget {
     );
     return _NotesActiveIndicatorFrame(
       state: state,
-      topInset: style == NotesTextBlockStyle.h1 ? 20 : 12,
+      topInset: style == NotesTextBlockStyle.h1 ? 18 : 12,
       child: semanticLabel == null
           ? textField
           : Semantics(label: semanticLabel, textField: true, child: textField),
@@ -98,20 +100,23 @@ class NotesListBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     final marker = listStyle == NotesListStyle.bulleted
         ? Container(
             width: 6,
             height: 6,
             decoration: BoxDecoration(
-              color: scheme.onSurface,
+              color: NotesFigmaTokens.textPrimary(context),
               shape: BoxShape.circle,
             ),
           )
         : Text(
             '$ordinal.',
             textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 16, height: 1.45),
+            style: TextStyle(
+              fontSize: 16,
+              height: 1.45,
+              color: NotesFigmaTokens.textPrimary(context),
+            ),
           );
     return _NotesActiveIndicatorFrame(
       state: state,
@@ -157,11 +162,9 @@ class NotesChecklistBlock extends StatelessWidget {
     return _NotesActiveIndicatorFrame(
       state: state,
       child: _NotesLeadingTextRow(
-        leading: Checkbox(
-          value: checked,
-          onChanged: (value) => onCheckedChanged(value ?? false),
-          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          visualDensity: VisualDensity.compact,
+        leading: _NotesCheckbox(
+          checked: checked,
+          onChanged: onCheckedChanged,
         ),
         controller: controller,
         focusNode: focusNode,
@@ -170,6 +173,46 @@ class NotesChecklistBlock extends StatelessWidget {
         onTap: onTap,
         textFieldKey: textFieldKey,
         checked: checked,
+      ),
+    );
+  }
+}
+
+class _NotesCheckbox extends StatelessWidget {
+  const _NotesCheckbox({required this.checked, required this.onChanged});
+
+  final bool checked;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final fill = NotesFigmaTokens.selectedSurface(context);
+    final border = NotesFigmaTokens.textPrimary(
+      context,
+    ).withValues(alpha: 0.15);
+    return Semantics(
+      button: true,
+      checked: checked,
+      child: InkWell(
+        onTap: () => onChanged(!checked),
+        borderRadius: BorderRadius.circular(6),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 120),
+          width: 20,
+          height: 20,
+          decoration: BoxDecoration(
+            color: checked ? fill : Colors.transparent,
+            borderRadius: BorderRadius.circular(6),
+            border: checked ? null : Border.all(color: border),
+          ),
+          child: checked
+              ? Icon(
+                  Icons.check_rounded,
+                  size: 14,
+                  color: NotesFigmaTokens.selectedIcon(context),
+                )
+              : null,
+        ),
       ),
     );
   }
@@ -202,9 +245,9 @@ class _NotesLeadingTextRow extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         kNotesContentInset,
-        kNotesBlockVerticalPadding,
+        10,
         kNotesContentInset,
-        kNotesBlockVerticalPadding,
+        10,
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -228,12 +271,17 @@ class _NotesLeadingTextRow extends StatelessWidget {
               onTap: onTap,
               style: checked
                   ? baseStyle.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      color: NotesFigmaTokens.textSecondary(context),
                       decoration: TextDecoration.lineThrough,
                     )
                   : baseStyle,
               decoration: InputDecoration(
                 hintText: hintText,
+                hintStyle: baseStyle.copyWith(
+                  color: NotesFigmaTokens.textSecondary(
+                    context,
+                  ).withValues(alpha: 0.55),
+                ),
                 border: InputBorder.none,
                 enabledBorder: InputBorder.none,
                 focusedBorder: InputBorder.none,
