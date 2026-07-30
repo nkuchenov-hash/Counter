@@ -38,13 +38,14 @@ class NotesToolbarButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     final foreground = selected
-        ? scheme.onInverseSurface
+        ? NotesFigmaTokens.selectedIcon(context)
         : enabled
-        ? scheme.onSurface
-        : scheme.onSurface.withValues(alpha: 0.35);
-    final background = selected ? scheme.inverseSurface : Colors.transparent;
+        ? NotesFigmaTokens.iconSecondary(context)
+        : NotesFigmaTokens.iconSecondary(context).withValues(alpha: 0.35);
+    final background = selected
+        ? NotesFigmaTokens.selectedSurface(context)
+        : Colors.transparent;
     return Tooltip(
       message: tooltip,
       child: Semantics(
@@ -54,14 +55,22 @@ class NotesToolbarButton extends StatelessWidget {
         label: tooltip,
         child: Material(
           color: background,
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(
+            NotesFigmaTokens.toolbarButtonRadius,
+          ),
           child: InkWell(
             key: ValueKey('notes-toolbar-${tool.name}'),
             onTap: enabled ? onPressed : null,
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(
+              NotesFigmaTokens.toolbarButtonRadius,
+            ),
             child: SizedBox.square(
-              dimension: kNotesToolbarButtonSize,
-              child: Icon(icon, size: 22, color: foreground),
+              dimension: NotesFigmaTokens.toolbarButtonSize,
+              child: Icon(
+                icon,
+                size: NotesFigmaTokens.toolbarIconSize,
+                color: foreground,
+              ),
             ),
           ),
         ),
@@ -70,6 +79,10 @@ class NotesToolbarButton extends StatelessWidget {
   }
 }
 
+/// Figma `Notes/Formatting Toolbar` (604:8938).
+///
+/// It is deliberately content-width and 48 px high. Parent screens must pin it
+/// over scroll content; it must never be used as a stretching bottom bar.
 class NotesEditorToolbar extends StatelessWidget {
   const NotesEditorToolbar({super.key, required this.actions});
 
@@ -77,31 +90,78 @@ class NotesEditorToolbar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Material(
-      color: scheme.surface.withValues(alpha: 0.96),
-      elevation: 6,
-      shadowColor: scheme.shadow.withValues(alpha: 0.16),
-      child: SafeArea(
-        top: false,
-        minimum: const EdgeInsets.fromLTRB(8, 8, 8, 8),
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              for (var index = 0; index < actions.length; index++) ...[
-                if (index > 0) const SizedBox(width: 4),
-                NotesToolbarButton(
-                  tool: actions[index].tool,
-                  icon: actions[index].icon,
-                  tooltip: actions[index].tooltip,
-                  onPressed: actions[index].onPressed,
-                  selected: actions[index].selected,
-                  enabled: actions[index].enabled,
+    final viewportWidth = MediaQuery.sizeOf(context).width;
+    final width = math.min(
+      NotesFigmaTokens.toolbarWidth,
+      math.max(0, viewportWidth - 40),
+    );
+    return SizedBox(
+      width: width,
+      height: NotesFigmaTokens.toolbarHeight,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(
+            NotesFigmaTokens.toolbarRadius,
+          ),
+          boxShadow: [NotesFigmaTokens.toolbarShadow],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(
+            NotesFigmaTokens.toolbarRadius,
+          ),
+          child: BackdropFilter(
+            filter: ui.ImageFilter.blur(
+              sigmaX: NotesFigmaTokens.glassBlur,
+              sigmaY: NotesFigmaTokens.glassBlur,
+            ),
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: NotesFigmaTokens.glassFill(context),
+                borderRadius: BorderRadius.circular(
+                  NotesFigmaTokens.toolbarRadius,
                 ),
-              ],
-            ],
+                border: Border.all(
+                  color: NotesFigmaTokens.glassStroke(context),
+                ),
+              ),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final compact = constraints.maxWidth < 320;
+                  final row = Row(
+                    mainAxisSize: compact
+                        ? MainAxisSize.min
+                        : MainAxisSize.max,
+                    mainAxisAlignment: compact
+                        ? MainAxisAlignment.start
+                        : MainAxisAlignment.spaceBetween,
+                    children: [
+                      for (final action in actions)
+                        NotesToolbarButton(
+                          tool: action.tool,
+                          icon: action.icon,
+                          tooltip: action.tooltip,
+                          onPressed: action.onPressed,
+                          selected: action.selected,
+                          enabled: action.enabled,
+                        ),
+                    ],
+                  );
+                  final padded = Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: NotesFigmaTokens.toolbarHorizontalPadding,
+                      vertical: NotesFigmaTokens.toolbarVerticalPadding,
+                    ),
+                    child: row,
+                  );
+                  return compact
+                      ? SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: padded,
+                        )
+                      : padded;
+                },
+              ),
+            ),
           ),
         ),
       ),
@@ -109,6 +169,7 @@ class NotesEditorToolbar extends StatelessWidget {
   }
 }
 
+/// Figma `Menus/Floating Options Sheet` glass surface.
 class NotesFloatingMenuSurface extends StatelessWidget {
   const NotesFloatingMenuSurface({
     super.key,
@@ -121,18 +182,35 @@ class NotesFloatingMenuSurface extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     return ConstrainedBox(
       constraints: BoxConstraints(maxWidth: maxWidth),
-      child: Material(
-        color: scheme.surface,
-        elevation: 10,
-        shadowColor: scheme.shadow.withValues(alpha: 0.22),
-        shape: RoundedRectangleBorder(
+      child: DecoratedBox(
+        decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(kNotesMenuRadius),
-          side: BorderSide(color: scheme.outlineVariant),
+          boxShadow: [NotesFigmaTokens.floatingMenuShadow],
         ),
-        child: Padding(padding: const EdgeInsets.all(16), child: child),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(kNotesMenuRadius),
+          child: BackdropFilter(
+            filter: ui.ImageFilter.blur(
+              sigmaX: NotesFigmaTokens.floatingMenuBlur,
+              sigmaY: NotesFigmaTokens.floatingMenuBlur,
+            ),
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: NotesFigmaTokens.glassFill(context),
+                borderRadius: BorderRadius.circular(kNotesMenuRadius),
+                border: Border.all(
+                  color: NotesFigmaTokens.glassStroke(context),
+                ),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: child,
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -215,7 +293,7 @@ class NotesTextFormattingMenu extends StatelessWidget {
                 },
                 color: format == NotesInlineFormat.link
                     ? scheme.primary
-                    : scheme.onSurface,
+                    : NotesFigmaTokens.textPrimary(context),
                 backgroundColor: format == NotesInlineFormat.highlight
                     ? scheme.tertiaryContainer
                     : null,
@@ -256,8 +334,17 @@ class NotesInsertMenu extends StatelessWidget {
             ListTile(
               dense: true,
               contentPadding: const EdgeInsets.symmetric(horizontal: 4),
-              leading: Icon(action.icon, size: 20),
-              title: Text(action.label),
+              leading: Icon(
+                action.icon,
+                size: 20,
+                color: NotesFigmaTokens.iconSecondary(context),
+              ),
+              title: Text(
+                action.label,
+                style: TextStyle(
+                  color: NotesFigmaTokens.textPrimary(context),
+                ),
+              ),
               onTap: action.onPressed,
             ),
         ],
@@ -281,9 +368,9 @@ class _NotesMenuRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final selectedColor = NotesFigmaTokens.selectedSurface(context);
     return Material(
-      color: selected ? scheme.secondaryContainer : Colors.transparent,
+      color: selected ? selectedColor.withValues(alpha: 0.08) : Colors.transparent,
       borderRadius: BorderRadius.circular(10),
       child: InkWell(
         onTap: onTap,
@@ -294,7 +381,7 @@ class _NotesMenuRow extends StatelessWidget {
             children: [
               Expanded(child: Text(label, style: previewStyle)),
               if (selected)
-                Icon(Icons.check_rounded, size: 18, color: scheme.primary),
+                Icon(Icons.check_rounded, size: 18, color: selectedColor),
             ],
           ),
         ),
