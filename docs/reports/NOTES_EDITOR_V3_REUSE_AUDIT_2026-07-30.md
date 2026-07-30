@@ -82,6 +82,9 @@ Public import: `lib/features/notes/widgets/notes_canonical_components.dart`.
 | `Notes/Table Size Picker` | `NotesTableSizePicker` | `notes_component_structural_blocks.dart`; compact/extended range is parameterized |
 | `Notes/Block/Image` / `Drawing` | `NotesMediaBlock` | `notes_component_media_blocks.dart`; media child and kind are parameters |
 | `Notes/Block/Audio` | `NotesAudioBlock` | `notes_component_media_blocks.dart`; state is a parameter |
+| `Notes/Drawing Controls` | `NotesDrawingControls` | `notes_component_media_blocks.dart`; pen/highlighter/eraser/lasso, color, width, undo/redo |
+| `Notes/Recorder Controls` | `NotesRecorderControls` | `notes_component_media_blocks.dart`; ready/recording/paused/permission-blocked states |
+| `Notes/Transcript` | `NotesTranscriptSurface` | `notes_component_media_blocks.dart`; fixed header/actions and scrollable transcript body |
 | `Notes/Toolbar/Button` | `NotesToolbarButton` | `notes_component_tools.dart` |
 | `Notes/Toolbar` | `NotesEditorToolbar` | `notes_component_tools.dart` |
 | `Notes/Menus/*` shell | `NotesFloatingMenuSurface` | `notes_component_tools.dart` |
@@ -101,6 +104,8 @@ Public import: `lib/features/notes/widgets/notes_canonical_components.dart`.
 - Toolbar selected state uses a dark semantic surface with a contrasting icon.
 - The toolbar tool enum intentionally has no Link member.
 - The table size picker defaults to 5 × 5 and accepts a larger configured range without introducing a desktop class.
+- Drawing, recorder, audio, and transcript controls are responsive shared widgets; platform services are injected through callbacks.
+- Notes actions reuse canonical `AppButton` and `AppIconButton` instead of raw app-action buttons.
 - All colors are derived from `ColorScheme`.
 - The canonical library is split into focused Dart parts; the public import remains one barrel.
 
@@ -111,6 +116,6 @@ Public import: `lib/features/notes/widgets/notes_canonical_components.dart`.
 - Native selection integration and formatting application to selected ranges.
 - Reorder controller and autosave integration.
 - Component Lab wiring.
-- Image picker/options, drawing editor integration, recorder service, transcript persistence, and platform permissions.
+- Image picker/options, drawing canvas service integration, recorder service, transcript persistence, and platform permissions.
 
 No PocketBase schema or Brain ownership change is required for this component slice.
