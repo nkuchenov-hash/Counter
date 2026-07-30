@@ -1,8 +1,10 @@
 import 'dart:math' as math;
+import 'dart:ui' as ui;
 
 import 'package:counter/core/widgets/app_button.dart';
 import 'package:counter/core/widgets/app_icon_button.dart';
 import 'package:counter/data/models.dart';
+import 'package:counter/features/notes/notes_figma_tokens.dart';
 import 'package:flutter/material.dart';
 
 part 'notes_component_text_blocks.dart';
@@ -38,12 +40,12 @@ enum NotesToolbarTool {
 
 enum NotesInlineFormat { bold, italic, underline, strike, highlight, link }
 
-const double kNotesContentInset = 20;
+const double kNotesContentInset = NotesFigmaTokens.editorContentInset;
 const double kNotesBlockVerticalPadding = 12;
 const double kNotesLeadingSize = 20;
 const double kNotesLeadingGap = 10;
-const double kNotesToolbarButtonSize = 40;
-const double kNotesMenuRadius = 16;
+const double kNotesToolbarButtonSize = NotesFigmaTokens.toolbarButtonSize;
+const double kNotesMenuRadius = NotesFigmaTokens.floatingMenuRadius;
 
 /// Text controller that renders the existing v2 inline runs before the editable
 /// receives a changed value. This keeps rich text from flashing as plain text.
@@ -142,7 +144,7 @@ class _NotesActiveIndicatorFrame extends StatelessWidget {
             bottom: 12,
             child: DecoratedBox(
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.outlineVariant,
+                color: NotesFigmaTokens.borderSubtle(context),
                 borderRadius: BorderRadius.circular(999),
               ),
               child: const SizedBox(width: 2),
@@ -157,33 +159,34 @@ TextStyle _notesTextStyle(
   BuildContext context,
   NotesTextBlockStyle style,
 ) {
-  final scheme = Theme.of(context).colorScheme;
+  final color = NotesFigmaTokens.textPrimary(context);
   return switch (style) {
     NotesTextBlockStyle.body => TextStyle(
-        fontSize: 16,
-        height: 1.5,
+        fontSize: NotesFigmaTokens.bodySize,
+        height:
+            NotesFigmaTokens.bodyLineHeight / NotesFigmaTokens.bodySize,
         fontWeight: FontWeight.w400,
-        color: scheme.onSurface,
+        color: color,
       ),
     NotesTextBlockStyle.h1 => TextStyle(
-        fontSize: 30,
-        height: 1.18,
-        fontWeight: FontWeight.w700,
-        letterSpacing: -0.5,
-        color: scheme.onSurface,
-      ),
-    NotesTextBlockStyle.h2 => TextStyle(
-        fontSize: 24,
-        height: 1.24,
+        fontSize: NotesFigmaTokens.h1Size,
+        height: NotesFigmaTokens.h1LineHeight / NotesFigmaTokens.h1Size,
         fontWeight: FontWeight.w700,
         letterSpacing: -0.25,
-        color: scheme.onSurface,
+        color: color,
+      ),
+    NotesTextBlockStyle.h2 => TextStyle(
+        fontSize: NotesFigmaTokens.h2Size,
+        height: NotesFigmaTokens.h2LineHeight / NotesFigmaTokens.h2Size,
+        fontWeight: FontWeight.w700,
+        letterSpacing: -0.15,
+        color: color,
       ),
     NotesTextBlockStyle.h3 => TextStyle(
-        fontSize: 20,
-        height: 1.3,
+        fontSize: NotesFigmaTokens.h3Size,
+        height: NotesFigmaTokens.h3LineHeight / NotesFigmaTokens.h3Size,
         fontWeight: FontWeight.w600,
-        color: scheme.onSurface,
+        color: color,
       ),
   };
 }
