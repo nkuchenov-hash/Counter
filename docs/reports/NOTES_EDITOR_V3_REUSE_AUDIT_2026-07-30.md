@@ -92,30 +92,24 @@ Public import: `lib/features/notes/widgets/notes_canonical_components.dart`.
 | `Notes/Menus/Heading Styles` | `NotesHeadingStylesMenu` | `notes_component_tools.dart` |
 | Empty-line insert menu | `NotesInsertMenu` | `notes_component_tools.dart` |
 
-## Component rules established by the first implementation slice
+## Implemented production behavior
 
-- One widget class per concept is used at every width.
-- Width is supplied by normal Flutter constraints; no platform branch changes component identity.
-- Text-like blocks stay transparent in default and active states.
-- Active text/list/checklist state uses a dynamic-height indicator in the left gutter.
-- Body, list, and checklist visible text share the specification geometry.
-- Quote and table own card surfaces and active outlines.
-- Media selection outlines only the media frame; caption remains outside.
-- Toolbar selected state uses a dark semantic surface with a contrasting icon.
-- The toolbar tool enum intentionally has no Link member.
-- The table size picker defaults to 5 × 5 and accepts a larger configured range without introducing a desktop class.
-- Drawing, recorder, audio, and transcript controls are responsive shared widgets; platform services are injected through callbacks.
-- Notes actions reuse canonical `AppButton` and `AppIconButton` instead of raw app-action buttons.
-- All colors are derived from `ColorScheme`.
-- The canonical library is split into focused Dart parts; the public import remains one barrel.
+- Empty notes open with H1; Enter creates Body.
+- Text, heading, quote, list, checklist, divider, table, image, and drawing payload blocks use canonical shared components.
+- Body/H1/H2/H3/Quote/List/Checklist conversions preserve text and inline runs.
+- Bold, italic, underline, strikethrough, highlight, and inline link edits apply to the selected range.
+- Block deletion keeps at least one editable block and does not remove unsupported legacy blocks.
+- Table controls add/delete rows and columns within the existing 20 × 6 serialization bounds.
+- Reorder works on visible production blocks while hidden compatibility blocks keep their stored position.
+- Checklist, table cell, media caption, insert, conversion, formatting, delete, and reorder changes are local-first and use debounced Brain persistence.
+- Existing image/drawing payloads render; media selection outlines only the frame.
 
-## Deferred to the next implementation slice
+## Remaining implementation scope
 
-- Production editor orchestration and document controller.
-- H1 → Body Enter behavior and list/checklist Enter/Backspace rules.
-- Native selection integration and formatting application to selected ranges.
-- Reorder controller and autosave integration.
-- Component Lab wiring.
-- Image picker/options, drawing canvas service integration, recorder service, transcript persistence, and platform permissions.
+- Image source picker, replace/crop/copy/save options, and camera support where available.
+- Dedicated drawing editor integration using the canonical V3 drawing controls.
+- Audio recording service, playback, transcription persistence, transcript error recovery, and platform permissions.
+- Component Lab mock scenarios.
+- Focused Flutter test execution and mobile/desktop visual checks.
 
-No PocketBase schema or Brain ownership change is required for this component slice.
+No PocketBase schema or Brain ownership change is required for the remaining work.
