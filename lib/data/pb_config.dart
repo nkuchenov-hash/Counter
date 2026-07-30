@@ -47,6 +47,14 @@ abstract class PbAppApiRoutes {
   /// Body: `{ "email": "..." }`; response never exposes profile data.
   static const String authRequestPasswordReset =
       '/api/auth/request-password-reset';
+
+  /// Authenticated cloud sleep-sync routes served by PocketBase hooks.
+  static const String sleepSyncStatus = '/api/sleep-sync/status';
+  static const String sleepSyncGoogleHealthConnect =
+      '/api/sleep-sync/google-health/connect';
+  static const String sleepSyncSettings = '/api/sleep-sync/settings';
+  static const String sleepSyncRun = '/api/sleep-sync/run';
+  static const String sleepSyncConnection = '/api/sleep-sync/connection';
 }
 
 /// PocketBase collection names (Admin → Collections). Must match server.
@@ -56,6 +64,7 @@ abstract class PbCollections {
   static const String categories = TableNames.categories;
   static const String plans = TableNames.plans;
   static const String tags = 'tags';
+  static const String sleepSyncConnections = 'sleep_sync_connections';
 }
 
 /// PocketBase Admin → OAuth2 provider **names** must match these strings exactly.
