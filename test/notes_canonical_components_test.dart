@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/notes/note_editor_page.dart';
 import 'package:counter/features/notes/widgets/notes_canonical_components.dart';
+import 'package:counter/features/notes/widgets/notes_editor_tools.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -47,58 +48,93 @@ void main() {
     expect(roundTrip.blocks.last.effectiveText, 'Preserve me');
   });
 
-  test('editor core handles H1 enter, insert, reorder, and preservation', () {
-    final empty = NotesEditorDocumentController(const NoteDocument());
-    final first = empty.blocks.single;
-    expect(first.type, NoteBlockType.heading);
-    expect(first.level, 1);
+  test(
+    'editor core handles H1 enter, formatting, table edits, delete, and preservation',
+    () {
+      final legacy = NoteBlock(
+        id: 'legacy-reference',
+        type: NoteBlockType.noteReference,
+        reference: const NoteReferenceData(targetId: 'note-42'),
+      );
+      final editor = NotesEditorDocumentController(
+        NoteDocument(blocks: [legacy]),
+      );
+      final first = editor.visibleBlocks.single;
+      expect(first.type, NoteBlockType.heading);
+      expect(first.level, 1);
 
-    empty.applyTextInput(
-      first.id,
-      'Heading',
-      const TextSelection.collapsed(offset: 7),
-    );
-    final enter = empty.handleEnter(
-      first.id,
-      const TextSelection.collapsed(offset: 7),
-    );
-    expect(enter.changed, isTrue);
-    expect(empty.blocks.map((block) => block.type).toList(), [
-      NoteBlockType.heading,
-      NoteBlockType.paragraph,
-    ]);
+      editor.applyTextInput(
+        first.id,
+        'Heading',
+        const TextSelection.collapsed(offset: 7),
+      );
+      final formatted = editor.applyInlineFormat(
+        first.id,
+        const TextSelection(baseOffset: 0, extentOffset: 7),
+        NotesInlineFormat.bold,
+      );
+      expect(formatted.changed, isTrue);
+      expect(
+        editor.blockById(first.id)!.effectiveRuns.single.marks.bold,
+        isTrue,
+      );
 
-    final bodyId = empty.blocks.last.id;
-    empty.insertAfter(
-      bodyId,
-      NoteBlockType.table,
-      table: NoteTableData.empty(rows: 2, columns: 3),
-    );
-    final tableIndex = empty.blocks.indexWhere(
-      (block) => block.type == NoteBlockType.table,
-    );
-    empty.reorder(tableIndex, 0);
-    expect(empty.blocks.first.type, NoteBlockType.table);
+      final enter = editor.handleEnter(
+        first.id,
+        const TextSelection.collapsed(offset: 7),
+      );
+      expect(enter.changed, isTrue);
+      expect(editor.visibleBlocks.map((block) => block.type).toList(), [
+        NoteBlockType.heading,
+        NoteBlockType.paragraph,
+      ]);
 
-    final legacy = NoteBlock(
-      id: 'legacy-reference',
-      type: NoteBlockType.noteReference,
-      reference: const NoteReferenceData(targetId: 'note-42'),
-    );
-    final withLegacy = NotesEditorDocumentController(
-      empty.document.copyWith(blocks: [...empty.blocks, legacy]),
-    );
-    final saved = NoteDocument.tryParse(
-      notesDeltaJson: withLegacy.document.encode(),
-    );
-    expect(
-      saved.blocks
-          .singleWhere((block) => block.id == legacy.id)
-          .reference
-          ?.targetId,
-      'note-42',
-    );
-  });
+      final bodyId = editor.visibleBlocks.last.id;
+      editor.insertAfter(
+        bodyId,
+        NoteBlockType.table,
+        table: NoteTableData.empty(rows: 2, columns: 3),
+      );
+      final table = editor.visibleBlocks.singleWhere(
+        (block) => block.type == NoteBlockType.table,
+      );
+      editor.editTable(
+        table.id,
+        NotesTableEditCommand.addRowBelow,
+        row: 0,
+        column: 0,
+      );
+      editor.editTable(
+        table.id,
+        NotesTableEditCommand.addColumnRight,
+        row: 0,
+        column: 0,
+      );
+      expect(editor.blockById(table.id)!.table?.rowCount, 3);
+      expect(editor.blockById(table.id)!.table?.columnCount, 4);
+
+      final tableIndex = editor.visibleBlocks.indexWhere(
+        (block) => block.id == table.id,
+      );
+      editor.reorderVisible(tableIndex, 0);
+      expect(editor.visibleBlocks.first.type, NoteBlockType.table);
+
+      final deleted = editor.deleteBlock(bodyId);
+      expect(deleted.changed, isTrue);
+      expect(editor.visibleBlocks.any((block) => block.id == bodyId), isFalse);
+
+      final saved = NoteDocument.tryParse(
+        notesDeltaJson: editor.document.encode(),
+      );
+      expect(
+        saved.blocks
+            .singleWhere((block) => block.id == legacy.id)
+            .reference
+            ?.targetId,
+        'note-42',
+      );
+    },
+  );
 
   testWidgets(
     'canonical editor components stay aligned and responsive at both widths',
