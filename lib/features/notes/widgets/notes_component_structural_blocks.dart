@@ -322,7 +322,7 @@ class _NotesTableSizePickerState extends State<NotesTableSizePicker> {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final rows = widget.maxRows.clamp(1, 20).toInt();
-    final columns = widget.maxColumns.clamp(1, 12).toInt();
+    final columns = widget.maxColumns.clamp(1, 6).toInt();
     final gridWidth = columns * widget.cellSize;
     final gridHeight = rows * widget.cellSize;
     final grid = Column(
