@@ -1,7 +1,7 @@
 # Notes Editor V3 — PR #24 / #25 reuse audit
 
-Date: 2026-07-30  
-Branch: `feature/notes-v3-design-system`  
+Date: 2026-07-30
+Branch: `feature/notes-v3-design-system`
 Source of truth: `docs/specs/NOTES_EDITOR_V3_SPEC_2026-07-30.md`
 
 ## Scope
