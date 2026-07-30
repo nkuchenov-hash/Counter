@@ -61,6 +61,8 @@
 	</array>
 	<key>NSFaceIDUsageDescription</key>
 	<string>Unlock the app with Face ID</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Record audio inside Life OS notes.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Select images to add to Life OS notes.</string>
 	<key>NSCameraUsageDescription</key>
