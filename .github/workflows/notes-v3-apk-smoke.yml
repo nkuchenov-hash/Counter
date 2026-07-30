@@ -1,6 +1,9 @@
 name: Notes V3 APK Smoke
 
 on:
+  pull_request:
+    branches:
+      - main
   push:
     branches:
       - feature/notes-v3-design-system
@@ -10,6 +13,7 @@ permissions:
 
 jobs:
   build-notes-apk:
+    if: github.event_name == 'push' || github.head_ref == 'feature/notes-v3-design-system'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
