@@ -54,6 +54,7 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
   final Map<String, NotesTextEditingController> _textControllers = {};
   final Map<String, TextEditingController> _captionControllers = {};
   final Map<String, FocusNode> _focusNodes = {};
+  final Map<String, TextSelection> _lastSelections = {};
   bool _dirty = false;
 
   @override
@@ -66,7 +67,12 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
     _gate = EditSheetAutosaveGate();
     _syncEditorsWithDocument();
 
-    if (_sourceDocument.blocks.isEmpty && _editor.activeBlockId != null) {
+    if (_editor.activeBlockId != null &&
+        _sourceDocument.blocks.every(
+          (block) => !NotesEditorDocumentController.isSupportedProductionBlock(
+            block.type,
+          ),
+        )) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
         _requestFocus(
@@ -131,13 +137,25 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
   }
 
   NotesTextEditingController _textControllerFor(NoteBlock block) {
-    return _textControllers.putIfAbsent(
-      block.id,
-      () => NotesTextEditingController(
+    return _textControllers.putIfAbsent(block.id, () {
+      final controller = NotesTextEditingController(
         text: block.effectiveText,
         runs: block.effectiveRuns,
-      ),
-    );
+      );
+      _lastSelections[block.id] = controller.selection;
+      controller.addListener(() {
+        final previous = _lastSelections[block.id];
+        final next = controller.selection;
+        if (previous == next) return;
+        _lastSelections[block.id] = next;
+        _editor.updateSelection(block.id, next);
+        if (!mounted || _editor.activeBlockId != block.id) return;
+        if (previous?.isCollapsed != next.isCollapsed) {
+          setState(() {});
+        }
+      });
+      return controller;
+    });
   }
 
   TextEditingController _captionControllerFor(NoteBlock block) {
@@ -168,7 +186,7 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
     final textIds = <String>{};
     final captionIds = <String>{};
     final focusIds = <String>{};
-    for (final block in _editor.blocks) {
+    for (final block in _editor.visibleBlocks) {
       if (NotesEditorDocumentController.isEditableText(block.type)) {
         textIds.add(block.id);
         final controller = _textControllerFor(block);
@@ -205,6 +223,7 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
     _disposeRemoved(_textControllers, textIds);
     _disposeRemoved(_captionControllers, captionIds);
     _disposeRemoved(_focusNodes, focusIds);
+    _lastSelections.removeWhere((id, _) => !textIds.contains(id));
   }
 
   void _disposeRemoved<T extends ChangeNotifier>(
@@ -326,6 +345,17 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
     return NotesTextBlockStyle.h2;
   }
 
+  Set<NotesInlineFormat> _selectionFormats() {
+    final block = _editor.activeBlock;
+    if (block == null ||
+        !NotesEditorDocumentController.isEditableText(block.type)) {
+      return const <NotesInlineFormat>{};
+    }
+    final selection = _textControllers[block.id]?.selection;
+    if (selection == null) return const <NotesInlineFormat>{};
+    return _editor.formatsForSelection(block.id, selection);
+  }
+
   Future<void> _showHeadingMenu() {
     return showNotesHeadingStylesMenu(
       context: context,
@@ -340,6 +370,62 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
         _convertActive(conversion);
       },
     );
+  }
+
+  Future<void> _showFormattingMenu() {
+    final block = _editor.activeBlock;
+    if (block == null ||
+        !NotesEditorDocumentController.isEditableText(block.type)) {
+      return Future<void>.value();
+    }
+    final selection = _textControllerFor(block).selection;
+    return showNotesTextFormattingMenu(
+      context: context,
+      selected: _editor.formatsForSelection(block.id, selection),
+      onSelected: (format) {
+        if (format == NotesInlineFormat.link) {
+          _editLink(block.id, selection);
+          return;
+        }
+        _applyInlineFormat(block.id, selection, format);
+      },
+    );
+  }
+
+  Future<void> _editLink(String blockId, TextSelection selection) async {
+    final current = _editor.linkForSelection(blockId, selection);
+    final result = await showNotesLinkDialog(
+      context: context,
+      currentUrl: current,
+    );
+    if (!mounted || result == null) return;
+    _applyInlineFormat(
+      blockId,
+      selection,
+      NotesInlineFormat.link,
+      link: result.url,
+    );
+  }
+
+  void _applyInlineFormat(
+    String blockId,
+    TextSelection selection,
+    NotesInlineFormat format, {
+    String? link,
+  }) {
+    final mutation = _editor.applyInlineFormat(
+      blockId,
+      selection,
+      format,
+      link: link,
+    );
+    if (!mutation.changed) return;
+    final updated = _editor.blockById(blockId);
+    if (updated != null) {
+      _textControllerFor(updated).setRuns(updated.effectiveRuns);
+    }
+    _scheduleSave();
+    setState(() {});
   }
 
   Future<void> _showTablePicker({String? anchorId}) {
@@ -370,17 +456,32 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
     );
   }
 
+  Future<void> _showActiveBlockOptions() {
+    final block = _editor.activeBlock;
+    if (block == null) return Future<void>.value();
+    return showNotesBlockOptionsMenu(
+      context: context,
+      block: block,
+      onDeleteBlock: () => _applyMutation(_editor.deleteBlock(block.id)),
+      onTableCommand: block.type == NoteBlockType.table
+          ? (command) => _applyMutation(
+                _editor.editTable(block.id, command, row: 0, column: 0),
+              )
+          : null,
+    );
+  }
+
   int _numberedOrdinal(int index) {
     var ordinal = 1;
     for (var cursor = index - 1; cursor >= 0; cursor--) {
-      if (_editor.blocks[cursor].type != NoteBlockType.numberedList) break;
+      if (_editor.visibleBlocks[cursor].type != NoteBlockType.numberedList) break;
       ordinal++;
     }
     return ordinal;
   }
 
   Widget _buildBlock(BuildContext context, int index) {
-    final block = _editor.blocks[index];
+    final block = _editor.visibleBlocks[index];
     final editable = NotesEditorDocumentController.isEditableText(block.type);
     return NotesEditorBlockItem(
       block: block,
@@ -436,8 +537,10 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
           constraints: const BoxConstraints(maxWidth: kGlmEditorMaxWidth),
           child: NotesEditorToolbarHost(
             activeBlock: _editor.activeBlock,
+            selectionFormats: _selectionFormats(),
             onHeading: _showHeadingMenu,
             onBody: () => _convertActive(NotesBlockConversion.body),
+            onFormatting: _showFormattingMenu,
             onQuote: () => _convertActive(NotesBlockConversion.quote),
             onList: () => _convertActive(
               activeType == NoteBlockType.bulletedList
@@ -447,6 +550,7 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
             onChecklist: () =>
                 _convertActive(NotesBlockConversion.checklist),
             onTable: () => _showTablePicker(),
+            onMore: _showActiveBlockOptions,
           ),
         ),
       ),
@@ -524,9 +628,9 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
                       padding: const EdgeInsets.only(bottom: 16),
                       buildDefaultDragHandles: false,
                       proxyDecorator: (child, _, __) => child,
-                      itemCount: _editor.blocks.length,
+                      itemCount: _editor.visibleBlocks.length,
                       onReorder: (oldIndex, newIndex) => _applyMutation(
-                        _editor.reorder(oldIndex, newIndex),
+                        _editor.reorderVisible(oldIndex, newIndex),
                       ),
                       itemBuilder: _buildBlock,
                     ),
@@ -567,23 +671,20 @@ class NotesEditorMutation {
 }
 
 class NotesEditorDocumentController {
-  NotesEditorDocumentController(NoteDocument source)
-    : _document = source.blocks.isEmpty
-          ? source.copyWith(
-              blocks: [
-                NoteBlock(
-                  id: generateNoteBlockId(),
-                  type: NoteBlockType.heading,
-                  level: 1,
-                ),
-              ],
-            )
-          : source {
-    for (final block in _document.blocks) {
-      if (isSupportedProductionBlock(block.type)) {
-        activeBlockId = block.id;
-        break;
-      }
+  NotesEditorDocumentController(NoteDocument source) : _document = source {
+    final visible = source.blocks.where(
+      (block) => isSupportedProductionBlock(block.type),
+    );
+    if (visible.isEmpty) {
+      final first = NoteBlock(
+        id: generateNoteBlockId(),
+        type: NoteBlockType.heading,
+        level: 1,
+      );
+      _document = source.copyWith(blocks: [first, ...source.blocks]);
+      activeBlockId = first.id;
+    } else {
+      activeBlockId = visible.first.id;
     }
   }
 
@@ -593,6 +694,9 @@ class NotesEditorDocumentController {
 
   NoteDocument get document => _document;
   List<NoteBlock> get blocks => _document.blocks;
+  List<NoteBlock> get visibleBlocks => blocks
+      .where((block) => isSupportedProductionBlock(block.type))
+      .toList(growable: false);
   NoteBlock? get activeBlock => blockById(activeBlockId);
 
   NoteBlock? blockById(String? id) {
@@ -608,6 +712,11 @@ class NotesEditorDocumentController {
     activeBlockId = id;
     activeSelection = selection;
     return changed;
+  }
+
+  void updateSelection(String id, TextSelection selection) {
+    if (activeBlockId != id) return;
+    activeSelection = selection;
   }
 
   NotesEditorMutation applyTextInput(
@@ -805,8 +914,10 @@ class NotesEditorDocumentController {
       level: level,
       table: type == NoteBlockType.table ? table ?? NoteTableData.empty() : null,
     );
-    final nextBlocks = List<NoteBlock>.from(blocks)
-      ..insert(anchorIndex >= 0 ? anchorIndex + 1 : blocks.length, block);
+    final insertAt = anchorIndex >= 0
+        ? anchorIndex + 1
+        : _indexAfterLastVisibleBlock();
+    final nextBlocks = List<NoteBlock>.from(blocks)..insert(insertAt, block);
     _document = _document.copyWith(blocks: nextBlocks);
     activeBlockId = block.id;
     activeSelection = isEditableText(type)
@@ -817,6 +928,43 @@ class NotesEditorDocumentController {
       requiresRebuild: true,
       focusBlockId: isEditableText(type) ? block.id : null,
       selection: activeSelection,
+    );
+  }
+
+  NotesEditorMutation deleteBlock(String id) {
+    final index = _indexOf(id);
+    if (index < 0 || !isSupportedProductionBlock(blocks[index].type)) {
+      return const NotesEditorMutation();
+    }
+    final nextBlocks = List<NoteBlock>.from(blocks)..removeAt(index);
+    final visible = nextBlocks
+        .where((block) => isSupportedProductionBlock(block.type))
+        .toList(growable: false);
+    String? focusId;
+    TextSelection? selection;
+    if (visible.isEmpty) {
+      final replacement = NoteBlock(
+        id: generateNoteBlockId(),
+        type: NoteBlockType.paragraph,
+      );
+      nextBlocks.insert(index.clamp(0, nextBlocks.length).toInt(), replacement);
+      focusId = replacement.id;
+      selection = const TextSelection.collapsed(offset: 0);
+    } else {
+      final candidate = visible[index.clamp(0, visible.length - 1).toInt()];
+      focusId = isEditableText(candidate.type) ? candidate.id : null;
+      selection = focusId == null
+          ? null
+          : TextSelection.collapsed(offset: candidate.effectiveText.length);
+    }
+    _document = _document.copyWith(blocks: nextBlocks);
+    activeBlockId = focusId ?? visible.first.id;
+    activeSelection = selection;
+    return NotesEditorMutation(
+      changed: true,
+      requiresRebuild: true,
+      focusBlockId: focusId,
+      selection: selection,
     );
   }
 
@@ -844,6 +992,70 @@ class NotesEditorDocumentController {
     return const NotesEditorMutation(changed: true);
   }
 
+  NotesEditorMutation editTable(
+    String id,
+    NotesTableEditCommand command, {
+    required int row,
+    required int column,
+  }) {
+    final block = blockById(id);
+    if (block == null || block.type != NoteBlockType.table) {
+      return const NotesEditorMutation();
+    }
+    final data = block.table ?? NoteTableData.empty();
+    final cells = _normalizedTableCells(data);
+    var changed = false;
+    final safeRow = row.clamp(0, cells.length - 1).toInt();
+    final safeColumn = column.clamp(0, cells.first.length - 1).toInt();
+    switch (command) {
+      case NotesTableEditCommand.addRowAbove:
+        cells.insert(safeRow, List<String>.filled(cells.first.length, ''));
+        changed = true;
+        break;
+      case NotesTableEditCommand.addRowBelow:
+        cells.insert(safeRow + 1, List<String>.filled(cells.first.length, ''));
+        changed = true;
+        break;
+      case NotesTableEditCommand.addColumnLeft:
+        if (cells.first.length < 6) {
+          for (final sourceRow in cells) {
+            sourceRow.insert(safeColumn, '');
+          }
+          changed = true;
+        }
+        break;
+      case NotesTableEditCommand.addColumnRight:
+        if (cells.first.length < 6) {
+          for (final sourceRow in cells) {
+            sourceRow.insert(safeColumn + 1, '');
+          }
+          changed = true;
+        }
+        break;
+      case NotesTableEditCommand.deleteRow:
+        if (cells.length > 1) {
+          cells.removeAt(safeRow);
+          changed = true;
+        }
+        break;
+      case NotesTableEditCommand.deleteColumn:
+        if (cells.first.length > 1) {
+          for (final sourceRow in cells) {
+            sourceRow.removeAt(safeColumn);
+          }
+          changed = true;
+        }
+        break;
+    }
+    if (!changed) return const NotesEditorMutation();
+    _replaceBlock(block.copyWith(table: data.copyWith(cells: cells)));
+    activeBlockId = id;
+    return const NotesEditorMutation(
+      changed: true,
+      requiresRebuild: true,
+    );
+  }
+
   NotesEditorMutation updateCaption(String id, String caption) {
     final block = blockById(id);
     if (block == null ||
@@ -861,23 +1073,110 @@ class NotesEditorDocumentController {
     return const NotesEditorMutation(changed: true);
   }
 
-  NotesEditorMutation reorder(int oldIndex, int newIndex) {
-    if (oldIndex < 0 || oldIndex >= blocks.length) {
+  NotesEditorMutation reorderVisible(int oldIndex, int newIndex) {
+    final visible = List<NoteBlock>.from(visibleBlocks);
+    if (oldIndex < 0 || oldIndex >= visible.length) {
       return const NotesEditorMutation();
     }
     var target = newIndex;
     if (oldIndex < target) target--;
-    target = target.clamp(0, blocks.length - 1).toInt();
+    target = target.clamp(0, visible.length - 1).toInt();
     if (oldIndex == target) return const NotesEditorMutation();
-    final nextBlocks = List<NoteBlock>.from(blocks);
-    final moving = nextBlocks.removeAt(oldIndex);
-    nextBlocks.insert(target, moving);
+    final moving = visible.removeAt(oldIndex);
+    visible.insert(target, moving);
+    var cursor = 0;
+    final nextBlocks = <NoteBlock>[];
+    for (final block in blocks) {
+      if (isSupportedProductionBlock(block.type)) {
+        nextBlocks.add(visible[cursor++]);
+      } else {
+        nextBlocks.add(block);
+      }
+    }
     _document = _document.copyWith(blocks: nextBlocks);
     activeBlockId = moving.id;
     return const NotesEditorMutation(
       changed: true,
       requiresRebuild: true,
     );
+  }
+
+  Set<NotesInlineFormat> formatsForSelection(
+    String id,
+    TextSelection selection,
+  ) {
+    final block = blockById(id);
+    if (block == null || !isEditableText(block.type)) {
+      return const <NotesInlineFormat>{};
+    }
+    final marks = _marksForSelection(block, selection);
+    if (marks.isEmpty) return const <NotesInlineFormat>{};
+    final selected = <NotesInlineFormat>{};
+    if (marks.every((item) => item.bold)) selected.add(NotesInlineFormat.bold);
+    if (marks.every((item) => item.italic)) {
+      selected.add(NotesInlineFormat.italic);
+    }
+    if (marks.every((item) => item.underline)) {
+      selected.add(NotesInlineFormat.underline);
+    }
+    if (marks.every((item) => item.strike)) {
+      selected.add(NotesInlineFormat.strike);
+    }
+    if (marks.every((item) => item.highlightColor != null)) {
+      selected.add(NotesInlineFormat.highlight);
+    }
+    if (marks.every((item) => item.link != null)) {
+      selected.add(NotesInlineFormat.link);
+    }
+    return selected;
+  }
+
+  String? linkForSelection(String id, TextSelection selection) {
+    final block = blockById(id);
+    if (block == null || !isEditableText(block.type)) return null;
+    final marks = _marksForSelection(block, selection);
+    if (marks.isEmpty) return null;
+    final first = marks.first.link;
+    if (first == null) return null;
+    return marks.every((item) => item.link == first) ? first : null;
+  }
+
+  NotesEditorMutation applyInlineFormat(
+    String id,
+    TextSelection selection,
+    NotesInlineFormat format, {
+    String? link,
+  }) {
+    final block = blockById(id);
+    if (block == null || !isEditableText(block.type) || !selection.isValid) {
+      return const NotesEditorMutation();
+    }
+    final start = selection.start.clamp(0, block.effectiveText.length).toInt();
+    final end = selection.end.clamp(0, block.effectiveText.length).toInt();
+    if (start == end) return const NotesEditorMutation();
+    final selectedFormats = formatsForSelection(id, selection);
+    final remove = selectedFormats.contains(format);
+    final runs = _transformRuns(
+      block.effectiveRuns,
+      start,
+      end,
+      (marks) => switch (format) {
+        NotesInlineFormat.bold => marks.copyWith(bold: !remove),
+        NotesInlineFormat.italic => marks.copyWith(italic: !remove),
+        NotesInlineFormat.underline => marks.copyWith(underline: !remove),
+        NotesInlineFormat.strike => marks.copyWith(strike: !remove),
+        NotesInlineFormat.highlight => marks.copyWith(
+            highlightColor: remove ? null : '#FFF59D',
+          ),
+        NotesInlineFormat.link => marks.copyWith(
+            link: link,
+          ),
+      },
+    );
+    _replaceBlock(block.copyWith(text: block.effectiveText, runs: runs));
+    activeBlockId = id;
+    activeSelection = selection;
+    return const NotesEditorMutation(changed: true);
   }
 
   NotesEditorMutation _focusMutation(
@@ -900,6 +1199,13 @@ class NotesEditorDocumentController {
   }
 
   int _indexOf(String id) => blocks.indexWhere((block) => block.id == id);
+
+  int _indexAfterLastVisibleBlock() {
+    for (var index = blocks.length - 1; index >= 0; index--) {
+      if (isSupportedProductionBlock(blocks[index].type)) return index + 1;
+    }
+    return 0;
+  }
 
   static bool isSupportedProductionBlock(NoteBlockType type) {
     return isEditableText(type) ||
@@ -967,6 +1273,92 @@ List<NoteTextRun> _sliceRuns(List<NoteTextRun> runs, int start, int end) {
     offset = runEnd;
   }
   return _mergeRuns(result);
+}
+
+List<NoteTextRun> _transformRuns(
+  List<NoteTextRun> source,
+  int start,
+  int end,
+  NoteInlineMarks Function(NoteInlineMarks marks) transform,
+) {
+  final result = <NoteTextRun>[];
+  var offset = 0;
+  for (final run in source) {
+    final runStart = offset;
+    final runEnd = offset + run.text.length;
+    if (runEnd <= start || runStart >= end) {
+      result.add(run);
+      offset = runEnd;
+      continue;
+    }
+    final localStart = (start - runStart).clamp(0, run.text.length).toInt();
+    final localEnd = (end - runStart).clamp(0, run.text.length).toInt();
+    if (localStart > 0) {
+      result.add(
+        NoteTextRun(
+          text: run.text.substring(0, localStart),
+          marks: run.marks,
+        ),
+      );
+    }
+    if (localStart < localEnd) {
+      result.add(
+        NoteTextRun(
+          text: run.text.substring(localStart, localEnd),
+          marks: transform(run.marks),
+        ),
+      );
+    }
+    if (localEnd < run.text.length) {
+      result.add(
+        NoteTextRun(
+          text: run.text.substring(localEnd),
+          marks: run.marks,
+        ),
+      );
+    }
+    offset = runEnd;
+  }
+  return _mergeRuns(result);
+}
+
+List<NoteInlineMarks> _marksForSelection(
+  NoteBlock block,
+  TextSelection selection,
+) {
+  final runs = block.effectiveRuns;
+  if (runs.isEmpty) return const <NoteInlineMarks>[];
+  final textLength = block.effectiveText.length;
+  var start = selection.start.clamp(0, textLength).toInt();
+  var end = selection.end.clamp(0, textLength).toInt();
+  if (start == end) {
+    if (textLength == 0) return const <NoteInlineMarks>[];
+    start = start == textLength ? start - 1 : start;
+    end = start + 1;
+  }
+  final result = <NoteInlineMarks>[];
+  var offset = 0;
+  for (final run in runs) {
+    final runEnd = offset + run.text.length;
+    if (runEnd > start && offset < end) result.add(run.marks);
+    offset = runEnd;
+  }
+  return result;
+}
+
+List<List<String>> _normalizedTableCells(NoteTableData data) {
+  final cells = data.cells.isEmpty ? NoteTableData.empty().cells : data.cells;
+  final columns = cells.isEmpty || cells.first.isEmpty
+      ? 2
+      : cells.first.length.clamp(1, 6).toInt();
+  return [
+    for (final row in cells)
+      [
+        ...row.take(columns),
+        if (row.length < columns)
+          ...List<String>.filled(columns - row.length, ''),
+      ],
+  ];
 }
 
 List<NoteTextRun> _mergeRuns(List<NoteTextRun> runs) {
