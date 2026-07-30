@@ -9,6 +9,7 @@ import 'dart:ui' as ui;
 
 import 'package:counter/core/widgets/app_button.dart';
 import 'package:counter/core/widgets/app_icon_button.dart';
+import 'package:counter/data/models.dart';
 import 'package:counter/features/notes/widgets/notes_canonical_components.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
