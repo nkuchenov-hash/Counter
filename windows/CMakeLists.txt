@@ -57,6 +57,13 @@ add_subdirectory("runner")
 # them to the application.
 include(flutter/generated_plugins.cmake)
 
+# clipboard 3.0.14 enables /WX through Flutter's standard settings but contains
+# one harmless unused local variable on Windows. Keep warnings-as-errors for the
+# app and every other plugin while suppressing only that upstream warning.
+if(TARGET clipboard_plugin)
+  target_compile_options(clipboard_plugin PRIVATE /wd4189)
+endif()
+
 
 # === Installation ===
 # Support files are copied into place next to the executable, so that it can
@@ -82,7 +89,7 @@ install(FILES "${FLUTTER_LIBRARY}" DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
   COMPONENT Runtime)
 
 if(PLUGIN_BUNDLED_LIBRARIES)
-  install(FILES "${PLUGIN_BUNDLED_LIBRARIES}"
+  install(FILES ${PLUGIN_BUNDLED_LIBRARIES}
     DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
     COMPONENT Runtime)
 endif()
@@ -103,6 +110,6 @@ install(DIRECTORY "${PROJECT_BUILD_DIR}/${FLUTTER_ASSET_DIR_NAME}"
   DESTINATION "${INSTALL_BUNDLE_DATA_DIR}" COMPONENT Runtime)
 
 # Install the AOT library on non-Debug builds only.
-install(FILES "${AOT_LIBRARY}" DESTINATION "${INSTALL_BUNDLE_DATA_DIR}"
+install(FILES "${AOT_LIBRARY}" DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
   CONFIGURATIONS Profile;Release
   COMPONENT Runtime)
