@@ -33,6 +33,9 @@ class NotesEditorToolbarHost extends StatelessWidget {
     this.selectionFormats = const <NotesInlineFormat>{},
     this.onFormatting,
     this.onMore,
+    this.onDrawing,
+    this.onImage,
+    this.onAudio,
   });
 
   final NoteBlock? activeBlock;
@@ -45,6 +48,9 @@ class NotesEditorToolbarHost extends StatelessWidget {
   final VoidCallback onChecklist;
   final VoidCallback onTable;
   final VoidCallback? onMore;
+  final VoidCallback? onDrawing;
+  final VoidCallback? onImage;
+  final VoidCallback? onAudio;
 
   @override
   Widget build(BuildContext context) {
@@ -111,23 +117,29 @@ class NotesEditorToolbarHost extends StatelessWidget {
         NotesToolbarAction(
           tool: NotesToolbarTool.drawing,
           icon: Icons.draw_rounded,
-          tooltip: 'Drawing — next phase',
-          enabled: false,
-          onPressed: _noop,
+          tooltip: type == NoteBlockType.drawing
+              ? 'Edit drawing'
+              : 'Insert drawing',
+          selected: type == NoteBlockType.drawing,
+          enabled: onDrawing != null,
+          onPressed: onDrawing ?? _noop,
         ),
         NotesToolbarAction(
           tool: NotesToolbarTool.image,
           icon: Icons.image_rounded,
-          tooltip: 'Image — next phase',
-          enabled: false,
-          onPressed: _noop,
+          tooltip: type == NoteBlockType.image
+              ? 'Replace image'
+              : 'Insert image',
+          selected: type == NoteBlockType.image,
+          enabled: onImage != null,
+          onPressed: onImage ?? _noop,
         ),
         NotesToolbarAction(
           tool: NotesToolbarTool.audio,
           icon: Icons.mic_rounded,
-          tooltip: 'Audio — next phase',
-          enabled: false,
-          onPressed: _noop,
+          tooltip: 'Record audio',
+          enabled: onAudio != null,
+          onPressed: onAudio ?? _noop,
         ),
       ],
     );
@@ -352,6 +364,7 @@ Future<void> showNotesBlockOptionsMenu({
   required NoteBlock block,
   required VoidCallback onDeleteBlock,
   ValueChanged<NotesTableEditCommand>? onTableCommand,
+  VoidCallback? onEditMedia,
 }) {
   return showModalBottomSheet<void>(
     context: context,
@@ -360,6 +373,17 @@ Future<void> showNotesBlockOptionsMenu({
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          if (onEditMedia != null)
+            _sheetAction(
+              sheetContext,
+              block.type == NoteBlockType.drawing
+                  ? Icons.draw_rounded
+                  : Icons.image_rounded,
+              block.type == NoteBlockType.drawing
+                  ? 'Edit drawing'
+                  : 'Replace image',
+              onEditMedia,
+            ),
           if (block.type == NoteBlockType.table && onTableCommand != null) ...[
             _sheetAction(
               sheetContext,
