@@ -1,0 +1,170 @@
+name: Fix Google Fit sleep sync
+
+on:
+  push:
+    branches:
+      - agent/fix-server-sleep-google-fit
+
+permissions:
+  contents: write
+
+jobs:
+  fix-and-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/fix-server-sleep-google-fit
+          fetch-depth: 0
+
+      - name: Replace invalid Google Health adapter with Google Fit REST
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          files = [
+              Path('pb_hooks/sleep_sync.pb.js'),
+              Path('pb_migrations/1785390000_server_sleep_sync.js'),
+              Path('docs/SERVER_SLEEP_SYNC_DEPLOY.md'),
+              Path('lib/data/health/cloud_sleep_sync_service.dart'),
+              Path('lib/data/pb_config.dart'),
+              Path('lib/features/settings/health/health_connect_settings_section.dart'),
+              Path('lib/l10n/dictionary.dart'),
+          ]
+
+          replacements = [
+              ('Google Health API', 'Google Fit REST API'),
+              ('Google Health account', 'Google Fit account'),
+              ('Google Health', 'Google Fit'),
+              ('googlehealth.sleep.readonly', 'fitness.sleep.read'),
+              ('SLEEP_SYNC_GOOGLE_HEALTH', 'SLEEP_SYNC_GOOGLE_FIT'),
+              ('GoogleHealth', 'GoogleFit'),
+              ('googleHealth', 'googleFit'),
+              ('google_health', 'google_fit'),
+              ('google-health', 'google-fit'),
+          ]
+
+          for path in files:
+              text = path.read_text(encoding='utf-8')
+              for old, new in replacements:
+                  text = text.replace(old, new)
+              path.write_text(text, encoding='utf-8')
+
+          hook = Path('pb_hooks/sleep_sync.pb.js')
+          text = hook.read_text(encoding='utf-8')
+          start = text.index('function __sleepSyncGoogleSessions(accessToken, start, end) {')
+          end = text.index('\nfunction __sleepSyncProfile', start)
+          function = r'''function __sleepSyncGoogleSessions(accessToken, start, end) {
+              var url = "https://www.googleapis.com/fitness/v1/users/me/sessions" +
+                  "?startTime=" + encodeURIComponent(start.toISOString()) +
+                  "&endTime=" + encodeURIComponent(end.toISOString()) +
+                  "&activityType=72";
+              var res = $http.send({
+                  url: url,
+                  method: "GET",
+                  headers: {
+                      "authorization": "Bearer " + accessToken,
+                      "accept": "application/json",
+                  },
+                  timeout: 45,
+              });
+              if (res.statusCode < 200 || res.statusCode >= 300 || !res.json) {
+                  throw new Error("Google Fit sleep request failed: HTTP " + res.statusCode);
+              }
+              var rows = res.json.session || [];
+              var out = [];
+              for (var i = 0; i < rows.length; i++) {
+                  var row = rows[i] || {};
+                  if (Number(row.activityType || 0) !== 72) continue;
+                  var startMillis = Number(row.startTimeMillis || 0);
+                  var endMillis = Number(row.endTimeMillis || 0);
+                  if (!isFinite(startMillis) || !isFinite(endMillis) || endMillis <= startMillis) continue;
+                  var startDate = new Date(startMillis);
+                  var endDate = new Date(endMillis);
+                  if (isNaN(startDate.getTime()) || isNaN(endDate.getTime()) || endDate.getTime() > Date.now()) continue;
+                  var application = row.application || {};
+                  var appIdentity = String(application.packageName || application.name || "unknown");
+                  var sessionId = String(row.id || "");
+                  var externalId = "google-fit|" + appIdentity + "|" +
+                      (sessionId || (startDate.toISOString() + "|" + endDate.toISOString()));
+                  out.push({
+                      externalId: externalId,
+                      start: startDate,
+                      end: endDate,
+                  });
+              }
+              out.sort(function(a, b) { return a.end.getTime() - b.end.getTime(); });
+              return out;
+          }
+          '''
+          text = text[:start] + function.rstrip() + text[end:]
+          hook.write_text(text, encoding='utf-8')
+
+          docs = Path('docs/SERVER_SLEEP_SYNC_DEPLOY.md')
+          text = docs.read_text(encoding='utf-8')
+          text = text.replace(
+              '`Mi Band → Mi Fitness → Health Connect → Google Fit account → Google Fit REST API → PocketBase cron → records → all Life OS clients`',
+              '`Mi Band → Mi Fitness → Google Fit → Google Fit REST API → PocketBase cron → records → all Life OS clients`',
+          )
+          text = text.replace(
+              'The Life OS phone app is not part of this path. A Bluetooth-only wearable still needs a gateway that uploads its data. For Xiaomi wearables, Google requires the watch or tracker to sync regularly with Mi Fitness; Google Fit does not communicate directly with Xiaomi devices.',
+              'The Life OS phone app is not part of this path. Life OS reads the sleep that is already visible in the user\'s Google Fit account. Mi Fitness remains responsible for uploading the Mi Band data to Google Fit.',
+          )
+          text = text.replace(
+              'Do not configure the retired Google Fit REST API.',
+              'Enable the Google Fitness API. Do not configure the unrelated Google Health API.',
+          )
+          text = text.replace(
+              'whether Mi Fitness has recently synchronized the Xiaomi device and is connected to Google Fit through Health Connect.',
+              'whether the expected sleep session is already visible in Google Fit.',
+          )
+          docs.write_text(text, encoding='utf-8')
+
+          # All source and route names must now be Google Fit only.
+          stale = []
+          for path in files:
+              text = path.read_text(encoding='utf-8')
+              for token in ('Google Health', 'google_health', 'google-health', 'googlehealth.'):
+                  if token in text:
+                      stale.append(f'{path}: {token}')
+          if stale:
+              raise SystemExit('Stale Google Health references:\n' + '\n'.join(stale))
+          PY
+
+      - name: Validate PocketBase JavaScript
+        run: |
+          node --check pb_hooks/sleep_sync.pb.js
+          node --check pb_migrations/1785390000_server_sleep_sync.js
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Format changed Dart files
+        run: |
+          dart format \
+            lib/data/health/cloud_sleep_sync_service.dart \
+            lib/data/pb_config.dart \
+            lib/features/settings/health/health_connect_settings_section.dart \
+            lib/l10n/dictionary.dart
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Verify focused diff
+        run: |
+          git diff --check
+          git diff --stat
+          grep -R "fitness.sleep.read" pb_hooks/sleep_sync.pb.js docs/SERVER_SLEEP_SYNC_DEPLOY.md
+          grep -R "fitness/v1/users/me/sessions" pb_hooks/sleep_sync.pb.js
+          grep -R "activityType=72" pb_hooks/sleep_sync.pb.js
+
+      - name: Commit correction and remove temporary workflow
+        run: |
+          rm .github/workflows/fix-google-fit-sleep-sync.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Use Google Fit for server sleep sync"
+          git push origin HEAD:agent/fix-server-sleep-google-fit
