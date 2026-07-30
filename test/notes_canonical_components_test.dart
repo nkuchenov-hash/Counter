@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:counter/data/models.dart';
-import 'package:counter/features/notes/note_editor_page.dart';
+import 'package:counter/features/notes/notes_editor_document_controller.dart';
 import 'package:counter/features/notes/widgets/notes_canonical_components.dart';
 import 'package:counter/features/notes/widgets/notes_editor_tools.dart';
 import 'package:flutter/material.dart';
