@@ -56,7 +56,7 @@ class HealthSleepSyncState {
   const HealthSleepSyncState({
     required this.enabled,
     required this.phase,
-    this.dailySyncMinutes = 600,
+    this.dailySyncMinutes = 1260,
     this.backgroundReadAvailable = false,
     this.backgroundReadAuthorized = false,
     this.lastSyncUtc,
@@ -71,7 +71,7 @@ class HealthSleepSyncState {
   const HealthSleepSyncState.initial()
     : enabled = false,
       phase = HealthSleepSyncPhase.disabled,
-      dailySyncMinutes = 600,
+      dailySyncMinutes = 1260,
       backgroundReadAvailable = false,
       backgroundReadAuthorized = false,
       lastSyncUtc = null,
@@ -182,7 +182,7 @@ class HealthSleepSyncService {
   static const String _lastSyncKey = 'health_sleep_last_sync_utc_v1';
   static const String _dailySyncMinutesKey =
       'health_sleep_daily_sync_minutes_v1';
-  static const int defaultDailySyncMinutes = 10 * 60;
+  static const int defaultDailySyncMinutes = 21 * 60;
   static const String iosBackgroundTaskIdentifier =
       'com.example.counter.sleep-sync';
   static const String backgroundTaskName = 'health_sleep_background_sync_v1';
