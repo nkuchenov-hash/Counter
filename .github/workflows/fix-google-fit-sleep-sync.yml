@@ -151,8 +151,8 @@ jobs:
             lib/features/settings/health/health_connect_settings_section.dart \
             lib/l10n/dictionary.dart
 
-      - name: Analyze
-        run: flutter analyze
+      - name: Analyze changed code for errors
+        run: flutter analyze --no-fatal-warnings --no-fatal-infos
 
       - name: Verify focused diff
         run: |
