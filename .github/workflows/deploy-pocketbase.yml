@@ -1,0 +1,148 @@
+name: Deploy PocketBase hooks and migrations
+
+on:
+  pull_request:
+    paths:
+      - 'pb_hooks/**'
+      - 'pb_migrations/**'
+      - '.github/workflows/deploy-pocketbase.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'pb_hooks/**'
+      - 'pb_migrations/**'
+      - '.github/workflows/deploy-pocketbase.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate PocketBase JavaScript
+        run: |
+          node --check pb_hooks/sleep_sync.pb.js
+          node --check pb_migrations/1785390000_server_sleep_sync.js
+
+      - name: Check production deploy credentials
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.POCKETBASE_SSH_PRIVATE_KEY || secrets.VPS_SSH_KEY || secrets.SSH_PRIVATE_KEY }}
+          SSH_USER: ${{ secrets.POCKETBASE_SSH_USER || secrets.VPS_SSH_USER || secrets.SSH_USER }}
+          SSH_HOST: ${{ secrets.POCKETBASE_SSH_HOST || secrets.VPS_HOST || secrets.SSH_HOST }}
+        run: |
+          if [[ -z "$SSH_PRIVATE_KEY" ]]; then
+            echo "::warning::PocketBase SSH private key is not configured. Add POCKETBASE_SSH_PRIVATE_KEY (or VPS_SSH_KEY / SSH_PRIVATE_KEY)."
+          else
+            echo "PocketBase SSH private key is configured."
+          fi
+          echo "PocketBase SSH target: ${SSH_USER:-root}@${SSH_HOST:-217.114.0.201}"
+
+  deploy:
+    if: github.event_name != 'pull_request'
+    needs: validate
+    runs-on: ubuntu-latest
+    environment: production
+    concurrency:
+      group: pocketbase-production
+      cancel-in-progress: false
+    env:
+      SSH_PRIVATE_KEY: ${{ secrets.POCKETBASE_SSH_PRIVATE_KEY || secrets.VPS_SSH_KEY || secrets.SSH_PRIVATE_KEY }}
+      SSH_USER: ${{ secrets.POCKETBASE_SSH_USER || secrets.VPS_SSH_USER || secrets.SSH_USER }}
+      SSH_HOST: ${{ secrets.POCKETBASE_SSH_HOST || secrets.VPS_HOST || secrets.SSH_HOST }}
+      SSH_PORT: ${{ secrets.POCKETBASE_SSH_PORT || secrets.VPS_SSH_PORT || '22' }}
+      POCKETBASE_SERVICE: ${{ secrets.POCKETBASE_SERVICE }}
+      POCKETBASE_DEPLOY_DIR: ${{ secrets.POCKETBASE_DEPLOY_DIR }}
+    steps:
+      - name: Require production credentials
+        run: |
+          if [[ -z "$SSH_PRIVATE_KEY" ]]; then
+            echo "PocketBase deployment cannot run: SSH private key is missing." >&2
+            exit 1
+          fi
+          echo "SSH_USER=${SSH_USER:-root}" >> "$GITHUB_ENV"
+          echo "SSH_HOST=${SSH_HOST:-217.114.0.201}" >> "$GITHUB_ENV"
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Prepare SSH
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/lifeos_pocketbase
+          chmod 600 ~/.ssh/lifeos_pocketbase
+          ssh-keyscan -p "$SSH_PORT" -H "$SSH_HOST" >> ~/.ssh/known_hosts
+
+      - name: Upload server bundle
+        run: |
+          ARCHIVE="/tmp/lifeos-pocketbase-${GITHUB_SHA}.tar.gz"
+          tar -czf "$ARCHIVE" pb_hooks pb_migrations
+          scp -i ~/.ssh/lifeos_pocketbase -P "$SSH_PORT" "$ARCHIVE" \
+            "$SSH_USER@$SSH_HOST:/tmp/lifeos-pocketbase-${GITHUB_SHA}.tar.gz"
+
+      - name: Install and restart PocketBase
+        run: |
+          ssh -i ~/.ssh/lifeos_pocketbase -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" \
+            "POCKETBASE_SERVICE='$POCKETBASE_SERVICE' POCKETBASE_DEPLOY_DIR='$POCKETBASE_DEPLOY_DIR' ARCHIVE='/tmp/lifeos-pocketbase-${GITHUB_SHA}.tar.gz' bash -s" <<'REMOTE'
+          set -euo pipefail
+
+          if [[ "$(id -u)" -eq 0 ]]; then
+            SUDO=""
+          else
+            SUDO="sudo -n"
+          fi
+
+          service_name="${POCKETBASE_SERVICE:-}"
+          if [[ -z "$service_name" ]]; then
+            service_name="$(systemctl list-unit-files --type=service --no-legend 2>/dev/null | awk 'tolower($1) ~ /pocketbase/ {print $1; exit}')"
+          fi
+
+          pid="$(pgrep -f '[p]ocketbase.*serve' | head -n 1 || true)"
+          if [[ -z "$service_name" && -n "$pid" ]]; then
+            service_name="$(systemctl status "$pid" --no-pager 2>/dev/null | sed -n '1s/^[^[:alnum:]]*\([^[:space:]]*\.service\).*/\1/p')"
+          fi
+
+          app_dir="${POCKETBASE_DEPLOY_DIR:-}"
+          if [[ -z "$app_dir" && -n "$service_name" ]]; then
+            app_dir="$(systemctl show "$service_name" -p WorkingDirectory --value 2>/dev/null || true)"
+            if [[ -z "$app_dir" || "$app_dir" == "/" ]]; then
+              exec_start="$(systemctl show "$service_name" -p ExecStart --value 2>/dev/null || true)"
+              binary="$(printf '%s' "$exec_start" | grep -oE '/[^ ;]*/pocketbase[^ ;]*' | head -n 1 || true)"
+              if [[ -n "$binary" ]]; then app_dir="$(dirname "$binary")"; fi
+            fi
+          fi
+          if [[ -z "$app_dir" && -n "$pid" ]]; then
+            app_dir="$(readlink -f "/proc/$pid/cwd" 2>/dev/null || true)"
+          fi
+
+          if [[ -z "$service_name" || -z "$app_dir" || ! -d "$app_dir" ]]; then
+            echo "Could not discover the PocketBase service or application directory." >&2
+            echo "Set POCKETBASE_SERVICE and POCKETBASE_DEPLOY_DIR repository secrets." >&2
+            exit 1
+          fi
+
+          echo "Deploying to $app_dir using $service_name"
+          $SUDO mkdir -p "$app_dir/pb_hooks" "$app_dir/pb_migrations"
+          $SUDO tar -xzf "$ARCHIVE" -C "$app_dir" pb_hooks pb_migrations
+          rm -f "$ARCHIVE"
+          $SUDO systemctl restart "$service_name"
+
+          for attempt in {1..20}; do
+            health="$(curl -sS -o /dev/null -w '%{http_code}' http://127.0.0.1:8090/api/health || true)"
+            route="$(curl -sS -o /dev/null -w '%{http_code}' http://127.0.0.1:8090/api/sleep-sync/status || true)"
+            if [[ "$health" == "200" && ( "$route" == "401" || "$route" == "403" ) ]]; then
+              echo "PocketBase is healthy and the sleep-sync route is loaded."
+              exit 0
+            fi
+            sleep 2
+          done
+
+          echo "PocketBase verification failed after restart." >&2
+          $SUDO systemctl status "$service_name" --no-pager || true
+          exit 1
+          REMOTE
