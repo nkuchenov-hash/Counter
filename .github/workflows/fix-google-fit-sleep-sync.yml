@@ -115,7 +115,7 @@ jobs:
           )
           text = text.replace(
               'Do not configure the retired Google Fit REST API.',
-              'Enable the Google Fitness API. Do not configure the unrelated Google Health API.',
+              'Enable the Google Fitness API.',
           )
           text = text.replace(
               'whether Mi Fitness has recently synchronized the Xiaomi device and is connected to Google Fit through Health Connect.',
