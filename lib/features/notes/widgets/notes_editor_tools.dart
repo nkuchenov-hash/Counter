@@ -24,112 +24,118 @@ class NotesEditorToolbarHost extends StatelessWidget {
   const NotesEditorToolbarHost({
     super.key,
     required this.activeBlock,
-    required this.selectionFormats,
     required this.onHeading,
-    required this.onFormatting,
+    required this.onBody,
     required this.onQuote,
     required this.onList,
     required this.onChecklist,
     required this.onTable,
-    required this.onMore,
+    this.selectionFormats = const <NotesInlineFormat>{},
+    this.onFormatting,
+    this.onMore,
   });
 
   final NoteBlock? activeBlock;
   final Set<NotesInlineFormat> selectionFormats;
   final VoidCallback onHeading;
-  final VoidCallback onFormatting;
+  final VoidCallback onBody;
+  final VoidCallback? onFormatting;
   final VoidCallback onQuote;
   final VoidCallback onList;
   final VoidCallback onChecklist;
   final VoidCallback onTable;
-  final VoidCallback onMore;
+  final VoidCallback? onMore;
 
   @override
   Widget build(BuildContext context) {
     final type = activeBlock?.type;
     final convertible = type != null && _isConvertibleText(type);
+    final toolbar = NotesEditorToolbar(
+      actions: [
+        NotesToolbarAction(
+          tool: NotesToolbarTool.heading,
+          icon: Icons.title_rounded,
+          tooltip: 'Heading styles',
+          selected: type == NoteBlockType.heading,
+          enabled: convertible,
+          onPressed: onHeading,
+        ),
+        NotesToolbarAction(
+          tool: NotesToolbarTool.text,
+          icon: onFormatting == null
+              ? Icons.text_fields_rounded
+              : Icons.format_bold_rounded,
+          tooltip: onFormatting == null ? 'Body text' : 'Text formatting',
+          selected: onFormatting == null
+              ? type == NoteBlockType.paragraph
+              : selectionFormats.isNotEmpty,
+          enabled: convertible,
+          onPressed: onFormatting ?? onBody,
+        ),
+        NotesToolbarAction(
+          tool: NotesToolbarTool.quote,
+          icon: Icons.format_quote_rounded,
+          tooltip: 'Quote',
+          selected: type == NoteBlockType.quote,
+          enabled: convertible,
+          onPressed: onQuote,
+        ),
+        NotesToolbarAction(
+          tool: NotesToolbarTool.list,
+          icon: type == NoteBlockType.numberedList
+              ? Icons.format_list_numbered_rounded
+              : Icons.format_list_bulleted_rounded,
+          tooltip: type == NoteBlockType.bulletedList
+              ? 'Numbered list'
+              : 'Bulleted list',
+          selected: type == NoteBlockType.bulletedList ||
+              type == NoteBlockType.numberedList,
+          enabled: convertible,
+          onPressed: onList,
+        ),
+        NotesToolbarAction(
+          tool: NotesToolbarTool.checklist,
+          icon: Icons.checklist_rounded,
+          tooltip: 'Checklist',
+          selected: type == NoteBlockType.checklist,
+          enabled: convertible,
+          onPressed: onChecklist,
+        ),
+        NotesToolbarAction(
+          tool: NotesToolbarTool.table,
+          icon: Icons.table_chart_rounded,
+          tooltip: 'Insert table',
+          selected: type == NoteBlockType.table,
+          onPressed: onTable,
+        ),
+        NotesToolbarAction(
+          tool: NotesToolbarTool.drawing,
+          icon: Icons.draw_rounded,
+          tooltip: 'Drawing — next phase',
+          enabled: false,
+          onPressed: _noop,
+        ),
+        NotesToolbarAction(
+          tool: NotesToolbarTool.image,
+          icon: Icons.image_rounded,
+          tooltip: 'Image — next phase',
+          enabled: false,
+          onPressed: _noop,
+        ),
+        NotesToolbarAction(
+          tool: NotesToolbarTool.audio,
+          icon: Icons.mic_rounded,
+          tooltip: 'Audio — next phase',
+          enabled: false,
+          onPressed: _noop,
+        ),
+      ],
+    );
+    if (onMore == null) return toolbar;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Expanded(
-          child: NotesEditorToolbar(
-            actions: [
-              NotesToolbarAction(
-                tool: NotesToolbarTool.heading,
-                icon: Icons.title_rounded,
-                tooltip: 'Heading styles',
-                selected: type == NoteBlockType.heading,
-                enabled: convertible,
-                onPressed: onHeading,
-              ),
-              NotesToolbarAction(
-                tool: NotesToolbarTool.text,
-                icon: Icons.format_bold_rounded,
-                tooltip: 'Text formatting',
-                selected: selectionFormats.isNotEmpty,
-                enabled: convertible,
-                onPressed: onFormatting,
-              ),
-              NotesToolbarAction(
-                tool: NotesToolbarTool.quote,
-                icon: Icons.format_quote_rounded,
-                tooltip: 'Quote',
-                selected: type == NoteBlockType.quote,
-                enabled: convertible,
-                onPressed: onQuote,
-              ),
-              NotesToolbarAction(
-                tool: NotesToolbarTool.list,
-                icon: type == NoteBlockType.numberedList
-                    ? Icons.format_list_numbered_rounded
-                    : Icons.format_list_bulleted_rounded,
-                tooltip: type == NoteBlockType.bulletedList
-                    ? 'Numbered list'
-                    : 'Bulleted list',
-                selected: type == NoteBlockType.bulletedList ||
-                    type == NoteBlockType.numberedList,
-                enabled: convertible,
-                onPressed: onList,
-              ),
-              NotesToolbarAction(
-                tool: NotesToolbarTool.checklist,
-                icon: Icons.checklist_rounded,
-                tooltip: 'Checklist',
-                selected: type == NoteBlockType.checklist,
-                enabled: convertible,
-                onPressed: onChecklist,
-              ),
-              NotesToolbarAction(
-                tool: NotesToolbarTool.table,
-                icon: Icons.table_chart_rounded,
-                tooltip: 'Insert table',
-                selected: type == NoteBlockType.table,
-                onPressed: onTable,
-              ),
-              NotesToolbarAction(
-                tool: NotesToolbarTool.drawing,
-                icon: Icons.draw_rounded,
-                tooltip: 'Drawing — next phase',
-                enabled: false,
-                onPressed: _noop,
-              ),
-              NotesToolbarAction(
-                tool: NotesToolbarTool.image,
-                icon: Icons.image_rounded,
-                tooltip: 'Image — next phase',
-                enabled: false,
-                onPressed: _noop,
-              ),
-              NotesToolbarAction(
-                tool: NotesToolbarTool.audio,
-                icon: Icons.mic_rounded,
-                tooltip: 'Audio — next phase',
-                enabled: false,
-                onPressed: _noop,
-              ),
-            ],
-          ),
-        ),
+        Expanded(child: toolbar),
         Material(
           color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.96),
           child: SafeArea(
