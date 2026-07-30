@@ -9,7 +9,6 @@ part 'notes_component_text_blocks.dart';
 part 'notes_component_structural_blocks.dart';
 part 'notes_component_media_blocks.dart';
 part 'notes_component_tools.dart';
-part 'notes_component_creation_tools.dart';
 
 /// Canonical Notes components shared by mobile, desktop, and web.
 ///
