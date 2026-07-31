@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!-- Replaced at build time. Production: flutter build web --base-href="/Counter/" -->
+  <base href="/Counter/notes-v3-preview/">
+  <!--
+    GitHub Pages project site: https://nkuchenov-hash.github.io/Counter/
+    Local: flutter run (default base "/") or flutter build web --base-href="/" for static serve at root.
+  -->
+
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="description" content="Life OS — time tracking, planning, and lists.">
+
+  <!-- PWA / browser chrome (matches lib/core/app_colors.dart light shell) -->
+  <meta name="theme-color" content="#111111">
+
+  <!-- iOS Home Screen / standalone PWA -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Life OS">
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/Icon-180.png">
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="favicon.png"/>
+
+  <title>Life OS</title>
+  <link rel="manifest" href="manifest.json">
+
+  <!-- Shell-only: prevent white bars / browser chrome gaps around Flutter canvas on iPhone PWA.
+       Flutter owns in-app safe areas via MediaQuery; do not add padding here. -->
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #FAFAF8;
+    }
+    body {
+      /* iOS standalone: fill dynamic viewport without double safe-area padding. */
+      min-height: 100%;
+      min-height: -webkit-fill-available;
+    }
+    flt-glass-pane, flutter-view, #flutter_view {
+      background-color: #FAFAF8;
+    }
+  </style>
+
+  <!-- Google Sign-In Web Client ID. Add authorized redirect URI in Google Cloud Console: https://nkuchenov-hash.github.io/Counter/ -->
+  <script src="https://apis.google.com/js/api.js"></script>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <meta name="google-signin-client_id" content="647328834111-9v6vqhi9p1bl1fg6cbc1huvdcvmc89tr.apps.googleusercontent.com">
+
+  <!-- Yandex OAuth: set YANDEX_CLIENT_ID to your Yandex OAuth app client ID. In Yandex OAuth app settings add Callback URI: https://nkuchenov-hash.github.io/Counter/ and allow this origin. -->
+  <meta name="yandex-oauth-client-id" content="YANDEX_CLIENT_ID">
+</head>
+<body>
+  <!-- Bust stale Flutter service-worker caches on GitHub Pages (P0 profile hydration deploy). -->
+  <script>
+    (function () {
+      if (!('serviceWorker' in navigator)) return;
+      navigator.serviceWorker.getRegistrations().then(function (regs) {
+        for (var i = 0; i < regs.length; i++) {
+          regs[i].unregister();
+        }
+      });
+      if (window.caches && caches.keys) {
+        caches.keys().then(function (keys) {
+          keys.forEach(function (k) { caches.delete(k); });
+        });
+      }
+    })();
+  </script>
+  <!--
+    You can customize the "flutter_bootstrap.js" script.
+    This is useful to provide a custom configuration to the Flutter loader
+    or to give the user feedback during the initialization process.
+
+    For more details:
+    * https://docs.flutter.dev/platform-integration/web/initialization
+  -->
+  <script src="flutter_bootstrap.js" async></script>
+</body>
+</html>
