@@ -1,0 +1,142 @@
+name: Notes V3 Acceptance Artifacts
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  PREVIEW_URL: https://nkuchenov-hash.github.io/Counter/notes-v3-preview/
+
+concurrency:
+  group: notes-v3-acceptance-artifacts
+  cancel-in-progress: true
+
+jobs:
+  publish-web-preview:
+    if: github.event_name == 'workflow_dispatch' || github.head_ref == 'feature/notes-v3-design-system'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout exact Notes head
+        uses: actions/checkout@v4
+        with:
+          ref: feature/notes-v3-design-system
+          fetch-depth: 0
+
+      - name: Capture source SHA
+        id: source
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Flutter 3.41.6
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.6'
+          channel: stable
+          cache: true
+
+      - name: Resolve dependencies
+        run: flutter pub get
+
+      - name: Build current Notes web preview
+        run: flutter build web --release --base-href="/Counter/notes-v3-preview/" --no-tree-shake-icons --no-wasm-dry-run --pwa-strategy=none
+
+      - name: Checkout published site
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: published
+          fetch-depth: 0
+
+      - name: Install exact current preview
+        run: |
+          rm -rf published/notes-v3-preview
+          mkdir -p published/notes-v3-preview
+          cp -R build/web/. published/notes-v3-preview/
+          printf '%s\n' "${{ steps.source.outputs.sha }}" > published/notes-v3-preview/PREVIEW_SOURCE_SHA.txt
+          touch published/.nojekyll
+
+      - name: Publish preview without replacing production root
+        working-directory: published
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git pull --rebase origin gh-pages
+          git add .nojekyll notes-v3-preview
+          if git diff --cached --quiet; then
+            echo "Preview already matches this exact build."
+          else
+            git commit -m "Deploy Notes V3 Figma repair from ${{ steps.source.outputs.sha }}"
+            git push origin HEAD:gh-pages
+          fi
+
+      - name: Verify public preview and exact SHA
+        run: |
+          expected="${{ steps.source.outputs.sha }}"
+          for attempt in $(seq 1 36); do
+            code=$(curl -L -sS -o /tmp/preview.html -w '%{http_code}' "$PREVIEW_URL" || true)
+            actual=$(curl -L -sS "${PREVIEW_URL}PREVIEW_SOURCE_SHA.txt" || true)
+            if [ "$code" = "200" ] && \
+               grep -q '/Counter/notes-v3-preview/' /tmp/preview.html && \
+               [ "$actual" = "$expected" ]; then
+              echo "Verified public Notes preview at exact SHA $expected"
+              exit 0
+            fi
+            echo "Attempt $attempt: HTTP=$code expected=$expected actual=$actual"
+            sleep 10
+          done
+          echo "Public Notes preview did not reach the exact current SHA"
+          exit 1
+
+  build-universal-apk:
+    if: github.event_name == 'workflow_dispatch' || github.head_ref == 'feature/notes-v3-design-system'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout exact Notes head
+        uses: actions/checkout@v4
+        with:
+          ref: feature/notes-v3-design-system
+          fetch-depth: 0
+
+      - name: Capture source SHA
+        id: source
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Flutter 3.41.6
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.6'
+          channel: stable
+          cache: true
+
+      - name: Resolve dependencies
+        run: flutter pub get
+
+      - name: Build universal release APK
+        run: flutter build apk --release --no-tree-shake-icons
+
+      - name: Verify APK signature, manifest, ABI summary, and SHA
+        run: |
+          APK=build/app/outputs/flutter-apk/app-release.apk
+          test -s "$APK"
+          BUILD_TOOLS=$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)
+          "$ANDROID_HOME/build-tools/$BUILD_TOOLS/apksigner" verify --verbose --print-certs "$APK"
+          min_sdk=$("$ANDROID_HOME/cmdline-tools/latest/bin/apkanalyzer" manifest min-sdk "$APK")
+          test "$min_sdk" = "26"
+          "$ANDROID_HOME/cmdline-tools/latest/bin/apkanalyzer" apk summary "$APK"
+          printf '%s\n' "${{ steps.source.outputs.sha }}" > build/app/outputs/flutter-apk/SOURCE_SHA.txt
+          sha256sum "$APK" | tee build/app/outputs/flutter-apk/app-release.apk.sha256
+
+      - name: Upload verified universal APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Counter-Notes-v3-Figma-repair-universal-apk
+          path: |
+            build/app/outputs/flutter-apk/app-release.apk
+            build/app/outputs/flutter-apk/app-release.apk.sha256
+            build/app/outputs/flutter-apk/SOURCE_SHA.txt
+          if-no-files-found: error
+          retention-days: 14
