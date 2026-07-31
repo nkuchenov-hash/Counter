@@ -43,6 +43,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: feature/notes-v3-design-system
+          fetch-depth: 0
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
@@ -54,16 +55,8 @@ jobs:
       - name: Resolve dependencies
         run: flutter pub get
 
-      - name: Format changed Notes files
-        run: |
-          dart format lib/features/notes/widgets/notes_library_body.dart lib/features/notes/widgets/notes_editor_screen.dart lib/features/notes/widgets/note_editor_block_widgets.dart
-          if ! git diff --quiet; then
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add lib/features/notes/widgets/notes_library_body.dart lib/features/notes/widgets/notes_editor_screen.dart lib/features/notes/widgets/note_editor_block_widgets.dart
-            git commit -m "Format Notes desktop workspace"
-            git push origin HEAD:feature/notes-v3-design-system
-          fi
+      - name: Check Notes formatting
+        run: dart format --output=none --set-exit-if-changed lib/features/notes/widgets/notes_library_body.dart lib/features/notes/widgets/notes_editor_screen.dart lib/features/notes/widgets/note_editor_block_widgets.dart
 
       - name: Analyze
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
@@ -73,3 +66,47 @@ jobs:
 
       - name: Build production web preview
         run: flutter build web --release --no-tree-shake-icons --base-href /Counter/notes-v3-preview/
+
+      - name: Publish preview to gh-pages
+        run: |
+          set -euo pipefail
+          SOURCE_SHA="$(git rev-parse HEAD)"
+          PREVIEW_DIR="/tmp/notes-v3-preview"
+          PAGES_DIR="/tmp/counter-gh-pages"
+          rm -rf "$PREVIEW_DIR" "$PAGES_DIR"
+          mkdir -p "$PREVIEW_DIR"
+          cp -R build/web/. "$PREVIEW_DIR/"
+          printf '%s' "$SOURCE_SHA" > "$PREVIEW_DIR/source-sha.txt"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin gh-pages
+          git worktree add "$PAGES_DIR" origin/gh-pages
+          cd "$PAGES_DIR"
+          git checkout -B gh-pages origin/gh-pages
+          rm -rf notes-v3-preview
+          mkdir -p notes-v3-preview
+          cp -R "$PREVIEW_DIR"/. notes-v3-preview/
+          touch .nojekyll
+          git add .nojekyll notes-v3-preview
+          if ! git diff --cached --quiet; then
+            git commit -m "Publish Notes desktop workspace preview ${SOURCE_SHA}"
+            git push origin HEAD:gh-pages
+          fi
+
+      - name: Verify public preview SHA
+        run: |
+          set -euo pipefail
+          SOURCE_SHA="$(git rev-parse HEAD)"
+          URL="https://nkuchenov-hash.github.io/Counter/notes-v3-preview/source-sha.txt"
+          for attempt in $(seq 1 36); do
+            ACTUAL="$(curl -fsSL -H 'Cache-Control: no-cache' "${URL}?cb=$(date +%s%N)" || true)"
+            if [ "$ACTUAL" = "$SOURCE_SHA" ]; then
+              echo "Public preview verified at ${SOURCE_SHA}"
+              exit 0
+            fi
+            echo "Waiting for Pages CDN (${attempt}/36): '${ACTUAL}'"
+            sleep 10
+          done
+          echo "Public preview did not expose ${SOURCE_SHA}"
+          exit 1
