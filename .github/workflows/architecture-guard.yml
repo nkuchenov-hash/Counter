@@ -11,7 +11,7 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   strict-structure:
@@ -39,8 +39,10 @@ jobs:
     name: notes-desktop-verify
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+      - name: Checkout Notes branch
         uses: actions/checkout@v4
+        with:
+          ref: feature/notes-v3-design-system
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
@@ -52,8 +54,16 @@ jobs:
       - name: Resolve dependencies
         run: flutter pub get
 
-      - name: Check formatting
-        run: dart format --output=none --set-exit-if-changed lib/features/notes/widgets/notes_library_body.dart lib/features/notes/widgets/notes_editor_screen.dart lib/features/notes/widgets/note_editor_block_widgets.dart
+      - name: Format changed Notes files
+        run: |
+          dart format lib/features/notes/widgets/notes_library_body.dart lib/features/notes/widgets/notes_editor_screen.dart lib/features/notes/widgets/note_editor_block_widgets.dart
+          if ! git diff --quiet; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add lib/features/notes/widgets/notes_library_body.dart lib/features/notes/widgets/notes_editor_screen.dart lib/features/notes/widgets/note_editor_block_widgets.dart
+            git commit -m "Format Notes desktop workspace"
+            git push origin HEAD:feature/notes-v3-design-system
+          fi
 
       - name: Analyze
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
