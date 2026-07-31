@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 /// Executable mapping of the Notes variables and geometry from APP-Design.
 ///
-/// Visual source:
+/// Verified production visual sources:
 /// - Notes/Screen/Mobile Core · Mode=Filled Note · Project (601:8710)
 /// - Notes/Screen/Desktop · Mode=Filled Editor (568:7944)
 /// - Notes/Formatting Toolbar (604:8938)
