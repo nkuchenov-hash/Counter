@@ -7,6 +7,7 @@ import 'package:counter/features/notes/notes_figma_tokens.dart';
 import 'package:counter/features/notes/notes_image_tools.dart';
 import 'package:counter/features/notes/widgets/notes_canonical_components.dart';
 import 'package:counter/features/notes/widgets/notes_editor_tools.dart';
+import 'package:counter/features/notes/widgets/notes_editor_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -233,6 +234,57 @@ void main() {
       await tester.tap(compactCell);
       expect(selectedTable?.rowCount, 5);
       expect(selectedTable?.columnCount, 5);
+      expect(tester.takeException(), isNull);
+
+      await tester.pumpWidget(
+        _host(
+          NotesEditorScreen(
+            titleController: headingController,
+            onTitleChanged: (_) {},
+            onDone: () {},
+            pinned: false,
+            onTogglePinned: () {},
+            onDelete: () {},
+            categoryLabel: 'Work',
+            tags: const [NotesEditorMetadataTag(label: 'planning')],
+            content: const Align(
+              alignment: Alignment.topLeft,
+              child: Text(
+                'Visible note content',
+                key: ValueKey('notes-production-visible-content'),
+              ),
+            ),
+            toolbar: NotesEditorToolbar(
+              actions: [
+                for (final tool in NotesToolbarTool.values)
+                  NotesToolbarAction(
+                    tool: tool,
+                    icon: _iconFor(tool),
+                    tooltip: tool.name,
+                    onPressed: () {},
+                  ),
+              ],
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final visibleContent = find.byKey(
+        const ValueKey('notes-production-visible-content'),
+      );
+      final productionToolbar = find.byType(NotesEditorToolbar);
+      expect(visibleContent, findsOneWidget);
+      expect(
+        tester.getSize(productionToolbar),
+        const Size(
+          NotesFigmaTokens.toolbarWidth,
+          NotesFigmaTokens.toolbarHeight,
+        ),
+      );
+      expect(
+        tester.getTopLeft(visibleContent).dy,
+        lessThan(tester.getTopLeft(productionToolbar).dy),
+      );
       expect(tester.takeException(), isNull);
 
       selectedTable = null;
