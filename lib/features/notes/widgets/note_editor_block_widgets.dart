@@ -8,10 +8,11 @@ import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-/// Production block row composed only from canonical Notes components.
+/// Production block row composed from canonical Notes components.
 ///
-/// This widget owns no document or Brain state; all mutations are callbacks to
-/// the editor coordinator.
+/// Text input stays outside delayed reorder listeners so typing and selection
+/// remain on the direct gesture path. Structural/media blocks retain long-press
+/// reorder behavior.
 class NotesEditorBlockItem extends StatelessWidget {
   const NotesEditorBlockItem({
     super.key,
@@ -74,7 +75,7 @@ class NotesEditorBlockItem extends StatelessWidget {
         onLongPress: onEmptyLongPress,
         child: interactive,
       );
-    } else if (_isVisibleProductionBlock(block.type)) {
+    } else if (!editable && _isVisibleProductionBlock(block.type)) {
       interactive = ReorderableDelayedDragStartListener(
         index: index,
         child: interactive,
@@ -199,27 +200,52 @@ class NotesEditorBlockItem extends StatelessWidget {
         : block.imageData;
     final bytes = _decodeImagePayload(raw);
     if (bytes == null) return _mediaPlaceholder(context);
-    return Image.memory(
-      bytes,
-      fit: BoxFit.contain,
-      gaplessPlayback: true,
-      errorBuilder: (_, __, ___) => _mediaPlaceholder(context),
+    return RepaintBoundary(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxHeight: 420),
+        child: Image.memory(
+          bytes,
+          fit: BoxFit.contain,
+          gaplessPlayback: true,
+          filterQuality: FilterQuality.medium,
+          errorBuilder: (_, __, ___) => _mediaPlaceholder(context),
+        ),
+      ),
     );
   }
 
   Widget _mediaPlaceholder(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return AspectRatio(
-      aspectRatio: 16 / 9,
-      child: ColoredBox(
-        color: scheme.surfaceContainerHighest,
-        child: Center(
-          child: Icon(
-            block.type == NoteBlockType.drawing
-                ? Icons.draw_rounded
-                : Icons.image_rounded,
-            size: 38,
-            color: scheme.onSurfaceVariant,
+    return SizedBox(
+      height: 88,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: scheme.surfaceContainerLow,
+          border: Border.all(color: scheme.outlineVariant),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            children: [
+              Icon(
+                block.type == NoteBlockType.drawing
+                    ? Icons.draw_rounded
+                    : Icons.broken_image_outlined,
+                size: 24,
+                color: scheme.onSurfaceVariant,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  t(currentLocale.value, 'notes_v3_editor_load_failed'),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),

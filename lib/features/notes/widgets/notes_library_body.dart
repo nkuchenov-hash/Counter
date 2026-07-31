@@ -1,10 +1,12 @@
 // Notes library body — grid/list of [NoteCard]s for the Lists tab.
 //
-// Parses each [PlanningTask]'s [NoteDocument] once per build and renders
-// the GLM v3 card layout. Used by [ListsPage] when not in bulk-select mode.
+// Mobile delegates to the dedicated full-screen editor route. Wide web and
+// desktop keep the surrounding app shell and library visible while opening the
+// editor in a finite right-side workspace pane.
 
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
+import 'package:counter/features/notes/note_editor_page.dart';
 import 'package:counter/features/notes/widgets/note_card.dart';
 import 'package:flutter/material.dart';
 
@@ -31,18 +33,18 @@ class NotesLibraryBody extends StatelessWidget {
     final db = DatabaseService.instance;
     final scheme = Theme.of(context).colorScheme;
     final cards = <NoteCardData>[];
-    for (final t in tasks) {
-      final doc = db.parseNoteDocument(t);
+    for (final task in tasks) {
+      final doc = db.parseNoteDocument(task);
       final stats = doc.computeStats();
-      final cat = db.getCategoryRuleById(t.categoryId);
+      final category = db.getCategoryRuleById(task.categoryId);
       cards.add(
         NoteCardData(
-          task: t,
+          task: task,
           doc: doc,
           stats: stats,
-          categoryName: cat?.name,
-          categoryColor: cat?.colorOrDefault ?? scheme.primary,
-          categoryIconCodePoint: cat?.iconCodePoint,
+          categoryName: category?.name,
+          categoryColor: category?.colorOrDefault ?? scheme.primary,
+          categoryIconCodePoint: category?.iconCodePoint,
           pinned: doc.meta.pinned,
         ),
       );
@@ -60,14 +62,14 @@ class NotesLibraryBody extends StatelessWidget {
           childAspectRatio: crossAxisCount == 2 ? 1.22 : 1.35,
         ),
         itemCount: cards.length,
-        itemBuilder: (_, i) => _card(cards[i], db),
+        itemBuilder: (context, index) => _card(context, cards[index], db),
       );
     } else {
       body = ListView.separated(
         padding: const EdgeInsets.only(top: 4, bottom: 24),
         itemCount: cards.length,
         separatorBuilder: (_, __) => const SizedBox(height: 6),
-        itemBuilder: (_, i) => _card(cards[i], db),
+        itemBuilder: (context, index) => _card(context, cards[index], db),
       );
     }
 
@@ -75,15 +77,77 @@ class NotesLibraryBody extends StatelessWidget {
     return RefreshIndicator(onRefresh: onRefresh!, child: body);
   }
 
-  Widget _card(NoteCardData data, DatabaseService db) {
+  Widget _card(
+    BuildContext context,
+    NoteCardData data,
+    DatabaseService db,
+  ) {
     return NoteCard(
       data: data,
       view: view,
       checkboxesOn: checkboxesOn,
-      onOpen: () => onTap(data.task),
+      onOpen: () => _openNote(context, data.task),
       onTogglePin: () => db.toggleNotePin(data.task.planRowIdForBackend),
       onToggleDone: () => db.toggleNoteDone(data.task.planRowIdForBackend),
       onLongPress: () => onLongPress(data.task),
+    );
+  }
+
+  void _openNote(BuildContext context, PlanningTask task) {
+    if (MediaQuery.sizeOf(context).width < 900) {
+      onTap(task);
+      return;
+    }
+
+    showGeneralDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      barrierColor: Colors.transparent,
+      transitionDuration: const Duration(milliseconds: 180),
+      pageBuilder: (dialogContext, _, __) {
+        return SafeArea(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final panelWidth = (constraints.maxWidth - 360)
+                  .clamp(620.0, 960.0)
+                  .toDouble();
+              final panelHeight = (constraints.maxHeight - 24)
+                  .clamp(0.0, constraints.maxHeight)
+                  .toDouble();
+              return Align(
+                alignment: Alignment.centerRight,
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: SizedBox(
+                    width: panelWidth,
+                    height: panelHeight,
+                    child: Material(
+                      color: Colors.transparent,
+                      borderRadius: BorderRadius.circular(28),
+                      clipBehavior: Clip.antiAlias,
+                      child: NoteEditorPage(task: task),
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        );
+      },
+      transitionBuilder: (context, animation, secondaryAnimation, child) {
+        final curved = CurvedAnimation(
+          parent: animation,
+          curve: Curves.easeOutCubic,
+          reverseCurve: Curves.easeInCubic,
+        );
+        return SlideTransition(
+          position: Tween<Offset>(
+            begin: const Offset(0.08, 0),
+            end: Offset.zero,
+          ).animate(curved),
+          child: FadeTransition(opacity: curved, child: child),
+        );
+      },
     );
   }
 }

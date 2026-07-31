@@ -1,5 +1,3 @@
-import 'dart:ui' as ui;
-
 import 'package:counter/features/notes/notes_figma_tokens.dart';
 import 'package:flutter/material.dart';
 
@@ -10,9 +8,12 @@ class NotesEditorMetadataTag {
   final Color? color;
 }
 
-/// Shared production shell for the Figma Notes editor on mobile, web, and
-/// desktop. The component owns editor geometry, title/header rhythm, metadata,
-/// the desktop glass surface, and the pinned 350 x 48 toolbar placement.
+/// Shared production shell for the Figma Notes editor.
+///
+/// The always-visible editor chrome intentionally avoids BackdropFilter. Large
+/// blur surfaces made scrolling and typing expensive on web and lower-end
+/// Android devices. Layering is expressed through opaque semantic surfaces,
+/// token borders, shadows, and repaint boundaries instead.
 class NotesEditorScreen extends StatelessWidget {
   const NotesEditorScreen({
     super.key,
@@ -51,16 +52,14 @@ class NotesEditorScreen extends StatelessWidget {
       body: LayoutBuilder(
         builder: (context, constraints) {
           final desktop = constraints.maxWidth >= 768;
-          final horizontalRoom =
-              constraints.maxWidth -
+          final horizontalRoom = constraints.maxWidth -
               (desktop ? NotesFigmaTokens.editorDesktopOuterInset * 2 : 0);
-          final verticalRoom =
-              constraints.maxHeight -
+          final verticalRoom = constraints.maxHeight -
               (desktop ? NotesFigmaTokens.editorDesktopOuterInset * 2 : 0);
           final frameWidth = desktop
               ? horizontalRoom
-                    .clamp(0.0, NotesFigmaTokens.editorSurfaceMaxWidth)
-                    .toDouble()
+                  .clamp(0.0, NotesFigmaTokens.editorSurfaceMaxWidth)
+                  .toDouble()
               : constraints.maxWidth;
           final frameHeight = desktop
               ? verticalRoom.clamp(0.0, 920.0).toDouble()
@@ -78,7 +77,10 @@ class NotesEditorScreen extends StatelessWidget {
                     child: LayoutBuilder(
                       builder: (context, editorConstraints) {
                         final contentWidth = editorConstraints.maxWidth
-                            .clamp(0.0, NotesFigmaTokens.editorContentMaxWidth)
+                            .clamp(
+                              0.0,
+                              NotesFigmaTokens.editorContentMaxWidth,
+                            )
                             .toDouble();
                         return Align(
                           alignment: Alignment.topCenter,
@@ -120,9 +122,11 @@ class NotesEditorScreen extends StatelessWidget {
                                         left: 0,
                                         right: 0,
                                         bottom: 8,
-                                        child: Align(
-                                          alignment: Alignment.bottomCenter,
-                                          child: toolbar,
+                                        child: RepaintBoundary(
+                                          child: Align(
+                                            alignment: Alignment.bottomCenter,
+                                            child: toolbar,
+                                          ),
                                         ),
                                       ),
                                     ],
@@ -162,32 +166,20 @@ class _NotesEditorSurface extends StatelessWidget {
 
     return DecoratedBox(
       decoration: BoxDecoration(
+        color: NotesFigmaTokens.surfaceCard(context),
         borderRadius: BorderRadius.circular(
           NotesFigmaTokens.editorSurfaceRadius,
         ),
+        border: Border.all(color: NotesFigmaTokens.glassStroke(context)),
         boxShadow: [NotesFigmaTokens.editorShadow],
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(
           NotesFigmaTokens.editorSurfaceRadius,
         ),
-        child: BackdropFilter(
-          filter: ui.ImageFilter.blur(
-            sigmaX: NotesFigmaTokens.glassBlur,
-            sigmaY: NotesFigmaTokens.glassBlur,
-          ),
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              color: NotesFigmaTokens.surfaceCard(
-                context,
-              ).withValues(alpha: 0.88),
-              borderRadius: BorderRadius.circular(
-                NotesFigmaTokens.editorSurfaceRadius,
-              ),
-              border: Border.all(color: NotesFigmaTokens.glassStroke(context)),
-            ),
-            child: child,
-          ),
+        child: ColoredBox(
+          color: NotesFigmaTokens.surfaceCard(context),
+          child: child,
         ),
       ),
     );
@@ -291,30 +283,17 @@ class _NotesHeaderAction extends StatelessWidget {
         : NotesFigmaTokens.iconSecondary(context);
     return Tooltip(
       message: tooltip,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 6,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: ClipOval(
-          child: BackdropFilter(
-            filter: ui.ImageFilter.blur(sigmaX: 3, sigmaY: 3),
-            child: Material(
-              color: NotesFigmaTokens.glassFill(context),
-              child: InkWell(
-                onTap: onPressed,
-                child: SizedBox.square(
-                  dimension: 40,
-                  child: Icon(icon, size: 16, color: foreground),
-                ),
-              ),
-            ),
+      child: Material(
+        color: NotesFigmaTokens.glassFill(context),
+        elevation: 1,
+        shadowColor: Colors.black.withValues(alpha: 0.08),
+        shape: const CircleBorder(),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onPressed,
+          child: SizedBox.square(
+            dimension: 40,
+            child: Icon(icon, size: 16, color: foreground),
           ),
         ),
       ),
@@ -409,22 +388,24 @@ class _NotesMetadataRow extends StatelessWidget {
     final label = categoryLabel?.trim() ?? '';
     return SizedBox(
       height: 21,
-      child: ListView(
+      child: ListView.separated(
         scrollDirection: Axis.horizontal,
-        children: [
-          if (label.isNotEmpty)
-            _NotesMetadataBadge(
+        itemCount: (label.isNotEmpty ? 1 : 0) + tags.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        itemBuilder: (context, index) {
+          if (label.isNotEmpty && index == 0) {
+            return _NotesMetadataBadge(
               label: label,
               color: categoryColor ?? Theme.of(context).colorScheme.primary,
-            ),
-          for (final tag in tags) ...[
-            if (label.isNotEmpty || tag != tags.first) const SizedBox(width: 8),
-            _NotesMetadataBadge(
-              label: tag.label,
-              color: tag.color ?? Theme.of(context).colorScheme.primary,
-            ),
-          ],
-        ],
+            );
+          }
+          final tagIndex = label.isNotEmpty ? index - 1 : index;
+          final tag = tags[tagIndex];
+          return _NotesMetadataBadge(
+            label: tag.label,
+            color: tag.color ?? Theme.of(context).colorScheme.primary,
+          );
+        },
       ),
     );
   }
