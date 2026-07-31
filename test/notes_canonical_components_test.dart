@@ -334,31 +334,59 @@ void main() {
         _host(
           NotesEmbeddedEditorScope(
             onClose: () {},
-            child: Align(
-              alignment: Alignment.topCenter,
-              child: SizedBox(
-                width: 880,
-                child: NotesEditorBlockItem(
-                  block: const NoteBlock(
-                    id: 'broken-media',
-                    type: NoteBlockType.image,
-                    imageData: 'not-base64',
+            child: NotesEditorScreen(
+              titleController: headingController,
+              onTitleChanged: (_) {},
+              onDone: () {},
+              pinned: false,
+              onTogglePinned: () {},
+              onDelete: () {},
+              categoryLabel: 'Work',
+              content: ReorderableListView(
+                buildDefaultDragHandles: false,
+                onReorder: (_, __) {},
+                children: [
+                  NotesEditorBlockItem(
+                    key: const ValueKey('desktop-media-block-item'),
+                    block: const NoteBlock(
+                      id: 'desktop-media',
+                      type: NoteBlockType.image,
+                      imageData: 'not-base64',
+                    ),
+                    index: 0,
+                    numberedOrdinal: 1,
+                    active: false,
+                    onTap: () {},
+                    onKeyEvent: (_) => KeyEventResult.ignored,
                   ),
-                  index: 0,
-                  numberedOrdinal: 1,
-                  active: false,
-                  onTap: () {},
-                  onKeyEvent: (_) => KeyEventResult.ignored,
-                ),
+                ],
+              ),
+              toolbar: NotesEditorToolbar(
+                actions: [
+                  for (final tool in NotesToolbarTool.values)
+                    NotesToolbarAction(
+                      tool: tool,
+                      icon: _iconFor(tool),
+                      tooltip: tool.name,
+                      onPressed: () {},
+                    ),
+                ],
               ),
             ),
           ),
         ),
       );
       await tester.pump();
+      final desktopMediaRow = find.byKey(
+        const ValueKey('notes-desktop-media-file-row'),
+      );
+      final embeddedToolbar = find.byType(NotesEditorToolbar);
+      expect(desktopMediaRow, findsOneWidget);
+      expect(tester.getSize(desktopMediaRow).height, 72);
+      expect(find.byKey(const ValueKey('notes-media-frame')), findsNothing);
       expect(
-        tester.getSize(find.byKey(const ValueKey('notes-media-frame'))).height,
-        72,
+        tester.getTopLeft(desktopMediaRow).dy,
+        lessThan(tester.getTopLeft(embeddedToolbar).dy),
       );
       expect(tester.takeException(), isNull);
 
