@@ -1,0 +1,82 @@
+name: Notes V3 Patch Only
+
+on:
+  push:
+    branches:
+      - feature/notes-v3-design-system
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: ${{ !contains(github.event.head_commit.message, '[notes-patch-only]') && !contains(github.event.head_commit.message, '[notes-ux-repair]') && !contains(github.event.head_commit.message, '[notes-patch-marker]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/notes-v3-design-system
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Mark patch workflow started
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          printf 'started from %s\n' "$GITHUB_SHA" > .github/notes-v3-patch-running.txt
+          git add .github/notes-v3-patch-running.txt
+          git commit -m "Mark Notes patch workflow start [notes-patch-marker]"
+          git push origin HEAD:feature/notes-v3-design-system
+
+      - name: Extract and apply repair script
+        shell: bash
+        run: |
+          set +e
+          python3 <<'PY' > /tmp/notes_patch.log 2>&1
+          from pathlib import Path
+
+          workflow = Path('.github/workflows/notes-v3-ux-repair.yml').read_text(encoding='utf-8')
+          start_token = "          python3 <<'PY'\n"
+          end_token = "\n          PY\n"
+          start = workflow.index(start_token) + len(start_token)
+          end = workflow.index(end_token, start)
+          lines = workflow[start:end].splitlines()
+          script = '\n'.join(line[10:] if line.startswith('          ') else line for line in lines)
+          exec(compile(script, 'notes_v3_ux_repair.py', 'exec'))
+          PY
+          STATUS=$?
+          if [ "$STATUS" -ne 0 ]; then
+            cp /tmp/notes_patch.log .github/notes-v3-patch-error.txt
+            git add .github/notes-v3-patch-error.txt
+            git commit -m "Capture Notes patch failure [notes-patch-only]"
+            git push origin HEAD:feature/notes-v3-design-system
+            cat /tmp/notes_patch.log
+            exit "$STATUS"
+          fi
+          cat /tmp/notes_patch.log
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.41.6
+          channel: stable
+          cache: true
+
+      - name: Format repaired Dart
+        run: |
+          dart format \
+            lib/features/notes/note_editor_page.dart \
+            lib/features/notes/widgets/notes_editor_screen.dart \
+            lib/features/notes/widgets/note_editor_block_widgets.dart \
+            lib/features/notes/widgets/notes_component_tools.dart \
+            lib/features/notes/widgets/notes_library_production_shell.dart \
+            lib/features/lists/lists_view.dart \
+            test/notes_canonical_components_test.dart
+
+      - name: Commit repair
+        shell: bash
+        run: |
+          rm -f .github/notes-v3-patch-running.txt .github/notes-v3-patch-error.txt
+          git add -A
+          git commit -m "Fix Notes workspace layout and editor performance [notes-ux-repair]"
+          git push origin HEAD:feature/notes-v3-design-system
