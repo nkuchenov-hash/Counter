@@ -145,11 +145,17 @@ class NotesEditorBlockItem extends StatelessWidget {
         );
       case NoteBlockType.image:
       case NoteBlockType.drawing:
+        // Desktop Notes is file-oriented. Bypass NotesMediaBlock entirely so
+        // no inherited constraints, image decoder, or legacy placeholder can
+        // stretch an attachment into a document-sized gray canvas.
+        if (MediaQuery.sizeOf(context).width >= 768) {
+          return _desktopMediaBlock(context);
+        }
         return NotesMediaBlock(
           kind: block.type == NoteBlockType.drawing
               ? NotesMediaKind.drawing
               : NotesMediaKind.image,
-          media: _mediaContent(context),
+          media: _mobileMediaContent(context),
           state: state,
           captionController: captionController,
           captionHint: 'Caption',
@@ -194,18 +200,132 @@ class NotesEditorBlockItem extends StatelessWidget {
     }
   }
 
-  Widget _mediaContent(BuildContext context) {
+  Widget _desktopMediaBlock(BuildContext context) {
     final raw = block.type == NoteBlockType.drawing
         ? block.drawingData
         : block.imageData;
+    final scheme = Theme.of(context).colorScheme;
+    final loc = currentLocale.value;
+    final hasPayload = raw?.trim().isNotEmpty ?? false;
+    final kindLabel = block.type == NoteBlockType.drawing
+        ? t(loc, 'notes_v3_draw_badge')
+        : t(loc, 'notes_v3_image_badge');
+    final title = hasPayload
+        ? kindLabel
+        : t(loc, 'notes_v3_editor_load_failed');
+    final sizeLabel = hasPayload
+        ? _formatNotesAssetBytes(_estimatedAssetBytes(raw!))
+        : null;
 
-    // Desktop Notes is a file-oriented workspace. Do not decode or paint the
-    // full base64 asset in the document hot path: legacy placeholder media was
-    // able to take over the editor and decoding also slowed opening/scrolling.
-    if (MediaQuery.sizeOf(context).width >= 768) {
-      return _desktopMediaFileRow(context, raw);
-    }
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: kNotesContentInset,
+        vertical: kNotesBlockVerticalPadding,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          GestureDetector(
+            onTap: onTap,
+            child: SizedBox(
+              key: const ValueKey('notes-desktop-media-file-row'),
+              height: 72,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: scheme.surfaceContainerLow,
+                  border: Border.all(color: scheme.outlineVariant),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                  child: Row(
+                    children: [
+                      DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: scheme.surface,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: SizedBox.square(
+                          dimension: 42,
+                          child: Icon(
+                            hasPayload
+                                ? (block.type == NoteBlockType.drawing
+                                      ? Icons.draw_rounded
+                                      : Icons.image_outlined)
+                                : Icons.broken_image_outlined,
+                            size: 21,
+                            color: scheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              title,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.titleSmall
+                                  ?.copyWith(fontWeight: FontWeight.w600),
+                            ),
+                            if (sizeLabel != null) ...[
+                              const SizedBox(height: 2),
+                              Text(
+                                sizeLabel,
+                                style: Theme.of(context).textTheme.bodySmall
+                                    ?.copyWith(
+                                      color: scheme.onSurfaceVariant,
+                                    ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                      Icon(
+                        Icons.more_horiz_rounded,
+                        size: 18,
+                        color: scheme.onSurfaceVariant,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          if (captionController != null &&
+              captionController!.text.trim().isNotEmpty) ...[
+            const SizedBox(height: 8),
+            TextField(
+              controller: captionController,
+              minLines: 1,
+              maxLines: null,
+              onChanged: onCaptionChanged,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                fontSize: 16,
+                color: scheme.onSurfaceVariant,
+              ),
+              decoration: const InputDecoration(
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                isDense: true,
+                contentPadding: EdgeInsets.zero,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
 
+  Widget _mobileMediaContent(BuildContext context) {
+    final raw = block.type == NoteBlockType.drawing
+        ? block.drawingData
+        : block.imageData;
     final bytes = _decodeImagePayload(raw);
     if (bytes == null) return _mediaPlaceholder(context);
     const previewHeight = 240.0;
@@ -227,86 +347,10 @@ class NotesEditorBlockItem extends StatelessWidget {
     );
   }
 
-  Widget _desktopMediaFileRow(BuildContext context, String? raw) {
+  Widget _mediaPlaceholder(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final loc = currentLocale.value;
-    final hasPayload = raw?.trim().isNotEmpty ?? false;
-    final kindLabel = block.type == NoteBlockType.drawing
-        ? t(loc, 'notes_v3_draw_badge')
-        : t(loc, 'notes_v3_image_badge');
-    final title = hasPayload
-        ? kindLabel
-        : t(loc, 'notes_v3_editor_load_failed');
-    final sizeLabel = hasPayload
-        ? _formatNotesAssetBytes(_estimatedAssetBytes(raw!))
-        : null;
-
     return SizedBox(
-      key: const ValueKey('notes-desktop-media-file-row'),
       height: 72,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14),
-        child: Row(
-          children: [
-            DecoratedBox(
-              decoration: BoxDecoration(
-                color: scheme.surfaceContainerLow,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: SizedBox.square(
-                dimension: 42,
-                child: Icon(
-                  hasPayload
-                      ? (block.type == NoteBlockType.drawing
-                            ? Icons.draw_rounded
-                            : Icons.image_outlined)
-                      : Icons.broken_image_outlined,
-                  size: 21,
-                  color: scheme.onSurfaceVariant,
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  if (sizeLabel != null) ...[
-                    const SizedBox(height: 2),
-                    Text(
-                      sizeLabel,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: scheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            Icon(
-              Icons.more_horiz_rounded,
-              size: 18,
-              color: scheme.onSurfaceVariant,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _mediaPlaceholder(BuildContext context, {bool compact = false}) {
-    final scheme = Theme.of(context).colorScheme;
-    return SizedBox(
-      height: compact ? 72 : 88,
       child: DecoratedBox(
         decoration: BoxDecoration(
           color: scheme.surfaceContainerLow,
@@ -350,9 +394,7 @@ int _estimatedAssetBytes(String raw) {
       : value;
   if (encoded.isEmpty) return 0;
   final padding = encoded.endsWith('==') ? 2 : (encoded.endsWith('=') ? 1 : 0);
-  return (((encoded.length * 3) ~/ 4) - padding)
-      .clamp(0, 1 << 30)
-      .toInt();
+  return ((encoded.length * 3) ~/ 4 - padding).clamp(0, 1 << 30);
 }
 
 String _formatNotesAssetBytes(int bytes) {
