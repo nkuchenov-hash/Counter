@@ -1,19 +1,22 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:counter/features/planning/plan_time_gesture_contract.dart';
 import 'package:counter/features/planning/time_view/time_view_drag_state.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 /// Pointer routing for proportional Time View cards.
 ///
-/// The top and bottom edge strips own duration resize across the full card
-/// width. The center body captures the pointer immediately, but the visible
-/// drag state starts only on the first real movement. A release without any
-/// movement remains a short click and never flashes a drag preview.
-///
-/// Cards that cannot move or resize still keep a tap-only body zone so virtual
-/// recurring occurrences can open the standard edit sheet.
+/// Wide layouts preserve immediate pointer move/resize. Compact phone layouts
+/// use one hold-to-edit gesture mode so normal vertical movement remains owned
+/// by the surrounding scroll view:
+/// - hold the center to move;
+/// - hold the top or bottom edge to resize;
+/// - move before the hold wins means scroll;
+/// - release without a hold remains a tap.
 class TimelinePlanInteractionBlock extends StatefulWidget {
   const TimelinePlanInteractionBlock({
     required this.canMove,
@@ -66,8 +69,12 @@ class TimelinePlanInteractionBlock extends StatefulWidget {
       TimelinePlanInteractionBlockState();
 }
 
+enum _TouchEditMode { move, resizeTop, resizeBottom }
+
 class TimelinePlanInteractionBlockState
     extends State<TimelinePlanInteractionBlock> {
+  static const Duration _touchHoldDuration = Duration(milliseconds: 320);
+
   double _moveAccumulatedDy = 0;
   bool _resizing = false;
   bool _bodyDragActive = false;
@@ -77,6 +84,7 @@ class TimelinePlanInteractionBlockState
   double? _lastVelocityGlobalDy;
   int _lastVelocityMicros = 0;
   double _smoothedVerticalVelocity = 0;
+  _TouchEditMode? _touchEditMode;
 
   bool _useImmediatePointerDrag = false;
 
@@ -84,7 +92,7 @@ class TimelinePlanInteractionBlockState
     final h = widget.blockHeightPx ?? widget.resizeHandlePx * 2;
     final preferred = _useImmediatePointerDrag
         ? math.min(widget.resizeHandlePx, 12.0)
-        : math.max(widget.resizeHandlePx, 20.0);
+        : math.min(math.max(widget.resizeHandlePx, 12.0), 16.0);
     final maxHeight = math.max(8.0, (h - 8.0) / 2);
     return preferred.clamp(8.0, maxHeight).toDouble();
   }
@@ -97,6 +105,16 @@ class TimelinePlanInteractionBlockState
     _lastVelocityGlobalDy = null;
     _lastVelocityMicros = 0;
     _smoothedVerticalVelocity = 0;
+  }
+
+  void _resetTouchEditMode() {
+    _touchEditMode = null;
+    if (_resizing && mounted) {
+      setState(() => _resizing = false);
+    } else {
+      _resizing = false;
+    }
+    _resetMoveGesture();
   }
 
   void _startVelocityTracking() {
@@ -190,6 +208,144 @@ class TimelinePlanInteractionBlockState
       widget.onMovePointerRelease?.call();
     }
     _resetMoveGesture();
+  }
+
+  _TouchEditMode? _touchModeFor(LongPressStartDetails details) {
+    final height = widget.blockHeightPx ?? context.size?.height ?? 0;
+    final edgeHeight = _resizeHandleHeight;
+    if (widget.canResize && details.localPosition.dy <= edgeHeight) {
+      return _TouchEditMode.resizeTop;
+    }
+    if (widget.canResize && details.localPosition.dy >= height - edgeHeight) {
+      return _TouchEditMode.resizeBottom;
+    }
+    if (widget.canMove) return _TouchEditMode.move;
+    return null;
+  }
+
+  void _startTouchEdit(LongPressStartDetails details) {
+    final mode = _touchModeFor(details);
+    if (mode == null) return;
+
+    _touchEditMode = mode;
+    unawaited(HapticFeedback.selectionClick());
+
+    switch (mode) {
+      case _TouchEditMode.move:
+        _resetMoveGesture();
+        _pointerDownGlobal = details.globalPosition;
+        _pendingGrabOffsetCanvasPx = details.localPosition.dy;
+        _bodyDragActive = true;
+        widget.onMovePointerDown?.call();
+        _startVelocityTracking();
+        if (kDebugMode) {
+          debugPrint('[TIME_VIEW_TOUCH_HOLD_MOVE_STARTED]');
+        }
+        widget.onVerticalDragStart?.call(_pendingGrabOffsetCanvasPx);
+        break;
+      case _TouchEditMode.resizeTop:
+      case _TouchEditMode.resizeBottom:
+        setState(() => _resizing = true);
+        final edge = mode == _TouchEditMode.resizeTop
+            ? TimelineResizeEdge.top
+            : TimelineResizeEdge.bottom;
+        if (kDebugMode) {
+          debugPrint('[TIME_VIEW_TOUCH_HOLD_RESIZE_STARTED] edge=$edge');
+        }
+        widget.onResizeStart?.call(edge);
+        break;
+    }
+  }
+
+  void _updateTouchEdit(LongPressMoveUpdateDetails details) {
+    final mode = _touchEditMode;
+    if (mode == null) return;
+    final delta = details.offsetFromOrigin.dy;
+    switch (mode) {
+      case _TouchEditMode.move:
+        _trackVerticalVelocity(details.globalPosition.dy);
+        _moveAccumulatedDy = delta;
+        widget.onVerticalDragUpdate?.call(delta, details.globalPosition.dy);
+        break;
+      case _TouchEditMode.resizeTop:
+      case _TouchEditMode.resizeBottom:
+        widget.onResizeUpdate?.call(delta, details.globalPosition.dy);
+        break;
+    }
+  }
+
+  void _endTouchEdit(LongPressEndDetails details) {
+    final mode = _touchEditMode;
+    if (mode == null) return;
+    switch (mode) {
+      case _TouchEditMode.move:
+        widget.onVerticalDragEnd?.call();
+        break;
+      case _TouchEditMode.resizeTop:
+      case _TouchEditMode.resizeBottom:
+        widget.onResizeEnd?.call();
+        break;
+    }
+    _resetTouchEditMode();
+  }
+
+  void _cancelTouchEdit() {
+    final mode = _touchEditMode;
+    if (mode == null) return;
+    switch (mode) {
+      case _TouchEditMode.move:
+        widget.onVerticalDragCancel?.call();
+        break;
+      case _TouchEditMode.resizeTop:
+      case _TouchEditMode.resizeBottom:
+        widget.onResizeCancel?.call();
+        break;
+    }
+    _resetTouchEditMode();
+  }
+
+  Widget _touchInteractionZone() {
+    final gestures = <Type, GestureRecognizerFactory>{};
+    if (widget.onBodyTap != null) {
+      gestures[TapGestureRecognizer] =
+          GestureRecognizerFactoryWithHandlers<TapGestureRecognizer>(
+            () => TapGestureRecognizer(debugOwner: this),
+            (recognizer) {
+              recognizer.onTap = () {
+                _logBodyTap();
+                widget.onBodyTap?.call();
+              };
+            },
+          );
+    }
+    if (widget.canMove || widget.canResize) {
+      gestures[LongPressGestureRecognizer] =
+          GestureRecognizerFactoryWithHandlers<LongPressGestureRecognizer>(
+            () => LongPressGestureRecognizer(
+              debugOwner: this,
+              duration: _touchHoldDuration,
+            ),
+            (recognizer) {
+              recognizer
+                ..onLongPressStart = _startTouchEdit
+                ..onLongPressMoveUpdate = _updateTouchEdit
+                ..onLongPressEnd = _endTouchEdit
+                ..onLongPressCancel = _cancelTouchEdit;
+            },
+          );
+    }
+
+    return Positioned(
+      top: 0,
+      bottom: 0,
+      left: widget.controlsLeftInset,
+      right: widget.controlsRightInset,
+      child: RawGestureDetector(
+        behavior: HitTestBehavior.translucent,
+        gestures: gestures,
+        child: const SizedBox.expand(),
+      ),
+    );
   }
 
   Widget _moveZone() {
@@ -288,6 +444,16 @@ class TimelinePlanInteractionBlockState
     _useImmediatePointerDrag =
         planTimeViewUsesImmediatePointerDrag(viewportWidth);
     final scheme = Theme.of(context).colorScheme;
+
+    if (!_useImmediatePointerDrag) {
+      return Stack(
+        fit: StackFit.expand,
+        children: [
+          widget.child,
+          _touchInteractionZone(),
+        ],
+      );
+    }
 
     return Stack(
       fit: StackFit.expand,
