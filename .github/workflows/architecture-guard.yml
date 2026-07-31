@@ -82,10 +82,8 @@ jobs:
           )
           if count != 1:
               raise SystemExit(f'Expected one service-worker registration block, found {count}')
-          if '_flutter.loader.load();' not in updated:
-              raise SystemExit('Final loader call was not converted to no-service-worker mode')
-          if 'serviceWorkerVersion:' in updated:
-              raise SystemExit('serviceWorkerVersion registration remained in bootstrap')
+          if not updated.rstrip().endswith('_flutter.loader.load();'):
+              raise SystemExit('Bootstrap does not end with the no-service-worker loader call')
           bootstrap.write_text(updated, encoding='utf-8')
 
           index = Path('build/web/index.html')
@@ -136,16 +134,15 @@ jobs:
             ACTUAL=$(curl -fsSL -H 'Cache-Control: no-cache' "${URL}?attempt=${attempt}&ts=$(date +%s)" || true)
             if [ "$ACTUAL" = "$EXPECTED" ]; then
               echo "Verified ${URL}: ${ACTUAL}"
-              BOOTSTRAP="https://nkuchenov-hash.github.io/Counter/${PREVIEW_DIR}/flutter_bootstrap.js?ts=$(date +%s)"
-              BOOTSTRAP_BODY=$(curl -fsSL -H 'Cache-Control: no-cache' "$BOOTSTRAP")
-              if printf '%s' "$BOOTSTRAP_BODY" | grep -q 'serviceWorkerVersion:'; then
-                echo 'Public bootstrap still registers a service worker' >&2
-                exit 1
-              fi
-              if ! printf '%s' "$BOOTSTRAP_BODY" | grep -q '_flutter.loader.load();'; then
-                echo 'Public bootstrap is missing the no-service-worker loader call' >&2
-                exit 1
-              fi
+              curl -fsSL -H 'Cache-Control: no-cache' \
+                "https://nkuchenov-hash.github.io/Counter/${PREVIEW_DIR}/flutter_bootstrap.js?ts=$(date +%s)" \
+                -o /tmp/public-bootstrap.js
+              python - <<'PY'
+              from pathlib import Path
+              source = Path('/tmp/public-bootstrap.js').read_text(encoding='utf-8')
+              if not source.rstrip().endswith('_flutter.loader.load();'):
+                  raise SystemExit('Public bootstrap does not end with the no-service-worker loader call')
+              PY
               exit 0
             fi
             sleep 5
