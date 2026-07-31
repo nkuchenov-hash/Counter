@@ -1,1 +1,1 @@
-verify Notes workspace repair
+verify Notes workspace repair after workflow indexing
