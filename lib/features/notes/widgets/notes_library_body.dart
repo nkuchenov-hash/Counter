@@ -77,11 +77,7 @@ class NotesLibraryBody extends StatelessWidget {
     return RefreshIndicator(onRefresh: onRefresh!, child: body);
   }
 
-  Widget _card(
-    BuildContext context,
-    NoteCardData data,
-    DatabaseService db,
-  ) {
+  Widget _card(BuildContext context, NoteCardData data, DatabaseService db) {
     return NoteCard(
       data: data,
       view: view,

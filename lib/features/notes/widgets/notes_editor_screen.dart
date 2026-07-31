@@ -52,14 +52,16 @@ class NotesEditorScreen extends StatelessWidget {
       body: LayoutBuilder(
         builder: (context, constraints) {
           final desktop = constraints.maxWidth >= 768;
-          final horizontalRoom = constraints.maxWidth -
+          final horizontalRoom =
+              constraints.maxWidth -
               (desktop ? NotesFigmaTokens.editorDesktopOuterInset * 2 : 0);
-          final verticalRoom = constraints.maxHeight -
+          final verticalRoom =
+              constraints.maxHeight -
               (desktop ? NotesFigmaTokens.editorDesktopOuterInset * 2 : 0);
           final frameWidth = desktop
               ? horizontalRoom
-                  .clamp(0.0, NotesFigmaTokens.editorSurfaceMaxWidth)
-                  .toDouble()
+                    .clamp(0.0, NotesFigmaTokens.editorSurfaceMaxWidth)
+                    .toDouble()
               : constraints.maxWidth;
           final frameHeight = desktop
               ? verticalRoom.clamp(0.0, 920.0).toDouble()
@@ -77,10 +79,7 @@ class NotesEditorScreen extends StatelessWidget {
                     child: LayoutBuilder(
                       builder: (context, editorConstraints) {
                         final contentWidth = editorConstraints.maxWidth
-                            .clamp(
-                              0.0,
-                              NotesFigmaTokens.editorContentMaxWidth,
-                            )
+                            .clamp(0.0, NotesFigmaTokens.editorContentMaxWidth)
                             .toDouble();
                         return Align(
                           alignment: Alignment.topCenter,
