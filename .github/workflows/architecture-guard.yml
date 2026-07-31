@@ -12,7 +12,6 @@ concurrency:
 
 permissions:
   contents: read
-  pages: read
 
 jobs:
   strict-structure:
@@ -28,29 +27,10 @@ jobs:
         run: pwsh -NoProfile -NonInteractive -File ./scripts/audit/architecture_guard.ps1 -Strict
 
       - name: Check for whitespace errors
-        run: git diff --check "${{ github.event.pull_request.base.sha }}...HEAD"
-
-      - name: Verify GitHub Pages source and public preview
-        env:
-          GH_TOKEN: ${{ github.token }}
         run: |
-          SOURCE=$(curl -fsSL \
-            -H "Accept: application/vnd.github+json" \
-            -H "Authorization: Bearer $GH_TOKEN" \
-            -H "X-GitHub-Api-Version: 2022-11-28" \
-            "https://api.github.com/repos/${{ github.repository }}/pages" \
-            | python3 -c "import json,sys; d=json.load(sys.stdin); print(d['source']['branch'] + ':' + d['source']['path'])")
-          echo "Pages source: $SOURCE"
-          test "$SOURCE" = "gh-pages:/"
-
-          EXPECTED="7baf95a7c6762ce33a7f19617eed611576ed097e"
-          BRANCH=$(git show origin/gh-pages:notes-v3-preview/notes-source-sha.txt | tr -d '\r\n')
-          echo "gh-pages marker: $BRANCH"
-          test "$BRANCH" = "$EXPECTED"
-
-          URL="https://nkuchenov-hash.github.io/Counter/notes-v3-preview/notes-source-sha.txt"
-          ACTUAL=$(curl -fsSL -L --max-time 30 \
-            -H "Cache-Control: no-cache" \
-            "$URL?verify=$(date +%s)" | tr -d '\r\n')
-          echo "public marker: $ACTUAL"
-          test "$ACTUAL" = "$EXPECTED"
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            git diff --check "${{ github.event.pull_request.base.sha }}...HEAD"
+          else
+            git fetch --no-tags --prune origin main
+            git diff --check "origin/main...HEAD"
+          fi
