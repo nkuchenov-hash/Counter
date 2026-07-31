@@ -392,7 +392,9 @@ class _NotesHeaderAction extends StatelessWidget {
     return Tooltip(
       message: tooltip,
       child: Material(
-        color: subtle ? Colors.transparent : NotesFigmaTokens.glassFill(context),
+        color: subtle
+            ? Colors.transparent
+            : NotesFigmaTokens.glassFill(context),
         elevation: subtle ? 0 : 1,
         shadowColor: Colors.black.withValues(alpha: 0.08),
         shape: const CircleBorder(),

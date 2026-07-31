@@ -204,7 +204,9 @@ class NotesEditorBlockItem extends StatelessWidget {
     // Inline media is a preview, not the document itself. A large or legacy
     // payload must never take over the entire editor viewport. Full-size work
     // remains available through the block media actions.
-    final previewHeight = MediaQuery.sizeOf(context).width >= 768 ? 220.0 : 260.0;
+    final previewHeight = MediaQuery.sizeOf(context).width >= 768
+        ? 220.0
+        : 260.0;
     return RepaintBoundary(
       child: SizedBox(
         width: double.infinity,
