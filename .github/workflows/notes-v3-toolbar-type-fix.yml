@@ -1,0 +1,43 @@
+name: Notes V3 Toolbar Type Fix
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fix-toolbar-width-type:
+    if: github.event_name == 'workflow_dispatch' || github.head_ref == 'feature/notes-v3-design-system'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/notes-v3-design-system
+          fetch-depth: 0
+      - name: Fix toolbar width type and commit
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('lib/features/notes/widgets/notes_component_tools.dart')
+          text = path.read_text(encoding='utf-8')
+          old = 'math.max(0, viewportWidth - 40)'
+          new = 'math.max(0.0, viewportWidth - 40)'
+          if old in text:
+              text = text.replace(old, new, 1)
+              path.write_text(text, encoding='utf-8')
+          elif new not in text:
+              raise SystemExit('toolbar width expression not found')
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add lib/features/notes/widgets/notes_component_tools.dart
+          if git diff --cached --quiet; then
+            echo "Type fix already applied."
+          else
+            git commit -m "Fix Notes toolbar width type"
+            git push origin HEAD:feature/notes-v3-design-system
+          fi
