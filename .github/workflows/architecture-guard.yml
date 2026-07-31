@@ -72,4 +72,4 @@ jobs:
         run: flutter test test/notes_canonical_components_test.dart
 
       - name: Build production web preview
-        run: flutter build web --release --base-href /Counter/notes-v3-preview/
+        run: flutter build web --release --no-tree-shake-icons --base-href /Counter/notes-v3-preview/
