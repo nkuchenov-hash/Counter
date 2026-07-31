@@ -83,8 +83,8 @@ class _NotesLibraryBodyState extends State<NotesLibraryBody> {
           );
         }
 
-        final listWidth = (constraints.maxWidth * 0.30)
-            .clamp(340.0, 430.0)
+        final listWidth = (constraints.maxWidth * 0.26)
+            .clamp(280.0, 360.0)
             .toDouble();
         final scheme = Theme.of(context).colorScheme;
         return Row(

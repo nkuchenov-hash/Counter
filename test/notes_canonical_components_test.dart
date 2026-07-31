@@ -6,10 +6,12 @@ import 'package:counter/features/notes/notes_editor_document_controller.dart';
 import 'package:counter/features/notes/notes_figma_tokens.dart';
 import 'package:counter/features/notes/notes_image_tools.dart';
 import 'package:counter/features/notes/widgets/notes_canonical_components.dart';
+import 'package:counter/features/notes/widgets/note_editor_block_widgets.dart';
 import 'package:counter/features/notes/widgets/notes_editor_tools.dart';
 import 'package:counter/features/notes/widgets/notes_editor_screen.dart';
 import 'package:counter/features/notes/widgets/notes_library_body.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -288,6 +290,75 @@ void main() {
       expect(
         tester.getTopLeft(visibleContent).dy,
         lessThan(tester.getTopLeft(productionToolbar).dy),
+      );
+      expect(tester.takeException(), isNull);
+
+      tester.view.physicalSize = const Size(1400, 900);
+      await tester.pumpWidget(
+        _host(
+          NotesEmbeddedEditorScope(
+            onClose: () {},
+            child: NotesEditorScreen(
+              titleController: headingController,
+              onTitleChanged: (_) {},
+              onDone: () {},
+              pinned: false,
+              onTogglePinned: () {},
+              onDelete: () {},
+              categoryLabel: 'Work',
+              content: const SizedBox.shrink(),
+              toolbar: NotesEditorToolbar(
+                actions: [
+                  for (final tool in NotesToolbarTool.values)
+                    NotesToolbarAction(
+                      tool: tool,
+                      icon: _iconFor(tool),
+                      tooltip: tool.name,
+                      onPressed: () {},
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      expect(
+        tester
+            .getSize(find.byKey(const ValueKey('notes-editor-content-rail')))
+            .width,
+        NotesFigmaTokens.editorContentMaxWidth,
+      );
+
+      await tester.pumpWidget(
+        _host(
+          NotesEmbeddedEditorScope(
+            onClose: () {},
+            child: Align(
+              alignment: Alignment.topCenter,
+              child: SizedBox(
+                width: 880,
+                child: NotesEditorBlockItem(
+                  block: const NoteBlock(
+                    id: 'broken-media',
+                    type: NoteBlockType.image,
+                    imageData: 'not-base64',
+                  ),
+                  index: 0,
+                  numberedOrdinal: 1,
+                  active: false,
+                  onTap: () {},
+                  onKeyEvent: (_) => KeyEventResult.ignored,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      expect(
+        tester.getSize(find.byKey(const ValueKey('notes-media-frame'))).height,
+        72,
       );
       expect(tester.takeException(), isNull);
 

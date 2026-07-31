@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 const double kGlmEditorMaxWidth = 768;
 
 /// Library content (`max-w-5xl`).
-const double kGlmLibraryMaxWidth = 1024;
+const double kGlmLibraryMaxWidth = 1440;
 
 const double kGlmEditorPadH = 20;
 const double kGlmEditorPadV = 16;
@@ -107,7 +107,7 @@ class NotesGlmLibraryFrame extends StatelessWidget {
             constraints: BoxConstraints(maxWidth: maxWidth),
             child: Padding(
               padding: EdgeInsets.symmetric(
-                horizontal: wide ? 32 : 20,
+                horizontal: wide ? 24 : 20,
                 vertical: 16,
               ),
               child: child,

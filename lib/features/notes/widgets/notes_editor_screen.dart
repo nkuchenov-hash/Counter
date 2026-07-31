@@ -173,13 +173,18 @@ class _NotesEditorRail extends StatelessWidget {
   Widget build(BuildContext context) {
     Widget rail = LayoutBuilder(
       builder: (context, constraints) {
-        final horizontalPadding = embedded ? 40.0 : 0.0;
+        final horizontalPadding = embedded
+            ? (constraints.maxWidth >= NotesFigmaTokens.editorSurfaceMaxWidth
+                  ? 40.0
+                  : 24.0)
+            : 0.0;
         final contentWidth = (constraints.maxWidth - horizontalPadding * 2)
             .clamp(0.0, NotesFigmaTokens.editorContentMaxWidth)
             .toDouble();
         return Align(
           alignment: Alignment.topCenter,
           child: SizedBox(
+            key: const ValueKey('notes-editor-content-rail'),
             width: contentWidth,
             height: constraints.maxHeight,
             child: Column(

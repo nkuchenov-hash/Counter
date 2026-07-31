@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/notes/notes_audio_controller.dart';
 import 'package:counter/features/notes/widgets/notes_canonical_components.dart';
+import 'package:counter/features/notes/widgets/notes_editor_screen.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -199,14 +200,91 @@ class NotesEditorBlockItem extends StatelessWidget {
         ? block.drawingData
         : block.imageData;
     final bytes = _decodeImagePayload(raw);
-    if (bytes == null) return _mediaPlaceholder(context);
+    final embedded = NotesEmbeddedEditorScope.maybeOf(context) != null;
+    if (bytes == null) {
+      return _mediaPlaceholder(context, compact: embedded);
+    }
 
-    // Inline media is a preview, not the document itself. A large or legacy
-    // payload must never take over the entire editor viewport. Full-size work
-    // remains available through the block media actions.
+    if (embedded) {
+      final scheme = Theme.of(context).colorScheme;
+      final loc = currentLocale.value;
+      final kindLabel = block.type == NoteBlockType.drawing
+          ? t(loc, 'notes_v3_draw_badge')
+          : t(loc, 'notes_v3_image_badge');
+      return RepaintBoundary(
+        child: SizedBox(
+          height: 112,
+          child: Row(
+            children: [
+              SizedBox(
+                width: 168,
+                height: 112,
+                child: ColoredBox(
+                  color: scheme.surfaceContainerLowest,
+                  child: Image.memory(
+                    bytes,
+                    alignment: Alignment.center,
+                    fit: BoxFit.contain,
+                    gaplessPlayback: true,
+                    filterQuality: FilterQuality.medium,
+                    errorBuilder: (_, __, ___) =>
+                        _mediaPlaceholder(context, compact: true),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      kindLabel,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      _formatNotesAssetBytes(bytes.length),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: scheme.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.more_horiz_rounded,
+                          size: 16,
+                          color: scheme.onSurfaceVariant,
+                        ),
+                        const SizedBox(width: 6),
+                        Flexible(
+                          child: Text(
+                            t(loc, 'notes_v3_editor_more_tooltip'),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.labelMedium
+                                ?.copyWith(color: scheme.onSurfaceVariant),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     final previewHeight = MediaQuery.sizeOf(context).width >= 768
-        ? 220.0
-        : 260.0;
+        ? 200.0
+        : 240.0;
     return RepaintBoundary(
       child: SizedBox(
         width: double.infinity,
@@ -225,10 +303,10 @@ class NotesEditorBlockItem extends StatelessWidget {
     );
   }
 
-  Widget _mediaPlaceholder(BuildContext context) {
+  Widget _mediaPlaceholder(BuildContext context, {bool compact = false}) {
     final scheme = Theme.of(context).colorScheme;
     return SizedBox(
-      height: 88,
+      height: compact ? 72 : 88,
       child: DecoratedBox(
         decoration: BoxDecoration(
           color: scheme.surfaceContainerLow,
@@ -262,6 +340,14 @@ class NotesEditorBlockItem extends StatelessWidget {
       ),
     );
   }
+}
+
+String _formatNotesAssetBytes(int bytes) {
+  if (bytes < 1024) return '$bytes B';
+  final kb = bytes / 1024;
+  if (kb < 1024) return '${kb.toStringAsFixed(kb >= 100 ? 0 : 1)} KB';
+  final mb = kb / 1024;
+  return '${mb.toStringAsFixed(mb >= 10 ? 1 : 2)} MB';
 }
 
 NotesTextBlockStyle _textStyleFor(NoteBlock block) {
