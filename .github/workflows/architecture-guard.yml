@@ -28,28 +28,29 @@ jobs:
         run: pwsh -NoProfile -NonInteractive -File ./scripts/audit/architecture_guard.ps1 -Strict
 
       - name: Check for whitespace errors
-        run: |
-          git diff --check "${{ github.event.pull_request.base.sha }}...HEAD"
+        run: git diff --check "${{ github.event.pull_request.base.sha }}...HEAD"
 
-      - name: Inspect GitHub Pages configuration
+      - name: Verify GitHub Pages source and public preview
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          curl -fsSL \
+          SOURCE=$(curl -fsSL \
             -H "Accept: application/vnd.github+json" \
             -H "Authorization: Bearer $GH_TOKEN" \
             -H "X-GitHub-Api-Version: 2022-11-28" \
             "https://api.github.com/repos/${{ github.repository }}/pages" \
-            | python3 -m json.tool
+            | python3 -c "import json,sys; d=json.load(sys.stdin); print(d['source']['branch'] + ':' + d['source']['path'])")
+          echo "Pages source: $SOURCE"
+          test "$SOURCE" = "gh-pages:/"
 
-      - name: Verify deployed branch marker and public endpoint
-        run: |
           EXPECTED="7baf95a7c6762ce33a7f19617eed611576ed097e"
           BRANCH=$(git show origin/gh-pages:notes-v3-preview/notes-source-sha.txt | tr -d '\r\n')
           echo "gh-pages marker: $BRANCH"
           test "$BRANCH" = "$EXPECTED"
 
           URL="https://nkuchenov-hash.github.io/Counter/notes-v3-preview/notes-source-sha.txt"
-          curl -v -L --max-time 30 --no-cache "$URL?verify=$(date +%s)" -o /tmp/public-marker.txt
-          echo "public marker: $(cat /tmp/public-marker.txt)"
-          test "$(tr -d '\r\n' < /tmp/public-marker.txt)" = "$EXPECTED"
+          ACTUAL=$(curl -fsSL -L --max-time 30 \
+            -H "Cache-Control: no-cache" \
+            "$URL?verify=$(date +%s)" | tr -d '\r\n')
+          echo "public marker: $ACTUAL"
+          test "$ACTUAL" = "$EXPECTED"
