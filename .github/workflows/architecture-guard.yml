@@ -47,29 +47,12 @@ jobs:
       - name: Dependencies
         run: flutter pub get
 
-      - name: Format Notes repair
+      - name: Notes format check
         run: |
-          dart format \
+          dart format --output=none --set-exit-if-changed \
             lib/features/notes/widgets/notes_library_body.dart \
             lib/features/notes/widgets/note_editor_block_widgets.dart \
             lib/features/notes/widgets/notes_editor_screen.dart
-
-      - name: Commit formatter output if needed
-        shell: bash
-        run: |
-          if git diff --quiet; then
-            exit 0
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add \
-            lib/features/notes/widgets/notes_library_body.dart \
-            lib/features/notes/widgets/note_editor_block_widgets.dart \
-            lib/features/notes/widgets/notes_editor_screen.dart
-          git commit -m "Format Notes workspace repair"
-          git push origin HEAD:${{ github.event.pull_request.head.ref }}
-          echo "Formatter commit pushed; next PR run will execute verification."
-          exit 0
 
       - name: Analyzer
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
@@ -81,23 +64,30 @@ jobs:
           flutter test test/notes_canonical_components_test.dart
 
       - name: Production web build
-        run: flutter build web --release --base-href="/Counter/notes-v3-preview/" --no-tree-shake-icons --no-wasm-dry-run
-
-      - name: Universal Android release build
-        run: flutter build apk --release --no-tree-shake-icons
-
-      - name: Package Notes repair artifacts
         run: |
-          cp build/app/outputs/flutter-apk/app-release.apk Counter-Notes-v3-workspace-repair.apk
-          (cd build/web && zip -qr ../../Counter-Notes-v3-workspace-web.zip .)
-          sha256sum Counter-Notes-v3-workspace-repair.apk > Counter-Notes-v3-workspace-repair.sha256
+          flutter build web --release --base-href="/Counter/notes-v3-preview/" --no-tree-shake-icons --no-wasm-dry-run
+          git rev-parse HEAD > build/web/notes-source-sha.txt
 
-      - name: Upload Notes repair artifacts
-        uses: actions/upload-artifact@v4
+      - name: Deploy Notes preview
+        uses: JamesIves/github-pages-deploy-action@v4
         with:
-          name: notes-v3-workspace-repair
-          path: |
-            Counter-Notes-v3-workspace-repair.apk
-            Counter-Notes-v3-workspace-repair.sha256
-            Counter-Notes-v3-workspace-web.zip
-          if-no-files-found: error
+          branch: gh-pages
+          folder: build/web
+          target-folder: notes-v3-preview
+          clean: false
+
+      - name: Verify public preview SHA
+        shell: bash
+        run: |
+          EXPECTED=$(git rev-parse HEAD)
+          URL="https://nkuchenov-hash.github.io/Counter/notes-v3-preview/notes-source-sha.txt"
+          for attempt in $(seq 1 30); do
+            ACTUAL=$(curl -fsSL --no-cache "$URL?attempt=$attempt" 2>/dev/null || true)
+            if [ "$ACTUAL" = "$EXPECTED" ]; then
+              echo "Verified public preview SHA: $ACTUAL"
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "Preview did not publish expected SHA $EXPECTED"
+          exit 1
