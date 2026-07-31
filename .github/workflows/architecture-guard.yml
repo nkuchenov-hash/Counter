@@ -34,26 +34,3 @@ jobs:
             git fetch --no-tags --prune origin main
             git diff --check "origin/main...HEAD"
           fi
-
-  verify-notes-cache-isolated-preview:
-    name: verify-notes-cache-isolated-preview
-    runs-on: ubuntu-latest
-    steps:
-      - name: Verify public source and no-worker bootstrap
-        run: |
-          EXPECTED='ebf4c12e4612e4437eeb0e07e3791f8161beeb84'
-          BASE='https://nkuchenov-hash.github.io/Counter/notes-v3-preview-live-20260731-1505'
-          for attempt in $(seq 1 60); do
-            ACTUAL=$(curl -fsSL -H 'Cache-Control: no-cache' "${BASE}/source-sha.txt?attempt=${attempt}&ts=$(date +%s)" || true)
-            if [ "$ACTUAL" = "$EXPECTED" ]; then
-              curl -fsSL -H 'Cache-Control: no-cache' "${BASE}/flutter_bootstrap.js?ts=$(date +%s)" -o /tmp/public-bootstrap.js
-              python -c "from pathlib import Path; s=Path('/tmp/public-bootstrap.js').read_text(encoding='utf-8').rstrip(); assert s.endswith('_flutter.loader.load();'), 'public bootstrap still registers a service worker'"
-              STATUS=$(curl -sS -o /tmp/public-index.html -w '%{http_code}' -H 'Cache-Control: no-cache' "${BASE}/?ts=$(date +%s)")
-              test "$STATUS" = '200'
-              echo "Verified public Notes preview: SHA=${ACTUAL}, HTTP=${STATUS}, no service worker"
-              exit 0
-            fi
-            sleep 5
-          done
-          echo "Public preview did not expose expected SHA ${EXPECTED}" >&2
-          exit 1
