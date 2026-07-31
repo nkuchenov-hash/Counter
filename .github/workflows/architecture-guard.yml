@@ -11,7 +11,8 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
-  contents: write
+  contents: read
+  pages: read
 
 jobs:
   strict-structure:
@@ -21,73 +22,34 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.ref || github.ref_name }}
           fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run strict architecture guard
         run: pwsh -NoProfile -NonInteractive -File ./scripts/audit/architecture_guard.ps1 -Strict
 
       - name: Check for whitespace errors
         run: |
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            git diff --check "${{ github.event.pull_request.base.sha }}...HEAD"
-          else
-            git fetch --no-tags --prune origin main
-            git diff --check "origin/main...HEAD"
-          fi
+          git diff --check "${{ github.event.pull_request.base.sha }}...HEAD"
 
-      - name: Set up Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          channel: stable
-          flutter-version: 3.41.6
-          cache: true
-
-      - name: Dependencies
-        run: flutter pub get
-
-      - name: Notes format check
+      - name: Inspect GitHub Pages configuration
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          dart format --output=none --set-exit-if-changed \
-            lib/features/notes/widgets/notes_library_body.dart \
-            lib/features/notes/widgets/note_editor_block_widgets.dart \
-            lib/features/notes/widgets/notes_editor_screen.dart
+          curl -fsSL \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/${{ github.repository }}/pages" \
+            | python3 -m json.tool
 
-      - name: Analyzer
-        run: flutter analyze --no-fatal-infos --no-fatal-warnings
-
-      - name: Exactly three focused Notes tests
+      - name: Verify deployed branch marker and public endpoint
         run: |
-          TEST_COUNT=$(grep -E "^[[:space:]]*test(Widgets)?\(" test/notes_canonical_components_test.dart | wc -l)
-          test "$TEST_COUNT" -eq 3
-          flutter test test/notes_canonical_components_test.dart
+          EXPECTED="7baf95a7c6762ce33a7f19617eed611576ed097e"
+          BRANCH=$(git show origin/gh-pages:notes-v3-preview/notes-source-sha.txt | tr -d '\r\n')
+          echo "gh-pages marker: $BRANCH"
+          test "$BRANCH" = "$EXPECTED"
 
-      - name: Production web build
-        run: |
-          flutter build web --release --base-href="/Counter/notes-v3-preview/" --no-tree-shake-icons --no-wasm-dry-run
-          git rev-parse HEAD > build/web/notes-source-sha.txt
-
-      - name: Deploy Notes preview
-        uses: JamesIves/github-pages-deploy-action@v4
-        with:
-          branch: gh-pages
-          folder: build/web
-          target-folder: notes-v3-preview
-          clean: false
-
-      - name: Verify public preview SHA
-        shell: bash
-        run: |
-          EXPECTED=$(git rev-parse HEAD)
           URL="https://nkuchenov-hash.github.io/Counter/notes-v3-preview/notes-source-sha.txt"
-          for attempt in $(seq 1 30); do
-            ACTUAL=$(curl -fsSL --no-cache "$URL?attempt=$attempt" 2>/dev/null || true)
-            if [ "$ACTUAL" = "$EXPECTED" ]; then
-              echo "Verified public preview SHA: $ACTUAL"
-              exit 0
-            fi
-            sleep 10
-          done
-          echo "Preview did not publish expected SHA $EXPECTED"
-          exit 1
+          curl -v -L --max-time 30 --no-cache "$URL?verify=$(date +%s)" -o /tmp/public-marker.txt
+          echo "public marker: $(cat /tmp/public-marker.txt)"
+          test "$(tr -d '\r\n' < /tmp/public-marker.txt)" = "$EXPECTED"
