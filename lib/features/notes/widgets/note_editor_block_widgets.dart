@@ -4,7 +4,6 @@ import 'dart:typed_data';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/notes/notes_audio_controller.dart';
 import 'package:counter/features/notes/widgets/notes_canonical_components.dart';
-import 'package:counter/features/notes/widgets/notes_editor_screen.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -199,92 +198,17 @@ class NotesEditorBlockItem extends StatelessWidget {
     final raw = block.type == NoteBlockType.drawing
         ? block.drawingData
         : block.imageData;
+
+    // Desktop Notes is a file-oriented workspace. Do not decode or paint the
+    // full base64 asset in the document hot path: legacy placeholder media was
+    // able to take over the editor and decoding also slowed opening/scrolling.
+    if (MediaQuery.sizeOf(context).width >= 768) {
+      return _desktopMediaFileRow(context, raw);
+    }
+
     final bytes = _decodeImagePayload(raw);
-    final embedded = NotesEmbeddedEditorScope.maybeOf(context) != null;
-    if (bytes == null) {
-      return _mediaPlaceholder(context, compact: embedded);
-    }
-
-    if (embedded) {
-      final scheme = Theme.of(context).colorScheme;
-      final loc = currentLocale.value;
-      final kindLabel = block.type == NoteBlockType.drawing
-          ? t(loc, 'notes_v3_draw_badge')
-          : t(loc, 'notes_v3_image_badge');
-      return RepaintBoundary(
-        child: SizedBox(
-          height: 112,
-          child: Row(
-            children: [
-              SizedBox(
-                width: 168,
-                height: 112,
-                child: ColoredBox(
-                  color: scheme.surfaceContainerLowest,
-                  child: Image.memory(
-                    bytes,
-                    alignment: Alignment.center,
-                    fit: BoxFit.contain,
-                    gaplessPlayback: true,
-                    filterQuality: FilterQuality.medium,
-                    errorBuilder: (_, __, ___) =>
-                        _mediaPlaceholder(context, compact: true),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      kindLabel,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      _formatNotesAssetBytes(bytes.length),
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: scheme.onSurfaceVariant,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.more_horiz_rounded,
-                          size: 16,
-                          color: scheme.onSurfaceVariant,
-                        ),
-                        const SizedBox(width: 6),
-                        Flexible(
-                          child: Text(
-                            t(loc, 'notes_v3_editor_more_tooltip'),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.labelMedium
-                                ?.copyWith(color: scheme.onSurfaceVariant),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    final previewHeight = MediaQuery.sizeOf(context).width >= 768
-        ? 200.0
-        : 240.0;
+    if (bytes == null) return _mediaPlaceholder(context);
+    const previewHeight = 240.0;
     return RepaintBoundary(
       child: SizedBox(
         width: double.infinity,
@@ -298,6 +222,82 @@ class NotesEditorBlockItem extends StatelessWidget {
           gaplessPlayback: true,
           filterQuality: FilterQuality.medium,
           errorBuilder: (_, __, ___) => _mediaPlaceholder(context),
+        ),
+      ),
+    );
+  }
+
+  Widget _desktopMediaFileRow(BuildContext context, String? raw) {
+    final scheme = Theme.of(context).colorScheme;
+    final loc = currentLocale.value;
+    final hasPayload = raw?.trim().isNotEmpty ?? false;
+    final kindLabel = block.type == NoteBlockType.drawing
+        ? t(loc, 'notes_v3_draw_badge')
+        : t(loc, 'notes_v3_image_badge');
+    final title = hasPayload
+        ? kindLabel
+        : t(loc, 'notes_v3_editor_load_failed');
+    final sizeLabel = hasPayload
+        ? _formatNotesAssetBytes(_estimatedAssetBytes(raw!))
+        : null;
+
+    return SizedBox(
+      key: const ValueKey('notes-desktop-media-file-row'),
+      height: 72,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14),
+        child: Row(
+          children: [
+            DecoratedBox(
+              decoration: BoxDecoration(
+                color: scheme.surfaceContainerLow,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: SizedBox.square(
+                dimension: 42,
+                child: Icon(
+                  hasPayload
+                      ? (block.type == NoteBlockType.drawing
+                            ? Icons.draw_rounded
+                            : Icons.image_outlined)
+                      : Icons.broken_image_outlined,
+                  size: 21,
+                  color: scheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  if (sizeLabel != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      sizeLabel,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: scheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            Icon(
+              Icons.more_horiz_rounded,
+              size: 18,
+              color: scheme.onSurfaceVariant,
+            ),
+          ],
         ),
       ),
     );
@@ -340,6 +340,19 @@ class NotesEditorBlockItem extends StatelessWidget {
       ),
     );
   }
+}
+
+int _estimatedAssetBytes(String raw) {
+  final value = raw.trim();
+  final comma = value.indexOf(',');
+  final encoded = value.startsWith('data:') && comma >= 0
+      ? value.substring(comma + 1)
+      : value;
+  if (encoded.isEmpty) return 0;
+  final padding = encoded.endsWith('==') ? 2 : (encoded.endsWith('=') ? 1 : 0);
+  return (((encoded.length * 3) ~/ 4) - padding)
+      .clamp(0, 1 << 30)
+      .toInt();
 }
 
 String _formatNotesAssetBytes(int bytes) {
