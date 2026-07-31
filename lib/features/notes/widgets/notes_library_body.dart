@@ -14,6 +14,12 @@ import 'package:counter/features/notes/widgets/note_card.dart';
 import 'package:counter/features/notes/widgets/notes_editor_screen.dart';
 import 'package:flutter/material.dart';
 
+const double kNotesEmbeddedWorkspaceBreakpoint = 1100;
+
+bool notesUsesEmbeddedWorkspace(double viewportWidth) {
+  return viewportWidth >= kNotesEmbeddedWorkspaceBreakpoint;
+}
+
 class NotesLibraryBody extends StatefulWidget {
   const NotesLibraryBody({
     super.key,
@@ -37,7 +43,6 @@ class NotesLibraryBody extends StatefulWidget {
 }
 
 class _NotesLibraryBodyState extends State<NotesLibraryBody> {
-  static const double _desktopBreakpoint = 1100;
   PlanningTask? _selectedTask;
 
   @override
@@ -60,7 +65,12 @@ class _NotesLibraryBodyState extends State<NotesLibraryBody> {
     final cards = _buildCards(context);
     return LayoutBuilder(
       builder: (context, constraints) {
-        final wide = constraints.maxWidth >= _desktopBreakpoint;
+        // The production library is intentionally capped below 1100px.
+        // Therefore the embedded-editor decision must use the viewport width,
+        // not this inner constrained width, or desktop mode can never activate.
+        final wide = notesUsesEmbeddedWorkspace(
+          MediaQuery.sizeOf(context).width,
+        );
         final selected = wide ? _selectedTask : null;
         if (selected == null) {
           return _withRefresh(
@@ -219,7 +229,7 @@ class _NotesLibraryBodyState extends State<NotesLibraryBody> {
   }
 
   void _openNote(BuildContext context, PlanningTask task) {
-    if (MediaQuery.sizeOf(context).width < _desktopBreakpoint) {
+    if (!notesUsesEmbeddedWorkspace(MediaQuery.sizeOf(context).width)) {
       widget.onTap(task);
       return;
     }
