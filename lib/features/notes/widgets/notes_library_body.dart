@@ -1,16 +1,20 @@
 // Notes library body — grid/list of [NoteCard]s for the Lists tab.
 //
 // Mobile delegates to the dedicated full-screen editor route. Wide web and
-// desktop keep the surrounding app shell and library visible while opening the
-// editor in a finite right-side workspace pane.
+// desktop use a real master-detail workspace: the note list stays in the
+// layout and the editor occupies the remaining content area without dialogs,
+// overlays, or a nested mobile screen.
+
+import 'dart:async';
 
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/notes/note_editor_page.dart';
 import 'package:counter/features/notes/widgets/note_card.dart';
+import 'package:counter/features/notes/widgets/notes_editor_screen.dart';
 import 'package:flutter/material.dart';
 
-class NotesLibraryBody extends StatelessWidget {
+class NotesLibraryBody extends StatefulWidget {
   const NotesLibraryBody({
     super.key,
     required this.tasks,
@@ -29,31 +33,125 @@ class NotesLibraryBody extends StatelessWidget {
   final Future<void> Function()? onRefresh;
 
   @override
+  State<NotesLibraryBody> createState() => _NotesLibraryBodyState();
+}
+
+class _NotesLibraryBodyState extends State<NotesLibraryBody> {
+  static const double _desktopBreakpoint = 1100;
+  PlanningTask? _selectedTask;
+
+  @override
+  void didUpdateWidget(covariant NotesLibraryBody oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final selectedId = _selectedTask?.planRowIdForBackend;
+    if (selectedId == null) return;
+    PlanningTask? refreshed;
+    for (final task in widget.tasks) {
+      if (task.planRowIdForBackend == selectedId) {
+        refreshed = task;
+        break;
+      }
+    }
+    _selectedTask = refreshed;
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final cards = _buildCards(context);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final wide = constraints.maxWidth >= _desktopBreakpoint;
+        final selected = wide ? _selectedTask : null;
+        if (selected == null) {
+          return _withRefresh(
+            _buildCollection(
+              context,
+              cards,
+              view: widget.view,
+              availableWidth: constraints.maxWidth,
+            ),
+          );
+        }
+
+        final listWidth = (constraints.maxWidth * 0.30)
+            .clamp(340.0, 430.0)
+            .toDouble();
+        final scheme = Theme.of(context).colorScheme;
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            SizedBox(
+              width: listWidth,
+              child: Padding(
+                padding: const EdgeInsets.only(right: 16),
+                child: _withRefresh(
+                  _buildCollection(
+                    context,
+                    cards,
+                    view: NotesLibraryView.list,
+                    availableWidth: listWidth,
+                    selectedId: selected.planRowIdForBackend,
+                  ),
+                ),
+              ),
+            ),
+            VerticalDivider(
+              width: 1,
+              thickness: 1,
+              color: scheme.outlineVariant.withValues(alpha: 0.65),
+            ),
+            Expanded(
+              child: ColoredBox(
+                color: scheme.surface,
+                child: NotesEmbeddedEditorScope(
+                  onClose: _closeEmbeddedEditor,
+                  child: NoteEditorPage(
+                    key: ValueKey<String>(
+                      'embedded-note-${selected.planRowIdForBackend}',
+                    ),
+                    task: selected,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  List<NoteCardData> _buildCards(BuildContext context) {
     final db = DatabaseService.instance;
     final scheme = Theme.of(context).colorScheme;
-    final cards = <NoteCardData>[];
-    for (final task in tasks) {
-      final doc = db.parseNoteDocument(task);
-      final stats = doc.computeStats();
-      final category = db.getCategoryRuleById(task.categoryId);
-      cards.add(
-        NoteCardData(
-          task: task,
-          doc: doc,
-          stats: stats,
-          categoryName: category?.name,
-          categoryColor: category?.colorOrDefault ?? scheme.primary,
-          categoryIconCodePoint: category?.iconCodePoint,
-          pinned: doc.meta.pinned,
-        ),
-      );
-    }
+    return [
+      for (final task in widget.tasks)
+        () {
+          final doc = db.parseNoteDocument(task);
+          final category = db.getCategoryRuleById(task.categoryId);
+          return NoteCardData(
+            task: task,
+            doc: doc,
+            stats: doc.computeStats(),
+            categoryName: category?.name,
+            categoryColor: category?.colorOrDefault ?? scheme.primary,
+            categoryIconCodePoint: category?.iconCodePoint,
+            pinned: doc.meta.pinned,
+          );
+        }(),
+    ];
+  }
 
-    Widget body;
-    final crossAxisCount = MediaQuery.sizeOf(context).width >= 720 ? 2 : 1;
+  Widget _buildCollection(
+    BuildContext context,
+    List<NoteCardData> cards, {
+    required NotesLibraryView view,
+    required double availableWidth,
+    String? selectedId,
+  }) {
+    final db = DatabaseService.instance;
     if (view == NotesLibraryView.grid) {
-      body = GridView.builder(
+      final crossAxisCount = availableWidth >= 720 ? 2 : 1;
+      return GridView.builder(
         padding: const EdgeInsets.only(top: 4, bottom: 24),
         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: crossAxisCount,
@@ -62,88 +160,73 @@ class NotesLibraryBody extends StatelessWidget {
           childAspectRatio: crossAxisCount == 2 ? 1.22 : 1.35,
         ),
         itemCount: cards.length,
-        itemBuilder: (context, index) => _card(context, cards[index], db),
-      );
-    } else {
-      body = ListView.separated(
-        padding: const EdgeInsets.only(top: 4, bottom: 24),
-        itemCount: cards.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 6),
-        itemBuilder: (context, index) => _card(context, cards[index], db),
+        itemBuilder: (context, index) => _card(
+          context,
+          cards[index],
+          db,
+          selected: cards[index].task.planRowIdForBackend == selectedId,
+        ),
       );
     }
 
-    if (onRefresh == null) return body;
-    return RefreshIndicator(onRefresh: onRefresh!, child: body);
+    return ListView.separated(
+      padding: const EdgeInsets.only(top: 4, bottom: 24),
+      itemCount: cards.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 6),
+      itemBuilder: (context, index) => _card(
+        context,
+        cards[index],
+        db,
+        selected: cards[index].task.planRowIdForBackend == selectedId,
+      ),
+    );
   }
 
-  Widget _card(BuildContext context, NoteCardData data, DatabaseService db) {
-    return NoteCard(
-      data: data,
-      view: view,
-      checkboxesOn: checkboxesOn,
-      onOpen: () => _openNote(context, data.task),
-      onTogglePin: () => db.toggleNotePin(data.task.planRowIdForBackend),
-      onToggleDone: () => db.toggleNoteDone(data.task.planRowIdForBackend),
-      onLongPress: () => onLongPress(data.task),
+  Widget _card(
+    BuildContext context,
+    NoteCardData data,
+    DatabaseService db, {
+    required bool selected,
+  }) {
+    final scheme = Theme.of(context).colorScheme;
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 140),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(14),
+        border: selected
+            ? Border.all(color: scheme.primary.withValues(alpha: 0.42))
+            : null,
+      ),
+      child: NoteCard(
+        data: data,
+        view: selected ? NotesLibraryView.list : widget.view,
+        checkboxesOn: widget.checkboxesOn,
+        onOpen: () => _openNote(context, data.task),
+        onTogglePin: () => db.toggleNotePin(data.task.planRowIdForBackend),
+        onToggleDone: () => db.toggleNoteDone(data.task.planRowIdForBackend),
+        onLongPress: () => widget.onLongPress(data.task),
+      ),
     );
+  }
+
+  Widget _withRefresh(Widget child) {
+    final onRefresh = widget.onRefresh;
+    if (onRefresh == null) return child;
+    return RefreshIndicator(onRefresh: onRefresh, child: child);
   }
 
   void _openNote(BuildContext context, PlanningTask task) {
-    if (MediaQuery.sizeOf(context).width < 900) {
-      onTap(task);
+    if (MediaQuery.sizeOf(context).width < _desktopBreakpoint) {
+      widget.onTap(task);
       return;
     }
+    setState(() => _selectedTask = task);
+  }
 
-    showGeneralDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      barrierColor: Colors.transparent,
-      transitionDuration: const Duration(milliseconds: 180),
-      pageBuilder: (dialogContext, _, __) {
-        return SafeArea(
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final panelWidth = (constraints.maxWidth - 360)
-                  .clamp(620.0, 960.0)
-                  .toDouble();
-              final panelHeight = (constraints.maxHeight - 24)
-                  .clamp(0.0, constraints.maxHeight)
-                  .toDouble();
-              return Align(
-                alignment: Alignment.centerRight,
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: SizedBox(
-                    width: panelWidth,
-                    height: panelHeight,
-                    child: Material(
-                      color: Colors.transparent,
-                      borderRadius: BorderRadius.circular(28),
-                      clipBehavior: Clip.antiAlias,
-                      child: NoteEditorPage(task: task),
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
-        );
-      },
-      transitionBuilder: (context, animation, secondaryAnimation, child) {
-        final curved = CurvedAnimation(
-          parent: animation,
-          curve: Curves.easeOutCubic,
-          reverseCurve: Curves.easeInCubic,
-        );
-        return SlideTransition(
-          position: Tween<Offset>(
-            begin: const Offset(0.08, 0),
-            end: Offset.zero,
-          ).animate(curved),
-          child: FadeTransition(opacity: curved, child: child),
-        );
-      },
-    );
+  void _closeEmbeddedEditor() {
+    if (!mounted) return;
+    setState(() => _selectedTask = null);
+    final refresh = widget.onRefresh;
+    if (refresh != null) unawaited(refresh());
   }
 }
