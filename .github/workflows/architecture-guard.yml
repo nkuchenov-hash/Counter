@@ -81,7 +81,11 @@ jobs:
               flags=re.S,
           )
           if count != 1:
-              raise SystemExit(f'Expected one serviceWorkerSettings block, found {count}')
+              raise SystemExit(f'Expected one service-worker registration block, found {count}')
+          if '_flutter.loader.load();' not in updated:
+              raise SystemExit('Final loader call was not converted to no-service-worker mode')
+          if 'serviceWorkerVersion:' in updated:
+              raise SystemExit('serviceWorkerVersion registration remained in bootstrap')
           bootstrap.write_text(updated, encoding='utf-8')
 
           index = Path('build/web/index.html')
@@ -101,10 +105,6 @@ jobs:
           if worker.exists():
               worker.unlink()
           PY
-          if grep -q 'serviceWorkerSettings' build/web/flutter_bootstrap.js; then
-            echo 'serviceWorkerSettings still present' >&2
-            exit 1
-          fi
           if [ -f build/web/flutter_service_worker.js ]; then
             echo 'flutter_service_worker.js still present' >&2
             exit 1
@@ -137,8 +137,13 @@ jobs:
             if [ "$ACTUAL" = "$EXPECTED" ]; then
               echo "Verified ${URL}: ${ACTUAL}"
               BOOTSTRAP="https://nkuchenov-hash.github.io/Counter/${PREVIEW_DIR}/flutter_bootstrap.js?ts=$(date +%s)"
-              if curl -fsSL -H 'Cache-Control: no-cache' "$BOOTSTRAP" | grep -q 'serviceWorkerSettings'; then
+              BOOTSTRAP_BODY=$(curl -fsSL -H 'Cache-Control: no-cache' "$BOOTSTRAP")
+              if printf '%s' "$BOOTSTRAP_BODY" | grep -q 'serviceWorkerVersion:'; then
                 echo 'Public bootstrap still registers a service worker' >&2
+                exit 1
+              fi
+              if ! printf '%s' "$BOOTSTRAP_BODY" | grep -q '_flutter.loader.load();'; then
+                echo 'Public bootstrap is missing the no-service-worker loader call' >&2
                 exit 1
               fi
               exit 0
