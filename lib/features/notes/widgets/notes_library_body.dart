@@ -164,6 +164,7 @@ class _NotesLibraryBodyState extends State<NotesLibraryBody> {
           context,
           cards[index],
           db,
+          view: view,
           selected: cards[index].task.planRowIdForBackend == selectedId,
         ),
       );
@@ -177,6 +178,7 @@ class _NotesLibraryBodyState extends State<NotesLibraryBody> {
         context,
         cards[index],
         db,
+        view: view,
         selected: cards[index].task.planRowIdForBackend == selectedId,
       ),
     );
@@ -186,6 +188,7 @@ class _NotesLibraryBodyState extends State<NotesLibraryBody> {
     BuildContext context,
     NoteCardData data,
     DatabaseService db, {
+    required NotesLibraryView view,
     required bool selected,
   }) {
     final scheme = Theme.of(context).colorScheme;
@@ -199,7 +202,7 @@ class _NotesLibraryBodyState extends State<NotesLibraryBody> {
       ),
       child: NoteCard(
         data: data,
-        view: selected ? NotesLibraryView.list : widget.view,
+        view: view,
         checkboxesOn: widget.checkboxesOn,
         onOpen: () => _openNote(context, data.task),
         onTogglePin: () => db.toggleNotePin(data.task.planRowIdForBackend),
