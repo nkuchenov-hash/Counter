@@ -1,5 +1,4 @@
 import 'package:counter/core/widgets/app_button.dart';
-import 'package:counter/core/widgets/app_icon_button.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/notes/widgets/notes_canonical_components.dart';
 import 'package:flutter/material.dart';
@@ -147,26 +146,13 @@ class NotesEditorToolbarHost extends StatelessWidget {
         ),
       ],
     );
-    if (onMore == null) return toolbar;
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Expanded(child: toolbar),
-        Material(
-          color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.96),
-          child: SafeArea(
-            top: false,
-            minimum: const EdgeInsets.fromLTRB(0, 8, 8, 8),
-            child: AppIconButton(
-              icon: Icons.more_horiz_rounded,
-              tooltip: 'Block options',
-              size: AppIconButtonSize.m,
-              variant: AppIconButtonVariant.subtle,
-              onPressed: activeBlock == null ? null : onMore,
-            ),
-          ),
-        ),
-      ],
+    final showOptions = onMore;
+    if (showOptions == null || activeBlock == null) return toolbar;
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onLongPress: showOptions,
+      onSecondaryTap: showOptions,
+      child: toolbar,
     );
   }
 }

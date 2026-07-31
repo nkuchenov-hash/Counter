@@ -51,9 +51,11 @@ class NotesEditorScreen extends StatelessWidget {
       body: LayoutBuilder(
         builder: (context, constraints) {
           final desktop = constraints.maxWidth >= 768;
-          final horizontalRoom = constraints.maxWidth -
+          final horizontalRoom =
+              constraints.maxWidth -
               (desktop ? NotesFigmaTokens.editorDesktopOuterInset * 2 : 0);
-          final verticalRoom = constraints.maxHeight -
+          final verticalRoom =
+              constraints.maxHeight -
               (desktop ? NotesFigmaTokens.editorDesktopOuterInset * 2 : 0);
           final frameWidth = desktop
               ? horizontalRoom
@@ -76,10 +78,7 @@ class NotesEditorScreen extends StatelessWidget {
                     child: LayoutBuilder(
                       builder: (context, editorConstraints) {
                         final contentWidth = editorConstraints.maxWidth
-                            .clamp(
-                              0.0,
-                              NotesFigmaTokens.editorContentMaxWidth,
-                            )
+                            .clamp(0.0, NotesFigmaTokens.editorContentMaxWidth)
                             .toDouble();
                         return Align(
                           alignment: Alignment.topCenter,
@@ -185,9 +184,7 @@ class _NotesEditorSurface extends StatelessWidget {
               borderRadius: BorderRadius.circular(
                 NotesFigmaTokens.editorSurfaceRadius,
               ),
-              border: Border.all(
-                color: NotesFigmaTokens.glassStroke(context),
-              ),
+              border: Border.all(color: NotesFigmaTokens.glassStroke(context)),
             ),
             child: child,
           ),
@@ -360,8 +357,7 @@ class _NotesTitleBlock extends StatelessWidget {
             style: TextStyle(
               fontSize: NotesFigmaTokens.titleSize,
               height:
-                  NotesFigmaTokens.titleLineHeight /
-                  NotesFigmaTokens.titleSize,
+                  NotesFigmaTokens.titleLineHeight / NotesFigmaTokens.titleSize,
               fontWeight: FontWeight.w700,
               letterSpacing: -0.5,
               color: NotesFigmaTokens.textPrimary(context),
@@ -422,8 +418,7 @@ class _NotesMetadataRow extends StatelessWidget {
               color: categoryColor ?? Theme.of(context).colorScheme.primary,
             ),
           for (final tag in tags) ...[
-            if (label.isNotEmpty || tag != tags.first)
-              const SizedBox(width: 8),
+            if (label.isNotEmpty || tag != tags.first) const SizedBox(width: 8),
             _NotesMetadataBadge(
               label: tag.label,
               color: tag.color ?? Theme.of(context).colorScheme.primary,
@@ -457,8 +452,7 @@ class _NotesMetadataBadge extends StatelessWidget {
           style: TextStyle(
             fontSize: NotesFigmaTokens.badgeSize,
             height:
-                NotesFigmaTokens.badgeLineHeight /
-                NotesFigmaTokens.badgeSize,
+                NotesFigmaTokens.badgeLineHeight / NotesFigmaTokens.badgeSize,
             fontWeight: FontWeight.w600,
             color: color,
           ),

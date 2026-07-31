@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:counter/data/models.dart';
 import 'package:counter/features/notes/notes_editor_document_controller.dart';
+import 'package:counter/features/notes/notes_figma_tokens.dart';
 import 'package:counter/features/notes/notes_image_tools.dart';
 import 'package:counter/features/notes/widgets/notes_canonical_components.dart';
 import 'package:counter/features/notes/widgets/notes_editor_tools.dart';
@@ -217,6 +218,13 @@ void main() {
             .getSize(find.byKey(const ValueKey('notes-active-indicator')))
             .height,
         greaterThan(20),
+      );
+      expect(
+        tester.getSize(find.byType(NotesEditorToolbar)),
+        const Size(
+          NotesFigmaTokens.toolbarWidth,
+          NotesFigmaTokens.toolbarHeight,
+        ),
       );
       await tester.tap(find.byKey(const ValueKey('notes-toolbar-table')));
       expect(tablePressed, isTrue);

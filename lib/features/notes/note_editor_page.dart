@@ -4,13 +4,13 @@
 // ids, canonical Notes components, and local-first debounced persistence.
 
 import 'dart:async';
-import 'package:counter/core/widgets/notes/notes_context_row.dart';
+import 'package:counter/core/widgets/app_button.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/notes/drawing_canvas_page.dart';
 import 'package:counter/features/notes/notes_audio_controller.dart';
 import 'package:counter/features/notes/notes_editor_document_controller.dart';
-import 'package:counter/features/notes/notes_glm_surface.dart';
+import 'package:counter/features/notes/widgets/notes_editor_screen.dart';
 import 'package:counter/features/notes/notes_image_tools.dart';
 import 'package:counter/features/notes/widgets/note_editor_block_widgets.dart';
 import 'package:counter/features/notes/widgets/notes_canonical_components.dart';
@@ -761,149 +761,109 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
     );
   }
 
+  void _togglePinned() {
+    final brain = DatabaseService.instance;
+    brain.toggleNotePin(_task.planRowIdForBackend);
+    final cached = brain.getCachedPlanningTaskForEdit(
+      _task.planRowIdForBackend,
+    );
+    if (cached != null && mounted) setState(() => _task = cached);
+  }
+
+  Future<void> _deleteCurrentNote() async {
+    final loc = currentLocale.value;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(t(loc, 'delete')),
+        actions: [
+          AppButton.ghost(
+            label: t(loc, 'cancel'),
+            size: AppButtonSize.s,
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+          ),
+          AppButton.destructive(
+            label: t(loc, 'delete'),
+            size: AppButtonSize.s,
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    _gate.flush(() {});
+    _dirty = false;
+    await DatabaseService.instance.deleteNote(_task.planRowIdForBackend);
+    if (mounted) Navigator.of(context).pop();
+  }
+
   @override
   Widget build(BuildContext context) {
     final loc = currentLocale.value;
-    final scheme = Theme.of(context).colorScheme;
-    final wide = MediaQuery.sizeOf(context).width >= 768;
     final activeType = _editor.activeBlock?.type;
     final category = DatabaseService.instance.getCategoryRuleById(
       _task.categoryId,
     );
 
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      resizeToAvoidBottomInset: true,
-      bottomNavigationBar: Align(
-        heightFactor: 1,
-        alignment: Alignment.bottomCenter,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: kGlmEditorMaxWidth),
-          child: NotesEditorToolbarHost(
-            activeBlock: _editor.activeBlock,
-            selectionFormats: _selectionFormats(),
-            onHeading: _showHeadingMenu,
-            onBody: () => _convertActive(NotesBlockConversion.body),
-            onFormatting: _showFormattingMenu,
-            onQuote: () => _convertActive(NotesBlockConversion.quote),
-            onList: () => _convertActive(
-              activeType == NoteBlockType.bulletedList
-                  ? NotesBlockConversion.numberedList
-                  : NotesBlockConversion.bulletedList,
-            ),
-            onChecklist: () => _convertActive(NotesBlockConversion.checklist),
-            onTable: () => _showTablePicker(),
-            onDrawing: widget.parityPreview
-                ? null
-                : () {
-                    final block = _editor.activeBlock;
-                    _openDrawing(
-                      editBlockId: block?.type == NoteBlockType.drawing
-                          ? block!.id
-                          : null,
-                    );
-                  },
-            onAudio: widget.parityPreview ? null : _recordAudio,
-            onImage: widget.parityPreview
-                ? null
-                : () {
-                    final block = _editor.activeBlock;
-                    _pickImage(
-                      replaceBlockId: block?.type == NoteBlockType.image
-                          ? block!.id
-                          : null,
-                    );
-                  },
-            onMore: _showActiveBlockOptions,
-          ),
+    return NotesEditorScreen(
+      titleController: _titleController,
+      titleHint: t(loc, 'notes_v3_editor_title_hint'),
+      onTitleChanged: _scheduleSave,
+      onDone: _close,
+      pinned: DatabaseService.instance.isNotePinned(_task),
+      onTogglePinned: _togglePinned,
+      onDelete: _deleteCurrentNote,
+      categoryLabel: category?.name,
+      categoryColor: category?.colorOrDefault,
+      tags: [
+        for (final tag in _task.tags) NotesEditorMetadataTag(label: tag.name),
+      ],
+      toolbar: NotesEditorToolbarHost(
+        activeBlock: _editor.activeBlock,
+        selectionFormats: _selectionFormats(),
+        onHeading: _showHeadingMenu,
+        onBody: () => _convertActive(NotesBlockConversion.body),
+        onFormatting: _showFormattingMenu,
+        onQuote: () => _convertActive(NotesBlockConversion.quote),
+        onList: () => _convertActive(
+          activeType == NoteBlockType.bulletedList
+              ? NotesBlockConversion.numberedList
+              : NotesBlockConversion.bulletedList,
         ),
+        onChecklist: () => _convertActive(NotesBlockConversion.checklist),
+        onTable: () => _showTablePicker(),
+        onDrawing: widget.parityPreview
+            ? null
+            : () {
+                final block = _editor.activeBlock;
+                _openDrawing(
+                  editBlockId: block?.type == NoteBlockType.drawing
+                      ? block!.id
+                      : null,
+                );
+              },
+        onAudio: widget.parityPreview ? null : _recordAudio,
+        onImage: widget.parityPreview
+            ? null
+            : () {
+                final block = _editor.activeBlock;
+                _pickImage(
+                  replaceBlockId: block?.type == NoteBlockType.image
+                      ? block!.id
+                      : null,
+                );
+              },
+        onMore: _showActiveBlockOptions,
       ),
-      body: NotesGlmBackground(
-        child: SafeArea(
-          bottom: false,
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: kGlmEditorMaxWidth),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  SizedBox(
-                    height: kGlmTopBarHeight,
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: TextButton.icon(
-                        onPressed: _close,
-                        icon: const Icon(Icons.arrow_back_rounded, size: 18),
-                        label: Text(t(loc, 'notes_v3_editor_done')),
-                        style: TextButton.styleFrom(
-                          foregroundColor: scheme.primary,
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          minimumSize: const Size(0, kGlmTopBarHeight),
-                        ),
-                      ),
-                    ),
-                  ),
-                  Padding(
-                    padding: EdgeInsets.fromLTRB(
-                      wide ? 24 : 20,
-                      8,
-                      wide ? 24 : 20,
-                      0,
-                    ),
-                    child: TextField(
-                      controller: _titleController,
-                      textCapitalization: TextCapitalization.sentences,
-                      textInputAction: TextInputAction.next,
-                      minLines: 1,
-                      maxLines: 5,
-                      onChanged: _scheduleSave,
-                      style: TextStyle(
-                        fontSize: wide
-                            ? kGlmTitleSizeDesktop
-                            : kGlmTitleSizeMobile,
-                        height: 1.15,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: -0.5,
-                        color: scheme.onSurface,
-                      ),
-                      decoration: InputDecoration(
-                        hintText: t(loc, 'notes_v3_editor_title_hint'),
-                        border: InputBorder.none,
-                        enabledBorder: InputBorder.none,
-                        focusedBorder: InputBorder.none,
-                        isDense: true,
-                        contentPadding: EdgeInsets.zero,
-                      ),
-                    ),
-                  ),
-                  AppNotesContextRow(
-                    showStatus: false,
-                    data: AppNotesContextRowData(
-                      categoryLabel: category?.name,
-                      categoryColor: category?.colorOrDefault,
-                      tags: [
-                        for (final tag in _task.tags)
-                          AppNotesContextTag(label: tag.name),
-                      ],
-                    ),
-                  ),
-                  Expanded(
-                    child: ReorderableListView.builder(
-                      padding: const EdgeInsets.only(bottom: 16),
-                      buildDefaultDragHandles: false,
-                      proxyDecorator: (child, _, __) => child,
-                      itemCount: _editor.visibleBlocks.length,
-                      onReorder: (oldIndex, newIndex) => _applyMutation(
-                        _editor.reorderVisible(oldIndex, newIndex),
-                      ),
-                      itemBuilder: _buildBlock,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
+      content: ReorderableListView.builder(
+        key: const ValueKey('notes-editor-content'),
+        padding: EdgeInsets.zero,
+        buildDefaultDragHandles: false,
+        proxyDecorator: (child, _, __) => child,
+        itemCount: _editor.visibleBlocks.length,
+        onReorder: (oldIndex, newIndex) =>
+            _applyMutation(_editor.reorderVisible(oldIndex, newIndex)),
+        itemBuilder: _buildBlock,
       ),
     );
   }
