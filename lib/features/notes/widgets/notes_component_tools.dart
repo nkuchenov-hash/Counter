@@ -93,7 +93,7 @@ class NotesEditorToolbar extends StatelessWidget {
     final viewportWidth = MediaQuery.sizeOf(context).width;
     final width = math.min(
       NotesFigmaTokens.toolbarWidth,
-      math.max(0, viewportWidth - 40),
+      math.max(0.0, viewportWidth - 40),
     );
     return SizedBox(
       width: width,
