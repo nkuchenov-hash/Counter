@@ -11,7 +11,7 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   strict-structure:
@@ -34,3 +34,116 @@ jobs:
             git fetch --no-tags --prune origin main
             git diff --check "origin/main...HEAD"
           fi
+
+  notes-cache-isolated-preview:
+    name: notes-cache-isolated-preview
+    runs-on: ubuntu-latest
+    env:
+      PREVIEW_DIR: notes-v3-preview-live-20260731-1505
+    steps:
+      - name: Checkout Notes branch
+        uses: actions/checkout@v4
+        with:
+          ref: feature/notes-v3-design-system
+          fetch-depth: 0
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.6'
+          channel: stable
+          cache: true
+
+      - name: Resolve dependencies
+        run: flutter pub get
+
+      - name: Analyze
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+
+      - name: Run three focused Notes tests
+        run: flutter test test/notes_canonical_components_test.dart
+
+      - name: Build production app at a new cache scope
+        run: flutter build web --release --no-tree-shake-icons --base-href /Counter/${PREVIEW_DIR}/
+
+      - name: Disable preview service worker and remove legacy cache script
+        run: |
+          python - <<'PY'
+          import re
+          from pathlib import Path
+
+          bootstrap = Path('build/web/flutter_bootstrap.js')
+          source = bootstrap.read_text(encoding='utf-8')
+          updated, count = re.subn(
+              r'_flutter\.loader\.load\(\{\s*serviceWorkerSettings:\s*\{.*?\}\s*\}\);',
+              '_flutter.loader.load();',
+              source,
+              flags=re.S,
+          )
+          if count != 1:
+              raise SystemExit(f'Expected one serviceWorkerSettings block, found {count}')
+          bootstrap.write_text(updated, encoding='utf-8')
+
+          index = Path('build/web/index.html')
+          html = index.read_text(encoding='utf-8')
+          html, removed = re.subn(
+              r'\s*<!-- Bust stale Flutter service-worker caches.*?</script>',
+              '',
+              html,
+              count=1,
+              flags=re.S,
+          )
+          if removed != 1:
+              raise SystemExit(f'Expected one legacy cache-clearing script, found {removed}')
+          index.write_text(html, encoding='utf-8')
+
+          worker = Path('build/web/flutter_service_worker.js')
+          if worker.exists():
+              worker.unlink()
+          PY
+          if grep -q 'serviceWorkerSettings' build/web/flutter_bootstrap.js; then
+            echo 'serviceWorkerSettings still present' >&2
+            exit 1
+          fi
+          if [ -f build/web/flutter_service_worker.js ]; then
+            echo 'flutter_service_worker.js still present' >&2
+            exit 1
+          fi
+
+      - name: Publish unique production preview
+        run: |
+          SOURCE_SHA=$(git rev-parse HEAD)
+          git fetch origin gh-pages
+          git worktree add /tmp/gh-pages origin/gh-pages
+          rm -rf "/tmp/gh-pages/${PREVIEW_DIR}"
+          mkdir -p "/tmp/gh-pages/${PREVIEW_DIR}"
+          cp -R build/web/. "/tmp/gh-pages/${PREVIEW_DIR}/"
+          printf '%s\n' "$SOURCE_SHA" > "/tmp/gh-pages/${PREVIEW_DIR}/source-sha.txt"
+          printf '%s\n' "$PREVIEW_DIR" > "/tmp/gh-pages/${PREVIEW_DIR}/preview-scope.txt"
+          touch /tmp/gh-pages/.nojekyll
+          cd /tmp/gh-pages
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .nojekyll "${PREVIEW_DIR}"
+          git commit -m "Publish cache-isolated Notes preview ${SOURCE_SHA}"
+          git push origin HEAD:gh-pages
+
+      - name: Verify public unique preview
+        run: |
+          EXPECTED=$(git rev-parse HEAD)
+          URL="https://nkuchenov-hash.github.io/Counter/${PREVIEW_DIR}/source-sha.txt"
+          for attempt in $(seq 1 60); do
+            ACTUAL=$(curl -fsSL -H 'Cache-Control: no-cache' "${URL}?attempt=${attempt}&ts=$(date +%s)" || true)
+            if [ "$ACTUAL" = "$EXPECTED" ]; then
+              echo "Verified ${URL}: ${ACTUAL}"
+              BOOTSTRAP="https://nkuchenov-hash.github.io/Counter/${PREVIEW_DIR}/flutter_bootstrap.js?ts=$(date +%s)"
+              if curl -fsSL -H 'Cache-Control: no-cache' "$BOOTSTRAP" | grep -q 'serviceWorkerSettings'; then
+                echo 'Public bootstrap still registers a service worker' >&2
+                exit 1
+              fi
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "Public preview did not expose expected SHA ${EXPECTED}" >&2
+          exit 1
