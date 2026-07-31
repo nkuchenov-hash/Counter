@@ -1,0 +1,69 @@
+name: Notes V3 Structure Manifest Fix
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  document-and-verify:
+    if: github.event_name == 'workflow_dispatch' || github.head_ref == 'feature/notes-v3-design-system'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/notes-v3-design-system
+          fetch-depth: 0
+
+      - name: Document exact Notes production files
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('docs/APP_STRUCTURE.md')
+          text = path.read_text(encoding='utf-8')
+
+          old_folder = "`notes/` | `drawing_canvas_page.dart`, `notes_audio_controller.dart`, `notes_image_tools.dart`, `notes_editor_document_controller.dart`, `notes_glm_surface.dart`, `notes_library_page.dart`, `notes_visual_tokens.dart`, `note_editor_page.dart`, **`widgets/`**"
+          new_folder = "`notes/` | `drawing_canvas_page.dart`, `notes_audio_controller.dart`, `notes_image_tools.dart`, `notes_editor_document_controller.dart`, `notes_glm_surface.dart`, `notes_library_page.dart`, `notes_visual_tokens.dart`, `notes_figma_tokens.dart`, `note_editor_page.dart`, **`widgets/`**"
+          if old_folder in text:
+              text = text.replace(old_folder, new_folder, 1)
+          elif new_folder not in text:
+              raise SystemExit('Notes folder manifest row not found')
+
+          visual_row = "| `notes/notes_visual_tokens.dart` | GLM Notes spacing/typography/glass token helpers |"
+          figma_row = "| `notes/notes_figma_tokens.dart` | Executable Figma Notes colors, typography, editor geometry, glass, and exact 350×48 toolbar tokens |"
+          if figma_row not in text:
+              if visual_row not in text:
+                  raise SystemExit('Notes visual token row not found')
+              text = text.replace(visual_row, visual_row + "\n" + figma_row, 1)
+
+          tools_row = "| `notes/widgets/notes_editor_tools.dart` | Contextual primary toolbar, Aa formatting panel, Insert panel, table/link dialogs |"
+          screen_row = "| `notes/widgets/notes_editor_screen.dart` | Shared responsive Figma production screen shell for mobile/web/desktop: header, title/meta, visible document viewport, desktop glass surface, pinned finite toolbar |"
+          if screen_row not in text:
+              if tools_row not in text:
+                  raise SystemExit('Notes editor tools row not found')
+              text = text.replace(tools_row, tools_row + "\n" + screen_row, 1)
+
+          path.write_text(text, encoding='utf-8')
+          PY
+
+      - name: Run strict architecture guard and whitespace check
+        shell: pwsh
+        run: |
+          ./scripts/audit/architecture_guard.ps1 -Strict
+          git diff --check
+
+      - name: Commit verified structure manifest
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/APP_STRUCTURE.md
+          if git diff --cached --quiet; then
+            echo "Notes structure manifest already current."
+          else
+            git commit -m "Document Figma Notes production modules"
+            git push origin HEAD:feature/notes-v3-design-system
+          fi
