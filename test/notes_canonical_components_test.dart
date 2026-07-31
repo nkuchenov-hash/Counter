@@ -8,6 +8,7 @@ import 'package:counter/features/notes/notes_image_tools.dart';
 import 'package:counter/features/notes/widgets/notes_canonical_components.dart';
 import 'package:counter/features/notes/widgets/notes_editor_tools.dart';
 import 'package:counter/features/notes/widgets/notes_editor_screen.dart';
+import 'package:counter/features/notes/widgets/notes_library_body.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -171,6 +172,9 @@ void main() {
   testWidgets(
     'canonical editor components stay aligned and responsive at both widths',
     (tester) async {
+      expect(notesUsesEmbeddedWorkspace(1024), isFalse);
+      expect(notesUsesEmbeddedWorkspace(1200), isTrue);
+
       final headingController = TextEditingController(
         text: 'A multiline heading that wraps without a fixed height',
       );
