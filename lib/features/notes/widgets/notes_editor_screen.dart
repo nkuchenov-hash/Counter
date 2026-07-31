@@ -8,12 +8,36 @@ class NotesEditorMetadataTag {
   final Color? color;
 }
 
+/// Marks a Notes editor as part of the desktop master-detail workspace.
+///
+/// In this mode the editor must not create another application-like canvas,
+/// card, safe area, or mobile navigation label. The surrounding Lists page
+/// already owns the workspace and supplies the close action.
+class NotesEmbeddedEditorScope extends InheritedWidget {
+  const NotesEmbeddedEditorScope({
+    super.key,
+    required this.onClose,
+    required super.child,
+  });
+
+  final VoidCallback onClose;
+
+  static NotesEmbeddedEditorScope? maybeOf(BuildContext context) {
+    return context
+        .dependOnInheritedWidgetOfExactType<NotesEmbeddedEditorScope>();
+  }
+
+  @override
+  bool updateShouldNotify(NotesEmbeddedEditorScope oldWidget) {
+    return oldWidget.onClose != onClose;
+  }
+}
+
 /// Shared production shell for the Figma Notes editor.
 ///
-/// The always-visible editor chrome intentionally avoids BackdropFilter. Large
-/// blur surfaces made scrolling and typing expensive on web and lower-end
-/// Android devices. Layering is expressed through opaque semantic surfaces,
-/// token borders, shadows, and repaint boundaries instead.
+/// Mobile uses the dedicated full-screen surface. Wide web and desktop can use
+/// the same editor inside [NotesEmbeddedEditorScope], where it becomes a plain
+/// workspace column with an 880 px content rail and no nested modal chrome.
 class NotesEditorScreen extends StatelessWidget {
   const NotesEditorScreen({
     super.key,
@@ -46,117 +70,188 @@ class NotesEditorScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final embeddedScope = NotesEmbeddedEditorScope.maybeOf(context);
+    final embedded = embeddedScope != null;
+    final editor = LayoutBuilder(
+      builder: (context, constraints) {
+        final desktop = embedded || constraints.maxWidth >= 768;
+        final frameWidth = embedded
+            ? constraints.maxWidth
+            : (constraints.maxWidth -
+                      (desktop
+                          ? NotesFigmaTokens.editorDesktopOuterInset * 2
+                          : 0))
+                  .clamp(0.0, NotesFigmaTokens.editorSurfaceMaxWidth)
+                  .toDouble();
+        final frameHeight = embedded
+            ? constraints.maxHeight
+            : (constraints.maxHeight -
+                      (desktop
+                          ? NotesFigmaTokens.editorDesktopOuterInset * 2
+                          : 0))
+                  .clamp(0.0, 920.0)
+                  .toDouble();
+
+        final frame = SizedBox(
+          width: frameWidth,
+          height: frameHeight,
+          child: _NotesEditorSurface(
+            desktop: desktop,
+            embedded: embedded,
+            child: _NotesEditorRail(
+              embedded: embedded,
+              onDone: embeddedScope?.onClose ?? onDone,
+              pinned: pinned,
+              onTogglePinned: onTogglePinned,
+              onDelete: embedded ? null : onDelete,
+              titleController: titleController,
+              onTitleChanged: onTitleChanged,
+              categoryLabel: categoryLabel,
+              categoryColor: categoryColor,
+              tags: tags,
+              titleHint: titleHint,
+              content: content,
+              toolbar: toolbar,
+            ),
+          ),
+        );
+
+        if (embedded) return frame;
+        return ColoredBox(
+          color: NotesFigmaTokens.canvas(context),
+          child: Center(child: frame),
+        );
+      },
+    );
+
+    if (embedded) {
+      return Material(
+        color: NotesFigmaTokens.surfaceCard(context),
+        child: editor,
+      );
+    }
     return Scaffold(
       backgroundColor: NotesFigmaTokens.canvas(context),
       resizeToAvoidBottomInset: true,
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          final desktop = constraints.maxWidth >= 768;
-          final horizontalRoom =
-              constraints.maxWidth -
-              (desktop ? NotesFigmaTokens.editorDesktopOuterInset * 2 : 0);
-          final verticalRoom =
-              constraints.maxHeight -
-              (desktop ? NotesFigmaTokens.editorDesktopOuterInset * 2 : 0);
-          final frameWidth = desktop
-              ? horizontalRoom
-                    .clamp(0.0, NotesFigmaTokens.editorSurfaceMaxWidth)
-                    .toDouble()
-              : constraints.maxWidth;
-          final frameHeight = desktop
-              ? verticalRoom.clamp(0.0, 920.0).toDouble()
-              : constraints.maxHeight;
-
-          return ColoredBox(
-            color: NotesFigmaTokens.canvas(context),
-            child: Center(
-              child: SizedBox(
-                width: frameWidth,
-                height: frameHeight,
-                child: _NotesEditorSurface(
-                  desktop: desktop,
-                  child: SafeArea(
-                    child: LayoutBuilder(
-                      builder: (context, editorConstraints) {
-                        final contentWidth = editorConstraints.maxWidth
-                            .clamp(0.0, NotesFigmaTokens.editorContentMaxWidth)
-                            .toDouble();
-                        return Align(
-                          alignment: Alignment.topCenter,
-                          child: SizedBox(
-                            width: contentWidth,
-                            height: editorConstraints.maxHeight,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                _NotesNavigationHeader(
-                                  onDone: onDone,
-                                  pinned: pinned,
-                                  onTogglePinned: onTogglePinned,
-                                  onDelete: onDelete,
-                                ),
-                                _NotesTitleBlock(
-                                  controller: titleController,
-                                  onChanged: onTitleChanged,
-                                  categoryLabel: categoryLabel,
-                                  categoryColor: categoryColor,
-                                  tags: tags,
-                                  hintText: titleHint,
-                                ),
-                                Expanded(
-                                  child: Stack(
-                                    fit: StackFit.expand,
-                                    children: [
-                                      Positioned.fill(
-                                        child: Padding(
-                                          padding: const EdgeInsets.only(
-                                            bottom:
-                                                NotesFigmaTokens.toolbarHeight +
-                                                24,
-                                          ),
-                                          child: content,
-                                        ),
-                                      ),
-                                      Positioned(
-                                        left: 0,
-                                        right: 0,
-                                        bottom: 8,
-                                        child: RepaintBoundary(
-                                          child: Align(
-                                            alignment: Alignment.bottomCenter,
-                                            child: toolbar,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          );
-        },
-      ),
+      body: editor,
     );
   }
 }
 
+class _NotesEditorRail extends StatelessWidget {
+  const _NotesEditorRail({
+    required this.embedded,
+    required this.onDone,
+    required this.pinned,
+    required this.onTogglePinned,
+    required this.onDelete,
+    required this.titleController,
+    required this.onTitleChanged,
+    required this.categoryLabel,
+    required this.categoryColor,
+    required this.tags,
+    required this.titleHint,
+    required this.content,
+    required this.toolbar,
+  });
+
+  final bool embedded;
+  final VoidCallback onDone;
+  final bool pinned;
+  final VoidCallback onTogglePinned;
+  final VoidCallback? onDelete;
+  final TextEditingController titleController;
+  final ValueChanged<String> onTitleChanged;
+  final String? categoryLabel;
+  final Color? categoryColor;
+  final List<NotesEditorMetadataTag> tags;
+  final String? titleHint;
+  final Widget content;
+  final Widget toolbar;
+
+  @override
+  Widget build(BuildContext context) {
+    Widget rail = LayoutBuilder(
+      builder: (context, constraints) {
+        final horizontalPadding = embedded ? 40.0 : 0.0;
+        final contentWidth = (constraints.maxWidth - horizontalPadding * 2)
+            .clamp(0.0, NotesFigmaTokens.editorContentMaxWidth)
+            .toDouble();
+        return Align(
+          alignment: Alignment.topCenter,
+          child: SizedBox(
+            width: contentWidth,
+            height: constraints.maxHeight,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _NotesNavigationHeader(
+                  embedded: embedded,
+                  onDone: onDone,
+                  pinned: pinned,
+                  onTogglePinned: onTogglePinned,
+                  onDelete: onDelete,
+                ),
+                _NotesTitleBlock(
+                  controller: titleController,
+                  onChanged: onTitleChanged,
+                  categoryLabel: categoryLabel,
+                  categoryColor: categoryColor,
+                  tags: tags,
+                  hintText: titleHint,
+                ),
+                Expanded(
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      Positioned.fill(
+                        child: Padding(
+                          padding: const EdgeInsets.only(
+                            bottom: NotesFigmaTokens.toolbarHeight + 28,
+                          ),
+                          child: content,
+                        ),
+                      ),
+                      Positioned(
+                        left: 0,
+                        right: 0,
+                        bottom: embedded ? 14 : 8,
+                        child: RepaintBoundary(
+                          child: Align(
+                            alignment: Alignment.bottomCenter,
+                            child: toolbar,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    if (!embedded) rail = SafeArea(child: rail);
+    return rail;
+  }
+}
+
 class _NotesEditorSurface extends StatelessWidget {
-  const _NotesEditorSurface({required this.desktop, required this.child});
+  const _NotesEditorSurface({
+    required this.desktop,
+    required this.embedded,
+    required this.child,
+  });
 
   final bool desktop;
+  final bool embedded;
   final Widget child;
 
   @override
   Widget build(BuildContext context) {
-    if (!desktop) {
+    if (embedded || !desktop) {
       return ColoredBox(
         color: NotesFigmaTokens.surfaceCard(context),
         child: child,
@@ -187,16 +282,18 @@ class _NotesEditorSurface extends StatelessWidget {
 
 class _NotesNavigationHeader extends StatelessWidget {
   const _NotesNavigationHeader({
+    required this.embedded,
     required this.onDone,
     required this.pinned,
     required this.onTogglePinned,
     required this.onDelete,
   });
 
+  final bool embedded;
   final VoidCallback onDone;
   final bool pinned;
   final VoidCallback onTogglePinned;
-  final VoidCallback onDelete;
+  final VoidCallback? onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -204,7 +301,15 @@ class _NotesNavigationHeader extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       child: Row(
         children: [
-          _NotesBackAction(onPressed: onDone),
+          if (embedded)
+            _NotesHeaderAction(
+              icon: Icons.close_rounded,
+              tooltip: 'Close note',
+              onPressed: onDone,
+              subtle: true,
+            )
+          else
+            _NotesBackAction(onPressed: onDone),
           const Spacer(),
           _NotesHeaderAction(
             icon: pinned ? Icons.push_pin_rounded : Icons.push_pin_outlined,
@@ -212,12 +317,14 @@ class _NotesNavigationHeader extends StatelessWidget {
             selected: pinned,
             onPressed: onTogglePinned,
           ),
-          const SizedBox(width: 8),
-          _NotesHeaderAction(
-            icon: Icons.delete_outline_rounded,
-            tooltip: 'Delete note',
-            onPressed: onDelete,
-          ),
+          if (onDelete != null) ...[
+            const SizedBox(width: 8),
+            _NotesHeaderAction(
+              icon: Icons.delete_outline_rounded,
+              tooltip: 'Delete note',
+              onPressed: onDelete!,
+            ),
+          ],
         ],
       ),
     );
@@ -268,12 +375,14 @@ class _NotesHeaderAction extends StatelessWidget {
     required this.tooltip,
     required this.onPressed,
     this.selected = false,
+    this.subtle = false,
   });
 
   final IconData icon;
   final String tooltip;
   final VoidCallback onPressed;
   final bool selected;
+  final bool subtle;
 
   @override
   Widget build(BuildContext context) {
@@ -283,8 +392,8 @@ class _NotesHeaderAction extends StatelessWidget {
     return Tooltip(
       message: tooltip,
       child: Material(
-        color: NotesFigmaTokens.glassFill(context),
-        elevation: 1,
+        color: subtle ? Colors.transparent : NotesFigmaTokens.glassFill(context),
+        elevation: subtle ? 0 : 1,
         shadowColor: Colors.black.withValues(alpha: 0.08),
         shape: const CircleBorder(),
         clipBehavior: Clip.antiAlias,
@@ -292,7 +401,7 @@ class _NotesHeaderAction extends StatelessWidget {
           onTap: onPressed,
           child: SizedBox.square(
             dimension: 40,
-            child: Icon(icon, size: 16, color: foreground),
+            child: Icon(icon, size: 17, color: foreground),
           ),
         ),
       ),
