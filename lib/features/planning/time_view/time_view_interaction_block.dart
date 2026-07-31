@@ -85,6 +85,7 @@ class TimelinePlanInteractionBlockState
   int _lastVelocityMicros = 0;
   double _smoothedVerticalVelocity = 0;
   _TouchEditMode? _touchEditMode;
+  bool _touchEditMoved = false;
 
   bool _useImmediatePointerDrag = false;
 
@@ -109,6 +110,7 @@ class TimelinePlanInteractionBlockState
 
   void _resetTouchEditMode() {
     _touchEditMode = null;
+    _touchEditMoved = false;
     if (_resizing && mounted) {
       setState(() => _resizing = false);
     } else {
@@ -228,6 +230,7 @@ class TimelinePlanInteractionBlockState
     if (mode == null) return;
 
     _touchEditMode = mode;
+    _touchEditMoved = false;
     unawaited(HapticFeedback.selectionClick());
 
     switch (mode) {
@@ -261,6 +264,7 @@ class TimelinePlanInteractionBlockState
     final mode = _touchEditMode;
     if (mode == null) return;
     final delta = details.offsetFromOrigin.dy;
+    if (delta.abs() >= 1) _touchEditMoved = true;
     switch (mode) {
       case _TouchEditMode.move:
         _trackVerticalVelocity(details.globalPosition.dy);
@@ -277,6 +281,19 @@ class TimelinePlanInteractionBlockState
   void _endTouchEdit(LongPressEndDetails details) {
     final mode = _touchEditMode;
     if (mode == null) return;
+    if (!_touchEditMoved) {
+      switch (mode) {
+        case _TouchEditMode.move:
+          widget.onVerticalDragCancel?.call();
+          break;
+        case _TouchEditMode.resizeTop:
+        case _TouchEditMode.resizeBottom:
+          widget.onResizeCancel?.call();
+          break;
+      }
+      _resetTouchEditMode();
+      return;
+    }
     switch (mode) {
       case _TouchEditMode.move:
         widget.onVerticalDragEnd?.call();
