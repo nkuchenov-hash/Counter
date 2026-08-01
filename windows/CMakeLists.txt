@@ -57,6 +57,28 @@ add_subdirectory("runner")
 # them to the application.
 include(flutter/generated_plugins.cmake)
 
+# clipboard 3.0.14 enables /WX through its own CMake settings but contains one
+# harmless unused local variable on Windows. Keep warnings-as-errors everywhere
+# else and suppress only that upstream warning on that target.
+if(TARGET clipboard_plugin)
+  target_compile_options(clipboard_plugin PRIVATE /wd4189)
+
+  # The plugin's generated registrant expects <clipboard/clipboard_plugin.h>,
+  # while the published package stores the header at windows/clipboard_plugin.h.
+  # Create a build-only include shim instead of editing the dependency cache.
+  set(CLIPBOARD_PLUGIN_WINDOWS_DIR
+    "${FLUTTER_MANAGED_DIR}/ephemeral/.plugin_symlinks/clipboard/windows")
+  set(CLIPBOARD_COMPAT_INCLUDE_DIR
+    "${CMAKE_CURRENT_BINARY_DIR}/clipboard_compat_include")
+  file(MAKE_DIRECTORY "${CLIPBOARD_COMPAT_INCLUDE_DIR}/clipboard")
+  configure_file(
+    "${CLIPBOARD_PLUGIN_WINDOWS_DIR}/clipboard_plugin.h"
+    "${CLIPBOARD_COMPAT_INCLUDE_DIR}/clipboard/clipboard_plugin.h"
+    COPYONLY)
+  target_include_directories(${BINARY_NAME} PRIVATE
+    "${CLIPBOARD_COMPAT_INCLUDE_DIR}")
+endif()
+
 
 # === Installation ===
 # Support files are copied into place next to the executable, so that it can
@@ -82,7 +104,7 @@ install(FILES "${FLUTTER_LIBRARY}" DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
   COMPONENT Runtime)
 
 if(PLUGIN_BUNDLED_LIBRARIES)
-  install(FILES "${PLUGIN_BUNDLED_LIBRARIES}"
+  install(FILES ${PLUGIN_BUNDLED_LIBRARIES}
     DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
     COMPONENT Runtime)
 endif()
@@ -103,6 +125,6 @@ install(DIRECTORY "${PROJECT_BUILD_DIR}/${FLUTTER_ASSET_DIR_NAME}"
   DESTINATION "${INSTALL_BUNDLE_DATA_DIR}" COMPONENT Runtime)
 
 # Install the AOT library on non-Debug builds only.
-install(FILES "${AOT_LIBRARY}" DESTINATION "${INSTALL_BUNDLE_DATA_DIR}"
+install(FILES "${AOT_LIBRARY}" DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
   CONFIGURATIONS Profile;Release
   COMPONENT Runtime)

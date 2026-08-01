@@ -15,7 +15,7 @@ Physical map of the Flutter application: what exists, which layer owns it, who m
 | **UI decomposition** | Pass 3 / 3B complete (shell, planning, timeline, lists, shared edit sheets, plan card) |
 | **Brain decomposition** | Pass 4A–4D complete (`plans/*`, `records/*`, `categories/*`, `profile/*`) |
 | **Diagnostics ownership** | Phase 2B (2026-07-22): runtime logs + kill switches under `lib/shared/diagnostics/`; plan duplicate log under `lib/data/plans/diagnostics/` (Brain); desktop voice pipeline under `lib/shared/voice/diagnostics/` |
-| **Voice ownership** | Phase 2C (2026-07-22): shared Voice contracts/adapters under `lib/shared/voice/`; Brain execution under `lib/data/voice/`; desktop Flutter Voice UI under `lib/features/voice/`; settings under `lib/features/settings/voice/`; Shell keeps `shell_voice_routing` |
+| **Voice ownership** | Phase 2C (2026-07-22): shared Voice contracts/adapters under `lib/shared/voice/`; Brain execution under `lib/data/voice/`; desktop Flutter Voice UI under `lib/features/voice/`; settings under `features/settings/voice/`; Shell keeps `shell_voice_routing` |
 | **Categories ownership** | Phase 2D (2026-07-23): shared presentation/tree/picker/visibility under `lib/shared/categories/`; Brain CRUD remains `lib/data/categories/`; manager UI under `lib/features/settings/categories/`; Lists owns `category_filter_tree_field.dart`; plan/record draft helpers under `features/shared/edit_sheet/category_edit_draft.dart` |
 | **Strict architecture guard** | Baseline 2026-07-17 cleanup **complete**: 63 → 0 (A=0, B=0); hygiene audit 2026-07-21; diagnostics Phase 2B + voice Phase 2C 2026-07-22; categories Phase 2D 2026-07-23 |
 | **Detailed file guide** | [`docs/APP_STRUCTURE_DETAILED.md`](APP_STRUCTURE_DETAILED.md) — owner-readable **evidence-backed** EN/RU entry per tracked folder and file (role, necessity, confidence, deletion consequence); regenerate via `generate_app_structure_detailed.py` |
@@ -179,6 +179,7 @@ Compatibility re-exports (remove when callers migrate): root `lib/app_shell.dart
 | `models/tag.dart` | `Tag`, `TagCatalogScope` *(part)* |
 | `models/stats.dart` | Stats aggregates *(part)* |
 | `models/note_rich_types.dart` | Notes v2 inline marks, text runs, table/callout/link/reference value objects (pure data) *(part)* |
+| `models/note_audio_types.dart` | Persisted Notes audio payload, duration, transcript status/error value object *(part)* |
 | `models/note_document.dart` | `NoteDocument` / `NoteBlock` — backward-compatible `lifeos_notes_blocks_v2` envelope in existing `plans.notes_delta` *(part)* |
 | `pb_config.dart` | PocketBase URL, collection names, expand constants |
 | `auth_bridge.dart` | Session check, OAuth routing |
@@ -482,12 +483,12 @@ Parser, live category/domain resolution, normalization, command execution (`writ
 | `stats/` | `stats_view.dart`, `plan_vs_fact_tab.dart` | Productivity stats (embedded in Timeline) |
 | `planning/` | `planning_view.dart` (barrel), **`planning_page.dart`**, **`planning_quick_add_tags_controller.dart`**, **`planning_page_shell.dart`**, **`planning_sort_mode.dart`**, `plan_time_view_layout.dart`, `plan_time_gesture_contract.dart`, `planning_day_start_prefs.dart`, `bulk_planning_edit_sheet.dart`, `recurrence_scope_dialog.dart`, `smart_plan_sheet.dart`, **`time_view/`**, **`settings/`**, **`widgets/`** | Plans tab: date pager shell + day page body, quick-add tag controller, Time View modules, settings, bulk edit |
 | `lists/` | `lists_view.dart`, `lists_filters.dart`, `lists_bulk_actions.dart`, `lists_inline_add.dart`, `lists_empty_state.dart`, `lists_card.dart`, `lists_export.dart`, `category_filter_tree_field.dart` | Lists/backlog coordinator + filter/bulk/inline/empty modules + card + export + Lists-only “All categories” filter field |
-| `notes/` | `drawing_canvas_page.dart`, `notes_glm_surface.dart`, `notes_library_page.dart`, `notes_visual_tokens.dart`, `note_editor_page.dart`, **`widgets/`** (`notes_library_body.dart`, `notes_library_production_shell.dart`, `note_card.dart`, `note_editor_block_widgets.dart`, `notes_editor_tools.dart`, `notes_special_block_widgets.dart`) | Notes library/editor/drawing feature UI; exact roles in §3.4 Notes below |
+| `notes/` | `drawing_canvas_page.dart`, `notes_audio_controller.dart`, `notes_image_tools.dart`, `notes_editor_document_controller.dart`, `notes_glm_surface.dart`, `notes_library_page.dart`, `notes_visual_tokens.dart`, `notes_figma_tokens.dart`, `note_editor_page.dart`, **`widgets/`** (`notes_library_body.dart`, `notes_library_production_shell.dart`, `note_card.dart`, `note_editor_block_widgets.dart`, `notes_editor_tools.dart`, `notes_special_block_widgets.dart`, `notes_canonical_components.dart`, `notes_component_text_blocks.dart`, `notes_component_structural_blocks.dart`, `notes_component_media_blocks.dart`, `notes_component_tools.dart`) | Notes library/editor/drawing feature UI; exact roles in §3.4 Notes below |
 | `calendar/` | `calendar_view.dart` (orchestrator), `calendar_chrome_header.dart`, `calendar_month_grid.dart`, `calendar_week_grid.dart`, `calendar_day_panel.dart`, `calendar_day_events.dart`, `calendar_helpers.dart` | Calendar tab: month/week grids, chrome header, focused-day task panel |
 | `profile/` | `profile_view.dart`, **`settings/`** (account, notification, security sections), `tag_manager_page.dart`, `tag_settings_hub.dart`, `tag_settings_view.dart`, `tag_default_duration_settings_view.dart` | Profile & tag settings |
 | `settings/` | `timezone_settings.dart`, **`voice/`** (`desktop_voice_settings_section.dart`, `desktop_voice_settings_desktop.dart`, `desktop_voice_attempt_dialog.dart`), **`categories/`** (`category_list_view.dart`, `category_row_widget.dart`, `category_editor_sheet.dart`, `category_appearance_sheet.dart`, `category_tag_input_field.dart`, `category_helpers.dart`, `create_category_dialog.dart`, `category_recursive_browse_panel.dart`) | Settings-owned timezone helpers + Voice settings + Categories manager UI (More → Categories) |
 | `voice/` | `desktop_voice_widget.dart`, `desktop_voice_capsule.dart`, `desktop_voice_correction_sheet.dart`, `desktop_voice_command_panel.dart` | Desktop Flutter Voice overlay UI (GOLOS STT capsule / correction / panel) |
-| `dev/` | `component_lab_view.dart`, `component_lab_cards_demo.dart` | Admin-only Component Lab |
+| `dev/` | `component_lab_view.dart`, `component_lab_cards_demo.dart`, `component_lab_notes_demo.dart` | Admin-only Component Lab including canonical Notes block/media/tool states |
 | `wear/` | `wear_timer_screen.dart`, `wear_main_wrapper.dart`, `wear_platform.dart`, `wear_runtime.dart` | Wear OS companion |
 | `shared/` | `shared_widgets.dart` (barrel), `activity_detail_sheet.dart`, `planning_task_edit_sheet.dart`, `timeline_record_edit_sheet.dart`, `empty_state_placeholder.dart`, **`edit_sheet/`** (autosave gate, time helpers/picker, checklist, repeat RRULE helpers, quill toolbar, parallel record panels, **`category_edit_draft.dart`**), **`notes_editor/`** (`notes_editor_launcher.dart`, `notes_editor_sheet.dart`), `offline_sync_status_bar.dart` | Activity edit sheets, Notes launch/sheet routing, Omni-Picker entry, offline sync banner, plan/record category draft helpers |
 
@@ -498,16 +499,26 @@ Parser, live category/domain resolution, normalization, command execution (`writ
 | File | Role |
 | :--- | :--- |
 | `notes/drawing_canvas_page.dart` | Full-screen drawing canvas for image/drawing blocks (PNG data URL in/out) |
+| `notes/notes_audio_controller.dart` | Cross-platform in-memory PCM recorder, WAV codec, byte playback, recorder/transcript modal orchestration |
+| `notes/notes_image_tools.dart` | Shared file/gallery/camera picker, crop surface, caption dialog, rich-image clipboard, and save-to-device helpers |
+| `notes/notes_editor_document_controller.dart` | Stable-ID local document, selection, conversion, reorder, table/media mutation, and compatibility-preservation controller |
 | `notes/notes_glm_surface.dart` | GLM background + centered library/editor column frames |
 | `notes/notes_library_page.dart` | Standalone Notes library page (search, chips, grid/list, sort) |
 | `notes/notes_visual_tokens.dart` | GLM Notes spacing/typography/glass token helpers |
+| `notes/notes_figma_tokens.dart` | Executable Figma Notes colors, typography, editor geometry, glass, and exact 350×48 toolbar tokens |
 | `notes/note_editor_page.dart` | Full-screen block editor (primary Notes editing experience) |
 | `notes/widgets/note_editor_block_widgets.dart` | Editor block rows + add-block chrome; callbacks only; no Brain ownership |
 | `notes/widgets/notes_editor_tools.dart` | Contextual primary toolbar, Aa formatting panel, Insert panel, table/link dialogs |
+| `notes/widgets/notes_editor_screen.dart` | Shared responsive Figma production screen shell for mobile/web/desktop: header, title/meta, visible document viewport, desktop glass surface, pinned finite toolbar |
 | `notes/widgets/notes_special_block_widgets.dart` | Divider, table, link card, and Life OS reference block renderers |
 | `notes/widgets/notes_library_body.dart` | Grid/list body of `NoteCard`s for Lists tab |
 | `notes/widgets/notes_library_production_shell.dart` | Production Lists-tab GLM library shell + inline add row |
 | `notes/widgets/note_card.dart` | Grid/list note card with block preview, pin/done badges |
+| `notes/widgets/notes_canonical_components.dart` | Public barrel, shared enums, rich text controller, semantic Notes geometry/helpers |
+| `notes/widgets/notes_component_text_blocks.dart` | Canonical responsive Body/H1/H2/H3, list, and checklist block components *(part)* |
+| `notes/widgets/notes_component_structural_blocks.dart` | Canonical quote, divider, table, and parameterized compact/extended table picker *(part)* |
+| `notes/widgets/notes_component_media_blocks.dart` | Canonical image/drawing frame and audio block states shared across widths *(part)* |
+| `notes/widgets/notes_component_tools.dart` | Canonical toolbar button/toolbar plus heading, formatting, and insert menu surfaces *(part)* |
 | `shared/notes_editor/notes_editor_launcher.dart` | `showNotesEditorSheet` — full-screen route launcher for Notes editor |
 | `shared/notes_editor/notes_editor_sheet.dart` | `NotesEditorSheet` — Quill Notes editor wired to Brain autosave |
 

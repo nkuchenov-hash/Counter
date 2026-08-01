@@ -4,6 +4,7 @@ import 'package:counter/core/widgets/app_loading.dart';
 import 'package:counter/core/widgets/app_state_views.dart';
 import 'package:counter/core/widgets/app_timezone_icon.dart';
 import 'package:counter/core/widgets/plan_card.dart';
+import 'package:counter/features/notes/widgets/notes_canonical_components.dart';
 import 'package:counter/core/widgets/global_app_header.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
@@ -11,6 +12,7 @@ import 'package:counter/core/widgets/chip_component.dart';
 import 'package:flutter/material.dart';
 
 part 'component_lab_cards_demo.dart';
+part 'component_lab_notes_demo.dart';
 
 /// Internal visual control surface for canonical components.
 ///
@@ -46,6 +48,7 @@ class ComponentLabPage extends StatelessWidget {
           ),
           _LabSection(title: 'Chips / Tags', child: _ChipsDemo()),
           _LabSection(title: 'Cards', child: ComponentLabPlanCardsDemo()),
+          _LabSection(title: 'Notes Editor V3', child: ComponentLabNotesDemo()),
           _LabSection(
             title: 'Tabs / Segments',
             child: _PlaceholderDemo(

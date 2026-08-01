@@ -13,9 +13,10 @@ const String kLifeOsNotesBlocksV1Format = 'lifeos_notes_blocks_v1';
 const String kLifeOsNotesBlocksFormat = 'lifeos_notes_blocks_v2';
 const int kLifeOsNotesBlocksVersion = 2;
 
-/// Guards against runaway base64 image/drawing payloads.
+/// Guards against runaway base64 image/drawing/audio payloads.
 const int kLifeOsNotesMaxPayloadBytes = 4 * 1024 * 1024;
 const int kLifeOsNotesMaxAssetBytes = 2 * 1024 * 1024;
+const int kLifeOsNotesMaxAudioBytes = kLifeOsNotesMaxAssetBytes;
 
 /// Every document block has a stable id and a single structural type.
 enum NoteBlockType {
@@ -30,6 +31,7 @@ enum NoteBlockType {
   table,
   image,
   drawing,
+  audio,
   linkCard,
   codeBlock,
   collapsible,
@@ -66,6 +68,10 @@ enum NoteBlockType {
         return NoteBlockType.image;
       case 'drawing':
         return NoteBlockType.drawing;
+      case 'audio':
+      case 'audioRecording':
+      case 'audio_recording':
+        return NoteBlockType.audio;
       case 'linkCard':
       case 'link_card':
       case 'link':
@@ -112,6 +118,7 @@ enum NoteBlockType {
       case NoteBlockType.table:
       case NoteBlockType.image:
       case NoteBlockType.drawing:
+      case NoteBlockType.audio:
       case NoteBlockType.linkCard:
       case NoteBlockType.planReference:
       case NoteBlockType.recordReference:
@@ -141,6 +148,7 @@ class NoteBlock {
     this.color,
     this.imageData,
     this.drawingData,
+    this.audio,
     this.caption,
     this.mediaAlignment,
     this.callout,
@@ -168,6 +176,7 @@ class NoteBlock {
 
   final String? imageData;
   final String? drawingData;
+  final NoteAudioData? audio;
   final String? caption;
   final String? mediaAlignment;
   final NoteCalloutData? callout;
@@ -207,6 +216,7 @@ class NoteBlock {
     Object? color = _sentinel,
     Object? imageData = _sentinel,
     Object? drawingData = _sentinel,
+    Object? audio = _sentinel,
     Object? caption = _sentinel,
     Object? mediaAlignment = _sentinel,
     Object? callout = _sentinel,
@@ -238,6 +248,7 @@ class NoteBlock {
       drawingData: identical(drawingData, _sentinel)
           ? this.drawingData
           : drawingData as String?,
+      audio: identical(audio, _sentinel) ? this.audio : audio as NoteAudioData?,
       caption: identical(caption, _sentinel)
           ? this.caption
           : caption as String?,
@@ -295,6 +306,9 @@ class NoteBlock {
     if (type == NoteBlockType.drawing && drawingData != null) {
       json['drawingData'] = drawingData;
     }
+    if (type == NoteBlockType.audio && audio != null) {
+      json['audio'] = audio!.toJson();
+    }
     if ((type == NoteBlockType.image || type == NoteBlockType.drawing) &&
         caption != null) {
       json['caption'] = caption;
@@ -331,6 +345,7 @@ class NoteBlock {
     final calloutRaw = json['callout'];
     final tableRaw = json['table'];
     final linkRaw = json['link'];
+    final audioRaw = json['audio'];
     final referenceRaw = json['reference'];
     return NoteBlock(
       id: (json['id']?.toString().trim().isNotEmpty ?? false)
@@ -349,6 +364,9 @@ class NoteBlock {
       color: _cleanJsonString(json['color']),
       imageData: _cleanJsonString(json['imageData']),
       drawingData: _cleanJsonString(json['drawingData']),
+      audio: audioRaw is Map<String, dynamic>
+          ? NoteAudioData.fromJson(audioRaw)
+          : null,
       caption: _cleanJsonString(json['caption']),
       mediaAlignment: _cleanJsonString(json['mediaAlignment']),
       callout: calloutRaw is Map<String, dynamic>
@@ -420,6 +438,8 @@ class NoteDocument {
         return (block.imageData ?? '').isEmpty;
       case NoteBlockType.drawing:
         return (block.drawingData ?? '').isEmpty;
+      case NoteBlockType.audio:
+        return (block.audio?.dataUrl ?? '').isEmpty;
       case NoteBlockType.linkCard:
         return (block.linkData?.url ?? '').isEmpty;
       case NoteBlockType.planReference:
@@ -671,6 +691,8 @@ class NoteDocument {
             )
             .where((row) => row.isNotEmpty)
             .join('\n');
+      } else if (block.type == NoteBlockType.audio) {
+        text = block.audio?.transcript?.trim() ?? '';
       } else if (block.type == NoteBlockType.linkCard) {
         text = <String?>[block.linkData?.title, block.linkData?.url]
             .whereType<String>()
@@ -705,6 +727,7 @@ class NoteDocument {
     var checklistChecked = 0;
     var hasImage = false;
     var hasDrawing = false;
+    var hasAudio = false;
     for (final block in blocks) {
       if (block.type == NoteBlockType.checklist) {
         checklistTotal++;
@@ -713,6 +736,8 @@ class NoteDocument {
         hasImage = true;
       } else if (block.type == NoteBlockType.drawing) {
         hasDrawing = true;
+      } else if (block.type == NoteBlockType.audio) {
+        hasAudio = true;
       }
     }
     return NoteDocumentStats(
@@ -720,6 +745,7 @@ class NoteDocument {
       checklistChecked: checklistChecked,
       hasImage: hasImage,
       hasDrawing: hasDrawing,
+      hasAudio: hasAudio,
       blockCount: blocks.length,
     );
   }
@@ -732,6 +758,7 @@ class NoteDocumentStats {
     required this.checklistChecked,
     required this.hasImage,
     required this.hasDrawing,
+    this.hasAudio = false,
     required this.blockCount,
   });
 
@@ -739,6 +766,7 @@ class NoteDocumentStats {
   final int checklistChecked;
   final bool hasImage;
   final bool hasDrawing;
+  final bool hasAudio;
   final int blockCount;
 
   bool get hasChecklist => checklistTotal > 0;

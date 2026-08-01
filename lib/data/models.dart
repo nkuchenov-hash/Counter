@@ -31,4 +31,5 @@ part 'models/planning.dart';
 part 'models/tag.dart';
 part 'models/stats.dart';
 part 'models/note_rich_types.dart';
+part 'models/note_audio_types.dart';
 part 'models/note_document.dart';
