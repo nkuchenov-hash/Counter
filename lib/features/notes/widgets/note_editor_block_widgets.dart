@@ -14,8 +14,8 @@ import 'package:flutter/services.dart';
 /// remain on the direct gesture path. Structural/media blocks retain long-press
 /// reorder behavior.
 class NotesEditorBlockItem extends StatelessWidget {
-  const NotesEditorBlockItem({
-    super.key,
+  NotesEditorBlockItem({
+    Key? key,
     required this.block,
     required this.index,
     required this.numberedOrdinal,
@@ -33,7 +33,7 @@ class NotesEditorBlockItem extends StatelessWidget {
     this.audioState = NotesAudioState.ready,
     this.onAudioPlayPause,
     this.onOpenTranscript,
-  });
+  }) : super(key: key ?? ValueKey<String>(block.id));
 
   final NoteBlock block;
   final int index;
@@ -82,7 +82,7 @@ class NotesEditorBlockItem extends StatelessWidget {
       );
     }
 
-    return KeyedSubtree(key: ValueKey(block.id), child: interactive);
+    return interactive;
   }
 
   Widget _buildCanonicalBlock(BuildContext context, NotesBlockState state) {
@@ -145,9 +145,6 @@ class NotesEditorBlockItem extends StatelessWidget {
         );
       case NoteBlockType.image:
       case NoteBlockType.drawing:
-        // Desktop Notes is file-oriented. Bypass NotesMediaBlock entirely so
-        // no inherited constraints, image decoder, or legacy placeholder can
-        // stretch an attachment into a document-sized gray canvas.
         if (MediaQuery.sizeOf(context).width >= 768) {
           return _desktopMediaBlock(context);
         }
