@@ -1,4 +1,4 @@
-name: Update Igropoisk content
+name: Update Igropoisk catalog
 
 on:
   workflow_dispatch:
@@ -15,15 +15,15 @@ permissions:
   contents: write
 
 concurrency:
-  group: igropoisk-content-update
-  cancel-in-progress: true
+  group: igropoisk-catalog-update
+  cancel-in-progress: false
 
 jobs:
   update:
     runs-on: ubuntu-latest
-    timeout-minutes: 55
+    timeout-minutes: 60
     steps:
-      - name: Checkout
+      - name: Checkout published branch
         uses: actions/checkout@v4
         with:
           ref: gh-pages
@@ -33,27 +33,33 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
-          cache-dependency-path: igropoisk/package-lock.json
 
       - name: Install collector dependencies
         working-directory: igropoisk
         run: npm install --no-audit --no-fund
 
-      - name: Collect games, screenshots, ratings and articles
+      - name: Collect and normalize catalog
         run: npm --prefix igropoisk run update
 
-      - name: Validate generated database quality
+      - name: Validate generated catalog
         run: |
           node - <<'NODE'
           const fs = require('fs');
-          const p = './igropoisk/data/catalog.json';
-          if (!fs.existsSync(p)) throw new Error('catalog.json was not generated');
-          const d = JSON.parse(fs.readFileSync(p, 'utf8'));
-          if (!Array.isArray(d.games) || d.games.length === 0) throw new Error('catalog is empty');
-          const invalid = d.games.filter(g => !g.title || !(g.appid || g.igdbId || g.rawgId) || !(g.headerImage || g.capsuleImage || g.poster));
-          if (invalid.length > Math.max(10, d.games.length * 0.1)) throw new Error(`too many incomplete games: ${invalid.length}`);
-          console.log(`Validated ${d.games.length} quality-filtered games`);
+          const catalog = JSON.parse(fs.readFileSync('./igropoisk/data/catalog.json', 'utf8'));
+          const articles = JSON.parse(fs.readFileSync('./igropoisk/data/articles.json', 'utf8'));
+          if (!Array.isArray(catalog.games) || catalog.games.length < 80) {
+            throw new Error(`Catalog is too small: ${catalog.games?.length || 0}`);
+          }
+          if (catalog.games.length > 220) throw new Error(`Catalog is unexpectedly large: ${catalog.games.length}`);
+          const invalid = catalog.games.filter(g =>
+            !g.appid || !g.title || !g.description || !g.releaseDate ||
+            !Array.isArray(g.genres) || !g.genres.length ||
+            !Array.isArray(g.screenshots) || g.screenshots.length < 2 ||
+            !g.capsuleImage || !g.heroImage || !Array.isArray(g.sourceEvidence) || g.sourceEvidence.length < 2
+          );
+          if (invalid.length) throw new Error(`Incomplete games: ${invalid.slice(0, 10).map(g => g.title).join(', ')}`);
+          if (!Array.isArray(articles.articles)) throw new Error('articles.json is invalid');
+          console.log(`Validated ${catalog.games.length} games and ${articles.articles.length} materials`);
           NODE
 
       - name: Commit refreshed data
@@ -65,5 +71,5 @@ jobs:
             echo "No content changes"
             exit 0
           fi
-          git commit -m "Update Igropoisk content"
-          git push origin gh-pages
+          git commit -m "Update Igropoisk catalog"
+          git push origin HEAD:gh-pages
