@@ -1,0 +1,49 @@
+name: Update Игропоиск catalog
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [gh-pages]
+    paths:
+      - 'igropoisk/scripts/**'
+      - 'igropoisk/package.json'
+      - '.github/workflows/igropoisk-update.yml'
+  schedule:
+    - cron: '17 3 * * *'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: igropoisk-data-update
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: igropoisk/package-lock.json
+      - name: Install collector dependencies
+        working-directory: igropoisk
+        run: npm install --no-audit --no-fund
+      - name: Collect games, screenshots, ratings and articles
+        run: npm --prefix igropoisk run update
+      - name: Commit refreshed data
+        run: |
+          git config user.name "igropoisk-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add igropoisk/data igropoisk/package-lock.json
+          if git diff --cached --quiet; then
+            echo "No data changes"
+            exit 0
+          fi
+          git commit -m "Update Игропоиск data"
+          git push origin gh-pages
