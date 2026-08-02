@@ -1,4 +1,4 @@
-name: Android APK Notes build
+name: Android APK Notes side-by-side build
 
 on:
   pull_request:
@@ -33,6 +33,16 @@ jobs:
           mkdir -p lib/core/env
           printf '%s\n' 'abstract final class Env {' '  static const String placeholder = '\''\'';' '}' > lib/core/env/env.dart
 
+      - name: Use non-conflicting Android package id
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('android/app/build.gradle.kts')
+          text = path.read_text(encoding='utf-8')
+          text = text.replace('applicationId = "com.example.counter"', 'applicationId = "com.example.counter.notespreview"')
+          path.write_text(text, encoding='utf-8')
+          PY
+
       - name: Install dependencies
         run: flutter pub get
 
@@ -42,12 +52,12 @@ jobs:
           flutter build apk --release --no-tree-shake-icons \
             --dart-define=GIT_COMMIT="$GITHUB_SHA" \
             --dart-define=BUILD_TIME="$BUILD_TIME"
-          cp build/app/outputs/flutter-apk/app-release.apk LifeOS-Android-notes-20260802.apk
+          cp build/app/outputs/flutter-apk/app-release.apk LifeOS-Android-Notes-Preview.apk
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: LifeOS-Android-notes-20260802
-          path: LifeOS-Android-notes-20260802.apk
+          name: LifeOS-Android-Notes-Preview
+          path: LifeOS-Android-Notes-Preview.apk
           if-no-files-found: error
           retention-days: 30
