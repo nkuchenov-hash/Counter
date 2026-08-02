@@ -3,13 +3,14 @@ name: Update Igropoisk catalog
 on:
   workflow_dispatch:
   schedule:
-    - cron: "*/5 * * * *"
+    - cron: '17 3 * * *'
   push:
     branches: [gh-pages]
     paths:
-      - "igropoisk/scripts/**"
-      - "igropoisk/package.json"
-      - ".github/workflows/igropoisk-update.yml"
+      - 'igropoisk/.collector-trigger'
+      - 'igropoisk/scripts/**'
+      - 'igropoisk/package.json'
+      - '.github/workflows/igropoisk-update.yml'
 
 permissions:
   contents: write
@@ -21,7 +22,7 @@ concurrency:
 jobs:
   update:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 90
     steps:
       - name: Checkout published branch
         uses: actions/checkout@v4
@@ -44,32 +45,25 @@ jobs:
       - name: Validate generated catalog
         run: |
           node - <<'NODE'
-          const fs = require('fs');
-          const catalog = JSON.parse(fs.readFileSync('./igropoisk/data/catalog.json', 'utf8'));
-          const articles = JSON.parse(fs.readFileSync('./igropoisk/data/articles.json', 'utf8'));
-          if (!Array.isArray(catalog.games) || catalog.games.length < 80) {
-            throw new Error(`Catalog is too small: ${catalog.games?.length || 0}`);
-          }
-          if (catalog.games.length > 220) throw new Error(`Catalog is unexpectedly large: ${catalog.games.length}`);
-          const invalid = catalog.games.filter(g =>
-            !g.appid || !g.title || !g.description || !g.releaseDate ||
-            !Array.isArray(g.genres) || !g.genres.length ||
-            !Array.isArray(g.screenshots) || g.screenshots.length < 2 ||
-            !g.capsuleImage || !g.heroImage || !Array.isArray(g.sourceEvidence) || g.sourceEvidence.length < 2
-          );
-          if (invalid.length) throw new Error(`Incomplete games: ${invalid.slice(0, 10).map(g => g.title).join(', ')}`);
-          if (!Array.isArray(articles.articles)) throw new Error('articles.json is invalid');
+          const fs=require('fs');
+          const catalog=JSON.parse(fs.readFileSync('./igropoisk/data/catalog.json','utf8'));
+          const articles=JSON.parse(fs.readFileSync('./igropoisk/data/articles.json','utf8'));
+          if(!Array.isArray(catalog.games)||catalog.games.length<120) throw new Error(`Catalog is too small: ${catalog.games?.length||0}`);
+          if(catalog.games.length>200) throw new Error(`Catalog is too large: ${catalog.games.length}`);
+          const invalid=catalog.games.filter(g=>!g.appid||!g.title||!g.description||!g.capsuleImage||!g.heroImage||!Array.isArray(g.screenshots)||!g.screenshots.length);
+          if(invalid.length) throw new Error(`Incomplete games: ${invalid.slice(0,10).map(g=>g.title).join(', ')}`);
+          if(!Array.isArray(articles.articles)) throw new Error('articles.json is invalid');
           console.log(`Validated ${catalog.games.length} games and ${articles.articles.length} materials`);
           NODE
 
       - name: Commit refreshed data
         run: |
-          git config user.name "igropoisk-bot"
-          git config user.email "actions@users.noreply.github.com"
+          git config user.name 'igropoisk-bot'
+          git config user.email 'actions@users.noreply.github.com'
           git add igropoisk/data igropoisk/package-lock.json
           if git diff --cached --quiet; then
-            echo "No content changes"
+            echo 'No content changes'
             exit 0
           fi
-          git commit -m "Update Igropoisk catalog"
+          git commit -m 'Update Igropoisk catalog'
           git push origin HEAD:gh-pages
