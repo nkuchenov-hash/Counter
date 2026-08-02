@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "update": "node scripts/update-data.mjs"
+    "update": "node scripts/update-curated.mjs"
   },
   "dependencies": {
     "fast-xml-parser": "^5.2.5"
