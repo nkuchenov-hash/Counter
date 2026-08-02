@@ -1,10 +1,11 @@
-name: Deploy Flutter Web to GitHub Pages
+name: Deploy Flutter Web and Igropoisk to GitHub Pages
 
 on:
   push:
     branches:
       - main
       - master
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -12,21 +13,37 @@ permissions:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 75
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Preserve Igropoisk from gh-pages
+      - name: Setup Node for Igropoisk
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Igropoisk collector
+        working-directory: igropoisk
+        run: npm install --no-audit --no-fund
+
+      - name: Build Igropoisk catalog
+        run: npm --prefix igropoisk run update
+
+      - name: Validate Igropoisk catalog
         run: |
-          git clone --depth 1 --branch gh-pages "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" /tmp/gh-pages
-          mkdir -p /tmp/preserved
-          if [ -d /tmp/gh-pages/igropoisk ]; then
-            cp -R /tmp/gh-pages/igropoisk /tmp/preserved/igropoisk
-          fi
-          if [ -f /tmp/gh-pages/.github/workflows/igropoisk-update.yml ]; then
-            mkdir -p /tmp/preserved/.github/workflows
-            cp /tmp/gh-pages/.github/workflows/igropoisk-update.yml /tmp/preserved/.github/workflows/igropoisk-update.yml
-          fi
+          node - <<'NODE'
+          const fs = require('fs');
+          const d = JSON.parse(fs.readFileSync('./igropoisk/data/catalog.json','utf8'));
+          if (!Array.isArray(d.games) || d.games.length < 80 || d.games.length > 220) {
+            throw new Error(`Invalid Igropoisk catalog size: ${d.games?.length || 0}`);
+          }
+          const invalid = d.games.filter(g => !g.appid || !g.title || !g.description || !g.releaseDate || !g.capsuleImage || !g.heroImage || !Array.isArray(g.screenshots) || g.screenshots.length < 2);
+          if (invalid.length) throw new Error(`Incomplete games: ${invalid.slice(0,10).map(g=>g.title).join(', ')}`);
+          console.log(`Igropoisk: ${d.games.length} games validated`);
+          NODE
 
       - name: Run strict architecture guard
         run: pwsh -NoProfile -NonInteractive -File ./scripts/audit/architecture_guard.ps1 -Strict
@@ -37,7 +54,7 @@ jobs:
           flutter-version: '3.41.6'
           channel: 'stable'
 
-      - name: Flutter doctor (CI environment diagnostics)
+      - name: Flutter doctor
         run: flutter doctor -v
 
       - name: Create env.dart
@@ -45,10 +62,10 @@ jobs:
           mkdir -p lib/core/env
           printf '%s\n' 'abstract final class Env {' '  static const String placeholder = '\'''\'';' '}' > lib/core/env/env.dart
 
-      - name: Install dependencies
+      - name: Install Flutter dependencies
         run: flutter pub get
 
-      - name: Build web
+      - name: Build Flutter web
         env:
           GIT_COMMIT: ${{ github.sha }}
         run: |
@@ -58,14 +75,14 @@ jobs:
             --dart-define=GIT_COMMIT="$SHORT_SHA" \
             --dart-define=BUILD_TIME="$BUILD_TIME"
 
-      - name: Restore Igropoisk into deployment
+      - name: Add Igropoisk to Pages build
         run: |
-          if [ -d /tmp/preserved/igropoisk ]; then
-            cp -R /tmp/preserved/igropoisk build/web/igropoisk
-          fi
-          if [ -f /tmp/preserved/.github/workflows/igropoisk-update.yml ]; then
+          rm -rf build/web/igropoisk
+          cp -R igropoisk build/web/igropoisk
+          rm -rf build/web/igropoisk/node_modules
+          if [ -f .github/workflows/igropoisk-update.yml ]; then
             mkdir -p build/web/.github/workflows
-            cp /tmp/preserved/.github/workflows/igropoisk-update.yml build/web/.github/workflows/igropoisk-update.yml
+            cp .github/workflows/igropoisk-update.yml build/web/.github/workflows/igropoisk-update.yml
           fi
 
       - name: Deploy to gh-pages
