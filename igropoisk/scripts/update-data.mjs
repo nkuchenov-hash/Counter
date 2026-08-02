@@ -174,3 +174,5 @@ linked.sort((a,b) => (b.igropoiskRating || 0) - (a.igropoiskRating || 0));
 await fs.writeFile(path.join(DATA, 'catalog.json'), JSON.stringify({ updatedAt: new Date().toISOString(), count: linked.length, games: linked }, null, 2));
 await fs.writeFile(path.join(DATA, 'articles.json'), JSON.stringify({ updatedAt: new Date().toISOString(), count: articles.length, articles }, null, 2));
 console.log(`saved ${linked.length} games and ${articles.length} articles`);
+
+// collector trigger 2026-08-02T15:39:35Z
