@@ -2,6 +2,10 @@ name: Update Igropoisk catalog
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/igropoisk-update.yml'
   schedule:
     - cron: '17 3 * * *'
 
