@@ -2,16 +2,11 @@ name: Update Igropoisk catalog
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
   schedule:
     - cron: '17 3 * * *'
 
 permissions:
   contents: write
-
-env:
-  NODE_OPTIONS: --max-old-space-size=4096
 
 concurrency:
   group: igropoisk-data-update
@@ -20,7 +15,7 @@ concurrency:
 jobs:
   update:
     runs-on: ubuntu-latest
-    timeout-minutes: 55
+    timeout-minutes: 60
     steps:
       - name: Checkout published site branch
         uses: actions/checkout@v4
@@ -41,7 +36,15 @@ jobs:
         run: npm --prefix igropoisk run update
 
       - name: Validate catalog
-        run: node -e "const d=require('./igropoisk/data/catalog.json'); if(!d.games || d.games.length < 100) throw new Error('Catalog contains fewer than 100 games'); console.log('Validated', d.games.length, 'games')"
+        run: |
+          node - <<'NODE'
+          const fs=require('fs');
+          const d=JSON.parse(fs.readFileSync('./igropoisk/data/catalog.json','utf8'));
+          if(!Array.isArray(d.games)||d.games.length<80||d.games.length>220)throw new Error(`Invalid catalog size: ${d.games?.length||0}`);
+          const invalid=d.games.filter(g=>!g.appid||!g.title||!g.description||!g.releaseDate||!g.capsuleImage||!g.heroImage||!Array.isArray(g.screenshots)||g.screenshots.length<2);
+          if(invalid.length)throw new Error(`Incomplete games: ${invalid.slice(0,10).map(g=>g.title).join(', ')}`);
+          console.log(`Validated ${d.games.length} games`);
+          NODE
 
       - name: Commit refreshed data
         run: |
@@ -52,5 +55,5 @@ jobs:
             echo "No data changes"
             exit 0
           fi
-          git commit -m "Update Igropoisk data"
+          git commit -m "Update Igropoisk catalog"
           git push origin HEAD:gh-pages
