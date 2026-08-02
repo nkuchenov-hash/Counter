@@ -16,6 +16,18 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Preserve Igropoisk from gh-pages
+        run: |
+          git clone --depth 1 --branch gh-pages "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" /tmp/gh-pages
+          mkdir -p /tmp/preserved
+          if [ -d /tmp/gh-pages/igropoisk ]; then
+            cp -R /tmp/gh-pages/igropoisk /tmp/preserved/igropoisk
+          fi
+          if [ -f /tmp/gh-pages/.github/workflows/igropoisk-update.yml ]; then
+            mkdir -p /tmp/preserved/.github/workflows
+            cp /tmp/gh-pages/.github/workflows/igropoisk-update.yml /tmp/preserved/.github/workflows/igropoisk-update.yml
+          fi
+
       - name: Run strict architecture guard
         run: pwsh -NoProfile -NonInteractive -File ./scripts/audit/architecture_guard.ps1 -Strict
 
@@ -45,6 +57,16 @@ jobs:
           flutter build web --release --base-href="/Counter/" --no-tree-shake-icons --no-wasm-dry-run --pwa-strategy=none \
             --dart-define=GIT_COMMIT="$SHORT_SHA" \
             --dart-define=BUILD_TIME="$BUILD_TIME"
+
+      - name: Restore Igropoisk into deployment
+        run: |
+          if [ -d /tmp/preserved/igropoisk ]; then
+            cp -R /tmp/preserved/igropoisk build/web/igropoisk
+          fi
+          if [ -f /tmp/preserved/.github/workflows/igropoisk-update.yml ]; then
+            mkdir -p build/web/.github/workflows
+            cp /tmp/preserved/.github/workflows/igropoisk-update.yml build/web/.github/workflows/igropoisk-update.yml
+          fi
 
       - name: Deploy to gh-pages
         uses: JamesIves/github-pages-deploy-action@v4
