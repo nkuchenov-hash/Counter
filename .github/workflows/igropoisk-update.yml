@@ -4,13 +4,14 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths:
-      - '.github/workflows/igropoisk-update.yml'
   schedule:
     - cron: '17 3 * * *'
 
 permissions:
   contents: write
+
+env:
+  NODE_OPTIONS: --max-old-space-size=4096
 
 concurrency:
   group: igropoisk-data-update
@@ -21,7 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 55
     steps:
-      - name: Checkout gh-pages
+      - name: Checkout published site branch
         uses: actions/checkout@v4
         with:
           ref: gh-pages
@@ -31,8 +32,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
-          cache-dependency-path: igropoisk/package-lock.json
 
       - name: Install collector dependencies
         working-directory: igropoisk
@@ -42,7 +41,7 @@ jobs:
         run: npm --prefix igropoisk run update
 
       - name: Validate catalog
-        run: node -e "const d=require('./igropoisk/data/catalog.json'); if(!d.games || d.games.length < 100) process.exit(1); console.log(d.games.length)"
+        run: node -e "const d=require('./igropoisk/data/catalog.json'); if(!d.games || d.games.length < 100) throw new Error('Catalog contains fewer than 100 games'); console.log('Validated', d.games.length, 'games')"
 
       - name: Commit refreshed data
         run: |
