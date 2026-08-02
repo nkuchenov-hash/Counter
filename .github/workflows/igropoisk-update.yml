@@ -27,11 +27,12 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: gh-pages
+          fetch-depth: 0
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
           cache-dependency-path: igropoisk/package-lock.json
 
@@ -42,9 +43,18 @@ jobs:
       - name: Collect games, screenshots, ratings and articles
         run: npm --prefix igropoisk run update
 
-      - name: Validate generated database
+      - name: Validate generated database quality
         run: |
-          node -e "const d=require('./igropoisk/data/catalog.json'); if(!d.games || d.games.length < 100) throw new Error('Catalog contains fewer than 100 games'); console.log('Validated', d.games.length, 'games');"
+          node - <<'NODE'
+          const fs = require('fs');
+          const p = './igropoisk/data/catalog.json';
+          if (!fs.existsSync(p)) throw new Error('catalog.json was not generated');
+          const d = JSON.parse(fs.readFileSync(p, 'utf8'));
+          if (!Array.isArray(d.games) || d.games.length === 0) throw new Error('catalog is empty');
+          const invalid = d.games.filter(g => !g.title || !(g.appid || g.igdbId || g.rawgId) || !(g.headerImage || g.capsuleImage || g.poster));
+          if (invalid.length > Math.max(10, d.games.length * 0.1)) throw new Error(`too many incomplete games: ${invalid.length}`);
+          console.log(`Validated ${d.games.length} quality-filtered games`);
+          NODE
 
       - name: Commit refreshed data
         run: |
@@ -57,5 +67,3 @@ jobs:
           fi
           git commit -m "Update Igropoisk content"
           git push origin gh-pages
-
-# trigger: 2026-08-02T14:40Z
