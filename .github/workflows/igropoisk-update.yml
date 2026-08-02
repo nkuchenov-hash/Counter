@@ -57,3 +57,5 @@ jobs:
           fi
           git commit -m "Update Igropoisk content"
           git push origin gh-pages
+
+# trigger: 2026-08-02T14:40Z
