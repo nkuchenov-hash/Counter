@@ -1,49 +1,59 @@
-name: Update Игропоиск catalog
+name: Update Igropoisk content
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: "17 3 * * *"
   push:
     branches: [gh-pages]
     paths:
-      - 'igropoisk/scripts/**'
-      - 'igropoisk/package.json'
-      - '.github/workflows/igropoisk-update.yml'
-  schedule:
-    - cron: '17 3 * * *'
+      - "igropoisk/scripts/**"
+      - "igropoisk/package.json"
+      - ".github/workflows/igropoisk-update.yml"
 
 permissions:
   contents: write
 
 concurrency:
-  group: igropoisk-data-update
-  cancel-in-progress: false
+  group: igropoisk-content-update
+  cancel-in-progress: true
 
 jobs:
   update:
     runs-on: ubuntu-latest
     timeout-minutes: 55
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
           ref: gh-pages
-      - uses: actions/setup-node@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 20
           cache: npm
           cache-dependency-path: igropoisk/package-lock.json
+
       - name: Install collector dependencies
         working-directory: igropoisk
         run: npm install --no-audit --no-fund
+
       - name: Collect games, screenshots, ratings and articles
         run: npm --prefix igropoisk run update
+
+      - name: Validate generated database
+        run: |
+          node -e "const d=require('./igropoisk/data/catalog.json'); if(!d.games || d.games.length < 100) throw new Error('Catalog contains fewer than 100 games'); console.log('Validated', d.games.length, 'games');"
+
       - name: Commit refreshed data
         run: |
           git config user.name "igropoisk-bot"
           git config user.email "actions@users.noreply.github.com"
           git add igropoisk/data igropoisk/package-lock.json
           if git diff --cached --quiet; then
-            echo "No data changes"
+            echo "No content changes"
             exit 0
           fi
-          git commit -m "Update Игропоиск data"
+          git commit -m "Update Igropoisk content"
           git push origin gh-pages
