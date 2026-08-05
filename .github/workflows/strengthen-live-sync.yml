@@ -32,7 +32,7 @@ jobs:
       - name: Repair receipt insertion point and braces
         run: python .github/scripts/repair_receipt_v2.py
 
-      - name: Apply direct revision-safe receipts
+      - name: Apply duplicate-safe revision receipts
         run: python .github/scripts/apply_receipt_hardening_v2.py
 
       - name: Format focused files
