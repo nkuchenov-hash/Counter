@@ -1,3 +1,4 @@
+# One-shot branch patch; remove after the bot commit.
 name: Patch Calendar Category Depth
 
 on:
