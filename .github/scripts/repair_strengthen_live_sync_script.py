@@ -36,6 +36,21 @@ if text.count(old_marker) != 1:
     raise SystemExit(f'expected one test marker, found {text.count(old_marker)}')
 text = text.replace(old_marker, new_marker, 1)
 
+old_test_close = '''    expect(await PlanMutationOutbox.acknowledge(prefs, secondUpdate), isTrue);
+    expect(await PlanMutationOutbox.load(prefs), isEmpty);
+  });"""
+'''
+new_test_close = '''    expect(await PlanMutationOutbox.acknowledge(prefs, secondUpdate), isTrue);
+    expect(await PlanMutationOutbox.load(prefs), isEmpty);
+  },
+  );"""
+'''
+if text.count(old_test_close) != 1:
+    raise SystemExit(
+        f'expected one first-test close target, found {text.count(old_test_close)}'
+    )
+text = text.replace(old_test_close, new_test_close, 1)
+
 old_expect = '''        "    expect(outbox, contains('await _cancelPendingPlanMutationsForBusinessId(businessId)'));\\n",
         "    expect(outbox, contains('await _acknowledgePlanMutation(writeAheadReceipt)'));\\n"
         "    expect(outbox, isNot(contains('await _pbTagRecordIdsFromTags(tags);')));\\n",
