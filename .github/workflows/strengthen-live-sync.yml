@@ -1,0 +1,74 @@
+name: Strengthen live sync receipts
+
+on:
+  push:
+    branches:
+      - fix/live-sync-push-20260805
+    paths:
+      - .github/workflows/strengthen-live-sync.yml
+
+permissions:
+  contents: write
+
+jobs:
+  strengthen-and-verify:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: fix/live-sync-push-20260805
+          fetch-depth: 0
+
+      - name: Set up Flutter 3.41.6
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.6'
+          channel: stable
+          cache: true
+
+      - name: Apply revision-safe write-ahead receipts
+        run: python .github/scripts/strengthen_live_sync_receipts.py
+
+      - name: Format focused outbox and test files
+        run: dart format lib/data/local_sync/plan_mutation_outbox.dart test/live_sync_contract_test.dart
+
+      - name: Resolve packages
+        run: flutter pub get
+
+      - name: Analyze
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+
+      - name: Run exactly three focused sync tests
+        run: flutter test test/live_sync_contract_test.dart
+
+      - name: Build release web
+        run: flutter build web --release --base-href="/Counter/" --no-tree-shake-icons --no-wasm-dry-run --pwa-strategy=none
+
+      - name: Build Android arm64 APK
+        run: flutter build apk --release --target-platform android-arm64 --split-per-abi --no-tree-shake-icons
+
+      - name: Validate surgical diff
+        run: git diff --check
+
+      - name: Commit verified receipt hardening
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            CHANGELOG.md \
+            lib/data/local_sync/plan_mutation_outbox.dart \
+            lib/data/plans/plan_outbox_helpers.dart \
+            lib/data/plan_service.dart \
+            test/live_sync_contract_test.dart
+          git commit -m "Harden write-ahead sync acknowledgements"
+          git push origin HEAD:fix/live-sync-push-20260805
+
+      - name: Upload Android APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: counter-live-sync-arm64-final
+          path: build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
+          if-no-files-found: error
