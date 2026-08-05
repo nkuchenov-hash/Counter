@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-05T19:23:55.969Z",
+  "updatedAt": "2026-08-05T19:39:05.701Z",
   "count": 495,
   "sources": [
     "IGN",
@@ -14,6 +14,33 @@
     "Игромания"
   ],
   "articles": [
+    {
+      "source": "PC Gamer",
+      "language": "en",
+      "title": "'Sorry about this!' Big Walk is already fixing its biggest complaint",
+      "normalizedTitle": "sorry about this big walk is already fixing its biggest complaint",
+      "url": "https://www.pcgamer.com/games/puzzle/sorry-about-this-big-walk-is-already-fixing-its-biggest-complaint/",
+      "summary": "In a game about communication, players are having trouble hearing each other.",
+      "publishedAt": "Wed, 05 Aug 2026 19:36:45 +0000"
+    },
+    {
+      "source": "Polygon",
+      "language": "en",
+      "title": "Pokémon Pokopia Bubbly Basin DLC Finally Gives the Best Type of Pokémon Their Due",
+      "normalizedTitle": "pokémon pokopia bubbly basin dlc finally gives the best type of pokémon their due",
+      "url": "https://www.polygon.com/pokemon-pokopia-bubbly-basin-fish/",
+      "summary": "Pokémon Pokopia's new Bubbly Basin DLC is a great reminder that Pokémon has a lot of elegantly designed fish.",
+      "publishedAt": "Wed, 05 Aug 2026 19:30:12 GMT"
+    },
+    {
+      "source": "GameSpot",
+      "language": "en",
+      "title": "Halo On PS5 Is Off To A Slow Start, Expert Says",
+      "normalizedTitle": "halo on ps5 is off to a slow start expert says",
+      "url": "https://www.gamespot.com/articles/halo-on-ps5-is-off-to-a-slow-start-expert-says/",
+      "summary": "For the first time ever, a Halo game is available on PlayStation with Halo: Campaign Evolved. The game is having a \"notably slow start\" on Sony's console in terms of sales, however, according to gaming analyst Rhys Elliott . He estimated that Campaign Evolved sold 351,000 copies on PS5 during July and 452,000 to date, generating nearly $28 million. By comparison, Elliott said Campaign Evolved has shifted 212,000 units on Steam and about 900,000 on Xbox across console and PC thus far. https://www.youtube.com/watch?v=7LimYD3Ycwo The analyst said the game's price point--$50--was partly to blame. ",
+      "publishedAt": "Wed, 05 Aug 2026 19:20:23 +0000"
+    },
     {
       "source": "PC Gamer",
       "language": "en",
@@ -184,15 +211,6 @@
       "url": "https://www.pcgamer.com/games/third-person-shooter/marvel-rivals-is-gearing-up-for-season-9-5-with-major-vanguard-adjustments-alongside-a-teaser-for-its-next-hero-the-hood/",
       "summary": "Close enough, welcome to Marvel Rivals Gun Devil from CSM.",
       "publishedAt": "Wed, 05 Aug 2026 16:40:17 +0000"
-    },
-    {
-      "source": "Polygon",
-      "language": "en",
-      "title": "Where to find charms in Beast of Reincarnation",
-      "normalizedTitle": "where to find charms in beast of reincarnation",
-      "url": "https://www.polygon.com/beast-of-reincarnation-charms-locations-how-to-get-stats-restore/",
-      "summary": "Charms provide Koo more stats in Beast of Reincarnation. Here's where you can find charms and how to use them.",
-      "publishedAt": "Wed, 05 Aug 2026 16:39:08 GMT"
     },
     {
       "source": "IGN",
@@ -742,15 +760,6 @@
       "url": "https://www.gamespot.com/articles/the-ironmouse-sprite-is-live-now-in-fortnite-but-it-seems-theres-more-to-come/",
       "summary": "Ironmouse 's Sprite is now available to claim in Fortnite , but it seems there could be more on the way as the popular VTuber teased some further content for September. On a recent stream , when asked about whether she would be releasing a Fortnite skin, Ironmouse said, \"Just a Sprite today. Period.\" She shortly followed that up with, \"That's all I'm going to say ... Also, do you guys know that I have a Subathon coming up in September and a lot of cool things are happening? I'm just saying, you know.\" The Ironmouse Sprite was released as a standalone addition to the game in honor of her stream",
       "publishedAt": "Wed, 05 Aug 2026 13:12:08 +0000"
-    },
-    {
-      "source": "GameSpot",
-      "language": "en",
-      "title": "Beast Of Reincarnation&#8217;s First Patch Will Tackle Tiny Text And Broken Cameras",
-      "normalizedTitle": "beast of reincarnation 8217 s first patch will tackle tiny text and broken cameras",
-      "url": "https://www.gamespot.com/articles/beast-of-reincarnation-first-patch-will-tackle-tiny-text-and-broken-cameras/",
-      "summary": "Beast of Reincarnation launched this week, and while the game does have several technical issues, co-developer Game Freak says that a patch is on the way. This will target several areas of the game, including bug fixes, improvements to the pacing of the game's story, and increasing the font size to something that doesn't require the Hubble Space Telescope to read. Game Freak says that it's aiming to release the patch next week. One of the fixes will be for the game's camera, as many players have complained about it being too close to the protagonist Emma, making battles harder than they need t",
-      "publishedAt": "Wed, 05 Aug 2026 13:01:49 +0000"
     },
     {
       "source": "IGN",
@@ -1696,15 +1705,6 @@
       "url": "https://stopgame.ru/show/163121/cena_xbox_kosmos_akterov_v_seriale_po_god_of_war_zamenyat_owlcat_ne_brosit_klassicheskie_rpg",
       "summary": "Xbox Series подорожала на 33-50 % в Европе и Великобритании в зависимости от модели; СМИ сообщают, что актёров, играющих Атрея и Труд в сериале по God of War, заменят во втором сезоне; авторы Pathfinder и Rogue Trader пообещали продолжить выпускать классические RPG; авторы Vampire: The Masquerade — Eternal Whispers поделились кучей деталей об игре; для Dragon’s Dogma II готовят «хардмод» и предмет для лечения драконьей чумы; Square Enix отвергла обвинения в использовании ИИ для арта Kingdom Hearts Collection; анонсирова",
       "publishedAt": "Tue, 04 Aug 2026 06:00:07 +0300"
-    },
-    {
-      "source": "PC Gamer",
-      "language": "en",
-      "title": "Beast of Reincarnation review",
-      "normalizedTitle": "beast of reincarnation review",
-      "url": "https://www.pcgamer.com/games/action/beast-of-reincarnation-review/",
-      "summary": "It's not perfect, but this parry-centric scrapper has a distinctive mood and often excellent combat.",
-      "publishedAt": "Tue, 04 Aug 2026 00:00:00 +0000"
     },
     {
       "source": "Eurogamer",
