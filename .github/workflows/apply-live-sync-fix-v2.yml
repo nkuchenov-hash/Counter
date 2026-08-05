@@ -29,23 +29,26 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Repair patch parser
-        run: python .github/scripts/repair_live_sync_patch_parser.py
-
-      - name: Apply surgical sync patch
-        run: python .github/scripts/apply_live_sync_fix.py
-
-      - name: Format changed Dart files
+      - name: Restore source baseline and remove formatting noise
         run: |
-          dart format \
+          git checkout origin/main -- \
+            CHANGELOG.md \
             lib/data/database_service.dart \
             lib/data/db_core.dart \
             lib/data/plan_service.dart \
             lib/data/local_sync/plan_mutation_outbox.dart \
             lib/data/plans/plan_outbox_helpers.dart \
-            lib/data/realtime/catalog_realtime.dart \
-            lib/features/shared/planning_task_edit_sheet.dart \
-            test/live_sync_contract_test.dart
+            lib/features/shared/planning_task_edit_sheet.dart
+          rm -f lib/data/realtime/catalog_realtime.dart test/live_sync_contract_test.dart
+
+      - name: Repair patch parser
+        run: python .github/scripts/repair_live_sync_patch_parser.py
+
+      - name: Reapply surgical sync patch
+        run: python .github/scripts/apply_live_sync_fix.py
+
+      - name: Format new files only
+        run: dart format lib/data/realtime/catalog_realtime.dart test/live_sync_contract_test.dart
 
       - name: Resolve packages
         run: flutter pub get
@@ -62,10 +65,13 @@ jobs:
       - name: Build Android arm64 APK
         run: flutter build apk --release --target-platform android-arm64 --split-per-abi --no-tree-shake-icons
 
-      - name: Validate diff
-        run: git diff --check
+      - name: Validate surgical diff
+        run: |
+          git diff --check
+          git diff --stat origin/main...HEAD || true
+          git diff --stat origin/main
 
-      - name: Commit verified source changes
+      - name: Commit normalized verified source changes
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -79,12 +85,12 @@ jobs:
             lib/data/realtime/catalog_realtime.dart \
             lib/features/shared/planning_task_edit_sheet.dart \
             test/live_sync_contract_test.dart
-          git commit -m "Fix push-first multi-device sync"
+          git commit -m "Normalize live sync patch scope"
           git push origin HEAD:fix/live-sync-push-20260805
 
       - name: Upload Android APK
         uses: actions/upload-artifact@v4
         with:
-          name: counter-live-sync-arm64
+          name: counter-live-sync-arm64-normalized
           path: build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
           if-no-files-found: error
