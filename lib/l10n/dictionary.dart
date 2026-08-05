@@ -172,6 +172,70 @@ const Map<String, String> _healthAndGapRu = {
   'unfilled_time_notification_body': 'В Timeline пропущено %s минут.',
 };
 
+const Map<String, String> _calendarIntegrationsEn = {
+  'calendar_integrations_title': 'Calendar integrations',
+  'calendar_integrations_subtitle':
+      'Show Microsoft Teams and Google Calendar events together with normal Life OS plans.',
+  'calendar_integrations_connect': 'Connect',
+  'calendar_integrations_refresh': 'Refresh',
+  'calendar_integrations_sync_now': 'Sync now',
+  'calendar_integrations_disconnect': 'Disconnect',
+  'calendar_integrations_disconnect_title': 'Disconnect calendar?',
+  'calendar_integrations_disconnect_body':
+      'Imported external plans will be removed. Normal Life OS plans and Timeline records will stay intact.',
+  'calendar_integrations_not_connected': 'Not connected',
+  'calendar_integrations_connecting': 'Waiting for provider authorization',
+  'calendar_integrations_connected': 'Connected',
+  'calendar_integrations_syncing': 'Synchronizing calendars…',
+  'calendar_integrations_error': 'Calendar synchronization failed',
+  'calendar_integrations_server_setup_required': 'Server setup required',
+  'calendar_integrations_server_not_deployed':
+      'The calendar integration server module has not been deployed yet.',
+  'calendar_integrations_no_calendars':
+      'No calendars are available for this account.',
+  'calendar_integrations_primary_calendar': 'Primary calendar',
+  'calendar_integrations_category_rule_note':
+      'Normal Life OS category matching runs first. The fallback below is used only when no category matches the event title.',
+  'calendar_integrations_fallback_category': 'Fallback category',
+  'calendar_integrations_fallback_category_hint':
+      'Used only when normal title-based category rules find nothing.',
+  'calendar_integrations_no_fallback': 'No fallback category',
+  'calendar_integrations_last_sync': 'Last sync',
+  'calendar_integrations_never_synced': 'Not synchronized yet',
+};
+
+const Map<String, String> _calendarIntegrationsRu = {
+  'calendar_integrations_title': 'Интеграции календарей',
+  'calendar_integrations_subtitle':
+      'Показывать встречи Microsoft Teams и события Google Календаря вместе с обычными планами Life OS.',
+  'calendar_integrations_connect': 'Подключить',
+  'calendar_integrations_refresh': 'Обновить',
+  'calendar_integrations_sync_now': 'Синхронизировать',
+  'calendar_integrations_disconnect': 'Отключить',
+  'calendar_integrations_disconnect_title': 'Отключить календарь?',
+  'calendar_integrations_disconnect_body':
+      'Импортированные внешние планы будут удалены. Обычные планы Life OS и записи Timeline останутся.',
+  'calendar_integrations_not_connected': 'Не подключено',
+  'calendar_integrations_connecting': 'Ожидание авторизации провайдера',
+  'calendar_integrations_connected': 'Подключено',
+  'calendar_integrations_syncing': 'Синхронизация календарей…',
+  'calendar_integrations_error': 'Ошибка синхронизации календаря',
+  'calendar_integrations_server_setup_required': 'Нужна настройка сервера',
+  'calendar_integrations_server_not_deployed':
+      'Серверный модуль календарных интеграций ещё не развёрнут.',
+  'calendar_integrations_no_calendars':
+      'Для этого аккаунта не найдено доступных календарей.',
+  'calendar_integrations_primary_calendar': 'Основной календарь',
+  'calendar_integrations_category_rule_note':
+      'Сначала применяются обычные правила категорий Life OS. Категория ниже используется только если по названию встречи ничего не найдено.',
+  'calendar_integrations_fallback_category': 'Категория по умолчанию',
+  'calendar_integrations_fallback_category_hint':
+      'Используется только если обычные правила по названию не нашли категорию.',
+  'calendar_integrations_no_fallback': 'Без категории по умолчанию',
+  'calendar_integrations_last_sync': 'Последняя синхронизация',
+  'calendar_integrations_never_synced': 'Ещё не синхронизировано',
+};
+
 /// Voice Vault: locale state + assembled translation catalog.
 /// Canonical EN/RU strings live in [kEnL10n] / [kRuL10n] (`lib/l10n/langs/`).
 /// Other locales layer on English via [_layerOnEnglish].
@@ -182,12 +246,14 @@ final Map<String, String> _englishCatalog = Map<String, String>.unmodifiable({
   ...kEnL10n,
   ..._planningAutoPlacementEn,
   ..._healthAndGapEn,
+  ..._calendarIntegrationsEn,
 });
 
 final Map<String, String> _russianCatalog = Map<String, String>.unmodifiable({
   ...kRuL10n,
   ..._planningAutoPlacementRu,
   ..._healthAndGapRu,
+  ..._calendarIntegrationsRu,
 });
 
 Map<String, String> _layerOnEnglish(Map<String, String> partial) {
