@@ -47,7 +47,9 @@ abstract final class PlanMutationOutbox {
     }
   }
 
-  static Future<List<Map<String, dynamic>>> load(SharedPreferences prefs) async {
+  static Future<List<Map<String, dynamic>>> load(
+    SharedPreferences prefs,
+  ) async {
     final current = _decode(prefs.getString(_prefsKey));
     if (current.isNotEmpty) return current;
     return _migrateLegacyCreates(prefs);
@@ -90,8 +92,7 @@ abstract final class PlanMutationOutbox {
   static Future<void> replaceAll(
     SharedPreferences prefs,
     List<Map<String, dynamic>> items,
-  ) =>
-      save(prefs, items);
+  ) => save(prefs, items);
 
   static String _newOperationId() {
     final r = Random.secure();
@@ -116,16 +117,36 @@ abstract final class PlanMutationOutbox {
     return kind == kindPlanDelete || op == 'delete';
   }
 
+  static bool _isCreateItem(Map<String, dynamic> item) =>
+      (item['kind'] ?? '').toString() == kindPlanCreate;
+
   static bool _isUpdateItem(Map<String, dynamic> item) =>
       (item['kind'] ?? '').toString() == kindPlanUpdate;
 
-  static List<Map<String, dynamic>> coalesceQueue(List<Map<String, dynamic>> q) {
+  static List<Map<String, dynamic>> coalesceQueue(
+    List<Map<String, dynamic>> q,
+  ) {
     final out = <Map<String, dynamic>>[];
     final updateIndexByBiz = <String, int>{};
 
     for (final raw in q) {
       final item = Map<String, dynamic>.from(raw);
       final biz = _bizKey(item);
+
+      // Write-ahead create may be staged again with an auth/network error.
+      // Keep one durable create per business id and preserve its original FIFO slot.
+      if (_isCreateItem(item) && biz.isNotEmpty) {
+        final existingCreateIndex = out.indexWhere(
+          (e) => _bizKey(e) == biz && _isCreateItem(e),
+        );
+        if (existingCreateIndex >= 0) {
+          final existing = out[existingCreateIndex];
+          item['operationId'] = existing['operationId'];
+          item['createdAt'] = existing['createdAt'];
+          out[existingCreateIndex] = item;
+          continue;
+        }
+      }
 
       if (_isDeleteItem(item)) {
         if (biz.isNotEmpty) {
@@ -157,7 +178,10 @@ abstract final class PlanMutationOutbox {
           final nextPayload = item['payload'] is Map
               ? Map<String, dynamic>.from(item['payload'] as Map)
               : <String, dynamic>{};
-          existing['payload'] = <String, dynamic>{...prevPayload, ...nextPayload};
+          existing['payload'] = <String, dynamic>{
+            ...prevPayload,
+            ...nextPayload,
+          };
           final pb = (item['pocketBaseId'] ?? '').toString().trim();
           if (pb.isNotEmpty) existing['pocketBaseId'] = pb;
           out[idx] = existing;
@@ -208,17 +232,16 @@ abstract final class PlanMutationOutbox {
     Object? error,
     String syncStatus = syncStatusPending,
     int? createdAt,
-  }) =>
-      _baseItem(
-        operationType: 'create',
-        businessId: businessId,
-        kind: kindPlanCreate,
-        payload: payload,
-        originalQueryId: businessId,
-        error: error,
-        syncStatus: syncStatus,
-        createdAt: createdAt,
-      );
+  }) => _baseItem(
+    operationType: 'create',
+    businessId: businessId,
+    kind: kindPlanCreate,
+    payload: payload,
+    originalQueryId: businessId,
+    error: error,
+    syncStatus: syncStatus,
+    createdAt: createdAt,
+  );
 
   static Map<String, dynamic> newPlanUpdateItem({
     required String businessId,
@@ -251,17 +274,16 @@ abstract final class PlanMutationOutbox {
     required String originalQueryId,
     Object? error,
     String syncStatus = syncStatusPending,
-  }) =>
-      _baseItem(
-        operationType: 'delete',
-        businessId: businessId,
-        pocketBaseId: pocketBaseId,
-        originalQueryId: originalQueryId,
-        kind: kindPlanDelete,
-        payload: const <String, dynamic>{},
-        error: error,
-        syncStatus: syncStatus,
-      );
+  }) => _baseItem(
+    operationType: 'delete',
+    businessId: businessId,
+    pocketBaseId: pocketBaseId,
+    originalQueryId: originalQueryId,
+    kind: kindPlanDelete,
+    payload: const <String, dynamic>{},
+    error: error,
+    syncStatus: syncStatus,
+  );
 
   static Future<void> enqueue(
     SharedPreferences prefs,

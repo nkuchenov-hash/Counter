@@ -19,7 +19,8 @@ import 'package:counter/data/local_sync/plan_mutation_outbox.dart';
 import 'package:counter/data/local_sync/record_mutation_outbox.dart';
 import 'package:counter/data/local_sync/sync_manager.dart';
 import 'package:counter/data/models.dart';
-import 'package:counter/data/plan_time_sequential_cascade.dart' as plan_time_seq;
+import 'package:counter/data/plan_time_sequential_cascade.dart'
+    as plan_time_seq;
 import 'package:counter/data/pb_config.dart';
 import 'package:counter/data/recurrence_edit_scope.dart';
 import 'package:counter/services/notification_service.dart';
@@ -62,6 +63,7 @@ part 'plans/plan_record_link_helpers.dart';
 part 'plans/notes_brain_helpers.dart';
 part 'plans/plan_alarm_helpers.dart';
 part 'plans/plan_ai_parse_helpers.dart';
+part 'realtime/catalog_realtime.dart';
 part 'plan_service.dart';
 part 'records/record_crud.dart';
 part 'records/record_optimistic.dart';
@@ -87,7 +89,8 @@ part 'db_core.dart';
 // Wear OS DataClient / MethodChannel: only under lib/features/wear/ — nothing here sends to the watch.
 
 /// Isolate target for prefs snapshot encoding (keeps main isolate clear during large jsonEncode).
-String _encodeRecordsFlatForPrefs(List<Map<String, dynamic>> rows) => jsonEncode(rows);
+String _encodeRecordsFlatForPrefs(List<Map<String, dynamic>> rows) =>
+    jsonEncode(rows);
 
 class _BuildNode {
   _BuildNode(this.label);
@@ -96,7 +99,6 @@ class _BuildNode {
   final Map<String, _BuildNode> children = {};
   final Map<String, List<Map<String, dynamic>>> sessionGroups = {};
 }
-
 
 /// In-memory only: timeline shows [endUtc] until server confirms or optimistic layer is cleared.
 class _OptimisticEndPatch {
@@ -115,8 +117,10 @@ class LegacyIdResolutionException implements Exception {
 
 /// PocketBase auth record id is required for mutating API calls (`user_id` on child rows).
 class AuthenticatedUserIdRequiredException implements Exception {
-  AuthenticatedUserIdRequiredException([this.message =
-      'PocketBase auth record id is null or empty; refusing mutating request.']);
+  AuthenticatedUserIdRequiredException([
+    this.message =
+        'PocketBase auth record id is null or empty; refusing mutating request.',
+  ]);
   final String message;
   @override
   String toString() => message;
@@ -163,12 +167,15 @@ class _DatabaseServiceLifecycleObserver with WidgetsBindingObserver {
 
 /// True when a flattened **categories** row should participate in the active tree / uniqueness checks.
 bool _categoryFlatRowIsActive(Map<String, dynamic> row) {
-  final fields =
-      row['fields'] is Map ? Map<String, dynamic>.from(row['fields'] as Map) : row;
+  final fields = row['fields'] is Map
+      ? Map<String, dynamic>.from(row['fields'] as Map)
+      : row;
   final archRaw = row['is_archived'] ?? fields['is_archived'];
   if (_jsonBoolFromDynamic(archRaw)) return false;
-  final st =
-      (row['status'] ?? fields['status'] ?? '').toString().trim().toLowerCase();
+  final st = (row['status'] ?? fields['status'] ?? '')
+      .toString()
+      .trim()
+      .toLowerCase();
   if (st == 'archived' || st == 'deleted') return false;
   return true;
 }
@@ -215,7 +222,8 @@ class DatabaseService {
   static const String _nocoSystemRowIdKey = '_noco_system_row_id';
 
   /// Categories table only: optional wrapper segment when PK is a non-integer string (slug).
-  static const String _nocoCategoryRestSegmentKey = '_noco_category_rest_segment';
+  static const String _nocoCategoryRestSegmentKey =
+      '_noco_category_rest_segment';
 
   static String? _sanitizePkString(String? raw) {
     if (raw == null) return null;
@@ -248,7 +256,8 @@ class DatabaseService {
 
   /// PK from the JSON **row wrapper** (list item), not from nested `fields`.
   static String? _envelopePkOnlyFromWrapper(Map<String, dynamic> record) {
-    final v = record['id'] ??
+    final v =
+        record['id'] ??
         record['Id'] ??
         record['ID'] ??
         record['record_id'] ??
@@ -286,7 +295,8 @@ class DatabaseService {
       'RecordId',
     ]) {
       final s = _sanitizePkString(fields[k]?.toString());
-      if (s != null && CategoryServiceExtension._isLikelyUuidOrLongPk(s)) return s;
+      if (s != null && CategoryServiceExtension._isLikelyUuidOrLongPk(s))
+        return s;
     }
     return null;
   }
@@ -397,8 +407,10 @@ class DatabaseService {
 
   SharedPreferences? _prefs;
   List<CategoryRule> _rules = [];
+
   /// All `category_id` / `normalized_id` (lowercase) for this user from PocketBase, **including archived** — reserved for new POSTs.
   Set<String> _reservedCategorySlugsLower = {};
+
   /// Display names + archive flags for **all** PB rows (see [_rebuildCategoryDialogUniverse]) — create dialog pre-flight.
   List<Map<String, dynamic>> _categoryDialogUniverse = [];
 
@@ -544,19 +556,20 @@ class DatabaseService {
   }
 
   Stream<UserSettings> get userSettingsStream => Stream.multi((c) {
-        c.add(_settings);
-        _settingsController.stream.listen(c.add, onError: c.addError);
-      });
+    c.add(_settings);
+    _settingsController.stream.listen(c.add, onError: c.addError);
+  });
 
   Stream<List<CategoryRule>> get categoryStream => Stream.multi((c) {
-        c.add(List.from(_rules));
-        _categoryController.stream.listen(c.add, onError: c.addError);
-      });
+    c.add(List.from(_rules));
+    _categoryController.stream.listen(c.add, onError: c.addError);
+  });
 
   /// Categories reorder: debounced bulk PATCH of [order] only (@DATA_MAP `categories`, `user_id`).
   static const Duration _categoryOrderDebounce = Duration(seconds: 2);
   Timer? _categoryOrderDebounceTimer;
   List<CategoryRule>? _pendingCategoryOrderSyncList;
+
   /// Local category id → list index before the first drag of the current reorder session.
   Map<int, int>? _categoryReorderBaselineByLocalId;
 
@@ -575,7 +588,8 @@ class DatabaseService {
   final Map<String, List<TimelineRecordRowVm>> _timelineDayVmCache = {};
 
   /// Lazy per-row VM cache (dateKey → recordKey → VM); avoids building all rows at once.
-  final Map<String, Map<String, TimelineRecordRowVm>> _timelineLazyRowVmByDay = {};
+  final Map<String, Map<String, TimelineRecordRowVm>> _timelineLazyRowVmByDay =
+      {};
 
   /// True while a deferred full day-index rebuild is running off the hot swipe path.
   bool _timelineDayIndexBuildInFlight = false;
@@ -609,7 +623,9 @@ class DatabaseService {
   /// Exponential backoff for `/api/realtime` reconnects: 5s → 10s → 20s (caps spam + main-thread churn).
   static const List<int> _kRealtimeBackoffSeconds = [5, 10, 20];
   int _recordsRealtimeFailureStreak = 0;
-  Timer? _recordsRealtimeReconnectTimer;  /// Prevents overlapping subscribe attempts (avoids recursive reconnect / stacked futures).
+  Timer? _recordsRealtimeReconnectTimer;
+
+  /// Prevents overlapping subscribe attempts (avoids recursive reconnect / stacked futures).
   Future<void>? _recordsRealtimeSubscribeFuture;
   DateTime? _lastRealtimeSubscribeErrorLogAt;
 
@@ -721,8 +737,7 @@ class DatabaseService {
     return out;
   }
 
-  bool get _hasAuthenticatedUserId =>
-      (_userIdForWhere?.isNotEmpty ?? false);
+  bool get _hasAuthenticatedUserId => (_userIdForWhere?.isNotEmpty ?? false);
 
   /// Use for POST/PATCH bodies and any call that must not run without a valid auth id.
   String _requireAuthUserIdForWrite() {
@@ -738,7 +753,6 @@ class DatabaseService {
 
   String _escapeForPbFilter(String raw) =>
       raw.replaceAll(r'\', r'\\').replaceAll('"', r'\"');
-
 
   /// PocketBase collection row `id`: lowercase alphanumeric, ~15 chars, no hyphens (@DATA_MAP).
   static bool _isLikelyPocketBaseRowId(String s) {
@@ -815,15 +829,18 @@ class DatabaseService {
         return id.isEmpty ? null : id;
       } on ClientException catch (_) {
         try {
-          debugPrint('SEARCHING PB FOR: record_id = "$key" (emergency: no user_id filter)');
+          debugPrint(
+            'SEARCHING PB FOR: record_id = "$key" (emergency: no user_id filter)',
+          );
           final solo = 'record_id = "$esc"';
-          final rec =
-              await _pb.collection(PbCollections.records).getFirstListItem(
-                    solo,
-                  );
+          final rec = await _pb
+              .collection(PbCollections.records)
+              .getFirstListItem(solo);
           final foundOwner = _pbRecordRowUserIdString(rec);
           if (foundOwner != authId) {
-            debugPrint('CONFLICT: Record found but owner mismatch. Found: $foundOwner, Expected: $authId');
+            debugPrint(
+              'CONFLICT: Record found but owner mismatch. Found: $foundOwner, Expected: $authId',
+            );
           }
           final id = rec.id.trim();
           return id.isEmpty ? null : id;
@@ -884,5 +901,4 @@ class DatabaseService {
   }
 
   /// Refreshes timeline cache after PocketBase create; [pocketCreatedRecordId] is the new row id.
-
 }

@@ -613,6 +613,32 @@ extension PlanOutboxSyncExtension on DatabaseService {
     return true;
   }
 
+  /// Durable write-ahead staging for a plan edit. The optimistic cache is already
+  /// visible before this awaits SharedPreferences; PocketBase network I/O starts only
+  /// after the mutation survives process death.
+  Future<void> _stagePlanUpdateWriteAhead({
+    required String originalInput,
+    required String businessId,
+    required Map<String, dynamic> patchBody,
+    String? pocketBaseId,
+    List<Tag>? tags,
+  }) async {
+    final scalarBody = Map<String, dynamic>.from(patchBody);
+    scalarBody.remove('user_id');
+    List<String>? tagIds;
+    if (tags != null) {
+      tagIds = await _pbTagRecordIdsFromTags(tags);
+    }
+    await _enqueuePlanUpdateMutation(
+      originalInput: originalInput,
+      businessId: businessId,
+      patchFields: scalarBody,
+      pocketBaseId: pocketBaseId,
+      tagsLinkPbIds: tagIds,
+    );
+    await offlineSync.refreshPendingCount();
+  }
+
   // --- Immediate update/delete network phase (not flush/replay) ---
 
   Future<bool> _patchPlanUpdateNetworkPhase({
@@ -647,7 +673,8 @@ extension PlanOutboxSyncExtension on DatabaseService {
       clearOptimisticPlanningForPlanRow(originalInput);
       clearOptimisticPlanningForPlanRow(resolvedPbId);
       notifyPlanningRefresh(scheduleNetworkRefresh: false);
-      unawaited(offlineSync.refreshPendingCount());
+      await _cancelPendingPlanMutationsForBusinessId(businessId);
+      await offlineSync.refreshPendingCount();
       return true;
     } on ClientException catch (e) {
       final code = e.statusCode;
@@ -655,6 +682,8 @@ extension PlanOutboxSyncExtension on DatabaseService {
         _removePlanFromUserCache(resolvedPbId);
         _removePlanFromUserCache(originalInput);
         notifyPlanningRefresh(scheduleNetworkRefresh: false);
+        await _cancelPendingPlanMutationsForBusinessId(businessId);
+        await offlineSync.refreshPendingCount();
         if (!suppressAppSnack) AppSnack.failed();
         return false;
       }
@@ -692,6 +721,8 @@ extension PlanOutboxSyncExtension on DatabaseService {
         offlineSync.setConnectivityOffline(true);
         return true;
       }
+      await _cancelPendingPlanMutationsForBusinessId(businessId);
+      await offlineSync.refreshPendingCount();
       if (!suppressAppSnack) AppSnack.failed();
       return false;
     } catch (e, st) {
@@ -713,6 +744,8 @@ extension PlanOutboxSyncExtension on DatabaseService {
         offlineSync.setConnectivityOffline(true);
         return true;
       }
+      await _cancelPendingPlanMutationsForBusinessId(businessId);
+      await offlineSync.refreshPendingCount();
       if (!suppressAppSnack) AppSnack.failed();
       return false;
     }

@@ -11,6 +11,13 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-08-05] - Push-first multi-device sync reliability [shipped]
+
+* **Plans/Lists durability:** create and edit mutations now use a local write-ahead outbox before PocketBase POST/PATCH; successful server confirmation clears the staged mutation, while auth/network failures keep one coalesced replay item.
+* **PocketBase realtime:** plan events merge immediately without a tag-catalog HTTP round trip; records, plans, categories, tags, and profile subscriptions are re-armed before one-shot resume catch-up, with no periodic polling.
+* **Mobile lifecycle:** dirty non-recurring plan drafts flush when the app becomes inactive/paused; realtime 404 no longer disables live sync silently for 30 minutes and retries the push channel after 30 seconds.
+* **Verification:** focused `live_sync_contract_test.dart`, analyzer, release web build, and Android arm64 APK build.
+
 ## [2026-07-30] - P0 Planning selected-time stability and web editor load [shipped]
 
 * **`planning_task_edit_sheet.dart`:** [shipped] Task-title typing no longer parses or overwrites the start time selected on the Time View grid; fuzzy category matching is debounced.

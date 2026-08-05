@@ -15,7 +15,8 @@ extension DbCoreExtension on DatabaseService {
       _pocketBase = PocketBase(
         baseUrl,
         authStore: AsyncAuthStore(
-          save: (data) async => prefs.setString(DatabaseService._pbAuthPrefsKey, data),
+          save: (data) async =>
+              prefs.setString(DatabaseService._pbAuthPrefsKey, data),
           initial: prefs.getString(DatabaseService._pbAuthPrefsKey),
           clear: () async => prefs.remove(DatabaseService._pbAuthPrefsKey),
         ),
@@ -39,6 +40,7 @@ extension DbCoreExtension on DatabaseService {
       if (isPbRealtimeUnavailable) return;
       _scheduleRecordsRealtimeReconnectAfterFailure();
       _schedulePlansRealtimeReconnectAfterFailure();
+      _scheduleCatalogRealtimeReconnectAfterFailure();
     };
   }
 
@@ -49,19 +51,34 @@ extension DbCoreExtension on DatabaseService {
         s.contains('failed to establish sse');
   }
 
-  void _markRealtimeEndpointUnavailable(Object e, {String source = 'realtime'}) {
+  void _markRealtimeEndpointUnavailable(
+    Object e, {
+    String source = 'realtime',
+  }) {
     if (!_isRealtimeEndpointUnavailableError(e) &&
         !(e is ClientException && e.statusCode == 404)) {
       return;
     }
-    _realtimeEndpointUnavailableUntil =
-        DateTime.now().add(const Duration(minutes: 30));
+    const retryDelay = Duration(seconds: 30);
+    _realtimeEndpointUnavailableUntil = DateTime.now().add(retryDelay);
     planStreamLifecycleLog(
       'realtimeSubscribe status=error code=404 source=$source '
-      'fallback=fetchUntil=${_realtimeEndpointUnavailableUntil!.toIso8601String()}',
+      'retryAt=${_realtimeEndpointUnavailableUntil!.toIso8601String()}',
     );
     unawaited(_cancelRecordsRealtimeSubscription());
     unawaited(_cancelPlansRealtimeSubscription());
+    unawaited(_cancelCatalogRealtimeSubscriptions());
+    _recordsRealtimeReconnectTimer?.cancel();
+    _plansRealtimeReconnectTimer?.cancel();
+    _catalogRealtimeReconnectTimer?.cancel();
+    _recordsRealtimeReconnectTimer = Timer(retryDelay, () {
+      _recordsRealtimeReconnectTimer = null;
+      _realtimeEndpointUnavailableUntil = null;
+      if (!_hasAuthenticatedUserId) return;
+      unawaited(_startRecordsRealtimeSubscription());
+      unawaited(_startPlansRealtimeSubscription());
+      unawaited(_startCatalogRealtimeSubscriptions());
+    });
     offlineSync.reconcileStuckSyncingBanner(
       syncFlushInFlight: isSyncFlushInFlight,
     );
@@ -105,8 +122,9 @@ extension DbCoreExtension on DatabaseService {
   }
 
   void _registerPocketBaseUnreachable(Object e) {
-    _pbNextAllowedNetworkAt =
-        DateTime.now().add(const Duration(seconds: DatabaseService._pbCircuitCooldownSeconds));
+    _pbNextAllowedNetworkAt = DateTime.now().add(
+      const Duration(seconds: DatabaseService._pbCircuitCooldownSeconds),
+    );
     _pbLastHealthProbeAt = DateTime.now();
     final wasOk = _pbLastHealthOk;
     _pbLastHealthOk = false;
@@ -147,8 +165,9 @@ extension DbCoreExtension on DatabaseService {
 
   void _maybeOpenPbCircuitFromListFailure(Object e, String reason) {
     if (!_isPbCircuitWorthyFailure(e)) return;
-    _pbNextAllowedNetworkAt =
-        DateTime.now().add(const Duration(seconds: DatabaseService._pbCircuitCooldownSeconds));
+    _pbNextAllowedNetworkAt = DateTime.now().add(
+      const Duration(seconds: DatabaseService._pbCircuitCooldownSeconds),
+    );
     if (kDebugMode) {
       debugPrint(
         '[PB] $reason — circuit ${DatabaseService._pbCircuitCooldownSeconds}s (404/connection): $e',
@@ -176,8 +195,10 @@ extension DbCoreExtension on DatabaseService {
   }
 
   Duration _recordsRealtimeDelayForCurrentFailureStreak() {
-    final idx =
-        _recordsRealtimeFailureStreak.clamp(0, DatabaseService._kRealtimeBackoffSeconds.length - 1);
+    final idx = _recordsRealtimeFailureStreak.clamp(
+      0,
+      DatabaseService._kRealtimeBackoffSeconds.length - 1,
+    );
     return Duration(seconds: DatabaseService._kRealtimeBackoffSeconds[idx]);
   }
 
@@ -199,7 +220,8 @@ extension DbCoreExtension on DatabaseService {
     if (isPbRealtimeUnavailable) return;
     _recordsRealtimeReconnectTimer?.cancel();
     final delay = _recordsRealtimeDelayForCurrentFailureStreak();
-    if (_recordsRealtimeFailureStreak < DatabaseService._kRealtimeBackoffSeconds.length) {
+    if (_recordsRealtimeFailureStreak <
+        DatabaseService._kRealtimeBackoffSeconds.length) {
       _recordsRealtimeFailureStreak++;
     }
     _recordsRealtimeReconnectTimer = Timer(delay, () {
@@ -216,7 +238,9 @@ extension DbCoreExtension on DatabaseService {
     if (_cachedFlatRecords.isNotEmpty) return;
     try {
       final prefs = _prefs ?? await SharedPreferences.getInstance();
-      final raw = prefs.getString(_scopedDataCacheKey(DatabaseService._cacheRecordsFlatKey));
+      final raw = prefs.getString(
+        _scopedDataCacheKey(DatabaseService._cacheRecordsFlatKey),
+      );
       if (raw == null || raw.trim().isEmpty) return;
       final decoded = jsonDecode(raw);
       if (decoded is! List) return;
@@ -243,7 +267,9 @@ extension DbCoreExtension on DatabaseService {
 
   void _unregisterAppLifecycleObserver() {
     if (!DatabaseService._appLifecycleObserverRegistered) return;
-    WidgetsBinding.instance.removeObserver(DatabaseService._appLifecycleObserver);
+    WidgetsBinding.instance.removeObserver(
+      DatabaseService._appLifecycleObserver,
+    );
     DatabaseService._appLifecycleObserverRegistered = false;
     DatabaseService._appLifecycleObserver.onResumed = null;
   }
@@ -260,6 +286,9 @@ extension DbCoreExtension on DatabaseService {
     _planningNotifyNetworkDebounceTimer = null;
     unawaited(NotificationService.instance.cancelAllPlanReminders());
     unawaited(_cancelPlansRealtimeSubscription());
+    unawaited(_cancelCatalogRealtimeSubscriptions());
+    _catalogRealtimeReconnectTimer?.cancel();
+    _catalogRealtimeReconnectTimer = null;
     _allPlansUserCache = [];
     _allPlansUserCacheFetchedAt = null;
     _recordsRealtimeReconnectTimer?.cancel();
@@ -479,7 +508,9 @@ extension DbCoreExtension on DatabaseService {
     _registerAppLifecycleObserverOnce();
     // LAW_OF_THE_MAIN_THREAD / Wear-lite: do not block watch bootstrap on realtime socket.
     unawaited(
-      _startRecordsRealtimeSubscription().catchError((Object _, StackTrace _) {}),
+      _startRecordsRealtimeSubscription().catchError(
+        (Object _, StackTrace _) {},
+      ),
     );
   }
 
@@ -520,6 +551,16 @@ extension DbCoreExtension on DatabaseService {
   Future<void> _runDeferredBootWorkAfterFirstShell() async {
     final projected = getProjectedToday();
     final timelineToday = getTimelineDeviceLocalToday();
+    // Subscribe first so cross-device changes arriving during catch-up are not missed.
+    if (!_pbHttpBackoffActive) {
+      try {
+        await Future.wait<void>([
+          _startRecordsRealtimeSubscription(),
+          _startPlansRealtimeSubscription(),
+          _startCatalogRealtimeSubscriptions(),
+        ]);
+      } catch (_) {}
+    }
     if (kUseMountedDayStrip) {
       preparePlansMountedWindowBoot(projected, criticalOnly: true);
       prepareTimelineMountedWindowBoot(timelineToday, criticalOnly: true);
@@ -528,14 +569,8 @@ extension DbCoreExtension on DatabaseService {
       schedulePlansMountedWindowBootBackground(projected);
       scheduleTimelineMountedWindowBootBackground(timelineToday);
     } else {
-      StartupLog.deferred(
-        name: 'plansWarmWindow',
-        reason: 'backgroundOnly',
-      );
-      StartupLog.deferred(
-        name: 'timelineWarmWindow',
-        reason: 'backgroundOnly',
-      );
+      StartupLog.deferred(name: 'plansWarmWindow', reason: 'backgroundOnly');
+      StartupLog.deferred(name: 'timelineWarmWindow', reason: 'backgroundOnly');
       final warmSw = Stopwatch()..start();
       if (kPlansWarmWindowEnabled) {
         ensurePlansWarmWindow(projected);
@@ -573,27 +608,20 @@ extension DbCoreExtension on DatabaseService {
       persistPlansWarmSnapshotsToDisk();
       persistTimelineWarmSnapshotsToDisk();
     }
-    StartupLog.deferred(
-      name: 'syncBootstrap',
-      reason: 'canRunAfterShell',
-    );
-    try {
-      await _startRecordsRealtimeSubscription();
-    } catch (_) {}
-    unawaited(
-      _startPlansRealtimeSubscription().catchError((Object e, StackTrace _) {
-        _handleRealtimeSubscribeFailure(e, source: 'plans-boot');
-      }),
-    );
+    StartupLog.deferred(name: 'syncBootstrap', reason: 'canRunAfterShell');
     unawaited(() async {
       try {
         await _ensureAllPlansUserCacheFresh(force: true);
-        notifyPlanningRefresh(scheduleNetworkRefresh: false, pumpNetworkNow: true);
+        notifyPlanningRefresh(
+          scheduleNetworkRefresh: false,
+          pumpNetworkNow: true,
+        );
       } catch (_) {}
     }());
     unawaited(
-      _runOneShotUntitledGhostRecordCleanDeferred()
-          .catchError((Object _, StackTrace _) {}),
+      _runOneShotUntitledGhostRecordCleanDeferred().catchError(
+        (Object _, StackTrace _) {},
+      ),
     );
     final syncSw = Stopwatch()..start();
     try {
@@ -618,6 +646,17 @@ extension DbCoreExtension on DatabaseService {
     await offlineSync.bootstrapFromOutboxes(
       pbBackoffActive: _pbHttpBackoffActive,
     );
+    // Re-arm push channels before flush/catch-up. The following fetch is a one-shot
+    // reconciliation for events missed while the app was suspended, never polling.
+    if (!_pbHttpBackoffActive) {
+      try {
+        await Future.wait<void>([
+          _startRecordsRealtimeSubscription(),
+          _startPlansRealtimeSubscription(),
+          _startCatalogRealtimeSubscriptions(),
+        ]);
+      } catch (_) {}
+    }
     await flushPendingLocalMutations();
     if (_pbHttpBackoffActive) return;
     try {
@@ -626,12 +665,9 @@ extension DbCoreExtension on DatabaseService {
       await _reconcileDuplicatePrimaryRunningRecords();
       await _ensureAllPlansUserCacheFresh(force: true);
       await _loadPlanningTasksForToday();
-      notifyPlanningRefresh(scheduleNetworkRefresh: false, pumpNetworkNow: true);
-      try {
-        await _startRecordsRealtimeSubscription();
-      } catch (_) {}
-      unawaited(
-        _startPlansRealtimeSubscription().catchError((Object _, StackTrace _) {}),
+      notifyPlanningRefresh(
+        scheduleNetworkRefresh: false,
+        pumpNetworkNow: true,
       );
     } catch (_) {}
   }
