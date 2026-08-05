@@ -29,9 +29,6 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Repair receipt insertion point and braces
-        run: python .github/scripts/repair_receipt_v2.py
-
       - name: Apply duplicate-safe revision receipts
         run: python .github/scripts/apply_receipt_hardening_v2.py
 
