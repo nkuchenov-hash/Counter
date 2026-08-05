@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-05T18:43:50.274Z",
+  "updatedAt": "2026-08-05T19:23:55.969Z",
   "count": 495,
   "sources": [
     "IGN",
@@ -14,6 +14,60 @@
     "Игромания"
   ],
   "articles": [
+    {
+      "source": "PC Gamer",
+      "language": "en",
+      "title": "Grand Theft Auto 6 publisher is holding an investors call at a very unusual time this week",
+      "normalizedTitle": "grand theft auto 6 publisher is holding an investors call at a very unusual time this week",
+      "url": "https://www.pcgamer.com/games/grand-theft-auto/grand-theft-auto-6-publisher-is-holding-an-investors-call-at-a-very-unusual-time-this-week/",
+      "summary": "What could it mean?",
+      "publishedAt": "Wed, 05 Aug 2026 19:20:04 +0000"
+    },
+    {
+      "source": "GamesRadar+",
+      "language": "en",
+      "title": "Fallout 3 was \"not what we intended\" after tech constraints in 2008, says Bethesda vet Nate Purkeypile, so it's time for a \"better\" remaster",
+      "normalizedTitle": "fallout 3 was not what we intended after tech constraints in 2008 says bethesda vet nate purkeypile so it s time for a better remaster",
+      "url": "https://www.gamesradar.com/games/fallout/fallout-3-was-not-what-we-intended-after-tech-constraints-in-2008-says-bethesda-vet-nate-purkeypile-so-its-time-for-a-better-remaster/",
+      "summary": "Never too late to try again",
+      "publishedAt": "Wed, 05 Aug 2026 19:08:57 +0000"
+    },
+    {
+      "source": "GamesRadar+",
+      "language": "en",
+      "title": "PlayStation is getting \"most\" of Sony's estimated $508 million tariff refund, but despite lawsuits there are no apparent plans to give refunds for price-hiked PS5s",
+      "normalizedTitle": "playstation is getting most of sony s estimated 508 million tariff refund but despite lawsuits there are no apparent plans to give refunds for price hiked ps5s",
+      "url": "https://www.gamesradar.com/platforms/playstation/playstation-is-getting-most-of-sonys-estimated-usd508-million-tariff-refund-but-despite-lawsuits-there-are-no-apparent-plans-to-give-refunds-for-price-hiked-ps5s/",
+      "summary": "The US government's 2025 tariffs were a big reason Sony increased PS5 prices",
+      "publishedAt": "Wed, 05 Aug 2026 19:00:17 +0000"
+    },
+    {
+      "source": "Polygon",
+      "language": "en",
+      "title": "Magic Designer Says This Underrated Avatar MTG Commander Deserves More Play",
+      "normalizedTitle": "magic designer says this underrated avatar mtg commander deserves more play",
+      "url": "https://www.polygon.com/mtg-avatar-the-last-airbender-best-commanders-katara-water-tribes-hope-underrated/",
+      "summary": "The lead designer on Avatar: The Last Airbender's Universes Beyond crossover thinks one Magic: The Gathering card deserves another look.",
+      "publishedAt": "Wed, 05 Aug 2026 19:00:12 GMT"
+    },
+    {
+      "source": "Polygon",
+      "language": "en",
+      "title": "Halo remake isn't doing so hot on PS5 compared to Black Ops ports",
+      "normalizedTitle": "halo remake isn t doing so hot on ps5 compared to black ops ports",
+      "url": "https://www.polygon.com/halo-campaign-evolved-call-of-duty-black-ops-sales-comparison/",
+      "summary": "Call of Duty: Black Ops and Black Ops 2 recently came to the PS4 and PS5, where they're dramatically outselling Halo: Campaign Evolved.",
+      "publishedAt": "Wed, 05 Aug 2026 18:53:15 GMT"
+    },
+    {
+      "source": "GameSpot",
+      "language": "en",
+      "title": "Minecraft Is Coming To Switch 2 In October, With An Upgrade Path For Switch Owners",
+      "normalizedTitle": "minecraft is coming to switch 2 in october with an upgrade path for switch owners",
+      "url": "https://www.gamespot.com/articles/minecraft-is-coming-to-switch-2-in-october-with-an-upgrade-path-for-switch-owners/",
+      "summary": "Minecraft is officially launching October 27 for Nintendo Switch 2, bringing with it what developer Mojang calls \"Vibrant Visuals\" as well as an upgrade path for original Switch owners. While Minecraft has been playable on the Switch 2 thanks to backwards compatibility, the Switch 2 version will bring some improvements that take advantage of Nintendo's latest hardware. In a blog post , Mojang labeled the Switch 2 version's graphical improvements as a new \"Vibrant Visuals\" experience that will offer enhanced lighting, shadows, and more. Not everything will support \"Vibrant Visuals,\" according t",
+      "publishedAt": "Wed, 05 Aug 2026 18:50:25 +0000"
+    },
     {
       "source": "Polygon",
       "language": "en",
@@ -157,15 +211,6 @@
       "url": "https://www.ign.com/articles/xbox-console-updates-adding-new-capture-and-achievement-features",
       "summary": "Xbox has announced another set of new console features, which will begin rolling out to some users from today.",
       "publishedAt": "Wed, 5 Aug 2026 16:31:47 +0000"
-    },
-    {
-      "source": "Polygon",
-      "language": "en",
-      "title": "James Cameron Says He May Finally Move on from Avatar and Tell “Other Stories”",
-      "normalizedTitle": "james cameron says he may finally move on from avatar and tell other stories",
-      "url": "https://www.polygon.com/james-cameron-moving-on-from-avatar-next-project/",
-      "summary": "In a recent interview, James Cameron said he's currently planning the \"last act\" of his career and implied that Avatar may not be in it.",
-      "publishedAt": "Wed, 05 Aug 2026 16:30:22 GMT"
     },
     {
       "source": "PC Gamer",
@@ -346,15 +391,6 @@
       "url": "https://www.gamespot.com/articles/kingdom-come-actor-is-living-my-dream-opening-a-medieval-pub-to-drink-beer-and-eat-food-with-friends/",
       "summary": "British actor Luke Dale, known for his roles in the Kingdom Come RPG series and EA's Battlefield V, has announced that he bought a tavern in the Czech Republic and plans to turn it into a medieval-inspired social gathering place with great food and drinks. \"Is this the dumbest thing I've ever done? There's a lot of competition for that title, but maybe,\" he said in a newly released video ( via GamesRadar ). The tavern, which is called the Nobleman, is located in Vinohrady. It's aiming to be a Bohemian-inspired tavern that isn't a themed pub or a tourist destination, but instead a cozy gatherin",
       "publishedAt": "Wed, 05 Aug 2026 15:56:02 +0000"
-    },
-    {
-      "source": "Polygon",
-      "language": "en",
-      "title": "Monster Hunter Wilds finally has a demo, with big limitations",
-      "normalizedTitle": "monster hunter wilds finally has a demo with big limitations",
-      "url": "https://www.polygon.com/monster-hunter-wilds-demo-release-capcom/",
-      "summary": "A year and a half after launch, and ahead of the Ascendance expansion, Capcom has released a Monster Hunter Wilds demo on console and PC.",
-      "publishedAt": "Wed, 05 Aug 2026 15:52:09 GMT"
     },
     {
       "source": "GamesRadar+",
@@ -1230,15 +1266,6 @@
       "publishedAt": "Tue, 04 Aug 2026 20:31:26 +0000"
     },
     {
-      "source": "GameSpot",
-      "language": "en",
-      "title": "EA Has Officially Been Sold, With Trump&#8217;s Son-In-Law Taking A Stake And Mass Layoffs Expected",
-      "normalizedTitle": "ea has officially been sold with trump 8217 s son in law taking a stake and mass layoffs expected",
-      "url": "https://www.gamespot.com/articles/ea-has-officially-been-sold-and-what-comes-next-could-be-painful/",
-      "summary": "The blockbuster buyout of Electronic Arts has been completed, with Saudi Arabia's Public Investment Fund taking ownership of the gaming giant in the biggest leveraged buyout (LBO) in the history of commerce . The $55 billion deal includes billions in debt for EA, which has prompted fears of massive cost-cutting with projected layoffs, studio closures, and game cancellations. Nothing has been confirmed as of yet, but a Bloomberg story from earlier this year said EA would look to have $700 million in cost savings , including $170 million in \"organizational efficiencies,\" that will likely come th",
-      "publishedAt": "Tue, 04 Aug 2026 20:27:24 +0000"
-    },
-    {
       "source": "GamesRadar+",
       "language": "en",
       "title": "The biggest Baldur's Gate 3 save scummers slammed quicksave over 1,400 times in one go, Larian says: \"You doing okay there?\"",
@@ -1347,15 +1374,6 @@
       "publishedAt": "Tue, 04 Aug 2026 17:15:52 +0000"
     },
     {
-      "source": "GamesRadar+",
-      "language": "en",
-      "title": "Thanks to Pokemon, X-Files, and Donkey Kong, this month's new Lego sets might be the best we've had all year",
-      "normalizedTitle": "thanks to pokemon x files and donkey kong this month s new lego sets might be the best we ve had all year",
-      "url": "https://www.gamesradar.com/toys-collectibles/best-new-lego-sets-in-august-2026/",
-      "summary": "I've rounded up every single kit launching this month, including the three I think are the best new Lego sets in August 2026",
-      "publishedAt": "Tue, 04 Aug 2026 17:13:29 +0000"
-    },
-    {
       "source": "PC Gamer",
       "language": "en",
       "title": "Larian drops new Baldur's Gate 3 stats and you're all monsters: More non-Durge players killed Alfira than Durge and, worst of all, 9,000 people played on portrait monitors",
@@ -1363,15 +1381,6 @@
       "url": "https://www.pcgamer.com/games/baldurs-gate/larian-drops-new-baldurs-gate-3-stats-and-youre-all-monsters-more-non-durge-players-killed-alfira-than-durge-and-worst-of-all-9-000-people-played-on-portrait-monitors/",
       "summary": "Excuse me, I feel sick.",
       "publishedAt": "Tue, 04 Aug 2026 17:03:17 +0000"
-    },
-    {
-      "source": "GamesRadar+",
-      "language": "en",
-      "title": "After earning $1 million on Steam from a game that took 4 months to make, stunned devs end up in Valve's coveted \"chocolate tier\"",
-      "normalizedTitle": "after earning 1 million on steam from a game that took 4 months to make stunned devs end up in valve s coveted chocolate tier",
-      "url": "https://www.gamesradar.com/games/strategy/after-earning-usd1-million-on-steam-from-a-game-that-took-4-months-to-make-stunned-devs-end-up-in-valves-coveted-chocolate-tier/",
-      "summary": "It took \"exactly 1 week\"",
-      "publishedAt": "Tue, 04 Aug 2026 16:49:21 +0000"
     },
     {
       "source": "Rock Paper Shotgun",
@@ -1705,15 +1714,6 @@
       "url": "https://www.eurogamer.net/beast-of-reincarnation-review",
       "summary": "Game Freak borrows liberally from the genre's biggest hits. And while it's messy and muddled, it's salvaged by exhilarating combat and traversal, and a surprising amount of soul. Read more",
       "publishedAt": "Tue, 04 Aug 2026 00:00:00 +0000"
-    },
-    {
-      "source": "PC Gamer",
-      "language": "en",
-      "title": "Henry Cavill confirms he'll star in the live action Warhammer 40K series written by Mike Flanagan, but his character 'shall remain a secret for now'",
-      "normalizedTitle": "henry cavill confirms he ll star in the live action warhammer 40k series written by mike flanagan but his character shall remain a secret for now",
-      "url": "https://www.pcgamer.com/movies-tv/henry-cavill-confirms-hell-star-in-the-live-action-warhammer-40k-series-written-by-mike-flanagan-but-his-character-shall-remain-a-secret-for-now/",
-      "summary": "Will Cavill play Titus? Cain? Eisenhorn? Or a brand new 40K character?",
-      "publishedAt": "Mon, 03 Aug 2026 23:58:14 +0000"
     },
     {
       "source": "Rock Paper Shotgun",
