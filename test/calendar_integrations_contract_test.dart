@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('normal category matching runs before calendar fallback', () {
+  test('normal deep category matching runs before calendar fallback', () {
     final hook = File(
       'pb_hooks/calendar_integrations.pb.js',
     ).readAsStringSync();
@@ -17,6 +17,10 @@ void main() {
     final resolver = hook.substring(resolverStart, resolverEnd);
 
     expect(resolver, contains('__calendarCategoryScore'));
+    expect(
+      resolver,
+      contains('effectiveScore = score + (score >= 2500 ? depth * 5000 : 0)'),
+    );
     expect(resolver.indexOf('if (best) return best.id;'), greaterThan(0));
     expect(
       resolver.indexOf('if (best) return best.id;'),
