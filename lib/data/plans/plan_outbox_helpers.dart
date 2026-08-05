@@ -613,6 +613,7 @@ extension PlanOutboxSyncExtension on DatabaseService {
     return true;
   }
 
+
   /// Durable write-ahead staging for a plan edit. The optimistic cache is already
   /// visible before this awaits SharedPreferences; PocketBase network I/O starts only
   /// after the mutation survives process death.

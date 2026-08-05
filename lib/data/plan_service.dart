@@ -8,8 +8,10 @@ bool get _isPlansTableConfigured => true;
 
 bool _planMutationOutboxFlushInFlight = false;
 
+
 final StreamController<List<PlanningTask>> _tasksController =
     StreamController<List<PlanningTask>>.broadcast();
+
 
 /// In-memory all-user plans (single source for Planning + Lists); refreshed by fetch, PATCH merge, realtime.
 List<PlanningTask> _allPlansUserCache = [];
@@ -17,6 +19,7 @@ DateTime? _allPlansUserCacheFetchedAt;
 const Duration _allPlansUserCacheFreshTtl = Duration(seconds: 30);
 Future<void>? _plansRealtimeSubscribeFuture;
 Future<void> Function()? _plansRealtimeUnsubscribe;
+
 
 List<PlanningTask> _tasksCache = [];
 
@@ -34,10 +37,12 @@ extension PlanServiceExtension on DatabaseService {
     _emitTimelineRefreshRaw();
   }
 
+
   bool _wallScheduleMatches(PlanningTask a, PlanningTask b) {
     if (a.startTime != b.startTime) return false;
     return a.endDateTime == b.endDateTime;
   }
+
 
   bool _planTagsEqual(List<Tag> a, List<Tag> b) {
     if (a.length != b.length) return false;
@@ -102,6 +107,7 @@ extension PlanServiceExtension on DatabaseService {
     await _fetchAllPlanningTasksForCurrentUser();
   }
 
+
   Stream<List<PlanningTask>> get tasksStream => Stream.multi((c) {
     c.add(List.from(_tasksCache));
     _tasksController.stream.listen(c.add, onError: c.addError);
@@ -165,6 +171,7 @@ extension PlanServiceExtension on DatabaseService {
       _tasksCache = [];
     }
   }
+
 
   /// Next `order` for a new plan on this wall day (for optimistic + POST).
   /// Plans for a wall day (same source as Planning tab). For UI manual `source_plan_id` linking.
@@ -421,6 +428,7 @@ extension PlanServiceExtension on DatabaseService {
       endUtcInstant: endUtc?.toUtc(),
     );
   }
+
 
   /// All **plans** for the current user (raw maps; includes `tags_link` expand when present).
   Future<List<Map<String, dynamic>>> fetchPlans() async {
@@ -725,6 +733,7 @@ extension PlanServiceExtension on DatabaseService {
     }());
   }
 
+
   Future<Map<String, dynamic>> _buildPocketPlanCreateBody(
     PlanningTask task, {
     required String titleTrimmed,
@@ -807,6 +816,7 @@ extension PlanServiceExtension on DatabaseService {
     return body;
   }
 
+
   Future<bool> _addPlanningTaskPocket(
     PlanningTask task, {
     required String titleTrimmed,
@@ -852,7 +862,10 @@ extension PlanServiceExtension on DatabaseService {
       return false;
     }
     // Write-ahead: persist the create intent before the asynchronous POST.
-    await _enqueuePlanCreateMutation(body, businessId: clientPlanId);
+    await _enqueuePlanCreateMutation(
+      body,
+      businessId: clientPlanId,
+    );
     await offlineSync.refreshPendingCount();
     try {
       final record = await _pb
@@ -982,7 +995,7 @@ extension PlanServiceExtension on DatabaseService {
       DatabaseService._log('[ADD_PLAN][FAIL] exception: $e\n$st');
       return false;
     }
-  }
+    }
 
   /// Flat `plans` scalar PATCH map (no `user_id` key). Shared by [updatePlanningTask] and [bulkUpdatePlans].
   Map<String, dynamic> _scalarPatchBodyForPlanningRow({
@@ -1879,3 +1892,4 @@ extension PlanServiceExtension on DatabaseService {
     );
   }
 }
+
