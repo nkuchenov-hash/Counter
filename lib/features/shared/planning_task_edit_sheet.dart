@@ -50,7 +50,7 @@ class PlanningTaskEditSheet extends StatefulWidget {
 }
 
 class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late final TextEditingController _titleController;
   late final QuillController _quillController;
   late final FocusNode _quillFocusNode;
@@ -94,6 +94,7 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _baselineTask = widget.task;
     _startedAsUndatedBacklog =
         widget.task.startTime == null && widget.task.dateKey.trim().length < 10;
@@ -179,6 +180,7 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     if (_isPersistedPlan) {
       _planAutosaveGate.flush(() {
         final latest = _buildDraftTask();
@@ -201,6 +203,35 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
       c.dispose();
     }
     super.dispose();
+  }
+
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.inactive &&
+        state != AppLifecycleState.paused &&
+        state != AppLifecycleState.detached) {
+      return;
+    }
+    _flushDirtyPlanDraftForLifecycle();
+  }
+
+  void _flushDirtyPlanDraftForLifecycle() {
+    if (!_isPersistedPlan || !_planAutosaveGate.isDirty) return;
+    if (DatabaseService.instance.planningTaskIsRecurringForScope(
+          _baselineTask,
+        ) &&
+        _recurrenceEditScopeChosen == null) {
+      // Recurring edits still require the explicit scope decision; never guess
+      // while the app is being backgrounded.
+      return;
+    }
+    _planAutosaveGate.flush(() {
+      final latest = _buildDraftTask();
+      if (latest == null) return;
+      _applyPlanDraftLocally(latest);
+      unawaited(_syncPlanDraftToNetwork(latest));
+    });
   }
 
   void _applyFuzzyCategoryFromTitle(String title) {

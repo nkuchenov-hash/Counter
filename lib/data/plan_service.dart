@@ -7,11 +7,11 @@ const String _plansToTagsLinkColumnSystemId = 'cnmo43ed26h293n';
 bool get _isPlansTableConfigured => true;
 
 bool _planMutationOutboxFlushInFlight = false;
-
+final Map<String, int> _pendingPlanMutationRevisionByBusinessId =
+    <String, int>{};
 
 final StreamController<List<PlanningTask>> _tasksController =
     StreamController<List<PlanningTask>>.broadcast();
-
 
 /// In-memory all-user plans (single source for Planning + Lists); refreshed by fetch, PATCH merge, realtime.
 List<PlanningTask> _allPlansUserCache = [];
@@ -19,7 +19,6 @@ DateTime? _allPlansUserCacheFetchedAt;
 const Duration _allPlansUserCacheFreshTtl = Duration(seconds: 30);
 Future<void>? _plansRealtimeSubscribeFuture;
 Future<void> Function()? _plansRealtimeUnsubscribe;
-
 
 List<PlanningTask> _tasksCache = [];
 
@@ -37,12 +36,10 @@ extension PlanServiceExtension on DatabaseService {
     _emitTimelineRefreshRaw();
   }
 
-
   bool _wallScheduleMatches(PlanningTask a, PlanningTask b) {
     if (a.startTime != b.startTime) return false;
     return a.endDateTime == b.endDateTime;
   }
-
 
   bool _planTagsEqual(List<Tag> a, List<Tag> b) {
     if (a.length != b.length) return false;
@@ -107,7 +104,6 @@ extension PlanServiceExtension on DatabaseService {
     await _fetchAllPlanningTasksForCurrentUser();
   }
 
-
   Stream<List<PlanningTask>> get tasksStream => Stream.multi((c) {
     c.add(List.from(_tasksCache));
     _tasksController.stream.listen(c.add, onError: c.addError);
@@ -171,7 +167,6 @@ extension PlanServiceExtension on DatabaseService {
       _tasksCache = [];
     }
   }
-
 
   /// Next `order` for a new plan on this wall day (for optimistic + POST).
   /// Plans for a wall day (same source as Planning tab). For UI manual `source_plan_id` linking.
@@ -428,7 +423,6 @@ extension PlanServiceExtension on DatabaseService {
       endUtcInstant: endUtc?.toUtc(),
     );
   }
-
 
   /// All **plans** for the current user (raw maps; includes `tags_link` expand when present).
   Future<List<Map<String, dynamic>>> fetchPlans() async {
@@ -733,7 +727,6 @@ extension PlanServiceExtension on DatabaseService {
     }());
   }
 
-
   Future<Map<String, dynamic>> _buildPocketPlanCreateBody(
     PlanningTask task, {
     required String titleTrimmed,
@@ -816,7 +809,6 @@ extension PlanServiceExtension on DatabaseService {
     return body;
   }
 
-
   Future<bool> _addPlanningTaskPocket(
     PlanningTask task, {
     required String titleTrimmed,
@@ -861,6 +853,13 @@ extension PlanServiceExtension on DatabaseService {
       notifyPlanningRefresh(scheduleNetworkRefresh: false);
       return false;
     }
+    // Write-ahead: persist the create intent before the asynchronous POST.
+    final writeAheadReceipt = await _enqueuePlanCreateMutation(
+      body,
+      businessId: clientPlanId,
+      tags: task.tags,
+    );
+    await offlineSync.refreshPendingCount();
     try {
       final record = await _pb
           .collection(PbCollections.plans)
@@ -880,7 +879,10 @@ extension PlanServiceExtension on DatabaseService {
       );
       _upsertPlanInUserCache(fromServer);
       _allPlansUserCacheFetchedAt = DateTime.now();
-      clearOptimisticPlanningForPlanRow(optimisticId);
+      await _acknowledgePlanMutation(writeAheadReceipt);
+      if (!_hasPendingPlanMutationForBusinessId(clientPlanId)) {
+        clearOptimisticPlanningForPlanRow(optimisticId);
+      }
       notifyPlanningRefresh(scheduleNetworkRefresh: false);
       return true;
     } on ClientException catch (e, st) {
@@ -888,35 +890,22 @@ extension PlanServiceExtension on DatabaseService {
       DatabaseService._log(st.toString());
       final code = e.statusCode;
       if (code == 401 || code == 403) {
-        await _enqueuePlanCreateMutation(
-          body,
-          businessId: clientPlanId,
-          error: code,
-          syncStatus: PlanMutationOutbox.syncStatusPausedAuth,
-        );
         offlineSync.setAuthPaused(true, message: 'HTTP $code');
         return true;
       }
       if (_planMutationRetriableHttpCode(code) || _pbHttpBackoffActive) {
-        await _enqueuePlanCreateMutation(
-          body,
-          businessId: clientPlanId,
-          error: code,
-        );
         offlineSync.setConnectivityOffline(true);
         return true;
       }
-      clearOptimisticPlanningForPlanRow(optimisticId);
+      await _acknowledgePlanMutation(writeAheadReceipt);
+      if (!_hasPendingPlanMutationForBusinessId(clientPlanId)) {
+        clearOptimisticPlanningForPlanRow(optimisticId);
+      }
       notifyPlanningRefresh(scheduleNetworkRefresh: false);
       return false;
     } catch (e, st) {
       DatabaseService._log('ADD_PLAN_PB: $e');
       DatabaseService._log(st.toString());
-      await _enqueuePlanCreateMutation(
-        body,
-        businessId: clientPlanId,
-        error: e,
-      );
       offlineSync.setConnectivityOffline(true);
       return true;
     }
@@ -985,7 +974,7 @@ extension PlanServiceExtension on DatabaseService {
       DatabaseService._log('[ADD_PLAN][FAIL] exception: $e\n$st');
       return false;
     }
-    }
+  }
 
   /// Flat `plans` scalar PATCH map (no `user_id` key). Shared by [updatePlanningTask] and [bulkUpdatePlans].
   Map<String, dynamic> _scalarPatchBodyForPlanningRow({
@@ -1285,6 +1274,13 @@ extension PlanServiceExtension on DatabaseService {
       rid,
       planBusinessId: planBusinessId,
     );
+    final writeAheadReceipt = await _stagePlanUpdateWriteAhead(
+      originalInput: rid,
+      businessId: businessId,
+      patchBody: patchBody,
+      pocketBaseId: shadowPb,
+      tags: tags,
+    );
     if (autoCategoryId != null &&
         oldCategoryId != null &&
         oldCategoryId != autoCategoryId &&
@@ -1302,6 +1298,7 @@ extension PlanServiceExtension on DatabaseService {
           originalInput: rid,
           resolvedPbId: shadowPb,
           businessId: businessId,
+          writeAheadReceipt: writeAheadReceipt,
           patchBody: patchBody,
           tags: tags,
           suppressAppSnack: suppressAppSnack,
@@ -1317,19 +1314,6 @@ extension PlanServiceExtension on DatabaseService {
           planBusinessId: planBusinessId,
         );
         if (!DatabaseService._isLikelyPocketBaseRowId(restId)) {
-          List<String>? tagIds;
-          if (tags != null) {
-            tagIds = await _pbTagRecordIdsFromTags(tags);
-          }
-          final scalarOnly = Map<String, dynamic>.from(patchBody);
-          scalarOnly.remove('user_id');
-          await _enqueuePlanUpdateMutation(
-            originalInput: rid,
-            businessId: businessId,
-            patchFields: scalarOnly,
-            tagsLinkPbIds: tagIds,
-            error: 'unresolved_pb_id',
-          );
           offlineSync.setConnectivityOffline(true);
           return;
         }
@@ -1337,6 +1321,7 @@ extension PlanServiceExtension on DatabaseService {
           originalInput: rid,
           resolvedPbId: restId,
           businessId: businessId,
+          writeAheadReceipt: writeAheadReceipt,
           patchBody: patchBody,
           tags: tags,
           suppressAppSnack: suppressAppSnack,
@@ -1345,14 +1330,6 @@ extension PlanServiceExtension on DatabaseService {
         DatabaseService._log('UPDATE_PLANNING_TASK_PB async: $e');
         DatabaseService._log(st.toString());
         if (_planMutationRetriableHttpCode(0)) {
-          final scalarOnly = Map<String, dynamic>.from(patchBody);
-          scalarOnly.remove('user_id');
-          await _enqueuePlanUpdateMutation(
-            originalInput: rid,
-            businessId: businessId,
-            patchFields: scalarOnly,
-            error: e,
-          );
           offlineSync.setConnectivityOffline(true);
         } else if (!suppressAppSnack) {
           AppSnack.failed();
@@ -1729,23 +1706,28 @@ extension PlanServiceExtension on DatabaseService {
       }
       final rec = e.record;
       if (rec == null) return;
-      unawaited(() async {
-        try {
-          final tagCatalog = await _fetchPlanAndListTagCatalog();
-          final task = _planningTaskFromPocketRecord(
-            rec,
-            pocketTagCatalog: tagCatalog,
-          );
-          _upsertPlanInUserCache(task);
-          _allPlansUserCacheFetchedAt = DateTime.now();
-          final biz = _planBusinessUuidFromTask(task);
+      // Realtime delivery must never wait for another HTTP request. The event
+      // is merged immediately using the current tag catalog/expand payload.
+      try {
+        final task = _planningTaskFromPocketRecord(
+          rec,
+          pocketTagCatalog: _userTagsCatalogCache,
+        );
+        _upsertPlanInUserCache(task);
+        _allPlansUserCacheFetchedAt = DateTime.now();
+        final biz = _planBusinessUuidFromTask(task);
+        if (!_hasPendingPlanMutationForBusinessId(biz)) {
           if (biz != null && biz.isNotEmpty) {
             clearOptimisticPlanningForPlanRow('optimistic-$biz');
           }
           clearOptimisticPlanningForPlanRow(task.planRowIdForBackend);
-          notifyPlanningRefresh(scheduleNetworkRefresh: false);
-        } catch (_) {}
-      }());
+        }
+        notifyPlanningRefresh(scheduleNetworkRefresh: false);
+      } catch (error, stackTrace) {
+        if (kDebugMode) {
+          debugPrint('plans realtime merge failed: $error\n$stackTrace');
+        }
+      }
     } catch (_) {}
   }
 
@@ -1872,4 +1854,3 @@ extension PlanServiceExtension on DatabaseService {
     );
   }
 }
-
