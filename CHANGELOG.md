@@ -1,3 +1,9 @@
+## 2026-08-05 — Realtime activates on app open
+
+- Cold start now arms PocketBase records/plans/catalog subscriptions immediately after profile hydration instead of depending on the post-frame maintenance queue.
+- A transient startup PocketBase backoff now schedules one automatic retry after the cooldown; no user action and no periodic polling are required.
+- App-open/resume sync uses one deduplicated push-first path followed by a single catch-up fetch for events missed while suspended.
+
 # 📖 DEV_JOURNAL (Changelog)
 
 > **WARNING FOR AI:** Read the latest entries to understand what features are ALREADY built and do not need to be recreated.
