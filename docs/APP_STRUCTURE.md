@@ -131,6 +131,7 @@ Compatibility re-exports (remove when callers migrate): root `lib/app_shell.dart
 | `records/record_crud.dart` | Record CRUD, PATCH/DELETE network phases, `writeRecord` / `updateRecord` / `stopRecord` *(part)* |
 | `records/record_optimistic.dart` | Optimistic stop overlay, sacred handoff, pending-start map *(part)* |
 | `records/record_realtime.dart` | PocketBase records realtime subscribe/unsubscribe *(part)* |
+| `realtime/catalog_realtime.dart` | PocketBase realtime subscribe/reconnect for categories, tags, and profile rows *(part)* |
 | `records/record_timeline_vm.dart` | Timeline day index, warm window, row VM builders *(part)* |
 | `records/record_outbox_helpers.dart` | Record mutation outbox enqueue/flush/replay, Highlander server phase *(part)* |
 | `records/record_overlap_helpers.dart` | Highlander local apply, singleton reconcile, overlap probes *(part)* |
