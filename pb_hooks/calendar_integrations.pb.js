@@ -505,9 +505,12 @@ function __calendarResolveAutoCategory(app, userId, title, fallbackId) {
         var score = __calendarCategoryScore(title, titleTokens, categories[j]);
         if (score <= 0) continue;
         var depth = __calendarCategoryDepth(categories[j], byId, memo);
-        if (!best || score > bestScore || (score === bestScore && depth > bestDepth)) {
+        // A confident child-category match must outrank a matching parent path.
+        // Apply the depth bonus only to phrase/multi-token-grade matches.
+        var effectiveScore = score + (score >= 2500 ? depth * 5000 : 0);
+        if (!best || effectiveScore > bestScore || (effectiveScore === bestScore && depth > bestDepth)) {
             best = categories[j];
-            bestScore = score;
+            bestScore = effectiveScore;
             bestDepth = depth;
         }
     }
