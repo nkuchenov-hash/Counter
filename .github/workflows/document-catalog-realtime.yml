@@ -1,0 +1,43 @@
+name: Document catalog realtime module
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/document-catalog-realtime.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch-and-clean:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Add canonical structure entry
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('docs/APP_STRUCTURE.md')
+          text = path.read_text(encoding='utf-8')
+          old = "| `records/record_realtime.dart` | PocketBase records realtime subscribe/unsubscribe *(part)* |\n"
+          new = old + "| `realtime/catalog_realtime.dart` | PocketBase realtime subscribe/reconnect for categories, tags, and profile rows *(part)* |\n"
+          if text.count(old) != 1:
+              raise SystemExit(f'Expected one structure anchor, found {text.count(old)}')
+          path.write_text(text.replace(old, new, 1), encoding='utf-8')
+          PY
+
+      - name: Remove temporary workflow and commit
+        run: |
+          git rm .github/workflows/document-catalog-realtime.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/APP_STRUCTURE.md
+          git commit -m "Document catalog realtime module"
+          git push origin HEAD:main
