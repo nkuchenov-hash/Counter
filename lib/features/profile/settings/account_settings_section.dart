@@ -1,5 +1,17 @@
-import 'dart:async';import 'package:counter/features/auth/oauth_session.dart';import 'package:counter/data/auth_bridge.dart';import 'package:counter/data/database_service.dart';import 'package:counter/data/models.dart';import 'package:counter/l10n/dictionary.dart';import 'package:flutter/material.dart';/// Account: current user + Logout in one row (PocketBase-hydrated identity).
+import 'dart:async';
+
+import 'package:counter/data/auth_bridge.dart';
+import 'package:counter/data/database_service.dart';
+import 'package:counter/data/models.dart';
+import 'package:counter/features/auth/oauth_session.dart';
+import 'package:counter/features/profile/calendar_integrations/calendar_integrations_section.dart';
+import 'package:counter/l10n/dictionary.dart';
+import 'package:flutter/material.dart';
+
+/// Account: current user, connected calendars, and logout.
 class AccountSecuritySection extends StatelessWidget {
+  const AccountSecuritySection({super.key});
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -20,41 +32,51 @@ class AccountSecuritySection extends StatelessWidget {
                   ? (AuthBridge.currentAuthEmail ?? '—')
                   : t(currentLocale.value, 'profile_hydration_error_title'));
         final loc = currentLocale.value;
-        return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Expanded(
-                child: Text.rich(
-                  TextSpan(
-                    style: theme.textTheme.bodyLarge,
-                    children: [
-                      TextSpan(text: '${t(loc, 'signed_in_as')} '),
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Expanded(
+                    child: Text.rich(
                       TextSpan(
-                        text: subtitle,
-                        style: const TextStyle(fontWeight: FontWeight.w600),
+                        style: theme.textTheme.bodyLarge,
+                        children: [
+                          TextSpan(text: '${t(loc, 'signed_in_as')} '),
+                          TextSpan(
+                            text: subtitle,
+                            style: const TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                        ],
                       ),
-                    ],
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              const SizedBox(width: 8),
-              TextButton.icon(
-                onPressed: () => _logout(context),
-                icon: Icon(Icons.logout_rounded, color: scheme.error, size: 20),
-                label: Text(
-                  t(loc, 'log_out'),
-                  style: TextStyle(
-                    color: scheme.error,
-                    fontWeight: FontWeight.w600,
+                  const SizedBox(width: 8),
+                  TextButton.icon(
+                    onPressed: () => _logout(context),
+                    icon: Icon(
+                      Icons.logout_rounded,
+                      color: scheme.error,
+                      size: 20,
+                    ),
+                    label: Text(
+                      t(loc, 'log_out'),
+                      style: TextStyle(
+                        color: scheme.error,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
-                ),
+                ],
               ),
-            ],
-          ),
+            ),
+            const CalendarIntegrationsSection(),
+          ],
         );
       },
     );
