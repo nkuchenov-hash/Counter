@@ -29,6 +29,9 @@ jobs:
           channel: stable
           cache: true
 
+      - name: Adapt receipt patch to formatted tests
+        run: python .github/scripts/repair_receipt_v2.py
+
       - name: Apply duplicate-safe revision receipts
         run: python .github/scripts/apply_receipt_hardening_v2.py
 
