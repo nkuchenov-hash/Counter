@@ -13,7 +13,7 @@
 
 ## [2026-08-05] - Push-first multi-device sync reliability [shipped]
 
-* **Plans/Lists durability:** create and edit mutations now use a local write-ahead outbox before PocketBase POST/PATCH; successful server confirmation clears the staged mutation, while auth/network failures keep one coalesced replay item.
+* **Plans/Lists durability:** create and edit mutations now use a serialized local write-ahead outbox before PocketBase POST/PATCH; revision-specific acknowledgements prevent stale responses or concurrent flushes from deleting newer mobile edits, while auth/network failures keep one coalesced replay item.
 * **PocketBase realtime:** plan events merge immediately without a tag-catalog HTTP round trip; records, plans, categories, tags, and profile subscriptions are re-armed before one-shot resume catch-up, with no periodic polling.
 * **Mobile lifecycle:** dirty non-recurring plan drafts flush when the app becomes inactive/paused; realtime 404 no longer disables live sync silently for 30 minutes and retries the push channel after 30 seconds.
 * **Verification:** focused `live_sync_contract_test.dart`, analyzer, release web build, and Android arm64 APK build.

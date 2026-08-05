@@ -7,32 +7,35 @@ import 'package:shared_preferences/shared_preferences.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  test(
-    'write-ahead create is durable and duplicate staging coalesces',
-    () async {
-      SharedPreferences.setMockInitialValues(<String, Object>{});
-      final prefs = await SharedPreferences.getInstance();
-      await PlanMutationOutbox.enqueue(
-        prefs,
-        PlanMutationOutbox.newPlanCreateItem(
-          businessId: 'plan-1',
-          payload: <String, dynamic>{'plan_id': 'plan-1', 'title': 'Draft'},
-        ),
-      );
-      await PlanMutationOutbox.enqueue(
-        prefs,
-        PlanMutationOutbox.newPlanCreateItem(
-          businessId: 'plan-1',
-          payload: <String, dynamic>{'plan_id': 'plan-1', 'title': 'Draft'},
-          error: 503,
-        ),
-      );
-      final queue = await PlanMutationOutbox.load(prefs);
-      expect(queue, hasLength(1));
-      expect(queue.single['businessId'], 'plan-1');
-      expect(queue.single['lastError'], '503');
-    },
-  );
+  test('stale acknowledgement cannot delete a newer plan edit', () async {
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+    final prefs = await SharedPreferences.getInstance();
+    final first = await PlanMutationOutbox.enqueue(
+      prefs,
+      PlanMutationOutbox.newPlanUpdateItem(
+        businessId: 'plan-1',
+        originalQueryId: 'plan-1',
+        patchFields: <String, dynamic>{'title': 'First'},
+      ),
+    );
+    final latest = await PlanMutationOutbox.enqueue(
+      prefs,
+      PlanMutationOutbox.newPlanUpdateItem(
+        businessId: 'plan-1',
+        originalQueryId: 'plan-1',
+        patchFields: <String, dynamic>{'title': 'Latest'},
+      ),
+    );
+
+    expect(await PlanMutationOutbox.acknowledge(prefs, first), isFalse);
+    var queue = await PlanMutationOutbox.load(prefs);
+    expect(queue, hasLength(1));
+    expect((queue.single['payload'] as Map)['title'], 'Latest');
+
+    expect(await PlanMutationOutbox.acknowledge(prefs, latest), isTrue);
+    queue = await PlanMutationOutbox.load(prefs);
+    expect(queue, isEmpty);
+  });
 
   test('plan create and update stage outbox before PocketBase network', () {
     final service = File('lib/data/plan_service.dart').readAsStringSync();
@@ -61,8 +64,9 @@ void main() {
     expect(updateStage, lessThan(updateDispatch));
     expect(
       outbox,
-      contains('await _cancelPendingPlanMutationsForBusinessId(businessId)'),
+      contains('await _acknowledgePlanMutation(writeAheadReceipt)'),
     );
+    expect(outbox, isNot(contains('await _pbTagRecordIdsFromTags(tags);')));
   });
 
   test(
