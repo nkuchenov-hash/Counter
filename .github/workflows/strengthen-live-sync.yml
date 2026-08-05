@@ -29,6 +29,9 @@ jobs:
           channel: stable
           cache: true
 
+      - name: Repair receipt hardening matcher
+        run: python .github/scripts/repair_strengthen_live_sync_script.py
+
       - name: Apply revision-safe write-ahead receipts
         run: python .github/scripts/strengthen_live_sync_receipts.py
 
