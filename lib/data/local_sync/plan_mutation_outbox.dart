@@ -1,24 +1,28 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
+final class PlanMutationReceipt {
+  const PlanMutationReceipt({
+    required this.operationId,
+    required this.revision,
+    required this.kind,
+    required this.businessId,
+  });
+
+  final String operationId;
+  final int revision;
+  final String kind;
+  final String businessId;
+}
+
 /// Local-only queue for PocketBase **plans** mutations (Planning + Lists).
 ///
-/// ## O1.3 manual verification scenarios
-/// - **Create list item offline → restart → reconnect:** `plan_create` body in prefs;
-///   flush POSTs to PocketBase and merges PB system id into `_allPlansUserCache`.
-/// - **Edit plan offline → restart → reconnect:** merged `plan_update` PATCH replays.
-/// - **Done-toggle offline → reconnect:** `plan_update` with `is_done` syncs.
-/// - **Delete plan offline → reconnect:** `plan_delete` DELETE replays; 404 = success.
-/// - **Delete never-synced optimistic create:** pending `plan_create` dropped (no POST+DELETE).
-/// - **Auth expired (401/403):** `paused_auth` on item; [OfflineSyncController.authPaused] blocks flush.
-///
-/// ## Coalescing (`coalesceQueue`) — ordering (O1.4)
-/// - **create → update:** FIFO preserved; `plan_update` merges payloads per `businessId`
-///   (done-toggle `is_done` folds into one PATCH).
-/// - **delete:** drops all earlier pending ops for same `businessId` (including unsynced `plan_create`).
-/// - Distinct `businessId` values keep global enqueue order.
+/// Writes are serialized. Every coalesced mutation carries a monotonically
+/// increasing revision so an older network response cannot acknowledge a newer
+/// edit for the same plan.
 abstract final class PlanMutationOutbox {
   static const String _prefsKey = 'plan_mutation_outbox_v1';
   static const String _legacyCreateKey = 'plan_create_outbox_v1';
@@ -30,8 +34,23 @@ abstract final class PlanMutationOutbox {
   static const String syncStatusPending = 'pending';
   static const String syncStatusPausedAuth = 'paused_auth';
 
-  /// Tag link ids for replay — stripped before scalar PATCH.
+  /// Reserved local payload keys. They are removed before scalar PocketBase writes.
   static const String payloadTagsLinkKey = '__tags_link_pb_ids';
+  static const String payloadTagsSnapshotKey = '__tags_snapshot';
+
+  static Future<void> _writeChain = Future<void>.value();
+
+  static Future<T> _withWriteLock<T>(Future<T> Function() action) async {
+    final previous = _writeChain;
+    final release = Completer<void>();
+    _writeChain = release.future;
+    await previous;
+    try {
+      return await action();
+    } finally {
+      release.complete();
+    }
+  }
 
   static List<Map<String, dynamic>> _decode(String? raw) {
     if (raw == null || raw.trim().isEmpty) return [];
@@ -90,8 +109,7 @@ abstract final class PlanMutationOutbox {
   static Future<void> replaceAll(
     SharedPreferences prefs,
     List<Map<String, dynamic>> items,
-  ) =>
-      save(prefs, items);
+  ) => _withWriteLock(() => save(prefs, items));
 
   static String _newOperationId() {
     final r = Random.secure();
@@ -122,6 +140,9 @@ abstract final class PlanMutationOutbox {
   static bool _isUpdateItem(Map<String, dynamic> item) =>
       (item['kind'] ?? '').toString() == kindPlanUpdate;
 
+  static int _revisionOf(Map<String, dynamic> item) =>
+      (item['revision'] as num?)?.toInt() ?? 1;
+
   static List<Map<String, dynamic>> coalesceQueue(List<Map<String, dynamic>> q) {
     final out = <Map<String, dynamic>>[];
     final updateIndexByBiz = <String, int>{};
@@ -130,17 +151,16 @@ abstract final class PlanMutationOutbox {
       final item = Map<String, dynamic>.from(raw);
       final biz = _bizKey(item);
 
-      // Write-ahead create may be staged again with an auth/network error.
-      // Keep one durable create per business id and preserve its original FIFO slot.
       if (_isCreateItem(item) && biz.isNotEmpty) {
-        final existingCreateIndex = out.indexWhere(
+        final existingIndex = out.indexWhere(
           (e) => _bizKey(e) == biz && _isCreateItem(e),
         );
-        if (existingCreateIndex >= 0) {
-          final existing = out[existingCreateIndex];
+        if (existingIndex >= 0) {
+          final existing = out[existingIndex];
           item['operationId'] = existing['operationId'];
           item['createdAt'] = existing['createdAt'];
-          out[existingCreateIndex] = item;
+          item['revision'] = _revisionOf(existing) + 1;
+          out[existingIndex] = item;
           continue;
         }
       }
@@ -178,6 +198,11 @@ abstract final class PlanMutationOutbox {
           existing['payload'] = <String, dynamic>{...prevPayload, ...nextPayload};
           final pb = (item['pocketBaseId'] ?? '').toString().trim();
           if (pb.isNotEmpty) existing['pocketBaseId'] = pb;
+          existing['revision'] = _revisionOf(existing) + 1;
+          existing['syncStatus'] = item['syncStatus'];
+          if (item.containsKey('lastError')) {
+            existing['lastError'] = item['lastError'];
+          }
           out[idx] = existing;
           continue;
         }
@@ -204,6 +229,7 @@ abstract final class PlanMutationOutbox {
   }) {
     return <String, dynamic>{
       'operationId': _newOperationId(),
+      'revision': 1,
       'collection': 'plans',
       'operationType': operationType,
       'businessId': businessId,
@@ -248,7 +274,7 @@ abstract final class PlanMutationOutbox {
     String syncStatus = syncStatusPending,
   }) {
     final payload = Map<String, dynamic>.from(patchFields);
-    if (tagsLinkPbIds != null && tagsLinkPbIds.isNotEmpty) {
+    if (tagsLinkPbIds != null) {
       payload[payloadTagsLinkKey] = tagsLinkPbIds;
     }
     return _baseItem(
@@ -281,19 +307,87 @@ abstract final class PlanMutationOutbox {
         syncStatus: syncStatus,
       );
 
-  static Future<void> enqueue(
+  static PlanMutationReceipt? receiptForItem(Map<String, dynamic> item) {
+    final operationId = (item['operationId'] ?? '').toString().trim();
+    final kind = (item['kind'] ?? '').toString().trim();
+    final businessId = _bizKey(item);
+    if (operationId.isEmpty || kind.isEmpty || businessId.isEmpty) return null;
+    return PlanMutationReceipt(
+      operationId: operationId,
+      revision: _revisionOf(item),
+      kind: kind,
+      businessId: businessId,
+    );
+  }
+
+  static bool _matchesReceipt(
+    Map<String, dynamic> item,
+    PlanMutationReceipt receipt,
+  ) =>
+      (item['operationId'] ?? '').toString() == receipt.operationId &&
+      _revisionOf(item) == receipt.revision &&
+      (item['kind'] ?? '').toString() == receipt.kind &&
+      _bizKey(item) == receipt.businessId;
+
+  static Future<PlanMutationReceipt?> enqueue(
     SharedPreferences prefs,
     Map<String, dynamic> item,
-  ) async {
+  ) => _withWriteLock(() async {
     final q = await load(prefs);
     q.add(item);
-    await save(prefs, coalesceQueue(q));
-  }
+    final next = coalesceQueue(q);
+    await save(prefs, next);
+    final businessId = _bizKey(item);
+    final kind = (item['kind'] ?? '').toString();
+    for (final candidate in next.reversed) {
+      if (_bizKey(candidate) == businessId &&
+          (candidate['kind'] ?? '').toString() == kind) {
+        return receiptForItem(candidate);
+      }
+    }
+    return null;
+  });
+
+  static Future<bool> acknowledge(
+    SharedPreferences prefs,
+    PlanMutationReceipt? receipt,
+  ) => _withWriteLock(() async {
+    if (receipt == null) return false;
+    final q = await load(prefs);
+    final next = q.where((item) => !_matchesReceipt(item, receipt)).toList();
+    if (next.length == q.length) return false;
+    await save(prefs, next);
+    return true;
+  });
+
+  static Future<bool> markRetryIfCurrent(
+    SharedPreferences prefs,
+    PlanMutationReceipt? receipt, {
+    required String lastError,
+    String? syncStatus,
+  }) => _withWriteLock(() async {
+    if (receipt == null) return false;
+    final q = await load(prefs);
+    var changed = false;
+    final next = <Map<String, dynamic>>[];
+    for (final raw in q) {
+      final item = Map<String, dynamic>.from(raw);
+      if (_matchesReceipt(item, receipt)) {
+        item['retryCount'] = ((item['retryCount'] as num?)?.toInt() ?? 0) + 1;
+        item['lastError'] = lastError;
+        if (syncStatus != null) item['syncStatus'] = syncStatus;
+        changed = true;
+      }
+      next.add(item);
+    }
+    if (changed) await save(prefs, next);
+    return changed;
+  });
 
   static Future<void> removePendingForBusinessId(
     SharedPreferences prefs,
     String businessId,
-  ) async {
+  ) => _withWriteLock(() async {
     final biz = businessId.trim();
     if (biz.isEmpty) return;
     final q = await load(prefs);
@@ -302,5 +396,5 @@ abstract final class PlanMutationOutbox {
     if (next.length != q.length) {
       await save(prefs, next);
     }
-  }
+  });
 }
