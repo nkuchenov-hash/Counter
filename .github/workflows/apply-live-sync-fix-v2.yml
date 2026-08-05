@@ -14,7 +14,7 @@ jobs:
   apply-and-verify:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     steps:
       - name: Checkout branch
         uses: actions/checkout@v4
@@ -22,9 +22,10 @@ jobs:
           ref: fix/live-sync-push-20260805
           fetch-depth: 0
 
-      - name: Set up Flutter
+      - name: Set up Flutter 3.41.6
         uses: subosito/flutter-action@v2
         with:
+          flutter-version: '3.41.6'
           channel: stable
           cache: true
 
@@ -56,7 +57,7 @@ jobs:
         run: flutter test test/live_sync_contract_test.dart
 
       - name: Build release web
-        run: flutter build web --release --base-href="/Counter/" --no-tree-shake-icons --no-wasm-dry-run
+        run: flutter build web --release --base-href="/Counter/" --no-tree-shake-icons --no-wasm-dry-run --pwa-strategy=none
 
       - name: Build Android arm64 APK
         run: flutter build apk --release --target-platform android-arm64 --split-per-abi --no-tree-shake-icons
