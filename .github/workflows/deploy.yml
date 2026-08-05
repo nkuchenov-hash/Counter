@@ -1,5 +1,6 @@
 name: Deploy Flutter Web and Igropoisk to GitHub Pages
 
+# Counter and Igropoisk share one Pages artifact; each validation gate must use its canonical output path.
 on:
   push:
     branches:
