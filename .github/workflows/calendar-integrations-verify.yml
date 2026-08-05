@@ -17,7 +17,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   verify:
@@ -26,36 +26,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          ref: feature/calendar-integrations-v1
-
-      - name: Remove arbitrary category fallback once
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-          hook = Path('pb_hooks/calendar_integrations.pb.js')
-          text = hook.read_text(encoding='utf-8')
-          old = '    return categories.length ? categories[0].id : "";'
-          if old in text:
-              text = text.replace(old, '    return "";', 1)
-              hook.write_text(text, encoding='utf-8')
-          test = Path('test/calendar_integrations_contract_test.dart')
-          t = test.read_text(encoding='utf-8')
-          anchor = "    expect(hook, contains('\"ts\": \"technical\"'));\n"
-          assertion = "    expect(resolver, contains('return \\\"\\\";'));\n"
-          if assertion not in t:
-              if anchor not in t:
-                  raise SystemExit('test anchor missing')
-              t = t.replace(anchor, anchor + assertion, 1)
-              test.write_text(t, encoding='utf-8')
-          PY
-          if ! git diff --quiet; then
-            git config user.name github-actions[bot]
-            git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-            git add pb_hooks/calendar_integrations.pb.js test/calendar_integrations_contract_test.dart
-            git commit -m "Require explicit fallback for unmatched calendar events"
-            git push origin HEAD:feature/calendar-integrations-v1
-          fi
 
       - name: Validate PocketBase JavaScript syntax
         run: |
