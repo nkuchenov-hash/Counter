@@ -29,7 +29,7 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Repair receipt test wrapper and matchers
+      - name: Repair receipt test callback only
         run: python .github/scripts/repair_strengthen_live_sync_script.py
 
       - name: Apply revision-safe write-ahead receipts
