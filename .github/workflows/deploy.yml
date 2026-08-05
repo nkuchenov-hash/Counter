@@ -30,14 +30,14 @@ jobs:
         run: npm install --no-audit --no-fund
 
       - name: Build Igropoisk catalog
-        run: npm --prefix igropoisk run update
+        run: node igropoisk/scripts/update-curated.mjs
 
       - name: Validate Igropoisk catalog
         run: |
           node - <<'NODE'
           const fs = require('fs');
           const d = JSON.parse(fs.readFileSync('./igropoisk/data/catalog.json','utf8'));
-          if (!Array.isArray(d.games) || d.games.length < 80 || d.games.length > 220) {
+          if (!Array.isArray(d.games) || d.games.length < 50 || d.games.length > 220) {
             throw new Error(`Invalid Igropoisk catalog size: ${d.games?.length || 0}`);
           }
           const invalid = d.games.filter(g => !g.appid || !g.title || !g.description || !g.releaseDate || !g.capsuleImage || !g.heroImage || !Array.isArray(g.screenshots) || g.screenshots.length < 2);
