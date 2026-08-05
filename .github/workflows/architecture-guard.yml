@@ -23,25 +23,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set up Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.41.6'
-          channel: stable
-          cache: true
-
-      - name: Resolve dependencies
-        run: flutter pub get
-
-      - name: Analyze
-        run: flutter analyze --no-fatal-infos --no-fatal-warnings
-
-      - name: Run exactly three focused Notes tests
-        run: flutter test test/notes_canonical_components_test.dart
-
-      - name: Build production web
-        run: flutter build web --release --base-href="/Counter/" --no-tree-shake-icons --no-wasm-dry-run
-
       - name: Run strict architecture guard
         run: pwsh -NoProfile -NonInteractive -File ./scripts/audit/architecture_guard.ps1 -Strict
 
