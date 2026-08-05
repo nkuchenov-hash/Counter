@@ -1,6 +1,9 @@
 // ignore_for_file: unused_import
 part of 'database_service.dart';
 
+Future<void>? _foregroundDataRefreshFuture;
+Timer? _appOpenSyncRetryTimer;
+
 /// Bootstrap, PocketBase init/health, lifecycle observer, realtime reconnect,
 /// loadInitialData, clearLocalStateOnSignOut.
 extension DbCoreExtension on DatabaseService {
@@ -15,7 +18,8 @@ extension DbCoreExtension on DatabaseService {
       _pocketBase = PocketBase(
         baseUrl,
         authStore: AsyncAuthStore(
-          save: (data) async => prefs.setString(DatabaseService._pbAuthPrefsKey, data),
+          save: (data) async =>
+              prefs.setString(DatabaseService._pbAuthPrefsKey, data),
           initial: prefs.getString(DatabaseService._pbAuthPrefsKey),
           clear: () async => prefs.remove(DatabaseService._pbAuthPrefsKey),
         ),
@@ -50,7 +54,10 @@ extension DbCoreExtension on DatabaseService {
         s.contains('failed to establish sse');
   }
 
-  void _markRealtimeEndpointUnavailable(Object e, {String source = 'realtime'}) {
+  void _markRealtimeEndpointUnavailable(
+    Object e, {
+    String source = 'realtime',
+  }) {
     if (!_isRealtimeEndpointUnavailableError(e) &&
         !(e is ClientException && e.statusCode == 404)) {
       return;
@@ -118,8 +125,9 @@ extension DbCoreExtension on DatabaseService {
   }
 
   void _registerPocketBaseUnreachable(Object e) {
-    _pbNextAllowedNetworkAt =
-        DateTime.now().add(const Duration(seconds: DatabaseService._pbCircuitCooldownSeconds));
+    _pbNextAllowedNetworkAt = DateTime.now().add(
+      const Duration(seconds: DatabaseService._pbCircuitCooldownSeconds),
+    );
     _pbLastHealthProbeAt = DateTime.now();
     final wasOk = _pbLastHealthOk;
     _pbLastHealthOk = false;
@@ -160,8 +168,9 @@ extension DbCoreExtension on DatabaseService {
 
   void _maybeOpenPbCircuitFromListFailure(Object e, String reason) {
     if (!_isPbCircuitWorthyFailure(e)) return;
-    _pbNextAllowedNetworkAt =
-        DateTime.now().add(const Duration(seconds: DatabaseService._pbCircuitCooldownSeconds));
+    _pbNextAllowedNetworkAt = DateTime.now().add(
+      const Duration(seconds: DatabaseService._pbCircuitCooldownSeconds),
+    );
     if (kDebugMode) {
       debugPrint(
         '[PB] $reason — circuit ${DatabaseService._pbCircuitCooldownSeconds}s (404/connection): $e',
@@ -189,8 +198,10 @@ extension DbCoreExtension on DatabaseService {
   }
 
   Duration _recordsRealtimeDelayForCurrentFailureStreak() {
-    final idx =
-        _recordsRealtimeFailureStreak.clamp(0, DatabaseService._kRealtimeBackoffSeconds.length - 1);
+    final idx = _recordsRealtimeFailureStreak.clamp(
+      0,
+      DatabaseService._kRealtimeBackoffSeconds.length - 1,
+    );
     return Duration(seconds: DatabaseService._kRealtimeBackoffSeconds[idx]);
   }
 
@@ -212,7 +223,8 @@ extension DbCoreExtension on DatabaseService {
     if (isPbRealtimeUnavailable) return;
     _recordsRealtimeReconnectTimer?.cancel();
     final delay = _recordsRealtimeDelayForCurrentFailureStreak();
-    if (_recordsRealtimeFailureStreak < DatabaseService._kRealtimeBackoffSeconds.length) {
+    if (_recordsRealtimeFailureStreak <
+        DatabaseService._kRealtimeBackoffSeconds.length) {
       _recordsRealtimeFailureStreak++;
     }
     _recordsRealtimeReconnectTimer = Timer(delay, () {
@@ -229,7 +241,9 @@ extension DbCoreExtension on DatabaseService {
     if (_cachedFlatRecords.isNotEmpty) return;
     try {
       final prefs = _prefs ?? await SharedPreferences.getInstance();
-      final raw = prefs.getString(_scopedDataCacheKey(DatabaseService._cacheRecordsFlatKey));
+      final raw = prefs.getString(
+        _scopedDataCacheKey(DatabaseService._cacheRecordsFlatKey),
+      );
       if (raw == null || raw.trim().isEmpty) return;
       final decoded = jsonDecode(raw);
       if (decoded is! List) return;
@@ -245,10 +259,31 @@ extension DbCoreExtension on DatabaseService {
   // Lifecycle observer
   // ---------------------------------------------------------------------------
 
+  void _scheduleAppOpenSyncRetry() {
+    _appOpenSyncRetryTimer?.cancel();
+    final until = _pbNextAllowedNetworkAt;
+    final remaining = until?.difference(DateTime.now()) ?? Duration.zero;
+    final delay = remaining.isNegative ? Duration.zero : remaining;
+    _appOpenSyncRetryTimer = Timer(
+      delay + const Duration(milliseconds: 250),
+      () {
+        _appOpenSyncRetryTimer = null;
+        if (!_isInitialized || !(currentProfileId?.isNotEmpty ?? false)) {
+          return;
+        }
+        unawaited(refreshForegroundData());
+      },
+    );
+  }
+
   void _registerAppLifecycleObserverOnce() {
     if (DatabaseService._appLifecycleObserverRegistered) return;
     DatabaseService._appLifecycleObserver.onResumed = () {
-      unawaited(refreshForegroundData());
+      if (_pbHttpBackoffActive) {
+        _scheduleAppOpenSyncRetry();
+      } else {
+        unawaited(refreshForegroundData());
+      }
     };
     WidgetsBinding.instance.addObserver(DatabaseService._appLifecycleObserver);
     DatabaseService._appLifecycleObserverRegistered = true;
@@ -256,7 +291,9 @@ extension DbCoreExtension on DatabaseService {
 
   void _unregisterAppLifecycleObserver() {
     if (!DatabaseService._appLifecycleObserverRegistered) return;
-    WidgetsBinding.instance.removeObserver(DatabaseService._appLifecycleObserver);
+    WidgetsBinding.instance.removeObserver(
+      DatabaseService._appLifecycleObserver,
+    );
     DatabaseService._appLifecycleObserverRegistered = false;
     DatabaseService._appLifecycleObserver.onResumed = null;
   }
@@ -267,6 +304,9 @@ extension DbCoreExtension on DatabaseService {
 
   void clearLocalStateOnSignOut() {
     _unregisterAppLifecycleObserver();
+    _appOpenSyncRetryTimer?.cancel();
+    _appOpenSyncRetryTimer = null;
+    _foregroundDataRefreshFuture = null;
     _planAlarmRescheduleDebounceTimer?.cancel();
     _planAlarmRescheduleDebounceTimer = null;
     _planningNotifyNetworkDebounceTimer?.cancel();
@@ -495,7 +535,9 @@ extension DbCoreExtension on DatabaseService {
     _registerAppLifecycleObserverOnce();
     // LAW_OF_THE_MAIN_THREAD / Wear-lite: do not block watch bootstrap on realtime socket.
     unawaited(
-      _startRecordsRealtimeSubscription().catchError((Object _, StackTrace _) {}),
+      _startRecordsRealtimeSubscription().catchError(
+        (Object _, StackTrace _) {},
+      ),
     );
   }
 
@@ -511,6 +553,7 @@ extension DbCoreExtension on DatabaseService {
       _tasksController.add(List.from(_tasksCache));
       _isInitialized = true;
       _registerAppLifecycleObserverOnce();
+      _scheduleAppOpenSyncRetry();
       StartupLog.scheduleAfterFirstFrame(
         'deferredBootWork',
         _runDeferredBootWorkAfterFirstShell,
@@ -526,6 +569,9 @@ extension DbCoreExtension on DatabaseService {
     _tasksController.add(List.from(_tasksCache));
     _isInitialized = true;
     _registerAppLifecycleObserverOnce();
+    // App-open freshness must not depend on a frame callback or user gesture.
+    // Realtime is armed first; the following pull is a single catch-up only.
+    unawaited(refreshForegroundData());
     StartupLog.scheduleAfterFirstFrame(
       'deferredBootWork',
       _runDeferredBootWorkAfterFirstShell,
@@ -536,16 +582,6 @@ extension DbCoreExtension on DatabaseService {
   Future<void> _runDeferredBootWorkAfterFirstShell() async {
     final projected = getProjectedToday();
     final timelineToday = getTimelineDeviceLocalToday();
-    // Subscribe first so cross-device changes arriving during catch-up are not missed.
-    if (!_pbHttpBackoffActive) {
-      try {
-        await Future.wait<void>([
-          _startRecordsRealtimeSubscription(),
-          _startPlansRealtimeSubscription(),
-          _startCatalogRealtimeSubscriptions(),
-        ]);
-      } catch (_) {}
-    }
     if (kUseMountedDayStrip) {
       preparePlansMountedWindowBoot(projected, criticalOnly: true);
       prepareTimelineMountedWindowBoot(timelineToday, criticalOnly: true);
@@ -554,14 +590,8 @@ extension DbCoreExtension on DatabaseService {
       schedulePlansMountedWindowBootBackground(projected);
       scheduleTimelineMountedWindowBootBackground(timelineToday);
     } else {
-      StartupLog.deferred(
-        name: 'plansWarmWindow',
-        reason: 'backgroundOnly',
-      );
-      StartupLog.deferred(
-        name: 'timelineWarmWindow',
-        reason: 'backgroundOnly',
-      );
+      StartupLog.deferred(name: 'plansWarmWindow', reason: 'backgroundOnly');
+      StartupLog.deferred(name: 'timelineWarmWindow', reason: 'backgroundOnly');
       final warmSw = Stopwatch()..start();
       if (kPlansWarmWindowEnabled) {
         ensurePlansWarmWindow(projected);
@@ -587,38 +617,15 @@ extension DbCoreExtension on DatabaseService {
         blocksFirstFrame: false,
       );
     }
-    if (!_pbHttpBackoffActive) {
-      try {
-        await _fetchRecordsIntoCache(forceNetwork: true);
-        await _reconcileDuplicatePrimaryRunningRecords();
-      } catch (_) {}
-      try {
-        await _loadPlanningTasksForToday();
-      } catch (_) {}
-      unawaited(_loadRulesFromNoco().catchError((Object _, StackTrace _) {}));
-      persistPlansWarmSnapshotsToDisk();
-      persistTimelineWarmSnapshotsToDisk();
-    }
-    StartupLog.deferred(
-      name: 'syncBootstrap',
-      reason: 'canRunAfterShell',
-    );
-    unawaited(() async {
-      try {
-        await _ensureAllPlansUserCacheFresh(force: true);
-        notifyPlanningRefresh(scheduleNetworkRefresh: false, pumpNetworkNow: true);
-      } catch (_) {}
-    }());
+    StartupLog.deferred(name: 'syncBootstrap', reason: 'canRunAfterShell');
     unawaited(
-      _runOneShotUntitledGhostRecordCleanDeferred()
-          .catchError((Object _, StackTrace _) {}),
+      _runOneShotUntitledGhostRecordCleanDeferred().catchError(
+        (Object _, StackTrace _) {},
+      ),
     );
     final syncSw = Stopwatch()..start();
     try {
-      await offlineSync.bootstrapFromOutboxes(
-        pbBackoffActive: _pbHttpBackoffActive,
-      );
-      await flushPendingLocalMutations();
+      await refreshForegroundData();
     } catch (_) {}
     syncSw.stop();
     StartupLog.bootStage(
@@ -629,34 +636,72 @@ extension DbCoreExtension on DatabaseService {
     StartupLog.markInteractive();
   }
 
-  /// Foreground/resume refresh: records + today's plans + stream pumps (no user input required).
-  Future<void> refreshForegroundData() async {
+  /// Foreground/app-open refresh: arm push first, then one catch-up pull.
+  /// Never polls and never requires a user gesture.
+  Future<void> refreshForegroundData() {
+    final active = _foregroundDataRefreshFuture;
+    if (active != null) return active;
+    late final Future<void> run;
+    run = _refreshForegroundDataBody().whenComplete(() {
+      if (identical(_foregroundDataRefreshFuture, run)) {
+        _foregroundDataRefreshFuture = null;
+      }
+    });
+    _foregroundDataRefreshFuture = run;
+    return run;
+  }
+
+  Future<void> _refreshForegroundDataBody() async {
     if (!(currentProfileId?.isNotEmpty ?? false)) return;
     if (!_isInitialized) return;
-    await offlineSync.bootstrapFromOutboxes(
-      pbBackoffActive: _pbHttpBackoffActive,
-    );
-    // Re-arm push channels before flush/catch-up. The following fetch is a one-shot
-    // reconciliation for events missed while the app was suspended, never polling.
-    if (!_pbHttpBackoffActive) {
-      try {
-        await Future.wait<void>([
-          _startRecordsRealtimeSubscription(),
-          _startPlansRealtimeSubscription(),
-          _startCatalogRealtimeSubscriptions(),
-        ]);
-      } catch (_) {}
+    if (_pbHttpBackoffActive) {
+      _scheduleAppOpenSyncRetry();
+      return;
     }
-    await flushPendingLocalMutations();
-    if (_pbHttpBackoffActive) return;
+    _appOpenSyncRetryTimer?.cancel();
+    _appOpenSyncRetryTimer = null;
+
+    // Push-first: subscribe before any outbox work or catch-up request so a
+    // concurrent remote write cannot fall into a startup gap.
+    try {
+      await Future.wait<void>([
+        _startRecordsRealtimeSubscription(),
+        _startPlansRealtimeSubscription(),
+        _startCatalogRealtimeSubscriptions(),
+      ]);
+    } catch (_) {}
+
+    // Local pending work must not prevent incoming remote data from appearing.
+    try {
+      await offlineSync.bootstrapFromOutboxes(
+        pbBackoffActive: _pbHttpBackoffActive,
+      );
+      await flushPendingLocalMutations();
+    } catch (_) {}
+    if (_pbHttpBackoffActive) {
+      _scheduleAppOpenSyncRetry();
+      return;
+    }
+
+    // Exactly one pull on open/resume to recover events missed while suspended.
     try {
       _lastSuccessfulRecordsNetworkFetchAt = null;
       await _fetchRecordsIntoCache(forceNetwork: true);
       await _reconcileDuplicatePrimaryRunningRecords();
       await _ensureAllPlansUserCacheFresh(force: true);
       await _loadPlanningTasksForToday();
-      notifyPlanningRefresh(scheduleNetworkRefresh: false, pumpNetworkNow: true);
-    } catch (_) {}
+      unawaited(_loadRulesFromNoco().catchError((Object _, StackTrace _) {}));
+      notifyPlanningRefresh(
+        scheduleNetworkRefresh: false,
+        pumpNetworkNow: true,
+      );
+      persistPlansWarmSnapshotsToDisk();
+      persistTimelineWarmSnapshotsToDisk();
+    } catch (_) {
+      if (_pbHttpBackoffActive) {
+        _scheduleAppOpenSyncRetry();
+      }
+    }
   }
 
   /// Drains all local PocketBase mutation outboxes (records + plans/lists).
