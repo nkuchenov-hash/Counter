@@ -42,8 +42,7 @@ old_test_close = '''    expect(await PlanMutationOutbox.acknowledge(prefs, secon
 '''
 new_test_close = '''    expect(await PlanMutationOutbox.acknowledge(prefs, secondUpdate), isTrue);
     expect(await PlanMutationOutbox.load(prefs), isEmpty);
-  },
-  );"""
+  }"""
 '''
 if text.count(old_test_close) != 1:
     raise SystemExit(
