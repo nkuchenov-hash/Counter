@@ -9,7 +9,7 @@ old = '''    text = read(path)
         "bool _planMutationOutboxFlushInFlight = false;\\n",
         "bool _planMutationOutboxFlushInFlight = false;\\n"
         "final Map<String, int> _pendingPlanMutationRevisionByBusinessId =\\n"
-        "    <String, int>{{}};\\n",
+        "    <String, int>{};\\n",
         'pending revision map',
     )
     write(path, text)
@@ -31,7 +31,7 @@ replacement = '''def patch_plan_service() -> None:
         "bool _planMutationOutboxFlushInFlight = false;\\n",
         "bool _planMutationOutboxFlushInFlight = false;\\n"
         "final Map<String, int> _pendingPlanMutationRevisionByBusinessId =\\n"
-        "    <String, int>{{}};\\n",
+        "    <String, int>{};\\n",
         'pending revision map',
     )
 '''
