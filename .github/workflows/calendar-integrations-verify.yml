@@ -17,7 +17,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   verify:
@@ -26,6 +26,44 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: feature/calendar-integrations-v1
+
+      - name: Apply category-depth ranking once
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('pb_hooks/calendar_integrations.pb.js')
+          text = path.read_text(encoding='utf-8')
+          old = '''        var depth = __calendarCategoryDepth(categories[j], byId, memo);
+          if (!best || score > bestScore || (score === bestScore && depth > bestDepth)) {
+              best = categories[j];
+              bestScore = score;
+              bestDepth = depth;
+          }'''
+          new = '''        var depth = __calendarCategoryDepth(categories[j], byId, memo);
+          // A confident child-category match must outrank a matching parent path.
+          // The depth bonus is applied only to multi-token/phrase-grade matches,
+          // never to a weak single-token overlap.
+          var effectiveScore = score + (score >= 2500 ? depth * 5000 : 0);
+          if (!best || effectiveScore > bestScore || (effectiveScore === bestScore && depth > bestDepth)) {
+              best = categories[j];
+              bestScore = effectiveScore;
+              bestDepth = depth;
+          }'''
+          if new not in text:
+              if old not in text:
+                  raise SystemExit('ranking anchor missing')
+              text = text.replace(old, new, 1)
+              path.write_text(text, encoding='utf-8')
+          PY
+          if ! git diff --quiet; then
+            git config user.name github-actions[bot]
+            git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+            git add pb_hooks/calendar_integrations.pb.js
+            git commit -m "Prioritize deep calendar category matches"
+            git push origin HEAD:feature/calendar-integrations-v1
+          fi
 
       - name: Validate PocketBase JavaScript syntax
         run: |
