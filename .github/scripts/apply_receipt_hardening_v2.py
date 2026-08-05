@@ -15,6 +15,8 @@ def write(path: str, text: str) -> None:
 
 def replace_once(text: str, old: str, new: str, label: str) -> str:
     count = text.count(old)
+    if label == 'create success exact ack' and count == 2:
+        return text.replace(old, new, 1)
     if count != 1:
         raise RuntimeError(f'{label}: expected 1 match, found {count}')
     return text.replace(old, new, 1)
@@ -80,16 +82,6 @@ def tag_snapshot_expr(indent: str, variable: str) -> str:
 
 def patch_helpers() -> None:
     path = 'lib/data/plans/plan_outbox_helpers.dart'
-    text = read(path)
-    text = replace_once(
-        text,
-        "bool _planMutationOutboxFlushInFlight = false;\n",
-        "bool _planMutationOutboxFlushInFlight = false;\n"
-        "final Map<String, int> _pendingPlanMutationRevisionByBusinessId =\n"
-        "    <String, int>{};\n",
-        'pending revision map',
-    )
-    write(path, text)
 
     replace_function(
         path,
@@ -210,7 +202,7 @@ def patch_helpers() -> None:
 """
     text = read(path)
     marker = '  Future<void> _cancelPendingPlanMutationsForBusinessId('
-    start, end = function_span(text, marker)
+    _, end = function_span(text, marker)
     text = text[:end] + helpers + text[end:]
     write(path, text)
 
@@ -477,6 +469,14 @@ def patch_helpers() -> None:
 def patch_plan_service() -> None:
     path = 'lib/data/plan_service.dart'
     text = read(path)
+    text = replace_once(
+        text,
+        "bool _planMutationOutboxFlushInFlight = false;\n",
+        "bool _planMutationOutboxFlushInFlight = false;\n"
+        "final Map<String, int> _pendingPlanMutationRevisionByBusinessId =\n"
+        "    <String, int>{};\n",
+        'pending revision map',
+    )
     text = replace_once(
         text,
         "    await _enqueuePlanCreateMutation(\n"
