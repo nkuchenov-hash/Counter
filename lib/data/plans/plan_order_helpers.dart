@@ -89,11 +89,19 @@ extension PlanOrderSyncExtension on DatabaseService {
           'oldOrder=${oldOrder ?? '-'} newOrder=$newOrder',
         );
 
+        final patchBody = <String, dynamic>{'order': newOrder};
+        final writeAheadReceipt = await _stagePlanUpdateWriteAhead(
+          originalInput: input,
+          businessId: businessId,
+          patchBody: patchBody,
+          pocketBaseId: resolved,
+        );
         final ok = await _patchPlanUpdateNetworkPhase(
           originalInput: input,
           resolvedPbId: resolved,
           businessId: businessId,
-          patchBody: <String, dynamic>{'order': newOrder},
+          writeAheadReceipt: writeAheadReceipt,
+          patchBody: patchBody,
           suppressAppSnack: true,
         );
         if (ok) {

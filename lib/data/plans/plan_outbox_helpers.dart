@@ -20,29 +20,28 @@ extension PlanOutboxSyncExtension on DatabaseService {
       await ensurePocketBaseReady();
       if (_pbHttpBackoffActive) return;
       final prefs = _prefs ?? await SharedPreferences.getInstance();
-      final q = await PlanMutationOutbox.load(prefs);
-      if (q.isEmpty) return;
-      var pendingTail = const <Map<String, dynamic>>[];
-      var i = 0;
-      for (; i < q.length; i++) {
-        final item = Map<String, dynamic>.from(q[i]);
+      final snapshot = await PlanMutationOutbox.load(prefs);
+      if (snapshot.isEmpty) return;
+      var allSynced = true;
+      for (final raw in snapshot) {
+        final item = Map<String, dynamic>.from(raw);
+        final receipt = PlanMutationOutbox.receiptForItem(item);
+        _rememberPendingPlanMutation(receipt);
         final ok = await _flushOnePlanOutboxEntry(item, prefs);
-        if (!ok) {
-          item['retryCount'] = ((item['retryCount'] as num?)?.toInt() ?? 0) + 1;
-          item['lastError'] = offlineSync.lastError ?? 'sync_failed';
-          pendingTail = [item, ...q.sublist(i + 1)];
-          break;
+        if (ok) {
+          await _acknowledgePlanMutation(receipt);
+          continue;
         }
+        allSynced = false;
+        await PlanMutationOutbox.markRetryIfCurrent(
+          prefs,
+          receipt,
+          lastError: offlineSync.lastError ?? 'sync_failed',
+        );
+        break;
       }
-      if (pendingTail.isEmpty && i >= q.length) {
-        await PlanMutationOutbox.replaceAll(prefs, []);
-        offlineSync.clearErrors();
-      } else if (pendingTail.isNotEmpty) {
-        await PlanMutationOutbox.replaceAll(prefs, pendingTail);
-      } else {
-        await PlanMutationOutbox.replaceAll(prefs, q.sublist(i));
-      }
-      unawaited(offlineSync.refreshPendingCount());
+      if (allSynced) offlineSync.clearErrors();
+      await offlineSync.refreshPendingCount();
     } finally {
       offlineSync.setSyncing(false);
       _planMutationOutboxFlushInFlight = false;
@@ -283,22 +282,79 @@ extension PlanOutboxSyncExtension on DatabaseService {
     try {
       final prefs = _prefs ?? await SharedPreferences.getInstance();
       await PlanMutationOutbox.removePendingForBusinessId(prefs, businessId);
+      _pendingPlanMutationRevisionByBusinessId.remove(businessId.trim());
       unawaited(offlineSync.refreshPendingCount());
     } catch (e) {
       DatabaseService._log('PLAN_OUTBOX_CANCEL: $e');
     }
   }
 
-  Future<void> _enqueuePlanCreateMutation(
+  void _rememberPendingPlanMutation(PlanMutationReceipt? receipt) {
+    if (receipt == null) return;
+    _pendingPlanMutationRevisionByBusinessId[receipt.businessId] =
+        receipt.revision;
+  }
+
+  bool _hasPendingPlanMutationForBusinessId(String? businessId) {
+    final key = businessId?.trim() ?? '';
+    return key.isNotEmpty &&
+        _pendingPlanMutationRevisionByBusinessId.containsKey(key);
+  }
+
+  Future<bool> _acknowledgePlanMutation(PlanMutationReceipt? receipt) async {
+    if (receipt == null) return false;
+    try {
+      final prefs = _prefs ?? await SharedPreferences.getInstance();
+      final removed = await PlanMutationOutbox.acknowledge(prefs, receipt);
+      if (removed &&
+          _pendingPlanMutationRevisionByBusinessId[receipt.businessId] ==
+              receipt.revision) {
+        _pendingPlanMutationRevisionByBusinessId.remove(receipt.businessId);
+      }
+      await offlineSync.refreshPendingCount();
+      return removed;
+    } catch (e) {
+      DatabaseService._log('PLAN_OUTBOX_ACK: $e');
+      return false;
+    }
+  }
+
+  List<Map<String, dynamic>> _planTagSnapshot(List<Tag> tags) =>
+      <Map<String, dynamic>>[
+        for (final tag in tags)
+          <String, dynamic>{
+            'id': tag.pbRecordId,
+            'tag_id': tag.tagId,
+            'name': tag.name,
+            'color': tag.color,
+            'icon': tag.icon,
+            'sort_order': tag.sortOrder,
+            'domain': tag.domain,
+            'default_plan_duration_minutes': tag.defaultPlanDurationMinutes,
+          },
+      ];
+
+  List<Tag> _planTagsFromSnapshot(dynamic raw) => <Tag>[
+    if (raw is List)
+      for (final item in raw)
+        if (item is Map) Tag.fromPocketJson(Map<String, dynamic>.from(item)),
+  ];
+
+  Future<PlanMutationReceipt?> _enqueuePlanCreateMutation(
     Map<String, dynamic> body, {
     required String businessId,
+    List<Tag>? tags,
     Object? error,
     String syncStatus = PlanMutationOutbox.syncStatusPending,
   }) async {
     try {
       final prefs = _prefs ?? await SharedPreferences.getInstance();
       final normalized = jsonDecode(jsonEncode(body)) as Map<String, dynamic>;
-      await PlanMutationOutbox.enqueue(
+      if (tags != null) {
+        normalized[PlanMutationOutbox.payloadTagsSnapshotKey] =
+            _planTagSnapshot(tags);
+      }
+      final receipt = await PlanMutationOutbox.enqueue(
         prefs,
         PlanMutationOutbox.newPlanCreateItem(
           businessId: businessId,
@@ -307,13 +363,16 @@ extension PlanOutboxSyncExtension on DatabaseService {
           syncStatus: syncStatus,
         ),
       );
+      _rememberPendingPlanMutation(receipt);
       unawaited(offlineSync.refreshPendingCount());
+      return receipt;
     } catch (e) {
       DatabaseService._log('PLAN_OUTBOX_ENQUEUE create: $e');
+      return null;
     }
   }
 
-  Future<void> _enqueuePlanUpdateMutation({
+  Future<PlanMutationReceipt?> _enqueuePlanUpdateMutation({
     required String originalInput,
     required String businessId,
     required Map<String, dynamic> patchFields,
@@ -326,8 +385,11 @@ extension PlanOutboxSyncExtension on DatabaseService {
       final prefs = _prefs ?? await SharedPreferences.getInstance();
       final normalized =
           jsonDecode(jsonEncode(patchFields)) as Map<String, dynamic>;
-      if (businessId.trim().isEmpty || normalized.isEmpty) return;
-      await PlanMutationOutbox.enqueue(
+      if (businessId.trim().isEmpty ||
+          (normalized.isEmpty && tagsLinkPbIds == null)) {
+        return null;
+      }
+      final receipt = await PlanMutationOutbox.enqueue(
         prefs,
         PlanMutationOutbox.newPlanUpdateItem(
           businessId: businessId.trim(),
@@ -339,9 +401,12 @@ extension PlanOutboxSyncExtension on DatabaseService {
           syncStatus: syncStatus,
         ),
       );
+      _rememberPendingPlanMutation(receipt);
       unawaited(offlineSync.refreshPendingCount());
+      return receipt;
     } catch (e) {
       DatabaseService._log('PLAN_OUTBOX_ENQUEUE update: $e');
+      return null;
     }
   }
 
@@ -385,11 +450,22 @@ extension PlanOutboxSyncExtension on DatabaseService {
       final wrapped = item['payload'];
       if (wrapped is! Map) return true;
       final body = Map<String, dynamic>.from(wrapped);
+      final tagsSnapshot = body.remove(
+        PlanMutationOutbox.payloadTagsSnapshotKey,
+      );
       body['user_id'] = _pidForPbFilter;
       try {
-        final record = await _pb
-            .collection(PbCollections.plans)
-            .create(body: body);
+        final existingId = await _fetchPbPlanSysIdByPlanIdField(businessId);
+        var record = existingId != null && existingId.isNotEmpty
+            ? await _pb.collection(PbCollections.plans).getOne(existingId)
+            : await _pb.collection(PbCollections.plans).create(body: body);
+        final replayTags = _planTagsFromSnapshot(tagsSnapshot);
+        if (replayTags.isNotEmpty || tagsSnapshot is List) {
+          await _syncPlanTagsPocket(record.id, replayTags);
+          record = await _pb
+              .collection(PbCollections.plans)
+              .getOne(record.id, expand: kPbPlanTagsExpand);
+        }
         final tagCatalog = await _fetchPlanAndListTagCatalog();
         final merged = record;
         final fromServer = _planningTaskFromPocketRecord(
@@ -444,9 +520,14 @@ extension PlanOutboxSyncExtension on DatabaseService {
       if (wrapped is! Map) return true;
       final rawPayload = Map<String, dynamic>.from(wrapped);
       final tagsRaw = rawPayload.remove(PlanMutationOutbox.payloadTagsLinkKey);
+      final tagsSnapshot = rawPayload.remove(
+        PlanMutationOutbox.payloadTagsSnapshotKey,
+      );
       final patchBody = Map<String, dynamic>.from(rawPayload);
       patchBody.remove('user_id');
-      if (patchBody.isEmpty && tagsRaw == null) return true;
+      if (patchBody.isEmpty && tagsRaw == null && tagsSnapshot == null) {
+        return true;
+      }
       final pbId = await _resolvePlanPbIdForOutboxReplay(
         businessId: businessId,
         pocketBaseId: (item['pocketBaseId'] ?? '').toString(),
@@ -481,14 +562,24 @@ extension PlanOutboxSyncExtension on DatabaseService {
               .collection(PbCollections.plans)
               .update(pbId, body: patchBody);
         }
+        List<String>? replayTagIds;
         if (tagsRaw is List) {
-          final ids = [
+          replayTagIds = [
             for (final e in tagsRaw)
               if (e != null) e.toString().trim(),
           ].where((s) => s.isNotEmpty).toList();
+        } else if (tagsSnapshot is List) {
+          replayTagIds = await _pbTagRecordIdsFromTags(
+            _planTagsFromSnapshot(tagsSnapshot),
+          );
+        }
+        if (replayTagIds != null) {
           await _pb
               .collection(PbCollections.plans)
-              .update(pbId, body: <String, dynamic>{kPbPlanTagsExpand: ids});
+              .update(
+                pbId,
+                body: <String, dynamic>{kPbPlanTagsExpand: replayTagIds},
+              );
         }
         final tagCatalog = await _fetchPlanAndListTagCatalog();
         final merged = await _pb
@@ -613,12 +704,40 @@ extension PlanOutboxSyncExtension on DatabaseService {
     return true;
   }
 
+  /// Durable write-ahead staging for a plan edit. The optimistic cache is already
+  /// visible before this awaits SharedPreferences; PocketBase network I/O starts only
+  /// after the mutation survives process death.
+  Future<PlanMutationReceipt?> _stagePlanUpdateWriteAhead({
+    required String originalInput,
+    required String businessId,
+    required Map<String, dynamic> patchBody,
+    String? pocketBaseId,
+    List<Tag>? tags,
+  }) async {
+    final scalarBody = Map<String, dynamic>.from(patchBody);
+    scalarBody.remove('user_id');
+    if (tags != null) {
+      scalarBody[PlanMutationOutbox.payloadTagsSnapshotKey] = _planTagSnapshot(
+        tags,
+      );
+    }
+    final receipt = await _enqueuePlanUpdateMutation(
+      originalInput: originalInput,
+      businessId: businessId,
+      patchFields: scalarBody,
+      pocketBaseId: pocketBaseId,
+    );
+    await offlineSync.refreshPendingCount();
+    return receipt;
+  }
+
   // --- Immediate update/delete network phase (not flush/replay) ---
 
   Future<bool> _patchPlanUpdateNetworkPhase({
     required String originalInput,
     required String resolvedPbId,
     required String businessId,
+    required PlanMutationReceipt? writeAheadReceipt,
     required Map<String, dynamic> patchBody,
     List<Tag>? tags,
     bool suppressAppSnack = false,
@@ -644,75 +763,45 @@ extension PlanOutboxSyncExtension on DatabaseService {
       );
       _upsertPlanInUserCache(taskFromServer);
       _allPlansUserCacheFetchedAt = DateTime.now();
-      clearOptimisticPlanningForPlanRow(originalInput);
-      clearOptimisticPlanningForPlanRow(resolvedPbId);
+      final acknowledged = await _acknowledgePlanMutation(writeAheadReceipt);
+      if (acknowledged) {
+        clearOptimisticPlanningForPlanRow(originalInput);
+        clearOptimisticPlanningForPlanRow(resolvedPbId);
+      }
       notifyPlanningRefresh(scheduleNetworkRefresh: false);
-      unawaited(offlineSync.refreshPendingCount());
       return true;
     } on ClientException catch (e) {
       final code = e.statusCode;
       if (code == 404) {
-        _removePlanFromUserCache(resolvedPbId);
-        _removePlanFromUserCache(originalInput);
+        final acknowledged = await _acknowledgePlanMutation(writeAheadReceipt);
+        if (acknowledged) {
+          _removePlanFromUserCache(resolvedPbId);
+          _removePlanFromUserCache(originalInput);
+        }
         notifyPlanningRefresh(scheduleNetworkRefresh: false);
         if (!suppressAppSnack) AppSnack.failed();
         return false;
       }
       if (code == 401 || code == 403) {
-        List<String>? tagIds;
-        if (tags != null) {
-          tagIds = await _pbTagRecordIdsFromTags(tags);
-        }
-        await _enqueuePlanUpdateMutation(
-          originalInput: originalInput,
-          businessId: businessId,
-          patchFields: scalarBody,
-          pocketBaseId: resolvedPbId,
-          tagsLinkPbIds: tagIds,
-          error: code,
-          syncStatus: PlanMutationOutbox.syncStatusPausedAuth,
-        );
         offlineSync.setAuthPaused(true, message: 'HTTP $code');
         if (!suppressAppSnack) AppSnack.failed();
         return true;
       }
       if (_planMutationRetriableHttpCode(code)) {
-        List<String>? tagIds;
-        if (tags != null) {
-          tagIds = await _pbTagRecordIdsFromTags(tags);
-        }
-        await _enqueuePlanUpdateMutation(
-          originalInput: originalInput,
-          businessId: businessId,
-          patchFields: scalarBody,
-          pocketBaseId: resolvedPbId,
-          tagsLinkPbIds: tagIds,
-          error: code,
-        );
         offlineSync.setConnectivityOffline(true);
         return true;
       }
+      await _acknowledgePlanMutation(writeAheadReceipt);
       if (!suppressAppSnack) AppSnack.failed();
       return false;
     } catch (e, st) {
       DatabaseService._log('PATCH_PLAN_NETWORK: $e');
       DatabaseService._log(st.toString());
       if (_planMutationRetriableHttpCode(0)) {
-        List<String>? tagIds;
-        if (tags != null) {
-          tagIds = await _pbTagRecordIdsFromTags(tags);
-        }
-        await _enqueuePlanUpdateMutation(
-          originalInput: originalInput,
-          businessId: businessId,
-          patchFields: scalarBody,
-          pocketBaseId: resolvedPbId,
-          tagsLinkPbIds: tagIds,
-          error: e,
-        );
         offlineSync.setConnectivityOffline(true);
         return true;
       }
+      await _acknowledgePlanMutation(writeAheadReceipt);
       if (!suppressAppSnack) AppSnack.failed();
       return false;
     }
