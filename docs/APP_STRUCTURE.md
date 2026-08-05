@@ -184,6 +184,7 @@ Compatibility re-exports (remove when callers migrate): root `lib/app_shell.dart
 | `models/note_document.dart` | `NoteDocument` / `NoteBlock` — backward-compatible `lifeos_notes_blocks_v2` envelope in existing `plans.notes_delta` *(part)* |
 | `pb_config.dart` | PocketBase URL, collection names, expand constants |
 | `auth_bridge.dart` | Session check, OAuth routing |
+| `calendar_integrations/calendar_integration_service.dart` | Provider-neutral authenticated client for Microsoft/Google calendar connection status, settings, sync, and disconnect |
 | `category_fuzzy_match.dart` | Category name scoring |
 | `voice/` | Brain Voice: parser, domain resolver, glossary, contamination gate, command normalize, recognition postprocess, Price Reporter client match, PocketBase cloud STT backend |
 | `smart_input_parser.dart` | Natural-language plan/list parse (client + AI backend hook) |
@@ -659,6 +660,7 @@ Explicit manifest entries for `architecture_guard.ps1 -Strict`:
 | `shared/profile_hydration_status_bar.dart` | Profile hydration error banner |
 | `core/navigation/shell_side_navigation.dart` | Desktop/web side navigation rail |
 | `profile/settings/account_settings_section.dart` | Signed-in identity + logout row |
+| `profile/calendar_integrations/calendar_integrations_section.dart` | In-app Microsoft/Google calendar connection, calendar selection, sync, and per-calendar fallback-category settings |
 | `profile/settings/notification_settings_section.dart` | OS notification permission block |
 | `profile/settings/security_settings_section.dart` | Password reset + biometric lock |
 | `shared/activity_detail_sheet.dart` | Edit sheet router (`ActivityDetailKind`) |
