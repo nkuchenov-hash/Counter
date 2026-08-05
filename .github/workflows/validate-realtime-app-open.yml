@@ -39,3 +39,5 @@ jobs:
           name: counter-realtime-app-open-arm64
           path: build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
           retention-days: 30
+
+# Validation rerun after canonical dart formatting.
