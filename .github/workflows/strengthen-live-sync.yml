@@ -29,14 +29,17 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Repair receipt test callback only
-        run: python .github/scripts/repair_strengthen_live_sync_script.py
+      - name: Apply direct revision-safe receipts
+        run: python .github/scripts/apply_receipt_hardening_v2.py
 
-      - name: Apply revision-safe write-ahead receipts
-        run: python .github/scripts/strengthen_live_sync_receipts.py
-
-      - name: Format focused outbox and test files
-        run: dart format lib/data/local_sync/plan_mutation_outbox.dart test/live_sync_contract_test.dart
+      - name: Format focused files
+        run: |
+          dart format \
+            lib/data/local_sync/plan_mutation_outbox.dart \
+            lib/data/plans/plan_outbox_helpers.dart \
+            lib/data/plan_service.dart \
+            lib/data/plans/plan_order_helpers.dart \
+            test/live_sync_contract_test.dart
 
       - name: Resolve packages
         run: flutter pub get
@@ -53,7 +56,7 @@ jobs:
       - name: Build Android arm64 APK
         run: flutter build apk --release --target-platform android-arm64 --split-per-abi --no-tree-shake-icons
 
-      - name: Validate surgical diff
+      - name: Validate diff
         run: git diff --check
 
       - name: Commit verified receipt hardening
@@ -65,6 +68,7 @@ jobs:
             lib/data/local_sync/plan_mutation_outbox.dart \
             lib/data/plans/plan_outbox_helpers.dart \
             lib/data/plan_service.dart \
+            lib/data/plans/plan_order_helpers.dart \
             test/live_sync_contract_test.dart
           git commit -m "Harden write-ahead sync acknowledgements"
           git push origin HEAD:fix/live-sync-push-20260805
