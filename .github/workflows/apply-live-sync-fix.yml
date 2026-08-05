@@ -28,6 +28,9 @@ jobs:
           channel: stable
           cache: true
 
+      - name: Repair patch parser
+        run: python .github/scripts/repair_live_sync_patch_parser.py
+
       - name: Apply surgical sync patch
         run: python .github/scripts/apply_live_sync_fix.py
 
