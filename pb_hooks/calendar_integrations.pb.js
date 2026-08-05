@@ -517,7 +517,7 @@ function __calendarResolveAutoCategory(app, userId, title, fallbackId) {
     if (best) return best.id;
     fallbackId = String(fallbackId || "").trim();
     if (fallbackId && byId[fallbackId]) return fallbackId;
-    return categories.length ? categories[0].id : "";
+    return "";
 }
 
 function __calendarWallDay(profile, date) {

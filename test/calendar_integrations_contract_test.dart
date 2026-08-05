@@ -27,6 +27,7 @@ void main() {
       lessThan(resolver.indexOf('fallbackId = String')),
     );
     expect(hook, contains('"ts": "technical"'));
+    expect(resolver, contains('return \"\";'));
   });
 
   test('provider resync has stable external identity and dedupe index', () {
