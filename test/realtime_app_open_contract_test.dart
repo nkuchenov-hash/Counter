@@ -7,7 +7,9 @@ void main() {
 
   test('cold start arms live sync without waiting for a user gesture', () {
     final ready = source.indexOf('unawaited(refreshForegroundData());');
-    final deferred = source.indexOf("StartupLog.scheduleAfterFirstFrame(\n      'deferredBootWork'");
+    final deferred = source.indexOf(
+      "StartupLog.scheduleAfterFirstFrame(\n      'deferredBootWork'",
+    );
     expect(ready, greaterThanOrEqualTo(0));
     expect(deferred, greaterThan(ready));
   });
