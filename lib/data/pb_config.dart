@@ -55,6 +55,21 @@ abstract class PbAppApiRoutes {
   static const String sleepSyncSettings = '/api/sleep-sync/settings';
   static const String sleepSyncRun = '/api/sleep-sync/run';
   static const String sleepSyncConnection = '/api/sleep-sync/connection';
+
+  /// Server-owned read-only calendar integrations.
+  static const String calendarIntegrationsStatus =
+      '/api/calendar-integrations/status';
+  static const String calendarIntegrationsSettings =
+      '/api/calendar-integrations/settings';
+
+  static String calendarIntegrationConnect(String provider) =>
+      '/api/calendar-integrations/$provider/connect';
+
+  static String calendarIntegrationSync(String provider) =>
+      '/api/calendar-integrations/$provider/sync';
+
+  static String calendarIntegrationConnection(String provider) =>
+      '/api/calendar-integrations/$provider';
 }
 
 /// PocketBase collection names (Admin → Collections). Must match server.
@@ -65,6 +80,7 @@ abstract class PbCollections {
   static const String plans = TableNames.plans;
   static const String tags = 'tags';
   static const String sleepSyncConnections = 'sleep_sync_connections';
+  static const String calendarIntegrations = 'calendar_integrations';
 }
 
 /// PocketBase Admin → OAuth2 provider **names** must match these strings exactly.
