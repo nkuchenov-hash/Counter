@@ -31,7 +31,9 @@ class ListsTagFilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final dark = theme.brightness == Brightness.dark;
     if (glmPresentation) {
       return Material(
         color: Colors.transparent,
@@ -43,12 +45,16 @@ class ListsTagFilterChip extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 11),
             decoration: BoxDecoration(
               color: selected
-                  ? color.withValues(alpha: 0.16)
+                  ? color.withValues(alpha: dark ? 0.22 : 0.16)
+                  : dark
+                  ? scheme.surfaceContainerHigh.withValues(alpha: 0.82)
                   : const Color(0xFFFFFFFF).withValues(alpha: 0.55),
               borderRadius: BorderRadius.circular(999),
               border: Border.all(
                 color: selected
-                    ? color.withValues(alpha: 0.55)
+                    ? color.withValues(alpha: dark ? 0.80 : 0.55)
+                    : dark
+                    ? scheme.outlineVariant.withValues(alpha: 0.70)
                     : const Color(0xFFE2E8F0),
               ),
             ),
@@ -60,7 +66,9 @@ class ListsTagFilterChip extends StatelessWidget {
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                color: selected ? color : kGlmPillTextColor,
+                color: selected
+                    ? (dark ? scheme.onSurface : color)
+                    : notesGlmPillTextColor(context),
               ),
             ),
           ),
