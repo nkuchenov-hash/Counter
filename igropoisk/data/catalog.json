@@ -1,6 +1,6 @@
 {
-  "updatedAt": "2026-08-07T23:41:04.713Z",
-  "count": 78,
+  "updatedAt": "2026-08-07T23:43:09.548Z",
+  "count": 77,
   "sourcePool": [
     "Steam",
     "SteamSpy",
@@ -241,7 +241,7 @@
       "movies": [],
       "criticRating": 9.6,
       "steamUserRating": 9.7,
-      "recommendations": 749571,
+      "recommendations": 749576,
       "owners": "20,000,000 .. 50,000,000",
       "peakConcurrent": 54771,
       "sourceEvidence": [
@@ -259,7 +259,7 @@
         "steamSpy": "https://steamspy.com/app/1086940",
         "metacritic": "https://www.metacritic.com/game/pc/baldurs-gate-3?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10577.481335526418,
+      "popularityScore": 10577.481625220425,
       "igropoiskRating": 9.6,
       "editorialSources": [
         "PC Gamer",
@@ -634,7 +634,7 @@
       "movies": [],
       "criticRating": 9.3,
       "steamUserRating": 9.8,
-      "recommendations": 284542,
+      "recommendations": 284544,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 2253,
       "sourceEvidence": [
@@ -647,7 +647,7 @@
         "steamSpy": "https://steamspy.com/app/1145360",
         "metacritic": "https://www.metacritic.com/game/pc/hades?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10485.414790606184,
+      "popularityScore": 10485.415095862652,
       "igropoiskRating": 9.5,
       "editorialSources": [],
       "materials": {
@@ -822,7 +822,7 @@
       "movies": [],
       "criticRating": 9.7,
       "steamUserRating": 9.3,
-      "recommendations": 116882,
+      "recommendations": 116885,
       "owners": "2,000,000 .. 5,000,000",
       "peakConcurrent": 918,
       "sourceEvidence": [
@@ -835,7 +835,7 @@
         "steamSpy": "https://steamspy.com/app/632470",
         "metacritic": "https://www.metacritic.com/game/pc/disco-elysium-the-final-cut?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10436.775134997215,
+      "popularityScore": 10436.776249673194,
       "igropoiskRating": 9.6,
       "editorialSources": [],
       "materials": {
@@ -919,7 +919,7 @@
       "movies": [],
       "criticRating": 6.9,
       "steamUserRating": 8.7,
-      "recommendations": 1159375,
+      "recommendations": 1159381,
       "owners": "20,000,000 .. 50,000,000",
       "peakConcurrent": 143870,
       "sourceEvidence": [
@@ -935,7 +935,7 @@
         "steamSpy": "https://steamspy.com/app/252490",
         "metacritic": "https://www.metacritic.com/game/pc/rust?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10436.42243058886,
+      "popularityScore": 10436.422655344259,
       "igropoiskRating": 7.5,
       "editorialSources": [
         "GameSpot",
@@ -1179,7 +1179,7 @@
       "movies": [],
       "criticRating": 8.9,
       "steamUserRating": 9.8,
-      "recommendations": 810292,
+      "recommendations": 810295,
       "owners": "50,000,000 .. 100,000,000",
       "peakConcurrent": 25122,
       "sourceEvidence": [
@@ -1192,7 +1192,7 @@
         "steamSpy": "https://steamspy.com/app/550",
         "metacritic": "https://www.metacritic.com/game/pc/left-4-dead-2?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10390.864208711826,
+      "popularityScore": 10390.864369503173,
       "igropoiskRating": 9.2,
       "editorialSources": [],
       "materials": {
@@ -1484,7 +1484,7 @@
       "movies": [],
       "criticRating": 9.5,
       "steamUserRating": 9.9,
-      "recommendations": 388771,
+      "recommendations": 388774,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 1959,
       "sourceEvidence": [
@@ -1497,7 +1497,7 @@
         "steamSpy": "https://steamspy.com/app/620",
         "metacritic": "https://www.metacritic.com/game/pc/portal-2?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10348.96949787764,
+      "popularityScore": 10348.969833004248,
       "igropoiskRating": 9.6,
       "editorialSources": [],
       "materials": {
@@ -1746,7 +1746,7 @@
       "movies": [],
       "criticRating": 9.2,
       "steamUserRating": 9,
-      "recommendations": 47637,
+      "recommendations": 47638,
       "owners": "50,000,000 .. 100,000,000",
       "peakConcurrent": 43819,
       "sourceEvidence": [
@@ -1759,7 +1759,7 @@
         "steamSpy": "https://steamspy.com/app/440",
         "metacritic": "https://www.metacritic.com/game/pc/team-fortress-2?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10277.795352008201,
+      "popularityScore": 10277.796263654205,
       "igropoiskRating": 9.1,
       "editorialSources": [],
       "materials": {
@@ -1914,7 +1914,7 @@
       "movies": [],
       "criticRating": 8.9,
       "steamUserRating": 9.4,
-      "recommendations": 277306,
+      "recommendations": 277308,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 4381,
       "sourceEvidence": [
@@ -1927,7 +1927,7 @@
         "steamSpy": "https://steamspy.com/app/374320",
         "metacritic": "https://www.metacritic.com/game/pc/dark-souls-iii?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10264.296083251693,
+      "popularityScore": 10264.29639647344,
       "igropoiskRating": 9.1,
       "editorialSources": [],
       "materials": {
@@ -1998,7 +1998,7 @@
       "movies": [],
       "criticRating": 8.9,
       "steamUserRating": 9.7,
-      "recommendations": 155442,
+      "recommendations": 155441,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 2559,
       "sourceEvidence": [
@@ -2011,7 +2011,7 @@
         "steamSpy": "https://steamspy.com/app/588650",
         "metacritic": "https://www.metacritic.com/game/pc/dead-cells?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10259.15711694167,
+      "popularityScore": 10259.1568375493,
       "igropoiskRating": 9.2,
       "editorialSources": [],
       "materials": {
@@ -2585,7 +2585,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 9.4,
-      "recommendations": 396513,
+      "recommendations": 396542,
       "owners": "50,000,000 .. 100,000,000",
       "peakConcurrent": 18028,
       "sourceEvidence": [
@@ -2600,7 +2600,7 @@
         "steamSpy": "https://steamspy.com/app/1623730",
         "metacritic": ""
       },
-      "popularityScore": 9939.825852586651,
+      "popularityScore": 9939.829028787095,
       "igropoiskRating": 9.4,
       "editorialSources": [
         "GamesRadar+",
@@ -2728,7 +2728,7 @@
       "movies": [],
       "criticRating": 8.1,
       "steamUserRating": 7.3,
-      "recommendations": 211688,
+      "recommendations": 211685,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 6300,
       "sourceEvidence": [
@@ -2746,7 +2746,7 @@
         "steamSpy": "https://steamspy.com/app/594650",
         "metacritic": "https://www.metacritic.com/game/pc/hunt-showdown?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9932.569829135235,
+      "popularityScore": 9932.569213660327,
       "igropoiskRating": 7.8,
       "editorialSources": [
         "GamesRadar+",
@@ -3029,7 +3029,7 @@
       "movies": [],
       "criticRating": 8.5,
       "steamUserRating": 8.7,
-      "recommendations": 49279,
+      "recommendations": 49277,
       "owners": "1,000,000 .. 2,000,000",
       "peakConcurrent": 648,
       "sourceEvidence": [
@@ -3042,7 +3042,7 @@
         "steamSpy": "https://steamspy.com/app/870780",
         "metacritic": "https://www.metacritic.com/game/pc/control?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9909.267069915637,
+      "popularityScore": 9909.265307321095,
       "igropoiskRating": 8.6,
       "editorialSources": [],
       "materials": {
@@ -4350,7 +4350,7 @@
       "movies": [],
       "criticRating": 8.3,
       "steamUserRating": 8.9,
-      "recommendations": 281117,
+      "recommendations": 281112,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 32112,
       "sourceEvidence": [
@@ -4363,7 +4363,7 @@
         "steamSpy": "https://steamspy.com/app/394360",
         "metacritic": "https://www.metacritic.com/game/pc/hearts-of-iron-iv?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9734.888865439576,
+      "popularityScore": 9734.888092991096,
       "igropoiskRating": 8.5,
       "editorialSources": [],
       "materials": {
@@ -4449,7 +4449,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 9.7,
-      "recommendations": 1085271,
+      "recommendations": 1085282,
       "owners": "20,000,000 .. 50,000,000",
       "peakConcurrent": 18400,
       "sourceEvidence": [
@@ -4461,7 +4461,7 @@
         "steamSpy": "https://steamspy.com/app/4000",
         "metacritic": ""
       },
-      "popularityScore": 9723.5538598364,
+      "popularityScore": 9723.554300022372,
       "igropoiskRating": 9.7,
       "editorialSources": [],
       "materials": {
@@ -5074,7 +5074,7 @@
       "movies": [],
       "criticRating": 7.9,
       "steamUserRating": 9.7,
-      "recommendations": 778177,
+      "recommendations": 778180,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 17281,
       "sourceEvidence": [
@@ -5087,7 +5087,7 @@
         "steamSpy": "https://steamspy.com/app/227300",
         "metacritic": "https://www.metacritic.com/game/pc/euro-truck-simulator-2?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9659.107894862957,
+      "popularityScore": 9659.108062290066,
       "igropoiskRating": 8.5,
       "editorialSources": [],
       "materials": {
@@ -5235,7 +5235,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 8.8,
-      "recommendations": 281335,
+      "recommendations": 281339,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 4450,
       "sourceEvidence": [
@@ -5247,7 +5247,7 @@
         "steamSpy": "https://steamspy.com/app/1326470",
         "metacritic": ""
       },
-      "popularityScore": 9624.922530842186,
+      "popularityScore": 9624.92314831225,
       "igropoiskRating": 8.8,
       "editorialSources": [],
       "materials": {
@@ -6103,7 +6103,7 @@
       "movies": [],
       "criticRating": 8.8,
       "steamUserRating": 9.7,
-      "recommendations": 130345,
+      "recommendations": 130350,
       "owners": "2,000,000 .. 5,000,000",
       "peakConcurrent": 1174,
       "sourceEvidence": [
@@ -6116,7 +6116,7 @@
         "steamSpy": "https://steamspy.com/app/504230",
         "metacritic": "https://www.metacritic.com/game/pc/celeste?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9481.509770827319,
+      "popularityScore": 9481.511436724824,
       "igropoiskRating": 9.1,
       "editorialSources": [],
       "materials": {
@@ -6292,7 +6292,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 9.7,
-      "recommendations": 110140,
+      "recommendations": 110139,
       "owners": "2,000,000 .. 5,000,000",
       "peakConcurrent": 6389,
       "sourceEvidence": [
@@ -6304,7 +6304,7 @@
         "steamSpy": "https://steamspy.com/app/1942280",
         "metacritic": ""
       },
-      "popularityScore": 9444.194901524052,
+      "popularityScore": 9444.194507214526,
       "igropoiskRating": 9.7,
       "editorialSources": [],
       "materials": {
@@ -6814,112 +6814,6 @@
       "articles": []
     },
     {
-      "id": "242760",
-      "appid": 242760,
-      "title": "The Forest",
-      "normalizedTitle": "the forest",
-      "description": "As the lone survivor of a passenger jet crash, you find yourself in a mysterious forest battling to stay alive against a society of cannibalistic mutants. Build, explore, survive in this terrifying first person survival horror simulator.",
-      "about": "As the lone survivor of a passenger jet crash, you find yourself in a mysterious forest battling to stay alive against a society of cannibalistic mutants. Build, explore, survive in this terrifying first person survival horror simulator. Key features Enter a living, breathing world, where every tree and plant can be chopped down. Below ground explore a vast network of caves and underground lakes. Chop down trees to build a camp, or start a fire to keep warm. Scavenge food to keep yourself from starving. Build a small shelter or a large ocean side fortress. Lay traps and defences to keep a safe perimeter. Explore and build during the day. Defend your base at night. Craft weapons and tools. Bunker down during the evening or bring the fight directly to the enemy. Defend yourself against a clan of genetic mutant enemies that have beliefs, families, morals and that appear almost human. Use stealth to evade enemies, or engage them directly with crude weapons built from sticks and stones.",
-      "story": "As the lone survivor of a passenger jet crash, you find yourself in a mysterious forest battling to stay alive against a society of cannibalistic mutants. Build, explore, survive in this terrifying first person survival horror simulator.",
-      "releaseDate": "30 апр. 2018 г.",
-      "year": 2018,
-      "comingSoon": false,
-      "developers": [
-        "Endnight Games Ltd"
-      ],
-      "publishers": [
-        "Endnight Games Ltd"
-      ],
-      "genres": [
-        "Экшены",
-        "Приключенческие игры",
-        "Инди",
-        "Симуляторы"
-      ],
-      "categories": [
-        "Для одного игрока",
-        "Для нескольких игроков",
-        "Кооператив",
-        "Кооператив (по сети)",
-        "Кооператив (локальная сеть)",
-        "Поддержка отслеживания контроллеров",
-        "Поддержка VR",
-        "Частичная поддержка контроллеров",
-        "Steam Cloud",
-        "Семейный доступ"
-      ],
-      "platforms": [
-        "windows"
-      ],
-      "headerImage": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/242760/header.jpg?t=1699381053",
-      "capsuleImage": "https://cdn.cloudflare.steamstatic.com/steam/apps/242760/library_600x900.jpg",
-      "heroImage": "https://cdn.cloudflare.steamstatic.com/steam/apps/242760/library_hero.jpg",
-      "screenshots": [
-        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/242760/ss_8ccb821c4df3fafdf4161d77f38635441a8157f2.1920x1080.jpg?t=1699381053",
-        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/242760/ss_53c615d49c4777144ed7359e4bf7c9eb6838cc8e.1920x1080.jpg?t=1699381053",
-        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/242760/ss_772eebf0ce7bdb51546055a36185e8ee46e8acac.1920x1080.jpg?t=1699381053",
-        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/242760/ss_d03a261fecab226a0ecac5746225c2a50d65c670.1920x1080.jpg?t=1699381053",
-        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/242760/ss_d77d402c78451a04b5c370e81ff7767c4008343c.1920x1080.jpg?t=1699381053",
-        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/242760/ss_a37e6873baf869be91010b20c30a7e61e4b82cc1.1920x1080.jpg?t=1699381053",
-        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/242760/ss_7598551a5bfbf69ae1161c8ebee8e000868add24.1920x1080.jpg?t=1699381053",
-        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/242760/ss_7a8d95143af9f801a7b5ba9a6cb23f2e5998344c.1920x1080.jpg?t=1699381053",
-        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/242760/ss_471c40435f1811182e47c11486cf9c042dbf7401.1920x1080.jpg?t=1699381053",
-        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/242760/ss_a1a871918b4fa3dcc71f19f3aa4ea1fff3ab649b.1920x1080.jpg?t=1699381053",
-        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/242760/ss_e50b7c8bc2f4720859ba13aa32703661192f4d62.1920x1080.jpg?t=1699381053",
-        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/242760/ss_792069bbfdd795f3e0b139c5b4e5140f2e9ea70c.1920x1080.jpg?t=1699381053"
-      ],
-      "movies": [],
-      "criticRating": 8.3,
-      "steamUserRating": 9.6,
-      "recommendations": 578803,
-      "owners": "20,000,000 .. 50,000,000",
-      "peakConcurrent": 2892,
-      "sourceEvidence": [
-        "Steam",
-        "SteamSpy",
-        "Metacritic",
-        "StopGame"
-      ],
-      "sourceLinks": {
-        "steam": "https://store.steampowered.com/app/242760/",
-        "steamSpy": "https://steamspy.com/app/242760",
-        "metacritic": "https://www.metacritic.com/game/pc/the-forest?ftag=MCD-06-10aaa1f"
-      },
-      "popularityScore": 9316.253152378067,
-      "igropoiskRating": 8.8,
-      "editorialSources": [
-        "StopGame"
-      ],
-      "materials": {
-        "articles": [],
-        "reviews": [],
-        "guides": [],
-        "tips": [],
-        "news": [
-          {
-            "source": "StopGame",
-            "language": "ru",
-            "title": "Ремастер Wolfenstein, геймплей Swords of Legends, анонс Warrior Cats: Clans of the Forest…",
-            "normalizedTitle": "ремастер wolfenstein геймплей swords of legends анонс warrior cats clans of the forest",
-            "url": "https://stopgame.ru/show/163130/remaster_wolfenstein_geympley_swords_of_legends_anons_warrior_cats_clans_of_the_forest",
-            "summary": "По мотивам серии книг «Коты-воители» выйдет пошаговая ролевая игра Warrior Cats: Clans of the Forest; в SteamDB обновилась страница Wolfenstein (2009), фанаты ожидают анонса ремастера; IGN опубликовала превью Swords of Legends; разработчик-одиночка представил метроидванию про похождения гриба Heart of Mycelium; XBOX планирует ввести аналог «платины» с PlayStation; Devolver Digital вновь станет частной компанией; Ghost Recon Wildlands получила обновление",
-            "publishedAt": "Fri, 07 Aug 2026 06:21:07 +0300"
-          }
-        ]
-      },
-      "articles": [
-        {
-          "source": "StopGame",
-          "language": "ru",
-          "title": "Ремастер Wolfenstein, геймплей Swords of Legends, анонс Warrior Cats: Clans of the Forest…",
-          "normalizedTitle": "ремастер wolfenstein геймплей swords of legends анонс warrior cats clans of the forest",
-          "url": "https://stopgame.ru/show/163130/remaster_wolfenstein_geympley_swords_of_legends_anons_warrior_cats_clans_of_the_forest",
-          "summary": "По мотивам серии книг «Коты-воители» выйдет пошаговая ролевая игра Warrior Cats: Clans of the Forest; в SteamDB обновилась страница Wolfenstein (2009), фанаты ожидают анонса ремастера; IGN опубликовала превью Swords of Legends; разработчик-одиночка представил метроидванию про похождения гриба Heart of Mycelium; XBOX планирует ввести аналог «платины» с PlayStation; Devolver Digital вновь станет частной компанией; Ghost Recon Wildlands получила обновление",
-          "publishedAt": "Fri, 07 Aug 2026 06:21:07 +0300"
-        }
-      ]
-    },
-    {
       "id": "424840",
       "appid": 424840,
       "title": "Little Nightmares",
@@ -7217,7 +7111,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 9.4,
-      "recommendations": 355174,
+      "recommendations": 355192,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 22864,
       "sourceEvidence": [
@@ -7229,7 +7123,7 @@
         "steamSpy": "https://steamspy.com/app/108600",
         "metacritic": ""
       },
-      "popularityScore": 9275.044238913317,
+      "popularityScore": 9275.046439829088,
       "igropoiskRating": 9.4,
       "editorialSources": [],
       "materials": {
@@ -7311,7 +7205,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 8.9,
-      "recommendations": 277920,
+      "recommendations": 277919,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 17045,
       "sourceEvidence": [
@@ -7323,7 +7217,7 @@
         "steamSpy": "https://steamspy.com/app/251570",
         "metacritic": ""
       },
-      "popularityScore": 9254.392136376027,
+      "popularityScore": 9254.391980110302,
       "igropoiskRating": 8.9,
       "editorialSources": [],
       "materials": {
@@ -7473,7 +7367,7 @@
       "movies": [],
       "criticRating": 9.3,
       "steamUserRating": 9.6,
-      "recommendations": 179779,
+      "recommendations": 179783,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 3510,
       "sourceEvidence": [
@@ -7487,7 +7381,7 @@
         "steamSpy": "https://steamspy.com/app/435150",
         "metacritic": "https://www.metacritic.com/game/pc/divinity-original-sin-ii?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9165.474137609153,
+      "popularityScore": 9165.475103878262,
       "igropoiskRating": 9.4,
       "editorialSources": [
         "VG247"
