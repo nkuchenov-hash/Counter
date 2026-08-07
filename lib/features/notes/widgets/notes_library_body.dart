@@ -49,6 +49,7 @@ class NotesLibraryBody extends StatefulWidget {
 
 class _NotesLibraryBodyState extends State<NotesLibraryBody> {
   PlanningTask? _selectedTask;
+  List<String>? _editingOrder;
   _NotesDateSort _dateSort = _NotesDateSort.updated;
 
   @override
@@ -75,7 +76,9 @@ class _NotesLibraryBodyState extends State<NotesLibraryBody> {
         break;
       }
     }
-    _selectedTask = refreshed;
+    // A background refresh may briefly omit the row while its autosave PATCH is
+    // in flight. Never destroy the editor/focus for that transient snapshot.
+    if (refreshed != null) _selectedTask = refreshed;
   }
 
   Future<void> _hydrateTimestamps({bool force = false}) async {
@@ -98,7 +101,17 @@ class _NotesLibraryBodyState extends State<NotesLibraryBody> {
 
   Future<void> _setDateSort(_NotesDateSort value) async {
     if (_dateSort == value) return;
-    setState(() => _dateSort = value);
+    setState(() {
+      _dateSort = value;
+      // A manual sort choice is intentional; establish a new stable order for
+      // the remainder of this edit session instead of letting autosave reshuffle it.
+      if (_selectedTask != null) {
+        _editingOrder = null;
+        _editingOrder = _sortedTasks()
+            .map((task) => task.planRowIdForBackend)
+            .toList(growable: false);
+      }
+    });
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(
@@ -200,32 +213,50 @@ class _NotesLibraryBodyState extends State<NotesLibraryBody> {
     );
   }
 
-  List<PlanningTask> _sortedTasks() {
+  int _compareTasks(PlanningTask a, PlanningTask b) {
     final db = DatabaseService.instance;
+    if (a.isDone != b.isDone) return a.isDone ? 1 : -1;
+    final ap = db.isNotePinned(a);
+    final bp = db.isNotePinned(b);
+    if (ap != bp) return ap ? -1 : 1;
+    final ad = _dateSort == _NotesDateSort.created
+        ? (a.createdAt ?? a.updatedAt)
+        : (a.updatedAt ?? a.createdAt);
+    final bd = _dateSort == _NotesDateSort.created
+        ? (b.createdAt ?? b.updatedAt)
+        : (b.updatedAt ?? b.createdAt);
+    if (ad != null && bd != null) {
+      final byDate = bd.compareTo(ad);
+      if (byDate != 0) return byDate;
+    } else if (ad != null) {
+      return -1;
+    } else if (bd != null) {
+      return 1;
+    }
+    final byOrder = a.order.compareTo(b.order);
+    if (byOrder != 0) return byOrder;
+    return a.title.compareTo(b.title);
+  }
+
+  List<PlanningTask> _sortedTasks() {
     final out = List<PlanningTask>.from(widget.tasks);
-    out.sort((a, b) {
-      if (a.isDone != b.isDone) return a.isDone ? 1 : -1;
-      final ap = db.isNotePinned(a);
-      final bp = db.isNotePinned(b);
-      if (ap != bp) return ap ? -1 : 1;
-      final ad = _dateSort == _NotesDateSort.created
-          ? (a.createdAt ?? a.updatedAt)
-          : (a.updatedAt ?? a.createdAt);
-      final bd = _dateSort == _NotesDateSort.created
-          ? (b.createdAt ?? b.updatedAt)
-          : (b.updatedAt ?? b.createdAt);
-      if (ad != null && bd != null) {
-        final byDate = bd.compareTo(ad);
-        if (byDate != 0) return byDate;
-      } else if (ad != null) {
-        return -1;
-      } else if (bd != null) {
-        return 1;
-      }
-      final byOrder = a.order.compareTo(b.order);
-      if (byOrder != 0) return byOrder;
-      return a.title.compareTo(b.title);
-    });
+    final editingOrder = _editingOrder;
+    if (_selectedTask != null && editingOrder != null) {
+      final rank = <String, int>{
+        for (var index = 0; index < editingOrder.length; index++)
+          editingOrder[index]: index,
+      };
+      out.sort((a, b) {
+        final ar = rank[a.planRowIdForBackend];
+        final br = rank[b.planRowIdForBackend];
+        if (ar != null && br != null) return ar.compareTo(br);
+        if (ar != null) return -1;
+        if (br != null) return 1;
+        return _compareTasks(a, b);
+      });
+      return out;
+    }
+    out.sort(_compareTasks);
     return out;
   }
 
@@ -455,12 +486,21 @@ class _NotesLibraryBodyState extends State<NotesLibraryBody> {
       widget.onTap(task);
       return;
     }
-    setState(() => _selectedTask = task);
+    final order = _sortedTasks()
+        .map((row) => row.planRowIdForBackend)
+        .toList(growable: false);
+    setState(() {
+      _editingOrder = order;
+      _selectedTask = task;
+    });
   }
 
   void _closeEmbeddedEditor() {
     if (!mounted) return;
-    setState(() => _selectedTask = null);
+    setState(() {
+      _selectedTask = null;
+      _editingOrder = null;
+    });
     final refresh = widget.onRefresh;
     if (refresh != null) unawaited(_refresh());
   }
