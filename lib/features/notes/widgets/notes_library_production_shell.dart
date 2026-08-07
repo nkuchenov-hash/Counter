@@ -67,6 +67,9 @@ class NotesGlmInlineAddRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final dark = theme.brightness == Brightness.dark;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
@@ -74,9 +77,15 @@ class NotesGlmInlineAddRow extends StatelessWidget {
           child: Container(
             height: 40,
             decoration: BoxDecoration(
-              color: const Color(0xFFFFFFFF).withValues(alpha: 0.78),
+              color: dark
+                  ? scheme.surfaceContainerHigh.withValues(alpha: 0.82)
+                  : const Color(0xFFFFFFFF).withValues(alpha: 0.78),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
+              border: Border.all(
+                color: dark
+                    ? scheme.outlineVariant.withValues(alpha: 0.78)
+                    : const Color(0xFFE2E8F0),
+              ),
             ),
             alignment: Alignment.centerLeft,
             padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -84,10 +93,13 @@ class NotesGlmInlineAddRow extends StatelessWidget {
               controller: controller,
               focusNode: focusNode,
               textInputAction: TextInputAction.done,
-              style: const TextStyle(fontSize: 14, color: Color(0xFF1E293B)),
+              style: TextStyle(fontSize: 14, color: scheme.onSurface),
               decoration: InputDecoration(
                 hintText: t(locale, 'input_placeholder_list'),
-                hintStyle: const TextStyle(fontSize: 14, color: kGlmMetaColor),
+                hintStyle: TextStyle(
+                  fontSize: 14,
+                  color: notesGlmMetaColor(context),
+                ),
                 border: InputBorder.none,
                 isDense: true,
                 contentPadding: EdgeInsets.zero,
@@ -98,7 +110,7 @@ class NotesGlmInlineAddRow extends StatelessWidget {
         ),
         const SizedBox(width: 8),
         Material(
-          color: const Color(0xFF6366F1),
+          color: scheme.primary,
           borderRadius: BorderRadius.circular(999),
           child: InkWell(
             onTap: onSubmit,
@@ -108,14 +120,14 @@ class NotesGlmInlineAddRow extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.add_rounded, size: 18, color: Colors.white),
+                  Icon(Icons.add_rounded, size: 18, color: scheme.onPrimary),
                   const SizedBox(width: 4),
                   Text(
                     t(locale, 'add'),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
-                      color: Colors.white,
+                      color: scheme.onPrimary,
                     ),
                   ),
                 ],
