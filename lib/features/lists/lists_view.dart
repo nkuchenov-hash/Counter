@@ -316,7 +316,6 @@ class _ListsPageState extends State<ListsPage>
     );
   }
 
-
   void _listsVisibilityListener() {
     if (!mounted) return;
     final id = _filterCategoryId;
@@ -796,8 +795,7 @@ class _ListsPageState extends State<ListsPage>
     required bool showTagsStrip,
   }) {
     final key = _listKey(task);
-    final isOptimistic =
-        task.planRowIdForBackend.startsWith('optimistic-');
+    final isOptimistic = task.planRowIdForBackend.startsWith('optimistic-');
     if (_listsSelectMode) {
       return BacklogPlanCard(
         task: task,
@@ -880,9 +878,7 @@ class _ListsPageState extends State<ListsPage>
   ) {
     final map = <String, List<PlanningTask>>{};
     for (final t in tasks) {
-      final path = DatabaseService.instance
-          .getCategoryPath(t.categoryId)
-          .trim();
+      final path = DatabaseService.instance.getCategoryPath(t.categoryId).trim();
       final key = path.isEmpty ? '—' : path;
       map.putIfAbsent(key, () => []).add(t);
     }
@@ -1235,7 +1231,7 @@ class _NotesLibraryHeader extends StatelessWidget {
                       t(locale, 'notes_v3_subtitle'),
                       style: TextStyle(
                         fontSize: 14,
-                        color: kGlmMetaColor,
+                        color: notesGlmMetaColor(context),
                       ),
                     ),
                     Text(
@@ -1245,7 +1241,7 @@ class _NotesLibraryHeader extends StatelessWidget {
                         fontWeight: FontWeight.w700,
                         letterSpacing: -0.4,
                         height: 1.15,
-                        color: const Color(0xFF0F172A),
+                        color: scheme.onSurface,
                       ),
                     ),
                   ],
@@ -1311,8 +1307,9 @@ class _NotesLibraryHeader extends StatelessWidget {
             textInputAction: TextInputAction.search,
             textCapitalization: TextCapitalization.sentences,
             onChanged: onSearchChanged,
-            style: const TextStyle(fontSize: 14, color: Color(0xFF1E293B)),
+            style: TextStyle(fontSize: 14, color: scheme.onSurface),
             decoration: notesGlmSearchDecoration(
+              context: context,
               hintText: t(locale, 'notes_v3_search_hint'),
               suffixIcon: searchQuery.trim().isNotEmpty
                   ? IconButton(
@@ -1398,9 +1395,7 @@ class _NotesLibraryEmptyState extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 80, horizontal: 32),
       children: [
         Icon(
-          noResults
-              ? Icons.search_off_rounded
-              : Icons.note_add_outlined,
+          noResults ? Icons.search_off_rounded : Icons.note_add_outlined,
           size: 56,
           color: scheme.onSurfaceVariant.withValues(alpha: 0.5),
         ),
