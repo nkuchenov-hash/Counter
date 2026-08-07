@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-07T22:55:29.888Z",
+  "updatedAt": "2026-08-07T23:07:45.114Z",
   "count": 495,
   "sources": [
     "IGN",
@@ -14,6 +14,15 @@
     "Игромания"
   ],
   "articles": [
+    {
+      "source": "Polygon",
+      "language": "en",
+      "title": "Memoirium combines Dark Souls, Inception, and Backrooms in Steam's Coolest New Action RPG",
+      "normalizedTitle": "memoirium combines dark souls inception and backrooms in steam s coolest new action rpg",
+      "url": "https://www.polygon.com/new-soulslike-memoirium-on-steam/",
+      "summary": "New action game Memoirium on Steam combines Dark Souls, Inception, and Backrooms",
+      "publishedAt": "Fri, 07 Aug 2026 23:00:12 GMT"
+    },
     {
       "source": "PC Gamer",
       "language": "en",
@@ -157,15 +166,6 @@
       "url": "https://www.gamesradar.com/games/action-rpg/rare-demons-souls-prototype-shows-off-first-person-perspective-unused-enemies-that-could-have-rewritten-dark-souls-history-like-watching-the-mona-lisa-being-painted/",
       "summary": "Unprecedented",
       "publishedAt": "Fri, 07 Aug 2026 21:10:48 +0000"
-    },
-    {
-      "source": "Polygon",
-      "language": "en",
-      "title": "10 New Movies to Watch this Weekend on Netflix, Prime Video, and Paramount Plus",
-      "normalizedTitle": "10 new movies to watch this weekend on netflix prime video and paramount plus",
-      "url": "https://www.polygon.com/new-movies-to-stream-this-weekend-netflix-august-7-9/",
-      "summary": "Evil Dead Burn, Netflix's The Last House, and Angelina Jolie's new drama Couture on this week's streaming column.",
-      "publishedAt": "Fri, 07 Aug 2026 21:00:12 GMT"
     },
     {
       "source": "IGN",

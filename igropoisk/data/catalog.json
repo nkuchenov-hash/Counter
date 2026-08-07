@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-07T22:55:29.888Z",
+  "updatedAt": "2026-08-07T23:07:45.114Z",
   "count": 78,
   "sourcePool": [
     "Steam",
@@ -2079,6 +2079,7 @@
         "Steam",
         "SteamSpy",
         "Metacritic",
+        "Polygon",
         "GamesRadar+",
         "Rock Paper Shotgun"
       ],
@@ -2090,11 +2091,21 @@
       "popularityScore": 10209.70760632109,
       "igropoiskRating": 8.7,
       "editorialSources": [
+        "Polygon",
         "GamesRadar+",
         "Rock Paper Shotgun"
       ],
       "materials": {
         "articles": [
+          {
+            "source": "Polygon",
+            "language": "en",
+            "title": "Memoirium combines Dark Souls, Inception, and Backrooms in Steam's Coolest New Action RPG",
+            "normalizedTitle": "memoirium combines dark souls inception and backrooms in steam s coolest new action rpg",
+            "url": "https://www.polygon.com/new-soulslike-memoirium-on-steam/",
+            "summary": "New action game Memoirium on Steam combines Dark Souls, Inception, and Backrooms",
+            "publishedAt": "Fri, 07 Aug 2026 23:00:12 GMT"
+          },
           {
             "source": "GamesRadar+",
             "language": "en",
@@ -2129,6 +2140,15 @@
         "news": []
       },
       "articles": [
+        {
+          "source": "Polygon",
+          "language": "en",
+          "title": "Memoirium combines Dark Souls, Inception, and Backrooms in Steam's Coolest New Action RPG",
+          "normalizedTitle": "memoirium combines dark souls inception and backrooms in steam s coolest new action rpg",
+          "url": "https://www.polygon.com/new-soulslike-memoirium-on-steam/",
+          "summary": "New action game Memoirium on Steam combines Dark Souls, Inception, and Backrooms",
+          "publishedAt": "Fri, 07 Aug 2026 23:00:12 GMT"
+        },
         {
           "source": "GamesRadar+",
           "language": "en",
@@ -3811,7 +3831,7 @@
       "movies": [],
       "criticRating": 8.7,
       "steamUserRating": 9.7,
-      "recommendations": 339373,
+      "recommendations": 339377,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 2719,
       "sourceEvidence": [
@@ -3826,7 +3846,7 @@
         "steamSpy": "https://steamspy.com/app/264710",
         "metacritic": "https://www.metacritic.com/game/pc/subnautica?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9803.067856724196,
+      "popularityScore": 9803.06836859832,
       "igropoiskRating": 9,
       "editorialSources": [
         "Rock Paper Shotgun",
@@ -4586,7 +4606,7 @@
       "movies": [],
       "criticRating": 8.5,
       "steamUserRating": 9.2,
-      "recommendations": 653708,
+      "recommendations": 653715,
       "owners": "20,000,000 .. 50,000,000",
       "peakConcurrent": 3832,
       "sourceEvidence": [
@@ -4599,7 +4619,7 @@
         "steamSpy": "https://steamspy.com/app/945360",
         "metacritic": "https://www.metacritic.com/game/pc/among-us?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9711.53844641971,
+      "popularityScore": 9711.538911465335,
       "igropoiskRating": 8.7,
       "editorialSources": [],
       "materials": {
@@ -4680,7 +4700,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 9.6,
-      "recommendations": 681518,
+      "recommendations": 681522,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 9978,
       "sourceEvidence": [
@@ -4692,7 +4712,7 @@
         "steamSpy": "https://steamspy.com/app/739630",
         "metacritic": ""
       },
-      "popularityScore": 9683.347796799188,
+      "popularityScore": 9683.348051696385,
       "igropoiskRating": 9.6,
       "editorialSources": [],
       "materials": {
@@ -5569,7 +5589,7 @@
       "movies": [],
       "criticRating": 8.9,
       "steamUserRating": 9.8,
-      "recommendations": 192189,
+      "recommendations": 192190,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 15038,
       "sourceEvidence": [
@@ -5583,7 +5603,7 @@
         "steamSpy": "https://steamspy.com/app/646570",
         "metacritic": "https://www.metacritic.com/game/pc/slay-the-spire?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9528.373078677789,
+      "popularityScore": 9528.373304648625,
       "igropoiskRating": 9.2,
       "editorialSources": [
         "PC Gamer"
@@ -5678,7 +5698,7 @@
       "movies": [],
       "criticRating": 9,
       "steamUserRating": 9.8,
-      "recommendations": 158872,
+      "recommendations": 158873,
       "owners": "2,000,000 .. 5,000,000",
       "peakConcurrent": 17123,
       "sourceEvidence": [
@@ -5691,7 +5711,7 @@
         "steamSpy": "https://steamspy.com/app/2379780",
         "metacritic": "https://www.metacritic.com/game/pc/balatro?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9510.105009640592,
+      "popularityScore": 9510.10528299926,
       "igropoiskRating": 9.3,
       "editorialSources": [],
       "materials": {
@@ -6851,7 +6871,7 @@
       "movies": [],
       "criticRating": 8.3,
       "steamUserRating": 9.6,
-      "recommendations": 578803,
+      "recommendations": 578795,
       "owners": "20,000,000 .. 50,000,000",
       "peakConcurrent": 2892,
       "sourceEvidence": [
@@ -6865,7 +6885,7 @@
         "steamSpy": "https://steamspy.com/app/242760",
         "metacritic": "https://www.metacritic.com/game/pc/the-forest?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9316.253152378067,
+      "popularityScore": 9316.25255210926,
       "igropoiskRating": 8.8,
       "editorialSources": [
         "StopGame"
