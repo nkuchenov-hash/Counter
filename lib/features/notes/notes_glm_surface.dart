@@ -29,6 +29,22 @@ const Color kGlmPillTextColor = Color(0xFF475569);
 /// Barely-visible active block wash.
 const Color kGlmActiveBlockWash = Color(0x0A6366F1);
 
+Color notesGlmMetaColor(BuildContext context) {
+  final theme = Theme.of(context);
+  if (theme.brightness == Brightness.dark) {
+    return theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.92);
+  }
+  return kGlmMetaColor;
+}
+
+Color notesGlmPillTextColor(BuildContext context) {
+  final theme = Theme.of(context);
+  if (theme.brightness == Brightness.dark) {
+    return theme.colorScheme.onSurfaceVariant;
+  }
+  return kGlmPillTextColor;
+}
+
 /// Soft full-page gradient matching the supplied GLM screenshot.
 class NotesGlmBackground extends StatelessWidget {
   const NotesGlmBackground({super.key, required this.child});
@@ -183,15 +199,23 @@ class NotesGlmEditorFrame extends StatelessWidget {
 }
 
 /// GLM glass pill for add-block actions.
-BoxDecoration notesGlmGlassPillDecoration() {
+BoxDecoration notesGlmGlassPillDecoration({BuildContext? context}) {
+  final dark = context != null && Theme.of(context).brightness == Brightness.dark;
+  final scheme = context != null ? Theme.of(context).colorScheme : null;
   return BoxDecoration(
-    color: const Color(0xFFFFFFFF).withValues(alpha: 0.82),
+    color: dark
+        ? scheme!.surfaceContainerHigh.withValues(alpha: 0.88)
+        : const Color(0xFFFFFFFF).withValues(alpha: 0.82),
     borderRadius: BorderRadius.circular(999),
-    border: Border.all(color: const Color(0xFFE2E8F0)),
+    border: Border.all(
+      color: dark
+          ? scheme!.outlineVariant.withValues(alpha: 0.78)
+          : const Color(0xFFE2E8F0),
+    ),
     boxShadow: [
       BoxShadow(
-        color: Colors.black.withValues(alpha: 0.04),
-        blurRadius: 3,
+        color: Colors.black.withValues(alpha: dark ? 0.18 : 0.04),
+        blurRadius: dark ? 8 : 3,
         offset: const Offset(0, 1),
       ),
     ],
@@ -202,53 +226,104 @@ BoxDecoration notesGlmGlassPillDecoration() {
 InputDecoration notesGlmSearchDecoration({
   required String hintText,
   Widget? suffixIcon,
+  BuildContext? context,
 }) {
+  final dark = context != null && Theme.of(context).brightness == Brightness.dark;
+  final scheme = context != null ? Theme.of(context).colorScheme : null;
+  final meta = context != null ? notesGlmMetaColor(context) : kGlmMetaColor;
+  final fill = dark
+      ? scheme!.surfaceContainerHigh.withValues(alpha: 0.82)
+      : const Color(0xFFFFFFFF).withValues(alpha: 0.75);
+  final borderColor = dark
+      ? scheme!.outlineVariant.withValues(alpha: 0.78)
+      : const Color(0xFFE2E8F0).withValues(alpha: 0.95);
   return InputDecoration(
     hintText: hintText,
-    hintStyle: const TextStyle(fontSize: 14, color: kGlmMetaColor),
-    prefixIcon: const Icon(
+    hintStyle: TextStyle(fontSize: 14, color: meta),
+    prefixIcon: Icon(
       Icons.search_rounded,
       size: 18,
-      color: kGlmMetaColor,
+      color: meta,
     ),
     suffixIcon: suffixIcon,
     filled: true,
-    fillColor: const Color(0xFFFFFFFF).withValues(alpha: 0.75),
+    fillColor: fill,
     isDense: true,
     contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
     enabledBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(12),
-      borderSide: BorderSide(
-        color: const Color(0xFFE2E8F0).withValues(alpha: 0.95),
-      ),
+      borderSide: BorderSide(color: borderColor),
     ),
     focusedBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(12),
       borderSide: BorderSide(
-        color: const Color(0xFF6366F1).withValues(alpha: 0.55),
+        color: (scheme?.primary ?? const Color(0xFF6366F1)).withValues(
+          alpha: dark ? 0.82 : 0.55,
+        ),
+        width: dark ? 1.2 : 1,
       ),
     ),
     border: OutlineInputBorder(
       borderRadius: BorderRadius.circular(12),
-      borderSide: BorderSide(
-        color: const Color(0xFFE2E8F0).withValues(alpha: 0.95),
-      ),
+      borderSide: BorderSide(color: borderColor),
     ),
   );
 }
 
 /// GLM glass card surface for library note cards.
-BoxDecoration notesGlmGlassCardDecoration({double radius = 16}) {
-  return BoxDecoration(
-    color: const Color(0xFFFFFFFF).withValues(alpha: 0.72),
-    borderRadius: BorderRadius.circular(radius),
-    border: Border.all(color: const Color(0xFFE8ECF4)),
-    boxShadow: [
+BoxDecoration notesGlmGlassCardDecoration({
+  double radius = 16,
+  BuildContext? context,
+  bool selected = false,
+}) {
+  final dark = context != null && Theme.of(context).brightness == Brightness.dark;
+  final scheme = context != null ? Theme.of(context).colorScheme : null;
+  final Color fill;
+  final Color borderColor;
+  final List<BoxShadow> shadows;
+
+  if (dark) {
+    final base = scheme!.surfaceContainerHigh;
+    fill = selected
+        ? Color.alphaBlend(
+            scheme.primary.withValues(alpha: 0.14),
+            base,
+          )
+        : base.withValues(alpha: 0.82);
+    borderColor = selected
+        ? scheme.primary.withValues(alpha: 0.62)
+        : scheme.outlineVariant.withValues(alpha: 0.62);
+    shadows = [
       BoxShadow(
-        color: Colors.black.withValues(alpha: 0.03),
-        blurRadius: 8,
+        color: selected
+            ? scheme.primary.withValues(alpha: 0.12)
+            : Colors.black.withValues(alpha: 0.18),
+        blurRadius: selected ? 14 : 10,
+        offset: const Offset(0, 3),
+      ),
+    ];
+  } else {
+    fill = selected
+        ? const Color(0xFFF1F3FF).withValues(alpha: 0.94)
+        : const Color(0xFFFFFFFF).withValues(alpha: 0.72);
+    borderColor = selected
+        ? const Color(0xFF6366F1).withValues(alpha: 0.45)
+        : const Color(0xFFE8ECF4);
+    shadows = [
+      BoxShadow(
+        color: selected
+            ? const Color(0xFF6366F1).withValues(alpha: 0.08)
+            : Colors.black.withValues(alpha: 0.03),
+        blurRadius: selected ? 12 : 8,
         offset: const Offset(0, 2),
       ),
-    ],
+    ];
+  }
+
+  return BoxDecoration(
+    color: fill,
+    borderRadius: BorderRadius.circular(radius),
+    border: Border.all(color: borderColor, width: selected ? 1.2 : 1),
+    boxShadow: shadows,
   );
 }
