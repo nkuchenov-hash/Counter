@@ -69,26 +69,12 @@ class NotesGlmInlineAddRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final dark = theme.brightness == Brightness.dark;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Expanded(
-          child: Container(
+          child: SizedBox(
             height: 40,
-            decoration: BoxDecoration(
-              color: dark
-                  ? scheme.surfaceContainerHigh.withValues(alpha: 0.82)
-                  : const Color(0xFFFFFFFF).withValues(alpha: 0.78),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: dark
-                    ? scheme.outlineVariant.withValues(alpha: 0.78)
-                    : const Color(0xFFE2E8F0),
-              ),
-            ),
-            alignment: Alignment.centerLeft,
-            padding: const EdgeInsets.symmetric(horizontal: 12),
             child: TextField(
               controller: controller,
               focusNode: focusNode,
@@ -100,9 +86,19 @@ class NotesGlmInlineAddRow extends StatelessWidget {
                   fontSize: 14,
                   color: notesGlmMetaColor(context),
                 ),
+                filled: false,
+                fillColor: Colors.transparent,
+                hoverColor: Colors.transparent,
+                focusColor: Colors.transparent,
                 border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                disabledBorder: InputBorder.none,
                 isDense: true,
-                contentPadding: EdgeInsets.zero,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 2,
+                  vertical: 10,
+                ),
               ),
               onSubmitted: (_) => onSubmit(),
             ),
