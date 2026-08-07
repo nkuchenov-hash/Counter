@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-07T23:55:39.944Z",
+  "updatedAt": "2026-08-07T23:56:32.563Z",
   "count": 78,
   "sourcePool": [
     "Steam",
@@ -241,7 +241,7 @@
       "movies": [],
       "criticRating": 9.6,
       "steamUserRating": 9.7,
-      "recommendations": 749571,
+      "recommendations": 749576,
       "owners": "20,000,000 .. 50,000,000",
       "peakConcurrent": 54771,
       "sourceEvidence": [
@@ -259,7 +259,7 @@
         "steamSpy": "https://steamspy.com/app/1086940",
         "metacritic": "https://www.metacritic.com/game/pc/baldurs-gate-3?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10577.481335526418,
+      "popularityScore": 10577.481625220425,
       "igropoiskRating": 9.6,
       "editorialSources": [
         "PC Gamer",
@@ -1268,7 +1268,7 @@
       "movies": [],
       "criticRating": 8.3,
       "steamUserRating": 9.7,
-      "recommendations": 1230419,
+      "recommendations": 1230421,
       "owners": "20,000,000 .. 50,000,000",
       "peakConcurrent": 24580,
       "sourceEvidence": [
@@ -1281,7 +1281,7 @@
         "steamSpy": "https://steamspy.com/app/105600",
         "metacritic": "https://www.metacritic.com/game/pc/terraria?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10389.005338180314,
+      "popularityScore": 10389.00540877314,
       "igropoiskRating": 8.8,
       "editorialSources": [],
       "materials": {
@@ -1573,7 +1573,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 9.4,
-      "recommendations": 456903,
+      "recommendations": 456900,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 14439,
       "sourceEvidence": [
@@ -1585,7 +1585,7 @@
         "steamSpy": "https://steamspy.com/app/892970",
         "metacritic": ""
       },
-      "popularityScore": 10325.982496013565,
+      "popularityScore": 10325.982210857881,
       "igropoiskRating": 9.4,
       "editorialSources": [],
       "materials": {
@@ -2728,7 +2728,7 @@
       "movies": [],
       "criticRating": 8.1,
       "steamUserRating": 7.3,
-      "recommendations": 211685,
+      "recommendations": 211688,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 6300,
       "sourceEvidence": [
@@ -2746,7 +2746,7 @@
         "steamSpy": "https://steamspy.com/app/594650",
         "metacritic": "https://www.metacritic.com/game/pc/hunt-showdown?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9932.569213660327,
+      "popularityScore": 9932.569829135235,
       "igropoiskRating": 7.8,
       "editorialSources": [
         "GamesRadar+",
@@ -3970,7 +3970,7 @@
       "movies": [],
       "criticRating": 9.1,
       "steamUserRating": 9.7,
-      "recommendations": 233163,
+      "recommendations": 233165,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 12596,
       "sourceEvidence": [
@@ -3983,7 +3983,7 @@
         "steamSpy": "https://steamspy.com/app/526870",
         "metacritic": "https://www.metacritic.com/game/pc/satisfactory?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9766.766149716648,
+      "popularityScore": 9766.76652223781,
       "igropoiskRating": 9.3,
       "editorialSources": [],
       "materials": {
@@ -4154,7 +4154,7 @@
       "movies": [],
       "criticRating": 8.7,
       "steamUserRating": 9.8,
-      "recommendations": 206917,
+      "recommendations": 206918,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 19211,
       "sourceEvidence": [
@@ -4167,7 +4167,7 @@
         "steamSpy": "https://steamspy.com/app/294100",
         "metacritic": "https://www.metacritic.com/game/pc/rimworld?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9741.57982720125,
+      "popularityScore": 9741.580037087984,
       "igropoiskRating": 9.1,
       "editorialSources": [],
       "materials": {
@@ -5235,7 +5235,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 8.8,
-      "recommendations": 281335,
+      "recommendations": 281339,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 4450,
       "sourceEvidence": [
@@ -5247,7 +5247,7 @@
         "steamSpy": "https://steamspy.com/app/1326470",
         "metacritic": ""
       },
-      "popularityScore": 9624.922530842186,
+      "popularityScore": 9624.92314831225,
       "igropoiskRating": 8.8,
       "editorialSources": [],
       "materials": {
