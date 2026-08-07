@@ -141,8 +141,6 @@ extension PlanOptimisticOverlayExtension on DatabaseService {
     for (final e in overlay.entries) {
       final t = e.value;
       if (t.startTime != null) continue;
-      final dk = t.dateKey.trim();
-      if (dk.length >= 10) continue;
       byId[e.key] = t;
     }
     final merged = byId.values.toList();
@@ -155,15 +153,30 @@ extension PlanOptimisticOverlayExtension on DatabaseService {
   }
 
   /// Instant backlog snapshot (cache + optimistic overlay) — no network.
+  ///
+  /// Backlog membership is defined by an unset `start_time`. Some legacy
+  /// note rows retain a stale `dateKey` (for example from an old `end_time`);
+  /// that metadata must not hide an otherwise undated note from Notes.
   List<PlanningTask> getBacklogPlansSnapshot({
     int? categoryId,
     bool includeCompleted = false,
   }) {
-    final base = _filterBacklogFromAll(
-      _allPlansUserCache,
-      categoryId: categoryId,
-      includeCompleted: includeCompleted,
-    );
+    final base = <PlanningTask>[];
+    for (final t in _allPlansUserCache) {
+      final pid = t.planRowIdForBackend.trim();
+      if (pid.startsWith('optimistic-') || pid.startsWith('virt-')) continue;
+      if (!includeCompleted && t.isDone) continue;
+      if (t.startTime != null) continue;
+      if (t.rrule != null && t.rrule!.trim().isNotEmpty) continue;
+      if (t.isBacklogChildItem) continue;
+      if (categoryId != null && t.categoryId != categoryId) continue;
+      base.add(t);
+    }
+    base.sort((a, b) {
+      final o = a.order.compareTo(b.order);
+      if (o != 0) return o;
+      return a.title.compareTo(b.title);
+    });
     return _mergeBacklogOptimistic(base);
   }
 }
