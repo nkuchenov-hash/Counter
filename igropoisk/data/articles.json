@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-07T23:46:05.889Z",
+  "updatedAt": "2026-08-07T23:55:22.994Z",
   "count": 495,
   "sources": [
     "IGN",
@@ -14,6 +14,15 @@
     "Игромания"
   ],
   "articles": [
+    {
+      "source": "PC Gamer",
+      "language": "en",
+      "title": "GTA 6's Netflix deal forces us to ask: can you pirate an advertisement?",
+      "normalizedTitle": "gta 6 s netflix deal forces us to ask can you pirate an advertisement",
+      "url": "https://www.pcgamer.com/games/grand-theft-auto/gta-6s-netflix-deal-forces-us-to-ask-can-you-pirate-an-advertisement/",
+      "summary": "Just when you thought videogame marketing couldn't get sillier, people are going to wind up stealing a trailer.",
+      "publishedAt": "Fri, 07 Aug 2026 23:52:49 +0000"
+    },
     {
       "source": "PC Gamer",
       "language": "en",
@@ -1777,15 +1786,6 @@
       "url": "https://www.pcgamer.com/games/puzzle/sorry-about-this-big-walk-is-already-fixing-its-biggest-complaint/",
       "summary": "In a game about communication, players are having trouble hearing each other.",
       "publishedAt": "Wed, 05 Aug 2026 19:36:45 +0000"
-    },
-    {
-      "source": "PC Gamer",
-      "language": "en",
-      "title": "Grand Theft Auto 6 publisher is holding an investors call at a very unusual time this week",
-      "normalizedTitle": "grand theft auto 6 publisher is holding an investors call at a very unusual time this week",
-      "url": "https://www.pcgamer.com/games/grand-theft-auto/grand-theft-auto-6-publisher-is-holding-an-investors-call-at-a-very-unusual-time-this-week/",
-      "summary": "What could it mean?",
-      "publishedAt": "Wed, 05 Aug 2026 19:20:04 +0000"
     },
     {
       "source": "StopGame",
