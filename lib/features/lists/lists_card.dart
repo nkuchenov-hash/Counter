@@ -31,7 +31,9 @@ class ListsQuadraticChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final dark = theme.brightness == Brightness.dark;
     final base = categoryColor;
     if (glmPresentation) {
       return Material(
@@ -44,12 +46,19 @@ class ListsQuadraticChip extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 12),
             decoration: BoxDecoration(
               color: selected
-                  ? base.withValues(alpha: 0.18)
+                  ? base.withValues(alpha: dark ? 0.22 : 0.18)
+                  : dark
+                  ? Color.alphaBlend(
+                      base.withValues(alpha: 0.08),
+                      scheme.surfaceContainerHigh,
+                    )
                   : base.withValues(alpha: 0.10),
               borderRadius: BorderRadius.circular(999),
               border: Border.all(
                 color: selected
-                    ? base.withValues(alpha: 0.65)
+                    ? base.withValues(alpha: dark ? 0.82 : 0.65)
+                    : dark
+                    ? scheme.outlineVariant.withValues(alpha: 0.70)
                     : base.withValues(alpha: 0.28),
                 width: selected ? 1.5 : 1,
               ),
@@ -62,7 +71,9 @@ class ListsQuadraticChip extends StatelessWidget {
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
-                color: selected ? base : kGlmPillTextColor,
+                color: selected
+                    ? (dark ? scheme.onSurface : base)
+                    : notesGlmPillTextColor(context),
               ),
             ),
           ),
