@@ -42,6 +42,7 @@ class NoteCard extends StatelessWidget {
     required this.onTogglePin,
     required this.onToggleDone,
     required this.onLongPress,
+    this.selected = false,
   });
 
   final NoteCardData data;
@@ -51,6 +52,7 @@ class NoteCard extends StatelessWidget {
   final VoidCallback onTogglePin;
   final VoidCallback onToggleDone;
   final VoidCallback onLongPress;
+  final bool selected;
 
   @override
   Widget build(BuildContext context) {
@@ -58,6 +60,7 @@ class NoteCard extends StatelessWidget {
         ? _GridCard(
             data: data,
             checkboxesOn: checkboxesOn,
+            selected: selected,
             onOpen: onOpen,
             onTogglePin: onTogglePin,
             onToggleDone: onToggleDone,
@@ -66,6 +69,7 @@ class NoteCard extends StatelessWidget {
         : _ListRow(
             data: data,
             checkboxesOn: checkboxesOn,
+            selected: selected,
             onOpen: onOpen,
             onTogglePin: onTogglePin,
             onToggleDone: onToggleDone,
@@ -80,6 +84,7 @@ class _GridCard extends StatelessWidget {
   const _GridCard({
     required this.data,
     required this.checkboxesOn,
+    required this.selected,
     required this.onOpen,
     required this.onTogglePin,
     required this.onToggleDone,
@@ -88,6 +93,7 @@ class _GridCard extends StatelessWidget {
 
   final NoteCardData data;
   final bool checkboxesOn;
+  final bool selected;
   final VoidCallback onOpen;
   final VoidCallback onTogglePin;
   final VoidCallback onToggleDone;
@@ -104,10 +110,14 @@ class _GridCard extends StatelessWidget {
       onTap: onOpen,
       onLongPress: onLongPress,
       child: AnimatedOpacity(
-        opacity: isDone ? 0.5 : 1.0,
+        opacity: isDone ? 0.62 : 1.0,
         duration: const Duration(milliseconds: 180),
         child: Container(
-          decoration: notesGlmGlassCardDecoration(radius: 16),
+          decoration: notesGlmGlassCardDecoration(
+            radius: 16,
+            context: context,
+            selected: selected,
+          ),
           padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -118,8 +128,11 @@ class _GridCard extends StatelessWidget {
                   const SizedBox(width: 10),
                   Expanded(child: _BadgesRow(data: data, loc: loc)),
                   if (data.pinned)
-                    Icon(Icons.push_pin_rounded,
-                        size: 14, color: scheme.primary),
+                    Icon(
+                      Icons.push_pin_rounded,
+                      size: 14,
+                      color: scheme.primary,
+                    ),
                   _DoneCheck(
                     isDone: isDone,
                     checkboxesOn: checkboxesOn,
@@ -140,8 +153,8 @@ class _GridCard extends StatelessWidget {
                   letterSpacing: -0.2,
                   decoration: isDone ? TextDecoration.lineThrough : null,
                   color: isDone
-                      ? kGlmMetaColor
-                      : const Color(0xFF0F172A),
+                      ? scheme.onSurfaceVariant.withValues(alpha: 0.78)
+                      : scheme.onSurface,
                 ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
@@ -157,7 +170,10 @@ class _GridCard extends StatelessWidget {
                   const Spacer(),
                   Text(
                     _relative(data.task.updatedAt ?? data.task.createdAt),
-                    style: const TextStyle(fontSize: 11, color: kGlmMetaColor),
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: notesGlmMetaColor(context),
+                    ),
                   ),
                 ],
               ),
@@ -175,6 +191,7 @@ class _ListRow extends StatelessWidget {
   const _ListRow({
     required this.data,
     required this.checkboxesOn,
+    required this.selected,
     required this.onOpen,
     required this.onTogglePin,
     required this.onToggleDone,
@@ -183,6 +200,7 @@ class _ListRow extends StatelessWidget {
 
   final NoteCardData data;
   final bool checkboxesOn;
+  final bool selected;
   final VoidCallback onOpen;
   final VoidCallback onTogglePin;
   final VoidCallback onToggleDone;
@@ -194,16 +212,22 @@ class _ListRow extends StatelessWidget {
     final loc = currentLocale.value;
     final isDone = data.task.isDone;
     final color = data.categoryColor;
+    final secondary = scheme.onSurfaceVariant.withValues(alpha: 0.94);
+    final meta = scheme.onSurfaceVariant.withValues(alpha: 0.82);
 
     return GestureDetector(
       onTap: onOpen,
       onLongPress: onLongPress,
       child: AnimatedOpacity(
-        opacity: isDone ? 0.5 : 1.0,
+        opacity: isDone ? 0.62 : 1.0,
         duration: const Duration(milliseconds: 180),
         child: Container(
           constraints: const BoxConstraints(minHeight: 80),
-          decoration: notesGlmGlassCardDecoration(radius: 12),
+          decoration: notesGlmGlassCardDecoration(
+            radius: 12,
+            context: context,
+            selected: selected,
+          ),
           padding: const EdgeInsets.fromLTRB(12, 14, 8, 14),
           child: Row(
             children: [
@@ -247,22 +271,28 @@ class _ListRow extends StatelessWidget {
                               decoration: isDone
                                   ? TextDecoration.lineThrough
                                   : null,
-                              color: isDone ? scheme.onSurfaceVariant : null,
+                              color: isDone
+                                  ? scheme.onSurfaceVariant.withValues(
+                                      alpha: 0.78,
+                                    )
+                                  : scheme.onSurface,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
                         if (data.pinned)
-                          Icon(Icons.push_pin_rounded,
-                              size: 12, color: scheme.primary),
+                          Icon(
+                            Icons.push_pin_rounded,
+                            size: 12,
+                            color: scheme.primary,
+                          ),
                       ],
                     ),
                     const SizedBox(height: 2),
                     Text(
                       _listPreview(data, loc),
-                      style: TextStyle(
-                          fontSize: 12, color: scheme.onSurfaceVariant),
+                      style: TextStyle(fontSize: 12, color: secondary),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -272,24 +302,18 @@ class _ListRow extends StatelessWidget {
                         if (data.categoryName != null) ...[
                           Text(
                             data.categoryName!,
-                            style: TextStyle(
-                                fontSize: 10,
-                                color: scheme.onSurfaceVariant),
+                            style: TextStyle(fontSize: 10, color: meta),
                           ),
                         ],
                         if (data.stats.hasChecklist) ...[
                           Text(
                             ' · ${t(loc, 'notes_v3_checklist_progress').replaceAll('{done}', '${data.stats.checklistChecked}').replaceAll('{total}', '${data.stats.checklistTotal}')}',
-                            style: TextStyle(
-                                fontSize: 10,
-                                color: scheme.onSurfaceVariant),
+                            style: TextStyle(fontSize: 10, color: meta),
                           ),
                         ],
                         Text(
                           ' · ${_relative(data.task.updatedAt ?? data.task.createdAt)}',
-                          style: TextStyle(
-                              fontSize: 10,
-                              color: scheme.onSurfaceVariant),
+                          style: TextStyle(fontSize: 10, color: meta),
                         ),
                       ],
                     ),
@@ -309,8 +333,7 @@ class _ListRow extends StatelessWidget {
                 ),
                 onPressed: onTogglePin,
                 padding: EdgeInsets.zero,
-                constraints:
-                    const BoxConstraints(minWidth: 28, minHeight: 28),
+                constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
                 splashRadius: 14,
                 visualDensity: VisualDensity.compact,
               ),
@@ -342,34 +365,42 @@ class _BadgesRow extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final children = <Widget>[];
     if (data.stats.hasChecklist) {
-      children.add(_Badge(
-        icon: Icons.checklist_rounded,
-        label: t(loc, 'notes_v3_checklist_progress')
-            .replaceAll('{done}', '${data.stats.checklistChecked}')
-            .replaceAll('{total}', '${data.stats.checklistTotal}'),
-        color: scheme.primary,
-      ));
+      children.add(
+        _Badge(
+          icon: Icons.checklist_rounded,
+          label: t(loc, 'notes_v3_checklist_progress')
+              .replaceAll('{done}', '${data.stats.checklistChecked}')
+              .replaceAll('{total}', '${data.stats.checklistTotal}'),
+          color: scheme.primary,
+        ),
+      );
     }
     if (data.stats.hasDrawing) {
-      children.add(_Badge(
-        icon: Icons.draw_outlined,
-        label: t(loc, 'notes_v3_draw_badge'),
-        color: Colors.amber.shade700,
-      ));
+      children.add(
+        _Badge(
+          icon: Icons.draw_outlined,
+          label: t(loc, 'notes_v3_draw_badge'),
+          color: Colors.amber.shade700,
+        ),
+      );
     }
     if (data.stats.hasImage) {
-      children.add(_Badge(
-        icon: Icons.image_outlined,
-        label: t(loc, 'notes_v3_image_badge'),
-        color: Colors.green,
-      ));
+      children.add(
+        _Badge(
+          icon: Icons.image_outlined,
+          label: t(loc, 'notes_v3_image_badge'),
+          color: Colors.green,
+        ),
+      );
     }
     if (data.stats.isEmpty) {
-      children.add(_Badge(
-        icon: Icons.checklist_rounded,
-        label: t(loc, 'notes_v3_checklist_badge'),
-        color: scheme.primary,
-      ));
+      children.add(
+        _Badge(
+          icon: Icons.checklist_rounded,
+          label: t(loc, 'notes_v3_checklist_badge'),
+          color: scheme.primary,
+        ),
+      );
     }
     return Wrap(spacing: 4, runSpacing: 2, children: children);
   }
@@ -401,7 +432,10 @@ class _Badge extends StatelessWidget {
           Text(
             label,
             style: TextStyle(
-                fontSize: 10, fontWeight: FontWeight.w500, color: color),
+              fontSize: 10,
+              fontWeight: FontWeight.w500,
+              color: color,
+            ),
           ),
         ],
       ),
@@ -410,7 +444,11 @@ class _Badge extends StatelessWidget {
 }
 
 class _BlockPreview extends StatelessWidget {
-  const _BlockPreview({required this.data, required this.loc, required this.isDone});
+  const _BlockPreview({
+    required this.data,
+    required this.loc,
+    required this.isDone,
+  });
   final NoteCardData data;
   final String loc;
   final bool isDone;
@@ -422,7 +460,10 @@ class _BlockPreview extends StatelessWidget {
     if (preview.isEmpty) {
       return Text(
         t(loc, 'notes_v3_untitled'),
-        style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant),
+        style: TextStyle(
+          fontSize: 12,
+          color: scheme.onSurfaceVariant.withValues(alpha: 0.94),
+        ),
       );
     }
     return Column(
@@ -435,8 +476,10 @@ class _BlockPreview extends StatelessWidget {
             child: Text(
               t(loc, 'notes_v3_more_count')
                   .replaceAll('{n}', '${data.doc.blocks.length - 5}'),
-              style:
-                  TextStyle(fontSize: 10, color: scheme.onSurfaceVariant),
+              style: TextStyle(
+                fontSize: 10,
+                color: scheme.onSurfaceVariant.withValues(alpha: 0.84),
+              ),
             ),
           ),
       ],
@@ -452,6 +495,7 @@ class _PreviewLine extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final secondary = scheme.onSurfaceVariant.withValues(alpha: 0.94);
     if (block.type == NoteBlockType.heading) {
       return Padding(
         padding: const EdgeInsets.only(bottom: 1),
@@ -494,9 +538,7 @@ class _PreviewLine extends StatelessWidget {
                 decoration: (block.checked || isDone)
                     ? TextDecoration.lineThrough
                     : null,
-                color: (block.checked || isDone)
-                    ? scheme.onSurfaceVariant
-                    : scheme.onSurfaceVariant,
+                color: secondary,
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -505,7 +547,8 @@ class _PreviewLine extends StatelessWidget {
         ],
       );
     }
-    if (block.type == NoteBlockType.image || block.type == NoteBlockType.drawing) {
+    if (block.type == NoteBlockType.image ||
+        block.type == NoteBlockType.drawing) {
       return Padding(
         padding: const EdgeInsets.only(top: 1),
         child: Row(
@@ -515,7 +558,7 @@ class _PreviewLine extends StatelessWidget {
                   ? Icons.draw_outlined
                   : Icons.image_outlined,
               size: 11,
-              color: scheme.onSurfaceVariant,
+              color: secondary,
             ),
             const SizedBox(width: 3),
             Text(
@@ -523,9 +566,10 @@ class _PreviewLine extends StatelessWidget {
                   ? t(currentLocale.value, 'notes_v3_draw_badge')
                   : t(currentLocale.value, 'notes_v3_image_badge'),
               style: TextStyle(
-                  fontSize: 10,
-                  fontStyle: FontStyle.italic,
-                  color: scheme.onSurfaceVariant),
+                fontSize: 10,
+                fontStyle: FontStyle.italic,
+                color: secondary,
+              ),
             ),
           ],
         ),
@@ -533,7 +577,7 @@ class _PreviewLine extends StatelessWidget {
     }
     return Text(
       block.text,
-      style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant),
+      style: TextStyle(fontSize: 12, color: secondary),
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
     );
@@ -559,7 +603,11 @@ class _DoneCheck extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     if (checkboxesOn) {
-      return _LargeDoneCheck(isDone: isDone, color: color, onToggle: onToggle);
+      return _LargeDoneCheck(
+        isDone: isDone,
+        color: color,
+        onToggle: onToggle,
+      );
     }
     return InkWell(
       onTap: onToggle,
@@ -606,7 +654,9 @@ class _LargeDoneCheck extends StatelessWidget {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: isDone ? scheme.primary : scheme.outlineVariant.withValues(alpha: 0.7),
+            color: isDone
+                ? scheme.primary
+                : scheme.outlineVariant.withValues(alpha: 0.7),
             width: 2,
           ),
           color: isDone ? scheme.primary : notesTintBackground(color),
