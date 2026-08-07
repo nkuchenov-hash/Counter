@@ -1104,9 +1104,7 @@ class _ListsPageState extends State<ListsPage>
                         onSubmit: _submitInline,
                       )
                     : null,
-                content: filterId == null
-                    ? ListsNoCategoryEmptyPanel(locale: loc)
-                    : _loading
+                content: _loading
                     ? const ListsLoadingPanel()
                     : listBodyEmpty
                     ? (_notesSearchQuery.trim().isNotEmpty
@@ -1428,4 +1426,3 @@ class _NotesLibraryEmptyState extends StatelessWidget {
     );
   }
 }
-
