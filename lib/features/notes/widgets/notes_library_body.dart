@@ -12,13 +12,18 @@ import 'package:counter/data/models.dart';
 import 'package:counter/features/notes/note_editor_page.dart';
 import 'package:counter/features/notes/widgets/note_card.dart';
 import 'package:counter/features/notes/widgets/notes_editor_screen.dart';
+import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 const double kNotesEmbeddedWorkspaceBreakpoint = 1100;
+const String _kNotesDateSortPref = 'lifeos.notes.dateSort';
 
 bool notesUsesEmbeddedWorkspace(double viewportWidth) {
   return viewportWidth >= kNotesEmbeddedWorkspaceBreakpoint;
 }
+
+enum _NotesDateSort { updated, created }
 
 class NotesLibraryBody extends StatefulWidget {
   const NotesLibraryBody({
@@ -44,6 +49,13 @@ class NotesLibraryBody extends StatefulWidget {
 
 class _NotesLibraryBodyState extends State<NotesLibraryBody> {
   PlanningTask? _selectedTask;
+  _NotesDateSort _dateSort = _NotesDateSort.updated;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_loadDateSort());
+  }
 
   @override
   void didUpdateWidget(covariant NotesLibraryBody oldWidget) {
@@ -60,9 +72,35 @@ class _NotesLibraryBodyState extends State<NotesLibraryBody> {
     _selectedTask = refreshed;
   }
 
+  Future<void> _loadDateSort() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString(_kNotesDateSortPref);
+      if (!mounted) return;
+      setState(() {
+        _dateSort = raw == 'created'
+            ? _NotesDateSort.created
+            : _NotesDateSort.updated;
+      });
+    } catch (_) {}
+  }
+
+  Future<void> _setDateSort(_NotesDateSort value) async {
+    if (_dateSort == value) return;
+    setState(() => _dateSort = value);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(
+        _kNotesDateSortPref,
+        value == _NotesDateSort.created ? 'created' : 'updated',
+      );
+    } catch (_) {}
+  }
+
   @override
   Widget build(BuildContext context) {
-    final cards = _buildCards(context);
+    final tasks = _sortedTasks();
+    final cards = _buildCards(context, tasks);
     return LayoutBuilder(
       builder: (context, constraints) {
         // The production library is intentionally capped below 1100px.
@@ -73,13 +111,22 @@ class _NotesLibraryBodyState extends State<NotesLibraryBody> {
         );
         final selected = wide ? _selectedTask : null;
         if (selected == null) {
-          return _withRefresh(
-            _buildCollection(
-              context,
-              cards,
-              view: widget.view,
-              availableWidth: constraints.maxWidth,
-            ),
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildSortControl(context),
+              const SizedBox(height: 6),
+              Expanded(
+                child: _withRefresh(
+                  _buildCollection(
+                    context,
+                    cards,
+                    view: widget.view,
+                    availableWidth: constraints.maxWidth,
+                  ),
+                ),
+              ),
+            ],
           );
         }
 
@@ -94,14 +141,23 @@ class _NotesLibraryBodyState extends State<NotesLibraryBody> {
               width: listWidth,
               child: Padding(
                 padding: const EdgeInsets.only(right: 16),
-                child: _withRefresh(
-                  _buildCollection(
-                    context,
-                    cards,
-                    view: NotesLibraryView.list,
-                    availableWidth: listWidth,
-                    selectedId: selected.planRowIdForBackend,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _buildSortControl(context),
+                    const SizedBox(height: 6),
+                    Expanded(
+                      child: _withRefresh(
+                        _buildCollection(
+                          context,
+                          cards,
+                          view: NotesLibraryView.list,
+                          availableWidth: listWidth,
+                          selectedId: selected.planRowIdForBackend,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -130,11 +186,150 @@ class _NotesLibraryBodyState extends State<NotesLibraryBody> {
     );
   }
 
-  List<NoteCardData> _buildCards(BuildContext context) {
+  List<PlanningTask> _sortedTasks() {
+    final db = DatabaseService.instance;
+    final out = List<PlanningTask>.from(widget.tasks);
+    out.sort((a, b) {
+      if (a.isDone != b.isDone) return a.isDone ? 1 : -1;
+      final ap = db.isNotePinned(a);
+      final bp = db.isNotePinned(b);
+      if (ap != bp) return ap ? -1 : 1;
+      final ad = _dateSort == _NotesDateSort.created
+          ? (a.createdAt ?? a.updatedAt)
+          : (a.updatedAt ?? a.createdAt);
+      final bd = _dateSort == _NotesDateSort.created
+          ? (b.createdAt ?? b.updatedAt)
+          : (b.updatedAt ?? b.createdAt);
+      if (ad != null && bd != null) {
+        final byDate = bd.compareTo(ad);
+        if (byDate != 0) return byDate;
+      } else if (ad != null) {
+        return -1;
+      } else if (bd != null) {
+        return 1;
+      }
+      final byOrder = a.order.compareTo(b.order);
+      if (byOrder != 0) return byOrder;
+      return a.title.compareTo(b.title);
+    });
+    return out;
+  }
+
+  Widget _buildSortControl(BuildContext context) {
+    final locale = currentLocale.value;
+    final scheme = Theme.of(context).colorScheme;
+    final label = _dateSortLabel(locale, _dateSort);
+    return Align(
+      alignment: Alignment.centerRight,
+      child: PopupMenuButton<_NotesDateSort>(
+        tooltip: _sortTooltip(locale),
+        initialValue: _dateSort,
+        onSelected: (value) => unawaited(_setDateSort(value)),
+        itemBuilder: (context) => [
+          PopupMenuItem<_NotesDateSort>(
+            value: _NotesDateSort.updated,
+            child: Row(
+              children: [
+                const Icon(Icons.update_rounded, size: 18),
+                const SizedBox(width: 8),
+                Text(_dateSortLabel(locale, _NotesDateSort.updated)),
+              ],
+            ),
+          ),
+          PopupMenuItem<_NotesDateSort>(
+            value: _NotesDateSort.created,
+            child: Row(
+              children: [
+                const Icon(Icons.event_available_outlined, size: 18),
+                const SizedBox(width: 8),
+                Text(_dateSortLabel(locale, _NotesDateSort.created)),
+              ],
+            ),
+          ),
+        ],
+        child: Container(
+          height: 34,
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          decoration: BoxDecoration(
+            color: scheme.surfaceContainerHighest.withValues(alpha: 0.55),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: scheme.outlineVariant.withValues(alpha: 0.7),
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.sort_rounded, size: 17),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: Theme.of(context).textTheme.labelMedium,
+              ),
+              const SizedBox(width: 2),
+              const Icon(Icons.arrow_drop_down_rounded, size: 18),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _sortTooltip(String locale) {
+    switch (locale) {
+      case 'ru':
+        return 'Сортировка заметок';
+      case 'fr':
+        return 'Trier les notes';
+      case 'de':
+        return 'Notizen sortieren';
+      case 'es':
+        return 'Ordenar notas';
+      case 'it':
+        return 'Ordina note';
+      case 'ko':
+        return '노트 정렬';
+      case 'zh':
+        return '笔记排序';
+      case 'ar':
+        return 'ترتيب الملاحظات';
+      default:
+        return 'Sort notes';
+    }
+  }
+
+  String _dateSortLabel(String locale, _NotesDateSort mode) {
+    final created = mode == _NotesDateSort.created;
+    switch (locale) {
+      case 'ru':
+        return created ? 'По дате создания' : 'По последнему изменению';
+      case 'fr':
+        return created ? 'Date de création' : 'Dernière modification';
+      case 'de':
+        return created ? 'Erstellungsdatum' : 'Letzte Änderung';
+      case 'es':
+        return created ? 'Fecha de creación' : 'Última modificación';
+      case 'it':
+        return created ? 'Data di creazione' : 'Ultima modifica';
+      case 'ko':
+        return created ? '생성일' : '최근 수정';
+      case 'zh':
+        return created ? '创建日期' : '最近修改';
+      case 'ar':
+        return created ? 'تاريخ الإنشاء' : 'آخر تعديل';
+      default:
+        return created ? 'Created' : 'Last modified';
+    }
+  }
+
+  List<NoteCardData> _buildCards(
+    BuildContext context,
+    List<PlanningTask> tasks,
+  ) {
     final db = DatabaseService.instance;
     final scheme = Theme.of(context).colorScheme;
     return [
-      for (final task in widget.tasks)
+      for (final task in tasks)
         () {
           final doc = db.parseNoteDocument(task);
           final category = db.getCategoryRuleById(task.categoryId);
