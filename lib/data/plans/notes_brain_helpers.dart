@@ -10,6 +10,10 @@
 
 part of '../database_service.dart';
 
+DateTime? _notesTimestampHydrationFetchedAt;
+Future<void>? _notesTimestampHydrationInFlight;
+const Duration _notesTimestampHydrationFreshTtl = Duration(minutes: 5);
+
 /// Brain-side extension for the Life OS Notes block editor.
 ///
 /// All methods are local-first: they mutate the Brain cache immediately, notify
@@ -21,6 +25,98 @@ extension NotesBrainExtension on DatabaseService {
   /// background sync without triggering a full refetch.
   PlanningTask? getCachedPlanningTaskForEdit(String planRowIdForBackend) {
     return _findCachedPlanningTaskForEdit(planRowIdForBackend);
+  }
+
+  /// Hydrates PocketBase's immutable `created` and auto-managed `updated`
+  /// timestamps into the existing Brain cache without refetching plan content.
+  ///
+  /// The Notes library renders immediately from the local cache; this metadata
+  /// refresh is background-only and requests only `id,created,updated`.
+  Future<void> ensureNoteTimestampsHydrated({bool force = false}) async {
+    if (!_isInitialized || !_hasAuthenticatedUserId) return;
+    if (!force &&
+        _notesTimestampHydrationFetchedAt != null &&
+        DateTime.now().difference(_notesTimestampHydrationFetchedAt!) <
+            _notesTimestampHydrationFreshTtl &&
+        !_allPlansUserCache.any(
+          (task) => task.createdAt == null || task.updatedAt == null,
+        )) {
+      return;
+    }
+
+    final existing = _notesTimestampHydrationInFlight;
+    if (existing != null) return existing;
+
+    final future = _hydrateNoteTimestampsFromPocketBase();
+    _notesTimestampHydrationInFlight = future;
+    try {
+      await future;
+    } finally {
+      _notesTimestampHydrationInFlight = null;
+    }
+  }
+
+  Future<void> _hydrateNoteTimestampsFromPocketBase() async {
+    try {
+      await ensurePocketBaseReady();
+      if (_pbHttpBackoffActive) return;
+      final authId = _userIdForWhere;
+      if (authId == null || authId.isEmpty) return;
+      final uid = _escapeForPbFilter(authId);
+      final rows = await _pb
+          .collection(PbCollections.plans)
+          .getFullList(
+            filter: 'user_id = "$uid"',
+            fields: 'id,created,updated',
+            batch: 200,
+          );
+
+      final byId = <String, ({DateTime? createdAt, DateTime? updatedAt})>{};
+      for (final row in rows) {
+        final id = row.id.trim();
+        if (id.isEmpty) continue;
+        final createdRaw = row.created.trim();
+        final updatedRaw = row.updated.trim();
+        byId[id] = (
+          createdAt: createdRaw.isEmpty ? null : DateTime.tryParse(createdRaw),
+          updatedAt: updatedRaw.isEmpty ? null : DateTime.tryParse(updatedRaw),
+        );
+      }
+
+      DateTime? latest(DateTime? a, DateTime? b) {
+        if (a == null) return b;
+        if (b == null) return a;
+        return a.isAfter(b) ? a : b;
+      }
+
+      var changed = false;
+      final next = <PlanningTask>[];
+      for (final task in _allPlansUserCache) {
+        final pbId = task.pocketRecordId?.trim() ?? '';
+        final stamp = byId[pbId];
+        if (stamp == null) {
+          next.add(task);
+          continue;
+        }
+        final createdAt = stamp.createdAt ?? task.createdAt;
+        final updatedAt = latest(task.updatedAt, stamp.updatedAt);
+        if (createdAt != task.createdAt || updatedAt != task.updatedAt) {
+          changed = true;
+          next.add(
+            task.copyWith(createdAt: createdAt, updatedAt: updatedAt),
+          );
+        } else {
+          next.add(task);
+        }
+      }
+      if (changed) {
+        _allPlansUserCache = next;
+        notifyPlanningRefresh(scheduleNetworkRefresh: false);
+      }
+      _notesTimestampHydrationFetchedAt = DateTime.now();
+    } catch (_) {
+      // Metadata hydration must never block or blank the local Notes library.
+    }
   }
 
   /// Parses a [PlanningTask]'s stored `notes_delta` (+ legacy fallbacks) into
@@ -59,7 +155,10 @@ extension NotesBrainExtension on DatabaseService {
   void toggleNoteDone(String planRowIdForBackend) {
     final task = _findCachedPlanningTaskForEdit(planRowIdForBackend);
     if (task == null) return;
-    final updated = task.copyWith(isDone: !task.isDone);
+    final updated = task.copyWith(
+      isDone: !task.isDone,
+      updatedAt: DateTime.now(),
+    );
     applyOptimisticPlanningTask(updated);
     notifyPlanningRefresh(scheduleNetworkRefresh: false);
     unawaited(
