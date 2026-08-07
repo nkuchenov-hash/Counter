@@ -5,6 +5,7 @@ import 'package:counter/features/notes/notes_glm_surface.dart';
 import 'package:counter/core/tag_contrast.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
+import 'package:counter/shared/categories/picker/category_tree_picker.dart';
 import 'package:counter/shared/categories/visibility/category_visibility_prefs.dart';
 import 'package:counter/features/lists/lists_card.dart';
 import 'package:counter/features/lists/lists_export.dart';
@@ -131,40 +132,103 @@ class ListsCategoryChipBar extends StatelessWidget {
   final void Function(int oldIndex, int newIndex) onManualChipReorder;
   final bool glmPresentation;
 
+  Future<void> _openCategoryPicker(BuildContext context) async {
+    final result = await showCategoryTreeSheet(
+      context,
+      initialCategoryId: filterCategoryId,
+      showAllCategoriesRow: false,
+    );
+    if (result is CategoryTreeSheetPicked) {
+      onFilterChanged(result.id);
+    }
+  }
+
+  Widget _addCategoryButton(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final dark = theme.brightness == Brightness.dark;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => unawaited(_openCategoryPicker(context)),
+        borderRadius: BorderRadius.circular(999),
+        child: Container(
+          key: const ValueKey<String>('notes-category-quick-add'),
+          height: glmPresentation ? 34 : 40,
+          padding: const EdgeInsets.symmetric(horizontal: 11),
+          decoration: BoxDecoration(
+            color: dark
+                ? scheme.surfaceContainerHigh.withValues(alpha: 0.82)
+                : const Color(0xFFFFFFFF).withValues(alpha: 0.55),
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(
+              color: dark
+                  ? scheme.outlineVariant.withValues(alpha: 0.70)
+                  : const Color(0xFFE2E8F0),
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.add_rounded, size: 16, color: scheme.onSurfaceVariant),
+              const SizedBox(width: 4),
+              Text(
+                t(currentLocale.value, 'add'),
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: scheme.onSurface,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (chipMode == 'manual' && chipIds.length > 1) {
-      return ReorderableListView.builder(
-        scrollController: scrollController,
-        scrollDirection: Axis.horizontal,
-        buildDefaultDragHandles: false,
-        shrinkWrap: true,
-        physics: const ClampingScrollPhysics(),
-        padding: EdgeInsets.symmetric(
-          horizontal: glmPresentation ? 0 : 12,
-          vertical: glmPresentation ? 2 : 4,
-        ),
-        itemCount: chipIds.length,
-        onReorder: onManualChipReorder,
-        itemBuilder: (ctx, idx) {
-          final id = chipIds[idx];
-          return ReorderableDelayedDragStartListener(
-            key: ValueKey<int>(id),
-            index: idx,
-            child: Padding(
-              padding: const EdgeInsetsDirectional.only(end: 8),
-              child: ListsQuadraticChip(
-                label: categoryRawName(id),
-                categoryColor: listsCategoryAccentColor(id),
-                selected: filterCategoryId == id,
-                glmPresentation: glmPresentation,
-                onTap: () {
-                  onFilterChanged(filterCategoryId == id ? null : id);
-                },
+      return Row(
+        children: [
+          Expanded(
+            child: ReorderableListView.builder(
+              scrollController: scrollController,
+              scrollDirection: Axis.horizontal,
+              buildDefaultDragHandles: false,
+              shrinkWrap: true,
+              physics: const ClampingScrollPhysics(),
+              padding: EdgeInsets.symmetric(
+                horizontal: glmPresentation ? 0 : 12,
+                vertical: glmPresentation ? 2 : 4,
               ),
+              itemCount: chipIds.length,
+              onReorder: onManualChipReorder,
+              itemBuilder: (ctx, idx) {
+                final id = chipIds[idx];
+                return ReorderableDelayedDragStartListener(
+                  key: ValueKey<int>(id),
+                  index: idx,
+                  child: Padding(
+                    padding: const EdgeInsetsDirectional.only(end: 8),
+                    child: ListsQuadraticChip(
+                      label: categoryRawName(id),
+                      categoryColor: listsCategoryAccentColor(id),
+                      selected: filterCategoryId == id,
+                      glmPresentation: glmPresentation,
+                      onTap: () {
+                        onFilterChanged(filterCategoryId == id ? null : id);
+                      },
+                    ),
+                  ),
+                );
+              },
             ),
-          );
-        },
+          ),
+          const SizedBox(width: 4),
+          _addCategoryButton(context),
+        ],
       );
     }
     return ListView(
@@ -188,6 +252,10 @@ class ListsCategoryChipBar extends StatelessWidget {
               },
             ),
           ),
+        Padding(
+          padding: const EdgeInsetsDirectional.only(end: 8),
+          child: _addCategoryButton(context),
+        ),
       ],
     );
   }
