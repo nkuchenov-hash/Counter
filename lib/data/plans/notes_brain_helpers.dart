@@ -37,10 +37,7 @@ extension NotesBrainExtension on DatabaseService {
     if (!force &&
         _notesTimestampHydrationFetchedAt != null &&
         DateTime.now().difference(_notesTimestampHydrationFetchedAt!) <
-            _notesTimestampHydrationFreshTtl &&
-        !_allPlansUserCache.any(
-          (task) => task.createdAt == null || task.updatedAt == null,
-        )) {
+            _notesTimestampHydrationFreshTtl) {
       return;
     }
 
