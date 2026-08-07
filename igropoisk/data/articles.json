@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-07T23:07:45.114Z",
+  "updatedAt": "2026-08-07T23:19:43.400Z",
   "count": 495,
   "sources": [
     "IGN",
@@ -14,6 +14,15 @@
     "Игромания"
   ],
   "articles": [
+    {
+      "source": "PC Gamer",
+      "language": "en",
+      "title": "FromSoftware sleuth unearths earliest footage of Demon's Souls to date: A prototype with a first person camera mode",
+      "normalizedTitle": "fromsoftware sleuth unearths earliest footage of demon s souls to date a prototype with a first person camera mode",
+      "url": "https://www.pcgamer.com/games/action/fromsoftware-sleuth-unearths-earliest-footage-of-demons-souls-to-date-a-prototype-with-a-first-person-camera-mode/",
+      "summary": "Demon's Field.",
+      "publishedAt": "Fri, 07 Aug 2026 23:06:12 +0000"
+    },
     {
       "source": "Polygon",
       "language": "en",
@@ -1786,15 +1795,6 @@
       "url": "https://stopgame.ru/show/160077/istoriya_serii_prototype",
       "summary": "Серия Prototype дебютировала в далёком 2009 году, но регулярно вспоминают о ней и по сей день. Мы решили разобраться в этом феномене — поговорить об игре, об эпохе, когда она вышла, и о причудливых переплетениях нитей судьбы, иногда больше похожих на сетку сосудов. Это рубрика «История серии», так что приготовьтесь к длинному рассказу!",
       "publishedAt": "Wed, 05 Aug 2026 19:41:12 +0300"
-    },
-    {
-      "source": "PC Gamer",
-      "language": "en",
-      "title": "Marvel Rivals is gearing up for season 9.5 with major Vanguard adjustments alongside a teaser for its next hero, The Hood",
-      "normalizedTitle": "marvel rivals is gearing up for season 9 5 with major vanguard adjustments alongside a teaser for its next hero the hood",
-      "url": "https://www.pcgamer.com/games/third-person-shooter/marvel-rivals-is-gearing-up-for-season-9-5-with-major-vanguard-adjustments-alongside-a-teaser-for-its-next-hero-the-hood/",
-      "summary": "Close enough, welcome to Marvel Rivals Gun Devil from CSM.",
-      "publishedAt": "Wed, 05 Aug 2026 16:40:17 +0000"
     },
     {
       "source": "Rock Paper Shotgun",
