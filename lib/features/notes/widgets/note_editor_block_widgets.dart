@@ -3,16 +3,18 @@ import 'dart:typed_data';
 
 import 'package:counter/data/models.dart';
 import 'package:counter/features/notes/notes_audio_controller.dart';
+import 'package:counter/features/notes/notes_figma_tokens.dart';
 import 'package:counter/features/notes/widgets/notes_canonical_components.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 
 /// Production block row composed from canonical Notes components.
 ///
-/// Text input stays outside delayed reorder listeners so typing and selection
-/// remain on the direct gesture path. Structural/media blocks retain long-press
-/// reorder behavior.
+/// Only the block that currently owns keyboard focus is an EditableText. Other
+/// text blocks render as normal RichText inside the page SelectionArea, so a
+/// desktop mouse drag can select continuously across paragraphs/list items.
 class NotesEditorBlockItem extends StatelessWidget {
   NotesEditorBlockItem({
     Key? key,
@@ -20,6 +22,7 @@ class NotesEditorBlockItem extends StatelessWidget {
     required this.index,
     required this.numberedOrdinal,
     required this.active,
+    required this.editing,
     required this.onTap,
     required this.onKeyEvent,
     this.textController,
@@ -39,6 +42,7 @@ class NotesEditorBlockItem extends StatelessWidget {
   final int index;
   final int numberedOrdinal;
   final bool active;
+  final bool editing;
   final VoidCallback onTap;
   final KeyEventResult Function(KeyEvent event) onKeyEvent;
   final TextEditingController? textController;
@@ -59,17 +63,28 @@ class NotesEditorBlockItem extends StatelessWidget {
         ? NotesBlockState.active
         : NotesBlockState.defaultState;
     final editable = _isEditableText(block.type);
-    final child = _buildCanonicalBlock(context, state);
+    final selectable = editable && !editing;
+    final child = selectable
+        ? _buildSelectableTextBlock(context)
+        : _buildCanonicalBlock(context, state);
 
-    Widget interactive = Listener(
-      behavior: HitTestBehavior.translucent,
-      onPointerDown: (_) => onTap(),
-      child: editable
-          ? Focus(onKeyEvent: (_, event) => onKeyEvent(event), child: child)
-          : child,
-    );
+    Widget interactive;
+    if (selectable) {
+      interactive = child;
+    } else if (editable) {
+      interactive = Focus(
+        onKeyEvent: (_, event) => onKeyEvent(event),
+        child: child,
+      );
+    } else {
+      interactive = Listener(
+        behavior: HitTestBehavior.translucent,
+        onPointerDown: (_) => onTap(),
+        child: child,
+      );
+    }
 
-    if (editable && block.effectiveText.isEmpty && onEmptyLongPress != null) {
+    if (!selectable && editable && block.effectiveText.isEmpty && onEmptyLongPress != null) {
       interactive = GestureDetector(
         behavior: HitTestBehavior.translucent,
         onLongPress: onEmptyLongPress,
@@ -83,6 +98,212 @@ class NotesEditorBlockItem extends StatelessWidget {
     }
 
     return interactive;
+  }
+
+  Widget _buildSelectableTextBlock(BuildContext context) {
+    final style = _selectableTextStyle(context, block);
+    final text = block.effectiveText;
+    final hint = switch (block.type) {
+      NoteBlockType.heading when block.level == 1 => 'Heading',
+      NoteBlockType.bulletedList || NoteBlockType.numberedList => 'List item',
+      NoteBlockType.checklist => 'Checklist item',
+      NoteBlockType.quote => 'Quote',
+      _ => 'Write something',
+    };
+
+    Widget selectableText({TextStyle? overrideStyle}) {
+      final effectiveStyle = overrideStyle ?? style;
+      final textKey = GlobalKey();
+      final span = text.isEmpty
+          ? TextSpan(
+              text: hint,
+              style: effectiveStyle.copyWith(
+                color: NotesFigmaTokens.textSecondary(context).withValues(alpha: 0.55),
+              ),
+            )
+          : _selectableSpan(context, effectiveStyle);
+      return Listener(
+        behavior: HitTestBehavior.translucent,
+        onPointerDown: (_) {
+          final current = FocusManager.instance.primaryFocus;
+          if (current != null && current != focusNode) current.unfocus();
+        },
+        child: GestureDetector(
+          behavior: HitTestBehavior.translucent,
+          onTapUp: (details) {
+            if (text.isNotEmpty) {
+              final render = textKey.currentContext?.findRenderObject();
+              if (render is RenderParagraph) {
+                final local = render.globalToLocal(details.globalPosition);
+                final position = render.getPositionForOffset(local);
+                final controller = textController;
+                if (controller != null) {
+                  final offset = position.offset.clamp(0, controller.text.length).toInt();
+                  controller.selection = TextSelection.collapsed(offset: offset);
+                }
+              }
+            } else {
+              final controller = textController;
+              if (controller != null) {
+                controller.selection = const TextSelection.collapsed(offset: 0);
+              }
+            }
+            onTap();
+          },
+          onLongPress: text.isEmpty ? onEmptyLongPress : null,
+          child: Text.rich(
+            span,
+            key: textKey,
+            softWrap: true,
+          ),
+        ),
+      );
+    }
+
+    switch (block.type) {
+      case NoteBlockType.paragraph:
+      case NoteBlockType.heading:
+        return Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: kNotesContentInset,
+            vertical: kNotesBlockVerticalPadding,
+          ),
+          child: selectableText(),
+        );
+      case NoteBlockType.bulletedList:
+      case NoteBlockType.numberedList:
+        final marker = block.type == NoteBlockType.numberedList
+            ? Text(
+                '$numberedOrdinal.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 16,
+                  height: 1.45,
+                  color: NotesFigmaTokens.textPrimary(context),
+                ),
+              )
+            : Container(
+                width: 6,
+                height: 6,
+                decoration: BoxDecoration(
+                  color: NotesFigmaTokens.textPrimary(context),
+                  shape: BoxShape.circle,
+                ),
+              );
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(
+            kNotesContentInset,
+            10,
+            kNotesContentInset,
+            10,
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(
+                width: kNotesLeadingSize,
+                height: 24,
+                child: Center(child: marker),
+              ),
+              const SizedBox(width: kNotesLeadingGap),
+              Expanded(child: selectableText()),
+            ],
+          ),
+        );
+      case NoteBlockType.checklist:
+        final checkedStyle = block.checked
+            ? style.copyWith(
+                color: NotesFigmaTokens.textSecondary(context),
+                decoration: TextDecoration.lineThrough,
+              )
+            : style;
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(
+            kNotesContentInset,
+            10,
+            kNotesContentInset,
+            10,
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(
+                width: kNotesLeadingSize,
+                height: 24,
+                child: Center(
+                  child: InkWell(
+                    onTap: onCheckedChanged == null
+                        ? null
+                        : () => onCheckedChanged!(!block.checked),
+                    borderRadius: BorderRadius.circular(6),
+                    child: Container(
+                      width: 20,
+                      height: 20,
+                      decoration: BoxDecoration(
+                        color: block.checked
+                            ? NotesFigmaTokens.selectedSurface(context)
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(6),
+                        border: block.checked
+                            ? null
+                            : Border.all(
+                                color: NotesFigmaTokens.textPrimary(context)
+                                    .withValues(alpha: 0.15),
+                              ),
+                      ),
+                      child: block.checked
+                          ? Icon(
+                              Icons.check_rounded,
+                              size: 14,
+                              color: NotesFigmaTokens.selectedIcon(context),
+                            )
+                          : null,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: kNotesLeadingGap),
+              Expanded(child: selectableText(overrideStyle: checkedStyle)),
+            ],
+          ),
+        );
+      case NoteBlockType.quote:
+        final scheme = Theme.of(context).colorScheme;
+        return Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: kNotesContentInset,
+            vertical: kNotesBlockVerticalPadding,
+          ),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: scheme.surfaceContainerLow,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: scheme.outlineVariant),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: selectableText(
+                overrideStyle: style.copyWith(fontStyle: FontStyle.italic),
+              ),
+            ),
+          ),
+        );
+      default:
+        return const SizedBox.shrink();
+    }
+  }
+
+  TextSpan _selectableSpan(BuildContext context, TextStyle style) {
+    final controller = textController;
+    if (controller is NotesTextEditingController) {
+      controller.linkColor = Theme.of(context).colorScheme.primary;
+      return controller.buildTextSpan(
+        context: context,
+        style: style,
+        withComposing: false,
+      );
+    }
+    return TextSpan(text: block.effectiveText, style: style);
   }
 
   Widget _buildCanonicalBlock(BuildContext context, NotesBlockState state) {
@@ -407,6 +628,39 @@ NotesTextBlockStyle _textStyleFor(NoteBlock block) {
   if (block.level == 1) return NotesTextBlockStyle.h1;
   if (block.level == 3) return NotesTextBlockStyle.h3;
   return NotesTextBlockStyle.h2;
+}
+
+TextStyle _selectableTextStyle(BuildContext context, NoteBlock block) {
+  final color = NotesFigmaTokens.textPrimary(context);
+  final style = _textStyleFor(block);
+  return switch (style) {
+    NotesTextBlockStyle.body => TextStyle(
+        fontSize: NotesFigmaTokens.bodySize,
+        height: NotesFigmaTokens.bodyLineHeight / NotesFigmaTokens.bodySize,
+        fontWeight: FontWeight.w400,
+        color: color,
+      ),
+    NotesTextBlockStyle.h1 => TextStyle(
+        fontSize: NotesFigmaTokens.h1Size,
+        height: NotesFigmaTokens.h1LineHeight / NotesFigmaTokens.h1Size,
+        fontWeight: FontWeight.w700,
+        letterSpacing: -0.25,
+        color: color,
+      ),
+    NotesTextBlockStyle.h2 => TextStyle(
+        fontSize: NotesFigmaTokens.h2Size,
+        height: NotesFigmaTokens.h2LineHeight / NotesFigmaTokens.h2Size,
+        fontWeight: FontWeight.w700,
+        letterSpacing: -0.15,
+        color: color,
+      ),
+    NotesTextBlockStyle.h3 => TextStyle(
+        fontSize: NotesFigmaTokens.h3Size,
+        height: NotesFigmaTokens.h3LineHeight / NotesFigmaTokens.h3Size,
+        fontWeight: FontWeight.w600,
+        color: color,
+      ),
+  };
 }
 
 bool _isEditableText(NoteBlockType type) {
