@@ -145,6 +145,7 @@ class _NotesLibraryBodyState extends State<NotesLibraryBody> {
             .clamp(280.0, 360.0)
             .toDouble();
         final scheme = Theme.of(context).colorScheme;
+        final dark = Theme.of(context).brightness == Brightness.dark;
         return Row(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -175,7 +176,9 @@ class _NotesLibraryBodyState extends State<NotesLibraryBody> {
             VerticalDivider(
               width: 1,
               thickness: 1,
-              color: scheme.outlineVariant.withValues(alpha: 0.65),
+              color: scheme.outlineVariant.withValues(
+                alpha: dark ? 0.88 : 0.65,
+              ),
             ),
             Expanded(
               child: ColoredBox(
@@ -271,14 +274,24 @@ class _NotesLibraryBodyState extends State<NotesLibraryBody> {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.sort_rounded, size: 17),
+              Icon(
+                Icons.sort_rounded,
+                size: 17,
+                color: scheme.onSurfaceVariant,
+              ),
               const SizedBox(width: 6),
               Text(
                 label,
-                style: Theme.of(context).textTheme.labelMedium,
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  color: scheme.onSurface,
+                ),
               ),
               const SizedBox(width: 2),
-              const Icon(Icons.arrow_drop_down_rounded, size: 18),
+              Icon(
+                Icons.arrow_drop_down_rounded,
+                size: 18,
+                color: scheme.onSurfaceVariant,
+              ),
             ],
           ),
         ),
@@ -407,19 +420,16 @@ class _NotesLibraryBodyState extends State<NotesLibraryBody> {
     required NotesLibraryView view,
     required bool selected,
   }) {
-    final scheme = Theme.of(context).colorScheme;
     return AnimatedContainer(
       duration: const Duration(milliseconds: 140),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(14),
-        border: selected
-            ? Border.all(color: scheme.primary.withValues(alpha: 0.42))
-            : null,
       ),
       child: NoteCard(
         data: data,
         view: view,
         checkboxesOn: widget.checkboxesOn,
+        selected: selected,
         onOpen: () => _openNote(context, data.task),
         onTogglePin: () => db.toggleNotePin(data.task.planRowIdForBackend),
         onToggleDone: () => db.toggleNoteDone(data.task.planRowIdForBackend),
