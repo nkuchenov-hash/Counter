@@ -55,11 +55,17 @@ class _NotesLibraryBodyState extends State<NotesLibraryBody> {
   void initState() {
     super.initState();
     unawaited(_loadDateSort());
+    unawaited(_hydrateTimestamps());
   }
 
   @override
   void didUpdateWidget(covariant NotesLibraryBody oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (widget.tasks.any(
+      (task) => task.createdAt == null || task.updatedAt == null,
+    )) {
+      unawaited(_hydrateTimestamps(force: true));
+    }
     final selectedId = _selectedTask?.planRowIdForBackend;
     if (selectedId == null) return;
     PlanningTask? refreshed;
@@ -70,6 +76,11 @@ class _NotesLibraryBodyState extends State<NotesLibraryBody> {
       }
     }
     _selectedTask = refreshed;
+  }
+
+  Future<void> _hydrateTimestamps({bool force = false}) async {
+    await DatabaseService.instance.ensureNoteTimestampsHydrated(force: force);
+    if (mounted) setState(() {});
   }
 
   Future<void> _loadDateSort() async {
@@ -418,9 +429,15 @@ class _NotesLibraryBodyState extends State<NotesLibraryBody> {
   }
 
   Widget _withRefresh(Widget child) {
-    final onRefresh = widget.onRefresh;
-    if (onRefresh == null) return child;
-    return RefreshIndicator(onRefresh: onRefresh, child: child);
+    if (widget.onRefresh == null) return child;
+    return RefreshIndicator(onRefresh: _refresh, child: child);
+  }
+
+  Future<void> _refresh() async {
+    final refresh = widget.onRefresh;
+    if (refresh != null) await refresh();
+    await DatabaseService.instance.ensureNoteTimestampsHydrated(force: true);
+    if (mounted) setState(() {});
   }
 
   void _openNote(BuildContext context, PlanningTask task) {
@@ -435,6 +452,6 @@ class _NotesLibraryBodyState extends State<NotesLibraryBody> {
     if (!mounted) return;
     setState(() => _selectedTask = null);
     final refresh = widget.onRefresh;
-    if (refresh != null) unawaited(refresh());
+    if (refresh != null) unawaited(_refresh());
   }
 }
