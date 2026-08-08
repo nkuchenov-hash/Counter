@@ -1038,7 +1038,6 @@ class _ListsPageState extends State<ListsPage>
                     ? const SizedBox.shrink()
                     : _NotesLibraryHeader(
                         locale: loc,
-                        notesCount: forGrouping.length,
                         searchController: _notesSearchController,
                         searchFocus: _notesSearchFocus,
                         searchQuery: _notesSearchQuery,
@@ -1179,7 +1178,6 @@ class _ListsPageState extends State<ListsPage>
 class _NotesLibraryHeader extends StatelessWidget {
   const _NotesLibraryHeader({
     required this.locale,
-    required this.notesCount,
     required this.searchController,
     required this.searchFocus,
     required this.searchQuery,
@@ -1195,7 +1193,6 @@ class _NotesLibraryHeader extends StatelessWidget {
   });
 
   final String locale;
-  final int notesCount;
   final TextEditingController searchController;
   final FocusNode searchFocus;
   final String searchQuery;
@@ -1211,8 +1208,7 @@ class _NotesLibraryHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
+    final scheme = Theme.of(context).colorScheme;
     final wide = MediaQuery.sizeOf(context).width >= 900;
     return Padding(
       padding: EdgeInsets.fromLTRB(wide ? 0 : 0, 12, 12, 4),
@@ -1224,27 +1220,15 @@ class _NotesLibraryHeader extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      t(locale, 'notes_v3_subtitle'),
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: notesGlmMetaColor(context),
-                      ),
-                    ),
-                    Text(
-                      t(locale, 'notes_v3_title'),
-                      style: TextStyle(
-                        fontSize: wide ? 30 : 24,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: -0.4,
-                        height: 1.15,
-                        color: scheme.onSurface,
-                      ),
-                    ),
-                  ],
+                child: Text(
+                  t(locale, 'notes_v3_title'),
+                  style: TextStyle(
+                    fontSize: wide ? 30 : 24,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.4,
+                    height: 1.15,
+                    color: scheme.onSurface,
+                  ),
                 ),
               ),
               IconButton(
@@ -1322,16 +1306,6 @@ class _NotesLibraryHeader extends StatelessWidget {
                   : null,
             ),
           ),
-          if (notesCount > 0)
-            Padding(
-              padding: const EdgeInsets.only(top: 6, left: 2),
-              child: Text(
-                t(locale, 'notes_v3_count').replaceAll('{n}', '$notesCount'),
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: scheme.onSurfaceVariant,
-                ),
-              ),
-            ),
         ],
       ),
     );
