@@ -1,0 +1,301 @@
+name: Apply Notes block actions fix
+
+on:
+  push:
+    branches:
+      - fix/notes-block-actions-20260808
+
+permissions:
+  contents: write
+
+jobs:
+  patch-verify-push:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout current main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Patch Notes block actions and drawing preview
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('lib/features/notes/note_editor_page.dart')
+          text = path.read_text(encoding='utf-8')
+
+          old_import = "import 'dart:async';\n"
+          new_import = "import 'dart:async';\nimport 'dart:convert';\n"
+          if "import 'dart:convert';" not in text:
+              if old_import not in text:
+                  raise SystemExit('dart:async import anchor not found')
+              text = text.replace(old_import, new_import, 1)
+
+          old = '''  Widget _buildBlock(BuildContext context, int index) {
+    final block = _editor.visibleBlocks[index];
+    final editable = NotesEditorDocumentController.isEditableText(block.type);
+    final focusNode = editable ? _focusNodeFor(block) : null;
+    return NotesEditorBlockItem(
+      block: block,
+      index: index,
+      numberedOrdinal: _numberedOrdinal(index),
+      active: _editor.activeBlockId == block.id,
+      editing: editable && _editingBlockId == block.id,
+      textController: editable ? _textControllerFor(block) : null,
+      focusNode: focusNode,
+      captionController:
+          block.type == NoteBlockType.image ||
+              block.type == NoteBlockType.drawing
+          ? _captionControllerFor(block)
+          : null,
+      onTap: () => _selectBlock(block.id),
+      onKeyEvent: (event) => _onBlockKeyEvent(block, event),
+      onTextChanged: editable
+          ? (value) => _onBlockTextChanged(block, value)
+          : null,
+      onCheckedChanged: block.type == NoteBlockType.checklist
+          ? (checked) =>
+                _applyMutation(_editor.toggleChecklist(block.id, checked))
+          : null,
+      onTableChanged: block.type == NoteBlockType.table
+          ? (table) => _applyMutation(_editor.updateTable(block.id, table))
+          : null,
+      onCaptionChanged:
+          block.type == NoteBlockType.image ||
+              block.type == NoteBlockType.drawing
+          ? (caption) =>
+                _applyMutation(_editor.updateCaption(block.id, caption))
+          : null,
+      onEmptyLongPress: editable && block.effectiveText.isEmpty
+          ? () => _showInsertMenu(block.id)
+          : null,
+      audioState: block.type == NoteBlockType.audio
+          ? _audioState(block.id)
+          : NotesAudioState.ready,
+      onAudioPlayPause: block.type == NoteBlockType.audio
+          ? () => _toggleAudio(block.id)
+          : null,
+      onOpenTranscript: block.type == NoteBlockType.audio
+          ? () => _openAudioTranscript(block.id)
+          : null,
+    );
+  }
+'''
+
+          new = '''  Widget? _desktopDrawingPreview(BuildContext context, NoteBlock block) {
+    if (block.type != NoteBlockType.drawing ||
+        MediaQuery.sizeOf(context).width < 768) {
+      return null;
+    }
+    final raw = block.drawingData?.trim() ?? '';
+    if (raw.isEmpty) return null;
+    final comma = raw.indexOf(',');
+    final encoded = raw.startsWith('data:') && comma >= 0
+        ? raw.substring(comma + 1)
+        : raw;
+    try {
+      final bytes = base64Decode(encoded);
+      final scheme = Theme.of(context).colorScheme;
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(
+          kNotesContentInset,
+          0,
+          kNotesContentInset,
+          kNotesBlockVerticalPadding,
+        ),
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => _selectBlock(block.id),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: scheme.outlineVariant),
+              ),
+              child: SizedBox(
+                width: double.infinity,
+                height: 280,
+                child: Image.memory(
+                  bytes,
+                  width: double.infinity,
+                  height: 280,
+                  alignment: Alignment.topCenter,
+                  fit: BoxFit.contain,
+                  gaplessPlayback: true,
+                  filterQuality: FilterQuality.medium,
+                  errorBuilder: (_, __, ___) => Center(
+                    child: Icon(
+                      Icons.broken_image_outlined,
+                      color: scheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    } on FormatException {
+      return null;
+    }
+  }
+
+  Widget _buildBlock(BuildContext context, int index) {
+    final block = _editor.visibleBlocks[index];
+    final editable = NotesEditorDocumentController.isEditableText(block.type);
+    final focusNode = editable ? _focusNodeFor(block) : null;
+    final active = _editor.activeBlockId == block.id;
+    Widget item = NotesEditorBlockItem(
+      block: block,
+      index: index,
+      numberedOrdinal: _numberedOrdinal(index),
+      active: active,
+      editing: editable && _editingBlockId == block.id,
+      textController: editable ? _textControllerFor(block) : null,
+      focusNode: focusNode,
+      captionController:
+          block.type == NoteBlockType.image ||
+              block.type == NoteBlockType.drawing
+          ? _captionControllerFor(block)
+          : null,
+      onTap: () => _selectBlock(block.id),
+      onKeyEvent: (event) => _onBlockKeyEvent(block, event),
+      onTextChanged: editable
+          ? (value) => _onBlockTextChanged(block, value)
+          : null,
+      onCheckedChanged: block.type == NoteBlockType.checklist
+          ? (checked) =>
+                _applyMutation(_editor.toggleChecklist(block.id, checked))
+          : null,
+      onTableChanged: block.type == NoteBlockType.table
+          ? (table) => _applyMutation(_editor.updateTable(block.id, table))
+          : null,
+      onCaptionChanged:
+          block.type == NoteBlockType.image ||
+              block.type == NoteBlockType.drawing
+          ? (caption) =>
+                _applyMutation(_editor.updateCaption(block.id, caption))
+          : null,
+      onEmptyLongPress: editable && block.effectiveText.isEmpty
+          ? () => _showInsertMenu(block.id)
+          : null,
+      audioState: block.type == NoteBlockType.audio
+          ? _audioState(block.id)
+          : NotesAudioState.ready,
+      onAudioPlayPause: block.type == NoteBlockType.audio
+          ? () => _toggleAudio(block.id)
+          : null,
+      onOpenTranscript: block.type == NoteBlockType.audio
+          ? () => _openAudioTranscript(block.id)
+          : null,
+    );
+
+    final drawingPreview = _desktopDrawingPreview(context, block);
+    if (drawingPreview != null) {
+      item = Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [item, drawingPreview],
+      );
+    }
+
+    if (widget.parityPreview) return item;
+
+    // Reserve the action rail for every block so activating a block never
+    // changes its text width or line wrapping. The button itself appears only
+    // for the active block and sits outside the hold-to-drag listener.
+    final content = Padding(
+      padding: const EdgeInsets.only(right: 36),
+      child: item,
+    );
+    if (!active) return content;
+
+    final scheme = Theme.of(context).colorScheme;
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        content,
+        Positioned(
+          top: 2,
+          right: 2,
+          child: Tooltip(
+            message: t(currentLocale.value, 'delete'),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                key: ValueKey<String>('notes-block-delete-${block.id}'),
+                onTap: () => _applyMutation(_editor.deleteBlock(block.id)),
+                borderRadius: BorderRadius.circular(8),
+                child: SizedBox(
+                  width: 30,
+                  height: 30,
+                  child: Icon(
+                    Icons.delete_outline_rounded,
+                    size: 18,
+                    color: scheme.error,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+'''
+
+          if old not in text:
+              raise SystemExit('_buildBlock anchor did not match current main')
+          text = text.replace(old, new, 1)
+          path.write_text(text, encoding='utf-8')
+          PY
+
+      - name: Set up Flutter 3.41.6
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.6'
+          channel: stable
+
+      - name: Create env.dart
+        run: |
+          mkdir -p lib/core/env
+          printf '%s\n' 'abstract final class Env {' '  static const String placeholder = '\'''\'';' '}' > lib/core/env/env.dart
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Format changed file
+        run: dart format lib/features/notes/note_editor_page.dart
+
+      - name: Analyze
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+
+      - name: Verify focused Notes contracts
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          s = Path('lib/features/notes/note_editor_page.dart').read_text(encoding='utf-8')
+          assert "notes-block-delete-" in s
+          assert "_editor.deleteBlock(block.id)" in s
+          assert "_desktopDrawingPreview" in s
+          assert "base64Decode(encoded)" in s
+          assert "Image.memory(" in s
+          print('Notes block delete + drawing preview contract OK')
+          PY
+
+      - name: Build web release
+        run: flutter build web --release --base-href="/Counter/" --no-tree-shake-icons --no-wasm-dry-run
+
+      - name: Commit verified fix to main
+        run: |
+          git config user.name "nkuchenov-hash"
+          git config user.email "nkuchenov@gmail.com"
+          git add lib/features/notes/note_editor_page.dart
+          git diff --cached --check
+          git commit -m "Show Notes block delete action and drawing preview"
+          git push origin HEAD:main
