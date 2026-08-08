@@ -104,7 +104,6 @@ class _GridCard extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final loc = currentLocale.value;
     final isDone = data.task.isDone;
-    final color = data.categoryColor;
 
     return GestureDetector(
       onTap: onOpen,
@@ -136,7 +135,6 @@ class _GridCard extends StatelessWidget {
                   _DoneCheck(
                     isDone: isDone,
                     checkboxesOn: checkboxesOn,
-                    color: color,
                     onToggle: onToggleDone,
                   ),
                 ],
@@ -245,7 +243,6 @@ class _ListRow extends StatelessWidget {
                   padding: const EdgeInsets.only(right: 10),
                   child: _LargeDoneCheck(
                     isDone: isDone,
-                    color: color,
                     onToggle: onToggleDone,
                   ),
                 )
@@ -590,13 +587,11 @@ class _DoneCheck extends StatelessWidget {
   const _DoneCheck({
     required this.isDone,
     required this.checkboxesOn,
-    required this.color,
     required this.onToggle,
   });
 
   final bool isDone;
   final bool checkboxesOn;
-  final Color color;
   final VoidCallback onToggle;
 
   @override
@@ -605,7 +600,6 @@ class _DoneCheck extends StatelessWidget {
     if (checkboxesOn) {
       return _LargeDoneCheck(
         isDone: isDone,
-        color: color,
         onToggle: onToggle,
       );
     }
@@ -634,12 +628,10 @@ class _DoneCheck extends StatelessWidget {
 class _LargeDoneCheck extends StatelessWidget {
   const _LargeDoneCheck({
     required this.isDone,
-    required this.color,
     required this.onToggle,
   });
 
   final bool isDone;
-  final Color color;
   final VoidCallback onToggle;
 
   @override
@@ -659,20 +651,11 @@ class _LargeDoneCheck extends StatelessWidget {
                 : scheme.outlineVariant.withValues(alpha: 0.7),
             width: 2,
           ),
-          color: isDone ? scheme.primary : notesTintBackground(color),
+          color: isDone ? scheme.primary : Colors.transparent,
         ),
         child: isDone
             ? const Icon(Icons.check_rounded, size: 20, color: Colors.white)
-            : Center(
-                child: Container(
-                  width: 9,
-                  height: 9,
-                  decoration: BoxDecoration(
-                    color: color,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-              ),
+            : null,
       ),
     );
   }
