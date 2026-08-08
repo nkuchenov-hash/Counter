@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-08T16:51:57.771Z",
+  "updatedAt": "2026-08-08T17:03:41.710Z",
   "count": 495,
   "sources": [
     "IGN",
@@ -14,6 +14,24 @@
     "Игромания"
   ],
   "articles": [
+    {
+      "source": "PC Gamer",
+      "language": "en",
+      "title": "WoW developers reflect on Midnight's first season—a world without AddOns, task overload, and Prey",
+      "normalizedTitle": "wow developers reflect on midnight s first season a world without addons task overload and prey",
+      "url": "https://www.pcgamer.com/games/world-of-warcraft/wow-developers-reflect-on-midnights-first-season-a-world-without-addons-task-overload-and-prey/",
+      "summary": "Curse of Ul'atek comes out next week, but how has Midnight's first season gone in the eyes of its devs?",
+      "publishedAt": "Sat, 08 Aug 2026 17:00:00 +0000"
+    },
+    {
+      "source": "Eurogamer",
+      "language": "en",
+      "title": "Extraction shooter BR1 Infinite is paying players for every in-game kill, drawing concerns about gambling and cheating",
+      "normalizedTitle": "extraction shooter br1 infinite is paying players for every in game kill drawing concerns about gambling and cheating",
+      "url": "https://www.eurogamer.net/br1-infinite-extraction-pays-for-kills",
+      "summary": "New extraction shooter, BR1 Infinite, is reportedly bringing new meaning to the term \"pay to play\" by paying players for each in-game kill. Read more",
+      "publishedAt": "Sat, 08 Aug 2026 16:56:11 +0000"
+    },
     {
       "source": "StopGame",
       "language": "ru",
@@ -1887,15 +1905,6 @@
       "publishedAt": "Wed, 05 Aug 2026 21:53:04 +0000"
     },
     {
-      "source": "PC Gamer",
-      "language": "en",
-      "title": "Path of Exile devs are planning 'an extreme shakeup' in the next major update to address concerns over its stale endgame and lack of exciting loot drops",
-      "normalizedTitle": "path of exile devs are planning an extreme shakeup in the next major update to address concerns over its stale endgame and lack of exciting loot drops",
-      "url": "https://www.pcgamer.com/games/rpg/path-of-exile-devs-are-planning-an-extreme-shakeup-in-the-next-major-update-to-address-concerns-over-its-stale-endgame-and-lack-of-exciting-loot-drops/",
-      "summary": "The action RPG's endgame won't look the same in patch 3.30.",
-      "publishedAt": "Wed, 05 Aug 2026 21:20:18 +0000"
-    },
-    {
       "source": "StopGame",
       "language": "ru",
       "title": "История серии Prototype",
@@ -3226,15 +3235,6 @@
       "url": "https://www.eurogamer.net/double-fine-layoffs-after-xbox-exit",
       "summary": "Nearly a month after it was announced Xbox was cutting 3200 jobs across the division and parting ways with four studios , Psychonauts 2 studio Double Fine Productions is laying off staffers to ensure its short-term survival. Read more",
       "publishedAt": "Wed, 29 Jul 2026 08:53:19 +0000"
-    },
-    {
-      "source": "Eurogamer",
-      "language": "en",
-      "title": "Capcom says likelihood of a Pragmata sequel is high, citing strong sales and 'appeal' of its main character, Diana",
-      "normalizedTitle": "capcom says likelihood of a pragmata sequel is high citing strong sales and appeal of its main character diana",
-      "url": "https://www.eurogamer.net/pragmata-sequel-capcom-internal-expectations-sales",
-      "summary": "Yesterday, we saw Capcom release sales figures for two of its latest releases, Pragmata and Resident Evil Requiem, via the company's Q1 2026 financial report . It mentioned Pragmata's impressive figures (racking up 2.5m sales since its release earlier this year), and the equally impressive performance of Resident Evil Requiem, already at 8m. Read more",
-      "publishedAt": "Wed, 29 Jul 2026 08:52:06 +0000"
     },
     {
       "source": "StopGame",
