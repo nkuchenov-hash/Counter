@@ -11,6 +11,7 @@ class NotesLibraryProductionShell extends StatelessWidget {
     super.key,
     required this.header,
     required this.categoryBar,
+    this.categoryBarInHeader = false,
     this.tagBar,
     this.inlineAdd,
     required this.content,
@@ -20,6 +21,7 @@ class NotesLibraryProductionShell extends StatelessWidget {
   final Widget? topBar;
   final Widget header;
   final Widget categoryBar;
+  final bool categoryBarInHeader;
   final Widget? tagBar;
   final Widget? inlineAdd;
   final Widget content;
@@ -32,14 +34,16 @@ class NotesLibraryProductionShell extends StatelessWidget {
         children: [
           if (topBar != null) topBar!,
           header,
-          const SizedBox(height: 8),
-          categoryBar,
+          if (!categoryBarInHeader) ...[
+            const SizedBox(height: 8),
+            categoryBar,
+          ],
           if (tagBar != null) ...[
             const SizedBox(height: 6),
             tagBar!,
           ],
           if (inlineAdd != null) ...[
-            const SizedBox(height: 14),
+            SizedBox(height: categoryBarInHeader ? 8 : 14),
             inlineAdd!,
           ],
           const SizedBox(height: 8),
@@ -70,6 +74,7 @@ class NotesGlmInlineAddRow extends StatelessWidget {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final dark = theme.brightness == Brightness.dark;
+    final compactMobile = MediaQuery.sizeOf(context).shortestSide < 600;
     final fill = dark
         ? scheme.surfaceContainerHigh.withValues(alpha: 0.82)
         : const Color(0xFFFFFFFF).withValues(alpha: 0.75);
@@ -125,31 +130,47 @@ class NotesGlmInlineAddRow extends StatelessWidget {
         ),
         const SizedBox(width: 8),
         SizedBox(
+          width: compactMobile ? 40 : null,
           height: 40,
-          child: Material(
-            color: scheme.primary,
-            borderRadius: BorderRadius.circular(999),
-            child: InkWell(
-              onTap: onSubmit,
+          child: Tooltip(
+            message: t(locale, 'add'),
+            child: Material(
+              color: scheme.primary,
               borderRadius: BorderRadius.circular(999),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 14),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.add_rounded, size: 18, color: scheme.onPrimary),
-                    const SizedBox(width: 4),
-                    Text(
-                      t(locale, 'add'),
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: scheme.onPrimary,
+              child: InkWell(
+                onTap: onSubmit,
+                borderRadius: BorderRadius.circular(999),
+                child: compactMobile
+                    ? Center(
+                        child: Icon(
+                          Icons.add_rounded,
+                          size: 20,
+                          color: scheme.onPrimary,
+                        ),
+                      )
+                    : Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 14),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.add_rounded,
+                              size: 18,
+                              color: scheme.onPrimary,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              t(locale, 'add'),
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: scheme.onPrimary,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
-                ),
               ),
             ),
           ),
