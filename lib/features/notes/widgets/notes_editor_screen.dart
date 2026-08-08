@@ -181,6 +181,11 @@ class _NotesEditorRail extends StatelessWidget {
         final contentWidth = (constraints.maxWidth - horizontalPadding * 2)
             .clamp(0.0, NotesFigmaTokens.editorContentMaxWidth)
             .toDouble();
+        final collapseTitleForKeyboard =
+            !embedded &&
+            constraints.maxWidth < 768 &&
+            constraints.maxHeight < 600 &&
+            FocusManager.instance.primaryFocus != null;
         return Align(
           alignment: Alignment.topCenter,
           child: SizedBox(
@@ -204,6 +209,7 @@ class _NotesEditorRail extends StatelessWidget {
                   categoryColor: categoryColor,
                   tags: tags,
                   hintText: titleHint,
+                  collapseForKeyboard: collapseTitleForKeyboard,
                 ),
                 Expanded(
                   child: Stack(
@@ -416,13 +422,14 @@ class _NotesHeaderAction extends StatelessWidget {
   }
 }
 
-class _NotesTitleBlock extends StatelessWidget {
+class _NotesTitleBlock extends StatefulWidget {
   const _NotesTitleBlock({
     required this.controller,
     required this.onChanged,
     required this.categoryLabel,
     required this.categoryColor,
     required this.tags,
+    required this.collapseForKeyboard,
     this.hintText,
   });
 
@@ -431,10 +438,42 @@ class _NotesTitleBlock extends StatelessWidget {
   final String? categoryLabel;
   final Color? categoryColor;
   final List<NotesEditorMetadataTag> tags;
+  final bool collapseForKeyboard;
   final String? hintText;
 
   @override
+  State<_NotesTitleBlock> createState() => _NotesTitleBlockState();
+}
+
+class _NotesTitleBlockState extends State<_NotesTitleBlock> {
+  final FocusNode _titleFocusNode = FocusNode(debugLabel: 'notes-title');
+
+  @override
+  void initState() {
+    super.initState();
+    _titleFocusNode.addListener(_onTitleFocusChanged);
+  }
+
+  @override
+  void dispose() {
+    _titleFocusNode
+      ..removeListener(_onTitleFocusChanged)
+      ..dispose();
+    super.dispose();
+  }
+
+  void _onTitleFocusChanged() {
+    if (mounted) setState(() {});
+  }
+
+  @override
   Widget build(BuildContext context) {
+    if (widget.collapseForKeyboard && !_titleFocusNode.hasFocus) {
+      return const SizedBox(
+        key: ValueKey('notes-editor-title-collapsed-for-keyboard'),
+      );
+    }
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
       child: Column(
@@ -442,12 +481,19 @@ class _NotesTitleBlock extends StatelessWidget {
         children: [
           TextField(
             key: const ValueKey('notes-editor-title'),
-            controller: controller,
+            controller: widget.controller,
+            focusNode: _titleFocusNode,
             textCapitalization: TextCapitalization.sentences,
             textInputAction: TextInputAction.next,
             minLines: 1,
             maxLines: null,
-            onChanged: onChanged,
+            scrollPadding: const EdgeInsets.fromLTRB(
+              20,
+              20,
+              20,
+              NotesFigmaTokens.toolbarHeight + 48,
+            ),
+            onChanged: widget.onChanged,
             style: TextStyle(
               fontSize: NotesFigmaTokens.titleSize,
               height:
@@ -457,7 +503,7 @@ class _NotesTitleBlock extends StatelessWidget {
               color: NotesFigmaTokens.textPrimary(context),
             ),
             decoration: InputDecoration(
-              hintText: hintText,
+              hintText: widget.hintText,
               hintStyle: TextStyle(
                 fontSize: NotesFigmaTokens.titleSize,
                 height:
@@ -482,9 +528,9 @@ class _NotesTitleBlock extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           _NotesMetadataRow(
-            categoryLabel: categoryLabel,
-            categoryColor: categoryColor,
-            tags: tags,
+            categoryLabel: widget.categoryLabel,
+            categoryColor: widget.categoryColor,
+            tags: widget.tags,
           ),
         ],
       ),

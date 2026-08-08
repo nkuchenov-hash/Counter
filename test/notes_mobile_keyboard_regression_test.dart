@@ -92,6 +92,10 @@ void main() {
     );
     final fieldRect = tester.getRect(find.byKey(const ValueKey('body-field')));
     expect(contentRect.height, greaterThan(0));
+    expect(
+      find.byKey(const ValueKey('notes-editor-title-collapsed-for-keyboard')),
+      findsOneWidget,
+    );
     expect(fieldRect.top, lessThan(430));
     expect(fieldRect.bottom, lessThanOrEqualTo(430));
     expect(find.byKey(const ValueKey('notes-test-toolbar')), findsOneWidget);
@@ -135,6 +139,10 @@ void main() {
     final fieldRect = tester.getRect(find.byKey(const ValueKey('body-field')));
     const visibleBottom = 844.0 - 380.0;
     expect(contentRect.height, greaterThan(0));
+    expect(
+      find.byKey(const ValueKey('notes-editor-title-collapsed-for-keyboard')),
+      findsOneWidget,
+    );
     expect(fieldRect.top, lessThan(visibleBottom));
     expect(fieldRect.bottom, lessThanOrEqualTo(visibleBottom));
     expect(find.byKey(const ValueKey('notes-test-toolbar')), findsOneWidget);
