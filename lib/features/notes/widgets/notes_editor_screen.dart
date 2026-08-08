@@ -78,13 +78,13 @@ class NotesEditorScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final embeddedScope = NotesEmbeddedEditorScope.maybeOf(context);
     final embedded = embeddedScope != null;
+    final flutterKeyboardInset = MediaQuery.viewInsetsOf(context).bottom;
     final visualInset =
         visualKeyboardInsetListenable ?? webVisualViewportBottomInset;
 
     final editor = ValueListenableBuilder<double>(
       valueListenable: visualInset,
       builder: (context, browserKeyboardInset, _) {
-        final flutterKeyboardInset = MediaQuery.viewInsetsOf(context).bottom;
         final hasTextFocus = FocusManager.instance.primaryFocus != null;
         final browserKeyboardVisible =
             browserKeyboardInset >= 120 && hasTextFocus;
