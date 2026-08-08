@@ -62,6 +62,7 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
   final Map<String, TextSelection> _lastSelections = {};
   late final NotesAudioPlaybackController _audioPlayback;
   final Set<String> _transcribingAudioIds = <String>{};
+  String? _editingBlockId;
   bool _dirty = false;
 
   @override
@@ -184,12 +185,17 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
     return _focusNodes.putIfAbsent(block.id, () {
       final node = FocusNode(debugLabel: 'notes-block-${block.id}');
       node.addListener(() {
-        if (!node.hasFocus || !mounted) return;
-        if (_editor.selectBlock(
-          block.id,
-          _textControllers[block.id]?.selection,
-        )) {
-          setState(() {});
+        if (!mounted) return;
+        if (node.hasFocus) {
+          final selection = _textControllers[block.id]?.selection;
+          final activeChanged = _editor.selectBlock(block.id, selection);
+          if (_editingBlockId != block.id || activeChanged) {
+            setState(() => _editingBlockId = block.id);
+          }
+          return;
+        }
+        if (_editingBlockId == block.id) {
+          setState(() => _editingBlockId = null);
         }
       });
       return node;
@@ -238,6 +244,9 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
     _disposeRemoved(_captionControllers, captionIds);
     _disposeRemoved(_focusNodes, focusIds);
     _lastSelections.removeWhere((id, _) => !textIds.contains(id));
+    if (_editingBlockId != null && !textIds.contains(_editingBlockId)) {
+      _editingBlockId = null;
+    }
   }
 
   void _disposeRemoved<T extends ChangeNotifier>(
@@ -280,12 +289,25 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
           .clamp(0, controller.text.length)
           .toInt(),
     );
-    if (block.type != NoteBlockType.quote) {
-      _focusNodeFor(block)?.requestFocus();
+    final changedActive = _editor.selectBlock(blockId, controller.selection);
+    if (block.type == NoteBlockType.quote) {
+      if (mounted && (_editingBlockId != blockId || changedActive)) {
+        setState(() => _editingBlockId = blockId);
+      }
+      return;
     }
-    if (_editor.selectBlock(blockId, controller.selection) && mounted) {
-      setState(() {});
+
+    final node = _focusNodeFor(block);
+    if (_editingBlockId != blockId) {
+      if (mounted) setState(() => _editingBlockId = blockId);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        node?.requestFocus();
+      });
+      return;
     }
+    node?.requestFocus();
+    if (changedActive && mounted) setState(() {});
   }
 
   void _onBlockTextChanged(NoteBlock block, String value) {
@@ -325,7 +347,25 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
   }
 
   void _selectBlock(String blockId) {
-    if (_editor.selectBlock(blockId, _textControllers[blockId]?.selection)) {
+    final block = _editor.blockById(blockId);
+    if (block == null) return;
+    final controller = NotesEditorDocumentController.isEditableText(block.type)
+        ? _textControllerFor(block)
+        : null;
+    final selection = controller?.selection;
+    final safeSelection = selection != null && selection.isValid
+        ? selection
+        : TextSelection.collapsed(offset: controller?.text.length ?? 0);
+    final changed = _editor.selectBlock(blockId, selection);
+    if (NotesEditorDocumentController.isEditableText(block.type)) {
+      if (mounted) {
+        setState(() => _editingBlockId = block.id);
+      }
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _requestFocus(block.id, safeSelection);
+      });
+    } else if (changed && mounted) {
       setState(() {});
     }
   }
@@ -716,13 +756,15 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
   Widget _buildBlock(BuildContext context, int index) {
     final block = _editor.visibleBlocks[index];
     final editable = NotesEditorDocumentController.isEditableText(block.type);
+    final focusNode = editable ? _focusNodeFor(block) : null;
     return NotesEditorBlockItem(
       block: block,
       index: index,
       numberedOrdinal: _numberedOrdinal(index),
       active: _editor.activeBlockId == block.id,
+      editing: editable && _editingBlockId == block.id,
       textController: editable ? _textControllerFor(block) : null,
-      focusNode: editable ? _focusNodeFor(block) : null,
+      focusNode: focusNode,
       captionController:
           block.type == NoteBlockType.image ||
               block.type == NoteBlockType.drawing
@@ -855,15 +897,17 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
               },
         onMore: _showActiveBlockOptions,
       ),
-      content: ReorderableListView.builder(
-        key: const ValueKey('notes-editor-content'),
-        padding: EdgeInsets.zero,
-        buildDefaultDragHandles: false,
-        proxyDecorator: (child, _, __) => child,
-        itemCount: _editor.visibleBlocks.length,
-        onReorder: (oldIndex, newIndex) =>
-            _applyMutation(_editor.reorderVisible(oldIndex, newIndex)),
-        itemBuilder: _buildBlock,
+      content: SelectionArea(
+        child: ReorderableListView.builder(
+          key: const ValueKey('notes-editor-content'),
+          padding: EdgeInsets.zero,
+          buildDefaultDragHandles: false,
+          proxyDecorator: (child, _, __) => child,
+          itemCount: _editor.visibleBlocks.length,
+          onReorder: (oldIndex, newIndex) =>
+              _applyMutation(_editor.reorderVisible(oldIndex, newIndex)),
+          itemBuilder: _buildBlock,
+        ),
       ),
     );
   }
