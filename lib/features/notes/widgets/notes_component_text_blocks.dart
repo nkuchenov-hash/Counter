@@ -7,6 +7,78 @@ const EdgeInsets _notesEditorTextScrollPadding = EdgeInsets.fromLTRB(
   NotesFigmaTokens.toolbarHeight + 48,
 );
 
+class _NotesKeyboardVisibilityAnchor extends StatefulWidget {
+  const _NotesKeyboardVisibilityAnchor({
+    required this.focusNode,
+    required this.child,
+  });
+
+  final FocusNode? focusNode;
+  final Widget child;
+
+  @override
+  State<_NotesKeyboardVisibilityAnchor> createState() =>
+      _NotesKeyboardVisibilityAnchorState();
+}
+
+class _NotesKeyboardVisibilityAnchorState
+    extends State<_NotesKeyboardVisibilityAnchor>
+    with WidgetsBindingObserver, AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => widget.focusNode?.hasFocus ?? false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    widget.focusNode?.addListener(_handleFocusChange);
+  }
+
+  @override
+  void didUpdateWidget(_NotesKeyboardVisibilityAnchor oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.focusNode == widget.focusNode) return;
+    oldWidget.focusNode?.removeListener(_handleFocusChange);
+    widget.focusNode?.addListener(_handleFocusChange);
+    updateKeepAlive();
+  }
+
+  @override
+  void dispose() {
+    widget.focusNode?.removeListener(_handleFocusChange);
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  void _handleFocusChange() {
+    updateKeepAlive();
+    if (widget.focusNode?.hasFocus == true) _ensureVisibleAfterLayout();
+  }
+
+  @override
+  void didChangeMetrics() {
+    if (widget.focusNode?.hasFocus == true) _ensureVisibleAfterLayout();
+  }
+
+  void _ensureVisibleAfterLayout() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || widget.focusNode?.hasFocus != true) return;
+      Scrollable.ensureVisible(
+        context,
+        duration: Duration.zero,
+        alignment: 1,
+        alignmentPolicy: ScrollPositionAlignmentPolicy.keepVisibleAtEnd,
+      );
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    return widget.child;
+  }
+}
+
 class NotesTextBlock extends StatelessWidget {
   const NotesTextBlock({
     super.key,
@@ -42,45 +114,48 @@ class NotesTextBlock extends StatelessWidget {
     if (controller is NotesTextEditingController) {
       (controller as NotesTextEditingController).linkColor = scheme.primary;
     }
-    final textField = Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: kNotesContentInset,
-        vertical: kNotesBlockVerticalPadding,
-      ),
-      child: TextField(
-        key: textFieldKey,
-        controller: controller,
-        focusNode: focusNode,
-        autofocus: autofocus,
-        readOnly: readOnly,
-        minLines: 1,
-        maxLines: null,
-        keyboardType: TextInputType.multiline,
-        textCapitalization: TextCapitalization.sentences,
-        scrollPadding: _notesEditorTextScrollPadding,
-        onChanged: onChanged,
-        onTap: onTap,
-        style: textStyle,
-        strutStyle: StrutStyle.fromTextStyle(
-          textStyle,
-          forceStrutHeight: true,
+    final textField = _NotesKeyboardVisibilityAnchor(
+      focusNode: focusNode,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: kNotesContentInset,
+          vertical: kNotesBlockVerticalPadding,
         ),
-        decoration: InputDecoration(
-          hintText: hintText,
-          hintStyle: textStyle.copyWith(
-            color: NotesFigmaTokens.textSecondary(
-              context,
-            ).withValues(alpha: 0.55),
+        child: TextField(
+          key: textFieldKey,
+          controller: controller,
+          focusNode: focusNode,
+          autofocus: autofocus,
+          readOnly: readOnly,
+          minLines: 1,
+          maxLines: null,
+          keyboardType: TextInputType.multiline,
+          textCapitalization: TextCapitalization.sentences,
+          scrollPadding: _notesEditorTextScrollPadding,
+          onChanged: onChanged,
+          onTap: onTap,
+          style: textStyle,
+          strutStyle: StrutStyle.fromTextStyle(
+            textStyle,
+            forceStrutHeight: true,
           ),
-          filled: false,
-          fillColor: Colors.transparent,
-          hoverColor: Colors.transparent,
-          focusColor: Colors.transparent,
-          border: InputBorder.none,
-          enabledBorder: InputBorder.none,
-          focusedBorder: InputBorder.none,
-          isCollapsed: true,
-          contentPadding: EdgeInsets.zero,
+          decoration: InputDecoration(
+            hintText: hintText,
+            hintStyle: textStyle.copyWith(
+              color: NotesFigmaTokens.textSecondary(
+                context,
+              ).withValues(alpha: 0.55),
+            ),
+            filled: false,
+            fillColor: Colors.transparent,
+            hoverColor: Colors.transparent,
+            focusColor: Colors.transparent,
+            border: InputBorder.none,
+            enabledBorder: InputBorder.none,
+            focusedBorder: InputBorder.none,
+            isCollapsed: true,
+            contentPadding: EdgeInsets.zero,
+          ),
         ),
       ),
     );
@@ -279,43 +354,46 @@ class _NotesLeadingTextRow extends StatelessWidget {
           ),
           const SizedBox(width: kNotesLeadingGap),
           Expanded(
-            child: TextField(
-              key: textFieldKey,
-              controller: controller,
+            child: _NotesKeyboardVisibilityAnchor(
               focusNode: focusNode,
-              minLines: 1,
-              maxLines: null,
-              keyboardType: TextInputType.multiline,
-              textCapitalization: TextCapitalization.sentences,
-              scrollPadding: _notesEditorTextScrollPadding,
-              onChanged: onChanged,
-              onTap: onTap,
-              style: checked
-                  ? baseStyle.copyWith(
-                      color: NotesFigmaTokens.textSecondary(context),
-                      decoration: TextDecoration.lineThrough,
-                    )
-                  : baseStyle,
-              strutStyle: StrutStyle.fromTextStyle(
-                baseStyle,
-                forceStrutHeight: true,
-              ),
-              decoration: InputDecoration(
-                hintText: hintText,
-                hintStyle: baseStyle.copyWith(
-                  color: NotesFigmaTokens.textSecondary(
-                    context,
-                  ).withValues(alpha: 0.55),
+              child: TextField(
+                key: textFieldKey,
+                controller: controller,
+                focusNode: focusNode,
+                minLines: 1,
+                maxLines: null,
+                keyboardType: TextInputType.multiline,
+                textCapitalization: TextCapitalization.sentences,
+                scrollPadding: _notesEditorTextScrollPadding,
+                onChanged: onChanged,
+                onTap: onTap,
+                style: checked
+                    ? baseStyle.copyWith(
+                        color: NotesFigmaTokens.textSecondary(context),
+                        decoration: TextDecoration.lineThrough,
+                      )
+                    : baseStyle,
+                strutStyle: StrutStyle.fromTextStyle(
+                  baseStyle,
+                  forceStrutHeight: true,
                 ),
-                filled: false,
-                fillColor: Colors.transparent,
-                hoverColor: Colors.transparent,
-                focusColor: Colors.transparent,
-                border: InputBorder.none,
-                enabledBorder: InputBorder.none,
-                focusedBorder: InputBorder.none,
-                isCollapsed: true,
-                contentPadding: EdgeInsets.zero,
+                decoration: InputDecoration(
+                  hintText: hintText,
+                  hintStyle: baseStyle.copyWith(
+                    color: NotesFigmaTokens.textSecondary(
+                      context,
+                    ).withValues(alpha: 0.55),
+                  ),
+                  filled: false,
+                  fillColor: Colors.transparent,
+                  hoverColor: Colors.transparent,
+                  focusColor: Colors.transparent,
+                  border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                  isCollapsed: true,
+                  contentPadding: EdgeInsets.zero,
+                ),
               ),
             ),
           ),

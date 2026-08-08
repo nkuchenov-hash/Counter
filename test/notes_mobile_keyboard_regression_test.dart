@@ -1,3 +1,4 @@
+import 'package:counter/features/notes/widgets/notes_canonical_components.dart';
 import 'package:counter/features/notes/widgets/notes_editor_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -30,17 +31,12 @@ void main() {
                 key: ValueKey('spacer-$index'),
                 height: 72,
               ),
-            Padding(
+            NotesTextBlock(
               key: const ValueKey('body-item'),
-              padding: const EdgeInsets.all(20),
-              child: TextField(
-                key: const ValueKey('body-field'),
-                controller: body,
-                focusNode: bodyFocus,
-                minLines: 1,
-                maxLines: null,
-                scrollPadding: const EdgeInsets.fromLTRB(20, 20, 20, 96),
-              ),
+              controller: body,
+              focusNode: bodyFocus,
+              state: NotesBlockState.active,
+              textFieldKey: const ValueKey('body-field'),
             ),
           ],
         ),
