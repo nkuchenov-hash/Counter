@@ -6,9 +6,29 @@ import 'package:counter/features/notes/notes_audio_controller.dart';
 import 'package:counter/features/notes/notes_figma_tokens.dart';
 import 'package:counter/features/notes/widgets/notes_canonical_components.dart';
 import 'package:counter/l10n/dictionary.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
+
+const Duration _notesBlockHoldToDragDuration = Duration(milliseconds: 320);
+
+/// Matches the Plans Time View hold-to-move timing: a short mouse drag remains
+/// available for text selection, while holding still for 320 ms arms reorder.
+class _NotesBlockHoldDragStartListener extends ReorderableDragStartListener {
+  const _NotesBlockHoldDragStartListener({
+    required super.index,
+    required super.child,
+  });
+
+  @override
+  MultiDragGestureRecognizer createRecognizer() {
+    return DelayedMultiDragGestureRecognizer(
+      delay: _notesBlockHoldToDragDuration,
+      debugOwner: this,
+    );
+  }
+}
 
 /// Production block row composed from canonical Notes components.
 ///
@@ -84,14 +104,19 @@ class NotesEditorBlockItem extends StatelessWidget {
       );
     }
 
-    if (!selectable && editable && block.effectiveText.isEmpty && onEmptyLongPress != null) {
+    if (!selectable &&
+        editable &&
+        block.effectiveText.isEmpty &&
+        onEmptyLongPress != null) {
       interactive = GestureDetector(
         behavior: HitTestBehavior.translucent,
         onLongPress: onEmptyLongPress,
         child: interactive,
       );
-    } else if (!editable && _isVisibleProductionBlock(block.type)) {
-      interactive = ReorderableDelayedDragStartListener(
+    }
+
+    if (_isVisibleProductionBlock(block.type)) {
+      interactive = _NotesBlockHoldDragStartListener(
         index: index,
         child: interactive,
       );
@@ -118,7 +143,9 @@ class NotesEditorBlockItem extends StatelessWidget {
           ? TextSpan(
               text: hint,
               style: effectiveStyle.copyWith(
-                color: NotesFigmaTokens.textSecondary(context).withValues(alpha: 0.55),
+                color: NotesFigmaTokens.textSecondary(
+                  context,
+                ).withValues(alpha: 0.55),
               ),
             )
           : _selectableSpan(context, effectiveStyle);
@@ -138,7 +165,9 @@ class NotesEditorBlockItem extends StatelessWidget {
                 final position = render.getPositionForOffset(local);
                 final controller = textController;
                 if (controller != null) {
-                  final offset = position.offset.clamp(0, controller.text.length).toInt();
+                  final offset = position.offset
+                      .clamp(0, controller.text.length)
+                      .toInt();
                   controller.selection = TextSelection.collapsed(offset: offset);
                 }
               }
@@ -247,8 +276,9 @@ class NotesEditorBlockItem extends StatelessWidget {
                         border: block.checked
                             ? null
                             : Border.all(
-                                color: NotesFigmaTokens.textPrimary(context)
-                                    .withValues(alpha: 0.15),
+                                color: NotesFigmaTokens.textPrimary(
+                                  context,
+                                ).withValues(alpha: 0.15),
                               ),
                       ),
                       child: block.checked
