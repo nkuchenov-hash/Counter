@@ -71,6 +71,7 @@ void main() {
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetViewInsets);
 
     final title = TextEditingController(text: 'Title');
     final body = TextEditingController(text: 'Body');
@@ -81,13 +82,9 @@ void main() {
     addTearDown(bodyFocus.dispose);
     addTearDown(browserInset.dispose);
 
-    Widget app(EdgeInsets viewInsets) => MaterialApp(
-      home: MediaQuery(
-        data: MediaQueryData(
-          size: const Size(390, 844),
-          viewInsets: viewInsets,
-        ),
-        child: NotesEditorScreen(
+    await tester.pumpWidget(
+      MaterialApp(
+        home: NotesEditorScreen(
           titleController: title,
           onTitleChanged: (_) {},
           onDone: () {},
@@ -117,10 +114,9 @@ void main() {
       ),
     );
 
-    await tester.pumpWidget(app(EdgeInsets.zero));
     bodyFocus.requestFocus();
     await tester.pump();
-    await tester.pumpWidget(app(const EdgeInsets.only(bottom: 300)));
+    tester.view.viewInsets = const FakeViewPadding(bottom: 300);
     await tester.pump();
 
     expect(
