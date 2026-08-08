@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-08T00:10:14.257Z",
+  "updatedAt": "2026-08-08T00:13:49.791Z",
   "count": 78,
   "sourcePool": [
     "Steam",
@@ -3970,7 +3970,7 @@
       "movies": [],
       "criticRating": 9.1,
       "steamUserRating": 9.7,
-      "recommendations": 233163,
+      "recommendations": 233165,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 12596,
       "sourceEvidence": [
@@ -3983,7 +3983,7 @@
         "steamSpy": "https://steamspy.com/app/526870",
         "metacritic": "https://www.metacritic.com/game/pc/satisfactory?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9766.766149716648,
+      "popularityScore": 9766.76652223781,
       "igropoiskRating": 9.3,
       "editorialSources": [],
       "materials": {
