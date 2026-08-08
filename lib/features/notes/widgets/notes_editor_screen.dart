@@ -100,6 +100,7 @@ class NotesEditorScreen extends StatelessWidget {
             embedded: embedded,
             child: _NotesEditorRail(
               embedded: embedded,
+              scrollTitleWithContent: !desktop,
               onDone: embeddedScope?.onClose ?? onDone,
               pinned: pinned,
               onTogglePinned: onTogglePinned,
@@ -141,6 +142,7 @@ class NotesEditorScreen extends StatelessWidget {
 class _NotesEditorRail extends StatelessWidget {
   const _NotesEditorRail({
     required this.embedded,
+    required this.scrollTitleWithContent,
     required this.onDone,
     required this.pinned,
     required this.onTogglePinned,
@@ -156,6 +158,7 @@ class _NotesEditorRail extends StatelessWidget {
   });
 
   final bool embedded;
+  final bool scrollTitleWithContent;
   final VoidCallback onDone;
   final bool pinned;
   final VoidCallback onTogglePinned;
@@ -181,6 +184,39 @@ class _NotesEditorRail extends StatelessWidget {
         final contentWidth = (constraints.maxWidth - horizontalPadding * 2)
             .clamp(0.0, NotesFigmaTokens.editorContentMaxWidth)
             .toDouble();
+        final title = _NotesTitleBlock(
+          controller: titleController,
+          onChanged: onTitleChanged,
+          categoryLabel: categoryLabel,
+          categoryColor: categoryColor,
+          tags: tags,
+          hintText: titleHint,
+        );
+        final editorBody = Stack(
+          fit: StackFit.expand,
+          children: [
+            Positioned.fill(
+              child: Padding(
+                padding: const EdgeInsets.only(
+                  bottom: NotesFigmaTokens.toolbarHeight + 28,
+                ),
+                child: content,
+              ),
+            ),
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: embedded ? 14 : 8,
+              child: RepaintBoundary(
+                child: Align(
+                  alignment: Alignment.bottomCenter,
+                  child: toolbar,
+                ),
+              ),
+            ),
+          ],
+        );
+
         return Align(
           alignment: Alignment.topCenter,
           child: SizedBox(
@@ -197,40 +233,25 @@ class _NotesEditorRail extends StatelessWidget {
                   onTogglePinned: onTogglePinned,
                   onDelete: onDelete,
                 ),
-                _NotesTitleBlock(
-                  controller: titleController,
-                  onChanged: onTitleChanged,
-                  categoryLabel: categoryLabel,
-                  categoryColor: categoryColor,
-                  tags: tags,
-                  hintText: titleHint,
-                ),
-                Expanded(
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      Positioned.fill(
-                        child: Padding(
-                          padding: const EdgeInsets.only(
-                            bottom: NotesFigmaTokens.toolbarHeight + 28,
-                          ),
-                          child: content,
+                if (scrollTitleWithContent)
+                  Expanded(
+                    child: NestedScrollView(
+                      key: const ValueKey('notes-editor-mobile-scroll'),
+                      keyboardDismissBehavior:
+                          ScrollViewKeyboardDismissBehavior.onDrag,
+                      headerSliverBuilder: (context, innerBoxIsScrolled) => [
+                        SliverToBoxAdapter(
+                          key: const ValueKey('notes-editor-scrollable-title'),
+                          child: title,
                         ),
-                      ),
-                      Positioned(
-                        left: 0,
-                        right: 0,
-                        bottom: embedded ? 14 : 8,
-                        child: RepaintBoundary(
-                          child: Align(
-                            alignment: Alignment.bottomCenter,
-                            child: toolbar,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                      ],
+                      body: editorBody,
+                    ),
+                  )
+                else ...[
+                  title,
+                  Expanded(child: editorBody),
+                ],
               ],
             ),
           ),
@@ -447,6 +468,7 @@ class _NotesTitleBlock extends StatelessWidget {
             textInputAction: TextInputAction.next,
             minLines: 1,
             maxLines: null,
+            scrollPadding: const EdgeInsets.only(bottom: 24),
             onChanged: onChanged,
             style: TextStyle(
               fontSize: NotesFigmaTokens.titleSize,
