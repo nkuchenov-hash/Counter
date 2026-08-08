@@ -69,6 +69,14 @@ class NotesGlmInlineAddRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    final dark = theme.brightness == Brightness.dark;
+    final fill = dark
+        ? scheme.surfaceContainerHigh.withValues(alpha: 0.82)
+        : const Color(0xFFFFFFFF).withValues(alpha: 0.75);
+    final borderColor = dark
+        ? scheme.outlineVariant.withValues(alpha: 0.78)
+        : const Color(0xFFE2E8F0).withValues(alpha: 0.95);
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
@@ -86,17 +94,28 @@ class NotesGlmInlineAddRow extends StatelessWidget {
                   fontSize: 14,
                   color: notesGlmMetaColor(context),
                 ),
-                filled: false,
-                fillColor: Colors.transparent,
+                filled: true,
+                fillColor: fill,
                 hoverColor: Colors.transparent,
                 focusColor: Colors.transparent,
-                border: InputBorder.none,
-                enabledBorder: InputBorder.none,
-                focusedBorder: InputBorder.none,
-                disabledBorder: InputBorder.none,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: borderColor),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: borderColor),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(
+                    color: scheme.primary.withValues(alpha: dark ? 0.82 : 0.55),
+                    width: dark ? 1.2 : 1,
+                  ),
+                ),
                 isDense: true,
                 contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 2,
+                  horizontal: 14,
                   vertical: 10,
                 ),
               ),
