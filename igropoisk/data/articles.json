@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-08T16:50:17.419Z",
+  "updatedAt": "2026-08-08T16:51:57.771Z",
   "count": 495,
   "sources": [
     "IGN",
@@ -14,6 +14,24 @@
     "Игромания"
   ],
   "articles": [
+    {
+      "source": "StopGame",
+      "language": "ru",
+      "title": "Guild Wars 2: Рейд 2 [ММОрафон]",
+      "normalizedTitle": "guild wars 2 рейд 2 мморафон",
+      "url": "https://stopgame.ru/show/163150/guild_wars_2_reyd_2_mmorafon",
+      "summary": "Настало время в очередной раз взять 7 отважных смельчаков из нашего коммьюнити и отправиться покорять рейды.Хочешь с нами? Милости просим в наш Discord!",
+      "publishedAt": "Sat, 08 Aug 2026 19:30:02 +0300"
+    },
+    {
+      "source": "StopGame",
+      "language": "ru",
+      "title": "Battle City и Contra. 8-битные легенды [Шутерок под Кофеёк]",
+      "normalizedTitle": "battle city и contra 8 битные легенды шутерок под кофеёк",
+      "url": "https://stopgame.ru/show/163149/battle_city_i_contra_8_bitnye_legendy_shuterok_pod_kofeek",
+      "summary": "В этот раз отправимся во времена юности, беззаботности и 8-битной радости (или боли).",
+      "publishedAt": "Sat, 08 Aug 2026 19:29:47 +0300"
+    },
     {
       "source": "Eurogamer",
       "language": "en",
@@ -3532,24 +3550,6 @@
       "url": "https://stopgame.ru/show/162892/karnoval_kvestov_redjack_revenge_of_the_brethren_efir_chetvertyy",
       "summary": "Это пятница пирррратская!",
       "publishedAt": "Sat, 25 Jul 2026 21:14:25 +0300"
-    },
-    {
-      "source": "StopGame",
-      "language": "ru",
-      "title": "Sid Meier&#039;s Pirates! [Ретрореквест]",
-      "normalizedTitle": "sid meier 039 s pirates ретрореквест",
-      "url": "https://stopgame.ru/show/162891/sid_meiers_pirates_retrorekvest",
-      "summary": "Традиционное ежепятничное погружение в уютную ностальгию. Предаёмся любви к старине и лампово общаемся.",
-      "publishedAt": "Sat, 25 Jul 2026 21:13:58 +0300"
-    },
-    {
-      "source": "StopGame",
-      "language": "ru",
-      "title": "Что скрывает Game Pass от Netflix",
-      "normalizedTitle": "что скрывает game pass от netflix",
-      "url": "https://stopgame.ru/show/162128/chto_skryvaet_game_pass_ot_netflix",
-      "summary": "Вместе с первым релизом ААА-игры от Netflix Games пробудилось древнее зло — Мобильный Уэс. Ну, а раз проснулись-потянулись, давайте оценим содержимое подписки с мобильными играми от гиганта индустрии развлечений.",
-      "publishedAt": "Sat, 25 Jul 2026 15:01:05 +0300"
     },
     {
       "source": "VG247",
