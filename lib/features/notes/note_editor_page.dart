@@ -4,6 +4,7 @@
 // ids, canonical Notes components, and local-first debounced persistence.
 
 import 'dart:async';
+import 'dart:convert';
 import 'package:counter/core/widgets/app_button.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
@@ -360,7 +361,9 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
     if (plain.isEmpty) return;
 
     final candidatePlain = _NotesStructuredClipboard.plainText;
-    final normalizedPlain = plain.replaceAll('\r\n', '\n').replaceAll('\r', '\n');
+    final normalizedPlain = plain
+        .replaceAll('\r\n', '\n')
+        .replaceAll('\r', '\n');
     final normalizedCandidate = candidatePlain
         ?.replaceAll('\r\n', '\n')
         .replaceAll('\r', '\n');
@@ -449,9 +452,11 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
     for (var startIndex = 0; startIndex < textBlocks.length; startIndex++) {
       final buffer = StringBuffer();
       final offsets = <int>[0];
-      for (var endIndex = startIndex;
-          endIndex < textBlocks.length;
-          endIndex++) {
+      for (
+        var endIndex = startIndex;
+        endIndex < textBlocks.length;
+        endIndex++
+      ) {
         buffer.write(textBlocks[endIndex].effectiveText);
         offsets.add(buffer.length);
         if (buffer.length < plain.length) continue;
@@ -463,9 +468,11 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
           if (foundAt < 0) break;
           final selectedEnd = foundAt + plain.length;
           final slices = <NoteBlock>[];
-          for (var localIndex = 0;
-              localIndex <= endIndex - startIndex;
-              localIndex++) {
+          for (
+            var localIndex = 0;
+            localIndex <= endIndex - startIndex;
+            localIndex++
+          ) {
             final source = textBlocks[startIndex + localIndex];
             final blockStart = offsets[localIndex];
             final blockEnd = offsets[localIndex + 1];
@@ -911,15 +918,76 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
     return ordinal;
   }
 
+  Widget? _desktopDrawingPreview(BuildContext context, NoteBlock block) {
+    if (block.type != NoteBlockType.drawing ||
+        MediaQuery.sizeOf(context).width < 768) {
+      return null;
+    }
+    final raw = block.drawingData?.trim() ?? '';
+    if (raw.isEmpty) return null;
+    final comma = raw.indexOf(',');
+    final encoded = raw.startsWith('data:') && comma >= 0
+        ? raw.substring(comma + 1)
+        : raw;
+    try {
+      final bytes = base64Decode(encoded);
+      final scheme = Theme.of(context).colorScheme;
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(
+          kNotesContentInset,
+          0,
+          kNotesContentInset,
+          kNotesBlockVerticalPadding,
+        ),
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => _selectBlock(block.id),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: scheme.outlineVariant),
+              ),
+              child: SizedBox(
+                width: double.infinity,
+                height: 280,
+                child: Image.memory(
+                  bytes,
+                  width: double.infinity,
+                  height: 280,
+                  alignment: Alignment.topCenter,
+                  fit: BoxFit.contain,
+                  gaplessPlayback: true,
+                  filterQuality: FilterQuality.medium,
+                  errorBuilder: (_, __, ___) => Center(
+                    child: Icon(
+                      Icons.broken_image_outlined,
+                      color: scheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    } on FormatException {
+      return null;
+    }
+  }
+
   Widget _buildBlock(BuildContext context, int index) {
     final block = _editor.visibleBlocks[index];
     final editable = NotesEditorDocumentController.isEditableText(block.type);
     final focusNode = editable ? _focusNodeFor(block) : null;
-    return NotesEditorBlockItem(
+    final active = _editor.activeBlockId == block.id;
+    Widget item = NotesEditorBlockItem(
       block: block,
       index: index,
       numberedOrdinal: _numberedOrdinal(index),
-      active: _editor.activeBlockId == block.id,
+      active: active,
       editing: editable && _editingBlockId == block.id,
       textController: editable ? _textControllerFor(block) : null,
       focusNode: focusNode,
@@ -958,6 +1026,58 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
       onOpenTranscript: block.type == NoteBlockType.audio
           ? () => _openAudioTranscript(block.id)
           : null,
+    );
+
+    final drawingPreview = _desktopDrawingPreview(context, block);
+    if (drawingPreview != null) {
+      item = Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [item, drawingPreview],
+      );
+    }
+
+    if (widget.parityPreview) return item;
+
+    // Reserve the action rail for every block so activating a block never
+    // changes its text width or line wrapping. The button itself appears only
+    // for the active block and sits outside the hold-to-drag listener.
+    final content = Padding(
+      padding: const EdgeInsets.only(right: 36),
+      child: item,
+    );
+    if (!active) return content;
+
+    final scheme = Theme.of(context).colorScheme;
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        content,
+        Positioned(
+          top: 2,
+          right: 2,
+          child: Tooltip(
+            message: t(currentLocale.value, 'delete'),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                key: ValueKey<String>('notes-block-delete-${block.id}'),
+                onTap: () => _applyMutation(_editor.deleteBlock(block.id)),
+                borderRadius: BorderRadius.circular(8),
+                child: SizedBox(
+                  width: 30,
+                  height: 30,
+                  child: Icon(
+                    Icons.delete_outline_rounded,
+                    size: 18,
+                    color: scheme.error,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 

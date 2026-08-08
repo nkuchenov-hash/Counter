@@ -356,6 +356,7 @@ void main() {
                     index: 0,
                     numberedOrdinal: 1,
                     active: false,
+                    editing: false,
                     onTap: () {},
                     onKeyEvent: (_) => KeyEventResult.ignored,
                   ),
