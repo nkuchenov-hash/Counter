@@ -38,7 +38,7 @@ class NotesEmbeddedEditorScope extends InheritedWidget {
 /// Mobile uses the dedicated full-screen surface. Wide web and desktop can use
 /// the same editor inside [NotesEmbeddedEditorScope], where it becomes a plain
 /// workspace column with an 880 px content rail and no nested modal chrome.
-class NotesEditorScreen extends StatelessWidget {
+class NotesEditorScreen extends StatefulWidget {
   const NotesEditorScreen({
     super.key,
     required this.titleController,
@@ -69,9 +69,84 @@ class NotesEditorScreen extends StatelessWidget {
   final String? titleHint;
 
   @override
+  State<NotesEditorScreen> createState() => _NotesEditorScreenState();
+}
+
+class _NotesEditorScreenState extends State<NotesEditorScreen>
+    with WidgetsBindingObserver {
+  final FocusNode _titleFocusNode = FocusNode(debugLabel: 'notes-title');
+  final GlobalKey _contentKey = GlobalKey(debugLabel: 'notes-editor-body');
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    FocusManager.instance.addListener(_onFocusChanged);
+  }
+
+  @override
+  void dispose() {
+    FocusManager.instance.removeListener(_onFocusChanged);
+    WidgetsBinding.instance.removeObserver(this);
+    _titleFocusNode.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didChangeMetrics() {
+    _scheduleFocusedCaretReveal();
+  }
+
+  void _onFocusChanged() {
+    if (!mounted) return;
+    setState(() {});
+    _scheduleFocusedCaretReveal();
+  }
+
+  bool _isBodyFocus() {
+    final focusContext = FocusManager.instance.primaryFocus?.context;
+    final bodyContext = _contentKey.currentContext;
+    if (focusContext == null || bodyContext == null) return false;
+    if (identical(focusContext, bodyContext)) return true;
+
+    var insideBody = false;
+    focusContext.visitAncestorElements((element) {
+      if (identical(element, bodyContext)) {
+        insideBody = true;
+        return false;
+      }
+      return true;
+    });
+    return insideBody;
+  }
+
+  EditableTextState? _editableStateFor(BuildContext context) {
+    if (context is StatefulElement && context.state is EditableTextState) {
+      return context.state as EditableTextState;
+    }
+    return context.findAncestorStateOfType<EditableTextState>();
+  }
+
+  void _scheduleFocusedCaretReveal() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_isBodyFocus()) return;
+      final focusContext = FocusManager.instance.primaryFocus?.context;
+      if (focusContext == null) return;
+      final editable = _editableStateFor(focusContext);
+      if (editable == null || !editable.mounted) return;
+      final selection = editable.widget.controller.selection;
+      if (!selection.isValid) return;
+      editable.bringIntoView(selection.extent);
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final embeddedScope = NotesEmbeddedEditorScope.maybeOf(context);
     final embedded = embeddedScope != null;
+    final phoneSurface = !embedded && MediaQuery.sizeOf(context).shortestSide < 600;
+    final bodyHasFocus = phoneSurface && _isBodyFocus();
+
     final editor = LayoutBuilder(
       builder: (context, constraints) {
         final desktop = embedded || constraints.maxWidth >= 768;
@@ -100,18 +175,20 @@ class NotesEditorScreen extends StatelessWidget {
             embedded: embedded,
             child: _NotesEditorRail(
               embedded: embedded,
-              onDone: embeddedScope?.onClose ?? onDone,
-              pinned: pinned,
-              onTogglePinned: onTogglePinned,
-              onDelete: embedded ? null : onDelete,
-              titleController: titleController,
-              onTitleChanged: onTitleChanged,
-              categoryLabel: categoryLabel,
-              categoryColor: categoryColor,
-              tags: tags,
-              titleHint: titleHint,
-              content: content,
-              toolbar: toolbar,
+              hideTitleForBodyEditing: bodyHasFocus,
+              onDone: embeddedScope?.onClose ?? widget.onDone,
+              pinned: widget.pinned,
+              onTogglePinned: widget.onTogglePinned,
+              onDelete: embedded ? null : widget.onDelete,
+              titleController: widget.titleController,
+              titleFocusNode: _titleFocusNode,
+              onTitleChanged: widget.onTitleChanged,
+              categoryLabel: widget.categoryLabel,
+              categoryColor: widget.categoryColor,
+              tags: widget.tags,
+              titleHint: widget.titleHint,
+              content: KeyedSubtree(key: _contentKey, child: widget.content),
+              toolbar: widget.toolbar,
             ),
           ),
         );
@@ -123,6 +200,8 @@ class NotesEditorScreen extends StatelessWidget {
         );
       },
     );
+
+    if (bodyHasFocus) _scheduleFocusedCaretReveal();
 
     if (embedded) {
       return Material(
@@ -141,11 +220,13 @@ class NotesEditorScreen extends StatelessWidget {
 class _NotesEditorRail extends StatelessWidget {
   const _NotesEditorRail({
     required this.embedded,
+    required this.hideTitleForBodyEditing,
     required this.onDone,
     required this.pinned,
     required this.onTogglePinned,
     required this.onDelete,
     required this.titleController,
+    required this.titleFocusNode,
     required this.onTitleChanged,
     required this.categoryLabel,
     required this.categoryColor,
@@ -156,11 +237,13 @@ class _NotesEditorRail extends StatelessWidget {
   });
 
   final bool embedded;
+  final bool hideTitleForBodyEditing;
   final VoidCallback onDone;
   final bool pinned;
   final VoidCallback onTogglePinned;
   final VoidCallback? onDelete;
   final TextEditingController titleController;
+  final FocusNode titleFocusNode;
   final ValueChanged<String> onTitleChanged;
   final String? categoryLabel;
   final Color? categoryColor;
@@ -197,14 +280,16 @@ class _NotesEditorRail extends StatelessWidget {
                   onTogglePinned: onTogglePinned,
                   onDelete: onDelete,
                 ),
-                _NotesTitleBlock(
-                  controller: titleController,
-                  onChanged: onTitleChanged,
-                  categoryLabel: categoryLabel,
-                  categoryColor: categoryColor,
-                  tags: tags,
-                  hintText: titleHint,
-                ),
+                if (!hideTitleForBodyEditing)
+                  _NotesTitleBlock(
+                    controller: titleController,
+                    focusNode: titleFocusNode,
+                    onChanged: onTitleChanged,
+                    categoryLabel: categoryLabel,
+                    categoryColor: categoryColor,
+                    tags: tags,
+                    hintText: titleHint,
+                  ),
                 Expanded(
                   child: Stack(
                     fit: StackFit.expand,
@@ -419,6 +504,7 @@ class _NotesHeaderAction extends StatelessWidget {
 class _NotesTitleBlock extends StatelessWidget {
   const _NotesTitleBlock({
     required this.controller,
+    required this.focusNode,
     required this.onChanged,
     required this.categoryLabel,
     required this.categoryColor,
@@ -427,6 +513,7 @@ class _NotesTitleBlock extends StatelessWidget {
   });
 
   final TextEditingController controller;
+  final FocusNode focusNode;
   final ValueChanged<String> onChanged;
   final String? categoryLabel;
   final Color? categoryColor;
@@ -443,6 +530,7 @@ class _NotesTitleBlock extends StatelessWidget {
           TextField(
             key: const ValueKey('notes-editor-title'),
             controller: controller,
+            focusNode: focusNode,
             textCapitalization: TextCapitalization.sentences,
             textInputAction: TextInputAction.next,
             minLines: 1,
