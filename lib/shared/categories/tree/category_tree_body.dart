@@ -29,6 +29,8 @@ class CategoryTreeBody extends StatefulWidget {
     required this.onSelect,
     required this.showEditChrome,
     this.showPickerCreateChrome = false,
+    this.showVisibilityCheckboxes = false,
+    this.onVisibilityChanged,
     this.onPickerAddChild,
     this.onFullSettingsTap,
     this.onAppearanceTap,
@@ -43,6 +45,13 @@ class CategoryTreeBody extends StatefulWidget {
   final ValueChanged<int> onSelect;
   final bool showEditChrome;
   final bool showPickerCreateChrome;
+
+  /// When true, hidden nodes stay in the tree and expose a visibility checkbox.
+  /// Descendants of a hidden parent are shown unchecked and disabled until the
+  /// parent is made visible again, matching [CategoryVisibilityPrefs] semantics.
+  final bool showVisibilityCheckboxes;
+  final void Function(CategoryRule rule, bool visible)? onVisibilityChanged;
+
   final void Function(CategoryRule parent)? onPickerAddChild;
   final void Function(CategoryRule r)? onFullSettingsTap;
   final void Function(CategoryRule r)? onAppearanceTap;
@@ -111,6 +120,8 @@ class _CategoryTreeBodyState extends State<CategoryTreeBody> {
             onSelect: widget.onSelect,
             showEditChrome: widget.showEditChrome,
             showPickerCreateChrome: widget.showPickerCreateChrome,
+            showVisibilityCheckboxes: widget.showVisibilityCheckboxes,
+            onVisibilityChanged: widget.onVisibilityChanged,
             onPickerAddChild: widget.onPickerAddChild,
             onFullSettingsTap: widget.onFullSettingsTap,
             onAppearanceTap: widget.onAppearanceTap,
@@ -131,6 +142,8 @@ class _CategoryTreeNode extends StatelessWidget {
     required this.onSelect,
     required this.showEditChrome,
     this.showPickerCreateChrome = false,
+    this.showVisibilityCheckboxes = false,
+    this.onVisibilityChanged,
     this.onPickerAddChild,
     this.onFullSettingsTap,
     this.onAppearanceTap,
@@ -145,19 +158,31 @@ class _CategoryTreeNode extends StatelessWidget {
   final ValueChanged<int> onSelect;
   final bool showEditChrome;
   final bool showPickerCreateChrome;
+  final bool showVisibilityCheckboxes;
+  final void Function(CategoryRule rule, bool visible)? onVisibilityChanged;
   final void Function(CategoryRule parent)? onPickerAddChild;
   final void Function(CategoryRule r)? onFullSettingsTap;
   final void Function(CategoryRule r)? onAppearanceTap;
   final void Function(CategoryRule parent)? onAddChild;
 
+  bool _hasHiddenAncestor() {
+    final hidden = CategoryVisibilityPrefs.hiddenIds.value.toSet();
+    if (hidden.isEmpty) return false;
+    final path = CategoryTreeSource.pathFromRoot(rule.id);
+    if (path.length <= 1) return false;
+    return path.take(path.length - 1).any(hidden.contains);
+  }
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final childrenRaw = rule.children ?? const <CategoryRule>[];
-    final children = [
-      for (final c in childrenRaw)
-        if (!CategoryVisibilityPrefs.isHiddenOrAncestor(c.id)) c
-    ];
+    final children = showVisibilityCheckboxes
+        ? childrenRaw
+        : [
+            for (final c in childrenRaw)
+              if (!CategoryVisibilityPrefs.isHiddenOrAncestor(c.id)) c,
+          ];
     final hasChildren = children.isNotEmpty;
     final expanded = expandedIds.contains(rule.id);
     final opacity = categoryBranchOpacityForSelection(
@@ -172,6 +197,10 @@ class _CategoryTreeNode extends StatelessWidget {
     final showRowAdd = categoryTreeNodeShowsPickerAddChild(
       showPickerCreateChrome: showPickerCreateChrome,
       onPickerAddChild: onPickerAddChild,
+    );
+    final hiddenByAncestor = showVisibilityCheckboxes && _hasHiddenAncestor();
+    final effectivelyVisible = !CategoryVisibilityPrefs.isHiddenOrAncestor(
+      rule.id,
     );
 
     final row = AnimatedOpacity(
@@ -199,6 +228,17 @@ class _CategoryTreeNode extends StatelessWidget {
               )
             else
               const SizedBox(width: 12),
+            if (showVisibilityCheckboxes)
+              Checkbox(
+                key: ValueKey<String>('category-visibility-${rule.id}'),
+                value: effectivelyVisible,
+                onChanged: hiddenByAncestor || onVisibilityChanged == null
+                    ? null
+                    : (value) {
+                        if (value == null) return;
+                        onVisibilityChanged!(rule, value);
+                      },
+              ),
             Expanded(
               child: InkWell(
                 onTap: () => onSelect(rule.id),
@@ -296,6 +336,8 @@ class _CategoryTreeNode extends StatelessWidget {
                     onSelect: onSelect,
                     showEditChrome: showEditChrome,
                     showPickerCreateChrome: showPickerCreateChrome,
+                    showVisibilityCheckboxes: showVisibilityCheckboxes,
+                    onVisibilityChanged: onVisibilityChanged,
                     onPickerAddChild: onPickerAddChild,
                     onFullSettingsTap: onFullSettingsTap,
                     onAppearanceTap: onAppearanceTap,
