@@ -20,25 +20,27 @@ void main() {
         pinned: false,
         onTogglePinned: () {},
         onDelete: () {},
-        content: ReorderableListView(
-          key: const ValueKey('notes-test-content'),
-          padding: EdgeInsets.zero,
-          buildDefaultDragHandles: false,
-          onReorder: (_, __) {},
-          children: [
-            for (var index = 0; index < 7; index++)
-              SizedBox(
-                key: ValueKey('spacer-$index'),
-                height: 72,
+        content: SelectionArea(
+          child: ReorderableListView(
+            key: const ValueKey('notes-test-content'),
+            padding: EdgeInsets.zero,
+            buildDefaultDragHandles: false,
+            onReorder: (_, __) {},
+            children: [
+              for (var index = 0; index < 7; index++)
+                SizedBox(
+                  key: ValueKey('spacer-$index'),
+                  height: 72,
+                ),
+              NotesTextBlock(
+                key: const ValueKey('body-item'),
+                controller: body,
+                focusNode: bodyFocus,
+                state: NotesBlockState.active,
+                textFieldKey: const ValueKey('body-field'),
               ),
-            NotesTextBlock(
-              key: const ValueKey('body-item'),
-              controller: body,
-              focusNode: bodyFocus,
-              state: NotesBlockState.active,
-              textFieldKey: const ValueKey('body-field'),
-            ),
-          ],
+            ],
+          ),
         ),
         toolbar: const SizedBox(
           key: ValueKey('notes-test-toolbar'),
@@ -48,7 +50,7 @@ void main() {
     );
   }
 
-  testWidgets('mobile web viewport resize keeps focused Notes body visible', (
+  testWidgets('mobile web typing keeps Notes content rendered and visible', (
     tester,
   ) async {
     tester.view.physicalSize = const Size(390, 844);
@@ -71,6 +73,11 @@ void main() {
 
     tester.view.physicalSize = const Size(390, 520);
     await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const ValueKey('body-field')),
+      'Body typing after keyboard resize',
+    );
+    await tester.pumpAndSettle();
 
     final contentRect = tester.getRect(
       find.byKey(const ValueKey('notes-test-content')),
@@ -83,7 +90,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('native keyboard inset keeps focused Notes body visible', (
+  testWidgets('native keyboard typing keeps Notes content rendered and visible', (
     tester,
   ) async {
     tester.view.physicalSize = const Size(390, 844);
@@ -106,6 +113,11 @@ void main() {
     await tester.pumpAndSettle();
 
     tester.view.viewInsets = const FakeViewPadding(bottom: 300);
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const ValueKey('body-field')),
+      'Body typing with native keyboard',
+    );
     await tester.pumpAndSettle();
 
     final contentRect = tester.getRect(
