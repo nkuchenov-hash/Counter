@@ -145,28 +145,28 @@ class ListsCategoryChipBar extends StatelessWidget {
   }
 
   Widget _addCategoryButton(BuildContext context) {
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
-    final dark = theme.brightness == Brightness.dark;
+    final scheme = Theme.of(context).colorScheme;
+    if (glmPresentation) {
+      return ListsQuadraticChip(
+        label: '+ ${t(currentLocale.value, 'category_label')}',
+        categoryColor: scheme.primary,
+        selected: false,
+        glmPresentation: true,
+        onTap: () => unawaited(_openCategoryPicker(context)),
+      );
+    }
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: () => unawaited(_openCategoryPicker(context)),
-        borderRadius: BorderRadius.circular(999),
+        borderRadius: BorderRadius.circular(8),
         child: Container(
           key: const ValueKey<String>('notes-category-quick-add'),
-          height: glmPresentation ? 34 : 40,
+          height: 40,
           padding: const EdgeInsets.symmetric(horizontal: 11),
           decoration: BoxDecoration(
-            color: dark
-                ? scheme.surfaceContainerHigh.withValues(alpha: 0.82)
-                : const Color(0xFFFFFFFF).withValues(alpha: 0.55),
-            borderRadius: BorderRadius.circular(999),
-            border: Border.all(
-              color: dark
-                  ? scheme.outlineVariant.withValues(alpha: 0.70)
-                  : const Color(0xFFE2E8F0),
-            ),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: scheme.outlineVariant),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -174,7 +174,7 @@ class ListsCategoryChipBar extends StatelessWidget {
               Icon(Icons.add_rounded, size: 16, color: scheme.onSurfaceVariant),
               const SizedBox(width: 4),
               Text(
-                t(currentLocale.value, 'add'),
+                t(currentLocale.value, 'category_label'),
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
