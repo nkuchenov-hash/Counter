@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-08T00:02:24.574Z",
+  "updatedAt": "2026-08-08T00:10:14.257Z",
   "count": 495,
   "sources": [
     "IGN",
@@ -14,6 +14,15 @@
     "Игромания"
   ],
   "articles": [
+    {
+      "source": "PC Gamer",
+      "language": "en",
+      "title": "Big Walk: So, what's the deal with that number puzzle?",
+      "normalizedTitle": "big walk so what s the deal with that number puzzle",
+      "url": "https://www.pcgamer.com/games/puzzle/big-walk-number-puzzle-4166-1899/",
+      "summary": "If you're stuck on this early puzzle, we can give you some hints—or the complete solution.",
+      "publishedAt": "Sat, 08 Aug 2026 00:02:33 +0000"
+    },
     {
       "source": "Polygon",
       "language": "en",
@@ -1777,15 +1786,6 @@
       "url": "https://www.pcgamer.com/games/third-person-shooter/something-big-is-coming-to-helldivers-2-next-week-squid-is-back-on-the-menu/",
       "summary": "Poor teddy.",
       "publishedAt": "Wed, 05 Aug 2026 19:55:52 +0000"
-    },
-    {
-      "source": "PC Gamer",
-      "language": "en",
-      "title": "'Sorry about this!' Big Walk is already fixing its biggest complaint",
-      "normalizedTitle": "sorry about this big walk is already fixing its biggest complaint",
-      "url": "https://www.pcgamer.com/games/puzzle/sorry-about-this-big-walk-is-already-fixing-its-biggest-complaint/",
-      "summary": "In a game about communication, players are having trouble hearing each other.",
-      "publishedAt": "Wed, 05 Aug 2026 19:36:45 +0000"
     },
     {
       "source": "StopGame",

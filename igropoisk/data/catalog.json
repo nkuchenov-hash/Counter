@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-08T00:02:24.574Z",
+  "updatedAt": "2026-08-08T00:10:14.257Z",
   "count": 78,
   "sourcePool": [
     "Steam",
@@ -2585,7 +2585,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 9.4,
-      "recommendations": 396513,
+      "recommendations": 396542,
       "owners": "50,000,000 .. 100,000,000",
       "peakConcurrent": 18028,
       "sourceEvidence": [
@@ -2600,7 +2600,7 @@
         "steamSpy": "https://steamspy.com/app/1623730",
         "metacritic": ""
       },
-      "popularityScore": 9939.825852586651,
+      "popularityScore": 9939.829028787095,
       "igropoiskRating": 9.4,
       "editorialSources": [
         "GamesRadar+",
@@ -4231,7 +4231,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 9.1,
-      "recommendations": 99015,
+      "recommendations": 99016,
       "owners": "2,000,000 .. 5,000,000",
       "peakConcurrent": 698,
       "sourceEvidence": [
@@ -4245,7 +4245,7 @@
         "steamSpy": "https://steamspy.com/app/848450",
         "metacritic": ""
       },
-      "popularityScore": 9739.57053779335,
+      "popularityScore": 9739.570976401543,
       "igropoiskRating": 9.1,
       "editorialSources": [
         "Rock Paper Shotgun",
@@ -7050,7 +7050,7 @@
       "movies": [],
       "criticRating": 8.3,
       "steamUserRating": 9.4,
-      "recommendations": 49956,
+      "recommendations": 49957,
       "owners": "1,000,000 .. 2,000,000",
       "peakConcurrent": 229,
       "sourceEvidence": [
@@ -7063,7 +7063,7 @@
         "steamSpy": "https://steamspy.com/app/860510",
         "metacritic": "https://www.metacritic.com/game/pc/little-nightmares-ii?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9289.859635038734,
+      "popularityScore": 9289.860504366627,
       "igropoiskRating": 8.7,
       "editorialSources": [],
       "materials": {
@@ -7133,7 +7133,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 7.7,
-      "recommendations": 385940,
+      "recommendations": 385944,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 37066,
       "sourceEvidence": [
@@ -7145,7 +7145,7 @@
         "steamSpy": "https://steamspy.com/app/221100",
         "metacritic": ""
       },
-      "popularityScore": 9288.652091779897,
+      "popularityScore": 9288.65254189246,
       "igropoiskRating": 7.7,
       "editorialSources": [],
       "materials": {
@@ -7473,7 +7473,7 @@
       "movies": [],
       "criticRating": 9.3,
       "steamUserRating": 9.6,
-      "recommendations": 179779,
+      "recommendations": 179783,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 3510,
       "sourceEvidence": [
@@ -7487,7 +7487,7 @@
         "steamSpy": "https://steamspy.com/app/435150",
         "metacritic": "https://www.metacritic.com/game/pc/divinity-original-sin-ii?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9165.474137609153,
+      "popularityScore": 9165.475103878262,
       "igropoiskRating": 9.4,
       "editorialSources": [
         "VG247"
