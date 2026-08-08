@@ -121,6 +121,115 @@ class NotesEditorDocumentController {
     );
   }
 
+  /// Paste a system clipboard string. Normal text keeps the existing editor
+  /// semantics; recognizable Markdown/native checkbox lines become real Notes
+  /// blocks instead of being flattened into one paragraph.
+  NotesEditorMutation pastePlainText(
+    String id,
+    TextSelection selection,
+    String plainText,
+  ) {
+    final block = blockById(id);
+    if (block == null || !isEditableText(block.type)) {
+      return const NotesEditorMutation();
+    }
+    final normalized = plainText
+        .replaceAll('\r\n', '\n')
+        .replaceAll('\r', '\n');
+    if (normalized.isEmpty) return const NotesEditorMutation();
+
+    final structured = _parseStructuredClipboardText(normalized);
+    if (structured != null && structured.isNotEmpty) {
+      return pasteBlocks(id, selection, structured);
+    }
+
+    final safe = selection.isValid
+        ? selection
+        : TextSelection.collapsed(offset: block.effectiveText.length);
+    final start = safe.start.clamp(0, block.effectiveText.length).toInt();
+    final end = safe.end.clamp(0, block.effectiveText.length).toInt();
+    final nextText = block.effectiveText.replaceRange(start, end, normalized);
+    return applyTextInput(
+      id,
+      nextText,
+      TextSelection.collapsed(offset: start + normalized.length),
+    );
+  }
+
+  /// Inserts structured text blocks at the current caret/selection. Block type,
+  /// checklist state, heading level and inline runs are preserved for internal
+  /// Notes clipboard payloads. New ids are always generated for pasted blocks.
+  NotesEditorMutation pasteBlocks(
+    String id,
+    TextSelection selection,
+    List<NoteBlock> sourceBlocks,
+  ) {
+    final target = blockById(id);
+    if (target == null || !isEditableText(target.type)) {
+      return const NotesEditorMutation();
+    }
+    final insertable = <NoteBlock>[
+      for (final source in sourceBlocks)
+        if (isEditableText(source.type)) source,
+    ];
+    if (insertable.isEmpty) return const NotesEditorMutation();
+
+    final safe = selection.isValid
+        ? selection
+        : TextSelection.collapsed(offset: target.effectiveText.length);
+    final start = safe.start.clamp(0, target.effectiveText.length).toInt();
+    final end = safe.end.clamp(0, target.effectiveText.length).toInt();
+    final prefixText = target.effectiveText.substring(0, start);
+    final suffixText = target.effectiveText.substring(end);
+    final prefixRuns = _sliceRuns(target.effectiveRuns, 0, start);
+    final suffixRuns = _sliceRuns(
+      target.effectiveRuns,
+      end,
+      target.effectiveText.length,
+    );
+
+    final replacement = <NoteBlock>[];
+    if (prefixText.isNotEmpty) {
+      replacement.add(target.copyWith(text: prefixText, runs: prefixRuns));
+    }
+
+    final pasted = <NoteBlock>[
+      for (final source in insertable) _cloneNoteBlockWithNewId(source),
+    ];
+    replacement.addAll(pasted);
+
+    NoteBlock? suffixBlock;
+    if (suffixText.isNotEmpty) {
+      final slicedTarget = target.copyWith(text: suffixText, runs: suffixRuns);
+      suffixBlock = prefixText.isEmpty
+          ? slicedTarget
+          : _cloneNoteBlockWithNewId(slicedTarget);
+      replacement.add(suffixBlock);
+    }
+
+    final index = _indexOf(target.id);
+    if (index < 0) return const NotesEditorMutation();
+    final nextBlocks = List<NoteBlock>.from(blocks)
+      ..removeAt(index)
+      ..insertAll(index, replacement);
+    _document = _document.copyWith(blocks: nextBlocks);
+
+    if (suffixBlock != null) {
+      activeBlockId = suffixBlock.id;
+      activeSelection = const TextSelection.collapsed(offset: 0);
+    } else {
+      final focus = pasted.lastWhere(
+        (candidate) => isEditableText(candidate.type),
+        orElse: () => pasted.last,
+      );
+      activeBlockId = focus.id;
+      activeSelection = TextSelection.collapsed(
+        offset: focus.effectiveText.length,
+      );
+    }
+    return _focusMutation(activeBlockId!, activeSelection);
+  }
+
   NotesEditorMutation _replaceWithSplitLines(
     NoteBlock block,
     String newText,
@@ -755,4 +864,114 @@ List<NoteTextRun> _mergeRuns(List<NoteTextRun> runs) {
     }
   }
   return List<NoteTextRun>.unmodifiable(result);
+}
+
+NoteBlock _cloneNoteBlockWithNewId(NoteBlock source) {
+  final json = Map<String, dynamic>.from(source.toJson());
+  json['id'] = generateNoteBlockId();
+  return NoteBlock.fromJson(json);
+}
+
+List<NoteBlock>? _parseStructuredClipboardText(String plainText) {
+  final lines = plainText.split('\n');
+  if (lines.isEmpty) return null;
+  final parsed = <NoteBlock>[];
+  var structuredCount = 0;
+  for (final line in lines) {
+    final result = _parseClipboardLine(line);
+    parsed.add(result.$1);
+    if (result.$2) structuredCount++;
+  }
+  if (structuredCount == 0) return null;
+  return parsed;
+}
+
+(NoteBlock, bool) _parseClipboardLine(String rawLine) {
+  final line = rawLine.replaceAll('\t', '  ');
+
+  final checklist = RegExp(r'^\s*(?:[-*]\s+)?\[( |x|X)\]\s*(.*)$')
+      .firstMatch(line);
+  if (checklist != null) {
+    return (
+      NoteBlock(
+        id: generateNoteBlockId(),
+        type: NoteBlockType.checklist,
+        text: checklist.group(2) ?? '',
+        checked: (checklist.group(1) ?? '').toLowerCase() == 'x',
+      ),
+      true,
+    );
+  }
+
+  final unicodeChecklist = RegExp(r'^\s*([☐☑☒□])\s*(.*)$').firstMatch(line);
+  if (unicodeChecklist != null) {
+    final marker = unicodeChecklist.group(1) ?? '';
+    return (
+      NoteBlock(
+        id: generateNoteBlockId(),
+        type: NoteBlockType.checklist,
+        text: unicodeChecklist.group(2) ?? '',
+        checked: marker == '☑' || marker == '☒',
+      ),
+      true,
+    );
+  }
+
+  final heading = RegExp(r'^\s*(#{1,3})\s+(.*)$').firstMatch(line);
+  if (heading != null) {
+    return (
+      NoteBlock(
+        id: generateNoteBlockId(),
+        type: NoteBlockType.heading,
+        level: (heading.group(1) ?? '#').length,
+        text: heading.group(2) ?? '',
+      ),
+      true,
+    );
+  }
+
+  final quote = RegExp(r'^\s*>\s?(.*)$').firstMatch(line);
+  if (quote != null) {
+    return (
+      NoteBlock(
+        id: generateNoteBlockId(),
+        type: NoteBlockType.quote,
+        text: quote.group(1) ?? '',
+      ),
+      true,
+    );
+  }
+
+  final numbered = RegExp(r'^\s*\d+[.)]\s+(.*)$').firstMatch(line);
+  if (numbered != null) {
+    return (
+      NoteBlock(
+        id: generateNoteBlockId(),
+        type: NoteBlockType.numberedList,
+        text: numbered.group(1) ?? '',
+      ),
+      true,
+    );
+  }
+
+  final bullet = RegExp(r'^\s*[-*•]\s+(.*)$').firstMatch(line);
+  if (bullet != null) {
+    return (
+      NoteBlock(
+        id: generateNoteBlockId(),
+        type: NoteBlockType.bulletedList,
+        text: bullet.group(1) ?? '',
+      ),
+      true,
+    );
+  }
+
+  return (
+    NoteBlock(
+      id: generateNoteBlockId(),
+      type: NoteBlockType.paragraph,
+      text: line,
+    ),
+    false,
+  );
 }

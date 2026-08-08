@@ -18,7 +18,19 @@ import 'package:counter/features/notes/widgets/notes_editor_tools.dart';
 import 'package:counter/features/shared/edit_sheet/sheet_autosave_gate.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
+
+/// In-process structural companion to the platform plain-text clipboard.
+///
+/// SelectionArea itself only publishes plain text. We keep the matching Notes
+/// blocks in memory and only reuse them when the platform clipboard still
+/// contains exactly the text produced by that selection. External clipboard
+/// content therefore remains safe and falls back to normal/plain parsing.
+class _NotesStructuredClipboard {
+  static String? plainText;
+  static List<NoteBlock> blocks = const <NoteBlock>[];
+}
 
 Future<void> showNoteEditorPage({
   required BuildContext context,
@@ -64,6 +76,7 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
   final Set<String> _transcribingAudioIds = <String>{};
   String? _editingBlockId;
   bool _dirty = false;
+  bool _notesEditorSessionRegistered = false;
 
   @override
   void initState() {
@@ -75,6 +88,10 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
     _gate = EditSheetAutosaveGate();
     _audioPlayback = NotesAudioPlaybackController()
       ..addListener(_onAudioPlaybackChanged);
+    if (!widget.parityPreview) {
+      DatabaseService.instance.beginNotesEditorSession();
+      _notesEditorSessionRegistered = true;
+    }
     _syncEditorsWithDocument();
 
     if (_editor.activeBlockId != null &&
@@ -111,6 +128,10 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
     }
     for (final node in _focusNodes.values) {
       node.dispose();
+    }
+    if (_notesEditorSessionRegistered) {
+      DatabaseService.instance.endNotesEditorSession();
+      _notesEditorSessionRegistered = false;
     }
     widget.onClosed?.call();
     super.dispose();
@@ -324,10 +345,65 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
     _applyMutation(mutation);
   }
 
+  Future<void> _pasteClipboardIntoBlock(
+    NoteBlock block,
+    TextSelection selection,
+  ) async {
+    ClipboardData? data;
+    try {
+      data = await Clipboard.getData(Clipboard.kTextPlain);
+    } catch (_) {
+      return;
+    }
+    if (!mounted) return;
+    final plain = data?.text ?? '';
+    if (plain.isEmpty) return;
+
+    final candidatePlain = _NotesStructuredClipboard.plainText;
+    final normalizedPlain = plain.replaceAll('\r\n', '\n').replaceAll('\r', '\n');
+    final normalizedCandidate = candidatePlain
+        ?.replaceAll('\r\n', '\n')
+        .replaceAll('\r', '\n');
+    final hasMatchingStructure =
+        normalizedCandidate != null &&
+        normalizedCandidate == normalizedPlain &&
+        _NotesStructuredClipboard.blocks.isNotEmpty;
+
+    final mutation = hasMatchingStructure
+        ? _editor.pasteBlocks(
+            block.id,
+            selection,
+            _NotesStructuredClipboard.blocks,
+          )
+        : _editor.pastePlainText(block.id, selection, normalizedPlain);
+    if (!mutation.changed) return;
+
+    if (!mutation.requiresRebuild) {
+      final updated = _editor.blockById(block.id);
+      if (updated != null) {
+        final controller = _textControllerFor(updated);
+        controller.syncDocument(
+          text: updated.effectiveText,
+          runs: updated.effectiveRuns,
+          selection:
+              _editor.activeSelection ??
+              TextSelection.collapsed(offset: updated.effectiveText.length),
+        );
+      }
+    }
+    _applyMutation(mutation);
+  }
+
   KeyEventResult _onBlockKeyEvent(NoteBlock block, KeyEvent event) {
     if (event is! KeyDownEvent) return KeyEventResult.ignored;
     final controller = _textControllerFor(block);
     final selection = controller.selection;
+    final keyboard = HardwareKeyboard.instance;
+    if (event.logicalKey == LogicalKeyboardKey.keyV &&
+        (keyboard.isControlPressed || keyboard.isMetaPressed)) {
+      unawaited(_pasteClipboardIntoBlock(block, selection));
+      return KeyEventResult.handled;
+    }
     if (event.logicalKey == LogicalKeyboardKey.enter) {
       final mutation = _editor.handleEnter(block.id, selection);
       if (!mutation.changed) return KeyEventResult.ignored;
@@ -344,6 +420,88 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
       return KeyEventResult.handled;
     }
     return KeyEventResult.ignored;
+  }
+
+  /// SelectionArea exposes plain text only. Flutter concatenates selected child
+  /// contents without inventing a delimiter, so locate that exact substring in
+  /// contiguous Notes text blocks and retain the matching block slices.
+  void _captureStructuredSelection(SelectedContent? selected) {
+    final plain = selected?.plainText ?? '';
+    if (plain.isEmpty) return;
+    final blocks = _inferStructuredSelectionBlocks(plain);
+    if (blocks.isEmpty) return;
+    _NotesStructuredClipboard.plainText = plain;
+    _NotesStructuredClipboard.blocks = List<NoteBlock>.unmodifiable(blocks);
+  }
+
+  List<NoteBlock> _inferStructuredSelectionBlocks(String plain) {
+    if (plain.isEmpty) return const <NoteBlock>[];
+    final textBlocks = <NoteBlock>[
+      for (final block in _editor.visibleBlocks)
+        if (NotesEditorDocumentController.isEditableText(block.type) &&
+            block.effectiveText.isNotEmpty)
+          block,
+    ];
+    if (textBlocks.isEmpty) return const <NoteBlock>[];
+
+    List<NoteBlock>? best;
+    var bestWindow = 1 << 30;
+    for (var startIndex = 0; startIndex < textBlocks.length; startIndex++) {
+      final buffer = StringBuffer();
+      final offsets = <int>[0];
+      for (var endIndex = startIndex;
+          endIndex < textBlocks.length;
+          endIndex++) {
+        buffer.write(textBlocks[endIndex].effectiveText);
+        offsets.add(buffer.length);
+        if (buffer.length < plain.length) continue;
+
+        final joined = buffer.toString();
+        var searchFrom = 0;
+        while (searchFrom <= joined.length - plain.length) {
+          final foundAt = joined.indexOf(plain, searchFrom);
+          if (foundAt < 0) break;
+          final selectedEnd = foundAt + plain.length;
+          final slices = <NoteBlock>[];
+          for (var localIndex = 0;
+              localIndex <= endIndex - startIndex;
+              localIndex++) {
+            final source = textBlocks[startIndex + localIndex];
+            final blockStart = offsets[localIndex];
+            final blockEnd = offsets[localIndex + 1];
+            final overlapStart = foundAt > blockStart ? foundAt : blockStart;
+            final overlapEnd = selectedEnd < blockEnd ? selectedEnd : blockEnd;
+            if (overlapStart >= overlapEnd) continue;
+            final localStart = overlapStart - blockStart;
+            final localEnd = overlapEnd - blockStart;
+            if (localStart == 0 && localEnd == source.effectiveText.length) {
+              slices.add(source);
+            } else {
+              slices.add(
+                source.copyWith(
+                  text: source.effectiveText.substring(localStart, localEnd),
+                  runs: const <NoteTextRun>[],
+                ),
+              );
+            }
+          }
+
+          // A single selected text fragment should behave like normal clipboard
+          // text. Structure matters once selection crosses a block boundary.
+          if (slices.length >= 2) {
+            final window = endIndex - startIndex + 1;
+            if (window < bestWindow) {
+              best = slices;
+              bestWindow = window;
+            }
+          }
+          searchFrom = foundAt + 1;
+        }
+        if (bestWindow == 2) break;
+      }
+      if (bestWindow == 2) break;
+    }
+    return best ?? const <NoteBlock>[];
   }
 
   void _selectBlock(String blockId) {
@@ -898,6 +1056,7 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
         onMore: _showActiveBlockOptions,
       ),
       content: SelectionArea(
+        onSelectionChanged: _captureStructuredSelection,
         child: ReorderableListView.builder(
           key: const ValueKey('notes-editor-content'),
           padding: EdgeInsets.zero,

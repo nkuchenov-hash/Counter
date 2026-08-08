@@ -12,6 +12,11 @@ Timer? _planningNotifyNetworkDebounceTimer;
 
 bool _planningRefreshWantsNetworkPump = false;
 
+/// Notes owns its editor state while a note is open. Global Lists subscribers
+/// must not turn every autosave/realtime echo into a full backlog network reload.
+int _activeNotesEditorSessions = 0;
+bool _planningHeavySideEffectsDeferredForNotes = false;
+
 int _planningStreamIdSeq = 0;
 
 final Map<String, _PlanningDayStreamHub> _planningStreamHubs = {};
@@ -137,6 +142,39 @@ final class _PlanningDayStreamHub {
 }
 
 extension PlanStreamRefreshExtension on DatabaseService {
+  /// Marks a live Notes editing session. Lists uses [planningRefreshNotifications]
+  /// and is intentionally isolated from autosave/realtime refresh fan-out until
+  /// the last editor closes. Raw Planning streams continue to receive cache pokes.
+  void beginNotesEditorSession() {
+    _activeNotesEditorSessions++;
+  }
+
+  /// Ends a Notes editing session and publishes one consolidated refresh so the
+  /// library can reconcile its cards once typing has stopped.
+  void endNotesEditorSession() {
+    if (_activeNotesEditorSessions > 0) {
+      _activeNotesEditorSessions--;
+    }
+    if (_activeNotesEditorSessions != 0) return;
+
+    if (_planningHeavySideEffectsDeferredForNotes) {
+      _planningHeavySideEffectsDeferredForNotes = false;
+      _planningHeavySideEffectsDebounceTimer?.cancel();
+      _planningHeavySideEffectsDebounceTimer = Timer(
+        const Duration(milliseconds: 50),
+        () {
+          _requestPlanAlarmReschedule();
+          _refreshPlansWarmSnapshotsAfterCacheMutation();
+          persistPlansWarmSnapshotsToDisk();
+        },
+      );
+    }
+
+    if (!_planningRefreshController.isClosed) {
+      _planningRefreshController.add(null);
+    }
+  }
+
   /// Ping planning/list subscribers. UI streams emit cache+overlay first; network refresh is debounced.
   void notifyPlanningRefresh({
     bool scheduleNetworkRefresh = true,
@@ -160,17 +198,23 @@ extension PlanStreamRefreshExtension on DatabaseService {
     );
 
     // Alarm rescheduling, warm-snapshot projection and disk persistence are
-    // expensive on web. They are correctness-neutral during active typing and
-    // only need the latest state after the edit burst settles.
-    _planningHeavySideEffectsDebounceTimer?.cancel();
-    _planningHeavySideEffectsDebounceTimer = Timer(
-      const Duration(milliseconds: 450),
-      () {
-        _requestPlanAlarmReschedule();
-        _refreshPlansWarmSnapshotsAfterCacheMutation();
-        persistPlansWarmSnapshotsToDisk();
-      },
-    );
+    // expensive on web. While Notes owns an active editor they are deferred;
+    // the editor's text/controller state is the source of truth and one pass on
+    // close is enough for an undated note edit.
+    if (_activeNotesEditorSessions > 0) {
+      _planningHeavySideEffectsDebounceTimer?.cancel();
+      _planningHeavySideEffectsDeferredForNotes = true;
+    } else {
+      _planningHeavySideEffectsDebounceTimer?.cancel();
+      _planningHeavySideEffectsDebounceTimer = Timer(
+        const Duration(milliseconds: 450),
+        () {
+          _requestPlanAlarmReschedule();
+          _refreshPlansWarmSnapshotsAfterCacheMutation();
+          persistPlansWarmSnapshotsToDisk();
+        },
+      );
+    }
 
     if (scheduleNetworkRefresh) {
       _planningNotifyNetworkDebounceTimer?.cancel();
@@ -195,9 +239,13 @@ extension PlanStreamRefreshExtension on DatabaseService {
     }
   }
 
-  /// Stats / Plan-vs-fact audit: listen to refresh planning data (same signal as [notifyPlanningRefresh]).
+  /// Legacy Lists/backlog subscriber. While a note editor is active it must not
+  /// react to every autosave/realtime echo by starting another full backlog GET.
+  /// A consolidated event is emitted from [endNotesEditorSession].
   Stream<void> get planningRefreshNotifications =>
-      _planningRefreshController.stream;
+      _planningRefreshController.stream.where(
+        (_) => _activeNotesEditorSessions == 0,
+      );
 
   /// Broadcast when planning cache should be re-read by UI (optimistic PATCH, realtime, etc.).
   Stream<void> get planningRefreshEvents => _planningRefreshController.stream;
