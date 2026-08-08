@@ -1,8 +1,4 @@
-import 'dart:math' as math;
-
-import 'package:counter/data/web_history.dart';
 import 'package:counter/features/notes/notes_figma_tokens.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 class NotesEditorMetadataTag {
@@ -57,7 +53,6 @@ class NotesEditorScreen extends StatelessWidget {
     this.categoryColor,
     this.tags = const <NotesEditorMetadataTag>[],
     this.titleHint,
-    @visibleForTesting this.visualKeyboardInsetListenable,
   });
 
   final TextEditingController titleController;
@@ -72,88 +67,59 @@ class NotesEditorScreen extends StatelessWidget {
   final Color? categoryColor;
   final List<NotesEditorMetadataTag> tags;
   final String? titleHint;
-  final ValueListenable<double>? visualKeyboardInsetListenable;
 
   @override
   Widget build(BuildContext context) {
     final embeddedScope = NotesEmbeddedEditorScope.maybeOf(context);
     final embedded = embeddedScope != null;
-    final flutterKeyboardInset = MediaQuery.viewInsetsOf(context).bottom;
-    final visualInset =
-        visualKeyboardInsetListenable ?? webVisualViewportBottomInset;
+    final editor = LayoutBuilder(
+      builder: (context, constraints) {
+        final desktop = embedded || constraints.maxWidth >= 768;
+        final frameWidth = embedded
+            ? constraints.maxWidth
+            : (constraints.maxWidth -
+                      (desktop
+                          ? NotesFigmaTokens.editorDesktopOuterInset * 2
+                          : 0))
+                  .clamp(0.0, NotesFigmaTokens.editorSurfaceMaxWidth)
+                  .toDouble();
+        final frameHeight = embedded
+            ? constraints.maxHeight
+            : (constraints.maxHeight -
+                      (desktop
+                          ? NotesFigmaTokens.editorDesktopOuterInset * 2
+                          : 0))
+                  .clamp(0.0, 920.0)
+                  .toDouble();
 
-    final editor = ValueListenableBuilder<double>(
-      valueListenable: visualInset,
-      builder: (context, browserKeyboardInset, _) {
-        final hasTextFocus = FocusManager.instance.primaryFocus != null;
-        final browserKeyboardVisible =
-            browserKeyboardInset >= 120 && hasTextFocus;
-        final keyboardVisible =
-            flutterKeyboardInset > 80 || browserKeyboardVisible;
-        final browserInset = browserKeyboardVisible ? browserKeyboardInset : 0.0;
+        final frame = SizedBox(
+          width: frameWidth,
+          height: frameHeight,
+          child: _NotesEditorSurface(
+            desktop: desktop,
+            embedded: embedded,
+            child: _NotesEditorRail(
+              embedded: embedded,
+              onDone: embeddedScope?.onClose ?? onDone,
+              pinned: pinned,
+              onTogglePinned: onTogglePinned,
+              onDelete: embedded ? null : onDelete,
+              titleController: titleController,
+              onTitleChanged: onTitleChanged,
+              categoryLabel: categoryLabel,
+              categoryColor: categoryColor,
+              tags: tags,
+              titleHint: titleHint,
+              content: content,
+              toolbar: toolbar,
+            ),
+          ),
+        );
 
-        return _NotesEditorViewport(
-          browserKeyboardInset: browserInset,
-          childBuilder: (context, uncoveredBrowserInset) {
-            return LayoutBuilder(
-              builder: (context, constraints) {
-                final desktop = embedded || constraints.maxWidth >= 768;
-                final phoneSurface = !embedded && constraints.maxWidth < 600;
-                final frameWidth = embedded
-                    ? constraints.maxWidth
-                    : (constraints.maxWidth -
-                              (desktop
-                                  ? NotesFigmaTokens.editorDesktopOuterInset * 2
-                                  : 0))
-                          .clamp(
-                            0.0,
-                            NotesFigmaTokens.editorSurfaceMaxWidth,
-                          )
-                          .toDouble();
-                final frameHeight = embedded
-                    ? constraints.maxHeight
-                    : (constraints.maxHeight -
-                              (desktop
-                                  ? NotesFigmaTokens.editorDesktopOuterInset * 2
-                                  : 0))
-                          .clamp(0.0, 920.0)
-                          .toDouble();
-
-                final frame = SizedBox(
-                  width: frameWidth,
-                  height: frameHeight,
-                  child: _NotesEditorSurface(
-                    desktop: desktop,
-                    embedded: embedded,
-                    child: _NotesEditorRail(
-                      embedded: embedded,
-                      phoneSurface: phoneSurface,
-                      keyboardVisible: keyboardVisible,
-                      uncoveredBrowserInset: uncoveredBrowserInset,
-                      onDone: embeddedScope?.onClose ?? onDone,
-                      pinned: pinned,
-                      onTogglePinned: onTogglePinned,
-                      onDelete: embedded ? null : onDelete,
-                      titleController: titleController,
-                      onTitleChanged: onTitleChanged,
-                      categoryLabel: categoryLabel,
-                      categoryColor: categoryColor,
-                      tags: tags,
-                      titleHint: titleHint,
-                      content: content,
-                      toolbar: toolbar,
-                    ),
-                  ),
-                );
-
-                if (embedded) return frame;
-                return ColoredBox(
-                  color: NotesFigmaTokens.canvas(context),
-                  child: Center(child: frame),
-                );
-              },
-            );
-          },
+        if (embedded) return frame;
+        return ColoredBox(
+          color: NotesFigmaTokens.canvas(context),
+          child: Center(child: frame),
         );
       },
     );
@@ -172,50 +138,9 @@ class NotesEditorScreen extends StatelessWidget {
   }
 }
 
-class _NotesEditorViewport extends StatefulWidget {
-  const _NotesEditorViewport({
-    required this.browserKeyboardInset,
-    required this.childBuilder,
-  });
-
-  final double browserKeyboardInset;
-  final Widget Function(BuildContext context, double uncoveredBrowserInset)
-  childBuilder;
-
-  @override
-  State<_NotesEditorViewport> createState() => _NotesEditorViewportState();
-}
-
-class _NotesEditorViewportState extends State<_NotesEditorViewport> {
-  double _unobscuredHeight = 0;
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        if (widget.browserKeyboardInset <= 0 || _unobscuredHeight == 0) {
-          _unobscuredHeight = constraints.maxHeight;
-        }
-        final layoutHeightLoss = math.max(
-          0.0,
-          _unobscuredHeight - constraints.maxHeight,
-        );
-        final uncoveredBrowserInset = math.max(
-          0.0,
-          widget.browserKeyboardInset - layoutHeightLoss,
-        );
-        return widget.childBuilder(context, uncoveredBrowserInset);
-      },
-    );
-  }
-}
-
 class _NotesEditorRail extends StatelessWidget {
   const _NotesEditorRail({
     required this.embedded,
-    required this.phoneSurface,
-    required this.keyboardVisible,
-    required this.uncoveredBrowserInset,
     required this.onDone,
     required this.pinned,
     required this.onTogglePinned,
@@ -231,9 +156,6 @@ class _NotesEditorRail extends StatelessWidget {
   });
 
   final bool embedded;
-  final bool phoneSurface;
-  final bool keyboardVisible;
-  final double uncoveredBrowserInset;
   final VoidCallback onDone;
   final bool pinned;
   final VoidCallback onTogglePinned;
@@ -282,7 +204,6 @@ class _NotesEditorRail extends StatelessWidget {
                   categoryColor: categoryColor,
                   tags: tags,
                   hintText: titleHint,
-                  collapseForKeyboard: phoneSurface && keyboardVisible,
                 ),
                 Expanded(
                   child: Stack(
@@ -290,11 +211,8 @@ class _NotesEditorRail extends StatelessWidget {
                     children: [
                       Positioned.fill(
                         child: Padding(
-                          padding: EdgeInsets.only(
-                            bottom:
-                                NotesFigmaTokens.toolbarHeight +
-                                28 +
-                                uncoveredBrowserInset,
+                          padding: const EdgeInsets.only(
+                            bottom: NotesFigmaTokens.toolbarHeight + 28,
                           ),
                           child: content,
                         ),
@@ -302,8 +220,7 @@ class _NotesEditorRail extends StatelessWidget {
                       Positioned(
                         left: 0,
                         right: 0,
-                        bottom:
-                            (embedded ? 14 : 8) + uncoveredBrowserInset,
+                        bottom: embedded ? 14 : 8,
                         child: RepaintBoundary(
                           child: Align(
                             alignment: Alignment.bottomCenter,
@@ -499,14 +416,13 @@ class _NotesHeaderAction extends StatelessWidget {
   }
 }
 
-class _NotesTitleBlock extends StatefulWidget {
+class _NotesTitleBlock extends StatelessWidget {
   const _NotesTitleBlock({
     required this.controller,
     required this.onChanged,
     required this.categoryLabel,
     required this.categoryColor,
     required this.tags,
-    required this.collapseForKeyboard,
     this.hintText,
   });
 
@@ -515,41 +431,10 @@ class _NotesTitleBlock extends StatefulWidget {
   final String? categoryLabel;
   final Color? categoryColor;
   final List<NotesEditorMetadataTag> tags;
-  final bool collapseForKeyboard;
   final String? hintText;
 
   @override
-  State<_NotesTitleBlock> createState() => _NotesTitleBlockState();
-}
-
-class _NotesTitleBlockState extends State<_NotesTitleBlock> {
-  final FocusNode _titleFocusNode = FocusNode(debugLabel: 'notes-title');
-
-  @override
-  void initState() {
-    super.initState();
-    _titleFocusNode.addListener(_handleTitleFocusChange);
-  }
-
-  @override
-  void dispose() {
-    _titleFocusNode.removeListener(_handleTitleFocusChange);
-    _titleFocusNode.dispose();
-    super.dispose();
-  }
-
-  void _handleTitleFocusChange() {
-    if (mounted) setState(() {});
-  }
-
-  @override
   Widget build(BuildContext context) {
-    if (widget.collapseForKeyboard && !_titleFocusNode.hasFocus) {
-      return const SizedBox(
-        key: ValueKey('notes-editor-title-collapsed-for-keyboard'),
-      );
-    }
-
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
       child: Column(
@@ -557,14 +442,12 @@ class _NotesTitleBlockState extends State<_NotesTitleBlock> {
         children: [
           TextField(
             key: const ValueKey('notes-editor-title'),
-            controller: widget.controller,
-            focusNode: _titleFocusNode,
+            controller: controller,
             textCapitalization: TextCapitalization.sentences,
             textInputAction: TextInputAction.next,
             minLines: 1,
             maxLines: null,
-            scrollPadding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
-            onChanged: widget.onChanged,
+            onChanged: onChanged,
             style: TextStyle(
               fontSize: NotesFigmaTokens.titleSize,
               height:
@@ -574,7 +457,7 @@ class _NotesTitleBlockState extends State<_NotesTitleBlock> {
               color: NotesFigmaTokens.textPrimary(context),
             ),
             decoration: InputDecoration(
-              hintText: widget.hintText,
+              hintText: hintText,
               hintStyle: TextStyle(
                 fontSize: NotesFigmaTokens.titleSize,
                 height:
@@ -599,9 +482,9 @@ class _NotesTitleBlockState extends State<_NotesTitleBlock> {
           ),
           const SizedBox(height: 8),
           _NotesMetadataRow(
-            categoryLabel: widget.categoryLabel,
-            categoryColor: widget.categoryColor,
-            tags: widget.tags,
+            categoryLabel: categoryLabel,
+            categoryColor: categoryColor,
+            tags: tags,
           ),
         ],
       ),
