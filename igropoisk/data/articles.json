@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-08T15:35:04.880Z",
+  "updatedAt": "2026-08-08T15:47:03.448Z",
   "count": 495,
   "sources": [
     "IGN",
@@ -14,6 +14,15 @@
     "Игромания"
   ],
   "articles": [
+    {
+      "source": "GamesRadar+",
+      "language": "en",
+      "title": "Baldur's Gate 3, Clair Obscur: Expedition 33 star didn't believe she was in Space Marine 2 until fan messages sent her sleuthing through receipts",
+      "normalizedTitle": "baldur s gate 3 clair obscur expedition 33 star didn t believe she was in space marine 2 until fan messages sent her sleuthing through receipts",
+      "url": "https://www.gamesradar.com/games/action/baldurs-gate-3-clair-obscur-expedition-33-star-didnt-believe-she-was-in-space-marine-2-until-fan-messages-sent-her-sleuthing-through-receipts/",
+      "summary": "\"I guess I kind of forgot about it\"",
+      "publishedAt": "Sat, 08 Aug 2026 15:44:40 +0000"
+    },
     {
       "source": "Polygon",
       "language": "en",
@@ -1399,15 +1408,6 @@
       "url": "https://www.gamesradar.com/games/adventure/bioware-vets-new-x-files-like-mystery-game-could-not-exist-in-the-aaa-space-that-would-rather-throw-money-at-a-problem-than-experiment/",
       "summary": "The Eventide is proudly indie",
       "publishedAt": "Thu, 06 Aug 2026 21:11:44 +0000"
-    },
-    {
-      "source": "GamesRadar+",
-      "language": "en",
-      "title": "\"If FromSoftware released the full Dark Souls design document, no one would be debating the lore\": Creator of one of the highest-rated new roguelikes on Steam says hands-off storytelling was key",
-      "normalizedTitle": "if fromsoftware released the full dark souls design document no one would be debating the lore creator of one of the highest rated new roguelikes on steam says hands off storytelling was key",
-      "url": "https://www.gamesradar.com/games/roguelike/if-fromsoftware-released-the-full-dark-souls-design-document-no-one-would-be-debating-the-lore-creator-of-one-of-the-highest-rated-new-roguelikes-on-steam-says-hands-off-storytelling-was-key/",
-      "summary": "Their deceptively simple action-strategy game's launch went \"way beyond my wildest expectations,\" dev says",
-      "publishedAt": "Thu, 06 Aug 2026 21:10:44 +0000"
     },
     {
       "source": "Rock Paper Shotgun",

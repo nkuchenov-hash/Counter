@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-08T15:35:04.880Z",
+  "updatedAt": "2026-08-08T15:47:03.448Z",
   "count": 78,
   "sourcePool": [
     "Steam",
@@ -79,7 +79,7 @@
       "movies": [],
       "criticRating": 9.4,
       "steamUserRating": 9.3,
-      "recommendations": 826370,
+      "recommendations": 826378,
       "owners": "20,000,000 .. 50,000,000",
       "peakConcurrent": 29529,
       "sourceEvidence": [
@@ -94,7 +94,7 @@
         "steamSpy": "https://steamspy.com/app/1245620",
         "metacritic": "https://www.metacritic.com/game/pc/elden-ring?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10591.717506799732,
+      "popularityScore": 10591.717927233054,
       "igropoiskRating": 9.4,
       "editorialSources": [
         "StopGame",
@@ -248,8 +248,8 @@
         "Steam",
         "SteamSpy",
         "Metacritic",
-        "PC Gamer",
         "GamesRadar+",
+        "PC Gamer",
         "Eurogamer",
         "Rock Paper Shotgun",
         "VG247"
@@ -262,14 +262,23 @@
       "popularityScore": 10577.486897313765,
       "igropoiskRating": 9.6,
       "editorialSources": [
-        "PC Gamer",
         "GamesRadar+",
+        "PC Gamer",
         "Eurogamer",
         "Rock Paper Shotgun",
         "VG247"
       ],
       "materials": {
         "articles": [
+          {
+            "source": "GamesRadar+",
+            "language": "en",
+            "title": "Baldur's Gate 3, Clair Obscur: Expedition 33 star didn't believe she was in Space Marine 2 until fan messages sent her sleuthing through receipts",
+            "normalizedTitle": "baldur s gate 3 clair obscur expedition 33 star didn t believe she was in space marine 2 until fan messages sent her sleuthing through receipts",
+            "url": "https://www.gamesradar.com/games/action/baldurs-gate-3-clair-obscur-expedition-33-star-didnt-believe-she-was-in-space-marine-2-until-fan-messages-sent-her-sleuthing-through-receipts/",
+            "summary": "\"I guess I kind of forgot about it\"",
+            "publishedAt": "Sat, 08 Aug 2026 15:44:40 +0000"
+          },
           {
             "source": "PC Gamer",
             "language": "en",
@@ -340,6 +349,15 @@
         "news": []
       },
       "articles": [
+        {
+          "source": "GamesRadar+",
+          "language": "en",
+          "title": "Baldur's Gate 3, Clair Obscur: Expedition 33 star didn't believe she was in Space Marine 2 until fan messages sent her sleuthing through receipts",
+          "normalizedTitle": "baldur s gate 3 clair obscur expedition 33 star didn t believe she was in space marine 2 until fan messages sent her sleuthing through receipts",
+          "url": "https://www.gamesradar.com/games/action/baldurs-gate-3-clair-obscur-expedition-33-star-didnt-believe-she-was-in-space-marine-2-until-fan-messages-sent-her-sleuthing-through-receipts/",
+          "summary": "\"I guess I kind of forgot about it\"",
+          "publishedAt": "Sat, 08 Aug 2026 15:44:40 +0000"
+        },
         {
           "source": "PC Gamer",
           "language": "en",
@@ -822,7 +840,7 @@
       "movies": [],
       "criticRating": 9.7,
       "steamUserRating": 9.3,
-      "recommendations": 116900,
+      "recommendations": 116902,
       "owners": "2,000,000 .. 5,000,000",
       "peakConcurrent": 918,
       "sourceEvidence": [
@@ -835,7 +853,7 @@
         "steamSpy": "https://steamspy.com/app/632470",
         "metacritic": "https://www.metacritic.com/game/pc/disco-elysium-the-final-cut?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10436.781822623989,
+      "popularityScore": 10436.782565630067,
       "igropoiskRating": 9.6,
       "editorialSources": [],
       "materials": {
@@ -1179,7 +1197,7 @@
       "movies": [],
       "criticRating": 8.9,
       "steamUserRating": 9.8,
-      "recommendations": 810412,
+      "recommendations": 810417,
       "owners": "50,000,000 .. 100,000,000",
       "peakConcurrent": 25122,
       "sourceEvidence": [
@@ -1192,7 +1210,7 @@
         "steamSpy": "https://steamspy.com/app/550",
         "metacritic": "https://www.metacritic.com/game/pc/left-4-dead-2?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10390.870639901434,
+      "popularityScore": 10390.870907847002,
       "igropoiskRating": 9.2,
       "editorialSources": [],
       "materials": {
@@ -1268,7 +1286,7 @@
       "movies": [],
       "criticRating": 8.3,
       "steamUserRating": 9.7,
-      "recommendations": 1230542,
+      "recommendations": 1230550,
       "owners": "20,000,000 .. 50,000,000",
       "peakConcurrent": 24580,
       "sourceEvidence": [
@@ -1281,7 +1299,7 @@
         "steamSpy": "https://steamspy.com/app/105600",
         "metacritic": "https://www.metacritic.com/game/pc/terraria?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10389.009679425697,
+      "popularityScore": 10389.009961768092,
       "igropoiskRating": 8.8,
       "editorialSources": [],
       "materials": {
@@ -1357,7 +1375,7 @@
       "movies": [],
       "criticRating": 8.9,
       "steamUserRating": 9.8,
-      "recommendations": 886357,
+      "recommendations": 886341,
       "owners": "20,000,000 .. 50,000,000",
       "peakConcurrent": 50662,
       "sourceEvidence": [
@@ -1370,7 +1388,7 @@
         "steamSpy": "https://steamspy.com/app/413150",
         "metacritic": "https://www.metacritic.com/game/pc/stardew-valley?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10364.760916886406,
+      "popularityScore": 10364.760132917127,
       "igropoiskRating": 9.2,
       "editorialSources": [],
       "materials": {
@@ -1891,7 +1909,7 @@
       "movies": [],
       "criticRating": 8.9,
       "steamUserRating": 9.4,
-      "recommendations": 277319,
+      "recommendations": 277320,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 4381,
       "sourceEvidence": [
@@ -1904,7 +1922,7 @@
         "steamSpy": "https://steamspy.com/app/374320",
         "metacritic": "https://www.metacritic.com/game/pc/dark-souls-iii?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10264.298119152674,
+      "popularityScore": 10264.298275756488,
       "igropoiskRating": 9.1,
       "editorialSources": [],
       "materials": {
@@ -2082,15 +2100,6 @@
             "publishedAt": "Fri, 07 Aug 2026 21:10:48 +0000"
           },
           {
-            "source": "GamesRadar+",
-            "language": "en",
-            "title": "\"If FromSoftware released the full Dark Souls design document, no one would be debating the lore\": Creator of one of the highest-rated new roguelikes on Steam says hands-off storytelling was key",
-            "normalizedTitle": "if fromsoftware released the full dark souls design document no one would be debating the lore creator of one of the highest rated new roguelikes on steam says hands off storytelling was key",
-            "url": "https://www.gamesradar.com/games/roguelike/if-fromsoftware-released-the-full-dark-souls-design-document-no-one-would-be-debating-the-lore-creator-of-one-of-the-highest-rated-new-roguelikes-on-steam-says-hands-off-storytelling-was-key/",
-            "summary": "Their deceptively simple action-strategy game's launch went \"way beyond my wildest expectations,\" dev says",
-            "publishedAt": "Thu, 06 Aug 2026 21:10:44 +0000"
-          },
-          {
             "source": "Rock Paper Shotgun",
             "language": "en",
             "title": "Marble Souls dares to ask what would happen if the bloke from Dark Souls got stuck in a physics-driven ball, and it's out this year",
@@ -2114,15 +2123,6 @@
           "url": "https://www.gamesradar.com/games/action-rpg/rare-demons-souls-prototype-shows-off-first-person-perspective-unused-enemies-that-could-have-rewritten-dark-souls-history-like-watching-the-mona-lisa-being-painted/",
           "summary": "Unprecedented",
           "publishedAt": "Fri, 07 Aug 2026 21:10:48 +0000"
-        },
-        {
-          "source": "GamesRadar+",
-          "language": "en",
-          "title": "\"If FromSoftware released the full Dark Souls design document, no one would be debating the lore\": Creator of one of the highest-rated new roguelikes on Steam says hands-off storytelling was key",
-          "normalizedTitle": "if fromsoftware released the full dark souls design document no one would be debating the lore creator of one of the highest rated new roguelikes on steam says hands off storytelling was key",
-          "url": "https://www.gamesradar.com/games/roguelike/if-fromsoftware-released-the-full-dark-souls-design-document-no-one-would-be-debating-the-lore-creator-of-one-of-the-highest-rated-new-roguelikes-on-steam-says-hands-off-storytelling-was-key/",
-          "summary": "Their deceptively simple action-strategy game's launch went \"way beyond my wildest expectations,\" dev says",
-          "publishedAt": "Thu, 06 Aug 2026 21:10:44 +0000"
         },
         {
           "source": "Rock Paper Shotgun",
@@ -2377,7 +2377,7 @@
       "movies": [],
       "criticRating": 8,
       "steamUserRating": 7.4,
-      "recommendations": 62711,
+      "recommendations": 62714,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 14345,
       "sourceEvidence": [
@@ -2390,7 +2390,7 @@
         "steamSpy": "https://steamspy.com/app/582660",
         "metacritic": "https://www.metacritic.com/game/pc/black-desert-online-land-of-the-morning-light-edition?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9949.735065143894,
+      "popularityScore": 9949.73714266061,
       "igropoiskRating": 7.8,
       "editorialSources": [],
       "materials": {
@@ -2455,7 +2455,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 9.7,
-      "recommendations": 875788,
+      "recommendations": 875789,
       "owners": "50,000,000 .. 100,000,000",
       "peakConcurrent": 15004,
       "sourceEvidence": [
@@ -2467,7 +2467,7 @@
         "steamSpy": "https://steamspy.com/app/2358720",
         "metacritic": ""
       },
-      "popularityScore": 9944.239948610695,
+      "popularityScore": 9944.239998199608,
       "igropoiskRating": 9.7,
       "editorialSources": [],
       "materials": {
@@ -3271,7 +3271,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 7.1,
-      "recommendations": 235687,
+      "recommendations": 235684,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 6327,
       "sourceEvidence": [
@@ -3283,7 +3283,7 @@
         "steamSpy": "https://steamspy.com/app/1238810",
         "metacritic": ""
       },
-      "popularityScore": 9827.233747108414,
+      "popularityScore": 9827.233194304818,
       "igropoiskRating": 7.1,
       "editorialSources": [],
       "materials": {
@@ -4024,7 +4024,7 @@
       "movies": [],
       "criticRating": 9,
       "steamUserRating": 9.7,
-      "recommendations": 194171,
+      "recommendations": 194165,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 16426,
       "sourceEvidence": [
@@ -4037,7 +4037,7 @@
         "steamSpy": "https://steamspy.com/app/427520",
         "metacritic": "https://www.metacritic.com/game/pc/factorio?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9748.818660393337,
+      "popularityScore": 9748.817318383599,
       "igropoiskRating": 9.2,
       "editorialSources": [],
       "materials": {
@@ -4110,7 +4110,7 @@
       "movies": [],
       "criticRating": 8.7,
       "steamUserRating": 9.8,
-      "recommendations": 206950,
+      "recommendations": 206954,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 19211,
       "sourceEvidence": [
@@ -4123,7 +4123,7 @@
         "steamSpy": "https://steamspy.com/app/294100",
         "metacritic": "https://www.metacritic.com/game/pc/rimworld?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9741.586752927959,
+      "popularityScore": 9741.587592334938,
       "igropoiskRating": 9.1,
       "editorialSources": [],
       "materials": {
@@ -4562,7 +4562,7 @@
       "movies": [],
       "criticRating": 8.5,
       "steamUserRating": 9.2,
-      "recommendations": 653805,
+      "recommendations": 653812,
       "owners": "20,000,000 .. 50,000,000",
       "peakConcurrent": 3832,
       "sourceEvidence": [
@@ -4575,7 +4575,7 @@
         "steamSpy": "https://steamspy.com/app/945360",
         "metacritic": "https://www.metacritic.com/game/pc/among-us?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9711.544890179794,
+      "popularityScore": 9711.545355156422,
       "igropoiskRating": 8.7,
       "editorialSources": [],
       "materials": {
@@ -4656,7 +4656,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 9.6,
-      "recommendations": 681554,
+      "recommendations": 681561,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 9978,
       "sourceEvidence": [
@@ -4668,7 +4668,7 @@
         "steamSpy": "https://steamspy.com/app/739630",
         "metacritic": ""
       },
-      "popularityScore": 9683.350090820106,
+      "popularityScore": 9683.350536865659,
       "igropoiskRating": 9.6,
       "editorialSources": [],
       "materials": {
@@ -4934,7 +4934,7 @@
       "movies": [],
       "criticRating": 8.3,
       "steamUserRating": 9.5,
-      "recommendations": 374355,
+      "recommendations": 374357,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 30542,
       "sourceEvidence": [
@@ -4947,7 +4947,7 @@
         "steamSpy": "https://steamspy.com/app/322330",
         "metacritic": "https://www.metacritic.com/game/pc/dont-starve-together?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9667.328479818534,
+      "popularityScore": 9667.328711840097,
       "igropoiskRating": 8.7,
       "editorialSources": [],
       "materials": {
@@ -5030,7 +5030,7 @@
       "movies": [],
       "criticRating": 7.9,
       "steamUserRating": 9.7,
-      "recommendations": 778257,
+      "recommendations": 778249,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 17281,
       "sourceEvidence": [
@@ -5043,7 +5043,7 @@
         "steamSpy": "https://steamspy.com/app/227300",
         "metacritic": "https://www.metacritic.com/game/pc/euro-truck-simulator-2?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9659.112359365008,
+      "popularityScore": 9659.111912935456,
       "igropoiskRating": 8.5,
       "editorialSources": [],
       "materials": {
@@ -5654,7 +5654,7 @@
       "movies": [],
       "criticRating": 9,
       "steamUserRating": 9.8,
-      "recommendations": 158909,
+      "recommendations": 158904,
       "owners": "2,000,000 .. 5,000,000",
       "peakConcurrent": 17123,
       "sourceEvidence": [
@@ -5667,7 +5667,7 @@
         "steamSpy": "https://steamspy.com/app/2379780",
         "metacritic": "https://www.metacritic.com/game/pc/balatro?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9510.115122765526,
+      "popularityScore": 9510.11375626463,
       "igropoiskRating": 9.3,
       "editorialSources": [],
       "materials": {
@@ -5888,7 +5888,7 @@
       "movies": [],
       "criticRating": 8.6,
       "steamUserRating": 9.8,
-      "recommendations": 250514,
+      "recommendations": 250516,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 2966,
       "sourceEvidence": [
@@ -5901,7 +5901,7 @@
         "steamSpy": "https://steamspy.com/app/1794680",
         "metacritic": "https://www.metacritic.com/game/pc/vampire-survivors?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9489.883373508228,
+      "popularityScore": 9489.883720228183,
       "igropoiskRating": 9,
       "editorialSources": [],
       "materials": {
@@ -6059,7 +6059,7 @@
       "movies": [],
       "criticRating": 8.8,
       "steamUserRating": 9.7,
-      "recommendations": 130372,
+      "recommendations": 130374,
       "owners": "2,000,000 .. 5,000,000",
       "peakConcurrent": 1174,
       "sourceEvidence": [
@@ -6072,7 +6072,7 @@
         "steamSpy": "https://steamspy.com/app/504230",
         "metacritic": "https://www.metacritic.com/game/pc/celeste?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9481.51876591479,
+      "popularityScore": 9481.51943214346,
       "igropoiskRating": 9.1,
       "editorialSources": [],
       "materials": {
@@ -6827,7 +6827,7 @@
       "movies": [],
       "criticRating": 8.3,
       "steamUserRating": 9.6,
-      "recommendations": 578831,
+      "recommendations": 578829,
       "owners": "20,000,000 .. 50,000,000",
       "peakConcurrent": 2892,
       "sourceEvidence": [
@@ -6841,7 +6841,7 @@
         "steamSpy": "https://steamspy.com/app/242760",
         "metacritic": "https://www.metacritic.com/game/pc/the-forest?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9316.255253253557,
+      "popularityScore": 9316.255103194391,
       "igropoiskRating": 8.8,
       "editorialSources": [
         "StopGame"
@@ -7089,7 +7089,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 7.7,
-      "recommendations": 385972,
+      "recommendations": 385969,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 37066,
       "sourceEvidence": [
@@ -7101,7 +7101,7 @@
         "steamSpy": "https://steamspy.com/app/221100",
         "metacritic": ""
       },
-      "popularityScore": 9288.655692549783,
+      "popularityScore": 9288.655354990287,
       "igropoiskRating": 7.7,
       "editorialSources": [],
       "materials": {
