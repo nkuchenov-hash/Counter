@@ -66,8 +66,8 @@ jobs:
       - name: Install Flutter dependencies
         run: flutter pub get
 
-      - name: Test Notes mobile keyboard regression
-        run: flutter test test/notes_mobile_keyboard_regression_test.dart
+      - name: Test Notes mobile keyboard regression in Chrome
+        run: flutter test --platform chrome test/notes_mobile_keyboard_regression_test.dart
 
       - name: Build Flutter web
         env:
