@@ -39,7 +39,7 @@ class NotesLibraryProductionShell extends StatelessWidget {
             tagBar!,
           ],
           if (inlineAdd != null) ...[
-            const SizedBox(height: 8),
+            const SizedBox(height: 14),
             inlineAdd!,
           ],
           const SizedBox(height: 8),
