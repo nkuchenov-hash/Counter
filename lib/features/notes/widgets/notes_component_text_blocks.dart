@@ -1,5 +1,12 @@
 part of 'notes_canonical_components.dart';
 
+const EdgeInsets _notesEditorTextScrollPadding = EdgeInsets.fromLTRB(
+  20,
+  20,
+  20,
+  NotesFigmaTokens.toolbarHeight + 48,
+);
+
 class NotesTextBlock extends StatelessWidget {
   const NotesTextBlock({
     super.key,
@@ -50,6 +57,7 @@ class NotesTextBlock extends StatelessWidget {
         maxLines: null,
         keyboardType: TextInputType.multiline,
         textCapitalization: TextCapitalization.sentences,
+        scrollPadding: _notesEditorTextScrollPadding,
         onChanged: onChanged,
         onTap: onTap,
         style: textStyle,
@@ -279,6 +287,7 @@ class _NotesLeadingTextRow extends StatelessWidget {
               maxLines: null,
               keyboardType: TextInputType.multiline,
               textCapitalization: TextCapitalization.sentences,
+              scrollPadding: _notesEditorTextScrollPadding,
               onChanged: onChanged,
               onTap: onTap,
               style: checked
