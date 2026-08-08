@@ -1,17 +1,19 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:counter/features/notes/notes_glm_surface.dart';
 
 import 'package:counter/core/tag_contrast.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
-import 'package:counter/shared/categories/picker/category_tree_picker.dart';
 import 'package:counter/shared/categories/visibility/category_visibility_prefs.dart';
 import 'package:counter/features/lists/lists_card.dart';
 import 'package:counter/features/lists/lists_export.dart';
 import 'package:counter/features/profile/tag_manager_page.dart';
 import 'package:counter/l10n/dictionary.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// Tag filter chip in the Lists horizontal tag bar.
 class ListsTagFilterChip extends StatelessWidget {
@@ -112,7 +114,7 @@ class ListsTagFilterChip extends StatelessWidget {
 }
 
 /// Category chip bar (manual reorder or horizontal scroll).
-class ListsCategoryChipBar extends StatelessWidget {
+class ListsCategoryChipBar extends StatefulWidget {
   const ListsCategoryChipBar({
     super.key,
     required this.chipIds,
@@ -132,23 +134,127 @@ class ListsCategoryChipBar extends StatelessWidget {
   final void Function(int oldIndex, int newIndex) onManualChipReorder;
   final bool glmPresentation;
 
-  Future<void> _openCategoryPicker(BuildContext context) async {
-    final result = await showCategoryTreeSheet(
-      context,
-      initialCategoryId: filterCategoryId,
-      showAllCategoriesRow: false,
-      showVisibilityControls: true,
-    );
-    if (result is CategoryTreeSheetPicked) {
-      onFilterChanged(result.id);
+  @override
+  State<ListsCategoryChipBar> createState() => _ListsCategoryChipBarState();
+}
+
+class _ListsCategoryChipBarState extends State<ListsCategoryChipBar> {
+  static const String _chipModePrefsKey = 'list_chip_mode';
+  static const String _pinnedIdsPrefsKey = 'list_pinned_ids';
+
+  List<int>? _quickChipIds;
+  bool _quickManualMode = false;
+
+  List<int> get _displayChipIds => _quickChipIds ?? widget.chipIds;
+
+  bool get _manualMode => _quickManualMode || widget.chipMode == 'manual';
+
+  @override
+  void didUpdateWidget(covariant ListsCategoryChipBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.chipMode != widget.chipMode) {
+      _quickChipIds = null;
+      _quickManualMode = false;
     }
+  }
+
+  List<int> _sanitizeQuickChipIds(Iterable<int> ids) {
+    final db = DatabaseService.instance;
+    final out = <int>[];
+    final seen = <int>{};
+    for (final id in ids) {
+      if (!seen.add(id)) continue;
+      if (!db.categoryExists(id)) continue;
+      if (CategoryVisibilityPrefs.isHiddenOrAncestor(id)) continue;
+      out.add(id);
+    }
+    return out;
+  }
+
+  Future<void> _persistQuickChipIds(List<int> ids) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_chipModePrefsKey, 'manual');
+    await prefs.setString(_pinnedIdsPrefsKey, jsonEncode(ids));
+  }
+
+  void _applyQuickChipIds(Iterable<int> ids) {
+    final next = _sanitizeQuickChipIds(ids);
+    setState(() {
+      _quickManualMode = true;
+      _quickChipIds = next;
+    });
+    final active = widget.filterCategoryId;
+    if (active != null && !next.contains(active)) {
+      widget.onFilterChanged(null);
+    }
+    unawaited(_persistQuickChipIds(next));
+  }
+
+  Future<void> _openCategoryPicker(BuildContext context) async {
+    final db = DatabaseService.instance;
+    final selected = Set<int>.from(_displayChipIds);
+    final expandedIds = <int>{};
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      useSafeArea: true,
+      builder: (ctx) {
+        final sheetHeight =
+            (MediaQuery.sizeOf(ctx).height * 0.82).clamp(320.0, 720.0);
+        return SizedBox(
+          height: sheetHeight,
+          child: StatefulBuilder(
+            builder: (ctx, setModal) {
+              void applyPickerMutation(void Function() mutation) {
+                setModal(mutation);
+                _applyQuickChipIds(selected);
+              }
+
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+                    child: Text(
+                      t(currentLocale.value, 'category_label'),
+                      style: Theme.of(ctx).textTheme.titleMedium,
+                    ),
+                  ),
+                  const Divider(height: 1),
+                  Expanded(
+                    child: ListView(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      children: [
+                        for (final r in db.rules)
+                          buildListsManualCategoryTreeTile(
+                            r,
+                            selected,
+                            expandedIds,
+                            (id) => toggleListsManualTreeExpand(
+                              id,
+                              setModal,
+                              expandedIds,
+                            ),
+                            applyPickerMutation,
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        );
+      },
+    );
   }
 
   Widget _addCategoryButton(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    if (glmPresentation) {
+    if (widget.glmPresentation) {
       return ListsQuadraticChip(
-        label: '+ ${t(currentLocale.value, 'category_label')}',
+        label: '+',
         categoryColor: scheme.primary,
         selected: false,
         glmPresentation: true,
@@ -162,69 +268,100 @@ class ListsCategoryChipBar extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         child: Container(
           key: const ValueKey<String>('notes-category-quick-add'),
-          height: 40,
-          padding: const EdgeInsets.symmetric(horizontal: 11),
+          width: 32,
+          height: 32,
+          alignment: Alignment.center,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(8),
             border: Border.all(color: scheme.outlineVariant),
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.add_rounded, size: 16, color: scheme.onSurfaceVariant),
-              const SizedBox(width: 4),
-              Text(
-                t(currentLocale.value, 'category_label'),
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: scheme.onSurface,
-                ),
-              ),
-            ],
+          child: Text(
+            '+',
+            style: TextStyle(
+              fontSize: 18,
+              height: 1,
+              fontWeight: FontWeight.w600,
+              color: scheme.onSurfaceVariant,
+            ),
           ),
         ),
       ),
     );
   }
 
+  Widget _withDesktopHorizontalScroll(Widget child) {
+    return ScrollConfiguration(
+      behavior: ScrollConfiguration.of(context).copyWith(
+        dragDevices: const {
+          PointerDeviceKind.touch,
+          PointerDeviceKind.mouse,
+          PointerDeviceKind.stylus,
+          PointerDeviceKind.invertedStylus,
+        },
+      ),
+      child: Listener(
+        onPointerSignal: (signal) {
+          if (signal is! PointerScrollEvent) return;
+          if (!widget.scrollController.hasClients) return;
+          if (signal.scrollDelta.dy.abs() <= signal.scrollDelta.dx.abs()) {
+            return;
+          }
+          final position = widget.scrollController.position;
+          final target = (position.pixels + signal.scrollDelta.dy).clamp(
+            position.minScrollExtent,
+            position.maxScrollExtent,
+          );
+          if (target != position.pixels) {
+            widget.scrollController.jumpTo(target.toDouble());
+          }
+        },
+        child: child,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    if (chipMode == 'manual' && chipIds.length > 1) {
+    final chipIds = _displayChipIds;
+    if (_manualMode && chipIds.length > 1) {
       return Row(
         children: [
           Expanded(
-            child: ReorderableListView.builder(
-              scrollController: scrollController,
-              scrollDirection: Axis.horizontal,
-              buildDefaultDragHandles: false,
-              shrinkWrap: true,
-              physics: const ClampingScrollPhysics(),
-              padding: EdgeInsets.symmetric(
-                horizontal: glmPresentation ? 0 : 12,
-                vertical: glmPresentation ? 2 : 4,
-              ),
-              itemCount: chipIds.length,
-              onReorder: onManualChipReorder,
-              itemBuilder: (ctx, idx) {
-                final id = chipIds[idx];
-                return ReorderableDelayedDragStartListener(
-                  key: ValueKey<int>(id),
-                  index: idx,
-                  child: Padding(
-                    padding: const EdgeInsetsDirectional.only(end: 8),
-                    child: ListsQuadraticChip(
-                      label: categoryRawName(id),
-                      categoryColor: listsCategoryAccentColor(id),
-                      selected: filterCategoryId == id,
-                      glmPresentation: glmPresentation,
-                      onTap: () {
-                        onFilterChanged(filterCategoryId == id ? null : id);
-                      },
+            child: _withDesktopHorizontalScroll(
+              ReorderableListView.builder(
+                scrollController: widget.scrollController,
+                scrollDirection: Axis.horizontal,
+                buildDefaultDragHandles: false,
+                shrinkWrap: true,
+                physics: const ClampingScrollPhysics(),
+                padding: EdgeInsets.symmetric(
+                  horizontal: widget.glmPresentation ? 0 : 12,
+                  vertical: widget.glmPresentation ? 2 : 4,
+                ),
+                itemCount: chipIds.length,
+                onReorder: widget.onManualChipReorder,
+                itemBuilder: (ctx, idx) {
+                  final id = chipIds[idx];
+                  return ReorderableDelayedDragStartListener(
+                    key: ValueKey<int>(id),
+                    index: idx,
+                    child: Padding(
+                      padding: const EdgeInsetsDirectional.only(end: 8),
+                      child: ListsQuadraticChip(
+                        label: categoryRawName(id),
+                        categoryColor: listsCategoryAccentColor(id),
+                        selected: widget.filterCategoryId == id,
+                        glmPresentation: widget.glmPresentation,
+                        onTap: () {
+                          widget.onFilterChanged(
+                            widget.filterCategoryId == id ? null : id,
+                          );
+                        },
+                      ),
                     ),
-                  ),
-                );
-              },
+                  );
+                },
+              ),
             ),
           ),
           const SizedBox(width: 4),
@@ -232,32 +369,36 @@ class ListsCategoryChipBar extends StatelessWidget {
         ],
       );
     }
-    return ListView(
-      controller: scrollController,
-      scrollDirection: Axis.horizontal,
-      padding: EdgeInsets.symmetric(
-        horizontal: glmPresentation ? 0 : 12,
-        vertical: glmPresentation ? 2 : 8,
-      ),
-      children: [
-        for (final id in chipIds)
+    return _withDesktopHorizontalScroll(
+      ListView(
+        controller: widget.scrollController,
+        scrollDirection: Axis.horizontal,
+        padding: EdgeInsets.symmetric(
+          horizontal: widget.glmPresentation ? 0 : 12,
+          vertical: widget.glmPresentation ? 2 : 8,
+        ),
+        children: [
+          for (final id in chipIds)
+            Padding(
+              padding: const EdgeInsetsDirectional.only(end: 8),
+              child: ListsQuadraticChip(
+                label: categoryRawName(id),
+                categoryColor: listsCategoryAccentColor(id),
+                selected: widget.filterCategoryId == id,
+                glmPresentation: widget.glmPresentation,
+                onTap: () {
+                  widget.onFilterChanged(
+                    widget.filterCategoryId == id ? null : id,
+                  );
+                },
+              ),
+            ),
           Padding(
             padding: const EdgeInsetsDirectional.only(end: 8),
-            child: ListsQuadraticChip(
-              label: categoryRawName(id),
-              categoryColor: listsCategoryAccentColor(id),
-              selected: filterCategoryId == id,
-              glmPresentation: glmPresentation,
-              onTap: () {
-                onFilterChanged(filterCategoryId == id ? null : id);
-              },
-            ),
+            child: _addCategoryButton(context),
           ),
-        Padding(
-          padding: const EdgeInsetsDirectional.only(end: 8),
-          child: _addCategoryButton(context),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
