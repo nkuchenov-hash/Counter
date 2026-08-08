@@ -137,6 +137,7 @@ class ListsCategoryChipBar extends StatelessWidget {
       context,
       initialCategoryId: filterCategoryId,
       showAllCategoriesRow: false,
+      showVisibilityControls: true,
     );
     if (result is CategoryTreeSheetPicked) {
       onFilterChanged(result.id);
