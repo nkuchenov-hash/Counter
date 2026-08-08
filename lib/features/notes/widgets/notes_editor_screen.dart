@@ -1,6 +1,6 @@
 import 'dart:math' as math;
 
-import 'package:counter/features/notes/mobile_keyboard_visual_inset.dart';
+import 'package:counter/data/web_history.dart';
 import 'package:counter/features/notes/notes_figma_tokens.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -79,7 +79,7 @@ class NotesEditorScreen extends StatelessWidget {
     final embeddedScope = NotesEmbeddedEditorScope.maybeOf(context);
     final embedded = embeddedScope != null;
     final visualInset =
-        visualKeyboardInsetListenable ?? notesMobileKeyboardVisualInset;
+        visualKeyboardInsetListenable ?? webVisualViewportBottomInset;
 
     final editor = ValueListenableBuilder<double>(
       valueListenable: visualInset,
