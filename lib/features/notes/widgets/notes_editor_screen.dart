@@ -237,8 +237,6 @@ class _NotesEditorRail extends StatelessWidget {
                   Expanded(
                     child: NestedScrollView(
                       key: const ValueKey('notes-editor-mobile-scroll'),
-                      keyboardDismissBehavior:
-                          ScrollViewKeyboardDismissBehavior.onDrag,
                       headerSliverBuilder: (context, innerBoxIsScrolled) => [
                         SliverToBoxAdapter(
                           key: const ValueKey('notes-editor-scrollable-title'),
