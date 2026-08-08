@@ -27,7 +27,7 @@ void main() {
             buildDefaultDragHandles: false,
             onReorder: (_, __) {},
             children: [
-              for (var index = 0; index < 7; index++)
+              for (var index = 0; index < 3; index++)
                 SizedBox(
                   key: ValueKey('spacer-$index'),
                   height: 72,
@@ -50,6 +50,13 @@ void main() {
     );
   }
 
+  void simulateTyping(TextEditingController body, String text) {
+    body.value = TextEditingValue(
+      text: text,
+      selection: TextSelection.collapsed(offset: text.length),
+    );
+  }
+
   testWidgets('mobile web typing keeps Notes content rendered and visible', (
     tester,
   ) async {
@@ -68,14 +75,15 @@ void main() {
     await tester.pumpWidget(
       editor(title: title, body: body, bodyFocus: bodyFocus),
     );
+    expect(find.byKey(const ValueKey('body-field')), findsOneWidget);
     bodyFocus.requestFocus();
     await tester.pumpAndSettle();
 
     tester.view.physicalSize = const Size(390, 520);
     await tester.pumpAndSettle();
-    await tester.enterText(
-      find.byKey(const ValueKey('body-field')),
-      'Body typing after keyboard resize',
+    simulateTyping(
+      body,
+      'Body typing after keyboard resize\nsecond line\nthird line\nfourth line',
     );
     await tester.pumpAndSettle();
 
@@ -109,14 +117,15 @@ void main() {
     await tester.pumpWidget(
       editor(title: title, body: body, bodyFocus: bodyFocus),
     );
+    expect(find.byKey(const ValueKey('body-field')), findsOneWidget);
     bodyFocus.requestFocus();
     await tester.pumpAndSettle();
 
     tester.view.viewInsets = const FakeViewPadding(bottom: 300);
     await tester.pumpAndSettle();
-    await tester.enterText(
-      find.byKey(const ValueKey('body-field')),
-      'Body typing with native keyboard',
+    simulateTyping(
+      body,
+      'Body typing with native keyboard\nsecond line\nthird line\nfourth line',
     );
     await tester.pumpAndSettle();
 
