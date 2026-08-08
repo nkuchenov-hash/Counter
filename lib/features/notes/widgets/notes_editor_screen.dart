@@ -1,6 +1,8 @@
 import 'dart:math' as math;
 
+import 'package:counter/features/notes/mobile_keyboard_visual_inset.dart';
 import 'package:counter/features/notes/notes_figma_tokens.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 class NotesEditorMetadataTag {
@@ -55,6 +57,7 @@ class NotesEditorScreen extends StatelessWidget {
     this.categoryColor,
     this.tags = const <NotesEditorMetadataTag>[],
     this.titleHint,
+    @visibleForTesting this.visualKeyboardInsetListenable,
   });
 
   final TextEditingController titleController;
@@ -69,59 +72,88 @@ class NotesEditorScreen extends StatelessWidget {
   final Color? categoryColor;
   final List<NotesEditorMetadataTag> tags;
   final String? titleHint;
+  final ValueListenable<double>? visualKeyboardInsetListenable;
 
   @override
   Widget build(BuildContext context) {
     final embeddedScope = NotesEmbeddedEditorScope.maybeOf(context);
     final embedded = embeddedScope != null;
-    final editor = LayoutBuilder(
-      builder: (context, constraints) {
-        final desktop = embedded || constraints.maxWidth >= 768;
-        final frameWidth = embedded
-            ? constraints.maxWidth
-            : (constraints.maxWidth -
-                      (desktop
-                          ? NotesFigmaTokens.editorDesktopOuterInset * 2
-                          : 0))
-                  .clamp(0.0, NotesFigmaTokens.editorSurfaceMaxWidth)
-                  .toDouble();
-        final frameHeight = embedded
-            ? constraints.maxHeight
-            : (constraints.maxHeight -
-                      (desktop
-                          ? NotesFigmaTokens.editorDesktopOuterInset * 2
-                          : 0))
-                  .clamp(0.0, 920.0)
-                  .toDouble();
+    final visualInset =
+        visualKeyboardInsetListenable ?? notesMobileKeyboardVisualInset;
 
-        final frame = SizedBox(
-          width: frameWidth,
-          height: frameHeight,
-          child: _NotesEditorSurface(
-            desktop: desktop,
-            embedded: embedded,
-            child: _NotesEditorRail(
-              embedded: embedded,
-              onDone: embeddedScope?.onClose ?? onDone,
-              pinned: pinned,
-              onTogglePinned: onTogglePinned,
-              onDelete: embedded ? null : onDelete,
-              titleController: titleController,
-              onTitleChanged: onTitleChanged,
-              categoryLabel: categoryLabel,
-              categoryColor: categoryColor,
-              tags: tags,
-              titleHint: titleHint,
-              content: content,
-              toolbar: toolbar,
-            ),
-          ),
-        );
+    final editor = ValueListenableBuilder<double>(
+      valueListenable: visualInset,
+      builder: (context, browserKeyboardInset, _) {
+        final flutterKeyboardInset = MediaQuery.viewInsetsOf(context).bottom;
+        final hasTextFocus = FocusManager.instance.primaryFocus != null;
+        final browserKeyboardVisible =
+            browserKeyboardInset >= 120 && hasTextFocus;
+        final keyboardVisible =
+            flutterKeyboardInset > 80 || browserKeyboardVisible;
+        final browserInset = browserKeyboardVisible ? browserKeyboardInset : 0.0;
 
-        if (embedded) return frame;
-        return ColoredBox(
-          color: NotesFigmaTokens.canvas(context),
-          child: Center(child: frame),
+        return _NotesEditorViewport(
+          browserKeyboardInset: browserInset,
+          childBuilder: (context, uncoveredBrowserInset) {
+            return LayoutBuilder(
+              builder: (context, constraints) {
+                final desktop = embedded || constraints.maxWidth >= 768;
+                final phoneSurface = !embedded && constraints.maxWidth < 600;
+                final frameWidth = embedded
+                    ? constraints.maxWidth
+                    : (constraints.maxWidth -
+                              (desktop
+                                  ? NotesFigmaTokens.editorDesktopOuterInset * 2
+                                  : 0))
+                          .clamp(
+                            0.0,
+                            NotesFigmaTokens.editorSurfaceMaxWidth,
+                          )
+                          .toDouble();
+                final frameHeight = embedded
+                    ? constraints.maxHeight
+                    : (constraints.maxHeight -
+                              (desktop
+                                  ? NotesFigmaTokens.editorDesktopOuterInset * 2
+                                  : 0))
+                          .clamp(0.0, 920.0)
+                          .toDouble();
+
+                final frame = SizedBox(
+                  width: frameWidth,
+                  height: frameHeight,
+                  child: _NotesEditorSurface(
+                    desktop: desktop,
+                    embedded: embedded,
+                    child: _NotesEditorRail(
+                      embedded: embedded,
+                      phoneSurface: phoneSurface,
+                      keyboardVisible: keyboardVisible,
+                      uncoveredBrowserInset: uncoveredBrowserInset,
+                      onDone: embeddedScope?.onClose ?? onDone,
+                      pinned: pinned,
+                      onTogglePinned: onTogglePinned,
+                      onDelete: embedded ? null : onDelete,
+                      titleController: titleController,
+                      onTitleChanged: onTitleChanged,
+                      categoryLabel: categoryLabel,
+                      categoryColor: categoryColor,
+                      tags: tags,
+                      titleHint: titleHint,
+                      content: content,
+                      toolbar: toolbar,
+                    ),
+                  ),
+                );
+
+                if (embedded) return frame;
+                return ColoredBox(
+                  color: NotesFigmaTokens.canvas(context),
+                  child: Center(child: frame),
+                );
+              },
+            );
+          },
         );
       },
     );
@@ -140,9 +172,50 @@ class NotesEditorScreen extends StatelessWidget {
   }
 }
 
+class _NotesEditorViewport extends StatefulWidget {
+  const _NotesEditorViewport({
+    required this.browserKeyboardInset,
+    required this.childBuilder,
+  });
+
+  final double browserKeyboardInset;
+  final Widget Function(BuildContext context, double uncoveredBrowserInset)
+  childBuilder;
+
+  @override
+  State<_NotesEditorViewport> createState() => _NotesEditorViewportState();
+}
+
+class _NotesEditorViewportState extends State<_NotesEditorViewport> {
+  double _unobscuredHeight = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (widget.browserKeyboardInset <= 0 || _unobscuredHeight == 0) {
+          _unobscuredHeight = constraints.maxHeight;
+        }
+        final layoutHeightLoss = math.max(
+          0.0,
+          _unobscuredHeight - constraints.maxHeight,
+        );
+        final uncoveredBrowserInset = math.max(
+          0.0,
+          widget.browserKeyboardInset - layoutHeightLoss,
+        );
+        return widget.childBuilder(context, uncoveredBrowserInset);
+      },
+    );
+  }
+}
+
 class _NotesEditorRail extends StatelessWidget {
   const _NotesEditorRail({
     required this.embedded,
+    required this.phoneSurface,
+    required this.keyboardVisible,
+    required this.uncoveredBrowserInset,
     required this.onDone,
     required this.pinned,
     required this.onTogglePinned,
@@ -158,6 +231,9 @@ class _NotesEditorRail extends StatelessWidget {
   });
 
   final bool embedded;
+  final bool phoneSurface;
+  final bool keyboardVisible;
+  final double uncoveredBrowserInset;
   final VoidCallback onDone;
   final bool pinned;
   final VoidCallback onTogglePinned;
@@ -206,6 +282,7 @@ class _NotesEditorRail extends StatelessWidget {
                   categoryColor: categoryColor,
                   tags: tags,
                   hintText: titleHint,
+                  collapseForKeyboard: phoneSurface && keyboardVisible,
                 ),
                 Expanded(
                   child: Stack(
@@ -213,8 +290,11 @@ class _NotesEditorRail extends StatelessWidget {
                     children: [
                       Positioned.fill(
                         child: Padding(
-                          padding: const EdgeInsets.only(
-                            bottom: NotesFigmaTokens.toolbarHeight + 28,
+                          padding: EdgeInsets.only(
+                            bottom:
+                                NotesFigmaTokens.toolbarHeight +
+                                28 +
+                                uncoveredBrowserInset,
                           ),
                           child: content,
                         ),
@@ -222,7 +302,8 @@ class _NotesEditorRail extends StatelessWidget {
                       Positioned(
                         left: 0,
                         right: 0,
-                        bottom: embedded ? 14 : 8,
+                        bottom:
+                            (embedded ? 14 : 8) + uncoveredBrowserInset,
                         child: RepaintBoundary(
                           child: Align(
                             alignment: Alignment.bottomCenter,
@@ -425,6 +506,7 @@ class _NotesTitleBlock extends StatefulWidget {
     required this.categoryLabel,
     required this.categoryColor,
     required this.tags,
+    required this.collapseForKeyboard,
     this.hintText,
   });
 
@@ -433,6 +515,7 @@ class _NotesTitleBlock extends StatefulWidget {
   final String? categoryLabel;
   final Color? categoryColor;
   final List<NotesEditorMetadataTag> tags;
+  final bool collapseForKeyboard;
   final String? hintText;
 
   @override
@@ -441,59 +524,27 @@ class _NotesTitleBlock extends StatefulWidget {
 
 class _NotesTitleBlockState extends State<_NotesTitleBlock> {
   final FocusNode _titleFocusNode = FocusNode(debugLabel: 'notes-title');
-  Size _unobscuredViewport = Size.zero;
 
   @override
   void initState() {
     super.initState();
-    FocusManager.instance.addListener(_handleFocusChange);
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    final currentSize = MediaQuery.sizeOf(context);
-    final anyFocus = FocusManager.instance.primaryFocus != null;
-    if (_unobscuredViewport == Size.zero || !anyFocus) {
-      _unobscuredViewport = currentSize;
-    }
+    _titleFocusNode.addListener(_handleTitleFocusChange);
   }
 
   @override
   void dispose() {
-    FocusManager.instance.removeListener(_handleFocusChange);
+    _titleFocusNode.removeListener(_handleTitleFocusChange);
     _titleFocusNode.dispose();
     super.dispose();
   }
 
-  void _handleFocusChange() {
+  void _handleTitleFocusChange() {
     if (mounted) setState(() {});
-  }
-
-  bool _shouldCollapseForKeyboard(BuildContext context) {
-    final currentSize = MediaQuery.sizeOf(context);
-    final phoneSurface = currentSize.shortestSide < 600;
-    if (!phoneSurface || _titleFocusNode.hasFocus) return false;
-
-    final primaryFocus = FocusManager.instance.primaryFocus;
-    if (primaryFocus == null) return false;
-
-    final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
-    final sameWidth = _unobscuredViewport.width > 0 &&
-        (currentSize.width - _unobscuredViewport.width).abs() < 40;
-    final heightLoss = sameWidth
-        ? math.max(0.0, _unobscuredViewport.height - currentSize.height)
-        : 0.0;
-
-    // Native mobile exposes the keyboard through viewInsets. Mobile web,
-    // especially iOS Safari/PWA, may instead shrink the logical viewport while
-    // leaving viewInsets at zero. A 120 px threshold ignores browser chrome.
-    return bottomInset > 80 || heightLoss >= 120;
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_shouldCollapseForKeyboard(context)) {
+    if (widget.collapseForKeyboard && !_titleFocusNode.hasFocus) {
       return const SizedBox(
         key: ValueKey('notes-editor-title-collapsed-for-keyboard'),
       );
