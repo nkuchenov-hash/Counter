@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-08T15:48:47.699Z",
+  "updatedAt": "2026-08-08T16:22:48.080Z",
   "count": 495,
   "sources": [
     "IGN",
@@ -14,6 +14,51 @@
     "Игромания"
   ],
   "articles": [
+    {
+      "source": "Eurogamer",
+      "language": "en",
+      "title": "Get a \"new look\" at Final Fantasy 7 Revelation at Gamescom's Opening Night Live",
+      "normalizedTitle": "get a new look at final fantasy 7 revelation at gamescom s opening night live",
+      "url": "https://www.eurogamer.net/final-fantasy-y-revelation-gamescom-new-look",
+      "summary": "Final Fantasy 7 Revelation, the final chapter in the Remake trilogy, is set to feature in this year's Gamescom Opening Night Live. Read more",
+      "publishedAt": "Sat, 08 Aug 2026 16:09:42 +0000"
+    },
+    {
+      "source": "Rock Paper Shotgun",
+      "language": "en",
+      "title": "Two months after revealing Crossfire, That's No Moon have seemingly laid off 14 members of staff",
+      "normalizedTitle": "two months after revealing crossfire that s no moon have seemingly laid off 14 members of staff",
+      "url": "https://www.rockpapershotgun.com/two-months-after-revealing-crossfire-thats-no-moon-have-seemingly-laid-off-14-members-of-staff",
+      "summary": "Two months ago, That's No Moon, a studio made up of former Naughty Dog and Infinity Ward devs, revealed Crossfire, a cinematic military shooter with a sci-fi flair. The team first formed around five years ago, but now it appears that there's layoffs before they've even managed to get their first game out the door. Read more",
+      "publishedAt": "Sat, 08 Aug 2026 16:09:41 +0000"
+    },
+    {
+      "source": "PC Gamer",
+      "language": "en",
+      "title": "Forget Quake, Worms: The Director's Cut just got a free expansion for the series' 30th anniversary",
+      "normalizedTitle": "forget quake worms the director s cut just got a free expansion for the series 30th anniversary",
+      "url": "https://www.pcgamer.com/games/strategy/forget-quake-worms-the-directors-cut-just-got-a-free-expansion-for-the-series-30th-anniversary/",
+      "summary": "Creator Andy Davidson hopes it gives the game \"a new lease on life.\"",
+      "publishedAt": "Sat, 08 Aug 2026 16:00:29 +0000"
+    },
+    {
+      "source": "PC Gamer",
+      "language": "en",
+      "title": "Stop waiting for the Game of Thrones CRPG of your dreams and settle for the pleasant eurojank compromise instead",
+      "normalizedTitle": "stop waiting for the game of thrones crpg of your dreams and settle for the pleasant eurojank compromise instead",
+      "url": "https://www.pcgamer.com/games/rpg/stop-waiting-for-the-game-of-thrones-crpg-of-your-dreams-and-settle-for-the-pleasant-eurojank-compromise-instead/",
+      "summary": "It's rough, dated and still probably one of the better GoT games.",
+      "publishedAt": "Sat, 08 Aug 2026 16:00:00 +0000"
+    },
+    {
+      "source": "GamesRadar+",
+      "language": "en",
+      "title": "Alice: Madness Returns creator joins forces with '90s goth icon for limited edition plush that's as soft and timeless as a black dress",
+      "normalizedTitle": "alice madness returns creator joins forces with 90s goth icon for limited edition plush that s as soft and timeless as a black dress",
+      "url": "https://www.gamesradar.com/toys-collectibles/alice-madness-returns-creator-joins-forces-with-90s-goth-icon-for-limited-edition-plush-thats-as-soft-and-timeless-as-a-black-dress/",
+      "summary": "Doom dev and Alice: Madness Returns creator collaborate with the ultimate '90s goth icon for limited edition plush that makes me want to renounce the sun and live among black cats",
+      "publishedAt": "Sat, 08 Aug 2026 16:00:00 +0000"
+    },
     {
       "source": "GamesRadar+",
       "language": "en",
@@ -31,6 +76,15 @@
       "url": "https://www.polygon.com/sci-fi-books-like-star-wars-dune/",
       "summary": "Start a new series or try a standalone novel filled with space battles, aliens, and galactic intrigue",
       "publishedAt": "Sat, 08 Aug 2026 15:00:12 GMT"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "Asus ROG XReal R1 XR Glasses Review",
+      "normalizedTitle": "asus rog xreal r1 xr glasses review",
+      "url": "https://www.ign.com/articles/asus-rog-xreal-r1-xr-glasses-review",
+      "summary": "Sometimes it feels like XR glasses are the next frontier when it comes to gaming accessories. And it makes sense, with the rise of handheld gaming PCs – at least before RAM prices started making them nigh unaffordable – these glasses are a great way to get something like the Steam Deck a bigger screen while you’re away from home. So, it makes sense that Asus would team up with XReal to make a bespoke pair of gaming glasses, especially off the back of the Asus ROG Xbox Ally X . And when the glasses are plugged straight into a handheld, the ROG XReal R1 is awesome, with a clear picture and some ",
+      "publishedAt": "Sat, 8 Aug 2026 15:00:00 +0000"
     },
     {
       "source": "Polygon",
@@ -616,15 +670,6 @@
       "url": "https://www.gamesradar.com/hardware/retro/inventor-creates-irl-home-screen-for-physical-discs-that-brings-the-convenience-of-a-digital-library-to-an-actual-game-shelf/",
       "summary": "Turns out you can select your physical games using a controller like a digital library, as an inventor has created an \"IRL home screen\" using a projector.",
       "publishedAt": "Fri, 07 Aug 2026 17:10:55 +0000"
-    },
-    {
-      "source": "IGN",
-      "language": "en",
-      "title": "The LEGO Icons Natural History Museum Set Drops to a 90-Day Low Price at Amazon With $50 Discount",
-      "normalizedTitle": "the lego icons natural history museum set drops to a 90 day low price at amazon with 50 discount",
-      "url": "https://www.ign.com/articles/the-lego-icons-natural-history-museum-set-drops-to-a-90-day-low-price-at-amazon-with-50-discount",
-      "summary": "The LEGO Icons Natural History Museum set has been marked down to $299.99 at Amazon, a $50 price cut from its original price of $349.99 and a 90-day low at the retailer.",
-      "publishedAt": "Fri, 7 Aug 2026 17:08:36 +0000"
     },
     {
       "source": "Rock Paper Shotgun",
@@ -1401,15 +1446,6 @@
       "publishedAt": "Thu, 06 Aug 2026 21:14:46 +0000"
     },
     {
-      "source": "GamesRadar+",
-      "language": "en",
-      "title": "BioWare vets' new X Files-like mystery game could \"not exist in the AAA space\" that would rather \"throw money at a problem\" than experiment",
-      "normalizedTitle": "bioware vets new x files like mystery game could not exist in the aaa space that would rather throw money at a problem than experiment",
-      "url": "https://www.gamesradar.com/games/adventure/bioware-vets-new-x-files-like-mystery-game-could-not-exist-in-the-aaa-space-that-would-rather-throw-money-at-a-problem-than-experiment/",
-      "summary": "The Eventide is proudly indie",
-      "publishedAt": "Thu, 06 Aug 2026 21:11:44 +0000"
-    },
-    {
       "source": "Rock Paper Shotgun",
       "language": "en",
       "title": "Repair sick robots and contemplate the role of healthcare providers in the deeply textured, pixel art, cyberpunk visual novel All Our Broken Parts",
@@ -1840,24 +1876,6 @@
       "url": "https://www.pcgamer.com/games/rpg/path-of-exile-devs-are-planning-an-extreme-shakeup-in-the-next-major-update-to-address-concerns-over-its-stale-endgame-and-lack-of-exciting-loot-drops/",
       "summary": "The action RPG's endgame won't look the same in patch 3.30.",
       "publishedAt": "Wed, 05 Aug 2026 21:20:18 +0000"
-    },
-    {
-      "source": "PC Gamer",
-      "language": "en",
-      "title": "Destiny 2 players are learning how to crack into its infamous content vault by tinkering with old game builds",
-      "normalizedTitle": "destiny 2 players are learning how to crack into its infamous content vault by tinkering with old game builds",
-      "url": "https://www.pcgamer.com/games/fps/destiny-2-players-are-learning-how-to-crack-into-its-infamous-content-vault-by-tinkering-with-old-builds/",
-      "summary": "Two months after it entered purgatory, Destiny 2's community archaeologists are creating tools for exploring its long-absent worlds.",
-      "publishedAt": "Wed, 05 Aug 2026 20:12:21 +0000"
-    },
-    {
-      "source": "PC Gamer",
-      "language": "en",
-      "title": "You should really get Ace Combat 7 while it's 80% off on Steam, because AC8 might be one of the year's best games",
-      "normalizedTitle": "you should really get ace combat 7 while it s 80 off on steam because ac8 might be one of the year s best games",
-      "url": "https://www.pcgamer.com/games/action/you-should-really-get-ace-combat-7-while-its-80-percent-off-on-steam-because-ac8-might-be-one-of-the-years-best-games/",
-      "summary": "Now this is dogfighting.",
-      "publishedAt": "Wed, 05 Aug 2026 20:09:21 +0000"
     },
     {
       "source": "StopGame",
@@ -3201,15 +3219,6 @@
       "publishedAt": "Wed, 29 Jul 2026 08:52:06 +0000"
     },
     {
-      "source": "Eurogamer",
-      "language": "en",
-      "title": "Ubisoft reportedly has yet another Far Cry game in development, but at least this one doesn't appear to be in trouble",
-      "normalizedTitle": "ubisoft reportedly has yet another far cry game in development but at least this one doesn t appear to be in trouble",
-      "url": "https://www.eurogamer.net/new-far-cry-kodiak-open-world-ubisoft-vantage-studios",
-      "summary": "The Far Cry series has been dormant for much longer than Ubisoft would've liked. The company never stopped working on new Far Cry games, however, they've just never seen the light of day. This next title may be different. Read more",
-      "publishedAt": "Wed, 29 Jul 2026 08:16:09 +0000"
-    },
-    {
       "source": "StopGame",
       "language": "ru",
       "title": "Что XBOX привезёт на gamescom 2026, геймплей Guns of Eschaton, ремастеров Dragon Age не будет…",
@@ -3469,15 +3478,6 @@
       "url": "https://stopgame.ru/show/162936/svoyak_mini_i_biggi",
       "summary": "Интеллектуально плавимся от мощнейших вопросов из паков, присланных зрителями!",
       "publishedAt": "Mon, 27 Jul 2026 12:32:56 +0300"
-    },
-    {
-      "source": "Rock Paper Shotgun",
-      "language": "en",
-      "title": "Marvel Tokon: Fighting Souls open beta beaten and bashed by PC performance issues, Arc System Works \"apologise for the impact this has had on your experience\"",
-      "normalizedTitle": "marvel tokon fighting souls open beta beaten and bashed by pc performance issues arc system works apologise for the impact this has had on your experience",
-      "url": "https://www.rockpapershotgun.com/marvel-tokon-fighting-souls-open-beta-beaten-and-bashed-by-pc-performance-issues-arc-system-works-apologise-for-the-impact-this-has-had-on-your-experience",
-      "summary": "Marvel Tokon: Fighting Souls ' pre-launch open beta has just wrapped up, having been open over the weekend. Sadly, those who've given the fighter a go on PC over the past few days have run into a litany of issues, leaving developers Arc System Works apologising for the inconvenience and scrambling to provide fixes. Read more",
-      "publishedAt": "Mon, 27 Jul 2026 09:24:58 +0000"
     },
     {
       "source": "StopGame",
