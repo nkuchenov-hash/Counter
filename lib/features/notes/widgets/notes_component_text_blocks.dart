@@ -31,40 +31,48 @@ class NotesTextBlock extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final textStyle = _notesTextStyle(context, style);
     if (controller is NotesTextEditingController) {
       (controller as NotesTextEditingController).linkColor = scheme.primary;
     }
-    final textField = TextField(
-      key: textFieldKey,
-      controller: controller,
-      focusNode: focusNode,
-      autofocus: autofocus,
-      readOnly: readOnly,
-      minLines: 1,
-      maxLines: null,
-      keyboardType: TextInputType.multiline,
-      textCapitalization: TextCapitalization.sentences,
-      onChanged: onChanged,
-      onTap: onTap,
-      style: _notesTextStyle(context, style),
-      decoration: InputDecoration(
-        hintText: hintText,
-        hintStyle: _notesTextStyle(context, style).copyWith(
-          color: NotesFigmaTokens.textSecondary(
-            context,
-          ).withValues(alpha: 0.55),
+    final textField = Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: kNotesContentInset,
+        vertical: kNotesBlockVerticalPadding,
+      ),
+      child: TextField(
+        key: textFieldKey,
+        controller: controller,
+        focusNode: focusNode,
+        autofocus: autofocus,
+        readOnly: readOnly,
+        minLines: 1,
+        maxLines: null,
+        keyboardType: TextInputType.multiline,
+        textCapitalization: TextCapitalization.sentences,
+        onChanged: onChanged,
+        onTap: onTap,
+        style: textStyle,
+        strutStyle: StrutStyle.fromTextStyle(
+          textStyle,
+          forceStrutHeight: true,
         ),
-        filled: false,
-        fillColor: Colors.transparent,
-        hoverColor: Colors.transparent,
-        focusColor: Colors.transparent,
-        border: InputBorder.none,
-        enabledBorder: InputBorder.none,
-        focusedBorder: InputBorder.none,
-        isDense: true,
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: kNotesContentInset,
-          vertical: kNotesBlockVerticalPadding,
+        decoration: InputDecoration(
+          hintText: hintText,
+          hintStyle: textStyle.copyWith(
+            color: NotesFigmaTokens.textSecondary(
+              context,
+            ).withValues(alpha: 0.55),
+          ),
+          filled: false,
+          fillColor: Colors.transparent,
+          hoverColor: Colors.transparent,
+          focusColor: Colors.transparent,
+          border: InputBorder.none,
+          enabledBorder: InputBorder.none,
+          focusedBorder: InputBorder.none,
+          isCollapsed: true,
+          contentPadding: EdgeInsets.zero,
         ),
       ),
     );
@@ -279,6 +287,10 @@ class _NotesLeadingTextRow extends StatelessWidget {
                       decoration: TextDecoration.lineThrough,
                     )
                   : baseStyle,
+              strutStyle: StrutStyle.fromTextStyle(
+                baseStyle,
+                forceStrutHeight: true,
+              ),
               decoration: InputDecoration(
                 hintText: hintText,
                 hintStyle: baseStyle.copyWith(
@@ -293,7 +305,7 @@ class _NotesLeadingTextRow extends StatelessWidget {
                 border: InputBorder.none,
                 enabledBorder: InputBorder.none,
                 focusedBorder: InputBorder.none,
-                isDense: true,
+                isCollapsed: true,
                 contentPadding: EdgeInsets.zero,
               ),
             ),
