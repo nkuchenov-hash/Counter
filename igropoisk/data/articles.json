@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-08T21:37:25.119Z",
+  "updatedAt": "2026-08-08T21:56:43.979Z",
   "count": 495,
   "sources": [
     "IGN",
@@ -14,6 +14,15 @@
     "Игромания"
   ],
   "articles": [
+    {
+      "source": "Rock Paper Shotgun",
+      "language": "en",
+      "title": "Come for Beastfolk Barber's cute, furry hairdressing, but stay for its thoughtful approach to worldbuilding",
+      "normalizedTitle": "come for beastfolk barber s cute furry hairdressing but stay for its thoughtful approach to worldbuilding",
+      "url": "https://www.rockpapershotgun.com/come-for-beastfolk-barbers-cute-furry-hairdressing-but-stay-for-its-thoughtful-approach-to-worldbuilding",
+      "summary": "Is there anything more fear-inducing in this world than a haircut? Whether it be the need to endure a cacophony of sensory nightmares, or the knowledge that a stylist who doesn't quite care enough could turn your split ends into the split end of your social life, the whole process is dredged in anxiety. So how about a game where you have to play as a hairstylist that must take all of this into consideration, where all of your customers are beastfolk and you've made a deal with a demon? Enter Beastfolk Barber. Read more",
+      "publishedAt": "Sat, 08 Aug 2026 21:51:32 +0000"
+    },
     {
       "source": "Polygon",
       "language": "en",
@@ -3478,15 +3487,6 @@
       "url": "https://stopgame.ru/show/161614/ischem_horoshie_igry",
       "summary": "Продолжение Dave the Diver в джунглях, «Тони Хоук» про поезда, идейный наследник Mouthwashing, кооп-хоррор в знаменитой анталогии Fears to Fathom, удивительно глубокие инкрементальные игры… Всё это (и не только) в свежем выпуске передачи «Рефанд?!»!",
       "publishedAt": "Mon, 27 Jul 2026 17:21:26 +0300"
-    },
-    {
-      "source": "Rock Paper Shotgun",
-      "language": "en",
-      "title": "\"I dunno why they chose Crashphalt\": forgotten Steam game suddenly becomes a hit after players start using it for Undertale online multiplayer",
-      "normalizedTitle": "i dunno why they chose crashphalt forgotten steam game suddenly becomes a hit after players start using it for undertale online multiplayer",
-      "url": "https://www.rockpapershotgun.com/i-dunno-why-they-chose-crashphalt-forgotten-steam-game-suddenly-becomes-a-hit-after-players-start-using-it-for-undertale-online-multiplayer",
-      "summary": "Released back in 2018, Crashphalt is a free and eccentric multiplayer game in which players do ground-pounds to send out seismic ripples, striving to punt each other off-screen. It's got an \"overwhelmingly positive\" Steam user review reception , as of writing, but that's not entirely a judgement on its quality. You see, Crashphalt is a hit today partly because you need it to run an online multiplayer mod for Toby Fox's wonderful RPG Undertale . Of Crashphalt's 555 currently existing user reviews, the vast majority were written over five years after release, and either totally disregard or crue",
-      "publishedAt": "Mon, 27 Jul 2026 13:30:00 +0000"
     },
     {
       "source": "StopGame",
