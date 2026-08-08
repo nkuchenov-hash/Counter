@@ -57,7 +57,7 @@ void main() {
     );
   }
 
-  testWidgets('mobile web typing keeps Notes content rendered and visible', (
+  testWidgets('short mobile web viewport keeps Notes typing visible', (
     tester,
   ) async {
     tester.view.physicalSize = const Size(390, 844);
@@ -79,7 +79,7 @@ void main() {
     bodyFocus.requestFocus();
     await tester.pumpAndSettle();
 
-    tester.view.physicalSize = const Size(390, 520);
+    tester.view.physicalSize = const Size(390, 430);
     await tester.pumpAndSettle();
     simulateTyping(
       body,
@@ -92,13 +92,13 @@ void main() {
     );
     final fieldRect = tester.getRect(find.byKey(const ValueKey('body-field')));
     expect(contentRect.height, greaterThan(0));
-    expect(fieldRect.top, lessThan(520));
-    expect(fieldRect.bottom, lessThanOrEqualTo(520));
+    expect(fieldRect.top, lessThan(430));
+    expect(fieldRect.bottom, lessThanOrEqualTo(430));
     expect(find.byKey(const ValueKey('notes-test-toolbar')), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('native keyboard typing keeps Notes content rendered and visible', (
+  testWidgets('large native keyboard keeps Notes typing visible', (
     tester,
   ) async {
     tester.view.physicalSize = const Size(390, 844);
@@ -121,7 +121,7 @@ void main() {
     bodyFocus.requestFocus();
     await tester.pumpAndSettle();
 
-    tester.view.viewInsets = const FakeViewPadding(bottom: 300);
+    tester.view.viewInsets = const FakeViewPadding(bottom: 380);
     await tester.pumpAndSettle();
     simulateTyping(
       body,
@@ -133,7 +133,7 @@ void main() {
       find.byKey(const ValueKey('notes-test-content')),
     );
     final fieldRect = tester.getRect(find.byKey(const ValueKey('body-field')));
-    const visibleBottom = 844.0 - 300.0;
+    const visibleBottom = 844.0 - 380.0;
     expect(contentRect.height, greaterThan(0));
     expect(fieldRect.top, lessThan(visibleBottom));
     expect(fieldRect.bottom, lessThanOrEqualTo(visibleBottom));
