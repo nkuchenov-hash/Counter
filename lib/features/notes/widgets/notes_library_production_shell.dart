@@ -124,28 +124,32 @@ class NotesGlmInlineAddRow extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 8),
-        Material(
-          color: scheme.primary,
-          borderRadius: BorderRadius.circular(999),
-          child: InkWell(
-            onTap: onSubmit,
+        SizedBox(
+          height: 40,
+          child: Material(
+            color: scheme.primary,
             borderRadius: BorderRadius.circular(999),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.add_rounded, size: 18, color: scheme.onPrimary),
-                  const SizedBox(width: 4),
-                  Text(
-                    t(locale, 'add'),
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: scheme.onPrimary,
+            child: InkWell(
+              onTap: onSubmit,
+              borderRadius: BorderRadius.circular(999),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 14),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.add_rounded, size: 18, color: scheme.onPrimary),
+                    const SizedBox(width: 4),
+                    Text(
+                      t(locale, 'add'),
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: scheme.onPrimary,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
