@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:counter/features/notes/notes_figma_tokens.dart';
 import 'package:flutter/material.dart';
 
@@ -416,7 +418,7 @@ class _NotesHeaderAction extends StatelessWidget {
   }
 }
 
-class _NotesTitleBlock extends StatelessWidget {
+class _NotesTitleBlock extends StatefulWidget {
   const _NotesTitleBlock({
     required this.controller,
     required this.onChanged,
@@ -434,7 +436,69 @@ class _NotesTitleBlock extends StatelessWidget {
   final String? hintText;
 
   @override
+  State<_NotesTitleBlock> createState() => _NotesTitleBlockState();
+}
+
+class _NotesTitleBlockState extends State<_NotesTitleBlock> {
+  final FocusNode _titleFocusNode = FocusNode(debugLabel: 'notes-title');
+  Size _unobscuredViewport = Size.zero;
+
+  @override
+  void initState() {
+    super.initState();
+    FocusManager.instance.addListener(_handleFocusChange);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final currentSize = MediaQuery.sizeOf(context);
+    final anyFocus = FocusManager.instance.primaryFocus != null;
+    if (_unobscuredViewport == Size.zero || !anyFocus) {
+      _unobscuredViewport = currentSize;
+    }
+  }
+
+  @override
+  void dispose() {
+    FocusManager.instance.removeListener(_handleFocusChange);
+    _titleFocusNode.dispose();
+    super.dispose();
+  }
+
+  void _handleFocusChange() {
+    if (mounted) setState(() {});
+  }
+
+  bool _shouldCollapseForKeyboard(BuildContext context) {
+    final currentSize = MediaQuery.sizeOf(context);
+    final phoneSurface = currentSize.shortestSide < 600;
+    if (!phoneSurface || _titleFocusNode.hasFocus) return false;
+
+    final primaryFocus = FocusManager.instance.primaryFocus;
+    if (primaryFocus == null) return false;
+
+    final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
+    final sameWidth = _unobscuredViewport.width > 0 &&
+        (currentSize.width - _unobscuredViewport.width).abs() < 40;
+    final heightLoss = sameWidth
+        ? math.max(0.0, _unobscuredViewport.height - currentSize.height)
+        : 0.0;
+
+    // Native mobile exposes the keyboard through viewInsets. Mobile web,
+    // especially iOS Safari/PWA, may instead shrink the logical viewport while
+    // leaving viewInsets at zero. A 120 px threshold ignores browser chrome.
+    return bottomInset > 80 || heightLoss >= 120;
+  }
+
+  @override
   Widget build(BuildContext context) {
+    if (_shouldCollapseForKeyboard(context)) {
+      return const SizedBox(
+        key: ValueKey('notes-editor-title-collapsed-for-keyboard'),
+      );
+    }
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
       child: Column(
@@ -442,12 +506,14 @@ class _NotesTitleBlock extends StatelessWidget {
         children: [
           TextField(
             key: const ValueKey('notes-editor-title'),
-            controller: controller,
+            controller: widget.controller,
+            focusNode: _titleFocusNode,
             textCapitalization: TextCapitalization.sentences,
             textInputAction: TextInputAction.next,
             minLines: 1,
             maxLines: null,
-            onChanged: onChanged,
+            scrollPadding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
+            onChanged: widget.onChanged,
             style: TextStyle(
               fontSize: NotesFigmaTokens.titleSize,
               height:
@@ -457,7 +523,7 @@ class _NotesTitleBlock extends StatelessWidget {
               color: NotesFigmaTokens.textPrimary(context),
             ),
             decoration: InputDecoration(
-              hintText: hintText,
+              hintText: widget.hintText,
               hintStyle: TextStyle(
                 fontSize: NotesFigmaTokens.titleSize,
                 height:
@@ -482,9 +548,9 @@ class _NotesTitleBlock extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           _NotesMetadataRow(
-            categoryLabel: categoryLabel,
-            categoryColor: categoryColor,
-            tags: tags,
+            categoryLabel: widget.categoryLabel,
+            categoryColor: widget.categoryColor,
+            tags: widget.tags,
           ),
         ],
       ),
