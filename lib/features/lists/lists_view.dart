@@ -93,6 +93,7 @@ class _ListsPageState extends State<ListsPage>
   String _notesSearchQuery = '';
   final TextEditingController _notesSearchController = TextEditingController();
   final FocusNode _notesSearchFocus = FocusNode();
+  bool _mobileNotesSearchOpen = false;
 
   // GLM Notes v3 library view preferences.
   static const String _kPrefNotesView = 'lifeos.notes.view';
@@ -983,6 +984,7 @@ class _ListsPageState extends State<ListsPage>
     final loc = currentLocale.value;
     final theme = Theme.of(context);
     final filterId = _filterCategoryId;
+    final compactMobileWeb = MediaQuery.sizeOf(context).shortestSide < 600;
 
     return StreamBuilder<UserSettings>(
       stream: DatabaseService.instance.userSettingsStream,
@@ -1019,6 +1021,19 @@ class _ListsPageState extends State<ListsPage>
             final grouped = _groupByCategoryPath(forGrouping);
             final flatRows = _listsFlattenGrouped(grouped);
             final listBodyEmpty = forGrouping.isEmpty && archiveSlice.isEmpty;
+            final categoryBar = SizedBox(
+              height: 40,
+              child: ListsCategoryChipBar(
+                chipIds: chipIds,
+                chipMode: _chipMode,
+                filterCategoryId: filterId,
+                scrollController: _chipBarScrollController,
+                onFilterChanged: _onFilterChanged,
+                onManualChipReorder: (oldI, newI) =>
+                    _onManualChipReorder(chipIds, oldI, newI),
+                glmPresentation: true,
+              ),
+            );
             _syncListsShellFabBulkReserve();
             return Scaffold(
               backgroundColor: Colors.transparent,
@@ -1066,20 +1081,28 @@ class _ListsPageState extends State<ListsPage>
                           setState(() => _notesCheckboxesOn = on);
                           unawaited(_persistNotesCheckboxMode(on));
                         },
+                        compactCategoryBar: compactMobileWeb
+                            ? categoryBar
+                            : null,
+                        compactSearchOpen: _mobileNotesSearchOpen,
+                        onCompactSearchOpenChanged: (open) {
+                          if (!open) {
+                            _notesSearchController.clear();
+                            _notesSearchFocus.unfocus();
+                          }
+                          setState(() {
+                            _mobileNotesSearchOpen = open;
+                            if (!open) _notesSearchQuery = '';
+                          });
+                          if (open) {
+                            WidgetsBinding.instance.addPostFrameCallback((_) {
+                              if (mounted) _notesSearchFocus.requestFocus();
+                            });
+                          }
+                        },
                       ),
-                categoryBar: SizedBox(
-                  height: 40,
-                  child: ListsCategoryChipBar(
-                    chipIds: chipIds,
-                    chipMode: _chipMode,
-                    filterCategoryId: filterId,
-                    scrollController: _chipBarScrollController,
-                    onFilterChanged: _onFilterChanged,
-                    onManualChipReorder: (oldI, newI) =>
-                        _onManualChipReorder(chipIds, oldI, newI),
-                    glmPresentation: true,
-                  ),
-                ),
+                categoryBar: categoryBar,
+                categoryBarInHeader: compactMobileWeb,
                 tagBar: filterId != null && _tagsForFilterBar().isNotEmpty
                     ? ListsTagFilterBar(
                         locale: loc,
@@ -1190,6 +1213,9 @@ class _NotesLibraryHeader extends StatelessWidget {
     required this.checkboxesOn,
     required this.onViewChanged,
     required this.onCheckboxModeChanged,
+    required this.compactCategoryBar,
+    required this.compactSearchOpen,
+    required this.onCompactSearchOpenChanged,
   });
 
   final String locale;
@@ -1205,13 +1231,130 @@ class _NotesLibraryHeader extends StatelessWidget {
   final bool checkboxesOn;
   final ValueChanged<NotesLibraryView> onViewChanged;
   final ValueChanged<bool> onCheckboxModeChanged;
+  final Widget? compactCategoryBar;
+  final bool compactSearchOpen;
+  final ValueChanged<bool> onCompactSearchOpenChanged;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final wide = MediaQuery.sizeOf(context).width >= 900;
+    final compactMobile = compactCategoryBar != null;
+    final wide = MediaQuery.sizeOf(context).width >= 900 && !compactMobile;
+
+    if (compactMobile) {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(0, 8, 0, 0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              t(locale, 'notes_v3_title'),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.w700,
+                letterSpacing: -0.35,
+                height: 1.1,
+                color: scheme.onSurface,
+              ),
+            ),
+            const SizedBox(height: 6),
+            SizedBox(
+              height: 40,
+              child: compactSearchOpen
+                  ? TextField(
+                      controller: searchController,
+                      focusNode: searchFocus,
+                      textInputAction: TextInputAction.search,
+                      textCapitalization: TextCapitalization.sentences,
+                      onChanged: onSearchChanged,
+                      style: TextStyle(fontSize: 14, color: scheme.onSurface),
+                      decoration: notesGlmSearchDecoration(
+                        context: context,
+                        hintText: t(locale, 'notes_v3_search_hint'),
+                        suffixIcon: IconButton(
+                          tooltip: t(locale, 'cancel'),
+                          icon: const Icon(Icons.close_rounded, size: 18),
+                          visualDensity: VisualDensity.compact,
+                          splashRadius: 16,
+                          onPressed: () {
+                            if (searchQuery.trim().isNotEmpty) onClearSearch();
+                            onCompactSearchOpenChanged(false);
+                          },
+                        ),
+                      ),
+                    )
+                  : Row(
+                      children: [
+                        Expanded(child: compactCategoryBar!),
+                        const SizedBox(width: 4),
+                        _HeaderSegBtn(
+                          icon: Icons.search_rounded,
+                          selected: false,
+                          onTap: () => onCompactSearchOpenChanged(true),
+                          tooltip: t(locale, 'notes_v3_search_hint'),
+                        ),
+                        _HeaderSegBtn(
+                          icon: checkboxesOn
+                              ? Icons.check_box_rounded
+                              : Icons.check_box_outline_blank_rounded,
+                          selected: checkboxesOn,
+                          onTap: () => onCheckboxModeChanged(!checkboxesOn),
+                          tooltip: checkboxesOn
+                              ? t(locale, 'notes_v3_checkbox_mode_off')
+                              : t(locale, 'notes_v3_checkbox_mode_on'),
+                        ),
+                        Container(
+                          decoration: BoxDecoration(
+                            color: scheme.surfaceContainerHighest.withValues(
+                              alpha: 0.6,
+                            ),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          padding: const EdgeInsets.all(2),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              _HeaderSegBtn(
+                                icon: Icons.grid_view_rounded,
+                                selected: notesView == NotesLibraryView.grid,
+                                onTap: () => onViewChanged(NotesLibraryView.grid),
+                                tooltip: t(locale, 'notes_v3_view_grid'),
+                              ),
+                              _HeaderSegBtn(
+                                icon: Icons.view_list_rounded,
+                                selected: notesView == NotesLibraryView.list,
+                                onTap: () => onViewChanged(NotesLibraryView.list),
+                                tooltip: t(locale, 'notes_v3_view_list'),
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (showExport)
+                          _HeaderSegBtn(
+                            icon: Icons.ios_share_rounded,
+                            selected: false,
+                            onTap: onExport,
+                            tooltip: t(locale, 'lists_export_text'),
+                          ),
+                        _HeaderSegBtn(
+                          icon: Icons.tune_rounded,
+                          selected: false,
+                          onTap: onOpenSettings,
+                          tooltip: t(locale, 'notes_editor_more_tooltip'),
+                        ),
+                      ],
+                    ),
+            ),
+          ],
+        ),
+      );
+    }
+
     return Padding(
-      padding: EdgeInsets.fromLTRB(wide ? 0 : 0, 12, 12, 4),
+      padding: const EdgeInsets.fromLTRB(0, 12, 12, 4),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
@@ -1222,6 +1365,8 @@ class _NotesLibraryHeader extends StatelessWidget {
               Expanded(
                 child: Text(
                   t(locale, 'notes_v3_title'),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontSize: wide ? 30 : 24,
                     fontWeight: FontWeight.w700,
