@@ -1,0 +1,31 @@
+name: One-off publish Notes header fix
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/one_off_publish_notes_header_fix.yml
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout latest main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Remove one-off workflow
+        run: |
+          git rm .github/workflows/one_off_publish_notes_header_fix.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Remove one-off Notes header publish workflow"
+          git fetch origin main
+          git rebase origin/main
+          git push origin HEAD:main
