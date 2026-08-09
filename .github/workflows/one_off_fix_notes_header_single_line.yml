@@ -1,0 +1,56 @@
+name: One-off Notes header single-line repair
+
+on:
+  push:
+    branches:
+      - fix/notes-header-single-line
+    paths:
+      - .github/workflows/one_off_fix_notes_header_single_line.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repair branch
+        uses: actions/checkout@v4
+        with:
+          ref: fix/notes-header-single-line
+          fetch-depth: 0
+
+      - name: Force Notes/Lists page title to one line
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('lib/features/lists/lists_view.dart')
+          text = path.read_text(encoding='utf-8')
+
+          old = """                child: Text(
+                  t(locale, 'notes_v3_title'),
+                  style: TextStyle(
+"""
+          new = """                child: Text(
+                  t(locale, 'notes_v3_title'),
+                  maxLines: 1,
+                  softWrap: false,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+"""
+
+          if text.count(old) != 1:
+              raise SystemExit(f'Expected exactly one Notes/Lists title fragment, found {text.count(old)}')
+
+          path.write_text(text.replace(old, new, 1), encoding='utf-8')
+          PY
+
+          git rm .github/workflows/one_off_fix_notes_header_single_line.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add lib/features/lists/lists_view.dart
+          git diff --check
+          git diff --cached -- lib/features/lists/lists_view.dart
+          git commit -m "Keep Notes and Lists title on one line"
+          git push origin HEAD:fix/notes-header-single-line
