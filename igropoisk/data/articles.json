@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-09T05:32:38.621Z",
+  "updatedAt": "2026-08-09T21:35:29.536Z",
   "count": 495,
   "sources": [
     "IGN",
@@ -14,6 +14,375 @@
     "Игромания"
   ],
   "articles": [
+    {
+      "source": "PC Gamer",
+      "language": "en",
+      "title": "The designer of Diamond City, Little Lamplight, and Starfield's Neon thinks Bethesda's galaxy was just too big: 'I would have done a handful of planets with bespoke layouts'",
+      "normalizedTitle": "the designer of diamond city little lamplight and starfield s neon thinks bethesda s galaxy was just too big i would have done a handful of planets with bespoke layouts",
+      "url": "https://www.pcgamer.com/games/rpg/the-designer-of-diamond-city-little-lamplight-and-starfields-neon-thinks-bethesdas-galaxy-was-just-too-big-i-would-have-done-a-handful-of-planets-with-bespoke-layouts/",
+      "summary": "Nate Purkeypile worked on Starfield for a year before leaving Bethesda.",
+      "publishedAt": "Sun, 09 Aug 2026 21:07:49 +0000"
+    },
+    {
+      "source": "Polygon",
+      "language": "en",
+      "title": "Marvel Tokon players are trying weird solutions to fix the bad PC port",
+      "normalizedTitle": "marvel tokon players are trying weird solutions to fix the bad pc port",
+      "url": "https://www.polygon.com/marvel-tokons-pc-issues-egs-store/",
+      "summary": "Marvel Tokon: Fighting Souls players on PC are resorting to running the Epic Games Store in the background, using framerate limiters, and more.",
+      "publishedAt": "Sun, 09 Aug 2026 21:04:17 GMT"
+    },
+    {
+      "source": "Polygon",
+      "language": "en",
+      "title": "47 Years Later, X-Men's Greatest Redemption Arc Is Finally Making the Leap From Comics to Movies",
+      "normalizedTitle": "47 years later x men s greatest redemption arc is finally making the leap from comics to movies",
+      "url": "https://www.polygon.com/emma-frost-marvel-historu-comics-villain-hero-x-men/",
+      "summary": "As Samara Weaving's Emma Frost prepares to hit the MCU, let's look back at the character's history and speculate on which version of Emma we're about to get.",
+      "publishedAt": "Sun, 09 Aug 2026 21:00:12 GMT"
+    },
+    {
+      "source": "GamesRadar+",
+      "language": "en",
+      "title": "16 things we learned about Game of Thrones from The Mad King play",
+      "normalizedTitle": "16 things we learned about game of thrones from the mad king play",
+      "url": "https://www.gamesradar.com/entertainment/fantasy-shows/16-things-we-learned-about-game-of-thrones-from-the-mad-king-play/",
+      "summary": "Everything we learned from Game of Thrones: The Mad King",
+      "publishedAt": "Sun, 09 Aug 2026 20:00:00 +0000"
+    },
+    {
+      "source": "GamesRadar+",
+      "language": "en",
+      "title": "I went to see new Game of Thrones play The Mad King, and for 3 hours and 40 minutes I was transported to a world of dragons and magic",
+      "normalizedTitle": "i went to see new game of thrones play the mad king and for 3 hours and 40 minutes i was transported to a world of dragons and magic",
+      "url": "https://www.gamesradar.com/entertainment/fantasy-shows/i-went-to-see-new-game-of-thrones-play-the-mad-king-and-for-3-hours-and-40-minutes-i-was-transported-to-a-world-of-dragons-and-magic/",
+      "summary": "Game of Thrones: The Mad King is everything fans and theatregoers could want",
+      "publishedAt": "Sun, 09 Aug 2026 20:00:00 +0000"
+    },
+    {
+      "source": "PC Gamer",
+      "language": "en",
+      "title": "Lies of P studio reveals name change and hypes up sequel: 'My goal has been to create the world's greatest action game.'",
+      "normalizedTitle": "lies of p studio reveals name change and hypes up sequel my goal has been to create the world s greatest action game",
+      "url": "https://www.pcgamer.com/games/action/lies-of-p-studio-reveals-name-change-and-hypes-up-sequel-my-goal-has-been-to-create-the-worlds-greatest-action-game/",
+      "summary": "Round 8 is now Nough, I think.",
+      "publishedAt": "Sun, 09 Aug 2026 19:33:17 +0000"
+    },
+    {
+      "source": "Polygon",
+      "language": "en",
+      "title": "7 Years Later, Game of Thrones Finally Redeems Its Biggest Failure With a Near-Perfect Prequel",
+      "normalizedTitle": "7 years later game of thrones finally redeems its biggest failure with a near perfect prequel",
+      "url": "https://www.polygon.com/the-mad-king-saved-game-of-thrones/",
+      "summary": "Dominic Cooke and Duncan Macmillan's stage play following Aerys Targaryen's waning reign might have just added a new lease of life to Game of Thrones",
+      "publishedAt": "Sun, 09 Aug 2026 19:00:12 GMT"
+    },
+    {
+      "source": "Polygon",
+      "language": "en",
+      "title": "The Odyssey passes The Dark Knight Rises to become Nolan’s highest-grossing film ever",
+      "normalizedTitle": "the odyssey passes the dark knight rises to become nolan s highest grossing film ever",
+      "url": "https://www.polygon.com/the-odyssey-christopher-nolan-highest-grossing-film/",
+      "summary": "The Odyssey just became Christopher Nolan's highest-grossing film of all time after hitting $1.1 billion at the box office.",
+      "publishedAt": "Sun, 09 Aug 2026 18:55:23 GMT"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "Spider-Man: Brand New Day Swings Closer to $2 Billion in Second Weekend in Theaters, The Odyssey Becomes Highest-Grossing Christopher Nolan Movie of All Time",
+      "normalizedTitle": "spider man brand new day swings closer to 2 billion in second weekend in theaters the odyssey becomes highest grossing christopher nolan movie of all time",
+      "url": "https://www.ign.com/articles/spider-man-brand-new-day-swings-closer-to-2-billion-in-second-weekend-in-theaters-the-odyssey-becomes-highest-grossing-christopher-nolan-movie-of-all-time",
+      "summary": "August brought another standout weekend at the box office after Spider-Man: Brand New Day swung closer to $2 billion in theaters, and The Odyssey became the highest-grossing Christopher Nolan movie of all time.",
+      "publishedAt": "Sun, 9 Aug 2026 18:45:09 +0000"
+    },
+    {
+      "source": "Polygon",
+      "language": "en",
+      "title": "5 'Solo Leveling' Characters Who Deserved Better (#4's Fate Is Tragic)",
+      "normalizedTitle": "5 solo leveling characters who deserved better 4 s fate is tragic",
+      "url": "https://www.polygon.com/solo-leveling-characters-sidelined-deserved-better/",
+      "summary": "These intriguing secondary characters were prematurely pushed aside to bolster Sung Jin-woo.",
+      "publishedAt": "Sun, 09 Aug 2026 17:00:12 GMT"
+    },
+    {
+      "source": "PC Gamer",
+      "language": "en",
+      "title": "Deltarune's 'The Third Sanctuary' is an affront to time signatures, and also one of my favourite songs in a videogame ever",
+      "normalizedTitle": "deltarune s the third sanctuary is an affront to time signatures and also one of my favourite songs in a videogame ever",
+      "url": "https://www.pcgamer.com/games/rpg/deltarunes-the-third-sanctuary-is-an-affront-to-time-signatures-and-also-one-of-my-favourite-songs-in-a-videogame-ever/",
+      "summary": "The drummer will say \"please\" and then \"make it stop\".",
+      "publishedAt": "Sun, 09 Aug 2026 17:00:00 +0000"
+    },
+    {
+      "source": "GamesRadar+",
+      "language": "en",
+      "title": "\"I'm a little disappointed with Rockstar\": GTA 5 and Red Dead Redemption actor auditioned for over 60 roles in GTA 6 and never heard back",
+      "normalizedTitle": "i m a little disappointed with rockstar gta 5 and red dead redemption actor auditioned for over 60 roles in gta 6 and never heard back",
+      "url": "https://www.gamesradar.com/games/grand-theft-auto/im-a-little-disappointed-with-rockstar-gta-5-and-red-dead-redemption-actor-auditioned-for-over-60-roles-in-gta-6-and-never-heard-back/",
+      "summary": "Robert Bogue first appeared in Red Dead Revolver way back in 2004",
+      "publishedAt": "Sun, 09 Aug 2026 17:00:00 +0000"
+    },
+    {
+      "source": "Polygon",
+      "language": "en",
+      "title": "PowerWash Simulator Meets Unpacking In a Cozy Gaming Steam Sleeper Hit",
+      "normalizedTitle": "powerwash simulator meets unpacking in a cozy gaming steam sleeper hit",
+      "url": "https://www.polygon.com/restory-steam-review/",
+      "summary": "ReStory: Chill Electronics Repairs pairs Y2K nostalgia with a compelling story. Here's how the cozy Tokyo repair sim feels a few hours in.",
+      "publishedAt": "Sun, 09 Aug 2026 16:30:11 GMT"
+    },
+    {
+      "source": "GamesRadar+",
+      "language": "en",
+      "title": "Diablo 4: Lord of Hatred and Overwatch's resurgence reportedly drove Blizzard to its \"first back-to-back years of growth\" in almost 10 years",
+      "normalizedTitle": "diablo 4 lord of hatred and overwatch s resurgence reportedly drove blizzard to its first back to back years of growth in almost 10 years",
+      "url": "https://www.gamesradar.com/games/fps/diablo-4-lord-of-hatred-and-overwatchs-resurgence-reportedly-drove-blizzard-to-its-first-back-to-back-years-of-growth-in-almost-10-years/",
+      "summary": "The power of Hello Kitty and K-Pop",
+      "publishedAt": "Sun, 09 Aug 2026 16:27:41 +0000"
+    },
+    {
+      "source": "PC Gamer",
+      "language": "en",
+      "title": "The last season of Netflix's Witcher show has reportedly been delayed",
+      "normalizedTitle": "the last season of netflix s witcher show has reportedly been delayed",
+      "url": "https://www.pcgamer.com/movies-tv/the-last-season-of-netflixs-witcher-show-has-reportedly-been-delayed/",
+      "summary": "Hold on to that coin, actually.",
+      "publishedAt": "Sun, 09 Aug 2026 16:27:27 +0000"
+    },
+    {
+      "source": "PC Gamer",
+      "language": "en",
+      "title": "Blizzard is now reportedly Microsoft's top studio, according to leaked email",
+      "normalizedTitle": "blizzard is now reportedly microsoft s top studio according to leaked email",
+      "url": "https://www.pcgamer.com/gaming-industry/blizzard-is-now-reportedly-microsofts-top-studio-according-to-leaked-email/",
+      "summary": "\"This past year has marked our third highest fiscal for top line revenue in Blizzard's history.\"",
+      "publishedAt": "Sun, 09 Aug 2026 16:22:58 +0000"
+    },
+    {
+      "source": "Polygon",
+      "language": "en",
+      "title": "My Hero Academia author’s new horror manga Quit Laughing, Shijima was just released in English",
+      "normalizedTitle": "my hero academia author s new horror manga quit laughing shijima was just released in english",
+      "url": "https://www.polygon.com/my-hero-academia-author-quit-laughing-shijima-released/",
+      "summary": "Quit Laughing, Shijima is a horror-romance one-shot from My Hero Academia creator Kohei Horikoshi, and it's out now for free in English.",
+      "publishedAt": "Sun, 09 Aug 2026 16:18:06 GMT"
+    },
+    {
+      "source": "Eurogamer",
+      "language": "en",
+      "title": "You can now stream PS Plus games to Steam Deck without owning a PS5 - and without buying a PS Portal",
+      "normalizedTitle": "you can now stream ps plus games to steam deck without owning a ps5 and without buying a ps portal",
+      "url": "https://www.eurogamer.net/steam-deck-ps5-streaming-app-asobi",
+      "summary": "A new cloud-streaming app that lets players stream PlayStation games to their Steam Deck and Steam Machine without a PS5 has just opened a playtest. Read more",
+      "publishedAt": "Sun, 09 Aug 2026 16:16:25 +0000"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "Netflix Reportedly Delays The Witcher Season 5 to 2027",
+      "normalizedTitle": "netflix reportedly delays the witcher season 5 to 2027",
+      "url": "https://www.ign.com/articles/netflix-reportedly-delays-the-witcher-season-5-to-2027",
+      "summary": "Geralt's return to Netflix seems to have been pushed back, as a new report has stated that The Witcher Season 5 has been delayed until 2027.",
+      "publishedAt": "Sun, 9 Aug 2026 16:03:41 +0000"
+    },
+    {
+      "source": "Polygon",
+      "language": "en",
+      "title": "Beast of Reincarnation Has a Difficulty Problem",
+      "normalizedTitle": "beast of reincarnation has a difficulty problem",
+      "url": "https://www.polygon.com/beast-of-reincarnations-easiest-mode-too-easy/",
+      "summary": "Beast of Reincarnation's forgiving story mode is too easy for players seeking a more moderate challenge.",
+      "publishedAt": "Sun, 09 Aug 2026 16:00:12 GMT"
+    },
+    {
+      "source": "Polygon",
+      "language": "en",
+      "title": "26 Years Later, Anime’s Most Influential Vampire Movie Deserves Another Shot",
+      "normalizedTitle": "26 years later anime s most influential vampire movie deserves another shot",
+      "url": "https://www.polygon.com/blood-the-last-vampire-anime-movie/",
+      "summary": "This 48-minute anime movie has groundbreaking animation, brutal action, and an iconic heroine.",
+      "publishedAt": "Sun, 09 Aug 2026 16:00:12 GMT"
+    },
+    {
+      "source": "PC Gamer",
+      "language": "en",
+      "title": "Hit markers are an FPS crutch",
+      "normalizedTitle": "hit markers are an fps crutch",
+      "url": "https://www.pcgamer.com/games/fps/hit-markers-are-an-fps-crutch/",
+      "summary": "The humble hit marker has its place, but it's way overused.",
+      "publishedAt": "Sun, 09 Aug 2026 16:00:00 +0000"
+    },
+    {
+      "source": "PC Gamer",
+      "language": "en",
+      "title": "Fields of Mistria's cast has me head over heels in a way no farm sim has since Stardew Valley",
+      "normalizedTitle": "fields of mistria s cast has me head over heels in a way no farm sim has since stardew valley",
+      "url": "https://www.pcgamer.com/games/life-sim/fields-of-mistrias-cast-has-me-head-over-heels-in-a-way-no-farm-sim-has-since-stardew-valley/",
+      "summary": "The anime aesthetic is just the beginning of what I've found to love about Mistria's locals.",
+      "publishedAt": "Sun, 09 Aug 2026 16:00:00 +0000"
+    },
+    {
+      "source": "Eurogamer",
+      "language": "en",
+      "title": "Steam reportedly refunds Battlefield 6 player with 470 hours logged after EA quietly pulled Rush mode from Quickplay",
+      "normalizedTitle": "steam reportedly refunds battlefield 6 player with 470 hours logged after ea quietly pulled rush mode from quickplay",
+      "url": "https://www.eurogamer.net/battlefield-6-steam-refund-rush-mode",
+      "summary": "A Battlefield 6 player \"upset\" at the removal of the popular Rush mode claims to have secured a full refund from Steam despite having clocked up 470 hours. Read more",
+      "publishedAt": "Sun, 09 Aug 2026 15:28:46 +0000"
+    },
+    {
+      "source": "GamesRadar+",
+      "language": "en",
+      "title": "The Legend of Zelda: Twilight Princess wasn't enough, you can now run Ocarina of Time and Majora's Mask natively on IOS",
+      "normalizedTitle": "the legend of zelda twilight princess wasn t enough you can now run ocarina of time and majora s mask natively on ios",
+      "url": "https://www.gamesradar.com/games/the-legend-of-zelda/the-legend-of-zelda-twilight-princess-wasnt-enough-you-can-now-run-ocarina-of-time-and-majoras-mask-natively-on-ios/",
+      "summary": "\"The decompilation community has been incredibly active this year.\"",
+      "publishedAt": "Sun, 09 Aug 2026 15:10:12 +0000"
+    },
+    {
+      "source": "Polygon",
+      "language": "en",
+      "title": "Amid Xbox woes, Blizzard has reportedly become the ‘top performing’ studio at the company",
+      "normalizedTitle": "amid xbox woes blizzard has reportedly become the top performing studio at the company",
+      "url": "https://www.polygon.com/xbox-blizzard-becomes-top-performing-studio-overwatch/",
+      "summary": "Blizzard has reportedly become the top performing studio at Xbox thanks to strong performances from Overwatch and Diablo 4's DLC.",
+      "publishedAt": "Sun, 09 Aug 2026 15:03:41 GMT"
+    },
+    {
+      "source": "GameSpot",
+      "language": "en",
+      "title": "Don&#8217;t Miss Out On Grabbing This 97%-Rated Cozy Indie Game For Its Lowest Price Yet",
+      "normalizedTitle": "don 8217 t miss out on grabbing this 97 rated cozy indie game for its lowest price yet",
+      "url": "https://www.gamespot.com/articles/dont-miss-out-on-grabbing-this-97-rated-cozy-indie-game-for-its-lowest-price-yet/",
+      "summary": "When it comes to tinkering with electronics and messing with components, my fat little fingers make it difficult. Take one look at my gaming PC build and, if you’re a fan of neat cable management, you might pass out on the spot. Fortunately, ReStory: Chill Electronics Repair offers exactly what the name suggests, and this charming indie is already highly rated on Steam, so now’s a great time to grab it at its lowest price yet. Some of the best cozy games still offer a satisfying challenge while focusing on the relaxing atmosphere we all need more of. ReStory: Chill Electronics Repair (which I’",
+      "publishedAt": "Sun, 09 Aug 2026 15:00:00 +0000"
+    },
+    {
+      "source": "PC Gamer",
+      "language": "en",
+      "title": "'I am a big roguelike guy, but also a fan of minimalism and elegance': Sam Barlow, creator of Her Story, guides us through the games in his Steam Library",
+      "normalizedTitle": "i am a big roguelike guy but also a fan of minimalism and elegance sam barlow creator of her story guides us through the games in his steam library",
+      "url": "https://www.pcgamer.com/gaming-industry/i-am-a-big-roguelike-guy-but-also-a-fan-of-minimalism-and-elegance-sam-barlow-creator-of-her-story-guides-us-through-the-games-in-his-steam-library/",
+      "summary": "The founder of Half Mermaid on classic adventure games, modern hacking sims, and his favourite screenwriting software.",
+      "publishedAt": "Sun, 09 Aug 2026 15:00:00 +0000"
+    },
+    {
+      "source": "Eurogamer",
+      "language": "en",
+      "title": "New Lies of P documentary teases next game \"is going to be really fun and emotionally moving\"",
+      "normalizedTitle": "new lies of p documentary teases next game is going to be really fun and emotionally moving",
+      "url": "https://www.eurogamer.net/lies-of-p-studio-next-game-tease",
+      "summary": "One of the teams behind Neowiz's Souls-like Lies of P has released a short documentary detailing how they kept \"testing and refining\" the game before its release, as well as offering a little insight into its hardcore \"games by gamers\" culture. Read more",
+      "publishedAt": "Sun, 09 Aug 2026 14:42:18 +0000"
+    },
+    {
+      "source": "GamesRadar+",
+      "language": "en",
+      "title": "A lost Final Fantasy 7 game has just been saved 20 years after its release, though it cost one preservationist $900",
+      "normalizedTitle": "a lost final fantasy 7 game has just been saved 20 years after its release though it cost one preservationist 900",
+      "url": "https://www.gamesradar.com/games/final-fantasy/a-lost-final-fantasy-7-game-has-just-been-saved-20-years-after-its-release-though-it-cost-one-preservationist-usd900/",
+      "summary": "Dirge of Cerberus' even more niche spin-off is finally preserved",
+      "publishedAt": "Sun, 09 Aug 2026 14:31:56 +0000"
+    },
+    {
+      "source": "GamesRadar+",
+      "language": "en",
+      "title": "\"If I was in charge of Starfield, I would have not done it that way at all\" - Former Bethesda veteran would've handled the RPG's 1,000 planets very differently",
+      "normalizedTitle": "if i was in charge of starfield i would have not done it that way at all former bethesda veteran would ve handled the rpg s 1 000 planets very differently",
+      "url": "https://www.gamesradar.com/games/rpg/if-i-was-in-charge-of-starfield-i-would-have-not-done-it-that-way-at-all-former-bethesda-veteran-wouldve-handled-the-rpgs-1-000-planets-very-differently/",
+      "summary": "\"Even early on, I was drawing parallels to Mass Effect 1\"",
+      "publishedAt": "Sun, 09 Aug 2026 13:43:05 +0000"
+    },
+    {
+      "source": "StopGame",
+      "language": "ru",
+      "title": "Индиана. Welcome to the Game III",
+      "normalizedTitle": "индиана welcome to the game iii",
+      "url": "https://stopgame.ru/show/163162/indiana_welcome_to_the_game_iii",
+      "summary": "Иногда оно возвращается.",
+      "publishedAt": "Sun, 09 Aug 2026 16:06:37 +0300"
+    },
+    {
+      "source": "StopGame",
+      "language": "ru",
+      "title": "Читаем геймерские анекдоты",
+      "normalizedTitle": "читаем геймерские анекдоты",
+      "url": "https://stopgame.ru/show/163161/chitaem_geymerskie_anekdoty",
+      "summary": "Зулин, Вокша, Карнов и анекдоты — ваша лучшая компания для вечера субботы.",
+      "publishedAt": "Sun, 09 Aug 2026 15:59:26 +0300"
+    },
+    {
+      "source": "Eurogamer",
+      "language": "en",
+      "title": "Peak gets its final major update and a \"new secret for you to discover\" next week",
+      "normalizedTitle": "peak gets its final major update and a new secret for you to discover next week",
+      "url": "https://www.eurogamer.net/peak-final-major-update",
+      "summary": "Aggro Crab has confirmed its co-op climbing game, Peak, will get its final major update on 11th August. Read more",
+      "publishedAt": "Sun, 09 Aug 2026 12:07:48 +0000"
+    },
+    {
+      "source": "PC Gamer",
+      "language": "en",
+      "title": "Cancelled Quake 4 expansion gets surprise GitHub release after former XCOM 2 developer discovers it on an old hard drive: 'This essentially saved my life'",
+      "normalizedTitle": "cancelled quake 4 expansion gets surprise github release after former xcom 2 developer discovers it on an old hard drive this essentially saved my life",
+      "url": "https://www.pcgamer.com/games/fps/cancelled-quake-4-expansion-gets-surprise-github-release-after-former-xcom-2-developer-discovers-it-on-an-old-hard-drive-this-essentially-saved-my-life/",
+      "summary": "Quake 4: Awakening was in development at Ritual Entertainment before being scrapped.",
+      "publishedAt": "Sun, 09 Aug 2026 12:00:00 +0000"
+    },
+    {
+      "source": "PC Gamer",
+      "language": "en",
+      "title": "Roblox shares plummet by 70% after the company reports persistent decline in player numbers, and of course the solution involves AI",
+      "normalizedTitle": "roblox shares plummet by 70 after the company reports persistent decline in player numbers and of course the solution involves ai",
+      "url": "https://www.pcgamer.com/games/roblox-shares-plummet-by-70-percent-after-the-company-reports-persistent-decline-in-player-numbers-and-of-course-the-solution-involves-ai/",
+      "summary": "The company's earnings outlook for the remaining year has \"changed considerably.\"",
+      "publishedAt": "Sun, 09 Aug 2026 11:00:00 +0000"
+    },
+    {
+      "source": "Eurogamer",
+      "language": "en",
+      "title": "Acclaimed photography puzzler sequel Toem 2 gets a release date",
+      "normalizedTitle": "acclaimed photography puzzler sequel toem 2 gets a release date",
+      "url": "https://www.eurogamer.net/toem-2-release-date",
+      "summary": "Toem 2 will release on Nintendo Switch 1 and 2, PC, and PS5 on 29th September, 2026. Read more",
+      "publishedAt": "Sun, 09 Aug 2026 10:33:59 +0000"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "'If You're Not a Netflix Subscriber, You Definitely Should Be' — Take-Two Boss Teases Grand Theft Auto VI: An Extended Look",
+      "normalizedTitle": "if you re not a netflix subscriber you definitely should be take two boss teases grand theft auto vi an extended look",
+      "url": "https://www.ign.com/articles/if-youre-not-a-netflix-subscriber-you-definitely-should-be-take-two-boss-teases-grand-theft-auto-vi-an-extended-look",
+      "summary": "Take-Two Boss Strauss Zelnick discusses Grand Theft Auto VI: An Extended Look Netflix reveal.",
+      "publishedAt": "Sun, 9 Aug 2026 10:25:54 +0000"
+    },
+    {
+      "source": "Rock Paper Shotgun",
+      "language": "en",
+      "title": "The Sunday Papers",
+      "normalizedTitle": "the sunday papers",
+      "url": "https://www.rockpapershotgun.com/the-sunday-papers-822",
+      "summary": "Sundays are for finally getting around to starting Peaky Blinders on your never-ending odyssey through all of the west's most laddish crime dramas. World War 1's just ended and every bloke's got PTSD from the trenches. Tommy Shelby and his brothers have returned to Birmingham, which probably hasn't helped their spirits. Cue lots of running around in flat caps and suits punching other blokes in flat caps and suits. Hours of fun so far, though I'm only a few episodes into the first series, so anyone who posts spoilers in the comments is getting slapped by a hat adorned with razor blades. Read mo",
+      "publishedAt": "Sun, 09 Aug 2026 10:00:00 +0000"
+    },
+    {
+      "source": "Eurogamer",
+      "language": "en",
+      "title": "Revisiting the original No Man's Sky, 10 years on - and why it was always good in its own way",
+      "normalizedTitle": "revisiting the original no man s sky 10 years on and why it was always good in its own way",
+      "url": "https://www.eurogamer.net/revisiting-the-original-no-mans-sky-10-years-on",
+      "summary": "\"Commencing Atlus suit initialisation system\", crackles a synthesised female voice from out of my TV screen. \"Life support systems activated\", she continues. And eventually, \"User initialisation sequence complete\". It's a start-up sequence I've heard countless times over the last decade, but today things are a little bit different. As No Man's Sky celebrates its 10th anniversary, I've slung myself back through a wormhole of sorts - one powered by a dusty PS4 wrenched from a box in the attic and an original disc copy of the game procured for &pound;8. Read more",
+      "publishedAt": "Sun, 09 Aug 2026 09:00:00 +0000"
+    },
+    {
+      "source": "PC Gamer",
+      "language": "en",
+      "title": "Lae'zel actor Devora Wilde didn't know she was in Space Marine 2 until players told her",
+      "normalizedTitle": "lae zel actor devora wilde didn t know she was in space marine 2 until players told her",
+      "url": "https://www.pcgamer.com/games/action/laezel-actor-devora-wilde-didnt-know-she-was-in-space-marine-2-until-players-told-her/",
+      "summary": "\"I was like, 'No, I'm not. What is that?'\"",
+      "publishedAt": "Sun, 09 Aug 2026 06:23:27 +0000"
+    },
     {
       "source": "PC Gamer",
       "language": "en",
@@ -33,33 +402,6 @@
       "publishedAt": "Sun, 09 Aug 2026 02:34:05 +0000"
     },
     {
-      "source": "Polygon",
-      "language": "en",
-      "title": "5 Anime Endings That Fans Still Argue About (I'm Still Mad About #3)",
-      "normalizedTitle": "5 anime endings that fans still argue about i m still mad about 3",
-      "url": "https://www.polygon.com/best-anime-endings-divisive-controversial/",
-      "summary": "These infamous conclusions continue to spark discussions, debates, and everything in between.",
-      "publishedAt": "Sun, 09 Aug 2026 02:00:22 GMT"
-    },
-    {
-      "source": "Polygon",
-      "language": "en",
-      "title": "Spider-Man: Brand New Day's Most Talked About Character Quietly Sets Up Marvel's X-Men Future",
-      "normalizedTitle": "spider man brand new day s most talked about character quietly sets up marvel s x men future",
-      "url": "https://www.polygon.com/spider-man-jean-grey-new-take-x-men/",
-      "summary": "Spider-Man: Brand New Day introduces a new version of Jean Grey, setting the stage for a new take on the X-Men.",
-      "publishedAt": "Sun, 09 Aug 2026 01:00:12 GMT"
-    },
-    {
-      "source": "Polygon",
-      "language": "en",
-      "title": "Apple TV’s Smartest Sci-Fi Thriller Officially Returns in 3 Weeks",
-      "normalizedTitle": "apple tv s smartest sci fi thriller officially returns in 3 weeks",
-      "url": "https://www.polygon.com/dark-matter-season-2-recap/",
-      "summary": "Here's everything you need to remember about the twisty plot before venturing back into Blake Crouch's world.",
-      "publishedAt": "Sun, 09 Aug 2026 00:00:11 GMT"
-    },
-    {
       "source": "IGN",
       "language": "en",
       "title": "Mortal Kombat Director 'Not Sure' About Return for Third Movie as Mortal Kombat 3 Remains in Limbo",
@@ -67,15 +409,6 @@
       "url": "https://www.ign.com/articles/mortal-kombat-director-not-sure-about-return-for-third-movie-as-mortal-kombat-3-remains-in-limbo",
       "summary": "Mortal Kombat movie director Simon McQuoid has cast doubt on his return to the franchise as work on a third movie remains in limbo.",
       "publishedAt": "Sat, 8 Aug 2026 23:19:52 +0000"
-    },
-    {
-      "source": "Polygon",
-      "language": "en",
-      "title": "The Witcher season 5 delayed on Netflix, new report says",
-      "normalizedTitle": "the witcher season 5 delayed on netflix new report says",
-      "url": "https://www.polygon.com/the-witcher-season-5-has-been-quietly-delayed/",
-      "summary": "Netflix's The Witcher season 5 was expected to have its final showing in 2026, but has been quietly delayed to 2027, according to What's On Netflix.",
-      "publishedAt": "Sat, 08 Aug 2026 22:19:04 GMT"
     },
     {
       "source": "IGN",
@@ -96,15 +429,6 @@
       "publishedAt": "Sat, 08 Aug 2026 21:51:32 +0000"
     },
     {
-      "source": "Polygon",
-      "language": "en",
-      "title": "Matt Damon’s 113-Minute 10/10 Action Thriller Officially Crowned as Netflix’s Biggest Movie of 2026",
-      "normalizedTitle": "matt damon s 113 minute 10 10 action thriller officially crowned as netflix s biggest movie of 2026",
-      "url": "https://www.polygon.com/matt-damon-action-thriller-netflix-biggest-streaming-hit-of-2026/",
-      "summary": "Nielsen's latest rankings reveal Matt Damon's Netflix thriller is the most-streamed movie of 2026, coming in at 4.432 billion minutes watched so far.",
-      "publishedAt": "Sat, 08 Aug 2026 21:00:12 GMT"
-    },
-    {
       "source": "Rock Paper Shotgun",
       "language": "en",
       "title": "Danchi Days, out this October, brings the Hamtaro: Ham-Ham Heartbreak vibes I've been desperately craving since childhood",
@@ -123,15 +447,6 @@
       "publishedAt": "Sat, 8 Aug 2026 20:03:41 +0000"
     },
     {
-      "source": "Polygon",
-      "language": "en",
-      "title": "Magic Designer Wants to Resurrect a Forgotten Card That Tells a Perfect Miniature Horror Story",
-      "normalizedTitle": "magic designer wants to resurrect a forgotten card that tells a perfect miniature horror story",
-      "url": "https://www.polygon.com/mtg-vengeful-pharaoh-card-mummy-horror-story-magic-2012/",
-      "summary": "Vengeful Pharaoh tells an entire mummy story through its mechanics. Now one Magic designer hopes the forgotten card rises again.",
-      "publishedAt": "Sat, 08 Aug 2026 20:00:12 GMT"
-    },
-    {
       "source": "PC Gamer",
       "language": "en",
       "title": "id co-founder John Carmack revisits Doom at QuakeCon: 'Still a great game after all these years!'",
@@ -139,15 +454,6 @@
       "url": "https://www.pcgamer.com/games/fps/id-co-founder-john-carmack-revisits-doom-at-quakecon-still-a-great-game-after-all-these-years/",
       "summary": "Not a controversial opinion, by any means.",
       "publishedAt": "Sat, 08 Aug 2026 19:08:08 +0000"
-    },
-    {
-      "source": "Polygon",
-      "language": "en",
-      "title": "Ambrosia Sky Review: Steam's Fascinating Sci-fi Shooter Tackles the Tough Questions",
-      "normalizedTitle": "ambrosia sky review steam s fascinating sci fi shooter tackles the tough questions",
-      "url": "https://www.polygon.com/ambrosia-sky-review/",
-      "summary": "Ambrosia Sky tells a timely story about humanity’s response to crisis through a creative, though underdeveloped, riff on Metroid Prime.",
-      "publishedAt": "Sat, 08 Aug 2026 19:00:12 GMT"
     },
     {
       "source": "PC Gamer",
@@ -166,15 +472,6 @@
       "url": "https://www.rockpapershotgun.com/polyzonia-is-an-ecosystem-sim-about-breathing-life-into-the-amazon-rainforest-until-it-can-look-after-itself",
       "summary": "How about we get in our digital grass touching for the day? Well, I suppose we can't just yet, as Polyzonia, an ecosystem sim set in the Amazon rainforest, isn't out just yet, but it has caught my eye at the very least. Read more",
       "publishedAt": "Sat, 08 Aug 2026 18:05:43 +0000"
-    },
-    {
-      "source": "Polygon",
-      "language": "en",
-      "title": "Marvel Tokon's Roster Should Add These 10 Characters You Forgot About",
-      "normalizedTitle": "marvel tokon s roster should add these 10 characters you forgot about",
-      "url": "https://www.polygon.com/marvel-tokon-fighting-souls-dlc-characters-wishlist/",
-      "summary": "Marvel Tokon Fighting Souls will add more playable characters as future DLC. Here are 10 essential heroes we want to see in the new 4v4 tag fighter.",
-      "publishedAt": "Sat, 08 Aug 2026 18:00:11 GMT"
     },
     {
       "source": "PC Gamer",
@@ -312,15 +609,6 @@
       "publishedAt": "Sat, 08 Aug 2026 15:44:40 +0000"
     },
     {
-      "source": "Polygon",
-      "language": "en",
-      "title": "10 Near-Perfect New Sci-fi Books for Star Wars and Dune Fans",
-      "normalizedTitle": "10 near perfect new sci fi books for star wars and dune fans",
-      "url": "https://www.polygon.com/sci-fi-books-like-star-wars-dune/",
-      "summary": "Start a new series or try a standalone novel filled with space battles, aliens, and galactic intrigue",
-      "publishedAt": "Sat, 08 Aug 2026 15:00:12 GMT"
-    },
-    {
       "source": "IGN",
       "language": "en",
       "title": "Asus ROG XReal R1 XR Glasses Review",
@@ -328,15 +616,6 @@
       "url": "https://www.ign.com/articles/asus-rog-xreal-r1-xr-glasses-review",
       "summary": "Sometimes it feels like XR glasses are the next frontier when it comes to gaming accessories. And it makes sense, with the rise of handheld gaming PCs – at least before RAM prices started making them nigh unaffordable – these glasses are a great way to get something like the Steam Deck a bigger screen while you’re away from home. So, it makes sense that Asus would team up with XReal to make a bespoke pair of gaming glasses, especially off the back of the Asus ROG Xbox Ally X . And when the glasses are plugged straight into a handheld, the ROG XReal R1 is awesome, with a clear picture and some ",
       "publishedAt": "Sat, 8 Aug 2026 15:00:00 +0000"
-    },
-    {
-      "source": "Polygon",
-      "language": "en",
-      "title": "The Legend of Zelda Movie cast: all confirmed roles and actors",
-      "normalizedTitle": "the legend of zelda movie cast all confirmed roles and actors",
-      "url": "https://www.polygon.com/the-legend-of-zelda-movie-cast-confirmed/",
-      "summary": "Who's playing who in Sony's The Legend of Zelda movie? Here's everyone confirmed so far in the cast, including Link, Zelda, and Ganondorf.",
-      "publishedAt": "Sat, 08 Aug 2026 14:28:43 GMT"
     },
     {
       "source": "GamesRadar+",
@@ -654,24 +933,6 @@
       "publishedAt": "Fri, 07 Aug 2026 20:45:54 +0000"
     },
     {
-      "source": "IGN",
-      "language": "en",
-      "title": "The Original Pokémon Series Is Now Streaming on Disney+ — So Where Are All of the Episodes?",
-      "normalizedTitle": "the original pokémon series is now streaming on disney so where are all of the episodes",
-      "url": "https://www.ign.com/articles/pokemon-episodes-now-streaming-on-disney-plus-august-2026",
-      "summary": "The original Pokémon TV series is officially streaming on Disney+. Some of it, at least.",
-      "publishedAt": "Fri, 7 Aug 2026 20:34:41 +0000"
-    },
-    {
-      "source": "IGN",
-      "language": "en",
-      "title": "Big Walk Review",
-      "normalizedTitle": "big walk review",
-      "url": "https://www.ign.com/articles/big-walk-review",
-      "summary": "A clever co-op puzzle adventure that uses communication like no other.",
-      "publishedAt": "Fri, 7 Aug 2026 20:34:11 +0000"
-    },
-    {
       "source": "GameSpot",
       "language": "en",
       "title": "Who Gets Left Behind In Sony&#8217;s All-Digital Future?",
@@ -706,15 +967,6 @@
       "url": "https://www.gamespot.com/videos/i-replaced-all-my-consoles-pc-with-a-steam-machine-for-a-month/",
       "summary": "Can the Steam Machine truly become my all in one solution for gaming?",
       "publishedAt": "Fri, 07 Aug 2026 20:00:00 +0000"
-    },
-    {
-      "source": "IGN",
-      "language": "en",
-      "title": "Doom 2016 Composer Mick Gordon Is Performing the Game's Soundtrack at a Music Festival for the Very First Time",
-      "normalizedTitle": "doom 2016 composer mick gordon is performing the game s soundtrack at a music festival for the very first time",
-      "url": "https://www.ign.com/articles/doom-2016-composer-mick-gordon-is-performing-the-games-soundtrack-live-in-concert-for-the-very-first-time",
-      "summary": "Mick Gordon, the composer of Doom 2016’s award-winning soundtrack, is taking the game’s music on tour for the first time ever — and he’s bringing the Doom Machine with him.",
-      "publishedAt": "Fri, 7 Aug 2026 19:50:03 +0000"
     },
     {
       "source": "GameSpot",
@@ -1104,15 +1356,6 @@
       "publishedAt": "Fri, 07 Aug 2026 13:51:27 +0000"
     },
     {
-      "source": "GameSpot",
-      "language": "en",
-      "title": "GTA 6 Preorders Are &#8220;Unprecedented&#8221; Across The Industry, Take-Two Claims",
-      "normalizedTitle": "gta 6 preorders are 8220 unprecedented 8221 across the industry take two claims",
-      "url": "https://www.gamespot.com/articles/gta-6-preorders-are-unprecedented-across-the-industry-take-two-claims/",
-      "summary": "Following the launch of GTA 6 preorders in late June, it immediately became apparent that there was, unsurprisingly, huge demand for the game. Now, in a Take-Two earnings call, the publishing company's CEO said the number of preorders is \"unprecedented\" across the industry. Strauss Zelnick said, \"No one's ever seen anything like this before at Take-Two, or in the industry.\" He went on to add that exceptional preorders don't always equal exceptional sales, though. \"To be clear, we haven't sold one unit yet. You can cancel a preorder.\" While Zelnick declined to comment on sales expectations, he ",
-      "publishedAt": "Fri, 07 Aug 2026 13:44:51 +0000"
-    },
-    {
       "source": "GamesRadar+",
       "language": "en",
       "title": "With GTA 6 digital only, Take-Two boss says discs \"don't really make sense\" – \"if you're already connected, who cares if you download digitally?\"",
@@ -1320,15 +1563,6 @@
       "publishedAt": "Fri, 07 Aug 2026 10:28:48 +0000"
     },
     {
-      "source": "GamesRadar+",
-      "language": "en",
-      "title": "Another look at Kingdom Hearts 4 seems even more likely this month after co-director is confirmed to appear at Disney D23 event",
-      "normalizedTitle": "another look at kingdom hearts 4 seems even more likely this month after co director is confirmed to appear at disney d23 event",
-      "url": "https://www.gamesradar.com/games/kingdom-hearts/another-look-at-kingdom-hearts-4-seems-even-more-likely-this-month-after-co-director-is-confirmed-to-appear-at-disney-d23-event/",
-      "summary": "Sora, Donald and Goofy will be getting plenty of attention at the conference",
-      "publishedAt": "Fri, 07 Aug 2026 10:25:34 +0000"
-    },
-    {
       "source": "PC Gamer",
       "language": "en",
       "title": "'They call us old stupid farmers, you know, but we’re not': Family declines $26 million offer to convert their farmland into an AI data center",
@@ -1336,15 +1570,6 @@
       "url": "https://www.pcgamer.com/software/ai/they-call-us-old-stupid-farmers-you-know-but-were-not-family-declines-usd26-million-offer-to-convert-their-farmland-into-an-ai-data-center/",
       "summary": "AI companies may have the cash to throw around, but some can't be bought so easily.",
       "publishedAt": "Fri, 07 Aug 2026 10:25:11 +0000"
-    },
-    {
-      "source": "GamesRadar+",
-      "language": "en",
-      "title": "Legend of Zelda movie fans think Ganondorf can be seen in leaked set videos",
-      "normalizedTitle": "legend of zelda movie fans think ganondorf can be seen in leaked set videos",
-      "url": "https://www.gamesradar.com/entertainment/live-action-movies/legend-of-zelda-movie-fans-think-ganondorf-can-be-seen-in-leaked-set-videos/",
-      "summary": "We may already have our first look at The Legend of Zelda movie's Ganondorf",
-      "publishedAt": "Fri, 07 Aug 2026 10:01:19 +0000"
     },
     {
       "source": "Rock Paper Shotgun",
@@ -1363,24 +1588,6 @@
       "url": "https://www.pcgamer.com/hardware/processors/if-your-amd-chipset-drivers-are-mysteriously-failing-to-install-like-mine-youll-need-to-manually-update-instead/",
       "summary": "Something's borked with the AMD Install Manager, it seems.",
       "publishedAt": "Fri, 07 Aug 2026 09:54:59 +0000"
-    },
-    {
-      "source": "GamesRadar+",
-      "language": "en",
-      "title": "Gears of War: E-Day's Steam player peak has already passed the series' all-time record, and it's still only in limited beta",
-      "normalizedTitle": "gears of war e day s steam player peak has already passed the series all time record and it s still only in limited beta",
-      "url": "https://www.gamesradar.com/games/gears-of-war/gears-of-war-e-days-steam-player-peak-has-already-passed-the-series-all-time-record-and-its-still-only-in-limited-beta/",
-      "summary": "E-Day's beta doesn't open up to everyone until August 13",
-      "publishedAt": "Fri, 07 Aug 2026 09:36:59 +0000"
-    },
-    {
-      "source": "GamesRadar+",
-      "language": "en",
-      "title": "Tom Holland's brother has a surprising impact on Spider-Man: Brand New Day's most wholesome scene",
-      "normalizedTitle": "tom holland s brother has a surprising impact on spider man brand new day s most wholesome scene",
-      "url": "https://www.gamesradar.com/entertainment/marvel-movies/tom-hollands-brother-has-a-surprising-impact-on-spider-man-brand-new-days-most-wholesome-scene/",
-      "summary": "Alright then, keep your secrets",
-      "publishedAt": "Fri, 07 Aug 2026 09:32:08 +0000"
     },
     {
       "source": "Eurogamer",
@@ -1417,15 +1624,6 @@
       "url": "https://www.eurogamer.net/archive-of-retro-computing-showcase-2026-south-london-preview",
       "summary": "Wander the winding track to London's Kingston University over the next week and you'll find a little pocket of gaming history awaiting there. The Archive of Retro Computing (ARC) is free to explore and features over 65 retro personal computers and gaming consoles, some familiar and others considerably less so. It's an exhibit stretching from the mid-70s and the advent of video game cartridges to significantly more modern gaming consoles, charting the history of personal computing across an incredibly rich three decades. Read more",
       "publishedAt": "Fri, 07 Aug 2026 09:00:00 +0000"
-    },
-    {
-      "source": "GamesRadar+",
-      "language": "en",
-      "title": "How to watch the GTA 6 extended look: Netflix streaming release date and times",
-      "normalizedTitle": "how to watch the gta 6 extended look netflix streaming release date and times",
-      "url": "https://www.gamesradar.com/how-to-watch-the-gta-6-extended-look-netflix/",
-      "summary": "Everything you need to know to get ready to tune into the Netflix GTA 6 extended look",
-      "publishedAt": "Fri, 07 Aug 2026 08:27:32 +0000"
     },
     {
       "source": "StopGame",
@@ -1500,15 +1698,6 @@
       "publishedAt": "Fri, 07 Aug 2026 00:01:51 +0000"
     },
     {
-      "source": "GamesRadar+",
-      "language": "en",
-      "title": "Ex Dragon Age boss warns devs against listening to player feedback for solutions: \"They're not developers\"",
-      "normalizedTitle": "ex dragon age boss warns devs against listening to player feedback for solutions they re not developers",
-      "url": "https://www.gamesradar.com/games/dragon-age/ex-dragon-age-boss-warns-devs-against-listening-to-player-feedback-for-solutions-theyre-not-developers/",
-      "summary": "\"They know they don't like something, but the solution they may come up with may not be the best\"",
-      "publishedAt": "Thu, 06 Aug 2026 23:59:08 +0000"
-    },
-    {
       "source": "PC Gamer",
       "language": "en",
       "title": "30 years after it 'ruined id Software,' Quake gets another big update while the studio once again grapples with adversity",
@@ -1543,15 +1732,6 @@
       "url": "https://www.rockpapershotgun.com/arise-dark-lord-is-an-action-rts-hybrid-styled-like-a-lord-of-the-rings-map-where-you-raise-an-army-of-the-undead-to-kill-all-humans",
       "summary": "What do we want? The ability to be evil in video games! How do we want it? Designed in a way that's mechanically enriching! That's what I'm hoping Arise Dark Lord will be, anyway, a Frankensteinian mish mash of action, real-time strategy , tower defence and base building where you are an evil overlord who rules over a nefarious army and wants to kill all humans. Read more",
       "publishedAt": "Thu, 06 Aug 2026 21:57:56 +0000"
-    },
-    {
-      "source": "GamesRadar+",
-      "language": "en",
-      "title": "Despite Supergirl bombing at the box office, Warner Bros CEO says DC Studios \"feels very good\" and has a \"robust pipeline\" of projects in the works",
-      "normalizedTitle": "despite supergirl bombing at the box office warner bros ceo says dc studios feels very good and has a robust pipeline of projects in the works",
-      "url": "https://www.gamesradar.com/entertainment/dc-movies/despite-supergirl-bombing-at-the-box-office-warner-bros-ceo-says-dc-studios-feels-very-good-and-has-a-robust-pipeline-of-projects-in-the-works/",
-      "summary": "David Zaslav doesn't seem too worried",
-      "publishedAt": "Thu, 06 Aug 2026 21:21:40 +0000"
     },
     {
       "source": "PC Gamer",
@@ -1590,24 +1770,6 @@
       "publishedAt": "Thu, 06 Aug 2026 20:37:08 +0000"
     },
     {
-      "source": "PC Gamer",
-      "language": "en",
-      "title": "You deserve a travel power adapter you actually like for your next trip",
-      "normalizedTitle": "you deserve a travel power adapter you actually like for your next trip",
-      "url": "https://www.pcgamer.com/hardware/you-deserve-a-travel-power-adapter-you-actually-like-for-your-next-trip/",
-      "summary": "Get rid of those oversized all-in-one chunks of plastic.",
-      "publishedAt": "Thu, 06 Aug 2026 19:48:31 +0000"
-    },
-    {
-      "source": "PC Gamer",
-      "language": "en",
-      "title": "Ghost Recon marks 25 years with a major update and free new missions for Wildlands, and a Ghost Recon: Future Soldier giveaway",
-      "normalizedTitle": "ghost recon marks 25 years with a major update and free new missions for wildlands and a ghost recon future soldier giveaway",
-      "url": "https://www.pcgamer.com/games/third-person-shooter/ghost-recon-marks-25-years-with-a-major-update-and-free-new-missions-for-wildlands-and-a-ghost-recon-future-soldier-giveaway/",
-      "summary": "We're going back to a \"darker, more oppressive Bolivia.\"",
-      "publishedAt": "Thu, 06 Aug 2026 19:17:43 +0000"
-    },
-    {
       "source": "Rock Paper Shotgun",
       "language": "en",
       "title": "After a successful first week, Mistfall Hunter gets a roadmap promising a much requested solo mode for one of its maps",
@@ -1615,15 +1777,6 @@
       "url": "https://www.rockpapershotgun.com/after-a-successful-first-week-mistfall-hunter-gets-a-roadmap-promising-a-much-requested-solo-mode-for-one-of-its-maps",
       "summary": "Mistfall Hunter launched last week, and so far it seems to be doing quite well for itself! Apparently there's a million of you now running around its very Elden Ring looking lands and extraction fantasy lands (though these don't sound like one million sales, to be clear). With a healthy, if currently fairly critical , community under the game's belt, developer Bellring Games have shared a roadmap for its first and second season outlining what you can expect next. Read more",
       "publishedAt": "Thu, 06 Aug 2026 18:03:56 +0000"
-    },
-    {
-      "source": "PC Gamer",
-      "language": "en",
-      "title": "New Kingdom Come trademark filings mention 'online' virtual worlds—but we shouldn't assume Warhorse is making a multiplayer game just yet",
-      "normalizedTitle": "new kingdom come trademark filings mention online virtual worlds but we shouldn t assume warhorse is making a multiplayer game just yet",
-      "url": "https://www.pcgamer.com/games/rpg/new-kingdom-come-trademark-filings-mention-online-virtual-worlds-but-we-shouldnt-assume-warhorse-is-making-a-multiplayer-game-just-yet/",
-      "summary": "A videogame IP attorney says the filings are \"far from a promise that the next Kingdom Come videogame will feature multiplayer.\"",
-      "publishedAt": "Thu, 06 Aug 2026 17:16:06 +0000"
     },
     {
       "source": "Rock Paper Shotgun",
@@ -1660,15 +1813,6 @@
       "url": "https://www.eurogamer.net/marvel-tokon-deadpool-references",
       "summary": "Marvel Tokon is out at last, and players are diving in and messing around with the full cast of playable characters. However, one of these fighters is truly - and perhaps fittingly - unique among the cast. Read more",
       "publishedAt": "Thu, 06 Aug 2026 15:58:32 +0000"
-    },
-    {
-      "source": "PC Gamer",
-      "language": "en",
-      "title": "It is genuinely cheaper for me to fly to QuakeCon and buy a RTX 5090 at the Nvidia booth than pick up the GPU absolutely anywhere else",
-      "normalizedTitle": "it is genuinely cheaper for me to fly to quakecon and buy a rtx 5090 at the nvidia booth than pick up the gpu absolutely anywhere else",
-      "url": "https://www.pcgamer.com/hardware/graphics-cards/it-is-genuinely-cheaper-for-me-to-fly-to-quakecon-and-buy-a-rtx-5090-at-the-nvidia-booth-than-pick-up-the-gpu-absolutely-anywhere-else/",
-      "summary": "Welcome to hell.",
-      "publishedAt": "Thu, 06 Aug 2026 15:33:16 +0000"
     },
     {
       "source": "Eurogamer",
@@ -1725,33 +1869,6 @@
       "publishedAt": "Thu, 06 Aug 2026 13:28:16 +0000"
     },
     {
-      "source": "PC Gamer",
-      "language": "en",
-      "title": "Larian gets briefly kicked off YouTube, TikTok for demonic smut reasons in Baldur's Gate 3",
-      "normalizedTitle": "larian gets briefly kicked off youtube tiktok for demonic smut reasons in baldur s gate 3",
-      "url": "https://www.pcgamer.com/games/baldurs-gate/larian-gets-briefly-kicked-off-youtube-tiktok-for-demonic-smut-reasons-in-baldurs-gate-3/",
-      "summary": "Hell, hell, hell has its laws. ToS, ToS, effects and the cause.",
-      "publishedAt": "Thu, 06 Aug 2026 13:26:28 +0000"
-    },
-    {
-      "source": "PC Gamer",
-      "language": "en",
-      "title": "The first GTA 6 gameplay reveal will debut on Netflix later this month, as the streaming service tries yet again to get a piece of that videogame pie",
-      "normalizedTitle": "the first gta 6 gameplay reveal will debut on netflix later this month as the streaming service tries yet again to get a piece of that videogame pie",
-      "url": "https://www.pcgamer.com/games/grand-theft-auto/the-first-gta-6-gameplay-reveal-will-debut-on-netflix-later-this-month-as-the-streaming-service-tries-yet-again-to-get-a-piece-of-that-videogame-pie/",
-      "summary": "Huh. Okay then.",
-      "publishedAt": "Thu, 06 Aug 2026 13:20:21 +0000"
-    },
-    {
-      "source": "PC Gamer",
-      "language": "en",
-      "title": "'Slightly ugly, and insanely functional': Check out this custom Steam Machine faceplate that doubles as a charging stand",
-      "normalizedTitle": "slightly ugly and insanely functional check out this custom steam machine faceplate that doubles as a charging stand",
-      "url": "https://www.pcgamer.com/hardware/gaming-pcs/slightly-ugly-and-insanely-functional-check-out-this-custom-steam-machine-faceplate-that-doubles-as-a-charging-stand/",
-      "summary": "They are apparently applying the finishing touches now.",
-      "publishedAt": "Thu, 06 Aug 2026 13:07:35 +0000"
-    },
-    {
       "source": "Rock Paper Shotgun",
       "language": "en",
       "title": "Big Walk simulates the strange, childlike sensation of being unexpectedly separated from your friends, and the joy and relief of finding your way back",
@@ -1797,15 +1914,6 @@
       "publishedAt": "Thu, 06 Aug 2026 12:08:13 +0000"
     },
     {
-      "source": "PC Gamer",
-      "language": "en",
-      "title": "Valve explains clever shortcut for the Steam Controller's Grip Sense, and I'm starting to think it's a killer feature",
-      "normalizedTitle": "valve explains clever shortcut for the steam controller s grip sense and i m starting to think it s a killer feature",
-      "url": "https://www.pcgamer.com/hardware/controllers/valve-explains-clever-shortcut-for-the-steam-controllers-grip-sense-and-im-starting-to-think-its-a-killer-feature/",
-      "summary": "This seems like a solid feature for the gyro heads.",
-      "publishedAt": "Thu, 06 Aug 2026 11:37:10 +0000"
-    },
-    {
       "source": "Eurogamer",
       "language": "en",
       "title": "Capcom shrugs off PlayStation's all-digital future, suggests shrinking physical market will not have a \"significant impact\" on its operations",
@@ -1840,24 +1948,6 @@
       "url": "https://www.rockpapershotgun.com/the-three-biggest-ram-makers-have-already-sold-all-their-2027-output-report-says-potentially-stretching-price-woes-into-2028",
       "summary": "In today&rsquo;s Demoralising But Not Remotely Surprising Hardware News, \"industry insiders\" are claiming that the Big Three memory makers &ndash; Samsung, Micron, and SK Hynix &ndash; have already sold not just their expected manufacturing output for 2026, but 2027 as well. The report, by Taiwanese newspaper DigiTimes and partially translated by TweakTown , effectively suggests that the large-scale supply of new RAM chips is already tapped out until 2028, likely extinguishing any lingering hopes that PC RAM, storage, and graphics cards will escape their current pricing nightmare anytime soon.",
       "publishedAt": "Thu, 06 Aug 2026 10:20:04 +0000"
-    },
-    {
-      "source": "PC Gamer",
-      "language": "en",
-      "title": "Onimusha: Way of the Sword's incredible sword-fighting secret sauce explained: 'We really wanted to focus on creating this very realistic, grounded sword action'",
-      "normalizedTitle": "onimusha way of the sword s incredible sword fighting secret sauce explained we really wanted to focus on creating this very realistic grounded sword action",
-      "url": "https://www.pcgamer.com/games/action/onimusha-way-of-the-swords-incredible-sword-fighting-secret-sauce-explained-we-really-wanted-to-focus-on-creating-this-very-realistic-grounded-sword-action/",
-      "summary": "So this is how you show elite-level sword techniques.",
-      "publishedAt": "Thu, 06 Aug 2026 10:19:18 +0000"
-    },
-    {
-      "source": "PC Gamer",
-      "language": "en",
-      "title": "Microsoft quietly deletes 32 GB RAM recommendation, which I'm sure has nothing to do with it bringing back 8 GB laptops",
-      "normalizedTitle": "microsoft quietly deletes 32 gb ram recommendation which i m sure has nothing to do with it bringing back 8 gb laptops",
-      "url": "https://www.pcgamer.com/hardware/gaming-laptops/microsoft-quietly-deletes-32-gb-ram-recommendation-which-im-sure-has-nothing-to-do-with-it-bringing-back-8-gb-laptops/",
-      "summary": "Is 8 GB enough any more?",
-      "publishedAt": "Thu, 06 Aug 2026 10:12:10 +0000"
     },
     {
       "source": "Rock Paper Shotgun",
@@ -1921,15 +2011,6 @@
       "url": "https://stopgame.ru/show/163127/party_for_two_baldurs_gate_3_strim_4",
       "summary": "Гоблины убиты, Хальсин освобождён, а конфликт тифлингов и друидов подошёл к логическому концу. Путь зовёт героев дальше, в самое сердце Абсолюта, но… вокруг ещё так много тайн и сокровищ! Спешить совсем не хочется!",
       "publishedAt": "Thu, 06 Aug 2026 10:21:46 +0300"
-    },
-    {
-      "source": "PC Gamer",
-      "language": "en",
-      "title": "Grab shopkeeper-dungeoncrawler Moonlighter free on Steam for a limited time",
-      "normalizedTitle": "grab shopkeeper dungeoncrawler moonlighter free on steam for a limited time",
-      "url": "https://www.pcgamer.com/games/roguelike/grab-shopkeeper-dungeoncrawler-moonlighter-free-on-steam-for-a-limited-time/",
-      "summary": "Two jobs for the price of none.",
-      "publishedAt": "Thu, 06 Aug 2026 04:04:30 +0000"
     },
     {
       "source": "StopGame",
@@ -3183,15 +3264,6 @@
       "publishedAt": "Wed, 29 Jul 2026 11:38:32 +0000"
     },
     {
-      "source": "Eurogamer",
-      "language": "en",
-      "title": "A Dragon Age Trilogy remaster probably won't happen as no one still employed at BioWare knows how the engine works, claims producer",
-      "normalizedTitle": "a dragon age trilogy remaster probably won t happen as no one still employed at bioware knows how the engine works claims producer",
-      "url": "https://www.eurogamer.net/dragon-age-trilogy-remaster-bioware-dont-know-engine",
-      "summary": "Former BioWare producer Mark Darrah believes a remaster of the original Dragon Age trilogy isn't likely to happen, as no one left working at the developer knows how the old engine works. Read more",
-      "publishedAt": "Wed, 29 Jul 2026 11:11:51 +0000"
-    },
-    {
       "source": "Rock Paper Shotgun",
       "language": "en",
       "title": "Wuchang: Fallen Feathers sequel in the works from original director's new studio, which bears the wonderful name Indolphinity",
@@ -3199,24 +3271,6 @@
       "url": "https://www.rockpapershotgun.com/wuchang-fallen-feathers-sequel-in-the-works-from-original-directors-new-studio-which-bears-the-wonderful-name-indolphinity",
       "summary": "Chinese soulslike Wuchang: Fallen Feathers is getting a sequel, set to be developed by a new studio helmed by the first game's director. Rather than original studio Lenzee, the new Wuchang entry's being made by Indolphinity - or the Chengdu Recursive Dolphin Technology Company - and published by 505 Games. Read more",
       "publishedAt": "Wed, 29 Jul 2026 11:01:30 +0000"
-    },
-    {
-      "source": "Eurogamer",
-      "language": "en",
-      "title": "Koei Tecmo wants to avoid \"dependence on major titles\", though expectations for Wo Long 2 and Attack on Titan 3 are high",
-      "normalizedTitle": "koei tecmo wants to avoid dependence on major titles though expectations for wo long 2 and attack on titan 3 are high",
-      "url": "https://www.eurogamer.net/koei-tecmo-fiscal-year-2027-plans",
-      "summary": "Koei Tecmo has been on a roll recently, with heavy hitters like Nioh 3 and Dynasty Warriors: Origins elevating established IPs while surprising collaborations like Pok&eacute;mon Pokopia have become viral sensations. According to the latest financial report from the company, however, fans should expect variety over a deluge of large-scale games. Read more",
-      "publishedAt": "Wed, 29 Jul 2026 10:49:42 +0000"
-    },
-    {
-      "source": "Eurogamer",
-      "language": "en",
-      "title": "Crazy Taxi: World Tour has competitive multiplayer, and you've got a chance to play it very soon",
-      "normalizedTitle": "crazy taxi world tour has competitive multiplayer and you ve got a chance to play it very soon",
-      "url": "https://www.eurogamer.net/crazy-taxi-world-tour-closed-network-test-multiplayer",
-      "summary": "Sega announced it's hosting a closed network test for Crazy Taxi : World Tour. The limited test is available across PC (Steam and Xbox app), PS5 and Xbox Series X/S. It runs for a single session from 11th September to 13th September. Read more",
-      "publishedAt": "Wed, 29 Jul 2026 10:47:00 +0000"
     },
     {
       "source": "StopGame",
@@ -3244,33 +3298,6 @@
       "url": "https://www.rockpapershotgun.com/gta-online-in-game-gambling-reportedly-blocked-in-australia-leaving-folks-down-under-locked-out-of-diamond-casino-games",
       "summary": "GTA Online players in Australia have reportedly found themselves suddenly barred from the litany of in-game gambling minigames found in Los Santos' Diamond Casino, with the change seemingly the result of developers Rockstar adding the country to their list of places where access to such minigames is restricted. Read more",
       "publishedAt": "Wed, 29 Jul 2026 10:04:25 +0000"
-    },
-    {
-      "source": "Eurogamer",
-      "language": "en",
-      "title": "007 First Light's Switch 2 release date may be closer than we realised",
-      "normalizedTitle": "007 first light s switch 2 release date may be closer than we realised",
-      "url": "https://www.eurogamer.net/007-first-light-nintendo-switch-2-release-date-leak",
-      "summary": "The Nintendo Switch 2 version of IO Interactive 's 007 First Light has been anticipated practically since it was revealed to be in the works. That version of the game didn't make it out alongside all the other platforms in May, but thanks to a new leak, we know when we'll be playing it. Read more",
-      "publishedAt": "Wed, 29 Jul 2026 09:24:07 +0000"
-    },
-    {
-      "source": "Eurogamer",
-      "language": "en",
-      "title": "After laying off Battlefield 6 devs, EA boss Andrew Wilson's bonus rose $8m to $38m last year, thanks to the game's success across \"all milestones\"",
-      "normalizedTitle": "after laying off battlefield 6 devs ea boss andrew wilson s bonus rose 8m to 38m last year thanks to the game s success across all milestones",
-      "url": "https://www.eurogamer.net/ea-boss-38-million-bonus-battlefield-6-layoffs",
-      "summary": "Electronic Arts CEO Andrew Wilson took home a $38.7m bonus for the 2026 financial year, as the company's games such as Battlefield 6 performed well, met \"all milestones\", and a new AI strategy was executed. That bonus and many others to senior EA executives come despite layoffs across multiple studios in the same financial year. Read more",
-      "publishedAt": "Wed, 29 Jul 2026 09:14:10 +0000"
-    },
-    {
-      "source": "Eurogamer",
-      "language": "en",
-      "title": "Double Fine hit with layoffs after exiting Xbox - \"The people we are losing were all important\"",
-      "normalizedTitle": "double fine hit with layoffs after exiting xbox the people we are losing were all important",
-      "url": "https://www.eurogamer.net/double-fine-layoffs-after-xbox-exit",
-      "summary": "Nearly a month after it was announced Xbox was cutting 3200 jobs across the division and parting ways with four studios , Psychonauts 2 studio Double Fine Productions is laying off staffers to ensure its short-term survival. Read more",
-      "publishedAt": "Wed, 29 Jul 2026 08:53:19 +0000"
     },
     {
       "source": "StopGame",
@@ -3471,15 +3498,6 @@
       "publishedAt": "Mon, 27 Jul 2026 19:08:14 +0300"
     },
     {
-      "source": "Rock Paper Shotgun",
-      "language": "en",
-      "title": "Dragon Age: Thedas at War is a BioWare RPG-inspired Crusader Kings 3 total conversion mod that's here to keep the series alive while it sits in EA limbo",
-      "normalizedTitle": "dragon age thedas at war is a bioware rpg inspired crusader kings 3 total conversion mod that s here to keep the series alive while it sits in ea limbo",
-      "url": "https://www.rockpapershotgun.com/dragon-age-thedas-at-war-is-a-bioware-rpg-inspired-crusader-kings-3-total-conversion-mod-thats-here-to-keep-the-series-alive-while-it-sits-in-ea-limbo",
-      "summary": "Who knows when or if BioWare'll ever be allowed to make a follow-up to Dragon Age: The Veilguard . Whatever ends up being the future of a series EA've left in a rather ambiguous place, a group of Crusader Kings 3 modders have stepped up to make a Dragon Age total conversion that lets folks play out a bit of their own kingdom-battling history in Thedas. Read more",
-      "publishedAt": "Mon, 27 Jul 2026 14:42:13 +0000"
-    },
-    {
       "source": "StopGame",
       "language": "ru",
       "title": "Ищем хорошие игры",
@@ -3532,24 +3550,6 @@
       "url": "https://stopgame.ru/show/162904/guild_wars_2_reyd_so_zritelyami_mmorafon",
       "summary": "Сегодня мы с семёркой отважных и опытных зрителей отправимся покорять первый рейд. Скорее всего будет больно и неприятно. Скорее всего мы вайпнемся несколько (много) раз. Но разве не за этим ходят в рейды?",
       "publishedAt": "Sun, 26 Jul 2026 07:35:16 +0300"
-    },
-    {
-      "source": "StopGame",
-      "language": "ru",
-      "title": "Neon White. Динамичный шутер-платформер [Шутерок под Кофеёк]",
-      "normalizedTitle": "neon white динамичный шутер платформер шутерок под кофеёк",
-      "url": "https://stopgame.ru/show/162893/neon_white_dinamichnyy_shuter_platformer_shuterok_pod_kofeek",
-      "summary": "Стреляем, прыгаем, думаем и капучинируем.",
-      "publishedAt": "Sat, 25 Jul 2026 21:15:20 +0300"
-    },
-    {
-      "source": "StopGame",
-      "language": "ru",
-      "title": "Карновал квестов + | Redjack: Revenge of the Brethren (эфир четвёртый)",
-      "normalizedTitle": "карновал квестов redjack revenge of the brethren эфир четвёртый",
-      "url": "https://stopgame.ru/show/162892/karnoval_kvestov_redjack_revenge_of_the_brethren_efir_chetvertyy",
-      "summary": "Это пятница пирррратская!",
-      "publishedAt": "Sat, 25 Jul 2026 21:14:25 +0300"
     },
     {
       "source": "VG247",
