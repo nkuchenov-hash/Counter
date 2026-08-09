@@ -1043,6 +1043,7 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
     // changes its text width or line wrapping. The button itself appears only
     // for the active block and sits outside the hold-to-drag listener.
     final content = Padding(
+      key: ValueKey<String>(block.id),
       padding: const EdgeInsets.only(right: 36),
       child: item,
     );
@@ -1050,6 +1051,7 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
 
     final scheme = Theme.of(context).colorScheme;
     return Stack(
+      key: ValueKey<String>(block.id),
       clipBehavior: Clip.none,
       children: [
         content,
