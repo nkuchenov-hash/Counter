@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-09T21:54:06.917Z",
+  "updatedAt": "2026-08-09T21:55:37.384Z",
   "count": 78,
   "sourcePool": [
     "Steam",
@@ -471,7 +471,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 8.7,
-      "recommendations": 5212666,
+      "recommendations": 5212590,
       "owners": "100,000,000 .. 200,000,000",
       "peakConcurrent": 1013936,
       "sourceEvidence": [
@@ -483,7 +483,7 @@
         "steamSpy": "https://steamspy.com/app/730",
         "metacritic": ""
       },
-      "popularityScore": 10541.705998184592,
+      "popularityScore": 10541.705364984327,
       "igropoiskRating": 8.7,
       "editorialSources": [],
       "materials": {
@@ -822,7 +822,7 @@
       "movies": [],
       "criticRating": 9.7,
       "steamUserRating": 9.3,
-      "recommendations": 116947,
+      "recommendations": 116952,
       "owners": "2,000,000 .. 5,000,000",
       "peakConcurrent": 918,
       "sourceEvidence": [
@@ -835,7 +835,7 @@
         "steamSpy": "https://steamspy.com/app/632470",
         "metacritic": "https://www.metacritic.com/game/pc/disco-elysium-the-final-cut?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10436.799279907043,
+      "popularityScore": 10436.801136651913,
       "igropoiskRating": 9.6,
       "editorialSources": [],
       "materials": {
@@ -1074,7 +1074,7 @@
       "movies": [],
       "criticRating": 7,
       "steamUserRating": 8.4,
-      "recommendations": 584296,
+      "recommendations": 584297,
       "owners": "20,000,000 .. 50,000,000",
       "peakConcurrent": 22170,
       "sourceEvidence": [
@@ -1087,7 +1087,7 @@
         "steamSpy": "https://steamspy.com/app/346110",
         "metacritic": "https://www.metacritic.com/game/pc/ark-survival-evolved?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10396.66336564852,
+      "popularityScore": 10396.66343997615,
       "igropoiskRating": 7.5,
       "editorialSources": [],
       "materials": {
@@ -1484,7 +1484,7 @@
       "movies": [],
       "criticRating": 9.5,
       "steamUserRating": 9.9,
-      "recommendations": 388875,
+      "recommendations": 388872,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 1959,
       "sourceEvidence": [
@@ -1497,7 +1497,7 @@
         "steamSpy": "https://steamspy.com/app/620",
         "metacritic": "https://www.metacritic.com/game/pc/portal-2?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10348.981114091244,
+      "popularityScore": 10348.980779051677,
       "igropoiskRating": 9.6,
       "editorialSources": [],
       "materials": {
@@ -1573,7 +1573,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 9.4,
-      "recommendations": 456977,
+      "recommendations": 456974,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 14439,
       "sourceEvidence": [
@@ -1585,7 +1585,7 @@
         "steamSpy": "https://steamspy.com/app/892970",
         "metacritic": ""
       },
-      "popularityScore": 10325.989529261124,
+      "popularityScore": 10325.989244151617,
       "igropoiskRating": 9.4,
       "editorialSources": [],
       "materials": {
@@ -1998,7 +1998,7 @@
       "movies": [],
       "criticRating": 8.9,
       "steamUserRating": 9.7,
-      "recommendations": 155508,
+      "recommendations": 155510,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 2559,
       "sourceEvidence": [
@@ -2011,7 +2011,7 @@
         "steamSpy": "https://steamspy.com/app/588650",
         "metacritic": "https://www.metacritic.com/game/pc/dead-cells?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10259.17555286505,
+      "popularityScore": 10259.176111407243,
       "igropoiskRating": 9.2,
       "editorialSources": [],
       "materials": {
@@ -2524,7 +2524,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 9.4,
-      "recommendations": 397895,
+      "recommendations": 397858,
       "owners": "50,000,000 .. 100,000,000",
       "peakConcurrent": 18028,
       "sourceEvidence": [
@@ -2539,7 +2539,7 @@
         "steamSpy": "https://steamspy.com/app/1623730",
         "metacritic": ""
       },
-      "popularityScore": 9939.976957325884,
+      "popularityScore": 9939.972918671814,
       "igropoiskRating": 9.4,
       "editorialSources": [
         "IGN",
@@ -3908,7 +3908,7 @@
       "movies": [],
       "criticRating": 9.1,
       "steamUserRating": 9.7,
-      "recommendations": 233281,
+      "recommendations": 233277,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 12596,
       "sourceEvidence": [
@@ -3921,7 +3921,7 @@
         "steamSpy": "https://steamspy.com/app/526870",
         "metacritic": "https://www.metacritic.com/game/pc/satisfactory?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9766.788122999711,
+      "popularityScore": 9766.787378324672,
       "igropoiskRating": 9.3,
       "editorialSources": [],
       "materials": {
@@ -4092,7 +4092,7 @@
       "movies": [],
       "criticRating": 8.7,
       "steamUserRating": 9.8,
-      "recommendations": 207028,
+      "recommendations": 207025,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 19211,
       "sourceEvidence": [
@@ -4105,7 +4105,7 @@
         "steamSpy": "https://steamspy.com/app/294100",
         "metacritic": "https://www.metacritic.com/game/pc/rimworld?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9741.603118438365,
+      "popularityScore": 9741.602489109679,
       "igropoiskRating": 9.1,
       "editorialSources": [],
       "materials": {
@@ -4638,7 +4638,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 9.6,
-      "recommendations": 681636,
+      "recommendations": 681638,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 9978,
       "sourceEvidence": [
@@ -4650,7 +4650,7 @@
         "steamSpy": "https://steamspy.com/app/739630",
         "metacritic": ""
       },
-      "popularityScore": 9683.355315637675,
+      "popularityScore": 9683.355443064398,
       "igropoiskRating": 9.6,
       "editorialSources": [],
       "materials": {
@@ -7249,7 +7249,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 8.9,
-      "recommendations": 278008,
+      "recommendations": 278006,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 17045,
       "sourceEvidence": [
@@ -7261,7 +7261,7 @@
         "steamSpy": "https://steamspy.com/app/251570",
         "metacritic": ""
       },
-      "popularityScore": 9254.405885558379,
+      "popularityScore": 9254.405573125297,
       "igropoiskRating": 8.9,
       "editorialSources": [],
       "materials": {
