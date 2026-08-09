@@ -42,6 +42,7 @@ Use `CHANGELOG.md` and `docs/ROADMAP.md` to understand what is already built bef
 - Feature status, shipped work, accepted work, or "what is already built": read `CHANGELOG.md` and `docs/ROADMAP.md`.
 - UX behavior, tap/save/delete/loading/offline/swipe contracts: read `docs/UX_CONTRACT.md`.
 - Runtime architecture, optimistic UI, performance, time rules, and PocketBase relation contracts: read `docs/ARCHITECTURE.md`.
+- **Notes editor, Notes block wrappers/reorder, mobile keyboard, caret visibility, or gray/blank editor regressions:** read `docs/NOTES_EDITOR_CONTRACT.md` before editing production Notes UI.
 - Project Knowledge upload list (14 docs, ≤25): read `docs/PROJECT_KNOWLEDGE_PACK.md`.
 
 ## Architecture Boundaries
@@ -127,6 +128,15 @@ Emergency response:
 - `CategoryChip`, `TagQuickPickStrip`, and related shared chip components are current shared/legacy-safe paths; future canonical chip work must follow `docs/DESIGN_SYSTEM.md`.
 - Component Lab is admin-only, mock-data-only, and must not write to PocketBase or expose production user data.
 - Do not add duplicate local UI components when a canonical component exists unless the inventory explicitly marks the old pattern as temporary legacy.
+
+## Notes Editor Guardrail
+
+For any production Notes editor change, `docs/NOTES_EDITOR_CONTRACT.md` is mandatory reading. In particular:
+
+- keep the existing Notes body `ReorderableListView` as the single vertical scroll owner;
+- every top-level widget returned by the reorderable `itemBuilder` must retain a stable `ValueKey<String>(block.id)` after any `Padding` / `Stack` / `Column` wrapper is added;
+- do not reintroduce global focus/caret tree traversal or `EditableTextState.bringIntoView` keyboard hacks;
+- a gray body with the surrounding Notes shell still visible is a P0 regression; inspect reorderable root keys and scroll ownership first.
 
 ## Hard Guardrails
 
