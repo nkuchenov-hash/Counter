@@ -27,18 +27,19 @@ jobs:
 
           path = Path('lib/features/lists/lists_view.dart')
           text = path.read_text(encoding='utf-8')
-
-          old = """                child: Text(
-                  t(locale, 'notes_v3_title'),
-                  style: TextStyle(
-"""
-          new = """                child: Text(
-                  t(locale, 'notes_v3_title'),
-                  maxLines: 1,
-                  softWrap: false,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-"""
+          old = (
+              "                child: Text(\n"
+              "                  t(locale, 'notes_v3_title'),\n"
+              "                  style: TextStyle(\n"
+          )
+          new = (
+              "                child: Text(\n"
+              "                  t(locale, 'notes_v3_title'),\n"
+              "                  maxLines: 1,\n"
+              "                  softWrap: false,\n"
+              "                  overflow: TextOverflow.ellipsis,\n"
+              "                  style: TextStyle(\n"
+          )
 
           if text.count(old) != 1:
               raise SystemExit(f'Expected exactly one Notes/Lists title fragment, found {text.count(old)}')
