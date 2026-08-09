@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-08T22:17:08.498Z",
+  "updatedAt": "2026-08-09T05:32:02.014Z",
   "count": 495,
   "sources": [
     "IGN",
@@ -14,6 +14,78 @@
     "Игромания"
   ],
   "articles": [
+    {
+      "source": "PC Gamer",
+      "language": "en",
+      "title": "Warhammer 40,000: Battlesector has a roadmap of upcoming additions, including a new narrative DLC",
+      "normalizedTitle": "warhammer 40 000 battlesector has a roadmap of upcoming additions including a new narrative dlc",
+      "url": "https://www.pcgamer.com/games/strategy/warhammer-40-000-battlesector-has-a-roadmap-of-upcoming-additions-including-a-new-narrative-dlc/",
+      "summary": "And another playable faction.",
+      "publishedAt": "Sun, 09 Aug 2026 03:49:46 +0000"
+    },
+    {
+      "source": "PC Gamer",
+      "language": "en",
+      "title": "The GTA 3D trilogy fanpatch has its biggest update, with over 100 new fixes including restored dialogue for San Andreas",
+      "normalizedTitle": "the gta 3d trilogy fanpatch has its biggest update with over 100 new fixes including restored dialogue for san andreas",
+      "url": "https://www.pcgamer.com/games/grand-theft-auto/the-gta-3d-trilogy-fanpatch-has-its-biggest-update-with-over-100-new-fixes-including-restored-dialogue-for-san-andreas/",
+      "summary": "Here we go again.",
+      "publishedAt": "Sun, 09 Aug 2026 02:34:05 +0000"
+    },
+    {
+      "source": "Polygon",
+      "language": "en",
+      "title": "5 Anime Endings That Fans Still Argue About (I'm Still Mad About #3)",
+      "normalizedTitle": "5 anime endings that fans still argue about i m still mad about 3",
+      "url": "https://www.polygon.com/best-anime-endings-divisive-controversial/",
+      "summary": "These infamous conclusions continue to spark discussions, debates, and everything in between.",
+      "publishedAt": "Sun, 09 Aug 2026 02:00:22 GMT"
+    },
+    {
+      "source": "Polygon",
+      "language": "en",
+      "title": "Spider-Man: Brand New Day's Most Talked About Character Quietly Sets Up Marvel's X-Men Future",
+      "normalizedTitle": "spider man brand new day s most talked about character quietly sets up marvel s x men future",
+      "url": "https://www.polygon.com/spider-man-jean-grey-new-take-x-men/",
+      "summary": "Spider-Man: Brand New Day introduces a new version of Jean Grey, setting the stage for a new take on the X-Men.",
+      "publishedAt": "Sun, 09 Aug 2026 01:00:12 GMT"
+    },
+    {
+      "source": "Polygon",
+      "language": "en",
+      "title": "Apple TV’s Smartest Sci-Fi Thriller Officially Returns in 3 Weeks",
+      "normalizedTitle": "apple tv s smartest sci fi thriller officially returns in 3 weeks",
+      "url": "https://www.polygon.com/dark-matter-season-2-recap/",
+      "summary": "Here's everything you need to remember about the twisty plot before venturing back into Blake Crouch's world.",
+      "publishedAt": "Sun, 09 Aug 2026 00:00:11 GMT"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "Mortal Kombat Director 'Not Sure' About Return for Third Movie as Mortal Kombat 3 Remains in Limbo",
+      "normalizedTitle": "mortal kombat director not sure about return for third movie as mortal kombat 3 remains in limbo",
+      "url": "https://www.ign.com/articles/mortal-kombat-director-not-sure-about-return-for-third-movie-as-mortal-kombat-3-remains-in-limbo",
+      "summary": "Mortal Kombat movie director Simon McQuoid has cast doubt on his return to the franchise as work on a third movie remains in limbo.",
+      "publishedAt": "Sat, 8 Aug 2026 23:19:52 +0000"
+    },
+    {
+      "source": "Polygon",
+      "language": "en",
+      "title": "The Witcher season 5 delayed on Netflix, new report says",
+      "normalizedTitle": "the witcher season 5 delayed on netflix new report says",
+      "url": "https://www.polygon.com/the-witcher-season-5-has-been-quietly-delayed/",
+      "summary": "Netflix's The Witcher season 5 was expected to have its final showing in 2026, but has been quietly delayed to 2027, according to What's On Netflix.",
+      "publishedAt": "Sat, 08 Aug 2026 22:19:04 GMT"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "Freddy Fazbear's Pizza Opening Permanent Location Featuring Animatronic Stage Shows in 2027",
+      "normalizedTitle": "freddy fazbear s pizza opening permanent location featuring animatronic stage shows in 2027",
+      "url": "https://www.ign.com/articles/freddy-fazbears-pizza-opening-permanent-location-featuring-animatronic-stage-shows-in-2027",
+      "summary": "Freddy Fazbear's Pizza is coming to life thanks to a new collaboration between Five Nights at Freddy's and entertainment and retail center American Dream.",
+      "publishedAt": "Sat, 8 Aug 2026 22:00:13 +0000"
+    },
     {
       "source": "Rock Paper Shotgun",
       "language": "en",
@@ -47,7 +119,7 @@
       "title": "'They Fundamentally Don't Understand Art' — Doom Dev Blasts Xbox After Microsoft 'Gutted' id Software With Layoffs",
       "normalizedTitle": "they fundamentally don t understand art doom dev blasts xbox after microsoft gutted id software with layoffs",
       "url": "https://www.ign.com/articles/they-fundamentally-dont-understand-art-doom-dev-blasts-xbox-after-microsoft-gutted-id-software-with-layoffs",
-      "summary": "After layoffs ripped through Doom developer id Software in July, id Software lead services programmer Chris Hays has taken aim at Xbox: \"They fundamentally don't understand art.\"",
+      "summary": "After layoffs ripped through Doom developer id Software in July, lead services programmer Chris Hays has taken aim at Xbox: \"They fundamentally don't understand art.\"",
       "publishedAt": "Sat, 8 Aug 2026 20:03:41 +0000"
     },
     {
@@ -276,33 +348,6 @@
       "publishedAt": "Sat, 08 Aug 2026 14:00:31 +0000"
     },
     {
-      "source": "Polygon",
-      "language": "en",
-      "title": "Golden Sun Is One of the Best RPGs Ever Made — and the Last of Its Kind",
-      "normalizedTitle": "golden sun is one of the best rpgs ever made and the last of its kind",
-      "url": "https://www.polygon.com/golden-sun-anniversary-switch-online/",
-      "summary": "Golden Sun drew on classic RPGs like Final Fantasy and turned those inspirations into something unique and special",
-      "publishedAt": "Sat, 08 Aug 2026 14:00:12 GMT"
-    },
-    {
-      "source": "Polygon",
-      "language": "en",
-      "title": "Deborah Ann Woll Says Tales from Woodcreek Season 2 Is 'Clue at the Overlook Hotel'",
-      "normalizedTitle": "deborah ann woll says tales from woodcreek season 2 is clue at the overlook hotel",
-      "url": "https://www.polygon.com/deborah-ann-woll-tales-from-woodcreek-season-2-is-clue-at-the-overlook-hotel/",
-      "summary": "The D&D actual play returns with a sprawling 1920s mansion, an ambitious ARG, and a murder mystery inspired by Clue and The Shining.",
-      "publishedAt": "Sat, 08 Aug 2026 13:30:11 GMT"
-    },
-    {
-      "source": "Polygon",
-      "language": "en",
-      "title": "What time does Mastery Monday start in Fortnite?",
-      "normalizedTitle": "what time does mastery monday start in fortnite",
-      "url": "https://www.polygon.com/fortnite-chapter-7-season-3-mastery-monday-start-end-time-when/",
-      "summary": "Here is the schedule for Mastery Monday for Fortnite Chapter 7 Season 3, so you don't miss out on your chance to level up your sprites!",
-      "publishedAt": "Sat, 08 Aug 2026 13:01:11 GMT"
-    },
-    {
       "source": "GamesRadar+",
       "language": "en",
       "title": "Doom developer slams Xbox after layoffs hit id Software: \"They fundamentally don't understand art. They don't understand games\"",
@@ -310,15 +355,6 @@
       "url": "https://www.gamesradar.com/games/fps/doom-developer-slams-xbox-after-layoffs-hit-id-software-they-fundamentally-dont-understand-art-they-dont-understand-games/",
       "summary": "\"We're not the same iD, we're half the same iD.\"",
       "publishedAt": "Sat, 08 Aug 2026 13:00:35 +0000"
-    },
-    {
-      "source": "Polygon",
-      "language": "en",
-      "title": "The 10 Most Ambitious Video Games Ever Made",
-      "normalizedTitle": "the 10 most ambitious video games ever made",
-      "url": "https://www.polygon.com/most-ambitious-video-games-ever/",
-      "summary": "Ten games in particular have used massive scale, ingenuity, and/or complexity to deliver the most ambitious experiences ever.",
-      "publishedAt": "Sat, 08 Aug 2026 13:00:12 GMT"
     },
     {
       "source": "PC Gamer",
@@ -681,15 +717,6 @@
       "publishedAt": "Fri, 7 Aug 2026 19:50:03 +0000"
     },
     {
-      "source": "IGN",
-      "language": "en",
-      "title": "Heated Rivalry Casts Justice Smith and Charlie Gillespie as Harris and Troy for Season 2",
-      "normalizedTitle": "heated rivalry casts justice smith and charlie gillespie as harris and troy for season 2",
-      "url": "https://www.ign.com/articles/heated-rivalry-casts-harris-and-troy-with-justice-smith-and-charlie-gillespie-for-season-2",
-      "summary": "The widely popular queer hockey drama series, Heated Rivalry, has just added to its cast for Season 2, with Crave announcing the casting of the fan-favorite characters Harris Drover and Troy Barrett in Justice Smith and Charlie Gillespie. Fans have been discussing their dream cast for the past eight months for these two specific characters, who are loved across the Game Changers book series by Rachel Reid, and are the main focus of book 5, Role Model. Smith will play Harris, the social media manager for the Ottawa Centaurs hockey team, as well as a bright light to everyone around him. Gillespi",
-      "publishedAt": "Fri, 7 Aug 2026 19:41:58 +0000"
-    },
-    {
       "source": "GameSpot",
       "language": "en",
       "title": "THQ Nordic Showcase 2026: All The News, Trailers, And Reveals",
@@ -697,15 +724,6 @@
       "url": "https://www.gamespot.com/articles/thq-nordic-showcase-2026-all-the-news-trailers-and-reveals/",
       "summary": "Since the Not-E3 blitz of summer gaming showcases, things have been relatively quiet since then. Amidst that break, THQ Nordic dropped a new showcase full of trailers to show what the publisher has on the way from its various studios. While it wasn't focused on big-name games like the ones you'd find in dedicated Xbox and PlayStation showcases, THQ Nordic instead has titles in very specific niche genres and IP. https://youtu.be/ToLh5Ruefxk Several of them are already available via early access or are already out and have post-launch plans in place, so if you're a fan of games that scratch a ve",
       "publishedAt": "Fri, 07 Aug 2026 19:30:00 +0000"
-    },
-    {
-      "source": "IGN",
-      "language": "en",
-      "title": "Christopher Nolan's The Odyssey Passes $1 Billion at the Global Box Office",
-      "normalizedTitle": "christopher nolan s the odyssey passes 1 billion at the global box office",
-      "url": "https://www.ign.com/articles/christopher-nolans-the-odyssey-passes-1-billion-at-the-global-box-office",
-      "summary": "Christopher Nolan's The Odyssey has officially passed $1 billion at the global box office after just three weeks in theaters.",
-      "publishedAt": "Fri, 7 Aug 2026 19:11:25 +0000"
     },
     {
       "source": "PC Gamer",
@@ -1914,15 +1932,6 @@
       "publishedAt": "Thu, 06 Aug 2026 04:04:30 +0000"
     },
     {
-      "source": "PC Gamer",
-      "language": "en",
-      "title": "Can you play Big Walk alone or with randoms?",
-      "normalizedTitle": "can you play big walk alone or with randoms",
-      "url": "https://www.pcgamer.com/games/adventure/can-you-play-big-walk-alone-or-with-randoms/",
-      "summary": "The most widely adored co-op game of 2026 is a bit tough on loners.",
-      "publishedAt": "Thu, 06 Aug 2026 03:40:16 +0000"
-    },
-    {
       "source": "StopGame",
       "language": "ru",
       "title": "В Ubisoft вернулся гейм-директор AC Valhalla, EA — частная компания, причина провала «Бордерлендс»…",
@@ -1930,15 +1939,6 @@
       "url": "https://stopgame.ru/show/163126/v_ubisoft_vernulsya_geym_direktor_ac_valhalla_ea_chastnaya_kompaniya_prichina_provala_borderlends",
       "summary": "В Ubisoft вернулся гейм-директор Assassin’s Creed Valhalla; сделка по покупке Electronic Arts завершена, в фирме могут пройти сокращения; со следующим апдейтом Marvel Rivals будет занимать меньше места на накопителе; режиссёр фильма по Borderlands заявил, что рейтинг PG-13 погубил экранизацию; битемап The Walking Dead: Streets of Survival прибудет 18 сентября; Moonlighter 2: The Endless Vault выйдет из раннего доступа",
       "publishedAt": "Thu, 06 Aug 2026 06:00:07 +0300"
-    },
-    {
-      "source": "PC Gamer",
-      "language": "en",
-      "title": "Former Bethesda lead artist is looking forward to Fallout 3's remaster because the game they released was '100% not what we intended, and it was very, very constrained'",
-      "normalizedTitle": "former bethesda lead artist is looking forward to fallout 3 s remaster because the game they released was 100 not what we intended and it was very very constrained",
-      "url": "https://www.pcgamer.com/games/fallout/former-bethesda-lead-artist-is-looking-forward-to-fallout-3s-remaster-because-the-game-they-released-was-100-percent-not-what-we-intended-and-it-was-very-very-constrained/",
-      "summary": "\"And you could only place so many lights.\"",
-      "publishedAt": "Thu, 06 Aug 2026 01:32:44 +0000"
     },
     {
       "source": "StopGame",
