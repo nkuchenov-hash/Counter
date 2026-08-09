@@ -1222,6 +1222,9 @@ class _NotesLibraryHeader extends StatelessWidget {
               Expanded(
                 child: Text(
                   t(locale, 'notes_v3_title'),
+                  maxLines: 1,
+                  softWrap: false,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontSize: wide ? 30 : 24,
                     fontWeight: FontWeight.w700,
