@@ -8,8 +8,9 @@ import 'package:flutter/material.dart';
 
 /// Daily statistics inside Timeline.
 ///
-/// The existing expandable/summed record tree remains available as the
-/// Details dashboard; the glass overview/day/category views are additive.
+/// Stats is one Timeline mode. Inside Stats there is only one navigation level:
+/// Overview / Day / Plan-Fact / Details. The original summed/expandable tree is
+/// preserved in Details.
 class StatsView extends StatefulWidget {
   const StatsView({
     super.key,
@@ -24,8 +25,6 @@ class StatsView extends StatefulWidget {
   final List<CategoryRule> rules;
   final bool isFutureDate;
   final DateTime selectedDate;
-
-  /// Swipe between calendar days in Stats; matches Timeline day navigation.
   final ValueChanged<DateTime>? onDayChanged;
 
   @override
@@ -42,7 +41,6 @@ class _StatsViewState extends State<StatsView> {
   List<StatsNode>? _cachedAggregated;
   int? _lastDashboardKey;
   DayStatsDashboardData? _cachedDashboard;
-
   PageController? _dayPageController;
 
   DateTime _dateOnly(DateTime value) =>
@@ -65,35 +63,8 @@ class _StatsViewState extends State<StatsView> {
     );
   }
 
-  /// The Timeline record mapper may carry a category as a local int, a
-  /// PocketBase relation id, or a stored business key depending on when the
-  /// record was created. The stats dashboard expects the local category id.
-  /// Normalize only the dashboard copy so every session can recover the same
-  /// category color that the normal Timeline card already uses.
-  List<Map<String, dynamic>> _recordsWithResolvedCategoryIds(
-    List<Map<String, dynamic>> records,
-  ) {
-    final db = DatabaseService.instance;
-    return records.map((record) {
-      final rawCategory =
-          record['categoryId'] ?? record['category_id'] ?? record['category'];
-      if (rawCategory == null) return record;
-
-      final probe = record['categoryId'] == rawCategory
-          ? record
-          : <String, dynamic>{...record, 'categoryId': rawCategory};
-      final resolved = db.resolvedCategoryIdForRecord(probe);
-      if (resolved == null) return record;
-
-      final existing = record['categoryId'];
-      if (existing is int && existing == resolved) return record;
-      return <String, dynamic>{...record, 'categoryId': resolved};
-    }).toList(growable: false);
-  }
-
   int _rulesVisualSignature(Iterable<CategoryRule> roots) {
     var signature = 17;
-
     void walk(CategoryRule rule) {
       signature = Object.hash(
         signature,
@@ -181,37 +152,10 @@ class _StatsViewState extends State<StatsView> {
         ),
       );
     }
-
-    final locale = currentLocale.value;
-    return DefaultTabController(
-      length: 2,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          TabBar(
-            tabs: [
-              Tab(text: t(locale, 'stats_tab_time_tracker')),
-              Tab(text: t(locale, 'stats_tab_plan_fact')),
-            ],
-          ),
-          Expanded(
-            child: TabBarView(
-              children: [
-                _buildTrackerTab(context),
-                PlanVsFactTab(
-                  selectedDate: widget.selectedDate,
-                  records: widget.records,
-                  isFutureDate: widget.isFutureDate,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
+    return _buildDayPager(context);
   }
 
-  Widget _buildTrackerTab(BuildContext context) {
+  Widget _buildDayPager(BuildContext context) {
     final aggregatedKey = _aggregatedCacheKey(
       widget.records,
       widget.selectedDate,
@@ -236,9 +180,8 @@ class _StatsViewState extends State<StatsView> {
     if (dashboardKey == _lastDashboardKey && _cachedDashboard != null) {
       dashboard = _cachedDashboard!;
     } else {
-      final dashboardRecords = _recordsWithResolvedCategoryIds(widget.records);
       dashboard = DayStatsDashboardData.build(
-        records: dashboardRecords,
+        records: widget.records,
         rules: widget.rules,
         aggregated: aggregated,
         selectedDate: widget.selectedDate,
@@ -247,7 +190,7 @@ class _StatsViewState extends State<StatsView> {
       _cachedDashboard = dashboard;
     }
 
-    final content = _buildStatsContent(context, aggregated, dashboard);
+    final content = _buildStatsContent(aggregated, dashboard);
     final navigate = widget.onDayChanged;
     final controller = _dayPageController;
     if (navigate == null || controller == null) return content;
@@ -285,24 +228,9 @@ class _StatsViewState extends State<StatsView> {
   }
 
   Widget _buildStatsContent(
-    BuildContext context,
     List<StatsNode> aggregated,
     DayStatsDashboardData dashboard,
   ) {
-    if (widget.records.isEmpty) {
-      final scheme = Theme.of(context).colorScheme;
-      return Center(
-        child: Text(
-          widget.isFutureDate
-              ? t(currentLocale.value, 'no_planned_tasks')
-              : t(currentLocale.value, 'no_records_yet'),
-          style: Theme.of(
-            context,
-          ).textTheme.bodyLarge?.copyWith(color: scheme.onSurfaceVariant),
-        ),
-      );
-    }
-
     return DayStatsDashboard(
       mode: _dashboardMode,
       onModeChanged: (mode) {
@@ -310,6 +238,11 @@ class _StatsViewState extends State<StatsView> {
         setState(() => _dashboardMode = mode);
       },
       data: dashboard,
+      planFactView: PlanVsFactTab(
+        selectedDate: widget.selectedDate,
+        records: widget.records,
+        isFutureDate: widget.isFutureDate,
+      ),
       detailsView: StatsDetailTree(
         roots: aggregated,
         totalDuration: Duration(seconds: dashboard.totalSeconds),
