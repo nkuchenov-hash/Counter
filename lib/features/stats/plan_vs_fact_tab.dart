@@ -80,10 +80,10 @@ class _PlanVsFactTabState extends State<PlanVsFactTab> {
   void initState() {
     super.initState();
     _statsFuture = _reloadStats();
-    _planRefreshSub =
-        DatabaseService.instance.planningRefreshNotifications.listen((_) {
-      if (mounted) setState(() => _statsFuture = _reloadStats());
-    });
+    _planRefreshSub = DatabaseService.instance.planningRefreshNotifications
+        .listen((_) {
+          if (mounted) setState(() => _statsFuture = _reloadStats());
+        });
   }
 
   @override
@@ -155,36 +155,36 @@ class _PlanVsFactTabState extends State<PlanVsFactTab> {
             .aggregateSourcePlanActualSecondsForWallCalendarDay(
               widget.selectedDate,
             );
-        final ghostPlans = stats.plansScheduledThisDay.where((task) {
-          final raw = task.pocketRecordId?.trim();
-          if (raw == null || raw.isEmpty) return true;
-          final key = DatabaseService.pocketRelationIdOrNull(raw) ?? raw;
-          return (byPlan[key] ?? 0) <= 0;
-        }).toList(growable: false);
+        final ghostPlans = stats.plansScheduledThisDay
+            .where((task) {
+              final raw = task.pocketRecordId?.trim();
+              if (raw == null || raw.isEmpty) return true;
+              final key = DatabaseService.pocketRelationIdOrNull(raw) ?? raw;
+              return (byPlan[key] ?? 0) <= 0;
+            })
+            .toList(growable: false);
 
         final roots = DatabaseService.instance.rules;
         final knownIds = _allRuleTreeIds(roots);
-        final orphanIds = allCatIds
-            .where((id) => !knownIds.contains(id))
-            .toList()
-          ..sort();
+        final orphanIds =
+            allCatIds.where((id) => !knownIds.contains(id)).toList()..sort();
 
-        final activeRoots = roots.where((r) {
-          final p = _rollupSubtreeSeconds(r.id, planned);
-          final a = _rollupSubtreeSeconds(r.id, actual);
-          return p > 0 || a > 0;
-        }).toList()
-          ..sort((a, b) {
-            final av = math.max(
-              _rollupSubtreeSeconds(a.id, planned),
-              _rollupSubtreeSeconds(a.id, actual),
-            );
-            final bv = math.max(
-              _rollupSubtreeSeconds(b.id, planned),
-              _rollupSubtreeSeconds(b.id, actual),
-            );
-            return bv.compareTo(av);
-          });
+        final activeRoots =
+            roots.where((r) {
+              final p = _rollupSubtreeSeconds(r.id, planned);
+              final a = _rollupSubtreeSeconds(r.id, actual);
+              return p > 0 || a > 0;
+            }).toList()..sort((a, b) {
+              final av = math.max(
+                _rollupSubtreeSeconds(a.id, planned),
+                _rollupSubtreeSeconds(a.id, actual),
+              );
+              final bv = math.max(
+                _rollupSubtreeSeconds(b.id, planned),
+                _rollupSubtreeSeconds(b.id, actual),
+              );
+              return bv.compareTo(av);
+            });
 
         return LayoutBuilder(
           builder: (context, constraints) {
@@ -253,8 +253,8 @@ class _PlanFactHero extends StatelessWidget {
     final accent = diff > 0
         ? scheme.tertiary
         : diff < 0
-            ? scheme.primary
-            : scheme.secondary;
+        ? scheme.primary
+        : scheme.secondary;
 
     return _Glass(
       accent: accent,
@@ -288,9 +288,7 @@ class _PlanFactHero extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: accent.withValues(alpha: 0.10),
                       borderRadius: BorderRadius.circular(999),
-                      border: Border.all(
-                        color: accent.withValues(alpha: 0.18),
-                      ),
+                      border: Border.all(color: accent.withValues(alpha: 0.18)),
                     ),
                     child: Text(
                       '$percent%',
@@ -494,7 +492,9 @@ class _OverallRail extends StatelessWidget {
               Positioned.fill(
                 child: DecoratedBox(
                   decoration: BoxDecoration(
-                    color: scheme.surfaceContainerHighest.withValues(alpha: 0.25),
+                    color: scheme.surfaceContainerHighest.withValues(
+                      alpha: 0.25,
+                    ),
                     borderRadius: BorderRadius.circular(999),
                   ),
                 ),
@@ -584,10 +584,9 @@ class _LegendItem extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
       decoration: BoxDecoration(
-        color: Theme.of(context)
-            .colorScheme
-            .surfaceContainerHighest
-            .withValues(alpha: 0.20),
+        color: Theme.of(
+          context,
+        ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.20),
         borderRadius: BorderRadius.circular(999),
       ),
       child: Row(
@@ -597,9 +596,9 @@ class _LegendItem extends StatelessWidget {
           const SizedBox(width: 7),
           Text(
             label,
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w700),
           ),
         ],
       ),
@@ -622,21 +621,21 @@ class _CategoryCompareCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = _rollupSubtreeSeconds(rule.id, planned);
     final a = _rollupSubtreeSeconds(rule.id, actual);
-    final children = (rule.children ?? const <CategoryRule>[]).where((child) {
-      return _rollupSubtreeSeconds(child.id, planned) > 0 ||
-          _rollupSubtreeSeconds(child.id, actual) > 0;
-    }).toList()
-      ..sort((x, y) {
-        final xv = math.max(
-          _rollupSubtreeSeconds(x.id, planned),
-          _rollupSubtreeSeconds(x.id, actual),
-        );
-        final yv = math.max(
-          _rollupSubtreeSeconds(y.id, planned),
-          _rollupSubtreeSeconds(y.id, actual),
-        );
-        return yv.compareTo(xv);
-      });
+    final children =
+        (rule.children ?? const <CategoryRule>[]).where((child) {
+          return _rollupSubtreeSeconds(child.id, planned) > 0 ||
+              _rollupSubtreeSeconds(child.id, actual) > 0;
+        }).toList()..sort((x, y) {
+          final xv = math.max(
+            _rollupSubtreeSeconds(x.id, planned),
+            _rollupSubtreeSeconds(x.id, actual),
+          );
+          final yv = math.max(
+            _rollupSubtreeSeconds(y.id, planned),
+            _rollupSubtreeSeconds(y.id, actual),
+          );
+          return yv.compareTo(xv);
+        });
 
     return _Glass(
       accent: rule.colorOrDefault,
@@ -652,15 +651,13 @@ class _CategoryCompareCard extends StatelessWidget {
             fact: a,
           ),
           const SizedBox(height: 12),
-          _CompareRail(
-            plan: p,
-            fact: a,
-            color: rule.colorOrDefault,
-          ),
+          _CompareRail(plan: p, fact: a, color: rule.colorOrDefault),
           if (children.isNotEmpty) ...[
             const SizedBox(height: 8),
             Theme(
-              data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+              data: Theme.of(
+                context,
+              ).copyWith(dividerColor: Colors.transparent),
               child: ExpansionTile(
                 tilePadding: EdgeInsets.zero,
                 childrenPadding: const EdgeInsets.only(top: 2),
@@ -772,8 +769,8 @@ class _CompareHeader extends StatelessWidget {
     final diffColor = diff > 0
         ? scheme.tertiary
         : diff < 0
-            ? scheme.primary
-            : scheme.onSurfaceVariant;
+        ? scheme.primary
+        : scheme.onSurfaceVariant;
 
     return Row(
       children: [
@@ -792,8 +789,11 @@ class _CompareHeader extends StatelessWidget {
             label,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: (compact ? theme.textTheme.bodyMedium : theme.textTheme.titleMedium)
-                ?.copyWith(fontWeight: FontWeight.w800),
+            style:
+                (compact
+                        ? theme.textTheme.bodyMedium
+                        : theme.textTheme.titleMedium)
+                    ?.copyWith(fontWeight: FontWeight.w800),
           ),
         ),
         const SizedBox(width: 8),
@@ -848,7 +848,9 @@ class _CompareRail extends StatelessWidget {
               Positioned.fill(
                 child: DecoratedBox(
                   decoration: BoxDecoration(
-                    color: scheme.surfaceContainerHighest.withValues(alpha: 0.24),
+                    color: scheme.surfaceContainerHighest.withValues(
+                      alpha: 0.24,
+                    ),
                     borderRadius: BorderRadius.circular(999),
                   ),
                 ),
@@ -908,8 +910,8 @@ class _OrphanCompareCard extends StatelessWidget {
     final rawLabel = categoryId == CategoryRule.uncategorizedSyntheticId
         ? t(currentLocale.value, 'uncategorized')
         : rule != null
-            ? db.getCategoryPath(categoryId)
-            : 'Category ($categoryId)';
+        ? db.getCategoryPath(categoryId)
+        : 'Category ($categoryId)';
     return _Glass(
       accent: color,
       padding: const EdgeInsets.all(15),
@@ -989,21 +991,20 @@ class _UntrackedPlans extends StatelessWidget {
                           task.title,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(fontWeight: FontWeight.w700),
                         ),
                         Text(
                           localizeCategoryBreadcrumbPath(
-                            DatabaseService.instance
-                                .getCategoryPath(task.categoryId),
+                            DatabaseService.instance.getCategoryPath(
+                              task.categoryId,
+                            ),
                             currentLocale.value,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            color: scheme.onSurfaceVariant,
-                          ),
+                          style: Theme.of(context).textTheme.labelSmall
+                              ?.copyWith(color: scheme.onSurfaceVariant),
                         ),
                       ],
                     ),

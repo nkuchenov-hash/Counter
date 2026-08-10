@@ -266,10 +266,7 @@ class _ModeRail extends StatelessWidget {
           height: kAppCompactControlHeight,
           child: SegmentedButton<DayStatsDashboardMode>(
             showSelectedIcon: false,
-            style: appCompactSegmentedButtonStyle(
-              context,
-              segmentWidth: width,
-            ),
+            style: appCompactSegmentedButtonStyle(context, segmentWidth: width),
             segments: [
               ButtonSegment(
                 value: DayStatsDashboardMode.overview,
@@ -391,20 +388,22 @@ class _Hero extends StatelessWidget {
                   Expanded(
                     child: Text(
                       _durationLong(data.totalSeconds),
-                      style: (compact
-                              ? theme.textTheme.displaySmall
-                              : theme.textTheme.displayMedium)
-                          ?.copyWith(
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: -1.6,
-                            height: 0.95,
-                          ),
+                      style:
+                          (compact
+                                  ? theme.textTheme.displaySmall
+                                  : theme.textTheme.displayMedium)
+                              ?.copyWith(
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: -1.6,
+                                height: 0.95,
+                              ),
                     ),
                   ),
                   if (!compact)
                     _SoftPill(
                       icon: Icons.view_agenda_outlined,
-                      text: '${data.sessions.length} ${t(currentLocale.value, 'stats_pvf_row_tasks').toLowerCase()}',
+                      text:
+                          '${data.sessions.length} ${t(currentLocale.value, 'stats_pvf_row_tasks').toLowerCase()}',
                     ),
                 ],
               ),
@@ -510,9 +509,9 @@ class _HeroSignal extends StatelessWidget {
               label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w700),
             ),
           ),
           const SizedBox(width: 8),
@@ -813,9 +812,7 @@ class _DayView extends StatelessWidget {
             mobile ? 12 : 18,
             30,
           ),
-          children: [
-            _TimeGrid(data: data, mobile: mobile),
-          ],
+          children: [_TimeGrid(data: data, mobile: mobile)],
         );
       },
     );
@@ -842,12 +839,7 @@ class _TimeGrid extends StatelessWidget {
     final labelEvery = mobile ? 3 : 2;
 
     return _Glass(
-      padding: EdgeInsets.fromLTRB(
-        mobile ? 10 : 16,
-        16,
-        mobile ? 10 : 16,
-        18,
-      ),
+      padding: EdgeInsets.fromLTRB(mobile ? 10 : 16, 16, mobile ? 10 : 16, 18),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -866,8 +858,10 @@ class _TimeGrid extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      DateFormat('EEEE, MMM d', currentLocale.value)
-                          .format(data.selectedDate),
+                      DateFormat(
+                        'EEEE, MMM d',
+                        currentLocale.value,
+                      ).format(data.selectedDate),
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: scheme.onSurfaceVariant,
                       ),
@@ -898,7 +892,10 @@ class _TimeGrid extends StatelessWidget {
             LayoutBuilder(
               builder: (context, constraints) {
                 final bodyLeft = labelWidth + 8;
-                final bodyWidth = math.max(0.0, constraints.maxWidth - bodyLeft);
+                final bodyWidth = math.max(
+                  0.0,
+                  constraints.maxWidth - bodyLeft,
+                );
                 return SizedBox(
                   height: gridHeight,
                   child: Stack(
@@ -916,7 +913,9 @@ class _TimeGrid extends StatelessWidget {
                             ),
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
-                              color: scheme.outlineVariant.withValues(alpha: 0.20),
+                              color: scheme.outlineVariant.withValues(
+                                alpha: 0.20,
+                              ),
                             ),
                           ),
                         ),
@@ -1014,7 +1013,8 @@ class _TimeGrid extends StatelessWidget {
                                     ],
                                   ),
                                   child: Row(
-                                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.stretch,
                                     children: [
                                       Container(width: 4, color: session.color),
                                       if (showTitle) ...[
@@ -1033,18 +1033,25 @@ class _TimeGrid extends StatelessWidget {
                                                 Text(
                                                   session.title,
                                                   maxLines: 1,
-                                                  overflow: TextOverflow.ellipsis,
-                                                  style: theme.textTheme.bodySmall
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                  style: theme
+                                                      .textTheme
+                                                      .bodySmall
                                                       ?.copyWith(
-                                                        fontWeight: FontWeight.w800,
+                                                        fontWeight:
+                                                            FontWeight.w800,
                                                       ),
                                                 ),
                                                 if (showMeta)
                                                   Text(
                                                     '${fmt.format(session.startWall)} — ${fmt.format(session.endWall)} · ${session.categoryLabel}',
                                                     maxLines: 1,
-                                                    overflow: TextOverflow.ellipsis,
-                                                    style: theme.textTheme.labelSmall
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                    style: theme
+                                                        .textTheme
+                                                        .labelSmall
                                                         ?.copyWith(
                                                           color: scheme
                                                               .onSurfaceVariant,
@@ -1062,10 +1069,13 @@ class _TimeGrid extends StatelessWidget {
                                             child: Center(
                                               child: Text(
                                                 _durationShort(session.seconds),
-                                                style: theme.textTheme.labelMedium
+                                                style: theme
+                                                    .textTheme
+                                                    .labelMedium
                                                     ?.copyWith(
                                                       color: session.color,
-                                                      fontWeight: FontWeight.w900,
+                                                      fontWeight:
+                                                          FontWeight.w900,
                                                     ),
                                               ),
                                             ),
@@ -1103,24 +1113,18 @@ class _CategoryPanel extends StatelessWidget {
         children: [
           Text(
             t(currentLocale.value, 'stats_pvf_by_category'),
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w800,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 12),
           _Spectrum(categories: categories),
           const SizedBox(height: 16),
           if (categories.isEmpty)
-            Text(
-              '—',
-              style: Theme.of(context).textTheme.bodyMedium,
-            )
+            Text('—', style: Theme.of(context).textTheme.bodyMedium)
           else
             for (final category in categories.take(8))
-              _CategoryRow(
-                category: category,
-                totalSeconds: data.totalSeconds,
-              ),
+              _CategoryRow(category: category, totalSeconds: data.totalSeconds),
         ],
       ),
     );
@@ -1171,10 +1175,7 @@ class _Spectrum extends StatelessWidget {
 }
 
 class _CategoryRow extends StatelessWidget {
-  const _CategoryRow({
-    required this.category,
-    required this.totalSeconds,
-  });
+  const _CategoryRow({required this.category, required this.totalSeconds});
   final DayStatsCategorySlice category;
   final int totalSeconds;
 
@@ -1206,16 +1207,16 @@ class _CategoryRow extends StatelessWidget {
                   category.label,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
                 ),
               ),
               Text(
                 _durationLong(category.seconds),
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w800,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w800),
               ),
               const SizedBox(width: 10),
               SizedBox(
@@ -1286,9 +1287,9 @@ class _Signals extends StatelessWidget {
         children: [
           Text(
             t(currentLocale.value, 'stats'),
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w800,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 11),
           _Signal(
@@ -1309,7 +1310,8 @@ class _Signals extends StatelessWidget {
             icon: Icons.av_timer_rounded,
             label: t(currentLocale.value, 'stats_pvf_row_time'),
             value: average == 0 ? '—' : _durationShort(average),
-            supporting: '${data.sessions.length} ${t(currentLocale.value, 'stats_pvf_row_tasks').toLowerCase()}',
+            supporting:
+                '${data.sessions.length} ${t(currentLocale.value, 'stats_pvf_row_tasks').toLowerCase()}',
           ),
         ],
       ),
@@ -1365,9 +1367,9 @@ class _Signal extends StatelessWidget {
                   label,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w700),
                 ),
                 if (supporting != null && supporting!.isNotEmpty)
                   Text(
