@@ -1,7 +1,6 @@
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/stats/day_stats_dashboard.dart';
-import 'package:counter/features/stats/day_stats_glass_view.dart';
 import 'package:counter/features/stats/plan_vs_fact_tab.dart';
 import 'package:counter/features/stats/stats_detail_tree.dart';
 import 'package:counter/l10n/dictionary.dart';
@@ -277,7 +276,7 @@ class _StatsViewState extends State<StatsView> {
       );
     }
 
-    return DayStatsGlassView(
+    return DayStatsDashboard(
       mode: _dashboardMode,
       onModeChanged: (mode) {
         if (mode == _dashboardMode) return;
