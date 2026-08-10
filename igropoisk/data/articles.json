@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-10T21:57:02.210Z",
+  "updatedAt": "2026-08-10T22:10:50.953Z",
   "count": 495,
   "sources": [
     "IGN",
@@ -14,6 +14,15 @@
     "Игромания"
   ],
   "articles": [
+    {
+      "source": "PC Gamer",
+      "language": "en",
+      "title": "id Software dev says mass layoffs like Microsoft's are weakening the games industry, because developers 'don't have the incentive to care anymore'",
+      "normalizedTitle": "id software dev says mass layoffs like microsoft s are weakening the games industry because developers don t have the incentive to care anymore",
+      "url": "https://www.pcgamer.com/gaming-industry/id-software-dev-says-mass-layoffs-like-microsofts-are-weakening-the-games-industry-because-developers-dont-have-the-incentive-to-care-anymore/",
+      "summary": "\"A lot of gamers, even if they don't know it, they can feel it's not right. There's something wrong.\"",
+      "publishedAt": "Mon, 10 Aug 2026 22:00:43 +0000"
+    },
     {
       "source": "GamesRadar+",
       "language": "en",
@@ -989,19 +998,19 @@
     {
       "source": "PC Gamer",
       "language": "en",
-      "title": "Light No Fire will 'absolutely' be like No Man's Sky, with new features coming post-release: Sean Murray says he'd like to still be working on it '10 years after launch'",
-      "normalizedTitle": "light no fire will absolutely be like no man s sky with new features coming post release sean murray says he d like to still be working on it 10 years after launch",
-      "url": "https://www.pcgamer.com/games/survival-crafting/light-no-fire-will-absolutely-be-like-no-mans-sky-with-new-features-coming-post-release-sean-murray-says-hed-like-to-still-be-working-on-it-10-years-after-launch/",
-      "summary": "\"I've worked on it for seven years now, and I'm still really enjoying it.\"",
+      "title": "Sean Murray still loves playing the 2016 version of No Man's Sky: 'It's a little bit weirder, but it's got its charm'",
+      "normalizedTitle": "sean murray still loves playing the 2016 version of no man s sky it s a little bit weirder but it s got its charm",
+      "url": "https://www.pcgamer.com/games/action/sean-murray-still-loves-playing-the-2016-version-of-no-mans-sky-its-a-little-bit-weirder-but-its-got-its-charm/",
+      "summary": "\"I've got a real soft spot for it,\" says the founder of Hello Games.",
       "publishedAt": "Mon, 10 Aug 2026 13:00:00 +0000"
     },
     {
       "source": "PC Gamer",
       "language": "en",
-      "title": "Sean Murray still loves playing the 2016 version of No Man's Sky: 'It's a little bit weirder, but it's got its charm'",
-      "normalizedTitle": "sean murray still loves playing the 2016 version of no man s sky it s a little bit weirder but it s got its charm",
-      "url": "https://www.pcgamer.com/games/action/sean-murray-still-loves-playing-the-2016-version-of-no-mans-sky-its-a-little-bit-weirder-but-its-got-its-charm/",
-      "summary": "\"I've got a real soft spot for it,\" says the founder of Hello Games.",
+      "title": "Light No Fire will 'absolutely' be like No Man's Sky, with new features coming post-release: Sean Murray says he'd like to still be working on it '10 years after launch'",
+      "normalizedTitle": "light no fire will absolutely be like no man s sky with new features coming post release sean murray says he d like to still be working on it 10 years after launch",
+      "url": "https://www.pcgamer.com/games/survival-crafting/light-no-fire-will-absolutely-be-like-no-mans-sky-with-new-features-coming-post-release-sean-murray-says-hed-like-to-still-be-working-on-it-10-years-after-launch/",
+      "summary": "\"I've worked on it for seven years now, and I'm still really enjoying it.\"",
       "publishedAt": "Mon, 10 Aug 2026 13:00:00 +0000"
     },
     {
@@ -1768,15 +1777,6 @@
       "url": "https://www.pcgamer.com/games/grand-theft-auto/gta-6s-netflix-deal-forces-us-to-ask-can-you-pirate-an-advertisement/",
       "summary": "Just when you thought videogame marketing couldn't get sillier, people are going to wind up stealing a trailer.",
       "publishedAt": "Fri, 07 Aug 2026 23:52:49 +0000"
-    },
-    {
-      "source": "PC Gamer",
-      "language": "en",
-      "title": "FromSoftware sleuth unearths earliest footage of Demon's Souls to date: A prototype with a first person camera mode",
-      "normalizedTitle": "fromsoftware sleuth unearths earliest footage of demon s souls to date a prototype with a first person camera mode",
-      "url": "https://www.pcgamer.com/games/action/fromsoftware-sleuth-unearths-earliest-footage-of-demons-souls-to-date-a-prototype-with-a-first-person-camera-mode/",
-      "summary": "Demon's Field.",
-      "publishedAt": "Fri, 07 Aug 2026 23:06:12 +0000"
     },
     {
       "source": "StopGame",
