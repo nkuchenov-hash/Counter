@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:counter/core/app_colors.dart';
 import 'package:counter/core/widgets/chip_component.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
