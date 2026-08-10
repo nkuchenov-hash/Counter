@@ -186,6 +186,10 @@ class DayStatsDashboardData {
   }
 }
 
+/// Responsive presentation for Timeline > Stats.
+///
+/// The existing expandable daily stats tree is injected through [detailsView]
+/// and remains fully usable as the Details mode.
 class DayStatsDashboard extends StatelessWidget {
   const DayStatsDashboard({
     super.key,
@@ -206,12 +210,13 @@ class DayStatsDashboard extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
+          padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
           child: LayoutBuilder(
             builder: (context, constraints) {
-              final segmentWidth = math.max(
-                72.0,
-                math.min(108.0, constraints.maxWidth / 4),
+              final compact = constraints.maxWidth < 520;
+              final width = math.max(
+                compact ? 64.0 : 78.0,
+                math.min(compact ? 88.0 : 116.0, constraints.maxWidth / 4),
               );
               return SizedBox(
                 height: kAppCompactControlHeight,
@@ -219,7 +224,7 @@ class DayStatsDashboard extends StatelessWidget {
                   showSelectedIcon: false,
                   style: appCompactSegmentedButtonStyle(
                     context,
-                    segmentWidth: segmentWidth,
+                    segmentWidth: width,
                   ),
                   segments: [
                     ButtonSegment(
@@ -231,14 +236,14 @@ class DayStatsDashboard extends StatelessWidget {
                     ),
                     ButtonSegment(
                       value: DayStatsDashboardMode.timeline,
-                      icon: const Icon(Icons.view_timeline_rounded),
+                      icon: const Icon(Icons.view_day_rounded),
                       label: AppCompactSegmentLabel(
                         text: t(currentLocale.value, 'timeline'),
                       ),
                     ),
                     ButtonSegment(
                       value: DayStatsDashboardMode.categories,
-                      icon: const Icon(Icons.donut_large_rounded),
+                      icon: const Icon(Icons.category_rounded),
                       label: AppCompactSegmentLabel(
                         text: t(currentLocale.value, 'categories'),
                       ),
@@ -260,189 +265,321 @@ class DayStatsDashboard extends StatelessWidget {
             },
           ),
         ),
-        const Divider(height: 1),
-        Expanded(child: _buildBody(context)),
+        Expanded(child: _body(context)),
       ],
     );
   }
 
-  Widget _buildBody(BuildContext context) {
+  Widget _body(BuildContext context) {
     switch (mode) {
       case DayStatsDashboardMode.overview:
-        return _OverviewView(data: data);
+        return _Overview(data: data);
       case DayStatsDashboardMode.timeline:
-        return _TimelineView(data: data);
+        return _DayView(data: data);
       case DayStatsDashboardMode.categories:
-        return _CategoriesView(data: data);
+        return _Categories(data: data);
       case DayStatsDashboardMode.details:
         return detailsView;
     }
   }
 }
 
-class _OverviewView extends StatelessWidget {
-  const _OverviewView({required this.data});
-
+class _Overview extends StatelessWidget {
+  const _Overview({required this.data});
   final DayStatsDashboardData data;
 
   @override
   Widget build(BuildContext context) {
-    final topCategory = data.categories.isNotEmpty
-        ? data.categories.first
-        : null;
-    final longest = data.longestSession;
-
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 24),
-      children: [
-        LayoutBuilder(
-          builder: (context, constraints) {
-            final width = (constraints.maxWidth - 12) / 2;
-            return Wrap(
-              spacing: 12,
-              runSpacing: 12,
-              children: [
-                SizedBox(
-                  width: width,
-                  child: _MetricCard(
-                    icon: Icons.schedule_rounded,
-                    label: t(currentLocale.value, 'total'),
-                    value: _formatDuration(data.totalSeconds),
-                  ),
-                ),
-                SizedBox(
-                  width: width,
-                  child: _MetricCard(
-                    icon: Icons.view_agenda_outlined,
-                    label: t(currentLocale.value, 'stats_pvf_row_tasks'),
-                    value: '${data.sessions.length}',
-                  ),
-                ),
-                SizedBox(
-                  width: width,
-                  child: _MetricCard(
-                    icon: topCategory?.icon ?? Icons.category_outlined,
-                    label: t(currentLocale.value, 'category_label'),
-                    value: topCategory?.label ?? '—',
-                    accent: topCategory?.color,
-                  ),
-                ),
-                SizedBox(
-                  width: width,
-                  child: _MetricCard(
-                    icon: Icons.timelapse_rounded,
-                    label: t(currentLocale.value, 'long_duration'),
-                    value: longest != null
-                        ? _formatDuration(longest.seconds)
-                        : '—',
-                    supporting: longest?.title,
-                    accent: longest?.color,
-                  ),
-                ),
-              ],
-            );
-          },
-        ),
-        const SizedBox(height: 16),
-        _DayMapCard(data: data),
-        const SizedBox(height: 16),
-        _CategoryShareCard(data: data),
-      ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final mobile = constraints.maxWidth < 680;
+        return ListView(
+          padding: EdgeInsets.fromLTRB(
+            mobile ? 12 : 16,
+            8,
+            mobile ? 12 : 16,
+            28,
+          ),
+          children: [
+            _Hero(data: data, compact: mobile),
+            const SizedBox(height: 12),
+            if (mobile) ...[
+              _VerticalDay(data: data),
+              const SizedBox(height: 12),
+              _CategoryPanel(data: data),
+              const SizedBox(height: 12),
+              _Signals(data: data),
+            ] else
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(flex: 3, child: _CategoryPanel(data: data)),
+                  const SizedBox(width: 14),
+                  Expanded(flex: 2, child: _Signals(data: data)),
+                ],
+              ),
+          ],
+        );
+      },
     );
   }
 }
 
-class _MetricCard extends StatelessWidget {
-  const _MetricCard({
-    required this.icon,
-    required this.label,
-    required this.value,
-    this.supporting,
-    this.accent,
-  });
-
-  final IconData icon;
-  final String label;
-  final String value;
-  final String? supporting;
-  final Color? accent;
+class _Hero extends StatelessWidget {
+  const _Hero({required this.data, required this.compact});
+  final DayStatsDashboardData data;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final effectiveAccent = accent ?? scheme.primary;
-
-    return Container(
-      constraints: const BoxConstraints(minHeight: 108),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: scheme.surface,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: scheme.outlineVariant.withValues(alpha: 0.45),
-        ),
-      ),
+    final longest = data.longestSession;
+    final sorted = [...data.categories]
+      ..sort((a, b) => b.seconds.compareTo(a.seconds));
+    final accent = sorted.isEmpty ? null : sorted.first.color;
+    return _Glass(
+      accent: accent,
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 22, color: effectiveAccent),
-          const SizedBox(height: 12),
-          Text(
-            value,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.w800,
-              color: scheme.onSurface,
-            ),
+          Row(
+            children: [
+              Expanded(
+                flex: compact ? 1 : 2,
+                child: _Metric(
+                  icon: Icons.schedule_rounded,
+                  value: _duration(data.totalSeconds),
+                  label: t(currentLocale.value, 'total'),
+                  large: !compact,
+                ),
+              ),
+              _divider(context, compact),
+              Expanded(
+                child: _Metric(
+                  icon: Icons.view_agenda_outlined,
+                  value: '${data.sessions.length}',
+                  label: t(currentLocale.value, 'stats_pvf_row_tasks'),
+                ),
+              ),
+              if (!compact) ...[
+                _divider(context, false),
+                Expanded(
+                  child: _Metric(
+                    icon: longest?.icon ?? Icons.timelapse_rounded,
+                    value: longest == null
+                        ? '—'
+                        : _duration(longest.seconds),
+                    label: t(currentLocale.value, 'long_duration'),
+                    accent: longest?.color,
+                  ),
+                ),
+              ],
+            ],
           ),
-          const SizedBox(height: 2),
-          Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: scheme.onSurfaceVariant,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          if (supporting != null && supporting!.trim().isNotEmpty) ...[
-            const SizedBox(height: 4),
-            Text(
-              supporting!,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: Theme.of(
-                context,
-              ).textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant),
-            ),
+          if (!compact) ...[
+            const SizedBox(height: 22),
+            _HorizontalDay(data: data),
           ],
         ],
       ),
     );
   }
+
+  Widget _divider(BuildContext context, bool short) => Container(
+    width: 1,
+    height: short ? 58 : 70,
+    margin: EdgeInsets.symmetric(horizontal: short ? 12 : 18),
+    color: Theme.of(
+      context,
+    ).colorScheme.outlineVariant.withValues(alpha: 0.35),
+  );
 }
 
-class _DayMapCard extends StatelessWidget {
-  const _DayMapCard({required this.data});
+class _Metric extends StatelessWidget {
+  const _Metric({
+    required this.icon,
+    required this.value,
+    required this.label,
+    this.accent,
+    this.large = false,
+  });
+  final IconData icon;
+  final String value;
+  final String label;
+  final Color? accent;
+  final bool large;
 
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final color = accent ?? scheme.primary;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 32,
+          height: 32,
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.10),
+            borderRadius: BorderRadius.circular(11),
+          ),
+          child: Icon(icon, size: 18, color: color),
+        ),
+        const SizedBox(height: 9),
+        Text(
+          value,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: (large
+                  ? Theme.of(context).textTheme.headlineMedium
+                  : Theme.of(context).textTheme.titleLarge)
+              ?.copyWith(fontWeight: FontWeight.w800, letterSpacing: -0.4),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: scheme.onSurfaceVariant,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _HorizontalDay extends StatelessWidget {
+  const _HorizontalDay({required this.data});
   final DayStatsDashboardData data;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final dayStart = data.selectedDate;
-    final totalDaySeconds = const Duration(days: 1).inSeconds.toDouble();
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: scheme.surface,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: scheme.outlineVariant.withValues(alpha: 0.45),
+    const daySeconds = 86400.0;
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: const [
+            Text('00'),
+            Text('06'),
+            Text('12'),
+            Text('18'),
+            Text('24'),
+          ],
         ),
-      ),
+        const SizedBox(height: 7),
+        LayoutBuilder(
+          builder: (context, c) => SizedBox(
+            height: 36,
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: scheme.surfaceContainerHighest.withValues(
+                        alpha: 0.50,
+                      ),
+                      borderRadius: BorderRadius.circular(13),
+                      border: Border.all(
+                        color: scheme.outlineVariant.withValues(alpha: 0.28),
+                      ),
+                    ),
+                  ),
+                ),
+                for (final session in data.sessions)
+                  Builder(
+                    builder: (_) {
+                      final start = session.startWall
+                          .difference(data.selectedDate)
+                          .inSeconds
+                          .clamp(0, 86400)
+                          .toDouble();
+                      final end = session.endWall
+                          .difference(data.selectedDate)
+                          .inSeconds
+                          .clamp(0, 86400)
+                          .toDouble();
+                      final left = c.maxWidth * start / daySeconds;
+                      final width = math.max(
+                        4.0,
+                        c.maxWidth * (end - start) / daySeconds,
+                      );
+                      return Positioned(
+                        left: left,
+                        top: 4,
+                        bottom: 4,
+                        width: math.min(
+                          width,
+                          math.max(0.0, c.maxWidth - left),
+                        ),
+                        child: Tooltip(
+                          message:
+                              '${session.title} · ${_duration(session.seconds)}',
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              color: session.color.withValues(alpha: 0.86),
+                              borderRadius: BorderRadius.circular(8),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: session.color.withValues(alpha: 0.22),
+                                  blurRadius: 10,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _DayView extends StatelessWidget {
+  const _DayView({required this.data});
+  final DayStatsDashboardData data;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final mobile = constraints.maxWidth < 680;
+        return ListView(
+          padding: EdgeInsets.fromLTRB(
+            mobile ? 12 : 16,
+            8,
+            mobile ? 12 : 16,
+            28,
+          ),
+          children: [
+            mobile ? _VerticalDay(data: data) : _ChronologicalDay(data: data),
+          ],
+        );
+      },
+    );
+  }
+}
+
+/// Mobile-first spatial representation of the full 24-hour day.
+class _VerticalDay extends StatelessWidget {
+  const _VerticalDay({required this.data});
+  final DayStatsDashboardData data;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final fmt = DateFormat.Hm(currentLocale.value);
+    const height = 690.0;
+    const axisX = 38.0;
+    const left = 56.0;
+    return _Glass(
+      padding: const EdgeInsets.fromLTRB(12, 16, 12, 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -450,70 +587,140 @@ class _DayMapCard extends StatelessWidget {
             t(currentLocale.value, 'timeline'),
             style: Theme.of(
               context,
-            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
           ),
-          const SizedBox(height: 14),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: const [
-              Text('00'),
-              Text('06'),
-              Text('12'),
-              Text('18'),
-              Text('24'),
-            ],
-          ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 12),
           LayoutBuilder(
-            builder: (context, constraints) {
+            builder: (context, c) {
+              final itemWidth = math.max(0.0, c.maxWidth - left);
               return SizedBox(
-                height: 34,
+                height: height,
                 child: Stack(
+                  clipBehavior: Clip.hardEdge,
                   children: [
-                    Positioned.fill(
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          color: scheme.surfaceContainerHighest,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
+                    Positioned(
+                      left: axisX,
+                      top: 8,
+                      bottom: 8,
+                      child: Container(
+                        width: 1.5,
+                        color: scheme.outlineVariant.withValues(alpha: 0.5),
                       ),
                     ),
+                    for (final hour in const [0, 6, 12, 18, 24]) ...[
+                      Positioned(
+                        top: (hour / 24) * (height - 22),
+                        left: 0,
+                        width: 30,
+                        child: Text(
+                          hour.toString().padLeft(2, '0'),
+                          textAlign: TextAlign.right,
+                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            color: scheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        top: (hour / 24) * (height - 22) + 5,
+                        left: axisX - 3,
+                        child: Container(
+                          width: 7,
+                          height: 7,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: scheme.surface,
+                            border: Border.all(color: scheme.outlineVariant),
+                          ),
+                        ),
+                      ),
+                    ],
                     for (final session in data.sessions)
                       Builder(
-                        builder: (context) {
+                        builder: (_) {
                           final start = session.startWall
-                              .difference(dayStart)
-                              .inSeconds
-                              .clamp(0, totalDaySeconds.toInt())
-                              .toDouble();
+                              .difference(data.selectedDate)
+                              .inMinutes
+                              .clamp(0, 1440);
                           final end = session.endWall
-                              .difference(dayStart)
-                              .inSeconds
-                              .clamp(0, totalDaySeconds.toInt())
-                              .toDouble();
-                          final left =
-                              constraints.maxWidth * start / totalDaySeconds;
-                          final rawWidth =
-                              constraints.maxWidth *
-                              (end - start) /
-                              totalDaySeconds;
-                          final width = math.max(3.0, rawWidth);
+                              .difference(data.selectedDate)
+                              .inMinutes
+                              .clamp(0, 1440);
+                          final top = (start / 1440) * (height - 22) + 2;
+                          final rawHeight =
+                              ((end - start) / 1440) * (height - 22);
+                          final blockHeight = math.min(
+                            math.max(30.0, rawHeight),
+                            math.max(18.0, height - top - 2),
+                          );
                           return Positioned(
+                            top: top,
                             left: left,
-                            top: 0,
-                            bottom: 0,
-                            width: math.min(
-                              width,
-                              math.max(0.0, constraints.maxWidth - left),
-                            ),
-                            child: Tooltip(
-                              message:
-                                  '${session.title} · ${_formatDuration(session.seconds)}',
-                              child: DecoratedBox(
-                                decoration: BoxDecoration(
-                                  color: session.color,
-                                  borderRadius: BorderRadius.circular(5),
+                            width: itemWidth,
+                            height: blockHeight,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 9,
+                                vertical: 5,
+                              ),
+                              decoration: BoxDecoration(
+                                color: session.color.withValues(alpha: 0.13),
+                                borderRadius: BorderRadius.circular(11),
+                                border: Border.all(
+                                  color: session.color.withValues(alpha: 0.34),
                                 ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 4,
+                                    decoration: BoxDecoration(
+                                      color: session.color,
+                                      borderRadius: BorderRadius.circular(3),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          session.title,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodySmall
+                                              ?.copyWith(
+                                                fontWeight: FontWeight.w700,
+                                              ),
+                                        ),
+                                        if (blockHeight >= 42)
+                                          Text(
+                                            '${fmt.format(session.startWall)} — ${fmt.format(session.endWall)}',
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .labelSmall
+                                                ?.copyWith(
+                                                  color: scheme.onSurfaceVariant,
+                                                ),
+                                          ),
+                                      ],
+                                    ),
+                                  ),
+                                  Text(
+                                    _duration(session.seconds),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .labelMedium
+                                        ?.copyWith(
+                                          color: session.color,
+                                          fontWeight: FontWeight.w800,
+                                        ),
+                                  ),
+                                ],
                               ),
                             ),
                           );
@@ -524,33 +731,124 @@ class _DayMapCard extends StatelessWidget {
               );
             },
           ),
-          const SizedBox(height: 12),
-          _CategoryLegend(categories: data.categories.take(5).toList()),
         ],
       ),
     );
   }
 }
 
-class _CategoryShareCard extends StatelessWidget {
-  const _CategoryShareCard({required this.data});
-
+class _ChronologicalDay extends StatelessWidget {
+  const _ChronologicalDay({required this.data});
   final DayStatsDashboardData data;
 
   @override
   Widget build(BuildContext context) {
+    final fmt = DateFormat.Hm(currentLocale.value);
     final scheme = Theme.of(context).colorScheme;
-    final categories = data.categories.take(5).toList();
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: scheme.surface,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: scheme.outlineVariant.withValues(alpha: 0.45),
-        ),
+    return _Glass(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            t(currentLocale.value, 'timeline'),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(height: 12),
+          for (final session in data.sessions)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: 112,
+                    child: Text(
+                      '${fmt.format(session.startWall)} — ${fmt.format(session.endWall)}',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: scheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                  Container(
+                    width: 10,
+                    height: 10,
+                    decoration: BoxDecoration(
+                      color: session.color,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
+                      decoration: BoxDecoration(
+                        color: scheme.surfaceContainerHighest.withValues(
+                          alpha: 0.28,
+                        ),
+                        borderRadius: BorderRadius.circular(13),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(session.icon, size: 19, color: session.color),
+                          const SizedBox(width: 9),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  session.title,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodyMedium
+                                      ?.copyWith(fontWeight: FontWeight.w700),
+                                ),
+                                Text(
+                                  session.categoryLabel,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodySmall
+                                      ?.copyWith(color: scheme.onSurfaceVariant),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Text(
+                            _duration(session.seconds),
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: session.color,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
       ),
+    );
+  }
+}
+
+class _CategoryPanel extends StatelessWidget {
+  const _CategoryPanel({required this.data});
+  final DayStatsDashboardData data;
+
+  @override
+  Widget build(BuildContext context) {
+    final categories = [...data.categories]
+      ..sort((a, b) => b.seconds.compareTo(a.seconds));
+    return _Glass(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -558,18 +856,15 @@ class _CategoryShareCard extends StatelessWidget {
             t(currentLocale.value, 'stats_pvf_by_category'),
             style: Theme.of(
               context,
-            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 12),
-          _ShareBar(categories: data.categories),
+          _Spectrum(categories: categories),
           const SizedBox(height: 14),
-          for (final category in categories)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: _CategorySummaryRow(
-                category: category,
-                totalSeconds: data.totalSeconds,
-              ),
+          for (final category in categories.take(7))
+            _CategoryRow(
+              category: category,
+              totalSeconds: data.totalSeconds,
             ),
         ],
       ),
@@ -577,111 +872,44 @@ class _CategoryShareCard extends StatelessWidget {
   }
 }
 
-class _TimelineView extends StatelessWidget {
-  const _TimelineView({required this.data});
-
+class _Categories extends StatelessWidget {
+  const _Categories({required this.data});
   final DayStatsDashboardData data;
 
   @override
   Widget build(BuildContext context) {
-    final loc = currentLocale.value;
-    final formatter = DateFormat.Hm(loc);
-
-    return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 24),
-      itemCount: data.sessions.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 10),
-      itemBuilder: (context, index) {
-        final session = data.sessions[index];
-        final scheme = Theme.of(context).colorScheme;
-        return Container(
-          clipBehavior: Clip.antiAlias,
-          decoration: BoxDecoration(
-            color: scheme.surface,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: scheme.outlineVariant.withValues(alpha: 0.45),
-            ),
-          ),
-          child: Row(
+    final categories = [...data.categories]
+      ..sort((a, b) => b.seconds.compareTo(a.seconds));
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 28),
+      children: [
+        _Glass(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(width: 6, height: 86, color: session.color),
-              const SizedBox(width: 12),
-              Icon(session.icon, color: session.color, size: 22),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        session.title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        session.categoryLabel,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: scheme.onSurfaceVariant,
-                        ),
-                      ),
-                      const SizedBox(height: 3),
-                      Text(
-                        '${formatter.format(session.startWall)} — '
-                        '${formatter.format(session.endWall)}'
-                        '${session.isRunning ? ' · ${t(loc, 'running_label')}' : ''}',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: scheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
-                  ),
+              Text(
+                t(currentLocale.value, 'stats_pvf_by_category'),
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w800,
                 ),
               ),
-              const SizedBox(width: 8),
-              Padding(
-                padding: const EdgeInsets.only(right: 14),
-                child: Text(
-                  _formatDuration(session.seconds),
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: session.color,
-                  ),
-                ),
-              ),
+              const SizedBox(height: 12),
+              _Spectrum(categories: categories),
             ],
           ),
-        );
-      },
-    );
-  }
-}
-
-class _CategoriesView extends StatelessWidget {
-  const _CategoriesView({required this.data});
-
-  final DayStatsDashboardData data;
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 24),
-      children: [
-        _ShareBar(categories: data.categories),
-        const SizedBox(height: 16),
-        for (final category in data.categories)
+        ),
+        const SizedBox(height: 12),
+        for (final category in categories)
           Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: _CategoryCard(
-              category: category,
-              totalSeconds: data.totalSeconds,
+            padding: const EdgeInsets.only(bottom: 10),
+            child: _Glass(
+              accent: category.color,
+              padding: const EdgeInsets.all(14),
+              child: _CategoryRow(
+                category: category,
+                totalSeconds: data.totalSeconds,
+                showProgress: true,
+              ),
             ),
           ),
       ],
@@ -689,100 +917,25 @@ class _CategoriesView extends StatelessWidget {
   }
 }
 
-class _CategoryCard extends StatelessWidget {
-  const _CategoryCard({required this.category, required this.totalSeconds});
-
-  final DayStatsCategorySlice category;
-  final int totalSeconds;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final share = totalSeconds > 0 ? category.seconds / totalSeconds : 0.0;
-
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: scheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: scheme.outlineVariant.withValues(alpha: 0.45),
-        ),
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Icon(category.icon, color: category.color, size: 22),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  category.label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w700),
-                ),
-              ),
-              Text(
-                _formatDuration(category.seconds),
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: category.color,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                '${(share * 100).round()}%',
-                style: Theme.of(
-                  context,
-                ).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          LinearProgressIndicator(
-            value: share.clamp(0.0, 1.0).toDouble(),
-            minHeight: 8,
-            borderRadius: BorderRadius.circular(8),
-            color: category.color,
-            backgroundColor: scheme.surfaceContainerHighest,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ShareBar extends StatelessWidget {
-  const _ShareBar({required this.categories});
-
+class _Spectrum extends StatelessWidget {
+  const _Spectrum({required this.categories});
   final List<DayStatsCategorySlice> categories;
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    if (categories.isEmpty) {
-      return Container(
-        height: 14,
-        decoration: BoxDecoration(
-          color: scheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(10),
-        ),
-      );
-    }
-
+    if (categories.isEmpty) return const SizedBox(height: 12);
     return ClipRRect(
       borderRadius: BorderRadius.circular(10),
       child: SizedBox(
-        height: 14,
+        height: 12,
         child: Row(
           children: [
             for (final category in categories)
               Expanded(
                 flex: math.max(1, category.seconds),
-                child: ColoredBox(color: category.color),
+                child: ColoredBox(
+                  color: category.color.withValues(alpha: 0.86),
+                ),
               ),
           ],
         ),
@@ -791,89 +944,77 @@ class _ShareBar extends StatelessWidget {
   }
 }
 
-class _CategoryLegend extends StatelessWidget {
-  const _CategoryLegend({required this.categories});
-
-  final List<DayStatsCategorySlice> categories;
-
-  @override
-  Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 10,
-      runSpacing: 8,
-      children: [
-        for (final category in categories)
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 9,
-                height: 9,
-                decoration: BoxDecoration(
-                  color: category.color,
-                  shape: BoxShape.circle,
-                ),
-              ),
-              const SizedBox(width: 5),
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 130),
-                child: Text(
-                  category.label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              ),
-            ],
-          ),
-      ],
-    );
-  }
-}
-
-class _CategorySummaryRow extends StatelessWidget {
-  const _CategorySummaryRow({
+class _CategoryRow extends StatelessWidget {
+  const _CategoryRow({
     required this.category,
     required this.totalSeconds,
+    this.showProgress = false,
   });
-
   final DayStatsCategorySlice category;
   final int totalSeconds;
+  final bool showProgress;
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     final share = totalSeconds > 0 ? category.seconds / totalSeconds : 0.0;
-    return Row(
+    final row = Row(
       children: [
         Container(
-          width: 10,
-          height: 10,
+          width: 30,
+          height: 30,
           decoration: BoxDecoration(
-            color: category.color,
-            borderRadius: BorderRadius.circular(3),
+            color: category.color.withValues(alpha: 0.10),
+            borderRadius: BorderRadius.circular(10),
           ),
+          child: Icon(category.icon, size: 17, color: category.color),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 9),
         Expanded(
           child: Text(
             category.label,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
           ),
         ),
         Text(
-          _formatDuration(category.seconds),
+          _duration(category.seconds),
           style: Theme.of(
             context,
-          ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
+          ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w800),
         ),
         const SizedBox(width: 8),
         SizedBox(
-          width: 42,
+          width: 38,
           child: Text(
             '${(share * 100).round()}%',
             textAlign: TextAlign.end,
-            style: Theme.of(context).textTheme.bodySmall,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: scheme.onSurfaceVariant,
+            ),
+          ),
+        ),
+      ],
+    );
+    if (!showProgress) {
+      return Padding(padding: const EdgeInsets.only(bottom: 10), child: row);
+    }
+    return Column(
+      children: [
+        row,
+        const SizedBox(height: 10),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: LinearProgressIndicator(
+            value: share.clamp(0.0, 1.0).toDouble(),
+            minHeight: 6,
+            color: category.color,
+            backgroundColor: scheme.surfaceContainerHighest.withValues(
+              alpha: 0.55,
+            ),
           ),
         ),
       ],
@@ -881,13 +1022,186 @@ class _CategorySummaryRow extends StatelessWidget {
   }
 }
 
-String _formatDuration(int totalSeconds) {
-  if (totalSeconds <= 0) return '0:00';
-  final hours = totalSeconds ~/ 3600;
-  final minutes = (totalSeconds % 3600) ~/ 60;
-  if (hours > 0) {
-    return '$hours:${minutes.toString().padLeft(2, '0')}';
+class _Signals extends StatelessWidget {
+  const _Signals({required this.data});
+  final DayStatsDashboardData data;
+
+  @override
+  Widget build(BuildContext context) {
+    final categories = [...data.categories]
+      ..sort((a, b) => b.seconds.compareTo(a.seconds));
+    final top = categories.isEmpty ? null : categories.first;
+    final longest = data.longestSession;
+    return _Glass(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            t(currentLocale.value, 'stats'),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(height: 10),
+          _Signal(
+            icon: Icons.timelapse_rounded,
+            label: t(currentLocale.value, 'long_duration'),
+            value: longest == null ? '—' : _duration(longest.seconds),
+            supporting: longest?.title,
+            accent: longest?.color,
+          ),
+          _Signal(
+            icon: top?.icon ?? Icons.category_outlined,
+            label: t(currentLocale.value, 'category_label'),
+            value: top?.label ?? '—',
+            supporting: top == null ? null : _duration(top.seconds),
+            accent: top?.color,
+          ),
+          _Signal(
+            icon: Icons.view_agenda_outlined,
+            label: t(currentLocale.value, 'stats_pvf_row_tasks'),
+            value: '${data.sessions.length}',
+          ),
+          _Signal(
+            icon: Icons.schedule_rounded,
+            label: t(currentLocale.value, 'total'),
+            value: _duration(data.totalSeconds),
+          ),
+        ],
+      ),
+    );
   }
-  final seconds = totalSeconds % 60;
+}
+
+class _Signal extends StatelessWidget {
+  const _Signal({
+    required this.icon,
+    required this.label,
+    required this.value,
+    this.supporting,
+    this.accent,
+  });
+  final IconData icon;
+  final String label;
+  final String value;
+  final String? supporting;
+  final Color? accent;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final color = accent ?? scheme.primary;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 9),
+      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 10),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHighest.withValues(alpha: 0.28),
+        borderRadius: BorderRadius.circular(13),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 19, color: color),
+          const SizedBox(width: 9),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                if (supporting != null && supporting!.isNotEmpty)
+                  Text(
+                    supporting!,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: scheme.onSurfaceVariant,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: color,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _Glass extends StatelessWidget {
+  const _Glass({
+    required this.child,
+    this.padding = const EdgeInsets.all(17),
+    this.accent,
+  });
+  final Widget child;
+  final EdgeInsets padding;
+  final Color? accent;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final dark = theme.brightness == Brightness.dark;
+    final glow = accent ?? scheme.primary;
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(21),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: dark ? 0.17 : 0.055),
+            blurRadius: dark ? 20 : 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(21),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                scheme.surface.withValues(alpha: dark ? 0.84 : 0.95),
+                Color.alphaBlend(
+                  glow.withValues(alpha: dark ? 0.055 : 0.035),
+                  scheme.surface.withValues(alpha: dark ? 0.74 : 0.88),
+                ),
+              ],
+            ),
+            border: Border.all(
+              color: dark
+                  ? Colors.white.withValues(alpha: 0.10)
+                  : Colors.white.withValues(alpha: 0.82),
+            ),
+          ),
+          child: Padding(padding: padding, child: child),
+        ),
+      ),
+    );
+  }
+}
+
+String _duration(int secondsTotal) {
+  if (secondsTotal <= 0) return '0:00';
+  final hours = secondsTotal ~/ 3600;
+  final minutes = (secondsTotal % 3600) ~/ 60;
+  if (hours > 0) return '$hours:${minutes.toString().padLeft(2, '0')}';
+  final seconds = secondsTotal % 60;
   return '$minutes:${seconds.toString().padLeft(2, '0')}';
 }
