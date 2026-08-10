@@ -822,21 +822,44 @@ class _DayView extends StatelessWidget {
 /// A calendar-like 24-hour grid. Activity is represented by spatial, colored
 /// blocks rather than dots/list rows, so the shape of the day is readable at a
 /// glance. Mobile deliberately keeps the day vertical.
-class _TimeGrid extends StatelessWidget {
+class _TimeGrid extends StatefulWidget {
   const _TimeGrid({required this.data, required this.mobile});
   final DayStatsDashboardData data;
   final bool mobile;
 
   @override
+  State<_TimeGrid> createState() => _TimeGridState();
+}
+
+class _TimeGridState extends State<_TimeGrid> {
+  static const double _minZoom = 0.75;
+  static const double _maxZoom = 3.0;
+  static const double _zoomStep = 0.25;
+  double _zoom = 1.5;
+
+  String _copy(String en, String ru) =>
+      currentLocale.value.toLowerCase().startsWith('ru') ? ru : en;
+
+  void _setZoom(double value) {
+    final next = value.clamp(_minZoom, _maxZoom).toDouble();
+    if ((next - _zoom).abs() < 0.001) return;
+    setState(() => _zoom = next);
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final data = widget.data;
+    final mobile = widget.mobile;
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final dark = theme.brightness == Brightness.dark;
     final fmt = DateFormat.Hm(currentLocale.value);
-    final hourHeight = mobile ? 42.0 : 35.0;
+    final baseHourHeight = mobile ? 50.0 : 44.0;
+    final hourHeight = baseHourHeight * _zoom;
     final gridHeight = hourHeight * 24;
-    final labelWidth = mobile ? 38.0 : 52.0;
-    final labelEvery = mobile ? 3 : 2;
+    final labelWidth = mobile ? 40.0 : 54.0;
+    final labelEvery = _zoom >= 1.25 ? 1 : 2;
+    final showHalfHours = _zoom >= 1.5;
 
     return _Glass(
       padding: EdgeInsets.fromLTRB(mobile ? 10 : 16, 16, mobile ? 10 : 16, 18),
@@ -844,6 +867,7 @@ class _TimeGrid extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
                 child: Column(
@@ -869,13 +893,83 @@ class _TimeGrid extends StatelessWidget {
                   ],
                 ),
               ),
+              const SizedBox(width: 8),
               _SoftPill(
                 icon: Icons.schedule_rounded,
                 text: _durationLong(data.totalSeconds),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
+                decoration: BoxDecoration(
+                  color: scheme.surfaceContainerHighest.withValues(alpha: 0.24),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: scheme.outlineVariant.withValues(alpha: 0.22),
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      visualDensity: VisualDensity.compact,
+                      icon: const Icon(Icons.remove_rounded, size: 19),
+                      tooltip: _copy('Zoom out', 'Уменьшить масштаб'),
+                      onPressed: _zoom <= _minZoom
+                          ? null
+                          : () => _setZoom(_zoom - _zoomStep),
+                    ),
+                    SizedBox(
+                      width: 52,
+                      child: Text(
+                        '${(_zoom * 100).round()}%',
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.labelLarge?.copyWith(
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      visualDensity: VisualDensity.compact,
+                      icon: const Icon(Icons.add_rounded, size: 19),
+                      tooltip: _copy('Zoom in', 'Увеличить масштаб'),
+                      onPressed: _zoom >= _maxZoom
+                          ? null
+                          : () => _setZoom(_zoom + _zoomStep),
+                    ),
+                  ],
+                ),
+              ),
+              TextButton.icon(
+                onPressed: () => _setZoom(0.75),
+                icon: const Icon(Icons.fit_screen_rounded, size: 17),
+                label: Text(_copy('Fit day', 'Весь день')),
+              ),
+              TextButton.icon(
+                onPressed: () => _setZoom(1.5),
+                icon: const Icon(Icons.view_day_rounded, size: 17),
+                label: Text(_copy('Comfort', 'Подробно')),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            _copy(
+              'Increase scale to turn the day into a long, scrollable tape.',
+              'Увеличивайте масштаб — день станет длинной прокручиваемой лентой.',
+            ),
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: scheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 14),
           if (data.sessions.isEmpty)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 44),
@@ -920,6 +1014,19 @@ class _TimeGrid extends StatelessWidget {
                           ),
                         ),
                       ),
+                      if (showHalfHours)
+                        for (var half = 1; half < 48; half += 2)
+                          Positioned(
+                            left: bodyLeft,
+                            right: 0,
+                            top: half * hourHeight / 2,
+                            child: Container(
+                              height: 1,
+                              color: scheme.outlineVariant.withValues(
+                                alpha: 0.08,
+                              ),
+                            ),
+                          ),
                       for (var hour = 0; hour <= 24; hour++) ...[
                         Positioned(
                           left: bodyLeft,
@@ -928,7 +1035,7 @@ class _TimeGrid extends StatelessWidget {
                           child: Container(
                             height: 1,
                             color: scheme.outlineVariant.withValues(
-                              alpha: hour % 6 == 0 ? 0.34 : 0.16,
+                              alpha: hour % 6 == 0 ? 0.36 : 0.18,
                             ),
                           ),
                         ),
@@ -969,11 +1076,11 @@ class _TimeGrid extends StatelessWidget {
                               (endMinutes - startMinutes) / 60 * hourHeight,
                             );
                             final blockHeight = math.min(
-                              math.max(mobile ? 18.0 : 16.0, rawHeight),
+                              math.max(mobile ? 20.0 : 18.0, rawHeight),
                               math.max(2.0, gridHeight - top),
                             );
-                            final showTitle = blockHeight >= 25;
-                            final showMeta = blockHeight >= (mobile ? 47 : 43);
+                            final showTitle = blockHeight >= 27;
+                            final showMeta = blockHeight >= (mobile ? 50 : 46);
                             return Positioned(
                               left: bodyLeft + 5,
                               width: math.max(0.0, bodyWidth - 10),
@@ -990,23 +1097,23 @@ class _TimeGrid extends StatelessWidget {
                                       end: Alignment.bottomRight,
                                       colors: [
                                         session.color.withValues(
-                                          alpha: dark ? 0.35 : 0.25,
+                                          alpha: dark ? 0.38 : 0.28,
                                         ),
                                         session.color.withValues(
-                                          alpha: dark ? 0.18 : 0.11,
+                                          alpha: dark ? 0.20 : 0.12,
                                         ),
                                       ],
                                     ),
                                     borderRadius: BorderRadius.circular(10),
                                     border: Border.all(
                                       color: session.color.withValues(
-                                        alpha: dark ? 0.60 : 0.46,
+                                        alpha: dark ? 0.64 : 0.50,
                                       ),
                                     ),
                                     boxShadow: [
                                       BoxShadow(
                                         color: session.color.withValues(
-                                          alpha: dark ? 0.16 : 0.11,
+                                          alpha: dark ? 0.17 : 0.12,
                                         ),
                                         blurRadius: 10,
                                       ),
@@ -1061,7 +1168,7 @@ class _TimeGrid extends StatelessWidget {
                                             ),
                                           ),
                                         ),
-                                        if (blockHeight >= 32)
+                                        if (blockHeight >= 34)
                                           Padding(
                                             padding: const EdgeInsets.symmetric(
                                               horizontal: 8,

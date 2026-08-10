@@ -63,6 +63,31 @@ class _StatsViewState extends State<StatsView> {
     );
   }
 
+  List<Map<String, dynamic>> _recordsWithResolvedCategoryIds(
+    List<Map<String, dynamic>> records,
+  ) {
+    final db = DatabaseService.instance;
+    return records
+        .map((record) {
+          final rawCategory =
+              record['categoryId'] ??
+              record['category_id'] ??
+              record['category'];
+          if (rawCategory == null) return record;
+
+          final probe = record['categoryId'] == rawCategory
+              ? record
+              : <String, dynamic>{...record, 'categoryId': rawCategory};
+          final resolved = db.resolvedCategoryIdForRecord(probe);
+          if (resolved == null) return record;
+
+          final existing = record['categoryId'];
+          if (existing is int && existing == resolved) return record;
+          return <String, dynamic>{...record, 'categoryId': resolved};
+        })
+        .toList(growable: false);
+  }
+
   int _rulesVisualSignature(Iterable<CategoryRule> roots) {
     var signature = 17;
     void walk(CategoryRule rule) {
@@ -181,7 +206,7 @@ class _StatsViewState extends State<StatsView> {
       dashboard = _cachedDashboard!;
     } else {
       dashboard = DayStatsDashboardData.build(
-        records: widget.records,
+        records: _recordsWithResolvedCategoryIds(widget.records),
         rules: widget.rules,
         aggregated: aggregated,
         selectedDate: widget.selectedDate,
@@ -238,7 +263,7 @@ class _StatsViewState extends State<StatsView> {
         setState(() => _dashboardMode = mode);
       },
       data: dashboard,
-      planFactView: PlanVsFactTab(
+      planFactView: PlanVsFactV2Tab(
         selectedDate: widget.selectedDate,
         records: widget.records,
         isFutureDate: widget.isFutureDate,
