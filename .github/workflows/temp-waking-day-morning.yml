@@ -15,13 +15,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Apply production patch
+      - name: Apply production patches
         run: |
           if grep -q "rangeStartWall: wakingWindow.wakeWall" lib/features/stats/stats_view.dart; then
-            echo "Patch already applied"
+            echo "Main patch already applied"
           else
             python3 tool/patch_waking_day_morning.py
           fi
+          python3 tool/patch_stats_waking_range_aggregate.py
 
       - name: Set up Flutter 3.41.6
         uses: subosito/flutter-action@v2
@@ -40,6 +41,7 @@ jobs:
       - name: Format production files
         run: |
           dart format \
+            lib/data/categories/category_stats.dart \
             lib/features/shared/sleep_record_policy.dart \
             lib/features/timeline/timeline_morning_start.dart \
             lib/features/timeline/timeline_view.dart \
@@ -50,6 +52,7 @@ jobs:
       - name: Persist production changes
         run: |
           if ! git diff --quiet -- \
+            lib/data/categories/category_stats.dart \
             lib/features/shared/sleep_record_policy.dart \
             lib/features/timeline/timeline_morning_start.dart \
             lib/features/timeline/timeline_view.dart \
@@ -60,6 +63,7 @@ jobs:
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git add \
+              lib/data/categories/category_stats.dart \
               lib/features/shared/sleep_record_policy.dart \
               lib/features/timeline/timeline_morning_start.dart \
               lib/features/timeline/timeline_view.dart \
@@ -75,7 +79,7 @@ jobs:
         run: pwsh -NoProfile -NonInteractive -File ./scripts/audit/architecture_guard.ps1 -Strict
 
       - name: Analyze affected Flutter files
-        run: flutter analyze lib/features/shared/sleep_record_policy.dart lib/features/timeline/timeline_morning_start.dart lib/features/timeline/timeline_view.dart lib/features/stats/stats_view.dart lib/features/stats/day_stats_dashboard.dart lib/features/stats/plan_vs_fact_tab.dart
+        run: flutter analyze lib/data/categories/category_stats.dart lib/features/shared/sleep_record_policy.dart lib/features/timeline/timeline_morning_start.dart lib/features/timeline/timeline_view.dart lib/features/stats/stats_view.dart lib/features/stats/day_stats_dashboard.dart lib/features/stats/plan_vs_fact_tab.dart
 
       - name: Build web
         run: flutter build web --release --base-href="/Counter/" --no-tree-shake-icons --no-wasm-dry-run --pwa-strategy=none
