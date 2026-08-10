@@ -199,6 +199,8 @@ class _StatsViewState extends State<StatsView> {
       aggregated = DatabaseService.instance.getAggregatedStats(
         statsRecords,
         widget.selectedDate,
+        rangeStartWall: wakingWindow.wakeWall,
+        rangeEndWall: wakingWindow.bedWall,
       );
       _lastAggregatedKey = aggregatedKey;
       _cachedAggregated = aggregated;

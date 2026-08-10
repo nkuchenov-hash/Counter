@@ -40,12 +40,13 @@ extension CategoryStatsExtension on DatabaseService {
       final cid = rec['categoryId'];
       final id = cid is int ? cid : int.tryParse(cid?.toString() ?? '');
       if (id != null && ids.contains(id)) {
-        sec += CategoryServiceExtension.recordDurationSecondsWithinDayFromTimestamps(
-          rec,
-          selectedDay,
-          _settings.timezoneOffsetHours,
-          _settings.preferredTimeZone,
-        );
+        sec +=
+            CategoryServiceExtension.recordDurationSecondsWithinDayFromTimestamps(
+              rec,
+              selectedDay,
+              _settings.timezoneOffsetHours,
+              _settings.preferredTimeZone,
+            );
       }
     }
     return Duration(seconds: sec);
@@ -53,14 +54,52 @@ extension CategoryStatsExtension on DatabaseService {
 
   List<StatsNode> getAggregatedStats(
     List<Map<String, dynamic>> records,
-    DateTime selectedDay,
-  ) {
-    final key = CategoryServiceExtension.statsRecordsSignature(records, selectedDay);
+    DateTime selectedDay, {
+    DateTime? rangeStartWall,
+    DateTime? rangeEndWall,
+  }) {
+    final key = Object.hash(
+      CategoryServiceExtension.statsRecordsSignature(records, selectedDay),
+      rangeStartWall?.millisecondsSinceEpoch ?? 0,
+      rangeEndWall?.millisecondsSinceEpoch ?? 0,
+    );
     if (key == _lastAggregatedKey && _lastStatsNodeRoots != null) {
       return _lastStatsNodeRoots!;
     }
     final oh = _settings.timezoneOffsetHours;
     final tzLabel = _settings.preferredTimeZone;
+
+    int durationFor(Map<String, dynamic> rec) {
+      if (rangeStartWall == null || rangeEndWall == null) {
+        return CategoryServiceExtension.recordDurationSecondsWithinDayFromTimestamps(
+          rec,
+          selectedDay,
+          oh,
+          tzLabel,
+        );
+      }
+      final type = rec['type'] as String? ?? 'record';
+      if (type == 'planned') return 0;
+      final startUtc = CategoryServiceExtension.startTimeFromRecord(rec);
+      if (startUtc == null) return 0;
+      final endParsed = CategoryServiceExtension.endTimeFromRecord(rec);
+      final status = (rec['status'] as String? ?? '').toLowerCase();
+      final DateTime endUtc;
+      if (endParsed != null) {
+        endUtc = endParsed;
+      } else if (status == 'running') {
+        endUtc = DatabaseService.getPlanetaryNow();
+      } else {
+        return 0;
+      }
+      var startWall = applyUserOffset(startUtc);
+      var endWall = applyUserOffset(endUtc);
+      if (startWall.isBefore(rangeStartWall)) startWall = rangeStartWall;
+      if (endWall.isAfter(rangeEndWall)) endWall = rangeEndWall;
+      if (!endWall.isAfter(startWall)) return 0;
+      return endWall.difference(startWall).inSeconds;
+    }
+
     final Map<String, _BuildNode> roots = {};
     for (final rec in records) {
       final pathStr = resolvedCategoryPathForRecord(rec);
@@ -70,12 +109,7 @@ extension CategoryStatsExtension on DatabaseService {
           .where((s) => s.isNotEmpty)
           .toList();
       if (segments.isEmpty) segments = ['Legacy Data'];
-      final sec = CategoryServiceExtension.recordDurationSecondsWithinDayFromTimestamps(
-        rec,
-        selectedDay,
-        oh,
-        tzLabel,
-      );
+      final sec = durationFor(rec);
       Map<String, _BuildNode> current = roots;
       for (var i = 0; i < segments.length; i++) {
         final segment = segments[i];
@@ -102,12 +136,7 @@ extension CategoryStatsExtension on DatabaseService {
         final sortedGroups = n.sessionGroups.entries.map((e) {
           var groupSec = 0;
           for (final r in e.value) {
-            groupSec += CategoryServiceExtension.recordDurationSecondsWithinDayFromTimestamps(
-              r,
-              selectedDay,
-              oh,
-              tzLabel,
-            );
+            groupSec += durationFor(r);
           }
           final actualTitles = e.value
               .map((r) => (r['title'] as String?)?.trim() ?? '')
