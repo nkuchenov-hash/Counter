@@ -117,8 +117,8 @@ class _PlanVsFactV2TabState extends State<PlanVsFactV2Tab> {
     _statsFuture = _reload();
     _planRefreshSub = DatabaseService.instance.planningRefreshNotifications
         .listen((_) {
-      if (mounted) setState(() => _statsFuture = _reload());
-    });
+          if (mounted) setState(() => _statsFuture = _reload());
+        });
   }
 
   @override
@@ -137,9 +137,9 @@ class _PlanVsFactV2TabState extends State<PlanVsFactV2Tab> {
   }
 
   Future<BasicDayStats> _reload() => DatabaseService.instance.getBasicDayStats(
-        widget.selectedDate,
-        recordsForDay: widget.records,
-      );
+    widget.selectedDate,
+    recordsForDay: widget.records,
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -163,7 +163,9 @@ class _PlanVsFactV2TabState extends State<PlanVsFactV2Tab> {
         }
         final stats = snap.data;
         if (stats == null) {
-          return AppErrorState(message: t(currentLocale.value, 'no_data_found'));
+          return AppErrorState(
+            message: t(currentLocale.value, 'no_data_found'),
+          );
         }
         if (stats.planTaskCount == 0 &&
             stats.planTimeSeconds == 0 &&
@@ -179,8 +181,8 @@ class _PlanVsFactV2TabState extends State<PlanVsFactV2Tab> {
 
         final byPlan = DatabaseService.instance
             .aggregateSourcePlanActualSecondsForWallCalendarDay(
-          widget.selectedDate,
-        );
+              widget.selectedDate,
+            );
         final unplannedRecordCount = widget.records.where((record) {
           final source = (record['source_plan_id'] ?? record['sourcePlanId'])
               ?.toString()
@@ -205,28 +207,32 @@ class _PlanFactContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final db = DatabaseService.instance;
-    final roots = db.rules.where((rule) {
-      final plannedSeconds =
-          _sumSecondsInSubtree(rule.id, facts.stats.plannedSecByCategory);
-      final actualSeconds =
-          _sumSecondsInSubtree(rule.id, facts.stats.actualSecByCategory);
-      final taskCount = facts.plansInSubtree(rule.id).length;
-      return plannedSeconds > 0 || actualSeconds > 0 || taskCount > 0;
-    }).toList()
-      ..sort((a, b) {
-        final aTasks = facts.plansInSubtree(a.id).length;
-        final bTasks = facts.plansInSubtree(b.id).length;
-        if (aTasks != bTasks) return bTasks.compareTo(aTasks);
-        final av = math.max(
-          _sumSecondsInSubtree(a.id, facts.stats.plannedSecByCategory),
-          _sumSecondsInSubtree(a.id, facts.stats.actualSecByCategory),
-        );
-        final bv = math.max(
-          _sumSecondsInSubtree(b.id, facts.stats.plannedSecByCategory),
-          _sumSecondsInSubtree(b.id, facts.stats.actualSecByCategory),
-        );
-        return bv.compareTo(av);
-      });
+    final roots =
+        db.rules.where((rule) {
+          final plannedSeconds = _sumSecondsInSubtree(
+            rule.id,
+            facts.stats.plannedSecByCategory,
+          );
+          final actualSeconds = _sumSecondsInSubtree(
+            rule.id,
+            facts.stats.actualSecByCategory,
+          );
+          final taskCount = facts.plansInSubtree(rule.id).length;
+          return plannedSeconds > 0 || actualSeconds > 0 || taskCount > 0;
+        }).toList()..sort((a, b) {
+          final aTasks = facts.plansInSubtree(a.id).length;
+          final bTasks = facts.plansInSubtree(b.id).length;
+          if (aTasks != bTasks) return bTasks.compareTo(aTasks);
+          final av = math.max(
+            _sumSecondsInSubtree(a.id, facts.stats.plannedSecByCategory),
+            _sumSecondsInSubtree(a.id, facts.stats.actualSecByCategory),
+          );
+          final bv = math.max(
+            _sumSecondsInSubtree(b.id, facts.stats.plannedSecByCategory),
+            _sumSecondsInSubtree(b.id, facts.stats.actualSecByCategory),
+          );
+          return bv.compareTo(av);
+        });
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -242,9 +248,9 @@ class _PlanFactContent extends StatelessWidget {
             Text(
               _copy('By category', 'По категориям'),
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: -0.4,
-                  ),
+                fontWeight: FontWeight.w900,
+                letterSpacing: -0.4,
+              ),
             ),
             const SizedBox(height: 10),
             for (final rule in roots)
@@ -281,8 +287,8 @@ class _OutcomeHero extends StatelessWidget {
     final accent = completion >= 0.8
         ? scheme.tertiary
         : completion >= 0.5
-            ? scheme.primary
-            : scheme.secondary;
+        ? scheme.primary
+        : scheme.secondary;
 
     return _Glass(
       accent: accent,
@@ -459,9 +465,9 @@ class _DimensionCard extends StatelessWidget {
               const SizedBox(width: 9),
               Text(
                 title,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
               ),
             ],
           ),
@@ -469,15 +475,15 @@ class _DimensionCard extends StatelessWidget {
           Text(
             main,
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: -0.5,
-                ),
+              fontWeight: FontWeight.w900,
+              letterSpacing: -0.5,
+            ),
           ),
           Text(
             mainLabel,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: scheme.onSurfaceVariant,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
           ),
           const SizedBox(height: 12),
           for (final line in lines)
@@ -498,9 +504,9 @@ class _DimensionCard extends StatelessWidget {
                     child: Text(
                       line,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: scheme.onSurfaceVariant,
-                            fontWeight: FontWeight.w600,
-                          ),
+                        color: scheme.onSurfaceVariant,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                 ],
@@ -521,10 +527,14 @@ class _CategoryOutcomeCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final color = rule.colorOrDefault;
-    final pTime =
-        _sumSecondsInSubtree(rule.id, facts.stats.plannedSecByCategory);
-    final aTime =
-        _sumSecondsInSubtree(rule.id, facts.stats.actualSecByCategory);
+    final pTime = _sumSecondsInSubtree(
+      rule.id,
+      facts.stats.plannedSecByCategory,
+    );
+    final aTime = _sumSecondsInSubtree(
+      rule.id,
+      facts.stats.actualSecByCategory,
+    );
     final plans = facts.plansInSubtree(rule.id);
     final done = plans.where((task) => task.isDone).length;
     final worked = plans.where(facts.hasWork).length;
@@ -533,7 +543,8 @@ class _CategoryOutcomeCard extends StatelessWidget {
     final children = (rule.children ?? const <CategoryRule>[]).where((child) {
       final childPlans = facts.plansInSubtree(child.id).length;
       return childPlans > 0 ||
-          _sumSecondsInSubtree(child.id, facts.stats.plannedSecByCategory) > 0 ||
+          _sumSecondsInSubtree(child.id, facts.stats.plannedSecByCategory) >
+              0 ||
           _sumSecondsInSubtree(child.id, facts.stats.actualSecByCategory) > 0;
     }).toList();
 
@@ -560,21 +571,18 @@ class _CategoryOutcomeCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      localizeCategoryDbSegment(
-                        rule.name,
-                        currentLocale.value,
-                      ),
+                      localizeCategoryDbSegment(rule.name, currentLocale.value),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w900,
-                          ),
+                        fontWeight: FontWeight.w900,
+                      ),
                     ),
                     Text(
                       '${done}/${plans.length} ${_copy('done', 'выполнено')} · $worked ${_copy('worked', 'в работе')}',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: scheme.onSurfaceVariant,
-                          ),
+                        color: scheme.onSurfaceVariant,
+                      ),
                     ),
                   ],
                 ),
@@ -582,9 +590,9 @@ class _CategoryOutcomeCard extends StatelessWidget {
               Text(
                 _deltaTime(pTime, aTime),
                 style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                      color: color,
-                      fontWeight: FontWeight.w900,
-                    ),
+                  color: color,
+                  fontWeight: FontWeight.w900,
+                ),
               ),
             ],
           ),
@@ -610,22 +618,24 @@ class _CategoryOutcomeCard extends StatelessWidget {
               Text(
                 '${_copy('Plan', 'План')}: ${_durationCompact(pTime)}',
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: scheme.onSurfaceVariant,
-                    ),
+                  color: scheme.onSurfaceVariant,
+                ),
               ),
               const Spacer(),
               Text(
                 '${_copy('Fact', 'Факт')}: ${_durationCompact(aTime)}',
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: scheme.onSurfaceVariant,
-                    ),
+                  color: scheme.onSurfaceVariant,
+                ),
               ),
             ],
           ),
           if (children.isNotEmpty) ...[
             const SizedBox(height: 5),
             Theme(
-              data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+              data: Theme.of(
+                context,
+              ).copyWith(dividerColor: Colors.transparent),
               child: ExpansionTile(
                 dense: true,
                 tilePadding: EdgeInsets.zero,
@@ -633,9 +643,9 @@ class _CategoryOutcomeCard extends StatelessWidget {
                 title: Text(
                   _copy('Subcategories', 'Подкатегории'),
                   style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        color: scheme.onSurfaceVariant,
-                        fontWeight: FontWeight.w700,
-                      ),
+                    color: scheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
                 children: [
                   for (final child in children)
@@ -660,10 +670,14 @@ class _SubcategoryRow extends StatelessWidget {
     final color = rule.colorOrDefault;
     final plans = facts.plansInSubtree(rule.id);
     final done = plans.where((task) => task.isDone).length;
-    final pTime =
-        _sumSecondsInSubtree(rule.id, facts.stats.plannedSecByCategory);
-    final aTime =
-        _sumSecondsInSubtree(rule.id, facts.stats.actualSecByCategory);
+    final pTime = _sumSecondsInSubtree(
+      rule.id,
+      facts.stats.plannedSecByCategory,
+    );
+    final aTime = _sumSecondsInSubtree(
+      rule.id,
+      facts.stats.actualSecByCategory,
+    );
     return Padding(
       padding: const EdgeInsets.only(top: 8),
       child: Row(
@@ -679,16 +693,16 @@ class _SubcategoryRow extends StatelessWidget {
               localizeCategoryDbSegment(rule.name, currentLocale.value),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w700),
             ),
           ),
           Text(
             '$done/${plans.length}',
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  fontWeight: FontWeight.w800,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w800),
           ),
           const SizedBox(width: 12),
           SizedBox(
@@ -721,23 +735,26 @@ class _NeedsAttention extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.pending_actions_rounded,
-                  size: 20, color: scheme.onSurfaceVariant),
+              Icon(
+                Icons.pending_actions_rounded,
+                size: 20,
+                color: scheme.onSurfaceVariant,
+              ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   _copy('Not completed', 'Не выполнено'),
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w900,
-                      ),
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
               ),
               Text(
                 '${plans.length}',
                 style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                      color: scheme.onSurfaceVariant,
-                      fontWeight: FontWeight.w900,
-                    ),
+                  color: scheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w900,
+                ),
               ),
             ],
           ),
@@ -768,8 +785,8 @@ class _NeedsAttention extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -778,9 +795,9 @@ class _NeedsAttention extends StatelessWidget {
                         ? _durationCompact(facts.actualForPlan(task))
                         : _copy('not started', 'не начато'),
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: scheme.onSurfaceVariant,
-                          fontWeight: FontWeight.w700,
-                        ),
+                      color: scheme.onSurfaceVariant,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ],
               ),
@@ -816,15 +833,16 @@ class _CompletionRing extends StatelessWidget {
               strokeWidth: 7,
               strokeCap: StrokeCap.round,
               color: color,
-              backgroundColor:
-                  scheme.surfaceContainerHighest.withValues(alpha: 0.35),
+              backgroundColor: scheme.surfaceContainerHighest.withValues(
+                alpha: 0.35,
+              ),
             ),
           ),
           Text(
             label,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w900,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900),
           ),
         ],
       ),
@@ -845,8 +863,12 @@ class _OutcomeRail extends StatelessWidget {
   final Color color;
 
   @override
-  Widget build(BuildContext context) =>
-      _LabeledRail(label: label, value: value, valueText: valueText, color: color);
+  Widget build(BuildContext context) => _LabeledRail(
+    label: label,
+    value: value,
+    valueText: valueText,
+    color: color,
+  );
 }
 
 class _LabeledRail extends StatelessWidget {
@@ -872,16 +894,16 @@ class _LabeledRail extends StatelessWidget {
               child: Text(
                 label,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: scheme.onSurfaceVariant,
-                      fontWeight: FontWeight.w700,
-                    ),
+                  color: scheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
             Text(
               valueText,
-              style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    fontWeight: FontWeight.w900,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w900),
             ),
           ],
         ),
@@ -894,7 +916,9 @@ class _LabeledRail extends StatelessWidget {
               children: [
                 Positioned.fill(
                   child: ColoredBox(
-                    color: scheme.surfaceContainerHighest.withValues(alpha: 0.34),
+                    color: scheme.surfaceContainerHighest.withValues(
+                      alpha: 0.34,
+                    ),
                   ),
                 ),
                 FractionallySizedBox(
@@ -945,7 +969,9 @@ class _TimeCompareRail extends StatelessWidget {
               Positioned.fill(
                 child: DecoratedBox(
                   decoration: BoxDecoration(
-                    color: scheme.surfaceContainerHighest.withValues(alpha: 0.24),
+                    color: scheme.surfaceContainerHighest.withValues(
+                      alpha: 0.24,
+                    ),
                     borderRadius: BorderRadius.circular(999),
                   ),
                 ),
@@ -1003,7 +1029,9 @@ class _Glow extends StatelessWidget {
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: color.withValues(
-              alpha: Theme.of(context).brightness == Brightness.dark ? 0.14 : 0.09,
+              alpha: Theme.of(context).brightness == Brightness.dark
+                  ? 0.14
+                  : 0.09,
             ),
           ),
         ),
