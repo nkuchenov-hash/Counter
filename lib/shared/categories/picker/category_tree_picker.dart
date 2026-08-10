@@ -251,7 +251,7 @@ class _CategoryTreePickerSheetState extends State<_CategoryTreePickerSheet> {
                   CategoryTreeBody(
                     roots: roots,
                     selectedCategoryId: widget.initialCategoryId,
-                    expandSelectionPath: true,
+                    expandSelectionPath: false,
                     onSelect: _selectCategory,
                     showEditChrome: false,
                     showPickerCreateChrome: true,
