@@ -1071,13 +1071,11 @@ class _TimeGridState extends State<_TimeGrid> {
                                 .inMinutes
                                 .clamp(0, 1440);
                             final top = startMinutes / 60 * hourHeight;
-                            final rawHeight = math.max(
-                              2.0,
-                              (endMinutes - startMinutes) / 60 * hourHeight,
-                            );
+                            final rawHeight =
+                                (endMinutes - startMinutes) / 60 * hourHeight;
                             final blockHeight = math.min(
-                              math.max(mobile ? 20.0 : 18.0, rawHeight),
-                              math.max(2.0, gridHeight - top),
+                              rawHeight,
+                              math.max(0.0, gridHeight - top),
                             );
                             final showTitle = blockHeight >= 27;
                             final showMeta = blockHeight >= (mobile ? 50 : 46);
