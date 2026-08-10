@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-10T21:37:04.885Z",
+  "updatedAt": "2026-08-10T21:57:02.210Z",
   "count": 495,
   "sources": [
     "IGN",
@@ -14,6 +14,24 @@
     "Игромания"
   ],
   "articles": [
+    {
+      "source": "GamesRadar+",
+      "language": "en",
+      "title": "Chill shop sim about repairing off-brand PS1s makes its budget back \"within 12 hours\" and earns $3 million days after launch",
+      "normalizedTitle": "chill shop sim about repairing off brand ps1s makes its budget back within 12 hours and earns 3 million days after launch",
+      "url": "https://www.gamesradar.com/games/simulation/chill-shop-sim-about-repairing-off-brand-ps1s-makes-its-budget-back-within-12-hours-and-earns-usd3-million-days-after-launch/",
+      "summary": "ReStory sounds like my ideal cozy game",
+      "publishedAt": "Mon, 10 Aug 2026 21:51:32 +0000"
+    },
+    {
+      "source": "GamesRadar+",
+      "language": "en",
+      "title": "2 years later, famous Palworld bug returns in 1.0 to bless players with a giant Sekhmet \"at least 200x her normal size\"",
+      "normalizedTitle": "2 years later famous palworld bug returns in 1 0 to bless players with a giant sekhmet at least 200x her normal size",
+      "url": "https://www.gamesradar.com/games/survival/2-years-later-famous-palworld-bug-returns-in-1-0-to-bless-players-with-a-giant-sekhmet-at-least-200x-her-normal-size/",
+      "summary": "Bless and/or terrify",
+      "publishedAt": "Mon, 10 Aug 2026 21:47:28 +0000"
+    },
     {
       "source": "PC Gamer",
       "language": "en",
@@ -971,19 +989,19 @@
     {
       "source": "PC Gamer",
       "language": "en",
-      "title": "Sean Murray still loves playing the 2016 version of No Man's Sky: 'It's a little bit weirder, but it's got its charm'",
-      "normalizedTitle": "sean murray still loves playing the 2016 version of no man s sky it s a little bit weirder but it s got its charm",
-      "url": "https://www.pcgamer.com/games/action/sean-murray-still-loves-playing-the-2016-version-of-no-mans-sky-its-a-little-bit-weirder-but-its-got-its-charm/",
-      "summary": "\"I've got a real soft spot for it,\" says the founder of Hello Games.",
+      "title": "Light No Fire will 'absolutely' be like No Man's Sky, with new features coming post-release: Sean Murray says he'd like to still be working on it '10 years after launch'",
+      "normalizedTitle": "light no fire will absolutely be like no man s sky with new features coming post release sean murray says he d like to still be working on it 10 years after launch",
+      "url": "https://www.pcgamer.com/games/survival-crafting/light-no-fire-will-absolutely-be-like-no-mans-sky-with-new-features-coming-post-release-sean-murray-says-hed-like-to-still-be-working-on-it-10-years-after-launch/",
+      "summary": "\"I've worked on it for seven years now, and I'm still really enjoying it.\"",
       "publishedAt": "Mon, 10 Aug 2026 13:00:00 +0000"
     },
     {
       "source": "PC Gamer",
       "language": "en",
-      "title": "Light No Fire will 'absolutely' be like No Man's Sky, with new features coming post-release: Sean Murray says he'd like to still be working on it '10 years after launch'",
-      "normalizedTitle": "light no fire will absolutely be like no man s sky with new features coming post release sean murray says he d like to still be working on it 10 years after launch",
-      "url": "https://www.pcgamer.com/games/survival-crafting/light-no-fire-will-absolutely-be-like-no-mans-sky-with-new-features-coming-post-release-sean-murray-says-hed-like-to-still-be-working-on-it-10-years-after-launch/",
-      "summary": "\"I've worked on it for seven years now, and I'm still really enjoying it.\"",
+      "title": "Sean Murray still loves playing the 2016 version of No Man's Sky: 'It's a little bit weirder, but it's got its charm'",
+      "normalizedTitle": "sean murray still loves playing the 2016 version of no man s sky it s a little bit weirder but it s got its charm",
+      "url": "https://www.pcgamer.com/games/action/sean-murray-still-loves-playing-the-2016-version-of-no-mans-sky-its-a-little-bit-weirder-but-its-got-its-charm/",
+      "summary": "\"I've got a real soft spot for it,\" says the founder of Hello Games.",
       "publishedAt": "Mon, 10 Aug 2026 13:00:00 +0000"
     },
     {
@@ -1257,15 +1275,6 @@
       "publishedAt": "Mon, 10 Aug 2026 09:46:40 +0300"
     },
     {
-      "source": "GamesRadar+",
-      "language": "en",
-      "title": "Even though John Stewart will be in Man of Tomorrow, Lanterns showrunner says he didn't have \"any specific landing point\"",
-      "normalizedTitle": "even though john stewart will be in man of tomorrow lanterns showrunner says he didn t have any specific landing point",
-      "url": "https://www.gamesradar.com/entertainment/dc-tv-shows/even-though-john-stewart-will-be-in-man-of-tomorrow-lanterns-showrunner-says-he-didnt-have-any-specific-landing-point/",
-      "summary": "It sounds like Lanterns had a lot of freedom",
-      "publishedAt": "Mon, 10 Aug 2026 05:00:00 +0000"
-    },
-    {
       "source": "PC Gamer",
       "language": "en",
       "title": "Australians must now prove their age to buy R18+ games on the Xbox store",
@@ -1282,15 +1291,6 @@
       "url": "https://stopgame.ru/show/163170/data_serious_sam_shatterverse_preview_onimusha_way_of_the_sword_gta_vi_bet_rekordy",
       "summary": "На THQ Nordic Digital Showcase показали свежие трейлеры Wreckfest 2, The Guild: Europa 1410 и классической трилогии Gothic для консолей, также тизернули новую игру от авторов Road 96, объявили о выходе Expeditions: Samurai и DLC The Prisoner для REANIMAL и напомнили о настольной Gothic: A Shadow’s Quest;",
       "publishedAt": "Mon, 10 Aug 2026 06:40:07 +0300"
-    },
-    {
-      "source": "GamesRadar+",
-      "language": "en",
-      "title": "House of the Dragon showrunner teases \"new dragons\" in \"a very worthy\" final season of the hit HBO show",
-      "normalizedTitle": "house of the dragon showrunner teases new dragons in a very worthy final season of the hit hbo show",
-      "url": "https://www.gamesradar.com/entertainment/fantasy-shows/house-of-the-dragon-showrunner-teases-a-very-worthy-final-season-of-the-hit-hbo-show/",
-      "summary": "Ryan Condal says House of the Dragon season 4 will be \"even bigger\"",
-      "publishedAt": "Mon, 10 Aug 2026 02:10:00 +0000"
     },
     {
       "source": "PC Gamer",
