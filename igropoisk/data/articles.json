@@ -1,6 +1,6 @@
 {
-  "updatedAt": "2026-08-10T22:10:50.953Z",
-  "count": 495,
+  "updatedAt": "2026-08-10T22:44:17.560Z",
+  "count": 485,
   "sources": [
     "IGN",
     "GameSpot",
@@ -14,6 +14,15 @@
     "Игромания"
   ],
   "articles": [
+    {
+      "source": "PC Gamer",
+      "language": "en",
+      "title": "The vibey offroading game with more than a million Steam wishlists has a release date",
+      "normalizedTitle": "the vibey offroading game with more than a million steam wishlists has a release date",
+      "url": "https://www.pcgamer.com/games/sim/the-vibey-offroading-game-with-more-than-a-million-steam-wishlists-has-a-release-date/",
+      "summary": "Over the Hill looks set to be a low key hit.",
+      "publishedAt": "Mon, 10 Aug 2026 22:33:09 +0000"
+    },
     {
       "source": "PC Gamer",
       "language": "en",
@@ -33,6 +42,15 @@
       "publishedAt": "Mon, 10 Aug 2026 21:51:32 +0000"
     },
     {
+      "source": "IGN",
+      "language": "en",
+      "title": "Nikki From Obsession Will Be At Halloween Horror Nights In a 'Where's Waldo' Way, But Fans Are Divided",
+      "normalizedTitle": "nikki from obsession will be at halloween horror nights in a where s waldo way but fans are divided",
+      "url": "https://www.ign.com/articles/nikki-from-obsession-will-be-at-halloween-horror-nights-in-a-wheres-waldo-way-but-fans-are-divided",
+      "summary": "Watch your back; Inde Navarrette’s iconic character, Nikki Freeman, will be wandering around Universal Studios theme parks for Halloween Horror Nights.",
+      "publishedAt": "Mon, 10 Aug 2026 21:47:44 +0000"
+    },
+    {
       "source": "GamesRadar+",
       "language": "en",
       "title": "2 years later, famous Palworld bug returns in 1.0 to bless players with a giant Sekhmet \"at least 200x her normal size\"",
@@ -42,6 +60,33 @@
       "publishedAt": "Mon, 10 Aug 2026 21:47:28 +0000"
     },
     {
+      "source": "IGN",
+      "language": "en",
+      "title": "Atlus Producer Says 'I Think We Have to Do' Persona 1 and 2 Remakes",
+      "normalizedTitle": "atlus producer says i think we have to do persona 1 and 2 remakes",
+      "url": "https://www.ign.com/articles/atlus-producer-says-i-think-we-have-to-do-persona-1-and-2-remakes",
+      "summary": "Kazuhisa Wada, producer for Atlus' P-Studio, says he \"can't say for sure\" if Persona 1 and 2 remakes are coming, but said they are still games he thinks \"we have to do.\"",
+      "publishedAt": "Mon, 10 Aug 2026 21:45:55 +0000"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "Fields of Mistria Review So Far",
+      "normalizedTitle": "fields of mistria review so far",
+      "url": "https://www.ign.com/articles/fields-of-mistria-review",
+      "summary": "This fantasy farming sim takes place in a pastel pixel art world full of mythical creatures and magic.",
+      "publishedAt": "Mon, 10 Aug 2026 21:30:12 +0000"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "Absolute Batman Volume 1 Hardcovers Drop to a New Low Price on Amazon",
+      "normalizedTitle": "absolute batman volume 1 hardcovers drop to a new low price on amazon",
+      "url": "https://www.ign.com/articles/absolute-batman-volume-1-hardcovers-drop-to-a-new-low-price-on-amazon",
+      "summary": "The first full volume of DC&#39;s All In publishing initiative has finally gotten a decent hardcover discount. Absolute Batman Vol. 1: The Zoo, which was first released back in August 2025, has dropped under $20 on Amazon, 22% off its usual retail price. Volume 1 of Absolute Batman wraps up the first 6-issue arc written by comics legend Scott Snyder and illustrated by Nick Dragotta. With issue #23 scheduled to release this week, this price drop makes it a great time to start your collection with some savings. If you aren&#39;t already familiar with Absolute Batman, it&#39;s worth noting that i",
+      "publishedAt": "Mon, 10 Aug 2026 21:30:00 +0000"
+    },
+    {
       "source": "PC Gamer",
       "language": "en",
       "title": "50 Cent is producing a Payday project for 'the screen'",
@@ -49,6 +94,15 @@
       "url": "https://www.pcgamer.com/movies-tv/50-cent-is-producing-a-payday-project-for-the-screen/",
       "summary": "Whether that's a TV or movie screen isn't clear at this point, but I'm pretty sure it's one or the other.",
       "publishedAt": "Mon, 10 Aug 2026 21:11:44 +0000"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "Battlefield 6 Player With Over 400 Hours Gets Full Refund from Steam After Key Modes Were Removed",
+      "normalizedTitle": "battlefield 6 player with over 400 hours gets full refund from steam after key modes were removed",
+      "url": "https://www.ign.com/articles/battlefield-6-player-with-over-400-hours-gets-full-refund-from-steam-after-key-modes-were-removed",
+      "summary": "A Battlefield 6 player with hundreds of hours of playtime has scored a full refund of the game after Battlefield Studios removed key modes from the game's quick-play matchmaking.",
+      "publishedAt": "Mon, 10 Aug 2026 21:10:16 +0000"
     },
     {
       "source": "GamesRadar+",
@@ -69,22 +123,13 @@
       "publishedAt": "Mon, 10 Aug 2026 21:05:30 +0000"
     },
     {
-      "source": "Polygon",
+      "source": "IGN",
       "language": "en",
-      "title": "'House of the Dragon' Officially Rewrites the Saddest Downfall in Game of Thrones History",
-      "normalizedTitle": "house of the dragon officially rewrites the saddest downfall in game of thrones history",
-      "url": "https://www.polygon.com/house-of-the-dragon-season-4-changes-rhaenyra/",
-      "summary": "Showrunner Ryan Condal may have just quietly set this character down a troubling path in 'House of the Dragon' season 4.",
-      "publishedAt": "Mon, 10 Aug 2026 21:00:12 GMT"
-    },
-    {
-      "source": "Polygon",
-      "language": "en",
-      "title": "2,000 Fortnite Players Hired as Air Traffic Controllers by US Government",
-      "normalizedTitle": "2 000 fortnite players hired as air traffic controllers by us government",
-      "url": "https://www.polygon.com/fortnite-united-states-air-traffic-control/",
-      "summary": "The United States department of transportation boasts that it is employing gamer air traffic controllers in record numbers",
-      "publishedAt": "Mon, 10 Aug 2026 20:59:21 GMT"
+      "title": "Save $400 Off the 2.6-Pound XPS 13 Ultra Portable Laptop During Dell's Back to School Sale",
+      "normalizedTitle": "save 400 off the 2 6 pound xps 13 ultra portable laptop during dell s back to school sale",
+      "url": "https://www.ign.com/articles/dell-xps-13-ultra-portable-laptop-deal-back-to-school-sale-2026",
+      "summary": "Equipped with Qualcomm's premium Snapdragon X Elite CPU.",
+      "publishedAt": "Mon, 10 Aug 2026 21:05:00 +0000"
     },
     {
       "source": "GamesRadar+",
@@ -105,33 +150,6 @@
       "publishedAt": "Mon, 10 Aug 2026 20:50:36 +0000"
     },
     {
-      "source": "Polygon",
-      "language": "en",
-      "title": "Chiikawa the Movie Is Killing It in Japan's Cinemas — While Leaving Children Crying in Fear",
-      "normalizedTitle": "chiikawa the movie is killing it in japan s cinemas while leaving children crying in fear",
-      "url": "https://www.polygon.com/chiikawa-the-movie-secret-of-mermaid-island-box-office/",
-      "summary": "Chiikawa The Movie: The Secret of Mermaid Island is one of the highest-grossing films in Japan this year, and is sending children crying in fear.",
-      "publishedAt": "Mon, 10 Aug 2026 20:48:24 GMT"
-    },
-    {
-      "source": "Polygon",
-      "language": "en",
-      "title": "Marvel Tokon's New PC Patch Finally Makes the Game Work, Players Say",
-      "normalizedTitle": "marvel tokon s new pc patch finally makes the game work players say",
-      "url": "https://www.polygon.com/marvel-tokon-fighting-souls-pc-patch-reportedly-fixes-game/",
-      "summary": "Marvel Tokon Fighting Souls had a rough launch on Windows PC. A new patch on Monday has reportedly fixed many of players' issues.",
-      "publishedAt": "Mon, 10 Aug 2026 20:41:44 GMT"
-    },
-    {
-      "source": "Polygon",
-      "language": "en",
-      "title": "Samara Weaving | Shelf Quest Episode 5",
-      "normalizedTitle": "samara weaving shelf quest episode 5",
-      "url": "https://www.polygon.com/video/samara-weaving-shelf-quest-episode-5/",
-      "summary": "Samara Weaving is an agent of chaos who loves to cause mayhem in video games. After toying with The Sims and Mario Kart as a kid, she really knuckled down and got into Red Dead Redemption after watching her husband play — and she never looked back. The star of Carolina Caroline and Ready or Not enjoys using films and games to let out her wild side. She loves action and just a liiiiiittle bit of violence. And yet she had a soft spot for her Sims.Join Sam on this episode of Shelf Quest as she browses the shelves of videogamesnewyork and reminisces on how she got into gaming, and her dreams for h",
-      "publishedAt": "Mon, 10 Aug 2026 20:37:14 GMT"
-    },
-    {
       "source": "GamesRadar+",
       "language": "en",
       "title": "Xbox finally fixes bug that made it impossible to play physical games while exec promises \"to improve reliability of our products\"",
@@ -148,6 +166,24 @@
       "url": "https://www.pcgamer.com/gaming-industry/grand-theft-auto-5-averages-more-copies-sold-per-year-than-most-megahits-manage-in-their-entire-lifetime-with-a-total-of-230-million-since-2013/",
       "summary": "The people yearn for Los Santos.",
       "publishedAt": "Mon, 10 Aug 2026 20:31:05 +0000"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "GameStop Reportedly Considers Dropping eBay Bid for New Partnership Offer",
+      "normalizedTitle": "gamestop reportedly considers dropping ebay bid for new partnership offer",
+      "url": "https://www.ign.com/articles/gamestop-reportedly-considers-dropping-ebay-bid-for-new-partnership-offer",
+      "summary": "GameStop CEO Ryan Cohen is reportedly considering dropping his eBay bid for a revised offer that could include a partnership between the two companies.",
+      "publishedAt": "Mon, 10 Aug 2026 20:23:51 +0000"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "Professional Smash Bros. Melee Payer Hungrybox Popped Off So Hard After Winning a Game That He Literally Fainted",
+      "normalizedTitle": "professional smash bros melee payer hungrybox popped off so hard after winning a game that he literally fainted",
+      "url": "https://www.ign.com/articles/professional-smash-bros-melee-payer-hungrybox-popped-off-so-hard-after-winning-a-game-that-he-literally-fainted",
+      "summary": "Professional Super Smash Bros. Melee player Juan ‘Hungrybox’ Debiedma went viral over the weekend after fainting while celebrating a victory over fellow player Hugh ‘SluG’ Hegarty.",
+      "publishedAt": "Mon, 10 Aug 2026 20:20:54 +0000"
     },
     {
       "source": "GameSpot",
@@ -177,15 +213,6 @@
       "publishedAt": "Mon, 10 Aug 2026 20:15:00 +0000"
     },
     {
-      "source": "Polygon",
-      "language": "en",
-      "title": "Large lost sunken relics list in Pokémon Pokopia",
-      "normalizedTitle": "large lost sunken relics list in pokémon pokopia",
-      "url": "https://www.polygon.com/pokemon-pokopia-lost-sunken-relics-dlc-list-how-to-get/",
-      "summary": "Here's a list of large lost sunken relics in Pokémon Pokopia Bubbly Basin DLC and how to get them.",
-      "publishedAt": "Mon, 10 Aug 2026 20:10:40 GMT"
-    },
-    {
       "source": "PC Gamer",
       "language": "en",
       "title": "'Thank you so much for the best weekend ever': The id Software gang got together at QuakeCon, and it sure looks like everyone had a great time",
@@ -204,13 +231,22 @@
       "publishedAt": "Mon, 10 Aug 2026 20:08:18 +0000"
     },
     {
-      "source": "Polygon",
+      "source": "IGN",
       "language": "en",
-      "title": "Big Walk's Award-winning Predecessor is a Must Play PlayStation Plus Game",
-      "normalizedTitle": "big walk s award winning predecessor is a must play playstation plus game",
-      "url": "https://www.polygon.com/untitled-goose-game-ps-plus-recommendation/",
-      "summary": "Before Big Walk, House House sharpened its craft in its award-winning Untitled Goose Game, available to play on PS Plus.",
-      "publishedAt": "Mon, 10 Aug 2026 20:00:12 GMT"
+      "title": "Madden NFL 27 Arcade Edition Is Officially Live on Apple Arcade",
+      "normalizedTitle": "madden nfl 27 arcade edition is officially live on apple arcade",
+      "url": "https://www.ign.com/articles/madden-nfl-27-arcade-edition-is-officially-live-on-apple-arcade",
+      "summary": "Madden NFL 27 Arcade Edition has officially launched on Apple Arcade. Get ready to enjoy football with no ads, no in-app purchases, no currencies, and no paywalls.",
+      "publishedAt": "Mon, 10 Aug 2026 20:00:00 +0000"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "The LEGO Animal Crossing Museum Set Is Perfect for Cozy Collectors, Now 41% Off",
+      "normalizedTitle": "the lego animal crossing museum set is perfect for cozy collectors now 41 off",
+      "url": "https://www.ign.com/articles/lego-animal-crossing-blathers-museum-set-deal-lowest-price-ever",
+      "summary": "LEGO’s Animal Crossing set that lets you build your own version of Blathers's Museum is a whopping 41% off on Amazon right now.",
+      "publishedAt": "Mon, 10 Aug 2026 20:00:00 +0000"
     },
     {
       "source": "GameSpot",
@@ -222,13 +258,22 @@
       "publishedAt": "Mon, 10 Aug 2026 19:30:45 +0000"
     },
     {
-      "source": "Polygon",
+      "source": "IGN",
       "language": "en",
-      "title": "Super Mario Bros. Players Are Closing In on a Perfect Playthrough",
-      "normalizedTitle": "super mario bros players are closing in on a perfect playthrough",
-      "url": "https://www.polygon.com/super-mario-bros-speedrun-lekukie-world-record/",
-      "summary": "A new video from Super Mario Bros. speedrunner Kosmic breaks down just how close players are to achieving a perfect game.",
-      "publishedAt": "Mon, 10 Aug 2026 19:30:12 GMT"
+      "title": "Beat the Summer Heat With This $6 Portable Turbo Fan",
+      "normalizedTitle": "beat the summer heat with this 6 portable turbo fan",
+      "url": "https://www.ign.com/articles/lerat-portable-turbo-fan-deal-august-2026",
+      "summary": "Stay frosty.",
+      "publishedAt": "Mon, 10 Aug 2026 19:30:00 +0000"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "Final Fantasy Fans Convinced Dirge of Cerberus Remake on the Way After Gackt Posts Photo in Genesis Cosplay",
+      "normalizedTitle": "final fantasy fans convinced dirge of cerberus remake on the way after gackt posts photo in genesis cosplay",
+      "url": "https://www.ign.com/articles/final-fantasy-fans-convinced-dirge-of-cerberus-remake-on-the-way-after-gackt-posts-photo-in-genesis-cosplay",
+      "summary": "Final Fantasy fans are convinced a Dirge of Cerberus remake could be on the horizon after one Japan’s most famous rockstars, Gackt, posted a photo of himself cosplaying as Crisis Core's Genesis.",
+      "publishedAt": "Mon, 10 Aug 2026 19:25:43 +0000"
     },
     {
       "source": "PC Gamer",
@@ -267,24 +312,6 @@
       "publishedAt": "Mon, 10 Aug 2026 22:00:15 +0300"
     },
     {
-      "source": "Polygon",
-      "language": "en",
-      "title": "Switch 2 Just Got One of the Decade’s Best Soulslikes",
-      "normalizedTitle": "switch 2 just got one of the decade s best soulslikes",
-      "url": "https://www.polygon.com/lies-of-p-complete-edition-nintendo-swtich-2-release/",
-      "summary": "Lies of P and its Overture expansion just hit the Nintendo Switch 2. Together, they're one of the best non-FromSoftware Soulslikes of the 2020s.",
-      "publishedAt": "Mon, 10 Aug 2026 19:00:12 GMT"
-    },
-    {
-      "source": "Polygon",
-      "language": "en",
-      "title": "Batman's new Joker actor officially confirms a shocking change to the iconic villains backstory",
-      "normalizedTitle": "batman s new joker actor officially confirms a shocking change to the iconic villains backstory",
-      "url": "https://www.polygon.com/batman-caped-crusader-joker-matthew-needham-interview/",
-      "summary": "‘I really hoped that people would see that everything we were doing was with great respect.’",
-      "publishedAt": "Mon, 10 Aug 2026 19:00:12 GMT"
-    },
-    {
       "source": "GamesRadar+",
       "language": "en",
       "title": "Oblivion intern tried to outsmart Bethesda's AI and was stunned when his apple murder strategy actually worked: \"I can't believe you accounted for this\"",
@@ -292,6 +319,15 @@
       "url": "https://www.gamesradar.com/games/the-elder-scrolls/oblivion-intern-tried-to-outsmart-bethesdas-ai-and-was-stunned-when-his-apple-murder-strategy-actually-worked-i-cant-believe-you-accounted-for-this/",
       "summary": "\"'Can I abuse this in any way?'\"",
       "publishedAt": "Mon, 10 Aug 2026 18:59:53 +0000"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "Arc System Launches Marvel Tokon PC Update, and Some Players Are Saying It's Fixing Most of Their Issues",
+      "normalizedTitle": "arc system launches marvel tokon pc update and some players are saying it s fixing most of their issues",
+      "url": "https://www.ign.com/articles/arc-system-launches-marvel-tokon-pc-update-and-some-players-are-saying-its-fixing-most-of-their-issues",
+      "summary": "Developer Arc System Works has launched a major Marvel Tokon: Fighting Souls update that seems to have fixed many of the PC issues players reported following its launch.",
+      "publishedAt": "Mon, 10 Aug 2026 18:59:48 +0000"
     },
     {
       "source": "IGN",
@@ -429,15 +465,6 @@
       "publishedAt": "Mon, 10 Aug 2026 17:15:00 +0000"
     },
     {
-      "source": "IGN",
-      "language": "en",
-      "title": "Score up to 20% off Select 256GB microSD Express Cards at Amazon",
-      "normalizedTitle": "score up to 20 off select 256gb microsd express cards at amazon",
-      "url": "https://www.ign.com/articles/score-up-to-20-off-select-256gb-microsd-express-cards-at-amazon",
-      "summary": "A PNY 256GB microSD Express card and a SanDisk 256GB microSD express card have been discounted at Amazon, with the former dropping to $49.99 and the latter hitting $58.99.",
-      "publishedAt": "Mon, 10 Aug 2026 17:00:00 +0000"
-    },
-    {
       "source": "Rock Paper Shotgun",
       "language": "en",
       "title": "In cosmic roguelike The Carcass, you build a colony inside the corpse of a god that's slowly becoming aware of you",
@@ -474,15 +501,6 @@
       "publishedAt": "Mon, 10 Aug 2026 16:49:03 +0000"
     },
     {
-      "source": "IGN",
-      "language": "en",
-      "title": "Sonic the Hedgehog is Joining Fortnite, and Yes You'll Be Able to Dash Up Walls in the Green Hill Zone",
-      "normalizedTitle": "sonic the hedgehog is joining fortnite and yes you ll be able to dash up walls in the green hill zone",
-      "url": "https://www.ign.com/articles/sonic-the-hedgehog-is-joining-fortnite-and-yes-youll-be-able-to-dash-up-walls-in-the-green-hill-zone",
-      "summary": "Sonic the Hedgehog is joining Fortnite as part of the battle royale's upcoming gaming-themed season.",
-      "publishedAt": "Mon, 10 Aug 2026 16:43:45 +0000"
-    },
-    {
       "source": "GamesRadar+",
       "language": "en",
       "title": "Dig and Clean codes (August 2026) for luck boosts",
@@ -492,15 +510,6 @@
       "publishedAt": "Mon, 10 Aug 2026 16:34:30 +0000"
     },
     {
-      "source": "IGN",
-      "language": "en",
-      "title": "Join the IGN Discord!",
-      "normalizedTitle": "join the ign discord",
-      "url": "https://www.ign.com/articles/join-the-ign-discord",
-      "summary": "Hello IGN Community, I hope everyone had a great weekend. I’m here today to introduce you all to our newest addition to the IGN Ecosystem, our brand new official IGN Discord . We are thrilled to officially launch the IGN Discord server, our brand-new space designed specifically for you to connect with fellow fans and us in real-time. This server serves as a new hub for the IGN Ecosystem, bringing together IGN fans around the world to talk gameS, movies, tech, anime and more. Whether you want to discuss the latest industry news or find a squad for your favorite multiplayer game, our Discord is ",
-      "publishedAt": "Mon, 10 Aug 2026 16:30:00 +0000"
-    },
-    {
       "source": "GamesRadar+",
       "language": "en",
       "title": "Terraria's biggest mod, Calamity, is shutting down after 10 years over what the makers call a \"troubled past\" and \"irrecoverably tainted reputation\"",
@@ -508,15 +517,6 @@
       "url": "https://www.gamesradar.com/games/survival/terrarias-biggest-mod-calamity-is-shutting-down-after-10-years-over-what-the-makers-call-a-troubled-past-and-irrecoverably-tainted-reputation/",
       "summary": "\"Most of us want to simply move on…\"",
       "publishedAt": "Mon, 10 Aug 2026 16:29:30 +0000"
-    },
-    {
-      "source": "IGN",
-      "language": "en",
-      "title": "IFA 2026: What to Expect From the World’s Largest Home & Consumer Tech Event",
-      "normalizedTitle": "ifa 2026 what to expect from the world s largest home consumer tech event",
-      "url": "https://www.ign.com/articles/ifa-2026-what-to-expect",
-      "summary": "More than a trade show; more like a cultural playground.",
-      "publishedAt": "Mon, 10 Aug 2026 16:25:54 +0000"
     },
     {
       "source": "GameSpot",
@@ -663,15 +663,6 @@
       "publishedAt": "Mon, 10 Aug 2026 16:00:00 +0000"
     },
     {
-      "source": "IGN",
-      "language": "en",
-      "title": "Aliens: Fireteam Elite on Nintendo Switch Shut Down With No Refunds, as Owners Become the Latest Victims of Gaming's Increasingly Digital Future",
-      "normalizedTitle": "aliens fireteam elite on nintendo switch shut down with no refunds as owners become the latest victims of gaming s increasingly digital future",
-      "url": "https://www.ign.com/articles/aliens-fireteam-elite-on-nintendo-switch-shut-down-with-no-refunds-as-owners-become-the-latest-victims-of-gamings-increasingly-digital-future",
-      "summary": "Aliens: Fireteam Elite has had its cloud servers shut down, leaving Nintendo Switch owners unable to play the game without any form of refund.",
-      "publishedAt": "Mon, 10 Aug 2026 15:58:25 +0000"
-    },
-    {
       "source": "GameSpot",
       "language": "en",
       "title": "Fields Of Mistria Romance, Marriage, And Children Guide",
@@ -717,15 +708,6 @@
       "publishedAt": "Mon, 10 Aug 2026 15:27:43 +0000"
     },
     {
-      "source": "IGN",
-      "language": "en",
-      "title": "Marvel's Spider-Man 2 Gets Huge Boost 3 Years After Launch Thanks to Box Office Phenomenon Spider-Man: Brand New Day",
-      "normalizedTitle": "marvel s spider man 2 gets huge boost 3 years after launch thanks to box office phenomenon spider man brand new day",
-      "url": "https://www.ign.com/articles/marvels-spider-man-2-gets-huge-boost-3-years-after-launch-thanks-to-box-office-phenomenon-spider-man-brand-new-day",
-      "summary": "The box office phenomenon that is Spider-Man: Brand New Day has sparked a surge of interest in Sony video game Marvel’s Spider-Man 2, with players flocking to reinstall the game or buy it anew.",
-      "publishedAt": "Mon, 10 Aug 2026 15:27:35 +0000"
-    },
-    {
       "source": "GamesRadar+",
       "language": "en",
       "title": "The Witcher 3 devs wanted Geralt to have \"no emotion,\" but his voice actor pushed back against CD Projekt Red: \"He's an emotional being\"",
@@ -744,15 +726,6 @@
       "publishedAt": "Mon, 10 Aug 2026 15:24:53 +0000"
     },
     {
-      "source": "IGN",
-      "language": "en",
-      "title": "Curtis '50 Cent' Jackson Joins Payday TV Show as Executive Producer",
-      "normalizedTitle": "curtis 50 cent jackson joins payday tv show as executive producer",
-      "url": "https://www.ign.com/articles/curtis-50-cent-jackson-joins-payday-tv-show-as-executive-producer",
-      "summary": "Starbreeze Entertainment and Vice Studio's Payday TV show has added an unexpected name to its team: rapper Curtis \"50 Cent\" Jackson.",
-      "publishedAt": "Mon, 10 Aug 2026 15:18:49 +0000"
-    },
-    {
       "source": "GameSpot",
       "language": "en",
       "title": "Brand New Day Is Giving Marvel&#8217;s Spider-Man 2 Its Biggest Sales Boost In Years",
@@ -760,24 +733,6 @@
       "url": "https://www.gamespot.com/articles/brand-new-day-is-giving-marvels-spider-man-2-its-biggest-sales-boost-in-years/",
       "summary": "Spider-Man: Brand New Day just cleared $1.6 billion at the box office, and that has also led to a surge in sales of Marvel's Spider-Man 2 . According to new data estimates by Alinea Analytics, another 316,000 copies of the 2023 game have been sold on PS5 and PC via Steam since Spider-Man: Brand New Day swung into theaters, generating $11 million in sales. As Alinea's head of market analysis Rhys Elliot noted online, 20% of the copies sold since the film launched were physical, and another 274,000 players jumped into the game via its availability through PlayStation Plus Game Catalog for Extra ",
       "publishedAt": "Mon, 10 Aug 2026 15:11:48 +0000"
-    },
-    {
-      "source": "IGN",
-      "language": "en",
-      "title": "Nintendo Is Giving Away a £50 Switch 2 Accessory With Its Latest Console Bundle",
-      "normalizedTitle": "nintendo is giving away a 50 switch 2 accessory with its latest console bundle",
-      "url": "https://www.ign.com/articles/build-nintendo-switch-2-bundle-free-accessory",
-      "summary": "Nintendo’s new Switch 2 bundle lets you choose a console, game and NSO plan, then add an accessory worth up to £49.99 for free.",
-      "publishedAt": "Mon, 10 Aug 2026 15:11:41 +0000"
-    },
-    {
-      "source": "IGN",
-      "language": "en",
-      "title": "The Alienware RTX 5090 Gaming PC Drops to $4,780, Nearly the Same Price as Buying the GPU By Itself",
-      "normalizedTitle": "the alienware rtx 5090 gaming pc drops to 4 780 nearly the same price as buying the gpu by itself",
-      "url": "https://www.ign.com/articles/dell-alienware-area-51-intel-edition-rtx-5090-gaming-pc-deal-july-2026",
-      "summary": "An RTX 5090 graphics card nowadays goes for at least $4,500 new and $4,000 used.",
-      "publishedAt": "Mon, 10 Aug 2026 15:10:00 +0000"
     },
     {
       "source": "PC Gamer",
@@ -816,15 +771,6 @@
       "publishedAt": "Mon, 10 Aug 2026 14:56:21 +0000"
     },
     {
-      "source": "IGN",
-      "language": "en",
-      "title": "Saros Is Back Down to $50 at Amazon, Its Lowest Price Yet",
-      "normalizedTitle": "saros is back down to 50 at amazon its lowest price yet",
-      "url": "https://www.ign.com/articles/saros-ps5-deal-lowest-price-amazon",
-      "summary": "You can currently grab physical copies of Housemarque's PS5 sci-fi shooter Saros for just $50 at Amazon, its lowest price ever.",
-      "publishedAt": "Mon, 10 Aug 2026 14:55:55 +0000"
-    },
-    {
       "source": "GamesRadar+",
       "language": "en",
       "title": "Don't want to buy a Stream Deck? Corsair's new mouse can pull up a virtual control center with one button",
@@ -852,15 +798,6 @@
       "publishedAt": "Mon, 10 Aug 2026 14:39:29 +0000"
     },
     {
-      "source": "IGN",
-      "language": "en",
-      "title": "Xbox's Forza Horizon 6 Controller Is Down to $75 at Amazon, Its Lowest Price Ever",
-      "normalizedTitle": "xbox s forza horizon 6 controller is down to 75 at amazon its lowest price ever",
-      "url": "https://www.ign.com/articles/xbox-forza-horizon-6-controller-deal-amazon",
-      "summary": "One of the best-looking controllers Xbox has ever made just dropped to its all-time lowest price at Amazon.",
-      "publishedAt": "Mon, 10 Aug 2026 14:25:16 +0000"
-    },
-    {
       "source": "GamesRadar+",
       "language": "en",
       "title": "Game of Thrones play The Mad King makes the identity of the Prince that was Promised clearer than ever – with a major catch",
@@ -879,15 +816,6 @@
       "publishedAt": "Mon, 10 Aug 2026 14:16:52 +0000"
     },
     {
-      "source": "IGN",
-      "language": "en",
-      "title": "House of the Dragon Season 3 Is Getting a 4K Steelbook, Now Up for Preorder",
-      "normalizedTitle": "house of the dragon season 3 is getting a 4k steelbook now up for preorder",
-      "url": "https://www.ign.com/articles/house-of-the-dragon-season-3-4k-steelbook-where-to-buy",
-      "summary": "Preorders are live for House of the Dragon's third season. It's available in a gorgeous 4K steelbook, as well as on Blu-ray and even DVD.",
-      "publishedAt": "Mon, 10 Aug 2026 14:15:20 +0000"
-    },
-    {
       "source": "GamesRadar+",
       "language": "en",
       "title": "Rumors swirl for new Lego UCS Millennium Falcon, Helm's Deep, and more",
@@ -904,15 +832,6 @@
       "url": "https://www.gamesradar.com/entertainment/marvel-movies/ahead-of-an-expected-d23-x-men-cast-reveal-sadie-sink-thinks-its-a-smart-choice-to-have-a-younger-generation-of-mutants-in-the-mcu/",
       "summary": "The kids are alright",
       "publishedAt": "Mon, 10 Aug 2026 14:01:20 +0000"
-    },
-    {
-      "source": "IGN",
-      "language": "en",
-      "title": "Crownsville: Read the Entire First Issue of the Oni Press Horror Series",
-      "normalizedTitle": "crownsville read the entire first issue of the oni press horror series",
-      "url": "https://www.ign.com/articles/crownsville-read-the-entire-first-issue-of-the-oni-press-horror-series",
-      "summary": "Oni Press' Crownsville is a truly haunting horror comic with a real historical legacy, and now you can read the entire first chapter for free.",
-      "publishedAt": "Mon, 10 Aug 2026 14:00:00 +0000"
     },
     {
       "source": "GamesRadar+",
@@ -1016,15 +935,6 @@
     {
       "source": "GamesRadar+",
       "language": "en",
-      "title": "Light No Fire only has \"between 12 and 20\" devs, says lead – but that's ok because a similar number worked on No Man's Sky at launch",
-      "normalizedTitle": "light no fire only has between 12 and 20 devs says lead but that s ok because a similar number worked on no man s sky at launch",
-      "url": "https://www.gamesradar.com/games/survival/light-no-fire-only-has-between-12-and-20-devs-says-lead-but-thats-ok-because-a-similar-number-worked-on-no-mans-sky-at-launch/",
-      "summary": "The team is \"very small\" but has \"a lot of tools and tech\" at its disposal",
-      "publishedAt": "Mon, 10 Aug 2026 13:00:00 +0000"
-    },
-    {
-      "source": "GamesRadar+",
-      "language": "en",
       "title": "No Man's Sky Cosmos is the next big update as Hello Games refuses to slow down after 10 years",
       "normalizedTitle": "no man s sky cosmos is the next big update as hello games refuses to slow down after 10 years",
       "url": "https://www.gamesradar.com/games/survival/no-mans-sky-cosmos-is-the-next-big-update-as-hello-games-refuses-to-slow-down-after-10-years/",
@@ -1038,6 +948,15 @@
       "normalizedTitle": "sean murray doesn t care how much money no man s sky dlc would ve made and it doesn t matter because updates will stay free",
       "url": "https://www.gamesradar.com/games/survival/sean-murray-doesnt-care-how-much-money-no-mans-sky-dlc-wouldve-made-and-it-doesnt-matter-because-updates-will-stay-free/",
       "summary": "\"Every player that we have is going to experience this\"",
+      "publishedAt": "Mon, 10 Aug 2026 13:00:00 +0000"
+    },
+    {
+      "source": "GamesRadar+",
+      "language": "en",
+      "title": "Light No Fire only has \"between 12 and 20\" devs, says lead – but that's ok because a similar number worked on No Man's Sky at launch",
+      "normalizedTitle": "light no fire only has between 12 and 20 devs says lead but that s ok because a similar number worked on no man s sky at launch",
+      "url": "https://www.gamesradar.com/games/survival/light-no-fire-only-has-between-12-and-20-devs-says-lead-but-thats-ok-because-a-similar-number-worked-on-no-mans-sky-at-launch/",
+      "summary": "The team is \"very small\" but has \"a lot of tools and tech\" at its disposal",
       "publishedAt": "Mon, 10 Aug 2026 13:00:00 +0000"
     },
     {
@@ -1768,15 +1687,6 @@
       "url": "https://www.pcgamer.com/games/puzzle/big-walk-number-puzzle-4166-1899/",
       "summary": "If you're stuck on this early puzzle, we can give you some hints—or the complete solution.",
       "publishedAt": "Sat, 08 Aug 2026 00:02:33 +0000"
-    },
-    {
-      "source": "PC Gamer",
-      "language": "en",
-      "title": "GTA 6's Netflix deal forces us to ask: can you pirate an advertisement?",
-      "normalizedTitle": "gta 6 s netflix deal forces us to ask can you pirate an advertisement",
-      "url": "https://www.pcgamer.com/games/grand-theft-auto/gta-6s-netflix-deal-forces-us-to-ask-can-you-pirate-an-advertisement/",
-      "summary": "Just when you thought videogame marketing couldn't get sillier, people are going to wind up stealing a trailer.",
-      "publishedAt": "Fri, 07 Aug 2026 23:52:49 +0000"
     },
     {
       "source": "StopGame",

@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-10T22:10:50.953Z",
+  "updatedAt": "2026-08-10T22:44:17.560Z",
   "count": 78,
   "sourcePool": [
     "Steam",
@@ -79,7 +79,7 @@
       "movies": [],
       "criticRating": 9.4,
       "steamUserRating": 9.3,
-      "recommendations": 826628,
+      "recommendations": 826636,
       "owners": "20,000,000 .. 50,000,000",
       "peakConcurrent": 29529,
       "sourceEvidence": [
@@ -94,7 +94,7 @@
         "steamSpy": "https://steamspy.com/app/1245620",
         "metacritic": "https://www.metacritic.com/game/pc/elden-ring?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10591.731063723779,
+      "popularityScore": 10591.731484025879,
       "igropoiskRating": 9.4,
       "editorialSources": [
         "StopGame",
@@ -241,7 +241,7 @@
       "movies": [],
       "criticRating": 9.6,
       "steamUserRating": 9.7,
-      "recommendations": 750066,
+      "recommendations": 750073,
       "owners": "20,000,000 .. 50,000,000",
       "peakConcurrent": 54771,
       "sourceEvidence": [
@@ -258,7 +258,7 @@
         "steamSpy": "https://steamspy.com/app/1086940",
         "metacritic": "https://www.metacritic.com/game/pc/baldurs-gate-3?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10577.51000586326,
+      "popularityScore": 10577.510411166677,
       "igropoiskRating": 9.6,
       "editorialSources": [
         "GamesRadar+",
@@ -496,7 +496,7 @@
       "movies": [],
       "criticRating": 9.6,
       "steamUserRating": 8.7,
-      "recommendations": 1891005,
+      "recommendations": 1891008,
       "owners": "50,000,000 .. 100,000,000",
       "peakConcurrent": 67851,
       "sourceEvidence": [
@@ -509,7 +509,7 @@
         "steamSpy": "https://steamspy.com/app/271590",
         "metacritic": "https://www.metacritic.com/game/pc/grand-theft-auto-v?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10507.669290682641,
+      "popularityScore": 10507.669359581545,
       "igropoiskRating": 9.3,
       "editorialSources": [],
       "materials": {
@@ -578,7 +578,7 @@
       "movies": [],
       "criticRating": 9.3,
       "steamUserRating": 9.8,
-      "recommendations": 284684,
+      "recommendations": 284685,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 2253,
       "sourceEvidence": [
@@ -591,7 +591,7 @@
         "steamSpy": "https://steamspy.com/app/1145360",
         "metacritic": "https://www.metacritic.com/game/pc/hades?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10485.436458485385,
+      "popularityScore": 10485.436611037756,
       "igropoiskRating": 9.5,
       "editorialSources": [],
       "materials": {
@@ -662,7 +662,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 5.9,
-      "recommendations": 1762547,
+      "recommendations": 1762548,
       "owners": "100,000,000 .. 200,000,000",
       "peakConcurrent": 314682,
       "sourceEvidence": [
@@ -674,7 +674,7 @@
         "steamSpy": "https://steamspy.com/app/578080",
         "metacritic": ""
       },
-      "popularityScore": 10474.614095309678,
+      "popularityScore": 10474.614119949822,
       "igropoiskRating": 5.9,
       "editorialSources": [],
       "materials": {
@@ -840,7 +840,7 @@
       "movies": [],
       "criticRating": 6.9,
       "steamUserRating": 8.7,
-      "recommendations": 1160208,
+      "recommendations": 1160220,
       "owners": "20,000,000 .. 50,000,000",
       "peakConcurrent": 143870,
       "sourceEvidence": [
@@ -854,7 +854,7 @@
         "steamSpy": "https://steamspy.com/app/252490",
         "metacritic": "https://www.metacritic.com/game/pc/rust?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10436.45362300638,
+      "popularityScore": 10436.45407219328,
       "igropoiskRating": 7.5,
       "editorialSources": [
         "Eurogamer"
@@ -954,7 +954,7 @@
       "movies": [],
       "criticRating": 7,
       "steamUserRating": 8.4,
-      "recommendations": 584381,
+      "recommendations": 584384,
       "owners": "20,000,000 .. 50,000,000",
       "peakConcurrent": 22170,
       "sourceEvidence": [
@@ -967,7 +967,7 @@
         "steamSpy": "https://steamspy.com/app/346110",
         "metacritic": "https://www.metacritic.com/game/pc/ark-survival-evolved?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10396.66968304295,
+      "popularityScore": 10396.669905993023,
       "igropoiskRating": 7.5,
       "editorialSources": [],
       "materials": {
@@ -1059,7 +1059,7 @@
       "movies": [],
       "criticRating": 8.9,
       "steamUserRating": 9.8,
-      "recommendations": 810900,
+      "recommendations": 810911,
       "owners": "50,000,000 .. 100,000,000",
       "peakConcurrent": 25122,
       "sourceEvidence": [
@@ -1072,7 +1072,7 @@
         "steamSpy": "https://steamspy.com/app/550",
         "metacritic": "https://www.metacritic.com/game/pc/left-4-dead-2?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10390.8967835989,
+      "popularityScore": 10390.897372722222,
       "igropoiskRating": 9.2,
       "editorialSources": [],
       "materials": {
@@ -1148,7 +1148,7 @@
       "movies": [],
       "criticRating": 8.3,
       "steamUserRating": 9.7,
-      "recommendations": 1231017,
+      "recommendations": 1231020,
       "owners": "20,000,000 .. 50,000,000",
       "peakConcurrent": 24580,
       "sourceEvidence": [
@@ -1162,7 +1162,7 @@
         "steamSpy": "https://steamspy.com/app/105600",
         "metacritic": "https://www.metacritic.com/game/pc/terraria?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10389.026440325099,
+      "popularityScore": 10389.026546162859,
       "igropoiskRating": 8.8,
       "editorialSources": [
         "GamesRadar+"
@@ -1260,7 +1260,7 @@
       "movies": [],
       "criticRating": 8.9,
       "steamUserRating": 9.8,
-      "recommendations": 886899,
+      "recommendations": 886902,
       "owners": "20,000,000 .. 50,000,000",
       "peakConcurrent": 50662,
       "sourceEvidence": [
@@ -1274,7 +1274,7 @@
         "steamSpy": "https://steamspy.com/app/413150",
         "metacritic": "https://www.metacritic.com/game/pc/stardew-valley?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10364.78746548977,
+      "popularityScore": 10364.787612392605,
       "igropoiskRating": 9.2,
       "editorialSources": [
         "PC Gamer"
@@ -1387,7 +1387,7 @@
       "movies": [],
       "criticRating": 9.5,
       "steamUserRating": 9.9,
-      "recommendations": 388916,
+      "recommendations": 388921,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 1959,
       "sourceEvidence": [
@@ -1400,7 +1400,7 @@
         "steamSpy": "https://steamspy.com/app/620",
         "metacritic": "https://www.metacritic.com/game/pc/portal-2?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10348.98569270632,
+      "popularityScore": 10348.986251040991,
       "igropoiskRating": 9.6,
       "editorialSources": [],
       "materials": {
@@ -1901,7 +1901,7 @@
       "movies": [],
       "criticRating": 8.9,
       "steamUserRating": 9.7,
-      "recommendations": 155530,
+      "recommendations": 155529,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 2559,
       "sourceEvidence": [
@@ -1914,7 +1914,7 @@
         "steamSpy": "https://steamspy.com/app/588650",
         "metacritic": "https://www.metacritic.com/game/pc/dead-cells?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10259.18169643412,
+      "popularityScore": 10259.181417199834,
       "igropoiskRating": 9.2,
       "editorialSources": [],
       "materials": {
@@ -2242,7 +2242,7 @@
       "movies": [],
       "criticRating": 8,
       "steamUserRating": 7.4,
-      "recommendations": 62724,
+      "recommendations": 62725,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 14345,
       "sourceEvidence": [
@@ -2255,7 +2255,7 @@
         "steamSpy": "https://steamspy.com/app/582660",
         "metacritic": "https://www.metacritic.com/game/pc/black-desert-online-land-of-the-morning-light-edition?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9949.744066998664,
+      "popularityScore": 9949.744759371753,
       "igropoiskRating": 7.8,
       "editorialSources": [],
       "materials": {
@@ -2320,7 +2320,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 9.7,
-      "recommendations": 875872,
+      "recommendations": 875871,
       "owners": "50,000,000 .. 100,000,000",
       "peakConcurrent": 15004,
       "sourceEvidence": [
@@ -2333,7 +2333,7 @@
         "steamSpy": "https://steamspy.com/app/2358720",
         "metacritic": ""
       },
-      "popularityScore": 9944.244113881909,
+      "popularityScore": 9944.244064297696,
       "igropoiskRating": 9.7,
       "editorialSources": [
         "GamesRadar+"
@@ -2430,7 +2430,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 9.4,
-      "recommendations": 398495,
+      "recommendations": 398518,
       "owners": "50,000,000 .. 100,000,000",
       "peakConcurrent": 18028,
       "sourceEvidence": [
@@ -2444,7 +2444,7 @@
         "steamSpy": "https://steamspy.com/app/1623730",
         "metacritic": ""
       },
-      "popularityScore": 9940.04239664181,
+      "popularityScore": 9940.044903187629,
       "igropoiskRating": 9.4,
       "editorialSources": [
         "GamesRadar+",
@@ -2552,7 +2552,7 @@
       "movies": [],
       "criticRating": 8.1,
       "steamUserRating": 7.3,
-      "recommendations": 211751,
+      "recommendations": 211752,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 6300,
       "sourceEvidence": [
@@ -2569,7 +2569,7 @@
         "steamSpy": "https://steamspy.com/app/594650",
         "metacritic": "https://www.metacritic.com/game/pc/hunt-showdown?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9932.582752093835,
+      "popularityScore": 9932.58295718916,
       "igropoiskRating": 7.8,
       "editorialSources": [
         "GamesRadar+",
@@ -2832,7 +2832,7 @@
       "movies": [],
       "criticRating": 8.5,
       "steamUserRating": 8.7,
-      "recommendations": 49332,
+      "recommendations": 49334,
       "owners": "1,000,000 .. 2,000,000",
       "peakConcurrent": 648,
       "sourceEvidence": [
@@ -2845,7 +2845,7 @@
         "steamSpy": "https://steamspy.com/app/870780",
         "metacritic": "https://www.metacritic.com/game/pc/control?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9909.31375262432,
+      "popularityScore": 9909.315513253834,
       "igropoiskRating": 8.6,
       "editorialSources": [],
       "materials": {
@@ -2928,7 +2928,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 8.9,
-      "recommendations": 110121,
+      "recommendations": 110123,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 10961,
       "sourceEvidence": [
@@ -2940,7 +2940,7 @@
         "steamSpy": "https://steamspy.com/app/1604030",
         "metacritic": ""
       },
-      "popularityScore": 9894.187409030825,
+      "popularityScore": 9894.188197775196,
       "igropoiskRating": 8.9,
       "editorialSources": [],
       "materials": {
@@ -3683,15 +3683,6 @@
         {
           "source": "GamesRadar+",
           "language": "en",
-          "title": "Light No Fire only has \"between 12 and 20\" devs, says lead – but that's ok because a similar number worked on No Man's Sky at launch",
-          "normalizedTitle": "light no fire only has between 12 and 20 devs says lead but that s ok because a similar number worked on no man s sky at launch",
-          "url": "https://www.gamesradar.com/games/survival/light-no-fire-only-has-between-12-and-20-devs-says-lead-but-thats-ok-because-a-similar-number-worked-on-no-mans-sky-at-launch/",
-          "summary": "The team is \"very small\" but has \"a lot of tools and tech\" at its disposal",
-          "publishedAt": "Mon, 10 Aug 2026 13:00:00 +0000"
-        },
-        {
-          "source": "GamesRadar+",
-          "language": "en",
           "title": "No Man's Sky Cosmos is the next big update as Hello Games refuses to slow down after 10 years",
           "normalizedTitle": "no man s sky cosmos is the next big update as hello games refuses to slow down after 10 years",
           "url": "https://www.gamesradar.com/games/survival/no-mans-sky-cosmos-is-the-next-big-update-as-hello-games-refuses-to-slow-down-after-10-years/",
@@ -3705,6 +3696,15 @@
           "normalizedTitle": "sean murray doesn t care how much money no man s sky dlc would ve made and it doesn t matter because updates will stay free",
           "url": "https://www.gamesradar.com/games/survival/sean-murray-doesnt-care-how-much-money-no-mans-sky-dlc-wouldve-made-and-it-doesnt-matter-because-updates-will-stay-free/",
           "summary": "\"Every player that we have is going to experience this\"",
+          "publishedAt": "Mon, 10 Aug 2026 13:00:00 +0000"
+        },
+        {
+          "source": "GamesRadar+",
+          "language": "en",
+          "title": "Light No Fire only has \"between 12 and 20\" devs, says lead – but that's ok because a similar number worked on No Man's Sky at launch",
+          "normalizedTitle": "light no fire only has between 12 and 20 devs says lead but that s ok because a similar number worked on no man s sky at launch",
+          "url": "https://www.gamesradar.com/games/survival/light-no-fire-only-has-between-12-and-20-devs-says-lead-but-thats-ok-because-a-similar-number-worked-on-no-mans-sky-at-launch/",
+          "summary": "The team is \"very small\" but has \"a lot of tools and tech\" at its disposal",
           "publishedAt": "Mon, 10 Aug 2026 13:00:00 +0000"
         },
         {
@@ -3782,7 +3782,7 @@
       "movies": [],
       "criticRating": 8.7,
       "steamUserRating": 9.7,
-      "recommendations": 339510,
+      "recommendations": 339511,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 2719,
       "sourceEvidence": [
@@ -3796,7 +3796,7 @@
         "steamSpy": "https://steamspy.com/app/264710",
         "metacritic": "https://www.metacritic.com/game/pc/subnautica?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9803.085384978562,
+      "popularityScore": 9803.085512896021,
       "igropoiskRating": 9,
       "editorialSources": [
         "Rock Paper Shotgun"
@@ -4085,7 +4085,7 @@
       "movies": [],
       "criticRating": 8.7,
       "steamUserRating": 9.8,
-      "recommendations": 207086,
+      "recommendations": 207088,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 19211,
       "sourceEvidence": [
@@ -4098,7 +4098,7 @@
         "steamSpy": "https://steamspy.com/app/294100",
         "metacritic": "https://www.metacritic.com/game/pc/rimworld?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9741.615283667486,
+      "popularityScore": 9741.615703097372,
       "igropoiskRating": 9.1,
       "editorialSources": [],
       "materials": {
@@ -4261,7 +4261,7 @@
       "movies": [],
       "criticRating": 8.3,
       "steamUserRating": 8.9,
-      "recommendations": 281293,
+      "recommendations": 281295,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 32112,
       "sourceEvidence": [
@@ -4274,7 +4274,7 @@
         "steamSpy": "https://steamspy.com/app/394360",
         "metacritic": "https://www.metacritic.com/game/pc/hearts-of-iron-iv?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9734.916046876428,
+      "popularityScore": 9734.916355658654,
       "igropoiskRating": 8.5,
       "editorialSources": [],
       "materials": {
@@ -4360,7 +4360,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 9.7,
-      "recommendations": 1085990,
+      "recommendations": 1086002,
       "owners": "20,000,000 .. 50,000,000",
       "peakConcurrent": 18400,
       "sourceEvidence": [
@@ -4372,7 +4372,7 @@
         "steamSpy": "https://steamspy.com/app/4000",
         "metacritic": ""
       },
-      "popularityScore": 9723.582622611237,
+      "popularityScore": 9723.583102495968,
       "igropoiskRating": 9.7,
       "editorialSources": [],
       "materials": {
@@ -4517,7 +4517,7 @@
       "movies": [],
       "criticRating": 8.5,
       "steamUserRating": 9.2,
-      "recommendations": 654073,
+      "recommendations": 654079,
       "owners": "20,000,000 .. 50,000,000",
       "peakConcurrent": 3832,
       "sourceEvidence": [
@@ -4530,7 +4530,7 @@
         "steamSpy": "https://steamspy.com/app/945360",
         "metacritic": "https://www.metacritic.com/game/pc/among-us?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9711.562688589858,
+      "popularityScore": 9711.563086978258,
       "igropoiskRating": 8.7,
       "editorialSources": [],
       "materials": {
@@ -4611,7 +4611,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 9.6,
-      "recommendations": 681695,
+      "recommendations": 681697,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 9978,
       "sourceEvidence": [
@@ -4623,7 +4623,7 @@
         "steamSpy": "https://steamspy.com/app/739630",
         "metacritic": ""
       },
-      "popularityScore": 9683.35907456883,
+      "popularityScore": 9683.359201984525,
       "igropoiskRating": 9.6,
       "editorialSources": [],
       "materials": {
@@ -4889,7 +4889,7 @@
       "movies": [],
       "criticRating": 8.3,
       "steamUserRating": 9.5,
-      "recommendations": 374496,
+      "recommendations": 374498,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 30542,
       "sourceEvidence": [
@@ -4902,7 +4902,7 @@
         "steamSpy": "https://steamspy.com/app/322330",
         "metacritic": "https://www.metacritic.com/game/pc/dont-starve-together?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9667.344834302703,
+      "popularityScore": 9667.34506623691,
       "igropoiskRating": 8.7,
       "editorialSources": [],
       "materials": {
@@ -5063,7 +5063,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 9.7,
-      "recommendations": 410974,
+      "recommendations": 410975,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 6199,
       "sourceEvidence": [
@@ -5075,7 +5075,7 @@
         "steamSpy": "https://steamspy.com/app/1966720",
         "metacritic": ""
       },
-      "popularityScore": 9651.381540413331,
+      "popularityScore": 9651.381646087388,
       "igropoiskRating": 9.7,
       "editorialSources": [],
       "materials": {
@@ -5146,7 +5146,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 8.8,
-      "recommendations": 281563,
+      "recommendations": 281567,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 4450,
       "sourceEvidence": [
@@ -5158,7 +5158,7 @@
         "steamSpy": "https://steamspy.com/app/1326470",
         "metacritic": ""
       },
-      "popularityScore": 9624.95771263195,
+      "popularityScore": 9624.958329602012,
       "igropoiskRating": 8.8,
       "editorialSources": [],
       "materials": {
@@ -5416,7 +5416,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 8.1,
-      "recommendations": 14318,
+      "recommendations": 14319,
       "owners": "500,000 .. 1,000,000",
       "peakConcurrent": 873,
       "sourceEvidence": [
@@ -5428,7 +5428,7 @@
         "steamSpy": "https://steamspy.com/app/1611600",
         "metacritic": ""
       },
-      "popularityScore": 9555.59126890859,
+      "popularityScore": 9555.594301797184,
       "igropoiskRating": 8.1,
       "editorialSources": [],
       "materials": {
@@ -5500,7 +5500,7 @@
       "movies": [],
       "criticRating": 8.9,
       "steamUserRating": 9.8,
-      "recommendations": 192322,
+      "recommendations": 192323,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 15038,
       "sourceEvidence": [
@@ -5513,7 +5513,7 @@
         "steamSpy": "https://steamspy.com/app/646570",
         "metacritic": "https://www.metacritic.com/game/pc/slay-the-spire?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9528.403122483016,
+      "popularityScore": 9528.403348297585,
       "igropoiskRating": 9.2,
       "editorialSources": [],
       "materials": {
@@ -5586,7 +5586,7 @@
       "movies": [],
       "criticRating": 9,
       "steamUserRating": 9.8,
-      "recommendations": 159038,
+      "recommendations": 159042,
       "owners": "2,000,000 .. 5,000,000",
       "peakConcurrent": 17123,
       "sourceEvidence": [
@@ -5599,7 +5599,7 @@
         "steamSpy": "https://steamspy.com/app/2379780",
         "metacritic": "https://www.metacritic.com/game/pc/balatro?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9510.15036363198,
+      "popularityScore": 9510.151455915056,
       "igropoiskRating": 9.3,
       "editorialSources": [],
       "materials": {
@@ -5741,7 +5741,7 @@
       "movies": [],
       "criticRating": 8.5,
       "steamUserRating": 9.7,
-      "recommendations": 134287,
+      "recommendations": 134288,
       "owners": "2,000,000 .. 5,000,000",
       "peakConcurrent": 1301,
       "sourceEvidence": [
@@ -5754,7 +5754,7 @@
         "steamSpy": "https://steamspy.com/app/1092790",
         "metacritic": "https://www.metacritic.com/game/pc/inscryption?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9492.803720576903,
+      "popularityScore": 9492.80404398098,
       "igropoiskRating": 8.9,
       "editorialSources": [],
       "materials": {
@@ -6074,7 +6074,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 9.7,
-      "recommendations": 402954,
+      "recommendations": 402965,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 14904,
       "sourceEvidence": [
@@ -6088,7 +6088,7 @@
         "steamSpy": "https://steamspy.com/app/250900",
         "metacritic": ""
       },
-      "popularityScore": 9470.525654901234,
+      "popularityScore": 9470.526840436616,
       "igropoiskRating": 9.7,
       "editorialSources": [
         "GamesRadar+",
@@ -6697,7 +6697,7 @@
       "movies": [],
       "criticRating": 8,
       "steamUserRating": 9.6,
-      "recommendations": 103670,
+      "recommendations": 103671,
       "owners": "2,000,000 .. 5,000,000",
       "peakConcurrent": 215,
       "sourceEvidence": [
@@ -6710,7 +6710,7 @@
         "steamSpy": "https://steamspy.com/app/238320",
         "metacritic": "https://www.metacritic.com/game/pc/outlast?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9341.56572877164,
+      "popularityScore": 9341.566147685693,
       "igropoiskRating": 8.6,
       "editorialSources": [],
       "materials": {
@@ -6780,7 +6780,7 @@
       "movies": [],
       "criticRating": 8.3,
       "steamUserRating": 9.6,
-      "recommendations": 578932,
+      "recommendations": 578933,
       "owners": "20,000,000 .. 50,000,000",
       "peakConcurrent": 2892,
       "sourceEvidence": [
@@ -6794,7 +6794,7 @@
         "steamSpy": "https://steamspy.com/app/242760",
         "metacritic": "https://www.metacritic.com/game/pc/the-forest?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9316.262830567222,
+      "popularityScore": 9316.26290558352,
       "igropoiskRating": 8.8,
       "editorialSources": [
         "StopGame"
@@ -6879,7 +6879,7 @@
       "movies": [],
       "criticRating": 8.1,
       "steamUserRating": 9.5,
-      "recommendations": 52082,
+      "recommendations": 52081,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 222,
       "sourceEvidence": [
@@ -6892,7 +6892,7 @@
         "steamSpy": "https://steamspy.com/app/424840",
         "metacritic": "https://www.metacritic.com/game/pc/little-nightmares?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9301.669599180288,
+      "popularityScore": 9301.66876532154,
       "igropoiskRating": 8.6,
       "editorialSources": [],
       "materials": {
@@ -6959,7 +6959,7 @@
       "movies": [],
       "criticRating": 8.3,
       "steamUserRating": 9.4,
-      "recommendations": 49975,
+      "recommendations": 49977,
       "owners": "1,000,000 .. 2,000,000",
       "peakConcurrent": 229,
       "sourceEvidence": [
@@ -6972,7 +6972,7 @@
         "steamSpy": "https://steamspy.com/app/860510",
         "metacritic": "https://www.metacritic.com/game/pc/little-nightmares-ii?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9289.876149293796,
+      "popularityScore": 9289.877887271194,
       "igropoiskRating": 8.7,
       "editorialSources": [],
       "materials": {
@@ -7042,7 +7042,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 7.7,
-      "recommendations": 386090,
+      "recommendations": 386094,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 37066,
       "sourceEvidence": [
@@ -7054,7 +7054,7 @@
         "steamSpy": "https://steamspy.com/app/221100",
         "metacritic": ""
       },
-      "popularityScore": 9288.668967809157,
+      "popularityScore": 9288.669417746847,
       "igropoiskRating": 7.7,
       "editorialSources": [],
       "materials": {
@@ -7126,7 +7126,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 9.4,
-      "recommendations": 356165,
+      "recommendations": 356178,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 22864,
       "sourceEvidence": [
@@ -7138,7 +7138,7 @@
         "steamSpy": "https://steamspy.com/app/108600",
         "metacritic": ""
       },
-      "popularityScore": 9275.165245887469,
+      "popularityScore": 9275.166831026205,
       "igropoiskRating": 9.4,
       "editorialSources": [],
       "materials": {
@@ -7382,7 +7382,7 @@
       "movies": [],
       "criticRating": 9.3,
       "steamUserRating": 9.6,
-      "recommendations": 179908,
+      "recommendations": 179910,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 3510,
       "sourceEvidence": [
@@ -7396,7 +7396,7 @@
         "steamSpy": "https://steamspy.com/app/435150",
         "metacritic": "https://www.metacritic.com/game/pc/divinity-original-sin-ii?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9165.505288959663,
+      "popularityScore": 9165.505771750482,
       "igropoiskRating": 9.4,
       "editorialSources": [
         "VG247"
