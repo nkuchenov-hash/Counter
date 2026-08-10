@@ -1,13 +1,16 @@
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/stats/day_stats_dashboard.dart';
+import 'package:counter/features/stats/day_stats_glass_view.dart';
 import 'package:counter/features/stats/plan_vs_fact_tab.dart';
 import 'package:counter/features/stats/stats_detail_tree.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
 
-/// Daily statistics: the existing expandable tree remains available as the
-/// Details dashboard, while overview/timeline/category views are read-only UI.
+/// Daily statistics inside Timeline.
+///
+/// The existing expandable/summed record tree remains available as the
+/// Details dashboard; the glass overview/day/category views are additive.
 class StatsView extends StatefulWidget {
   const StatsView({
     super.key,
@@ -274,7 +277,7 @@ class _StatsViewState extends State<StatsView> {
       );
     }
 
-    return DayStatsDashboard(
+    return DayStatsGlassView(
       mode: _dashboardMode,
       onModeChanged: (mode) {
         if (mode == _dashboardMode) return;
