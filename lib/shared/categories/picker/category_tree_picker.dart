@@ -106,13 +106,10 @@ class _CategoryTreePickerSheetState extends State<_CategoryTreePickerSheet> {
   }
 
   List<CategoryRule> get _visibleRoots {
-    final rootsRaw = CategoryTreeSource.childrenOf(null);
-    final roots = widget.showVisibilityControls
-        ? rootsRaw
-        : [
-            for (final r in rootsRaw)
-              if (!CategoryVisibilityPrefs.isHiddenOrAncestor(r.id)) r,
-          ];
+    // Selection/edit pickers must always expose the complete active category
+    // tree. Local visibility preferences are presentation filters only and
+    // must never make an existing category impossible to select or restore.
+    final roots = CategoryTreeSource.childrenOf(null);
     return filterCategoryRootsForPickerSearch(roots, _query, _labelForRule);
   }
 
