@@ -25,7 +25,7 @@ class CategoryTreeBody extends StatefulWidget {
     super.key,
     required this.roots,
     required this.selectedCategoryId,
-    this.expandSelectionPath = true,
+    this.expandSelectionPath = false,
     required this.onSelect,
     required this.showEditChrome,
     this.showPickerCreateChrome = false,
