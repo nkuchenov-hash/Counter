@@ -24,6 +24,11 @@ jobs:
           fi
           python3 tool/patch_stats_waking_range_aggregate.py
           python3 tool/patch_stats_exact_seconds.py
+          if grep -q "final wakeWall =" lib/features/shared/sleep_record_policy.dart; then
+            echo "Refinement already applied"
+          else
+            python3 tool/patch_morning_refine.py
+          fi
 
       - name: Set up Flutter 3.41.6
         uses: subosito/flutter-action@v2
@@ -72,7 +77,7 @@ jobs:
               lib/features/stats/day_stats_dashboard.dart \
               lib/features/stats/plan_vs_fact_tab.dart \
               docs/APP_STRUCTURE.md
-            git commit -m "Make Stats a waking day and add morning Start Day flow"
+            git commit -m "Refine waking-day boundaries and morning check-in"
             git push
           fi
 
@@ -80,7 +85,7 @@ jobs:
         run: pwsh -NoProfile -NonInteractive -File ./scripts/audit/architecture_guard.ps1 -Strict
 
       - name: Analyze affected Flutter files
-        run: flutter analyze lib/data/categories/category_stats.dart lib/features/shared/sleep_record_policy.dart lib/features/timeline/timeline_morning_start.dart lib/features/timeline/timeline_view.dart lib/features/stats/stats_view.dart lib/features/stats/day_stats_dashboard.dart lib/features/stats/plan_vs_fact_tab.dart
+        run: flutter analyze lib/data/categories/category_stats.dart lib/features/shared/sleep_record_policy.dart lib/features/timeline/timeline_morning_start.dart lib/features/stats/stats_view.dart lib/features/stats/day_stats_dashboard.dart lib/features/stats/plan_vs_fact_tab.dart
 
       - name: Build web
         run: flutter build web --release --base-href="/Counter/" --no-tree-shake-icons --no-wasm-dry-run --pwa-strategy=none
