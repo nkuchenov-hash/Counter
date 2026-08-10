@@ -6,6 +6,7 @@ import 'package:counter/core/widgets/app_loading.dart';
 import 'package:counter/core/widgets/app_state_views.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
+import 'package:counter/features/shared/sleep_record_policy.dart';
 import 'package:counter/l10n/category_db_display.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
@@ -48,7 +49,27 @@ class _PlanFacts {
   final Map<String, int> actualByPlan;
   final int unplannedRecordCount;
 
-  List<PlanningTask> get plans => stats.plansScheduledThisDay;
+  List<PlanningTask> get plans => stats.plansScheduledThisDay
+      .where((task) => !SleepRecordPolicy.isSleepCategoryId(task.categoryId))
+      .toList(growable: false);
+
+  int _sleepSeconds(Map<int, int> values) {
+    var seconds = 0;
+    for (final root in DatabaseService.instance.rules) {
+      if (!SleepRecordPolicy.isSleepCategoryId(root.id)) continue;
+      seconds += _sumSecondsInSubtree(root.id, values);
+    }
+    return seconds;
+  }
+
+  int get plannedTimeSeconds => math.max(
+    0,
+    stats.planTimeSeconds - _sleepSeconds(stats.plannedSecByCategory),
+  );
+  int get factTimeSeconds => math.max(
+    0,
+    stats.factTimeSeconds - _sleepSeconds(stats.actualSecByCategory),
+  );
   int get plannedCount => plans.length;
   int get completedCount => plans.where((task) => task.isDone).length;
   int get workedCount => plans.where(hasWork).length;
@@ -160,18 +181,6 @@ class _PlanVsFactV2TabState extends State<PlanVsFactV2Tab> {
             message: t(currentLocale.value, 'no_data_found'),
           );
         }
-        if (stats.planTaskCount == 0 &&
-            stats.planTimeSeconds == 0 &&
-            stats.factTimeSeconds == 0) {
-          return AppEmptyState(
-            message: t(
-              currentLocale.value,
-              widget.isFutureDate ? 'no_planned_tasks' : 'stats_pvf_no_plans',
-            ),
-            icon: Icons.fact_check_outlined,
-          );
-        }
-
         final byPlan = DatabaseService.instance
             .aggregateSourcePlanActualSecondsForWallCalendarDay(
               widget.selectedDate,
@@ -187,6 +196,17 @@ class _PlanVsFactV2TabState extends State<PlanVsFactV2Tab> {
           actualByPlan: byPlan,
           unplannedRecordCount: unplannedRecordCount,
         );
+        if (facts.plannedCount == 0 &&
+            facts.plannedTimeSeconds == 0 &&
+            facts.factTimeSeconds == 0) {
+          return AppEmptyState(
+            message: t(
+              currentLocale.value,
+              widget.isFutureDate ? 'no_planned_tasks' : 'stats_pvf_no_plans',
+            ),
+            icon: Icons.fact_check_outlined,
+          );
+        }
         return _PlanFactContent(facts: facts);
       },
     );
@@ -202,6 +222,7 @@ class _PlanFactContent extends StatelessWidget {
     final db = DatabaseService.instance;
     final roots =
         db.rules.where((rule) {
+          if (SleepRecordPolicy.isSleepCategoryId(rule.id)) return false;
           final plannedSeconds = _sumSecondsInSubtree(
             rule.id,
             facts.stats.plannedSecByCategory,
@@ -274,9 +295,9 @@ class _OutcomeHero extends StatelessWidget {
     final planned = math.max(1, facts.plannedCount);
     final completion = facts.completedCount / planned;
     final worked = facts.workedCount / planned;
-    final timeRatio = facts.stats.planTimeSeconds > 0
-        ? facts.stats.factTimeSeconds / facts.stats.planTimeSeconds
-        : (facts.stats.factTimeSeconds > 0 ? 1.0 : 0.0);
+    final timeRatio = facts.plannedTimeSeconds > 0
+        ? facts.factTimeSeconds / facts.plannedTimeSeconds
+        : (facts.factTimeSeconds > 0 ? 1.0 : 0.0);
     final accent = completion >= 0.8
         ? scheme.tertiary
         : completion >= 0.5
@@ -350,7 +371,7 @@ class _OutcomeHero extends StatelessWidget {
                 label: _copy('Time vs plan', 'Время к плану'),
                 value: timeRatio.clamp(0.0, 1.0),
                 valueText:
-                    '${_durationCompact(facts.stats.factTimeSeconds)} / ${_durationCompact(facts.stats.planTimeSeconds)}',
+                    '${_durationCompact(facts.factTimeSeconds)} / ${_durationCompact(facts.plannedTimeSeconds)}',
                 color: scheme.secondary,
               ),
             ],
@@ -382,11 +403,11 @@ class _ThreeDimensions extends StatelessWidget {
       _DimensionCard(
         icon: Icons.schedule_rounded,
         title: _copy('Time', 'Время'),
-        main: _durationCompact(facts.stats.factTimeSeconds),
+        main: _durationCompact(facts.factTimeSeconds),
         mainLabel: _copy('actual tracked', 'фактически учтено'),
         lines: [
-          '${_durationCompact(facts.stats.planTimeSeconds)} ${_copy('planned', 'запланировано')}',
-          '${_deltaTime(facts.stats.planTimeSeconds, facts.stats.factTimeSeconds)} ${_copy('difference', 'разница')}',
+          '${_durationCompact(facts.plannedTimeSeconds)} ${_copy('planned', 'запланировано')}',
+          '${_deltaTime(facts.plannedTimeSeconds, facts.factTimeSeconds)} ${_copy('difference', 'разница')}',
         ],
       ),
       _DimensionCard(

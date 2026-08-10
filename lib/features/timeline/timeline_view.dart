@@ -24,6 +24,7 @@ import 'package:intl/intl.dart';
 import 'package:counter/features/timeline/timeline_helpers.dart';
 import 'package:counter/features/timeline/timeline_day_page.dart';
 import 'package:counter/features/timeline/timeline_header_controls.dart';
+import 'package:counter/features/timeline/timeline_morning_start.dart';
 // ---------------------------------------------------------------------------
 // TIMELINE FEATURE вЂ” UI_ISOLATION (В§7). PLANETARY TIME PROTOCOL (В§5). ACTIVE_STATUS_LAW (В§2).
 // All strings via t() from dictionary. Timeline **day** keys use profile wall-calendar via DatabaseService ([DATA_MAP] В§8).
@@ -201,8 +202,9 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
     RuntimeLog.logAdjVmWarmDisabledIfNeeded();
     RuntimeLog.biometricGate(enabled: false, reason: 'stabilization');
     _anchorDate = DateUtils.dateOnly(DateTime.now());
-    final daysOffset =
-        _dateOnly(widget.selectedDate).difference(_anchorDate).inDays;
+    final daysOffset = _dateOnly(
+      widget.selectedDate,
+    ).difference(_anchorDate).inDays;
     _visiblePageIndex = _initialPage + daysOffset;
     _controller = PageController(initialPage: _visiblePageIndex);
     _controller.addListener(_onPageControllerTick);
@@ -276,9 +278,7 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
   Widget build(BuildContext context) {
     rebuildMetricsTick('TimelineSwipeWrapper');
     if (kUseMountedDayStrip) {
-      return AppErrorState(
-        message: t(currentLocale.value, 'no_data_found'),
-      );
+      return AppErrorState(message: t(currentLocale.value, 'no_data_found'));
     }
     final visibleDate = _dateForIndex(_visiblePageIndex);
     try {
@@ -346,7 +346,8 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
                 onShowEditRecordSheet: widget.onShowEditRecordSheet,
                 onNavigateToDate: widget.onDateChanged,
                 showStatsView: _showStatsView,
-                onShowStatsViewChanged: (v) => setState(() => _showStatsView = v),
+                onShowStatsViewChanged: (v) =>
+                    setState(() => _showStatsView = v),
               );
             },
           ),
@@ -536,81 +537,97 @@ class _TimelinePageState extends State<TimelinePage> {
               onNewTaskForPastDate: widget.onNewTaskForPastDate,
             ),
             Expanded(
-              child: kUseMountedDayStrip &&
-                      widget.mountedWindow != null &&
-                      widget.stripController != null &&
-                      widget.onVisibleDateChanged != null
-                  ? EagerDayContentStrip(
-                      screen: 'Timeline',
-                      dates: widget.mountedWindow!.dates,
-                      initialIndex: () {
-                        final raw =
-                            widget.mountedWindow!.indexOf(_visibleDate);
-                        return raw.clamp(
-                          0,
-                          math.max(0, widget.mountedWindow!.length - 1),
-                        ).toInt();
-                      }(),
-                      activeIndex: () {
-                        final raw =
-                            widget.mountedWindow!.indexOf(_visibleDate);
-                        return raw.clamp(
-                          0,
-                          math.max(0, widget.mountedWindow!.length - 1),
-                        ).toInt();
-                      }(),
-                      controller: widget.stripController,
-                      physics: const FeatherDateSwipePhysics(),
-                      onUserDragStart: widget.onUserDragStart,
-                      onUserDragEnd: widget.onUserDragEnd,
-                      onScrollTick: widget.onScrollTick,
-                      onIndexChanged: widget.onVisibleDateChanged!,
-                      itemBuilder: (context, date, index, isActive) {
-                        final dateKey = _dateKey(date);
-                        return RepaintBoundary(
-                          child: TimelineDayCardList(
-                            key: ValueKey<String>('tl-day-$dateKey'),
-                            date: date,
-                            dateKey: dateKey,
-                            isFutureDate: date.isAfter(widget.anchorToday),
-                            isActive: isActive,
-                            showStatsView: widget.showStatsView,
-                            rules: widget.rules,
-                            liveRecordMaps:
-                                isActive ? _liveRecordsForVisibleDay() : null,
-                            onStop: widget.onStopRecord,
-                            onDelete: widget.onDeleteRecord,
-                            onEdit: (data) => _showEditRecordSheet(context, data),
-                            onNavigateToDate: widget.onNavigateToDate,
-                            titleFocus: widget.titleFocus,
+              child: MorningStartGate(
+                selectedDate: _visibleDate,
+                active: widget.isActivePage && widget.shellTabActive,
+                titleController: widget.titleController,
+                titleFocus: widget.titleFocus,
+                onStart: widget.onStart,
+                child:
+                    kUseMountedDayStrip &&
+                        widget.mountedWindow != null &&
+                        widget.stripController != null &&
+                        widget.onVisibleDateChanged != null
+                    ? EagerDayContentStrip(
+                        screen: 'Timeline',
+                        dates: widget.mountedWindow!.dates,
+                        initialIndex: () {
+                          final raw = widget.mountedWindow!.indexOf(
+                            _visibleDate,
+                          );
+                          return raw
+                              .clamp(
+                                0,
+                                math.max(0, widget.mountedWindow!.length - 1),
+                              )
+                              .toInt();
+                        }(),
+                        activeIndex: () {
+                          final raw = widget.mountedWindow!.indexOf(
+                            _visibleDate,
+                          );
+                          return raw
+                              .clamp(
+                                0,
+                                math.max(0, widget.mountedWindow!.length - 1),
+                              )
+                              .toInt();
+                        }(),
+                        controller: widget.stripController,
+                        physics: const FeatherDateSwipePhysics(),
+                        onUserDragStart: widget.onUserDragStart,
+                        onUserDragEnd: widget.onUserDragEnd,
+                        onScrollTick: widget.onScrollTick,
+                        onIndexChanged: widget.onVisibleDateChanged!,
+                        itemBuilder: (context, date, index, isActive) {
+                          final dateKey = _dateKey(date);
+                          return RepaintBoundary(
+                            child: TimelineDayCardList(
+                              key: ValueKey<String>('tl-day-$dateKey'),
+                              date: date,
+                              dateKey: dateKey,
+                              isFutureDate: date.isAfter(widget.anchorToday),
+                              isActive: isActive,
+                              showStatsView: widget.showStatsView,
+                              rules: widget.rules,
+                              liveRecordMaps: isActive
+                                  ? _liveRecordsForVisibleDay()
+                                  : null,
+                              onStop: widget.onStopRecord,
+                              onDelete: widget.onDeleteRecord,
+                              onEdit: (data) =>
+                                  _showEditRecordSheet(context, data),
+                              onNavigateToDate: widget.onNavigateToDate,
+                              titleFocus: widget.titleFocus,
+                            ),
+                          );
+                        },
+                      )
+                    : widget.isActivePage
+                    ? RepaintBoundary(
+                        child: TimelineDayCardList(
+                          key: ValueKey<String>(
+                            'tl-day-${_dateKey(_visibleDate)}',
                           ),
-                        );
-                      },
-                    )
-                  : widget.isActivePage
-                  ? RepaintBoundary(
-                      child: TimelineDayCardList(
-                        key: ValueKey<String>(
-                          'tl-day-${_dateKey(_visibleDate)}',
+                          date: _visibleDate,
+                          dateKey: _dateKey(_visibleDate),
+                          isFutureDate: _visibleIsFuture,
+                          isActive: true,
+                          showStatsView: widget.showStatsView,
+                          rules: widget.rules,
+                          liveRecordMaps: _liveRecordsForVisibleDay(),
+                          onStop: widget.onStopRecord,
+                          onDelete: widget.onDeleteRecord,
+                          onEdit: (data) => _showEditRecordSheet(context, data),
+                          onNavigateToDate: widget.onNavigateToDate,
+                          titleFocus: widget.titleFocus,
                         ),
-                        date: _visibleDate,
-                        dateKey: _dateKey(_visibleDate),
-                        isFutureDate: _visibleIsFuture,
-                        isActive: true,
-                        showStatsView: widget.showStatsView,
-                        rules: widget.rules,
-                        liveRecordMaps: _liveRecordsForVisibleDay(),
-                        onStop: widget.onStopRecord,
-                        onDelete: widget.onDeleteRecord,
-                        onEdit: (data) => _showEditRecordSheet(context, data),
-                        onNavigateToDate: widget.onNavigateToDate,
-                        titleFocus: widget.titleFocus,
+                      )
+                    : const ColoredBox(
+                        color: Colors.transparent,
+                        child: SizedBox.expand(),
                       ),
-                    )
-                  : const ColoredBox(
-                      color: Colors.transparent,
-                      child: SizedBox.expand(),
-                    ),
+              ),
             ),
           ],
         ),

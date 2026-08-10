@@ -1,5 +1,6 @@
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
+import 'package:counter/features/shared/sleep_record_policy.dart';
 import 'package:counter/features/stats/day_stats_dashboard.dart';
 import 'package:counter/features/stats/plan_vs_fact_tab.dart';
 import 'package:counter/features/stats/stats_detail_tree.dart';
@@ -181,17 +182,25 @@ class _StatsViewState extends State<StatsView> {
   }
 
   Widget _buildDayPager(BuildContext context) {
-    final aggregatedKey = _aggregatedCacheKey(
-      widget.records,
-      widget.selectedDate,
+    final wakingWindow = SleepRecordPolicy.wakingDayWindow(
+      selectedDay: widget.selectedDate,
+      currentRecords: widget.records,
+    );
+    final statsRecords = wakingWindow.records;
+    final aggregatedKey = Object.hash(
+      _aggregatedCacheKey(statsRecords, widget.selectedDate),
+      wakingWindow.wakeWall,
+      wakingWindow.bedWall,
     );
     final List<StatsNode> aggregated;
     if (aggregatedKey == _lastAggregatedKey && _cachedAggregated != null) {
       aggregated = _cachedAggregated!;
     } else {
       aggregated = DatabaseService.instance.getAggregatedStats(
-        widget.records,
+        statsRecords,
         widget.selectedDate,
+        rangeStartWall: wakingWindow.wakeWall,
+        rangeEndWall: wakingWindow.bedWall,
       );
       _lastAggregatedKey = aggregatedKey;
       _cachedAggregated = aggregated;
@@ -206,16 +215,18 @@ class _StatsViewState extends State<StatsView> {
       dashboard = _cachedDashboard!;
     } else {
       dashboard = DayStatsDashboardData.build(
-        records: _recordsWithResolvedCategoryIds(widget.records),
+        records: _recordsWithResolvedCategoryIds(statsRecords),
         rules: widget.rules,
         aggregated: aggregated,
         selectedDate: widget.selectedDate,
+        rangeStartWall: wakingWindow.wakeWall,
+        rangeEndWall: wakingWindow.bedWall,
       );
       _lastDashboardKey = dashboardKey;
       _cachedDashboard = dashboard;
     }
 
-    final content = _buildStatsContent(aggregated, dashboard);
+    final content = _buildStatsContent(aggregated, dashboard, statsRecords);
     final navigate = widget.onDayChanged;
     final controller = _dayPageController;
     if (navigate == null || controller == null) return content;
@@ -255,6 +266,7 @@ class _StatsViewState extends State<StatsView> {
   Widget _buildStatsContent(
     List<StatsNode> aggregated,
     DayStatsDashboardData dashboard,
+    List<Map<String, dynamic>> statsRecords,
   ) {
     return DayStatsDashboard(
       mode: _dashboardMode,
@@ -265,7 +277,7 @@ class _StatsViewState extends State<StatsView> {
       data: dashboard,
       planFactView: PlanVsFactV2Tab(
         selectedDate: widget.selectedDate,
-        records: widget.records,
+        records: statsRecords,
         isFutureDate: widget.isFutureDate,
       ),
       detailsView: StatsDetailTree(
