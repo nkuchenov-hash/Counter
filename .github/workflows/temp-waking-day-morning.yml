@@ -23,6 +23,7 @@ jobs:
             python3 tool/patch_waking_day_morning.py
           fi
           python3 tool/patch_stats_waking_range_aggregate.py
+          python3 tool/patch_stats_exact_seconds.py
 
       - name: Set up Flutter 3.41.6
         uses: subosito/flutter-action@v2
