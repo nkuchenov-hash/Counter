@@ -1,6 +1,6 @@
 {
-  "updatedAt": "2026-08-10T22:44:17.560Z",
-  "count": 485,
+  "updatedAt": "2026-08-10T22:59:09.854Z",
+  "count": 495,
   "sources": [
     "IGN",
     "GameSpot",
@@ -132,6 +132,24 @@
       "publishedAt": "Mon, 10 Aug 2026 21:05:00 +0000"
     },
     {
+      "source": "Polygon",
+      "language": "en",
+      "title": "'House of the Dragon' Officially Rewrites the Saddest Downfall in Game of Thrones History",
+      "normalizedTitle": "house of the dragon officially rewrites the saddest downfall in game of thrones history",
+      "url": "https://www.polygon.com/house-of-the-dragon-season-4-changes-rhaenyra/",
+      "summary": "Showrunner Ryan Condal may have just quietly set this character down a troubling path in 'House of the Dragon' season 4.",
+      "publishedAt": "Mon, 10 Aug 2026 21:00:12 GMT"
+    },
+    {
+      "source": "Polygon",
+      "language": "en",
+      "title": "2,000 Fortnite Players Hired as Air Traffic Controllers by US Government",
+      "normalizedTitle": "2 000 fortnite players hired as air traffic controllers by us government",
+      "url": "https://www.polygon.com/fortnite-united-states-air-traffic-control/",
+      "summary": "The United States department of transportation boasts that it is employing gamer air traffic controllers in record numbers",
+      "publishedAt": "Mon, 10 Aug 2026 20:59:21 GMT"
+    },
+    {
       "source": "GamesRadar+",
       "language": "en",
       "title": "18 AAA games in 8 weeks: With the GTA 6 shadow looming, Gamescom suddenly feels like the most essential gaming event of 2026",
@@ -148,6 +166,33 @@
       "url": "https://www.gamesradar.com/games/its-time-to-sue-sony-stop-killing-games-joins-lawsuit-over-playstations-digital-monopoly-amid-death-of-physical-games/",
       "summary": "\"Once Sony stops selling physical games in 2028, you won't have any choice at all\"",
       "publishedAt": "Mon, 10 Aug 2026 20:50:36 +0000"
+    },
+    {
+      "source": "Polygon",
+      "language": "en",
+      "title": "Chiikawa the Movie Is Killing It in Japan's Cinemas — While Leaving Children Crying in Fear",
+      "normalizedTitle": "chiikawa the movie is killing it in japan s cinemas while leaving children crying in fear",
+      "url": "https://www.polygon.com/chiikawa-the-movie-secret-of-mermaid-island-box-office/",
+      "summary": "Chiikawa The Movie: The Secret of Mermaid Island is one of the highest-grossing films in Japan this year, and is sending children crying in fear.",
+      "publishedAt": "Mon, 10 Aug 2026 20:48:24 GMT"
+    },
+    {
+      "source": "Polygon",
+      "language": "en",
+      "title": "Marvel Tokon's New PC Patch Finally Makes the Game Work, Players Say",
+      "normalizedTitle": "marvel tokon s new pc patch finally makes the game work players say",
+      "url": "https://www.polygon.com/marvel-tokon-fighting-souls-pc-patch-reportedly-fixes-game/",
+      "summary": "Marvel Tokon Fighting Souls had a rough launch on Windows PC. A new patch on Monday has reportedly fixed many of players' issues.",
+      "publishedAt": "Mon, 10 Aug 2026 20:41:44 GMT"
+    },
+    {
+      "source": "Polygon",
+      "language": "en",
+      "title": "Samara Weaving | Shelf Quest Episode 5",
+      "normalizedTitle": "samara weaving shelf quest episode 5",
+      "url": "https://www.polygon.com/video/samara-weaving-shelf-quest-episode-5/",
+      "summary": "Samara Weaving is an agent of chaos who loves to cause mayhem in video games. After toying with The Sims and Mario Kart as a kid, she really knuckled down and got into Red Dead Redemption after watching her husband play — and she never looked back. The star of Carolina Caroline and Ready or Not enjoys using films and games to let out her wild side. She loves action and just a liiiiiittle bit of violence. And yet she had a soft spot for her Sims.Join Sam on this episode of Shelf Quest as she browses the shelves of videogamesnewyork and reminisces on how she got into gaming, and her dreams for h",
+      "publishedAt": "Mon, 10 Aug 2026 20:37:14 GMT"
     },
     {
       "source": "GamesRadar+",
@@ -213,6 +258,15 @@
       "publishedAt": "Mon, 10 Aug 2026 20:15:00 +0000"
     },
     {
+      "source": "Polygon",
+      "language": "en",
+      "title": "Large lost sunken relics list in Pokémon Pokopia",
+      "normalizedTitle": "large lost sunken relics list in pokémon pokopia",
+      "url": "https://www.polygon.com/pokemon-pokopia-lost-sunken-relics-dlc-list-how-to-get/",
+      "summary": "Here's a list of large lost sunken relics in Pokémon Pokopia Bubbly Basin DLC and how to get them.",
+      "publishedAt": "Mon, 10 Aug 2026 20:10:40 GMT"
+    },
+    {
       "source": "PC Gamer",
       "language": "en",
       "title": "'Thank you so much for the best weekend ever': The id Software gang got together at QuakeCon, and it sure looks like everyone had a great time",
@@ -229,6 +283,15 @@
       "url": "https://www.gamesradar.com/games/fps/overwatchs-huge-battle-pass-revamp-is-out-tomorrow-and-makes-things-a-lot-more-complicated-but-seemingly-better/",
       "summary": "New Overwatch battle pass \"Tier Hack\" lets players unlock old skins",
       "publishedAt": "Mon, 10 Aug 2026 20:08:18 +0000"
+    },
+    {
+      "source": "Polygon",
+      "language": "en",
+      "title": "Big Walk's Award-winning Predecessor is a Must Play PlayStation Plus Game",
+      "normalizedTitle": "big walk s award winning predecessor is a must play playstation plus game",
+      "url": "https://www.polygon.com/untitled-goose-game-ps-plus-recommendation/",
+      "summary": "Before Big Walk, House House sharpened its craft in its award-winning Untitled Goose Game, available to play on PS Plus.",
+      "publishedAt": "Mon, 10 Aug 2026 20:00:12 GMT"
     },
     {
       "source": "IGN",
@@ -256,6 +319,15 @@
       "url": "https://www.gamespot.com/articles/overwatchs-battle-pass-overhaul-will-let-you-swap-out-skins-you-dont-want/",
       "summary": "Overwatch is making big changes to its battle pass as part of Season 4, with a new multi-track system that even gives players an option to swap out and replace a skin they don't want. As explained in a new \"Director's Take\" blog post by Overwatch product director Chris McCabe, Blizzard said it recognizes that due to Overwatch's ever-expanding roster of 50+ heroes, not every battle pass will have rewards for the heroes a particular player is most excited about. The solution Blizzard is introducing is to not only break the battle pass into smaller chunks so players can more quickly pursue the re",
       "publishedAt": "Mon, 10 Aug 2026 19:30:45 +0000"
+    },
+    {
+      "source": "Polygon",
+      "language": "en",
+      "title": "Super Mario Bros. Players Are Closing In on a Perfect Playthrough",
+      "normalizedTitle": "super mario bros players are closing in on a perfect playthrough",
+      "url": "https://www.polygon.com/super-mario-bros-speedrun-lekukie-world-record/",
+      "summary": "A new video from Super Mario Bros. speedrunner Kosmic breaks down just how close players are to achieving a perfect game.",
+      "publishedAt": "Mon, 10 Aug 2026 19:30:12 GMT"
     },
     {
       "source": "IGN",
@@ -310,6 +382,24 @@
       "url": "https://stopgame.ru/show/163183/guild_wars_2_ponedelnik_den_chillovyy_mmorafon",
       "summary": "Мы прерываем сюжетное прохождение Guild Wars 2 для того, чтобы показать вам это срочное сообщение: в игре есть ещё куча разного контента!",
       "publishedAt": "Mon, 10 Aug 2026 22:00:15 +0300"
+    },
+    {
+      "source": "Polygon",
+      "language": "en",
+      "title": "Switch 2 Just Got One of the Decade’s Best Soulslikes",
+      "normalizedTitle": "switch 2 just got one of the decade s best soulslikes",
+      "url": "https://www.polygon.com/lies-of-p-complete-edition-nintendo-swtich-2-release/",
+      "summary": "Lies of P and its Overture expansion just hit the Nintendo Switch 2. Together, they're one of the best non-FromSoftware Soulslikes of the 2020s.",
+      "publishedAt": "Mon, 10 Aug 2026 19:00:12 GMT"
+    },
+    {
+      "source": "Polygon",
+      "language": "en",
+      "title": "Batman's new Joker actor officially confirms a shocking change to the iconic villains backstory",
+      "normalizedTitle": "batman s new joker actor officially confirms a shocking change to the iconic villains backstory",
+      "url": "https://www.polygon.com/batman-caped-crusader-joker-matthew-needham-interview/",
+      "summary": "‘I really hoped that people would see that everything we were doing was with great respect.’",
+      "publishedAt": "Mon, 10 Aug 2026 19:00:12 GMT"
     },
     {
       "source": "GamesRadar+",
