@@ -115,7 +115,7 @@ class TimelineRecordCardState extends State<TimelineRecordCard> {
     final subtitle = _subtitleForBuild();
     final metaIcons = timelineRowMetaIconsFromVm(context, widget.vm);
 
-    final runningFill = isRunning ? AppColors.cardSurface : null;
+    final runningFill = isRunning ? scheme.surfaceContainerHighest : null;
     final runningBorder = isRunning ? scheme.primary : Colors.transparent;
     final runningTextColor = isRunning ? scheme.onSurface : null;
 
