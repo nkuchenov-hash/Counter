@@ -64,69 +64,71 @@ class TimelineHeaderControls extends StatelessWidget {
             ),
           ),
         ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-          child: Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: titleController,
-                  focusNode: titleFocus,
-                  textInputAction: TextInputAction.done,
-                  onSubmitted: (_) {
-                    if (visibleIsFuture) {
-                      onPlan();
-                    } else if (timelineIsToday(visibleDate)) {
-                      onStart();
-                    } else {
-                      onNewTaskForPastDate();
-                    }
-                  },
-                  decoration: InputDecoration(
-                    hintText: t(loc, 'input_placeholder_record'),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Builder(
-                builder: (context) {
-                  final projectedToday = timelineLocalToday();
-                  final isToday =
-                      visibleDate.year == projectedToday.year &&
-                      visibleDate.month == projectedToday.month &&
-                      visibleDate.day == projectedToday.day;
-                  final isFuture = visibleIsFuture;
-                  return FilledButton.icon(
-                    onPressed: () {
-                      if (isFuture) {
+        if (!showStatsView) ...[
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: titleController,
+                    focusNode: titleFocus,
+                    textInputAction: TextInputAction.done,
+                    onSubmitted: (_) {
+                      if (visibleIsFuture) {
                         onPlan();
-                      } else if (isToday) {
+                      } else if (timelineIsToday(visibleDate)) {
                         onStart();
                       } else {
                         onNewTaskForPastDate();
                       }
                     },
-                    icon: Icon(
-                      isFuture
-                          ? Icons.event_rounded
-                          : isToday
-                          ? Icons.play_arrow_rounded
-                          : Icons.add_task_rounded,
+                    decoration: InputDecoration(
+                      hintText: t(loc, 'input_placeholder_record'),
                     ),
-                    label: Text(
-                      isFuture
-                          ? t(loc, 'plan')
-                          : isToday
-                          ? t(loc, 'start_timer')
-                          : t(loc, 'new_record_btn'),
-                    ),
-                  );
-                },
-              ),
-            ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Builder(
+                  builder: (context) {
+                    final projectedToday = timelineLocalToday();
+                    final isToday =
+                        visibleDate.year == projectedToday.year &&
+                        visibleDate.month == projectedToday.month &&
+                        visibleDate.day == projectedToday.day;
+                    final isFuture = visibleIsFuture;
+                    return FilledButton.icon(
+                      onPressed: () {
+                        if (isFuture) {
+                          onPlan();
+                        } else if (isToday) {
+                          onStart();
+                        } else {
+                          onNewTaskForPastDate();
+                        }
+                      },
+                      icon: Icon(
+                        isFuture
+                            ? Icons.event_rounded
+                            : isToday
+                            ? Icons.play_arrow_rounded
+                            : Icons.add_task_rounded,
+                      ),
+                      label: Text(
+                        isFuture
+                            ? t(loc, 'plan')
+                            : isToday
+                            ? t(loc, 'start_timer')
+                            : t(loc, 'new_record_btn'),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
           ),
-        ),
-        const SizedBox(height: 8),
+          const SizedBox(height: 8),
+        ],
         const Divider(height: 1),
       ],
     );
