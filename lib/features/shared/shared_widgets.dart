@@ -2,7 +2,6 @@
 // SHARED UI — barrel re-exports for Timeline, Planning, Categories sheets.
 // ---------------------------------------------------------------------------
 
-export 'package:counter/core/widgets/app_edit_sheet.dart';
 export 'activity_detail_sheet.dart';
 export 'empty_state_placeholder.dart';
 export 'planning_task_edit_sheet.dart';
