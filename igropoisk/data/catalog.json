@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-10T23:10:04.345Z",
+  "updatedAt": "2026-08-10T23:10:30.620Z",
   "count": 78,
   "sourcePool": [
     "Steam",
@@ -1148,7 +1148,7 @@
       "movies": [],
       "criticRating": 8.3,
       "steamUserRating": 9.7,
-      "recommendations": 1231020,
+      "recommendations": 1231017,
       "owners": "20,000,000 .. 50,000,000",
       "peakConcurrent": 24580,
       "sourceEvidence": [
@@ -1162,7 +1162,7 @@
         "steamSpy": "https://steamspy.com/app/105600",
         "metacritic": "https://www.metacritic.com/game/pc/terraria?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10389.026546162859,
+      "popularityScore": 10389.026440325099,
       "igropoiskRating": 8.8,
       "editorialSources": [
         "GamesRadar+"
@@ -1260,7 +1260,7 @@
       "movies": [],
       "criticRating": 8.9,
       "steamUserRating": 9.8,
-      "recommendations": 886902,
+      "recommendations": 886899,
       "owners": "20,000,000 .. 50,000,000",
       "peakConcurrent": 50662,
       "sourceEvidence": [
@@ -1274,7 +1274,7 @@
         "steamSpy": "https://steamspy.com/app/413150",
         "metacritic": "https://www.metacritic.com/game/pc/stardew-valley?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10364.787612392605,
+      "popularityScore": 10364.78746548977,
       "igropoiskRating": 9.2,
       "editorialSources": [
         "PC Gamer"
@@ -4360,7 +4360,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 9.7,
-      "recommendations": 1085990,
+      "recommendations": 1086002,
       "owners": "20,000,000 .. 50,000,000",
       "peakConcurrent": 18400,
       "sourceEvidence": [
@@ -4372,7 +4372,7 @@
         "steamSpy": "https://steamspy.com/app/4000",
         "metacritic": ""
       },
-      "popularityScore": 9723.582622611237,
+      "popularityScore": 9723.583102495968,
       "igropoiskRating": 9.7,
       "editorialSources": [],
       "materials": {
@@ -5146,7 +5146,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 8.8,
-      "recommendations": 281567,
+      "recommendations": 281563,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 4450,
       "sourceEvidence": [
@@ -5158,7 +5158,7 @@
         "steamSpy": "https://steamspy.com/app/1326470",
         "metacritic": ""
       },
-      "popularityScore": 9624.958329602012,
+      "popularityScore": 9624.95771263195,
       "igropoiskRating": 8.8,
       "editorialSources": [],
       "materials": {
