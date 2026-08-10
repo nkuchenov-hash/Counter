@@ -13,13 +13,6 @@ import 'package:flutter/material.dart';
 String _copy(String en, String ru) =>
     currentLocale.value.toLowerCase().startsWith('ru') ? ru : en;
 
-String _duration(int seconds) {
-  if (seconds <= 0) return '0 h 00 m';
-  final h = seconds ~/ 3600;
-  final m = (seconds % 3600) ~/ 60;
-  return '$h h ${m.toString().padLeft(2, '0')} m';
-}
-
 String _durationCompact(int seconds) {
   final value = seconds.abs();
   final h = value ~/ 3600;
@@ -579,7 +572,7 @@ class _CategoryOutcomeCard extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      '${done}/${plans.length} ${_copy('done', 'выполнено')} · $worked ${_copy('worked', 'в работе')}',
+                      '$done/${plans.length} ${_copy('done', 'выполнено')} · $worked ${_copy('worked', 'в работе')}',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: scheme.onSurfaceVariant,
                       ),
