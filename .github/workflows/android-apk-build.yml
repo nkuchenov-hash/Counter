@@ -1,5 +1,6 @@
 name: Android release APK
 
+# Manual artifact trigger: 2026-08-10 category tree + canonical edit sheet.
 on:
   workflow_dispatch:
   push:
