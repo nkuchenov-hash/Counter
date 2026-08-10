@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-10T15:42:15.119Z",
+  "updatedAt": "2026-08-10T21:37:04.885Z",
   "count": 495,
   "sources": [
     "IGN",
@@ -15,6 +15,654 @@
   ],
   "articles": [
     {
+      "source": "PC Gamer",
+      "language": "en",
+      "title": "50 Cent is producing a Payday project for 'the screen'",
+      "normalizedTitle": "50 cent is producing a payday project for the screen",
+      "url": "https://www.pcgamer.com/movies-tv/50-cent-is-producing-a-payday-project-for-the-screen/",
+      "summary": "Whether that's a TV or movie screen isn't clear at this point, but I'm pretty sure it's one or the other.",
+      "publishedAt": "Mon, 10 Aug 2026 21:11:44 +0000"
+    },
+    {
+      "source": "GamesRadar+",
+      "language": "en",
+      "title": "As GTA 6 anticipation builds and the games industry buckles, Take-Two boss says \"I don't love winning by attrition, but I'll take it\"",
+      "normalizedTitle": "as gta 6 anticipation builds and the games industry buckles take two boss says i don t love winning by attrition but i ll take it",
+      "url": "https://www.gamesradar.com/games/grand-theft-auto/as-gta-6-anticipation-builds-and-the-games-industry-buckles-take-two-boss-says-i-dont-love-winning-by-attrition-but-ill-take-it/",
+      "summary": "\"The people who hate running public companies are the people who hate telling the truth\"",
+      "publishedAt": "Mon, 10 Aug 2026 21:08:00 +0000"
+    },
+    {
+      "source": "GameSpot",
+      "language": "en",
+      "title": "Indie Games Are Breaking Out&#8211;But It&#8217;s Still Tough Out There",
+      "normalizedTitle": "indie games are breaking out 8211 but it 8217 s still tough out there",
+      "url": "https://www.gamespot.com/articles/indie-games-are-breaking-out-but-its-still-tough-out-there/",
+      "summary": "Developer House House and publisher Panic announced today that their co-op multiplayer puzzle/exploration/goof-around game Big Walk has achieved huge sales success in just under a week. In a post on Bluesky, Panic announced that Big Walk has already passed over one million units in sales . For small development teams and publishers, one million is a tremendous milestone--one that plenty of big commercial releases from major publishers often fail to reach. But we've seen a fair few massive indie hits in 2026 so far. Today the official X account of Ball X Pit posted that they've just crossed 2 m",
+      "publishedAt": "Mon, 10 Aug 2026 21:05:30 +0000"
+    },
+    {
+      "source": "Polygon",
+      "language": "en",
+      "title": "'House of the Dragon' Officially Rewrites the Saddest Downfall in Game of Thrones History",
+      "normalizedTitle": "house of the dragon officially rewrites the saddest downfall in game of thrones history",
+      "url": "https://www.polygon.com/house-of-the-dragon-season-4-changes-rhaenyra/",
+      "summary": "Showrunner Ryan Condal may have just quietly set this character down a troubling path in 'House of the Dragon' season 4.",
+      "publishedAt": "Mon, 10 Aug 2026 21:00:12 GMT"
+    },
+    {
+      "source": "Polygon",
+      "language": "en",
+      "title": "2,000 Fortnite Players Hired as Air Traffic Controllers by US Government",
+      "normalizedTitle": "2 000 fortnite players hired as air traffic controllers by us government",
+      "url": "https://www.polygon.com/fortnite-united-states-air-traffic-control/",
+      "summary": "The United States department of transportation boasts that it is employing gamer air traffic controllers in record numbers",
+      "publishedAt": "Mon, 10 Aug 2026 20:59:21 GMT"
+    },
+    {
+      "source": "GamesRadar+",
+      "language": "en",
+      "title": "18 AAA games in 8 weeks: With the GTA 6 shadow looming, Gamescom suddenly feels like the most essential gaming event of 2026",
+      "normalizedTitle": "18 aaa games in 8 weeks with the gta 6 shadow looming gamescom suddenly feels like the most essential gaming event of 2026",
+      "url": "https://www.gamesradar.com/games/18-aaa-games-in-8-weeks-with-the-gta-6-shadow-looming-gamescom-suddenly-feels-like-the-most-essential-gaming-event-of-2026/",
+      "summary": "With the world migrating to Vice City this November, all eyes are on Gamescom 2026 to help us better understand the fall schedule",
+      "publishedAt": "Mon, 10 Aug 2026 20:50:48 +0000"
+    },
+    {
+      "source": "GamesRadar+",
+      "language": "en",
+      "title": "\"It's time to sue Sony\": Stop Killing Games joins lawsuit over PlayStation's digital \"monopoly\" amid death of physical games",
+      "normalizedTitle": "it s time to sue sony stop killing games joins lawsuit over playstation s digital monopoly amid death of physical games",
+      "url": "https://www.gamesradar.com/games/its-time-to-sue-sony-stop-killing-games-joins-lawsuit-over-playstations-digital-monopoly-amid-death-of-physical-games/",
+      "summary": "\"Once Sony stops selling physical games in 2028, you won't have any choice at all\"",
+      "publishedAt": "Mon, 10 Aug 2026 20:50:36 +0000"
+    },
+    {
+      "source": "Polygon",
+      "language": "en",
+      "title": "Chiikawa the Movie Is Killing It in Japan's Cinemas — While Leaving Children Crying in Fear",
+      "normalizedTitle": "chiikawa the movie is killing it in japan s cinemas while leaving children crying in fear",
+      "url": "https://www.polygon.com/chiikawa-the-movie-secret-of-mermaid-island-box-office/",
+      "summary": "Chiikawa The Movie: The Secret of Mermaid Island is one of the highest-grossing films in Japan this year, and is sending children crying in fear.",
+      "publishedAt": "Mon, 10 Aug 2026 20:48:24 GMT"
+    },
+    {
+      "source": "Polygon",
+      "language": "en",
+      "title": "Marvel Tokon's New PC Patch Finally Makes the Game Work, Players Say",
+      "normalizedTitle": "marvel tokon s new pc patch finally makes the game work players say",
+      "url": "https://www.polygon.com/marvel-tokon-fighting-souls-pc-patch-reportedly-fixes-game/",
+      "summary": "Marvel Tokon Fighting Souls had a rough launch on Windows PC. A new patch on Monday has reportedly fixed many of players' issues.",
+      "publishedAt": "Mon, 10 Aug 2026 20:41:44 GMT"
+    },
+    {
+      "source": "Polygon",
+      "language": "en",
+      "title": "Samara Weaving | Shelf Quest Episode 5",
+      "normalizedTitle": "samara weaving shelf quest episode 5",
+      "url": "https://www.polygon.com/video/samara-weaving-shelf-quest-episode-5/",
+      "summary": "Samara Weaving is an agent of chaos who loves to cause mayhem in video games. After toying with The Sims and Mario Kart as a kid, she really knuckled down and got into Red Dead Redemption after watching her husband play — and she never looked back. The star of Carolina Caroline and Ready or Not enjoys using films and games to let out her wild side. She loves action and just a liiiiiittle bit of violence. And yet she had a soft spot for her Sims.Join Sam on this episode of Shelf Quest as she browses the shelves of videogamesnewyork and reminisces on how she got into gaming, and her dreams for h",
+      "publishedAt": "Mon, 10 Aug 2026 20:37:14 GMT"
+    },
+    {
+      "source": "GamesRadar+",
+      "language": "en",
+      "title": "Xbox finally fixes bug that made it impossible to play physical games while exec promises \"to improve reliability of our products\"",
+      "normalizedTitle": "xbox finally fixes bug that made it impossible to play physical games while exec promises to improve reliability of our products",
+      "url": "https://www.gamesradar.com/platforms/xbox/xbox-finally-fixes-bug-that-made-it-impossible-to-play-physical-games-while-exec-promises-to-improve-reliability-of-our-products/",
+      "summary": "That would be nice",
+      "publishedAt": "Mon, 10 Aug 2026 20:36:33 +0000"
+    },
+    {
+      "source": "PC Gamer",
+      "language": "en",
+      "title": "Grand Theft Auto 5 averages more copies sold per year than most megahits manage in their entire lifetime, with a total of 230 million since 2013",
+      "normalizedTitle": "grand theft auto 5 averages more copies sold per year than most megahits manage in their entire lifetime with a total of 230 million since 2013",
+      "url": "https://www.pcgamer.com/gaming-industry/grand-theft-auto-5-averages-more-copies-sold-per-year-than-most-megahits-manage-in-their-entire-lifetime-with-a-total-of-230-million-since-2013/",
+      "summary": "The people yearn for Los Santos.",
+      "publishedAt": "Mon, 10 Aug 2026 20:31:05 +0000"
+    },
+    {
+      "source": "GameSpot",
+      "language": "en",
+      "title": "Insomniac’s Spider-Man Reveals What Brand New Day Is Missing",
+      "normalizedTitle": "insomniac s spider man reveals what brand new day is missing",
+      "url": "https://www.gamespot.com/articles/insomniacs-spider-man-reveals-what-brand-new-day-is-missing/",
+      "summary": "Spider-Man: Brand New Day has swung into theaters and shattered numerous records; everyone and their Aunt May went to see this film, it seems. And thankfully, it’s good! After a trilogy of Tom Holland movies that purposefully went in a different direction than what fans had come to expect of the character in prior adaptations--and to divisive results--Brand New Day ties up this iteration of Peter Parker in a much more familiar web. In the latest film, the hero is devoted to his career of fighting crime, with zero time left for a personal life; he has to wrestle with his moral compass in order ",
+      "publishedAt": "Mon, 10 Aug 2026 20:20:38 +0000"
+    },
+    {
+      "source": "PC Gamer",
+      "language": "en",
+      "title": "Battlefield 6 player claims to have received Steam refund after 470 hours due to surprise mode removal",
+      "normalizedTitle": "battlefield 6 player claims to have received steam refund after 470 hours due to surprise mode removal",
+      "url": "https://www.pcgamer.com/games/fps/battlefield-6-player-claims-to-have-received-steam-refund-after-470-hours-due-to-surprise-mode-removal/",
+      "summary": "Mode madness.",
+      "publishedAt": "Mon, 10 Aug 2026 20:16:13 +0000"
+    },
+    {
+      "source": "Rock Paper Shotgun",
+      "language": "en",
+      "title": "Over the Hill, SnowRunner's hippie off-roading cousin from the Art of Rally devs, gets an October release date",
+      "normalizedTitle": "over the hill snowrunner s hippie off roading cousin from the art of rally devs gets an october release date",
+      "url": "https://www.rockpapershotgun.com/over-the-hill-snowrunners-hippie-off-roading-cousin-from-the-art-of-rally-devs-gets-an-october-release-date",
+      "summary": "Fire up the Landy! Over the Hill , Funselektor and Strelka Games' off-roader which takes the hardcore trail-running you get in a sim like SnowRunner and sands off the edges a bit to make for more chill countryside-roaming, finally has a release date. It's set to motor onto the scene in October, following a Steam Next Fest demo which I dug. Read more",
+      "publishedAt": "Mon, 10 Aug 2026 20:15:00 +0000"
+    },
+    {
+      "source": "Polygon",
+      "language": "en",
+      "title": "Large lost sunken relics list in Pokémon Pokopia",
+      "normalizedTitle": "large lost sunken relics list in pokémon pokopia",
+      "url": "https://www.polygon.com/pokemon-pokopia-lost-sunken-relics-dlc-list-how-to-get/",
+      "summary": "Here's a list of large lost sunken relics in Pokémon Pokopia Bubbly Basin DLC and how to get them.",
+      "publishedAt": "Mon, 10 Aug 2026 20:10:40 GMT"
+    },
+    {
+      "source": "PC Gamer",
+      "language": "en",
+      "title": "'Thank you so much for the best weekend ever': The id Software gang got together at QuakeCon, and it sure looks like everyone had a great time",
+      "normalizedTitle": "thank you so much for the best weekend ever the id software gang got together at quakecon and it sure looks like everyone had a great time",
+      "url": "https://www.pcgamer.com/games/thank-you-so-much-for-the-best-weekend-ever-the-id-software-gang-got-together-at-quakecon-and-it-sure-looks-like-everyone-had-a-great-time/",
+      "summary": "I love a happy ending.",
+      "publishedAt": "Mon, 10 Aug 2026 20:09:49 +0000"
+    },
+    {
+      "source": "GamesRadar+",
+      "language": "en",
+      "title": "Overwatch's huge \"battle pass revamp\" is out tomorrow and makes things a lot more complicated but, seemingly, better",
+      "normalizedTitle": "overwatch s huge battle pass revamp is out tomorrow and makes things a lot more complicated but seemingly better",
+      "url": "https://www.gamesradar.com/games/fps/overwatchs-huge-battle-pass-revamp-is-out-tomorrow-and-makes-things-a-lot-more-complicated-but-seemingly-better/",
+      "summary": "New Overwatch battle pass \"Tier Hack\" lets players unlock old skins",
+      "publishedAt": "Mon, 10 Aug 2026 20:08:18 +0000"
+    },
+    {
+      "source": "Polygon",
+      "language": "en",
+      "title": "Big Walk's Award-winning Predecessor is a Must Play PlayStation Plus Game",
+      "normalizedTitle": "big walk s award winning predecessor is a must play playstation plus game",
+      "url": "https://www.polygon.com/untitled-goose-game-ps-plus-recommendation/",
+      "summary": "Before Big Walk, House House sharpened its craft in its award-winning Untitled Goose Game, available to play on PS Plus.",
+      "publishedAt": "Mon, 10 Aug 2026 20:00:12 GMT"
+    },
+    {
+      "source": "GameSpot",
+      "language": "en",
+      "title": "Overwatch&#8217;s Battle Pass Overhaul Will Let You Swap Out Skins You Don&#8217;t Want",
+      "normalizedTitle": "overwatch 8217 s battle pass overhaul will let you swap out skins you don 8217 t want",
+      "url": "https://www.gamespot.com/articles/overwatchs-battle-pass-overhaul-will-let-you-swap-out-skins-you-dont-want/",
+      "summary": "Overwatch is making big changes to its battle pass as part of Season 4, with a new multi-track system that even gives players an option to swap out and replace a skin they don't want. As explained in a new \"Director's Take\" blog post by Overwatch product director Chris McCabe, Blizzard said it recognizes that due to Overwatch's ever-expanding roster of 50+ heroes, not every battle pass will have rewards for the heroes a particular player is most excited about. The solution Blizzard is introducing is to not only break the battle pass into smaller chunks so players can more quickly pursue the re",
+      "publishedAt": "Mon, 10 Aug 2026 19:30:45 +0000"
+    },
+    {
+      "source": "Polygon",
+      "language": "en",
+      "title": "Super Mario Bros. Players Are Closing In on a Perfect Playthrough",
+      "normalizedTitle": "super mario bros players are closing in on a perfect playthrough",
+      "url": "https://www.polygon.com/super-mario-bros-speedrun-lekukie-world-record/",
+      "summary": "A new video from Super Mario Bros. speedrunner Kosmic breaks down just how close players are to achieving a perfect game.",
+      "publishedAt": "Mon, 10 Aug 2026 19:30:12 GMT"
+    },
+    {
+      "source": "PC Gamer",
+      "language": "en",
+      "title": "Overwatch's old battle passes are finally coming back permanently starting next month, but some of the rewards will be left out",
+      "normalizedTitle": "overwatch s old battle passes are finally coming back permanently starting next month but some of the rewards will be left out",
+      "url": "https://www.pcgamer.com/games/fps/overwatchs-old-battle-passes-are-finally-coming-back-permanently-starting-next-month-but-some-of-the-rewards-will-be-left-out/",
+      "summary": "After years, Blizzard is loosening up on the battle pass FOMO.",
+      "publishedAt": "Mon, 10 Aug 2026 19:14:26 +0000"
+    },
+    {
+      "source": "GameSpot",
+      "language": "en",
+      "title": "Battlefield 6 Removed A Fan-Favorite Mode, As Devs Look For &#8220;Best&#8221; Way To Bring It Back",
+      "normalizedTitle": "battlefield 6 removed a fan favorite mode as devs look for 8220 best 8221 way to bring it back",
+      "url": "https://www.gamespot.com/articles/battlefield-6-removed-a-fan-favorite-mode-as-devs-look-for-best-way-to-bring-it-back/",
+      "summary": "The removal of Rush from Battlefield 6 isn't going over well within the game's community, as developer Battlefield Studios confirms it's exploring ways to bring it back. Playlists for the mode, along with several others like King of the Hill and Team Deathmatch, were removed with no real warning or fanfare from Battlefield 6 following its minor patch 1.4.1.5 update on August 4. The modes were also removed from custom searches, relegating the modes to Battlefield 6's Portal custom games. According to the official Battlefield Comms social media account several days after the fact, developer Batt",
+      "publishedAt": "Mon, 10 Aug 2026 19:01:13 +0000"
+    },
+    {
+      "source": "StopGame",
+      "language": "ru",
+      "title": "Big Walk. Прогулка длиною в стрим",
+      "normalizedTitle": "big walk прогулка длиною в стрим",
+      "url": "https://stopgame.ru/show/163184/big_walk_progulka_dlinoyu_v_strim",
+      "summary": "Раньше, чтобы выйти на улицу к друзьям, подышать свежим воздухом и потрогать траву, надо было... кхм, представляете, реально выходить из дома. Бррр, дикость какая. Сейчас можно обойтись без всех этих варварских телодвижений и просто запустить Big Walk.",
+      "publishedAt": "Mon, 10 Aug 2026 22:00:29 +0300"
+    },
+    {
+      "source": "StopGame",
+      "language": "ru",
+      "title": "Guild Wars 2: Понедельник день чилловый [ММОрафон]",
+      "normalizedTitle": "guild wars 2 понедельник день чилловый мморафон",
+      "url": "https://stopgame.ru/show/163183/guild_wars_2_ponedelnik_den_chillovyy_mmorafon",
+      "summary": "Мы прерываем сюжетное прохождение Guild Wars 2 для того, чтобы показать вам это срочное сообщение: в игре есть ещё куча разного контента!",
+      "publishedAt": "Mon, 10 Aug 2026 22:00:15 +0300"
+    },
+    {
+      "source": "Polygon",
+      "language": "en",
+      "title": "Switch 2 Just Got One of the Decade’s Best Soulslikes",
+      "normalizedTitle": "switch 2 just got one of the decade s best soulslikes",
+      "url": "https://www.polygon.com/lies-of-p-complete-edition-nintendo-swtich-2-release/",
+      "summary": "Lies of P and its Overture expansion just hit the Nintendo Switch 2. Together, they're one of the best non-FromSoftware Soulslikes of the 2020s.",
+      "publishedAt": "Mon, 10 Aug 2026 19:00:12 GMT"
+    },
+    {
+      "source": "Polygon",
+      "language": "en",
+      "title": "Batman's new Joker actor officially confirms a shocking change to the iconic villains backstory",
+      "normalizedTitle": "batman s new joker actor officially confirms a shocking change to the iconic villains backstory",
+      "url": "https://www.polygon.com/batman-caped-crusader-joker-matthew-needham-interview/",
+      "summary": "‘I really hoped that people would see that everything we were doing was with great respect.’",
+      "publishedAt": "Mon, 10 Aug 2026 19:00:12 GMT"
+    },
+    {
+      "source": "GamesRadar+",
+      "language": "en",
+      "title": "Oblivion intern tried to outsmart Bethesda's AI and was stunned when his apple murder strategy actually worked: \"I can't believe you accounted for this\"",
+      "normalizedTitle": "oblivion intern tried to outsmart bethesda s ai and was stunned when his apple murder strategy actually worked i can t believe you accounted for this",
+      "url": "https://www.gamesradar.com/games/the-elder-scrolls/oblivion-intern-tried-to-outsmart-bethesdas-ai-and-was-stunned-when-his-apple-murder-strategy-actually-worked-i-cant-believe-you-accounted-for-this/",
+      "summary": "\"'Can I abuse this in any way?'\"",
+      "publishedAt": "Mon, 10 Aug 2026 18:59:53 +0000"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "Wardogs 'Hits Different' and Could Be the Next Big FPS, Those Who Managed to Get Into the Recent Private Playtest Say",
+      "normalizedTitle": "wardogs hits different and could be the next big fps those who managed to get into the recent private playtest say",
+      "url": "https://www.ign.com/articles/wardogs-hits-different-and-could-be-the-next-big-fps-those-who-managed-to-get-into-the-recent-private-playtest-say",
+      "summary": "A brand-new first-person shooter, Wardogs, could be a breakout title for the genre, according to players who recently went hands-on with an early version of the game.",
+      "publishedAt": "Mon, 10 Aug 2026 18:51:27 +0000"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "Pay Less Than Half Price for Sony's Outstanding WH-1000XM6 Wireless Noise Canceling Headphones",
+      "normalizedTitle": "pay less than half price for sony s outstanding wh 1000xm6 wireless noise canceling headphones",
+      "url": "https://www.ign.com/articles/sony-wh-1000xm6-wireless-noise-canceling-headphone-deal-august-2026",
+      "summary": "These are refurbished units that are indistinguishable from new and include a 2 year warranty.",
+      "publishedAt": "Mon, 10 Aug 2026 18:50:00 +0000"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "Hideki Kamiya Gives Fans Hope That He Will Direct Another Devil May Cry Game",
+      "normalizedTitle": "hideki kamiya gives fans hope that he will direct another devil may cry game",
+      "url": "https://www.ign.com/articles/hideki-kamiya-gives-fans-hope-that-he-will-direct-another-devil-may-cry-game",
+      "summary": "It’s been over twenty years since Hideki Kamiya directed the very first Devil May Cry game, and his latest tweets are hinting that he might make a long-awaited return to the franchise.",
+      "publishedAt": "Mon, 10 Aug 2026 18:29:05 +0000"
+    },
+    {
+      "source": "PC Gamer",
+      "language": "en",
+      "title": "There was originally supposed to be a 'much bigger' reveal of Light No Fire: here's why Sean Murray changed his mind",
+      "normalizedTitle": "there was originally supposed to be a much bigger reveal of light no fire here s why sean murray changed his mind",
+      "url": "https://www.pcgamer.com/games/survival-crafting/there-was-originally-supposed-to-be-a-much-bigger-reveal-of-light-no-fire-heres-why-sean-murray-changed-his-mind/",
+      "summary": "There was so much hype after the teaser in 2023 that Murray decided \"We don't need to say anything more right now.\"",
+      "publishedAt": "Mon, 10 Aug 2026 18:28:26 +0000"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "Today’s Top Deals: Resident Evil Requiem, Intel Core Ultra 5 250K Plus CPU, LEGO Earth and Moon",
+      "normalizedTitle": "today s top deals resident evil requiem intel core ultra 5 250k plus cpu lego earth and moon",
+      "url": "https://www.ign.com/articles/best-deals-for-august-10-2026",
+      "summary": "And don’t miss incredible savings on a gaming monitor, a Forza Horizon 6 Xbox Controller, and more.",
+      "publishedAt": "Mon, 10 Aug 2026 18:20:00 +0000"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "Grand Theft Auto Players Fundraise $50k for Sick Fan Trying to Make It to GTA 6",
+      "normalizedTitle": "grand theft auto players fundraise 50k for sick fan trying to make it to gta 6",
+      "url": "https://www.ign.com/articles/grand-theft-auto-players-fundraise-50k-for-sick-fan-trying-to-make-it-to-gta-6",
+      "summary": "Grand Theft Auto players have rallied behind a sick fan in need of a lung transplant by raising more than $50,000 so he can live long enough to play GTA 6.",
+      "publishedAt": "Mon, 10 Aug 2026 17:59:59 +0000"
+    },
+    {
+      "source": "GameSpot",
+      "language": "en",
+      "title": "Blizzard Is Reportedly Xbox&#8217;s New Top Studio",
+      "normalizedTitle": "blizzard is reportedly xbox 8217 s new top studio",
+      "url": "https://www.gamespot.com/articles/blizzard-is-reportedly-xboxs-new-top-studio/",
+      "summary": "Out of all of Xbox's studios (of which there are admittedly fewer now following mass layoffs and studio divestitures ), Blizzard is reportedly the \"top performing.\" That's according to a new report from Windows Central based on emails sent by Blizzard president Johanna Faries to staff last week. In the emails, Faries celebrated the studio's performance ahead of BlizzCon in September, an event she hopes will \"serve as a powerful springboard into a new era of momentum and excitement.\" Faries went on to state Blizzard ended the 2026 fiscal year as the \"top-performing studio in Xbox's studios divi",
+      "publishedAt": "Mon, 10 Aug 2026 17:59:30 +0000"
+    },
+    {
+      "source": "GameSpot",
+      "language": "en",
+      "title": "Marvel Tokon: Fighting Souls&#8217; First PC Patch Targets Its Biggest Problems",
+      "normalizedTitle": "marvel tokon fighting souls 8217 first pc patch targets its biggest problems",
+      "url": "https://www.gamespot.com/articles/marvel-tokon-fighting-souls-first-pc-patch-targets-its-biggest-problems/",
+      "summary": "Marvel Tokon: Fighting Souls launched last week, and its first patch is taking aim at the many technical teething issues on PC . Poor optimization appears to be one of the major issues, as many users online have reported it being demanding on their systems despite having moderate PC requirements. \"We've been working on a number of fixes and improvements aimed at reducing performance issues, improving stability, and addressing some specific problems,\" Arc System Works wrote in an update. According to the patch notes, Arc has several fixes to help reduce overall CPU usage, improve frame rates, a",
+      "publishedAt": "Mon, 10 Aug 2026 17:51:23 +0000"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "Save 30% on One of the Coolest and Most Interactive Space-Themed LEGO Sets Ever",
+      "normalizedTitle": "save 30 on one of the coolest and most interactive space themed lego sets ever",
+      "url": "https://www.ign.com/articles/lego-technic-planet-earth-and-moon-in-orbit-deal-august-2026",
+      "summary": "The LEGO Technic Planet Earth and Moon in Orbit 42179 is on sale for just $51.99.",
+      "publishedAt": "Mon, 10 Aug 2026 17:50:00 +0000"
+    },
+    {
+      "source": "PC Gamer",
+      "language": "en",
+      "title": "Steam user data 'may have been compromised' by a cyberattack targeting Valve's European shipping partner",
+      "normalizedTitle": "steam user data may have been compromised by a cyberattack targeting valve s european shipping partner",
+      "url": "https://www.pcgamer.com/gaming-industry/steam-user-data-may-have-been-compromised-by-a-cyberattack-targeting-valves-european-shipping-partner/",
+      "summary": "An attack targeting CEVA Logistics \"likely\" exposed the personal information of European customers who ordered Steam hardware, Valve says.",
+      "publishedAt": "Mon, 10 Aug 2026 17:45:04 +0000"
+    },
+    {
+      "source": "GamesRadar+",
+      "language": "en",
+      "title": "Star Wars: Knights of the Old Republic devs were so committed to the RPG's bad language that they spent a day watching the films to prove Lucasfilm wrong",
+      "normalizedTitle": "star wars knights of the old republic devs were so committed to the rpg s bad language that they spent a day watching the films to prove lucasfilm wrong",
+      "url": "https://www.gamesradar.com/games/rpg/star-wars-knights-of-the-old-republic-devs-were-so-committed-to-the-rpgs-bad-language-that-they-spent-a-day-watching-the-films-to-prove-lucasfilm-wrong/",
+      "summary": "But in the end, Lucasfilm got its way",
+      "publishedAt": "Mon, 10 Aug 2026 17:30:00 +0000"
+    },
+    {
+      "source": "PC Gamer",
+      "language": "en",
+      "title": "Payday has come to Fortnite, because today's cool gamers are 'discovering legendary IPs in entirely new ways'",
+      "normalizedTitle": "payday has come to fortnite because today s cool gamers are discovering legendary ips in entirely new ways",
+      "url": "https://www.pcgamer.com/games/fps/payday-has-come-to-fortnite-because-todays-cool-gamers-are-discovering-legendary-ips-in-entirely-new-ways/",
+      "summary": "The new game is called, literally and in totality, Heist Escape Roguelike: Payday Experience.",
+      "publishedAt": "Mon, 10 Aug 2026 17:26:09 +0000"
+    },
+    {
+      "source": "GamesRadar+",
+      "language": "en",
+      "title": "\"I think we have to do\" Persona 1 and 2 Remakes, says Persona 4 Revival producer",
+      "normalizedTitle": "i think we have to do persona 1 and 2 remakes says persona 4 revival producer",
+      "url": "https://www.gamesradar.com/games/persona/i-think-we-have-to-do-persona-1-and-2-remakes-says-persona-4-revival-producer/",
+      "summary": "But how do you remake Persona 2?",
+      "publishedAt": "Mon, 10 Aug 2026 17:20:17 +0000"
+    },
+    {
+      "source": "GamesRadar+",
+      "language": "en",
+      "title": "25 years later, Hideki Kamiya says he'd make another Devil May Cry game just to clear up some deep-cut lore",
+      "normalizedTitle": "25 years later hideki kamiya says he d make another devil may cry game just to clear up some deep cut lore",
+      "url": "https://www.gamesradar.com/games/devil-may-cry/25-years-later-hideki-kamiya-says-hed-make-another-devil-may-cry-game-just-to-clear-up-some-deep-cut-lore/",
+      "summary": "Kamiya's reunion with Capcom for Okami even makes it feel like a real possibility",
+      "publishedAt": "Mon, 10 Aug 2026 17:17:11 +0000"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "Amazon Discounts MTG Commander Decks From Marvel and Strixhaven",
+      "normalizedTitle": "amazon discounts mtg commander decks from marvel and strixhaven",
+      "url": "https://www.ign.com/articles/amazon-discounts-mtg-commander-decks-from-marvel-and-strixhaven",
+      "summary": "From assembling the Avengers to blighting your foes, here are the best Magic precon deals right now at Amazon.",
+      "publishedAt": "Mon, 10 Aug 2026 17:15:00 +0000"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "Score up to 20% off Select 256GB microSD Express Cards at Amazon",
+      "normalizedTitle": "score up to 20 off select 256gb microsd express cards at amazon",
+      "url": "https://www.ign.com/articles/score-up-to-20-off-select-256gb-microsd-express-cards-at-amazon",
+      "summary": "A PNY 256GB microSD Express card and a SanDisk 256GB microSD express card have been discounted at Amazon, with the former dropping to $49.99 and the latter hitting $58.99.",
+      "publishedAt": "Mon, 10 Aug 2026 17:00:00 +0000"
+    },
+    {
+      "source": "Rock Paper Shotgun",
+      "language": "en",
+      "title": "In cosmic roguelike The Carcass, you build a colony inside the corpse of a god that's slowly becoming aware of you",
+      "normalizedTitle": "in cosmic roguelike the carcass you build a colony inside the corpse of a god that s slowly becoming aware of you",
+      "url": "https://www.rockpapershotgun.com/in-cosmic-roguelike-the-carcass-you-build-a-colony-inside-the-corpse-of-a-god-thats-slowly-becoming-aware-of-you",
+      "summary": "Update 10th August: Seems I may have been naive about this one! While there's no AI disclosure on the full Steam page for The Carcass, there is a disclosure on the separate store page for the demo. Here's the disclosure in full. The entire vision, design, and core structure of this game are the result of human effort. AI tools were used strictly as a coding assistant during development&mdash;to speed up programming, debug, and optimize performance. This project is the result of a year of hard work; it was not 'generated' with a few simple prompts. Disclosure aside, there are a bunch of Steam r",
+      "publishedAt": "Mon, 10 Aug 2026 17:00:00 +0000"
+    },
+    {
+      "source": "GamesRadar+",
+      "language": "en",
+      "title": "No Man's Sky lead planned to show more Light No Fire, but \"why do any marketing\" when it's already topping Steam wishlists",
+      "normalizedTitle": "no man s sky lead planned to show more light no fire but why do any marketing when it s already topping steam wishlists",
+      "url": "https://www.gamesradar.com/games/survival/no-mans-sky-lead-planned-to-show-more-light-no-fire-but-why-do-any-marketing-when-its-already-topping-steam-wishlists/",
+      "summary": "Hello Games doesn't feel more is needed right now",
+      "publishedAt": "Mon, 10 Aug 2026 16:56:34 +0000"
+    },
+    {
+      "source": "PC Gamer",
+      "language": "en",
+      "title": "How to upgrade the Cargo Elevator antennas in Arc Raiders",
+      "normalizedTitle": "how to upgrade the cargo elevator antennas in arc raiders",
+      "url": "https://www.pcgamer.com/games/third-person-shooter/arc-raiders-upgrade-cargo-elevator-antennas/",
+      "summary": "Complete the first step of the Phantom Targets project.",
+      "publishedAt": "Mon, 10 Aug 2026 16:54:56 +0000"
+    },
+    {
+      "source": "PC Gamer",
+      "language": "en",
+      "title": "Persona big boss says 'I think we have to do' remakes of the series' most-neglected games",
+      "normalizedTitle": "persona big boss says i think we have to do remakes of the series most neglected games",
+      "url": "https://www.pcgamer.com/games/rpg/persona-big-boss-says-i-think-we-have-to-do-remakes-of-the-series-most-neglected-games/",
+      "summary": "Put away your PSPs, friends.",
+      "publishedAt": "Mon, 10 Aug 2026 16:49:03 +0000"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "Sonic the Hedgehog is Joining Fortnite, and Yes You'll Be Able to Dash Up Walls in the Green Hill Zone",
+      "normalizedTitle": "sonic the hedgehog is joining fortnite and yes you ll be able to dash up walls in the green hill zone",
+      "url": "https://www.ign.com/articles/sonic-the-hedgehog-is-joining-fortnite-and-yes-youll-be-able-to-dash-up-walls-in-the-green-hill-zone",
+      "summary": "Sonic the Hedgehog is joining Fortnite as part of the battle royale's upcoming gaming-themed season.",
+      "publishedAt": "Mon, 10 Aug 2026 16:43:45 +0000"
+    },
+    {
+      "source": "GamesRadar+",
+      "language": "en",
+      "title": "Dig and Clean codes (August 2026) for luck boosts",
+      "normalizedTitle": "dig and clean codes august 2026 for luck boosts",
+      "url": "https://www.gamesradar.com/games/simulation/dig-and-clean-codes/",
+      "summary": "Codes for Dig and Clean will give you temporary luck increases to improve the quality of the hidden items you detect",
+      "publishedAt": "Mon, 10 Aug 2026 16:34:30 +0000"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "Join the IGN Discord!",
+      "normalizedTitle": "join the ign discord",
+      "url": "https://www.ign.com/articles/join-the-ign-discord",
+      "summary": "Hello IGN Community, I hope everyone had a great weekend. I’m here today to introduce you all to our newest addition to the IGN Ecosystem, our brand new official IGN Discord . We are thrilled to officially launch the IGN Discord server, our brand-new space designed specifically for you to connect with fellow fans and us in real-time. This server serves as a new hub for the IGN Ecosystem, bringing together IGN fans around the world to talk gameS, movies, tech, anime and more. Whether you want to discuss the latest industry news or find a squad for your favorite multiplayer game, our Discord is ",
+      "publishedAt": "Mon, 10 Aug 2026 16:30:00 +0000"
+    },
+    {
+      "source": "GamesRadar+",
+      "language": "en",
+      "title": "Terraria's biggest mod, Calamity, is shutting down after 10 years over what the makers call a \"troubled past\" and \"irrecoverably tainted reputation\"",
+      "normalizedTitle": "terraria s biggest mod calamity is shutting down after 10 years over what the makers call a troubled past and irrecoverably tainted reputation",
+      "url": "https://www.gamesradar.com/games/survival/terrarias-biggest-mod-calamity-is-shutting-down-after-10-years-over-what-the-makers-call-a-troubled-past-and-irrecoverably-tainted-reputation/",
+      "summary": "\"Most of us want to simply move on…\"",
+      "publishedAt": "Mon, 10 Aug 2026 16:29:30 +0000"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "IFA 2026: What to Expect From the World’s Largest Home & Consumer Tech Event",
+      "normalizedTitle": "ifa 2026 what to expect from the world s largest home consumer tech event",
+      "url": "https://www.ign.com/articles/ifa-2026-what-to-expect",
+      "summary": "More than a trade show; more like a cultural playground.",
+      "publishedAt": "Mon, 10 Aug 2026 16:25:54 +0000"
+    },
+    {
+      "source": "GameSpot",
+      "language": "en",
+      "title": "After eBay&#8217;s Resounding Rejection, GameStop Reconsiders Its $56 Billion Acquisition Bid",
+      "normalizedTitle": "after ebay 8217 s resounding rejection gamestop reconsiders its 56 billion acquisition bid",
+      "url": "https://www.gamespot.com/articles/after-ebay-resounding-rejection-gamestop-reconsiders-its-56-billion-acquisition-bid/",
+      "summary": "GameStop CEO Ryan Cohen might be ready to pull the plug on his ambitious plan to purchase eBay for $56 billion , a new report claims. Cohen--who came up with the plan while seated on his porcelain throne --had been pursuing the deal ever since it was announced, but eBay rejected the offer, saying it was “neither credible nor attractive.” According to Bloomberg , Cohen is now considering a different strategy that would revolve around a partnership between eBay and GameStop to sell more collectible items like trading cards. GameStop has roughly 1,600 physical stores across the US, and Cohen has ",
+      "publishedAt": "Mon, 10 Aug 2026 16:24:41 +0000"
+    },
+    {
+      "source": "GamesRadar+",
+      "language": "en",
+      "title": "Gearbox owner Take-Two is \"thrilled\" with Borderlands 4 even though some fans weren't thrilled with it at launch",
+      "normalizedTitle": "gearbox owner take two is thrilled with borderlands 4 even though some fans weren t thrilled with it at launch",
+      "url": "https://www.gamesradar.com/games/borderlands/gearbox-owner-take-two-is-thrilled-with-borderlands-4-even-though-some-fans-werent-thrilled-with-it-at-launch/",
+      "summary": "Strauss Zelnick is more than satisfied",
+      "publishedAt": "Mon, 10 Aug 2026 16:21:22 +0000"
+    },
+    {
+      "source": "PC Gamer",
+      "language": "en",
+      "title": "The Steam Machine design makes for a frightfully good tissue box, and now you can 3D print your own",
+      "normalizedTitle": "the steam machine design makes for a frightfully good tissue box and now you can 3d print your own",
+      "url": "https://www.pcgamer.com/hardware/gaming-pcs/the-steam-machine-design-makes-for-a-frightfully-good-tissue-box-and-now-you-can-3d-print-your-own/",
+      "summary": "Maybe useful to catch our tears over memory prices right now.",
+      "publishedAt": "Mon, 10 Aug 2026 16:16:15 +0000"
+    },
+    {
+      "source": "PC Gamer",
+      "language": "en",
+      "title": "1666: Amsterdam has the makings of something brilliant but I came away from its preview with a bad feeling as its early access release creeps too close for comfort",
+      "normalizedTitle": "1666 amsterdam has the makings of something brilliant but i came away from its preview with a bad feeling as its early access release creeps too close for comfort",
+      "url": "https://www.pcgamer.com/games/action/1666-amsterdam-has-the-makings-of-something-brilliant-but-i-came-away-from-its-preview-with-a-bad-feeling-as-its-early-access-release-creeps-too-close-for-comfort/",
+      "summary": "I want to play 1666: Amsterdam's final iteration, I just hope it gets that far.",
+      "publishedAt": "Mon, 10 Aug 2026 16:08:34 +0000"
+    },
+    {
+      "source": "GamesRadar+",
+      "language": "en",
+      "title": "With an even bigger caveat than Capcom and Sony, Square Enix reports 90% of its game sales are digital ahead of Final Fantasy 7 Revelation release",
+      "normalizedTitle": "with an even bigger caveat than capcom and sony square enix reports 90 of its game sales are digital ahead of final fantasy 7 revelation release",
+      "url": "https://www.gamesradar.com/games/with-an-even-bigger-caveat-than-capcom-and-sony-square-enix-reports-90-percent-of-its-game-sales-are-digital-ahead-of-final-fantasy-7-revelation-release/",
+      "summary": "The data shows people's habits are changing",
+      "publishedAt": "Mon, 10 Aug 2026 16:06:37 +0000"
+    },
+    {
+      "source": "GamesRadar+",
+      "language": "en",
+      "title": "\"Expect fake messages\" - Valve's EU shipping partner suffers a data breach, so if you bought a Steam Machine or Steam Controller, you may need to be on guard",
+      "normalizedTitle": "expect fake messages valve s eu shipping partner suffers a data breach so if you bought a steam machine or steam controller you may need to be on guard",
+      "url": "https://www.gamesradar.com/hardware/gaming-controllers/expect-fake-messages-valves-eu-shipping-partner-suffers-a-data-breach-so-if-you-bought-a-steam-machine-or-steam-controller-you-may-need-to-be-on-guard/",
+      "summary": "Valve's shipping partner for its European hardware sales has suffered a data breach that could lead to customers receiving harmful or fake messages.",
+      "publishedAt": "Mon, 10 Aug 2026 16:06:03 +0000"
+    },
+    {
+      "source": "PC Gamer",
+      "language": "en",
+      "title": "Keychron is experimenting with a mic-equipped mini keeb that lets you chat to your AI agent while it vibe codes, and I have my head in my hands",
+      "normalizedTitle": "keychron is experimenting with a mic equipped mini keeb that lets you chat to your ai agent while it vibe codes and i have my head in my hands",
+      "url": "https://www.pcgamer.com/software/ai/keychron-is-experimenting-with-a-mic-equipped-mini-keeb-that-lets-you-chat-to-your-ai-agent-while-it-vibe-codes-and-i-have-my-head-in-my-hands/",
+      "summary": "Stop the train, I want to get off.",
+      "publishedAt": "Mon, 10 Aug 2026 16:05:36 +0000"
+    },
+    {
+      "source": "GamesRadar+",
+      "language": "en",
+      "title": "Former Assassin's Creed lead's new game has a roguelike twist with randomized abilities that reset on death, and your witchy protagonist will look great using them",
+      "normalizedTitle": "former assassin s creed lead s new game has a roguelike twist with randomized abilities that reset on death and your witchy protagonist will look great using them",
+      "url": "https://www.gamesradar.com/games/action/former-assassins-creed-leads-new-game-has-a-roguelike-twist-with-randomized-abilities-that-reset-on-death-and-your-witchy-protagonist-will-look-great-using-them/",
+      "summary": "1666 Amsterdam can make you the fanciest witch in the city",
+      "publishedAt": "Mon, 10 Aug 2026 16:05:00 +0000"
+    },
+    {
+      "source": "GamesRadar+",
+      "language": "en",
+      "title": "With gen AI assets cut from Assassin's Creed creator's new game demo, lead admits \"we didn't even realize it was AI anymore because we were used to seeing it\"",
+      "normalizedTitle": "with gen ai assets cut from assassin s creed creator s new game demo lead admits we didn t even realize it was ai anymore because we were used to seeing it",
+      "url": "https://www.gamesradar.com/games/action/with-gen-ai-assets-cut-from-assassins-creed-creators-new-game-demo-lead-admits-we-didnt-even-realize-it-was-ai-anymore-because-we-were-used-to-seeing-it/",
+      "summary": "\"There was some slip. That will not be the case anymore,\" says 1666 Amsterdam's Patrice Désilets",
+      "publishedAt": "Mon, 10 Aug 2026 16:05:00 +0000"
+    },
+    {
+      "source": "GameSpot",
+      "language": "en",
+      "title": "This Switch Game You Might Have Bought Is Now Totally Unplayable",
+      "normalizedTitle": "this switch game you might have bought is now totally unplayable",
+      "url": "https://www.gamespot.com/articles/this-switch-game-you-might-have-bought-is-now-totally-unplayable/",
+      "summary": "The Nintendo Switch version of Aliens: Fireteam Elite is now completely removed from sale and impossible to play for people who bought it. Developer Cold Iron Studios announced earlier this year that Fireteam Elite, a game that runs in the cloud and not locally, would be shut down on August 5, and now that day has come. The game was delisted on the Switch's eShop earlier this year, along with other digital platforms. However, the game remains playable on other platforms in an offline state. Because the Switch version is streamed over the cloud, it's now totally unplayable. Fireteam Elite origi",
+      "publishedAt": "Mon, 10 Aug 2026 16:03:44 +0000"
+    },
+    {
+      "source": "GamesRadar+",
+      "language": "en",
+      "title": "House of the Dragon season 3 puts a surprise twist on Alys Rivers, which could mean she appears in the Aegon's Conquest movie",
+      "normalizedTitle": "house of the dragon season 3 puts a surprise twist on alys rivers which could mean she appears in the aegon s conquest movie",
+      "url": "https://www.gamesradar.com/entertainment/fantasy-shows/house-of-the-dragon-season-3-puts-a-surprise-twist-on-alys-rivers-which-could-mean-she-appears-in-the-aegons-conquest-movie/",
+      "summary": "House of the Dragon season 3 makes a big change to Alys Rivers",
+      "publishedAt": "Mon, 10 Aug 2026 16:02:59 +0000"
+    },
+    {
+      "source": "Eurogamer",
+      "language": "en",
+      "title": "I've seen much more of 1666: Amsterdam, and the witchy game by the creator of Assassin's Creed has some surprising ideas",
+      "normalizedTitle": "i ve seen much more of 1666 amsterdam and the witchy game by the creator of assassin s creed has some surprising ideas",
+      "url": "https://www.eurogamer.net/1666-amsterdam-impressions-patrice-desilets",
+      "summary": "1666: Amsterdam returned to the public eye this year after a protracted 15 year conception that involved legal battles, rewritten concepts, secret publishers, and finally: an actual game. Suffice to say, this is the game Patrice D&eacute;silets has wanted to make for a very long time - D&eacute;silets being the original creator of Assassin's Creed and more recently the mind behind primate evolution game Ancestors: The Humankind Odyssey . Read more",
+      "publishedAt": "Mon, 10 Aug 2026 16:02:55 +0000"
+    },
+    {
+      "source": "Eurogamer",
+      "language": "en",
+      "title": "Assassin's Creed creator's dark and witchy action game 1666: Amsterdam is out in early access sooner than we expected",
+      "normalizedTitle": "assassin s creed creator s dark and witchy action game 1666 amsterdam is out in early access sooner than we expected",
+      "url": "https://www.eurogamer.net/amsterdam-1666-early-access-release-date",
+      "summary": "1666: Amsterdam, a game that's survived years of legal battles between Assassin's Creed creator Patrice D&eacute;silets and Ubisoft, has an early access release date. It'll be released 25th August for PC, on Steam and the Epic Games Store. Read more",
+      "publishedAt": "Mon, 10 Aug 2026 16:02:09 +0000"
+    },
+    {
+      "source": "GameSpot",
+      "language": "en",
+      "title": "1666: Amsterdam Hands-On Preview",
+      "normalizedTitle": "1666 amsterdam hands on preview",
+      "url": "https://www.gamespot.com/videos/1666-amsterdam-hands-on-preview/",
+      "summary": "Panache Digital Games' upcoming adventure game is interesting conceptually, but its early hours leave a lot to be desired.",
+      "publishedAt": "Mon, 10 Aug 2026 16:00:00 +0000"
+    },
+    {
+      "source": "GameSpot",
+      "language": "en",
+      "title": "No Game Has Ever Needed Early Access More Than 1666: Amsterdam",
+      "normalizedTitle": "no game has ever needed early access more than 1666 amsterdam",
+      "url": "https://www.gamespot.com/articles/no-game-has-ever-needed-early-access-more-than-1666-amsterdam/",
+      "summary": "Following its reveal at Summer Game Fest earlier this year, 1666: Amsterdam quickly became my most anticipated game of 2026. While the entire world seems to be pining for Rockstar's next big adventure in Vice City, after that showcase I found myself ensnared by Panache's promise of a dark tale full of witchcraft and stunningly rendered cobblestone streets. Its initial reveal--coupled with the knowledge that one of the key members behind the first few Assassin's Creed titles was attached to the game--left me extremely eager to go hands-on with 1666: Amsterdam. Fortunately, it didn't take long f",
+      "publishedAt": "Mon, 10 Aug 2026 16:00:00 +0000"
+    },
+    {
+      "source": "GamesRadar+",
+      "language": "en",
+      "title": "1666 Amsterdam feels like the Assassin's Creed game that never was, and fighting witch hunters with my time-traveling familiar left me hungry for more",
+      "normalizedTitle": "1666 amsterdam feels like the assassin s creed game that never was and fighting witch hunters with my time traveling familiar left me hungry for more",
+      "url": "https://www.gamesradar.com/games/action/1666-amsterdam-feels-like-the-assassins-creed-game-that-never-was-and-fighting-witch-hunters-with-my-time-traveling-familiar-left-me-hungry-for-more/",
+      "summary": "With magical combat, city sleuthing, and physical roguelike charms, I can't wait for 1666 Amsterdam's Early Access on August 25",
+      "publishedAt": "Mon, 10 Aug 2026 16:00:00 +0000"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "Aliens: Fireteam Elite on Nintendo Switch Shut Down With No Refunds, as Owners Become the Latest Victims of Gaming's Increasingly Digital Future",
+      "normalizedTitle": "aliens fireteam elite on nintendo switch shut down with no refunds as owners become the latest victims of gaming s increasingly digital future",
+      "url": "https://www.ign.com/articles/aliens-fireteam-elite-on-nintendo-switch-shut-down-with-no-refunds-as-owners-become-the-latest-victims-of-gamings-increasingly-digital-future",
+      "summary": "Aliens: Fireteam Elite has had its cloud servers shut down, leaving Nintendo Switch owners unable to play the game without any form of refund.",
+      "publishedAt": "Mon, 10 Aug 2026 15:58:25 +0000"
+    },
+    {
+      "source": "GameSpot",
+      "language": "en",
+      "title": "Fields Of Mistria Romance, Marriage, And Children Guide",
+      "normalizedTitle": "fields of mistria romance marriage and children guide",
+      "url": "https://www.gamespot.com/articles/fields-of-mistria-romance-marriage-and-children-guide/",
+      "summary": "In This Article Fields Of Mistria Dateable NPCs list Female Marriage Candidates Male Marriage Candidates How To Build Relationships In Fields Of Mistria Heart Events In Fields Of Mistria How To Date In Fields Of Mistria All Date Inspiration Items Getting Married In Fields Of Mistria Having A Baby In Fields Of Mistria All Fields Of Mistria Proposal Gifts One of the biggest selling points of Fields Of Mistria is the detailed and varied dating life your character can have with a range of diverse NPCs. If you're into farmhand himbos, fun-loving chefs, reserved medical professionals, actual dragons",
+      "publishedAt": "Mon, 10 Aug 2026 15:49:07 +0000"
+    },
+    {
+      "source": "GameSpot",
+      "language": "en",
+      "title": "How Long To Beat Marvel Tokon: Fighting Souls",
+      "normalizedTitle": "how long to beat marvel tokon fighting souls",
+      "url": "https://www.gamespot.com/articles/how-long-to-beat-marvel-tokon-fighting-souls/",
+      "summary": "Marvel Tokon: Fighting Souls is the latest fighting game collaboration between a game studio and Marvel Comics. Generally speaking, there isn’t much to do outside of the arcade or story modes, as well as challenging combo trials to get those fingers slamming on the buttons, but little else. However, there has been a shift toward including single-player offerings, and as such, there are a sizeable number of single-player modes available from the start. Those primarily playing Marvel Tokon will challenge opponents in online fights, but even they actually need to play some single-player content i",
+      "publishedAt": "Mon, 10 Aug 2026 15:47:39 +0000"
+    },
+    {
       "source": "Rock Paper Shotgun",
       "language": "en",
       "title": "Someone's head is killing me in Memoirium, a PSX-styled soulslike about battling through bizarre dreamscapes and decorating your bedroom",
@@ -24,6 +672,15 @@
       "publishedAt": "Mon, 10 Aug 2026 15:41:17 +0000"
     },
     {
+      "source": "GameSpot",
+      "language": "en",
+      "title": "Marvel Tokon: Fighting Souls Character Tier List",
+      "normalizedTitle": "marvel tokon fighting souls character tier list",
+      "url": "https://www.gamespot.com/articles/marvel-tokon-fighting-souls-character-tier-list/",
+      "summary": "Marvel Tokon: Fighting Souls is rather unique in that it's a 4v4 fighting game . However, it's a little more complicated than 3v3 fighters of the past, as the order in which you select your character fixes them into specific roles: Leader, Shooter, Vertical, and Assault. As a result, the Marvel Tokon: Fighting Souls roster needs to be evaluated with everything in mind. Some fighters are versatile, while others are one-note, and that's how we'll be evaluating their overall rankings on the tier list. So just because one character has an amazing Vertical special doesn't mean that they are suited ",
+      "publishedAt": "Mon, 10 Aug 2026 15:31:09 +0000"
+    },
+    {
       "source": "Eurogamer",
       "language": "en",
       "title": "\"They don't understand art\" - id Software lead slams Xbox, says it's \"impossible\" to make games like 2016's Doom now",
@@ -31,6 +688,15 @@
       "url": "https://www.eurogamer.net/id-software-slams-xbox-interview-impossible-aaa-games",
       "summary": "A lead developer at id Software has spoken out about Microsoft's decision to make major cuts at the developer, and has said it's \"impossible\" to make triple-A games like 2016's Doom with half the staff. Read more",
       "publishedAt": "Mon, 10 Aug 2026 15:27:43 +0000"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "Marvel's Spider-Man 2 Gets Huge Boost 3 Years After Launch Thanks to Box Office Phenomenon Spider-Man: Brand New Day",
+      "normalizedTitle": "marvel s spider man 2 gets huge boost 3 years after launch thanks to box office phenomenon spider man brand new day",
+      "url": "https://www.ign.com/articles/marvels-spider-man-2-gets-huge-boost-3-years-after-launch-thanks-to-box-office-phenomenon-spider-man-brand-new-day",
+      "summary": "The box office phenomenon that is Spider-Man: Brand New Day has sparked a surge of interest in Sony video game Marvel’s Spider-Man 2, with players flocking to reinstall the game or buy it anew.",
+      "publishedAt": "Mon, 10 Aug 2026 15:27:35 +0000"
     },
     {
       "source": "GamesRadar+",
@@ -51,6 +717,15 @@
       "publishedAt": "Mon, 10 Aug 2026 15:24:53 +0000"
     },
     {
+      "source": "IGN",
+      "language": "en",
+      "title": "Curtis '50 Cent' Jackson Joins Payday TV Show as Executive Producer",
+      "normalizedTitle": "curtis 50 cent jackson joins payday tv show as executive producer",
+      "url": "https://www.ign.com/articles/curtis-50-cent-jackson-joins-payday-tv-show-as-executive-producer",
+      "summary": "Starbreeze Entertainment and Vice Studio's Payday TV show has added an unexpected name to its team: rapper Curtis \"50 Cent\" Jackson.",
+      "publishedAt": "Mon, 10 Aug 2026 15:18:49 +0000"
+    },
+    {
       "source": "GameSpot",
       "language": "en",
       "title": "Brand New Day Is Giving Marvel&#8217;s Spider-Man 2 Its Biggest Sales Boost In Years",
@@ -60,22 +735,22 @@
       "publishedAt": "Mon, 10 Aug 2026 15:11:48 +0000"
     },
     {
-      "source": "Polygon",
+      "source": "IGN",
       "language": "en",
-      "title": "Genshin Impact 7.0 release time in your time zone",
-      "normalizedTitle": "genshin impact 7 0 release time in your time zone",
-      "url": "https://www.polygon.com/genshin-impact-version-7-0-release-time-edt-pdt/",
-      "summary": "Genshin Impact's big 7.0 update to Snezhnaya is coming soon. Here's when Genshin 7.0 launches in your time zone.",
-      "publishedAt": "Mon, 10 Aug 2026 15:09:33 GMT"
+      "title": "Nintendo Is Giving Away a £50 Switch 2 Accessory With Its Latest Console Bundle",
+      "normalizedTitle": "nintendo is giving away a 50 switch 2 accessory with its latest console bundle",
+      "url": "https://www.ign.com/articles/build-nintendo-switch-2-bundle-free-accessory",
+      "summary": "Nintendo’s new Switch 2 bundle lets you choose a console, game and NSO plan, then add an accessory worth up to £49.99 for free.",
+      "publishedAt": "Mon, 10 Aug 2026 15:11:41 +0000"
     },
     {
-      "source": "Polygon",
+      "source": "IGN",
       "language": "en",
-      "title": "Black Myth Devs Were Inspired by 2026's Hottest Movie to Reject AI in Sequel’s Development",
-      "normalizedTitle": "black myth devs were inspired by 2026 s hottest movie to reject ai in sequel s development",
-      "url": "https://www.polygon.com/black-myth-wukong-devs-ai-sequel-nolan-odyssey/",
-      "summary": "Black Myth: Zhong Kui might take longer because the action RPG developers want to emulate Christopher Nolan's approach to art",
-      "publishedAt": "Mon, 10 Aug 2026 15:09:01 GMT"
+      "title": "The Alienware RTX 5090 Gaming PC Drops to $4,780, Nearly the Same Price as Buying the GPU By Itself",
+      "normalizedTitle": "the alienware rtx 5090 gaming pc drops to 4 780 nearly the same price as buying the gpu by itself",
+      "url": "https://www.ign.com/articles/dell-alienware-area-51-intel-edition-rtx-5090-gaming-pc-deal-july-2026",
+      "summary": "An RTX 5090 graphics card nowadays goes for at least $4,500 new and $4,000 used.",
+      "publishedAt": "Mon, 10 Aug 2026 15:10:00 +0000"
     },
     {
       "source": "PC Gamer",
@@ -96,15 +771,6 @@
       "publishedAt": "Mon, 10 Aug 2026 15:07:56 +0000"
     },
     {
-      "source": "Polygon",
-      "language": "en",
-      "title": "HBO’s House of the Dragon Replacement Officially Arrives in 1 Week",
-      "normalizedTitle": "hbo s house of the dragon replacement officially arrives in 1 week",
-      "url": "https://www.polygon.com/lanterns-hbo-dcu-premiere/",
-      "summary": "Swap dragons for aliens as the network takes on another epic franchise",
-      "publishedAt": "Mon, 10 Aug 2026 14:59:09 GMT"
-    },
-    {
       "source": "Rock Paper Shotgun",
       "language": "en",
       "title": "\"Expect fake messages\": A load of Steam user personal info has been stolen thanks to a cyberattack on one of Valve's partners, claims report",
@@ -121,6 +787,15 @@
       "url": "https://www.gamespot.com/articles/gta-6-on-a-disc-doesnt-make-sense-but-could-happen-take-two-ceo-says/",
       "summary": "For big games like GTA 6 , discs \"don't really make sense for the consumer,\" but it's something Take-Two would hasn't totally ruled out for the upcoming game, the company's CEO recently said. Speaking to IGN , Strauss Zelnick said more than 90% of Take-Two's sales currently are digital, going on to say people \"need to be connected\" to play most games today. “So everyone's connected. So it's just a matter of the most efficient way to get the title into people's hands,\" he said. No discs for GTA 6. GTA 6 is not shipping on a disc, though it will be available at retailers via a code in a box. Ask",
       "publishedAt": "Mon, 10 Aug 2026 14:56:21 +0000"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "Saros Is Back Down to $50 at Amazon, Its Lowest Price Yet",
+      "normalizedTitle": "saros is back down to 50 at amazon its lowest price yet",
+      "url": "https://www.ign.com/articles/saros-ps5-deal-lowest-price-amazon",
+      "summary": "You can currently grab physical copies of Housemarque's PS5 sci-fi shooter Saros for just $50 at Amazon, its lowest price ever.",
+      "publishedAt": "Mon, 10 Aug 2026 14:55:55 +0000"
     },
     {
       "source": "GamesRadar+",
@@ -150,6 +825,15 @@
       "publishedAt": "Mon, 10 Aug 2026 14:39:29 +0000"
     },
     {
+      "source": "IGN",
+      "language": "en",
+      "title": "Xbox's Forza Horizon 6 Controller Is Down to $75 at Amazon, Its Lowest Price Ever",
+      "normalizedTitle": "xbox s forza horizon 6 controller is down to 75 at amazon its lowest price ever",
+      "url": "https://www.ign.com/articles/xbox-forza-horizon-6-controller-deal-amazon",
+      "summary": "One of the best-looking controllers Xbox has ever made just dropped to its all-time lowest price at Amazon.",
+      "publishedAt": "Mon, 10 Aug 2026 14:25:16 +0000"
+    },
+    {
       "source": "GamesRadar+",
       "language": "en",
       "title": "Game of Thrones play The Mad King makes the identity of the Prince that was Promised clearer than ever – with a major catch",
@@ -168,13 +852,13 @@
       "publishedAt": "Mon, 10 Aug 2026 14:16:52 +0000"
     },
     {
-      "source": "Polygon",
+      "source": "IGN",
       "language": "en",
-      "title": "Valve warns Steam Machine and Steam Controller users about data breach",
-      "normalizedTitle": "valve warns steam machine and steam controller users about data breach",
-      "url": "https://www.polygon.com/valve-hardware-data-breach-scam-emails/",
-      "summary": "Valve's European logistics partner was hit with a data breach, and the company has warned customers to look out for scam emails.",
-      "publishedAt": "Mon, 10 Aug 2026 14:13:51 GMT"
+      "title": "House of the Dragon Season 3 Is Getting a 4K Steelbook, Now Up for Preorder",
+      "normalizedTitle": "house of the dragon season 3 is getting a 4k steelbook now up for preorder",
+      "url": "https://www.ign.com/articles/house-of-the-dragon-season-3-4k-steelbook-where-to-buy",
+      "summary": "Preorders are live for House of the Dragon's third season. It's available in a gorgeous 4K steelbook, as well as on Blu-ray and even DVD.",
+      "publishedAt": "Mon, 10 Aug 2026 14:15:20 +0000"
     },
     {
       "source": "GamesRadar+",
@@ -186,15 +870,6 @@
       "publishedAt": "Mon, 10 Aug 2026 14:05:31 +0000"
     },
     {
-      "source": "GameSpot",
-      "language": "en",
-      "title": "No Man&#8217;s Sky 10th Anniversary Trailer",
-      "normalizedTitle": "no man 8217 s sky 10th anniversary trailer",
-      "url": "https://www.gamespot.com/videos/no-mans-sky-10th-anniversary-trailer/",
-      "summary": "On August 9th 2016 the first Travellers set foot on their first planet in No Man's Sky. 10 years on and over 40 major (free) updates later, and the universe is more bustling and vibrant than ever.",
-      "publishedAt": "Mon, 10 Aug 2026 14:02:22 +0000"
-    },
-    {
       "source": "GamesRadar+",
       "language": "en",
       "title": "Ahead of an expected D23 X-Men cast reveal, Sadie Sink thinks it's a \"smart choice\" to have a \"younger generation of mutants\" in the MCU",
@@ -204,13 +879,13 @@
       "publishedAt": "Mon, 10 Aug 2026 14:01:20 +0000"
     },
     {
-      "source": "Polygon",
+      "source": "IGN",
       "language": "en",
-      "title": "Darkest Dungeon Is Getting an Expansion from a Dark Souls Veteran",
-      "normalizedTitle": "darkest dungeon is getting an expansion from a dark souls veteran",
-      "url": "https://www.polygon.com/darkest-dungeon-graphic-novel-crowdfunding/",
-      "summary": "Crowdfunding begins in October for a project that will expand Darkest Dungeon's creepy lore.",
-      "publishedAt": "Mon, 10 Aug 2026 14:00:12 GMT"
+      "title": "Crownsville: Read the Entire First Issue of the Oni Press Horror Series",
+      "normalizedTitle": "crownsville read the entire first issue of the oni press horror series",
+      "url": "https://www.ign.com/articles/crownsville-read-the-entire-first-issue-of-the-oni-press-horror-series",
+      "summary": "Oni Press' Crownsville is a truly haunting horror comic with a real historical legacy, and now you can read the entire first chapter for free.",
+      "publishedAt": "Mon, 10 Aug 2026 14:00:00 +0000"
     },
     {
       "source": "GamesRadar+",
@@ -220,42 +895,6 @@
       "url": "https://www.gamesradar.com/games/baldur-s-gate/best-ways-to-replay-baldurs-gate-3/",
       "summary": "When you're ready to step back into the Sword Coast, here are some of the best ways to replay Baldur's Gate 3",
       "publishedAt": "Mon, 10 Aug 2026 14:00:00 +0000"
-    },
-    {
-      "source": "Polygon",
-      "language": "en",
-      "title": "Steam’s Controversial Refund Decision Could Set a Dangerous Precedent",
-      "normalizedTitle": "steam s controversial refund decision could set a dangerous precedent",
-      "url": "https://www.polygon.com/steam-battlefield-6-refund-removed-modes/",
-      "summary": "Steam grants controversial refund to Battlefield 6 launch-day player after 470 hours of playtime.",
-      "publishedAt": "Mon, 10 Aug 2026 13:58:41 GMT"
-    },
-    {
-      "source": "GameSpot",
-      "language": "en",
-      "title": "Ryan Hurst Shows Off How Shredded He Got For God Of War, Before Misfortune Struck",
-      "normalizedTitle": "ryan hurst shows off how shredded he got for god of war before misfortune struck",
-      "url": "https://www.gamespot.com/articles/ryan-hurst-shows-off-how-shredded-he-got-for-god-of-war-before-misfortune/",
-      "summary": "Anyone looking to portray Sony's beefiest protagonist, Kratos, in a live-action God of War series would need to be suitably jacked for the role, and actor Ryan Hurst certainly looks like he spent most of the day at the gym. Following a devastating bicep tear injury that forced him to vacate the role, Hurst has posted an image online of just how massive he got to play the stoic god-killer, and that simple selfie looks leagues better than the official God of War TV series promotional image that preceded it. While the image briefly appeared on Hurst's Instagram Stories--quick-fire content that is",
-      "publishedAt": "Mon, 10 Aug 2026 13:56:43 +0000"
-    },
-    {
-      "source": "IGN",
-      "language": "en",
-      "title": "'Expect Fake Messages': Valve Admits Steam Hardware Owners' Personal Data Likely Stolen",
-      "normalizedTitle": "expect fake messages valve admits steam hardware owners personal data likely stolen",
-      "url": "https://www.ign.com/articles/expect-fake-messages-valve-admits-steam-hardware-owners-personal-data-likely-stolen",
-      "summary": "Valve has begun notifying recent Steam hardware customers of a personal data breach that may have exposed their name, address, phone number and email.",
-      "publishedAt": "Mon, 10 Aug 2026 13:46:31 +0000"
-    },
-    {
-      "source": "GameSpot",
-      "language": "en",
-      "title": "GTA 6 Preorder Numbers Won&#8217;t Be Revealed Because They Could Be Misleading, Take-Two CEO Says",
-      "normalizedTitle": "gta 6 preorder numbers won 8217 t be revealed because they could be misleading take two ceo says",
-      "url": "https://www.gamespot.com/articles/gta-6-preorder-numbers-wont-be-revealed-because-they-could-be-misleading-take-two-ceo-says/",
-      "summary": "Take-Two's Strauss Zelnick recently said GTA 6 's preorder numbers are unprecedented in the gaming industry , and that's part of the reason why the company is not revealing actual numbers. Zelnick said in an interview with Bloomberg that GTA 6 preorders \"vastly\" surpassed internal expectations, but he's unsure \"whether they mean anything.\" \"The massive demand for preorders we’ve seen to date could reflect a pull forward of sales that otherwise would materialize in the fullness of time,\" he said. Zelnick said sharing real, raw data for GTA 6 preorders could mislead investors, so Take-Two is not",
-      "publishedAt": "Mon, 10 Aug 2026 13:44:54 +0000"
     },
     {
       "source": "PC Gamer",
@@ -281,7 +920,7 @@
       "title": "Sean Murray reflects on 10 years of No Man's Sky, its future, and why Hello Games' \"redemption arc\" narrative \"isn't really the story\" of the developer",
       "normalizedTitle": "sean murray reflects on 10 years of no man s sky its future and why hello games redemption arc narrative isn t really the story of the developer",
       "url": "https://www.eurogamer.net/sean-murray-hello-games-reflects-10-years-no-mans-sky",
-      "summary": "When Hello Games ended its trailer for No Man's Sky 's first major update with the words - \"This is the foundation of things to come\" - it's doubtful anyone, studio included, could have predicted the game would still be going strong some 10 years later. But as the exploratory space sim celebrates a decade since its original release this week, it's now stronger than ever . It's been an eventful 10 years, seeing the release of over 45 major updates, and so to mark No Man's Sky's huge milestone I chatted with studio boss Sean Murray about that 10-year (and counting) journey, the past, the future,",
+      "summary": "When Hello Games ended its trailer for No Man's Sky 's first major update with the words \"This is the foundation of things to come\", it's doubtful anyone, studio included, could have predicted the game would still be going strong some 10 years later. But as the exploratory space sim celebrates a decade since its original release this week, it's now stronger than ever . It's been an eventful 10 years, seeing the release of over 45 major updates, and so to mark No Man's Sky's huge milestone I chatted with studio boss Sean Murray about that 10-year (and counting) journey, the past, the future, an",
       "publishedAt": "Mon, 10 Aug 2026 13:34:41 +0000"
     },
     {
@@ -312,24 +951,6 @@
       "publishedAt": "Mon, 10 Aug 2026 13:32:43 +0000"
     },
     {
-      "source": "IGN",
-      "language": "en",
-      "title": "Ultra-Slim RFID-Blocking Wallets Drop to Just $3.49 at Amazon Using This Promo Code",
-      "normalizedTitle": "ultra slim rfid blocking wallets drop to just 3 49 at amazon using this promo code",
-      "url": "https://www.ign.com/articles/ultra-slim-rfid-blocking-wallet-amazon-deal",
-      "summary": "This slim minimalist RFID-blocking wallet is down to just $3.49 at Amazon right now if you stack an on-page coupon with a secret promo code at checkout.",
-      "publishedAt": "Mon, 10 Aug 2026 13:32:28 +0000"
-    },
-    {
-      "source": "IGN",
-      "language": "en",
-      "title": "Bethesda Veteran Reveals How He Would Have Designed Starfield Differently",
-      "normalizedTitle": "bethesda veteran reveals how he would have designed starfield differently",
-      "url": "https://www.ign.com/articles/bethesda-veteran-reveals-how-he-would-have-designed-starfield-differently",
-      "summary": "A former Bethesda developer who worked on Skyrim, Fallout 3, Fallout 4, and Fallout 76 has outlined how he would have designed Starfield had he been in charge of the game — and it sounds very different.",
-      "publishedAt": "Mon, 10 Aug 2026 13:25:37 +0000"
-    },
-    {
       "source": "GamesRadar+",
       "language": "en",
       "title": "New Game of Thrones play The Mad King might retcon Jon Snow's season 8 plot",
@@ -339,15 +960,6 @@
       "publishedAt": "Mon, 10 Aug 2026 13:21:37 +0000"
     },
     {
-      "source": "GameSpot",
-      "language": "en",
-      "title": "Don&#8217;t Expect To Hear About GTA 6&#8217;s Online Mode Soon",
-      "normalizedTitle": "don 8217 t expect to hear about gta 6 8217 s online mode soon",
-      "url": "https://www.gamespot.com/articles/dont-expect-to-hear-about-gta-6s-online-mode-soon/",
-      "summary": "GTA Online for GTA 5 has been, and continues to be, a gigantic success for Rockstar and Take-Two. So why hasn't Rockstar divulged any information about how GTA 6 will work with respect to multiplayer and online? We don't know, and a new report claims Rockstar isn't going to reveal anything anytime soon. \"Right now, Take-Two is only talking about GTA 6 in terms of the single-player portion, which will not presumably have recurring revenue. I don't think they are putting microtransactions in the single-player game,\" Bloomberg's Jason Schreier reported . \"They have not talked at all, and they are",
-      "publishedAt": "Mon, 10 Aug 2026 13:09:41 +0000"
-    },
-    {
       "source": "StopGame",
       "language": "ru",
       "title": "Типа Крутые Легавые | НРИ. Delta Green (КЕК!)",
@@ -355,24 +967,6 @@
       "url": "https://stopgame.ru/show/163172/tipa_krutye_legavye_nri_delta_green_kek",
       "summary": "Трое агентов Delta Green отправились на расследование подозрительной аномалии в штате Мэн. Почти прибыв на место, они внезапно попали в аварию и потеряли память за прошедшие четыре дня. Смогут ли они вернуть себе воспоминания, а что ещё важнее — выжить в загадочном городке? Смотрите в новой КЕК-нарезке!",
       "publishedAt": "Mon, 10 Aug 2026 16:07:35 +0300"
-    },
-    {
-      "source": "IGN",
-      "language": "en",
-      "title": "Penguin's Amazing Spider-Man Classic Collection Is on Sale",
-      "normalizedTitle": "penguin s amazing spider man classic collection is on sale",
-      "url": "https://www.ign.com/articles/penguin-spider-man-classic-collection-where-to-buy",
-      "summary": "Save on Penguin’s The Amazing Spider-Man Classic Collection at Amazon. Get 12 iconic 1960s Stan Lee and Steve Ditko stories for under $25.",
-      "publishedAt": "Mon, 10 Aug 2026 13:01:23 +0000"
-    },
-    {
-      "source": "IGN",
-      "language": "en",
-      "title": "After a Decade of No Man's Sky, Players Have Explored Less Than 1% of the Planets",
-      "normalizedTitle": "after a decade of no man s sky players have explored less than 1 of the planets",
-      "url": "https://www.ign.com/articles/after-a-decade-of-no-mans-sky-players-have-explored-less-than-1-of-the-planets",
-      "summary": "No Man’s Sky developer Hello Games is celebrating its 10-year anniversary with an eye-catching stat and a tease for the upcoming update.",
-      "publishedAt": "Mon, 10 Aug 2026 13:00:00 +0000"
     },
     {
       "source": "PC Gamer",
@@ -395,10 +989,10 @@
     {
       "source": "GamesRadar+",
       "language": "en",
-      "title": "Sean Murray doesn't care how much money No Man's Sky DLC would've made, and \"it doesn't matter\" because updates will stay free",
-      "normalizedTitle": "sean murray doesn t care how much money no man s sky dlc would ve made and it doesn t matter because updates will stay free",
-      "url": "https://www.gamesradar.com/games/survival/sean-murray-doesnt-care-how-much-money-no-mans-sky-dlc-wouldve-made-and-it-doesnt-matter-because-updates-will-stay-free/",
-      "summary": "\"Every player that we have is going to experience this\"",
+      "title": "Light No Fire only has \"between 12 and 20\" devs, says lead – but that's ok because a similar number worked on No Man's Sky at launch",
+      "normalizedTitle": "light no fire only has between 12 and 20 devs says lead but that s ok because a similar number worked on no man s sky at launch",
+      "url": "https://www.gamesradar.com/games/survival/light-no-fire-only-has-between-12-and-20-devs-says-lead-but-thats-ok-because-a-similar-number-worked-on-no-mans-sky-at-launch/",
+      "summary": "The team is \"very small\" but has \"a lot of tools and tech\" at its disposal",
       "publishedAt": "Mon, 10 Aug 2026 13:00:00 +0000"
     },
     {
@@ -413,20 +1007,11 @@
     {
       "source": "GamesRadar+",
       "language": "en",
-      "title": "Light No Fire only has \"between 12 and 20\" devs, says lead – but that's ok because a similar number worked on No Man's Sky at launch",
-      "normalizedTitle": "light no fire only has between 12 and 20 devs says lead but that s ok because a similar number worked on no man s sky at launch",
-      "url": "https://www.gamesradar.com/games/survival/light-no-fire-only-has-between-12-and-20-devs-says-lead-but-thats-ok-because-a-similar-number-worked-on-no-mans-sky-at-launch/",
-      "summary": "The team is \"very small\" but has \"a lot of tools and tech\" at its disposal",
+      "title": "Sean Murray doesn't care how much money No Man's Sky DLC would've made, and \"it doesn't matter\" because updates will stay free",
+      "normalizedTitle": "sean murray doesn t care how much money no man s sky dlc would ve made and it doesn t matter because updates will stay free",
+      "url": "https://www.gamesradar.com/games/survival/sean-murray-doesnt-care-how-much-money-no-mans-sky-dlc-wouldve-made-and-it-doesnt-matter-because-updates-will-stay-free/",
+      "summary": "\"Every player that we have is going to experience this\"",
       "publishedAt": "Mon, 10 Aug 2026 13:00:00 +0000"
-    },
-    {
-      "source": "GameSpot",
-      "language": "en",
-      "title": "Halloween: The Game Banned In Australia, But Murdering People Isn&#8217;t The Problem",
-      "normalizedTitle": "halloween the game banned in australia but murdering people isn 8217 t the problem",
-      "url": "https://www.gamespot.com/articles/halloween-the-game-banned-in-australia-but-murdering-people-isnt-the-problem/",
-      "summary": "Halloween: The Game is right around the corner, but fans of the old-school horror film series in Australia and New Zealand won't be allowed to take part when the game comes out next month. Developer Illfonic has confirmed that it has been denied classification in those countries, effectively ruling it out from being sold legally within those regions. The strange thing is the reason behind the denial for classification, as it's not because players can take control of a stab-happy murderer who indiscriminately kills kids and adults. Instead, the reason behind the banning is because of the \"prese",
-      "publishedAt": "Mon, 10 Aug 2026 12:46:05 +0000"
     },
     {
       "source": "GamesRadar+",
@@ -454,60 +1039,6 @@
       "url": "https://www.gamesradar.com/hardware/ssd-hard-drives/sandisks-new-optimus-line-provides-more-storage-options-for-xbox-players-with-its-new-up-to-2tb-expansion-cards/",
       "summary": "SanDisk has unveiled its brand new Optimus GX C50 Storage Expansion Cards, which are set to provide up to 2TB worth of storage for Xbox Series X/S owners.",
       "publishedAt": "Mon, 10 Aug 2026 12:20:16 +0000"
-    },
-    {
-      "source": "Polygon",
-      "language": "en",
-      "title": "You Can Play PS Plus Games Without Owning a PS5, but There’s a Catch",
-      "normalizedTitle": "you can play ps plus games without owning a ps5 but there s a catch",
-      "url": "https://www.polygon.com/asobi-remote-play-ps-plus-games-steam-deck/",
-      "summary": "It's never been easier to stream your PlayStation games onto other devices thanks to the latest cloud-streaming app.",
-      "publishedAt": "Mon, 10 Aug 2026 12:18:58 GMT"
-    },
-    {
-      "source": "GameSpot",
-      "language": "en",
-      "title": "Valve Warns Steam Machine Owners Their Personal Details May Have Been Stolen",
-      "normalizedTitle": "valve warns steam machine owners their personal details may have been stolen",
-      "url": "https://www.gamespot.com/articles/valve-warns-steam-machine-owners-their-personal-details-may-have-been-stolen/",
-      "summary": "Valve has begun notifying customers of its Steam Machine PC that their personal details may have been compromised. Affecting European owners of the PC, Valve says that a logistics company that helps ship the unit in that region was the target of a cyberattack, although \"additional information\" related to Steam accounts remains safe. Because the company holds onto consumer information for up to 90 days, details like a client's name, street address, phone number, and email address may have been acquired. Valve says that this means that people could expect fake messages--via email, SMS, or phone-",
-      "publishedAt": "Mon, 10 Aug 2026 12:15:01 +0000"
-    },
-    {
-      "source": "Polygon",
-      "language": "en",
-      "title": "I Played the Game Recommended by the Weeknd, and It Could Be 2026’s Sleeper Hit",
-      "normalizedTitle": "i played the game recommended by the weeknd and it could be 2026 s sleeper hit",
-      "url": "https://www.polygon.com/about-fishing-game-the-weeknd-recommend/",
-      "summary": "About Fishing is a PSX-style horror fishing game, and The Weeknd loved it so much he met with the developers.",
-      "publishedAt": "Mon, 10 Aug 2026 12:10:51 GMT"
-    },
-    {
-      "source": "IGN",
-      "language": "en",
-      "title": "God of War Fans Agree Ryan Hurst's New Kratos Pic Looks Much Better Than Prime Video's Previous, Widely-Ridiculed Photo",
-      "normalizedTitle": "god of war fans agree ryan hurst s new kratos pic looks much better than prime video s previous widely ridiculed photo",
-      "url": "https://www.ign.com/articles/god-of-war-fans-agree-ryan-hursts-new-kratos-pic-looks-much-better-than-prime-videos-previous-widely-ridiculed-photo",
-      "summary": "God of War fans are reacting positively to a new photo of Ryan Hurst in costume as Kratos, as Prime Video seeks to secure his replacement.",
-      "publishedAt": "Mon, 10 Aug 2026 12:01:16 +0000"
-    },
-    {
-      "source": "Polygon",
-      "language": "en",
-      "title": "How 'Camp Miasma’s Crew Revived a Pre-CGI Technique with \"Old-School Film Nerd\" Ambition",
-      "normalizedTitle": "how camp miasma s crew revived a pre cgi technique with old school film nerd ambition",
-      "url": "https://www.polygon.com/teenage-sex-death-camp-miasma-matte-painting-interview/",
-      "summary": "Camp Miasma's production designers Brandon Tonner-Connolly & Matt Hyland explain how they revived old-school matte painting techniques for their film.",
-      "publishedAt": "Mon, 10 Aug 2026 12:00:12 GMT"
-    },
-    {
-      "source": "IGN",
-      "language": "en",
-      "title": "'We're Totally Supporting It' — Take-Two Boss Says Borderlands 4 Performance 'Has Not Affected Our Plans at All' as Fans Await Year 2 Roadmap",
-      "normalizedTitle": "we re totally supporting it take two boss says borderlands 4 performance has not affected our plans at all as fans await year 2 roadmap",
-      "url": "https://www.ign.com/articles/were-totally-supporting-it-take-two-boss-says-borderlands-4-performance-has-not-affected-our-plans-at-all-as-fans-await-year-2-roadmap",
-      "summary": "Take-Two boss Strauss Zelnick has insisted publisher 2K remains committed to Borderlands 4, and that the looter shooter's commercial performance hasn’t affected plans to support the game.",
-      "publishedAt": "Mon, 10 Aug 2026 11:45:19 +0000"
     },
     {
       "source": "Eurogamer",
@@ -564,24 +1095,6 @@
       "publishedAt": "Mon, 10 Aug 2026 11:21:32 +0000"
     },
     {
-      "source": "IGN",
-      "language": "en",
-      "title": "'It's Complicated': Daredevil Star Charlie Cox Responds to Spider-Man: Brand New Day, And The Punisher's Claim He's Never Had a Friend Like Peter Parker",
-      "normalizedTitle": "it s complicated daredevil star charlie cox responds to spider man brand new day and the punisher s claim he s never had a friend like peter parker",
-      "url": "https://www.ign.com/articles/its-complicated-daredevil-star-charlie-cox-responds-to-spider-man-brand-new-day-and-the-punishers-claim-hes-never-had-a-friend-like-peter-parker",
-      "summary": "Charlie Cox has been asked about a certain scene featuring Frank Castle in Spider-Man: Brand New Day.",
-      "publishedAt": "Mon, 10 Aug 2026 11:14:34 +0000"
-    },
-    {
-      "source": "IGN",
-      "language": "en",
-      "title": "Burnout Revenge Is Actually the Best One",
-      "normalizedTitle": "burnout revenge is actually the best one",
-      "url": "https://www.ign.com/articles/burnout-revenge-is-actually-the-best-one",
-      "summary": "Burnout Revenge is actually the best one.",
-      "publishedAt": "Mon, 10 Aug 2026 11:10:00 +0000"
-    },
-    {
       "source": "Rock Paper Shotgun",
       "language": "en",
       "title": "If you drove yourself mad building computers in Minecraft, Pight's redstone-inspired puzzling is an affordable palate cleanser",
@@ -591,15 +1104,6 @@
       "publishedAt": "Mon, 10 Aug 2026 11:09:41 +0000"
     },
     {
-      "source": "IGN",
-      "language": "en",
-      "title": "Game of Thrones Is Getting a New 4K Steelbook Collection, Now Up for Preorder",
-      "normalizedTitle": "game of thrones is getting a new 4k steelbook collection now up for preorder",
-      "url": "https://www.ign.com/articles/game-of-thrones-complete-collection-4k-steelbook-set-where-to-buy",
-      "summary": "This limited edition release is now available to preorder from select retailers ahead of its release date on November 3.",
-      "publishedAt": "Mon, 10 Aug 2026 11:08:14 +0000"
-    },
-    {
       "source": "PC Gamer",
       "language": "en",
       "title": "Valve has added 'initial' SteamOS gamepad support for several new gaming handhelds, including the MSI Claw 8 EX AI+",
@@ -607,15 +1111,6 @@
       "url": "https://www.pcgamer.com/hardware/handheld-gaming-pcs/valve-has-added-initial-steamos-gamepad-support-for-several-new-gaming-handhelds-including-the-msi-claw-8-ex-ai/",
       "summary": "Along with a host of bug fixes, of course.",
       "publishedAt": "Mon, 10 Aug 2026 11:05:21 +0000"
-    },
-    {
-      "source": "Polygon",
-      "language": "en",
-      "title": "One Piece Follows in Pokémon’s Footsteps With Controversial ID Measures",
-      "normalizedTitle": "one piece follows in pokémon s footsteps with controversial id measures",
-      "url": "https://www.polygon.com/one-piece-card-game-facial-recognition-scalpers/",
-      "summary": "Bandai Namco announces that One Piece Card Game shops will introduce a facial recognition system in an attempt to contain scalpers.",
-      "publishedAt": "Mon, 10 Aug 2026 10:58:21 GMT"
     },
     {
       "source": "GamesRadar+",
@@ -634,24 +1129,6 @@
       "url": "https://www.gamesradar.com/entertainment/action-shows/ex-god-of-war-star-reveals-new-look-at-his-kratos-and-its-way-better-than-what-amazon-showed-us/",
       "summary": "Ryan Hurst gives a fresh glimpse at his Kratos",
       "publishedAt": "Mon, 10 Aug 2026 10:47:24 +0000"
-    },
-    {
-      "source": "IGN",
-      "language": "en",
-      "title": "Spider-Man: Brand New Day 4K Steelbook Designs Seemingly Revealed, Since Removed by Amazon",
-      "normalizedTitle": "spider man brand new day 4k steelbook designs seemingly revealed since removed by amazon",
-      "url": "https://www.ign.com/articles/spider-man-brand-new-day-4k-steelbook-designs-revealed",
-      "summary": "Amazon briefly revealed the cover art for Spider-Man: Brand New Day's 4K UHD Steelbook and $150 Collector's Edition before promptly removing the designs from its listings. While fans seem to love the Steelbook artwork, the Collector's Edition cover is getting a much colder reception.",
-      "publishedAt": "Mon, 10 Aug 2026 10:47:20 +0000"
-    },
-    {
-      "source": "IGN",
-      "language": "en",
-      "title": "Why a Warhammer 40,000 Book Just Sold for $3,150 on eBay",
-      "normalizedTitle": "why a warhammer 40 000 book just sold for 3 150 on ebay",
-      "url": "https://www.ign.com/articles/why-a-warhammer-40000-book-just-sold-for-3150-on-ebay",
-      "summary": "A Warhammer 40,000 book just sold on eBay for an eye-watering $3,150 — leaving fans stunned.",
-      "publishedAt": "Mon, 10 Aug 2026 10:44:53 +0000"
     },
     {
       "source": "GamesRadar+",
@@ -697,24 +1174,6 @@
       "url": "https://www.gamesradar.com/hardware/retro/ayaneo-drops-a-pink-gba-homage-to-princess-peach-after-restocking-its-konkr-pocket-advance-but-i-feel-sorry-for-fans-who-previously-pre-ordered-the-portable/",
       "summary": "Ayaneo has unveiled a new pink GBA clone, but the \"Peach\" KONKR Pocket Advance waited until initial pre-orders sold out to pop up.",
       "publishedAt": "Mon, 10 Aug 2026 10:06:48 +0000"
-    },
-    {
-      "source": "IGN",
-      "language": "en",
-      "title": "Harry Potter Fan Protest Diverts Power Line Planned to 'Go Straight Through' Dobby's Grave",
-      "normalizedTitle": "harry potter fan protest diverts power line planned to go straight through dobby s grave",
-      "url": "https://www.ign.com/articles/harry-potter-fan-protest-diverts-power-line-planned-to-go-straight-through-dobbys-grave",
-      "summary": "Harry Potter fans have successfully campaigned to change plans for a new power line, which would have carved through the site of Dobby's grave.",
-      "publishedAt": "Mon, 10 Aug 2026 10:05:10 +0000"
-    },
-    {
-      "source": "IGN",
-      "language": "en",
-      "title": "Avengers: Doomsday Will Be 'Brutal' for Steve Rogers, Chris Evans Says, as Fans Fear for the Fate of His Child",
-      "normalizedTitle": "avengers doomsday will be brutal for steve rogers chris evans says as fans fear for the fate of his child",
-      "url": "https://www.ign.com/articles/avengers-doomsday-will-be-brutal-for-steve-rogers-chris-evans-says-as-fans-fear-for-the-fate-of-his-child",
-      "summary": "Avengers: Doomsday will be \"brutal\" for Steve Rogers, former Captain America star Chris Evans has teased.",
-      "publishedAt": "Mon, 10 Aug 2026 10:00:10 +0000"
     },
     {
       "source": "GamesRadar+",
@@ -825,57 +1284,12 @@
       "publishedAt": "Mon, 10 Aug 2026 06:40:07 +0300"
     },
     {
-      "source": "IGN",
-      "language": "en",
-      "title": "One Night Only Director Cut 'So Much Nudity' from Film Because Audiences Now Dislike Seeing It",
-      "normalizedTitle": "one night only director cut so much nudity from film because audiences now dislike seeing it",
-      "url": "https://www.ign.com/articles/one-night-only-director-cut-so-much-nudity-from-film-because-audiences-now-dislike-seeing-it",
-      "summary": "Director Will Gluck revealed that he “cut out so much” nudity from One Night Only because he believes modern movie audiences are now too uncomfortable seeing it on screen.",
-      "publishedAt": "Mon, 10 Aug 2026 03:11:54 +0000"
-    },
-    {
-      "source": "IGN",
-      "language": "en",
-      "title": "House of the Dragon Season 3 Ending Explained and Book Differences",
-      "normalizedTitle": "house of the dragon season 3 ending explained and book differences",
-      "url": "https://www.ign.com/articles/house-of-the-dragon-season-3-ending-explained-book-differences",
-      "summary": "Unpack the House of the Dragon Season 3 finale ending, including key betrayals, deaths, dragon devastation, and the biggest book-to-show changes from Fire & Blood.",
-      "publishedAt": "Mon, 10 Aug 2026 02:30:00 +0000"
-    },
-    {
-      "source": "IGN",
-      "language": "en",
-      "title": "House of the Dragon Season 3 Finale Recap and Review",
-      "normalizedTitle": "house of the dragon season 3 finale recap and review",
-      "url": "https://www.ign.com/articles/house-of-the-dragon-season-3-finale-episode-8-recap-and-review",
-      "summary": "House of the Dragon Season 3 Finale Recap and Review: There’s little sense of an ending here, but this spectacular battle left everything to play for in the final season.",
-      "publishedAt": "Mon, 10 Aug 2026 02:10:00 +0000"
-    },
-    {
       "source": "GamesRadar+",
       "language": "en",
       "title": "House of the Dragon showrunner teases \"new dragons\" in \"a very worthy\" final season of the hit HBO show",
       "normalizedTitle": "house of the dragon showrunner teases new dragons in a very worthy final season of the hit hbo show",
       "url": "https://www.gamesradar.com/entertainment/fantasy-shows/house-of-the-dragon-showrunner-teases-a-very-worthy-final-season-of-the-hit-hbo-show/",
       "summary": "Ryan Condal says House of the Dragon season 4 will be \"even bigger\"",
-      "publishedAt": "Mon, 10 Aug 2026 02:10:00 +0000"
-    },
-    {
-      "source": "GamesRadar+",
-      "language": "en",
-      "title": "House of the Dragon showrunner explains why season 3 didn't include the revenge killing viewers were expecting: \"That would be no fun\"",
-      "normalizedTitle": "house of the dragon showrunner explains why season 3 didn t include the revenge killing viewers were expecting that would be no fun",
-      "url": "https://www.gamesradar.com/entertainment/fantasy-shows/house-of-the-dragon-showrunner-explains-why-aegon-didnt-kill-aemond/",
-      "summary": "Ryan Condal says one major character could've made a crucial, life-ending decision, but it would've been too easy",
-      "publishedAt": "Mon, 10 Aug 2026 02:10:00 +0000"
-    },
-    {
-      "source": "GamesRadar+",
-      "language": "en",
-      "title": "House of the Dragon season 4 release date speculation, cast, plot, and more news",
-      "normalizedTitle": "house of the dragon season 4 release date speculation cast plot and more news",
-      "url": "https://www.gamesradar.com/entertainment/fantasy-shows/house-of-the-dragon-season-4-release-date-cast-plot-trailer-news/",
-      "summary": "Everything we know about House of the Dragon season 4, including cast, plot and release date speculation",
       "publishedAt": "Mon, 10 Aug 2026 02:10:00 +0000"
     },
     {
@@ -897,15 +1311,6 @@
       "publishedAt": "Mon, 10 Aug 2026 01:03:33 +0000"
     },
     {
-      "source": "IGN",
-      "language": "en",
-      "title": "Warner Bros. Stirs Controversy After Posting 'Embarrassing' AI Dog Podcast for The End of Oak Street",
-      "normalizedTitle": "warner bros stirs controversy after posting embarrassing ai dog podcast for the end of oak street",
-      "url": "https://www.ign.com/articles/warner-bros-stirs-controversy-after-posting-embarrassing-ai-dog-podcast-for-the-end-of-oak-street",
-      "summary": "Warner Bros. is under fire after it collaborated with an AI dog podcast to promote Ewan McGregor and Anne Hathaway's new movie, The End of Oak Street.",
-      "publishedAt": "Sun, 9 Aug 2026 23:26:38 +0000"
-    },
-    {
       "source": "StopGame",
       "language": "ru",
       "title": "Хорошие игры, которые вы могли пропустить в июле",
@@ -915,24 +1320,6 @@
       "publishedAt": "Mon, 10 Aug 2026 02:26:01 +0300"
     },
     {
-      "source": "GamesRadar+",
-      "language": "en",
-      "title": "Lanterns showrunner hints that the grounded DC show might go cosmic: \"We'd be stupid not to use everything that you can do inside the Green Lantern universe\"",
-      "normalizedTitle": "lanterns showrunner hints that the grounded dc show might go cosmic we d be stupid not to use everything that you can do inside the green lantern universe",
-      "url": "https://www.gamesradar.com/entertainment/dc-tv-shows/lanterns-showrunner-hints-that-the-grounded-dc-show-might-go-cosmic/",
-      "summary": "Chris Mundy is reaching for the stars",
-      "publishedAt": "Sun, 09 Aug 2026 23:01:00 +0000"
-    },
-    {
-      "source": "IGN",
-      "language": "en",
-      "title": "Marvel Tokon PC Launch Is So Bad That Famed FGC Content Creator Maximilian Dood Uninstalled the Game on Stream",
-      "normalizedTitle": "marvel tokon pc launch is so bad that famed fgc content creator maximilian dood uninstalled the game on stream",
-      "url": "https://www.ign.com/articles/marvel-tokon-pc-launch-is-so-bad-that-famed-fgc-content-creator-maximilian-dood-uninstalled-the-game-on-stream",
-      "summary": "Marvel Tokon: Fighting Souls' launch weekend has been filled with so many PC issues that even famed FGC content creator Maximilian Christiansen (a.k.a. Maximilian Dood) couldn't help but uninstall the game on stream.",
-      "publishedAt": "Sun, 9 Aug 2026 22:02:57 +0000"
-    },
-    {
       "source": "PC Gamer",
       "language": "en",
       "title": "The designer of Diamond City, Little Lamplight, and Starfield's Neon thinks Bethesda's galaxy was just too big: 'I would have done a handful of planets with bespoke layouts'",
@@ -940,33 +1327,6 @@
       "url": "https://www.pcgamer.com/games/rpg/the-designer-of-diamond-city-little-lamplight-and-starfields-neon-thinks-bethesdas-galaxy-was-just-too-big-i-would-have-done-a-handful-of-planets-with-bespoke-layouts/",
       "summary": "Nate Purkeypile worked on Starfield for a year before leaving Bethesda.",
       "publishedAt": "Sun, 09 Aug 2026 21:07:49 +0000"
-    },
-    {
-      "source": "IGN",
-      "language": "en",
-      "title": "Blizzard Reportedly Leads Xbox as 'Top-Performing' Studio Thanks to Overwatch and Diablo",
-      "normalizedTitle": "blizzard reportedly leads xbox as top performing studio thanks to overwatch and diablo",
-      "url": "https://www.ign.com/articles/blizzard-reportedly-leads-xbox-as-top-performing-studio-thanks-to-overwatch-and-diablo",
-      "summary": "Blizzard Entertainment is reportedly Microsoft's golden child after Overwatch and Diablo 4: Lord of Hatred helped it become the \"top-performing\" Xbox studio.",
-      "publishedAt": "Sun, 9 Aug 2026 20:29:23 +0000"
-    },
-    {
-      "source": "GamesRadar+",
-      "language": "en",
-      "title": "16 things we learned about Game of Thrones from The Mad King play",
-      "normalizedTitle": "16 things we learned about game of thrones from the mad king play",
-      "url": "https://www.gamesradar.com/entertainment/fantasy-shows/16-things-we-learned-about-game-of-thrones-from-the-mad-king-play/",
-      "summary": "Everything we learned from Game of Thrones: The Mad King",
-      "publishedAt": "Sun, 09 Aug 2026 20:00:00 +0000"
-    },
-    {
-      "source": "GamesRadar+",
-      "language": "en",
-      "title": "I went to see new Game of Thrones play The Mad King, and for 3 hours and 40 minutes I was transported to a world of dragons and magic",
-      "normalizedTitle": "i went to see new game of thrones play the mad king and for 3 hours and 40 minutes i was transported to a world of dragons and magic",
-      "url": "https://www.gamesradar.com/entertainment/fantasy-shows/i-went-to-see-new-game-of-thrones-play-the-mad-king-and-for-3-hours-and-40-minutes-i-was-transported-to-a-world-of-dragons-and-magic/",
-      "summary": "Game of Thrones: The Mad King is everything fans and theatregoers could want",
-      "publishedAt": "Sun, 09 Aug 2026 20:00:00 +0000"
     },
     {
       "source": "PC Gamer",
@@ -985,24 +1345,6 @@
       "url": "https://www.pcgamer.com/games/rpg/deltarunes-the-third-sanctuary-is-an-affront-to-time-signatures-and-also-one-of-my-favourite-songs-in-a-videogame-ever/",
       "summary": "The drummer will say \"please\" and then \"make it stop\".",
       "publishedAt": "Sun, 09 Aug 2026 17:00:00 +0000"
-    },
-    {
-      "source": "GamesRadar+",
-      "language": "en",
-      "title": "\"I'm a little disappointed with Rockstar\": GTA 5 and Red Dead Redemption actor auditioned for over 60 roles in GTA 6 and never heard back",
-      "normalizedTitle": "i m a little disappointed with rockstar gta 5 and red dead redemption actor auditioned for over 60 roles in gta 6 and never heard back",
-      "url": "https://www.gamesradar.com/games/grand-theft-auto/im-a-little-disappointed-with-rockstar-gta-5-and-red-dead-redemption-actor-auditioned-for-over-60-roles-in-gta-6-and-never-heard-back/",
-      "summary": "Robert Bogue first appeared in Red Dead Revolver way back in 2004",
-      "publishedAt": "Sun, 09 Aug 2026 17:00:00 +0000"
-    },
-    {
-      "source": "GamesRadar+",
-      "language": "en",
-      "title": "Diablo 4: Lord of Hatred and Overwatch's resurgence reportedly drove Blizzard to its \"first back-to-back years of growth\" in almost 10 years",
-      "normalizedTitle": "diablo 4 lord of hatred and overwatch s resurgence reportedly drove blizzard to its first back to back years of growth in almost 10 years",
-      "url": "https://www.gamesradar.com/games/fps/diablo-4-lord-of-hatred-and-overwatchs-resurgence-reportedly-drove-blizzard-to-its-first-back-to-back-years-of-growth-in-almost-10-years/",
-      "summary": "The power of Hello Kitty and K-Pop",
-      "publishedAt": "Sun, 09 Aug 2026 16:27:41 +0000"
     },
     {
       "source": "PC Gamer",
@@ -1059,24 +1401,6 @@
       "publishedAt": "Sun, 09 Aug 2026 15:28:46 +0000"
     },
     {
-      "source": "GamesRadar+",
-      "language": "en",
-      "title": "The Legend of Zelda: Twilight Princess wasn't enough, you can now run Ocarina of Time and Majora's Mask natively on IOS",
-      "normalizedTitle": "the legend of zelda twilight princess wasn t enough you can now run ocarina of time and majora s mask natively on ios",
-      "url": "https://www.gamesradar.com/games/the-legend-of-zelda/the-legend-of-zelda-twilight-princess-wasnt-enough-you-can-now-run-ocarina-of-time-and-majoras-mask-natively-on-ios/",
-      "summary": "\"The decompilation community has been incredibly active this year.\"",
-      "publishedAt": "Sun, 09 Aug 2026 15:10:12 +0000"
-    },
-    {
-      "source": "GameSpot",
-      "language": "en",
-      "title": "Don&#8217;t Miss Out On Grabbing This 97%-Rated Cozy Indie Game For Its Lowest Price Yet",
-      "normalizedTitle": "don 8217 t miss out on grabbing this 97 rated cozy indie game for its lowest price yet",
-      "url": "https://www.gamespot.com/articles/dont-miss-out-on-grabbing-this-97-rated-cozy-indie-game-for-its-lowest-price-yet/",
-      "summary": "When it comes to tinkering with electronics and messing with components, my fat little fingers make it difficult. Take one look at my gaming PC build and, if you’re a fan of neat cable management, you might pass out on the spot. Fortunately, ReStory: Chill Electronics Repair offers exactly what the name suggests, and this charming indie is already highly rated on Steam, so now’s a great time to grab it at its lowest price yet. Some of the best cozy games still offer a satisfying challenge while focusing on the relaxing atmosphere we all need more of. ReStory: Chill Electronics Repair (which I’",
-      "publishedAt": "Sun, 09 Aug 2026 15:00:00 +0000"
-    },
-    {
       "source": "PC Gamer",
       "language": "en",
       "title": "'I am a big roguelike guy, but also a fan of minimalism and elegance': Sam Barlow, creator of Her Story, guides us through the games in his Steam Library",
@@ -1093,24 +1417,6 @@
       "url": "https://www.eurogamer.net/lies-of-p-studio-next-game-tease",
       "summary": "One of the teams behind Neowiz's Souls-like Lies of P has released a short documentary detailing how they kept \"testing and refining\" the game before its release, as well as offering a little insight into its hardcore \"games by gamers\" culture. Read more",
       "publishedAt": "Sun, 09 Aug 2026 14:42:18 +0000"
-    },
-    {
-      "source": "GamesRadar+",
-      "language": "en",
-      "title": "A lost Final Fantasy 7 game has just been saved 20 years after its release, though it cost one preservationist $900",
-      "normalizedTitle": "a lost final fantasy 7 game has just been saved 20 years after its release though it cost one preservationist 900",
-      "url": "https://www.gamesradar.com/games/final-fantasy/a-lost-final-fantasy-7-game-has-just-been-saved-20-years-after-its-release-though-it-cost-one-preservationist-usd900/",
-      "summary": "Dirge of Cerberus' even more niche spin-off is finally preserved",
-      "publishedAt": "Sun, 09 Aug 2026 14:31:56 +0000"
-    },
-    {
-      "source": "GamesRadar+",
-      "language": "en",
-      "title": "\"If I was in charge of Starfield, I would have not done it that way at all\" - Former Bethesda veteran would've handled the RPG's 1,000 planets very differently",
-      "normalizedTitle": "if i was in charge of starfield i would have not done it that way at all former bethesda veteran would ve handled the rpg s 1 000 planets very differently",
-      "url": "https://www.gamesradar.com/games/rpg/if-i-was-in-charge-of-starfield-i-would-have-not-done-it-that-way-at-all-former-bethesda-veteran-wouldve-handled-the-rpgs-1-000-planets-very-differently/",
-      "summary": "\"Even early on, I was drawing parallels to Mass Effect 1\"",
-      "publishedAt": "Sun, 09 Aug 2026 13:43:05 +0000"
     },
     {
       "source": "StopGame",
@@ -1347,42 +1653,6 @@
       "publishedAt": "Sat, 08 Aug 2026 16:00:00 +0000"
     },
     {
-      "source": "GamesRadar+",
-      "language": "en",
-      "title": "Alice: Madness Returns creator joins forces with '90s goth icon for limited edition plush that's as soft and timeless as a black dress",
-      "normalizedTitle": "alice madness returns creator joins forces with 90s goth icon for limited edition plush that s as soft and timeless as a black dress",
-      "url": "https://www.gamesradar.com/toys-collectibles/alice-madness-returns-creator-joins-forces-with-90s-goth-icon-for-limited-edition-plush-thats-as-soft-and-timeless-as-a-black-dress/",
-      "summary": "Doom dev and Alice: Madness Returns creator collaborate with the ultimate '90s goth icon for limited edition plush that makes me want to renounce the sun and live among black cats",
-      "publishedAt": "Sat, 08 Aug 2026 16:00:00 +0000"
-    },
-    {
-      "source": "GamesRadar+",
-      "language": "en",
-      "title": "Baldur's Gate 3, Clair Obscur: Expedition 33 star didn't believe she was in Space Marine 2 until fan messages sent her sleuthing through receipts",
-      "normalizedTitle": "baldur s gate 3 clair obscur expedition 33 star didn t believe she was in space marine 2 until fan messages sent her sleuthing through receipts",
-      "url": "https://www.gamesradar.com/games/action/baldurs-gate-3-clair-obscur-expedition-33-star-didnt-believe-she-was-in-space-marine-2-until-fan-messages-sent-her-sleuthing-through-receipts/",
-      "summary": "\"I guess I kind of forgot about it\"",
-      "publishedAt": "Sat, 08 Aug 2026 15:44:40 +0000"
-    },
-    {
-      "source": "GamesRadar+",
-      "language": "en",
-      "title": "As PS5 and Xbox prices endlessly balloon, Take-Two CEO says rising console costs are good for no one, but won't hurt the company as GTA 6 approaches",
-      "normalizedTitle": "as ps5 and xbox prices endlessly balloon take two ceo says rising console costs are good for no one but won t hurt the company as gta 6 approaches",
-      "url": "https://www.gamesradar.com/games/grand-theft-auto/as-ps5-and-xbox-prices-endlessly-balloon-take-two-ceo-says-rising-console-costs-are-good-for-no-one-but-wont-hurt-the-company-as-gta-6-approaches/",
-      "summary": "\"I don't think it will slow us down any because... we're delivering experiences that people want\"",
-      "publishedAt": "Sat, 08 Aug 2026 14:00:31 +0000"
-    },
-    {
-      "source": "GamesRadar+",
-      "language": "en",
-      "title": "Doom developer slams Xbox after layoffs hit id Software: \"They fundamentally don't understand art. They don't understand games\"",
-      "normalizedTitle": "doom developer slams xbox after layoffs hit id software they fundamentally don t understand art they don t understand games",
-      "url": "https://www.gamesradar.com/games/fps/doom-developer-slams-xbox-after-layoffs-hit-id-software-they-fundamentally-dont-understand-art-they-dont-understand-games/",
-      "summary": "\"We're not the same iD, we're half the same iD.\"",
-      "publishedAt": "Sat, 08 Aug 2026 13:00:35 +0000"
-    },
-    {
       "source": "PC Gamer",
       "language": "en",
       "title": "Blocky zombie survival sim Unturned releases its source code so players can build a 'lasting legacy' for the game 'regardless of the changes we make'",
@@ -1390,15 +1660,6 @@
       "url": "https://www.pcgamer.com/games/survival-crafting/blocky-zombie-survival-sim-unturned-releases-its-source-code-so-players-can-build-a-lasting-legacy-for-the-game-regardless-of-the-changes-we-make/",
       "summary": "The source files are freely available for non-commercial use.",
       "publishedAt": "Sat, 08 Aug 2026 13:00:00 +0000"
-    },
-    {
-      "source": "GamesRadar+",
-      "language": "en",
-      "title": "Soulslike prince Lies of P added difficulty settings after its own developers struggled to beat it: \"Most couldn't even make it halfway\"",
-      "normalizedTitle": "soulslike prince lies of p added difficulty settings after its own developers struggled to beat it most couldn t even make it halfway",
-      "url": "https://www.gamesradar.com/games/rpg/soulslike-prince-lies-of-p-added-difficulty-settings-after-its-own-developers-struggled-to-beat-it-most-couldnt-even-make-it-halfway/",
-      "summary": "\"We received a lot of positive feedback\"",
-      "publishedAt": "Sat, 08 Aug 2026 12:10:01 +0000"
     },
     {
       "source": "PC Gamer",
@@ -1425,15 +1686,6 @@
       "normalizedTitle": "tencent s cyberpunk rival to grand theft auto is in trouble as its developer lays off 80 people",
       "url": "https://www.pcgamer.com/games/action/tencents-cyberpunk-rival-to-grand-theft-auto-is-in-trouble-as-its-developer-lays-off-80-people/",
       "summary": "Lightspeed LA says it will \"shift the creative and development direction\" of Last Sentinel.",
-      "publishedAt": "Sat, 08 Aug 2026 11:00:00 +0000"
-    },
-    {
-      "source": "GamesRadar+",
-      "language": "en",
-      "title": "These devs have been building the perfect platformer for 22 years, and the Steam apocalypse won't stop them now: \"Video games have always been about a small team of sickos doing something\"",
-      "normalizedTitle": "these devs have been building the perfect platformer for 22 years and the steam apocalypse won t stop them now video games have always been about a small team of sickos doing something",
-      "url": "https://www.gamesradar.com/games/platformer/these-devs-have-been-building-the-perfect-platformer-for-22-years-and-the-steam-apocalypse-wont-stop-them-now-video-games-have-always-been-about-a-small-team-of-sickos-doing-something/",
-      "summary": "For this week's Saturday Read, the devs behind Metanet Software tell us about the decades-long road that's led to N Plus Infinity Times Two",
       "publishedAt": "Sat, 08 Aug 2026 11:00:00 +0000"
     },
     {
@@ -1527,132 +1779,6 @@
       "publishedAt": "Fri, 07 Aug 2026 23:06:12 +0000"
     },
     {
-      "source": "PC Gamer",
-      "language": "en",
-      "title": "From ancient Buddhism, to iconic manga hair, to Keanu Reeves: a PC Gamer Causality Chain™",
-      "normalizedTitle": "from ancient buddhism to iconic manga hair to keanu reeves a pc gamer causality chain",
-      "url": "https://www.pcgamer.com/games/from-ancient-buddhism-to-iconic-manga-hair-to-keanu-reeves-a-pc-gamer-causality-chaintm/",
-      "summary": "Would Xuanzang have liked John Wick?",
-      "publishedAt": "Fri, 07 Aug 2026 22:11:11 +0000"
-    },
-    {
-      "source": "PC Gamer",
-      "language": "en",
-      "title": "BioWare veteran says Baldur's Gate 3 was such a great sequel because it didn't try to be too much like Baldur's Gate 2",
-      "normalizedTitle": "bioware veteran says baldur s gate 3 was such a great sequel because it didn t try to be too much like baldur s gate 2",
-      "url": "https://www.pcgamer.com/games/baldurs-gate/bioware-veteran-says-baldurs-gate-3-was-such-a-great-sequel-because-it-didnt-try-to-be-too-much-like-baldurs-gate-2/",
-      "summary": "Mark Darrah thinks Larian succeeded because it wasn't afraid to do its own thing.",
-      "publishedAt": "Fri, 07 Aug 2026 21:59:51 +0000"
-    },
-    {
-      "source": "GamesRadar+",
-      "language": "en",
-      "title": "3 years after the best Soulslike not by FromSoftware, Lies of P leads feel \"pressure\" to make the sequel even better",
-      "normalizedTitle": "3 years after the best soulslike not by fromsoftware lies of p leads feel pressure to make the sequel even better",
-      "url": "https://www.gamesradar.com/games/action-rpg/3-years-after-the-best-soulslike-not-by-fromsoftware-lies-of-p-leads-feel-pressure-to-make-the-sequel-even-better/",
-      "summary": "\"How much better do we need to be?\"",
-      "publishedAt": "Fri, 07 Aug 2026 21:55:15 +0000"
-    },
-    {
-      "source": "PC Gamer",
-      "language": "en",
-      "title": "Even with an $80 price tag, 'Grand Theft Auto 6 will be an incredible bargain,' Take-Two boss says",
-      "normalizedTitle": "even with an 80 price tag grand theft auto 6 will be an incredible bargain take two boss says",
-      "url": "https://www.pcgamer.com/games/grand-theft-auto/even-with-an-usd80-price-tag-grand-theft-auto-6-will-be-an-incredible-bargain-take-two-boss-says/",
-      "summary": "Strauss Zelnick reckons that the quality of the experience will more than justify the price.",
-      "publishedAt": "Fri, 07 Aug 2026 21:54:24 +0000"
-    },
-    {
-      "source": "GameSpot",
-      "language": "en",
-      "title": "Fortnite&#8217;s Item Shop Has Become An Increasingly Annoying Labyrinth Of Frustration",
-      "normalizedTitle": "fortnite 8217 s item shop has become an increasingly annoying labyrinth of frustration",
-      "url": "https://www.gamespot.com/articles/fortnites-item-shop-has-become-an-increasingly-annoying-labyrinth-of-frustration/",
-      "summary": "The Fortnite item shop has always been kind of annoying, because it's never had a consistent inventory you could browse like a normal store. There are more than 2,000 Fortnite skins that have been sold in the item shop, but only a few dozen are available on any given day. But Epic has never been content with just the FOMO angle--the company has been dinged by regulatory agencies all over the world for its \"dark patterns\" and coercive sale techniques. In some very significant ways, the Fortnite item shop is in much better shape now because of the changes those agencies forced Epic to implement-",
-      "publishedAt": "Fri, 07 Aug 2026 21:36:56 +0000"
-    },
-    {
-      "source": "GamesRadar+",
-      "language": "en",
-      "title": "Rare Demon's Souls prototype shows off first-person perspective, unused enemies that could have rewritten Dark Souls history: \"Like watching the mona lisa being painted\"",
-      "normalizedTitle": "rare demon s souls prototype shows off first person perspective unused enemies that could have rewritten dark souls history like watching the mona lisa being painted",
-      "url": "https://www.gamesradar.com/games/action-rpg/rare-demons-souls-prototype-shows-off-first-person-perspective-unused-enemies-that-could-have-rewritten-dark-souls-history-like-watching-the-mona-lisa-being-painted/",
-      "summary": "Unprecedented",
-      "publishedAt": "Fri, 07 Aug 2026 21:10:48 +0000"
-    },
-    {
-      "source": "GameSpot",
-      "language": "en",
-      "title": "Magic: The Gathering Has A Kickass Video Game You Probably Don’t Know About",
-      "normalizedTitle": "magic the gathering has a kickass video game you probably don t know about",
-      "url": "https://www.gamespot.com/articles/magic-the-gathering-has-a-kickass-video-game-you-probably-dont-know-about/",
-      "summary": "We’re currently experiencing a huge renaissance of Magic: The Gathering popularity. The 33-year-old card game designed by Richard Garfield introduced the world to the concept of the trading card game itself: a game where players would collect individual game pieces and craft a deck that represented spells they would cast and creatures they would summon. It was a wild new form of player expression that greatly impacted the world of tabletop gaming for all time. Magic: The Gathering also told players a story--a narrative of powerful wizards known as Planeswalkers that would traverse multiple uni",
-      "publishedAt": "Fri, 07 Aug 2026 20:45:54 +0000"
-    },
-    {
-      "source": "GameSpot",
-      "language": "en",
-      "title": "Who Gets Left Behind In Sony&#8217;s All-Digital Future?",
-      "normalizedTitle": "who gets left behind in sony 8217 s all digital future",
-      "url": "https://www.gamespot.com/articles/who-gets-left-behind-in-sonys-all-digital-future/",
-      "summary": "When Sony dropped the announcement that it was going to be ending physical disc production for PlayStation 5 in early 2028, I saw many posts on social media lamenting how this decision would have an outsized impact on certain groups and institutions. People without reliable internet, lending libraries, gaming tournament organizers, gamers in developing countries--how would the decision to move to download-only games affect these people? I reached out to several folks, some of whom I knew while others I'd yet to meet, to ask them all the same question: How do you expect physical discs going awa",
-      "publishedAt": "Fri, 07 Aug 2026 20:28:50 +0000"
-    },
-    {
-      "source": "GameSpot",
-      "language": "en",
-      "title": "The Best Otome Games To Play That Aren&#8217;t Love And Deepspace",
-      "normalizedTitle": "the best otome games to play that aren 8217 t love and deepspace",
-      "url": "https://www.gamespot.com/articles/the-best-otome-games-to-play-that-arent-love-and-deepspace/",
-      "summary": "Otome has a long history, as vibrant and complex as any other video game subgenre. For decades, most of that history has been obscured in North America. The good news is now is the best possible time to get into Otome. The massive success of Love and Deepspace has more than proven that there is a huge audience for games focused on romances with men, and more of these games get translated (and made in English) than ever before. And, should you get interested in retro offerings, there are now fan translations aplenty, making it significantly easier to play through many of the genre's best offeri",
-      "publishedAt": "Fri, 07 Aug 2026 20:07:39 +0000"
-    },
-    {
-      "source": "PC Gamer",
-      "language": "en",
-      "title": "Take-Two CEO says he expects the games industry to be in 'commercial streaming mode within 3 years,' which is great news if you hate owning things",
-      "normalizedTitle": "take two ceo says he expects the games industry to be in commercial streaming mode within 3 years which is great news if you hate owning things",
-      "url": "https://www.pcgamer.com/gaming-industry/take-two-ceo-says-he-expects-the-games-industry-to-be-in-commercial-streaming-mode-within-3-years-which-is-great-news-if-you-hate-owning-things/",
-      "summary": "Rockstar's parent company believes cloud gaming will grow its customer base even as hardware prices rise.",
-      "publishedAt": "Fri, 07 Aug 2026 20:05:13 +0000"
-    },
-    {
-      "source": "GameSpot",
-      "language": "en",
-      "title": "I Replaced All My Consoles & PC With A Steam Machine For A Month",
-      "normalizedTitle": "i replaced all my consoles pc with a steam machine for a month",
-      "url": "https://www.gamespot.com/videos/i-replaced-all-my-consoles-pc-with-a-steam-machine-for-a-month/",
-      "summary": "Can the Steam Machine truly become my all in one solution for gaming?",
-      "publishedAt": "Fri, 07 Aug 2026 20:00:00 +0000"
-    },
-    {
-      "source": "PC Gamer",
-      "language": "en",
-      "title": "Big Walk patch addresses voice volume complaints with restraint: 'We consider it an important part of the game's design that you can only hear players who are close to you'",
-      "normalizedTitle": "big walk patch addresses voice volume complaints with restraint we consider it an important part of the game s design that you can only hear players who are close to you",
-      "url": "https://www.pcgamer.com/games/puzzle/big-walk-patch-addresses-voice-volume-complaints-with-restraint-we-consider-it-an-important-part-of-the-games-design-that-you-can-only-hear-players-who-are-close-to-you/",
-      "summary": "A new update \"makes quiet voices louder overall,\" but doesn't let you hear players from farther away.",
-      "publishedAt": "Fri, 07 Aug 2026 18:55:09 +0000"
-    },
-    {
-      "source": "GamesRadar+",
-      "language": "en",
-      "title": "Don't worry about $1,000 consoles, you'll be streaming your games soon enough, reckons Take-Two CEO: \"I think we'll be in commercial streaming mode in 3 years\"",
-      "normalizedTitle": "don t worry about 1 000 consoles you ll be streaming your games soon enough reckons take two ceo i think we ll be in commercial streaming mode in 3 years",
-      "url": "https://www.gamesradar.com/games/dont-worry-about-usd1-000-consoles-youll-be-streaming-your-games-soon-enough-reckons-take-two-ceo-i-think-well-be-in-commercial-streaming-mode-in-3-years/",
-      "summary": "\"I'm happy to put a timeline on it\"",
-      "publishedAt": "Fri, 07 Aug 2026 18:39:27 +0000"
-    },
-    {
-      "source": "PC Gamer",
-      "language": "en",
-      "title": "Japan has reportedly asked the US to stop using Mario, Pokemon, and others in social media posts",
-      "normalizedTitle": "japan has reportedly asked the us to stop using mario pokemon and others in social media posts",
-      "url": "https://www.pcgamer.com/games/japan-has-reportedly-asked-the-us-to-stop-using-mario-pokemon-and-others-in-social-media-posts/",
-      "summary": "It's not just about the sanctity of copyright law anymore—Japan's foreign ministry is apparently worried that the US government is damaging the brands.",
-      "publishedAt": "Fri, 07 Aug 2026 18:25:32 +0000"
-    },
-    {
       "source": "StopGame",
       "language": "ru",
       "title": "Даурский Марафон. Elden Ring #14",
@@ -1671,15 +1797,6 @@
       "publishedAt": "Fri, 07 Aug 2026 17:02:00 +0000"
     },
     {
-      "source": "PC Gamer",
-      "language": "en",
-      "title": "Take-Two boss dismisses hand-wringing over the end of disc-based games: 'Our business is well over 90% digitally distributed as it is'",
-      "normalizedTitle": "take two boss dismisses hand wringing over the end of disc based games our business is well over 90 digitally distributed as it is",
-      "url": "https://www.pcgamer.com/gaming-industry/take-two-boss-dismisses-hand-wringing-over-the-end-of-disc-based-games-our-business-is-well-over-90-percent-digitally-distributed-as-it-is/",
-      "summary": "Strauss Zelnick says Take-Two will still put out physical editions \"now and then,\" but for the most part, the era of games on discs is already over.",
-      "publishedAt": "Fri, 07 Aug 2026 16:35:05 +0000"
-    },
-    {
       "source": "Eurogamer",
       "language": "en",
       "title": "Take-Two boss \"not in the least\" concerned bad press around Rockstar's employment tribunal will affect GTA 6 launch",
@@ -1687,33 +1804,6 @@
       "url": "https://www.eurogamer.net/take-two-strauss-zelnick-not-concerned-rockstar-union-busting-gta-6",
       "summary": "Take-Two boss Strauss Zelnick, who heads the company Rockstar belongs to, has said he's \"not in the least\" concerned that bad press over alleged union-busting will affect the launch of Grand Theft Auto 6 . Read more",
       "publishedAt": "Fri, 07 Aug 2026 16:22:27 +0000"
-    },
-    {
-      "source": "PC Gamer",
-      "language": "en",
-      "title": "Overwatch's new mech hero is the sword-and-board sequel to D.Va, except her code isn't 'a plate of spaghetti' under the hood",
-      "normalizedTitle": "overwatch s new mech hero is the sword and board sequel to d va except her code isn t a plate of spaghetti under the hood",
-      "url": "https://www.pcgamer.com/games/fps/overwatchs-new-mech-hero-is-the-sword-and-board-sequel-to-d-va-except-her-code-isnt-a-plate-of-spaghetti-under-the-hood/",
-      "summary": "Blizzard set out to avoid the mistakes of the past with D.Mon.",
-      "publishedAt": "Fri, 07 Aug 2026 16:00:36 +0000"
-    },
-    {
-      "source": "PC Gamer",
-      "language": "en",
-      "title": "Launch day performance issues and forced logins take another victim: Marvel Tōkon: Fighting Souls sees mixed Steam rating, especially among Linux users",
-      "normalizedTitle": "launch day performance issues and forced logins take another victim marvel tōkon fighting souls sees mixed steam rating especially among linux users",
-      "url": "https://www.pcgamer.com/hardware/launch-day-performance-issues-and-forced-logins-take-another-victim-marvel-tokon-fighting-souls-sees-mixed-steam-rating-especially-among-linux-users/",
-      "summary": "Ouch, that's gotta sting.",
-      "publishedAt": "Fri, 07 Aug 2026 15:58:15 +0000"
-    },
-    {
-      "source": "PC Gamer",
-      "language": "en",
-      "title": "Asus ROG Zephyrus G16 (2026) review",
-      "normalizedTitle": "asus rog zephyrus g16 2026 review",
-      "url": "https://www.pcgamer.com/hardware/gaming-laptops/asus-rog-zephyrus-g16-2026-review/",
-      "summary": "The super-portable G16 is, in many ways, better than ever—but the memory crisis has priced it out of top contention.",
-      "publishedAt": "Fri, 07 Aug 2026 15:49:06 +0000"
     },
     {
       "source": "Rock Paper Shotgun",
@@ -1732,15 +1822,6 @@
       "url": "https://www.eurogamer.net/sam-neill-legend-of-zelda-film",
       "summary": "There's been a flurry of news related to castings in the upcoming live-action Legend of Zelda film, including the name of the actor who's landed the antagonist's role of Ganondorf - but also that recently departed actor Sam Neill will apparently star in the film. Read more",
       "publishedAt": "Fri, 07 Aug 2026 14:48:41 +0000"
-    },
-    {
-      "source": "PC Gamer",
-      "language": "en",
-      "title": "The humble Wii Nunchuck has been turned into a video editing tool because it's 'one of the most ergonomic things ever made'",
-      "normalizedTitle": "the humble wii nunchuck has been turned into a video editing tool because it s one of the most ergonomic things ever made",
-      "url": "https://www.pcgamer.com/hardware/controllers/the-humble-wii-nunchuck-has-been-turned-into-a-video-editing-tool-because-its-one-of-the-most-ergonomic-things-ever-made/",
-      "summary": "What a wonderfully geeky way to edit.",
-      "publishedAt": "Fri, 07 Aug 2026 14:43:08 +0000"
     },
     {
       "source": "Eurogamer",
@@ -1788,15 +1869,6 @@
       "publishedAt": "Fri, 07 Aug 2026 13:10:07 +0000"
     },
     {
-      "source": "PC Gamer",
-      "language": "en",
-      "title": "ChatTJB is a fake chatbot where a guy called Tucker Bryant answers queries himself: 'I tend to overcommit to bits'",
-      "normalizedTitle": "chattjb is a fake chatbot where a guy called tucker bryant answers queries himself i tend to overcommit to bits",
-      "url": "https://www.pcgamer.com/software/ai/chattjb-is-a-fake-chatbot-where-a-guy-called-tucker-bryant-answers-queries-himself-i-tend-to-overcommit-to-bits/",
-      "summary": "Bryant will answer any questions asked (eventually) and will even scribble images for users.",
-      "publishedAt": "Fri, 07 Aug 2026 12:03:36 +0000"
-    },
-    {
       "source": "Eurogamer",
       "language": "en",
       "title": "Sony appears to be putting labels on PS5 console boxes to warn people it's ending disc production",
@@ -1813,15 +1885,6 @@
       "url": "https://www.eurogamer.net/john-romero-doom-id-software-taiwanese-pirates",
       "summary": "John Romero, the legendarily long-haired co-founder of id Software and father of game series Quake and Doom, has recounted a tale about when id Software worked with Taiwanese pirates to spread Doom. Read more",
       "publishedAt": "Fri, 07 Aug 2026 12:00:44 +0000"
-    },
-    {
-      "source": "PC Gamer",
-      "language": "en",
-      "title": "WoW's changing how world bosses work because they've 'really been a little bit lackluster' in recent years, says dev",
-      "normalizedTitle": "wow s changing how world bosses work because they ve really been a little bit lackluster in recent years says dev",
-      "url": "https://www.pcgamer.com/games/world-of-warcraft/wows-changing-how-world-bosses-work-because-theyve-really-been-a-little-bit-lackluster-in-recent-years-says-dev/",
-      "summary": "\"A lot of players just cluster into a boss. It drops in a few moments.\"",
-      "publishedAt": "Fri, 07 Aug 2026 11:56:28 +0000"
     },
     {
       "source": "Eurogamer",
@@ -3237,24 +3300,6 @@
       "publishedAt": "Thu, 30 Jul 2026 12:13:29 +0000"
     },
     {
-      "source": "Eurogamer",
-      "language": "en",
-      "title": "GTA 6 news coming in August, leaker says, as more evidence points to the game's official website getting a backend update",
-      "normalizedTitle": "gta 6 news coming in august leaker says as more evidence points to the game s official website getting a backend update",
-      "url": "https://www.eurogamer.net/gta-6-news-august-insider-official-website-backend-updates",
-      "summary": "It looks like we're getting some sort of Grand Theft Auto 6 news very soon, according to one insider and some convenient circumstantial evidence. NateTheHate, a reliable industry insider, was asked about the highly-anticipated game as part of a recent Q&A on X. Read more",
-      "publishedAt": "Thu, 30 Jul 2026 11:50:27 +0000"
-    },
-    {
-      "source": "Eurogamer",
-      "language": "en",
-      "title": "Nvidia GPUs see yet another price hike of up to 30 percent, as the generative AI hardware crisis worsens",
-      "normalizedTitle": "nvidia gpus see yet another price hike of up to 30 percent as the generative ai hardware crisis worsens",
-      "url": "https://www.eurogamer.net/nvidia-gpu-price-rise-30-percent",
-      "summary": "The personal computing affordability crisis continues in earnest, as Nvidia has announced yet another price hike for its GPUs. Read more",
-      "publishedAt": "Thu, 30 Jul 2026 11:37:28 +0000"
-    },
-    {
       "source": "Rock Paper Shotgun",
       "language": "en",
       "title": "\"Our business did not grow with our audience\": post-layoffs, Xbox execs are trying to sell a gaming division bounce back by summer 2027",
@@ -3453,24 +3498,6 @@
       "publishedAt": "Tue, 28 Jul 2026 16:30:23 +0000"
     },
     {
-      "source": "Rock Paper Shotgun",
-      "language": "en",
-      "title": "\"I didn’t fully appreciate the scope of it\": a year on from taking over, Nexus Mods owners reflect on the challenges of their push to minimise modding hassle",
-      "normalizedTitle": "i didn t fully appreciate the scope of it a year on from taking over nexus mods owners reflect on the challenges of their push to minimise modding hassle",
-      "url": "https://www.rockpapershotgun.com/i-didnt-fully-appreciate-the-scope-of-it-a-year-on-from-taking-over-nexus-mods-owners-reflect-on-the-challenges-of-their-push-to-minimise-modding-hassle",
-      "summary": "Last June, modding site Nexus Mods announced an ownership change . Site founder Robin 'Dark0ne' Scott stepped back, and in came a number of new leaders from Danish firm Chosen - principally Chosen CEO Victor Folmann. A year and a bit on from taking the reigns, Folmann's put up a post reflecting on the new regime's first year running the modding site and outlining hopes to turn it into \"an operating system for user-generated content in gaming\" in the long term. Read more",
-      "publishedAt": "Tue, 28 Jul 2026 15:59:46 +0000"
-    },
-    {
-      "source": "Rock Paper Shotgun",
-      "language": "en",
-      "title": "\"I wish I could do that\": A developer on The Sims has been eyeing up Paralives' characters' asymmetric shoes and their wider possibilities",
-      "normalizedTitle": "i wish i could do that a developer on the sims has been eyeing up paralives characters asymmetric shoes and their wider possibilities",
-      "url": "https://www.rockpapershotgun.com/i-wish-i-could-do-that-a-developer-on-the-sims-has-been-eyeing-up-paralives-characters-asymmetric-shoes-and-their-wider-possibilities",
-      "summary": "Asymmetric shoes may not seem like a big deal. I mean, if we look past the cultural mountain that was climbed to turn the faux pas of odd socks into a proud fashion statement of mismatched shoes, asymmetric footwear is just that, right? Two different shoes. Yet, for one of the senior character artists working on the Sims, competitor Paralives ' support for non-uniform footwear signifies something much more significant. Read more",
-      "publishedAt": "Tue, 28 Jul 2026 12:24:11 +0000"
-    },
-    {
       "source": "StopGame",
       "language": "ru",
       "title": "Комплементация Карнова | Аниме-Ле-Ман (КЕК!)",
@@ -3543,24 +3570,6 @@
       "publishedAt": "Mon, 27 Jul 2026 19:08:14 +0300"
     },
     {
-      "source": "StopGame",
-      "language": "ru",
-      "title": "Ищем хорошие игры",
-      "normalizedTitle": "ищем хорошие игры",
-      "url": "https://stopgame.ru/show/161614/ischem_horoshie_igry",
-      "summary": "Продолжение Dave the Diver в джунглях, «Тони Хоук» про поезда, идейный наследник Mouthwashing, кооп-хоррор в знаменитой анталогии Fears to Fathom, удивительно глубокие инкрементальные игры… Всё это (и не только) в свежем выпуске передачи «Рефанд?!»!",
-      "publishedAt": "Mon, 27 Jul 2026 17:21:26 +0300"
-    },
-    {
-      "source": "StopGame",
-      "language": "ru",
-      "title": "СВОЯК. Мини и Бигги",
-      "normalizedTitle": "свояк мини и бигги",
-      "url": "https://stopgame.ru/show/162936/svoyak_mini_i_biggi",
-      "summary": "Интеллектуально плавимся от мощнейших вопросов из паков, присланных зрителями!",
-      "publishedAt": "Mon, 27 Jul 2026 12:32:56 +0300"
-    },
-    {
       "source": "VG247",
       "language": "en",
       "title": "Monopoly Go x The Simpsons crossover is almost here",
@@ -3604,15 +3613,6 @@
       "url": "https://www.vg247.com/forza-horizon-6-review",
       "summary": "There is this idea that, for a long-running series to remain as consistently popular as Forza Horizon has been, it needs to diminish itself somewhat with each new entry, gradually losing more and more of its edge in a bid to appeal to the widest possible audience. Read more",
       "publishedAt": "Thu, 14 May 2026 12:00:03 +0000"
-    },
-    {
-      "source": "GameSpot",
-      "language": "en",
-      "title": "Every Game Getting &#8220;Switch 2 Edition&#8221; Enhanced Versions",
-      "normalizedTitle": "every game getting 8220 switch 2 edition 8221 enhanced versions",
-      "url": "https://www.gamespot.com/gallery/every-game-getting-switch-2-edition-enhanced-versions/2900-6398/",
-      "summary": "Alongside brand-new games for Nintendo Switch 2, a number of existing and upcoming games for the original Switch have received Switch 2-enhanced versions, officially dubbed \"Switch 2 Edition.\" Metroid Prime 4: Beyond and Pokemon Legends Z-A , were among the first games to launch with Switch 2 Editions, while older games such as Super Mario Party Jamboree are among the titles getting an upgrade. Fans who already own those games for the original Switch can purchase an upgrade to the Switch 2 Editions, typically costing $10 (though some exceptions apply). The good news for The Legend of Zelda: Br",
-      "publishedAt": "Mon, 11 May 2026 10:14:00 +0000"
     },
     {
       "source": "VG247",
