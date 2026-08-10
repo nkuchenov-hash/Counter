@@ -181,18 +181,6 @@ class _PlanVsFactV2TabState extends State<PlanVsFactV2Tab> {
             message: t(currentLocale.value, 'no_data_found'),
           );
         }
-        if (stats.planTaskCount == 0 &&
-            stats.planTimeSeconds == 0 &&
-            stats.factTimeSeconds == 0) {
-          return AppEmptyState(
-            message: t(
-              currentLocale.value,
-              widget.isFutureDate ? 'no_planned_tasks' : 'stats_pvf_no_plans',
-            ),
-            icon: Icons.fact_check_outlined,
-          );
-        }
-
         final byPlan = DatabaseService.instance
             .aggregateSourcePlanActualSecondsForWallCalendarDay(
               widget.selectedDate,
@@ -208,6 +196,17 @@ class _PlanVsFactV2TabState extends State<PlanVsFactV2Tab> {
           actualByPlan: byPlan,
           unplannedRecordCount: unplannedRecordCount,
         );
+        if (facts.plannedCount == 0 &&
+            facts.plannedTimeSeconds == 0 &&
+            facts.factTimeSeconds == 0) {
+          return AppEmptyState(
+            message: t(
+              currentLocale.value,
+              widget.isFutureDate ? 'no_planned_tasks' : 'stats_pvf_no_plans',
+            ),
+            icon: Icons.fact_check_outlined,
+          );
+        }
         return _PlanFactContent(facts: facts);
       },
     );

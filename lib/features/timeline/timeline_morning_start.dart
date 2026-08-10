@@ -83,11 +83,6 @@ class _MorningStartGateState extends State<MorningStartGate> {
       final start = SleepRecordPolicy.startWall(record);
       return start != null && _sameDay(start, day);
     });
-    if (hasWakingActivity) {
-      _lastCheckedDay = key;
-      return;
-    }
-
     // Ask close to the actual wake-up when sleep is available. Without sleep
     // data, use a conservative morning window instead of interrupting at night.
     if (wake != null) {
@@ -124,6 +119,7 @@ class _MorningStartGateState extends State<MorningStartGate> {
         day: day,
         detectedBed: detectedBed,
         detectedWake: detectedWake,
+        allowFirstActivity: !hasWakingActivity,
       ),
     );
     _sheetOpen = false;
@@ -176,11 +172,13 @@ class MorningStartSheet extends StatefulWidget {
   const MorningStartSheet({
     super.key,
     required this.day,
+    required this.allowFirstActivity,
     this.detectedBed,
     this.detectedWake,
   });
 
   final DateTime day;
+  final bool allowFirstActivity;
   final DateTime? detectedBed;
   final DateTime? detectedWake;
 
@@ -258,7 +256,7 @@ class _MorningStartSheetState extends State<MorningStartSheet> {
 
   void _finish({required bool startActivity}) {
     final custom = _customController.text.trim();
-    final activity = !startActivity
+    final activity = !startActivity || !widget.allowFirstActivity
         ? ''
         : custom.isNotEmpty
         ? custom
@@ -411,58 +409,73 @@ class _MorningStartSheetState extends State<MorningStartSheet> {
                   ),
                 ],
               ),
-              const SizedBox(height: 24),
-              Text(
-                _copy('What do we do first?', 'Что делаем первым?'),
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w800,
+              if (widget.allowFirstActivity) ...[
+                const SizedBox(height: 24),
+                Text(
+                  _copy('What do we do first?', 'Что делаем первым?'),
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 10),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  for (final suggestion in _suggestions)
-                    ChoiceChip(
-                      label: Text(suggestion),
-                      selected:
-                          _activity == suggestion &&
-                          _customController.text.trim().isEmpty,
-                      onSelected: (_) {
-                        _customController.clear();
-                        setState(() => _activity = suggestion);
-                      },
-                    ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: _customController,
-                textInputAction: TextInputAction.done,
-                onChanged: (_) => setState(() {}),
-                decoration: InputDecoration(
-                  hintText: _copy('Something else…', 'Что-то другое…'),
-                  prefixIcon: const Icon(Icons.edit_outlined, size: 19),
+                const SizedBox(height: 10),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    for (final suggestion in _suggestions)
+                      ChoiceChip(
+                        label: Text(suggestion),
+                        selected:
+                            _activity == suggestion &&
+                            _customController.text.trim().isEmpty,
+                        onSelected: (_) {
+                          _customController.clear();
+                          setState(() => _activity = suggestion);
+                        },
+                      ),
+                  ],
                 ),
-              ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: _customController,
+                  textInputAction: TextInputAction.done,
+                  onChanged: (_) => setState(() {}),
+                  decoration: InputDecoration(
+                    hintText: _copy('Something else…', 'Что-то другое…'),
+                    prefixIcon: const Icon(Icons.edit_outlined, size: 19),
+                  ),
+                ),
+              ],
               const SizedBox(height: 18),
               SizedBox(
                 width: double.infinity,
                 child: FilledButton.icon(
-                  onPressed: () => _finish(startActivity: true),
-                  icon: const Icon(Icons.play_arrow_rounded),
-                  label: Text(_copy('Start day', 'Начать день')),
+                  onPressed: () =>
+                      _finish(startActivity: widget.allowFirstActivity),
+                  icon: Icon(
+                    widget.allowFirstActivity
+                        ? Icons.play_arrow_rounded
+                        : Icons.check_rounded,
+                  ),
+                  label: Text(
+                    widget.allowFirstActivity
+                        ? _copy('Start day', 'Начать день')
+                        : _copy('Save morning check-in', 'Сохранить утро'),
+                  ),
                 ),
               ),
-              const SizedBox(height: 6),
-              SizedBox(
-                width: double.infinity,
-                child: TextButton(
-                  onPressed: () => _finish(startActivity: false),
-                  child: Text(_copy('Save sleep only', 'Только сохранить сон')),
+              if (widget.allowFirstActivity) ...[
+                const SizedBox(height: 6),
+                SizedBox(
+                  width: double.infinity,
+                  child: TextButton(
+                    onPressed: () => _finish(startActivity: false),
+                    child: Text(
+                      _copy('Save sleep only', 'Только сохранить сон'),
+                    ),
+                  ),
                 ),
-              ),
+              ],
             ],
           ),
         ),

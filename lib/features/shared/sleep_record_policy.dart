@@ -128,7 +128,13 @@ abstract final class SleepRecordPolicy {
       final end = endWall(record);
       if (start == null || end == null || !end.isAfter(start)) continue;
       if (!start.isAfter(wakeWall.add(const Duration(hours: 4)))) continue;
-      if (end.difference(start) < const Duration(hours: 2)) continue;
+      final duration = end.difference(start);
+      if (duration < const Duration(hours: 2)) continue;
+      final looksLikeMainSleep =
+          duration >= const Duration(hours: 4) ||
+          start.hour >= 18 ||
+          start.hour < 5;
+      if (!looksLikeMainSleep) continue;
       if (bestStart == null || start.isBefore(bestStart)) {
         best = record;
         bestStart = start;
@@ -147,7 +153,7 @@ abstract final class SleepRecordPolicy {
     final nonSleep = candidates.where((r) => !isSleepRecord(r)).toList();
 
     final previousSleep = mainSleepEndingOnDay(day, candidates);
-    DateTime? wake = previousSleep == null ? null : endWall(previousSleep);
+    final detectedWake = previousSleep == null ? null : endWall(previousSleep);
 
     final nonSleepOnDay =
         nonSleep.where((record) {
@@ -161,26 +167,31 @@ abstract final class SleepRecordPolicy {
 
     // If sleep data has not arrived yet, the first waking activity is the most
     // truthful observable start boundary. Only then fall back to 06:00.
-    wake ??= nonSleepOnDay.isNotEmpty
-        ? startWall(nonSleepOnDay.first)
-        : day.add(const Duration(hours: 6));
+    final wakeWall =
+        detectedWake ??
+        (nonSleepOnDay.isNotEmpty
+            ? startWall(nonSleepOnDay.first)!
+            : day.add(const Duration(hours: 6)));
 
-    final nextSleep = nextMainSleepAfter(wake, candidates);
-    DateTime? bed = nextSleep == null ? null : startWall(nextSleep);
+    final nextSleep = nextMainSleepAfter(wakeWall, candidates);
+    final detectedBed = nextSleep == null ? null : startWall(nextSleep);
 
     final today = _day(db.getTimelineDeviceLocalToday());
-    if (bed == null) {
-      if (_sameDay(day, today)) {
-        final nowWall = db.applyUserOffset(DatabaseService.getPlanetaryNow());
-        bed = nowWall.isAfter(wake)
-            ? nowWall
-            : wake.add(const Duration(minutes: 1));
-      } else {
-        // When the next sleep is unavailable, keep the historical fallback at
-        // the calendar boundary rather than inventing a bedtime.
-        bed = day.add(const Duration(days: 1));
-        if (!bed.isAfter(wake)) bed = wake.add(const Duration(hours: 16));
-      }
+    final DateTime bedWall;
+    if (detectedBed != null) {
+      bedWall = detectedBed;
+    } else if (_sameDay(day, today)) {
+      final nowWall = db.applyUserOffset(DatabaseService.getPlanetaryNow());
+      bedWall = nowWall.isAfter(wakeWall)
+          ? nowWall
+          : wakeWall.add(const Duration(minutes: 1));
+    } else {
+      // When the next sleep is unavailable, keep the historical fallback at
+      // the calendar boundary rather than inventing a bedtime.
+      final boundary = day.add(const Duration(days: 1));
+      bedWall = boundary.isAfter(wakeWall)
+          ? boundary
+          : wakeWall.add(const Duration(hours: 16));
     }
 
     final wakingRecords = <Map<String, dynamic>>[];
@@ -188,7 +199,7 @@ abstract final class SleepRecordPolicy {
       final start = startWall(record);
       final end = endWall(record) ?? start;
       if (start == null || end == null) continue;
-      if (!end.isAfter(wake) || !start.isBefore(bed)) continue;
+      if (!end.isAfter(wakeWall) || !start.isBefore(bedWall)) continue;
       wakingRecords.add(record);
     }
     wakingRecords.sort((a, b) {
@@ -202,8 +213,8 @@ abstract final class SleepRecordPolicy {
 
     return WakingDayWindow(
       selectedDay: day,
-      wakeWall: wake,
-      bedWall: bed,
+      wakeWall: wakeWall,
+      bedWall: bedWall,
       previousSleep: previousSleep,
       nextSleep: nextSleep,
       records: wakingRecords,
