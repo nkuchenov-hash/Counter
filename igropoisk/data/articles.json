@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-10T14:52:02.711Z",
+  "updatedAt": "2026-08-10T15:40:23.639Z",
   "count": 495,
   "sources": [
     "IGN",
@@ -14,6 +14,114 @@
     "Игромания"
   ],
   "articles": [
+    {
+      "source": "Eurogamer",
+      "language": "en",
+      "title": "\"They don't understand art\" - id Software lead slams Xbox, says it's \"impossible\" to make games like 2016's Doom now",
+      "normalizedTitle": "they don t understand art id software lead slams xbox says it s impossible to make games like 2016 s doom now",
+      "url": "https://www.eurogamer.net/id-software-slams-xbox-interview-impossible-aaa-games",
+      "summary": "A lead developer at id Software has spoken out about Microsoft's decision to make major cuts at the developer, and has said it's \"impossible\" to make triple-A games like 2016's Doom with half the staff. Read more",
+      "publishedAt": "Mon, 10 Aug 2026 15:27:43 +0000"
+    },
+    {
+      "source": "GamesRadar+",
+      "language": "en",
+      "title": "The Witcher 3 devs wanted Geralt to have \"no emotion,\" but his voice actor pushed back against CD Projekt Red: \"He's an emotional being\"",
+      "normalizedTitle": "the witcher 3 devs wanted geralt to have no emotion but his voice actor pushed back against cd projekt red he s an emotional being",
+      "url": "https://www.gamesradar.com/games/the-witcher/the-witcher-3-devs-wanted-geralt-to-have-no-emotion-but-his-voice-actor-pushed-back-against-cd-projekt-red-hes-an-emotional-being/",
+      "summary": "\"He does have emotions\"",
+      "publishedAt": "Mon, 10 Aug 2026 15:26:32 +0000"
+    },
+    {
+      "source": "GamesRadar+",
+      "language": "en",
+      "title": "The upcoming Amiga A1200 remake will ship with a special edition of an iconic UK gaming magazine, but only if you're an early bird",
+      "normalizedTitle": "the upcoming amiga a1200 remake will ship with a special edition of an iconic uk gaming magazine but only if you re an early bird",
+      "url": "https://www.gamesradar.com/hardware/retro/the-upcoming-amiga-a1200-remake-will-ship-with-a-special-edition-of-an-iconic-uk-gaming-magazine-but-only-if-youre-an-early-bird/",
+      "summary": "Retro Games Ltd has revealed that its first wave of Amiga THEA1200 microcomputer remakes will include a special edition copy of ZZAP! magazine in the UK.",
+      "publishedAt": "Mon, 10 Aug 2026 15:24:53 +0000"
+    },
+    {
+      "source": "GameSpot",
+      "language": "en",
+      "title": "Brand New Day Is Giving Marvel&#8217;s Spider-Man 2 Its Biggest Sales Boost In Years",
+      "normalizedTitle": "brand new day is giving marvel 8217 s spider man 2 its biggest sales boost in years",
+      "url": "https://www.gamespot.com/articles/brand-new-day-is-giving-marvels-spider-man-2-its-biggest-sales-boost-in-years/",
+      "summary": "Spider-Man: Brand New Day just cleared $1.6 billion at the box office, and that has also led to a surge in sales of Marvel's Spider-Man 2 . According to new data estimates by Alinea Analytics, another 316,000 copies of the 2023 game have been sold on PS5 and PC via Steam since Spider-Man: Brand New Day swung into theaters, generating $11 million in sales. As Alinea's head of market analysis Rhys Elliot noted online, 20% of the copies sold since the film launched were physical, and another 274,000 players jumped into the game via its availability through PlayStation Plus Game Catalog for Extra ",
+      "publishedAt": "Mon, 10 Aug 2026 15:11:48 +0000"
+    },
+    {
+      "source": "Polygon",
+      "language": "en",
+      "title": "Genshin Impact 7.0 release time in your time zone",
+      "normalizedTitle": "genshin impact 7 0 release time in your time zone",
+      "url": "https://www.polygon.com/genshin-impact-version-7-0-release-time-edt-pdt/",
+      "summary": "Genshin Impact's big 7.0 update to Snezhnaya is coming soon. Here's when Genshin 7.0 launches in your time zone.",
+      "publishedAt": "Mon, 10 Aug 2026 15:09:33 GMT"
+    },
+    {
+      "source": "Polygon",
+      "language": "en",
+      "title": "Black Myth Devs Were Inspired by 2026's Hottest Movie to Reject AI in Sequel’s Development",
+      "normalizedTitle": "black myth devs were inspired by 2026 s hottest movie to reject ai in sequel s development",
+      "url": "https://www.polygon.com/black-myth-wukong-devs-ai-sequel-nolan-odyssey/",
+      "summary": "Black Myth: Zhong Kui might take longer because the action RPG developers want to emulate Christopher Nolan's approach to art",
+      "publishedAt": "Mon, 10 Aug 2026 15:09:01 GMT"
+    },
+    {
+      "source": "PC Gamer",
+      "language": "en",
+      "title": "The 'world's first' water-cooled Steam Machine is a Frankenstein's monster of neon pink tubing and external hardware",
+      "normalizedTitle": "the world s first water cooled steam machine is a frankenstein s monster of neon pink tubing and external hardware",
+      "url": "https://www.pcgamer.com/hardware/gaming-pcs/the-worlds-first-water-cooled-steam-machine-is-a-frankensteins-monster-of-neon-pink-tubing-and-external-hardware/",
+      "summary": "More Franken-machines, please.",
+      "publishedAt": "Mon, 10 Aug 2026 15:07:58 +0000"
+    },
+    {
+      "source": "PC Gamer",
+      "language": "en",
+      "title": "Sovereign Tower review",
+      "normalizedTitle": "sovereign tower review",
+      "url": "https://www.pcgamer.com/games/rpg/sovereign-tower-review/",
+      "summary": "Judiciously rule a fantasy kingdom, or just use time travel to fix all of your terrible mistakes.",
+      "publishedAt": "Mon, 10 Aug 2026 15:07:56 +0000"
+    },
+    {
+      "source": "Polygon",
+      "language": "en",
+      "title": "HBO’s House of the Dragon Replacement Officially Arrives in 1 Week",
+      "normalizedTitle": "hbo s house of the dragon replacement officially arrives in 1 week",
+      "url": "https://www.polygon.com/lanterns-hbo-dcu-premiere/",
+      "summary": "Swap dragons for aliens as the network takes on another epic franchise",
+      "publishedAt": "Mon, 10 Aug 2026 14:59:09 GMT"
+    },
+    {
+      "source": "Rock Paper Shotgun",
+      "language": "en",
+      "title": "\"Expect fake messages\": A load of Steam user personal info has been stolen thanks to a cyberattack on one of Valve's partners, claims report",
+      "normalizedTitle": "expect fake messages a load of steam user personal info has been stolen thanks to a cyberattack on one of valve s partners claims report",
+      "url": "https://www.rockpapershotgun.com/expect-fake-messages-a-load-of-steam-user-personal-info-has-been-thanks-to-a-cyberattack-on-one-of-valves-partners-claims-report",
+      "summary": "If you live in Europe and have bought hardware from Steam in the past three months, then watch out, your personal information might have been stolen thanks to a cyberattack on one of Valve's shipping partners. Read more",
+      "publishedAt": "Mon, 10 Aug 2026 14:56:46 +0000"
+    },
+    {
+      "source": "GameSpot",
+      "language": "en",
+      "title": "GTA 6 On A Disc Doesn&#8217;t Make Sense But Could Happen, Take-Two CEO Says",
+      "normalizedTitle": "gta 6 on a disc doesn 8217 t make sense but could happen take two ceo says",
+      "url": "https://www.gamespot.com/articles/gta-6-on-a-disc-doesnt-make-sense-but-could-happen-take-two-ceo-says/",
+      "summary": "For big games like GTA 6 , discs \"don't really make sense for the consumer,\" but it's something Take-Two would hasn't totally ruled out for the upcoming game, the company's CEO recently said. Speaking to IGN , Strauss Zelnick said more than 90% of Take-Two's sales currently are digital, going on to say people \"need to be connected\" to play most games today. “So everyone's connected. So it's just a matter of the most efficient way to get the title into people's hands,\" he said. No discs for GTA 6. GTA 6 is not shipping on a disc, though it will be available at retailers via a code in a box. Ask",
+      "publishedAt": "Mon, 10 Aug 2026 14:56:21 +0000"
+    },
+    {
+      "source": "GamesRadar+",
+      "language": "en",
+      "title": "Don't want to buy a Stream Deck? Corsair's new mouse can pull up a virtual control center with one button",
+      "normalizedTitle": "don t want to buy a stream deck corsair s new mouse can pull up a virtual control center with one button",
+      "url": "https://www.gamesradar.com/hardware/gaming-mice/dont-want-to-buy-a-stream-deck-corsairs-new-mouse-can-pull-up-a-virtual-control-center-with-one-button/",
+      "summary": "The new Corsair Nightsword V2 Wireless can open a virtual Stream Deck with one button, and that might be handier than you'd think.",
+      "publishedAt": "Mon, 10 Aug 2026 14:51:54 +0000"
+    },
     {
       "source": "GamesRadar+",
       "language": "en",
@@ -116,8 +224,8 @@
     {
       "source": "GameSpot",
       "language": "en",
-      "title": "Ryan Hurst Shows Off How Shredded He Got For God Of War, Before Misfortune",
-      "normalizedTitle": "ryan hurst shows off how shredded he got for god of war before misfortune",
+      "title": "Ryan Hurst Shows Off How Shredded He Got For God Of War, Before Misfortune Struck",
+      "normalizedTitle": "ryan hurst shows off how shredded he got for god of war before misfortune struck",
       "url": "https://www.gamespot.com/articles/ryan-hurst-shows-off-how-shredded-he-got-for-god-of-war-before-misfortune/",
       "summary": "Anyone looking to portray Sony's beefiest protagonist, Kratos, in a live-action God of War series would need to be suitably jacked for the role, and actor Ryan Hurst certainly looks like he spent most of the day at the gym. Following a devastating bicep tear injury that forced him to vacate the role, Hurst has posted an image online of just how massive he got to play the stoic god-killer, and that simple selfie looks leagues better than the official God of War TV series promotional image that preceded it. While the image briefly appeared on Hurst's Instagram Stories--quick-fire content that is",
       "publishedAt": "Mon, 10 Aug 2026 13:56:43 +0000"
@@ -164,7 +272,7 @@
       "title": "Sean Murray reflects on 10 years of No Man's Sky, its future, and why Hello Games' \"redemption arc\" narrative \"isn't really the story\" of the developer",
       "normalizedTitle": "sean murray reflects on 10 years of no man s sky its future and why hello games redemption arc narrative isn t really the story of the developer",
       "url": "https://www.eurogamer.net/sean-murray-hello-games-reflects-10-years-no-mans-sky",
-      "summary": "When Hello Games ended its trailer for No Man's Sky 's first major update with three little words - \"Our journey continues\" - it's doubtful anyone, studio included, could have predicted the game would still be going strong some 10 years later. But as the exploratory space sim celebrates a decade since its original release this week, it's now stronger than ever . It's been an eventful 10 years, seeing the release of over 45 major updates, and so to mark No Man's Sky's huge milestone I chatted with studio boss Sean Murray about that 10-year (and counting) journey, the past, the future, and even ",
+      "summary": "When Hello Games ended its trailer for No Man's Sky 's first major update with the words - \"This is the foundation of things to come\" - it's doubtful anyone, studio included, could have predicted the game would still be going strong some 10 years later. But as the exploratory space sim celebrates a decade since its original release this week, it's now stronger than ever . It's been an eventful 10 years, seeing the release of over 45 major updates, and so to mark No Man's Sky's huge milestone I chatted with studio boss Sean Murray about that 10-year (and counting) journey, the past, the future,",
       "publishedAt": "Mon, 10 Aug 2026 13:34:41 +0000"
     },
     {
@@ -260,15 +368,6 @@
     {
       "source": "PC Gamer",
       "language": "en",
-      "title": "Sean Murray still loves playing the 2016 version of No Man's Sky: 'It's a little bit weirder, but it's got its charm'",
-      "normalizedTitle": "sean murray still loves playing the 2016 version of no man s sky it s a little bit weirder but it s got its charm",
-      "url": "https://www.pcgamer.com/games/action/sean-murray-still-loves-playing-the-2016-version-of-no-mans-sky-its-a-little-bit-weirder-but-its-got-its-charm/",
-      "summary": "\"I've got a real soft spot for it,\" says the founder of Hello Games.",
-      "publishedAt": "Mon, 10 Aug 2026 13:00:00 +0000"
-    },
-    {
-      "source": "PC Gamer",
-      "language": "en",
       "title": "Light No Fire will 'absolutely' be like No Man's Sky, with new features coming post-release: Sean Murray says he'd like to still be working on it '10 years after launch'",
       "normalizedTitle": "light no fire will absolutely be like no man s sky with new features coming post release sean murray says he d like to still be working on it 10 years after launch",
       "url": "https://www.pcgamer.com/games/survival-crafting/light-no-fire-will-absolutely-be-like-no-mans-sky-with-new-features-coming-post-release-sean-murray-says-hed-like-to-still-be-working-on-it-10-years-after-launch/",
@@ -276,12 +375,21 @@
       "publishedAt": "Mon, 10 Aug 2026 13:00:00 +0000"
     },
     {
+      "source": "PC Gamer",
+      "language": "en",
+      "title": "Sean Murray still loves playing the 2016 version of No Man's Sky: 'It's a little bit weirder, but it's got its charm'",
+      "normalizedTitle": "sean murray still loves playing the 2016 version of no man s sky it s a little bit weirder but it s got its charm",
+      "url": "https://www.pcgamer.com/games/action/sean-murray-still-loves-playing-the-2016-version-of-no-mans-sky-its-a-little-bit-weirder-but-its-got-its-charm/",
+      "summary": "\"I've got a real soft spot for it,\" says the founder of Hello Games.",
+      "publishedAt": "Mon, 10 Aug 2026 13:00:00 +0000"
+    },
+    {
       "source": "GamesRadar+",
       "language": "en",
-      "title": "Light No Fire only has \"between 12 and 20\" devs, says lead – but that's ok because a similar number worked on No Man's Sky at launch",
-      "normalizedTitle": "light no fire only has between 12 and 20 devs says lead but that s ok because a similar number worked on no man s sky at launch",
-      "url": "https://www.gamesradar.com/games/survival/light-no-fire-only-has-between-12-and-20-devs-says-lead-but-thats-ok-because-a-similar-number-worked-on-no-mans-sky-at-launch/",
-      "summary": "The team is \"very small\" but has \"a lot of tools and tech\" at its disposal",
+      "title": "Sean Murray doesn't care how much money No Man's Sky DLC would've made, and \"it doesn't matter\" because updates will stay free",
+      "normalizedTitle": "sean murray doesn t care how much money no man s sky dlc would ve made and it doesn t matter because updates will stay free",
+      "url": "https://www.gamesradar.com/games/survival/sean-murray-doesnt-care-how-much-money-no-mans-sky-dlc-wouldve-made-and-it-doesnt-matter-because-updates-will-stay-free/",
+      "summary": "\"Every player that we have is going to experience this\"",
       "publishedAt": "Mon, 10 Aug 2026 13:00:00 +0000"
     },
     {
@@ -296,10 +404,10 @@
     {
       "source": "GamesRadar+",
       "language": "en",
-      "title": "Sean Murray doesn't care how much money No Man's Sky DLC would've made, and \"it doesn't matter\" because updates will stay free",
-      "normalizedTitle": "sean murray doesn t care how much money no man s sky dlc would ve made and it doesn t matter because updates will stay free",
-      "url": "https://www.gamesradar.com/games/survival/sean-murray-doesnt-care-how-much-money-no-mans-sky-dlc-wouldve-made-and-it-doesnt-matter-because-updates-will-stay-free/",
-      "summary": "\"Every player that we have is going to experience this\"",
+      "title": "Light No Fire only has \"between 12 and 20\" devs, says lead – but that's ok because a similar number worked on No Man's Sky at launch",
+      "normalizedTitle": "light no fire only has between 12 and 20 devs says lead but that s ok because a similar number worked on no man s sky at launch",
+      "url": "https://www.gamesradar.com/games/survival/light-no-fire-only-has-between-12-and-20-devs-says-lead-but-thats-ok-because-a-similar-number-worked-on-no-mans-sky-at-launch/",
+      "summary": "The team is \"very small\" but has \"a lot of tools and tech\" at its disposal",
       "publishedAt": "Mon, 10 Aug 2026 13:00:00 +0000"
     },
     {
@@ -564,15 +672,6 @@
       "publishedAt": "Mon, 10 Aug 2026 10:10:55 +0000"
     },
     {
-      "source": "Polygon",
-      "language": "en",
-      "title": "An Xbox Game With 50% One-Star Reviews Is Still the Top Game With a Million Players in Week 1",
-      "normalizedTitle": "an xbox game with 50 one star reviews is still the top game with a million players in week 1",
-      "url": "https://www.polygon.com/mistfall-hunter-1-million-players-negative-reviews/",
-      "summary": "With lag, region locking, and spambots, can Mistfall Hunter survive the overwhelmingly negative reviews?",
-      "publishedAt": "Mon, 10 Aug 2026 10:08:45 GMT"
-    },
-    {
       "source": "GamesRadar+",
       "language": "en",
       "title": "Chris Evans says Steve Rogers has a \"brutal\" arc in Avengers: Doomsday, and the Russo brothers \"beat the crap\" out of his Marvel character",
@@ -598,15 +697,6 @@
       "url": "https://www.ign.com/articles/harry-potter-fan-protest-diverts-power-line-planned-to-go-straight-through-dobbys-grave",
       "summary": "Harry Potter fans have successfully campaigned to change plans for a new power line, which would have carved through the site of Dobby's grave.",
       "publishedAt": "Mon, 10 Aug 2026 10:05:10 +0000"
-    },
-    {
-      "source": "Polygon",
-      "language": "en",
-      "title": "The Most Unhinged Sci-Fi Anime of 2026 Already Feels Like an Instant Cult Classic",
-      "normalizedTitle": "the most unhinged sci fi anime of 2026 already feels like an instant cult classic",
-      "url": "https://www.polygon.com/false-memory-anime-review/",
-      "summary": "Flint Sugar delivers an exhilarating series on the cost of memory told through some of the most visually striking animation seen in years.",
-      "publishedAt": "Mon, 10 Aug 2026 10:00:12 GMT"
     },
     {
       "source": "IGN",
@@ -735,15 +825,6 @@
       "publishedAt": "Mon, 10 Aug 2026 03:11:54 +0000"
     },
     {
-      "source": "Polygon",
-      "language": "en",
-      "title": "In One Line, 'House of the Dragon' Just Quietly Retconned the Entire Plot of 'Game of Thrones'",
-      "normalizedTitle": "in one line house of the dragon just quietly retconned the entire plot of game of thrones",
-      "url": "https://www.polygon.com/house-of-the-dragon-season-3-finale-prince-that-was-promised/",
-      "summary": "House of the Dragon's season 3 finale finally reveals when The Prince That Was Promised goes from Targaryen family secret to Westeros legend.",
-      "publishedAt": "Mon, 10 Aug 2026 03:00:12 GMT"
-    },
-    {
       "source": "IGN",
       "language": "en",
       "title": "House of the Dragon Season 3 Ending Explained and Book Differences",
@@ -863,19 +944,19 @@
     {
       "source": "GamesRadar+",
       "language": "en",
-      "title": "I went to see new Game of Thrones play The Mad King, and for 3 hours and 40 minutes I was transported to a world of dragons and magic",
-      "normalizedTitle": "i went to see new game of thrones play the mad king and for 3 hours and 40 minutes i was transported to a world of dragons and magic",
-      "url": "https://www.gamesradar.com/entertainment/fantasy-shows/i-went-to-see-new-game-of-thrones-play-the-mad-king-and-for-3-hours-and-40-minutes-i-was-transported-to-a-world-of-dragons-and-magic/",
-      "summary": "Game of Thrones: The Mad King is everything fans and theatregoers could want",
+      "title": "16 things we learned about Game of Thrones from The Mad King play",
+      "normalizedTitle": "16 things we learned about game of thrones from the mad king play",
+      "url": "https://www.gamesradar.com/entertainment/fantasy-shows/16-things-we-learned-about-game-of-thrones-from-the-mad-king-play/",
+      "summary": "Everything we learned from Game of Thrones: The Mad King",
       "publishedAt": "Sun, 09 Aug 2026 20:00:00 +0000"
     },
     {
       "source": "GamesRadar+",
       "language": "en",
-      "title": "16 things we learned about Game of Thrones from The Mad King play",
-      "normalizedTitle": "16 things we learned about game of thrones from the mad king play",
-      "url": "https://www.gamesradar.com/entertainment/fantasy-shows/16-things-we-learned-about-game-of-thrones-from-the-mad-king-play/",
-      "summary": "Everything we learned from Game of Thrones: The Mad King",
+      "title": "I went to see new Game of Thrones play The Mad King, and for 3 hours and 40 minutes I was transported to a world of dragons and magic",
+      "normalizedTitle": "i went to see new game of thrones play the mad king and for 3 hours and 40 minutes i was transported to a world of dragons and magic",
+      "url": "https://www.gamesradar.com/entertainment/fantasy-shows/i-went-to-see-new-game-of-thrones-play-the-mad-king-and-for-3-hours-and-40-minutes-i-was-transported-to-a-world-of-dragons-and-magic/",
+      "summary": "Game of Thrones: The Mad King is everything fans and theatregoers could want",
       "publishedAt": "Sun, 09 Aug 2026 20:00:00 +0000"
     },
     {
@@ -1536,15 +1617,6 @@
       "publishedAt": "Fri, 07 Aug 2026 20:00:00 +0000"
     },
     {
-      "source": "GameSpot",
-      "language": "en",
-      "title": "THQ Nordic Showcase 2026: All The News, Trailers, And Reveals",
-      "normalizedTitle": "thq nordic showcase 2026 all the news trailers and reveals",
-      "url": "https://www.gamespot.com/articles/thq-nordic-showcase-2026-all-the-news-trailers-and-reveals/",
-      "summary": "Since the Not-E3 blitz of summer gaming showcases, things have been relatively quiet since then. Amidst that break, THQ Nordic dropped a new showcase full of trailers to show what the publisher has on the way from its various studios. While it wasn't focused on big-name games like the ones you'd find in dedicated Xbox and PlayStation showcases, THQ Nordic instead has titles in very specific niche genres and IP. https://youtu.be/ToLh5Ruefxk Several of them are already available via early access or are already out and have post-launch plans in place, so if you're a fan of games that scratch a ve",
-      "publishedAt": "Fri, 07 Aug 2026 19:30:00 +0000"
-    },
-    {
       "source": "PC Gamer",
       "language": "en",
       "title": "Big Walk patch addresses voice volume complaints with restraint: 'We consider it an important part of the game's design that you can only hear players who are close to you'",
@@ -1561,15 +1633,6 @@
       "url": "https://www.gamesradar.com/games/dont-worry-about-usd1-000-consoles-youll-be-streaming-your-games-soon-enough-reckons-take-two-ceo-i-think-well-be-in-commercial-streaming-mode-in-3-years/",
       "summary": "\"I'm happy to put a timeline on it\"",
       "publishedAt": "Fri, 07 Aug 2026 18:39:27 +0000"
-    },
-    {
-      "source": "GameSpot",
-      "language": "en",
-      "title": "AI Tools Aren&#8217;t Going To Replace Anyone, Says GTA 6 Publisher Boss",
-      "normalizedTitle": "ai tools aren 8217 t going to replace anyone says gta 6 publisher boss",
-      "url": "https://www.gamespot.com/articles/ai-tools-arent-going-to-replace-anyone-says-gta-6-publisher-boss/",
-      "summary": "During the latest investment call for Grand Theft Auto 6 's parent company, Take-Two Interactive, CEO Strauss Zelnick weighed in on the future of AI in game development. While Zelnick acknowledges that even his company will utilize AI, he reiterated his belief that the emerging technology won't replace anyone. \"Those [AI] tools are not going to replace anyone,\" said Zelnick. He also expanded on the company's approach, which he characterized as focusing on creating entertainment rather leading with technology. \"The first of our core pillars is creativity,\" noted Zelnick. \"And we have 13,000 col",
-      "publishedAt": "Fri, 07 Aug 2026 18:35:00 +0000"
     },
     {
       "source": "PC Gamer",
@@ -1590,24 +1653,6 @@
       "publishedAt": "Fri, 07 Aug 2026 20:47:50 +0300"
     },
     {
-      "source": "GamesRadar+",
-      "language": "en",
-      "title": "Pokemon artist behind iconic Gen 9 'mons also designed a Deltarune Chapter 5 character, though Toby Fox \"made some modifications\"",
-      "normalizedTitle": "pokemon artist behind iconic gen 9 mons also designed a deltarune chapter 5 character though toby fox made some modifications",
-      "url": "https://www.gamesradar.com/games/rpg/pokemon-artist-behind-iconic-gen-9-mons-also-designed-a-deltarune-chapter-5-character-though-toby-fox-made-some-modifications/",
-      "summary": "Grass-type critters nearly made it to Deltarune",
-      "publishedAt": "Fri, 07 Aug 2026 17:29:36 +0000"
-    },
-    {
-      "source": "GamesRadar+",
-      "language": "en",
-      "title": "Inventor creates \"IRL home screen\" for physical discs that brings the convenience of a digital library to an actual game shelf",
-      "normalizedTitle": "inventor creates irl home screen for physical discs that brings the convenience of a digital library to an actual game shelf",
-      "url": "https://www.gamesradar.com/hardware/retro/inventor-creates-irl-home-screen-for-physical-discs-that-brings-the-convenience-of-a-digital-library-to-an-actual-game-shelf/",
-      "summary": "Turns out you can select your physical games using a controller like a digital library, as an inventor has created an \"IRL home screen\" using a projector.",
-      "publishedAt": "Fri, 07 Aug 2026 17:10:55 +0000"
-    },
-    {
       "source": "Rock Paper Shotgun",
       "language": "en",
       "title": "Space News Network is No Man's Sky but you're a roving journalist, blasting bandits while trying to keep your subscribers happy",
@@ -1615,15 +1660,6 @@
       "url": "https://www.rockpapershotgun.com/space-news-network-is-no-mans-sky-but-youre-a-roving-journalist-blasting-bandits-while-trying-to-keep-your-subscribers-happy",
       "summary": "Yet again, friends, I am escaping to the one place that hasn't been corrupted by capitalism. They have need of journalists up there, no matter what that dafty Musk might prefer. Or so I understand from Space News Network - a No Man's Sky -esque exploration game in which you play a starpilot reporter, rocketing between strange new worlds in search of the next scoop. You'll brave pirate blockades, descend through the atmosphere and tangle with unidentified fauna, all in the name of such Pulitzer Prize-baiting bulletins as \"Cisiom: it's glowy, it's blue. Is it safe to touch?\" Read more",
       "publishedAt": "Fri, 07 Aug 2026 17:02:00 +0000"
-    },
-    {
-      "source": "GamesRadar+",
-      "language": "en",
-      "title": "Crimson Desert finally fixes one of its most annoying bugs after weeks of complaints",
-      "normalizedTitle": "crimson desert finally fixes one of its most annoying bugs after weeks of complaints",
-      "url": "https://www.gamesradar.com/games/open-world/crimson-desert-finally-fixes-one-of-its-most-annoying-bugs-after-weeks-of-complaints/",
-      "summary": "Pearl Abyss literally has fans rejoicing",
-      "publishedAt": "Fri, 07 Aug 2026 16:58:17 +0000"
     },
     {
       "source": "PC Gamer",
@@ -1806,15 +1842,6 @@
       "publishedAt": "Fri, 07 Aug 2026 10:44:12 +0000"
     },
     {
-      "source": "PC Gamer",
-      "language": "en",
-      "title": "'They call us old stupid farmers, you know, but we’re not': Family declines $26 million offer to convert their farmland into an AI data center",
-      "normalizedTitle": "they call us old stupid farmers you know but we re not family declines 26 million offer to convert their farmland into an ai data center",
-      "url": "https://www.pcgamer.com/software/ai/they-call-us-old-stupid-farmers-you-know-but-were-not-family-declines-usd26-million-offer-to-convert-their-farmland-into-an-ai-data-center/",
-      "summary": "AI companies may have the cash to throw around, but some can't be bought so easily.",
-      "publishedAt": "Fri, 07 Aug 2026 10:25:11 +0000"
-    },
-    {
       "source": "Rock Paper Shotgun",
       "language": "en",
       "title": "The makers of the glorious Othercide have another tactics RPG bloodbath out in September, with a playtest live now",
@@ -1822,15 +1849,6 @@
       "url": "https://www.rockpapershotgun.com/the-makers-of-the-glorious-othercide-have-another-tactics-rpg-bloodbath-out-in-september-with-a-playtest-live-now",
       "summary": "Lightbulb Crew's Othercide was a melancholy meatgrinder of an XCOM-style tactics RPG, featuring the world's worst mum . It saw you leading squads of sorrowful, blade and pistol-wielding clones into stark geographical projections of anguish. With the odds generally against you, the game put a huge emphasis on initiative, running order and acting outside your turn. Lightbulb's new game Ex Sanguis looks an awful lot like Othercide, from the porcelain beauty of the characters to the grotesque and gloopy metaphysicality of the battlespace, and I couldn't be happier. Read more",
       "publishedAt": "Fri, 07 Aug 2026 10:00:00 +0000"
-    },
-    {
-      "source": "PC Gamer",
-      "language": "en",
-      "title": "If your AMD chipset drivers are mysteriously failing to install like mine, you'll need to manually update instead",
-      "normalizedTitle": "if your amd chipset drivers are mysteriously failing to install like mine you ll need to manually update instead",
-      "url": "https://www.pcgamer.com/hardware/processors/if-your-amd-chipset-drivers-are-mysteriously-failing-to-install-like-mine-youll-need-to-manually-update-instead/",
-      "summary": "Something's borked with the AMD Install Manager, it seems.",
-      "publishedAt": "Fri, 07 Aug 2026 09:54:59 +0000"
     },
     {
       "source": "Eurogamer",
@@ -3237,15 +3255,6 @@
       "publishedAt": "Thu, 30 Jul 2026 10:44:48 +0000"
     },
     {
-      "source": "Eurogamer",
-      "language": "en",
-      "title": "Assassin's Creed Hexe is at least one year away, insider claims",
-      "normalizedTitle": "assassin s creed hexe is at least one year away insider claims",
-      "url": "https://www.eurogamer.net/assassins-creed-hexe-potential-release-window-leak",
-      "summary": "Assassins's Creed: Codename Hexe is set to follow up Shadows as the next original mainline game in the long-running series. Unfortunately, it looks like we'll be waiting longer still for it to re-appear. Read more",
-      "publishedAt": "Thu, 30 Jul 2026 10:26:14 +0000"
-    },
-    {
       "source": "Rock Paper Shotgun",
       "language": "en",
       "title": "BeamNG.drive, Steam's finest car pancake maker, gets its biggest update yet with overhauled graphics, fresh rally stages and a sporty new coupe",
@@ -3460,15 +3469,6 @@
       "url": "https://www.rockpapershotgun.com/nioh-3s-hell-rising-dlc-will-sword-thrust-the-soulslikes-yokai-battling-action-into-decimated-keian-era-edo-when-it-arrives-next-month",
       "summary": "Nioh , far, wherever you are. I've probably made that bad pun before, but seriously, I hope our guides writer Jeremy's not close to any desks right now. Nioh 3 , that game that pushed the poor bloke to the point of violence against the contents of his home , is getting its first major DLC next month. The expansion's dubbed Hell Rising, and kicks off a two-part story with a trip to a decimated version of Japanese capital Edo during the Keian era. Read more",
       "publishedAt": "Tue, 28 Jul 2026 12:00:00 +0000"
-    },
-    {
-      "source": "Rock Paper Shotgun",
-      "language": "en",
-      "title": "Toxic yuri story Kaschei is a marvelous free visual novel that turns your Downloads folder into a little labyrinth of mirrors",
-      "normalizedTitle": "toxic yuri story kaschei is a marvelous free visual novel that turns your downloads folder into a little labyrinth of mirrors",
-      "url": "https://www.rockpapershotgun.com/toxic-yuri-story-kaschei-is-a-marvelous-free-visual-novel-that-turns-your-downloads-folder-into-a-little-labyrinth-of-mirrors",
-      "summary": "I too often default to thinking of videogames as singular, monolithic things, rather than hives of collectively made functions and assets, secreted behind a launcher icon. Kaschei, an experimental visual novel created for Toxic Yuri VN Jam 2 , is an openly piecemeal arrangement of mutually informing or sabotaging fictions, stretched across different interfaces and timeframes, held together by a lot of lovely and hateful emotions. A really good kind of carefully networked, absolute mess. People and pieces in orbit. Read more",
-      "publishedAt": "Tue, 28 Jul 2026 11:30:24 +0000"
     },
     {
       "source": "StopGame",
