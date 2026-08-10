@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-10T23:10:30.620Z",
+  "updatedAt": "2026-08-10T23:27:36.051Z",
   "count": 78,
   "sourcePool": [
     "Steam",
@@ -496,7 +496,7 @@
       "movies": [],
       "criticRating": 9.6,
       "steamUserRating": 8.7,
-      "recommendations": 1891008,
+      "recommendations": 1891017,
       "owners": "50,000,000 .. 100,000,000",
       "peakConcurrent": 67851,
       "sourceEvidence": [
@@ -509,7 +509,7 @@
         "steamSpy": "https://steamspy.com/app/271590",
         "metacritic": "https://www.metacritic.com/game/pc/grand-theft-auto-v?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10507.669359581545,
+      "popularityScore": 10507.669566277602,
       "igropoiskRating": 9.3,
       "editorialSources": [],
       "materials": {
@@ -578,7 +578,7 @@
       "movies": [],
       "criticRating": 9.3,
       "steamUserRating": 9.8,
-      "recommendations": 284685,
+      "recommendations": 284688,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 2253,
       "sourceEvidence": [
@@ -591,7 +591,7 @@
         "steamSpy": "https://steamspy.com/app/1145360",
         "metacritic": "https://www.metacritic.com/game/pc/hades?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10485.436611037756,
+      "popularityScore": 10485.437068691655,
       "igropoiskRating": 9.5,
       "editorialSources": [],
       "materials": {
@@ -662,7 +662,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 5.9,
-      "recommendations": 1762548,
+      "recommendations": 1762549,
       "owners": "100,000,000 .. 200,000,000",
       "peakConcurrent": 314682,
       "sourceEvidence": [
@@ -674,7 +674,7 @@
         "steamSpy": "https://steamspy.com/app/578080",
         "metacritic": ""
       },
-      "popularityScore": 10474.614119949822,
+      "popularityScore": 10474.614144589952,
       "igropoiskRating": 5.9,
       "editorialSources": [],
       "materials": {
@@ -840,7 +840,7 @@
       "movies": [],
       "criticRating": 6.9,
       "steamUserRating": 8.7,
-      "recommendations": 1160220,
+      "recommendations": 1160235,
       "owners": "20,000,000 .. 50,000,000",
       "peakConcurrent": 143870,
       "sourceEvidence": [
@@ -854,7 +854,7 @@
         "steamSpy": "https://steamspy.com/app/252490",
         "metacritic": "https://www.metacritic.com/game/pc/rust?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10436.45407219328,
+      "popularityScore": 10436.454633670372,
       "igropoiskRating": 7.5,
       "editorialSources": [
         "Eurogamer"
@@ -1148,7 +1148,7 @@
       "movies": [],
       "criticRating": 8.3,
       "steamUserRating": 9.7,
-      "recommendations": 1231017,
+      "recommendations": 1231020,
       "owners": "20,000,000 .. 50,000,000",
       "peakConcurrent": 24580,
       "sourceEvidence": [
@@ -1162,7 +1162,7 @@
         "steamSpy": "https://steamspy.com/app/105600",
         "metacritic": "https://www.metacritic.com/game/pc/terraria?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10389.026440325099,
+      "popularityScore": 10389.026546162859,
       "igropoiskRating": 8.8,
       "editorialSources": [
         "GamesRadar+"
@@ -1260,7 +1260,7 @@
       "movies": [],
       "criticRating": 8.9,
       "steamUserRating": 9.8,
-      "recommendations": 886899,
+      "recommendations": 886904,
       "owners": "20,000,000 .. 50,000,000",
       "peakConcurrent": 50662,
       "sourceEvidence": [
@@ -1274,7 +1274,7 @@
         "steamSpy": "https://steamspy.com/app/413150",
         "metacritic": "https://www.metacritic.com/game/pc/stardew-valley?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10364.78746548977,
+      "popularityScore": 10364.787710327551,
       "igropoiskRating": 9.2,
       "editorialSources": [
         "PC Gamer"
@@ -1387,7 +1387,7 @@
       "movies": [],
       "criticRating": 9.5,
       "steamUserRating": 9.9,
-      "recommendations": 388921,
+      "recommendations": 388924,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 1959,
       "sourceEvidence": [
@@ -1400,7 +1400,7 @@
         "steamSpy": "https://steamspy.com/app/620",
         "metacritic": "https://www.metacritic.com/game/pc/portal-2?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10348.986251040991,
+      "popularityScore": 10348.986586038347,
       "igropoiskRating": 9.6,
       "editorialSources": [],
       "materials": {
@@ -1558,7 +1558,7 @@
       "movies": [],
       "criticRating": 8.7,
       "steamUserRating": 9.7,
-      "recommendations": 498264,
+      "recommendations": 498270,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 4912,
       "sourceEvidence": [
@@ -1571,7 +1571,7 @@
         "steamSpy": "https://steamspy.com/app/367520",
         "metacritic": "https://www.metacritic.com/game/pc/hollow-knight?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10319.746038177127,
+      "popularityScore": 10319.746561142056,
       "igropoiskRating": 9,
       "editorialSources": [],
       "materials": {
@@ -1975,7 +1975,7 @@
       "movies": [],
       "criticRating": 8.4,
       "steamUserRating": 9.2,
-      "recommendations": 99390,
+      "recommendations": 99392,
       "owners": "2,000,000 .. 5,000,000",
       "peakConcurrent": 2879,
       "sourceEvidence": [
@@ -1989,7 +1989,7 @@
         "steamSpy": "https://steamspy.com/app/570940",
         "metacritic": "https://www.metacritic.com/game/pc/dark-souls-remastered?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10209.734706017902,
+      "popularityScore": 10209.73557992019,
       "igropoiskRating": 8.7,
       "editorialSources": [
         "Rock Paper Shotgun"
@@ -2928,7 +2928,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 8.9,
-      "recommendations": 110123,
+      "recommendations": 110124,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 10961,
       "sourceEvidence": [
@@ -2940,7 +2940,7 @@
         "steamSpy": "https://steamspy.com/app/1604030",
         "metacritic": ""
       },
-      "popularityScore": 9894.188197775196,
+      "popularityScore": 9894.18859214201,
       "igropoiskRating": 8.9,
       "editorialSources": [],
       "materials": {
@@ -3558,19 +3558,19 @@
           {
             "source": "PC Gamer",
             "language": "en",
-            "title": "Light No Fire will 'absolutely' be like No Man's Sky, with new features coming post-release: Sean Murray says he'd like to still be working on it '10 years after launch'",
-            "normalizedTitle": "light no fire will absolutely be like no man s sky with new features coming post release sean murray says he d like to still be working on it 10 years after launch",
-            "url": "https://www.pcgamer.com/games/survival-crafting/light-no-fire-will-absolutely-be-like-no-mans-sky-with-new-features-coming-post-release-sean-murray-says-hed-like-to-still-be-working-on-it-10-years-after-launch/",
-            "summary": "\"I've worked on it for seven years now, and I'm still really enjoying it.\"",
+            "title": "Sean Murray still loves playing the 2016 version of No Man's Sky: 'It's a little bit weirder, but it's got its charm'",
+            "normalizedTitle": "sean murray still loves playing the 2016 version of no man s sky it s a little bit weirder but it s got its charm",
+            "url": "https://www.pcgamer.com/games/action/sean-murray-still-loves-playing-the-2016-version-of-no-mans-sky-its-a-little-bit-weirder-but-its-got-its-charm/",
+            "summary": "\"I've got a real soft spot for it,\" says the founder of Hello Games.",
             "publishedAt": "Mon, 10 Aug 2026 13:00:00 +0000"
           },
           {
             "source": "PC Gamer",
             "language": "en",
-            "title": "Sean Murray still loves playing the 2016 version of No Man's Sky: 'It's a little bit weirder, but it's got its charm'",
-            "normalizedTitle": "sean murray still loves playing the 2016 version of no man s sky it s a little bit weirder but it s got its charm",
-            "url": "https://www.pcgamer.com/games/action/sean-murray-still-loves-playing-the-2016-version-of-no-mans-sky-its-a-little-bit-weirder-but-its-got-its-charm/",
-            "summary": "\"I've got a real soft spot for it,\" says the founder of Hello Games.",
+            "title": "Light No Fire will 'absolutely' be like No Man's Sky, with new features coming post-release: Sean Murray says he'd like to still be working on it '10 years after launch'",
+            "normalizedTitle": "light no fire will absolutely be like no man s sky with new features coming post release sean murray says he d like to still be working on it 10 years after launch",
+            "url": "https://www.pcgamer.com/games/survival-crafting/light-no-fire-will-absolutely-be-like-no-mans-sky-with-new-features-coming-post-release-sean-murray-says-hed-like-to-still-be-working-on-it-10-years-after-launch/",
+            "summary": "\"I've worked on it for seven years now, and I'm still really enjoying it.\"",
             "publishedAt": "Mon, 10 Aug 2026 13:00:00 +0000"
           },
           {
@@ -3665,19 +3665,19 @@
         {
           "source": "PC Gamer",
           "language": "en",
-          "title": "Light No Fire will 'absolutely' be like No Man's Sky, with new features coming post-release: Sean Murray says he'd like to still be working on it '10 years after launch'",
-          "normalizedTitle": "light no fire will absolutely be like no man s sky with new features coming post release sean murray says he d like to still be working on it 10 years after launch",
-          "url": "https://www.pcgamer.com/games/survival-crafting/light-no-fire-will-absolutely-be-like-no-mans-sky-with-new-features-coming-post-release-sean-murray-says-hed-like-to-still-be-working-on-it-10-years-after-launch/",
-          "summary": "\"I've worked on it for seven years now, and I'm still really enjoying it.\"",
+          "title": "Sean Murray still loves playing the 2016 version of No Man's Sky: 'It's a little bit weirder, but it's got its charm'",
+          "normalizedTitle": "sean murray still loves playing the 2016 version of no man s sky it s a little bit weirder but it s got its charm",
+          "url": "https://www.pcgamer.com/games/action/sean-murray-still-loves-playing-the-2016-version-of-no-mans-sky-its-a-little-bit-weirder-but-its-got-its-charm/",
+          "summary": "\"I've got a real soft spot for it,\" says the founder of Hello Games.",
           "publishedAt": "Mon, 10 Aug 2026 13:00:00 +0000"
         },
         {
           "source": "PC Gamer",
           "language": "en",
-          "title": "Sean Murray still loves playing the 2016 version of No Man's Sky: 'It's a little bit weirder, but it's got its charm'",
-          "normalizedTitle": "sean murray still loves playing the 2016 version of no man s sky it s a little bit weirder but it s got its charm",
-          "url": "https://www.pcgamer.com/games/action/sean-murray-still-loves-playing-the-2016-version-of-no-mans-sky-its-a-little-bit-weirder-but-its-got-its-charm/",
-          "summary": "\"I've got a real soft spot for it,\" says the founder of Hello Games.",
+          "title": "Light No Fire will 'absolutely' be like No Man's Sky, with new features coming post-release: Sean Murray says he'd like to still be working on it '10 years after launch'",
+          "normalizedTitle": "light no fire will absolutely be like no man s sky with new features coming post release sean murray says he d like to still be working on it 10 years after launch",
+          "url": "https://www.pcgamer.com/games/survival-crafting/light-no-fire-will-absolutely-be-like-no-mans-sky-with-new-features-coming-post-release-sean-murray-says-hed-like-to-still-be-working-on-it-10-years-after-launch/",
+          "summary": "\"I've worked on it for seven years now, and I'm still really enjoying it.\"",
           "publishedAt": "Mon, 10 Aug 2026 13:00:00 +0000"
         },
         {
@@ -3782,7 +3782,7 @@
       "movies": [],
       "criticRating": 8.7,
       "steamUserRating": 9.7,
-      "recommendations": 339511,
+      "recommendations": 339515,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 2719,
       "sourceEvidence": [
@@ -3796,7 +3796,7 @@
         "steamSpy": "https://steamspy.com/app/264710",
         "metacritic": "https://www.metacritic.com/game/pc/subnautica?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9803.085512896021,
+      "popularityScore": 9803.086024562086,
       "igropoiskRating": 9,
       "editorialSources": [
         "Rock Paper Shotgun"
@@ -5146,7 +5146,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 8.8,
-      "recommendations": 281563,
+      "recommendations": 281567,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 4450,
       "sourceEvidence": [
@@ -5158,7 +5158,7 @@
         "steamSpy": "https://steamspy.com/app/1326470",
         "metacritic": ""
       },
-      "popularityScore": 9624.95771263195,
+      "popularityScore": 9624.958329602012,
       "igropoiskRating": 8.8,
       "editorialSources": [],
       "materials": {
@@ -5333,7 +5333,7 @@
       "movies": [],
       "criticRating": 8.5,
       "steamUserRating": 9.3,
-      "recommendations": 135129,
+      "recommendations": 135128,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 8961,
       "sourceEvidence": [
@@ -5346,7 +5346,7 @@
         "steamSpy": "https://steamspy.com/app/244210",
         "metacritic": "https://www.metacritic.com/game/pc/assetto-corsa?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9573.075177676514,
+      "popularityScore": 9573.074856285195,
       "igropoiskRating": 8.8,
       "editorialSources": [],
       "materials": {
@@ -6201,7 +6201,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 9.7,
-      "recommendations": 110254,
+      "recommendations": 110255,
       "owners": "2,000,000 .. 5,000,000",
       "peakConcurrent": 6389,
       "sourceEvidence": [
@@ -6213,7 +6213,7 @@
         "steamSpy": "https://steamspy.com/app/1942280",
         "metacritic": ""
       },
-      "popularityScore": 9444.239829358814,
+      "popularityScore": 9444.240223257062,
       "igropoiskRating": 9.7,
       "editorialSources": [],
       "materials": {
@@ -6697,7 +6697,7 @@
       "movies": [],
       "criticRating": 8,
       "steamUserRating": 9.6,
-      "recommendations": 103671,
+      "recommendations": 103673,
       "owners": "2,000,000 .. 5,000,000",
       "peakConcurrent": 215,
       "sourceEvidence": [
@@ -6710,7 +6710,7 @@
         "steamSpy": "https://steamspy.com/app/238320",
         "metacritic": "https://www.metacritic.com/game/pc/outlast?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9341.566147685693,
+      "popularityScore": 9341.566985501675,
       "igropoiskRating": 8.6,
       "editorialSources": [],
       "materials": {
@@ -7042,7 +7042,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 7.7,
-      "recommendations": 386094,
+      "recommendations": 386097,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 37066,
       "sourceEvidence": [
@@ -7054,7 +7054,7 @@
         "steamSpy": "https://steamspy.com/app/221100",
         "metacritic": ""
       },
-      "popularityScore": 9288.669417746847,
+      "popularityScore": 9288.669755197056,
       "igropoiskRating": 7.7,
       "editorialSources": [],
       "materials": {
