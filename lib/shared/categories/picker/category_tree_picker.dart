@@ -106,9 +106,8 @@ class _CategoryTreePickerSheetState extends State<_CategoryTreePickerSheet> {
   }
 
   List<CategoryRule> get _visibleRoots {
-    // Selection/edit pickers must always expose the complete active category
-    // tree. Local visibility preferences are presentation filters only and
-    // must never make an existing category impossible to select or restore.
+    // Assignment/edit pickers always expose the complete active category tree.
+    // Local visibility preferences only control navigation/presentation.
     final roots = CategoryTreeSource.childrenOf(null);
     return filterCategoryRootsForPickerSearch(roots, _query, _labelForRule);
   }
@@ -252,11 +251,12 @@ class _CategoryTreePickerSheetState extends State<_CategoryTreePickerSheet> {
                   CategoryTreeBody(
                     roots: roots,
                     selectedCategoryId: widget.initialCategoryId,
-                    expandSelectionPath: false,
+                    expandSelectionPath: true,
                     onSelect: _selectCategory,
                     showEditChrome: false,
                     showPickerCreateChrome: true,
                     showVisibilityCheckboxes: widget.showVisibilityControls,
+                    filterHiddenCategories: false,
                     onVisibilityChanged: widget.showVisibilityControls
                         ? (rule, visible) =>
                               unawaited(_setCategoryVisible(rule, visible))
