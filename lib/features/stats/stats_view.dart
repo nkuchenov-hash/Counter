@@ -65,6 +65,32 @@ class _StatsViewState extends State<StatsView> {
     );
   }
 
+  /// The Timeline record mapper may carry a category as a local int, a
+  /// PocketBase relation id, or a stored business key depending on when the
+  /// record was created. The stats dashboard expects the local category id.
+  /// Normalize only the dashboard copy so every session can recover the same
+  /// category color that the normal Timeline card already uses.
+  List<Map<String, dynamic>> _recordsWithResolvedCategoryIds(
+    List<Map<String, dynamic>> records,
+  ) {
+    final db = DatabaseService.instance;
+    return records.map((record) {
+      final rawCategory =
+          record['categoryId'] ?? record['category_id'] ?? record['category'];
+      if (rawCategory == null) return record;
+
+      final probe = record['categoryId'] == rawCategory
+          ? record
+          : <String, dynamic>{...record, 'categoryId': rawCategory};
+      final resolved = db.resolvedCategoryIdForRecord(probe);
+      if (resolved == null) return record;
+
+      final existing = record['categoryId'];
+      if (existing is int && existing == resolved) return record;
+      return <String, dynamic>{...record, 'categoryId': resolved};
+    }).toList(growable: false);
+  }
+
   int _rulesVisualSignature(Iterable<CategoryRule> roots) {
     var signature = 17;
 
@@ -210,8 +236,9 @@ class _StatsViewState extends State<StatsView> {
     if (dashboardKey == _lastDashboardKey && _cachedDashboard != null) {
       dashboard = _cachedDashboard!;
     } else {
+      final dashboardRecords = _recordsWithResolvedCategoryIds(widget.records);
       dashboard = DayStatsDashboardData.build(
-        records: widget.records,
+        records: dashboardRecords,
         rules: widget.rules,
         aggregated: aggregated,
         selectedDate: widget.selectedDate,
