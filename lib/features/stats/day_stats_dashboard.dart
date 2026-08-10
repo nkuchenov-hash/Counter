@@ -730,12 +730,12 @@ class _MiniVerticalDay extends StatelessWidget {
     final fmt = DateFormat.Hm(currentLocale.value);
     const height = 250.0;
     const labelWidth = 40.0;
-    final rangeMinutes = math.max(
+    final rangeSeconds = math.max(
       1,
-      data.rangeEndWall.difference(data.rangeStartWall).inMinutes,
+      data.rangeEndWall.difference(data.rangeStartWall).inSeconds,
     );
     final middle = data.rangeStartWall.add(
-      Duration(minutes: (rangeMinutes / 2).round()),
+      Duration(seconds: (rangeSeconds / 2).round()),
     );
     final marks = [data.rangeStartWall, middle, data.rangeEndWall];
     return LayoutBuilder(
@@ -773,14 +773,14 @@ class _MiniVerticalDay extends StatelessWidget {
                   builder: (_) {
                     final start = session.startWall
                         .difference(data.rangeStartWall)
-                        .inMinutes
-                        .clamp(0, rangeMinutes);
+                        .inSeconds
+                        .clamp(0, rangeSeconds);
                     final end = session.endWall
                         .difference(data.rangeStartWall)
-                        .inMinutes
-                        .clamp(0, rangeMinutes);
-                    final top = start / rangeMinutes * (height - 16) + 5;
-                    final h = (end - start) / rangeMinutes * (height - 16);
+                        .inSeconds
+                        .clamp(0, rangeSeconds);
+                    final top = start / rangeSeconds * (height - 16) + 5;
+                    final h = (end - start) / rangeSeconds * (height - 16);
                     return Positioned(
                       left: labelWidth + 6,
                       width: bodyWidth,
@@ -874,11 +874,11 @@ class _TimeGridState extends State<_TimeGrid> {
     final fmt = DateFormat.Hm(currentLocale.value);
     final baseHourHeight = mobile ? 50.0 : 44.0;
     final hourHeight = baseHourHeight * _zoom;
-    final rangeMinutes = math.max(
+    final rangeSeconds = math.max(
       1,
-      data.rangeEndWall.difference(data.rangeStartWall).inMinutes,
+      data.rangeEndWall.difference(data.rangeStartWall).inSeconds,
     );
-    final gridHeight = rangeMinutes / 60 * hourHeight;
+    final gridHeight = rangeSeconds / 3600 * hourHeight;
     final labelWidth = mobile ? 46.0 : 58.0;
     final showHalfHours = _zoom >= 1.5;
     final hourMarks = <DateTime>[];
@@ -1111,8 +1111,8 @@ class _TimeGridState extends State<_TimeGrid> {
                               final top =
                                   half
                                       .difference(data.rangeStartWall)
-                                      .inMinutes /
-                                  60 *
+                                      .inSeconds /
+                                  3600 *
                                   hourHeight;
                               return Positioned(
                                 left: bodyLeft,
@@ -1144,17 +1144,17 @@ class _TimeGridState extends State<_TimeGrid> {
                       for (final session in data.sessions)
                         Builder(
                           builder: (_) {
-                            final startMinutes = session.startWall
+                            final startSeconds = session.startWall
                                 .difference(data.rangeStartWall)
-                                .inMinutes
-                                .clamp(0, rangeMinutes);
-                            final endMinutes = session.endWall
+                                .inSeconds
+                                .clamp(0, rangeSeconds);
+                            final endSeconds = session.endWall
                                 .difference(data.rangeStartWall)
-                                .inMinutes
-                                .clamp(0, rangeMinutes);
-                            final top = startMinutes / 60 * hourHeight;
+                                .inSeconds
+                                .clamp(0, rangeSeconds);
+                            final top = startSeconds / 3600 * hourHeight;
                             final rawHeight =
-                                (endMinutes - startMinutes) / 60 * hourHeight;
+                                (endSeconds - startSeconds) / 3600 * hourHeight;
                             final blockHeight = math.min(
                               math.max(0.0, rawHeight),
                               math.max(0.0, gridHeight - top),
