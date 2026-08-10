@@ -50,12 +50,16 @@ class DayStatsSession {
 class DayStatsDashboardData {
   const DayStatsDashboardData({
     required this.selectedDate,
+    required this.rangeStartWall,
+    required this.rangeEndWall,
     required this.totalSeconds,
     required this.categories,
     required this.sessions,
   });
 
   final DateTime selectedDate;
+  final DateTime rangeStartWall;
+  final DateTime rangeEndWall;
   final int totalSeconds;
   final List<DayStatsCategorySlice> categories;
   final List<DayStatsSession> sessions;
@@ -75,6 +79,8 @@ class DayStatsDashboardData {
     required List<CategoryRule> rules,
     required List<StatsNode> aggregated,
     required DateTime selectedDate,
+    DateTime? rangeStartWall,
+    DateTime? rangeEndWall,
   }) {
     final rootByCategoryId = <int, CategoryRule>{};
 
@@ -110,6 +116,11 @@ class DayStatsDashboardData {
       selectedDate.day,
     );
     final dayEnd = dayStart.add(const Duration(days: 1));
+    final rangeStart = rangeStartWall ?? dayStart;
+    var rangeEnd = rangeEndWall ?? dayEnd;
+    if (!rangeEnd.isAfter(rangeStart)) {
+      rangeEnd = rangeStart.add(const Duration(minutes: 1));
+    }
     final sessions = <DayStatsSession>[];
     final secondsByRoot = <int, int>{};
     var unresolvedSeconds = 0;
@@ -125,20 +136,13 @@ class DayStatsDashboardData {
           (isRunning ? DatabaseService.getPlanetaryNow() : null);
       if (endUtc == null) continue;
 
-      final seconds =
-          CategoryServiceExtension.recordDurationSecondsWithinDayFromTimestamps(
-            record,
-            selectedDate,
-            db.settings.timezoneOffsetHours,
-            db.settings.preferredTimeZone,
-          );
-      if (seconds <= 0) continue;
-
       var startWall = db.applyUserOffset(startUtc);
       var endWall = db.applyUserOffset(endUtc);
-      if (startWall.isBefore(dayStart)) startWall = dayStart;
-      if (endWall.isAfter(dayEnd)) endWall = dayEnd;
+      if (startWall.isBefore(rangeStart)) startWall = rangeStart;
+      if (endWall.isAfter(rangeEnd)) endWall = rangeEnd;
       if (!endWall.isAfter(startWall)) continue;
+      final seconds = endWall.difference(startWall).inSeconds;
+      if (seconds <= 0) continue;
 
       final root = rootForRecord(record);
       if (root == null) {
@@ -186,13 +190,15 @@ class DayStatsDashboardData {
         ),
     ];
 
-    final totalSeconds = aggregated.fold<int>(
+    final totalSeconds = sessions.fold<int>(
       0,
-      (sum, node) => sum + node.totalSeconds,
+      (sum, session) => sum + session.seconds,
     );
 
     return DayStatsDashboardData(
       selectedDate: dayStart,
+      rangeStartWall: rangeStart,
+      rangeEndWall: rangeEnd,
       totalSeconds: totalSeconds,
       categories: categories,
       sessions: sessions,
@@ -575,17 +581,22 @@ class _HorizontalDay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    const daySeconds = 86400.0;
+    final fmt = DateFormat.Hm(currentLocale.value);
+    final rangeSeconds = math.max(
+      1.0,
+      data.rangeEndWall.difference(data.rangeStartWall).inSeconds.toDouble(),
+    );
+    final middle = data.rangeStartWall.add(
+      Duration(seconds: (rangeSeconds / 2).round()),
+    );
     return Column(
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: const [
-            Text('00'),
-            Text('06'),
-            Text('12'),
-            Text('18'),
-            Text('24'),
+          children: [
+            Text(fmt.format(data.rangeStartWall)),
+            Text(fmt.format(middle)),
+            Text(fmt.format(data.rangeEndWall)),
           ],
         ),
         const SizedBox(height: 8),
@@ -607,40 +618,36 @@ class _HorizontalDay extends StatelessWidget {
                     ),
                   ),
                 ),
-                for (final hour in const [6, 12, 18])
-                  Positioned(
-                    left: c.maxWidth * hour / 24,
-                    top: 6,
-                    bottom: 6,
-                    child: Container(
-                      width: 1,
-                      color: scheme.outlineVariant.withValues(alpha: 0.24),
-                    ),
+                Positioned(
+                  left: c.maxWidth / 2,
+                  top: 6,
+                  bottom: 6,
+                  child: Container(
+                    width: 1,
+                    color: scheme.outlineVariant.withValues(alpha: 0.24),
                   ),
+                ),
                 for (final session in data.sessions)
                   Builder(
                     builder: (_) {
                       final start = session.startWall
-                          .difference(data.selectedDate)
+                          .difference(data.rangeStartWall)
                           .inSeconds
-                          .clamp(0, 86400)
+                          .clamp(0, rangeSeconds.round())
                           .toDouble();
                       final end = session.endWall
-                          .difference(data.selectedDate)
+                          .difference(data.rangeStartWall)
                           .inSeconds
-                          .clamp(0, 86400)
+                          .clamp(0, rangeSeconds.round())
                           .toDouble();
-                      final left = c.maxWidth * start / daySeconds;
-                      final width = math.max(
-                        3.0,
-                        c.maxWidth * (end - start) / daySeconds,
-                      );
+                      final left = c.maxWidth * start / rangeSeconds;
+                      final width = c.maxWidth * (end - start) / rangeSeconds;
                       return Positioned(
                         left: left,
                         top: 5,
                         bottom: 5,
                         width: math.min(
-                          width,
+                          math.max(0.0, width),
                           math.max(0.0, c.maxWidth - left),
                         ),
                         child: Tooltip(
@@ -720,8 +727,17 @@ class _MiniVerticalDay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final fmt = DateFormat.Hm(currentLocale.value);
     const height = 250.0;
-    const labelWidth = 32.0;
+    const labelWidth = 40.0;
+    final rangeMinutes = math.max(
+      1,
+      data.rangeEndWall.difference(data.rangeStartWall).inMinutes,
+    );
+    final middle = data.rangeStartWall.add(
+      Duration(minutes: (rangeMinutes / 2).round()),
+    );
+    final marks = [data.rangeStartWall, middle, data.rangeEndWall];
     return LayoutBuilder(
       builder: (context, constraints) {
         final bodyWidth = math.max(0.0, constraints.maxWidth - labelWidth - 6);
@@ -729,13 +745,13 @@ class _MiniVerticalDay extends StatelessWidget {
           height: height,
           child: Stack(
             children: [
-              for (final hour in const [0, 6, 12, 18, 24]) ...[
+              for (var i = 0; i < marks.length; i++) ...[
                 Positioned(
                   left: 0,
-                  top: (hour / 24) * (height - 16),
-                  width: 26,
+                  top: i / (marks.length - 1) * (height - 16),
+                  width: labelWidth - 4,
                   child: Text(
-                    hour.toString().padLeft(2, '0'),
+                    fmt.format(marks[i]),
                     textAlign: TextAlign.right,
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
                       color: scheme.onSurfaceVariant,
@@ -745,7 +761,7 @@ class _MiniVerticalDay extends StatelessWidget {
                 Positioned(
                   left: labelWidth,
                   right: 0,
-                  top: (hour / 24) * (height - 16) + 6,
+                  top: i / (marks.length - 1) * (height - 16) + 6,
                   child: Container(
                     height: 1,
                     color: scheme.outlineVariant.withValues(alpha: 0.25),
@@ -756,23 +772,20 @@ class _MiniVerticalDay extends StatelessWidget {
                 Builder(
                   builder: (_) {
                     final start = session.startWall
-                        .difference(data.selectedDate)
+                        .difference(data.rangeStartWall)
                         .inMinutes
-                        .clamp(0, 1440);
+                        .clamp(0, rangeMinutes);
                     final end = session.endWall
-                        .difference(data.selectedDate)
+                        .difference(data.rangeStartWall)
                         .inMinutes
-                        .clamp(0, 1440);
-                    final top = start / 1440 * (height - 16) + 5;
-                    final h = math.max(
-                      5.0,
-                      (end - start) / 1440 * (height - 16),
-                    );
+                        .clamp(0, rangeMinutes);
+                    final top = start / rangeMinutes * (height - 16) + 5;
+                    final h = (end - start) / rangeMinutes * (height - 16);
                     return Positioned(
                       left: labelWidth + 6,
                       width: bodyWidth,
                       top: top,
-                      height: math.min(h, height - top),
+                      height: math.min(math.max(0.0, h), height - top),
                       child: DecoratedBox(
                         decoration: BoxDecoration(
                           color: session.color.withValues(alpha: 0.55),
@@ -846,6 +859,11 @@ class _TimeGridState extends State<_TimeGrid> {
     setState(() => _zoom = next);
   }
 
+  DateTime _ceilHour(DateTime value) {
+    final floor = DateTime(value.year, value.month, value.day, value.hour);
+    return value == floor ? floor : floor.add(const Duration(hours: 1));
+  }
+
   @override
   Widget build(BuildContext context) {
     final data = widget.data;
@@ -856,10 +874,21 @@ class _TimeGridState extends State<_TimeGrid> {
     final fmt = DateFormat.Hm(currentLocale.value);
     final baseHourHeight = mobile ? 50.0 : 44.0;
     final hourHeight = baseHourHeight * _zoom;
-    final gridHeight = hourHeight * 24;
-    final labelWidth = mobile ? 40.0 : 54.0;
-    final labelEvery = _zoom >= 1.25 ? 1 : 2;
+    final rangeMinutes = math.max(
+      1,
+      data.rangeEndWall.difference(data.rangeStartWall).inMinutes,
+    );
+    final gridHeight = rangeMinutes / 60 * hourHeight;
+    final labelWidth = mobile ? 46.0 : 58.0;
     final showHalfHours = _zoom >= 1.5;
+    final hourMarks = <DateTime>[];
+    for (
+      var mark = _ceilHour(data.rangeStartWall);
+      !mark.isAfter(data.rangeEndWall);
+      mark = mark.add(const Duration(hours: 1))
+    ) {
+      hourMarks.add(mark);
+    }
 
     return _Glass(
       padding: EdgeInsets.fromLTRB(mobile ? 10 : 16, 16, mobile ? 10 : 16, 18),
@@ -882,10 +911,7 @@ class _TimeGridState extends State<_TimeGrid> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      DateFormat(
-                        'EEEE, MMM d',
-                        currentLocale.value,
-                      ).format(data.selectedDate),
+                      '${fmt.format(data.rangeStartWall)} — ${fmt.format(data.rangeEndWall)} · ${DateFormat('EEEE, MMM d', currentLocale.value).format(data.selectedDate)}',
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: scheme.onSurfaceVariant,
                       ),
@@ -950,7 +976,7 @@ class _TimeGridState extends State<_TimeGrid> {
               TextButton.icon(
                 onPressed: () => _setZoom(0.75),
                 icon: const Icon(Icons.fit_screen_rounded, size: 17),
-                label: Text(_copy('Fit day', 'Весь день')),
+                label: Text(_copy('Fit waking day', 'Весь день')),
               ),
               TextButton.icon(
                 onPressed: () => _setZoom(1.5),
@@ -962,8 +988,8 @@ class _TimeGridState extends State<_TimeGrid> {
           const SizedBox(height: 6),
           Text(
             _copy(
-              'Increase scale to turn the day into a long, scrollable tape.',
-              'Увеличивайте масштаб — день станет длинной прокручиваемой лентой.',
+              'Sleep is excluded. The tape runs from wake-up to the next main sleep.',
+              'Сон не показывается. Лента идёт от подъёма до следующего основного сна.',
             ),
             style: theme.textTheme.labelSmall?.copyWith(
               color: scheme.onSurfaceVariant,
@@ -1014,67 +1040,123 @@ class _TimeGridState extends State<_TimeGrid> {
                           ),
                         ),
                       ),
-                      if (showHalfHours)
-                        for (var half = 1; half < 48; half += 2)
-                          Positioned(
-                            left: bodyLeft,
-                            right: 0,
-                            top: half * hourHeight / 2,
-                            child: Container(
-                              height: 1,
-                              color: scheme.outlineVariant.withValues(
-                                alpha: 0.08,
-                              ),
-                            ),
-                          ),
-                      for (var hour = 0; hour <= 24; hour++) ...[
-                        Positioned(
-                          left: bodyLeft,
-                          right: 0,
-                          top: math.min(gridHeight - 1, hour * hourHeight),
-                          child: Container(
-                            height: 1,
-                            color: scheme.outlineVariant.withValues(
-                              alpha: hour % 6 == 0 ? 0.36 : 0.18,
-                            ),
+                      Positioned(
+                        left: 0,
+                        top: 0,
+                        width: labelWidth,
+                        child: Text(
+                          fmt.format(data.rangeStartWall),
+                          textAlign: TextAlign.right,
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: scheme.onSurfaceVariant,
+                            fontFeatures: const [FontFeature.tabularFigures()],
                           ),
                         ),
-                        if (hour % labelEvery == 0)
-                          Positioned(
-                            left: 0,
-                            top: math.min(
-                              gridHeight - 15,
-                              math.max(0.0, hour * hourHeight - 7),
-                            ),
-                            width: labelWidth,
-                            child: Text(
-                              hour.toString().padLeft(2, '0'),
-                              textAlign: TextAlign.right,
-                              style: theme.textTheme.labelSmall?.copyWith(
-                                color: scheme.onSurfaceVariant,
-                                fontFeatures: const [
-                                  FontFeature.tabularFigures(),
-                                ],
+                      ),
+                      for (final mark in hourMarks) ...[
+                        Builder(
+                          builder: (_) {
+                            final top =
+                                mark.difference(data.rangeStartWall).inMinutes /
+                                60 *
+                                hourHeight;
+                            return Positioned(
+                              left: bodyLeft,
+                              right: 0,
+                              top: math.min(gridHeight - 1, top),
+                              child: Container(
+                                height: 1,
+                                color: scheme.outlineVariant.withValues(
+                                  alpha: 0.20,
+                                ),
                               ),
-                            ),
+                            );
+                          },
+                        ),
+                        Builder(
+                          builder: (_) {
+                            final top =
+                                mark.difference(data.rangeStartWall).inMinutes /
+                                60 *
+                                hourHeight;
+                            return Positioned(
+                              left: 0,
+                              top: math.min(
+                                math.max(0.0, gridHeight - 15),
+                                math.max(0.0, top - 7),
+                              ),
+                              width: labelWidth,
+                              child: Text(
+                                fmt.format(mark),
+                                textAlign: TextAlign.right,
+                                style: theme.textTheme.labelSmall?.copyWith(
+                                  color: scheme.onSurfaceVariant,
+                                  fontFeatures: const [
+                                    FontFeature.tabularFigures(),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                        if (showHalfHours &&
+                            mark
+                                .subtract(const Duration(minutes: 30))
+                                .isAfter(data.rangeStartWall))
+                          Builder(
+                            builder: (_) {
+                              final half = mark.subtract(
+                                const Duration(minutes: 30),
+                              );
+                              final top =
+                                  half
+                                      .difference(data.rangeStartWall)
+                                      .inMinutes /
+                                  60 *
+                                  hourHeight;
+                              return Positioned(
+                                left: bodyLeft,
+                                right: 0,
+                                top: top,
+                                child: Container(
+                                  height: 1,
+                                  color: scheme.outlineVariant.withValues(
+                                    alpha: 0.08,
+                                  ),
+                                ),
+                              );
+                            },
                           ),
                       ],
+                      Positioned(
+                        left: 0,
+                        bottom: 0,
+                        width: labelWidth,
+                        child: Text(
+                          fmt.format(data.rangeEndWall),
+                          textAlign: TextAlign.right,
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: scheme.onSurfaceVariant,
+                            fontFeatures: const [FontFeature.tabularFigures()],
+                          ),
+                        ),
+                      ),
                       for (final session in data.sessions)
                         Builder(
                           builder: (_) {
                             final startMinutes = session.startWall
-                                .difference(data.selectedDate)
+                                .difference(data.rangeStartWall)
                                 .inMinutes
-                                .clamp(0, 1440);
+                                .clamp(0, rangeMinutes);
                             final endMinutes = session.endWall
-                                .difference(data.selectedDate)
+                                .difference(data.rangeStartWall)
                                 .inMinutes
-                                .clamp(0, 1440);
+                                .clamp(0, rangeMinutes);
                             final top = startMinutes / 60 * hourHeight;
                             final rawHeight =
                                 (endMinutes - startMinutes) / 60 * hourHeight;
                             final blockHeight = math.min(
-                              rawHeight,
+                              math.max(0.0, rawHeight),
                               math.max(0.0, gridHeight - top),
                             );
                             final showTitle = blockHeight >= 27;

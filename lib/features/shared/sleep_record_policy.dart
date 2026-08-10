@@ -35,10 +35,11 @@ abstract final class SleepRecordPolicy {
   }
 
   static bool isSleepRecord(Map<String, dynamic> record) {
-    final externalKind = (record['external_kind'] ?? record['externalKind'] ?? '')
-        .toString()
-        .trim()
-        .toLowerCase();
+    final externalKind =
+        (record['external_kind'] ?? record['externalKind'] ?? '')
+            .toString()
+            .trim()
+            .toLowerCase();
     if (externalKind == 'sleep') return true;
 
     final sleepSource = (record['sleep_source'] ?? record['sleepSource'] ?? '')
@@ -148,15 +149,15 @@ abstract final class SleepRecordPolicy {
     final previousSleep = mainSleepEndingOnDay(day, candidates);
     DateTime? wake = previousSleep == null ? null : endWall(previousSleep);
 
-    final nonSleepOnDay = nonSleep.where((record) {
-      final start = startWall(record);
-      return start != null && _sameDay(start, day);
-    }).toList()
-      ..sort((a, b) {
-        final as = startWall(a)!;
-        final bs = startWall(b)!;
-        return as.compareTo(bs);
-      });
+    final nonSleepOnDay =
+        nonSleep.where((record) {
+          final start = startWall(record);
+          return start != null && _sameDay(start, day);
+        }).toList()..sort((a, b) {
+          final as = startWall(a)!;
+          final bs = startWall(b)!;
+          return as.compareTo(bs);
+        });
 
     // If sleep data has not arrived yet, the first waking activity is the most
     // truthful observable start boundary. Only then fall back to 06:00.
@@ -171,7 +172,9 @@ abstract final class SleepRecordPolicy {
     if (bed == null) {
       if (_sameDay(day, today)) {
         final nowWall = db.applyUserOffset(DatabaseService.getPlanetaryNow());
-        bed = nowWall.isAfter(wake) ? nowWall : wake.add(const Duration(minutes: 1));
+        bed = nowWall.isAfter(wake)
+            ? nowWall
+            : wake.add(const Duration(minutes: 1));
       } else {
         // When the next sleep is unavailable, keep the historical fallback at
         // the calendar boundary rather than inventing a bedtime.

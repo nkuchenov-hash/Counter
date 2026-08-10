@@ -73,7 +73,9 @@ class _MorningStartGateState extends State<MorningStartGate> {
     final current = db.peekTimelineRecordsForDate(day);
     final adjacent = SleepRecordPolicy.adjacentRecordsForDay(day, current);
     final mainSleep = SleepRecordPolicy.mainSleepEndingOnDay(day, adjacent);
-    final wake = mainSleep == null ? null : SleepRecordPolicy.endWall(mainSleep);
+    final wake = mainSleep == null
+        ? null
+        : SleepRecordPolicy.endWall(mainSleep);
     final nowWall = db.applyUserOffset(DatabaseService.getPlanetaryNow());
 
     final hasWakingActivity = current.any((record) {
@@ -206,10 +208,11 @@ class _MorningStartSheetState extends State<MorningStartSheet> {
     final fallbackWake = DatabaseService.instance.applyUserOffset(
       DatabaseService.getPlanetaryNow(),
     );
-    final bed = widget.detectedBed ??
-        widget.day.subtract(const Duration(days: 1)).add(
-          const Duration(hours: 23, minutes: 30),
-        );
+    final bed =
+        widget.detectedBed ??
+        widget.day
+            .subtract(const Duration(days: 1))
+            .add(const Duration(hours: 23, minutes: 30));
     final wake = widget.detectedWake ?? fallbackWake;
     _bed = TimeOfDay.fromDateTime(bed);
     _wake = TimeOfDay.fromDateTime(wake);
@@ -366,7 +369,9 @@ class _MorningStartSheetState extends State<MorningStartSheet> {
                               border: Border.all(
                                 color: i == _quality
                                     ? scheme.primary.withValues(alpha: 0.45)
-                                    : scheme.outlineVariant.withValues(alpha: 0.35),
+                                    : scheme.outlineVariant.withValues(
+                                        alpha: 0.35,
+                                      ),
                               ),
                             ),
                             alignment: Alignment.center,
@@ -422,7 +427,8 @@ class _MorningStartSheetState extends State<MorningStartSheet> {
                     ChoiceChip(
                       label: Text(suggestion),
                       selected:
-                          _activity == suggestion && _customController.text.trim().isEmpty,
+                          _activity == suggestion &&
+                          _customController.text.trim().isEmpty,
                       onSelected: (_) {
                         _customController.clear();
                         setState(() => _activity = suggestion);
@@ -454,9 +460,7 @@ class _MorningStartSheetState extends State<MorningStartSheet> {
                 width: double.infinity,
                 child: TextButton(
                   onPressed: () => _finish(startActivity: false),
-                  child: Text(
-                    _copy('Save sleep only', 'Только сохранить сон'),
-                  ),
+                  child: Text(_copy('Save sleep only', 'Только сохранить сон')),
                 ),
               ),
             ],
