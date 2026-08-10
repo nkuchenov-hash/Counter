@@ -3,7 +3,7 @@ part of '../app_shell.dart';
 mixin ShellEditHosts on ShellCoreLogic {
   void openNewTaskForPastDate() {
     final ctx = context;
-    // Synthetic empty record signals "create" to _TimelineRecordSheetContent
+    // Synthetic empty record signals "create" to TimelineRecordSheetContent
     // (id == '' triggers the create branch in _save). Single shared edit sheet.
     final tzHours = DatabaseService.instance.settings.timezoneOffsetHours;
     final defaultStartDisplay = DateTime(
@@ -21,33 +21,16 @@ mixin ShellEditHosts on ShellCoreLogic {
       status: 'completed',
       timezoneOffsetHours: tzHours,
     );
-    showModalBottomSheet<void>(
+    showAppEditSheet<void>(
       context: ctx,
-      useRootNavigator: true,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      clipBehavior: Clip.none,
-      builder: (sheetCtx) {
-        return Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(sheetCtx).viewInsets.bottom,
-          ),
-          child: DraggableScrollableSheet(
-            expand: false,
-            initialChildSize: 0.88,
-            minChildSize: 0.42,
-            maxChildSize: 0.95,
-            builder: (context, scrollController) {
-              return ActivityDetailSheet(
-                kind: ActivityDetailKind.timelineRecord,
-                timelineRecord: placeholder,
-                scrollController: scrollController,
-                onSaved: (_) {
-                  if (sheetCtx.mounted) Navigator.of(sheetCtx).pop();
-                },
-              );
-            },
-          ),
+      builder: (context, scrollController, sheetCtx) {
+        return ActivityDetailSheet(
+          kind: ActivityDetailKind.timelineRecord,
+          timelineRecord: placeholder,
+          scrollController: scrollController,
+          onSaved: (_) {
+            if (sheetCtx.mounted) Navigator.of(sheetCtx).pop();
+          },
         );
       },
     );
@@ -57,112 +40,77 @@ mixin ShellEditHosts on ShellCoreLogic {
     BuildContext context,
     Map<String, dynamic> data,
   ) {
-    showModalBottomSheet<void>(
+    final record = TimelineRecord.fromMap(
+      data,
+      timezoneOffsetHours:
+          DatabaseService.instance.settings.timezoneOffsetHours,
+    );
+    showAppEditSheet<void>(
       context: context,
-      useRootNavigator: true,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      clipBehavior: Clip.none,
-      builder: (sheetCtx) {
-        final record = TimelineRecord.fromMap(
-          data,
-          timezoneOffsetHours:
-              DatabaseService.instance.settings.timezoneOffsetHours,
-        );
-        return Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(sheetCtx).viewInsets.bottom,
-          ),
-          child: DraggableScrollableSheet(
-            expand: false,
-            initialChildSize: 0.88,
-            minChildSize: 0.42,
-            maxChildSize: 0.95,
-            builder: (context, scrollController) {
-              return ActivityDetailSheet(
-                kind: ActivityDetailKind.timelineRecord,
-                timelineRecord: record,
-                scrollController: scrollController,
-                onSaved: (updated) {
-                  if (sheetCtx.mounted) {
-                    Navigator.of(sheetCtx).pop();
-                  }
-                },
-                onDelete: () async {
-                  final ok = await DatabaseService.instance.deleteRecordByDocId(
-                    record.id,
-                  );
-                  if (!mounted) return;
-                  if (!ok) {
-                    showSyncFailedSnackBar(
-                      onRetry: () => unawaited(
-                        DatabaseService.instance.deleteRecordByDocId(record.id),
-                      ),
-                    );
-                  }
-                  if (sheetCtx.mounted) Navigator.of(sheetCtx).pop();
-                },
-                onStop: () async {
-                  await DatabaseService.instance.stopRecordByDocId(record.id);
-                  if (!mounted) return;
-                  if (sheetCtx.mounted) Navigator.of(sheetCtx).pop();
-                },
+      builder: (context, scrollController, sheetCtx) {
+        return ActivityDetailSheet(
+          kind: ActivityDetailKind.timelineRecord,
+          timelineRecord: record,
+          scrollController: scrollController,
+          onSaved: (updated) {
+            if (sheetCtx.mounted) Navigator.of(sheetCtx).pop();
+          },
+          onDelete: () async {
+            final ok = await DatabaseService.instance.deleteRecordByDocId(
+              record.id,
+            );
+            if (!mounted) return;
+            if (!ok) {
+              showSyncFailedSnackBar(
+                onRetry: () => unawaited(
+                  DatabaseService.instance.deleteRecordByDocId(record.id),
+                ),
               );
-            },
-          ),
+            }
+            if (sheetCtx.mounted) Navigator.of(sheetCtx).pop();
+          },
+          onStop: () async {
+            await DatabaseService.instance.stopRecordByDocId(record.id);
+            if (!mounted) return;
+            if (sheetCtx.mounted) Navigator.of(sheetCtx).pop();
+          },
         );
       },
     );
   }
 
   Future<void> openEditDialog(PlanningTask task) async {
-    final result = await showModalBottomSheet<Object?>(
+    final result = await showAppEditSheet<Object?>(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) {
-        return Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(ctx).viewInsets.bottom,
-          ),
-          child: DraggableScrollableSheet(
-            expand: false,
-            initialChildSize: 0.88,
-            minChildSize: 0.42,
-            maxChildSize: 0.95,
-            builder: (context, scrollController) {
-              return ActivityDetailSheet(
-                kind: ActivityDetailKind.planningTask,
-                planningTask: task,
-                scrollController: scrollController,
-                onSaved: (dynamic updatedRaw) {
-                  Navigator.of(ctx).pop(updatedRaw);
+      useRootNavigator: false,
+      builder: (context, scrollController, sheetCtx) {
+        return ActivityDetailSheet(
+          kind: ActivityDetailKind.planningTask,
+          planningTask: task,
+          scrollController: scrollController,
+          onSaved: (dynamic updatedRaw) {
+            Navigator.of(sheetCtx).pop(updatedRaw);
+          },
+          onDelete: shellIsNewPlanningDraft(task)
+              ? null
+              : () {
+                  final backup = PlanningTask(
+                    id: 0,
+                    title: task.title,
+                    categoryId: task.categoryId,
+                    isDone: task.isDone,
+                    dateKey: task.dateKey,
+                    order: task.order,
+                    startTime: task.startTime,
+                    date: task.date,
+                    tags: task.tags,
+                  );
+                  DatabaseService.instance.applyOptimisticPlanningTask(
+                    task.copyWith(dateKey: shellOptimisticPurgeDateKey),
+                  );
+                  DatabaseService.instance.notifyPlanningRefresh();
+                  unawaited(deletePlanningTaskOptimisticFollowUp(task, backup));
                 },
-                onDelete: shellIsNewPlanningDraft(task)
-                    ? null
-                    : () {
-                        final backup = PlanningTask(
-                          id: 0,
-                          title: task.title,
-                          categoryId: task.categoryId,
-                          isDone: task.isDone,
-                          dateKey: task.dateKey,
-                          order: task.order,
-                          startTime: task.startTime,
-                          date: task.date,
-                          tags: task.tags,
-                        );
-                        DatabaseService.instance.applyOptimisticPlanningTask(
-                          task.copyWith(dateKey: shellOptimisticPurgeDateKey),
-                        );
-                        DatabaseService.instance.notifyPlanningRefresh();
-                        unawaited(
-                          deletePlanningTaskOptimisticFollowUp(task, backup),
-                        );
-                      },
-              );
-            },
-          ),
         );
       },
     );
