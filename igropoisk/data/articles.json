@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-09T21:55:37.384Z",
+  "updatedAt": "2026-08-10T07:36:31.312Z",
   "count": 495,
   "sources": [
     "IGN",
@@ -14,6 +14,177 @@
     "Игромания"
   ],
   "articles": [
+    {
+      "source": "StopGame",
+      "language": "ru",
+      "title": "НРИ. Cyberpunk RED. [Выпуск#1]",
+      "normalizedTitle": "нри cyberpunk red выпуск 1",
+      "url": "https://stopgame.ru/show/163171/nri_cyberpunk_red_vypusk_1",
+      "summary": "У вас была всего одна задача — забрать у учёного важные данные из головы. Кто бы мог подумать, что это дело может обернуться большими проблемами как для вас, так и для всего будущего Найт-Сити… Хватит ли у вас сил, чтобы противостоять жадным корпам и остаться человеком при этом?",
+      "publishedAt": "Mon, 10 Aug 2026 09:46:40 +0300"
+    },
+    {
+      "source": "GamesRadar+",
+      "language": "en",
+      "title": "Even though John Stewart will be in Man of Tomorrow, Lanterns showrunner says he didn't have \"any specific landing point\"",
+      "normalizedTitle": "even though john stewart will be in man of tomorrow lanterns showrunner says he didn t have any specific landing point",
+      "url": "https://www.gamesradar.com/entertainment/dc-tv-shows/even-though-john-stewart-will-be-in-man-of-tomorrow-lanterns-showrunner-says-he-didnt-have-any-specific-landing-point/",
+      "summary": "It sounds like Lanterns had a lot of freedom",
+      "publishedAt": "Mon, 10 Aug 2026 05:00:00 +0000"
+    },
+    {
+      "source": "PC Gamer",
+      "language": "en",
+      "title": "Australians must now prove their age to buy R18+ games on the Xbox store",
+      "normalizedTitle": "australians must now prove their age to buy r18 games on the xbox store",
+      "url": "https://www.pcgamer.com/gaming-industry/australians-must-now-prove-their-age-to-buy-r18-games-on-the-xbox-store/",
+      "summary": "Microsoft is the first among major games platforms to implement stricter age verification.",
+      "publishedAt": "Mon, 10 Aug 2026 03:52:45 +0000"
+    },
+    {
+      "source": "StopGame",
+      "language": "ru",
+      "title": "Дата Serious Sam: Shatterverse, превью Onimusha: Way of the Sword, GTA VI бьёт рекорды…",
+      "normalizedTitle": "дата serious sam shatterverse превью onimusha way of the sword gta vi бьёт рекорды",
+      "url": "https://stopgame.ru/show/163170/data_serious_sam_shatterverse_preview_onimusha_way_of_the_sword_gta_vi_bet_rekordy",
+      "summary": "На THQ Nordic Digital Showcase показали свежие трейлеры Wreckfest 2, The Guild: Europa 1410 и классической трилогии Gothic для консолей, также тизернули новую игру от авторов Road 96, объявили о выходе Expeditions: Samurai и DLC The Prisoner для REANIMAL и напомнили о настольной Gothic: A Shadow’s Quest;",
+      "publishedAt": "Mon, 10 Aug 2026 06:40:07 +0300"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "One Night Only Director Cut 'So Much Nudity' from Film Because Audiences Now Dislike Seeing It",
+      "normalizedTitle": "one night only director cut so much nudity from film because audiences now dislike seeing it",
+      "url": "https://www.ign.com/articles/one-night-only-director-cut-so-much-nudity-from-film-because-audiences-now-dislike-seeing-it",
+      "summary": "Director Will Gluck revealed that he “cut out so much” nudity from One Night Only because he believes modern movie audiences are now too uncomfortable seeing it on screen.",
+      "publishedAt": "Mon, 10 Aug 2026 03:11:54 +0000"
+    },
+    {
+      "source": "Polygon",
+      "language": "en",
+      "title": "In One Line, 'House of the Dragon' Just Quietly Retconned the Entire Plot of 'Game of Thrones'",
+      "normalizedTitle": "in one line house of the dragon just quietly retconned the entire plot of game of thrones",
+      "url": "https://www.polygon.com/house-of-the-dragon-season-3-finale-prince-that-was-promised/",
+      "summary": "House of the Dragon's season 3 finale finally reveals when The Prince That Was Promised goes from Targaryen family secret to Westeros legend.",
+      "publishedAt": "Mon, 10 Aug 2026 03:00:12 GMT"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "House of the Dragon Season 3 Ending Explained and Book Differences",
+      "normalizedTitle": "house of the dragon season 3 ending explained and book differences",
+      "url": "https://www.ign.com/articles/house-of-the-dragon-season-3-ending-explained-book-differences",
+      "summary": "Unpack the House of the Dragon Season 3 finale ending, including key betrayals, deaths, dragon devastation, and the biggest book-to-show changes from Fire & Blood.",
+      "publishedAt": "Mon, 10 Aug 2026 02:30:00 +0000"
+    },
+    {
+      "source": "Polygon",
+      "language": "en",
+      "title": "'House of the Dragon' Season 3 Ending Explained: I Finally Understand Why George R.R. Martin Hates This Show",
+      "normalizedTitle": "house of the dragon season 3 ending explained i finally understand why george r r martin hates this show",
+      "url": "https://www.polygon.com/house-of-the-dragon-season-3-ending-explained-grrm/",
+      "summary": "After the explosive 'House of the Dragon' season 3 finale, George R.R Martin's criticisms of the TV adaptation finally make sense.",
+      "publishedAt": "Mon, 10 Aug 2026 02:10:12 GMT"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "House of the Dragon Season 3 Finale Recap and Review",
+      "normalizedTitle": "house of the dragon season 3 finale recap and review",
+      "url": "https://www.ign.com/articles/house-of-the-dragon-season-3-finale-episode-8-recap-and-review",
+      "summary": "House of the Dragon Season 3 Finale Recap and Review: There’s little sense of an ending here, but this spectacular battle left everything to play for in the final season.",
+      "publishedAt": "Mon, 10 Aug 2026 02:10:00 +0000"
+    },
+    {
+      "source": "GamesRadar+",
+      "language": "en",
+      "title": "House of the Dragon showrunner explains why season 3 didn't include the revenge killing viewers were expecting: \"That would be no fun\"",
+      "normalizedTitle": "house of the dragon showrunner explains why season 3 didn t include the revenge killing viewers were expecting that would be no fun",
+      "url": "https://www.gamesradar.com/entertainment/fantasy-shows/house-of-the-dragon-showrunner-explains-why-aegon-didnt-kill-aemond/",
+      "summary": "Ryan Condal says one major character could've made a crucial, life-ending decision, but it would've been too easy",
+      "publishedAt": "Mon, 10 Aug 2026 02:10:00 +0000"
+    },
+    {
+      "source": "GamesRadar+",
+      "language": "en",
+      "title": "House of the Dragon showrunner teases \"new dragons\" in \"a very worthy\" final season of the hit HBO show",
+      "normalizedTitle": "house of the dragon showrunner teases new dragons in a very worthy final season of the hit hbo show",
+      "url": "https://www.gamesradar.com/entertainment/fantasy-shows/house-of-the-dragon-showrunner-teases-a-very-worthy-final-season-of-the-hit-hbo-show/",
+      "summary": "Ryan Condal says House of the Dragon season 4 will be \"even bigger\"",
+      "publishedAt": "Mon, 10 Aug 2026 02:10:00 +0000"
+    },
+    {
+      "source": "GamesRadar+",
+      "language": "en",
+      "title": "House of the Dragon season 4 release date speculation, cast, plot, and more news",
+      "normalizedTitle": "house of the dragon season 4 release date speculation cast plot and more news",
+      "url": "https://www.gamesradar.com/entertainment/fantasy-shows/house-of-the-dragon-season-4-release-date-cast-plot-trailer-news/",
+      "summary": "Everything we know about House of the Dragon season 4, including cast, plot and release date speculation",
+      "publishedAt": "Mon, 10 Aug 2026 02:10:00 +0000"
+    },
+    {
+      "source": "PC Gamer",
+      "language": "en",
+      "title": "Steam Week in Review: Games about sorting 1000s of mundane objects onto shelves are the new craze sweeping PC gaming",
+      "normalizedTitle": "steam week in review games about sorting 1000s of mundane objects onto shelves are the new craze sweeping pc gaming",
+      "url": "https://www.pcgamer.com/gaming-industry/steam-week-in-review-games-about-sorting-1000s-of-mundane-objects-onto-shelves-is-the-new-craze-sweeping-pc-gaming/",
+      "summary": "All the interesting Steam facts for the week ending August 9.",
+      "publishedAt": "Mon, 10 Aug 2026 01:37:33 +0000"
+    },
+    {
+      "source": "PC Gamer",
+      "language": "en",
+      "title": "Free-to-play Division game launches on Steam to mixed reviews: 'Calling it slop disrespects actual slop'",
+      "normalizedTitle": "free to play division game launches on steam to mixed reviews calling it slop disrespects actual slop",
+      "url": "https://www.pcgamer.com/games/third-person-shooter/free-to-play-division-game-launches-on-steam-to-mixed-reviews-calling-it-slop-disrespects-actual-slop/",
+      "summary": "The Division Resurgence was made for mobile and it shows.",
+      "publishedAt": "Mon, 10 Aug 2026 01:03:33 +0000"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "Warner Bros. Stirs Controversy After Posting 'Embarrassing' AI Dog Podcast for The End of Oak Street",
+      "normalizedTitle": "warner bros stirs controversy after posting embarrassing ai dog podcast for the end of oak street",
+      "url": "https://www.ign.com/articles/warner-bros-stirs-controversy-after-posting-embarrassing-ai-dog-podcast-for-the-end-of-oak-street",
+      "summary": "Warner Bros. is under fire after it collaborated with an AI dog podcast to promote Ewan McGregor and Anne Hathaway's new movie, The End of Oak Street.",
+      "publishedAt": "Sun, 9 Aug 2026 23:26:38 +0000"
+    },
+    {
+      "source": "StopGame",
+      "language": "ru",
+      "title": "Хорошие игры, которые вы могли пропустить в июле",
+      "normalizedTitle": "хорошие игры которые вы могли пропустить в июле",
+      "url": "https://stopgame.ru/show/163068/horoshie_igry_kotorye_vy_mogli_propustit_v_iyule",
+      "summary": "В этом выпуске вас ждут много аниме-девочек, пара замечательных квестов, шахматы с котиками, Dark Souls с динозаврами, текстовая RPG от ветерана Capcom, клон Genshin Impact без гачи, вариация Disco Elysium в киберпанке и другие интересные игры.… […]",
+      "publishedAt": "Mon, 10 Aug 2026 02:26:01 +0300"
+    },
+    {
+      "source": "GamesRadar+",
+      "language": "en",
+      "title": "Lanterns showrunner hints that the grounded DC show might go cosmic: \"We'd be stupid not to use everything that you can do inside the Green Lantern universe\"",
+      "normalizedTitle": "lanterns showrunner hints that the grounded dc show might go cosmic we d be stupid not to use everything that you can do inside the green lantern universe",
+      "url": "https://www.gamesradar.com/entertainment/dc-tv-shows/lanterns-showrunner-hints-that-the-grounded-dc-show-might-go-cosmic/",
+      "summary": "Chris Mundy is reaching for the stars",
+      "publishedAt": "Sun, 09 Aug 2026 23:01:00 +0000"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "Marvel Tokon PC Launch Is So Bad That Famed FGC Content Creator Maximilian Dood Uninstalled the Game on Stream",
+      "normalizedTitle": "marvel tokon pc launch is so bad that famed fgc content creator maximilian dood uninstalled the game on stream",
+      "url": "https://www.ign.com/articles/marvel-tokon-pc-launch-is-so-bad-that-famed-fgc-content-creator-maximilian-dood-uninstalled-the-game-on-stream",
+      "summary": "Marvel Tokon: Fighting Souls' launch weekend has been filled with so many PC issues that even famed FGC content creator Maximilian Christiansen (a.k.a. Maximilian Dood) couldn't help but uninstall the game on stream.",
+      "publishedAt": "Sun, 9 Aug 2026 22:02:57 +0000"
+    },
+    {
+      "source": "Polygon",
+      "language": "en",
+      "title": "The Best Games Like Dungeon Crawler Carl",
+      "normalizedTitle": "the best games like dungeon crawler carl",
+      "url": "https://www.polygon.com/games-like-dungeon-crawler-carl/",
+      "summary": "From Lethal Company to Antichamber, these eight games capture the same survive-and-strategize energy that makes Dungeon Crawler Carl such a wild ride.",
+      "publishedAt": "Sun, 09 Aug 2026 22:00:12 GMT"
+    },
     {
       "source": "PC Gamer",
       "language": "en",
@@ -40,6 +211,24 @@
       "url": "https://www.polygon.com/emma-frost-marvel-historu-comics-villain-hero-x-men/",
       "summary": "As Samara Weaving's Emma Frost prepares to hit the MCU, let's look back at the character's history and speculate on which version of Emma we're about to get.",
       "publishedAt": "Sun, 09 Aug 2026 21:00:12 GMT"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "Blizzard Reportedly Leads Xbox as 'Top-Performing' Studio Thanks to Overwatch and Diablo",
+      "normalizedTitle": "blizzard reportedly leads xbox as top performing studio thanks to overwatch and diablo",
+      "url": "https://www.ign.com/articles/blizzard-reportedly-leads-xbox-as-top-performing-studio-thanks-to-overwatch-and-diablo",
+      "summary": "Blizzard Entertainment is reportedly Microsoft's golden child after Overwatch and Diablo 4: Lord of Hatred helped it become the \"top-performing\" Xbox studio.",
+      "publishedAt": "Sun, 9 Aug 2026 20:29:23 +0000"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "The Best Deals Today: Civilization VII, AirPods Pro 3, Spider-Man: Brand New Day Steelbook, and More",
+      "normalizedTitle": "the best deals today civilization vii airpods pro 3 spider man brand new day steelbook and more",
+      "url": "https://www.ign.com/articles/best-deals-for-august-9-2026",
+      "summary": "A new weekend has arrived, and today, you can save on Civilization VII, select LEGO sets, AirPods Pro 3, Saros, Mega Man Star Force Legacy Collection, and more. Check out our top picks for Sunday, August 9, below. Civilization VII for $19.99 Amazon has Civilization VII on sale for $19.99 this weekend, saving you $20 off a physical copy. In our 7/10 review , we wrote, &quot;Civilization 7&#39;s improved warfare and added bits of narrative flair give me reasons to keep clicking one more turn late into the night, but the desire to streamline and simplify this legendary 4X series feels like it has",
+      "publishedAt": "Sun, 9 Aug 2026 20:26:42 +0000"
     },
     {
       "source": "GamesRadar+",
@@ -186,24 +375,6 @@
       "publishedAt": "Sun, 9 Aug 2026 16:03:41 +0000"
     },
     {
-      "source": "Polygon",
-      "language": "en",
-      "title": "Beast of Reincarnation Has a Difficulty Problem",
-      "normalizedTitle": "beast of reincarnation has a difficulty problem",
-      "url": "https://www.polygon.com/beast-of-reincarnations-easiest-mode-too-easy/",
-      "summary": "Beast of Reincarnation's forgiving story mode is too easy for players seeking a more moderate challenge.",
-      "publishedAt": "Sun, 09 Aug 2026 16:00:12 GMT"
-    },
-    {
-      "source": "Polygon",
-      "language": "en",
-      "title": "26 Years Later, Anime’s Most Influential Vampire Movie Deserves Another Shot",
-      "normalizedTitle": "26 years later anime s most influential vampire movie deserves another shot",
-      "url": "https://www.polygon.com/blood-the-last-vampire-anime-movie/",
-      "summary": "This 48-minute anime movie has groundbreaking animation, brutal action, and an iconic heroine.",
-      "publishedAt": "Sun, 09 Aug 2026 16:00:12 GMT"
-    },
-    {
       "source": "PC Gamer",
       "language": "en",
       "title": "Hit markers are an FPS crutch",
@@ -238,15 +409,6 @@
       "url": "https://www.gamesradar.com/games/the-legend-of-zelda/the-legend-of-zelda-twilight-princess-wasnt-enough-you-can-now-run-ocarina-of-time-and-majoras-mask-natively-on-ios/",
       "summary": "\"The decompilation community has been incredibly active this year.\"",
       "publishedAt": "Sun, 09 Aug 2026 15:10:12 +0000"
-    },
-    {
-      "source": "Polygon",
-      "language": "en",
-      "title": "Amid Xbox woes, Blizzard has reportedly become the ‘top performing’ studio at the company",
-      "normalizedTitle": "amid xbox woes blizzard has reportedly become the top performing studio at the company",
-      "url": "https://www.polygon.com/xbox-blizzard-becomes-top-performing-studio-overwatch/",
-      "summary": "Blizzard has reportedly become the top performing studio at Xbox thanks to strong performances from Overwatch and Diablo 4's DLC.",
-      "publishedAt": "Sun, 09 Aug 2026 15:03:41 GMT"
     },
     {
       "source": "GameSpot",
@@ -807,33 +969,6 @@
       "publishedAt": "Fri, 07 Aug 2026 23:06:12 +0000"
     },
     {
-      "source": "IGN",
-      "language": "en",
-      "title": "Dwayne Johnson Reacts to Negative Moana Reviews After Disney's Live-Action Remake Bombs",
-      "normalizedTitle": "dwayne johnson reacts to negative moana reviews after disney s live action remake bombs",
-      "url": "https://www.ign.com/articles/dwayne-johnson-reacts-to-negative-moana-reviews-after-disneys-live-action-remake-bombs",
-      "summary": "Dwayne \"The Rock\" Johnson shared his thoughts about the negative reviews for Disney's live-action Moana remake after it floundered in theaters.",
-      "publishedAt": "Fri, 7 Aug 2026 22:33:00 +0000"
-    },
-    {
-      "source": "IGN",
-      "language": "en",
-      "title": "Brandon Sanderson Says the Speed Racer Movie Is 'Unironically a 10 out of 10'",
-      "normalizedTitle": "brandon sanderson says the speed racer movie is unironically a 10 out of 10",
-      "url": "https://www.ign.com/articles/brandon-sanderson-says-the-speed-racer-movie-is-unironically-a-10-out-of-10",
-      "summary": "\"This is the Wachowskis at their A game, and it was underappreciated when it came out.\"",
-      "publishedAt": "Fri, 7 Aug 2026 22:29:53 +0000"
-    },
-    {
-      "source": "IGN",
-      "language": "en",
-      "title": "Newly Discovered Demon's Souls Prototype Footage Shows Scrapped First-Person Option",
-      "normalizedTitle": "newly discovered demon s souls prototype footage shows scrapped first person option",
-      "url": "https://www.ign.com/articles/newly-discovered-demons-souls-prototype-footage-shows-scrapped-first-person-option",
-      "summary": "Demon's Souls almost had an option to play the game in first-person, as shown in newly discovered footage from a 2007 presentation brought to light by famed Elden Ring dataminer Lance McDonald.",
-      "publishedAt": "Fri, 7 Aug 2026 22:26:55 +0000"
-    },
-    {
       "source": "PC Gamer",
       "language": "en",
       "title": "From ancient Buddhism, to iconic manga hair, to Keanu Reeves: a PC Gamer Causality Chain™",
@@ -841,24 +976,6 @@
       "url": "https://www.pcgamer.com/games/from-ancient-buddhism-to-iconic-manga-hair-to-keanu-reeves-a-pc-gamer-causality-chaintm/",
       "summary": "Would Xuanzang have liked John Wick?",
       "publishedAt": "Fri, 07 Aug 2026 22:11:11 +0000"
-    },
-    {
-      "source": "IGN",
-      "language": "en",
-      "title": "Madden NFL 27 Review So Far",
-      "normalizedTitle": "madden nfl 27 review so far",
-      "url": "https://www.ign.com/articles/madden-nfl-27-review",
-      "summary": "The gridiron calls once again.",
-      "publishedAt": "Fri, 7 Aug 2026 22:09:12 +0000"
-    },
-    {
-      "source": "IGN",
-      "language": "en",
-      "title": "Palworld 1.0 Showed Me Why Everyone Loves Survival Games",
-      "normalizedTitle": "palworld 1 0 showed me why everyone loves survival games",
-      "url": "https://www.ign.com/articles/palworld-10-showed-me-why-everyone-loves-survival-games",
-      "summary": "Palworld 1.0 does a great job of easing you into its many complex systems.",
-      "publishedAt": "Fri, 7 Aug 2026 22:00:00 +0000"
     },
     {
       "source": "PC Gamer",
@@ -897,15 +1014,6 @@
       "publishedAt": "Fri, 07 Aug 2026 21:36:56 +0000"
     },
     {
-      "source": "IGN",
-      "language": "en",
-      "title": "These Recently Retired LEGO Sets Are Still Available at Amazon at MSRP",
-      "normalizedTitle": "these recently retired lego sets are still available at amazon at msrp",
-      "url": "https://www.ign.com/articles/recently-retired-lego-sets-still-available-in-august-2026",
-      "summary": "The best time to buy a LEGO set is usually right before it retires. It&#39;s around this time that retailers start offering discounts to unload older stock and make room for newer builds. But if you miss that window, the next best time to buy a set is right after it retires. You&#39;re unlikely to find any sort of discount, but you can often still find popular sets at MSRP outside of the LEGO Store. Once a LEGO set gets retired, it quickly becomes a scarce resource. There isn&#39;t going to be more stock coming down the line, so it&#39;s either buy now at full price or find a third-party selle",
-      "publishedAt": "Fri, 7 Aug 2026 21:15:00 +0000"
-    },
-    {
       "source": "GamesRadar+",
       "language": "en",
       "title": "Rare Demon's Souls prototype shows off first-person perspective, unused enemies that could have rewritten Dark Souls history: \"Like watching the mona lisa being painted\"",
@@ -913,15 +1021,6 @@
       "url": "https://www.gamesradar.com/games/action-rpg/rare-demons-souls-prototype-shows-off-first-person-perspective-unused-enemies-that-could-have-rewritten-dark-souls-history-like-watching-the-mona-lisa-being-painted/",
       "summary": "Unprecedented",
       "publishedAt": "Fri, 07 Aug 2026 21:10:48 +0000"
-    },
-    {
-      "source": "IGN",
-      "language": "en",
-      "title": "The Legend of Zelda Movie Adds Lydia Peckham to Its Cast",
-      "normalizedTitle": "the legend of zelda movie adds lydia peckham to its cast",
-      "url": "https://www.ign.com/articles/the-legend-of-zelda-movie-adds-lydia-peckham-to-its-cast",
-      "summary": "The Legend of Zelda movie has reportedly picked up Kingdom of the Planet of the Apes' actress Lydia Peckham to its steadily growing list of cast members.",
-      "publishedAt": "Fri, 7 Aug 2026 20:47:04 +0000"
     },
     {
       "source": "GameSpot",
@@ -1509,24 +1608,6 @@
       "publishedAt": "Fri, 07 Aug 2026 11:00:45 +0000"
     },
     {
-      "source": "GamesRadar+",
-      "language": "en",
-      "title": "Metal The Gathering: From ripping packs in a moshpit to a secret allstar metal MTG group chat, Atreyu explain why Magic is the most metal TCG",
-      "normalizedTitle": "metal the gathering from ripping packs in a moshpit to a secret allstar metal mtg group chat atreyu explain why magic is the most metal tcg",
-      "url": "https://www.gamesradar.com/tabletop-gaming/metal-the-gathering-from-ripping-packs-in-a-moshpit-to-a-secret-allstar-metal-mtg-group-chat-atreyu-explain-why-magic-is-the-most-metal-tcg/",
-      "summary": "Atreyu’s Porter McKnight talks the bonding power of Magic: The Gathering and why playing a gig at Magic Con was a dream come true",
-      "publishedAt": "Fri, 07 Aug 2026 11:00:00 +0000"
-    },
-    {
-      "source": "GamesRadar+",
-      "language": "en",
-      "title": "Palworld 1.0 is \"very much for the fans,\" so the Pocketpair devs \"weren't really thinking about critic reception at all,\" lead says",
-      "normalizedTitle": "palworld 1 0 is very much for the fans so the pocketpair devs weren t really thinking about critic reception at all lead says",
-      "url": "https://www.gamesradar.com/games/survival/palworld-1-0-is-very-much-for-the-fans-so-the-pocketpair-devs-werent-really-thinking-about-critic-reception-at-all-lead-says/",
-      "summary": "\"I can't fault media for not wanting to put the time in post-release. No harm!\"",
-      "publishedAt": "Fri, 07 Aug 2026 10:55:19 +0000"
-    },
-    {
       "source": "Rock Paper Shotgun",
       "language": "en",
       "title": "Co-op climber Peak finally reaches the summit, with its last major update bringing two foreboding new biomes next week",
@@ -1534,33 +1615,6 @@
       "url": "https://www.rockpapershotgun.com/co-op-climber-peak-finally-reaches-the-summit-with-its-last-major-update-bringing-two-foreboding-new-biomes-next-week",
       "summary": "Just over a year of post-launch additions for climbing with your mates game Peak will end with one last update next week. In what's called the Final Ascent, devs Aggro Crab and Landfall are wheeling out two spooky new biomes as a challenge to round out the scaling of rugged landscapes. Read more",
       "publishedAt": "Fri, 07 Aug 2026 10:44:12 +0000"
-    },
-    {
-      "source": "GamesRadar+",
-      "language": "en",
-      "title": "James Gunn shoots down dream rumor that The Batman Part 2 and 3 are being filmed back to back",
-      "normalizedTitle": "james gunn shoots down dream rumor that the batman part 2 and 3 are being filmed back to back",
-      "url": "https://www.gamesradar.com/entertainment/dc-movies/james-gunn-shoots-down-dream-rumor-that-the-batman-part-2-and-3-are-being-filmed-back-to-back/",
-      "summary": "Sorry, it's not happening",
-      "publishedAt": "Fri, 07 Aug 2026 10:43:45 +0000"
-    },
-    {
-      "source": "GamesRadar+",
-      "language": "en",
-      "title": "As Persona 6 drives hype, Atlus' JRPG series sold another 1 million copies over Sega's last quarter",
-      "normalizedTitle": "as persona 6 drives hype atlus jrpg series sold another 1 million copies over sega s last quarter",
-      "url": "https://www.gamesradar.com/games/persona/as-persona-6-drives-hype-atlus-jrpg-series-sold-another-1-million-copies-over-segas-last-quarter/",
-      "summary": "The Persona series combined has sold over 30 million copies",
-      "publishedAt": "Fri, 07 Aug 2026 10:42:50 +0000"
-    },
-    {
-      "source": "GamesRadar+",
-      "language": "en",
-      "title": "How to get the Pokopia Ocean Pals rug for Stunfisk",
-      "normalizedTitle": "how to get the pokopia ocean pals rug for stunfisk",
-      "url": "https://www.gamesradar.com/games/pokemon/pokopia-ocean-pals-rug/",
-      "summary": "Stunfisk will ask you to find the Pokopia Ocean Pals rug for them, but won't really tell you where it is",
-      "publishedAt": "Fri, 07 Aug 2026 10:28:48 +0000"
     },
     {
       "source": "PC Gamer",
@@ -1734,15 +1788,6 @@
       "publishedAt": "Thu, 06 Aug 2026 21:57:56 +0000"
     },
     {
-      "source": "PC Gamer",
-      "language": "en",
-      "title": "Capcom says it wants Monster Hunter Wilds to outsell World 'over the medium to long term,' but it'll need to muster a lot of sales momentum to get there",
-      "normalizedTitle": "capcom says it wants monster hunter wilds to outsell world over the medium to long term but it ll need to muster a lot of sales momentum to get there",
-      "url": "https://www.pcgamer.com/games/action/capcom-says-it-wants-monster-hunter-wilds-to-outsell-world-over-the-medium-to-long-term-but-itll-need-to-muster-a-lot-of-sales-momentum-to-get-there/",
-      "summary": "Wilds didn't rank in Capcom's quarterly best sellers, but the company hopes to turn that around.",
-      "publishedAt": "Thu, 06 Aug 2026 21:14:46 +0000"
-    },
-    {
       "source": "Rock Paper Shotgun",
       "language": "en",
       "title": "Repair sick robots and contemplate the role of healthcare providers in the deeply textured, pixel art, cyberpunk visual novel All Our Broken Parts",
@@ -1750,24 +1795,6 @@
       "url": "https://www.rockpapershotgun.com/repair-sick-robots-and-contemplate-the-role-of-healthcare-providers-in-the-deeply-textured-pixel-art-cyberpunk-visual-novel-all-our-broken-parts",
       "summary": "All Our Broken Parts is a game that is a lot to take in almost out the gate. It's a cyberpunk visual novel with resplendently detailed pixel art where you play as a robot doctor taking care of other robots, each with their own unique affliction. Oh, and humans have disappeared, the ocean doesn't exist anymore, and after a medical mishap, you've been forced into a tiny clinic with not much going for you. Read more",
       "publishedAt": "Thu, 06 Aug 2026 20:43:16 +0000"
-    },
-    {
-      "source": "PC Gamer",
-      "language": "en",
-      "title": "Couple's dispute over playing Slay the Spire 2 in bed gets a ruling from comedian John Hodgman: 'Pick an arbitrary battle and stick with it'",
-      "normalizedTitle": "couple s dispute over playing slay the spire 2 in bed gets a ruling from comedian john hodgman pick an arbitrary battle and stick with it",
-      "url": "https://www.pcgamer.com/games/roguelike/couples-dispute-over-playing-slay-the-spire-2-in-bed-gets-a-ruling-from-comedian-john-hodgman-pick-an-arbitrary-battle-and-stick-with-it/",
-      "summary": "Gaming in bed: awful or lawful? The man who played the PC in Apple's \"Get a Mac\" ads issues a landmark PC gaming ruling.",
-      "publishedAt": "Thu, 06 Aug 2026 20:40:03 +0000"
-    },
-    {
-      "source": "PC Gamer",
-      "language": "en",
-      "title": "John Romero says id Software once sold empty Doom boxes to Taiwanese pirates so fans there could have legit copies: 'For us, it was distribution'",
-      "normalizedTitle": "john romero says id software once sold empty doom boxes to taiwanese pirates so fans there could have legit copies for us it was distribution",
-      "url": "https://www.pcgamer.com/games/fps/john-romero-says-id-software-once-sold-empty-doom-boxes-to-taiwanese-pirates-so-fans-there-could-have-legit-copies-for-us-it-was-distribution/",
-      "summary": "The id Software co-founder told the story during an opening panel at QuakeCon.",
-      "publishedAt": "Thu, 06 Aug 2026 20:37:08 +0000"
     },
     {
       "source": "Rock Paper Shotgun",
@@ -3523,33 +3550,6 @@
       "url": "https://stopgame.ru/show/162932/data_god_of_war_laufey_perenos_tomb_raider_catalyst_ocenki_halo_campaign_evolved",
       "summary": "В Steam появились первые отзывы о Halo: Campaign Evolved, также свои обзоры опубликовали журналисты; God of War: Laufey стартует в феврале; отказ Sony от физических версий игр для PlayStation прокомментировали Дэн Хаузер и Ив Гиймо; Tomb Raider: Catalyst перенесли на 2028-й год; студия Warhorse зарегистрировала торговый знак Kingdom Come Salvation — возможно, так будет называться новая часть серии; IO Interactive выпустила патч для 007 First Light",
       "publishedAt": "Mon, 27 Jul 2026 06:36:07 +0300"
-    },
-    {
-      "source": "StopGame",
-      "language": "ru",
-      "title": "Denshattack!: Обзор самой безбашенной аркады года",
-      "normalizedTitle": "denshattack обзор самой безбашенной аркады года",
-      "url": "https://stopgame.ru/show/162785/denshattack_review_samoy_bezbashennoy_arkady_goda",
-      "summary": "В XX веке транспортная система везде развивалась очень по-разному. Одни страны постепенно отказывались от поездов, сделав ставку на строительство дорог для автомобилей, а другие, наоборот, плели железнодорожные сети, которыми по сей день ежемесячно пользуются миллионы людей. Ко второй категории стран относится, к примеру, Япония, где почти 30 % пассажирских перевозок происходят именно с помощью поездов. Создатели Denshattack! взяли за основу тот факт, что в Японии много железных дорог, и придумали очень странную игру, вызывающую немало ассоциаций, но при этом ставшую одним из самых необычных р",
-      "publishedAt": "Sun, 26 Jul 2026 22:05:05 +0300"
-    },
-    {
-      "source": "StopGame",
-      "language": "ru",
-      "title": "Индиана. Yuppie Psycho (стрим третий)",
-      "normalizedTitle": "индиана yuppie psycho стрим третий",
-      "url": "https://stopgame.ru/show/162905/indiana_yuppie_psycho_strim_tretiy",
-      "summary": "Возвращение работяги.",
-      "publishedAt": "Sun, 26 Jul 2026 07:36:00 +0300"
-    },
-    {
-      "source": "StopGame",
-      "language": "ru",
-      "title": "Guild Wars 2: Рейд со зрителями [ММОрафон]",
-      "normalizedTitle": "guild wars 2 рейд со зрителями мморафон",
-      "url": "https://stopgame.ru/show/162904/guild_wars_2_reyd_so_zritelyami_mmorafon",
-      "summary": "Сегодня мы с семёркой отважных и опытных зрителей отправимся покорять первый рейд. Скорее всего будет больно и неприятно. Скорее всего мы вайпнемся несколько (много) раз. Но разве не за этим ходят в рейды?",
-      "publishedAt": "Sun, 26 Jul 2026 07:35:16 +0300"
     },
     {
       "source": "VG247",
