@@ -1505,5 +1505,5 @@ String _durationLong(int secondsTotal) {
   if (secondsTotal <= 0) return '0 h 00 m';
   final hours = secondsTotal ~/ 3600;
   final minutes = (secondsTotal % 3600) ~/ 60;
-  return '${hours} h ${minutes.toString().padLeft(2, '0')} m';
+  return '$hours h ${minutes.toString().padLeft(2, '0')} m';
 }
