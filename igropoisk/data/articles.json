@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-10T15:40:23.639Z",
+  "updatedAt": "2026-08-10T15:42:15.119Z",
   "count": 495,
   "sources": [
     "IGN",
@@ -14,6 +14,15 @@
     "Игромания"
   ],
   "articles": [
+    {
+      "source": "Rock Paper Shotgun",
+      "language": "en",
+      "title": "Someone's head is killing me in Memoirium, a PSX-styled soulslike about battling through bizarre dreamscapes and decorating your bedroom",
+      "normalizedTitle": "someone s head is killing me in memoirium a psx styled soulslike about battling through bizarre dreamscapes and decorating your bedroom",
+      "url": "https://www.rockpapershotgun.com/someones-head-is-killing-me-in-memoirium-a-psx-styled-soulslike-about-battling-through-bizarre-dreamscapes-and-decorating-your-bedroom",
+      "summary": "I don&rsquo;t know whose dreams Memoirium warps into action-RPG soulslike levels - it may not even be the player character&rsquo;s - but whoever they are, they need to lay off the post-10pm Babybels. Besides being filled with chair-wielding thugs and hornfaced monsters, this blocky sleeprealm is lousy with the kind of shattered fantasy geometry that could send an innocent dodgeroller tumbling fatally off a hundred-foot-high-ledge. Also, the ledge is a giant sword. Such was just one of my deaths in Memoirium&rsquo;s generously proportioned demo, which is available now on Steam ahead of the game",
+      "publishedAt": "Mon, 10 Aug 2026 15:41:17 +0000"
+    },
     {
       "source": "Eurogamer",
       "language": "en",
@@ -368,19 +377,19 @@
     {
       "source": "PC Gamer",
       "language": "en",
-      "title": "Light No Fire will 'absolutely' be like No Man's Sky, with new features coming post-release: Sean Murray says he'd like to still be working on it '10 years after launch'",
-      "normalizedTitle": "light no fire will absolutely be like no man s sky with new features coming post release sean murray says he d like to still be working on it 10 years after launch",
-      "url": "https://www.pcgamer.com/games/survival-crafting/light-no-fire-will-absolutely-be-like-no-mans-sky-with-new-features-coming-post-release-sean-murray-says-hed-like-to-still-be-working-on-it-10-years-after-launch/",
-      "summary": "\"I've worked on it for seven years now, and I'm still really enjoying it.\"",
+      "title": "Sean Murray still loves playing the 2016 version of No Man's Sky: 'It's a little bit weirder, but it's got its charm'",
+      "normalizedTitle": "sean murray still loves playing the 2016 version of no man s sky it s a little bit weirder but it s got its charm",
+      "url": "https://www.pcgamer.com/games/action/sean-murray-still-loves-playing-the-2016-version-of-no-mans-sky-its-a-little-bit-weirder-but-its-got-its-charm/",
+      "summary": "\"I've got a real soft spot for it,\" says the founder of Hello Games.",
       "publishedAt": "Mon, 10 Aug 2026 13:00:00 +0000"
     },
     {
       "source": "PC Gamer",
       "language": "en",
-      "title": "Sean Murray still loves playing the 2016 version of No Man's Sky: 'It's a little bit weirder, but it's got its charm'",
-      "normalizedTitle": "sean murray still loves playing the 2016 version of no man s sky it s a little bit weirder but it s got its charm",
-      "url": "https://www.pcgamer.com/games/action/sean-murray-still-loves-playing-the-2016-version-of-no-mans-sky-its-a-little-bit-weirder-but-its-got-its-charm/",
-      "summary": "\"I've got a real soft spot for it,\" says the founder of Hello Games.",
+      "title": "Light No Fire will 'absolutely' be like No Man's Sky, with new features coming post-release: Sean Murray says he'd like to still be working on it '10 years after launch'",
+      "normalizedTitle": "light no fire will absolutely be like no man s sky with new features coming post release sean murray says he d like to still be working on it 10 years after launch",
+      "url": "https://www.pcgamer.com/games/survival-crafting/light-no-fire-will-absolutely-be-like-no-mans-sky-with-new-features-coming-post-release-sean-murray-says-hed-like-to-still-be-working-on-it-10-years-after-launch/",
+      "summary": "\"I've worked on it for seven years now, and I'm still really enjoying it.\"",
       "publishedAt": "Mon, 10 Aug 2026 13:00:00 +0000"
     },
     {
@@ -3460,15 +3469,6 @@
       "url": "https://www.rockpapershotgun.com/i-wish-i-could-do-that-a-developer-on-the-sims-has-been-eyeing-up-paralives-characters-asymmetric-shoes-and-their-wider-possibilities",
       "summary": "Asymmetric shoes may not seem like a big deal. I mean, if we look past the cultural mountain that was climbed to turn the faux pas of odd socks into a proud fashion statement of mismatched shoes, asymmetric footwear is just that, right? Two different shoes. Yet, for one of the senior character artists working on the Sims, competitor Paralives ' support for non-uniform footwear signifies something much more significant. Read more",
       "publishedAt": "Tue, 28 Jul 2026 12:24:11 +0000"
-    },
-    {
-      "source": "Rock Paper Shotgun",
-      "language": "en",
-      "title": "Nioh 3's Hell Rising DLC will sword thrust the soulslike's yokai-battling action into decimated Keian era Edo when it arrives next month",
-      "normalizedTitle": "nioh 3 s hell rising dlc will sword thrust the soulslike s yokai battling action into decimated keian era edo when it arrives next month",
-      "url": "https://www.rockpapershotgun.com/nioh-3s-hell-rising-dlc-will-sword-thrust-the-soulslikes-yokai-battling-action-into-decimated-keian-era-edo-when-it-arrives-next-month",
-      "summary": "Nioh , far, wherever you are. I've probably made that bad pun before, but seriously, I hope our guides writer Jeremy's not close to any desks right now. Nioh 3 , that game that pushed the poor bloke to the point of violence against the contents of his home , is getting its first major DLC next month. The expansion's dubbed Hell Rising, and kicks off a two-part story with a trip to a decimated version of Japanese capital Edo during the Keian era. Read more",
-      "publishedAt": "Tue, 28 Jul 2026 12:00:00 +0000"
     },
     {
       "source": "StopGame",

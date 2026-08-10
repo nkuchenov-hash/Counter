@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-10T15:40:23.639Z",
+  "updatedAt": "2026-08-10T15:42:15.119Z",
   "count": 78,
   "sourcePool": [
     "Steam",
@@ -453,7 +453,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 8.7,
-      "recommendations": 5213547,
+      "recommendations": 5213489,
       "owners": "100,000,000 .. 200,000,000",
       "peakConcurrent": 1013936,
       "sourceEvidence": [
@@ -465,7 +465,7 @@
         "steamSpy": "https://steamspy.com/app/730",
         "metacritic": ""
       },
-      "popularityScore": 10541.713337634996,
+      "popularityScore": 10541.712854485708,
       "igropoiskRating": 8.7,
       "editorialSources": [],
       "materials": {
@@ -616,7 +616,7 @@
       "movies": [],
       "criticRating": 9.3,
       "steamUserRating": 9.8,
-      "recommendations": 284669,
+      "recommendations": 284666,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 2253,
       "sourceEvidence": [
@@ -629,7 +629,7 @@
         "steamSpy": "https://steamspy.com/app/1145360",
         "metacritic": "https://www.metacritic.com/game/pc/hades?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10485.434170135504,
+      "popularityScore": 10485.433712451058,
       "igropoiskRating": 9.5,
       "editorialSources": [],
       "materials": {
@@ -886,8 +886,7 @@
         "SteamSpy",
         "Metacritic",
         "GameSpot",
-        "Eurogamer",
-        "Rock Paper Shotgun"
+        "Eurogamer"
       ],
       "sourceLinks": {
         "steam": "https://store.steampowered.com/app/252490/",
@@ -898,8 +897,7 @@
       "igropoiskRating": 7.5,
       "editorialSources": [
         "GameSpot",
-        "Eurogamer",
-        "Rock Paper Shotgun"
+        "Eurogamer"
       ],
       "materials": {
         "articles": [
@@ -923,17 +921,7 @@
           }
         ],
         "reviews": [],
-        "guides": [
-          {
-            "source": "Rock Paper Shotgun",
-            "language": "en",
-            "title": "Nioh 3's Hell Rising DLC will sword thrust the soulslike's yokai-battling action into decimated Keian era Edo when it arrives next month",
-            "normalizedTitle": "nioh 3 s hell rising dlc will sword thrust the soulslike s yokai battling action into decimated keian era edo when it arrives next month",
-            "url": "https://www.rockpapershotgun.com/nioh-3s-hell-rising-dlc-will-sword-thrust-the-soulslikes-yokai-battling-action-into-decimated-keian-era-edo-when-it-arrives-next-month",
-            "summary": "Nioh , far, wherever you are. I've probably made that bad pun before, but seriously, I hope our guides writer Jeremy's not close to any desks right now. Nioh 3 , that game that pushed the poor bloke to the point of violence against the contents of his home , is getting its first major DLC next month. The expansion's dubbed Hell Rising, and kicks off a two-part story with a trip to a decimated version of Japanese capital Edo during the Keian era. Read more",
-            "publishedAt": "Tue, 28 Jul 2026 12:00:00 +0000"
-          }
-        ],
+        "guides": [],
         "tips": [],
         "news": []
       },
@@ -955,15 +943,6 @@
           "url": "https://www.eurogamer.net/path-of-exile-2-shaders-device-remove-fixed-champagne",
           "summary": "Path of Exile 2 finally has a fix for two of its longest-lasting and most frustrating technical problems, with director Jonathan Rogers celebrating the occasion by popping open a bottle of champagne. Read more",
           "publishedAt": "Thu, 30 Jul 2026 14:48:53 +0000"
-        },
-        {
-          "source": "Rock Paper Shotgun",
-          "language": "en",
-          "title": "Nioh 3's Hell Rising DLC will sword thrust the soulslike's yokai-battling action into decimated Keian era Edo when it arrives next month",
-          "normalizedTitle": "nioh 3 s hell rising dlc will sword thrust the soulslike s yokai battling action into decimated keian era edo when it arrives next month",
-          "url": "https://www.rockpapershotgun.com/nioh-3s-hell-rising-dlc-will-sword-thrust-the-soulslikes-yokai-battling-action-into-decimated-keian-era-edo-when-it-arrives-next-month",
-          "summary": "Nioh , far, wherever you are. I've probably made that bad pun before, but seriously, I hope our guides writer Jeremy's not close to any desks right now. Nioh 3 , that game that pushed the poor bloke to the point of violence against the contents of his home , is getting its first major DLC next month. The expansion's dubbed Hell Rising, and kicks off a two-part story with a trip to a decimated version of Japanese capital Edo during the Keian era. Read more",
-          "publishedAt": "Tue, 28 Jul 2026 12:00:00 +0000"
         }
       ]
     },
@@ -1033,7 +1012,7 @@
       "movies": [],
       "criticRating": 7,
       "steamUserRating": 8.4,
-      "recommendations": 584350,
+      "recommendations": 584355,
       "owners": "20,000,000 .. 50,000,000",
       "peakConcurrent": 22170,
       "sourceEvidence": [
@@ -1046,7 +1025,7 @@
         "steamSpy": "https://steamspy.com/app/346110",
         "metacritic": "https://www.metacritic.com/game/pc/ark-survival-evolved?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10396.667379158496,
+      "popularityScore": 10396.66775076103,
       "igropoiskRating": 7.5,
       "editorialSources": [],
       "materials": {
@@ -1227,7 +1206,7 @@
       "movies": [],
       "criticRating": 8.3,
       "steamUserRating": 9.7,
-      "recommendations": 1230946,
+      "recommendations": 1230962,
       "owners": "20,000,000 .. 50,000,000",
       "peakConcurrent": 24580,
       "sourceEvidence": [
@@ -1240,7 +1219,7 @@
         "steamSpy": "https://steamspy.com/app/105600",
         "metacritic": "https://www.metacritic.com/game/pc/terraria?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10389.023935422858,
+      "popularityScore": 10389.02449992048,
       "igropoiskRating": 8.8,
       "editorialSources": [],
       "materials": {
@@ -1443,7 +1422,7 @@
       "movies": [],
       "criticRating": 9.5,
       "steamUserRating": 9.9,
-      "recommendations": 388899,
+      "recommendations": 388897,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 1959,
       "sourceEvidence": [
@@ -1456,7 +1435,7 @@
         "steamSpy": "https://steamspy.com/app/620",
         "metacritic": "https://www.metacritic.com/game/pc/portal-2?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10348.983794314747,
+      "popularityScore": 10348.983570969105,
       "igropoiskRating": 9.6,
       "editorialSources": [],
       "materials": {
@@ -1614,7 +1593,7 @@
       "movies": [],
       "criticRating": 8.7,
       "steamUserRating": 9.7,
-      "recommendations": 498208,
+      "recommendations": 498211,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 4912,
       "sourceEvidence": [
@@ -1627,7 +1606,7 @@
         "steamSpy": "https://steamspy.com/app/367520",
         "metacritic": "https://www.metacritic.com/game/pc/hollow-knight?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10319.741156867425,
+      "popularityScore": 10319.741418380068,
       "igropoiskRating": 9,
       "editorialSources": [],
       "materials": {
@@ -1705,7 +1684,7 @@
       "movies": [],
       "criticRating": 9.2,
       "steamUserRating": 9,
-      "recommendations": 47658,
+      "recommendations": 47659,
       "owners": "50,000,000 .. 100,000,000",
       "peakConcurrent": 43819,
       "sourceEvidence": [
@@ -1718,7 +1697,7 @@
         "steamSpy": "https://steamspy.com/app/440",
         "metacritic": "https://www.metacritic.com/game/pc/team-fortress-2?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10277.814492556734,
+      "popularityScore": 10277.815403801043,
       "igropoiskRating": 9.1,
       "editorialSources": [],
       "materials": {
@@ -1873,7 +1852,7 @@
       "movies": [],
       "criticRating": 8.9,
       "steamUserRating": 9.4,
-      "recommendations": 277354,
+      "recommendations": 277352,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 4381,
       "sourceEvidence": [
@@ -1886,7 +1865,7 @@
         "steamSpy": "https://steamspy.com/app/374320",
         "metacritic": "https://www.metacritic.com/game/pc/dark-souls-iii?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10264.303599950217,
+      "popularityScore": 10264.303286780418,
       "igropoiskRating": 9.1,
       "editorialSources": [],
       "materials": {
@@ -2259,7 +2238,7 @@
       "movies": [],
       "criticRating": 8.3,
       "steamUserRating": 8,
-      "recommendations": 139155,
+      "recommendations": 139156,
       "owners": "20,000,000 .. 50,000,000",
       "peakConcurrent": 24619,
       "sourceEvidence": [
@@ -2272,7 +2251,7 @@
         "steamSpy": "https://steamspy.com/app/1085660",
         "metacritic": "https://www.metacritic.com/game/pc/destiny-2?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10064.350193658249,
+      "popularityScore": 10064.35050574894,
       "igropoiskRating": 8.2,
       "editorialSources": [],
       "materials": {
@@ -2648,7 +2627,7 @@
       "movies": [],
       "criticRating": 8.1,
       "steamUserRating": 7.3,
-      "recommendations": 211745,
+      "recommendations": 211744,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 6300,
       "sourceEvidence": [
@@ -2664,7 +2643,7 @@
         "steamSpy": "https://steamspy.com/app/594650",
         "metacritic": "https://www.metacritic.com/game/pc/hunt-showdown?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9932.581521501532,
+      "popularityScore": 9932.581316399426,
       "igropoiskRating": 7.8,
       "editorialSources": [
         "Rock Paper Shotgun",
@@ -3397,7 +3376,7 @@
       "movies": [],
       "criticRating": 8.5,
       "steamUserRating": 9.7,
-      "recommendations": 302261,
+      "recommendations": 302264,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 5216,
       "sourceEvidence": [
@@ -3410,7 +3389,7 @@
         "steamSpy": "https://steamspy.com/app/548430",
         "metacritic": "https://www.metacritic.com/game/pc/deep-rock-galactic?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9818.038355165136,
+      "popularityScore": 9818.038786207404,
       "igropoiskRating": 8.9,
       "editorialSources": [],
       "materials": {
@@ -3627,19 +3606,19 @@
           {
             "source": "PC Gamer",
             "language": "en",
-            "title": "Light No Fire will 'absolutely' be like No Man's Sky, with new features coming post-release: Sean Murray says he'd like to still be working on it '10 years after launch'",
-            "normalizedTitle": "light no fire will absolutely be like no man s sky with new features coming post release sean murray says he d like to still be working on it 10 years after launch",
-            "url": "https://www.pcgamer.com/games/survival-crafting/light-no-fire-will-absolutely-be-like-no-mans-sky-with-new-features-coming-post-release-sean-murray-says-hed-like-to-still-be-working-on-it-10-years-after-launch/",
-            "summary": "\"I've worked on it for seven years now, and I'm still really enjoying it.\"",
+            "title": "Sean Murray still loves playing the 2016 version of No Man's Sky: 'It's a little bit weirder, but it's got its charm'",
+            "normalizedTitle": "sean murray still loves playing the 2016 version of no man s sky it s a little bit weirder but it s got its charm",
+            "url": "https://www.pcgamer.com/games/action/sean-murray-still-loves-playing-the-2016-version-of-no-mans-sky-its-a-little-bit-weirder-but-its-got-its-charm/",
+            "summary": "\"I've got a real soft spot for it,\" says the founder of Hello Games.",
             "publishedAt": "Mon, 10 Aug 2026 13:00:00 +0000"
           },
           {
             "source": "PC Gamer",
             "language": "en",
-            "title": "Sean Murray still loves playing the 2016 version of No Man's Sky: 'It's a little bit weirder, but it's got its charm'",
-            "normalizedTitle": "sean murray still loves playing the 2016 version of no man s sky it s a little bit weirder but it s got its charm",
-            "url": "https://www.pcgamer.com/games/action/sean-murray-still-loves-playing-the-2016-version-of-no-mans-sky-its-a-little-bit-weirder-but-its-got-its-charm/",
-            "summary": "\"I've got a real soft spot for it,\" says the founder of Hello Games.",
+            "title": "Light No Fire will 'absolutely' be like No Man's Sky, with new features coming post-release: Sean Murray says he'd like to still be working on it '10 years after launch'",
+            "normalizedTitle": "light no fire will absolutely be like no man s sky with new features coming post release sean murray says he d like to still be working on it 10 years after launch",
+            "url": "https://www.pcgamer.com/games/survival-crafting/light-no-fire-will-absolutely-be-like-no-mans-sky-with-new-features-coming-post-release-sean-murray-says-hed-like-to-still-be-working-on-it-10-years-after-launch/",
+            "summary": "\"I've worked on it for seven years now, and I'm still really enjoying it.\"",
             "publishedAt": "Mon, 10 Aug 2026 13:00:00 +0000"
           },
           {
@@ -3743,19 +3722,19 @@
         {
           "source": "PC Gamer",
           "language": "en",
-          "title": "Light No Fire will 'absolutely' be like No Man's Sky, with new features coming post-release: Sean Murray says he'd like to still be working on it '10 years after launch'",
-          "normalizedTitle": "light no fire will absolutely be like no man s sky with new features coming post release sean murray says he d like to still be working on it 10 years after launch",
-          "url": "https://www.pcgamer.com/games/survival-crafting/light-no-fire-will-absolutely-be-like-no-mans-sky-with-new-features-coming-post-release-sean-murray-says-hed-like-to-still-be-working-on-it-10-years-after-launch/",
-          "summary": "\"I've worked on it for seven years now, and I'm still really enjoying it.\"",
+          "title": "Sean Murray still loves playing the 2016 version of No Man's Sky: 'It's a little bit weirder, but it's got its charm'",
+          "normalizedTitle": "sean murray still loves playing the 2016 version of no man s sky it s a little bit weirder but it s got its charm",
+          "url": "https://www.pcgamer.com/games/action/sean-murray-still-loves-playing-the-2016-version-of-no-mans-sky-its-a-little-bit-weirder-but-its-got-its-charm/",
+          "summary": "\"I've got a real soft spot for it,\" says the founder of Hello Games.",
           "publishedAt": "Mon, 10 Aug 2026 13:00:00 +0000"
         },
         {
           "source": "PC Gamer",
           "language": "en",
-          "title": "Sean Murray still loves playing the 2016 version of No Man's Sky: 'It's a little bit weirder, but it's got its charm'",
-          "normalizedTitle": "sean murray still loves playing the 2016 version of no man s sky it s a little bit weirder but it s got its charm",
-          "url": "https://www.pcgamer.com/games/action/sean-murray-still-loves-playing-the-2016-version-of-no-mans-sky-its-a-little-bit-weirder-but-its-got-its-charm/",
-          "summary": "\"I've got a real soft spot for it,\" says the founder of Hello Games.",
+          "title": "Light No Fire will 'absolutely' be like No Man's Sky, with new features coming post-release: Sean Murray says he'd like to still be working on it '10 years after launch'",
+          "normalizedTitle": "light no fire will absolutely be like no man s sky with new features coming post release sean murray says he d like to still be working on it 10 years after launch",
+          "url": "https://www.pcgamer.com/games/survival-crafting/light-no-fire-will-absolutely-be-like-no-mans-sky-with-new-features-coming-post-release-sean-murray-says-hed-like-to-still-be-working-on-it-10-years-after-launch/",
+          "summary": "\"I've worked on it for seven years now, and I'm still really enjoying it.\"",
           "publishedAt": "Mon, 10 Aug 2026 13:00:00 +0000"
         },
         {
@@ -4595,7 +4574,7 @@
       "movies": [],
       "criticRating": 8.5,
       "steamUserRating": 9.2,
-      "recommendations": 654034,
+      "recommendations": 654038,
       "owners": "20,000,000 .. 50,000,000",
       "peakConcurrent": 3832,
       "sourceEvidence": [
@@ -4608,7 +4587,7 @@
         "steamSpy": "https://steamspy.com/app/945360",
         "metacritic": "https://www.metacritic.com/game/pc/among-us?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9711.56009897618,
+      "popularityScore": 9711.56036458469,
       "igropoiskRating": 8.7,
       "editorialSources": [],
       "materials": {
@@ -6152,7 +6131,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 9.7,
-      "recommendations": 402811,
+      "recommendations": 402775,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 14904,
       "sourceEvidence": [
@@ -6166,7 +6145,7 @@
         "steamSpy": "https://steamspy.com/app/250900",
         "metacritic": ""
       },
-      "popularityScore": 9470.510239995545,
+      "popularityScore": 9470.506358457747,
       "igropoiskRating": 9.7,
       "editorialSources": [
         "GamesRadar+",
