@@ -21,7 +21,7 @@ Figma component names should stay clean and designer-facing. Flutter component n
 | `Card` | `AppTaskCard` or `AppCard` |
 | `Chip` | `AppTagChip` / `AppCategoryChip` |
 | `Tabs` | `AppSegmentedTabs` |
-| `Sheet` | `AppSheet` |
+| `Sheet / Edit` | `showAppEditSheet` + `AppEditSheetSurface` |
 | `Header` | `AppShellHeader` |
 
 For buttons specifically:
@@ -153,7 +153,7 @@ Canonical widget: `PlanTimeTaskCard` in `lib/core/widgets/plan_time_task_card.da
 | **Separator** | Progress bar is the **only** separator between content and footer. **No** duplicate divider line. |
 | **Footer** | Category breadcrumbs **left**, planned time **right** (medium/large only). |
 | **Category color** | Breadcrumb/path and watermark use the **category color**, not link blue. Watermark = low-opacity category icon. |
-| **Density tiers** | **micro** (&lt;56px), **compact** (56–90px), **medium** (90–130px), **large** (≥130px) — chosen by **rendered block height**, not duration label alone. |
+| **Density tiers** | **micro** (<56px), **compact** (56–90px), **medium** (90–130px), **large** (≥130px) — chosen by **rendered block height**, not duration label alone. |
 | **Micro / compact** | Checkbox, play, title, duration/time, menu only. **Do not** force full footer, tag row, or large watermark on 5–15 minute / short blocks. |
 | **Hover** | Full-card hover surface; checkbox, play, and menu keep **independent** hit targets. |
 | **Resize affordance** | Top/bottom 16px hit zones; hover shows subtle handle; floating time preview during drag/resize. |
@@ -187,8 +187,13 @@ Canonical widget: `PlanTimeTaskCard` in `lib/core/widgets/plan_time_task_card.da
 
 ### Sheets
 
-- Future canonical sheet scaffolds should define padding, handle, max height, header, footer, and close/save behavior.
-- Feature sheets may keep domain content but should share shell chrome.
+- Current canonical primary edit-sheet host: `showAppEditSheet` in `lib/core/widgets/app_edit_sheet.dart`.
+- Current canonical primary edit-sheet surface/tokens: `AppEditSheetSurface` and `AppEditSheetTokens` in the same file.
+- The host owns modal transparency, keyboard inset, `DraggableScrollableSheet`, and the standard 0.88 / 0.42 / 0.95 height behavior. Feature code must not copy those values.
+- `ActivityDetailSheet` remains the single domain router: record content → `TimelineRecordSheetContent`; plan/list content → `PlanningTaskEditSheet`.
+- Record and plan/list editors are legitimate domain variants, not separate sheet systems. Their save/autosave/recurrence/record-specific content stays separate while shared sheet chrome belongs in `AppEditSheet` components.
+- New primary record/plan/list edit entry points must call `showAppEditSheet`; do not add another local `showModalBottomSheet + DraggableScrollableSheet` copy.
+- Generic non-edit sheets may still use their own Material surface until a broader canonical `AppSheet` is introduced.
 
 ### Inputs
 
@@ -202,7 +207,7 @@ Canonical widget: `PlanTimeTaskCard` in `lib/core/widgets/plan_time_task_card.da
 
 ## Forbidden Local UI Rule
 
-Feature screens must not directly create raw duplicates of buttons, cards, chips, tabs, headers, loading states, empty states, or error states when a canonical component exists.
+Feature screens must not directly create raw duplicates of buttons, cards, chips, tabs, headers, loading states, empty states, error states, or the primary edit-sheet host when a canonical component exists.
 
 Allowed exceptions:
 
