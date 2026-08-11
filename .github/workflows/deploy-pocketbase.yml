@@ -29,17 +29,31 @@ jobs:
         run: |
           node --check pb_hooks/sleep_sync.pb.js
           node --check pb_migrations/1785390000_server_sleep_sync.js
+          node --check pb_migrations/1786470000_google_fit_records.js
+          node --check pb_migrations/1786550000_google_health_history.js
 
       - name: Check production deploy credentials
         env:
           SSH_PRIVATE_KEY: ${{ secrets.POCKETBASE_SSH_PRIVATE_KEY || secrets.VPS_SSH_KEY || secrets.SSH_PRIVATE_KEY }}
           SSH_USER: ${{ secrets.POCKETBASE_SSH_USER || secrets.VPS_SSH_USER || secrets.SSH_USER }}
           SSH_HOST: ${{ secrets.POCKETBASE_SSH_HOST || secrets.VPS_HOST || secrets.SSH_HOST }}
+          GOOGLE_HEALTH_CLIENT_ID: ${{ secrets.GOOGLE_HEALTH_CLIENT_ID }}
+          GOOGLE_HEALTH_CLIENT_SECRET: ${{ secrets.GOOGLE_HEALTH_CLIENT_SECRET }}
+          SLEEP_SYNC_TOKEN_KEY: ${{ secrets.SLEEP_SYNC_TOKEN_KEY }}
         run: |
           if [[ -z "$SSH_PRIVATE_KEY" ]]; then
             echo "::warning::PocketBase SSH private key is not configured. Add POCKETBASE_SSH_PRIVATE_KEY (or VPS_SSH_KEY / SSH_PRIVATE_KEY)."
           else
             echo "PocketBase SSH private key is configured."
+          fi
+          if [[ -z "$GOOGLE_HEALTH_CLIENT_ID" || -z "$GOOGLE_HEALTH_CLIENT_SECRET" ]]; then
+            echo "::warning::Google Health OAuth is not configured. Add GOOGLE_HEALTH_CLIENT_ID and GOOGLE_HEALTH_CLIENT_SECRET."
+          else
+            echo "Google Health OAuth credentials are configured."
+          fi
+          if [[ -n "$SLEEP_SYNC_TOKEN_KEY" && ${#SLEEP_SYNC_TOKEN_KEY} -ne 32 ]]; then
+            echo "::error::SLEEP_SYNC_TOKEN_KEY must be exactly 32 characters when configured."
+            exit 1
           fi
           echo "PocketBase SSH target: ${SSH_USER:-root}@${SSH_HOST:-217.114.0.201}"
 
@@ -58,11 +72,22 @@ jobs:
       SSH_PORT: ${{ secrets.POCKETBASE_SSH_PORT || secrets.VPS_SSH_PORT || '22' }}
       POCKETBASE_SERVICE: ${{ secrets.POCKETBASE_SERVICE }}
       POCKETBASE_DEPLOY_DIR: ${{ secrets.POCKETBASE_DEPLOY_DIR }}
+      GOOGLE_HEALTH_CLIENT_ID: ${{ secrets.GOOGLE_HEALTH_CLIENT_ID }}
+      GOOGLE_HEALTH_CLIENT_SECRET: ${{ secrets.GOOGLE_HEALTH_CLIENT_SECRET }}
+      SLEEP_SYNC_TOKEN_KEY: ${{ secrets.SLEEP_SYNC_TOKEN_KEY }}
     steps:
       - name: Require production credentials
         run: |
           if [[ -z "$SSH_PRIVATE_KEY" ]]; then
             echo "PocketBase deployment cannot run: SSH private key is missing." >&2
+            exit 1
+          fi
+          if [[ -z "$GOOGLE_HEALTH_CLIENT_ID" || -z "$GOOGLE_HEALTH_CLIENT_SECRET" ]]; then
+            echo "PocketBase deployment cannot run: Google Health OAuth credentials are missing." >&2
+            exit 1
+          fi
+          if [[ -n "$SLEEP_SYNC_TOKEN_KEY" && ${#SLEEP_SYNC_TOKEN_KEY} -ne 32 ]]; then
+            echo "PocketBase deployment cannot run: SLEEP_SYNC_TOKEN_KEY must be exactly 32 characters." >&2
             exit 1
           fi
           echo "SSH_USER=${SSH_USER:-root}" >> "$GITHUB_ENV"
@@ -78,12 +103,25 @@ jobs:
           chmod 600 ~/.ssh/lifeos_pocketbase
           ssh-keyscan -p "$SSH_PORT" -H "$SSH_HOST" >> ~/.ssh/known_hosts
 
+      - name: Prepare Google Health environment
+        run: |
+          umask 077
+          {
+            printf 'SLEEP_SYNC_GOOGLE_HEALTH_CLIENT_ID=%s\n' "$GOOGLE_HEALTH_CLIENT_ID"
+            printf 'SLEEP_SYNC_GOOGLE_HEALTH_CLIENT_SECRET=%s\n' "$GOOGLE_HEALTH_CLIENT_SECRET"
+            if [[ -n "$SLEEP_SYNC_TOKEN_KEY" ]]; then
+              printf 'SLEEP_SYNC_TOKEN_KEY=%s\n' "$SLEEP_SYNC_TOKEN_KEY"
+            fi
+          } > /tmp/lifeos-google-health.env
+
       - name: Upload server bundle
         run: |
           ARCHIVE="/tmp/lifeos-pocketbase-${GITHUB_SHA}.tar.gz"
           tar -czf "$ARCHIVE" pb_hooks pb_migrations
           scp -i ~/.ssh/lifeos_pocketbase -P "$SSH_PORT" "$ARCHIVE" \
             "$SSH_USER@$SSH_HOST:/tmp/lifeos-pocketbase-${GITHUB_SHA}.tar.gz"
+          scp -i ~/.ssh/lifeos_pocketbase -P "$SSH_PORT" /tmp/lifeos-google-health.env \
+            "$SSH_USER@$SSH_HOST:/tmp/lifeos-google-health.env"
 
       - name: Install and restart PocketBase
         run: |
@@ -130,6 +168,15 @@ jobs:
           $SUDO mkdir -p "$app_dir/pb_hooks" "$app_dir/pb_migrations"
           $SUDO tar -xzf "$ARCHIVE" -C "$app_dir" pb_hooks pb_migrations
           rm -f "$ARCHIVE"
+
+          $SUDO install -m 600 /tmp/lifeos-google-health.env "$app_dir/.lifeos-google-health.env"
+          rm -f /tmp/lifeos-google-health.env
+
+          override_dir="/etc/systemd/system/${service_name}.d"
+          $SUDO mkdir -p "$override_dir"
+          printf '[Service]\nEnvironmentFile=%s\n' "$app_dir/.lifeos-google-health.env" | \
+            $SUDO tee "$override_dir/lifeos-google-health.conf" >/dev/null
+          $SUDO systemctl daemon-reload
           $SUDO systemctl restart "$service_name"
 
           for attempt in {1..20}; do
