@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:math' as math;
 
-import 'package:counter/core/app_colors.dart';
 import 'package:counter/core/date_pager_settle_gate.dart';
 import 'package:counter/core/date_swipe_physics.dart';
 import 'package:counter/shared/diagnostics/runtime_log.dart';
@@ -14,13 +13,10 @@ import 'package:counter/core/widgets/app_state_views.dart';
 import 'package:counter/core/widgets/mouse_drag_scroll_behavior.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
-import 'package:counter/features/shared/shared_widgets.dart';
-import 'package:counter/features/stats/stats_view.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
-import 'package:intl/intl.dart';
 import 'package:counter/features/timeline/timeline_helpers.dart';
 import 'package:counter/features/timeline/timeline_day_page.dart';
 import 'package:counter/features/timeline/timeline_continuous_history.dart';
@@ -30,22 +26,6 @@ import 'package:counter/features/timeline/timeline_morning_start.dart';
 // TIMELINE FEATURE вЂ” UI_ISOLATION (В§7). PLANETARY TIME PROTOCOL (В§5). ACTIVE_STATUS_LAW (В§2).
 // All strings via t() from dictionary. Timeline **day** keys use profile wall-calendar via DatabaseService ([DATA_MAP] В§8).
 // ---------------------------------------------------------------------------
-
-// --- Time helpers: device-local calendar for day strip; profile offset for clock labels only ---
-DateTime _localToday() => timelineLocalToday();
-
-bool _isToday(DateTime date) => timelineIsToday(date);
-
-DateTime _dateOnlyCalendar(DateTime d) => timelineDateOnlyCalendar(d);
-
-String _wallCalendarDayKeyFromUtcInstant(DateTime startUtcOrAny) =>
-    timelineWallCalendarDayKeyFromUtcInstant(startUtcOrAny);
-
-String _formatTimeOfDay(DateTime dt) => timelineFormatTimeOfDay(dt);
-
-DateTime _utcToDisplay(DateTime utc) => timelineUtcToDisplay(utc);
-
-String _formatDuration(Duration d) => timelineFormatDuration(d);
 
 /// Wraps Timeline in a PageView for swipe-to-change date. Exported for LifeOSDashboard.
 ///
