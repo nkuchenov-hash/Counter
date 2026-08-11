@@ -17,7 +17,6 @@ import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
-import 'package:counter/features/timeline/timeline_helpers.dart';
 import 'package:counter/features/timeline/timeline_day_page.dart';
 import 'package:counter/features/timeline/timeline_continuous_history.dart';
 import 'package:counter/features/timeline/timeline_header_controls.dart';
