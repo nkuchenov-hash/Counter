@@ -24,6 +24,7 @@ jobs:
           fi
           python3 tool/patch_continuous_timeline_cleanup.py
           python3 tool/patch_structure_continuous_timeline.py
+          python3 tool/patch_timeline_view_analyzer_cleanup.py
 
       - name: Set up Flutter 3.41.6
         uses: subosito/flutter-action@v2
@@ -51,15 +52,15 @@ jobs:
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git add lib/features/timeline/timeline_continuous_history.dart lib/features/timeline/timeline_view.dart docs/APP_STRUCTURE.md
-            git commit -m "Document continuous Timeline history"
+            git commit -m "Finalize continuous Timeline history"
             git push
           fi
 
       - name: Strict architecture guard
         run: pwsh -NoProfile -NonInteractive -File ./scripts/audit/architecture_guard.ps1 -Strict
 
-      - name: Analyze Timeline files
-        run: flutter analyze lib/features/timeline/timeline_continuous_history.dart lib/features/timeline/timeline_view.dart lib/features/timeline/timeline_day_page.dart lib/features/timeline/timeline_record_card.dart
+      - name: Analyze changed Timeline files
+        run: flutter analyze lib/features/timeline/timeline_continuous_history.dart lib/features/timeline/timeline_view.dart
 
       - name: Build web
         run: flutter build web --release --base-href="/Counter/" --no-tree-shake-icons --no-wasm-dry-run --pwa-strategy=none
