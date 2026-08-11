@@ -1,0 +1,42 @@
+name: Temp Continuous Timeline Final
+
+on:
+  push:
+    branches:
+      - feat/timeline-continuous-history-20260811
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply final controller fix
+        run: python3 tool/patch_continuous_stats_controller.py
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.6'
+          channel: stable
+      - name: Create env.dart
+        run: |
+          mkdir -p lib/core/env
+          echo "abstract final class Env { static const String placeholder = ''; }" > lib/core/env/env.dart
+      - run: flutter pub get
+      - name: Format and persist
+        run: |
+          dart format lib/features/timeline/timeline_view.dart
+          if ! git diff --quiet -- lib/features/timeline/timeline_view.dart; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add lib/features/timeline/timeline_view.dart
+            git commit -m "Keep Stats on the visible Timeline date"
+            git push
+          fi
+      - name: Strict architecture guard
+        run: pwsh -NoProfile -NonInteractive -File ./scripts/audit/architecture_guard.ps1 -Strict
+      - name: Analyze changed Timeline files
+        run: flutter analyze lib/features/timeline/timeline_continuous_history.dart lib/features/timeline/timeline_view.dart
+      - name: Build web
+        run: flutter build web --release --base-href="/Counter/" --no-tree-shake-icons --no-wasm-dry-run --pwa-strategy=none
