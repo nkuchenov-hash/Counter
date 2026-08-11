@@ -1,0 +1,63 @@
+name: Temp Continuous Timeline
+
+on:
+  push:
+    branches:
+      - feat/timeline-continuous-history-20260811
+
+permissions:
+  contents: write
+
+jobs:
+  apply-and-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Apply integration patch
+        run: |
+          if grep -q "TimelineContinuousPage" lib/features/timeline/timeline_view.dart; then
+            echo "Patch already applied"
+          else
+            python3 tool/patch_timeline_continuous.py
+          fi
+
+      - name: Set up Flutter 3.41.6
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.6'
+          channel: stable
+
+      - name: Create env.dart
+        run: |
+          mkdir -p lib/core/env
+          echo "abstract final class Env { static const String placeholder = ''; }" > lib/core/env/env.dart
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Format production files
+        run: |
+          dart format \
+            lib/features/timeline/timeline_continuous_history.dart \
+            lib/features/timeline/timeline_view.dart
+
+      - name: Persist production changes
+        run: |
+          if ! git diff --quiet -- lib/features/timeline/timeline_continuous_history.dart lib/features/timeline/timeline_view.dart; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add lib/features/timeline/timeline_continuous_history.dart lib/features/timeline/timeline_view.dart
+            git commit -m "Make Timeline a continuous history with pinned dates"
+            git push
+          fi
+
+      - name: Strict architecture guard
+        run: pwsh -NoProfile -NonInteractive -File ./scripts/audit/architecture_guard.ps1 -Strict
+
+      - name: Analyze Timeline files
+        run: flutter analyze lib/features/timeline/timeline_continuous_history.dart lib/features/timeline/timeline_view.dart lib/features/timeline/timeline_day_page.dart lib/features/timeline/timeline_record_card.dart
+
+      - name: Build web
+        run: flutter build web --release --base-href="/Counter/" --no-tree-shake-icons --no-wasm-dry-run --pwa-strategy=none
