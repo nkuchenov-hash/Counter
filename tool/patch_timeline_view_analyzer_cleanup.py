@@ -6,6 +6,7 @@ for line in [
     "import 'package:counter/core/app_colors.dart';\n",
     "import 'package:counter/features/shared/shared_widgets.dart';\n",
     "import 'package:counter/features/stats/stats_view.dart';\n",
+    "import 'package:counter/features/timeline/timeline_helpers.dart';\n",
     "import 'package:intl/intl.dart';\n",
 ]:
     s = s.replace(line, '')
