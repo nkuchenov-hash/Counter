@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-11T00:12:36.613Z",
+  "updatedAt": "2026-08-11T00:12:42.888Z",
   "count": 78,
   "sourcePool": [
     "Steam",
@@ -415,7 +415,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 8.7,
-      "recommendations": 5214204,
+      "recommendations": 5214139,
       "owners": "100,000,000 .. 200,000,000",
       "peakConcurrent": 1013936,
       "sourceEvidence": [
@@ -427,7 +427,7 @@
         "steamSpy": "https://steamspy.com/app/730",
         "metacritic": ""
       },
-      "popularityScore": 10541.718810174958,
+      "popularityScore": 10541.71826878241,
       "igropoiskRating": 8.7,
       "editorialSources": [],
       "materials": {
@@ -1476,7 +1476,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 9.4,
-      "recommendations": 457031,
+      "recommendations": 457034,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 14439,
       "sourceEvidence": [
@@ -1488,7 +1488,7 @@
         "steamSpy": "https://steamspy.com/app/892970",
         "metacritic": ""
       },
-      "popularityScore": 10325.99466091221,
+      "popularityScore": 10325.99494598616,
       "igropoiskRating": 9.4,
       "editorialSources": [],
       "materials": {
