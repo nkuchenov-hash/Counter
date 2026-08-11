@@ -273,7 +273,17 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
       if (page >= 0 && page < _totalPageCount) {
         _visiblePageIndex = page;
         _settleGate.resetCommittedPage(page);
-        if (_controller.hasClients) _controller.jumpToPage(page);
+        if (_controller.hasClients) {
+          _controller.jumpToPage(page);
+        } else {
+          // List mode does not mount the PageView. Recreate the controller so
+          // its initial page matches the date currently pinned in Timeline;
+          // otherwise Stats would reopen on the app's original launch date.
+          _controller.removeListener(_onPageControllerTick);
+          _controller.dispose();
+          _controller = PageController(initialPage: page);
+          _controller.addListener(_onPageControllerTick);
+        }
       }
       widget.onDateChanged(_dateOnly(target));
     } else {
