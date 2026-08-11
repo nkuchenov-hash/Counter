@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-11T00:12:42.888Z",
+  "updatedAt": "2026-08-11T00:35:25.311Z",
   "count": 495,
   "sources": [
     "IGN",
@@ -1043,15 +1043,6 @@
     {
       "source": "GamesRadar+",
       "language": "en",
-      "title": "Light No Fire only has \"between 12 and 20\" devs, says lead – but that's ok because a similar number worked on No Man's Sky at launch",
-      "normalizedTitle": "light no fire only has between 12 and 20 devs says lead but that s ok because a similar number worked on no man s sky at launch",
-      "url": "https://www.gamesradar.com/games/survival/light-no-fire-only-has-between-12-and-20-devs-says-lead-but-thats-ok-because-a-similar-number-worked-on-no-mans-sky-at-launch/",
-      "summary": "The team is \"very small\" but has \"a lot of tools and tech\" at its disposal",
-      "publishedAt": "Mon, 10 Aug 2026 13:00:00 +0000"
-    },
-    {
-      "source": "GamesRadar+",
-      "language": "en",
       "title": "No Man's Sky Cosmos is the next big update as Hello Games refuses to slow down after 10 years",
       "normalizedTitle": "no man s sky cosmos is the next big update as hello games refuses to slow down after 10 years",
       "url": "https://www.gamesradar.com/games/survival/no-mans-sky-cosmos-is-the-next-big-update-as-hello-games-refuses-to-slow-down-after-10-years/",
@@ -1065,6 +1056,15 @@
       "normalizedTitle": "sean murray doesn t care how much money no man s sky dlc would ve made and it doesn t matter because updates will stay free",
       "url": "https://www.gamesradar.com/games/survival/sean-murray-doesnt-care-how-much-money-no-mans-sky-dlc-wouldve-made-and-it-doesnt-matter-because-updates-will-stay-free/",
       "summary": "\"Every player that we have is going to experience this\"",
+      "publishedAt": "Mon, 10 Aug 2026 13:00:00 +0000"
+    },
+    {
+      "source": "GamesRadar+",
+      "language": "en",
+      "title": "Light No Fire only has \"between 12 and 20\" devs, says lead – but that's ok because a similar number worked on No Man's Sky at launch",
+      "normalizedTitle": "light no fire only has between 12 and 20 devs says lead but that s ok because a similar number worked on no man s sky at launch",
+      "url": "https://www.gamesradar.com/games/survival/light-no-fire-only-has-between-12-and-20-devs-says-lead-but-thats-ok-because-a-similar-number-worked-on-no-mans-sky-at-launch/",
+      "summary": "The team is \"very small\" but has \"a lot of tools and tech\" at its disposal",
       "publishedAt": "Mon, 10 Aug 2026 13:00:00 +0000"
     },
     {
