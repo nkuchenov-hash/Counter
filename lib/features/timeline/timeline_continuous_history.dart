@@ -1,9 +1,7 @@
 import 'dart:async';
 
 import 'package:counter/data/database_service.dart';
-import 'package:counter/data/models.dart';
 import 'package:counter/features/timeline/timeline_header_controls.dart';
-import 'package:counter/features/timeline/timeline_helpers.dart';
 import 'package:counter/features/timeline/timeline_morning_start.dart';
 import 'package:counter/features/timeline/timeline_record_card.dart';
 import 'package:counter/l10n/dictionary.dart';
@@ -51,8 +49,7 @@ class TimelineContinuousPage extends StatefulWidget {
   final ValueChanged<DateTime> onVisibleDateChanged;
 
   @override
-  State<TimelineContinuousPage> createState() =>
-      _TimelineContinuousPageState();
+  State<TimelineContinuousPage> createState() => _TimelineContinuousPageState();
 }
 
 class _TimelineContinuousPageState extends State<TimelineContinuousPage> {
@@ -119,8 +116,7 @@ class _TimelineContinuousPageState extends State<TimelineContinuousPage> {
                   onVisibleDateChanged: _handleVisibleDate,
                   onStop: widget.onStopRecord,
                   onDelete: widget.onDeleteRecord,
-                  onEdit: (data) =>
-                      widget.onShowEditRecordSheet(context, data),
+                  onEdit: (data) => widget.onShowEditRecordSheet(context, data),
                 ),
               ),
             ),
@@ -178,7 +174,9 @@ class _ContinuousTimelineHistoryState extends State<ContinuousTimelineHistory> {
     super.initState();
     _topDate = _day(widget.initialDate);
     _reportedPinnedDate = _topDate;
-    widget.onVisibleDateChanged(_topDate);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) widget.onVisibleDateChanged(_topDate);
+    });
     _controller.addListener(_onScroll);
     _timeSub = DatabaseService.instance.timeUpdates.listen((_) {
       if (mounted) setState(() {});
@@ -319,11 +317,7 @@ class _ContinuousTimelineHistoryState extends State<ContinuousTimelineHistory> {
       );
     }
 
-    slivers.add(
-      const SliverToBoxAdapter(
-        child: SizedBox(height: 80),
-      ),
-    );
+    slivers.add(const SliverToBoxAdapter(child: SizedBox(height: 80)));
 
     return CustomScrollView(
       controller: _controller,
@@ -396,11 +390,7 @@ class _TimelineDateHeaderDelegate extends SliverPersistentHeaderDelegate {
         ),
         child: Row(
           children: [
-            Icon(
-              Icons.calendar_today_rounded,
-              size: 16,
-              color: scheme.primary,
-            ),
+            Icon(Icons.calendar_today_rounded, size: 16, color: scheme.primary),
             const SizedBox(width: 9),
             Expanded(
               child: Text(

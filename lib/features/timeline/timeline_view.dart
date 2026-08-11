@@ -23,6 +23,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:intl/intl.dart';
 import 'package:counter/features/timeline/timeline_helpers.dart';
 import 'package:counter/features/timeline/timeline_day_page.dart';
+import 'package:counter/features/timeline/timeline_continuous_history.dart';
 import 'package:counter/features/timeline/timeline_header_controls.dart';
 import 'package:counter/features/timeline/timeline_morning_start.dart';
 // ---------------------------------------------------------------------------
@@ -105,6 +106,7 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
   int? _pendingExternalPage;
   final DatePagerSettleGate _settleGate = DatePagerSettleGate();
   bool _showStatsView = false;
+  DateTime? _continuousVisibleDate;
   String? _swipeFromDateKey;
 
   String _dateKeyFromDate(DateTime d) =>
@@ -206,6 +208,7 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
       widget.selectedDate,
     ).difference(_anchorDate).inDays;
     _visiblePageIndex = _initialPage + daysOffset;
+    _continuousVisibleDate = _dateOnly(widget.selectedDate);
     _controller = PageController(initialPage: _visiblePageIndex);
     _controller.addListener(_onPageControllerTick);
     if (!kUseMountedDayStrip) {
@@ -230,6 +233,15 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
   @override
   void didUpdateWidget(covariant TimelineSwipeWrapper oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (!_showStatsView) {
+      final oldD = _dateOnly(oldWidget.selectedDate);
+      final newD = _dateOnly(widget.selectedDate);
+      final current = _continuousVisibleDate;
+      if (oldD != newD && (current == null || current != newD)) {
+        setState(() => _continuousVisibleDate = newD);
+      }
+      return;
+    }
     if (!oldWidget.shellTabActive && widget.shellTabActive) {
       _syncOnTabActivated();
       return;
@@ -274,6 +286,23 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
     super.dispose();
   }
 
+  void _setStatsView(bool value) {
+    if (_showStatsView == value) return;
+    if (value) {
+      final target = _continuousVisibleDate ?? _dateForIndex(_visiblePageIndex);
+      final page = _pageIndexForDate(target);
+      if (page >= 0 && page < _totalPageCount) {
+        _visiblePageIndex = page;
+        _settleGate.resetCommittedPage(page);
+        if (_controller.hasClients) _controller.jumpToPage(page);
+      }
+      widget.onDateChanged(_dateOnly(target));
+    } else {
+      _continuousVisibleDate = _dateForIndex(_visiblePageIndex);
+    }
+    setState(() => _showStatsView = value);
+  }
+
   @override
   Widget build(BuildContext context) {
     rebuildMetricsTick('TimelineSwipeWrapper');
@@ -281,6 +310,30 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
       return AppErrorState(message: t(currentLocale.value, 'no_data_found'));
     }
     final visibleDate = _dateForIndex(_visiblePageIndex);
+    if (!_showStatsView) {
+      final continuousDate = _continuousVisibleDate ?? visibleDate;
+      return TimelineContinuousPage(
+        selectedDate: continuousDate,
+        anchorToday: _anchorToday,
+        shellTabActive: widget.shellTabActive,
+        titleController: widget.titleController,
+        titleFocus: widget.titleFocus,
+        onStart: widget.onStart,
+        onPlan: widget.onPlan,
+        onNewTaskForPastDate: widget.onNewTaskForPastDate,
+        onStopRecord: widget.onStopRecord,
+        onDeleteRecord: widget.onDeleteRecord,
+        onShowEditRecordSheet: widget.onShowEditRecordSheet,
+        onShowStatsViewChanged: _setStatsView,
+        onVisibleDateChanged: (date) {
+          final next = _dateOnly(date);
+          final current = _continuousVisibleDate;
+          if (current != null && current == next) return;
+          setState(() => _continuousVisibleDate = next);
+          widget.onDateChanged(next);
+        },
+      );
+    }
     try {
       return ScrollConfiguration(
         behavior: const MouseDragScrollBehavior(),
@@ -346,8 +399,7 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
                 onShowEditRecordSheet: widget.onShowEditRecordSheet,
                 onNavigateToDate: widget.onDateChanged,
                 showStatsView: _showStatsView,
-                onShowStatsViewChanged: (v) =>
-                    setState(() => _showStatsView = v),
+                onShowStatsViewChanged: _setStatsView,
               );
             },
           ),
