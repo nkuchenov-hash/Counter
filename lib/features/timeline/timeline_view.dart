@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:math' as math;
 
-import 'package:counter/core/app_colors.dart';
 import 'package:counter/core/date_pager_settle_gate.dart';
 import 'package:counter/core/date_swipe_physics.dart';
 import 'package:counter/shared/diagnostics/runtime_log.dart';
@@ -14,37 +13,18 @@ import 'package:counter/core/widgets/app_state_views.dart';
 import 'package:counter/core/widgets/mouse_drag_scroll_behavior.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
-import 'package:counter/features/shared/shared_widgets.dart';
-import 'package:counter/features/stats/stats_view.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
-import 'package:intl/intl.dart';
-import 'package:counter/features/timeline/timeline_helpers.dart';
 import 'package:counter/features/timeline/timeline_day_page.dart';
+import 'package:counter/features/timeline/timeline_continuous_history.dart';
 import 'package:counter/features/timeline/timeline_header_controls.dart';
 import 'package:counter/features/timeline/timeline_morning_start.dart';
 // ---------------------------------------------------------------------------
 // TIMELINE FEATURE вЂ” UI_ISOLATION (В§7). PLANETARY TIME PROTOCOL (В§5). ACTIVE_STATUS_LAW (В§2).
 // All strings via t() from dictionary. Timeline **day** keys use profile wall-calendar via DatabaseService ([DATA_MAP] В§8).
 // ---------------------------------------------------------------------------
-
-// --- Time helpers: device-local calendar for day strip; profile offset for clock labels only ---
-DateTime _localToday() => timelineLocalToday();
-
-bool _isToday(DateTime date) => timelineIsToday(date);
-
-DateTime _dateOnlyCalendar(DateTime d) => timelineDateOnlyCalendar(d);
-
-String _wallCalendarDayKeyFromUtcInstant(DateTime startUtcOrAny) =>
-    timelineWallCalendarDayKeyFromUtcInstant(startUtcOrAny);
-
-String _formatTimeOfDay(DateTime dt) => timelineFormatTimeOfDay(dt);
-
-DateTime _utcToDisplay(DateTime utc) => timelineUtcToDisplay(utc);
-
-String _formatDuration(Duration d) => timelineFormatDuration(d);
 
 /// Wraps Timeline in a PageView for swipe-to-change date. Exported for LifeOSDashboard.
 ///
@@ -105,6 +85,7 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
   int? _pendingExternalPage;
   final DatePagerSettleGate _settleGate = DatePagerSettleGate();
   bool _showStatsView = false;
+  DateTime? _continuousVisibleDate;
   String? _swipeFromDateKey;
 
   String _dateKeyFromDate(DateTime d) =>
@@ -206,6 +187,7 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
       widget.selectedDate,
     ).difference(_anchorDate).inDays;
     _visiblePageIndex = _initialPage + daysOffset;
+    _continuousVisibleDate = _dateOnly(widget.selectedDate);
     _controller = PageController(initialPage: _visiblePageIndex);
     _controller.addListener(_onPageControllerTick);
     if (!kUseMountedDayStrip) {
@@ -230,6 +212,15 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
   @override
   void didUpdateWidget(covariant TimelineSwipeWrapper oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (!_showStatsView) {
+      final oldD = _dateOnly(oldWidget.selectedDate);
+      final newD = _dateOnly(widget.selectedDate);
+      final current = _continuousVisibleDate;
+      if (oldD != newD && (current == null || current != newD)) {
+        setState(() => _continuousVisibleDate = newD);
+      }
+      return;
+    }
     if (!oldWidget.shellTabActive && widget.shellTabActive) {
       _syncOnTabActivated();
       return;
@@ -274,6 +265,33 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
     super.dispose();
   }
 
+  void _setStatsView(bool value) {
+    if (_showStatsView == value) return;
+    if (value) {
+      final target = _continuousVisibleDate ?? _dateForIndex(_visiblePageIndex);
+      final page = _pageIndexForDate(target);
+      if (page >= 0 && page < _totalPageCount) {
+        _visiblePageIndex = page;
+        _settleGate.resetCommittedPage(page);
+        if (_controller.hasClients) {
+          _controller.jumpToPage(page);
+        } else {
+          // List mode does not mount the PageView. Recreate the controller so
+          // its initial page matches the date currently pinned in Timeline;
+          // otherwise Stats would reopen on the app's original launch date.
+          _controller.removeListener(_onPageControllerTick);
+          _controller.dispose();
+          _controller = PageController(initialPage: page);
+          _controller.addListener(_onPageControllerTick);
+        }
+      }
+      widget.onDateChanged(_dateOnly(target));
+    } else {
+      _continuousVisibleDate = _dateForIndex(_visiblePageIndex);
+    }
+    setState(() => _showStatsView = value);
+  }
+
   @override
   Widget build(BuildContext context) {
     rebuildMetricsTick('TimelineSwipeWrapper');
@@ -281,6 +299,30 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
       return AppErrorState(message: t(currentLocale.value, 'no_data_found'));
     }
     final visibleDate = _dateForIndex(_visiblePageIndex);
+    if (!_showStatsView) {
+      final continuousDate = _continuousVisibleDate ?? visibleDate;
+      return TimelineContinuousPage(
+        selectedDate: continuousDate,
+        anchorToday: _anchorToday,
+        shellTabActive: widget.shellTabActive,
+        titleController: widget.titleController,
+        titleFocus: widget.titleFocus,
+        onStart: widget.onStart,
+        onPlan: widget.onPlan,
+        onNewTaskForPastDate: widget.onNewTaskForPastDate,
+        onStopRecord: widget.onStopRecord,
+        onDeleteRecord: widget.onDeleteRecord,
+        onShowEditRecordSheet: widget.onShowEditRecordSheet,
+        onShowStatsViewChanged: _setStatsView,
+        onVisibleDateChanged: (date) {
+          final next = _dateOnly(date);
+          final current = _continuousVisibleDate;
+          if (current != null && current == next) return;
+          setState(() => _continuousVisibleDate = next);
+          widget.onDateChanged(next);
+        },
+      );
+    }
     try {
       return ScrollConfiguration(
         behavior: const MouseDragScrollBehavior(),
@@ -346,8 +388,7 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
                 onShowEditRecordSheet: widget.onShowEditRecordSheet,
                 onNavigateToDate: widget.onDateChanged,
                 showStatsView: _showStatsView,
-                onShowStatsViewChanged: (v) =>
-                    setState(() => _showStatsView = v),
+                onShowStatsViewChanged: _setStatsView,
               );
             },
           ),
