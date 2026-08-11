@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-10T23:27:36.051Z",
+  "updatedAt": "2026-08-11T00:12:36.613Z",
   "count": 495,
   "sources": [
     "IGN",
@@ -15,6 +15,60 @@
   ],
   "articles": [
     {
+      "source": "Polygon",
+      "language": "en",
+      "title": "Netflix's The Last House ending explained by director: 'We humans are the bad guys of this planet'",
+      "normalizedTitle": "netflix s the last house ending explained by director we humans are the bad guys of this planet",
+      "url": "https://www.polygon.com/the-last-house-director-dives-into-a-murky-ending-of-cosmic-proportions/",
+      "summary": "Director Louis Leterrier talks about his swerve away from Spielbergian convention",
+      "publishedAt": "Tue, 11 Aug 2026 00:00:11 GMT"
+    },
+    {
+      "source": "GamesRadar+",
+      "language": "en",
+      "title": "Bethesda veteran says Oblivion Remastered can't be called a remake, unlike Final Fantasy 7 and Resident Evil 2 which are \"completely new games\"",
+      "normalizedTitle": "bethesda veteran says oblivion remastered can t be called a remake unlike final fantasy 7 and resident evil 2 which are completely new games",
+      "url": "https://www.gamesradar.com/games/the-elder-scrolls/bethesda-veteran-says-oblivion-remastered-cant-be-called-a-remake-unlike-final-fantasy-7-and-resident-evil-2-which-are-completely-new-games/",
+      "summary": "\"It really came down to Todd's perception of - well, the core bones are still the original game. So it's disingenuous to call it a remake\"",
+      "publishedAt": "Tue, 11 Aug 2026 00:00:11 +0000"
+    },
+    {
+      "source": "PC Gamer",
+      "language": "en",
+      "title": "Halloween: The Game is banned in Australia because incentivized drug use is bad but incentivized ultra-violence isn't",
+      "normalizedTitle": "halloween the game is banned in australia because incentivized drug use is bad but incentivized ultra violence isn t",
+      "url": "https://www.pcgamer.com/gaming-industry/halloween-the-game-is-banned-in-australia-because-incentivized-drug-use-is-bad-but-incentivized-ultra-violence-isnt/",
+      "summary": "Priorities, priorities.",
+      "publishedAt": "Mon, 10 Aug 2026 23:52:13 +0000"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "Chloe Bailey Wants to Play Storm in Marvel's X-Men Movie",
+      "normalizedTitle": "chloe bailey wants to play storm in marvel s x men movie",
+      "url": "https://www.ign.com/articles/chloe-bailey-wants-to-play-storm-in-marvels-x-men-movie",
+      "summary": "Singer, songwriter, and actress Chloe Bailey is throwing her hat in the ring for the chance at playing Storm in Marvel’s upcoming X-Men movie.",
+      "publishedAt": "Mon, 10 Aug 2026 22:53:07 +0000"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "New York Citizen Receives Letters to Spider-Man Because He Shares a Home With Marvel's Peter Parker",
+      "normalizedTitle": "new york citizen receives letters to spider man because he shares a home with marvel s peter parker",
+      "url": "https://www.ign.com/articles/new-york-citizen-receives-letters-to-spider-man-because-he-shares-a-home-with-marvels-peter-parker",
+      "summary": "A New York citizen has revealed himself to be the owner of a home shared by Marvel's Peter Parker, and it just so happens to come with one major perk: letters to Spider-Man.",
+      "publishedAt": "Mon, 10 Aug 2026 22:45:12 +0000"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "Walmart's Private Label 512GB and 256GB Nintendo Switch 2 Memory Cards Are the Best Deals You Can Get",
+      "normalizedTitle": "walmart s private label 512gb and 256gb nintendo switch 2 memory cards are the best deals you can get",
+      "url": "https://www.ign.com/articles/cheapest-nintendo-switch-2-microsd-express-memory-card-deal-august-2026",
+      "summary": "Prices remain constant amidst the memory crisis, but for how long?",
+      "publishedAt": "Mon, 10 Aug 2026 22:45:00 +0000"
+    },
+    {
       "source": "PC Gamer",
       "language": "en",
       "title": "The vibey offroading game with more than a million Steam wishlists has a release date",
@@ -22,6 +76,33 @@
       "url": "https://www.pcgamer.com/games/sim/the-vibey-offroading-game-with-more-than-a-million-steam-wishlists-has-a-release-date/",
       "summary": "Over the Hill looks set to be a low key hit.",
       "publishedAt": "Mon, 10 Aug 2026 22:33:09 +0000"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "GTA 6 Boss Says More People Are Pre-Ordering the $100 Version of the Game",
+      "normalizedTitle": "gta 6 boss says more people are pre ordering the 100 version of the game",
+      "url": "https://www.ign.com/articles/gta-6-boss-says-more-people-are-pre-ordering-the-100-version-of-the-game",
+      "summary": "Grand Theft Auto 6 fans are pre-ordering the $100 Ultimate Edition more than the standard edition of the game.",
+      "publishedAt": "Mon, 10 Aug 2026 22:14:28 +0000"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "This Personal Room-Sized 21-Pint Dehumidifier Drops to Just $88 During Amazon's Back to School Sale",
+      "normalizedTitle": "this personal room sized 21 pint dehumidifier drops to just 88 during amazon s back to school sale",
+      "url": "https://www.ign.com/articles/dravonic-dehumidifier-deal",
+      "summary": "A small, convenient dehumidifier for a gaming den, dorm room, or bedroom.",
+      "publishedAt": "Mon, 10 Aug 2026 22:05:00 +0000"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "Valve Is Expanding SteamOS Support to More Handhelds, and I Hope It Keeps Growing",
+      "normalizedTitle": "valve is expanding steamos support to more handhelds and i hope it keeps growing",
+      "url": "https://www.ign.com/articles/valve-is-expanding-steamos-support-to-more-handhelds-and-i-hope-it-keeps-growing",
+      "summary": "Valve has added initial support for the Claw 8 EX AI+, along with some other ARM handhelds, and I hope it's just getting started.",
+      "publishedAt": "Mon, 10 Aug 2026 22:03:58 +0000"
     },
     {
       "source": "PC Gamer",
@@ -44,7 +125,7 @@
     {
       "source": "IGN",
       "language": "en",
-      "title": "Nikki From Obsession Will Be At Halloween Horror Nights In a 'Where's Waldo' Way, But Fans Are Divided",
+      "title": "Nikki From Obsession Will Be at Halloween Horror Nights in a 'Where's Waldo' Way, but Fans Are Divided",
       "normalizedTitle": "nikki from obsession will be at halloween horror nights in a where s waldo way but fans are divided",
       "url": "https://www.ign.com/articles/nikki-from-obsession-will-be-at-halloween-horror-nights-in-a-wheres-waldo-way-but-fans-are-divided",
       "summary": "Watch your back; Inde Navarrette’s iconic character, Nikki Freeman, will be wandering around Universal Studios theme parks for Halloween Horror Nights.",
@@ -83,7 +164,7 @@
       "title": "Absolute Batman Volume 1 Hardcovers Drop to a New Low Price on Amazon",
       "normalizedTitle": "absolute batman volume 1 hardcovers drop to a new low price on amazon",
       "url": "https://www.ign.com/articles/absolute-batman-volume-1-hardcovers-drop-to-a-new-low-price-on-amazon",
-      "summary": "The first full volume of DC&#39;s All In publishing initiative has finally gotten a decent hardcover discount. Absolute Batman Vol. 1: The Zoo, which was first released back in August 2025, has dropped under $20 on Amazon, 22% off its usual retail price. Volume 1 of Absolute Batman wraps up the first 6-issue arc written by comics legend Scott Snyder and illustrated by Nick Dragotta. With issue #23 scheduled to release this week, this price drop makes it a great time to start your collection with some savings. If you aren&#39;t already familiar with Absolute Batman, it&#39;s worth noting that i",
+      "summary": "The first full volume of DC&#39;s All In publishing initiative has finally gotten a decent hardcover discount. Absolute Batman Vol. 1: The Zoo, which was first released back in August 2025, has dropped to under $20 on Amazon, 22% off its usual retail price. Volume 1 of Absolute Batman wraps up the first 6-issue arc written by comics legend Scott Snyder and illustrated by Nick Dragotta. With issue #23 scheduled to release this week, this price drop makes it a great time to start your collection with some savings. If you aren&#39;t already familiar with Absolute Batman, it&#39;s worth noting tha",
       "publishedAt": "Mon, 10 Aug 2026 21:30:00 +0000"
     },
     {
@@ -393,15 +474,6 @@
       "publishedAt": "Mon, 10 Aug 2026 19:00:12 GMT"
     },
     {
-      "source": "Polygon",
-      "language": "en",
-      "title": "Batman's new Joker actor officially confirms a shocking change to the iconic villains backstory",
-      "normalizedTitle": "batman s new joker actor officially confirms a shocking change to the iconic villains backstory",
-      "url": "https://www.polygon.com/batman-caped-crusader-joker-matthew-needham-interview/",
-      "summary": "‘I really hoped that people would see that everything we were doing was with great respect.’",
-      "publishedAt": "Mon, 10 Aug 2026 19:00:12 GMT"
-    },
-    {
       "source": "GamesRadar+",
       "language": "en",
       "title": "Oblivion intern tried to outsmart Bethesda's AI and was stunned when his apple murder strategy actually worked: \"I can't believe you accounted for this\"",
@@ -429,24 +501,6 @@
       "publishedAt": "Mon, 10 Aug 2026 18:51:27 +0000"
     },
     {
-      "source": "IGN",
-      "language": "en",
-      "title": "Pay Less Than Half Price for Sony's Outstanding WH-1000XM6 Wireless Noise Canceling Headphones",
-      "normalizedTitle": "pay less than half price for sony s outstanding wh 1000xm6 wireless noise canceling headphones",
-      "url": "https://www.ign.com/articles/sony-wh-1000xm6-wireless-noise-canceling-headphone-deal-august-2026",
-      "summary": "These are refurbished units that are indistinguishable from new and include a 2 year warranty.",
-      "publishedAt": "Mon, 10 Aug 2026 18:50:00 +0000"
-    },
-    {
-      "source": "IGN",
-      "language": "en",
-      "title": "Hideki Kamiya Gives Fans Hope That He Will Direct Another Devil May Cry Game",
-      "normalizedTitle": "hideki kamiya gives fans hope that he will direct another devil may cry game",
-      "url": "https://www.ign.com/articles/hideki-kamiya-gives-fans-hope-that-he-will-direct-another-devil-may-cry-game",
-      "summary": "It’s been over twenty years since Hideki Kamiya directed the very first Devil May Cry game, and his latest tweets are hinting that he might make a long-awaited return to the franchise.",
-      "publishedAt": "Mon, 10 Aug 2026 18:29:05 +0000"
-    },
-    {
       "source": "PC Gamer",
       "language": "en",
       "title": "There was originally supposed to be a 'much bigger' reveal of Light No Fire: here's why Sean Murray changed his mind",
@@ -454,24 +508,6 @@
       "url": "https://www.pcgamer.com/games/survival-crafting/there-was-originally-supposed-to-be-a-much-bigger-reveal-of-light-no-fire-heres-why-sean-murray-changed-his-mind/",
       "summary": "There was so much hype after the teaser in 2023 that Murray decided \"We don't need to say anything more right now.\"",
       "publishedAt": "Mon, 10 Aug 2026 18:28:26 +0000"
-    },
-    {
-      "source": "IGN",
-      "language": "en",
-      "title": "Today’s Top Deals: Resident Evil Requiem, Intel Core Ultra 5 250K Plus CPU, LEGO Earth and Moon",
-      "normalizedTitle": "today s top deals resident evil requiem intel core ultra 5 250k plus cpu lego earth and moon",
-      "url": "https://www.ign.com/articles/best-deals-for-august-10-2026",
-      "summary": "And don’t miss incredible savings on a gaming monitor, a Forza Horizon 6 Xbox Controller, and more.",
-      "publishedAt": "Mon, 10 Aug 2026 18:20:00 +0000"
-    },
-    {
-      "source": "IGN",
-      "language": "en",
-      "title": "Grand Theft Auto Players Fundraise $50k for Sick Fan Trying to Make It to GTA 6",
-      "normalizedTitle": "grand theft auto players fundraise 50k for sick fan trying to make it to gta 6",
-      "url": "https://www.ign.com/articles/grand-theft-auto-players-fundraise-50k-for-sick-fan-trying-to-make-it-to-gta-6",
-      "summary": "Grand Theft Auto players have rallied behind a sick fan in need of a lung transplant by raising more than $50,000 so he can live long enough to play GTA 6.",
-      "publishedAt": "Mon, 10 Aug 2026 17:59:59 +0000"
     },
     {
       "source": "GameSpot",
@@ -490,15 +526,6 @@
       "url": "https://www.gamespot.com/articles/marvel-tokon-fighting-souls-first-pc-patch-targets-its-biggest-problems/",
       "summary": "Marvel Tokon: Fighting Souls launched last week, and its first patch is taking aim at the many technical teething issues on PC . Poor optimization appears to be one of the major issues, as many users online have reported it being demanding on their systems despite having moderate PC requirements. \"We've been working on a number of fixes and improvements aimed at reducing performance issues, improving stability, and addressing some specific problems,\" Arc System Works wrote in an update. According to the patch notes, Arc has several fixes to help reduce overall CPU usage, improve frame rates, a",
       "publishedAt": "Mon, 10 Aug 2026 17:51:23 +0000"
-    },
-    {
-      "source": "IGN",
-      "language": "en",
-      "title": "Save 30% on One of the Coolest and Most Interactive Space-Themed LEGO Sets Ever",
-      "normalizedTitle": "save 30 on one of the coolest and most interactive space themed lego sets ever",
-      "url": "https://www.ign.com/articles/lego-technic-planet-earth-and-moon-in-orbit-deal-august-2026",
-      "summary": "The LEGO Technic Planet Earth and Moon in Orbit 42179 is on sale for just $51.99.",
-      "publishedAt": "Mon, 10 Aug 2026 17:50:00 +0000"
     },
     {
       "source": "PC Gamer",
@@ -544,15 +571,6 @@
       "url": "https://www.gamesradar.com/games/devil-may-cry/25-years-later-hideki-kamiya-says-hed-make-another-devil-may-cry-game-just-to-clear-up-some-deep-cut-lore/",
       "summary": "Kamiya's reunion with Capcom for Okami even makes it feel like a real possibility",
       "publishedAt": "Mon, 10 Aug 2026 17:17:11 +0000"
-    },
-    {
-      "source": "IGN",
-      "language": "en",
-      "title": "Amazon Discounts MTG Commander Decks From Marvel and Strixhaven",
-      "normalizedTitle": "amazon discounts mtg commander decks from marvel and strixhaven",
-      "url": "https://www.ign.com/articles/amazon-discounts-mtg-commander-decks-from-marvel-and-strixhaven",
-      "summary": "From assembling the Avengers to blighting your foes, here are the best Magic precon deals right now at Amazon.",
-      "publishedAt": "Mon, 10 Aug 2026 17:15:00 +0000"
     },
     {
       "source": "Rock Paper Shotgun",
@@ -1007,19 +1025,19 @@
     {
       "source": "PC Gamer",
       "language": "en",
-      "title": "Sean Murray still loves playing the 2016 version of No Man's Sky: 'It's a little bit weirder, but it's got its charm'",
-      "normalizedTitle": "sean murray still loves playing the 2016 version of no man s sky it s a little bit weirder but it s got its charm",
-      "url": "https://www.pcgamer.com/games/action/sean-murray-still-loves-playing-the-2016-version-of-no-mans-sky-its-a-little-bit-weirder-but-its-got-its-charm/",
-      "summary": "\"I've got a real soft spot for it,\" says the founder of Hello Games.",
+      "title": "Light No Fire will 'absolutely' be like No Man's Sky, with new features coming post-release: Sean Murray says he'd like to still be working on it '10 years after launch'",
+      "normalizedTitle": "light no fire will absolutely be like no man s sky with new features coming post release sean murray says he d like to still be working on it 10 years after launch",
+      "url": "https://www.pcgamer.com/games/survival-crafting/light-no-fire-will-absolutely-be-like-no-mans-sky-with-new-features-coming-post-release-sean-murray-says-hed-like-to-still-be-working-on-it-10-years-after-launch/",
+      "summary": "\"I've worked on it for seven years now, and I'm still really enjoying it.\"",
       "publishedAt": "Mon, 10 Aug 2026 13:00:00 +0000"
     },
     {
       "source": "PC Gamer",
       "language": "en",
-      "title": "Light No Fire will 'absolutely' be like No Man's Sky, with new features coming post-release: Sean Murray says he'd like to still be working on it '10 years after launch'",
-      "normalizedTitle": "light no fire will absolutely be like no man s sky with new features coming post release sean murray says he d like to still be working on it 10 years after launch",
-      "url": "https://www.pcgamer.com/games/survival-crafting/light-no-fire-will-absolutely-be-like-no-mans-sky-with-new-features-coming-post-release-sean-murray-says-hed-like-to-still-be-working-on-it-10-years-after-launch/",
-      "summary": "\"I've worked on it for seven years now, and I'm still really enjoying it.\"",
+      "title": "Sean Murray still loves playing the 2016 version of No Man's Sky: 'It's a little bit weirder, but it's got its charm'",
+      "normalizedTitle": "sean murray still loves playing the 2016 version of no man s sky it s a little bit weirder but it s got its charm",
+      "url": "https://www.pcgamer.com/games/action/sean-murray-still-loves-playing-the-2016-version-of-no-mans-sky-its-a-little-bit-weirder-but-its-got-its-charm/",
+      "summary": "\"I've got a real soft spot for it,\" says the founder of Hello Games.",
       "publishedAt": "Mon, 10 Aug 2026 13:00:00 +0000"
     },
     {
@@ -1246,15 +1264,6 @@
       "url": "https://www.eurogamer.net/the-duskbloods-check-network-test-access",
       "summary": "The Duskbloods, the next game from Elden Ring , Dark Souls, and Bloodborne creator FromSoftware, is hosting its first-ever public test later this month. The network test, as the developer calls it, was always intended to be limited, meaning not everyone who signed up will get to play. Read more",
       "publishedAt": "Mon, 10 Aug 2026 09:33:03 +0000"
-    },
-    {
-      "source": "GamesRadar+",
-      "language": "en",
-      "title": "Beast of Reincarnation's first update is here, and it aims to fix story issues and more as \"Mixed\" Steam reviews dub Game Freak's new action RPG \"bad and laughable\"",
-      "normalizedTitle": "beast of reincarnation s first update is here and it aims to fix story issues and more as mixed steam reviews dub game freak s new action rpg bad and laughable",
-      "url": "https://www.gamesradar.com/games/action-rpg/beast-of-reincarnations-first-update-is-here-and-it-aims-to-fix-story-issues-and-more-as-mixed-steam-reviews-dub-game-freaks-new-action-rpg-bad-and-laughable/",
-      "summary": "\"Multiple additional patches are planned,\" too",
-      "publishedAt": "Mon, 10 Aug 2026 09:16:41 +0000"
     },
     {
       "source": "Rock Paper Shotgun",
@@ -1768,15 +1777,6 @@
       "url": "https://stopgame.ru/show/163136/total_overdose_retrorekvest",
       "summary": "Традиционное ежепятничное погружение в уютную ностальгию. Предаёмся любви к старине и лампово общаемся.",
       "publishedAt": "Sat, 08 Aug 2026 09:28:45 +0300"
-    },
-    {
-      "source": "PC Gamer",
-      "language": "en",
-      "title": "Big Walk: So, what's the deal with that number puzzle?",
-      "normalizedTitle": "big walk so what s the deal with that number puzzle",
-      "url": "https://www.pcgamer.com/games/puzzle/big-walk-number-puzzle-4166-1899/",
-      "summary": "If you're stuck on this early puzzle, we can give you some hints—or the complete solution.",
-      "publishedAt": "Sat, 08 Aug 2026 00:02:33 +0000"
     },
     {
       "source": "StopGame",

@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-10T23:27:36.051Z",
+  "updatedAt": "2026-08-11T00:12:36.613Z",
   "count": 78,
   "sourcePool": [
     "Steam",
@@ -79,7 +79,7 @@
       "movies": [],
       "criticRating": 9.4,
       "steamUserRating": 9.3,
-      "recommendations": 826636,
+      "recommendations": 826642,
       "owners": "20,000,000 .. 50,000,000",
       "peakConcurrent": 29529,
       "sourceEvidence": [
@@ -94,7 +94,7 @@
         "steamSpy": "https://steamspy.com/app/1245620",
         "metacritic": "https://www.metacritic.com/game/pc/elden-ring?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10591.731484025879,
+      "popularityScore": 10591.731799249785,
       "igropoiskRating": 9.4,
       "editorialSources": [
         "StopGame",
@@ -241,7 +241,7 @@
       "movies": [],
       "criticRating": 9.6,
       "steamUserRating": 9.7,
-      "recommendations": 750073,
+      "recommendations": 750080,
       "owners": "20,000,000 .. 50,000,000",
       "peakConcurrent": 54771,
       "sourceEvidence": [
@@ -258,7 +258,7 @@
         "steamSpy": "https://steamspy.com/app/1086940",
         "metacritic": "https://www.metacritic.com/game/pc/baldurs-gate-3?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10577.510411166677,
+      "popularityScore": 10577.510816466312,
       "igropoiskRating": 9.6,
       "editorialSources": [
         "GamesRadar+",
@@ -415,7 +415,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 8.7,
-      "recommendations": 5214139,
+      "recommendations": 5214204,
       "owners": "100,000,000 .. 200,000,000",
       "peakConcurrent": 1013936,
       "sourceEvidence": [
@@ -427,7 +427,7 @@
         "steamSpy": "https://steamspy.com/app/730",
         "metacritic": ""
       },
-      "popularityScore": 10541.71826878241,
+      "popularityScore": 10541.718810174958,
       "igropoiskRating": 8.7,
       "editorialSources": [],
       "materials": {
@@ -743,7 +743,7 @@
       "movies": [],
       "criticRating": 9.7,
       "steamUserRating": 9.3,
-      "recommendations": 116989,
+      "recommendations": 116992,
       "owners": "2,000,000 .. 5,000,000",
       "peakConcurrent": 918,
       "sourceEvidence": [
@@ -756,7 +756,7 @@
         "steamSpy": "https://steamspy.com/app/632470",
         "metacritic": "https://www.metacritic.com/game/pc/disco-elysium-the-final-cut?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10436.81487409733,
+      "popularityScore": 10436.815987753831,
       "igropoiskRating": 9.6,
       "editorialSources": [],
       "materials": {
@@ -954,7 +954,7 @@
       "movies": [],
       "criticRating": 7,
       "steamUserRating": 8.4,
-      "recommendations": 584384,
+      "recommendations": 584385,
       "owners": "20,000,000 .. 50,000,000",
       "peakConcurrent": 22170,
       "sourceEvidence": [
@@ -967,7 +967,7 @@
         "steamSpy": "https://steamspy.com/app/346110",
         "metacritic": "https://www.metacritic.com/game/pc/ark-survival-evolved?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10396.669905993023,
+      "popularityScore": 10396.66998030946,
       "igropoiskRating": 7.5,
       "editorialSources": [],
       "materials": {
@@ -1059,7 +1059,7 @@
       "movies": [],
       "criticRating": 8.9,
       "steamUserRating": 9.8,
-      "recommendations": 810911,
+      "recommendations": 810921,
       "owners": "50,000,000 .. 100,000,000",
       "peakConcurrent": 25122,
       "sourceEvidence": [
@@ -1072,7 +1072,7 @@
         "steamSpy": "https://steamspy.com/app/550",
         "metacritic": "https://www.metacritic.com/game/pc/left-4-dead-2?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10390.897372722222,
+      "popularityScore": 10390.897908281942,
       "igropoiskRating": 9.2,
       "editorialSources": [],
       "materials": {
@@ -1148,7 +1148,7 @@
       "movies": [],
       "criticRating": 8.3,
       "steamUserRating": 9.7,
-      "recommendations": 1231020,
+      "recommendations": 1231025,
       "owners": "20,000,000 .. 50,000,000",
       "peakConcurrent": 24580,
       "sourceEvidence": [
@@ -1162,7 +1162,7 @@
         "steamSpy": "https://steamspy.com/app/105600",
         "metacritic": "https://www.metacritic.com/game/pc/terraria?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10389.026546162859,
+      "popularityScore": 10389.026722558548,
       "igropoiskRating": 8.8,
       "editorialSources": [
         "GamesRadar+"
@@ -1649,7 +1649,7 @@
       "movies": [],
       "criticRating": 9.2,
       "steamUserRating": 9,
-      "recommendations": 47662,
+      "recommendations": 47661,
       "owners": "50,000,000 .. 100,000,000",
       "peakConcurrent": 43819,
       "sourceEvidence": [
@@ -1662,7 +1662,7 @@
         "steamSpy": "https://steamspy.com/app/440",
         "metacritic": "https://www.metacritic.com/game/pc/team-fortress-2?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10277.81813741926,
+      "popularityScore": 10277.817226232306,
       "igropoiskRating": 9.1,
       "editorialSources": [],
       "materials": {
@@ -1982,6 +1982,7 @@
         "Steam",
         "SteamSpy",
         "Metacritic",
+        "GamesRadar+",
         "Rock Paper Shotgun"
       ],
       "sourceLinks": {
@@ -1992,10 +1993,20 @@
       "popularityScore": 10209.73557992019,
       "igropoiskRating": 8.7,
       "editorialSources": [
+        "GamesRadar+",
         "Rock Paper Shotgun"
       ],
       "materials": {
         "articles": [
+          {
+            "source": "GamesRadar+",
+            "language": "en",
+            "title": "Bethesda veteran says Oblivion Remastered can't be called a remake, unlike Final Fantasy 7 and Resident Evil 2 which are \"completely new games\"",
+            "normalizedTitle": "bethesda veteran says oblivion remastered can t be called a remake unlike final fantasy 7 and resident evil 2 which are completely new games",
+            "url": "https://www.gamesradar.com/games/the-elder-scrolls/bethesda-veteran-says-oblivion-remastered-cant-be-called-a-remake-unlike-final-fantasy-7-and-resident-evil-2-which-are-completely-new-games/",
+            "summary": "\"It really came down to Todd's perception of - well, the core bones are still the original game. So it's disingenuous to call it a remake\"",
+            "publishedAt": "Tue, 11 Aug 2026 00:00:11 +0000"
+          },
           {
             "source": "Rock Paper Shotgun",
             "language": "en",
@@ -2012,6 +2023,15 @@
         "news": []
       },
       "articles": [
+        {
+          "source": "GamesRadar+",
+          "language": "en",
+          "title": "Bethesda veteran says Oblivion Remastered can't be called a remake, unlike Final Fantasy 7 and Resident Evil 2 which are \"completely new games\"",
+          "normalizedTitle": "bethesda veteran says oblivion remastered can t be called a remake unlike final fantasy 7 and resident evil 2 which are completely new games",
+          "url": "https://www.gamesradar.com/games/the-elder-scrolls/bethesda-veteran-says-oblivion-remastered-cant-be-called-a-remake-unlike-final-fantasy-7-and-resident-evil-2-which-are-completely-new-games/",
+          "summary": "\"It really came down to Todd's perception of - well, the core bones are still the original game. So it's disingenuous to call it a remake\"",
+          "publishedAt": "Tue, 11 Aug 2026 00:00:11 +0000"
+        },
         {
           "source": "Rock Paper Shotgun",
           "language": "en",
@@ -2430,7 +2450,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 9.4,
-      "recommendations": 398518,
+      "recommendations": 398549,
       "owners": "50,000,000 .. 100,000,000",
       "peakConcurrent": 18028,
       "sourceEvidence": [
@@ -2444,7 +2464,7 @@
         "steamSpy": "https://steamspy.com/app/1623730",
         "metacritic": ""
       },
-      "popularityScore": 9940.044903187629,
+      "popularityScore": 9940.048281346595,
       "igropoiskRating": 9.4,
       "editorialSources": [
         "GamesRadar+",
@@ -2552,7 +2572,7 @@
       "movies": [],
       "criticRating": 8.1,
       "steamUserRating": 7.3,
-      "recommendations": 211752,
+      "recommendations": 211754,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 6300,
       "sourceEvidence": [
@@ -2569,7 +2589,7 @@
         "steamSpy": "https://steamspy.com/app/594650",
         "metacritic": "https://www.metacritic.com/game/pc/hunt-showdown?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9932.58295718916,
+      "popularityScore": 9932.583367376908,
       "igropoiskRating": 7.8,
       "editorialSources": [
         "GamesRadar+",
@@ -2755,7 +2775,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 8.3,
-      "recommendations": 45853,
+      "recommendations": 45854,
       "owners": "1,000,000 .. 2,000,000",
       "peakConcurrent": 1573,
       "sourceEvidence": [
@@ -2767,7 +2787,7 @@
         "steamSpy": "https://steamspy.com/app/1282100",
         "metacritic": ""
       },
-      "popularityScore": 9916.137722663974,
+      "popularityScore": 9916.138669778176,
       "igropoiskRating": 8.3,
       "editorialSources": [],
       "materials": {
@@ -3118,7 +3138,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 7.1,
-      "recommendations": 235786,
+      "recommendations": 235785,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 6327,
       "sourceEvidence": [
@@ -3130,7 +3150,7 @@
         "steamSpy": "https://steamspy.com/app/1238810",
         "metacritic": ""
       },
-      "popularityScore": 9827.251985680698,
+      "popularityScore": 9827.251801490984,
       "igropoiskRating": 7.1,
       "editorialSources": [],
       "materials": {
@@ -3405,7 +3425,7 @@
       "movies": [],
       "criticRating": 8.6,
       "steamUserRating": 9.1,
-      "recommendations": 66593,
+      "recommendations": 66594,
       "owners": "2,000,000 .. 5,000,000",
       "peakConcurrent": 1011,
       "sourceEvidence": [
@@ -3418,7 +3438,7 @@
         "steamSpy": "https://steamspy.com/app/1888160",
         "metacritic": "https://www.metacritic.com/game/pc/armored-core-vi-fires-of-rubicon?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9812.343510177878,
+      "popularityScore": 9812.344162325551,
       "igropoiskRating": 8.8,
       "editorialSources": [],
       "materials": {
@@ -3558,19 +3578,19 @@
           {
             "source": "PC Gamer",
             "language": "en",
-            "title": "Sean Murray still loves playing the 2016 version of No Man's Sky: 'It's a little bit weirder, but it's got its charm'",
-            "normalizedTitle": "sean murray still loves playing the 2016 version of no man s sky it s a little bit weirder but it s got its charm",
-            "url": "https://www.pcgamer.com/games/action/sean-murray-still-loves-playing-the-2016-version-of-no-mans-sky-its-a-little-bit-weirder-but-its-got-its-charm/",
-            "summary": "\"I've got a real soft spot for it,\" says the founder of Hello Games.",
+            "title": "Light No Fire will 'absolutely' be like No Man's Sky, with new features coming post-release: Sean Murray says he'd like to still be working on it '10 years after launch'",
+            "normalizedTitle": "light no fire will absolutely be like no man s sky with new features coming post release sean murray says he d like to still be working on it 10 years after launch",
+            "url": "https://www.pcgamer.com/games/survival-crafting/light-no-fire-will-absolutely-be-like-no-mans-sky-with-new-features-coming-post-release-sean-murray-says-hed-like-to-still-be-working-on-it-10-years-after-launch/",
+            "summary": "\"I've worked on it for seven years now, and I'm still really enjoying it.\"",
             "publishedAt": "Mon, 10 Aug 2026 13:00:00 +0000"
           },
           {
             "source": "PC Gamer",
             "language": "en",
-            "title": "Light No Fire will 'absolutely' be like No Man's Sky, with new features coming post-release: Sean Murray says he'd like to still be working on it '10 years after launch'",
-            "normalizedTitle": "light no fire will absolutely be like no man s sky with new features coming post release sean murray says he d like to still be working on it 10 years after launch",
-            "url": "https://www.pcgamer.com/games/survival-crafting/light-no-fire-will-absolutely-be-like-no-mans-sky-with-new-features-coming-post-release-sean-murray-says-hed-like-to-still-be-working-on-it-10-years-after-launch/",
-            "summary": "\"I've worked on it for seven years now, and I'm still really enjoying it.\"",
+            "title": "Sean Murray still loves playing the 2016 version of No Man's Sky: 'It's a little bit weirder, but it's got its charm'",
+            "normalizedTitle": "sean murray still loves playing the 2016 version of no man s sky it s a little bit weirder but it s got its charm",
+            "url": "https://www.pcgamer.com/games/action/sean-murray-still-loves-playing-the-2016-version-of-no-mans-sky-its-a-little-bit-weirder-but-its-got-its-charm/",
+            "summary": "\"I've got a real soft spot for it,\" says the founder of Hello Games.",
             "publishedAt": "Mon, 10 Aug 2026 13:00:00 +0000"
           },
           {
@@ -3665,19 +3685,19 @@
         {
           "source": "PC Gamer",
           "language": "en",
-          "title": "Sean Murray still loves playing the 2016 version of No Man's Sky: 'It's a little bit weirder, but it's got its charm'",
-          "normalizedTitle": "sean murray still loves playing the 2016 version of no man s sky it s a little bit weirder but it s got its charm",
-          "url": "https://www.pcgamer.com/games/action/sean-murray-still-loves-playing-the-2016-version-of-no-mans-sky-its-a-little-bit-weirder-but-its-got-its-charm/",
-          "summary": "\"I've got a real soft spot for it,\" says the founder of Hello Games.",
+          "title": "Light No Fire will 'absolutely' be like No Man's Sky, with new features coming post-release: Sean Murray says he'd like to still be working on it '10 years after launch'",
+          "normalizedTitle": "light no fire will absolutely be like no man s sky with new features coming post release sean murray says he d like to still be working on it 10 years after launch",
+          "url": "https://www.pcgamer.com/games/survival-crafting/light-no-fire-will-absolutely-be-like-no-mans-sky-with-new-features-coming-post-release-sean-murray-says-hed-like-to-still-be-working-on-it-10-years-after-launch/",
+          "summary": "\"I've worked on it for seven years now, and I'm still really enjoying it.\"",
           "publishedAt": "Mon, 10 Aug 2026 13:00:00 +0000"
         },
         {
           "source": "PC Gamer",
           "language": "en",
-          "title": "Light No Fire will 'absolutely' be like No Man's Sky, with new features coming post-release: Sean Murray says he'd like to still be working on it '10 years after launch'",
-          "normalizedTitle": "light no fire will absolutely be like no man s sky with new features coming post release sean murray says he d like to still be working on it 10 years after launch",
-          "url": "https://www.pcgamer.com/games/survival-crafting/light-no-fire-will-absolutely-be-like-no-mans-sky-with-new-features-coming-post-release-sean-murray-says-hed-like-to-still-be-working-on-it-10-years-after-launch/",
-          "summary": "\"I've worked on it for seven years now, and I'm still really enjoying it.\"",
+          "title": "Sean Murray still loves playing the 2016 version of No Man's Sky: 'It's a little bit weirder, but it's got its charm'",
+          "normalizedTitle": "sean murray still loves playing the 2016 version of no man s sky it s a little bit weirder but it s got its charm",
+          "url": "https://www.pcgamer.com/games/action/sean-murray-still-loves-playing-the-2016-version-of-no-mans-sky-its-a-little-bit-weirder-but-its-got-its-charm/",
+          "summary": "\"I've got a real soft spot for it,\" says the founder of Hello Games.",
           "publishedAt": "Mon, 10 Aug 2026 13:00:00 +0000"
         },
         {
@@ -3901,7 +3921,7 @@
       "movies": [],
       "criticRating": 9.1,
       "steamUserRating": 9.7,
-      "recommendations": 233330,
+      "recommendations": 233331,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 12596,
       "sourceEvidence": [
@@ -3914,7 +3934,7 @@
         "steamSpy": "https://steamspy.com/app/526870",
         "metacritic": "https://www.metacritic.com/game/pc/satisfactory?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9766.797244232806,
+      "popularityScore": 9766.797430360475,
       "igropoiskRating": 9.3,
       "editorialSources": [],
       "materials": {
@@ -3999,7 +4019,7 @@
       "movies": [],
       "criticRating": 9,
       "steamUserRating": 9.7,
-      "recommendations": 194273,
+      "recommendations": 194278,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 16426,
       "sourceEvidence": [
@@ -4012,7 +4032,7 @@
         "steamSpy": "https://steamspy.com/app/427520",
         "metacritic": "https://www.metacritic.com/game/pc/factorio?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9748.841468216393,
+      "popularityScore": 9748.842585939025,
       "igropoiskRating": 9.2,
       "editorialSources": [],
       "materials": {
@@ -4085,7 +4105,7 @@
       "movies": [],
       "criticRating": 8.7,
       "steamUserRating": 9.8,
-      "recommendations": 207088,
+      "recommendations": 207089,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 19211,
       "sourceEvidence": [
@@ -4098,7 +4118,7 @@
         "steamSpy": "https://steamspy.com/app/294100",
         "metacritic": "https://www.metacritic.com/game/pc/rimworld?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9741.615703097372,
+      "popularityScore": 9741.615912810797,
       "igropoiskRating": 9.1,
       "editorialSources": [],
       "materials": {
@@ -4261,7 +4281,7 @@
       "movies": [],
       "criticRating": 8.3,
       "steamUserRating": 8.9,
-      "recommendations": 281295,
+      "recommendations": 281300,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 32112,
       "sourceEvidence": [
@@ -4274,7 +4294,7 @@
         "steamSpy": "https://steamspy.com/app/394360",
         "metacritic": "https://www.metacritic.com/game/pc/hearts-of-iron-iv?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9734.916355658654,
+      "popularityScore": 9734.917127604615,
       "igropoiskRating": 8.5,
       "editorialSources": [],
       "materials": {
@@ -4360,7 +4380,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 9.7,
-      "recommendations": 1086002,
+      "recommendations": 1086006,
       "owners": "20,000,000 .. 50,000,000",
       "peakConcurrent": 18400,
       "sourceEvidence": [
@@ -4372,7 +4392,7 @@
         "steamSpy": "https://steamspy.com/app/4000",
         "metacritic": ""
       },
-      "popularityScore": 9723.583102495968,
+      "popularityScore": 9723.583262456366,
       "igropoiskRating": 9.7,
       "editorialSources": [],
       "materials": {
@@ -4517,7 +4537,7 @@
       "movies": [],
       "criticRating": 8.5,
       "steamUserRating": 9.2,
-      "recommendations": 654079,
+      "recommendations": 654084,
       "owners": "20,000,000 .. 50,000,000",
       "peakConcurrent": 3832,
       "sourceEvidence": [
@@ -4530,7 +4550,7 @@
         "steamSpy": "https://steamspy.com/app/945360",
         "metacritic": "https://www.metacritic.com/game/pc/among-us?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9711.563086978258,
+      "popularityScore": 9711.5634189658,
       "igropoiskRating": 8.7,
       "editorialSources": [],
       "materials": {
@@ -4611,7 +4631,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 9.6,
-      "recommendations": 681697,
+      "recommendations": 681699,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 9978,
       "sourceEvidence": [
@@ -4623,7 +4643,7 @@
         "steamSpy": "https://steamspy.com/app/739630",
         "metacritic": ""
       },
-      "popularityScore": 9683.359201984525,
+      "popularityScore": 9683.359329399846,
       "igropoiskRating": 9.6,
       "editorialSources": [],
       "materials": {
@@ -4786,7 +4806,7 @@
       "movies": [],
       "criticRating": 9.1,
       "steamUserRating": 9,
-      "recommendations": 95937,
+      "recommendations": 95938,
       "owners": "2,000,000 .. 5,000,000",
       "peakConcurrent": 14302,
       "sourceEvidence": [
@@ -4799,7 +4819,7 @@
         "steamSpy": "https://steamspy.com/app/1158310",
         "metacritic": "https://www.metacritic.com/game/pc/crusader-kings-iii?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9668.19906605754,
+      "popularityScore": 9668.199518737623,
       "igropoiskRating": 9.1,
       "editorialSources": [],
       "materials": {
@@ -4985,7 +5005,7 @@
       "movies": [],
       "criticRating": 7.9,
       "steamUserRating": 9.7,
-      "recommendations": 778573,
+      "recommendations": 778578,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 17281,
       "sourceEvidence": [
@@ -4998,7 +5018,7 @@
         "steamSpy": "https://steamspy.com/app/227300",
         "metacritic": "https://www.metacritic.com/game/pc/euro-truck-simulator-2?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9659.129989662712,
+      "popularityScore": 9659.130268565608,
       "igropoiskRating": 8.5,
       "editorialSources": [],
       "materials": {
@@ -5063,7 +5083,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 9.7,
-      "recommendations": 410975,
+      "recommendations": 410979,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 6199,
       "sourceEvidence": [
@@ -5075,7 +5095,7 @@
         "steamSpy": "https://steamspy.com/app/1966720",
         "metacritic": ""
       },
-      "popularityScore": 9651.381646087388,
+      "popularityScore": 9651.382068781042,
       "igropoiskRating": 9.7,
       "editorialSources": [],
       "materials": {
@@ -5146,7 +5166,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 8.8,
-      "recommendations": 281567,
+      "recommendations": 281573,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 4450,
       "sourceEvidence": [
@@ -5158,7 +5178,7 @@
         "steamSpy": "https://steamspy.com/app/1326470",
         "metacritic": ""
       },
-      "popularityScore": 9624.958329602012,
+      "popularityScore": 9624.959255040672,
       "igropoiskRating": 8.8,
       "editorialSources": [],
       "materials": {
@@ -5500,7 +5520,7 @@
       "movies": [],
       "criticRating": 8.9,
       "steamUserRating": 9.8,
-      "recommendations": 192323,
+      "recommendations": 192327,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 15038,
       "sourceEvidence": [
@@ -5513,7 +5533,7 @@
         "steamSpy": "https://steamspy.com/app/646570",
         "metacritic": "https://www.metacritic.com/game/pc/slay-the-spire?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9528.403348297585,
+      "popularityScore": 9528.404251544118,
       "igropoiskRating": 9.2,
       "editorialSources": [],
       "materials": {
@@ -5586,7 +5606,7 @@
       "movies": [],
       "criticRating": 9,
       "steamUserRating": 9.8,
-      "recommendations": 159042,
+      "recommendations": 159044,
       "owners": "2,000,000 .. 5,000,000",
       "peakConcurrent": 17123,
       "sourceEvidence": [
@@ -5599,7 +5619,7 @@
         "steamSpy": "https://steamspy.com/app/2379780",
         "metacritic": "https://www.metacritic.com/game/pc/balatro?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9510.151455915056,
+      "popularityScore": 9510.152002046292,
       "igropoiskRating": 9.3,
       "editorialSources": [],
       "materials": {
@@ -5741,7 +5761,7 @@
       "movies": [],
       "criticRating": 8.5,
       "steamUserRating": 9.7,
-      "recommendations": 134288,
+      "recommendations": 134289,
       "owners": "2,000,000 .. 5,000,000",
       "peakConcurrent": 1301,
       "sourceEvidence": [
@@ -5754,7 +5774,7 @@
         "steamSpy": "https://steamspy.com/app/1092790",
         "metacritic": "https://www.metacritic.com/game/pc/inscryption?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9492.80404398098,
+      "popularityScore": 9492.804367382645,
       "igropoiskRating": 8.9,
       "editorialSources": [],
       "materials": {
@@ -5820,7 +5840,7 @@
       "movies": [],
       "criticRating": 8.6,
       "steamUserRating": 9.8,
-      "recommendations": 250577,
+      "recommendations": 250578,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 2966,
       "sourceEvidence": [
@@ -5833,7 +5853,7 @@
         "steamSpy": "https://steamspy.com/app/1794680",
         "metacritic": "https://www.metacritic.com/game/pc/vampire-survivors?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9489.894293857347,
+      "popularityScore": 9489.894467174085,
       "igropoiskRating": 9,
       "editorialSources": [],
       "materials": {
@@ -6074,7 +6094,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 9.7,
-      "recommendations": 402965,
+      "recommendations": 402989,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 14904,
       "sourceEvidence": [
@@ -6088,7 +6108,7 @@
         "steamSpy": "https://steamspy.com/app/250900",
         "metacritic": ""
       },
-      "popularityScore": 9470.526840436616,
+      "popularityScore": 9470.52942694694,
       "igropoiskRating": 9.7,
       "editorialSources": [
         "GamesRadar+",
@@ -6780,7 +6800,7 @@
       "movies": [],
       "criticRating": 8.3,
       "steamUserRating": 9.6,
-      "recommendations": 578933,
+      "recommendations": 578935,
       "owners": "20,000,000 .. 50,000,000",
       "peakConcurrent": 2892,
       "sourceEvidence": [
@@ -6794,7 +6814,7 @@
         "steamSpy": "https://steamspy.com/app/242760",
         "metacritic": "https://www.metacritic.com/game/pc/the-forest?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9316.26290558352,
+      "popularityScore": 9316.26305561573,
       "igropoiskRating": 8.8,
       "editorialSources": [
         "StopGame"
@@ -7126,7 +7146,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 9.4,
-      "recommendations": 356178,
+      "recommendations": 356191,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 22864,
       "sourceEvidence": [
@@ -7138,7 +7158,7 @@
         "steamSpy": "https://steamspy.com/app/108600",
         "metacritic": ""
       },
-      "popularityScore": 9275.166831026205,
+      "popularityScore": 9275.168416107088,
       "igropoiskRating": 9.4,
       "editorialSources": [],
       "materials": {
@@ -7382,7 +7402,7 @@
       "movies": [],
       "criticRating": 9.3,
       "steamUserRating": 9.6,
-      "recommendations": 179910,
+      "recommendations": 179912,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 3510,
       "sourceEvidence": [
@@ -7396,7 +7416,7 @@
         "steamSpy": "https://steamspy.com/app/435150",
         "metacritic": "https://www.metacritic.com/game/pc/divinity-original-sin-ii?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9165.505771750482,
+      "popularityScore": 9165.506254535936,
       "igropoiskRating": 9.4,
       "editorialSources": [
         "VG247"
