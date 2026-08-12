@@ -6,7 +6,11 @@ import 'package:counter/shared/categories/picker/category_picker_contracts.dart'
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-const String _kHiddenCategoryIdsKey = 'hidden_category_ids_json';
+// v1 stored raw local integer category ids globally in the browser/device.
+// Those ids can become stale after category-backend migrations and can make an
+// unrelated/current catalog appear fully hidden. Do not migrate v1: visibility
+// is presentation-only state, so starting clean is safer than hiding real data.
+const String _kHiddenCategoryIdsKey = 'hidden_category_ids_json_v2';
 
 /// Local-only hidden category ids; descendants are hidden when an ancestor is hidden.
 class CategoryVisibilityPrefs {
@@ -27,10 +31,29 @@ class CategoryVisibilityPrefs {
           hiddenIds.value = decoded
               .map((e) => int.tryParse('$e'))
               .whereType<int>()
+              .toSet()
               .toList();
         }
       } catch (_) {}
     }
+
+    // Safety invariant: local presentation prefs must never make the entire
+    // real category catalog disappear. If every current root is hidden, treat
+    // the saved visibility state as stale/corrupt and recover to all-visible.
+    final getChildren = CategoryTreeSource.getChildrenOf;
+    final pathFromRoot = CategoryTreeSource.pathFromRootToLocalId;
+    if (hiddenIds.value.isNotEmpty &&
+        getChildren != null &&
+        pathFromRoot != null) {
+      final roots = getChildren(null);
+      if (roots.isNotEmpty && roots.every((r) => isHiddenOrAncestor(r.id))) {
+        hiddenIds.value = <int>[];
+        try {
+          await prefs.remove(_kHiddenCategoryIdsKey);
+        } catch (_) {}
+      }
+    }
+
     _loaded = true;
   }
 
