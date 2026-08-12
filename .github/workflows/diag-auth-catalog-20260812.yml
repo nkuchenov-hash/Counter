@@ -20,13 +20,12 @@ jobs:
           mkdir -p ~/.ssh
           printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -H 217.114.0.201 >> ~/.ssh/known_hosts 2>/dev/null
 
       - name: Inspect recent PocketBase auth/catalog requests
         shell: bash
         run: |
           set -euo pipefail
-          ssh -i ~/.ssh/id_ed25519 root@217.114.0.201 'bash -s' <<'REMOTE'
+          ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=12 -i ~/.ssh/id_ed25519 root@217.114.0.201 'bash -s' <<'REMOTE'
           set -euo pipefail
           echo '=== REQUEST TABLE SCHEMA ==='
           sqlite3 -readonly /root/pb/pb_data/auxiliary.db "PRAGMA table_info(_requests);"
@@ -34,7 +33,7 @@ jobs:
           sqlite3 -readonly -header -column /root/pb/pb_data/auxiliary.db "
             SELECT created, method, url, status, substr(error,1,300) AS error
             FROM _requests
-            WHERE created >= datetime('now','-75 minutes')
+            WHERE created >= datetime('now','-90 minutes')
               AND (
                 url LIKE '%/api/collections/profiles/%'
                 OR url LIKE '%/api/collections/categories/%'
@@ -43,7 +42,7 @@ jobs:
                 OR url LIKE '%/api/collections/records/%'
               )
             ORDER BY created DESC
-            LIMIT 250;
+            LIMIT 300;
           "
           echo '=== LIVE DATA COUNTS (READ ONLY) ==='
           sqlite3 -readonly -header -column /root/pb/pb_data/data.db "
