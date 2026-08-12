@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-12T19:02:43.933Z",
+  "updatedAt": "2026-08-12T19:02:53.510Z",
   "count": 78,
   "sourcePool": [
     "Steam",
@@ -1261,7 +1261,7 @@
       "movies": [],
       "criticRating": 8.9,
       "steamUserRating": 9.8,
-      "recommendations": 887308,
+      "recommendations": 887303,
       "owners": "20,000,000 .. 50,000,000",
       "peakConcurrent": 50662,
       "sourceEvidence": [
@@ -1274,7 +1274,7 @@
         "steamSpy": "https://steamspy.com/app/413150",
         "metacritic": "https://www.metacritic.com/game/pc/stardew-valley?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10364.807488660235,
+      "popularityScore": 10364.80724393393,
       "igropoiskRating": 9.2,
       "editorialSources": [],
       "materials": {
@@ -3893,7 +3893,7 @@
       "movies": [],
       "criticRating": 9.1,
       "steamUserRating": 9.7,
-      "recommendations": 233480,
+      "recommendations": 233485,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 12596,
       "sourceEvidence": [
@@ -3906,7 +3906,7 @@
         "steamSpy": "https://steamspy.com/app/526870",
         "metacritic": "https://www.metacritic.com/game/pc/satisfactory?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9766.8251544727,
+      "popularityScore": 9766.82608450519,
       "igropoiskRating": 9.3,
       "editorialSources": [],
       "materials": {
@@ -5555,7 +5555,7 @@
       "movies": [],
       "criticRating": 9,
       "steamUserRating": 9.8,
-      "recommendations": 159159,
+      "recommendations": 159155,
       "owners": "2,000,000 .. 5,000,000",
       "peakConcurrent": 17123,
       "sourceEvidence": [
@@ -5568,7 +5568,7 @@
         "steamSpy": "https://steamspy.com/app/2379780",
         "metacritic": "https://www.metacritic.com/game/pc/balatro?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9510.183393047435,
+      "popularityScore": 9510.182301567316,
       "igropoiskRating": 9.3,
       "editorialSources": [],
       "materials": {
