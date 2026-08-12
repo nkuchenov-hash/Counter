@@ -1,0 +1,116 @@
+name: LIFE OS owner read hotfix
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/lifeos-owner-read-hotfix.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  hotfix:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Patch legacy-compatible owner reads
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path, old, new, label):
+              p = Path(path)
+              s = p.read_text(encoding='utf-8')
+              count = s.count(old)
+              if count != 1:
+                  raise SystemExit(f'{label}: expected exactly one match, found {count}')
+              p.write_text(s.replace(old, new, 1), encoding='utf-8')
+
+          plan = 'lib/data/plan_service.dart'
+
+          replace_once(
+              plan,
+              '''      final authId = _userIdForWhere;\n      if (authId == null || authId.isEmpty) return null;\n      final uid = _escapeForPbFilter(authId);\n      final esc = _escapeForPbFilter(key);\n      final rec = await _pb\n          .collection(PbCollections.plans)\n          .getFirstListItem('plan_id = \\"$esc\\" && user_id = \\"$uid\\"');\n''',
+              '''      final ownerFilter = _pocketBaseOwnerFilterClauseForRecords();\n      if (ownerFilter == null || ownerFilter.isEmpty) return null;\n      final esc = _escapeForPbFilter(key);\n      final rec = await _pb\n          .collection(PbCollections.plans)\n          .getFirstListItem('plan_id = \\"$esc\\" && $ownerFilter');\n''',
+              'plan id resolution owner filter',
+          )
+
+          replace_once(
+              plan,
+              '''    final authId = _userIdForWhere;\n    if (authId == null || authId.isEmpty) return [];\n    final uid = _escapeForPbFilter(authId);\n    final sw = Stopwatch()..start();\n''',
+              '''    final ownerFilter = _pocketBaseOwnerFilterClauseForRecords();\n    if (ownerFilter == null || ownerFilter.isEmpty) return [];\n    final sw = Stopwatch()..start();\n''',
+              'all plans owner filter setup',
+          )
+
+          replace_once(
+              plan,
+              '''            expand: kPbPlanTagsExpand,\n            filter: 'user_id = \\"$uid\\"',\n            batch: 200,\n''',
+              '''            expand: kPbPlanTagsExpand,\n            filter: ownerFilter,\n            batch: 200,\n''',
+              'all plans owner filter query',
+          )
+
+          replace_once(
+              plan,
+              '''      final authId = _userIdForWhere;\n      if (authId == null || authId.isEmpty) return [];\n      final uid = _escapeForPbFilter(authId);\n      final list = await _pb\n          .collection(PbCollections.plans)\n          .getFullList(filter: 'user_id = \\"$uid\\"', expand: kPbPlanTagsExpand);\n''',
+              '''      final ownerFilter = _pocketBaseOwnerFilterClauseForRecords();\n      if (ownerFilter == null || ownerFilter.isEmpty) return [];\n      final list = await _pb\n          .collection(PbCollections.plans)\n          .getFullList(filter: ownerFilter, expand: kPbPlanTagsExpand);\n''',
+              'fetchPlans owner filter',
+          )
+
+          replace_once(
+              plan,
+              '''  String? _pocketBaseOwnerFilterClauseForPlans() {\n    final uid = _userIdForWhere?.trim() ?? '';\n    if (uid.isEmpty) return null;\n    return 'user_id = \\"${_escapeForPbFilter(uid)}\\"';\n  }\n''',
+              '''  String? _pocketBaseOwnerFilterClauseForPlans() {\n    return _pocketBaseOwnerFilterClauseForRecords();\n  }\n''',
+              'plans realtime owner filter',
+          )
+
+          notes = 'lib/data/plans/notes_brain_helpers.dart'
+          replace_once(
+              notes,
+              '''      final authId = _userIdForWhere;\n      if (authId == null || authId.isEmpty) return;\n      final uid = _escapeForPbFilter(authId);\n      final rows = await _pb\n          .collection(PbCollections.plans)\n          .getFullList(\n            filter: 'user_id = \\"$uid\\"',\n            fields: 'id,created,updated',\n''',
+              '''      final ownerFilter = _pocketBaseOwnerFilterClauseForRecords();\n      if (ownerFilter == null || ownerFilter.isEmpty) return;\n      final rows = await _pb\n          .collection(PbCollections.plans)\n          .getFullList(\n            filter: ownerFilter,\n            fields: 'id,created,updated',\n''',
+              'notes timestamp owner filter',
+          )
+
+          tags = 'lib/data/profile/tag_catalog.dart'
+          replace_once(
+              tags,
+              '''      final authId = _userIdForWhere;\n      if (authId == null || authId.isEmpty) return [];\n      final uid = _escapeForPbFilter(authId);\n      final list = await _pb\n          .collection(PbCollections.tags)\n          .getFullList(filter: 'user_id = \\"$uid\\"');\n''',
+              '''      final ownerFilter = _pocketBaseOwnerFilterClauseForRecords();\n      if (ownerFilter == null || ownerFilter.isEmpty) return [];\n      final list = await _pb\n          .collection(PbCollections.tags)\n          .getFullList(filter: ownerFilter);\n''',
+              'tags owner filter',
+          )
+
+          # Guard against reintroducing the exact auth-id-only reads that caused the incident.
+          checks = {
+              plan: [
+                  'getFullList(filter: ownerFilter, expand: kPbPlanTagsExpand)',
+                  'filter: ownerFilter,\n            batch: 200,',
+                  'return _pocketBaseOwnerFilterClauseForRecords();',
+                  "getFirstListItem('plan_id = \\\"$esc\\\" && $ownerFilter')",
+              ],
+              notes: ['filter: ownerFilter,'],
+              tags: ['getFullList(filter: ownerFilter)'],
+          }
+          for path, needles in checks.items():
+              text = Path(path).read_text(encoding='utf-8')
+              for needle in needles:
+                  if needle not in text:
+                      raise SystemExit(f'missing hotfix guard {needle!r} in {path}')
+          PY
+
+      - name: Commit hotfix
+        shell: bash
+        run: |
+          git config user.name "nkuchenov-hash"
+          git config user.email "nkuchenov@gmail.com"
+          git rm .github/workflows/lifeos-owner-read-hotfix.yml
+          git add lib/data/plan_service.dart lib/data/plans/notes_brain_helpers.dart lib/data/profile/tag_catalog.dart
+          git diff --cached --check
+          git commit -m "Fix legacy owner reads for plans notes and tags"
+          git push origin HEAD:main
