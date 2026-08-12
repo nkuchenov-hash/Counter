@@ -1,0 +1,64 @@
+name: Diagnose record start
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/diag-record-start.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      SSH_PRIVATE_KEY: ${{ secrets.POCKETBASE_SSH_PRIVATE_KEY || secrets.VPS_SSH_KEY || secrets.SSH_PRIVATE_KEY }}
+      SSH_USER: ${{ secrets.POCKETBASE_SSH_USER || secrets.VPS_SSH_USER || secrets.SSH_USER }}
+      SSH_HOST: ${{ secrets.POCKETBASE_SSH_HOST || secrets.VPS_HOST || secrets.SSH_HOST }}
+      SSH_PORT: ${{ secrets.POCKETBASE_SSH_PORT || secrets.VPS_SSH_PORT || '22' }}
+    steps:
+      - name: Prepare SSH
+        run: |
+          set -euo pipefail
+          test -n "$SSH_PRIVATE_KEY"
+          echo "SSH_USER=${SSH_USER:-root}" >> "$GITHUB_ENV"
+          echo "SSH_HOST=${SSH_HOST:-217.114.0.201}" >> "$GITHUB_ENV"
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/lifeos_pocketbase
+          chmod 600 ~/.ssh/lifeos_pocketbase
+          ssh-keyscan -p "$SSH_PORT" -H "${SSH_HOST:-217.114.0.201}" >> ~/.ssh/known_hosts
+      - name: Read recent record create requests
+        run: |
+          set -euo pipefail
+          ssh -i ~/.ssh/lifeos_pocketbase -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -eu
+          AUX_PATH=/root/pb/pb_data/auxiliary.db python3 - <<'PY'
+          import os, sqlite3, json
+          con = sqlite3.connect(f"file:{os.environ['AUX_PATH']}?mode=ro", uri=True)
+          rows = con.execute("select created, level, message, data from _logs order by created desc limit 400").fetchall()
+          shown = 0
+          for created, level, message, raw in rows:
+              m = message or ''
+              if '/api/collections/records/records' not in m:
+                  continue
+              if not (m.startswith('POST ') or m.startswith('PATCH ') or 'POST /api/collections/records/records' in m):
+                  continue
+              try:
+                  data = json.loads(raw) if isinstance(raw, str) and raw.strip() else (raw or {})
+              except Exception:
+                  data = {'raw': str(raw)[:800]}
+              safe = {}
+              if isinstance(data, dict):
+                  for key in ('status','statusCode','method','url','path','elapsed','duration','userId','authId','type','error','message'):
+                      if key in data:
+                          safe[key] = data[key]
+              print('REQ', created, 'level=', level, 'message=', m[:500])
+              print('META', json.dumps(safe, separators=(',',':'), ensure_ascii=True)[:2000])
+              shown += 1
+              if shown >= 30:
+                  break
+          con.close()
+          PY
+          REMOTE
