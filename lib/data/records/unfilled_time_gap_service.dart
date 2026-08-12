@@ -164,7 +164,11 @@ class UnfilledTimeGapService with WidgetsBindingObserver {
       explicitEndTime: gap.endUtc,
     );
     if (createdId == null || createdId.isEmpty) return false;
-    await refresh();
+
+    // The write is already confirmed here. Recomputing the gap is follow-up UI
+    // maintenance and must never keep the save sheet waiting on a full records
+    // refresh/network round trip.
+    unawaited(refresh());
     return true;
   }
 
