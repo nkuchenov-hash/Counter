@@ -152,14 +152,24 @@ class UnfilledTimeGapBanner extends StatelessWidget {
     final title = controller.text.trim();
     if (title.isEmpty) return;
     setSheetState(() => setSaving(true));
-    final ok = await UnfilledTimeGapService.instance.fillGap(gap, title);
+
+    var ok = false;
+    try {
+      ok = await UnfilledTimeGapService.instance
+          .fillGap(gap, title)
+          .timeout(const Duration(seconds: 20), onTimeout: () => false);
+    } catch (_) {
+      ok = false;
+    }
+
     if (!sheetContext.mounted) return;
     if (ok) {
       Navigator.of(sheetContext).pop();
       AppSnack.saved();
-    } else {
-      setSheetState(() => setSaving(false));
-      AppSnack.failed();
+      return;
     }
+
+    setSheetState(() => setSaving(false));
+    AppSnack.failed();
   }
 }
