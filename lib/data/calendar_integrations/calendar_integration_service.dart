@@ -212,6 +212,12 @@ class CalendarIntegrationService {
     throw const FormatException('Unexpected calendar integration response');
   }
 
+  String _errorText(Object error) {
+    if (error is StateError) return '${error.message}';
+    if (error is FormatException) return error.message;
+    return '$error';
+  }
+
   Future<void> loadStatus() async {
     final headers = _headers();
     if (headers == null) {
@@ -250,7 +256,7 @@ class CalendarIntegrationService {
     } catch (error) {
       state.value = state.value.copyWith(
         loading: false,
-        error: '$error',
+        error: _errorText(error),
       );
     }
   }
@@ -270,6 +276,12 @@ class CalendarIntegrationService {
             body: '{}',
           )
           .timeout(const Duration(seconds: 20));
+      if (response.statusCode == 404) {
+        state.value = state.value.copyWith(
+          error: 'server_calendar_integrations_not_deployed',
+        );
+        return false;
+      }
       if (response.statusCode < 200 || response.statusCode >= 300) {
         final payload = _decode(response);
         throw StateError(
@@ -292,7 +304,7 @@ class CalendarIntegrationService {
       if (!launched) throw StateError('Could not open provider authorization');
       return true;
     } catch (error) {
-      state.value = state.value.copyWith(error: '$error');
+      state.value = state.value.copyWith(error: _errorText(error));
       return false;
     } finally {
       state.value = state.value.copyWith(clearActionProvider: true);
@@ -328,7 +340,7 @@ class CalendarIntegrationService {
       await loadStatus();
       return true;
     } catch (error) {
-      state.value = state.value.copyWith(error: '$error');
+      state.value = state.value.copyWith(error: _errorText(error));
       return false;
     } finally {
       state.value = state.value.copyWith(clearActionProvider: true);
@@ -360,7 +372,7 @@ class CalendarIntegrationService {
       );
       return true;
     } catch (error) {
-      state.value = state.value.copyWith(error: '$error');
+      state.value = state.value.copyWith(error: _errorText(error));
       return false;
     } finally {
       state.value = state.value.copyWith(clearActionProvider: true);
@@ -393,7 +405,7 @@ class CalendarIntegrationService {
       );
       return true;
     } catch (error) {
-      state.value = state.value.copyWith(error: '$error');
+      state.value = state.value.copyWith(error: _errorText(error));
       return false;
     } finally {
       state.value = state.value.copyWith(clearActionProvider: true);

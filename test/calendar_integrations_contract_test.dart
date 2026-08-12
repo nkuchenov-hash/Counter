@@ -66,6 +66,12 @@ void main() {
     expect(ui, contains('allCategoryIdPathPairs'));
     expect(service, contains('calendarIntegrationConnect'));
     expect(service, contains('notifyPlanningRefresh'));
+    expect(service, contains('response.statusCode == 404'));
+    expect(
+      service,
+      contains("error: 'server_calendar_integrations_not_deployed'"),
+    );
+    expect(service, contains('String _errorText(Object error)'));
     expect(service, isNot(contains('Price Reporter')));
     expect(service, isNot(contains('LAREDO')));
   });
