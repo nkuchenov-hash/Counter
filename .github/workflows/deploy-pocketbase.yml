@@ -29,6 +29,8 @@ jobs:
         run: |
           node --check pb_hooks/sleep_sync.pb.js
           node --check pb_migrations/1785390000_server_sleep_sync.js
+          node --check pb_hooks/calendar_integrations.pb.js
+          node --check pb_migrations/1785960000_calendar_integrations.js
 
       - name: Check production deploy credentials
         env:
@@ -134,9 +136,10 @@ jobs:
 
           for attempt in {1..20}; do
             health="$(curl -sS -o /dev/null -w '%{http_code}' http://127.0.0.1:8090/api/health || true)"
-            route="$(curl -sS -o /dev/null -w '%{http_code}' http://127.0.0.1:8090/api/sleep-sync/status || true)"
-            if [[ "$health" == "200" && ( "$route" == "401" || "$route" == "403" ) ]]; then
-              echo "PocketBase is healthy and the sleep-sync route is loaded."
+            sleep_route="$(curl -sS -o /dev/null -w '%{http_code}' http://127.0.0.1:8090/api/sleep-sync/status || true)"
+            calendar_route="$(curl -sS -o /dev/null -w '%{http_code}' http://127.0.0.1:8090/api/calendar-integrations/status || true)"
+            if [[ "$health" == "200" && ( "$sleep_route" == "401" || "$sleep_route" == "403" ) && ( "$calendar_route" == "401" || "$calendar_route" == "403" ) ]]; then
+              echo "PocketBase is healthy and protected sleep/calendar routes are loaded."
               exit 0
             fi
             sleep 2
