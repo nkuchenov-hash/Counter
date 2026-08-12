@@ -1,22 +1,89 @@
 part of '../database_service.dart';
 
 extension CategoryCacheExtension on DatabaseService {
+  Set<String> _categoryCacheOwnerAliases() {
+    final aliases = <String>{};
+
+    void add(dynamic value) {
+      final s = (value ?? '').toString().trim();
+      if (s.isNotEmpty) aliases.add(s);
+    }
+
+    add(currentProfileId);
+    add(_userIdForWhere);
+    try {
+      final rec = _pocketBase?.authStore.record;
+      add(rec?.id);
+      add(rec?.data['user_id']);
+    } catch (_) {}
+    return aliases;
+  }
+
+  Iterable<String> _categoryCacheCandidateKeys() sync* {
+    final base = DatabaseService._cacheCategoriesRawKey;
+    final seen = <String>{};
+    for (final owner in _categoryCacheOwnerAliases()) {
+      final key = '${base}_$owner';
+      if (seen.add(key)) yield key;
+    }
+    final scoped = _scopedDataCacheKey(base);
+    if (seen.add(scoped)) yield scoped;
+    final anon = '${base}_anon';
+    if (seen.add(anon)) yield anon;
+    if (seen.add(base)) yield base;
+  }
+
   Future<List<Map<String, dynamic>>?> _readCachedCategoryMaps() async {
     try {
       final prefs = _prefs ?? await SharedPreferences.getInstance();
-      final raw = prefs.getString(
-        _scopedDataCacheKey(DatabaseService._cacheCategoriesRawKey),
-      );
-      if (raw == null || raw.trim().isEmpty) return null;
-      final decoded = jsonDecode(raw);
-      if (decoded is! List) return null;
-      return [
-        for (final e in decoded)
-          if (e is Map) Map<String, dynamic>.from(e),
-      ];
+      for (final key in _categoryCacheCandidateKeys()) {
+        final raw = prefs.getString(key);
+        if (raw == null || raw.trim().isEmpty) continue;
+        final decoded = jsonDecode(raw);
+        if (decoded is! List) continue;
+        final rows = [
+          for (final e in decoded)
+            if (e is Map) Map<String, dynamic>.from(e),
+        ];
+        // Prefer a known non-empty catalog. An empty cache from a transient
+        // auth/owner mismatch must never mask another valid owner alias cache.
+        if (rows.isNotEmpty) return rows;
+      }
+
+      // Return an actual cached empty list only when no compatible owner alias
+      // contains a non-empty catalog.
+      for (final key in _categoryCacheCandidateKeys()) {
+        final raw = prefs.getString(key);
+        if (raw == null || raw.trim().isEmpty) continue;
+        final decoded = jsonDecode(raw);
+        if (decoded is List) {
+          return [
+            for (final e in decoded)
+              if (e is Map) Map<String, dynamic>.from(e),
+          ];
+        }
+      }
+      return null;
     } catch (_) {
       return null;
     }
+  }
+
+  Future<void> _writeCategoryCacheMaps(
+    List<Map<String, dynamic>> rows,
+  ) async {
+    if (rows.isEmpty) return;
+    try {
+      final prefs = _prefs ?? await SharedPreferences.getInstance();
+      final encoded = jsonEncode(rows);
+      for (final key in _categoryCacheCandidateKeys()) {
+        if (key.endsWith('_anon') ||
+            key == DatabaseService._cacheCategoriesRawKey) {
+          continue;
+        }
+        await prefs.setString(key, encoded);
+      }
+    } catch (_) {}
   }
 
   String? _categoryOwnerFilterClauseForRead() {
@@ -27,10 +94,10 @@ extension CategoryCacheExtension on DatabaseService {
   }
 
   Future<List<Map<String, dynamic>>> fetchCategories() async {
-    if (!(currentProfileId?.isNotEmpty ?? false)) return [];
     try {
       await ensurePocketBaseReady();
-      if (_pbHttpBackoffActive) {
+      final ownerFilter = _categoryOwnerFilterClauseForRead();
+      if (_pbHttpBackoffActive || ownerFilter == null || ownerFilter.isEmpty) {
         final cached = await _readCachedCategoryMaps();
         if (cached == null) return [];
         return [
@@ -44,8 +111,6 @@ extension CategoryCacheExtension on DatabaseService {
               row,
         ];
       }
-      final ownerFilter = _categoryOwnerFilterClauseForRead();
-      if (ownerFilter == null || ownerFilter.isEmpty) return [];
       final list = await _pb
           .collection(PbCollections.categories)
           .getFullList(filter: '$ownerFilter && is_archived = false');
@@ -55,6 +120,25 @@ extension CategoryCacheExtension on DatabaseService {
         m['_pb_record_id'] = r.id;
         return m;
       }).toList();
+      if (out.isNotEmpty) {
+        await _writeCategoryCacheMaps(out);
+      } else {
+        // PocketBase list rules can return HTTP 200 + [] during a transient
+        // auth/owner mismatch. A passive read is not deletion evidence.
+        final cached = await _readCachedCategoryMaps();
+        if (cached != null && cached.isNotEmpty) {
+          return [
+            for (final row in cached)
+              if (_categoryFlatRowIsActive(
+                CategoryServiceExtension._flattenNocoRecord(
+                  row,
+                  allowCategoryIdAsRowPk: true,
+                ),
+              ))
+                row,
+          ];
+        }
+      }
       if (kDebugMode) {
         debugPrint(
           '[PB] fetchCategories: ${out.length} rows (owner compatibility filter) @ $kPocketBaseUrl',
@@ -95,12 +179,13 @@ extension CategoryCacheExtension on DatabaseService {
 
   Future<List<Map<String, dynamic>>> getCategories() => fetchCategories();
 
-  /// PocketBase **categories**: every row for `user_id` (active + archived) for slug reservation / collision checks.
+  /// PocketBase **categories**: every row for the compatible owner identity
+  /// (active + archived) for slug reservation / collision checks.
   ///
   /// `null` means the network result is unknown (backoff/error). An empty list
-  /// means PocketBase successfully confirmed that this owner has zero rows.
+  /// means PocketBase answered with zero visible rows, which is still not
+  /// sufficient by itself to destroy a known local category catalog.
   Future<List<Map<String, dynamic>>?> _fetchAllCategoryMapsForUser() async {
-    if (!(currentProfileId?.isNotEmpty ?? false)) return null;
     try {
       await ensurePocketBaseReady();
       if (_pbHttpBackoffActive) {
@@ -175,17 +260,27 @@ extension CategoryCacheExtension on DatabaseService {
     List<Map<String, dynamic>>? allRows;
     try {
       final fetched = await _fetchAllCategoryMapsForUser();
-      if (fetched != null) {
-        allRows = fetched;
-        try {
-          final prefs = _prefs ?? await SharedPreferences.getInstance();
-          await prefs.setString(
-            _scopedDataCacheKey(DatabaseService._cacheCategoriesRawKey),
-            jsonEncode(allRows),
-          );
-        } catch (_) {}
-      } else {
+      if (fetched == null) {
         allRows = await _readCachedCategoryMaps();
+      } else if (fetched.isNotEmpty) {
+        allRows = fetched;
+        await _writeCategoryCacheMaps(fetched);
+      } else {
+        // CRITICAL INVARIANT: a passive protected-list read returning [] is not
+        // proof that the user deleted every category. PocketBase may return a
+        // successful empty list while auth/owner visibility is temporarily
+        // unresolved. Never overwrite a known-good catalog with that response.
+        final cached = await _readCachedCategoryMaps();
+        if (cached != null && cached.isNotEmpty) {
+          allRows = cached;
+          _scheduleAppOpenSyncRetry();
+        } else if (_rules.isNotEmpty) {
+          _categoryController.add(List.from(_rules));
+          _scheduleAppOpenSyncRetry();
+          return;
+        } else {
+          allRows = fetched;
+        }
       }
     } catch (e) {
       DatabaseService._log('CATEGORY_FETCH: $e');
@@ -199,11 +294,14 @@ extension CategoryCacheExtension on DatabaseService {
       return;
     }
     if (allRows.isEmpty) {
-      // Only a successful empty server result (or a real cached empty catalog)
-      // may clear the category tree.
-      _rules = [];
-      _reservedCategorySlugsLower.clear();
-      _categoryDialogUniverse = [];
+      // A genuinely new account may have no categories. Existing known
+      // categories are never cleared by passive bootstrap/sync; explicit CRUD
+      // is responsible for updating the in-memory catalog after real deletion.
+      if (_rules.isNotEmpty) {
+        _categoryController.add(List.from(_rules));
+        _scheduleAppOpenSyncRetry();
+        return;
+      }
       _categoryController.add(List.from(_rules));
       return;
     }
@@ -219,6 +317,13 @@ extension CategoryCacheExtension on DatabaseService {
           )
           .where(_categoryFlatRowIsActive)
           .toList();
+      if (flat.isEmpty && _rules.isNotEmpty) {
+        // Same invariant after flattening/archive interpretation: malformed or
+        // temporarily invisible rows may not erase the last valid tree.
+        _categoryController.add(List.from(_rules));
+        _scheduleAppOpenSyncRetry();
+        return;
+      }
       final built = flat.isEmpty
           ? (<CategoryRule>[], <List<CategoryRule>>[])
           : _buildCategoryTreeFromFlat(flat);
