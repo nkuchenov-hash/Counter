@@ -37,12 +37,12 @@ jobs:
           ssh -i ~/.ssh/lifeos_pocketbase -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
           set -eu
           db=/root/pb/pb_data/data.db
-          echo 'SERVICE_STATE:'
+          aux=/root/pb/pb_data/auxiliary.db
           systemctl is-active pocketbase.service || true
-          systemctl show pocketbase.service -p WorkingDirectory --value || true
           stat -c 'DB=%n bytes=%s modified=%y' "$db"
-          DB_PATH="$db" python3 - <<'PY'
-          import os, sqlite3
+          DB_PATH="$db" AUX_PATH="$aux" python3 - <<'PY'
+          import os, sqlite3, json
+
           db = os.environ['DB_PATH']
           con = sqlite3.connect(f'file:{db}?mode=ro', uri=True)
           cur = con.cursor()
@@ -60,26 +60,42 @@ jobs:
                   print(f'profile={r[0]}.. legacy={r[1]}.. admin={r[2]}')
           print('OWNED_ROW_COUNTS:')
           for table in ('plans','categories','tags','records'):
-              if not exists(table):
-                  continue
-              cols = {r[1] for r in cur.execute(f'pragma table_info({table})')}
-              if 'user_id' not in cols:
-                  print(f'[{table}] user_id=MISSING')
-                  continue
+              if not exists(table): continue
               print(f'[{table}]')
               for owner, count in cur.execute(f"select substr(coalesce(user_id,''),1,8), count(*) from {table} group by user_id order by count(*) desc"):
                   print(f'owner={owner}.. rows={count}')
           print('COLLECTION_RULES:')
           if exists('_collections'):
-              cols = {r[1] for r in cur.execute('pragma table_info(_collections)')}
               wanted = ['profiles','plans','categories','tags','records']
-              rule_cols = [c for c in ('listRule','viewRule','createRule','updateRule','deleteRule') if c in cols]
-              print('rule_cols=' + ','.join(rule_cols))
-              if rule_cols:
-                  sql = 'select name,' + ','.join(rule_cols) + ' from _collections where name in (' + ','.join('?' for _ in wanted) + ') order by name'
-                  for row in cur.execute(sql, wanted):
-                      print(row)
+              for row in cur.execute("select name,listRule,viewRule from _collections where name in (?,?,?,?,?) order by name", wanted):
+                  print(row)
           con.close()
+
+          aux = os.environ['AUX_PATH']
+          acon = sqlite3.connect(f'file:{aux}?mode=ro', uri=True)
+          ac = acon.cursor()
+          tables = [r[0] for r in ac.execute("select name from sqlite_master where type='table' order by name")]
+          print('AUX_TABLES=' + ','.join(tables))
+          for table in tables:
+              if 'log' not in table.lower():
+                  continue
+              cols = [r[1] for r in ac.execute(f'pragma table_info("{table}")')]
+              print(f'LOG_TABLE={table} COLS=' + ','.join(cols))
+              try:
+                  rows = ac.execute(f'select * from "{table}" order by rowid desc limit 40').fetchall()
+              except Exception as e:
+                  print('LOG_READ_FAIL', table, e)
+                  continue
+              for row in rows:
+                  item = dict(zip(cols, row))
+                  status = item.get('status') or item.get('statusCode') or item.get('code')
+                  message = str(item.get('message') or item.get('data') or item.get('details') or '')
+                  url = str(item.get('url') or item.get('path') or item.get('requestUrl') or '')
+                  created = str(item.get('created') or item.get('time') or item.get('timestamp') or '')
+                  blob = f'{status} {url} {message}'.lower()
+                  if any(x in blob for x in ('400','401','403','422','500','plans','categories','tags','profiles')):
+                      print('LOG', created[:30], 'status=', status, 'url=', url[:180], 'msg=', message[:500].replace('\n',' '))
+          acon.close()
           PY
           curl -sS -o /dev/null -w 'health=%{http_code}\n' https://217-114-0-201.sslip.io/api/health || true
           REMOTE
