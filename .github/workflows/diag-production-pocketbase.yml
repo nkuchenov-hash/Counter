@@ -1,0 +1,94 @@
+name: Diagnose production PocketBase ownership
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/diag-production-pocketbase.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      SSH_PRIVATE_KEY: ${{ secrets.POCKETBASE_SSH_PRIVATE_KEY || secrets.VPS_SSH_KEY || secrets.SSH_PRIVATE_KEY }}
+      SSH_USER: ${{ secrets.POCKETBASE_SSH_USER || secrets.VPS_SSH_USER || secrets.SSH_USER }}
+      SSH_HOST: ${{ secrets.POCKETBASE_SSH_HOST || secrets.VPS_HOST || secrets.SSH_HOST }}
+      SSH_PORT: ${{ secrets.POCKETBASE_SSH_PORT || secrets.VPS_SSH_PORT || '22' }}
+      POCKETBASE_SERVICE: ${{ secrets.POCKETBASE_SERVICE }}
+      POCKETBASE_DEPLOY_DIR: ${{ secrets.POCKETBASE_DEPLOY_DIR }}
+    steps:
+      - name: Prepare SSH
+        run: |
+          set -euo pipefail
+          test -n "$SSH_PRIVATE_KEY"
+          echo "SSH_USER=${SSH_USER:-root}" >> "$GITHUB_ENV"
+          echo "SSH_HOST=${SSH_HOST:-217.114.0.201}" >> "$GITHUB_ENV"
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/lifeos_pocketbase
+          chmod 600 ~/.ssh/lifeos_pocketbase
+          ssh-keyscan -p "$SSH_PORT" -H "${SSH_HOST:-217.114.0.201}" >> ~/.ssh/known_hosts
+
+      - name: Inspect active PocketBase database without modifying it
+        run: |
+          set -euo pipefail
+          ssh -i ~/.ssh/lifeos_pocketbase -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" \
+            "POCKETBASE_SERVICE='$POCKETBASE_SERVICE' POCKETBASE_DEPLOY_DIR='$POCKETBASE_DEPLOY_DIR' bash -s" <<'REMOTE'
+          set -euo pipefail
+          service_name="${POCKETBASE_SERVICE:-}"
+          if [[ -z "$service_name" ]]; then
+            service_name="$(systemctl list-unit-files --type=service --no-legend 2>/dev/null | awk 'tolower($1) ~ /pocketbase/ {print $1; exit}')"
+          fi
+          app_dir="${POCKETBASE_DEPLOY_DIR:-}"
+          if [[ -z "$app_dir" && -n "$service_name" ]]; then
+            app_dir="$(systemctl show "$service_name" -p WorkingDirectory --value 2>/dev/null || true)"
+          fi
+          echo "SERVICE=$service_name"
+          echo "APP_DIR=$app_dir"
+          systemctl show "$service_name" -p ExecStart -p WorkingDirectory --no-pager || true
+          pid="$(pgrep -f '[p]ocketbase.*serve' | head -n1 || true)"
+          if [[ -n "$pid" ]]; then
+            echo "PID=$pid CWD=$(readlink -f /proc/$pid/cwd || true)"
+            printf 'CMD='; tr '\0' ' ' < "/proc/$pid/cmdline"; echo
+          fi
+          echo 'PB_DATA_FILES:'
+          find "$app_dir" -maxdepth 3 -type f \( -name 'data.db' -o -name '*.db' -o -name '*.sqlite*' \) -printf '%p %s bytes %TY-%Tm-%Td %TH:%TM:%TS\n' 2>/dev/null | sort
+
+          db="$app_dir/pb_data/data.db"
+          if [[ ! -f "$db" ]]; then
+            echo "ERROR: expected active database not found at $db"
+            exit 2
+          fi
+
+          if command -v sqlite3 >/dev/null 2>&1; then
+            echo 'ROW_COUNTS:'
+            for table in profiles plans categories tags records; do
+              if sqlite3 "$db" "SELECT 1 FROM sqlite_master WHERE type='table' AND name='$table';" | grep -q 1; then
+                printf '%s=' "$table"
+                sqlite3 "$db" "SELECT count(*) FROM \"$table\";"
+              else
+                echo "$table=MISSING"
+              fi
+            done
+            echo 'PROFILE_OWNERSHIP:'
+            sqlite3 -header -column "$db" "SELECT id, substr(COALESCE(user_id,''),1,12) AS legacy_user_prefix, COALESCE(is_admin,0) AS is_admin FROM profiles ORDER BY created;" || true
+            echo 'OWNED_ROW_COUNTS:'
+            for table in plans categories tags records; do
+              if sqlite3 "$db" "SELECT 1 FROM sqlite_master WHERE type='table' AND name='$table';" | grep -q 1; then
+                echo "[$table]"
+                sqlite3 -header -column "$db" "SELECT user_id, count(*) AS rows FROM \"$table\" GROUP BY user_id ORDER BY rows DESC;" || true
+              fi
+            done
+            echo 'COLLECTION_RULES:'
+            sqlite3 -header -column "$db" "SELECT name, listRule, viewRule FROM _collections WHERE name IN ('profiles','plans','categories','tags','records') ORDER BY name;" || true
+          else
+            echo 'sqlite3 unavailable; using PocketBase sqlite metadata only.'
+          fi
+
+          echo 'LOCAL_HEALTH:'
+          curl -sS -o /dev/null -w 'health=%{http_code}\n' https://217-114-0-201.sslip.io/api/health || true
+          REMOTE
