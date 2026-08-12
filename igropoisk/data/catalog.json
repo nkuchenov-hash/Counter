@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-12T19:57:49.141Z",
+  "updatedAt": "2026-08-12T19:59:15.719Z",
   "count": 78,
   "sourcePool": [
     "Steam",
@@ -1060,7 +1060,7 @@
       "movies": [],
       "criticRating": 8.9,
       "steamUserRating": 9.8,
-      "recommendations": 811226,
+      "recommendations": 811241,
       "owners": "50,000,000 .. 100,000,000",
       "peakConcurrent": 25122,
       "sourceEvidence": [
@@ -1073,7 +1073,7 @@
         "steamSpy": "https://steamspy.com/app/550",
         "metacritic": "https://www.metacritic.com/game/pc/left-4-dead-2?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10390.914239681651,
+      "popularityScore": 10390.915042706823,
       "igropoiskRating": 9.2,
       "editorialSources": [],
       "materials": {
@@ -1454,7 +1454,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 9.4,
-      "recommendations": 457113,
+      "recommendations": 457118,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 14439,
       "sourceEvidence": [
@@ -1466,7 +1466,7 @@
         "steamSpy": "https://steamspy.com/app/892970",
         "metacritic": ""
       },
-      "popularityScore": 10326.002452260116,
+      "popularityScore": 10326.002927297095,
       "igropoiskRating": 9.4,
       "editorialSources": [],
       "materials": {
@@ -1627,7 +1627,7 @@
       "movies": [],
       "criticRating": 9.2,
       "steamUserRating": 9,
-      "recommendations": 47671,
+      "recommendations": 47673,
       "owners": "50,000,000 .. 100,000,000",
       "peakConcurrent": 43819,
       "sourceEvidence": [
@@ -1640,7 +1640,7 @@
         "steamSpy": "https://steamspy.com/app/440",
         "metacritic": "https://www.metacritic.com/game/pc/team-fortress-2?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10277.826337241673,
+      "popularityScore": 10277.828159214203,
       "igropoiskRating": 9.1,
       "editorialSources": [],
       "materials": {
@@ -1879,7 +1879,7 @@
       "movies": [],
       "criticRating": 8.9,
       "steamUserRating": 9.7,
-      "recommendations": 155574,
+      "recommendations": 155573,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 2559,
       "sourceEvidence": [
@@ -1892,7 +1892,7 @@
         "steamSpy": "https://steamspy.com/app/588650",
         "metacritic": "https://www.metacritic.com/game/pc/dead-cells?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10259.19398096565,
+      "popularityScore": 10259.193701810338,
       "igropoiskRating": 9.2,
       "editorialSources": [],
       "materials": {
@@ -3774,7 +3774,7 @@
       "movies": [],
       "criticRating": 8.7,
       "steamUserRating": 9.7,
-      "recommendations": 339604,
+      "recommendations": 339601,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 2719,
       "sourceEvidence": [
@@ -3788,7 +3788,7 @@
         "steamSpy": "https://steamspy.com/app/264710",
         "metacritic": "https://www.metacritic.com/game/pc/subnautica?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9803.0974075731,
+      "popularityScore": 9803.097023924685,
       "igropoiskRating": 9,
       "editorialSources": [
         "Rock Paper Shotgun"
@@ -6006,7 +6006,7 @@
       "movies": [],
       "criticRating": 8.8,
       "steamUserRating": 9.7,
-      "recommendations": 130553,
+      "recommendations": 130551,
       "owners": "2,000,000 .. 5,000,000",
       "peakConcurrent": 1174,
       "sourceEvidence": [
@@ -6019,7 +6019,7 @@
         "steamSpy": "https://steamspy.com/app/504230",
         "metacritic": "https://www.metacritic.com/game/pc/celeste?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9481.579018256505,
+      "popularityScore": 9481.578352941297,
       "igropoiskRating": 9.1,
       "editorialSources": [],
       "materials": {
