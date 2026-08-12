@@ -6,7 +6,6 @@ import 'package:counter/data/models.dart';
 import 'package:counter/features/settings/categories/category_appearance_sheet.dart';
 import 'package:counter/features/settings/categories/category_editor_sheet.dart';
 import 'package:counter/features/settings/categories/category_row_widget.dart';
-import 'package:counter/shared/categories/visibility/category_visibility_prefs.dart';
 import 'package:counter/features/settings/categories/create_category_dialog.dart';
 import 'package:counter/features/shared/shared_widgets.dart';
 import 'package:counter/l10n/dictionary.dart';
@@ -45,34 +44,8 @@ class _CategoriesPageState extends State<CategoriesPage> {
   bool _useHorizontalScrollLayout = false;
   static const int _maxDepth = 4;
 
-  void _categoryVisibilityListener() {
-    if (!mounted) return;
-    var changed = false;
-    for (var d = 0; d < _maxDepth; d++) {
-      final id = _selectedPath[d];
-      if (id != null && CategoryVisibilityPrefs.isHiddenOrAncestor(id)) {
-        for (var j = d; j < _maxDepth; j++) {
-          _selectedPath[j] = null;
-        }
-        changed = true;
-        break;
-      }
-    }
-    if (changed) setState(() {});
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    unawaited(CategoryVisibilityPrefs.ensureLoaded());
-    CategoryVisibilityPrefs.hiddenIds.addListener(_categoryVisibilityListener);
-  }
-
   @override
   void dispose() {
-    CategoryVisibilityPrefs.hiddenIds.removeListener(
-      _categoryVisibilityListener,
-    );
     unawaited(DatabaseService.instance.flushCategoryOrderSyncNow());
     super.dispose();
   }
@@ -115,18 +88,12 @@ class _CategoriesPageState extends State<CategoriesPage> {
   }
 
   List<CategoryRule> _getItemsForDepth(int depth) {
-    final List<CategoryRule> raw;
     if (depth == 0) {
-      raw = DatabaseService.instance.getChildrenOf(null);
-    } else {
-      final parentId = _selectedPath[depth - 1];
-      if (parentId == null) return [];
-      raw = DatabaseService.instance.getChildrenOf(parentId);
+      return DatabaseService.instance.getChildrenOf(null);
     }
-    if (_categoryEditMode) return raw;
-    return raw
-        .where((r) => !CategoryVisibilityPrefs.isHiddenOrAncestor(r.id))
-        .toList();
+    final parentId = _selectedPath[depth - 1];
+    if (parentId == null) return [];
+    return DatabaseService.instance.getChildrenOf(parentId);
   }
 
   void _selectAtDepth(int depth, int? id) {
@@ -235,9 +202,6 @@ class _CategoriesPageState extends State<CategoriesPage> {
       showAdd: canAddAtThisLevel,
       onAddTap: () => unawaited(_addSubcategoryAtDepth(depth)),
       editMode: _categoryEditMode,
-      onToggleCategoryVisibility: _categoryEditMode
-          ? (id) => unawaited(CategoryVisibilityPrefs.toggle(id))
-          : null,
     );
 
     final hasSelection = depth < _maxDepth && selectedId != null;
@@ -261,84 +225,78 @@ class _CategoriesPageState extends State<CategoriesPage> {
     final scheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     final loc = currentLocale.value;
+    final roots = _getItemsForDepth(0);
 
-    return ValueListenableBuilder<List<int>>(
-      valueListenable: CategoryVisibilityPrefs.hiddenIds,
-      builder: (context, _, _) {
-        final roots = _getItemsForDepth(0);
-        return Scaffold(
-          resizeToAvoidBottomInset: true,
-          appBar: AppBar(
-            title: Text(t(loc, 'categories_title')),
-            actions: [
-              AppIconButton(
-                icon: _useHorizontalScrollLayout
-                    ? Icons.grid_view_rounded
-                    : Icons.view_week_rounded,
-                tooltip: _useHorizontalScrollLayout
-                    ? t(loc, 'switch_to_wrap')
-                    : t(loc, 'switch_to_scrollable'),
-                onPressed: () => setState(
-                  () =>
-                      _useHorizontalScrollLayout = !_useHorizontalScrollLayout,
-                ),
-              ),
-              AppIconButton(
-                tooltip: t(loc, 'add_category'),
-                onPressed: () => unawaited(_addRule()),
-                icon: Icons.add_rounded,
-              ),
-              const SizedBox(width: 4),
-            ],
-          ),
-          body: SafeArea(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                SwitchListTile(
-                  dense: true,
-                  visualDensity: VisualDensity.compact,
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 0,
-                  ),
-                  title: Text(
-                    t(loc, 'category_edit_mode'),
-                    style: textTheme.titleSmall,
-                  ),
-                  subtitle: Text(
-                    t(loc, 'category_edit_mode_subtitle'),
-                    style: textTheme.bodySmall?.copyWith(
-                      color: scheme.onSurfaceVariant,
-                    ),
-                  ),
-                  value: _categoryEditMode,
-                  onChanged: (v) => setState(() => _categoryEditMode = v),
-                ),
-                Divider(
-                  height: 1,
-                  color: scheme.outlineVariant.withValues(alpha: 0.5),
-                ),
-                Expanded(
-                  child: roots.isEmpty
-                      ? EmptyStatePlaceholder(
-                          icon: Icons.folder_outlined,
-                          titleL10nKey: 'empty_categories_title',
-                          subtitleL10nKey: 'empty_categories_subtitle',
-                          actionLabelL10nKey: 'add_category',
-                          onAction: () => unawaited(_addRule()),
-                          useFilledAction: true,
-                        )
-                      : SingleChildScrollView(
-                          padding: const EdgeInsets.only(bottom: 16),
-                          child: buildTabRow(context, 0, roots),
-                        ),
-                ),
-              ],
+    return Scaffold(
+      resizeToAvoidBottomInset: true,
+      appBar: AppBar(
+        title: Text(t(loc, 'categories_title')),
+        actions: [
+          AppIconButton(
+            icon: _useHorizontalScrollLayout
+                ? Icons.grid_view_rounded
+                : Icons.view_week_rounded,
+            tooltip: _useHorizontalScrollLayout
+                ? t(loc, 'switch_to_wrap')
+                : t(loc, 'switch_to_scrollable'),
+            onPressed: () => setState(
+              () => _useHorizontalScrollLayout = !_useHorizontalScrollLayout,
             ),
           ),
-        );
-      },
+          AppIconButton(
+            tooltip: t(loc, 'add_category'),
+            onPressed: () => unawaited(_addRule()),
+            icon: Icons.add_rounded,
+          ),
+          const SizedBox(width: 4),
+        ],
+      ),
+      body: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            SwitchListTile(
+              dense: true,
+              visualDensity: VisualDensity.compact,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 0,
+              ),
+              title: Text(
+                t(loc, 'category_edit_mode'),
+                style: textTheme.titleSmall,
+              ),
+              subtitle: Text(
+                t(loc, 'category_edit_mode_subtitle'),
+                style: textTheme.bodySmall?.copyWith(
+                  color: scheme.onSurfaceVariant,
+                ),
+              ),
+              value: _categoryEditMode,
+              onChanged: (v) => setState(() => _categoryEditMode = v),
+            ),
+            Divider(
+              height: 1,
+              color: scheme.outlineVariant.withValues(alpha: 0.5),
+            ),
+            Expanded(
+              child: roots.isEmpty
+                  ? EmptyStatePlaceholder(
+                      icon: Icons.folder_outlined,
+                      titleL10nKey: 'empty_categories_title',
+                      subtitleL10nKey: 'empty_categories_subtitle',
+                      actionLabelL10nKey: 'add_category',
+                      onAction: () => unawaited(_addRule()),
+                      useFilledAction: true,
+                    )
+                  : SingleChildScrollView(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: buildTabRow(context, 0, roots),
+                    ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
