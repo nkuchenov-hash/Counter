@@ -33,7 +33,6 @@ import 'package:counter/data/models.dart';
 import 'package:counter/data/voice/voice_command_parser.dart';
 import 'package:counter/features/calendar/calendar_view.dart';
 import 'package:counter/features/settings/categories/category_list_view.dart';
-import 'package:counter/shared/categories/visibility/category_visibility_prefs.dart';
 import 'package:counter/features/dev/component_lab_view.dart';
 import 'package:counter/features/lists/lists_view.dart';
 import 'package:counter/features/planning/planning_view.dart';
@@ -159,10 +158,6 @@ class ShellDashboardState extends State<LifeOSDashboard> with ShellDashboardBase
   @override
   void initState() {
     super.initState();
-    unawaited(CategoryVisibilityPrefs.ensureLoaded());
-    CategoryVisibilityPrefs.hiddenIds.addListener(
-      categoryVisibilityShellListener,
-    );
     selectedDate = DatabaseService.instance.getTimelineDeviceLocalToday();
     focusedDay = DatabaseService.instance.getTimelineDeviceLocalToday();
     selectedDateListenable = ValueNotifier(selectedDate);
@@ -250,9 +245,6 @@ class ShellDashboardState extends State<LifeOSDashboard> with ShellDashboardBase
 
   @override
   void dispose() {
-    CategoryVisibilityPrefs.hiddenIds.removeListener(
-      categoryVisibilityShellListener,
-    );
     deviceLocalMidnightWatchTimer?.cancel();
     notificationSub?.cancel();
     categoryRulesSub?.cancel();

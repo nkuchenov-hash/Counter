@@ -372,7 +372,6 @@ const Map<String, String> kZhL10n = {
     'lists_chip_bar_sheet_title': '[TODO] Quick filters',
     'lists_inline_add_no_category': '[TODO] No category available to assign.',
     'plan_filter_no_tags': '[TODO] No Tags',
-    'category_visibility_toggle': '[TODO] Show or hide in lists and planning',
     'lists_delete_backlog_confirm': '[TODO] Remove this backlog task?',
     'more_menu_profile': '[TODO] Profile & settings',
     'more_menu_categories': '[TODO] Categories',

@@ -40,7 +40,6 @@ const Map<String, String> kRuL10n = {
   'lists_inline_add_hint': 'Добавить задачу…',
   'lists_select_leaf_hint': 'Выберите подкатегорию, чтобы добавить задачи',
   'plan_filter_no_tags': 'Без тегов',
-  'category_visibility_toggle': 'Показать или скрыть в списках и планировании',
   'lists_delete_backlog_confirm': 'Удалить эту задачу из списка?',
   'lists_pin_chips_title': 'Быстрые фильтры',
   'lists_pin_chips_subtitle': 'Выберите категории для чипов рядом с «Все».',

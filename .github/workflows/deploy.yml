@@ -1,122 +1,96 @@
-name: Finalize hidden category removal
+name: Deploy Flutter Web and Igropoisk to GitHub Pages
 
+# Counter and Igropoisk share one Pages artifact; each validation gate must use its canonical output path.
 on:
   push:
     branches:
       - main
+      - master
+  workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
-  cleanup:
+  build-and-deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 75
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Remove all hidden-category remnants and restore deploy workflow
-        shell: bash
+      - name: Setup Node for Igropoisk
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Igropoisk collector
+        working-directory: igropoisk
+        run: npm install --no-audit --no-fund
+
+      - name: Build Igropoisk catalog
+        run: node igropoisk/scripts/update-curated.mjs
+
+      - name: Validate Igropoisk catalog
         run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          import re
+          node - <<'NODE'
+          const fs = require('fs');
+          const d = JSON.parse(fs.readFileSync('./igropoisk/data/catalog.json','utf8'));
+          if (!Array.isArray(d.games) || d.games.length < 50 || d.games.length > 220) {
+            throw new Error(`Invalid Igropoisk catalog size: ${d.games?.length || 0}`);
+          }
+          const invalid = d.games.filter(g => !g.appid || !g.title || !g.description || !g.releaseDate || !g.capsuleImage || !g.heroImage || !Array.isArray(g.screenshots) || g.screenshots.length < 2);
+          if (invalid.length) throw new Error(`Incomplete games: ${invalid.slice(0,10).map(g=>g.title).join(', ')}`);
+          console.log(`Igropoisk: ${d.games.length} games validated`);
+          NODE
 
-          def exact(text, old, new, label):
-              n = text.count(old)
-              if n != 1:
-                  raise SystemExit(f'{label}: expected 1 match, found {n}')
-              return text.replace(old, new, 1)
+      - name: Run strict architecture guard
+        run: pwsh -NoProfile -NonInteractive -File ./scripts/audit/architecture_guard.ps1 -Strict
 
-          p = Path('lib/app/shell/app_shell.dart')
-          s = p.read_text(encoding='utf-8')
-          s = exact(s, "import 'package:counter/shared/categories/visibility/category_visibility_prefs.dart';\n", '', 'app_shell import')
-          s = exact(s, "    unawaited(CategoryVisibilityPrefs.ensureLoaded());\n    CategoryVisibilityPrefs.hiddenIds.addListener(\n      categoryVisibilityShellListener,\n    );\n", '', 'app_shell init')
-          s = exact(s, "    CategoryVisibilityPrefs.hiddenIds.removeListener(\n      categoryVisibilityShellListener,\n    );\n", '', 'app_shell dispose')
-          p.write_text(s, encoding='utf-8')
+      - name: 'Set up Flutter 3.41.6 (Dart 3.11 satisfies pubspec sdk ^3.11.0)'
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.6'
+          channel: 'stable'
 
-          p = Path('lib/app/shell/shared/shell_core.dart')
-          s = p.read_text(encoding='utf-8')
-          old = "  void categoryVisibilityShellListener() {\n    if (!mounted) return;\n    final id = selectedCategoryId;\n    if (id != null && CategoryVisibilityPrefs.isHiddenOrAncestor(id)) {\n      int? firstVisible;\n      for (final p in DatabaseService.instance.allCategoryIdPathPairs) {\n        if (!CategoryVisibilityPrefs.isHiddenOrAncestor(p.id)) {\n          firstVisible = p.id;\n          break;\n        }\n      }\n      setState(() => selectedCategoryId = firstVisible);\n    }\n  }\n\n"
-          s = exact(s, old, '', 'shell_core visibility method')
-          p.write_text(s, encoding='utf-8')
+      - name: Flutter doctor
+        run: flutter doctor -v
 
-          p = Path('lib/features/lists/lists_view.dart')
-          s = p.read_text(encoding='utf-8')
-          s = exact(s, "import 'package:counter/shared/categories/visibility/category_visibility_prefs.dart';\n", '', 'lists_view import')
-          old = "  void _listsVisibilityListener() {\n    if (!mounted) return;\n    final id = _filterCategoryId;\n    if (id != null && CategoryVisibilityPrefs.isHiddenOrAncestor(id)) {\n      setState(() => _filterCategoryId = null);\n      unawaited(_persistFilterCategoryId(null));\n      unawaited(_reload());\n    }\n  }\n\n"
-          s = exact(s, old, '', 'lists visibility listener')
-          s = exact(s, '    CategoryVisibilityPrefs.hiddenIds.addListener(_listsVisibilityListener);\n', '', 'lists init listener')
-          s = exact(s, '    await CategoryVisibilityPrefs.ensureLoaded();\n', '', 'lists visibility load')
-          s = exact(s, '    CategoryVisibilityPrefs.hiddenIds.removeListener(_listsVisibilityListener);\n', '', 'lists dispose listener')
-          old = "    final d = db.defaultCategoryId;\n    if (d != null && !CategoryVisibilityPrefs.isHiddenOrAncestor(d)) {\n      return d;\n    }\n    final pairs = CategoryVisibilityPrefs.filterPairs(\n      db.allCategoryIdPathPairs,\n      (p) => p.id,\n    );\n"
-          new = "    final d = db.defaultCategoryId;\n    if (d != null && db.categoryExists(d)) {\n      return d;\n    }\n    final pairs = db.allCategoryIdPathPairs;\n"
-          s = exact(s, old, new, 'lists default category')
-          old = "    if (fid != null &&\n        db.categoryExists(fid) &&\n        !CategoryVisibilityPrefs.isHiddenOrAncestor(fid)) {\n      return fid;\n    }\n"
-          new = "    if (fid != null && db.categoryExists(fid)) {\n      return fid;\n    }\n"
-          s = exact(s, old, new, 'lists effective category')
-          old = "    final visible = raw\n        .where((id) => !CategoryVisibilityPrefs.isHiddenOrAncestor(id))\n        .toList();\n    final active = _filterCategoryId;\n    if (active != null && visible.contains(active)) {\n      return [active, ...visible.where((x) => x != active)];\n    }\n    return visible;\n"
-          new = "    final available = _sanitizeIntCategoryIds(raw);\n    final active = _filterCategoryId;\n    if (active != null && available.contains(active)) {\n      return [active, ...available.where((x) => x != active)];\n    }\n    return available;\n"
-          s = exact(s, old, new, 'lists chip filter')
-          s = re.sub(r'^\s*if \(CategoryVisibilityPrefs\.isHiddenOrAncestor\([^\n]+\)\) continue;\n', '', s, flags=re.MULTILINE)
-          old = "        return ValueListenableBuilder<List<int>>(\n          valueListenable: CategoryVisibilityPrefs.hiddenIds,\n          builder: (context, _, _) {\n"
-          new = "        return Builder(\n          builder: (context) {\n"
-          s = exact(s, old, new, 'lists visibility builder')
-          p.write_text(s, encoding='utf-8')
+      - name: Create env.dart
+        run: |
+          mkdir -p lib/core/env
+          printf '%s\n' 'abstract final class Env {' '  static const String placeholder = '\'''\'';' '}' > lib/core/env/env.dart
 
-          p = Path('lib/features/lists/lists_filters.dart')
-          s = p.read_text(encoding='utf-8')
-          s = exact(s, "import 'package:counter/shared/categories/visibility/category_visibility_prefs.dart';\n", '', 'lists_filters import')
-          s = re.sub(r'^\s*if \(CategoryVisibilityPrefs\.isHiddenOrAncestor\([^\n]+\)\) continue;\n', '', s, flags=re.MULTILINE)
-          old = "  if (CategoryVisibilityPrefs.isHiddenOrAncestor(r.id)) {\n    return const SizedBox.shrink();\n  }\n  final rawKids = r.children ?? const <CategoryRule>[];\n  final kids = rawKids\n      .where((c) => !CategoryVisibilityPrefs.isHiddenOrAncestor(c.id))\n      .toList();\n"
-          s = exact(s, old, "  final kids = r.children ?? const <CategoryRule>[];\n", 'lists manual category tree')
-          p.write_text(s, encoding='utf-8')
+      - name: Install Flutter dependencies
+        run: flutter pub get
 
-          # The feature is gone, so delete every remaining source line naming its dead localization key.
-          removed_key_lines = 0
-          for p in Path('lib').rglob('*.dart'):
-              lines = p.read_text(encoding='utf-8', errors='ignore').splitlines(keepends=True)
-              kept = []
-              for line in lines:
-                  if 'category_visibility_toggle' in line:
-                      print(f'REMOVE {p}: {line.strip()}')
-                      removed_key_lines += 1
-                      continue
-                  kept.append(line)
-              p.write_text(''.join(kept), encoding='utf-8')
-          if removed_key_lines < 1:
-              raise SystemExit('Expected at least one dead category_visibility_toggle line')
+      - name: Test Notes mobile keyboard regression in Chrome
+        run: flutter test --platform chrome test/notes_mobile_keyboard_regression_test.dart
 
-          p = Path('AGENTS.md')
-          s = p.read_text(encoding='utf-8')
-          old = "- `lib/shared/categories/` owns reusable category presentation, tree, picker, and local visibility prefs (`presentation/`, `tree/`, `picker/`, `visibility/`). It may import `data/models.dart` for `CategoryRule` only. It must not import `features/`, `database_service.dart`, or `app/shell/`. Brain wires `CategoryTreeSource` / `CategoryPickerActions` / `PlanCategoryLookup` from `main.dart`.\n"
-          new = "- `lib/shared/categories/` owns reusable category presentation, tree, and picker (`presentation/`, `tree/`, `picker/`). It may import `data/models.dart` for `CategoryRule` only. It must not import `features/`, `database_service.dart`, or `app/shell/`. Brain wires `CategoryTreeSource` / `CategoryPickerActions` / `PlanCategoryLookup` from `main.dart`.\n"
-          s = exact(s, old, new, 'AGENTS categories ownership')
-          p.write_text(s, encoding='utf-8')
+      - name: Build Flutter web
+        env:
+          GIT_COMMIT: ${{ github.sha }}
+        run: |
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          BUILD_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          flutter build web --release --base-href="/Counter/" --no-tree-shake-icons --no-wasm-dry-run --pwa-strategy=none \
+            --dart-define=GIT_COMMIT="$SHORT_SHA" \
+            --dart-define=BUILD_TIME="$BUILD_TIME"
 
-          forbidden = [
-              'CategoryVisibilityPrefs',
-              'hidden_category_ids_json',
-              'category_visibility_toggle',
-              'shared/categories/visibility',
-          ]
-          leftovers = []
-          for p in Path('lib').rglob('*.dart'):
-              s = p.read_text(encoding='utf-8', errors='ignore')
-              for needle in forbidden:
-                  if needle in s:
-                      leftovers.append(f'{needle} @ {p}')
-          if leftovers:
-              raise SystemExit('Forbidden hidden-category remnants remain: ' + '; '.join(leftovers))
-          PY
+      - name: Add Igropoisk to Pages build
+        run: |
+          rm -rf build/web/igropoisk
+          cp -R igropoisk build/web/igropoisk
+          rm -rf build/web/igropoisk/node_modules
+          if [ -f .github/workflows/igropoisk-update.yml ]; then
+            mkdir -p build/web/.github/workflows
+            cp .github/workflows/igropoisk-update.yml build/web/.github/workflows/igropoisk-update.yml
+          fi
 
-          # Put the normal production deploy workflow back before publishing the cleanup commit.
-          git show 6a890c3d9ae8c677a632cda0598db4a2482892c7:.github/workflows/deploy.yml > .github/workflows/deploy.yml
-          git config user.name "nkuchenov-hash"
-          git config user.email "nkuchenov@gmail.com"
-          git add -A
-          git diff --cached --check
-          git commit -m "Remove hidden categories from all runtime paths"
-          git push origin HEAD:main
+      - name: Deploy to gh-pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: build/web
+          branch: gh-pages

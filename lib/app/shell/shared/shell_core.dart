@@ -1,21 +1,6 @@
 part of '../app_shell.dart';
 
 mixin ShellCoreLogic on ShellDashboardBase {
-  void categoryVisibilityShellListener() {
-    if (!mounted) return;
-    final id = selectedCategoryId;
-    if (id != null && CategoryVisibilityPrefs.isHiddenOrAncestor(id)) {
-      int? firstVisible;
-      for (final p in DatabaseService.instance.allCategoryIdPathPairs) {
-        if (!CategoryVisibilityPrefs.isHiddenOrAncestor(p.id)) {
-          firstVisible = p.id;
-          break;
-        }
-      }
-      setState(() => selectedCategoryId = firstVisible);
-    }
-  }
-
   void onDeviceLocalCalendarDayWatchTick() {
     final key = DatabaseService.instance.getTimelineDeviceLocalTodayDateKey();
     if (key == deviceLocalDayKeyLast) {
