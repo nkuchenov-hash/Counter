@@ -29,145 +29,80 @@ jobs:
           from pathlib import Path
           import re
 
-          def read(path):
-              return Path(path).read_text(encoding='utf-8')
-
-          def write(path, text):
-              Path(path).write_text(text, encoding='utf-8')
-
-          def replace_once(text, old, new, label):
-              count = text.count(old)
-              if count != 1:
-                  raise SystemExit(f'{label}: expected 1 exact match, found {count}')
+          def exact(text, old, new, label):
+              n = text.count(old)
+              if n != 1:
+                  raise SystemExit(f'{label}: expected 1 match, found {n}')
               return text.replace(old, new, 1)
 
-          p = 'lib/app/shell/app_shell.dart'
-          s = read(p)
-          s = replace_once(s, "import 'package:counter/shared/categories/visibility/category_visibility_prefs.dart';\n", '', 'app_shell import')
-          s = replace_once(s, "    unawaited(CategoryVisibilityPrefs.ensureLoaded());\n    CategoryVisibilityPrefs.hiddenIds.addListener(\n      categoryVisibilityShellListener,\n    );\n", '', 'app_shell init visibility listener')
-          s = replace_once(s, "    CategoryVisibilityPrefs.hiddenIds.removeListener(\n      categoryVisibilityShellListener,\n    );\n", '', 'app_shell dispose visibility listener')
-          write(p, s)
+          p = Path('lib/app/shell/app_shell.dart')
+          s = p.read_text(encoding='utf-8')
+          s = exact(s, "import 'package:counter/shared/categories/visibility/category_visibility_prefs.dart';\n", '', 'app_shell import')
+          s = exact(s, "    unawaited(CategoryVisibilityPrefs.ensureLoaded());\n    CategoryVisibilityPrefs.hiddenIds.addListener(\n      categoryVisibilityShellListener,\n    );\n", '', 'app_shell init')
+          s = exact(s, "    CategoryVisibilityPrefs.hiddenIds.removeListener(\n      categoryVisibilityShellListener,\n    );\n", '', 'app_shell dispose')
+          p.write_text(s, encoding='utf-8')
 
-          p = 'lib/app/shell/shared/shell_core.dart'
-          s = read(p)
-          s = replace_once(s, """  void categoryVisibilityShellListener() {
-            if (!mounted) return;
-            final id = selectedCategoryId;
-            if (id != null && CategoryVisibilityPrefs.isHiddenOrAncestor(id)) {
-              int? firstVisible;
-              for (final p in DatabaseService.instance.allCategoryIdPathPairs) {
-                if (!CategoryVisibilityPrefs.isHiddenOrAncestor(p.id)) {
-                  firstVisible = p.id;
-                  break;
-                }
-              }
-              setState(() => selectedCategoryId = firstVisible);
-            }
-          }
+          p = Path('lib/app/shell/shared/shell_core.dart')
+          s = p.read_text(encoding='utf-8')
+          old = "  void categoryVisibilityShellListener() {\n    if (!mounted) return;\n    final id = selectedCategoryId;\n    if (id != null && CategoryVisibilityPrefs.isHiddenOrAncestor(id)) {\n      int? firstVisible;\n      for (final p in DatabaseService.instance.allCategoryIdPathPairs) {\n        if (!CategoryVisibilityPrefs.isHiddenOrAncestor(p.id)) {\n          firstVisible = p.id;\n          break;\n        }\n      }\n      setState(() => selectedCategoryId = firstVisible);\n    }\n  }\n\n"
+          s = exact(s, old, '', 'shell_core method')
+          p.write_text(s, encoding='utf-8')
 
-""", '', 'shell_core visibility method')
-          write(p, s)
-
-          p = 'lib/features/lists/lists_view.dart'
-          s = read(p)
-          s = replace_once(s, "import 'package:counter/shared/categories/visibility/category_visibility_prefs.dart';\n", '', 'lists_view import')
-          s = replace_once(s, """  void _listsVisibilityListener() {
-            if (!mounted) return;
-            final id = _filterCategoryId;
-            if (id != null && CategoryVisibilityPrefs.isHiddenOrAncestor(id)) {
-              setState(() => _filterCategoryId = null);
-              unawaited(_persistFilterCategoryId(null));
-              unawaited(_reload());
-            }
-          }
-
-""", '', 'lists visibility listener')
-          s = replace_once(s, '    CategoryVisibilityPrefs.hiddenIds.addListener(_listsVisibilityListener);\n', '', 'lists init listener')
-          s = replace_once(s, '    await CategoryVisibilityPrefs.ensureLoaded();\n', '', 'lists visibility load')
-          s = replace_once(s, '    CategoryVisibilityPrefs.hiddenIds.removeListener(_listsVisibilityListener);\n', '', 'lists dispose listener')
-          s = replace_once(s, """    final d = db.defaultCategoryId;
-            if (d != null && !CategoryVisibilityPrefs.isHiddenOrAncestor(d)) {
-              return d;
-            }
-            final pairs = CategoryVisibilityPrefs.filterPairs(
-              db.allCategoryIdPathPairs,
-              (p) => p.id,
-            );
-""", """    final d = db.defaultCategoryId;
-            if (d != null && db.categoryExists(d)) {
-              return d;
-            }
-            final pairs = db.allCategoryIdPathPairs;
-""", 'lists default category')
-          s = replace_once(s, """    if (fid != null &&
-                db.categoryExists(fid) &&
-                !CategoryVisibilityPrefs.isHiddenOrAncestor(fid)) {
-              return fid;
-            }
-""", """    if (fid != null && db.categoryExists(fid)) {
-              return fid;
-            }
-""", 'lists effective category')
-          s = replace_once(s, """    final visible = raw
-                .where((id) => !CategoryVisibilityPrefs.isHiddenOrAncestor(id))
-                .toList();
-            final active = _filterCategoryId;
-            if (active != null && visible.contains(active)) {
-              return [active, ...visible.where((x) => x != active)];
-            }
-            return visible;
-""", """    final available = _sanitizeIntCategoryIds(raw);
-            final active = _filterCategoryId;
-            if (active != null && available.contains(active)) {
-              return [active, ...available.where((x) => x != active)];
-            }
-            return available;
-""", 'lists chip visibility filter')
+          p = Path('lib/features/lists/lists_view.dart')
+          s = p.read_text(encoding='utf-8')
+          s = exact(s, "import 'package:counter/shared/categories/visibility/category_visibility_prefs.dart';\n", '', 'lists_view import')
+          old = "  void _listsVisibilityListener() {\n    if (!mounted) return;\n    final id = _filterCategoryId;\n    if (id != null && CategoryVisibilityPrefs.isHiddenOrAncestor(id)) {\n      setState(() => _filterCategoryId = null);\n      unawaited(_persistFilterCategoryId(null));\n      unawaited(_reload());\n    }\n  }\n\n"
+          s = exact(s, old, '', 'lists visibility listener')
+          s = exact(s, '    CategoryVisibilityPrefs.hiddenIds.addListener(_listsVisibilityListener);\n', '', 'lists init listener')
+          s = exact(s, '    await CategoryVisibilityPrefs.ensureLoaded();\n', '', 'lists visibility load')
+          s = exact(s, '    CategoryVisibilityPrefs.hiddenIds.removeListener(_listsVisibilityListener);\n', '', 'lists dispose listener')
+          old = "    final d = db.defaultCategoryId;\n    if (d != null && !CategoryVisibilityPrefs.isHiddenOrAncestor(d)) {\n      return d;\n    }\n    final pairs = CategoryVisibilityPrefs.filterPairs(\n      db.allCategoryIdPathPairs,\n      (p) => p.id,\n    );\n"
+          new = "    final d = db.defaultCategoryId;\n    if (d != null && db.categoryExists(d)) {\n      return d;\n    }\n    final pairs = db.allCategoryIdPathPairs;\n"
+          s = exact(s, old, new, 'lists default category')
+          old = "    if (fid != null &&\n        db.categoryExists(fid) &&\n        !CategoryVisibilityPrefs.isHiddenOrAncestor(fid)) {\n      return fid;\n    }\n"
+          new = "    if (fid != null && db.categoryExists(fid)) {\n      return fid;\n    }\n"
+          s = exact(s, old, new, 'lists effective category')
+          old = "    final visible = raw\n        .where((id) => !CategoryVisibilityPrefs.isHiddenOrAncestor(id))\n        .toList();\n    final active = _filterCategoryId;\n    if (active != null && visible.contains(active)) {\n      return [active, ...visible.where((x) => x != active)];\n    }\n    return visible;\n"
+          new = "    final available = _sanitizeIntCategoryIds(raw);\n    final active = _filterCategoryId;\n    if (active != null && available.contains(active)) {\n      return [active, ...available.where((x) => x != active)];\n    }\n    return available;\n"
+          s = exact(s, old, new, 'lists chip filter')
           s = re.sub(r'^\s*if \(CategoryVisibilityPrefs\.isHiddenOrAncestor\([^\n]+\)\) continue;\n', '', s, flags=re.MULTILINE)
-          s = replace_once(s, """        return ValueListenableBuilder<List<int>>(
-                  valueListenable: CategoryVisibilityPrefs.hiddenIds,
-                  builder: (context, _, _) {
-""", """        return Builder(
-                  builder: (context) {
-""", 'lists build visibility listenable')
-          write(p, s)
+          old = "        return ValueListenableBuilder<List<int>>(\n          valueListenable: CategoryVisibilityPrefs.hiddenIds,\n          builder: (context, _, _) {\n"
+          new = "        return Builder(\n          builder: (context) {\n"
+          s = exact(s, old, new, 'lists visibility builder')
+          p.write_text(s, encoding='utf-8')
 
-          p = 'lib/features/lists/lists_filters.dart'
-          s = read(p)
-          s = replace_once(s, "import 'package:counter/shared/categories/visibility/category_visibility_prefs.dart';\n", '', 'lists_filters import')
+          p = Path('lib/features/lists/lists_filters.dart')
+          s = p.read_text(encoding='utf-8')
+          s = exact(s, "import 'package:counter/shared/categories/visibility/category_visibility_prefs.dart';\n", '', 'lists_filters import')
           s = re.sub(r'^\s*if \(CategoryVisibilityPrefs\.isHiddenOrAncestor\([^\n]+\)\) continue;\n', '', s, flags=re.MULTILINE)
-          s = replace_once(s, """  if (CategoryVisibilityPrefs.isHiddenOrAncestor(r.id)) {
-            return const SizedBox.shrink();
-          }
-          final rawKids = r.children ?? const <CategoryRule>[];
-          final kids = rawKids
-              .where((c) => !CategoryVisibilityPrefs.isHiddenOrAncestor(c.id))
-              .toList();
-""", """  final kids = r.children ?? const <CategoryRule>[];
-""", 'manual category tree visibility filter')
-          write(p, s)
+          old = "  if (CategoryVisibilityPrefs.isHiddenOrAncestor(r.id)) {\n    return const SizedBox.shrink();\n  }\n  final rawKids = r.children ?? const <CategoryRule>[];\n  final kids = rawKids\n      .where((c) => !CategoryVisibilityPrefs.isHiddenOrAncestor(c.id))\n      .toList();\n"
+          new = "  final kids = r.children ?? const <CategoryRule>[];\n"
+          s = exact(s, old, new, 'lists manual category tree')
+          p.write_text(s, encoding='utf-8')
 
-          for p in ['lib/l10n/langs/en.dart', 'lib/l10n/langs/ru.dart']:
-              s = read(p)
+          for name in ['en', 'ru']:
+              p = Path(f'lib/l10n/langs/{name}.dart')
+              s = p.read_text(encoding='utf-8')
               s, n = re.subn(r"^\s*'category_visibility_toggle':.*\n", '', s, flags=re.MULTILINE)
               if n != 1:
-                  raise SystemExit(f'{p}: expected one category_visibility_toggle key, found {n}')
-              write(p, s)
+                  raise SystemExit(f'{name} visibility string: expected 1, found {n}')
+              p.write_text(s, encoding='utf-8')
 
-          p = 'AGENTS.md'
-          s = read(p)
-          s = replace_once(s, "- `lib/shared/categories/` owns reusable category presentation, tree, picker, and local visibility prefs (`presentation/`, `tree/`, `picker/`, `visibility/`). It may import `data/models.dart` for `CategoryRule` only. It must not import `features/`, `database_service.dart`, or `app/shell/`. Brain wires `CategoryTreeSource` / `CategoryPickerActions` / `PlanCategoryLookup` from `main.dart`.\n", "- `lib/shared/categories/` owns reusable category presentation, tree, and picker (`presentation/`, `tree/`, `picker/`). It may import `data/models.dart` for `CategoryRule` only. It must not import `features/`, `database_service.dart`, or `app/shell/`. Brain wires `CategoryTreeSource` / `CategoryPickerActions` / `PlanCategoryLookup` from `main.dart`.\n", 'AGENTS categories ownership')
-          write(p, s)
+          p = Path('AGENTS.md')
+          s = p.read_text(encoding='utf-8')
+          old = "- `lib/shared/categories/` owns reusable category presentation, tree, picker, and local visibility prefs (`presentation/`, `tree/`, `picker/`, `visibility/`). It may import `data/models.dart` for `CategoryRule` only. It must not import `features/`, `database_service.dart`, or `app/shell/`. Brain wires `CategoryTreeSource` / `CategoryPickerActions` / `PlanCategoryLookup` from `main.dart`.\n"
+          new = "- `lib/shared/categories/` owns reusable category presentation, tree, and picker (`presentation/`, `tree/`, `picker/`). It may import `data/models.dart` for `CategoryRule` only. It must not import `features/`, `database_service.dart`, or `app/shell/`. Brain wires `CategoryTreeSource` / `CategoryPickerActions` / `PlanCategoryLookup` from `main.dart`.\n"
+          s = exact(s, old, new, 'AGENTS categories ownership')
+          p.write_text(s, encoding='utf-8')
 
           forbidden = ['CategoryVisibilityPrefs', 'hidden_category_ids_json', 'category_visibility_toggle', 'shared/categories/visibility']
-          production = '\n'.join(p.read_text(encoding='utf-8', errors='ignore') for p in Path('lib').rglob('*.dart'))
-          leftovers = [needle for needle in forbidden if needle in production]
+          production = '\n'.join(x.read_text(encoding='utf-8', errors='ignore') for x in Path('lib').rglob('*.dart'))
+          leftovers = [x for x in forbidden if x in production]
           if leftovers:
               raise SystemExit(f'Forbidden hidden-category remnants remain in lib/: {leftovers}')
           PY
 
-          # Restore this workflow to the pre-cleanup version before committing.
-          git checkout HEAD^ -- .github/workflows/deploy.yml
+          git show 6a890c3d9ae8c677a632cda0598db4a2482892c7:.github/workflows/deploy.yml > .github/workflows/deploy.yml
           git config user.name "nkuchenov-hash"
           git config user.email "nkuchenov@gmail.com"
           git add -A
