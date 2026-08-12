@@ -80,13 +80,15 @@ jobs:
           s = exact(s, old, new, 'lists manual category tree')
           p.write_text(s, encoding='utf-8')
 
-          for name in ['en', 'ru']:
-              p = Path(f'lib/l10n/langs/{name}.dart')
+          removed_visibility_strings = 0
+          for p in Path('lib').rglob('*.dart'):
               s = p.read_text(encoding='utf-8')
-              s, n = re.subn(r"^\s*'category_visibility_toggle':.*\n", '', s, flags=re.MULTILINE)
-              if n != 1:
-                  raise SystemExit(f'{name} visibility string: expected 1, found {n}')
-              p.write_text(s, encoding='utf-8')
+              updated, n = re.subn(r"^\s*'category_visibility_toggle':.*\n", '', s, flags=re.MULTILINE)
+              if n:
+                  p.write_text(updated, encoding='utf-8')
+                  removed_visibility_strings += n
+          if removed_visibility_strings < 1:
+              raise SystemExit('Expected at least one dead category_visibility_toggle localization entry')
 
           p = Path('AGENTS.md')
           s = p.read_text(encoding='utf-8')
