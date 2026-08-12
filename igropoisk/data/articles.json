@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-12T20:53:31.824Z",
+  "updatedAt": "2026-08-12T20:52:37.278Z",
   "count": 495,
   "sources": [
     "IGN",
@@ -14,15 +14,6 @@
     "Игромания"
   ],
   "articles": [
-    {
-      "source": "Polygon",
-      "language": "en",
-      "title": "A Knight of the Seven Kingdoms showrunner is working with George RR Martin to develop future seasons",
-      "normalizedTitle": "a knight of the seven kingdoms showrunner is working with george rr martin to develop future seasons",
-      "url": "https://www.polygon.com/video/a-knight-of-the-seven-kingdoms-showrunner-future-plans/",
-      "summary": "Ira Parker discusses his hopes for future seasons of A Knight of the Seven Kingdoms.",
-      "publishedAt": "Wed, 12 Aug 2026 20:52:36 GMT"
-    },
     {
       "source": "PC Gamer",
       "language": "en",
@@ -229,6 +220,15 @@
       "url": "https://www.gamesradar.com/games/survival/there-is-probably-some-end-to-no-mans-sky-says-hello-games-boss-but-hell-probably-come-back-10-years-later-for-a-surprise-update-anyway/",
       "summary": "\"If you had asked me five years ago, I would have thought we would have passed it by now\"",
       "publishedAt": "Wed, 12 Aug 2026 18:20:06 +0000"
+    },
+    {
+      "source": "Polygon",
+      "language": "en",
+      "title": "Steam shooter explodes in popularity after devs warn fans not to buy it",
+      "normalizedTitle": "steam shooter explodes in popularity after devs warn fans not to buy it",
+      "url": "https://www.polygon.com/steam-wardogs-bulkhead-10-reasons-not-buy-tactical-fps-early-access/",
+      "summary": "Wardogs, a tactical 100-player FPS that will soon launch on Steam's early access, is taking an unusual marketing approach aimed at PC gamers",
+      "publishedAt": "Wed, 12 Aug 2026 18:19:40 GMT"
     },
     {
       "source": "GameSpot",

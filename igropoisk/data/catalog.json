@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-12T20:53:31.824Z",
+  "updatedAt": "2026-08-12T20:52:37.278Z",
   "count": 78,
   "sourcePool": [
     "Steam",
@@ -1060,7 +1060,7 @@
       "movies": [],
       "criticRating": 8.9,
       "steamUserRating": 9.8,
-      "recommendations": 811241,
+      "recommendations": 811250,
       "owners": "50,000,000 .. 100,000,000",
       "peakConcurrent": 25122,
       "sourceEvidence": [
@@ -1073,7 +1073,7 @@
         "steamSpy": "https://steamspy.com/app/550",
         "metacritic": "https://www.metacritic.com/game/pc/left-4-dead-2?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10390.915042706823,
+      "popularityScore": 10390.915524514798,
       "igropoiskRating": 9.2,
       "editorialSources": [],
       "materials": {
@@ -1261,7 +1261,7 @@
       "movies": [],
       "criticRating": 8.9,
       "steamUserRating": 9.8,
-      "recommendations": 887322,
+      "recommendations": 887315,
       "owners": "20,000,000 .. 50,000,000",
       "peakConcurrent": 50662,
       "sourceEvidence": [
@@ -1274,7 +1274,7 @@
         "steamSpy": "https://steamspy.com/app/413150",
         "metacritic": "https://www.metacritic.com/game/pc/stardew-valley?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10364.808173886553,
+      "popularityScore": 10364.807831274746,
       "igropoiskRating": 9.2,
       "editorialSources": [],
       "materials": {
@@ -1365,7 +1365,7 @@
       "movies": [],
       "criticRating": 9.5,
       "steamUserRating": 9.9,
-      "recommendations": 388978,
+      "recommendations": 388975,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 1959,
       "sourceEvidence": [
@@ -1378,7 +1378,7 @@
         "steamSpy": "https://steamspy.com/app/620",
         "metacritic": "https://www.metacritic.com/game/pc/portal-2?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10348.992615548945,
+      "popularityScore": 10348.992280598095,
       "igropoiskRating": 9.6,
       "editorialSources": [],
       "materials": {
@@ -1879,7 +1879,7 @@
       "movies": [],
       "criticRating": 8.9,
       "steamUserRating": 9.7,
-      "recommendations": 155577,
+      "recommendations": 155574,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 2559,
       "sourceEvidence": [
@@ -1892,7 +1892,7 @@
         "steamSpy": "https://steamspy.com/app/588650",
         "metacritic": "https://www.metacritic.com/game/pc/dead-cells?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10259.194818420823,
+      "popularityScore": 10259.19398096565,
       "igropoiskRating": 9.2,
       "editorialSources": [],
       "materials": {
@@ -1953,7 +1953,7 @@
       "movies": [],
       "criticRating": 8.4,
       "steamUserRating": 9.2,
-      "recommendations": 99422,
+      "recommendations": 99421,
       "owners": "2,000,000 .. 5,000,000",
       "peakConcurrent": 2879,
       "sourceEvidence": [
@@ -1971,7 +1971,7 @@
         "steamSpy": "https://steamspy.com/app/570940",
         "metacritic": "https://www.metacritic.com/game/pc/dark-souls-remastered?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10209.748686344781,
+      "popularityScore": 10209.74824952768,
       "igropoiskRating": 8.7,
       "editorialSources": [
         "Polygon",
@@ -2501,7 +2501,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 9.4,
-      "recommendations": 400110,
+      "recommendations": 400062,
       "owners": "50,000,000 .. 100,000,000",
       "peakConcurrent": 18028,
       "sourceEvidence": [
@@ -2515,7 +2515,7 @@
         "steamSpy": "https://steamspy.com/app/1623730",
         "metacritic": ""
       },
-      "popularityScore": 9940.218049132809,
+      "popularityScore": 9940.212838732281,
       "igropoiskRating": 9.4,
       "editorialSources": [
         "GamesRadar+",
@@ -3912,7 +3912,7 @@
       "movies": [],
       "criticRating": 9.1,
       "steamUserRating": 9.7,
-      "recommendations": 233489,
+      "recommendations": 233493,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 12596,
       "sourceEvidence": [
@@ -3925,7 +3925,7 @@
         "steamSpy": "https://steamspy.com/app/526870",
         "metacritic": "https://www.metacritic.com/game/pc/satisfactory?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9766.826828516843,
+      "popularityScore": 9766.827572515751,
       "igropoiskRating": 9.3,
       "editorialSources": [],
       "materials": {
@@ -5597,7 +5597,7 @@
       "movies": [],
       "criticRating": 9,
       "steamUserRating": 9.8,
-      "recommendations": 159164,
+      "recommendations": 159162,
       "owners": "2,000,000 .. 5,000,000",
       "peakConcurrent": 17123,
       "sourceEvidence": [
@@ -5610,7 +5610,7 @@
         "steamSpy": "https://steamspy.com/app/2379780",
         "metacritic": "https://www.metacritic.com/game/pc/balatro?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9510.18475735901,
+      "popularityScore": 9510.184211639524,
       "igropoiskRating": 9.3,
       "editorialSources": [],
       "materials": {
