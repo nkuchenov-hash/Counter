@@ -1,0 +1,134 @@
+name: Apply auth session validation hotfix
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/hotfix-auth-session-validation.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Patch session validation surgically
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          auth_path = Path('lib/data/auth_bridge.dart')
+          auth = auth_path.read_text()
+          old = '''      if (!pb.authStore.isValid || pb.authStore.record == null) {
+        try {
+          pb.authStore.clear();
+          await _storage.delete(key: _profileIdKey);
+        } catch (_) {}
+        return null;
+      }
+      final data = pb.authStore.record!.data;
+'''
+          new = '''      if (!pb.authStore.isValid || pb.authStore.record == null) {
+        try {
+          pb.authStore.clear();
+          await _storage.delete(key: _profileIdKey);
+        } catch (_) {}
+        return null;
+      }
+
+      // `authStore.isValid` only checks the local JWT shape/expiry. Verify the
+      // persisted token with PocketBase before treating protected list results
+      // as authoritative; an invalid token otherwise looks like a valid empty
+      // account because list rules return HTTP 200 with zero visible rows.
+      try {
+        await pb.collection(PbCollections.profiles).authRefresh();
+      } on ClientException catch (e) {
+        if (e.statusCode >= 400 && e.statusCode < 500) {
+          try {
+            pb.authStore.clear();
+            await _storage.delete(key: _profileIdKey);
+          } catch (_) {}
+          return null;
+        }
+        // Keep an unexpired local session during a real network/server outage
+        // so the existing offline caches remain usable.
+      } catch (_) {
+        // Same offline behavior for transport errors outside ClientException.
+      }
+
+      if (!pb.authStore.isValid || pb.authStore.record == null) {
+        try {
+          pb.authStore.clear();
+          await _storage.delete(key: _profileIdKey);
+        } catch (_) {}
+        return null;
+      }
+      final data = pb.authStore.record!.data;
+'''
+          if auth.count(old) != 1:
+              raise SystemExit(f'auth_bridge expected block count={auth.count(old)}')
+          auth_path.write_text(auth.replace(old, new, 1))
+
+          core_path = Path('lib/data/db_core.dart')
+          core = core_path.read_text()
+          old = '''    _appOpenSyncRetryTimer?.cancel();
+    _appOpenSyncRetryTimer = null;
+
+    // Push-first: subscribe before any outbox work or catch-up request so a
+'''
+          new = '''    _appOpenSyncRetryTimer?.cancel();
+    _appOpenSyncRetryTimer = null;
+
+    // Never let an expired/revoked server token turn protected collections
+    // into authoritative empty caches. PocketBase list rules intentionally
+    // return 200 with zero visible rows for an unauthenticated request.
+    try {
+      await _pb.collection(PbCollections.profiles).authRefresh();
+    } on ClientException catch (e) {
+      if (e.statusCode >= 400 && e.statusCode < 500) {
+        final handler = onSessionInvalid;
+        if (handler != null) {
+          await handler();
+        }
+        return;
+      }
+      _maybeOpenPbCircuitFromListFailure(e, 'foregroundAuthRefresh');
+      if (_pbHttpBackoffActive) {
+        _scheduleAppOpenSyncRetry();
+      }
+      return;
+    } catch (e) {
+      _maybeOpenPbCircuitFromListFailure(e, 'foregroundAuthRefresh');
+      if (_pbHttpBackoffActive) {
+        _scheduleAppOpenSyncRetry();
+      }
+      return;
+    }
+
+    // Push-first: subscribe before any outbox work or catch-up request so a
+'''
+          if core.count(old) != 1:
+              raise SystemExit(f'db_core expected block count={core.count(old)}')
+          core_path.write_text(core.replace(old, new, 1))
+          PY
+
+          git diff --check
+          git diff -- lib/data/auth_bridge.dart lib/data/db_core.dart
+
+      - name: Commit hotfix
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add lib/data/auth_bridge.dart lib/data/db_core.dart
+          git commit -m "Validate PocketBase auth before loading owned data"
+          git push origin HEAD:main
