@@ -118,13 +118,12 @@ extension PlanServiceExtension on DatabaseService {
     if (DatabaseService._isLikelyPocketBaseRowId(key)) return key;
     try {
       await ensurePocketBaseReady();
-      final authId = _userIdForWhere;
-      if (authId == null || authId.isEmpty) return null;
-      final uid = _escapeForPbFilter(authId);
+      final ownerFilter = _pocketBaseOwnerFilterClauseForRecords();
+      if (ownerFilter == null || ownerFilter.isEmpty) return null;
       final esc = _escapeForPbFilter(key);
       final rec = await _pb
           .collection(PbCollections.plans)
-          .getFirstListItem('plan_id = "$esc" && user_id = "$uid"');
+          .getFirstListItem('plan_id = "$esc" && $ownerFilter');
       final id = rec.id.trim();
       return id.isEmpty ? null : id;
     } on ClientException catch (_) {
@@ -287,9 +286,8 @@ extension PlanServiceExtension on DatabaseService {
   Future<List<PlanningTask>> _fetchAllPlanningTasksForCurrentUser() async {
     if (!_isPlansTableConfigured) return [];
     if (!_isInitialized || !(currentProfileId?.isNotEmpty ?? false)) return [];
-    final authId = _userIdForWhere;
-    if (authId == null || authId.isEmpty) return [];
-    final uid = _escapeForPbFilter(authId);
+    final ownerFilter = _pocketBaseOwnerFilterClauseForRecords();
+    if (ownerFilter == null || ownerFilter.isEmpty) return [];
     final sw = Stopwatch()..start();
     try {
       final tagCatalog = await _fetchPlanAndListTagCatalog();
@@ -297,7 +295,7 @@ extension PlanServiceExtension on DatabaseService {
           .collection(PbCollections.plans)
           .getFullList(
             expand: kPbPlanTagsExpand,
-            filter: 'user_id = "$uid"',
+            filter: ownerFilter,
             batch: 200,
           );
       sw.stop();
@@ -432,12 +430,11 @@ extension PlanServiceExtension on DatabaseService {
       if (_pbHttpBackoffActive) {
         return [];
       }
-      final authId = _userIdForWhere;
-      if (authId == null || authId.isEmpty) return [];
-      final uid = _escapeForPbFilter(authId);
+      final ownerFilter = _pocketBaseOwnerFilterClauseForRecords();
+      if (ownerFilter == null || ownerFilter.isEmpty) return [];
       final list = await _pb
           .collection(PbCollections.plans)
-          .getFullList(filter: 'user_id = "$uid"', expand: kPbPlanTagsExpand);
+          .getFullList(filter: ownerFilter, expand: kPbPlanTagsExpand);
       final out = list.map((r) {
         final m = Map<String, dynamic>.from(r.data);
         m['id'] = r.id;
@@ -1686,9 +1683,7 @@ extension PlanServiceExtension on DatabaseService {
   // ---------------------------------------------------------------------------
 
   String? _pocketBaseOwnerFilterClauseForPlans() {
-    final uid = _userIdForWhere?.trim() ?? '';
-    if (uid.isEmpty) return null;
-    return 'user_id = "${_escapeForPbFilter(uid)}"';
+    return _pocketBaseOwnerFilterClauseForRecords();
   }
 
   void _onPbPlansSubscriptionEvent(RecordSubscriptionEvent e) {

@@ -21,12 +21,11 @@ extension TagCatalogExtension on DatabaseService {
       if (_pbHttpBackoffActive) {
         return [];
       }
-      final authId = _userIdForWhere;
-      if (authId == null || authId.isEmpty) return [];
-      final uid = _escapeForPbFilter(authId);
+      final ownerFilter = _pocketBaseOwnerFilterClauseForRecords();
+      if (ownerFilter == null || ownerFilter.isEmpty) return [];
       final list = await _pb
           .collection(PbCollections.tags)
-          .getFullList(filter: 'user_id = "$uid"');
+          .getFullList(filter: ownerFilter);
       final out = list.map((r) {
         final m = Map<String, dynamic>.from(r.data);
         m['id'] = r.id;

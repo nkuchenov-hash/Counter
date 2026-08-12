@@ -57,13 +57,12 @@ extension NotesBrainExtension on DatabaseService {
     try {
       await ensurePocketBaseReady();
       if (_pbHttpBackoffActive) return;
-      final authId = _userIdForWhere;
-      if (authId == null || authId.isEmpty) return;
-      final uid = _escapeForPbFilter(authId);
+      final ownerFilter = _pocketBaseOwnerFilterClauseForRecords();
+      if (ownerFilter == null || ownerFilter.isEmpty) return;
       final rows = await _pb
           .collection(PbCollections.plans)
           .getFullList(
-            filter: 'user_id = "$uid"',
+            filter: ownerFilter,
             fields: 'id,created,updated',
             batch: 200,
           );
