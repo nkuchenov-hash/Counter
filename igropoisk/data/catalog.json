@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-12T17:03:39.261Z",
+  "updatedAt": "2026-08-12T17:45:12.633Z",
   "count": 78,
   "sourcePool": [
     "Steam",
@@ -79,7 +79,7 @@
       "movies": [],
       "criticRating": 9.4,
       "steamUserRating": 9.3,
-      "recommendations": 826812,
+      "recommendations": 826824,
       "owners": "20,000,000 .. 50,000,000",
       "peakConcurrent": 29529,
       "sourceEvidence": [
@@ -94,7 +94,7 @@
         "steamSpy": "https://steamspy.com/app/1245620",
         "metacritic": "https://www.metacritic.com/game/pc/elden-ring?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10591.740729643116,
+      "popularityScore": 10591.74135995444,
       "igropoiskRating": 9.4,
       "editorialSources": [
         "Rock Paper Shotgun",
@@ -241,7 +241,7 @@
       "movies": [],
       "criticRating": 9.6,
       "steamUserRating": 9.7,
-      "recommendations": 750333,
+      "recommendations": 750344,
       "owners": "20,000,000 .. 50,000,000",
       "peakConcurrent": 54771,
       "sourceEvidence": [
@@ -257,7 +257,7 @@
         "steamSpy": "https://steamspy.com/app/1086940",
         "metacritic": "https://www.metacritic.com/game/pc/baldurs-gate-3?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10577.525462614873,
+      "popularityScore": 10577.52609929191,
       "igropoiskRating": 9.6,
       "editorialSources": [
         "Eurogamer",
@@ -395,7 +395,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 8.7,
-      "recommendations": 5216524,
+      "recommendations": 5216617,
       "owners": "100,000,000 .. 200,000,000",
       "peakConcurrent": 1013936,
       "sourceEvidence": [
@@ -407,7 +407,7 @@
         "steamSpy": "https://steamspy.com/app/730",
         "metacritic": ""
       },
-      "popularityScore": 10541.738129306306,
+      "popularityScore": 10541.738903557878,
       "igropoiskRating": 8.7,
       "editorialSources": [],
       "materials": {
@@ -642,7 +642,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 5.9,
-      "recommendations": 1762633,
+      "recommendations": 1762636,
       "owners": "100,000,000 .. 200,000,000",
       "peakConcurrent": 314682,
       "sourceEvidence": [
@@ -654,7 +654,7 @@
         "steamSpy": "https://steamspy.com/app/578080",
         "metacritic": ""
       },
-      "popularityScore": 10474.616214310936,
+      "popularityScore": 10474.616288227719,
       "igropoiskRating": 5.9,
       "editorialSources": [],
       "materials": {
@@ -723,7 +723,7 @@
       "movies": [],
       "criticRating": 9.7,
       "steamUserRating": 9.3,
-      "recommendations": 117064,
+      "recommendations": 117067,
       "owners": "2,000,000 .. 5,000,000",
       "peakConcurrent": 918,
       "sourceEvidence": [
@@ -736,7 +736,7 @@
         "steamSpy": "https://steamspy.com/app/632470",
         "metacritic": "https://www.metacritic.com/game/pc/disco-elysium-the-final-cut?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10436.84270694624,
+      "popularityScore": 10436.843819889264,
       "igropoiskRating": 9.6,
       "editorialSources": [],
       "materials": {
@@ -955,7 +955,7 @@
       "movies": [],
       "criticRating": 7,
       "steamUserRating": 8.4,
-      "recommendations": 584498,
+      "recommendations": 584499,
       "owners": "20,000,000 .. 50,000,000",
       "peakConcurrent": 22170,
       "sourceEvidence": [
@@ -968,7 +968,7 @@
         "steamSpy": "https://steamspy.com/app/346110",
         "metacritic": "https://www.metacritic.com/game/pc/ark-survival-evolved?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10396.678377247843,
+      "popularityScore": 10396.678451549786,
       "igropoiskRating": 7.5,
       "editorialSources": [],
       "materials": {
@@ -1149,7 +1149,7 @@
       "movies": [],
       "criticRating": 8.3,
       "steamUserRating": 9.7,
-      "recommendations": 1231362,
+      "recommendations": 1231368,
       "owners": "20,000,000 .. 50,000,000",
       "peakConcurrent": 24580,
       "sourceEvidence": [
@@ -1163,7 +1163,7 @@
         "steamSpy": "https://steamspy.com/app/105600",
         "metacritic": "https://www.metacritic.com/game/pc/terraria?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10389.038609976931,
+      "popularityScore": 10389.038821592883,
       "igropoiskRating": 8.8,
       "editorialSources": [
         "PC Gamer"
@@ -1365,7 +1365,7 @@
       "movies": [],
       "criticRating": 9.5,
       "steamUserRating": 9.9,
-      "recommendations": 388968,
+      "recommendations": 388975,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 1959,
       "sourceEvidence": [
@@ -1378,7 +1378,7 @@
         "steamSpy": "https://steamspy.com/app/620",
         "metacritic": "https://www.metacritic.com/game/pc/portal-2?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10348.991499036063,
+      "popularityScore": 10348.992280598095,
       "igropoiskRating": 9.6,
       "editorialSources": [],
       "materials": {
@@ -1627,7 +1627,7 @@
       "movies": [],
       "criticRating": 9.2,
       "steamUserRating": 9,
-      "recommendations": 47670,
+      "recommendations": 47671,
       "owners": "50,000,000 .. 100,000,000",
       "peakConcurrent": 43819,
       "sourceEvidence": [
@@ -1640,7 +1640,7 @@
         "steamSpy": "https://steamspy.com/app/440",
         "metacritic": "https://www.metacritic.com/game/pc/team-fortress-2?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10277.825426226744,
+      "popularityScore": 10277.826337241673,
       "igropoiskRating": 9.1,
       "editorialSources": [],
       "materials": {
@@ -1795,7 +1795,7 @@
       "movies": [],
       "criticRating": 8.9,
       "steamUserRating": 9.4,
-      "recommendations": 277390,
+      "recommendations": 277389,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 4381,
       "sourceEvidence": [
@@ -1808,7 +1808,7 @@
         "steamSpy": "https://steamspy.com/app/374320",
         "metacritic": "https://www.metacritic.com/game/pc/dark-souls-iii?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10264.309236620466,
+      "popularityScore": 10264.309080056171,
       "igropoiskRating": 9.1,
       "editorialSources": [],
       "materials": {
@@ -1879,7 +1879,7 @@
       "movies": [],
       "criticRating": 8.9,
       "steamUserRating": 9.7,
-      "recommendations": 155574,
+      "recommendations": 155573,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 2559,
       "sourceEvidence": [
@@ -1892,7 +1892,7 @@
         "steamSpy": "https://steamspy.com/app/588650",
         "metacritic": "https://www.metacritic.com/game/pc/dead-cells?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10259.19398096565,
+      "popularityScore": 10259.193701810338,
       "igropoiskRating": 9.2,
       "editorialSources": [],
       "materials": {
@@ -1953,7 +1953,7 @@
       "movies": [],
       "criticRating": 8.4,
       "steamUserRating": 9.2,
-      "recommendations": 99419,
+      "recommendations": 99420,
       "owners": "2,000,000 .. 5,000,000",
       "peakConcurrent": 2879,
       "sourceEvidence": [
@@ -1970,7 +1970,7 @@
         "steamSpy": "https://steamspy.com/app/570940",
         "metacritic": "https://www.metacritic.com/game/pc/dark-souls-remastered?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10209.747375880299,
+      "popularityScore": 10209.747812706186,
       "igropoiskRating": 8.7,
       "editorialSources": [
         "GamesRadar+",
@@ -2237,7 +2237,7 @@
       "movies": [],
       "criticRating": 8.3,
       "steamUserRating": 8,
-      "recommendations": 139183,
+      "recommendations": 139184,
       "owners": "20,000,000 .. 50,000,000",
       "peakConcurrent": 24619,
       "sourceEvidence": [
@@ -2250,7 +2250,7 @@
         "steamSpy": "https://steamspy.com/app/1085660",
         "metacritic": "https://www.metacritic.com/game/pc/destiny-2?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10064.358931349945,
+      "popularityScore": 10064.359243377852,
       "igropoiskRating": 8.2,
       "editorialSources": [],
       "materials": {
@@ -2316,7 +2316,7 @@
       "movies": [],
       "criticRating": 8,
       "steamUserRating": 7.4,
-      "recommendations": 62744,
+      "recommendations": 62745,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 14345,
       "sourceEvidence": [
@@ -2329,7 +2329,7 @@
         "steamSpy": "https://steamspy.com/app/582660",
         "metacritic": "https://www.metacritic.com/game/pc/black-desert-online-land-of-the-morning-light-edition?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9949.757912363631,
+      "popularityScore": 9949.758604516028,
       "igropoiskRating": 7.8,
       "editorialSources": [],
       "materials": {
@@ -2394,7 +2394,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 9.7,
-      "recommendations": 876006,
+      "recommendations": 876017,
       "owners": "50,000,000 .. 100,000,000",
       "peakConcurrent": 15004,
       "sourceEvidence": [
@@ -2406,7 +2406,7 @@
         "steamSpy": "https://steamspy.com/app/2358720",
         "metacritic": ""
       },
-      "popularityScore": 9944.25075765439,
+      "popularityScore": 9944.251302993562,
       "igropoiskRating": 9.7,
       "editorialSources": [],
       "materials": {
@@ -2481,7 +2481,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 9.4,
-      "recommendations": 399946,
+      "recommendations": 399980,
       "owners": "50,000,000 .. 100,000,000",
       "peakConcurrent": 18028,
       "sourceEvidence": [
@@ -2495,7 +2495,7 @@
         "steamSpy": "https://steamspy.com/app/1623730",
         "metacritic": ""
       },
-      "popularityScore": 9940.200244349648,
+      "popularityScore": 9940.203936185011,
       "igropoiskRating": 9.4,
       "editorialSources": [
         "GameSpot",
@@ -2604,7 +2604,7 @@
       "movies": [],
       "criticRating": 8.1,
       "steamUserRating": 7.3,
-      "recommendations": 211799,
+      "recommendations": 211800,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 6300,
       "sourceEvidence": [
@@ -2620,7 +2620,7 @@
         "steamSpy": "https://steamspy.com/app/594650",
         "metacritic": "https://www.metacritic.com/game/pc/hunt-showdown?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9932.592595577147,
+      "popularityScore": 9932.592800625993,
       "igropoiskRating": 7.8,
       "editorialSources": [
         "Rock Paper Shotgun",
@@ -2769,7 +2769,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 8.3,
-      "recommendations": 45880,
+      "recommendations": 45881,
       "owners": "1,000,000 .. 2,000,000",
       "peakConcurrent": 1573,
       "sourceEvidence": [
@@ -2781,7 +2781,7 @@
         "steamSpy": "https://steamspy.com/app/1282100",
         "metacritic": ""
       },
-      "popularityScore": 9916.163287500405,
+      "popularityScore": 9916.164234057258,
       "igropoiskRating": 8.3,
       "editorialSources": [],
       "materials": {
@@ -2846,7 +2846,7 @@
       "movies": [],
       "criticRating": 8.5,
       "steamUserRating": 8.7,
-      "recommendations": 49359,
+      "recommendations": 49358,
       "owners": "1,000,000 .. 2,000,000",
       "peakConcurrent": 648,
       "sourceEvidence": [
@@ -2859,7 +2859,7 @@
         "steamSpy": "https://steamspy.com/app/870780",
         "metacritic": "https://www.metacritic.com/game/pc/control?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9909.33751510252,
+      "popularityScore": 9909.33663524255,
       "igropoiskRating": 8.6,
       "editorialSources": [],
       "materials": {
@@ -2942,7 +2942,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 8.9,
-      "recommendations": 110133,
+      "recommendations": 110136,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 10961,
       "sourceEvidence": [
@@ -2954,7 +2954,7 @@
         "steamSpy": "https://steamspy.com/app/1604030",
         "metacritic": ""
       },
-      "popularityScore": 9894.192141282194,
+      "popularityScore": 9894.193324264472,
       "igropoiskRating": 8.9,
       "editorialSources": [],
       "materials": {
@@ -3151,7 +3151,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 7.1,
-      "recommendations": 235868,
+      "recommendations": 235870,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 6327,
       "sourceEvidence": [
@@ -3163,7 +3163,7 @@
         "steamSpy": "https://steamspy.com/app/1238810",
         "metacritic": ""
       },
-      "popularityScore": 9827.267086579606,
+      "popularityScore": 9827.267454828625,
       "igropoiskRating": 7.1,
       "editorialSources": [],
       "materials": {
@@ -3520,7 +3520,7 @@
       "movies": [],
       "criticRating": 6.1,
       "steamUserRating": 8.3,
-      "recommendations": 311228,
+      "recommendations": 311229,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 12291,
       "sourceEvidence": [
@@ -3536,7 +3536,7 @@
         "steamSpy": "https://steamspy.com/app/275850",
         "metacritic": "https://www.metacritic.com/game/pc/no-mans-sky?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9809.308005731888,
+      "popularityScore": 9809.308145273442,
       "igropoiskRating": 6.9,
       "editorialSources": [
         "GamesRadar+",
@@ -3736,30 +3736,53 @@
       "movies": [],
       "criticRating": 8.7,
       "steamUserRating": 9.7,
-      "recommendations": 339594,
+      "recommendations": 339598,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 2719,
       "sourceEvidence": [
         "Steam",
         "SteamSpy",
-        "Metacritic"
+        "Metacritic",
+        "Rock Paper Shotgun"
       ],
       "sourceLinks": {
         "steam": "https://store.steampowered.com/app/264710/",
         "steamSpy": "https://steamspy.com/app/264710",
         "metacritic": "https://www.metacritic.com/game/pc/subnautica?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9803.09612873187,
+      "popularityScore": 9803.09664027288,
       "igropoiskRating": 9,
-      "editorialSources": [],
+      "editorialSources": [
+        "Rock Paper Shotgun"
+      ],
       "materials": {
         "articles": [],
         "reviews": [],
         "guides": [],
         "tips": [],
-        "news": []
+        "news": [
+          {
+            "source": "Rock Paper Shotgun",
+            "language": "en",
+            "title": "Subnautica 2 now has a beta update branch, letting players try out patches before they're finished, but beware, your saves won't carry over",
+            "normalizedTitle": "subnautica 2 now has a beta update branch letting players try out patches before they re finished but beware your saves won t carry over",
+            "url": "https://www.rockpapershotgun.com/subnautica-2-now-has-a-beta-update-branch-letting-players-try-out-patches-before-theyre-finished-but-beware-your-saves-wont-carry-over",
+            "summary": "Ocean survival sim Subnautica 2 now has an experimental beta branch on Steam, allowing the intrepid PC owner to test out updates before they're officially live. If there's one thing Subnautica 2's toothy underwater ecosystem has taught us, it's the value of taking risks. Just be aware that any savegames you create in the experimental branch will be specific to that version of the game - you won't be able to carry progress back to the main release. Read more",
+            "publishedAt": "Wed, 12 Aug 2026 17:44:24 +0000"
+          }
+        ]
       },
-      "articles": []
+      "articles": [
+        {
+          "source": "Rock Paper Shotgun",
+          "language": "en",
+          "title": "Subnautica 2 now has a beta update branch, letting players try out patches before they're finished, but beware, your saves won't carry over",
+          "normalizedTitle": "subnautica 2 now has a beta update branch letting players try out patches before they re finished but beware your saves won t carry over",
+          "url": "https://www.rockpapershotgun.com/subnautica-2-now-has-a-beta-update-branch-letting-players-try-out-patches-before-theyre-finished-but-beware-your-saves-wont-carry-over",
+          "summary": "Ocean survival sim Subnautica 2 now has an experimental beta branch on Steam, allowing the intrepid PC owner to test out updates before they're officially live. If there's one thing Subnautica 2's toothy underwater ecosystem has taught us, it's the value of taking risks. Just be aware that any savegames you create in the experimental branch will be specific to that version of the game - you won't be able to carry progress back to the main release. Read more",
+          "publishedAt": "Wed, 12 Aug 2026 17:44:24 +0000"
+        }
+      ]
     },
     {
       "id": "526870",
@@ -3930,7 +3953,7 @@
       "movies": [],
       "criticRating": 9,
       "steamUserRating": 9.7,
-      "recommendations": 194344,
+      "recommendations": 194343,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 16426,
       "sourceEvidence": [
@@ -3943,7 +3966,7 @@
         "steamSpy": "https://steamspy.com/app/427520",
         "metacritic": "https://www.metacritic.com/game/pc/factorio?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9748.857337182428,
+      "popularityScore": 9748.857113716118,
       "igropoiskRating": 9.2,
       "editorialSources": [],
       "materials": {
@@ -4016,7 +4039,7 @@
       "movies": [],
       "criticRating": 8.7,
       "steamUserRating": 9.8,
-      "recommendations": 207180,
+      "recommendations": 207185,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 19211,
       "sourceEvidence": [
@@ -4029,7 +4052,7 @@
         "steamSpy": "https://steamspy.com/app/294100",
         "metacritic": "https://www.metacritic.com/game/pc/rimworld?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9741.634992494623,
+      "popularityScore": 9741.636040586005,
       "igropoiskRating": 9.1,
       "editorialSources": [],
       "materials": {
@@ -4093,29 +4116,52 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 9.1,
-      "recommendations": 99049,
+      "recommendations": 99048,
       "owners": "2,000,000 .. 5,000,000",
       "peakConcurrent": 698,
       "sourceEvidence": [
         "Steam",
-        "SteamSpy"
+        "SteamSpy",
+        "Rock Paper Shotgun"
       ],
       "sourceLinks": {
         "steam": "https://store.steampowered.com/app/848450/",
         "steamSpy": "https://steamspy.com/app/848450",
         "metacritic": ""
       },
-      "popularityScore": 9739.585447987456,
+      "popularityScore": 9739.585009525392,
       "igropoiskRating": 9.1,
-      "editorialSources": [],
+      "editorialSources": [
+        "Rock Paper Shotgun"
+      ],
       "materials": {
         "articles": [],
         "reviews": [],
         "guides": [],
         "tips": [],
-        "news": []
+        "news": [
+          {
+            "source": "Rock Paper Shotgun",
+            "language": "en",
+            "title": "Subnautica 2 now has a beta update branch, letting players try out patches before they're finished, but beware, your saves won't carry over",
+            "normalizedTitle": "subnautica 2 now has a beta update branch letting players try out patches before they re finished but beware your saves won t carry over",
+            "url": "https://www.rockpapershotgun.com/subnautica-2-now-has-a-beta-update-branch-letting-players-try-out-patches-before-theyre-finished-but-beware-your-saves-wont-carry-over",
+            "summary": "Ocean survival sim Subnautica 2 now has an experimental beta branch on Steam, allowing the intrepid PC owner to test out updates before they're officially live. If there's one thing Subnautica 2's toothy underwater ecosystem has taught us, it's the value of taking risks. Just be aware that any savegames you create in the experimental branch will be specific to that version of the game - you won't be able to carry progress back to the main release. Read more",
+            "publishedAt": "Wed, 12 Aug 2026 17:44:24 +0000"
+          }
+        ]
       },
-      "articles": []
+      "articles": [
+        {
+          "source": "Rock Paper Shotgun",
+          "language": "en",
+          "title": "Subnautica 2 now has a beta update branch, letting players try out patches before they're finished, but beware, your saves won't carry over",
+          "normalizedTitle": "subnautica 2 now has a beta update branch letting players try out patches before they re finished but beware your saves won t carry over",
+          "url": "https://www.rockpapershotgun.com/subnautica-2-now-has-a-beta-update-branch-letting-players-try-out-patches-before-theyre-finished-but-beware-your-saves-wont-carry-over",
+          "summary": "Ocean survival sim Subnautica 2 now has an experimental beta branch on Steam, allowing the intrepid PC owner to test out updates before they're officially live. If there's one thing Subnautica 2's toothy underwater ecosystem has taught us, it's the value of taking risks. Just be aware that any savegames you create in the experimental branch will be specific to that version of the game - you won't be able to carry progress back to the main release. Read more",
+          "publishedAt": "Wed, 12 Aug 2026 17:44:24 +0000"
+        }
+      ]
     },
     {
       "id": "394360",
@@ -4169,7 +4215,7 @@
       "movies": [],
       "criticRating": 8.3,
       "steamUserRating": 8.9,
-      "recommendations": 281391,
+      "recommendations": 281394,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 32112,
       "sourceEvidence": [
@@ -4182,7 +4228,7 @@
         "steamSpy": "https://steamspy.com/app/394360",
         "metacritic": "https://www.metacritic.com/game/pc/hearts-of-iron-iv?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9734.931174624286,
+      "popularityScore": 9734.931637635495,
       "igropoiskRating": 8.5,
       "editorialSources": [],
       "materials": {
@@ -4268,7 +4314,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 9.7,
-      "recommendations": 1086368,
+      "recommendations": 1086380,
       "owners": "20,000,000 .. 50,000,000",
       "peakConcurrent": 18400,
       "sourceEvidence": [
@@ -4280,7 +4326,7 @@
         "steamSpy": "https://steamspy.com/app/4000",
         "metacritic": ""
       },
-      "popularityScore": 9723.597736433607,
+      "popularityScore": 9723.598216151364,
       "igropoiskRating": 9.7,
       "editorialSources": [],
       "materials": {
@@ -4425,7 +4471,7 @@
       "movies": [],
       "criticRating": 8.5,
       "steamUserRating": 9.2,
-      "recommendations": 654227,
+      "recommendations": 654234,
       "owners": "20,000,000 .. 50,000,000",
       "peakConcurrent": 3832,
       "sourceEvidence": [
@@ -4438,7 +4484,7 @@
         "steamSpy": "https://steamspy.com/app/945360",
         "metacritic": "https://www.metacritic.com/game/pc/among-us?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9711.572912735433,
+      "popularityScore": 9711.573377412138,
       "igropoiskRating": 8.7,
       "editorialSources": [],
       "materials": {
@@ -4519,7 +4565,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 9.6,
-      "recommendations": 681803,
+      "recommendations": 681806,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 9978,
       "sourceEvidence": [
@@ -4531,7 +4577,7 @@
         "steamSpy": "https://steamspy.com/app/739630",
         "metacritic": ""
       },
-      "popularityScore": 9683.36595448143,
+      "popularityScore": 9683.366145574557,
       "igropoiskRating": 9.6,
       "editorialSources": [],
       "materials": {
@@ -4602,7 +4648,7 @@
       "movies": [],
       "criticRating": 8.7,
       "steamUserRating": 8.7,
-      "recommendations": 95579,
+      "recommendations": 95580,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 12445,
       "sourceEvidence": [
@@ -4615,7 +4661,7 @@
         "steamSpy": "https://steamspy.com/app/236850",
         "metacritic": "https://www.metacritic.com/game/pc/europa-universalis-iv?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9678.036702618478,
+      "popularityScore": 9678.037156994089,
       "igropoiskRating": 8.7,
       "editorialSources": [],
       "materials": {
@@ -4797,7 +4843,7 @@
       "movies": [],
       "criticRating": 8.3,
       "steamUserRating": 9.5,
-      "recommendations": 374590,
+      "recommendations": 374593,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 30542,
       "sourceEvidence": [
@@ -4810,7 +4856,7 @@
         "steamSpy": "https://steamspy.com/app/322330",
         "metacritic": "https://www.metacritic.com/game/pc/dont-starve-together?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9667.35573387165,
+      "popularityScore": 9667.356081685193,
       "igropoiskRating": 8.7,
       "editorialSources": [],
       "materials": {
@@ -4971,7 +5017,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 9.7,
-      "recommendations": 410994,
+      "recommendations": 410996,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 6199,
       "sourceEvidence": [
@@ -4983,7 +5029,7 @@
         "steamSpy": "https://steamspy.com/app/1966720",
         "metacritic": ""
       },
-      "popularityScore": 9651.383653845607,
+      "popularityScore": 9651.38386518318,
       "igropoiskRating": 9.7,
       "editorialSources": [],
       "materials": {
@@ -5054,7 +5100,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 8.8,
-      "recommendations": 281649,
+      "recommendations": 281652,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 4450,
       "sourceEvidence": [
@@ -5066,7 +5112,7 @@
         "steamSpy": "https://steamspy.com/app/1326470",
         "metacritic": ""
       },
-      "popularityScore": 9624.970975557137,
+      "popularityScore": 9624.971438144215,
       "igropoiskRating": 8.8,
       "editorialSources": [],
       "materials": {
@@ -5135,7 +5181,7 @@
       "movies": [],
       "criticRating": 8.1,
       "steamUserRating": 5.7,
-      "recommendations": 24265,
+      "recommendations": 24264,
       "owners": "1,000,000 .. 2,000,000",
       "peakConcurrent": 2183,
       "sourceEvidence": [
@@ -5148,7 +5194,7 @@
         "steamSpy": "https://steamspy.com/app/1677280",
         "metacritic": "https://www.metacritic.com/game/pc/company-of-heroes-3?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9588.49981932624,
+      "popularityScore": 9588.498029565131,
       "igropoiskRating": 7.3,
       "editorialSources": [],
       "materials": {
@@ -5218,7 +5264,7 @@
       "movies": [],
       "criticRating": 8.5,
       "steamUserRating": 9.3,
-      "recommendations": 135170,
+      "recommendations": 135171,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 8961,
       "sourceEvidence": [
@@ -5231,7 +5277,7 @@
         "steamSpy": "https://steamspy.com/app/244210",
         "metacritic": "https://www.metacritic.com/game/pc/assetto-corsa?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9573.0883526732,
+      "popularityScore": 9573.088673964656,
       "igropoiskRating": 8.8,
       "editorialSources": [],
       "materials": {
@@ -5385,7 +5431,7 @@
       "movies": [],
       "criticRating": 8.9,
       "steamUserRating": 9.8,
-      "recommendations": 192388,
+      "recommendations": 192389,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 15038,
       "sourceEvidence": [
@@ -5398,7 +5444,7 @@
         "steamSpy": "https://steamspy.com/app/646570",
         "metacritic": "https://www.metacritic.com/game/pc/slay-the-spire?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9528.418023726588,
+      "popularityScore": 9528.41824946369,
       "igropoiskRating": 9.2,
       "editorialSources": [],
       "materials": {
@@ -5471,7 +5517,7 @@
       "movies": [],
       "criticRating": 9,
       "steamUserRating": 9.8,
-      "recommendations": 159150,
+      "recommendations": 159155,
       "owners": "2,000,000 .. 5,000,000",
       "peakConcurrent": 17123,
       "sourceEvidence": [
@@ -5484,7 +5530,7 @@
         "steamSpy": "https://steamspy.com/app/2379780",
         "metacritic": "https://www.metacritic.com/game/pc/balatro?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9510.180937178591,
+      "popularityScore": 9510.182301567316,
       "igropoiskRating": 9.3,
       "editorialSources": [],
       "materials": {
@@ -5551,7 +5597,7 @@
       "movies": [],
       "criticRating": 7.7,
       "steamUserRating": 9.3,
-      "recommendations": 33419,
+      "recommendations": 33420,
       "owners": "1,000,000 .. 2,000,000",
       "peakConcurrent": 1479,
       "sourceEvidence": [
@@ -5564,7 +5610,7 @@
         "steamSpy": "https://steamspy.com/app/805550",
         "metacritic": "https://www.metacritic.com/game/pc/assetto-corsa-competizione?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9502.400644555737,
+      "popularityScore": 9502.401944041028,
       "igropoiskRating": 8.3,
       "editorialSources": [],
       "materials": {
@@ -5626,7 +5672,7 @@
       "movies": [],
       "criticRating": 8.5,
       "steamUserRating": 9.7,
-      "recommendations": 134331,
+      "recommendations": 134332,
       "owners": "2,000,000 .. 5,000,000",
       "peakConcurrent": 1301,
       "sourceEvidence": [
@@ -5639,7 +5685,7 @@
         "steamSpy": "https://steamspy.com/app/1092790",
         "metacritic": "https://www.metacritic.com/game/pc/inscryption?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9492.817948078486,
+      "popularityScore": 9492.818271376631,
       "igropoiskRating": 8.9,
       "editorialSources": [],
       "materials": {
@@ -5982,7 +6028,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 9.7,
-      "recommendations": 403694,
+      "recommendations": 403719,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 14904,
       "sourceEvidence": [
@@ -5994,7 +6040,7 @@
         "steamSpy": "https://steamspy.com/app/250900",
         "metacritic": ""
       },
-      "popularityScore": 9470.605337045105,
+      "popularityScore": 9470.60802645812,
       "igropoiskRating": 9.7,
       "editorialSources": [],
       "materials": {
@@ -6564,7 +6610,7 @@
       "movies": [],
       "criticRating": 8,
       "steamUserRating": 9.6,
-      "recommendations": 103698,
+      "recommendations": 103700,
       "owners": "2,000,000 .. 5,000,000",
       "peakConcurrent": 215,
       "sourceEvidence": [
@@ -6577,7 +6623,7 @@
         "steamSpy": "https://steamspy.com/app/238320",
         "metacritic": "https://www.metacritic.com/game/pc/outlast?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9341.577456837964,
+      "popularityScore": 9341.578294435807,
       "igropoiskRating": 8.6,
       "editorialSources": [],
       "materials": {
@@ -6746,7 +6792,7 @@
       "movies": [],
       "criticRating": 8.1,
       "steamUserRating": 9.5,
-      "recommendations": 52087,
+      "recommendations": 52088,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 222,
       "sourceEvidence": [
@@ -6760,7 +6806,7 @@
         "steamSpy": "https://steamspy.com/app/424840",
         "metacritic": "https://www.metacritic.com/game/pc/little-nightmares?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9301.673768233884,
+      "popularityScore": 9301.67460199658,
       "igropoiskRating": 8.6,
       "editorialSources": [
         "Eurogamer"
@@ -6932,7 +6978,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 7.7,
-      "recommendations": 386167,
+      "recommendations": 386175,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 37066,
       "sourceEvidence": [
@@ -6944,7 +6990,7 @@
         "steamSpy": "https://steamspy.com/app/221100",
         "metacritic": ""
       },
-      "popularityScore": 9288.677628290994,
+      "popularityScore": 9288.678527982285,
       "igropoiskRating": 7.7,
       "editorialSources": [],
       "materials": {
@@ -7016,7 +7062,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 9.4,
-      "recommendations": 356628,
+      "recommendations": 356646,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 22864,
       "sourceEvidence": [
@@ -7029,7 +7075,7 @@
         "steamSpy": "https://steamspy.com/app/108600",
         "metacritic": ""
       },
-      "popularityScore": 9275.22166557992,
+      "popularityScore": 9275.223857522638,
       "igropoiskRating": 9.4,
       "editorialSources": [
         "StopGame"
@@ -7295,7 +7341,7 @@
       "movies": [],
       "criticRating": 9.3,
       "steamUserRating": 9.6,
-      "recommendations": 179959,
+      "recommendations": 179961,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 3510,
       "sourceEvidence": [
@@ -7309,7 +7355,7 @@
         "steamSpy": "https://steamspy.com/app/435150",
         "metacritic": "https://www.metacritic.com/game/pc/divinity-original-sin-ii?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9165.517598449353,
+      "popularityScore": 9165.518081103352,
       "igropoiskRating": 9.4,
       "editorialSources": [
         "VG247"
@@ -7401,7 +7447,7 @@
       "movies": [],
       "criticRating": 8.8,
       "steamUserRating": 8.5,
-      "recommendations": 79467,
+      "recommendations": 79468,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 3123,
       "sourceEvidence": [
@@ -7414,7 +7460,7 @@
         "steamSpy": "https://steamspy.com/app/268500",
         "metacritic": "https://www.metacritic.com/game/pc/xcom-2?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9120.019228310757,
+      "popularityScore": 9120.019774809662,
       "igropoiskRating": 8.7,
       "editorialSources": [],
       "materials": {

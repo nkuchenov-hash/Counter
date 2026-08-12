@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-12T17:03:39.261Z",
+  "updatedAt": "2026-08-12T17:45:12.633Z",
   "count": 495,
   "sources": [
     "IGN",
@@ -14,6 +14,60 @@
     "Игромания"
   ],
   "articles": [
+    {
+      "source": "Rock Paper Shotgun",
+      "language": "en",
+      "title": "Subnautica 2 now has a beta update branch, letting players try out patches before they're finished, but beware, your saves won't carry over",
+      "normalizedTitle": "subnautica 2 now has a beta update branch letting players try out patches before they re finished but beware your saves won t carry over",
+      "url": "https://www.rockpapershotgun.com/subnautica-2-now-has-a-beta-update-branch-letting-players-try-out-patches-before-theyre-finished-but-beware-your-saves-wont-carry-over",
+      "summary": "Ocean survival sim Subnautica 2 now has an experimental beta branch on Steam, allowing the intrepid PC owner to test out updates before they're officially live. If there's one thing Subnautica 2's toothy underwater ecosystem has taught us, it's the value of taking risks. Just be aware that any savegames you create in the experimental branch will be specific to that version of the game - you won't be able to carry progress back to the main release. Read more",
+      "publishedAt": "Wed, 12 Aug 2026 17:44:24 +0000"
+    },
+    {
+      "source": "GamesRadar+",
+      "language": "en",
+      "title": "The Lord of the Rings: War in the North re-release is just the start as publisher teases \"more classic releases\" from Middle-earth are on the way",
+      "normalizedTitle": "the lord of the rings war in the north re release is just the start as publisher teases more classic releases from middle earth are on the way",
+      "url": "https://www.gamesradar.com/games/the-lord-of-the-rings-war-in-the-north-re-release-is-just-the-start-as-publisher-teases-more-classic-releases-from-middle-earth-are-on-the-way/",
+      "summary": "The Battle for Middle-earth and The Third Age could be next",
+      "publishedAt": "Wed, 12 Aug 2026 17:31:47 +0000"
+    },
+    {
+      "source": "Polygon",
+      "language": "en",
+      "title": "Dimension 20 Returns on Dropout: Here's A First Look at Its Twisted Take on Toy Story",
+      "normalizedTitle": "dimension 20 returns on dropout here s a first look at its twisted take on toy story",
+      "url": "https://www.polygon.com/dropout-dimension-20-toylight-new-campaign-trailer/",
+      "summary": "Dimension 20's next season is set to premiere in September on Dropout. It finds the Intrepid Heroes returning as toys fighting a rebellion.",
+      "publishedAt": "Wed, 12 Aug 2026 17:30:12 GMT"
+    },
+    {
+      "source": "GamesRadar+",
+      "language": "en",
+      "title": "Arc Raiders' Frozen Trail update is out October 8, Embark admits \"it's time to expand\" as recent Steam reviews hit 50% negative",
+      "normalizedTitle": "arc raiders frozen trail update is out october 8 embark admits it s time to expand as recent steam reviews hit 50 negative",
+      "url": "https://www.gamesradar.com/games/third-person-shooter/arc-raiders-frozen-trail-update-is-out-october-8-embark-admits-its-time-to-expand-as-recent-steam-reviews-hit-50-percent-negative/",
+      "summary": "Embark is also working on anti-cheat, which is really becoming a problem",
+      "publishedAt": "Wed, 12 Aug 2026 17:24:52 +0000"
+    },
+    {
+      "source": "Polygon",
+      "language": "en",
+      "title": "The Movie That Hollywood Tried to Kill Officially Releases in Theaters This Week",
+      "normalizedTitle": "the movie that hollywood tried to kill officially releases in theaters this week",
+      "url": "https://www.polygon.com/coyote-vs-acme-release-date-looney-tunes/",
+      "summary": "We didn't think it would ever happen, but Coyote vs. Acme is finally coming to the silver screen.",
+      "publishedAt": "Wed, 12 Aug 2026 17:07:58 GMT"
+    },
+    {
+      "source": "Polygon",
+      "language": "en",
+      "title": "Amazon Further Abandons Gaming, Dropping MMOs Lost Ark & Throne And Liberty",
+      "normalizedTitle": "amazon further abandons gaming dropping mmos lost ark throne and liberty",
+      "url": "https://www.polygon.com/amazon-games-mmo-lost-ark-throne-and-liberty/",
+      "summary": "Amazon Game Studios will no longer publish Lost Ark or Throne and Liberty as it shifts focus to games like Tomb Raider: Legacy of Atlantis.",
+      "publishedAt": "Wed, 12 Aug 2026 17:05:49 GMT"
+    },
     {
       "source": "Polygon",
       "language": "en",
@@ -60,6 +114,24 @@
       "publishedAt": "Wed, 12 Aug 2026 16:40:54 +0000"
     },
     {
+      "source": "IGN",
+      "language": "en",
+      "title": "Halo 2's Midnight Release Turns Into a Hostage Situation in a New Short Film",
+      "normalizedTitle": "halo 2 s midnight release turns into a hostage situation in a new short film",
+      "url": "https://www.ign.com/articles/halo-2s-midnight-release-turns-into-a-hostage-situation-in-a-new-short-film",
+      "summary": "A new short film known as Midnight Drop will turn Halo 2's highly anticipated midnight release into the worst night for a group of gamers.",
+      "publishedAt": "Wed, 12 Aug 2026 16:39:46 +0000"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "Warhammer 40,000: Dawn of War 4 Delayed Out of the September Crush, Dev Updates Roadmap of DLC",
+      "normalizedTitle": "warhammer 40 000 dawn of war 4 delayed out of the september crush dev updates roadmap of dlc",
+      "url": "https://www.ign.com/articles/warhammer-40000-dawn-of-war-4-delayed-out-of-the-september-crush-dev-updates-roadmap-of-dlc",
+      "summary": "Warhammer 40,000: Dawn of War 4 has been hit by a delay of two-and-a-half months, forcing an update to the DLC roadmap.",
+      "publishedAt": "Wed, 12 Aug 2026 16:36:50 +0000"
+    },
+    {
       "source": "GamesRadar+",
       "language": "en",
       "title": "The Scuf Envision Pro's biggest selling point is exactly why I wouldn't recommend it",
@@ -85,6 +157,15 @@
       "url": "https://www.gamesradar.com/games/the-witcher/the-witcher-multiplayer-spin-off-project-sirius-reportedly-hit-with-another-wave-of-layoffs/",
       "summary": "CD Projekt Red has yet to confirm anything",
       "publishedAt": "Wed, 12 Aug 2026 16:33:00 +0000"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "CD Projekt Confirms Layoffs on The Witcher Multiplayer Spinoff, Issues Statement",
+      "normalizedTitle": "cd projekt confirms layoffs on the witcher multiplayer spinoff issues statement",
+      "url": "https://www.ign.com/articles/cd-projekt-confirms-layoffs-on-the-witcher-multiplayer-spinoff-issues-statement",
+      "summary": "CD Projekt has confirmed layoffs on The Witcher multiplayer spinoff, codenamed Project Sirius.",
+      "publishedAt": "Wed, 12 Aug 2026 16:31:24 +0000"
     },
     {
       "source": "Polygon",
@@ -141,6 +222,69 @@
       "publishedAt": "Wed, 12 Aug 2026 16:21:22 +0000"
     },
     {
+      "source": "IGN",
+      "language": "en",
+      "title": "Amazon Is Offering a Great Deal on a RTX 5070 Ti Gaming PC, and It Includes Two Upcoming AAA Games",
+      "normalizedTitle": "amazon is offering a great deal on a rtx 5070 ti gaming pc and it includes two upcoming aaa games",
+      "url": "https://www.ign.com/articles/acer-predator-orion-rtx-5070-ti-gaming-pc-deal-intel-gamer-days-sale",
+      "summary": "The RTX 5070 Ti graphics card is powerful enough to run the latest games smoothly at 4K.",
+      "publishedAt": "Wed, 12 Aug 2026 16:20:00 +0000"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "The CyberPowerPC RTX 5070 Gaming PC Drops to $1,399 Shipped and Includes Two Upcoming PC Games",
+      "normalizedTitle": "the cyberpowerpc rtx 5070 gaming pc drops to 1 399 shipped and includes two upcoming pc games",
+      "url": "https://www.ign.com/articles/cyberpowerpc-geforce-rtx-5070-gaming-pc-deal-august-2026",
+      "summary": "Get Star Wars Galactic Racer and Tomb Raider: Legacy of Atlantis for free as part of the Intel Gamer Days event.",
+      "publishedAt": "Wed, 12 Aug 2026 16:20:00 +0000"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "PlayStation Plus Game Catalog for August 2026 Confirmed",
+      "normalizedTitle": "playstation plus game catalog for august 2026 confirmed",
+      "url": "https://www.ign.com/articles/playstation-plus-game-catalog-for-august-2026-confirmed",
+      "summary": "Sony has confirmed the PlayStation Plus Game Catalog for August 2026, which is headlined by Helldivers 2, Kingdom Come Deliverance 2, and Vampire Survivors.",
+      "publishedAt": "Wed, 12 Aug 2026 16:19:56 +0000"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "How Absolute Batman Reimagines One of Bruce Wayne's Greatest Tragedies",
+      "normalizedTitle": "how absolute batman reimagines one of bruce wayne s greatest tragedies",
+      "url": "https://www.ign.com/articles/how-absolute-batman-reimagines-one-of-bruce-waynes-greatest-tragedies",
+      "summary": "It's not easy being Absolute Batman, as the series delivers its own spin on one of the darkest and most tragic Batman stories of all time.",
+      "publishedAt": "Wed, 12 Aug 2026 16:16:51 +0000"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "Get a Comfortable Big and Tall Gaming Chair for Less Than $140 With Free Shipping on Amazon",
+      "normalizedTitle": "get a comfortable big and tall gaming chair for less than 140 with free shipping on amazon",
+      "url": "https://www.ign.com/articles/comhoma-big-and-tall-gaming-chair-deal-august-2026",
+      "summary": "Three different styles are on sale.",
+      "publishedAt": "Wed, 12 Aug 2026 16:15:00 +0000"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "The Alienware RTX 5090 Gaming PC Drops to $4,780, Nearly the Same Price as Buying the GPU By Itself",
+      "normalizedTitle": "the alienware rtx 5090 gaming pc drops to 4 780 nearly the same price as buying the gpu by itself",
+      "url": "https://www.ign.com/articles/dell-alienware-area-51-intel-edition-rtx-5090-gaming-pc-deal-july-2026",
+      "summary": "An RTX 5090 graphics card nowadays goes for at least $4,500 new and $4,000 used.",
+      "publishedAt": "Wed, 12 Aug 2026 16:15:00 +0000"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "The Intel Gamer Days Sale Stacks Walmart's Best Gaming PC Deals With Two Free Upcoming PC Games",
+      "normalizedTitle": "the intel gamer days sale stacks walmart s best gaming pc deals with two free upcoming pc games",
+      "url": "https://www.ign.com/articles/intel-gamer-days-sale-2026-best-walmart-gaming-pc-deals",
+      "summary": "These aren't some no-name games, they'll otherwise cost $59.99 apiece at launch.",
+      "publishedAt": "Wed, 12 Aug 2026 16:15:00 +0000"
+    },
+    {
       "source": "GamesRadar+",
       "language": "en",
       "title": "Keyboard brand Epomaker is getting into the headset game with a pair of $50 open-back cups",
@@ -175,6 +319,15 @@
       "url": "https://www.pcgamer.com/games/mmo/amazon-drops-lost-ark-and-throne-and-liberty/",
       "summary": "Both MMOs will continue to operate, but new publishers are taking over in the West.",
       "publishedAt": "Wed, 12 Aug 2026 16:01:40 +0000"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "Coyote vs. Acme Review",
+      "normalizedTitle": "coyote vs acme review",
+      "url": "https://www.ign.com/articles/coyote-vs-acme-review",
+      "summary": "Coyote vs. Acme shows why Looney Tunes are just as funny now as they’ve ever been, with a film that’s an amazingly meta answer to corporate shenanigans, and an hilarious anvil-dropping, rocket-skate-wearing, Batman and Joker dynamic wrapped in a legal drama.",
+      "publishedAt": "Wed, 12 Aug 2026 16:01:29 +0000"
     },
     {
       "source": "Polygon",
@@ -222,15 +375,6 @@
       "publishedAt": "Wed, 12 Aug 2026 15:58:45 +0000"
     },
     {
-      "source": "Polygon",
-      "language": "en",
-      "title": "Game Awards 2026: All Game of the Year Front-Runners and Predictions",
-      "normalizedTitle": "game awards 2026 all game of the year front runners and predictions",
-      "url": "https://www.polygon.com/game-of-the-year-goty-game-awards-2026-frontrunners/",
-      "summary": "We rank the contenders for GOTY 2026 at TGAs, including Resident Evil Requiem and Grand Theft Auto 6",
-      "publishedAt": "Wed, 12 Aug 2026 15:58:30 GMT"
-    },
-    {
       "source": "IGN",
       "language": "en",
       "title": "Mel Gibson Says He Still Wants to Direct Lethal Weapon 5, Although It Sounds Like It's in Development Hell",
@@ -276,15 +420,6 @@
       "publishedAt": "Wed, 12 Aug 2026 15:43:07 +0000"
     },
     {
-      "source": "Polygon",
-      "language": "en",
-      "title": "'Ghost of Yotei' Is Getting a Narrative Expansion and a Roguelike Mode in new Complete Edition",
-      "normalizedTitle": "ghost of yotei is getting a narrative expansion and a roguelike mode in new complete edition",
-      "url": "https://www.polygon.com/ghost-of-yotei-complete-edition-story-expansion-most-wanted-roguelike-mode-ps5/",
-      "summary": "The PS5 exclusive action-adventure has announced a new story expansion, roguelike mode, and quality-of-life improvements",
-      "publishedAt": "Wed, 12 Aug 2026 15:43:01 GMT"
-    },
-    {
       "source": "GamesRadar+",
       "language": "en",
       "title": "Your Name director is teaming up with Crunchyroll for his next anime movie, but the plot is still under wraps",
@@ -292,15 +427,6 @@
       "url": "https://www.gamesradar.com/entertainment/anime-movies/your-name-director-is-teaming-up-with-crunchyroll-for-his-next-anime-movie-but-the-plot-is-still-under-wraps/",
       "summary": "The title has yet to be revealed",
       "publishedAt": "Wed, 12 Aug 2026 15:32:20 +0000"
-    },
-    {
-      "source": "Polygon",
-      "language": "en",
-      "title": "Andy Weir's New Time Travel Thriller Launches in Just Three Months",
-      "normalizedTitle": "andy weir s new time travel thriller launches in just three months",
-      "url": "https://www.polygon.com/andy-weir-benjamin-percy-audible-exoplanet/",
-      "summary": "The Audible Original story Exoplanet stars Anthony Mackie, Ariana DeBose, and John Leguizamo.",
-      "publishedAt": "Wed, 12 Aug 2026 15:32:12 GMT"
     },
     {
       "source": "PC Gamer",
@@ -528,15 +654,6 @@
       "publishedAt": "Wed, 12 Aug 2026 14:04:13 +0000"
     },
     {
-      "source": "IGN",
-      "language": "en",
-      "title": "GTA 5’s Trevor Flipped the Bird at Rockstar's Haters",
-      "normalizedTitle": "gta 5 s trevor flipped the bird at rockstar s haters",
-      "url": "https://www.ign.com/articles/gta-5-trevor-haters",
-      "summary": "The Genius of Grand Theft Auto 5’s Trevor Philips: how Rockstar turned franchise backlash into an iconic character.",
-      "publishedAt": "Wed, 12 Aug 2026 14:00:00 +0000"
-    },
-    {
       "source": "GameSpot",
       "language": "en",
       "title": "Take-Two CEO Won&#8217;t Be In GTA 6 After His Surprise Appearance In WWE 2K26",
@@ -627,15 +744,6 @@
       "publishedAt": "Wed, 12 Aug 2026 13:00:00 +0000"
     },
     {
-      "source": "IGN",
-      "language": "en",
-      "title": "Sony Predicts Influx of New Players as Helldivers 2 Drops on the PlayStation Plus Game Catalog Alongside New Update and Warhammer 40,000 Warbond",
-      "normalizedTitle": "sony predicts influx of new players as helldivers 2 drops on the playstation plus game catalog alongside new update and warhammer 40 000 warbond",
-      "url": "https://www.ign.com/articles/sony-predicts-influx-of-new-players-as-helldivers-2-drops-on-the-playstation-plus-game-catalog-alongside-new-update-and-warhammer-40000-warbond",
-      "summary": "Helldivers 2 has surprised-dropped on the PlayStation Plus catalog alongside a major new update and the long-awaited Warhammer 40,000 crossover Warbond.",
-      "publishedAt": "Wed, 12 Aug 2026 12:33:31 +0000"
-    },
-    {
       "source": "GameSpot",
       "language": "en",
       "title": "PlayStation Plus Extra/Premium Games For August 2026 Includes Helldivers 2",
@@ -652,15 +760,6 @@
       "url": "https://www.gamesradar.com/hardware/word-to-the-wise-if-youre-planning-to-wait-for-that-leaked-zelda-switch-2-youll-have-to-contend-with-the-price-hike/",
       "summary": "The leaked Legend of Zelda Switch 2 looks sublime, but waiting for it will likely mean having to contend with Nintendo's incoming price increases.",
       "publishedAt": "Wed, 12 Aug 2026 12:21:21 +0000"
-    },
-    {
-      "source": "IGN",
-      "language": "en",
-      "title": "The Voice of The Witcher's Geralt Says He'd Sue Every Single AI Platform With His Voice on It 'Into the Ground' if He Could",
-      "normalizedTitle": "the voice of the witcher s geralt says he d sue every single ai platform with his voice on it into the ground if he could",
-      "url": "https://www.ign.com/articles/the-voice-of-the-witchers-geralt-says-hed-sue-every-single-ai-platform-with-his-voice-on-it-into-the-ground-if-he-could",
-      "summary": "Doug Cockle, the voice behind The Witcher’s Geralt, has hit out at AI platforms that feature his voice, saying he’d sue them if he could.",
-      "publishedAt": "Wed, 12 Aug 2026 12:15:09 +0000"
     },
     {
       "source": "PC Gamer",
@@ -688,15 +787,6 @@
       "url": "https://www.gamesradar.com/entertainment/sci-fi-shows/9-months-after-season-1-apple-tv-boss-still-hasnt-seen-any-pluribus-season-2-scripts-but-theyre-being-worked-on/",
       "summary": "The long wait for Pluribus season 2 continues",
       "publishedAt": "Wed, 12 Aug 2026 12:02:52 +0000"
-    },
-    {
-      "source": "IGN",
-      "language": "en",
-      "title": "How Wet Hot American Summer Went from Box Office Bomb to Cult Classic",
-      "normalizedTitle": "how wet hot american summer went from box office bomb to cult classic",
-      "url": "https://www.ign.com/articles/how-wet-hot-american-summer-went-from-box-office-bomb-to-cult-classic",
-      "summary": "David Wain reflects on 25 years of Wet Hot American Summer: We talk with the Wet Hot director about the film's origins and if there could be another follow-up.",
-      "publishedAt": "Wed, 12 Aug 2026 12:00:00 +0000"
     },
     {
       "source": "Rock Paper Shotgun",
@@ -733,15 +823,6 @@
       "url": "https://www.pcgamer.com/software/ai/welcome-to-the-internet-in-2026-where-ai-agents-are-both-victim-and-attacker-in-malware-wars/",
       "summary": "Let's hope safeguards develop in-line with AI agent capabilities.",
       "publishedAt": "Wed, 12 Aug 2026 11:29:16 +0000"
-    },
-    {
-      "source": "IGN",
-      "language": "en",
-      "title": "Space Marine 2 Maker Saber Interactive Denies Writer's Claim They Were Replaced by ChatGPT, but Admits Rideshare Stimulator Will Feature AI 'By Necessity'",
-      "normalizedTitle": "space marine 2 maker saber interactive denies writer s claim they were replaced by chatgpt but admits rideshare stimulator will feature ai by necessity",
-      "url": "https://www.ign.com/articles/space-marine-2-maker-saber-interactive-denies-writers-claim-they-were-replaced-by-chatgpt-but-admits-that-rideshare-stimulator-will-feature-ai-by-necessity",
-      "summary": "Saber Interactive, the company behind Warhammer 40,000: Space Marine 2, has denied it replaced a writer with ChatGPT, but admitted its new taxi game Rideshare Stimulator uses AI \"by necessity.\"",
-      "publishedAt": "Wed, 12 Aug 2026 11:26:50 +0000"
     },
     {
       "source": "PC Gamer",
@@ -796,15 +877,6 @@
       "url": "https://www.gamesradar.com/entertainment/action-shows/reacher-season-4-is-currently-the-shows-lowest-rated-season-on-rotten-tomatoes-but-its-not-all-bad-news-for-the-big-man/",
       "summary": "Critics are divided on the latest season of Reacher",
       "publishedAt": "Wed, 12 Aug 2026 11:12:10 +0000"
-    },
-    {
-      "source": "IGN",
-      "language": "en",
-      "title": "Take-Two Boss Strauss Zelnick Says He Asked to Be a Playable Character in WWE 2K26 Because 'I Thought It Would Be Funny for Insiders' — but Don't Expect Him to Pop Up in GTA 6",
-      "normalizedTitle": "take two boss strauss zelnick says he asked to be a playable character in wwe 2k26 because i thought it would be funny for insiders but don t expect him to pop up in gta 6",
-      "url": "https://www.ign.com/articles/take-two-boss-strauss-zelnick-says-he-asked-to-be-a-playable-character-in-wwe-2k26-because-i-thought-it-would-be-funny-for-insiders-but-dont-expect-him-to-pop-up-in-gta-6",
-      "summary": "Take-Two boss Strauss Zelnick has spoken for the first time about his surprise addition to the WWE 2K26 roster in June, saying it was his idea and the DLC did quite well actually. But don’t expect the high-powered CEO to appear in GTA 6.",
-      "publishedAt": "Wed, 12 Aug 2026 11:02:07 +0000"
     },
     {
       "source": "GamesRadar+",
@@ -906,24 +978,6 @@
       "publishedAt": "Wed, 12 Aug 2026 10:24:19 +0000"
     },
     {
-      "source": "IGN",
-      "language": "en",
-      "title": "Avengers: Doomsday Advert Cost Marvel $160,000 in Fines After Safety Fears",
-      "normalizedTitle": "avengers doomsday advert cost marvel 160 000 in fines after safety fears",
-      "url": "https://www.ign.com/articles/avengers-doomsday-advert-cost-marvel-160000-in-fines-after-safety-fears",
-      "summary": "Marvel incurred fines totaling $160,000 to display a lavish Avengers: Doomsday advert during San Diego Comic-Con, despite opposition by city officials.",
-      "publishedAt": "Wed, 12 Aug 2026 10:17:44 +0000"
-    },
-    {
-      "source": "IGN",
-      "language": "en",
-      "title": "Disney Confirms D23 Kingdom Hearts Panel Details, and Given Who's on It, We're Expecting Kingdom Hearts 4 News",
-      "normalizedTitle": "disney confirms d23 kingdom hearts panel details and given who s on it we re expecting kingdom hearts 4 news",
-      "url": "https://www.ign.com/articles/disney-confirms-d23-kingdom-hearts-panel-details-and-given-whos-on-it-were-expecting-kingdom-hearts-4-news",
-      "summary": "Kingdom Hearts 4 news looks set for later this week after Disney confirmed the details of its Kingdom Hearts panel at fan convention D23.",
-      "publishedAt": "Wed, 12 Aug 2026 09:58:17 +0000"
-    },
-    {
       "source": "GamesRadar+",
       "language": "en",
       "title": "J.J Abrams confirms the connection between The End of Oak Street and the Cloverfield franchise, but it's not what you think",
@@ -940,15 +994,6 @@
       "url": "https://www.gamesradar.com/entertainment/marvel-movies/ms-marvel-actor-says-spider-man-brand-new-day-is-proof-superhero-fatigue-doesnt-exist-audiences-just-want-good-movies/",
       "summary": "Iman Vellani responds to Brand New Day's box office success",
       "publishedAt": "Wed, 12 Aug 2026 09:51:04 +0000"
-    },
-    {
-      "source": "IGN",
-      "language": "en",
-      "title": "Huge Helldivers 2 Patch Adds New Illuminate Enemies, a New Biome 'Full of Fresh Horrors,' a Level Cap Increase and Much More",
-      "normalizedTitle": "huge helldivers 2 patch adds new illuminate enemies a new biome full of fresh horrors a level cap increase and much more",
-      "url": "https://www.ign.com/articles/huge-helldivers-2-patch-adds-new-illuminate-enemies-a-new-biome-full-of-fresh-horrors-a-level-cap-increase-and-much-more",
-      "summary": "Helldivers 2 developer Arrowhead has released a major update for the game, adding new Illuminate enemies, a new biome, and raising the level cap. Check out the 7.0.0 patch notes.",
-      "publishedAt": "Wed, 12 Aug 2026 09:49:01 +0000"
     },
     {
       "source": "GamesRadar+",
@@ -969,15 +1014,6 @@
       "publishedAt": "Wed, 12 Aug 2026 09:43:17 +0000"
     },
     {
-      "source": "IGN",
-      "language": "en",
-      "title": "The Elder Scrolls 6 Demo to Xbox Leadership Included a Giant Inflatable Rat, Placed Outside Bethesda Offices in Protest at Microsoft's Mass Layoffs",
-      "normalizedTitle": "the elder scrolls 6 demo to xbox leadership included a giant inflatable rat placed outside bethesda offices in protest at microsoft s mass layoffs",
-      "url": "https://www.ign.com/articles/the-elder-scrolls-6-demo-to-xbox-leadership-included-a-giant-inflatable-rat-placed-outside-bethesda-offices-in-protest-at-microsofts-mass-layoffs",
-      "summary": "Bethesda staff have inflated a giant rat outside the company's offices, during a visit by the Xbox management team to play The Elder Scrolls 6.",
-      "publishedAt": "Wed, 12 Aug 2026 09:41:40 +0000"
-    },
-    {
       "source": "Eurogamer",
       "language": "en",
       "title": "Xbox CEO Asha Sharma's internal playthrough of The Elder Scrolls 6 disrupted by a giant inflatable rat, as Bethesda union protests cuts",
@@ -994,15 +1030,6 @@
       "url": "https://www.eurogamer.net/halo-campaign-evolved-launch-sales-numbers",
       "summary": "Halo: Campaign Evolved - the remake of the original Halo 1 campaign and the first Halo game released on PlayStation - has struggled to sell in meaningful quantities, and the probable reason for it? A lack of multiplayer. Read more",
       "publishedAt": "Wed, 12 Aug 2026 08:50:25 +0000"
-    },
-    {
-      "source": "IGN",
-      "language": "en",
-      "title": "Sony Announces Phantom Blade Zero State of Play and Everyone Knows How the Chat Is Going to Go",
-      "normalizedTitle": "sony announces phantom blade zero state of play and everyone knows how the chat is going to go",
-      "url": "https://www.ign.com/articles/sony-announces-phantom-blade-zero-state-of-play-and-everyone-knows-how-the-chat-is-going-to-go",
-      "summary": "Promising looking action game Phantom Blade Zero is getting its very own State of Play, but if the reaction to Sony’s announcement is any indication, the chat is going to be overrun with angry comments about Sony’s decision to kill PlayStation discs.",
-      "publishedAt": "Wed, 12 Aug 2026 08:43:35 +0000"
     },
     {
       "source": "Rock Paper Shotgun",
@@ -1318,24 +1345,6 @@
       "url": "https://www.rockpapershotgun.com/even-10-years-on-sean-murray-feels-like-he-could-work-on-no-mans-sky-forever-even-if-he-knows-there-probably-is-some-end-date-for-it",
       "summary": "What's that? It's been 10 years since No Man's Sky launched? Oh! That's gone by a bit too quick! In that time the planet hopping survival game has changed drastically, starting life frequently derided for missing promised features, slowly morphing into what it is now. The game now has a massive mish mash of features that have kept people coming back year after year, and according to Hello Games co-founder Sean Murray, he could keep going as long as they do. Read more",
       "publishedAt": "Tue, 11 Aug 2026 16:28:30 +0000"
-    },
-    {
-      "source": "GamesRadar+",
-      "language": "en",
-      "title": "One of the first Animal Crossing speedrunners spent 4,300 hours catching shrimp in an MMO \"just to see if I could,\" and he might even \"do it again\"",
-      "normalizedTitle": "one of the first animal crossing speedrunners spent 4 300 hours catching shrimp in an mmo just to see if i could and he might even do it again",
-      "url": "https://www.gamesradar.com/games/mmo/one-of-the-first-animal-crossing-speedrunners-spent-4-300-hours-catching-shrimp-in-an-mmo-just-to-see-if-i-could-and-he-might-even-do-it-again/",
-      "summary": "\"To me, it was worth it\"",
-      "publishedAt": "Tue, 11 Aug 2026 16:26:27 +0000"
-    },
-    {
-      "source": "GamesRadar+",
-      "language": "en",
-      "title": "7 years after it was cancelled by Fox, Marvel's X-Force movie producer reveals that a major MCU actor was set to star as a fan-favorite villain",
-      "normalizedTitle": "7 years after it was cancelled by fox marvel s x force movie producer reveals that a major mcu actor was set to star as a fan favorite villain",
-      "url": "https://www.gamesradar.com/entertainment/marvel-movies/7-years-after-it-was-cancelled-by-fox-marvels-x-force-movie-producer-reveals-that-a-major-mcu-actor-was-set-to-star-as-a-fan-favorite-villain/",
-      "summary": "Rob Liefeld created both X-Force and Deadpool",
-      "publishedAt": "Tue, 11 Aug 2026 16:07:35 +0000"
     },
     {
       "source": "PC Gamer",
@@ -3424,15 +3433,6 @@
       "url": "https://www.rockpapershotgun.com/runescape-dragonwilds-revamps-the-agility-skill-and-gives-you-wipeout-style-courses-to-test-your-mettle-on",
       "summary": "Skills in RuneScape have always tickled me because of the sheer variety on display, and this extends to Dragonwilds too. There's magic, but then there's woodcutting. You've got prayer, and also fishing. And of course you've got runecrafting, or agility. It's that last one that's important for today's purposes, as a new update has arrived in Dragonwilds that revamp the skill, as well as add in some courses for you to pseudo-parkour across. Read more",
       "publishedAt": "Thu, 30 Jul 2026 17:04:11 +0000"
-    },
-    {
-      "source": "Rock Paper Shotgun",
-      "language": "en",
-      "title": "Thimbleweed Park 2 is \"not really a sequel, not really a prequel,\" but it is in development and due out in 2028",
-      "normalizedTitle": "thimbleweed park 2 is not really a sequel not really a prequel but it is in development and due out in 2028",
-      "url": "https://www.rockpapershotgun.com/thimbleweed-park-2-is-not-really-a-sequel-not-really-a-prequel-but-it-is-in-development-and-due-out-in-2028",
-      "summary": "Hark! I bring word of some good news for those of you with an appetite for adventure games with tasty pixel art. You may remember that Monkey Island creator Ron Gilbert was working on a game that was described as \" Classic Zelda meets Diablo meets Thimbleweed Park .\" That got canned at the end of last year , unfortunately, but the spirit of Thimbleweed Park lives on. Literally! As Thimbleweed Park 2 is in the works. Read more",
-      "publishedAt": "Thu, 30 Jul 2026 16:04:49 +0000"
     },
     {
       "source": "StopGame",
