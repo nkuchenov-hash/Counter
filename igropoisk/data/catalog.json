@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-12T20:48:16.130Z",
+  "updatedAt": "2026-08-12T20:50:54.584Z",
   "count": 78,
   "sourcePool": [
     "Steam",
@@ -723,7 +723,7 @@
       "movies": [],
       "criticRating": 9.7,
       "steamUserRating": 9.3,
-      "recommendations": 117073,
+      "recommendations": 117072,
       "owners": "2,000,000 .. 5,000,000",
       "peakConcurrent": 918,
       "sourceEvidence": [
@@ -736,7 +736,7 @@
         "steamSpy": "https://steamspy.com/app/632470",
         "metacritic": "https://www.metacritic.com/game/pc/disco-elysium-the-final-cut?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10436.846045689754,
+      "popularityScore": 10436.845674730926,
       "igropoiskRating": 9.6,
       "editorialSources": [],
       "materials": {
@@ -1060,7 +1060,7 @@
       "movies": [],
       "criticRating": 8.9,
       "steamUserRating": 9.8,
-      "recommendations": 811241,
+      "recommendations": 811250,
       "owners": "50,000,000 .. 100,000,000",
       "peakConcurrent": 25122,
       "sourceEvidence": [
@@ -1073,7 +1073,7 @@
         "steamSpy": "https://steamspy.com/app/550",
         "metacritic": "https://www.metacritic.com/game/pc/left-4-dead-2?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10390.915042706823,
+      "popularityScore": 10390.915524514798,
       "igropoiskRating": 9.2,
       "editorialSources": [],
       "materials": {
@@ -1536,7 +1536,7 @@
       "movies": [],
       "criticRating": 8.7,
       "steamUserRating": 9.7,
-      "recommendations": 498529,
+      "recommendations": 498537,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 4912,
       "sourceEvidence": [
@@ -1549,7 +1549,7 @@
         "steamSpy": "https://steamspy.com/app/367520",
         "metacritic": "https://www.metacritic.com/game/pc/hollow-knight?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10319.769129793842,
+      "popularityScore": 10319.769826708365,
       "igropoiskRating": 9,
       "editorialSources": [],
       "materials": {
@@ -1879,7 +1879,7 @@
       "movies": [],
       "criticRating": 8.9,
       "steamUserRating": 9.7,
-      "recommendations": 155577,
+      "recommendations": 155574,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 2559,
       "sourceEvidence": [
@@ -1892,7 +1892,7 @@
         "steamSpy": "https://steamspy.com/app/588650",
         "metacritic": "https://www.metacritic.com/game/pc/dead-cells?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10259.194818420823,
+      "popularityScore": 10259.19398096565,
       "igropoiskRating": 9.2,
       "editorialSources": [],
       "materials": {
@@ -2501,7 +2501,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 9.4,
-      "recommendations": 400110,
+      "recommendations": 400062,
       "owners": "50,000,000 .. 100,000,000",
       "peakConcurrent": 18028,
       "sourceEvidence": [
@@ -2515,7 +2515,7 @@
         "steamSpy": "https://steamspy.com/app/1623730",
         "metacritic": ""
       },
-      "popularityScore": 9940.218049132809,
+      "popularityScore": 9940.212838732281,
       "igropoiskRating": 9.4,
       "editorialSources": [
         "GamesRadar+",
@@ -3190,7 +3190,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 7.1,
-      "recommendations": 235878,
+      "recommendations": 235876,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 6327,
       "sourceEvidence": [
@@ -3202,7 +3202,7 @@
         "steamSpy": "https://steamspy.com/app/1238810",
         "metacritic": ""
       },
-      "popularityScore": 9827.268927793482,
+      "popularityScore": 9827.268559556951,
       "igropoiskRating": 7.1,
       "editorialSources": [],
       "materials": {
@@ -4010,7 +4010,7 @@
       "movies": [],
       "criticRating": 9,
       "steamUserRating": 9.7,
-      "recommendations": 194344,
+      "recommendations": 194347,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 16426,
       "sourceEvidence": [
@@ -4023,7 +4023,7 @@
         "steamSpy": "https://steamspy.com/app/427520",
         "metacritic": "https://www.metacritic.com/game/pc/factorio?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9748.857337182428,
+      "popularityScore": 9748.858007574458,
       "igropoiskRating": 9.2,
       "editorialSources": [],
       "materials": {
@@ -5019,7 +5019,7 @@
       "movies": [],
       "criticRating": 7.9,
       "steamUserRating": 9.7,
-      "recommendations": 778843,
+      "recommendations": 778849,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 17281,
       "sourceEvidence": [
@@ -5032,7 +5032,7 @@
         "steamSpy": "https://steamspy.com/app/227300",
         "metacritic": "https://www.metacritic.com/game/pc/euro-truck-simulator-2?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9659.145047856631,
+      "popularityScore": 9659.145382423869,
       "igropoiskRating": 8.5,
       "editorialSources": [],
       "materials": {
@@ -5597,7 +5597,7 @@
       "movies": [],
       "criticRating": 9,
       "steamUserRating": 9.8,
-      "recommendations": 159164,
+      "recommendations": 159162,
       "owners": "2,000,000 .. 5,000,000",
       "peakConcurrent": 17123,
       "sourceEvidence": [
@@ -5610,7 +5610,7 @@
         "steamSpy": "https://steamspy.com/app/2379780",
         "metacritic": "https://www.metacritic.com/game/pc/balatro?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9510.18475735901,
+      "popularityScore": 9510.184211639524,
       "igropoiskRating": 9.3,
       "editorialSources": [],
       "materials": {
@@ -5831,7 +5831,7 @@
       "movies": [],
       "criticRating": 8.6,
       "steamUserRating": 9.8,
-      "recommendations": 250600,
+      "recommendations": 250601,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 2966,
       "sourceEvidence": [
@@ -5845,7 +5845,7 @@
         "steamSpy": "https://steamspy.com/app/1794680",
         "metacritic": "https://www.metacritic.com/game/pc/vampire-survivors?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9489.898279967336,
+      "popularityScore": 9489.898453268166,
       "igropoiskRating": 9,
       "editorialSources": [
         "Rock Paper Shotgun"
@@ -7421,7 +7421,7 @@
       "movies": [],
       "criticRating": 9.3,
       "steamUserRating": 9.6,
-      "recommendations": 179962,
+      "recommendations": 179965,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 3510,
       "sourceEvidence": [
@@ -7435,7 +7435,7 @@
         "steamSpy": "https://steamspy.com/app/435150",
         "metacritic": "https://www.metacritic.com/game/pc/divinity-original-sin-ii?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9165.518322428341,
+      "popularityScore": 9165.51904639526,
       "igropoiskRating": 9.4,
       "editorialSources": [
         "VG247"
