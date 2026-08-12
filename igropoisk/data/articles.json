@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-12T20:52:37.278Z",
+  "updatedAt": "2026-08-12T21:52:57.802Z",
   "count": 495,
   "sources": [
     "IGN",
@@ -14,6 +14,87 @@
     "Игромания"
   ],
   "articles": [
+    {
+      "source": "GamesRadar+",
+      "language": "en",
+      "title": "The Elder Scrolls 6: Sentinel could be the title of Bethesda's next RPG according to a solid fan theory that dates back to a Starfield teaser",
+      "normalizedTitle": "the elder scrolls 6 sentinel could be the title of bethesda s next rpg according to a solid fan theory that dates back to a starfield teaser",
+      "url": "https://www.gamesradar.com/games/the-elder-scrolls/the-elder-scrolls-6-sentinel-could-be-the-title-of-bethesdas-next-rpg-according-to-a-solid-fan-theory-that-dates-back-to-a-starfield-teaser/",
+      "summary": "Todd Howard, you sly dog",
+      "publishedAt": "Wed, 12 Aug 2026 21:37:15 +0000"
+    },
+    {
+      "source": "Polygon",
+      "language": "en",
+      "title": "Where to find the pond jockey location in Grounded 2",
+      "normalizedTitle": "where to find the pond jockey location in grounded 2",
+      "url": "https://www.polygon.com/grounded-2-pond-jockey-location-where-to-find/",
+      "summary": "Here's where to find the pond jockey in Grounded 2, so you can scan pond jockey meat to unlock the harpoon gun",
+      "publishedAt": "Wed, 12 Aug 2026 21:36:39 GMT"
+    },
+    {
+      "source": "PC Gamer",
+      "language": "en",
+      "title": "Helldivers 2 borrows from Dead Space and Silent Hill for its horrific new aliens",
+      "normalizedTitle": "helldivers 2 borrows from dead space and silent hill for its horrific new aliens",
+      "url": "https://www.pcgamer.com/games/third-person-shooter/helldivers-2-borrows-from-dead-space-and-silent-hill-for-its-horrific-new-aliens/",
+      "summary": "Attack the void!",
+      "publishedAt": "Wed, 12 Aug 2026 21:32:04 +0000"
+    },
+    {
+      "source": "GamesRadar+",
+      "language": "en",
+      "title": "Halo: Campaign Evolved needed PvP to match Call of Duty: Black Ops 1 and 2 PS5 sales, analyst says",
+      "normalizedTitle": "halo campaign evolved needed pvp to match call of duty black ops 1 and 2 ps5 sales analyst says",
+      "url": "https://www.gamesradar.com/games/fps/halo-campaign-evolved-needed-pvp-to-match-call-of-duty-black-ops-1-and-2-ps5-sales-analyst-says/",
+      "summary": "\"Split-screen Halo and LAN parties are a foundational memory for exactly the 30-something demographic this remake was chasing\"",
+      "publishedAt": "Wed, 12 Aug 2026 21:13:09 +0000"
+    },
+    {
+      "source": "GamesRadar+",
+      "language": "en",
+      "title": "The Witcher 3's Geralt actor wishes he could \"sue every single AI platform\" for stealing his voice",
+      "normalizedTitle": "the witcher 3 s geralt actor wishes he could sue every single ai platform for stealing his voice",
+      "url": "https://www.gamesradar.com/games/the-witcher/the-witcher-3s-geralt-actor-wishes-he-could-sue-every-single-ai-platform-for-stealing-his-voice/",
+      "summary": "Seems fair to me",
+      "publishedAt": "Wed, 12 Aug 2026 21:08:12 +0000"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "Brandon Sanderson Shares a Look Into Tolkien's Life as a Professor Before He Authored The Lord of the Rings",
+      "normalizedTitle": "brandon sanderson shares a look into tolkien s life as a professor before he authored the lord of the rings",
+      "url": "https://www.ign.com/articles/brandon-sanderson-shares-a-look-into-tolkiens-life-as-a-professor-before-he-authored-the-lord-of-the-rings-books",
+      "summary": "Brandon Sanderson revealed a rather interesting Tolkien tidbit during his weekly podcast, saying he encountered an illustration of Helm's Deep he'd never seen before, and it just so happened to be in a rather unlikely place.",
+      "publishedAt": "Wed, 12 Aug 2026 20:57:14 +0000"
+    },
+    {
+      "source": "Polygon",
+      "language": "en",
+      "title": "A Knight of the Seven Kingdoms showrunner is working with George RR Martin to develop future seasons",
+      "normalizedTitle": "a knight of the seven kingdoms showrunner is working with george rr martin to develop future seasons",
+      "url": "https://www.polygon.com/video/a-knight-of-the-seven-kingdoms-showrunner-future-plans/",
+      "summary": "Ira Parker discusses his hopes for future seasons of A Knight of the Seven Kingdoms.",
+      "publishedAt": "Wed, 12 Aug 2026 20:52:36 GMT"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "The Full Teenage Mutant Ninja Turtles Trilogy in 4K Is on Sale for $29.99",
+      "normalizedTitle": "the full teenage mutant ninja turtles trilogy in 4k is on sale for 29 99",
+      "url": "https://www.ign.com/articles/teenage-mutant-ninja-turtles-4k-trilogy-walmart-deal-august-2026",
+      "summary": "The '90s Teenage Mutant Ninja Turtles movie trilogy is on sale for an all-time low price.",
+      "publishedAt": "Wed, 12 Aug 2026 20:51:10 +0000"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "Theater Employee Makes Their Own Spider-Man: Brand New Day Poster After Cinema Never Received Official One",
+      "normalizedTitle": "theater employee makes their own spider man brand new day poster after cinema never received official one",
+      "url": "https://www.ign.com/articles/theater-employee-makes-their-own-spider-man-brand-new-day-poster-after-cinema-never-receives-official-one",
+      "summary": "An employee at a Cineplex theater in Prince George, British Columbia took matters into their own hands after their workplace didn’t get an official poster for the newest Spidey film.",
+      "publishedAt": "Wed, 12 Aug 2026 20:50:27 +0000"
+    },
     {
       "source": "PC Gamer",
       "language": "en",
@@ -42,6 +123,15 @@
       "publishedAt": "Wed, 12 Aug 2026 20:30:06 GMT"
     },
     {
+      "source": "IGN",
+      "language": "en",
+      "title": "The Miskatonic Tales: Journey to Innsmouth Board Game Plays Like a Tabletop RPG Without a GM",
+      "normalizedTitle": "the miskatonic tales journey to innsmouth board game plays like a tabletop rpg without a gm",
+      "url": "https://www.ign.com/articles/miskatonic-tales-journey-to-innsmouth-board-game-review",
+      "summary": "Miskatonic Tales: Journey to Innsmouth feels less like a board game and more like a fancy way to run a role-playing game without a GM.",
+      "publishedAt": "Wed, 12 Aug 2026 20:18:59 +0000"
+    },
+    {
       "source": "Polygon",
       "language": "en",
       "title": "How to get a toe biter buggy in Grounded 2",
@@ -49,6 +139,42 @@
       "url": "https://www.polygon.com/grounded-2-toe-biter-buggy-how-to-get-egg-nest-recipe-location/",
       "summary": "Here's how to get a toe biter buggy in Grounded 2, where to find the toe biter nest recipe, and where to find toe biter eggs",
       "publishedAt": "Wed, 12 Aug 2026 20:18:59 GMT"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "Reddit User Cuts Steam Machine Faceplates Out of Same Marble Michelangelo Used",
+      "normalizedTitle": "reddit user cuts steam machine faceplates out of same marble michelangelo used",
+      "url": "https://www.ign.com/articles/reddit-user-cuts-steam-machine-faceplates-out-of-same-marble-michelangelo-used",
+      "summary": "A Reddit user has made Steam Machine faceplates out of marble, and they're absolutely gorgeous. Luckily, you might be able to actually buy one.",
+      "publishedAt": "Wed, 12 Aug 2026 20:12:19 +0000"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "Barbie 2 May Not Happen as Warner Bros. and Creative Team Clash Over Pay Demands",
+      "normalizedTitle": "barbie 2 may not happen as warner bros and creative team clash over pay demands",
+      "url": "https://www.ign.com/articles/barbie-2-may-not-happen-as-warner-bros-and-creative-team-clash-over-pay-demands",
+      "summary": "There's a race to get Barbie 2 made, but a financial feud between Warner Bros. and the film's creative team (including Margot Robbie and Ryan Gosling) could kill the project.",
+      "publishedAt": "Wed, 12 Aug 2026 20:11:05 +0000"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "Halo: Campaign Evolved Sales Estimates Put it at a Nearly 50-50 Split Between Xbox and PS5 Buyers",
+      "normalizedTitle": "halo campaign evolved sales estimates put it at a nearly 50 50 split between xbox and ps5 buyers",
+      "url": "https://www.ign.com/articles/halo-campaign-evolved-sales-estimates-put-it-at-a-nearly-50-50-split-between-xbox-and-ps5-buyers",
+      "summary": "Halo: Campaign Evolved, the recently released Unreal Engine 5 remake of the campaign half of original Xbox killer app Halo: Combat Evolved, has sold 1.2 million copies across Xbox, PlayStation 5, and Steam, according to estimates from Alinea Analytics.",
+      "publishedAt": "Wed, 12 Aug 2026 20:00:56 +0000"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "LEGO Reveals Nike Air Force 1 Set With a New Version of the Classic Spaceman Minifigure",
+      "normalizedTitle": "lego reveals nike air force 1 set with a new version of the classic spaceman minifigure",
+      "url": "https://www.ign.com/articles/lego-nike-air-force-1-set-reveal",
+      "summary": "LEGO has revealed an upcoming set based on Nike’s iconic Air Force 1 sneaker that also includes a new version of the Classic Spaceman minifigure.",
+      "publishedAt": "Wed, 12 Aug 2026 19:45:29 +0000"
     },
     {
       "source": "Polygon",
@@ -67,6 +193,33 @@
       "url": "https://www.pcgamer.com/games/adventure/immortality-creator-sam-barlow-reveals-his-next-game-a-tale-of-visions-of-the-future-and-why-theyre-not-always-great/",
       "summary": "Precognition promises to \"follow in the footsteps of Immorality\" with a tale of visions of the future, and why they're not always great.",
       "publishedAt": "Wed, 12 Aug 2026 19:43:56 +0000"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "Coyote vs. Acme Debuts With Perfect 100% Score on Rotten Tomatoes",
+      "normalizedTitle": "coyote vs acme debuts with perfect 100 score on rotten tomatoes",
+      "url": "https://www.ign.com/articles/coyote-vs-acme-debuts-with-perfect-100-score-on-rotten-tomatoes",
+      "summary": "Two years after Warner Bros. planned to shelve the flick for a $30 billion tax write-off, Coyote vs. Acme is set for its long-awaited theatrical release, and it’s already proving to be a hit among critics.",
+      "publishedAt": "Wed, 12 Aug 2026 19:41:54 +0000"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "DC's TV Division Reportedly Scrapped Two Key TV Projects, Rejected Pitches for Catwoman and Poison Ivy Shows",
+      "normalizedTitle": "dc s tv division reportedly scrapped two key tv projects rejected pitches for catwoman and poison ivy shows",
+      "url": "https://www.ign.com/articles/dcs-tv-division-reportedly-scrapped-two-key-tv-projects-rejected-pitches-for-catwoman-and-poison-ivy-shows",
+      "summary": "DC Studios has reportedly pulled the plug on two previously announced TV shows and rejected pitches for other promising projects.",
+      "publishedAt": "Wed, 12 Aug 2026 19:35:50 +0000"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "Xbox Reveals Stunning 3D-Moulded Gears of War: E-Day Limited Edition Controllers",
+      "normalizedTitle": "xbox reveals stunning 3d moulded gears of war e day limited edition controllers",
+      "url": "https://www.ign.com/articles/xbox-reveals-stunning-3d-moulded-gears-of-war-e-day-limited-edition-controllers",
+      "summary": "Microsoft has announced a pair of highly-detailed Gears of War: E-Day Limited Edition Xbox controllers, which look just as gruff and grizzled as you'd expect.",
+      "publishedAt": "Wed, 12 Aug 2026 19:33:51 +0000"
     },
     {
       "source": "GameSpot",
@@ -150,6 +303,24 @@
       "publishedAt": "Wed, 12 Aug 2026 19:12:44 +0000"
     },
     {
+      "source": "IGN",
+      "language": "en",
+      "title": "The Baseus 20,000mAh 100W Power Bank With Dual USB-C Cables Drops to Just $33.29",
+      "normalizedTitle": "the baseus 20 000mah 100w power bank with dual usb c cables drops to just 33 29",
+      "url": "https://www.ign.com/articles/baseus-20000mah-100w-power-bank-deal-august-2026",
+      "summary": "High capacity and high output at an affordable price for your back to school needs.",
+      "publishedAt": "Wed, 12 Aug 2026 19:10:00 +0000"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "Gears of War: E-Day-Themed Xbox Controller Is Up for Preorder",
+      "normalizedTitle": "gears of war e day themed xbox controller is up for preorder",
+      "url": "https://www.ign.com/articles/gears-of-war-e-day-themed-xbox-controller-is-up-for-preorder",
+      "summary": "Microsoft is releasing a new limited-edition controller decked out with Gears of War: E-Day imagery to coincide with the game's release.",
+      "publishedAt": "Wed, 12 Aug 2026 19:01:18 +0000"
+    },
+    {
       "source": "Polygon",
       "language": "en",
       "title": "Is 'The End of Oak Street' a Cloverfield Spin-Off? A Spoiler Free Guide",
@@ -170,7 +341,7 @@
     {
       "source": "IGN",
       "language": "en",
-      "title": "Christopher Judge Slams God of War TV Series Showrunners For Not Hiring Writers of the Games",
+      "title": "Christopher Judge Slams God of War TV Series Showrunners for Not Hiring Writers of the Games",
       "normalizedTitle": "christopher judge slams god of war tv series showrunners for not hiring writers of the games",
       "url": "https://www.ign.com/articles/christopher-judge-slams-god-of-war-tv-series-showrunners-for-not-hiring-writers-of-the-games",
       "summary": "Kratos actor Christopher Judge has a bit of a bone to pick with adaptations of video games, particularly when they don't involve the people who created the games.",
@@ -195,15 +366,6 @@
       "publishedAt": "Wed, 12 Aug 2026 18:26:58 GMT"
     },
     {
-      "source": "Polygon",
-      "language": "en",
-      "title": "Oblivion Remastered Switch 2 Fixes May Come To Other Platforms",
-      "normalizedTitle": "oblivion remastered switch 2 fixes may come to other platforms",
-      "url": "https://www.polygon.com/elder-scrolls-4-oblivion-remastered-switch-2-patch-optimizations/",
-      "summary": "The Elder Scrolls 4: Oblivion Remastered has been plagued by performance issues, but the smooth Switch 2 port may fix the problem once and for all",
-      "publishedAt": "Wed, 12 Aug 2026 18:26:26 GMT"
-    },
-    {
       "source": "IGN",
       "language": "en",
       "title": "Reacher Season 4 Review",
@@ -222,15 +384,6 @@
       "publishedAt": "Wed, 12 Aug 2026 18:20:06 +0000"
     },
     {
-      "source": "Polygon",
-      "language": "en",
-      "title": "Steam shooter explodes in popularity after devs warn fans not to buy it",
-      "normalizedTitle": "steam shooter explodes in popularity after devs warn fans not to buy it",
-      "url": "https://www.polygon.com/steam-wardogs-bulkhead-10-reasons-not-buy-tactical-fps-early-access/",
-      "summary": "Wardogs, a tactical 100-player FPS that will soon launch on Steam's early access, is taking an unusual marketing approach aimed at PC gamers",
-      "publishedAt": "Wed, 12 Aug 2026 18:19:40 GMT"
-    },
-    {
       "source": "GameSpot",
       "language": "en",
       "title": "Amazon Will Soon Be Out Of The MMO Business Entirely",
@@ -242,7 +395,7 @@
     {
       "source": "IGN",
       "language": "en",
-      "title": "Twitch Now Trains Amazon's Generative AI Models On Your Channel By Default",
+      "title": "Twitch Now Trains Amazon's Generative AI Models on Your Channel by Default",
       "normalizedTitle": "twitch now trains amazon s generative ai models on your channel by default",
       "url": "https://www.ign.com/articles/twitch-now-trains-amazons-generative-ai-models-on-your-channel-by-default",
       "summary": "Twitch has rolled out a new \"feature\" that trains Amazon's generative AI content models on its users' channels. The setting can be disabled, but it's turned on by default.",
@@ -330,15 +483,6 @@
       "publishedAt": "Wed, 12 Aug 2026 17:19:01 +0000"
     },
     {
-      "source": "IGN",
-      "language": "en",
-      "title": "Made by Google 2026 Live Blog: Get Ready for the Pixel 11",
-      "normalizedTitle": "made by google 2026 live blog get ready for the pixel 11",
-      "url": "https://www.ign.com/articles/made-by-google-2026-everything-announced",
-      "summary": "Every year, Google holds the Made By Google event, where the company reveals its flagship mobile hardware for the next year. This time around, we already know the Pixel 11 is going to be there, but there are sure to be a few surprises up Google's sleeve.",
-      "publishedAt": "Wed, 12 Aug 2026 17:15:33 +0000"
-    },
-    {
       "source": "Rock Paper Shotgun",
       "language": "en",
       "title": "The Steam Frame needs to be more than a cool device if Valve want to reshape the VR market",
@@ -355,24 +499,6 @@
       "url": "https://www.gamesradar.com/hardware/gaming-controllers/microsoft-drops-new-gears-of-war-e-day-xbox-controller-and-im-just-hoping-these-press-shots-arent-lying-to-me/",
       "summary": "Microsoft has launched its limited edition Gears of War E-Day Xbox controller, and I hope it's really as cool as the press shots make out.",
       "publishedAt": "Wed, 12 Aug 2026 16:40:54 +0000"
-    },
-    {
-      "source": "IGN",
-      "language": "en",
-      "title": "Halo 2's Midnight Release Turns Into a Hostage Situation in a New Short Film",
-      "normalizedTitle": "halo 2 s midnight release turns into a hostage situation in a new short film",
-      "url": "https://www.ign.com/articles/halo-2s-midnight-release-turns-into-a-hostage-situation-in-a-new-short-film",
-      "summary": "A new short film known as Midnight Drop will turn Halo 2's highly anticipated midnight release into the worst night for a group of gamers.",
-      "publishedAt": "Wed, 12 Aug 2026 16:39:46 +0000"
-    },
-    {
-      "source": "IGN",
-      "language": "en",
-      "title": "Warhammer 40,000: Dawn of War 4 Delayed Out of the September Crush, Dev Updates Roadmap of DLC",
-      "normalizedTitle": "warhammer 40 000 dawn of war 4 delayed out of the september crush dev updates roadmap of dlc",
-      "url": "https://www.ign.com/articles/warhammer-40000-dawn-of-war-4-delayed-out-of-the-september-crush-dev-updates-roadmap-of-dlc",
-      "summary": "Warhammer 40,000: Dawn of War 4 has been hit by a delay of two-and-a-half months, forcing an update to the DLC roadmap.",
-      "publishedAt": "Wed, 12 Aug 2026 16:36:50 +0000"
     },
     {
       "source": "GamesRadar+",
@@ -400,15 +526,6 @@
       "url": "https://www.gamesradar.com/games/the-witcher/the-witcher-multiplayer-spin-off-project-sirius-reportedly-hit-with-another-wave-of-layoffs/",
       "summary": "CD Projekt Red has yet to confirm anything",
       "publishedAt": "Wed, 12 Aug 2026 16:33:00 +0000"
-    },
-    {
-      "source": "IGN",
-      "language": "en",
-      "title": "CD Projekt Confirms Layoffs on The Witcher Multiplayer Spin-Off, Issues Statement",
-      "normalizedTitle": "cd projekt confirms layoffs on the witcher multiplayer spin off issues statement",
-      "url": "https://www.ign.com/articles/cd-projekt-confirms-layoffs-on-the-witcher-multiplayer-spinoff-issues-statement",
-      "summary": "CD Projekt has confirmed layoffs on The Witcher multiplayer spin-off, codenamed Project Sirius.",
-      "publishedAt": "Wed, 12 Aug 2026 16:31:24 +0000"
     },
     {
       "source": "PC Gamer",
@@ -447,69 +564,6 @@
       "publishedAt": "Wed, 12 Aug 2026 16:21:22 +0000"
     },
     {
-      "source": "IGN",
-      "language": "en",
-      "title": "Amazon Is Offering a Great Deal on a RTX 5070 Ti Gaming PC, and It Includes Two Upcoming AAA Games",
-      "normalizedTitle": "amazon is offering a great deal on a rtx 5070 ti gaming pc and it includes two upcoming aaa games",
-      "url": "https://www.ign.com/articles/acer-predator-orion-rtx-5070-ti-gaming-pc-deal-intel-gamer-days-sale",
-      "summary": "The RTX 5070 Ti graphics card is powerful enough to run the latest games smoothly at 4K.",
-      "publishedAt": "Wed, 12 Aug 2026 16:20:00 +0000"
-    },
-    {
-      "source": "IGN",
-      "language": "en",
-      "title": "The CyberPowerPC RTX 5070 Gaming PC Drops to $1,399 Shipped and Includes Two Upcoming PC Games",
-      "normalizedTitle": "the cyberpowerpc rtx 5070 gaming pc drops to 1 399 shipped and includes two upcoming pc games",
-      "url": "https://www.ign.com/articles/cyberpowerpc-geforce-rtx-5070-gaming-pc-deal-august-2026",
-      "summary": "Get Star Wars Galactic Racer and Tomb Raider: Legacy of Atlantis for free as part of the Intel Gamer Days event.",
-      "publishedAt": "Wed, 12 Aug 2026 16:20:00 +0000"
-    },
-    {
-      "source": "IGN",
-      "language": "en",
-      "title": "PlayStation Plus Game Catalog for August 2026 Confirmed",
-      "normalizedTitle": "playstation plus game catalog for august 2026 confirmed",
-      "url": "https://www.ign.com/articles/playstation-plus-game-catalog-for-august-2026-confirmed",
-      "summary": "Sony has confirmed the PlayStation Plus Game Catalog for August 2026, which is headlined by Helldivers 2, Kingdom Come Deliverance 2, and Vampire Survivors.",
-      "publishedAt": "Wed, 12 Aug 2026 16:19:56 +0000"
-    },
-    {
-      "source": "IGN",
-      "language": "en",
-      "title": "How Absolute Batman Reimagines One of Bruce Wayne's Greatest Tragedies",
-      "normalizedTitle": "how absolute batman reimagines one of bruce wayne s greatest tragedies",
-      "url": "https://www.ign.com/articles/how-absolute-batman-reimagines-one-of-bruce-waynes-greatest-tragedies",
-      "summary": "It's not easy being Absolute Batman, as the series delivers its own spin on one of the darkest and most tragic Batman stories of all time.",
-      "publishedAt": "Wed, 12 Aug 2026 16:16:51 +0000"
-    },
-    {
-      "source": "IGN",
-      "language": "en",
-      "title": "Get a Comfortable Big and Tall Gaming Chair for Less Than $140 With Free Shipping on Amazon",
-      "normalizedTitle": "get a comfortable big and tall gaming chair for less than 140 with free shipping on amazon",
-      "url": "https://www.ign.com/articles/comhoma-big-and-tall-gaming-chair-deal-august-2026",
-      "summary": "Three different styles are on sale.",
-      "publishedAt": "Wed, 12 Aug 2026 16:15:00 +0000"
-    },
-    {
-      "source": "IGN",
-      "language": "en",
-      "title": "The Alienware RTX 5090 Gaming PC Drops to $4,780, Nearly the Same Price as Buying the GPU By Itself",
-      "normalizedTitle": "the alienware rtx 5090 gaming pc drops to 4 780 nearly the same price as buying the gpu by itself",
-      "url": "https://www.ign.com/articles/dell-alienware-area-51-intel-edition-rtx-5090-gaming-pc-deal-july-2026",
-      "summary": "An RTX 5090 graphics card nowadays goes for at least $4,500 new and $4,000 used.",
-      "publishedAt": "Wed, 12 Aug 2026 16:15:00 +0000"
-    },
-    {
-      "source": "IGN",
-      "language": "en",
-      "title": "The Intel Gamer Days Sale Stacks Walmart's Best Gaming PC Deals With Two Free Upcoming PC Games",
-      "normalizedTitle": "the intel gamer days sale stacks walmart s best gaming pc deals with two free upcoming pc games",
-      "url": "https://www.ign.com/articles/intel-gamer-days-sale-2026-best-walmart-gaming-pc-deals",
-      "summary": "These aren't some no-name games, they'll otherwise cost $59.99 apiece at launch.",
-      "publishedAt": "Wed, 12 Aug 2026 16:15:00 +0000"
-    },
-    {
       "source": "GamesRadar+",
       "language": "en",
       "title": "Keyboard brand Epomaker is getting into the headset game with a pair of $50 open-back cups",
@@ -535,15 +589,6 @@
       "url": "https://www.pcgamer.com/games/mmo/amazon-drops-lost-ark-and-throne-and-liberty/",
       "summary": "Both MMOs will continue to operate, but new publishers are taking over in the West.",
       "publishedAt": "Wed, 12 Aug 2026 16:01:40 +0000"
-    },
-    {
-      "source": "IGN",
-      "language": "en",
-      "title": "Coyote vs. Acme Review",
-      "normalizedTitle": "coyote vs acme review",
-      "url": "https://www.ign.com/articles/coyote-vs-acme-review",
-      "summary": "Coyote vs. Acme shows why Looney Tunes are just as funny now as they’ve ever been, with a film that’s an amazingly meta answer to corporate shenanigans, and an hilarious anvil-dropping, rocket-skate-wearing, Batman and Joker dynamic wrapped in a legal drama.",
-      "publishedAt": "Wed, 12 Aug 2026 16:01:29 +0000"
     },
     {
       "source": "PC Gamer",
@@ -580,15 +625,6 @@
       "url": "https://www.gamesradar.com/games/survival/keep-the-door-locked-codes/",
       "summary": "Codes for Keep the Door Locked will provide plenty of money to buy upgrades, along with tokens that give temporary boosts",
       "publishedAt": "Wed, 12 Aug 2026 15:58:45 +0000"
-    },
-    {
-      "source": "IGN",
-      "language": "en",
-      "title": "Mel Gibson Says He Still Wants to Direct Lethal Weapon 5, Although It Sounds Like It's in Development Hell",
-      "normalizedTitle": "mel gibson says he still wants to direct lethal weapon 5 although it sounds like it s in development hell",
-      "url": "https://www.ign.com/articles/mel-gibson-says-he-still-wants-to-direct-lethal-weapon-5-although-it-sounds-like-its-in-development-hell",
-      "summary": "Lethal Weapon 5 is still on Mel Gibson’s radar, although it sounds mired in development trouble.",
-      "publishedAt": "Wed, 12 Aug 2026 15:53:32 +0000"
     },
     {
       "source": "GamesRadar+",
@@ -1293,15 +1329,6 @@
       "publishedAt": "Tue, 11 Aug 2026 19:26:01 +0000"
     },
     {
-      "source": "GamesRadar+",
-      "language": "en",
-      "title": "15 years later, delisted Lord of the Rings action RPG resurfaces with a remastered version on PS5, Switch 2, Xbox Series X, and PC",
-      "normalizedTitle": "15 years later delisted lord of the rings action rpg resurfaces with a remastered version on ps5 switch 2 xbox series x and pc",
-      "url": "https://www.gamesradar.com/games/action-rpg/15-years-later-delisted-lord-of-the-rings-action-rpg-resurfaces-with-a-remastered-version-on-ps5-switch-2-xbox-series-x-and-pc/",
-      "summary": "The Lord of the Rings: War in the North - Legacy Edition is out now",
-      "publishedAt": "Tue, 11 Aug 2026 18:54:52 +0000"
-    },
-    {
       "source": "PC Gamer",
       "language": "en",
       "title": "Believe the hype for Wardogs, possibly the next great multiplayer FPS",
@@ -1309,15 +1336,6 @@
       "url": "https://www.pcgamer.com/games/fps/believe-the-hype-for-wardogs-possibly-the-next-great-multiplayer-fps/",
       "summary": "A 100-player milsim that's inspired by Arma but plays like Battlefield.",
       "publishedAt": "Tue, 11 Aug 2026 18:21:35 +0000"
-    },
-    {
-      "source": "GamesRadar+",
-      "language": "en",
-      "title": "I'm boycotting Love and Deepspace for killing my virtual boyfriend, and so are 251,000 other loyal widows",
-      "normalizedTitle": "i m boycotting love and deepspace for killing my virtual boyfriend and so are 251 000 other loyal widows",
-      "url": "https://www.gamesradar.com/games/rpg/im-boycotting-love-and-deepspace-for-killing-my-virtual-boyfriend-and-so-are-251-000-other-loyal-widows/",
-      "summary": "This is the War on Valko",
-      "publishedAt": "Tue, 11 Aug 2026 18:00:00 +0000"
     },
     {
       "source": "PC Gamer",
@@ -1336,15 +1354,6 @@
       "url": "https://www.rockpapershotgun.com/paralives-latest-update-throws-out-its-wonderfully-awful-homunculi-babies-and-makes-it-so-that-dead-bodies-should-no-longer-litter-the-streets",
       "summary": "The beauty of an early access game is being able to look at something funky, say \"that's not right,\" and as long as you're correct and not an irritating know-it-all making feedback that's not actually helpful, see it changed in (very slow) real-time. Paralives ' latest update is here, and with it comes an improvement (?) to the life sim's babies after a number of people complained at how they looked. Read more",
       "publishedAt": "Tue, 11 Aug 2026 17:30:59 +0000"
-    },
-    {
-      "source": "GamesRadar+",
-      "language": "en",
-      "title": "10 years later, Sean Murray still plays the launch version of No Man's Sky, and he still likes it: \"It does feel quite barebones in places, but I kind of enjoy that\"",
-      "normalizedTitle": "10 years later sean murray still plays the launch version of no man s sky and he still likes it it does feel quite barebones in places but i kind of enjoy that",
-      "url": "https://www.gamesradar.com/games/survival/10-years-later-sean-murray-still-plays-the-launch-version-of-no-mans-sky-and-he-still-likes-it-it-does-feel-quite-barebones-in-places-but-i-kind-of-enjoy-that/",
-      "summary": "\"A game is obviously owned by the players,\" says Sean Murray",
-      "publishedAt": "Tue, 11 Aug 2026 17:30:00 +0000"
     },
     {
       "source": "Rock Paper Shotgun",
@@ -1705,15 +1714,6 @@
       "url": "https://www.pcgamer.com/gaming-industry/id-software-dev-says-mass-layoffs-like-microsofts-are-weakening-the-games-industry-because-developers-dont-have-the-incentive-to-care-anymore/",
       "summary": "\"A lot of gamers, even if they don't know it, they can feel it's not right. There's something wrong.\"",
       "publishedAt": "Mon, 10 Aug 2026 22:00:43 +0000"
-    },
-    {
-      "source": "PC Gamer",
-      "language": "en",
-      "title": "50 Cent is producing a Payday project for 'the screen'",
-      "normalizedTitle": "50 cent is producing a payday project for the screen",
-      "url": "https://www.pcgamer.com/movies-tv/50-cent-is-producing-a-payday-project-for-the-screen/",
-      "summary": "Whether that's a TV or movie screen isn't clear at this point, but I'm pretty sure it's one or the other.",
-      "publishedAt": "Mon, 10 Aug 2026 21:11:44 +0000"
     },
     {
       "source": "Rock Paper Shotgun",
