@@ -59,35 +59,49 @@ jobs:
           find "$app_dir" -maxdepth 3 -type f \( -name 'data.db' -o -name '*.db' -o -name '*.sqlite*' \) -printf '%p %s bytes %TY-%Tm-%Td %TH:%TM:%TS\n' 2>/dev/null | sort
 
           db="$app_dir/pb_data/data.db"
-          if [[ ! -f "$db" ]]; then
-            echo "ERROR: expected active database not found at $db"
-            exit 2
-          fi
-
-          if command -v sqlite3 >/dev/null 2>&1; then
-            echo 'ROW_COUNTS:'
-            for table in profiles plans categories tags records; do
-              if sqlite3 "$db" "SELECT 1 FROM sqlite_master WHERE type='table' AND name='$table';" | grep -q 1; then
-                printf '%s=' "$table"
-                sqlite3 "$db" "SELECT count(*) FROM \"$table\";"
-              else
-                echo "$table=MISSING"
-              fi
-            done
-            echo 'PROFILE_OWNERSHIP:'
-            sqlite3 -header -column "$db" "SELECT id, substr(COALESCE(user_id,''),1,12) AS legacy_user_prefix, COALESCE(is_admin,0) AS is_admin FROM profiles ORDER BY created;" || true
-            echo 'OWNED_ROW_COUNTS:'
-            for table in plans categories tags records; do
-              if sqlite3 "$db" "SELECT 1 FROM sqlite_master WHERE type='table' AND name='$table';" | grep -q 1; then
-                echo "[$table]"
-                sqlite3 -header -column "$db" "SELECT user_id, count(*) AS rows FROM \"$table\" GROUP BY user_id ORDER BY rows DESC;" || true
-              fi
-            done
-            echo 'COLLECTION_RULES:'
-            sqlite3 -header -column "$db" "SELECT name, listRule, viewRule FROM _collections WHERE name IN ('profiles','plans','categories','tags','records') ORDER BY name;" || true
-          else
-            echo 'sqlite3 unavailable; using PocketBase sqlite metadata only.'
-          fi
+          test -f "$db"
+          DB_PATH="$db" python3 - <<'PY'
+          import os, sqlite3
+          db = os.environ['DB_PATH']
+          con = sqlite3.connect(f'file:{db}?mode=ro', uri=True)
+          cur = con.cursor()
+          def table_exists(name):
+              return cur.execute("select 1 from sqlite_master where type='table' and name=?", (name,)).fetchone() is not None
+          print('ROW_COUNTS:')
+          for table in ('profiles','plans','categories','tags','records'):
+              if table_exists(table):
+                  print(f'{table}={cur.execute(f"select count(*) from {table}").fetchone()[0]}')
+              else:
+                  print(f'{table}=MISSING')
+          print('PROFILE_OWNERSHIP:')
+          if table_exists('profiles'):
+              cols = {r[1] for r in cur.execute('pragma table_info(profiles)')}
+              legacy = "substr(coalesce(user_id,''),1,8)" if 'user_id' in cols else "'-'"
+              admin = "coalesce(is_admin,0)" if 'is_admin' in cols else "'-'"
+              for row in cur.execute(f"select substr(id,1,6), {legacy}, {admin}, substr(coalesce(email,''),1,2) from profiles order by created"):
+                  print(f'profile={row[0]}.. legacy={row[1]}.. admin={row[2]} email_prefix={row[3]}..')
+          print('OWNED_ROW_COUNTS:')
+          for table in ('plans','categories','tags','records'):
+              if table_exists(table):
+                  cols = {r[1] for r in cur.execute(f'pragma table_info({table})')}
+                  if 'user_id' not in cols:
+                      print(f'[{table}] user_id=MISSING')
+                      continue
+                  print(f'[{table}]')
+                  for owner, count in cur.execute(f"select substr(coalesce(user_id,''),1,8), count(*) from {table} group by user_id order by count(*) desc"):
+                      print(f'owner={owner}.. rows={count}')
+          print('COLLECTION_RULES:')
+          if table_exists('_collections'):
+              cols = {r[1] for r in cur.execute('pragma table_info(_collections)')}
+              print('columns=' + ','.join(sorted(cols)))
+              wanted = ['profiles','plans','categories','tags','records']
+              rule_cols = [c for c in ('listRule','viewRule','createRule','updateRule','deleteRule') if c in cols]
+              if rule_cols:
+                  sql = 'select name,' + ','.join(rule_cols) + ' from _collections where name in (' + ','.join('?' for _ in wanted) + ') order by name'
+                  for row in cur.execute(sql, wanted):
+                      print(row)
+          con.close()
+          PY
 
           echo 'LOCAL_HEALTH:'
           curl -sS -o /dev/null -w 'health=%{http_code}\n' https://217-114-0-201.sslip.io/api/health || true
