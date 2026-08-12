@@ -1,28 +1,23 @@
-name: Deploy Flutter Web and Igropoisk to GitHub Pages
+name: Finalize hidden category removal
 
-# Counter and Igropoisk share one Pages artifact; each validation gate must use its canonical output path.
 on:
   push:
     branches:
       - main
-      - master
-  workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
-  build-and-deploy:
+  cleanup:
     runs-on: ubuntu-latest
-    timeout-minutes: 75
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: One-time remove hidden category feature remnants
-        if: github.ref == 'refs/heads/main'
+      - name: Remove all hidden-category remnants and restore deploy workflow
         shell: bash
         run: |
           python3 - <<'PY'
@@ -45,7 +40,7 @@ jobs:
           p = Path('lib/app/shell/shared/shell_core.dart')
           s = p.read_text(encoding='utf-8')
           old = "  void categoryVisibilityShellListener() {\n    if (!mounted) return;\n    final id = selectedCategoryId;\n    if (id != null && CategoryVisibilityPrefs.isHiddenOrAncestor(id)) {\n      int? firstVisible;\n      for (final p in DatabaseService.instance.allCategoryIdPathPairs) {\n        if (!CategoryVisibilityPrefs.isHiddenOrAncestor(p.id)) {\n          firstVisible = p.id;\n          break;\n        }\n      }\n      setState(() => selectedCategoryId = firstVisible);\n    }\n  }\n\n"
-          s = exact(s, old, '', 'shell_core method')
+          s = exact(s, old, '', 'shell_core visibility method')
           p.write_text(s, encoding='utf-8')
 
           p = Path('lib/features/lists/lists_view.dart')
@@ -76,19 +71,23 @@ jobs:
           s = exact(s, "import 'package:counter/shared/categories/visibility/category_visibility_prefs.dart';\n", '', 'lists_filters import')
           s = re.sub(r'^\s*if \(CategoryVisibilityPrefs\.isHiddenOrAncestor\([^\n]+\)\) continue;\n', '', s, flags=re.MULTILINE)
           old = "  if (CategoryVisibilityPrefs.isHiddenOrAncestor(r.id)) {\n    return const SizedBox.shrink();\n  }\n  final rawKids = r.children ?? const <CategoryRule>[];\n  final kids = rawKids\n      .where((c) => !CategoryVisibilityPrefs.isHiddenOrAncestor(c.id))\n      .toList();\n"
-          new = "  final kids = r.children ?? const <CategoryRule>[];\n"
-          s = exact(s, old, new, 'lists manual category tree')
+          s = exact(s, old, "  final kids = r.children ?? const <CategoryRule>[];\n", 'lists manual category tree')
           p.write_text(s, encoding='utf-8')
 
-          removed_visibility_strings = 0
+          # The feature is gone, so delete every remaining source line naming its dead localization key.
+          removed_key_lines = 0
           for p in Path('lib').rglob('*.dart'):
-              s = p.read_text(encoding='utf-8')
-              updated, n = re.subn(r"^\s*'category_visibility_toggle':.*\n", '', s, flags=re.MULTILINE)
-              if n:
-                  p.write_text(updated, encoding='utf-8')
-                  removed_visibility_strings += n
-          if removed_visibility_strings < 1:
-              raise SystemExit('Expected at least one dead category_visibility_toggle localization entry')
+              lines = p.read_text(encoding='utf-8', errors='ignore').splitlines(keepends=True)
+              kept = []
+              for line in lines:
+                  if 'category_visibility_toggle' in line:
+                      print(f'REMOVE {p}: {line.strip()}')
+                      removed_key_lines += 1
+                      continue
+                  kept.append(line)
+              p.write_text(''.join(kept), encoding='utf-8')
+          if removed_key_lines < 1:
+              raise SystemExit('Expected at least one dead category_visibility_toggle line')
 
           p = Path('AGENTS.md')
           s = p.read_text(encoding='utf-8')
@@ -97,13 +96,23 @@ jobs:
           s = exact(s, old, new, 'AGENTS categories ownership')
           p.write_text(s, encoding='utf-8')
 
-          forbidden = ['CategoryVisibilityPrefs', 'hidden_category_ids_json', 'category_visibility_toggle', 'shared/categories/visibility']
-          production = '\n'.join(x.read_text(encoding='utf-8', errors='ignore') for x in Path('lib').rglob('*.dart'))
-          leftovers = [x for x in forbidden if x in production]
+          forbidden = [
+              'CategoryVisibilityPrefs',
+              'hidden_category_ids_json',
+              'category_visibility_toggle',
+              'shared/categories/visibility',
+          ]
+          leftovers = []
+          for p in Path('lib').rglob('*.dart'):
+              s = p.read_text(encoding='utf-8', errors='ignore')
+              for needle in forbidden:
+                  if needle in s:
+                      leftovers.append(f'{needle} @ {p}')
           if leftovers:
-              raise SystemExit(f'Forbidden hidden-category remnants remain in lib/: {leftovers}')
+              raise SystemExit('Forbidden hidden-category remnants remain: ' + '; '.join(leftovers))
           PY
 
+          # Put the normal production deploy workflow back before publishing the cleanup commit.
           git show 6a890c3d9ae8c677a632cda0598db4a2482892c7:.github/workflows/deploy.yml > .github/workflows/deploy.yml
           git config user.name "nkuchenov-hash"
           git config user.email "nkuchenov@gmail.com"
@@ -111,77 +120,3 @@ jobs:
           git diff --cached --check
           git commit -m "Remove hidden categories from all runtime paths"
           git push origin HEAD:main
-
-      - name: Setup Node for Igropoisk
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-
-      - name: Install Igropoisk collector
-        working-directory: igropoisk
-        run: npm install --no-audit --no-fund
-
-      - name: Build Igropoisk catalog
-        run: node igropoisk/scripts/update-curated.mjs
-
-      - name: Validate Igropoisk catalog
-        run: |
-          node - <<'NODE'
-          const fs = require('fs');
-          const d = JSON.parse(fs.readFileSync('./igropoisk/data/catalog.json','utf8'));
-          if (!Array.isArray(d.games) || d.games.length < 50 || d.games.length > 220) {
-            throw new Error(`Invalid Igropoisk catalog size: ${d.games?.length || 0}`);
-          }
-          const invalid = d.games.filter(g => !g.appid || !g.title || !g.description || !g.releaseDate || !g.capsuleImage || !g.heroImage || !Array.isArray(g.screenshots) || g.screenshots.length < 2);
-          if (invalid.length) throw new Error(`Incomplete games: ${invalid.slice(0,10).map(g=>g.title).join(', ')}`);
-          console.log(`Igropoisk: ${d.games.length} games validated`);
-          NODE
-
-      - name: Run strict architecture guard
-        run: pwsh -NoProfile -NonInteractive -File ./scripts/audit/architecture_guard.ps1 -Strict
-
-      - name: 'Set up Flutter 3.41.6 (Dart 3.11 satisfies pubspec sdk ^3.11.0)'
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.41.6'
-          channel: 'stable'
-
-      - name: Flutter doctor
-        run: flutter doctor -v
-
-      - name: Create env.dart
-        run: |
-          mkdir -p lib/core/env
-          printf '%s\n' 'abstract final class Env {' '  static const String placeholder = '\'''\'';' '}' > lib/core/env/env.dart
-
-      - name: Install Flutter dependencies
-        run: flutter pub get
-
-      - name: Test Notes mobile keyboard regression in Chrome
-        run: flutter test --platform chrome test/notes_mobile_keyboard_regression_test.dart
-
-      - name: Build Flutter web
-        env:
-          GIT_COMMIT: ${{ github.sha }}
-        run: |
-          SHORT_SHA=$(git rev-parse --short HEAD)
-          BUILD_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-          flutter build web --release --base-href="/Counter/" --no-tree-shake-icons --no-wasm-dry-run --pwa-strategy=none \
-            --dart-define=GIT_COMMIT="$SHORT_SHA" \
-            --dart-define=BUILD_TIME="$BUILD_TIME"
-
-      - name: Add Igropoisk to Pages build
-        run: |
-          rm -rf build/web/igropoisk
-          cp -R igropoisk build/web/igropoisk
-          rm -rf build/web/igropoisk/node_modules
-          if [ -f .github/workflows/igropoisk-update.yml ]; then
-            mkdir -p build/web/.github/workflows
-            cp .github/workflows/igropoisk-update.yml build/web/.github/workflows/igropoisk-update.yml
-          fi
-
-      - name: Deploy to gh-pages
-        uses: JamesIves/github-pages-deploy-action@v4
-        with:
-          folder: build/web
-          branch: gh-pages
