@@ -111,7 +111,7 @@ extension DbCoreExtension on DatabaseService {
       return;
     }
     try {
-      await _pb.health.check();
+      await _pb.health.check().timeout(const Duration(seconds: 3));
       _clearPocketBaseConnectivityBackoff();
       _pbLastHealthProbeAt = DateTime.now();
       final wasOk = _pbLastHealthOk;
@@ -665,7 +665,10 @@ extension DbCoreExtension on DatabaseService {
     // into authoritative empty caches. PocketBase list rules intentionally
     // return 200 with zero visible rows for an unauthenticated request.
     try {
-      await _pb.collection(PbCollections.profiles).authRefresh();
+      await _pb
+.collection(PbCollections.profiles)
+.authRefresh()
+.timeout(const Duration(seconds: 3));
     } on ClientException catch (e) {
       if (e.statusCode >= 400 && e.statusCode < 500) {
         final handler = onSessionInvalid;

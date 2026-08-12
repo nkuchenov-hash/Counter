@@ -93,7 +93,10 @@ class AuthBridge {
       // as authoritative; an invalid token otherwise looks like a valid empty
       // account because list rules return HTTP 200 with zero visible rows.
       try {
-        await pb.collection(PbCollections.profiles).authRefresh();
+        await pb
+  .collection(PbCollections.profiles)
+  .authRefresh()
+  .timeout(const Duration(seconds: 3));
       } on ClientException catch (e) {
         if (e.statusCode >= 400 && e.statusCode < 500) {
           try {
