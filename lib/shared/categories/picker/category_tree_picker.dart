@@ -7,7 +7,6 @@ import 'package:counter/shared/categories/picker/category_picker_contracts.dart'
 import 'package:counter/shared/categories/picker/create_category_from_picker.dart';
 import 'package:counter/shared/categories/tree/category_tree_body.dart';
 import 'package:counter/shared/categories/tree/category_tree_filter.dart';
-import 'package:counter/shared/categories/visibility/category_visibility_prefs.dart';
 import 'package:flutter/material.dart';
 
 export 'package:counter/shared/categories/picker/category_picker_models.dart'
@@ -38,7 +37,6 @@ Future<CategoryTreeSheetResult?> showCategoryTreeSheet(
   BuildContext context, {
   int? initialCategoryId,
   bool showAllCategoriesRow = false,
-  bool showVisibilityControls = false,
 }) {
   return showModalBottomSheet<CategoryTreeSheetResult>(
     context: context,
@@ -53,7 +51,6 @@ Future<CategoryTreeSheetResult?> showCategoryTreeSheet(
         child: _CategoryTreePickerSheet(
           initialCategoryId: initialCategoryId,
           showAllCategoriesRow: showAllCategoriesRow,
-          showVisibilityControls: showVisibilityControls,
         ),
       );
     },
@@ -64,12 +61,10 @@ class _CategoryTreePickerSheet extends StatefulWidget {
   const _CategoryTreePickerSheet({
     required this.initialCategoryId,
     required this.showAllCategoriesRow,
-    required this.showVisibilityControls,
   });
 
   final int? initialCategoryId;
   final bool showAllCategoriesRow;
-  final bool showVisibilityControls;
 
   @override
   State<_CategoryTreePickerSheet> createState() =>
@@ -88,11 +83,6 @@ class _CategoryTreePickerSheetState extends State<_CategoryTreePickerSheet> {
     _searchController.addListener(() {
       setState(() => _query = _searchController.text);
     });
-    unawaited(
-      CategoryVisibilityPrefs.ensureLoaded().then((_) {
-        if (mounted) setState(() {});
-      }),
-    );
     _catSub = CategoryTreeSource.watchCategories().listen((_) {
       if (mounted) setState(() {});
     });
@@ -106,8 +96,6 @@ class _CategoryTreePickerSheetState extends State<_CategoryTreePickerSheet> {
   }
 
   List<CategoryRule> get _visibleRoots {
-    // Assignment/edit pickers always expose the complete active category tree.
-    // Local visibility preferences only control navigation/presentation.
     final roots = CategoryTreeSource.childrenOf(null);
     return filterCategoryRootsForPickerSearch(roots, _query, _labelForRule);
   }
@@ -149,22 +137,7 @@ class _CategoryTreePickerSheetState extends State<_CategoryTreePickerSheet> {
     );
   }
 
-  Future<void> _setCategoryVisible(CategoryRule rule, bool visible) async {
-    await CategoryVisibilityPrefs.ensureLoaded();
-    final directlyHidden = CategoryVisibilityPrefs.hiddenIds.value.contains(
-      rule.id,
-    );
-    if ((visible && directlyHidden) || (!visible && !directlyHidden)) {
-      await CategoryVisibilityPrefs.toggle(rule.id);
-    }
-    if (mounted) setState(() {});
-  }
-
   void _selectCategory(int id) {
-    if (widget.showVisibilityControls &&
-        CategoryVisibilityPrefs.isHiddenOrAncestor(id)) {
-      return;
-    }
     Navigator.of(context).pop(CategoryTreeSheetPicked(id));
   }
 
@@ -252,15 +225,10 @@ class _CategoryTreePickerSheetState extends State<_CategoryTreePickerSheet> {
                     roots: roots,
                     selectedCategoryId: widget.initialCategoryId,
                     expandSelectionPath: false,
+                    expandAll: true,
                     onSelect: _selectCategory,
                     showEditChrome: false,
                     showPickerCreateChrome: true,
-                    showVisibilityCheckboxes: widget.showVisibilityControls,
-                    filterHiddenCategories: false,
-                    onVisibilityChanged: widget.showVisibilityControls
-                        ? (rule, visible) =>
-                              unawaited(_setCategoryVisible(rule, visible))
-                        : null,
                     onPickerAddChild: _canCreate ? _onPickerAddChild : null,
                   ),
               ],
