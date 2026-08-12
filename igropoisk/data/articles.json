@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-12T17:45:12.633Z",
+  "updatedAt": "2026-08-12T18:11:17.596Z",
   "count": 495,
   "sources": [
     "IGN",
@@ -14,6 +14,42 @@
     "Игромания"
   ],
   "articles": [
+    {
+      "source": "GamesRadar+",
+      "language": "en",
+      "title": "DCU's Waller and Wonder Woman show Paradise Lost have reportedly been scrapped, but Lanterns may get a second season",
+      "normalizedTitle": "dcu s waller and wonder woman show paradise lost have reportedly been scrapped but lanterns may get a second season",
+      "url": "https://www.gamesradar.com/entertainment/dc-tv-shows/dcus-waller-and-wonder-woman-show-paradise-lost-have-reportedly-been-scrapped-but-lanterns-may-get-a-second-season/",
+      "summary": "The DCU is making some changes to its previously announced roster",
+      "publishedAt": "Wed, 12 Aug 2026 18:10:03 +0000"
+    },
+    {
+      "source": "Polygon",
+      "language": "en",
+      "title": "MTG's Most Popular Commander Has Been Officially Dethroned by a Final Fantasy Card",
+      "normalizedTitle": "mtg s most popular commander has been officially dethroned by a final fantasy card",
+      "url": "https://www.polygon.com/mtg-yshtola-nights-blessed-most-popular-commander-final-fantasy/",
+      "summary": "Y’shtola, Night’s Blessed has surpassed The Ur-Dragon as the most popular Magic: The Gathering Commander on EDHREC.",
+      "publishedAt": "Wed, 12 Aug 2026 18:00:34 GMT"
+    },
+    {
+      "source": "Polygon",
+      "language": "en",
+      "title": "'X-Men '97' Season 2 Ending Explained: the Cast Break Down 4 Crucial Moments",
+      "normalizedTitle": "x men 97 season 2 ending explained the cast break down 4 crucial moments",
+      "url": "https://www.polygon.com/x-men-97-cast-members-weigh-in-on-that-epic-season-2-finale/",
+      "summary": "Ross Marquand (Professor X, Apocalypse), Lenore Zann (Rogue), and Adrian Hough (Nightcrawler) weigh in on the impact of X-Men '97 season 2's finale",
+      "publishedAt": "Wed, 12 Aug 2026 18:00:11 GMT"
+    },
+    {
+      "source": "GamesRadar+",
+      "language": "en",
+      "title": "Now that The Elder Scrolls 6 is playable, Bethesda's RPG nightmare of its own making is nearly over",
+      "normalizedTitle": "now that the elder scrolls 6 is playable bethesda s rpg nightmare of its own making is nearly over",
+      "url": "https://www.gamesradar.com/games/the-elder-scrolls/now-that-the-elder-scrolls-6-is-playable-bethesdas-rpg-nightmare-of-its-own-making-is-nearly-over/",
+      "summary": "But that 8-year wait is far from over yet",
+      "publishedAt": "Wed, 12 Aug 2026 18:00:00 +0000"
+    },
     {
       "source": "Rock Paper Shotgun",
       "language": "en",
@@ -49,6 +85,15 @@
       "url": "https://www.gamesradar.com/games/third-person-shooter/arc-raiders-frozen-trail-update-is-out-october-8-embark-admits-its-time-to-expand-as-recent-steam-reviews-hit-50-percent-negative/",
       "summary": "Embark is also working on anti-cheat, which is really becoming a problem",
       "publishedAt": "Wed, 12 Aug 2026 17:24:52 +0000"
+    },
+    {
+      "source": "GameSpot",
+      "language": "en",
+      "title": "God Of War&#8217;s Christopher Judge Is Tired Of Video Game TV Adaptations Ignoring Game Creators",
+      "normalizedTitle": "god of war 8217 s christopher judge is tired of video game tv adaptations ignoring game creators",
+      "url": "https://www.gamespot.com/articles/god-of-wars-christopher-judge-is-tired-of-video-game-tv-adaptations-ignoring-game-creators/",
+      "summary": "The live-action adaptation of God of War is on the way, but the voice of the iconic god-killer Kratos, Christopher Judge, has a bone to pick with the people behind game adaptations. As the actor explained, he's annoyed that these projects fail to hire anyone from the source material to work on them, as they tend to ignore the talent behind the success of those games. \"My problem with all game adaptations is you have this pre-existing, successful property, and the first thing you do is not hire anyone associated with it,\" Judge said during a Fan Expo panel (via Reddit ), using HBO's The Last of",
+      "publishedAt": "Wed, 12 Aug 2026 17:19:01 +0000"
     },
     {
       "source": "Polygon",
@@ -294,15 +339,6 @@
       "publishedAt": "Wed, 12 Aug 2026 16:13:59 +0000"
     },
     {
-      "source": "Polygon",
-      "language": "en",
-      "title": "PS Plus Extra August 2026 game catalog additions announced",
-      "normalizedTitle": "ps plus extra august 2026 game catalog additions announced",
-      "url": "https://www.polygon.com/ps-plus-game-catalog-august-2026-update/",
-      "summary": "PlayStation adds new games each month to its PS Plus Games Catalog for subscribers to enjoy. Here's what Extra/Premium users get in August 2026.",
-      "publishedAt": "Wed, 12 Aug 2026 16:13:03 GMT"
-    },
-    {
       "source": "GameSpot",
       "language": "en",
       "title": "Mysterious Witcher Game Project Sirius Undergoes More Changes &#8211; Report",
@@ -328,15 +364,6 @@
       "url": "https://www.ign.com/articles/coyote-vs-acme-review",
       "summary": "Coyote vs. Acme shows why Looney Tunes are just as funny now as they’ve ever been, with a film that’s an amazingly meta answer to corporate shenanigans, and an hilarious anvil-dropping, rocket-skate-wearing, Batman and Joker dynamic wrapped in a legal drama.",
       "publishedAt": "Wed, 12 Aug 2026 16:01:29 +0000"
-    },
-    {
-      "source": "Polygon",
-      "language": "en",
-      "title": "D&D Rival Announces New Partnership to Fight Financial Struggles",
-      "normalizedTitle": "d d rival announces new partnership to fight financial struggles",
-      "url": "https://www.polygon.com/paizo-drivethrurpg-partnership-pathfinder/",
-      "summary": "DriveThruRPG is getting the full Paizo library, and the retailer will also sell Pathfinder and Starfinder physical books.",
-      "publishedAt": "Wed, 12 Aug 2026 16:00:12 GMT"
     },
     {
       "source": "PC Gamer",
@@ -1185,15 +1212,6 @@
       "publishedAt": "Tue, 11 Aug 2026 20:03:21 +0000"
     },
     {
-      "source": "GameSpot",
-      "language": "en",
-      "title": "The Elder Scrolls 6 Might Have An 8-Letter Subtitle",
-      "normalizedTitle": "the elder scrolls 6 might have an 8 letter subtitle",
-      "url": "https://www.gamespot.com/articles/the-elder-scrolls-6-might-have-an-8-letter-subtitle/",
-      "summary": "The Elder Scrolls 6 is one of Microsoft's biggest upcoming games, but it remains largely a mystery, despite being announced more than eight years ago. Today, August 11, Xbox CEO Asha Sharma provided an update on it, saying she witnessed a \"live playthrough\" of the game. She also teased the game's subtitle, or at least that's what it seems like. \"The scale and grandeur are incredible. The story is even greater,\" she said. Those are buzzwords that do not mean much of anything. More intriguingly, Sharma included asterisks in her post that suggest she's referring to the game's subtitle. Her post u",
-      "publishedAt": "Tue, 11 Aug 2026 19:57:04 +0000"
-    },
-    {
       "source": "GamesRadar+",
       "language": "en",
       "title": "The Elder Scrolls 6 is playable, Xbox CEO says her \"live playthrough\" shows \"incredible\" scale and an \"even greater\" story",
@@ -1311,15 +1329,6 @@
       "publishedAt": "Tue, 11 Aug 2026 16:45:36 +0000"
     },
     {
-      "source": "GamesRadar+",
-      "language": "en",
-      "title": "Pokemon-like DokeV is \"targeting a launch in the second half of 2028,\" nearly 10 years after it was revealed by Crimson Desert studio Pearl Abyss",
-      "normalizedTitle": "pokemon like dokev is targeting a launch in the second half of 2028 nearly 10 years after it was revealed by crimson desert studio pearl abyss",
-      "url": "https://www.gamesradar.com/games/open-world/pokemon-like-dokev-is-targeting-a-launch-in-the-second-half-of-2028-nearly-10-years-after-it-was-revealed-by-crimson-desert-studio-pearl-abyss/",
-      "summary": "There's a release window for the latent MMO",
-      "publishedAt": "Tue, 11 Aug 2026 16:33:25 +0000"
-    },
-    {
       "source": "PC Gamer",
       "language": "en",
       "title": "Mark Zuckerberg's rambling AI manifesto is 6,434 words of high-handed platitudes and dubious conclusions",
@@ -1327,15 +1336,6 @@
       "url": "https://www.pcgamer.com/software/ai/mark-zuckerbergs-rambling-ai-manifesto-is-6-434-words-of-high-handed-platitudes-and-dubious-conclusions/",
       "summary": "Tell us what you really think. No actually, don't.",
       "publishedAt": "Tue, 11 Aug 2026 16:31:38 +0000"
-    },
-    {
-      "source": "GamesRadar+",
-      "language": "en",
-      "title": "\"Just pirate it\": Roguelike dev would rather you download its games illegally than buy from Steam code resellers",
-      "normalizedTitle": "just pirate it roguelike dev would rather you download its games illegally than buy from steam code resellers",
-      "url": "https://www.gamesradar.com/games/just-pirate-it-roguelike-dev-would-rather-you-download-its-games-illegally-than-buy-from-steam-code-resellers/",
-      "summary": "Otherwise, \"our good will is abused\"",
-      "publishedAt": "Tue, 11 Aug 2026 16:29:05 +0000"
     },
     {
       "source": "Rock Paper Shotgun",
