@@ -1,0 +1,89 @@
+name: Temporary unfilled gap diagnostic
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/diag-unfilled-gap.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    env:
+      SSH_PRIVATE_KEY: ${{ secrets.POCKETBASE_SSH_PRIVATE_KEY || secrets.VPS_SSH_KEY || secrets.SSH_PRIVATE_KEY }}
+      SSH_USER: ${{ secrets.POCKETBASE_SSH_USER || secrets.VPS_SSH_USER || secrets.SSH_USER }}
+      SSH_HOST: ${{ secrets.POCKETBASE_SSH_HOST || secrets.VPS_HOST || secrets.SSH_HOST }}
+      SSH_PORT: ${{ secrets.POCKETBASE_SSH_PORT || secrets.VPS_SSH_PORT || '22' }}
+    steps:
+      - name: Prepare SSH
+        run: |
+          test -n "$SSH_PRIVATE_KEY"
+          SSH_USER="${SSH_USER:-root}"
+          SSH_HOST="${SSH_HOST:-217.114.0.201}"
+          echo "SSH_USER=$SSH_USER" >> "$GITHUB_ENV"
+          echo "SSH_HOST=$SSH_HOST" >> "$GITHUB_ENV"
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/lifeos_pocketbase
+          chmod 600 ~/.ssh/lifeos_pocketbase
+          ssh-keyscan -p "$SSH_PORT" -H "$SSH_HOST" >> ~/.ssh/known_hosts
+
+      - name: Read PocketBase request failures around the incident
+        run: |
+          ssh -i ~/.ssh/lifeos_pocketbase -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" 'python3 - <<'"'"'PY'"'"'
+          import json, sqlite3
+          from pathlib import Path
+
+          db = Path("/root/pb/pb_data/auxiliary.db")
+          con = sqlite3.connect(f"file:{db}?mode=ro", uri=True)
+          con.row_factory = sqlite3.Row
+          tables = [r[0] for r in con.execute("select name from sqlite_master where type='table' order by name")]
+          print("tables:", tables)
+          for table in tables:
+              if "log" not in table.lower():
+                  continue
+              cols = [r[1] for r in con.execute(f"pragma table_info([{table}])")]
+              print(f"table={table} columns={cols}")
+              order = "created" if "created" in cols else ("id" if "id" in cols else cols[0])
+              rows = con.execute(f"select * from [{table}] order by [{order}] desc limit 250").fetchall()
+              for row in reversed(rows):
+                  d = dict(row)
+                  created = str(d.get("created", ""))
+                  if created and created < "2026-08-12 20:55:00":
+                      continue
+                  raw = d.get("data")
+                  parsed = None
+                  if isinstance(raw, (str, bytes)):
+                      try:
+                          parsed = json.loads(raw)
+                      except Exception:
+                          pass
+                  hay = json.dumps(parsed if parsed is not None else d, ensure_ascii=False, default=str)
+                  if not any(x in hay.lower() for x in ("records", "error", "unfilled", "reference", "hook")):
+                      continue
+                  out = {k: d.get(k) for k in ("id", "created", "level", "message") if k in d}
+                  def collect(obj, prefix=""):
+                      if isinstance(obj, dict):
+                          for k, v in obj.items():
+                              lk = k.lower()
+                              p = f"{prefix}.{k}" if prefix else k
+                              if lk in {"method","path","status","error","message","type","collection","collectionname","url"}:
+                                  if isinstance(v, (str,int,float,bool)) or v is None:
+                                      out[p] = v
+                              if isinstance(v, (dict,list)):
+                                  collect(v, p)
+                      elif isinstance(obj, list):
+                          for i, v in enumerate(obj[:8]):
+                              collect(v, f"{prefix}[{i}]")
+                  if parsed is not None:
+                      collect(parsed)
+                  print(json.dumps(out, ensure_ascii=False, default=str))
+          PY
+
+      - name: Read PocketBase service errors around the incident
+        run: |
+          ssh -i ~/.ssh/lifeos_pocketbase -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" \
+            'journalctl --since "2026-08-12 20:55:00" --until "2026-08-12 21:35:00" --no-pager 2>/dev/null | grep -Ei "records|error|reference|exception|hook|panic" | tail -n 200 || true'
