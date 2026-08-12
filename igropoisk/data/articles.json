@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-12T19:21:56.816Z",
+  "updatedAt": "2026-08-12T19:57:49.141Z",
   "count": 495,
   "sources": [
     "IGN",
@@ -14,6 +14,105 @@
     "Игромания"
   ],
   "articles": [
+    {
+      "source": "Polygon",
+      "language": "en",
+      "title": "Pokémon TCG's 30th Anniversary Fat Pikachu Revealed",
+      "normalizedTitle": "pokémon tcg s 30th anniversary fat pikachu revealed",
+      "url": "https://www.polygon.com/pokemon-30th-anniversary-tcg-fat-pikachu-ken-sugimori-new-design/",
+      "summary": "TPC reveals a wide variety of new illustrations for the 30th anniversary set, from tragic takes on Pikachu to deeply silly renditions of the mascot",
+      "publishedAt": "Wed, 12 Aug 2026 19:44:21 GMT"
+    },
+    {
+      "source": "PC Gamer",
+      "language": "en",
+      "title": "Immortality creator Sam Barlow reveals his next game: A tale of visions of the future, and why they're not always great",
+      "normalizedTitle": "immortality creator sam barlow reveals his next game a tale of visions of the future and why they re not always great",
+      "url": "https://www.pcgamer.com/games/adventure/immortality-creator-sam-barlow-reveals-his-next-game-a-tale-of-visions-of-the-future-and-why-theyre-not-always-great/",
+      "summary": "Precognition promises to \"follow in the footsteps of Immorality\" with a blend of FMV, non-linear storytelling, and player freedom.",
+      "publishedAt": "Wed, 12 Aug 2026 19:43:56 +0000"
+    },
+    {
+      "source": "GameSpot",
+      "language": "en",
+      "title": "Phasmophobia Studio Launches A Publishing Label With These Five Exciting Games",
+      "normalizedTitle": "phasmophobia studio launches a publishing label with these five exciting games",
+      "url": "https://www.gamespot.com/articles/phasmophobia-studio-launches-a-publishing-label-with-these-five-exciting-games/",
+      "summary": "Kinetic Games is expanding into the games publishing business. Before today, Kinetic has only been known for Phasmophobia , its four-player ghost-hunting game that first exploded during the COVID pandemic and has remained a favorite since then. It has apparently done well enough to allow the team to expand its business into publishing, as it's announced a group of five games that make up its initial publishing efforts. The lineup includes one horror title--and man, is it a big one--and also features other kinds of games, including a punky racing game starring witches on broomsticks, a super-te",
+      "publishedAt": "Wed, 12 Aug 2026 19:30:00 +0000"
+    },
+    {
+      "source": "Rock Paper Shotgun",
+      "language": "en",
+      "title": "Immortality developer Sam Barlow reveals Precognition, a sci-fi horror collaboration with Brandon Cronenberg about \"really terrible things that are just around the corner\"",
+      "normalizedTitle": "immortality developer sam barlow reveals precognition a sci fi horror collaboration with brandon cronenberg about really terrible things that are just around the corner",
+      "url": "https://www.rockpapershotgun.com/immortality-developer-sam-barlow-reveals-precognition-a-sci-fi-horror-collaboration-with-brandon-cronenberg-about-really-terrible-things-that-are-just-around-the-corner",
+      "summary": "Immortality and Her Story developer Sam Barlow has announced Precognition, a new sci-fi horror game in development at Half Mermaid Productions, which features writing from Antiviral and Infinity Pool director Brandon Cronenberg. That's Brandon, not David, yes, but still, having any kind of Cronenberg in your credits is a win, right? When's the last time you made a game with a Cronenberg? Besides, I thought Infinity Pool was good fun. And I quite like the sound of Precognition, which stars a woman with brain implants who can choose between visions to weave a range of possible dark futures. It b",
+      "publishedAt": "Wed, 12 Aug 2026 19:30:00 +0000"
+    },
+    {
+      "source": "Eurogamer",
+      "language": "en",
+      "title": "Immortality creator Sam Barlow's new video-scouring game is sci-fi horror Precognition, a collab with filmmaker Brandon Cronenberg, in which you see and change the future",
+      "normalizedTitle": "immortality creator sam barlow s new video scouring game is sci fi horror precognition a collab with filmmaker brandon cronenberg in which you see and change the future",
+      "url": "https://www.eurogamer.net/sam-barlow-immortality-precognition-brandon-cronenberg",
+      "summary": "The new game from Her Story and Immortality maker Sam Barlow - and his studio Half Mermaid - has a name: it's called Precognition. It's a sci-fi horror and it's releasing in spring 2028, as one of the debut games from Phasmophobia company Kinetic's new publishing label. Read more",
+      "publishedAt": "Wed, 12 Aug 2026 19:30:00 +0000"
+    },
+    {
+      "source": "GameSpot",
+      "language": "en",
+      "title": "The Rumored New James Bond Could Be An Actor From Battlefield 1",
+      "normalizedTitle": "the rumored new james bond could be an actor from battlefield 1",
+      "url": "https://www.gamespot.com/articles/the-rumored-new-james-bond-could-be-an-actor-from-battlefield-1/",
+      "summary": "Rumors continue to swirl about who may play the British super-spy James Bond in the next movie. The latest name in the mix is Jack Lowden, the 36-year-old known in the video game world for playing T.E. Lawrence AKA Lawrence of Arabia in Battlefield 1 . TV presenter Richard Osman said on his podcast, The Rest Is Entertainment , that he heard from \"someone\" that Lowden is being considered for the role. He said his source told him \"for definite\" that Lowden is in the mix, though nothing is confirmed at this stage. Jack Lowden played T.E. Lawrence in Battlefield 1. Lowden's one and only video game",
+      "publishedAt": "Wed, 12 Aug 2026 19:29:51 +0000"
+    },
+    {
+      "source": "Polygon",
+      "language": "en",
+      "title": "Liam Neeson's 106-Minute Crime-Thriller Is Officially One of the Biggest Movies on Netflix",
+      "normalizedTitle": "liam neeson s 106 minute crime thriller is officially one of the biggest movies on netflix",
+      "url": "https://www.polygon.com/liam-neesons-106-minute-crime-thriller-officially-one-of-the-biggest-movies-on-streaming/",
+      "summary": "Liam Neeson’s 2024 thriller ‘In the Land of Saints and Sinners’ is a Netflix hit, reaching No. 3 in the U.S. and No. 7 worldwide.",
+      "publishedAt": "Wed, 12 Aug 2026 19:29:33 GMT"
+    },
+    {
+      "source": "Polygon",
+      "language": "en",
+      "title": "All large lost sunken relics list in Pokémon Pokopia",
+      "normalizedTitle": "all large lost sunken relics list in pokémon pokopia",
+      "url": "https://www.polygon.com/pokemon-pokopia-lost-sunken-relics-dlc-list-how-to-get/",
+      "summary": "Here's a list of large lost sunken relics in Pokémon Pokopia Bubbly Basin DLC and how to get them.",
+      "publishedAt": "Wed, 12 Aug 2026 19:24:42 GMT"
+    },
+    {
+      "source": "GameSpot",
+      "language": "en",
+      "title": "New Bully-Like Agefield High Isn&#8217;t Having The Best First Day Of School",
+      "normalizedTitle": "new bully like agefield high isn 8217 t having the best first day of school",
+      "url": "https://www.gamespot.com/articles/new-bully-like-agefield-high-isnt-having-the-best-first-day-of-school/",
+      "summary": "After a story trailer got Bully fans excited for the spiritual successor Agefield High: Rock The School last year, the game has officially released on PC. Unfortunately, first impressions from players aren't so kind, so you may want to temper your expectations that it could match the high bar Rockstar set so long ago. Set in the early 2000s and inspired by the humor of movies like American Pie, Agefield High's developers warn on the Steam page that this humor isn't for everyone. However, the complaints from players seem to be more with how the game runs on a basic level. Numerous Steam reviews",
+      "publishedAt": "Wed, 12 Aug 2026 19:21:57 +0000"
+    },
+    {
+      "source": "PC Gamer",
+      "language": "en",
+      "title": "CD Projekt cuts more than 20% of The Witcher spinoff development team 'to reflect the project's needs at this stage of development'",
+      "normalizedTitle": "cd projekt cuts more than 20 of the witcher spinoff development team to reflect the project s needs at this stage of development",
+      "url": "https://www.pcgamer.com/games/the-witcher/cd-projekt-cuts-more-than-20-percent-of-the-witcher-spinoff-development-team-to-reflect-the-projects-needs-at-this-stage-of-development/",
+      "summary": "18 people have been taken off the still-unrevealed Witcher spinoff Project Sirius, which isn't a huge number but does represent a significant percentage.",
+      "publishedAt": "Wed, 12 Aug 2026 19:13:43 +0000"
+    },
+    {
+      "source": "GameSpot",
+      "language": "en",
+      "title": "Helldivers 2 NPCs Will Hug You Back Now, Even When No One Else Will",
+      "normalizedTitle": "helldivers 2 npcs will hug you back now even when no one else will",
+      "url": "https://www.gamespot.com/articles/helldivers-2-npcs-will-hug-you-back-now-even-when-no-one-else-will/",
+      "summary": "Helldivers 2's massive 7.0 update, Devoid of Liberty , is live now, and it brings some huge changes to the game's loveable SEAF soldiers. These NPCs are basically the equivalent of UNSC marines in Halo--fun to have around, but not particularly good at their job. Previously in Helldivers 2, SEAF soldiers could be recruited to follow players around and occasionally shoot at enemies, but were mostly good at being accidentally (or maybe not?) blown to bits by friendly fire. In the Devoid of Liberty update, the SEAF soldiers can now appear as a planet modifier, joining Helldivers in their battles. ",
+      "publishedAt": "Wed, 12 Aug 2026 19:12:44 +0000"
+    },
     {
       "source": "Polygon",
       "language": "en",
@@ -33,6 +132,24 @@
       "publishedAt": "Wed, 12 Aug 2026 19:00:12 GMT"
     },
     {
+      "source": "IGN",
+      "language": "en",
+      "title": "Christopher Judge Slams God of War TV Series Showrunners For Not Hiring Writers of the Games",
+      "normalizedTitle": "christopher judge slams god of war tv series showrunners for not hiring writers of the games",
+      "url": "https://www.ign.com/articles/christopher-judge-slams-god-of-war-tv-series-showrunners-for-not-hiring-writers-of-the-games",
+      "summary": "Kratos actor Christopher Judge has a bit of a bone to pick with adaptations of video games, particularly when they don't involve the people who created the games.",
+      "publishedAt": "Wed, 12 Aug 2026 18:50:05 +0000"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "The New 2026 Hisense U6 Pro TV Delivers Premium Tech and the Latest Gaming Features at a Budget Price",
+      "normalizedTitle": "the new 2026 hisense u6 pro tv delivers premium tech and the latest gaming features at a budget price",
+      "url": "https://www.ign.com/articles/hisense-u6-pro-gaming-tv-deal-2026",
+      "summary": "Improvements over the U6 include an even brighter picture, an anti-glare screen, and a built-in subwoofer.",
+      "publishedAt": "Wed, 12 Aug 2026 18:30:00 +0000"
+    },
+    {
       "source": "Polygon",
       "language": "en",
       "title": "Waller and Paradise Lost shows Reportedly Canceled by DC Studios",
@@ -49,6 +166,15 @@
       "url": "https://www.polygon.com/elder-scrolls-4-oblivion-remastered-switch-2-patch-optimizations/",
       "summary": "The Elder Scrolls 4: Oblivion Remastered has been plagued by performance issues, but the smooth Switch 2 port may fix the problem once and for all",
       "publishedAt": "Wed, 12 Aug 2026 18:26:26 GMT"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "Reacher Season 4 Review",
+      "normalizedTitle": "reacher season 4 review",
+      "url": "https://www.ign.com/articles/reacher-season-4-review",
+      "summary": "Reacher Season 4 review: He’s good at not letting people get away with things.",
+      "publishedAt": "Wed, 12 Aug 2026 18:25:04 +0000"
     },
     {
       "source": "GamesRadar+",
@@ -87,6 +213,15 @@
       "publishedAt": "Wed, 12 Aug 2026 18:13:40 +0000"
     },
     {
+      "source": "IGN",
+      "language": "en",
+      "title": "Twitch Now Trains Amazon's Generative AI Models On Your Channel By Default",
+      "normalizedTitle": "twitch now trains amazon s generative ai models on your channel by default",
+      "url": "https://www.ign.com/articles/twitch-now-trains-amazons-generative-ai-models-on-your-channel-by-default",
+      "summary": "Twitch has rolled out a new \"feature\" that trains Amazon's generative AI content models on its users' channels. The setting can be disabled, but it's turned on by default.",
+      "publishedAt": "Wed, 12 Aug 2026 18:10:45 +0000"
+    },
+    {
       "source": "GamesRadar+",
       "language": "en",
       "title": "DCU's Waller and Wonder Woman show Paradise Lost have reportedly been scrapped, but Lanterns may get a second season",
@@ -103,15 +238,6 @@
       "url": "https://www.polygon.com/mtg-yshtola-nights-blessed-most-popular-commander-final-fantasy/",
       "summary": "Y’shtola, Night’s Blessed has surpassed The Ur-Dragon as the most popular Magic: The Gathering Commander on EDHREC.",
       "publishedAt": "Wed, 12 Aug 2026 18:00:34 GMT"
-    },
-    {
-      "source": "Polygon",
-      "language": "en",
-      "title": "'X-Men '97' Season 2 Ending Explained: the Cast Break Down 4 Crucial Moments",
-      "normalizedTitle": "x men 97 season 2 ending explained the cast break down 4 crucial moments",
-      "url": "https://www.polygon.com/x-men-97-cast-members-weigh-in-on-that-epic-season-2-finale/",
-      "summary": "Ross Marquand (Professor X, Apocalypse), Lenore Zann (Rogue), and Adrian Hough (Nightcrawler) weigh in on the impact of X-Men '97 season 2's finale",
-      "publishedAt": "Wed, 12 Aug 2026 18:00:11 GMT"
     },
     {
       "source": "GamesRadar+",
@@ -159,15 +285,6 @@
       "publishedAt": "Wed, 12 Aug 2026 17:31:47 +0000"
     },
     {
-      "source": "Polygon",
-      "language": "en",
-      "title": "Dimension 20 Returns on Dropout: Here's A First Look at Its Twisted Take on Toy Story",
-      "normalizedTitle": "dimension 20 returns on dropout here s a first look at its twisted take on toy story",
-      "url": "https://www.polygon.com/dropout-dimension-20-toylight-new-campaign-trailer/",
-      "summary": "Dimension 20's next season is set to premiere in September on Dropout. It finds the Intrepid Heroes returning as toys fighting a rebellion.",
-      "publishedAt": "Wed, 12 Aug 2026 17:30:12 GMT"
-    },
-    {
       "source": "GamesRadar+",
       "language": "en",
       "title": "Arc Raiders' Frozen Trail update is out October 8, Embark admits \"it's time to expand\" as recent Steam reviews hit 50% negative",
@@ -197,20 +314,11 @@
     {
       "source": "IGN",
       "language": "en",
-      "title": "Made By Google 2026 Live Blog: Get Ready For the Pixel 11",
+      "title": "Made by Google 2026 Live Blog: Get Ready for the Pixel 11",
       "normalizedTitle": "made by google 2026 live blog get ready for the pixel 11",
       "url": "https://www.ign.com/articles/made-by-google-2026-everything-announced",
       "summary": "Every year, Google holds the Made By Google event, where the company reveals its flagship mobile hardware for the next year. This time around, we already know the Pixel 11 is going to be there, but there are sure to be a few surprises up Google's sleeve.",
       "publishedAt": "Wed, 12 Aug 2026 17:15:33 +0000"
-    },
-    {
-      "source": "Polygon",
-      "language": "en",
-      "title": "The Movie That Hollywood Tried to Kill Officially Releases in Theaters This Week",
-      "normalizedTitle": "the movie that hollywood tried to kill officially releases in theaters this week",
-      "url": "https://www.polygon.com/coyote-vs-acme-release-date-looney-tunes/",
-      "summary": "We didn't think it would ever happen, but Coyote vs. Acme is finally coming to the silver screen.",
-      "publishedAt": "Wed, 12 Aug 2026 17:07:58 GMT"
     },
     {
       "source": "Rock Paper Shotgun",
@@ -278,10 +386,10 @@
     {
       "source": "IGN",
       "language": "en",
-      "title": "CD Projekt Confirms Layoffs on The Witcher Multiplayer Spinoff, Issues Statement",
-      "normalizedTitle": "cd projekt confirms layoffs on the witcher multiplayer spinoff issues statement",
+      "title": "CD Projekt Confirms Layoffs on The Witcher Multiplayer Spin-Off, Issues Statement",
+      "normalizedTitle": "cd projekt confirms layoffs on the witcher multiplayer spin off issues statement",
       "url": "https://www.ign.com/articles/cd-projekt-confirms-layoffs-on-the-witcher-multiplayer-spinoff-issues-statement",
-      "summary": "CD Projekt has confirmed layoffs on The Witcher multiplayer spinoff, codenamed Project Sirius.",
+      "summary": "CD Projekt has confirmed layoffs on The Witcher multiplayer spin-off, codenamed Project Sirius.",
       "publishedAt": "Wed, 12 Aug 2026 16:31:24 +0000"
     },
     {
@@ -519,24 +627,6 @@
       "publishedAt": "Wed, 12 Aug 2026 15:28:38 +0000"
     },
     {
-      "source": "IGN",
-      "language": "en",
-      "title": "‘I Know That He Is a Reviled Person’ — The Social Reckoning Star Jeremy Strong Says He Emailed Mark Zuckerberg to Promise to Approach the Role ‘With Respect’",
-      "normalizedTitle": "i know that he is a reviled person the social reckoning star jeremy strong says he emailed mark zuckerberg to promise to approach the role with respect",
-      "url": "https://www.ign.com/articles/i-know-that-he-is-a-reviled-person-the-social-reckoning-star-jeremy-strong-says-he-emailed-mark-zuckerberg-to-promise-to-approach-the-role-with-respect",
-      "summary": "‘I know that he is a reviled person’ — The Social Reckoning star Jeremy Strong says he emailed Mark Zuckerberg to promise to approach the role ‘with respect’.",
-      "publishedAt": "Wed, 12 Aug 2026 15:22:26 +0000"
-    },
-    {
-      "source": "IGN",
-      "language": "en",
-      "title": "Preorder a Google Pixel 11 Smartphone and Get Up to $350 in Amazon Gift Cards",
-      "normalizedTitle": "preorder a google pixel 11 smartphone and get up to 350 in amazon gift cards",
-      "url": "https://www.ign.com/articles/google-pixel-11-pro-fold-smartphone-where-to-buy",
-      "summary": "Google's latest flagship Android phones are coming soon, and you can get up to $350 in free gift cards when you preorder.",
-      "publishedAt": "Wed, 12 Aug 2026 15:21:30 +0000"
-    },
-    {
       "source": "Eurogamer",
       "language": "en",
       "title": "Multiplayer Witcher spin-off Project Sirius hit by layoffs again, in \"broader shift in development strategy\" at CD Projekt Red",
@@ -564,15 +654,6 @@
       "publishedAt": "Wed, 12 Aug 2026 15:16:28 +0000"
     },
     {
-      "source": "IGN",
-      "language": "en",
-      "title": "The AOC 15.6-Inch Portable Monitor Has Dropped to $65 at Best Buy for Today Only",
-      "normalizedTitle": "the aoc 15 6 inch portable monitor has dropped to 65 at best buy for today only",
-      "url": "https://www.ign.com/articles/aoc-156-inch-portable-monitor-on-sale-best-buy",
-      "summary": "The AOC 16T35 15.6-Inch IPS Panel portable monitor has been discounted to $64.99 at Best Buy as part of its Deal of the Day. Act fast to save $25 on it before the deal is gone.",
-      "publishedAt": "Wed, 12 Aug 2026 15:14:50 +0000"
-    },
-    {
       "source": "PC Gamer",
       "language": "en",
       "title": "You can now cuddle Helldivers 2's beloved SEAF troopers, though maybe don't do what I did and try it when a Crusher's standing next to you",
@@ -589,15 +670,6 @@
       "url": "https://www.pcgamer.com/hardware/sony-has-zero-understanding-for-what-their-customers-want-says-gaming-preservation-group/",
       "summary": "With Sony ending disc support, many fear what that means for game preservation going forward.",
       "publishedAt": "Wed, 12 Aug 2026 15:06:36 +0000"
-    },
-    {
-      "source": "IGN",
-      "language": "en",
-      "title": "Fight Night Round 3 on Xbox 360 Was the First ‘Holy Sh*t!’ Game of the HD Era",
-      "normalizedTitle": "fight night round 3 on xbox 360 was the first holy sh t game of the hd era",
-      "url": "https://www.ign.com/articles/fight-night-round-3-on-xbox-360-was-the-first-holy-sht-game-of-the-hd-era",
-      "summary": "We're looking back at milestone games in the run up to Xbox's 25th anniversary, and today it's time to remember the mind-blowing visuals of Fight Night Round 3.",
-      "publishedAt": "Wed, 12 Aug 2026 15:00:00 +0000"
     },
     {
       "source": "GamesRadar+",
@@ -699,15 +771,6 @@
       "publishedAt": "Wed, 12 Aug 2026 14:04:13 +0000"
     },
     {
-      "source": "GameSpot",
-      "language": "en",
-      "title": "Take-Two CEO Won&#8217;t Be In GTA 6 After His Surprise Appearance In WWE 2K26",
-      "normalizedTitle": "take two ceo won 8217 t be in gta 6 after his surprise appearance in wwe 2k26",
-      "url": "https://www.gamespot.com/articles/take-two-ceo-wont-be-in-gta-6-after-his-surprise-appearance-in-wwe-2k26/",
-      "summary": "Take-Two CEO Strauss Zelnick unexpectedly appeared in WWE 2K26 as a playable character , and now the executive has explained how that came to be while also confirming that you won't see him in GTA 6 . Zelnick told IGN that his appearance in WWE 2K26 came about simply by asking the team to do it for him, and not because there was a big internal or external demand for him to be added to the game. \"I asked, and then I went on the soundstage, and I did motion capture and we all had fun with it. But no, this was a rare moment where I said, ‘I think this would be fun. Let's do this.’ And everyone's ",
-      "publishedAt": "Wed, 12 Aug 2026 13:59:27 +0000"
-    },
-    {
       "source": "Eurogamer",
       "language": "en",
       "title": "The King is Watching revels in magic, menace and distraction",
@@ -744,15 +807,6 @@
       "publishedAt": "Wed, 12 Aug 2026 13:33:23 +0000"
     },
     {
-      "source": "GameSpot",
-      "language": "en",
-      "title": "Phantom Blade Zero &#8211; 11 Minutes Of Official Gameplay | Pre-Order Trailer",
-      "normalizedTitle": "phantom blade zero 8211 11 minutes of official gameplay pre order trailer",
-      "url": "https://www.gamespot.com/videos/phantom-blade-zero-11-minutes-of-official-gameplay-pre-order-trailer/",
-      "summary": "Phantom Blade Zero PS5 pre-orders are LIVE! Watch the new 11-minute trailer for a fresh look at the story, lightning-fast combat, deadly bosses, and unforgettable characters. Featuring martial arts legend Donnie Yen as Creative Consultant and the actor for Mó Yuan.",
-      "publishedAt": "Wed, 12 Aug 2026 13:26:34 +0000"
-    },
-    {
       "source": "GamesRadar+",
       "language": "en",
       "title": "Wednesday season 3 begins in senior year at Nevermore, and is all about being on the \"precipice of adulthood\"",
@@ -760,24 +814,6 @@
       "url": "https://www.gamesradar.com/entertainment/supernatural-shows/wednesday-season-3-begins-in-senior-year-at-nevermore-and-is-all-about-being-on-the-precipice-of-adulthood/",
       "summary": "Wednesday is coming of age in season 3",
       "publishedAt": "Wed, 12 Aug 2026 13:22:49 +0000"
-    },
-    {
-      "source": "GameSpot",
-      "language": "en",
-      "title": "Control Resonant Has No Parry Mechanic And I Don&#8217;t Know How To Feel About That",
-      "normalizedTitle": "control resonant has no parry mechanic and i don 8217 t know how to feel about that",
-      "url": "https://www.gamespot.com/articles/control-resonant-has-no-parry-mechanic-and-i-dont-know-how-to-feel-about-that/",
-      "summary": "Nothing beats the satisfying feeling of successfully parrying an attack, but don't expect to rely on that counter in Control Resonant . In fact, the game features no parry gameplay mechanic at all, as developer Remedy Entertainment wants players to get into the thick of things and chase enemies down in the follow-up to Control. Speaking to IGN , game director Mikael Kasurinen confirmed that players won't be able to deflect any attacks in the upcoming action-RPG. Remedy did experiment with using that mechanic in the game, but it ultimately didn't fit their vision for a fast-paced action game. \"",
-      "publishedAt": "Wed, 12 Aug 2026 13:18:20 +0000"
-    },
-    {
-      "source": "GameSpot",
-      "language": "en",
-      "title": "More Lord Of The Rings Game Re-Releases Are Coming",
-      "normalizedTitle": "more lord of the rings game re releases are coming",
-      "url": "https://www.gamespot.com/articles/more-lord-of-the-rings-game-re-releases-are-coming/",
-      "summary": "Aspyr Media shadowdropped a new \"Legacy Edition\" of the 2011 The Lord of the Rings game, War in the North, earlier this week. It won't be the last The Lord of the Rings re-release from Aspyr, as the company has confirmed \"even more classic releases\" from The Lord of the Rings series are coming \"in the future.\" That's all Aspyr had to say, so it's anyone's guess as to the other \"classic\" The Lord of the Rings games that could make a return. https://www.youtube.com/watch?v=G_gZuaXTDEo War in the North's Legacy Edition was released under a licensing deal with Warner Bros. Interactive Entertainmen",
-      "publishedAt": "Wed, 12 Aug 2026 13:07:21 +0000"
     },
     {
       "source": "GamesRadar+",
@@ -1680,15 +1716,6 @@
       "publishedAt": "Mon, 10 Aug 2026 20:31:05 +0000"
     },
     {
-      "source": "PC Gamer",
-      "language": "en",
-      "title": "Battlefield 6 player claims to have received Steam refund after 470 hours due to surprise mode removal",
-      "normalizedTitle": "battlefield 6 player claims to have received steam refund after 470 hours due to surprise mode removal",
-      "url": "https://www.pcgamer.com/games/fps/battlefield-6-player-claims-to-have-received-steam-refund-after-470-hours-due-to-surprise-mode-removal/",
-      "summary": "Mode madness.",
-      "publishedAt": "Mon, 10 Aug 2026 20:16:13 +0000"
-    },
-    {
       "source": "Rock Paper Shotgun",
       "language": "en",
       "title": "Over the Hill, SnowRunner's hippie off-roading cousin from the Art of Rally devs, gets an October release date",
@@ -1696,15 +1723,6 @@
       "url": "https://www.rockpapershotgun.com/over-the-hill-snowrunners-hippie-off-roading-cousin-from-the-art-of-rally-devs-gets-an-october-release-date",
       "summary": "Fire up the Landy! Over the Hill , Funselektor and Strelka Games' off-roader which takes the hardcore trail-running you get in a sim like SnowRunner and sands off the edges a bit to make for more chill countryside-roaming, finally has a release date. It's set to motor onto the scene in October, following a Steam Next Fest demo which I dug. Read more",
       "publishedAt": "Mon, 10 Aug 2026 20:15:00 +0000"
-    },
-    {
-      "source": "PC Gamer",
-      "language": "en",
-      "title": "'Thank you so much for the best weekend ever': The id Software gang got together at QuakeCon, and it sure looks like everyone had a great time",
-      "normalizedTitle": "thank you so much for the best weekend ever the id software gang got together at quakecon and it sure looks like everyone had a great time",
-      "url": "https://www.pcgamer.com/games/thank-you-so-much-for-the-best-weekend-ever-the-id-software-gang-got-together-at-quakecon-and-it-sure-looks-like-everyone-had-a-great-time/",
-      "summary": "I love a happy ending.",
-      "publishedAt": "Mon, 10 Aug 2026 20:09:49 +0000"
     },
     {
       "source": "StopGame",
@@ -3156,15 +3174,6 @@
       "publishedAt": "Mon, 03 Aug 2026 11:52:09 +0000"
     },
     {
-      "source": "Eurogamer",
-      "language": "en",
-      "title": "Memory chip maker Samsung says the component shortage will continue to get worse in 2027, while earning a pretty penny from it",
-      "normalizedTitle": "memory chip maker samsung says the component shortage will continue to get worse in 2027 while earning a pretty penny from it",
-      "url": "https://www.eurogamer.net/samsung-memory-shortage-2027-2028-q2-earnings",
-      "summary": "Samsung, one of the largest manufacturers of memory and storage in the world, has delivered bad news for anyone hoping the global component shortages will ease up soon. Samsung, which is responsible for about a third of the global memory supply, revealed in an earnings call that it expects the crisis to continue getting worse into next year. Read more",
-      "publishedAt": "Mon, 03 Aug 2026 11:33:01 +0000"
-    },
-    {
       "source": "Rock Paper Shotgun",
       "language": "en",
       "title": "This week in PC games: Beast of Reincarnation, Big Walk, and Marvel Tōkon, plus a round table RPG, some flammable robots, and a flock of lovestruck pigeons",
@@ -3415,15 +3424,6 @@
       "url": "https://www.rockpapershotgun.com/machine-party-out-now-is-masochistic-mario-party-from-the-dev-that-brought-you-buckshot-roulette",
       "summary": "There is an obvious humour to be found in the contrast between the visual presentation of Mario Party and the agita and unbridled rage it brings out in people. This is not a game about violence, yet it pulls it out from people nonetheless. So, how about something that leans into this violence, while still retaining the jovially competitive nature? Enter Machine Party, the latest from Buckshot Roulette developer Mike Klubnika, made alongside GDeavid, a party game \"where failure is lethal.\" Read more",
       "publishedAt": "Thu, 30 Jul 2026 19:01:10 +0000"
-    },
-    {
-      "source": "Rock Paper Shotgun",
-      "language": "en",
-      "title": "RuneScape: Dragonwilds revamps the agility skill and gives you Wipeout style courses to test your mettle on",
-      "normalizedTitle": "runescape dragonwilds revamps the agility skill and gives you wipeout style courses to test your mettle on",
-      "url": "https://www.rockpapershotgun.com/runescape-dragonwilds-revamps-the-agility-skill-and-gives-you-wipeout-style-courses-to-test-your-mettle-on",
-      "summary": "Skills in RuneScape have always tickled me because of the sheer variety on display, and this extends to Dragonwilds too. There's magic, but then there's woodcutting. You've got prayer, and also fishing. And of course you've got runecrafting, or agility. It's that last one that's important for today's purposes, as a new update has arrived in Dragonwilds that revamp the skill, as well as add in some courses for you to pseudo-parkour across. Read more",
-      "publishedAt": "Thu, 30 Jul 2026 17:04:11 +0000"
     },
     {
       "source": "StopGame",
