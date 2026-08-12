@@ -11,7 +11,6 @@ import 'package:counter/core/shell_layout_state.dart';
 import 'package:counter/core/widgets/global_app_header.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
-import 'package:counter/shared/categories/visibility/category_visibility_prefs.dart';
 import 'package:counter/data/smart_input_parser.dart';
 import 'package:counter/core/tag_contrast.dart';
 import 'package:counter/features/profile/tag_manager_page.dart';
@@ -316,21 +315,10 @@ class _ListsPageState extends State<ListsPage>
     );
   }
 
-  void _listsVisibilityListener() {
-    if (!mounted) return;
-    final id = _filterCategoryId;
-    if (id != null && CategoryVisibilityPrefs.isHiddenOrAncestor(id)) {
-      setState(() => _filterCategoryId = null);
-      unawaited(_persistFilterCategoryId(null));
-      unawaited(_reload());
-    }
-  }
-
   @override
   void initState() {
     super.initState();
     _inlineController = TextEditingController();
-    CategoryVisibilityPrefs.hiddenIds.addListener(_listsVisibilityListener);
     final db = DatabaseService.instance;
     _planRefreshSub = db.planningRefreshNotifications.listen((_) {
       if (!mounted) return;
@@ -364,7 +352,6 @@ class _ListsPageState extends State<ListsPage>
   }
 
   Future<void> _bootstrap() async {
-    await CategoryVisibilityPrefs.ensureLoaded();
     await _loadPersistedFilter();
     await _loadChipModeAndPinnedIds();
     await _loadNotesLibraryPrefs();
@@ -505,7 +492,6 @@ class _ListsPageState extends State<ListsPage>
     final out = <int>[];
     for (final id in ids) {
       if (!db.categoryExists(id)) continue;
-      if (CategoryVisibilityPrefs.isHiddenOrAncestor(id)) continue;
       out.add(id);
     }
     return out;
@@ -534,13 +520,10 @@ class _ListsPageState extends State<ListsPage>
   int? _defaultCategoryWhenFilterAll() {
     final db = DatabaseService.instance;
     final d = db.defaultCategoryId;
-    if (d != null && !CategoryVisibilityPrefs.isHiddenOrAncestor(d)) {
+    if (d != null && db.categoryExists(d)) {
       return d;
     }
-    final pairs = CategoryVisibilityPrefs.filterPairs(
-      db.allCategoryIdPathPairs,
-      (p) => p.id,
-    );
+    final pairs = db.allCategoryIdPathPairs;
     if (pairs.isEmpty) return null;
     return pairs.first.id;
   }
@@ -549,9 +532,7 @@ class _ListsPageState extends State<ListsPage>
   int? _effectiveCategoryIdForNewTask() {
     final fid = _filterCategoryId;
     final db = DatabaseService.instance;
-    if (fid != null &&
-        db.categoryExists(fid) &&
-        !CategoryVisibilityPrefs.isHiddenOrAncestor(fid)) {
+    if (fid != null && db.categoryExists(fid)) {
       return fid;
     }
     return _defaultCategoryWhenFilterAll();
@@ -574,7 +555,6 @@ class _ListsPageState extends State<ListsPage>
     for (final e in entries) {
       if (out.length >= maxN) break;
       if (!db.categoryExists(e.key)) continue;
-      if (CategoryVisibilityPrefs.isHiddenOrAncestor(e.key)) continue;
       out.add(e.key);
     }
     return out;
@@ -587,14 +567,12 @@ class _ListsPageState extends State<ListsPage>
     } else {
       raw = List<int>.from(_pinnedChipIds);
     }
-    final visible = raw
-        .where((id) => !CategoryVisibilityPrefs.isHiddenOrAncestor(id))
-        .toList();
+    final available = _sanitizeIntCategoryIds(raw);
     final active = _filterCategoryId;
-    if (active != null && visible.contains(active)) {
-      return [active, ...visible.where((x) => x != active)];
+    if (active != null && available.contains(active)) {
+      return [active, ...available.where((x) => x != active)];
     }
-    return visible;
+    return available;
   }
 
   List<Tag> _tagsForFilterBar() {
@@ -676,7 +654,6 @@ class _ListsPageState extends State<ListsPage>
 
   @override
   void dispose() {
-    CategoryVisibilityPrefs.hiddenIds.removeListener(_listsVisibilityListener);
     _planRefreshSub?.cancel();
     _tagsCatalogSub?.cancel();
     _chipBarScrollController.dispose();
@@ -995,9 +972,8 @@ class _ListsPageState extends State<ListsPage>
         final showListTagsOnCards =
             (settingsSnap.data ?? DatabaseService.instance.settings)
                 .showListTagsOnCards;
-        return ValueListenableBuilder<List<int>>(
-          valueListenable: CategoryVisibilityPrefs.hiddenIds,
-          builder: (context, _, _) {
+        return Builder(
+          builder: (context) {
             final chipIds = _chipIdsForBar();
             final flat = _applyNotesSearch(_displayFlat);
             final hasActiveTagFilter =

@@ -53,7 +53,6 @@ class PlanningNoTagsSettingsBlockState
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
             title: Text(t(loc, 'plan_filter_no_tags')),
-            subtitle: Text(t(loc, 'category_visibility_toggle')),
             value: _visible,
             onChanged: (v) {
               setState(() => _visible = v);

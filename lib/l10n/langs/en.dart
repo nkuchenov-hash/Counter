@@ -40,7 +40,6 @@ const Map<String, String> kEnL10n = {
   'lists_inline_add_hint': 'Add new item...',
   'lists_select_leaf_hint': 'Select a subcategory to add items',
   'plan_filter_no_tags': 'No Tags',
-  'category_visibility_toggle': 'Show or hide in lists and planning',
   'lists_delete_backlog_confirm': 'Remove this backlog task?',
   'lists_pin_chips_title': 'Filter chips',
   'lists_pin_chips_subtitle':
