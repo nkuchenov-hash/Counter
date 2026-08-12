@@ -13752,17 +13752,19 @@ case 2:return A.l(o.at(-1),r)}})
 return A.n($async$y_,r)},
 t_(a){var s=0,r=A.o(t.H),q
 var $async$t_=A.j(function(b,c){if(b===1)return A.l(c,r)
-for(;;)switch(s){case 0:s=a.gl0()?3:4
+for(;;)switch(s){case 0:s=3
+return A.d(A.k0(a),$async$t_)
+case 3:s=a.gl0()?4:5
 break
-case 3:s=5
+case 4:s=6
 return A.d(A.anN(a,!0),$async$t_)
-case 5:s=6
-return A.d(A.ama(a),$async$t_)
 case 6:s=7
-return A.d(A.alL($.Q()),$async$t_)
+return A.d(A.ama(a),$async$t_)
 case 7:s=8
+return A.d(A.alL($.Q()),$async$t_)
+case 8:s=9
 return A.d(A.anO(a),$async$t_)
-case 8:if(a.y==null)a.y="PocketBase unreachable; retry scheduled."
+case 9:if(a.y==null)a.y="PocketBase unreachable; retry scheduled."
 $.xs().B(0,$.aU())
 a.CW.B(0,A.aH(a.as,!0,t.Ua))
 $.aJN().B(0,A.aH($.Pf,!0,t.g))
@@ -13772,9 +13774,7 @@ A.t0(a)
 A.cjY("deferredBootWork",A.cel(a))
 s=1
 break
-case 4:s=9
-return A.d(A.k0(a),$async$t_)
-case 9:s=10
+case 5:s=10
 return A.d(A.anN(a,!0),$async$t_)
 case 10:s=11
 return A.d(A.ama(a),$async$t_)
@@ -65023,7 +65023,7 @@ s=a.b
 r=s==null?null:B.b.n(s)
 return(r==null?"":r).length===0},
 ccE(a){var s=B.b.n(a)
-return"APP_BUILD commit=62bf6c6 builtAt=2026-08-12T20:52:47Z"+(s.length!==0?" route="+s:"")},
+return"APP_BUILD commit=47a382b builtAt=2026-08-12T20:55:32Z"+(s.length!==0?" route="+s:"")},
 bP(a,b){var s,r=null,q=$.aJO().gaf()
 if(q==null)return
 q.tD()
@@ -104214,7 +104214,7 @@ e=A.i(a2).ok.z
 if(e==null)e=a
 else{d=A.i(a2).ax
 c=d.rx
-e=e.aS(c==null?d.k3:c)}return A.jp(a0,a,new A.Qa(A.b([new A.na(q,a,o,a),new A.na(n,a,new A.Kz(!0,a),a),new A.Sd(l,m,a),new A.na(k,a,j,a),new A.na(i,a,h,a),new A.na(g,a,A.x(f+" 62bf6c6 \xb7 2026-08-12T20:52:47Z",a,a,a,a,a,e,a,a,a,a),a)],p),a),a,a,a,!0)},
+e=e.aS(c==null?d.k3:c)}return A.jp(a0,a,new A.Qa(A.b([new A.na(q,a,o,a),new A.na(n,a,new A.Kz(!0,a),a),new A.Sd(l,m,a),new A.na(k,a,j,a),new A.na(i,a,h,a),new A.na(g,a,A.x(f+" 47a382b \xb7 2026-08-12T20:55:32Z",a,a,a,a,a,e,a,a,a,a),a)],p),a),a,a,a,!0)},
 aMP(a,b,c){var s,r,q,p,o,n,m=this,l=null,k=A.L([B.Ih,A.p(b,"settings_tab_account"),B.Ii,A.p(b,"settings_tab_preferences"),B.A2,A.p(b,"settings_tab_desktop_voice"),B.Ij,A.p(b,"settings_tab_notifications"),B.Ik,A.p(b,"settings_tab_appearance"),B.Il,A.p(b,"settings_tab_about")],t.OS,t.N),j=A.p(b,"profile_page_title"),i=A.i(a).ok.f
 j=A.x(j,l,l,l,l,l,i==null?l:i.TT(32,B.ag,1.15),l,l,l,l)
 i=m.ax
@@ -104237,7 +104237,7 @@ p=A.i(a).ok.z
 if(p==null)p=l
 else{o=A.i(a).ax
 n=o.rx
-p=p.aS(n==null?o.k3:n)}p=new A.na(r,l,A.x(q+" 62bf6c6 \xb7 2026-08-12T20:52:47Z",l,l,l,l,l,p,l,l,l,l),l)
+p=p.aS(n==null?o.k3:n)}p=new A.na(r,l,A.x(q+" 47a382b \xb7 2026-08-12T20:55:32Z",l,l,l,l,l,p,l,l,l,l),l)
 r=p
 break
 default:r=l}return new A.Qa(A.b([j,B.c1,new A.a8L(i,new A.bP4(m),k,l),s,B.fS,r],t.p),l)},

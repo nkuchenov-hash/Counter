@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-12T20:50:54.584Z",
+  "updatedAt": "2026-08-12T20:53:31.824Z",
   "count": 495,
   "sources": [
     "IGN",
@@ -14,6 +14,24 @@
     "Игромания"
   ],
   "articles": [
+    {
+      "source": "Polygon",
+      "language": "en",
+      "title": "A Knight of the Seven Kingdoms showrunner is working with George RR Martin to develop future seasons",
+      "normalizedTitle": "a knight of the seven kingdoms showrunner is working with george rr martin to develop future seasons",
+      "url": "https://www.polygon.com/video/a-knight-of-the-seven-kingdoms-showrunner-future-plans/",
+      "summary": "Ira Parker discusses his hopes for future seasons of A Knight of the Seven Kingdoms.",
+      "publishedAt": "Wed, 12 Aug 2026 20:52:36 GMT"
+    },
+    {
+      "source": "PC Gamer",
+      "language": "en",
+      "title": "Wes Fenlon's recommendations",
+      "normalizedTitle": "wes fenlon s recommendations",
+      "url": "https://www.pcgamer.com/games/wes-fenlons-recommendations/",
+      "summary": "What has Senior Editor Wes Fenlon been into lately?",
+      "publishedAt": "Wed, 12 Aug 2026 20:49:17 +0000"
+    },
     {
       "source": "GamesRadar+",
       "language": "en",
@@ -211,15 +229,6 @@
       "url": "https://www.gamesradar.com/games/survival/there-is-probably-some-end-to-no-mans-sky-says-hello-games-boss-but-hell-probably-come-back-10-years-later-for-a-surprise-update-anyway/",
       "summary": "\"If you had asked me five years ago, I would have thought we would have passed it by now\"",
       "publishedAt": "Wed, 12 Aug 2026 18:20:06 +0000"
-    },
-    {
-      "source": "Polygon",
-      "language": "en",
-      "title": "Steam shooter explodes in popularity after devs warn fans not to buy it",
-      "normalizedTitle": "steam shooter explodes in popularity after devs warn fans not to buy it",
-      "url": "https://www.polygon.com/steam-wardogs-bulkhead-10-reasons-not-buy-tactical-fps-early-access/",
-      "summary": "Wardogs, a tactical 100-player FPS that will soon launch on Steam's early access, is taking an unusual marketing approach aimed at PC gamers",
-      "publishedAt": "Wed, 12 Aug 2026 18:19:40 GMT"
     },
     {
       "source": "GameSpot",
@@ -1705,15 +1714,6 @@
       "url": "https://www.pcgamer.com/movies-tv/50-cent-is-producing-a-payday-project-for-the-screen/",
       "summary": "Whether that's a TV or movie screen isn't clear at this point, but I'm pretty sure it's one or the other.",
       "publishedAt": "Mon, 10 Aug 2026 21:11:44 +0000"
-    },
-    {
-      "source": "PC Gamer",
-      "language": "en",
-      "title": "Grand Theft Auto 5 averages more copies sold per year than most megahits manage in their entire lifetime, with a total of 230 million since 2013",
-      "normalizedTitle": "grand theft auto 5 averages more copies sold per year than most megahits manage in their entire lifetime with a total of 230 million since 2013",
-      "url": "https://www.pcgamer.com/gaming-industry/grand-theft-auto-5-averages-more-copies-sold-per-year-than-most-megahits-manage-in-their-entire-lifetime-with-a-total-of-230-million-since-2013/",
-      "summary": "The people yearn for Los Santos.",
-      "publishedAt": "Mon, 10 Aug 2026 20:31:05 +0000"
     },
     {
       "source": "Rock Paper Shotgun",

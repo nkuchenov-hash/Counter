@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-12T20:50:54.584Z",
+  "updatedAt": "2026-08-12T20:53:31.824Z",
   "count": 78,
   "sourcePool": [
     "Steam",
@@ -723,7 +723,7 @@
       "movies": [],
       "criticRating": 9.7,
       "steamUserRating": 9.3,
-      "recommendations": 117072,
+      "recommendations": 117073,
       "owners": "2,000,000 .. 5,000,000",
       "peakConcurrent": 918,
       "sourceEvidence": [
@@ -736,7 +736,7 @@
         "steamSpy": "https://steamspy.com/app/632470",
         "metacritic": "https://www.metacritic.com/game/pc/disco-elysium-the-final-cut?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10436.845674730926,
+      "popularityScore": 10436.846045689754,
       "igropoiskRating": 9.6,
       "editorialSources": [],
       "materials": {
@@ -1060,7 +1060,7 @@
       "movies": [],
       "criticRating": 8.9,
       "steamUserRating": 9.8,
-      "recommendations": 811250,
+      "recommendations": 811241,
       "owners": "50,000,000 .. 100,000,000",
       "peakConcurrent": 25122,
       "sourceEvidence": [
@@ -1073,7 +1073,7 @@
         "steamSpy": "https://steamspy.com/app/550",
         "metacritic": "https://www.metacritic.com/game/pc/left-4-dead-2?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10390.915524514798,
+      "popularityScore": 10390.915042706823,
       "igropoiskRating": 9.2,
       "editorialSources": [],
       "materials": {
@@ -1879,7 +1879,7 @@
       "movies": [],
       "criticRating": 8.9,
       "steamUserRating": 9.7,
-      "recommendations": 155574,
+      "recommendations": 155577,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 2559,
       "sourceEvidence": [
@@ -1892,7 +1892,7 @@
         "steamSpy": "https://steamspy.com/app/588650",
         "metacritic": "https://www.metacritic.com/game/pc/dead-cells?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10259.19398096565,
+      "popularityScore": 10259.194818420823,
       "igropoiskRating": 9.2,
       "editorialSources": [],
       "materials": {
@@ -2501,7 +2501,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 9.4,
-      "recommendations": 400062,
+      "recommendations": 400110,
       "owners": "50,000,000 .. 100,000,000",
       "peakConcurrent": 18028,
       "sourceEvidence": [
@@ -2515,7 +2515,7 @@
         "steamSpy": "https://steamspy.com/app/1623730",
         "metacritic": ""
       },
-      "popularityScore": 9940.212838732281,
+      "popularityScore": 9940.218049132809,
       "igropoiskRating": 9.4,
       "editorialSources": [
         "GamesRadar+",
@@ -2808,7 +2808,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 8.3,
-      "recommendations": 45885,
+      "recommendations": 45886,
       "owners": "1,000,000 .. 2,000,000",
       "peakConcurrent": 1573,
       "sourceEvidence": [
@@ -2820,7 +2820,7 @@
         "steamSpy": "https://steamspy.com/app/1282100",
         "metacritic": ""
       },
-      "popularityScore": 9916.168020078374,
+      "popularityScore": 9916.168966532085,
       "igropoiskRating": 8.3,
       "editorialSources": [],
       "materials": {
@@ -3190,7 +3190,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 7.1,
-      "recommendations": 235876,
+      "recommendations": 235878,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 6327,
       "sourceEvidence": [
@@ -3202,7 +3202,7 @@
         "steamSpy": "https://steamspy.com/app/1238810",
         "metacritic": ""
       },
-      "popularityScore": 9827.268559556951,
+      "popularityScore": 9827.268927793482,
       "igropoiskRating": 7.1,
       "editorialSources": [],
       "materials": {
@@ -3912,7 +3912,7 @@
       "movies": [],
       "criticRating": 9.1,
       "steamUserRating": 9.7,
-      "recommendations": 233493,
+      "recommendations": 233489,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 12596,
       "sourceEvidence": [
@@ -3925,7 +3925,7 @@
         "steamSpy": "https://steamspy.com/app/526870",
         "metacritic": "https://www.metacritic.com/game/pc/satisfactory?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9766.827572515751,
+      "popularityScore": 9766.826828516843,
       "igropoiskRating": 9.3,
       "editorialSources": [],
       "materials": {
@@ -5180,7 +5180,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 8.8,
-      "recommendations": 281665,
+      "recommendations": 281661,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 4450,
       "sourceEvidence": [
@@ -5192,7 +5192,7 @@
         "steamSpy": "https://steamspy.com/app/1326470",
         "metacritic": ""
       },
-      "popularityScore": 9624.973442631288,
+      "popularityScore": 9624.972825875888,
       "igropoiskRating": 8.8,
       "editorialSources": [],
       "materials": {
@@ -5597,7 +5597,7 @@
       "movies": [],
       "criticRating": 9,
       "steamUserRating": 9.8,
-      "recommendations": 159162,
+      "recommendations": 159164,
       "owners": "2,000,000 .. 5,000,000",
       "peakConcurrent": 17123,
       "sourceEvidence": [
@@ -5610,7 +5610,7 @@
         "steamSpy": "https://steamspy.com/app/2379780",
         "metacritic": "https://www.metacritic.com/game/pc/balatro?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9510.184211639524,
+      "popularityScore": 9510.18475735901,
       "igropoiskRating": 9.3,
       "editorialSources": [],
       "materials": {
@@ -6773,7 +6773,7 @@
       "movies": [],
       "criticRating": 8.3,
       "steamUserRating": 9.6,
-      "recommendations": 579006,
+      "recommendations": 579005,
       "owners": "20,000,000 .. 50,000,000",
       "peakConcurrent": 2892,
       "sourceEvidence": [
@@ -6787,7 +6787,7 @@
         "steamSpy": "https://steamspy.com/app/242760",
         "metacritic": "https://www.metacritic.com/game/pc/the-forest?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9316.268381423348,
+      "popularityScore": 9316.268306416507,
       "igropoiskRating": 8.8,
       "editorialSources": [
         "StopGame"
