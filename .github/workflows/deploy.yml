@@ -66,10 +66,10 @@ jobs:
       - name: Install Flutter dependencies
         run: flutter pub get
 
-      - name: Test critical web regressions in Chrome
+      - name: Test critical web regressions
         run: |
           flutter test --platform chrome test/notes_mobile_keyboard_regression_test.dart
-          flutter test --platform chrome test/category_catalog_resilience_contract_test.dart
+          flutter test test/category_catalog_resilience_contract_test.dart
 
       - name: Build Flutter web
         env:
