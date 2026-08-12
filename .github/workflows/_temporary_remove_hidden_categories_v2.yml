@@ -1,0 +1,206 @@
+name: Temporary remove hidden categories remnants v2
+
+on:
+  push:
+    branches:
+      - fix/remove-hidden-categories-runtime-rest-20260812
+
+permissions:
+  contents: write
+
+jobs:
+  remove-remnants:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/remove-hidden-categories-runtime-rest-20260812
+          fetch-depth: 0
+
+      - name: Remove hidden-category code paths
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          def read(path):
+              return Path(path).read_text(encoding='utf-8')
+
+          def write(path, text):
+              Path(path).write_text(text, encoding='utf-8')
+
+          def replace_once(text, old, new, label):
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f'{label}: expected 1 exact match, found {count}')
+              return text.replace(old, new, 1)
+
+          p = 'lib/app/shell/app_shell.dart'
+          s = read(p)
+          s = replace_once(s, "import 'package:counter/shared/categories/visibility/category_visibility_prefs.dart';\n", '', 'app_shell import')
+          s = replace_once(s, "    unawaited(CategoryVisibilityPrefs.ensureLoaded());\n    CategoryVisibilityPrefs.hiddenIds.addListener(\n      categoryVisibilityShellListener,\n    );\n", '', 'app_shell init visibility listener')
+          s = replace_once(s, "    CategoryVisibilityPrefs.hiddenIds.removeListener(\n      categoryVisibilityShellListener,\n    );\n", '', 'app_shell dispose visibility listener')
+          write(p, s)
+
+          p = 'lib/app/shell/shared/shell_core.dart'
+          s = read(p)
+          method = """  void categoryVisibilityShellListener() {
+            if (!mounted) return;
+            final id = selectedCategoryId;
+            if (id != null && CategoryVisibilityPrefs.isHiddenOrAncestor(id)) {
+              int? firstVisible;
+              for (final p in DatabaseService.instance.allCategoryIdPathPairs) {
+                if (!CategoryVisibilityPrefs.isHiddenOrAncestor(p.id)) {
+                  firstVisible = p.id;
+                  break;
+                }
+              }
+              setState(() => selectedCategoryId = firstVisible);
+            }
+          }
+
+"""
+          s = replace_once(s, method, '', 'shell_core visibility method')
+          write(p, s)
+
+          p = 'lib/features/lists/lists_view.dart'
+          s = read(p)
+          s = replace_once(s, "import 'package:counter/shared/categories/visibility/category_visibility_prefs.dart';\n", '', 'lists_view import')
+          visibility_listener = """  void _listsVisibilityListener() {
+            if (!mounted) return;
+            final id = _filterCategoryId;
+            if (id != null && CategoryVisibilityPrefs.isHiddenOrAncestor(id)) {
+              setState(() => _filterCategoryId = null);
+              unawaited(_persistFilterCategoryId(null));
+              unawaited(_reload());
+            }
+          }
+
+"""
+          s = replace_once(s, visibility_listener, '', 'lists visibility listener')
+          s = replace_once(s, '    CategoryVisibilityPrefs.hiddenIds.addListener(_listsVisibilityListener);\n', '', 'lists init listener')
+          s = replace_once(s, '    await CategoryVisibilityPrefs.ensureLoaded();\n', '', 'lists visibility load')
+          s = replace_once(s, '    CategoryVisibilityPrefs.hiddenIds.removeListener(_listsVisibilityListener);\n', '', 'lists dispose listener')
+          s = replace_once(
+              s,
+              """    final d = db.defaultCategoryId;
+            if (d != null && !CategoryVisibilityPrefs.isHiddenOrAncestor(d)) {
+              return d;
+            }
+            final pairs = CategoryVisibilityPrefs.filterPairs(
+              db.allCategoryIdPathPairs,
+              (p) => p.id,
+            );
+""",
+              """    final d = db.defaultCategoryId;
+            if (d != null && db.categoryExists(d)) {
+              return d;
+            }
+            final pairs = db.allCategoryIdPathPairs;
+""",
+              'lists default category',
+          )
+          s = replace_once(
+              s,
+              """    if (fid != null &&
+                db.categoryExists(fid) &&
+                !CategoryVisibilityPrefs.isHiddenOrAncestor(fid)) {
+              return fid;
+            }
+""",
+              """    if (fid != null && db.categoryExists(fid)) {
+              return fid;
+            }
+""",
+              'lists effective category',
+          )
+          s = replace_once(
+              s,
+              """    final visible = raw
+                .where((id) => !CategoryVisibilityPrefs.isHiddenOrAncestor(id))
+                .toList();
+            final active = _filterCategoryId;
+            if (active != null && visible.contains(active)) {
+              return [active, ...visible.where((x) => x != active)];
+            }
+            return visible;
+""",
+              """    final available = _sanitizeIntCategoryIds(raw);
+            final active = _filterCategoryId;
+            if (active != null && available.contains(active)) {
+              return [active, ...available.where((x) => x != active)];
+            }
+            return available;
+""",
+              'lists chip visibility filter',
+          )
+          s = re.sub(r'^\s*if \(CategoryVisibilityPrefs\.isHiddenOrAncestor\([^\n]+\)\) continue;\n', '', s, flags=re.MULTILINE)
+          s = replace_once(
+              s,
+              """        return ValueListenableBuilder<List<int>>(
+                  valueListenable: CategoryVisibilityPrefs.hiddenIds,
+                  builder: (context, _, _) {
+""",
+              """        return Builder(
+                  builder: (context) {
+""",
+              'lists build visibility listenable',
+          )
+          write(p, s)
+
+          p = 'lib/features/lists/lists_filters.dart'
+          s = read(p)
+          s = replace_once(s, "import 'package:counter/shared/categories/visibility/category_visibility_prefs.dart';\n", '', 'lists_filters import')
+          s = re.sub(r'^\s*if \(CategoryVisibilityPrefs\.isHiddenOrAncestor\([^\n]+\)\) continue;\n', '', s, flags=re.MULTILINE)
+          s = replace_once(
+              s,
+              """  if (CategoryVisibilityPrefs.isHiddenOrAncestor(r.id)) {
+            return const SizedBox.shrink();
+          }
+          final rawKids = r.children ?? const <CategoryRule>[];
+          final kids = rawKids
+              .where((c) => !CategoryVisibilityPrefs.isHiddenOrAncestor(c.id))
+              .toList();
+""",
+              """  final kids = r.children ?? const <CategoryRule>[];
+""",
+              'manual category tree visibility filter',
+          )
+          write(p, s)
+
+          for p in ['lib/l10n/langs/en.dart', 'lib/l10n/langs/ru.dart']:
+              s = read(p)
+              s, n = re.subn(r"^\s*'category_visibility_toggle':.*\n", '', s, flags=re.MULTILINE)
+              if n != 1:
+                  raise SystemExit(f'{p}: expected one category_visibility_toggle key, found {n}')
+              write(p, s)
+
+          p = 'AGENTS.md'
+          s = read(p)
+          s = replace_once(
+              s,
+              "- `lib/shared/categories/` owns reusable category presentation, tree, picker, and local visibility prefs (`presentation/`, `tree/`, `picker/`, `visibility/`). It may import `data/models.dart` for `CategoryRule` only. It must not import `features/`, `database_service.dart`, or `app/shell/`. Brain wires `CategoryTreeSource` / `CategoryPickerActions` / `PlanCategoryLookup` from `main.dart`.\n",
+              "- `lib/shared/categories/` owns reusable category presentation, tree, and picker (`presentation/`, `tree/`, `picker/`). It may import `data/models.dart` for `CategoryRule` only. It must not import `features/`, `database_service.dart`, or `app/shell/`. Brain wires `CategoryTreeSource` / `CategoryPickerActions` / `PlanCategoryLookup` from `main.dart`.\n",
+              'AGENTS categories ownership',
+          )
+          write(p, s)
+
+          forbidden = ['CategoryVisibilityPrefs', 'hidden_category_ids_json', 'category_visibility_toggle', 'shared/categories/visibility']
+          production = '\n'.join(p.read_text(encoding='utf-8', errors='ignore') for p in Path('lib').rglob('*.dart'))
+          leftovers = [needle for needle in forbidden if needle in production]
+          if leftovers:
+              raise SystemExit(f'Forbidden hidden-category remnants remain in lib/: {leftovers}')
+          PY
+
+      - name: Remove temporary workflows and publish cleanup commit
+        shell: bash
+        run: |
+          rm -f .github/workflows/_temporary_remove_hidden_categories.yml
+          rm -f .github/workflows/_temporary_remove_hidden_categories_v2.yml
+          git config user.name "nkuchenov-hash"
+          git config user.email "nkuchenov@gmail.com"
+          git add -A
+          git diff --cached --check
+          git commit -m "Remove remaining hidden category code"
+          git push origin HEAD:fix/remove-hidden-categories-runtime-rest-20260812
