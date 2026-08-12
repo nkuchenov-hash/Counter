@@ -87,6 +87,34 @@ class AuthBridge {
         } catch (_) {}
         return null;
       }
+
+      // `authStore.isValid` only checks the local JWT shape/expiry. Verify the
+      // persisted token with PocketBase before treating protected list results
+      // as authoritative; an invalid token otherwise looks like a valid empty
+      // account because list rules return HTTP 200 with zero visible rows.
+      try {
+        await pb.collection(PbCollections.profiles).authRefresh();
+      } on ClientException catch (e) {
+        if (e.statusCode >= 400 && e.statusCode < 500) {
+          try {
+            pb.authStore.clear();
+            await _storage.delete(key: _profileIdKey);
+          } catch (_) {}
+          return null;
+        }
+        // Keep an unexpired local session during a real network/server outage
+        // so the existing offline caches remain usable.
+      } catch (_) {
+        // Same offline behavior for transport errors outside ClientException.
+      }
+
+      if (!pb.authStore.isValid || pb.authStore.record == null) {
+        try {
+          pb.authStore.clear();
+          await _storage.delete(key: _profileIdKey);
+        } catch (_) {}
+        return null;
+      }
       final data = pb.authStore.record!.data;
       final uid = (data['user_id'] ?? '').toString().trim();
       final id = uid.isNotEmpty ? uid : pb.authStore.record!.id;

@@ -661,6 +661,32 @@ extension DbCoreExtension on DatabaseService {
     _appOpenSyncRetryTimer?.cancel();
     _appOpenSyncRetryTimer = null;
 
+    // Never let an expired/revoked server token turn protected collections
+    // into authoritative empty caches. PocketBase list rules intentionally
+    // return 200 with zero visible rows for an unauthenticated request.
+    try {
+      await _pb.collection(PbCollections.profiles).authRefresh();
+    } on ClientException catch (e) {
+      if (e.statusCode >= 400 && e.statusCode < 500) {
+        final handler = onSessionInvalid;
+        if (handler != null) {
+          await handler();
+        }
+        return;
+      }
+      _maybeOpenPbCircuitFromListFailure(e, 'foregroundAuthRefresh');
+      if (_pbHttpBackoffActive) {
+        _scheduleAppOpenSyncRetry();
+      }
+      return;
+    } catch (e) {
+      _maybeOpenPbCircuitFromListFailure(e, 'foregroundAuthRefresh');
+      if (_pbHttpBackoffActive) {
+        _scheduleAppOpenSyncRetry();
+      }
+      return;
+    }
+
     // Push-first: subscribe before any outbox work or catch-up request so a
     // concurrent remote write cannot fall into a startup gap.
     try {
