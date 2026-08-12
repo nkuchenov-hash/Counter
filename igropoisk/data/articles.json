@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-12T18:14:44.851Z",
+  "updatedAt": "2026-08-12T18:29:47.266Z",
   "count": 495,
   "sources": [
     "IGN",
@@ -14,6 +14,51 @@
     "Игромания"
   ],
   "articles": [
+    {
+      "source": "Polygon",
+      "language": "en",
+      "title": "Waller and Paradise Lost shows Reportedly Canceled by DC Studios",
+      "normalizedTitle": "waller and paradise lost shows reportedly canceled by dc studios",
+      "url": "https://www.polygon.com/dcu-canceled-shows-waller-paradise-lost-james-gunn/",
+      "summary": "The DC Universe is having a rough go after Supergirl bombed at the box office. Two more TV shows just got canceled.",
+      "publishedAt": "Wed, 12 Aug 2026 18:26:58 GMT"
+    },
+    {
+      "source": "Polygon",
+      "language": "en",
+      "title": "Oblivion Remastered Switch 2 Fixes May Come To Other Platforms",
+      "normalizedTitle": "oblivion remastered switch 2 fixes may come to other platforms",
+      "url": "https://www.polygon.com/elder-scrolls-4-oblivion-remastered-switch-2-patch-optimizations/",
+      "summary": "The Elder Scrolls 4: Oblivion Remastered has been plagued by performance issues, but the smooth Switch 2 port may fix the problem once and for all",
+      "publishedAt": "Wed, 12 Aug 2026 18:26:26 GMT"
+    },
+    {
+      "source": "GamesRadar+",
+      "language": "en",
+      "title": "\"There is probably some end\" to No Man's Sky, says Hello Games boss, but he'll probably come back 10 years later for a surprise update anyway",
+      "normalizedTitle": "there is probably some end to no man s sky says hello games boss but he ll probably come back 10 years later for a surprise update anyway",
+      "url": "https://www.gamesradar.com/games/survival/there-is-probably-some-end-to-no-mans-sky-says-hello-games-boss-but-hell-probably-come-back-10-years-later-for-a-surprise-update-anyway/",
+      "summary": "\"If you had asked me five years ago, I would have thought we would have passed it by now\"",
+      "publishedAt": "Wed, 12 Aug 2026 18:20:06 +0000"
+    },
+    {
+      "source": "Polygon",
+      "language": "en",
+      "title": "Steam shooter explodes in popularity after devs warn fans not to buy it",
+      "normalizedTitle": "steam shooter explodes in popularity after devs warn fans not to buy it",
+      "url": "https://www.polygon.com/steam-wardogs-bulkhead-10-reasons-not-buy-tactical-fps-early-access/",
+      "summary": "Wardogs, a tactical 100-player FPS that will soon launch on Steam's early access, is taking an unusual marketing approach aimed at PC gamers",
+      "publishedAt": "Wed, 12 Aug 2026 18:19:40 GMT"
+    },
+    {
+      "source": "Polygon",
+      "language": "en",
+      "title": "Warhammer 40K: Dawn Of War 4 Delayed",
+      "normalizedTitle": "warhammer 40k dawn of war 4 delayed",
+      "url": "https://www.polygon.com/warhammer-dawn-of-war-4-delayed-december/",
+      "summary": "'Warhammer 40,000: Dawn of War 4' has been delayed to early December, putting it within 2 weeks of 'GTA 6''s release.",
+      "publishedAt": "Wed, 12 Aug 2026 18:15:23 GMT"
+    },
     {
       "source": "GamesRadar+",
       "language": "en",
@@ -49,6 +94,24 @@
       "url": "https://www.gamesradar.com/games/the-elder-scrolls/now-that-the-elder-scrolls-6-is-playable-bethesdas-rpg-nightmare-of-its-own-making-is-nearly-over/",
       "summary": "But that 8-year wait is far from over yet",
       "publishedAt": "Wed, 12 Aug 2026 18:00:00 +0000"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "Tom Holland's Brutal Spider-Man: Brand New Day Workout Goes Viral as Fans Try It for Themselves",
+      "normalizedTitle": "tom holland s brutal spider man brand new day workout goes viral as fans try it for themselves",
+      "url": "https://www.ign.com/articles/tom-hollands-brutal-spider-man-brand-new-day-workout-goes-viral-as-fans-try-it-for-themselves",
+      "summary": "Tom Holland’s brutal workout to get in shape for Spider-Man: Brand New Day is taking social media by storm as fans share their own experiences trying it for themselves.",
+      "publishedAt": "Wed, 12 Aug 2026 17:55:46 +0000"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "Today’s Top Deals: Marvel Cosmic Invasion for Switch, LEGO Animal Crossing, and Switch 2 Console",
+      "normalizedTitle": "today s top deals marvel cosmic invasion for switch lego animal crossing and switch 2 console",
+      "url": "https://www.ign.com/articles/best-deals-for-august-12-2026",
+      "summary": "And don’t miss discounts on an RTX 5070 Ti gaming PC, Bose headphones, and more.",
+      "publishedAt": "Wed, 12 Aug 2026 17:50:00 +0000"
     },
     {
       "source": "Rock Paper Shotgun",
@@ -87,6 +150,15 @@
       "publishedAt": "Wed, 12 Aug 2026 17:24:52 +0000"
     },
     {
+      "source": "IGN",
+      "language": "en",
+      "title": "The One Piece: Escape from Egghead Board Game Is Runny and Undercooked",
+      "normalizedTitle": "the one piece escape from egghead board game is runny and undercooked",
+      "url": "https://www.ign.com/articles/one-piece-escape-from-egghead-board-game-review",
+      "summary": "The push-your-luck dice rolling can be fun with the right group, but One Piece: Escape from Egghead stumbles due to ambiguous rules, questionable designs, and mechanics that break at different player counts.",
+      "publishedAt": "Wed, 12 Aug 2026 17:19:54 +0000"
+    },
+    {
       "source": "GameSpot",
       "language": "en",
       "title": "God Of War&#8217;s Christopher Judge Is Tired Of Video Game TV Adaptations Ignoring Game Creators",
@@ -94,6 +166,15 @@
       "url": "https://www.gamespot.com/articles/god-of-wars-christopher-judge-is-tired-of-video-game-tv-adaptations-ignoring-game-creators/",
       "summary": "The live-action adaptation of God of War is on the way, but the voice of the iconic god-killer Kratos, Christopher Judge, has a bone to pick with the people behind game adaptations. As the actor explained, he's annoyed that these projects fail to hire anyone from the source material to work on them, as they tend to ignore the talent behind the success of those games. \"My problem with all game adaptations is you have this pre-existing, successful property, and the first thing you do is not hire anyone associated with it,\" Judge said during a Fan Expo panel (via Reddit ), using HBO's The Last of",
       "publishedAt": "Wed, 12 Aug 2026 17:19:01 +0000"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "Made By Google 2026 Live Blog: Get Ready For the Pixel 11",
+      "normalizedTitle": "made by google 2026 live blog get ready for the pixel 11",
+      "url": "https://www.ign.com/articles/made-by-google-2026-everything-announced",
+      "summary": "Every year, Google holds the Made By Google event, where the company reveals its flagship mobile hardware for the next year. This time around, we already know the Pixel 11 is going to be there, but there are sure to be a few surprises up Google's sleeve.",
+      "publishedAt": "Wed, 12 Aug 2026 17:15:33 +0000"
     },
     {
       "source": "Polygon",
@@ -123,15 +204,6 @@
       "publishedAt": "Wed, 12 Aug 2026 16:55:59 GMT"
     },
     {
-      "source": "Polygon",
-      "language": "en",
-      "title": "The Sims 4 Mod Creates Immersive World Selection Screen",
-      "normalizedTitle": "the sims 4 mod creates immersive world selection screen",
-      "url": "https://www.polygon.com/the-sims-4-world-section-mod/",
-      "summary": "A Sims 4 mod makes it possible for players to see all worlds in one big map, making travel more realistic.",
-      "publishedAt": "Wed, 12 Aug 2026 16:51:34 GMT"
-    },
-    {
       "source": "Rock Paper Shotgun",
       "language": "en",
       "title": "The Steam Frame needs to be more than a cool device if Valve want to reshape the VR market",
@@ -139,15 +211,6 @@
       "url": "https://www.rockpapershotgun.com/the-steam-frame-needs-to-be-more-than-a-cool-device-if-valve-want-to-reshape-the-vr-market",
       "summary": "Hi! I'm Rick Lane, and you might remember me from such columns as Reality Bytes , RPS' erstwhile monthly goggle at the world of virtual reality . I've spent the last couple of years trapped between the second and third dimensions, my flattened body doomed to forever spin to face the camera. But RPS has whipped out its bicycle pump and popped me back into stereoscopic 3D, so I can seek revenge tell you all about the state of VR in 2026. And boy, what a state! The headlines make for grim reading. VR headset shipments are in decline . Notable VR studios are either laying people off or being shut ",
       "publishedAt": "Wed, 12 Aug 2026 16:44:06 +0000"
-    },
-    {
-      "source": "Polygon",
-      "language": "en",
-      "title": "How does the Explorer Gadget work in Pokémon Go?",
-      "normalizedTitle": "how does the explorer gadget work in pokémon go",
-      "url": "https://www.polygon.com/pokemon-go-explorer-gadget-how-to-use/",
-      "summary": "If you found an Explorer Gadget in your Pokémon Go inventory, here's how to use it and what it does.",
-      "publishedAt": "Wed, 12 Aug 2026 16:43:27 GMT"
     },
     {
       "source": "GamesRadar+",
@@ -211,24 +274,6 @@
       "url": "https://www.ign.com/articles/cd-projekt-confirms-layoffs-on-the-witcher-multiplayer-spinoff-issues-statement",
       "summary": "CD Projekt has confirmed layoffs on The Witcher multiplayer spinoff, codenamed Project Sirius.",
       "publishedAt": "Wed, 12 Aug 2026 16:31:24 +0000"
-    },
-    {
-      "source": "Polygon",
-      "language": "en",
-      "title": "Team behind multiplayer Witcher game 'Project Sirius' hit by layoffs",
-      "normalizedTitle": "team behind multiplayer witcher game project sirius hit by layoffs",
-      "url": "https://www.polygon.com/multiplayer-witcher-game-layoffs-project-sirius-update/",
-      "summary": "The multiplayer Witcher game titled 'Project Sirius' might be in trouble after its development team was hit by another round of layoffs.",
-      "publishedAt": "Wed, 12 Aug 2026 16:30:41 GMT"
-    },
-    {
-      "source": "Polygon",
-      "language": "en",
-      "title": "The 8 Best Games Like Cyberpunk 2077",
-      "normalizedTitle": "the 8 best games like cyberpunk 2077",
-      "url": "https://www.polygon.com/games-like-cyberpunk-2077/",
-      "summary": "Looking for your next Night City-adjacent adventure? These eight games share Cyberpunk 2077’s messy choices, augmented anti-heroes, or overall mood.",
-      "publishedAt": "Wed, 12 Aug 2026 16:30:12 GMT"
     },
     {
       "source": "PC Gamer",
@@ -476,15 +521,6 @@
     {
       "source": "IGN",
       "language": "en",
-      "title": "Made By Google 2026 Live Blog: Get Ready For the Pixel 11",
-      "normalizedTitle": "made by google 2026 live blog get ready for the pixel 11",
-      "url": "https://www.ign.com/articles/made-by-google-2026-everything-announced",
-      "summary": "Every year, Google holds the Made By Google event, where the company reveals its flagship mobile hardware for the next year. This time around, we already know the Pixel 11 is going to be there, but there are sure to be a few surprises up Google's sleeve.",
-      "publishedAt": "Wed, 12 Aug 2026 15:21:33 +0000"
-    },
-    {
-      "source": "IGN",
-      "language": "en",
       "title": "Preorder a Google Pixel 11 Smartphone and Get Up to $350 in Amazon Gift Cards",
       "normalizedTitle": "preorder a google pixel 11 smartphone and get up to 350 in amazon gift cards",
       "url": "https://www.ign.com/articles/google-pixel-11-pro-fold-smartphone-where-to-buy",
@@ -552,15 +588,6 @@
       "normalizedTitle": "fight night round 3 on xbox 360 was the first holy sh t game of the hd era",
       "url": "https://www.ign.com/articles/fight-night-round-3-on-xbox-360-was-the-first-holy-sht-game-of-the-hd-era",
       "summary": "We're looking back at milestone games in the run up to Xbox's 25th anniversary, and today it's time to remember the mind-blowing visuals of Fight Night Round 3.",
-      "publishedAt": "Wed, 12 Aug 2026 15:00:00 +0000"
-    },
-    {
-      "source": "IGN",
-      "language": "en",
-      "title": "The End of Oak Street Review",
-      "normalizedTitle": "the end of oak street review",
-      "url": "https://www.ign.com/articles/the-end-of-oak-street-review",
-      "summary": "The End of Oak Street hits all the right nostalgic notes for a family adventure clearly inspired by the '80s most iconic sci fi films. David Robert Mitchell pulls from the same back of tricks that made It Follows a cult classic to add just enough plumage to the dinosaurs to make his film more than just a Spielberg impression.",
       "publishedAt": "Wed, 12 Aug 2026 15:00:00 +0000"
     },
     {
@@ -652,24 +679,6 @@
       "url": "https://www.gamesradar.com/games/the-elder-scrolls/elder-scrolls-6-setting-theory-backed-by-ex-bethesda-dev-as-fans-try-to-decipher-xbox-ceos-teaser/",
       "summary": "Michael Kirkbride thinks it might be Sentinel",
       "publishedAt": "Wed, 12 Aug 2026 14:18:57 +0000"
-    },
-    {
-      "source": "IGN",
-      "language": "en",
-      "title": "PS5 Exclusive Ghost of Yōtei Is Getting a New Narrative Expansion, New Combat Survival Mode, and More as Part of a Complete Edition",
-      "normalizedTitle": "ps5 exclusive ghost of yōtei is getting a new narrative expansion new combat survival mode and more as part of a complete edition",
-      "url": "https://www.ign.com/articles/ps5-exclusive-ghost-of-ytei-is-getting-a-new-narrative-expansion-new-combat-survival-mode-and-more-as-part-of-a-complete-edition",
-      "summary": "Sony has announced Ghost of Yōtei Complete Edition alongside new content coming to the game.",
-      "publishedAt": "Wed, 12 Aug 2026 14:10:50 +0000"
-    },
-    {
-      "source": "IGN",
-      "language": "en",
-      "title": "There Are Many Solid The Elder Scrolls 6 Subtitle Theories Based on Xbox Boss Asha Sharma’s Asterisk-Filled Tease — but Let’s Rule Out Skyrim 2 Right Now",
-      "normalizedTitle": "there are many solid the elder scrolls 6 subtitle theories based on xbox boss asha sharma s asterisk filled tease but let s rule out skyrim 2 right now",
-      "url": "https://www.ign.com/articles/there-are-many-solid-the-elder-scrolls-6-subtitle-theories-based-on-xbox-boss-asha-sharmas-asterisk-filled-tease-but-lets-rule-out-skyrim-2-right-now",
-      "summary": "Yesterday, Xbox boss Asha Sharma teased The Elder Scrolls 6 with a tweet confirming she’d witnessed a live playthrough of Bethesda’s hotly anticipated open-world fantasy role-playing game. She did so by using asterisks where the subtitle of the game should be, which was all it took to send The Elder Scrolls fans down a rabbit hole from which they have now emerged with some solid theories.",
-      "publishedAt": "Wed, 12 Aug 2026 14:05:19 +0000"
     },
     {
       "source": "PC Gamer",
@@ -1309,15 +1318,6 @@
       "url": "https://www.gamesradar.com/games/open-world/crimson-desert-is-not-a-one-off-title-pearl-abyss-is-open-to-sequel-titles-multiplayer-expansions-and-even-more-dlc/",
       "summary": "This crimson desert is turning into a crimson kingdom",
       "publishedAt": "Tue, 11 Aug 2026 16:55:16 +0000"
-    },
-    {
-      "source": "GamesRadar+",
-      "language": "en",
-      "title": "This leaked Legend of Zelda 40th anniversary Switch 2 console better be real, because I'm already desperate to buy it",
-      "normalizedTitle": "this leaked legend of zelda 40th anniversary switch 2 console better be real because i m already desperate to buy it",
-      "url": "https://www.gamesradar.com/hardware/this-leaked-legend-of-zelda-40th-anniversary-switch-2-console-better-be-real-because-im-already-desperate-to-buy-it/",
-      "summary": "I don't need another Switch 2, I don't need another Switch 2, I don't need another Switch 2...",
-      "publishedAt": "Tue, 11 Aug 2026 16:52:44 +0000"
     },
     {
       "source": "PC Gamer",

@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-12T18:14:44.851Z",
+  "updatedAt": "2026-08-12T18:29:47.266Z",
   "count": 78,
   "sourcePool": [
     "Steam",
@@ -79,7 +79,7 @@
       "movies": [],
       "criticRating": 9.4,
       "steamUserRating": 9.3,
-      "recommendations": 826824,
+      "recommendations": 826826,
       "owners": "20,000,000 .. 50,000,000",
       "peakConcurrent": 29529,
       "sourceEvidence": [
@@ -94,7 +94,7 @@
         "steamSpy": "https://steamspy.com/app/1245620",
         "metacritic": "https://www.metacritic.com/game/pc/elden-ring?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10591.74135995444,
+      "popularityScore": 10591.741465005438,
       "igropoiskRating": 9.4,
       "editorialSources": [
         "Rock Paper Shotgun",
@@ -241,7 +241,7 @@
       "movies": [],
       "criticRating": 9.6,
       "steamUserRating": 9.7,
-      "recommendations": 750344,
+      "recommendations": 750350,
       "owners": "20,000,000 .. 50,000,000",
       "peakConcurrent": 54771,
       "sourceEvidence": [
@@ -257,7 +257,7 @@
         "steamSpy": "https://steamspy.com/app/1086940",
         "metacritic": "https://www.metacritic.com/game/pc/baldurs-gate-3?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10577.52609929191,
+      "popularityScore": 10577.52644656636,
       "igropoiskRating": 9.6,
       "editorialSources": [
         "Eurogamer",
@@ -723,7 +723,7 @@
       "movies": [],
       "criticRating": 9.7,
       "steamUserRating": 9.3,
-      "recommendations": 117067,
+      "recommendations": 117068,
       "owners": "2,000,000 .. 5,000,000",
       "peakConcurrent": 918,
       "sourceEvidence": [
@@ -736,7 +736,7 @@
         "steamSpy": "https://steamspy.com/app/632470",
         "metacritic": "https://www.metacritic.com/game/pc/disco-elysium-the-final-cut?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10436.843819889264,
+      "popularityScore": 10436.844190863934,
       "igropoiskRating": 9.6,
       "editorialSources": [],
       "materials": {
@@ -820,7 +820,7 @@
       "movies": [],
       "criticRating": 6.9,
       "steamUserRating": 8.7,
-      "recommendations": 1160691,
+      "recommendations": 1160701,
       "owners": "20,000,000 .. 50,000,000",
       "peakConcurrent": 143870,
       "sourceEvidence": [
@@ -835,7 +835,7 @@
         "steamSpy": "https://steamspy.com/app/252490",
         "metacritic": "https://www.metacritic.com/game/pc/rust?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10436.471699110256,
+      "popularityScore": 10436.472073277228,
       "igropoiskRating": 7.5,
       "editorialSources": [
         "GameSpot",
@@ -955,7 +955,7 @@
       "movies": [],
       "criticRating": 7,
       "steamUserRating": 8.4,
-      "recommendations": 584499,
+      "recommendations": 584500,
       "owners": "20,000,000 .. 50,000,000",
       "peakConcurrent": 22170,
       "sourceEvidence": [
@@ -968,7 +968,7 @@
         "steamSpy": "https://steamspy.com/app/346110",
         "metacritic": "https://www.metacritic.com/game/pc/ark-survival-evolved?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10396.678451549786,
+      "popularityScore": 10396.678525851601,
       "igropoiskRating": 7.5,
       "editorialSources": [],
       "materials": {
@@ -1060,7 +1060,7 @@
       "movies": [],
       "criticRating": 8.9,
       "steamUserRating": 9.8,
-      "recommendations": 811219,
+      "recommendations": 811226,
       "owners": "50,000,000 .. 100,000,000",
       "peakConcurrent": 25122,
       "sourceEvidence": [
@@ -1073,7 +1073,7 @@
         "steamSpy": "https://steamspy.com/app/550",
         "metacritic": "https://www.metacritic.com/game/pc/left-4-dead-2?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10390.91386493149,
+      "popularityScore": 10390.914239681651,
       "igropoiskRating": 9.2,
       "editorialSources": [],
       "materials": {
@@ -1454,7 +1454,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 9.4,
-      "recommendations": 457113,
+      "recommendations": 457110,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 14439,
       "sourceEvidence": [
@@ -1466,7 +1466,7 @@
         "steamSpy": "https://steamspy.com/app/892970",
         "metacritic": ""
       },
-      "popularityScore": 10326.002452260116,
+      "popularityScore": 10326.002167235434,
       "igropoiskRating": 9.4,
       "editorialSources": [],
       "materials": {
@@ -1960,6 +1960,7 @@
         "Steam",
         "SteamSpy",
         "Metacritic",
+        "Polygon",
         "GamesRadar+",
         "PC Gamer",
         "Eurogamer",
@@ -1973,6 +1974,7 @@
       "popularityScore": 10209.747812706186,
       "igropoiskRating": 8.7,
       "editorialSources": [
+        "Polygon",
         "GamesRadar+",
         "PC Gamer",
         "Eurogamer",
@@ -1980,6 +1982,15 @@
       ],
       "materials": {
         "articles": [
+          {
+            "source": "Polygon",
+            "language": "en",
+            "title": "Oblivion Remastered Switch 2 Fixes May Come To Other Platforms",
+            "normalizedTitle": "oblivion remastered switch 2 fixes may come to other platforms",
+            "url": "https://www.polygon.com/elder-scrolls-4-oblivion-remastered-switch-2-patch-optimizations/",
+            "summary": "The Elder Scrolls 4: Oblivion Remastered has been plagued by performance issues, but the smooth Switch 2 port may fix the problem once and for all",
+            "publishedAt": "Wed, 12 Aug 2026 18:26:26 GMT"
+          },
           {
             "source": "GamesRadar+",
             "language": "en",
@@ -2041,6 +2052,15 @@
         "news": []
       },
       "articles": [
+        {
+          "source": "Polygon",
+          "language": "en",
+          "title": "Oblivion Remastered Switch 2 Fixes May Come To Other Platforms",
+          "normalizedTitle": "oblivion remastered switch 2 fixes may come to other platforms",
+          "url": "https://www.polygon.com/elder-scrolls-4-oblivion-remastered-switch-2-patch-optimizations/",
+          "summary": "The Elder Scrolls 4: Oblivion Remastered has been plagued by performance issues, but the smooth Switch 2 port may fix the problem once and for all",
+          "publishedAt": "Wed, 12 Aug 2026 18:26:26 GMT"
+        },
         {
           "source": "GamesRadar+",
           "language": "en",
@@ -2394,7 +2414,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 9.7,
-      "recommendations": 876017,
+      "recommendations": 876021,
       "owners": "50,000,000 .. 100,000,000",
       "peakConcurrent": 15004,
       "sourceEvidence": [
@@ -2406,7 +2426,7 @@
         "steamSpy": "https://steamspy.com/app/2358720",
         "metacritic": ""
       },
-      "popularityScore": 9944.251302993562,
+      "popularityScore": 9944.251501297016,
       "igropoiskRating": 9.7,
       "editorialSources": [],
       "materials": {
@@ -2481,7 +2501,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 9.4,
-      "recommendations": 399980,
+      "recommendations": 400025,
       "owners": "50,000,000 .. 100,000,000",
       "peakConcurrent": 18028,
       "sourceEvidence": [
@@ -2495,7 +2515,7 @@
         "steamSpy": "https://steamspy.com/app/1623730",
         "metacritic": ""
       },
-      "popularityScore": 9940.203936185011,
+      "popularityScore": 9940.208821955188,
       "igropoiskRating": 9.4,
       "editorialSources": [
         "GameSpot",
@@ -2604,7 +2624,7 @@
       "movies": [],
       "criticRating": 8.1,
       "steamUserRating": 7.3,
-      "recommendations": 211800,
+      "recommendations": 211801,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 6300,
       "sourceEvidence": [
@@ -2620,7 +2640,7 @@
         "steamSpy": "https://steamspy.com/app/594650",
         "metacritic": "https://www.metacritic.com/game/pc/hunt-showdown?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9932.592800625993,
+      "popularityScore": 9932.59300567387,
       "igropoiskRating": 7.8,
       "editorialSources": [
         "Rock Paper Shotgun",
@@ -2942,7 +2962,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 8.9,
-      "recommendations": 110136,
+      "recommendations": 110139,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 10961,
       "sourceEvidence": [
@@ -2954,7 +2974,7 @@
         "steamSpy": "https://steamspy.com/app/1604030",
         "metacritic": ""
       },
-      "popularityScore": 9894.193324264472,
+      "popularityScore": 9894.194507214526,
       "igropoiskRating": 8.9,
       "editorialSources": [],
       "materials": {
@@ -3151,7 +3171,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 7.1,
-      "recommendations": 235870,
+      "recommendations": 235874,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 6327,
       "sourceEvidence": [
@@ -3163,7 +3183,7 @@
         "steamSpy": "https://steamspy.com/app/1238810",
         "metacritic": ""
       },
-      "popularityScore": 9827.267454828625,
+      "popularityScore": 9827.268191317298,
       "igropoiskRating": 7.1,
       "editorialSources": [],
       "materials": {
@@ -3520,7 +3540,7 @@
       "movies": [],
       "criticRating": 6.1,
       "steamUserRating": 8.3,
-      "recommendations": 311234,
+      "recommendations": 311229,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 12291,
       "sourceEvidence": [
@@ -3536,7 +3556,7 @@
         "steamSpy": "https://steamspy.com/app/275850",
         "metacritic": "https://www.metacritic.com/game/pc/no-mans-sky?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9809.30884297449,
+      "popularityScore": 9809.308145273442,
       "igropoiskRating": 6.9,
       "editorialSources": [
         "GamesRadar+",
@@ -3596,6 +3616,15 @@
         "tips": [],
         "news": [
           {
+            "source": "GamesRadar+",
+            "language": "en",
+            "title": "\"There is probably some end\" to No Man's Sky, says Hello Games boss, but he'll probably come back 10 years later for a surprise update anyway",
+            "normalizedTitle": "there is probably some end to no man s sky says hello games boss but he ll probably come back 10 years later for a surprise update anyway",
+            "url": "https://www.gamesradar.com/games/survival/there-is-probably-some-end-to-no-mans-sky-says-hello-games-boss-but-hell-probably-come-back-10-years-later-for-a-surprise-update-anyway/",
+            "summary": "\"If you had asked me five years ago, I would have thought we would have passed it by now\"",
+            "publishedAt": "Wed, 12 Aug 2026 18:20:06 +0000"
+          },
+          {
             "source": "Eurogamer",
             "language": "en",
             "title": "Sean Murray reflects on 10 years of No Man's Sky, its future, and why Hello Games' \"redemption arc\" narrative \"isn't really the story\" of the developer",
@@ -3616,6 +3645,15 @@
         ]
       },
       "articles": [
+        {
+          "source": "GamesRadar+",
+          "language": "en",
+          "title": "\"There is probably some end\" to No Man's Sky, says Hello Games boss, but he'll probably come back 10 years later for a surprise update anyway",
+          "normalizedTitle": "there is probably some end to no man s sky says hello games boss but he ll probably come back 10 years later for a surprise update anyway",
+          "url": "https://www.gamesradar.com/games/survival/there-is-probably-some-end-to-no-mans-sky-says-hello-games-boss-but-hell-probably-come-back-10-years-later-for-a-surprise-update-anyway/",
+          "summary": "\"If you had asked me five years ago, I would have thought we would have passed it by now\"",
+          "publishedAt": "Wed, 12 Aug 2026 18:20:06 +0000"
+        },
         {
           "source": "GamesRadar+",
           "language": "en",
@@ -3855,7 +3893,7 @@
       "movies": [],
       "criticRating": 9.1,
       "steamUserRating": 9.7,
-      "recommendations": 233485,
+      "recommendations": 233480,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 12596,
       "sourceEvidence": [
@@ -3868,7 +3906,7 @@
         "steamSpy": "https://steamspy.com/app/526870",
         "metacritic": "https://www.metacritic.com/game/pc/satisfactory?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9766.82608450519,
+      "popularityScore": 9766.8251544727,
       "igropoiskRating": 9.3,
       "editorialSources": [],
       "materials": {
@@ -4039,7 +4077,7 @@
       "movies": [],
       "criticRating": 8.7,
       "steamUserRating": 9.8,
-      "recommendations": 207185,
+      "recommendations": 207186,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 19211,
       "sourceEvidence": [
@@ -4052,7 +4090,7 @@
         "steamSpy": "https://steamspy.com/app/294100",
         "metacritic": "https://www.metacritic.com/game/pc/rimworld?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9741.636040586005,
+      "popularityScore": 9741.636250201245,
       "igropoiskRating": 9.1,
       "editorialSources": [],
       "materials": {
@@ -4116,7 +4154,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 9.1,
-      "recommendations": 99048,
+      "recommendations": 99050,
       "owners": "2,000,000 .. 5,000,000",
       "peakConcurrent": 698,
       "sourceEvidence": [
@@ -4129,7 +4167,7 @@
         "steamSpy": "https://steamspy.com/app/848450",
         "metacritic": ""
       },
-      "popularityScore": 9739.585009525392,
+      "popularityScore": 9739.585886445093,
       "igropoiskRating": 9.1,
       "editorialSources": [
         "Rock Paper Shotgun"
@@ -4215,7 +4253,7 @@
       "movies": [],
       "criticRating": 8.3,
       "steamUserRating": 8.9,
-      "recommendations": 281394,
+      "recommendations": 281391,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 32112,
       "sourceEvidence": [
@@ -4228,7 +4266,7 @@
         "steamSpy": "https://steamspy.com/app/394360",
         "metacritic": "https://www.metacritic.com/game/pc/hearts-of-iron-iv?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9734.931637635495,
+      "popularityScore": 9734.931174624286,
       "igropoiskRating": 8.5,
       "editorialSources": [],
       "materials": {
@@ -4314,7 +4352,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 9.7,
-      "recommendations": 1086397,
+      "recommendations": 1086380,
       "owners": "20,000,000 .. 50,000,000",
       "peakConcurrent": 18400,
       "sourceEvidence": [
@@ -4326,7 +4364,7 @@
         "steamSpy": "https://steamspy.com/app/4000",
         "metacritic": ""
       },
-      "popularityScore": 9723.598895742449,
+      "popularityScore": 9723.598216151364,
       "igropoiskRating": 9.7,
       "editorialSources": [],
       "materials": {
@@ -4648,7 +4686,7 @@
       "movies": [],
       "criticRating": 8.7,
       "steamUserRating": 8.7,
-      "recommendations": 95580,
+      "recommendations": 95579,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 12445,
       "sourceEvidence": [
@@ -4661,7 +4699,7 @@
         "steamSpy": "https://steamspy.com/app/236850",
         "metacritic": "https://www.metacritic.com/game/pc/europa-universalis-iv?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9678.037156994089,
+      "popularityScore": 9678.036702618478,
       "igropoiskRating": 8.7,
       "editorialSources": [],
       "materials": {
@@ -4740,7 +4778,7 @@
       "movies": [],
       "criticRating": 9.1,
       "steamUserRating": 9,
-      "recommendations": 95972,
+      "recommendations": 95974,
       "owners": "2,000,000 .. 5,000,000",
       "peakConcurrent": 14302,
       "sourceEvidence": [
@@ -4753,7 +4791,7 @@
         "steamSpy": "https://steamspy.com/app/1158310",
         "metacritic": "https://www.metacritic.com/game/pc/crusader-kings-iii?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9668.214907053663,
+      "popularityScore": 9668.215812078945,
       "igropoiskRating": 9.1,
       "editorialSources": [],
       "materials": {
@@ -5100,7 +5138,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 8.8,
-      "recommendations": 281653,
+      "recommendations": 281652,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 4450,
       "sourceEvidence": [
@@ -5112,7 +5150,7 @@
         "steamSpy": "https://steamspy.com/app/1326470",
         "metacritic": ""
       },
-      "popularityScore": 9624.971592338814,
+      "popularityScore": 9624.971438144215,
       "igropoiskRating": 8.8,
       "editorialSources": [],
       "materials": {
@@ -5181,7 +5219,7 @@
       "movies": [],
       "criticRating": 8.1,
       "steamUserRating": 5.7,
-      "recommendations": 24264,
+      "recommendations": 24266,
       "owners": "1,000,000 .. 2,000,000",
       "peakConcurrent": 2183,
       "sourceEvidence": [
@@ -5194,7 +5232,7 @@
         "steamSpy": "https://steamspy.com/app/1677280",
         "metacritic": "https://www.metacritic.com/game/pc/company-of-heroes-3?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9588.498029565131,
+      "popularityScore": 9588.501609013594,
       "igropoiskRating": 7.3,
       "editorialSources": [],
       "materials": {
@@ -5431,7 +5469,7 @@
       "movies": [],
       "criticRating": 8.9,
       "steamUserRating": 9.8,
-      "recommendations": 192389,
+      "recommendations": 192390,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 15038,
       "sourceEvidence": [
@@ -5444,7 +5482,7 @@
         "steamSpy": "https://steamspy.com/app/646570",
         "metacritic": "https://www.metacritic.com/game/pc/slay-the-spire?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9528.41824946369,
+      "popularityScore": 9528.418475199618,
       "igropoiskRating": 9.2,
       "editorialSources": [],
       "materials": {
@@ -5672,7 +5710,7 @@
       "movies": [],
       "criticRating": 8.5,
       "steamUserRating": 9.7,
-      "recommendations": 134332,
+      "recommendations": 134333,
       "owners": "2,000,000 .. 5,000,000",
       "peakConcurrent": 1301,
       "sourceEvidence": [
@@ -5685,7 +5723,7 @@
         "steamSpy": "https://steamspy.com/app/1092790",
         "metacritic": "https://www.metacritic.com/game/pc/inscryption?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9492.818271376631,
+      "popularityScore": 9492.81859467237,
       "igropoiskRating": 8.9,
       "editorialSources": [],
       "materials": {
@@ -5751,7 +5789,7 @@
       "movies": [],
       "criticRating": 8.6,
       "steamUserRating": 9.8,
-      "recommendations": 250599,
+      "recommendations": 250600,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 2966,
       "sourceEvidence": [
@@ -5765,7 +5803,7 @@
         "steamSpy": "https://steamspy.com/app/1794680",
         "metacritic": "https://www.metacritic.com/game/pc/vampire-survivors?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9489.898106665813,
+      "popularityScore": 9489.898279967336,
       "igropoiskRating": 9,
       "editorialSources": [
         "Rock Paper Shotgun"
@@ -5945,7 +5983,7 @@
       "movies": [],
       "criticRating": 8.8,
       "steamUserRating": 9.7,
-      "recommendations": 130549,
+      "recommendations": 130551,
       "owners": "2,000,000 .. 5,000,000",
       "peakConcurrent": 1174,
       "sourceEvidence": [
@@ -5958,7 +5996,7 @@
         "steamSpy": "https://steamspy.com/app/504230",
         "metacritic": "https://www.metacritic.com/game/pc/celeste?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9481.577687615896,
+      "popularityScore": 9481.578352941297,
       "igropoiskRating": 9.1,
       "editorialSources": [],
       "materials": {
@@ -6693,7 +6731,7 @@
       "movies": [],
       "criticRating": 8.3,
       "steamUserRating": 9.6,
-      "recommendations": 578997,
+      "recommendations": 578999,
       "owners": "20,000,000 .. 50,000,000",
       "peakConcurrent": 2892,
       "sourceEvidence": [
@@ -6707,7 +6745,7 @@
         "steamSpy": "https://steamspy.com/app/242760",
         "metacritic": "https://www.metacritic.com/game/pc/the-forest?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9316.26770635712,
+      "popularityScore": 9316.267856372744,
       "igropoiskRating": 8.8,
       "editorialSources": [
         "StopGame"
