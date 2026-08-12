@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-11T00:40:57.372Z",
+  "updatedAt": "2026-08-12T14:19:36.045Z",
   "count": 78,
   "sourcePool": [
     "Steam",
@@ -79,7 +79,7 @@
       "movies": [],
       "criticRating": 9.4,
       "steamUserRating": 9.3,
-      "recommendations": 826642,
+      "recommendations": 826795,
       "owners": "20,000,000 .. 50,000,000",
       "peakConcurrent": 29529,
       "sourceEvidence": [
@@ -94,7 +94,7 @@
         "steamSpy": "https://steamspy.com/app/1245620",
         "metacritic": "https://www.metacritic.com/game/pc/elden-ring?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10591.731799249785,
+      "popularityScore": 10591.739836686414,
       "igropoiskRating": 9.4,
       "editorialSources": [
         "StopGame",
@@ -110,15 +110,6 @@
             "url": "https://www.rockpapershotgun.com/the-soulslike-genre-has-grown-stale-after-elden-ring-and-only-fromsoftware-can-take-it-to-strange-new-places",
             "summary": "Sometimes I have to remind myself that I&rsquo;m a clich&eacute;, a person first compelled to write about games because I slew Dark Souls &rsquo; Gwynn, Lord Of Cinder and sat quietly for a moment before thinking to myself, &ldquo;Hit me, come on, hit me!&rdquo;. No, I was not okay. But my understanding of games shifted in that tiny university room: they could be overcome, not just completed. FromSoftware&rsquo;s dark fantasy lands, with their puzzle-box intricacy and dribbly residents, ushered in the \"Soulslike\" as other developers sought to cash in on masochists like me. Here I am, still a m",
             "publishedAt": "Mon, 03 Aug 2026 12:59:49 +0000"
-          },
-          {
-            "source": "Rock Paper Shotgun",
-            "language": "en",
-            "title": "Mistfall Hunter looks like legally distinct Elden Ring but with a faster paced, extraction spin",
-            "normalizedTitle": "mistfall hunter looks like legally distinct elden ring but with a faster paced extraction spin",
-            "url": "https://www.rockpapershotgun.com/mistfall-hunter-looks-like-legally-distinct-elden-ring-but-with-a-faster-paced-extraction-spin",
-            "summary": "On its surface, aesthetically Mistfall Hunter certainly looks like a game where if you were doomscrolling and briefly saw a gif of it in action, you'd be forgiven for thinking it's from Elden Ring . The game certainly apes FromSoftware's dark fantasy, selectively colourful vibe, but it is offering up something different under the hood at least, as rather than your dime a dozen soulslike , it's opted for the slightly trendier extraction approach. Read more",
-            "publishedAt": "Tue, 28 Jul 2026 16:30:23 +0000"
           }
         ],
         "reviews": [],
@@ -154,15 +145,6 @@
           "url": "https://www.rockpapershotgun.com/the-soulslike-genre-has-grown-stale-after-elden-ring-and-only-fromsoftware-can-take-it-to-strange-new-places",
           "summary": "Sometimes I have to remind myself that I&rsquo;m a clich&eacute;, a person first compelled to write about games because I slew Dark Souls &rsquo; Gwynn, Lord Of Cinder and sat quietly for a moment before thinking to myself, &ldquo;Hit me, come on, hit me!&rdquo;. No, I was not okay. But my understanding of games shifted in that tiny university room: they could be overcome, not just completed. FromSoftware&rsquo;s dark fantasy lands, with their puzzle-box intricacy and dribbly residents, ushered in the \"Soulslike\" as other developers sought to cash in on masochists like me. Here I am, still a m",
           "publishedAt": "Mon, 03 Aug 2026 12:59:49 +0000"
-        },
-        {
-          "source": "Rock Paper Shotgun",
-          "language": "en",
-          "title": "Mistfall Hunter looks like legally distinct Elden Ring but with a faster paced, extraction spin",
-          "normalizedTitle": "mistfall hunter looks like legally distinct elden ring but with a faster paced extraction spin",
-          "url": "https://www.rockpapershotgun.com/mistfall-hunter-looks-like-legally-distinct-elden-ring-but-with-a-faster-paced-extraction-spin",
-          "summary": "On its surface, aesthetically Mistfall Hunter certainly looks like a game where if you were doomscrolling and briefly saw a gif of it in action, you'd be forgiven for thinking it's from Elden Ring . The game certainly apes FromSoftware's dark fantasy, selectively colourful vibe, but it is offering up something different under the hood at least, as rather than your dime a dozen soulslike , it's opted for the slightly trendier extraction approach. Read more",
-          "publishedAt": "Tue, 28 Jul 2026 16:30:23 +0000"
         }
       ]
     },
@@ -241,7 +223,7 @@
       "movies": [],
       "criticRating": 9.6,
       "steamUserRating": 9.7,
-      "recommendations": 750080,
+      "recommendations": 750313,
       "owners": "20,000,000 .. 50,000,000",
       "peakConcurrent": 54771,
       "sourceEvidence": [
@@ -258,7 +240,7 @@
         "steamSpy": "https://steamspy.com/app/1086940",
         "metacritic": "https://www.metacritic.com/game/pc/baldurs-gate-3?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10577.510816466312,
+      "popularityScore": 10577.524304996346,
       "igropoiskRating": 9.6,
       "editorialSources": [
         "GamesRadar+",
@@ -271,11 +253,11 @@
           {
             "source": "GamesRadar+",
             "language": "en",
-            "title": "I've played Larian's RPG for over 1000 hours, and these are the 5 best ways to replay Baldur's Gate 3",
-            "normalizedTitle": "i ve played larian s rpg for over 1000 hours and these are the 5 best ways to replay baldur s gate 3",
-            "url": "https://www.gamesradar.com/games/baldur-s-gate/best-ways-to-replay-baldurs-gate-3/",
-            "summary": "When you're ready to step back into the Sword Coast, here are some of the best ways to replay Baldur's Gate 3",
-            "publishedAt": "Mon, 10 Aug 2026 14:00:00 +0000"
+            "title": "12 hours in, Star Wars Zero Company is a solid strategy RPG, but it's missing XCOM 2 or Baldur's Gate 3's spark",
+            "normalizedTitle": "12 hours in star wars zero company is a solid strategy rpg but it s missing xcom 2 or baldur s gate 3 s spark",
+            "url": "https://www.gamesradar.com/games/strategy/12-hours-in-star-wars-zero-company-is-a-solid-strategy-rpg-but-its-missing-xcom-2-or-baldurs-gate-3s-spark/",
+            "summary": "Zero Company is on the council, but I do not grant it the rank of master",
+            "publishedAt": "Tue, 11 Aug 2026 14:00:00 +0000"
           },
           {
             "source": "Eurogamer",
@@ -314,11 +296,11 @@
         {
           "source": "GamesRadar+",
           "language": "en",
-          "title": "I've played Larian's RPG for over 1000 hours, and these are the 5 best ways to replay Baldur's Gate 3",
-          "normalizedTitle": "i ve played larian s rpg for over 1000 hours and these are the 5 best ways to replay baldur s gate 3",
-          "url": "https://www.gamesradar.com/games/baldur-s-gate/best-ways-to-replay-baldurs-gate-3/",
-          "summary": "When you're ready to step back into the Sword Coast, here are some of the best ways to replay Baldur's Gate 3",
-          "publishedAt": "Mon, 10 Aug 2026 14:00:00 +0000"
+          "title": "12 hours in, Star Wars Zero Company is a solid strategy RPG, but it's missing XCOM 2 or Baldur's Gate 3's spark",
+          "normalizedTitle": "12 hours in star wars zero company is a solid strategy rpg but it s missing xcom 2 or baldur s gate 3 s spark",
+          "url": "https://www.gamesradar.com/games/strategy/12-hours-in-star-wars-zero-company-is-a-solid-strategy-rpg-but-its-missing-xcom-2-or-baldurs-gate-3s-spark/",
+          "summary": "Zero Company is on the council, but I do not grant it the rank of master",
+          "publishedAt": "Tue, 11 Aug 2026 14:00:00 +0000"
         },
         {
           "source": "Eurogamer",
@@ -415,7 +397,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 8.7,
-      "recommendations": 5214204,
+      "recommendations": 5216308,
       "owners": "100,000,000 .. 200,000,000",
       "peakConcurrent": 1013936,
       "sourceEvidence": [
@@ -427,7 +409,7 @@
         "steamSpy": "https://steamspy.com/app/730",
         "metacritic": ""
       },
-      "popularityScore": 10541.718810174958,
+      "popularityScore": 10541.73633099133,
       "igropoiskRating": 8.7,
       "editorialSources": [],
       "materials": {
@@ -496,7 +478,7 @@
       "movies": [],
       "criticRating": 9.6,
       "steamUserRating": 8.7,
-      "recommendations": 1891017,
+      "recommendations": 1891166,
       "owners": "50,000,000 .. 100,000,000",
       "peakConcurrent": 67851,
       "sourceEvidence": [
@@ -509,7 +491,7 @@
         "steamSpy": "https://steamspy.com/app/271590",
         "metacritic": "https://www.metacritic.com/game/pc/grand-theft-auto-v?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10507.669566277602,
+      "popularityScore": 10507.672988102702,
       "igropoiskRating": 9.3,
       "editorialSources": [],
       "materials": {
@@ -578,7 +560,7 @@
       "movies": [],
       "criticRating": 9.3,
       "steamUserRating": 9.8,
-      "recommendations": 284688,
+      "recommendations": 284745,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 2253,
       "sourceEvidence": [
@@ -591,7 +573,7 @@
         "steamSpy": "https://steamspy.com/app/1145360",
         "metacritic": "https://www.metacritic.com/game/pc/hades?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10485.437068691655,
+      "popularityScore": 10485.445763199563,
       "igropoiskRating": 9.5,
       "editorialSources": [],
       "materials": {
@@ -642,27 +624,27 @@
       "platforms": [
         "windows"
       ],
-      "headerImage": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/578080/841ea38bc58cabb70aef65365cf50bc2d79329d9/header.jpg?t=1786063212",
+      "headerImage": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/578080/841ea38bc58cabb70aef65365cf50bc2d79329d9/header.jpg?t=1786493086",
       "capsuleImage": "https://cdn.cloudflare.steamstatic.com/steam/apps/578080/library_600x900.jpg",
       "heroImage": "https://cdn.cloudflare.steamstatic.com/steam/apps/578080/library_hero.jpg",
       "screenshots": [
-        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/578080/c16e2f2d122cae77a1cbaca19263df0f2d2214fa/ss_c16e2f2d122cae77a1cbaca19263df0f2d2214fa.1920x1080.jpg?t=1786063212",
-        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/578080/aa1c51a9b45c88e770b443d8d3cd28f3024b0760/ss_aa1c51a9b45c88e770b443d8d3cd28f3024b0760.1920x1080.jpg?t=1786063212",
-        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/578080/bf9b3de5896d4ec7ef9531938b26946cded81fdf/ss_bf9b3de5896d4ec7ef9531938b26946cded81fdf.1920x1080.jpg?t=1786063212",
-        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/578080/faa4f9f6caa9613f07fd1193a143f66e0fac489c/ss_faa4f9f6caa9613f07fd1193a143f66e0fac489c.1920x1080.jpg?t=1786063212",
-        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/578080/3ae78fac4c07e9a2e2955286014355d6b7f3c8c7/ss_3ae78fac4c07e9a2e2955286014355d6b7f3c8c7.1920x1080.jpg?t=1786063212",
-        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/578080/eb19c1ce924ff4689105242257b6d377ffe2e264/ss_eb19c1ce924ff4689105242257b6d377ffe2e264.1920x1080.jpg?t=1786063212",
-        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/578080/e4d447065171993f718cab6b5d793f1e03dda581/ss_e4d447065171993f718cab6b5d793f1e03dda581.1920x1080.jpg?t=1786063212",
-        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/578080/dfbecb503265d4ba705f7ffb60eff2460c936d70/ss_dfbecb503265d4ba705f7ffb60eff2460c936d70.1920x1080.jpg?t=1786063212",
-        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/578080/78ce82886e296fcaa69a480cd4440df61846cdaf/ss_78ce82886e296fcaa69a480cd4440df61846cdaf.1920x1080.jpg?t=1786063212",
-        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/578080/9effed8d0922ade3f36b3c2a56f2947189109d4f/ss_9effed8d0922ade3f36b3c2a56f2947189109d4f.1920x1080.jpg?t=1786063212",
-        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/578080/1ab55ce84484630645bdb49b383ebaee5412391b/ss_1ab55ce84484630645bdb49b383ebaee5412391b.1920x1080.jpg?t=1786063212",
-        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/578080/c5fa382f8b85e7bda233d6b509c8df69bc6b1c1d/ss_c5fa382f8b85e7bda233d6b509c8df69bc6b1c1d.1920x1080.jpg?t=1786063212"
+        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/578080/c16e2f2d122cae77a1cbaca19263df0f2d2214fa/ss_c16e2f2d122cae77a1cbaca19263df0f2d2214fa.1920x1080.jpg?t=1786493086",
+        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/578080/aa1c51a9b45c88e770b443d8d3cd28f3024b0760/ss_aa1c51a9b45c88e770b443d8d3cd28f3024b0760.1920x1080.jpg?t=1786493086",
+        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/578080/bf9b3de5896d4ec7ef9531938b26946cded81fdf/ss_bf9b3de5896d4ec7ef9531938b26946cded81fdf.1920x1080.jpg?t=1786493086",
+        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/578080/faa4f9f6caa9613f07fd1193a143f66e0fac489c/ss_faa4f9f6caa9613f07fd1193a143f66e0fac489c.1920x1080.jpg?t=1786493086",
+        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/578080/3ae78fac4c07e9a2e2955286014355d6b7f3c8c7/ss_3ae78fac4c07e9a2e2955286014355d6b7f3c8c7.1920x1080.jpg?t=1786493086",
+        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/578080/eb19c1ce924ff4689105242257b6d377ffe2e264/ss_eb19c1ce924ff4689105242257b6d377ffe2e264.1920x1080.jpg?t=1786493086",
+        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/578080/e4d447065171993f718cab6b5d793f1e03dda581/ss_e4d447065171993f718cab6b5d793f1e03dda581.1920x1080.jpg?t=1786493086",
+        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/578080/dfbecb503265d4ba705f7ffb60eff2460c936d70/ss_dfbecb503265d4ba705f7ffb60eff2460c936d70.1920x1080.jpg?t=1786493086",
+        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/578080/78ce82886e296fcaa69a480cd4440df61846cdaf/ss_78ce82886e296fcaa69a480cd4440df61846cdaf.1920x1080.jpg?t=1786493086",
+        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/578080/9effed8d0922ade3f36b3c2a56f2947189109d4f/ss_9effed8d0922ade3f36b3c2a56f2947189109d4f.1920x1080.jpg?t=1786493086",
+        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/578080/1ab55ce84484630645bdb49b383ebaee5412391b/ss_1ab55ce84484630645bdb49b383ebaee5412391b.1920x1080.jpg?t=1786493086",
+        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/578080/c5fa382f8b85e7bda233d6b509c8df69bc6b1c1d/ss_c5fa382f8b85e7bda233d6b509c8df69bc6b1c1d.1920x1080.jpg?t=1786493086"
       ],
       "movies": [],
       "criticRating": null,
       "steamUserRating": 5.9,
-      "recommendations": 1762549,
+      "recommendations": 1762626,
       "owners": "100,000,000 .. 200,000,000",
       "peakConcurrent": 314682,
       "sourceEvidence": [
@@ -674,7 +656,7 @@
         "steamSpy": "https://steamspy.com/app/578080",
         "metacritic": ""
       },
-      "popularityScore": 10474.614144589952,
+      "popularityScore": 10474.616041837955,
       "igropoiskRating": 5.9,
       "editorialSources": [],
       "materials": {
@@ -743,7 +725,7 @@
       "movies": [],
       "criticRating": 9.7,
       "steamUserRating": 9.3,
-      "recommendations": 116992,
+      "recommendations": 117062,
       "owners": "2,000,000 .. 5,000,000",
       "peakConcurrent": 918,
       "sourceEvidence": [
@@ -756,7 +738,7 @@
         "steamSpy": "https://steamspy.com/app/632470",
         "metacritic": "https://www.metacritic.com/game/pc/disco-elysium-the-final-cut?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10436.815987753831,
+      "popularityScore": 10436.841964968378,
       "igropoiskRating": 9.6,
       "editorialSources": [],
       "materials": {
@@ -840,51 +822,51 @@
       "movies": [],
       "criticRating": 6.9,
       "steamUserRating": 8.7,
-      "recommendations": 1160235,
+      "recommendations": 1160657,
       "owners": "20,000,000 .. 50,000,000",
       "peakConcurrent": 143870,
       "sourceEvidence": [
         "Steam",
         "SteamSpy",
         "Metacritic",
-        "Eurogamer"
+        "GamesRadar+"
       ],
       "sourceLinks": {
         "steam": "https://store.steampowered.com/app/252490/",
         "steamSpy": "https://steamspy.com/app/252490",
         "metacritic": "https://www.metacritic.com/game/pc/rust?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10436.454633670372,
+      "popularityScore": 10436.470426918437,
       "igropoiskRating": 7.5,
       "editorialSources": [
-        "Eurogamer"
+        "GamesRadar+"
       ],
       "materials": {
-        "articles": [
+        "articles": [],
+        "reviews": [
           {
-            "source": "Eurogamer",
+            "source": "GamesRadar+",
             "language": "en",
-            "title": "Path of Exile 2 finally has a fix for two of its longest-lasting, and most frustrating, technical problems",
-            "normalizedTitle": "path of exile 2 finally has a fix for two of its longest lasting and most frustrating technical problems",
-            "url": "https://www.eurogamer.net/path-of-exile-2-shaders-device-remove-fixed-champagne",
-            "summary": "Path of Exile 2 finally has a fix for two of its longest-lasting and most frustrating technical problems, with director Jonathan Rogers celebrating the occasion by popping open a bottle of champagne. Read more",
-            "publishedAt": "Thu, 30 Jul 2026 14:48:53 +0000"
+            "title": "Hell Let Loose: Vietnam review: \"Often frustrating but always involving, this FPS brings war to life and bloody death\"",
+            "normalizedTitle": "hell let loose vietnam review often frustrating but always involving this fps brings war to life and bloody death",
+            "url": "https://www.gamesradar.com/games/fps/hell-let-loose-vietnam-review/",
+            "summary": "This FPS' very nature fights against making battles a streamlined experience, but it works",
+            "publishedAt": "Wed, 12 Aug 2026 13:00:00 +0000"
           }
         ],
-        "reviews": [],
         "guides": [],
         "tips": [],
         "news": []
       },
       "articles": [
         {
-          "source": "Eurogamer",
+          "source": "GamesRadar+",
           "language": "en",
-          "title": "Path of Exile 2 finally has a fix for two of its longest-lasting, and most frustrating, technical problems",
-          "normalizedTitle": "path of exile 2 finally has a fix for two of its longest lasting and most frustrating technical problems",
-          "url": "https://www.eurogamer.net/path-of-exile-2-shaders-device-remove-fixed-champagne",
-          "summary": "Path of Exile 2 finally has a fix for two of its longest-lasting and most frustrating technical problems, with director Jonathan Rogers celebrating the occasion by popping open a bottle of champagne. Read more",
-          "publishedAt": "Thu, 30 Jul 2026 14:48:53 +0000"
+          "title": "Hell Let Loose: Vietnam review: \"Often frustrating but always involving, this FPS brings war to life and bloody death\"",
+          "normalizedTitle": "hell let loose vietnam review often frustrating but always involving this fps brings war to life and bloody death",
+          "url": "https://www.gamesradar.com/games/fps/hell-let-loose-vietnam-review/",
+          "summary": "This FPS' very nature fights against making battles a streamlined experience, but it works",
+          "publishedAt": "Wed, 12 Aug 2026 13:00:00 +0000"
         }
       ]
     },
@@ -954,7 +936,7 @@
       "movies": [],
       "criticRating": 7,
       "steamUserRating": 8.4,
-      "recommendations": 584385,
+      "recommendations": 584488,
       "owners": "20,000,000 .. 50,000,000",
       "peakConcurrent": 22170,
       "sourceEvidence": [
@@ -967,7 +949,7 @@
         "steamSpy": "https://steamspy.com/app/346110",
         "metacritic": "https://www.metacritic.com/game/pc/ark-survival-evolved?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10396.66998030946,
+      "popularityScore": 10396.677634221427,
       "igropoiskRating": 7.5,
       "editorialSources": [],
       "materials": {
@@ -1059,7 +1041,7 @@
       "movies": [],
       "criticRating": 8.9,
       "steamUserRating": 9.8,
-      "recommendations": 810921,
+      "recommendations": 811188,
       "owners": "50,000,000 .. 100,000,000",
       "peakConcurrent": 25122,
       "sourceEvidence": [
@@ -1072,7 +1054,7 @@
         "steamSpy": "https://steamspy.com/app/550",
         "metacritic": "https://www.metacritic.com/game/pc/left-4-dead-2?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10390.897908281942,
+      "popularityScore": 10390.912205284763,
       "igropoiskRating": 9.2,
       "editorialSources": [],
       "materials": {
@@ -1148,35 +1130,35 @@
       "movies": [],
       "criticRating": 8.3,
       "steamUserRating": 9.7,
-      "recommendations": 1231025,
+      "recommendations": 1231340,
       "owners": "20,000,000 .. 50,000,000",
       "peakConcurrent": 24580,
       "sourceEvidence": [
         "Steam",
         "SteamSpy",
         "Metacritic",
-        "GamesRadar+"
+        "PC Gamer"
       ],
       "sourceLinks": {
         "steam": "https://store.steampowered.com/app/105600/",
         "steamSpy": "https://steamspy.com/app/105600",
         "metacritic": "https://www.metacritic.com/game/pc/terraria?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10389.026722558548,
+      "popularityScore": 10389.037834042949,
       "igropoiskRating": 8.8,
       "editorialSources": [
-        "GamesRadar+"
+        "PC Gamer"
       ],
       "materials": {
         "articles": [
           {
-            "source": "GamesRadar+",
+            "source": "PC Gamer",
             "language": "en",
-            "title": "Terraria's biggest mod, Calamity, is shutting down after 10 years over what the makers call a \"troubled past\" and \"irrecoverably tainted reputation\"",
-            "normalizedTitle": "terraria s biggest mod calamity is shutting down after 10 years over what the makers call a troubled past and irrecoverably tainted reputation",
-            "url": "https://www.gamesradar.com/games/survival/terrarias-biggest-mod-calamity-is-shutting-down-after-10-years-over-what-the-makers-call-a-troubled-past-and-irrecoverably-tainted-reputation/",
-            "summary": "\"Most of us want to simply move on…\"",
-            "publishedAt": "Mon, 10 Aug 2026 16:29:30 +0000"
+            "title": "After 10 years, Terraria's biggest mod shuts down due to an 'irrecoverably tainted reputation' and grooming allegations",
+            "normalizedTitle": "after 10 years terraria s biggest mod shuts down due to an irrecoverably tainted reputation and grooming allegations",
+            "url": "https://www.pcgamer.com/games/survival-crafting/after-10-years-terrarias-biggest-mod-shuts-down-due-to-an-irrecoverably-tainted-reputation-and-grooming-allegations/",
+            "summary": "\"Almost all passion we've had for the mod has been soured.\"",
+            "publishedAt": "Tue, 11 Aug 2026 13:51:53 +0000"
           }
         ],
         "reviews": [],
@@ -1186,13 +1168,13 @@
       },
       "articles": [
         {
-          "source": "GamesRadar+",
+          "source": "PC Gamer",
           "language": "en",
-          "title": "Terraria's biggest mod, Calamity, is shutting down after 10 years over what the makers call a \"troubled past\" and \"irrecoverably tainted reputation\"",
-          "normalizedTitle": "terraria s biggest mod calamity is shutting down after 10 years over what the makers call a troubled past and irrecoverably tainted reputation",
-          "url": "https://www.gamesradar.com/games/survival/terrarias-biggest-mod-calamity-is-shutting-down-after-10-years-over-what-the-makers-call-a-troubled-past-and-irrecoverably-tainted-reputation/",
-          "summary": "\"Most of us want to simply move on…\"",
-          "publishedAt": "Mon, 10 Aug 2026 16:29:30 +0000"
+          "title": "After 10 years, Terraria's biggest mod shuts down due to an 'irrecoverably tainted reputation' and grooming allegations",
+          "normalizedTitle": "after 10 years terraria s biggest mod shuts down due to an irrecoverably tainted reputation and grooming allegations",
+          "url": "https://www.pcgamer.com/games/survival-crafting/after-10-years-terrarias-biggest-mod-shuts-down-due-to-an-irrecoverably-tainted-reputation-and-grooming-allegations/",
+          "summary": "\"Almost all passion we've had for the mod has been soured.\"",
+          "publishedAt": "Tue, 11 Aug 2026 13:51:53 +0000"
         }
       ]
     },
@@ -1260,53 +1242,30 @@
       "movies": [],
       "criticRating": 8.9,
       "steamUserRating": 9.8,
-      "recommendations": 886904,
+      "recommendations": 887252,
       "owners": "20,000,000 .. 50,000,000",
       "peakConcurrent": 50662,
       "sourceEvidence": [
         "Steam",
         "SteamSpy",
-        "Metacritic",
-        "PC Gamer"
+        "Metacritic"
       ],
       "sourceLinks": {
         "steam": "https://store.steampowered.com/app/413150/",
         "steamSpy": "https://steamspy.com/app/413150",
         "metacritic": "https://www.metacritic.com/game/pc/stardew-valley?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10364.787710327551,
+      "popularityScore": 10364.804747646847,
       "igropoiskRating": 9.2,
-      "editorialSources": [
-        "PC Gamer"
-      ],
+      "editorialSources": [],
       "materials": {
-        "articles": [
-          {
-            "source": "PC Gamer",
-            "language": "en",
-            "title": "Fields of Mistria's cast has me head over heels in a way no farm sim has since Stardew Valley",
-            "normalizedTitle": "fields of mistria s cast has me head over heels in a way no farm sim has since stardew valley",
-            "url": "https://www.pcgamer.com/games/life-sim/fields-of-mistrias-cast-has-me-head-over-heels-in-a-way-no-farm-sim-has-since-stardew-valley/",
-            "summary": "The anime aesthetic is just the beginning of what I've found to love about Mistria's locals.",
-            "publishedAt": "Sun, 09 Aug 2026 16:00:00 +0000"
-          }
-        ],
+        "articles": [],
         "reviews": [],
         "guides": [],
         "tips": [],
         "news": []
       },
-      "articles": [
-        {
-          "source": "PC Gamer",
-          "language": "en",
-          "title": "Fields of Mistria's cast has me head over heels in a way no farm sim has since Stardew Valley",
-          "normalizedTitle": "fields of mistria s cast has me head over heels in a way no farm sim has since stardew valley",
-          "url": "https://www.pcgamer.com/games/life-sim/fields-of-mistrias-cast-has-me-head-over-heels-in-a-way-no-farm-sim-has-since-stardew-valley/",
-          "summary": "The anime aesthetic is just the beginning of what I've found to love about Mistria's locals.",
-          "publishedAt": "Sun, 09 Aug 2026 16:00:00 +0000"
-        }
-      ]
+      "articles": []
     },
     {
       "id": "620",
@@ -1387,7 +1346,7 @@
       "movies": [],
       "criticRating": 9.5,
       "steamUserRating": 9.9,
-      "recommendations": 388924,
+      "recommendations": 388966,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 1959,
       "sourceEvidence": [
@@ -1400,7 +1359,7 @@
         "steamSpy": "https://steamspy.com/app/620",
         "metacritic": "https://www.metacritic.com/game/pc/portal-2?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10348.986586038347,
+      "popularityScore": 10348.991275730043,
       "igropoiskRating": 9.6,
       "editorialSources": [],
       "materials": {
@@ -1476,7 +1435,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 9.4,
-      "recommendations": 457034,
+      "recommendations": 457098,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 14439,
       "sourceEvidence": [
@@ -1488,7 +1447,7 @@
         "steamSpy": "https://steamspy.com/app/892970",
         "metacritic": ""
       },
-      "popularityScore": 10325.99494598616,
+      "popularityScore": 10326.001027118004,
       "igropoiskRating": 9.4,
       "editorialSources": [],
       "materials": {
@@ -1558,7 +1517,7 @@
       "movies": [],
       "criticRating": 8.7,
       "steamUserRating": 9.7,
-      "recommendations": 498270,
+      "recommendations": 498504,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 4912,
       "sourceEvidence": [
@@ -1571,7 +1530,7 @@
         "steamSpy": "https://steamspy.com/app/367520",
         "metacritic": "https://www.metacritic.com/game/pc/hollow-knight?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10319.746561142056,
+      "popularityScore": 10319.766951863869,
       "igropoiskRating": 9,
       "editorialSources": [],
       "materials": {
@@ -1649,7 +1608,7 @@
       "movies": [],
       "criticRating": 9.2,
       "steamUserRating": 9,
-      "recommendations": 47661,
+      "recommendations": 47670,
       "owners": "50,000,000 .. 100,000,000",
       "peakConcurrent": 43819,
       "sourceEvidence": [
@@ -1662,7 +1621,7 @@
         "steamSpy": "https://steamspy.com/app/440",
         "metacritic": "https://www.metacritic.com/game/pc/team-fortress-2?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10277.817226232306,
+      "popularityScore": 10277.825426226744,
       "igropoiskRating": 9.1,
       "editorialSources": [],
       "materials": {
@@ -1732,7 +1691,7 @@
       "movies": [],
       "criticRating": 9,
       "steamUserRating": 8.2,
-      "recommendations": 14374,
+      "recommendations": 14375,
       "owners": "100,000,000 .. 200,000,000",
       "peakConcurrent": 623941,
       "sourceEvidence": [
@@ -1745,7 +1704,7 @@
         "steamSpy": "https://steamspy.com/app/570",
         "metacritic": "https://www.metacritic.com/game/pc/dota-2?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10275.760785336166,
+      "popularityScore": 10275.763806410092,
       "igropoiskRating": 8.7,
       "editorialSources": [],
       "materials": {
@@ -1817,7 +1776,7 @@
       "movies": [],
       "criticRating": 8.9,
       "steamUserRating": 9.4,
-      "recommendations": 277358,
+      "recommendations": 277385,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 4381,
       "sourceEvidence": [
@@ -1830,7 +1789,7 @@
         "steamSpy": "https://steamspy.com/app/374320",
         "metacritic": "https://www.metacritic.com/game/pc/dark-souls-iii?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10264.30422628304,
+      "popularityScore": 10264.308453793345,
       "igropoiskRating": 9.1,
       "editorialSources": [],
       "materials": {
@@ -1901,7 +1860,7 @@
       "movies": [],
       "criticRating": 8.9,
       "steamUserRating": 9.7,
-      "recommendations": 155529,
+      "recommendations": 155570,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 2559,
       "sourceEvidence": [
@@ -1914,7 +1873,7 @@
         "steamSpy": "https://steamspy.com/app/588650",
         "metacritic": "https://www.metacritic.com/game/pc/dead-cells?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10259.181417199834,
+      "popularityScore": 10259.192864333634,
       "igropoiskRating": 9.2,
       "editorialSources": [],
       "materials": {
@@ -1975,13 +1934,15 @@
       "movies": [],
       "criticRating": 8.4,
       "steamUserRating": 9.2,
-      "recommendations": 99392,
+      "recommendations": 99421,
       "owners": "2,000,000 .. 5,000,000",
       "peakConcurrent": 2879,
       "sourceEvidence": [
         "Steam",
         "SteamSpy",
         "Metacritic",
+        "PC Gamer",
+        "Eurogamer",
         "GamesRadar+",
         "Rock Paper Shotgun"
       ],
@@ -1990,22 +1951,51 @@
         "steamSpy": "https://steamspy.com/app/570940",
         "metacritic": "https://www.metacritic.com/game/pc/dark-souls-remastered?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10209.73557992019,
+      "popularityScore": 10209.74824952768,
       "igropoiskRating": 8.7,
       "editorialSources": [
+        "PC Gamer",
+        "Eurogamer",
         "GamesRadar+",
         "Rock Paper Shotgun"
       ],
       "materials": {
         "articles": [
           {
+            "source": "PC Gamer",
+            "language": "en",
+            "title": "After giving it 2 patches and dropping it like a stone, Bethesda promises to bring Switch 2 optimisations to Oblivion Remastered on other platforms",
+            "normalizedTitle": "after giving it 2 patches and dropping it like a stone bethesda promises to bring switch 2 optimisations to oblivion remastered on other platforms",
+            "url": "https://www.pcgamer.com/games/the-elder-scrolls/after-giving-it-2-patches-and-dropping-it-like-a-stone-bethesda-promises-to-bring-switch-2-optimisations-to-oblivion-remastered-on-other-platforms/",
+            "summary": "I'll take it.",
+            "publishedAt": "Wed, 12 Aug 2026 11:22:30 +0000"
+          },
+          {
+            "source": "Eurogamer",
+            "language": "en",
+            "title": "A forgotten old co-op Lord of the Rings game has been unexpectedly remastered and re-released, and there's a promise of more to come",
+            "normalizedTitle": "a forgotten old co op lord of the rings game has been unexpectedly remastered and re released and there s a promise of more to come",
+            "url": "https://www.eurogamer.net/lord-of-the-rings-co-op-game-remaster-war-in-north",
+            "summary": "Aspyr has unexpectedly remastered and re-released an old Lord of the Rings action role-playing game, which was notable for having three-player co-op and parallel story about one of Sauron's powerful servants doing naughty things up north. Read more",
+            "publishedAt": "Wed, 12 Aug 2026 10:42:05 +0000"
+          },
+          {
             "source": "GamesRadar+",
             "language": "en",
-            "title": "Bethesda veteran says Oblivion Remastered can't be called a remake, unlike Final Fantasy 7 and Resident Evil 2 which are \"completely new games\"",
-            "normalizedTitle": "bethesda veteran says oblivion remastered can t be called a remake unlike final fantasy 7 and resident evil 2 which are completely new games",
-            "url": "https://www.gamesradar.com/games/the-elder-scrolls/bethesda-veteran-says-oblivion-remastered-cant-be-called-a-remake-unlike-final-fantasy-7-and-resident-evil-2-which-are-completely-new-games/",
-            "summary": "\"It really came down to Todd's perception of - well, the core bones are still the original game. So it's disingenuous to call it a remake\"",
-            "publishedAt": "Tue, 11 Aug 2026 00:00:11 +0000"
+            "title": "Oblivion Remastered's Switch 2 improvements could come to other platforms, says Bethesda",
+            "normalizedTitle": "oblivion remastered s switch 2 improvements could come to other platforms says bethesda",
+            "url": "https://www.gamesradar.com/games/the-elder-scrolls/oblivion-remastereds-switch-2-improvements-could-come-to-other-platforms-says-bethesda/",
+            "summary": "\"We've heard your feedback asking for an additional patch for Oblivion Remastered\"",
+            "publishedAt": "Tue, 11 Aug 2026 21:39:38 +0000"
+          },
+          {
+            "source": "GamesRadar+",
+            "language": "en",
+            "title": "15 years later, delisted Lord of the Rings action RPG resurfaces with a remastered version on PS5, Switch 2, Xbox Series X, and PC",
+            "normalizedTitle": "15 years later delisted lord of the rings action rpg resurfaces with a remastered version on ps5 switch 2 xbox series x and pc",
+            "url": "https://www.gamesradar.com/games/action-rpg/15-years-later-delisted-lord-of-the-rings-action-rpg-resurfaces-with-a-remastered-version-on-ps5-switch-2-xbox-series-x-and-pc/",
+            "summary": "The Lord of the Rings: War in the North - Legacy Edition is out now",
+            "publishedAt": "Tue, 11 Aug 2026 18:54:52 +0000"
           },
           {
             "source": "Rock Paper Shotgun",
@@ -2024,13 +2014,40 @@
       },
       "articles": [
         {
+          "source": "PC Gamer",
+          "language": "en",
+          "title": "After giving it 2 patches and dropping it like a stone, Bethesda promises to bring Switch 2 optimisations to Oblivion Remastered on other platforms",
+          "normalizedTitle": "after giving it 2 patches and dropping it like a stone bethesda promises to bring switch 2 optimisations to oblivion remastered on other platforms",
+          "url": "https://www.pcgamer.com/games/the-elder-scrolls/after-giving-it-2-patches-and-dropping-it-like-a-stone-bethesda-promises-to-bring-switch-2-optimisations-to-oblivion-remastered-on-other-platforms/",
+          "summary": "I'll take it.",
+          "publishedAt": "Wed, 12 Aug 2026 11:22:30 +0000"
+        },
+        {
+          "source": "Eurogamer",
+          "language": "en",
+          "title": "A forgotten old co-op Lord of the Rings game has been unexpectedly remastered and re-released, and there's a promise of more to come",
+          "normalizedTitle": "a forgotten old co op lord of the rings game has been unexpectedly remastered and re released and there s a promise of more to come",
+          "url": "https://www.eurogamer.net/lord-of-the-rings-co-op-game-remaster-war-in-north",
+          "summary": "Aspyr has unexpectedly remastered and re-released an old Lord of the Rings action role-playing game, which was notable for having three-player co-op and parallel story about one of Sauron's powerful servants doing naughty things up north. Read more",
+          "publishedAt": "Wed, 12 Aug 2026 10:42:05 +0000"
+        },
+        {
           "source": "GamesRadar+",
           "language": "en",
-          "title": "Bethesda veteran says Oblivion Remastered can't be called a remake, unlike Final Fantasy 7 and Resident Evil 2 which are \"completely new games\"",
-          "normalizedTitle": "bethesda veteran says oblivion remastered can t be called a remake unlike final fantasy 7 and resident evil 2 which are completely new games",
-          "url": "https://www.gamesradar.com/games/the-elder-scrolls/bethesda-veteran-says-oblivion-remastered-cant-be-called-a-remake-unlike-final-fantasy-7-and-resident-evil-2-which-are-completely-new-games/",
-          "summary": "\"It really came down to Todd's perception of - well, the core bones are still the original game. So it's disingenuous to call it a remake\"",
-          "publishedAt": "Tue, 11 Aug 2026 00:00:11 +0000"
+          "title": "Oblivion Remastered's Switch 2 improvements could come to other platforms, says Bethesda",
+          "normalizedTitle": "oblivion remastered s switch 2 improvements could come to other platforms says bethesda",
+          "url": "https://www.gamesradar.com/games/the-elder-scrolls/oblivion-remastereds-switch-2-improvements-could-come-to-other-platforms-says-bethesda/",
+          "summary": "\"We've heard your feedback asking for an additional patch for Oblivion Remastered\"",
+          "publishedAt": "Tue, 11 Aug 2026 21:39:38 +0000"
+        },
+        {
+          "source": "GamesRadar+",
+          "language": "en",
+          "title": "15 years later, delisted Lord of the Rings action RPG resurfaces with a remastered version on PS5, Switch 2, Xbox Series X, and PC",
+          "normalizedTitle": "15 years later delisted lord of the rings action rpg resurfaces with a remastered version on ps5 switch 2 xbox series x and pc",
+          "url": "https://www.gamesradar.com/games/action-rpg/15-years-later-delisted-lord-of-the-rings-action-rpg-resurfaces-with-a-remastered-version-on-ps5-switch-2-xbox-series-x-and-pc/",
+          "summary": "The Lord of the Rings: War in the North - Legacy Edition is out now",
+          "publishedAt": "Tue, 11 Aug 2026 18:54:52 +0000"
         },
         {
           "source": "Rock Paper Shotgun",
@@ -2098,7 +2115,7 @@
       "movies": [],
       "criticRating": 8.8,
       "steamUserRating": 6.7,
-      "recommendations": 1579,
+      "recommendations": 1578,
       "owners": "100,000,000 .. 200,000,000",
       "peakConcurrent": 124262,
       "sourceEvidence": [
@@ -2111,7 +2128,7 @@
         "steamSpy": "https://steamspy.com/app/1172470",
         "metacritic": "https://www.metacritic.com/game/pc/apex-legends?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10159.865708695443,
+      "popularityScore": 10159.838213000829,
       "igropoiskRating": 8.1,
       "editorialSources": [],
       "materials": {
@@ -2183,7 +2200,7 @@
       "movies": [],
       "criticRating": 8.3,
       "steamUserRating": 8,
-      "recommendations": 139157,
+      "recommendations": 139182,
       "owners": "20,000,000 .. 50,000,000",
       "peakConcurrent": 24619,
       "sourceEvidence": [
@@ -2196,7 +2213,7 @@
         "steamSpy": "https://steamspy.com/app/1085660",
         "metacritic": "https://www.metacritic.com/game/pc/destiny-2?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10064.350817837387,
+      "popularityScore": 10064.358619319797,
       "igropoiskRating": 8.2,
       "editorialSources": [],
       "materials": {
@@ -2262,7 +2279,7 @@
       "movies": [],
       "criticRating": 8,
       "steamUserRating": 7.4,
-      "recommendations": 62725,
+      "recommendations": 62738,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 14345,
       "sourceEvidence": [
@@ -2275,7 +2292,7 @@
         "steamSpy": "https://steamspy.com/app/582660",
         "metacritic": "https://www.metacritic.com/game/pc/black-desert-online-land-of-the-morning-light-edition?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9949.744759371753,
+      "popularityScore": 9949.753759217583,
       "igropoiskRating": 7.8,
       "editorialSources": [],
       "materials": {
@@ -2340,52 +2357,29 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 9.7,
-      "recommendations": 875871,
+      "recommendations": 875991,
       "owners": "50,000,000 .. 100,000,000",
       "peakConcurrent": 15004,
       "sourceEvidence": [
         "Steam",
-        "SteamSpy",
-        "GamesRadar+"
+        "SteamSpy"
       ],
       "sourceLinks": {
         "steam": "https://store.steampowered.com/app/2358720/",
         "steamSpy": "https://steamspy.com/app/2358720",
         "metacritic": ""
       },
-      "popularityScore": 9944.244064297696,
+      "popularityScore": 9944.250013999032,
       "igropoiskRating": 9.7,
-      "editorialSources": [
-        "GamesRadar+"
-      ],
+      "editorialSources": [],
       "materials": {
-        "articles": [
-          {
-            "source": "GamesRadar+",
-            "language": "en",
-            "title": "Black Myth: Wukong sequel isn't using AI because the devs were inspired by The Odyssey and Christopher Nolan's filmmaking techniques: \"No rush\"",
-            "normalizedTitle": "black myth wukong sequel isn t using ai because the devs were inspired by the odyssey and christopher nolan s filmmaking techniques no rush",
-            "url": "https://www.gamesradar.com/games/action-rpg/black-myth-wukong-sequel-isnt-using-ai-because-the-devs-were-inspired-by-the-odyssey-and-christopher-nolans-filmmaking-techniques-no-rush/",
-            "summary": "Game Science is taking its time making Black Myth: Zhong Kui",
-            "publishedAt": "Mon, 10 Aug 2026 12:34:20 +0000"
-          }
-        ],
+        "articles": [],
         "reviews": [],
         "guides": [],
         "tips": [],
         "news": []
       },
-      "articles": [
-        {
-          "source": "GamesRadar+",
-          "language": "en",
-          "title": "Black Myth: Wukong sequel isn't using AI because the devs were inspired by The Odyssey and Christopher Nolan's filmmaking techniques: \"No rush\"",
-          "normalizedTitle": "black myth wukong sequel isn t using ai because the devs were inspired by the odyssey and christopher nolan s filmmaking techniques no rush",
-          "url": "https://www.gamesradar.com/games/action-rpg/black-myth-wukong-sequel-isnt-using-ai-because-the-devs-were-inspired-by-the-odyssey-and-christopher-nolans-filmmaking-techniques-no-rush/",
-          "summary": "Game Science is taking its time making Black Myth: Zhong Kui",
-          "publishedAt": "Mon, 10 Aug 2026 12:34:20 +0000"
-        }
-      ]
+      "articles": []
     },
     {
       "id": "1623730",
@@ -2450,7 +2444,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 9.4,
-      "recommendations": 398549,
+      "recommendations": 399775,
       "owners": "50,000,000 .. 100,000,000",
       "peakConcurrent": 18028,
       "sourceEvidence": [
@@ -2464,7 +2458,7 @@
         "steamSpy": "https://steamspy.com/app/1623730",
         "metacritic": ""
       },
-      "popularityScore": 9940.048281346595,
+      "popularityScore": 9940.181671829529,
       "igropoiskRating": 9.4,
       "editorialSources": [
         "GamesRadar+",
@@ -2472,15 +2466,6 @@
       ],
       "materials": {
         "articles": [
-          {
-            "source": "GamesRadar+",
-            "language": "en",
-            "title": "2 years later, famous Palworld bug returns in 1.0 to bless players with a giant Sekhmet \"at least 200x her normal size\"",
-            "normalizedTitle": "2 years later famous palworld bug returns in 1 0 to bless players with a giant sekhmet at least 200x her normal size",
-            "url": "https://www.gamesradar.com/games/survival/2-years-later-famous-palworld-bug-returns-in-1-0-to-bless-players-with-a-giant-sekhmet-at-least-200x-her-normal-size/",
-            "summary": "Bless and/or terrify",
-            "publishedAt": "Mon, 10 Aug 2026 21:47:28 +0000"
-          },
           {
             "source": "Eurogamer",
             "language": "en",
@@ -2493,18 +2478,28 @@
         ],
         "reviews": [],
         "guides": [],
-        "tips": [],
+        "tips": [
+          {
+            "source": "GamesRadar+",
+            "language": "en",
+            "title": "New Palworld patch makes building bases over water much easier, and finally lets you earn World Tree Holy Water through expeditions rather than just farming",
+            "normalizedTitle": "new palworld patch makes building bases over water much easier and finally lets you earn world tree holy water through expeditions rather than just farming",
+            "url": "https://www.gamesradar.com/games/survival/new-palworld-patch-makes-building-bases-over-water-much-easier-and-finally-lets-you-earn-world-tree-holy-water-through-expeditions-rather-than-just-farming/",
+            "summary": "Pocketpair is doing some fine-tuning",
+            "publishedAt": "Wed, 12 Aug 2026 11:00:45 +0000"
+          }
+        ],
         "news": []
       },
       "articles": [
         {
           "source": "GamesRadar+",
           "language": "en",
-          "title": "2 years later, famous Palworld bug returns in 1.0 to bless players with a giant Sekhmet \"at least 200x her normal size\"",
-          "normalizedTitle": "2 years later famous palworld bug returns in 1 0 to bless players with a giant sekhmet at least 200x her normal size",
-          "url": "https://www.gamesradar.com/games/survival/2-years-later-famous-palworld-bug-returns-in-1-0-to-bless-players-with-a-giant-sekhmet-at-least-200x-her-normal-size/",
-          "summary": "Bless and/or terrify",
-          "publishedAt": "Mon, 10 Aug 2026 21:47:28 +0000"
+          "title": "New Palworld patch makes building bases over water much easier, and finally lets you earn World Tree Holy Water through expeditions rather than just farming",
+          "normalizedTitle": "new palworld patch makes building bases over water much easier and finally lets you earn world tree holy water through expeditions rather than just farming",
+          "url": "https://www.gamesradar.com/games/survival/new-palworld-patch-makes-building-bases-over-water-much-easier-and-finally-lets-you-earn-world-tree-holy-water-through-expeditions-rather-than-just-farming/",
+          "summary": "Pocketpair is doing some fine-tuning",
+          "publishedAt": "Wed, 12 Aug 2026 11:00:45 +0000"
         },
         {
           "source": "Eurogamer",
@@ -2572,14 +2567,13 @@
       "movies": [],
       "criticRating": 8.1,
       "steamUserRating": 7.3,
-      "recommendations": 211754,
+      "recommendations": 211792,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 6300,
       "sourceEvidence": [
         "Steam",
         "SteamSpy",
         "Metacritic",
-        "GamesRadar+",
         "Rock Paper Shotgun",
         "Eurogamer",
         "StopGame"
@@ -2589,25 +2583,15 @@
         "steamSpy": "https://steamspy.com/app/594650",
         "metacritic": "https://www.metacritic.com/game/pc/hunt-showdown?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9932.583367376908,
+      "popularityScore": 9932.591160208114,
       "igropoiskRating": 7.8,
       "editorialSources": [
-        "GamesRadar+",
         "Rock Paper Shotgun",
         "Eurogamer",
         "StopGame"
       ],
       "materials": {
         "articles": [
-          {
-            "source": "GamesRadar+",
-            "language": "en",
-            "title": "1666 Amsterdam feels like the Assassin's Creed game that never was, and fighting witch hunters with my time-traveling familiar left me hungry for more",
-            "normalizedTitle": "1666 amsterdam feels like the assassin s creed game that never was and fighting witch hunters with my time traveling familiar left me hungry for more",
-            "url": "https://www.gamesradar.com/games/action/1666-amsterdam-feels-like-the-assassins-creed-game-that-never-was-and-fighting-witch-hunters-with-my-time-traveling-familiar-left-me-hungry-for-more/",
-            "summary": "With magical combat, city sleuthing, and physical roguelike charms, I can't wait for 1666 Amsterdam's Early Access on August 25",
-            "publishedAt": "Mon, 10 Aug 2026 16:00:00 +0000"
-          },
           {
             "source": "Rock Paper Shotgun",
             "language": "en",
@@ -2634,15 +2618,6 @@
             "url": "https://www.rockpapershotgun.com/a-former-assassins-creed-dev-is-making-a-ghost-hunting-horror-mystery-based-on-visits-to-abandoned-convents-in-which-your-greatest-weapon-is-a-chunky-instant-camera",
             "summary": "What's the next logical games industry career step after being a cinematic director on Deus Ex: Human Revolution , a lead cinematic consultant on XCOM: The Bureau, and a director at Ubisoft Montreal working on Assassin's Creed Unity and the recently reborn 1666: Amsterdam ? If you answered \"explore abandoned convents with a camera crew, proceed to make a horror game about it\", then you are clearly Jesse Malcolm Sweet, developer of Sisters of Solitude, and I'll thank you to keep your nose out of my drafts. G'wan, get thee to a nunnery! Read more",
             "publishedAt": "Fri, 31 Jul 2026 09:27:37 +0000"
-          },
-          {
-            "source": "Rock Paper Shotgun",
-            "language": "en",
-            "title": "Mistfall Hunter looks like legally distinct Elden Ring but with a faster paced, extraction spin",
-            "normalizedTitle": "mistfall hunter looks like legally distinct elden ring but with a faster paced extraction spin",
-            "url": "https://www.rockpapershotgun.com/mistfall-hunter-looks-like-legally-distinct-elden-ring-but-with-a-faster-paced-extraction-spin",
-            "summary": "On its surface, aesthetically Mistfall Hunter certainly looks like a game where if you were doomscrolling and briefly saw a gif of it in action, you'd be forgiven for thinking it's from Elden Ring . The game certainly apes FromSoftware's dark fantasy, selectively colourful vibe, but it is offering up something different under the hood at least, as rather than your dime a dozen soulslike , it's opted for the slightly trendier extraction approach. Read more",
-            "publishedAt": "Tue, 28 Jul 2026 16:30:23 +0000"
           }
         ],
         "reviews": [],
@@ -2661,15 +2636,6 @@
         ]
       },
       "articles": [
-        {
-          "source": "GamesRadar+",
-          "language": "en",
-          "title": "1666 Amsterdam feels like the Assassin's Creed game that never was, and fighting witch hunters with my time-traveling familiar left me hungry for more",
-          "normalizedTitle": "1666 amsterdam feels like the assassin s creed game that never was and fighting witch hunters with my time traveling familiar left me hungry for more",
-          "url": "https://www.gamesradar.com/games/action/1666-amsterdam-feels-like-the-assassins-creed-game-that-never-was-and-fighting-witch-hunters-with-my-time-traveling-familiar-left-me-hungry-for-more/",
-          "summary": "With magical combat, city sleuthing, and physical roguelike charms, I can't wait for 1666 Amsterdam's Early Access on August 25",
-          "publishedAt": "Mon, 10 Aug 2026 16:00:00 +0000"
-        },
         {
           "source": "Rock Paper Shotgun",
           "language": "en",
@@ -2705,15 +2671,6 @@
           "url": "https://www.rockpapershotgun.com/a-former-assassins-creed-dev-is-making-a-ghost-hunting-horror-mystery-based-on-visits-to-abandoned-convents-in-which-your-greatest-weapon-is-a-chunky-instant-camera",
           "summary": "What's the next logical games industry career step after being a cinematic director on Deus Ex: Human Revolution , a lead cinematic consultant on XCOM: The Bureau, and a director at Ubisoft Montreal working on Assassin's Creed Unity and the recently reborn 1666: Amsterdam ? If you answered \"explore abandoned convents with a camera crew, proceed to make a horror game about it\", then you are clearly Jesse Malcolm Sweet, developer of Sisters of Solitude, and I'll thank you to keep your nose out of my drafts. G'wan, get thee to a nunnery! Read more",
           "publishedAt": "Fri, 31 Jul 2026 09:27:37 +0000"
-        },
-        {
-          "source": "Rock Paper Shotgun",
-          "language": "en",
-          "title": "Mistfall Hunter looks like legally distinct Elden Ring but with a faster paced, extraction spin",
-          "normalizedTitle": "mistfall hunter looks like legally distinct elden ring but with a faster paced extraction spin",
-          "url": "https://www.rockpapershotgun.com/mistfall-hunter-looks-like-legally-distinct-elden-ring-but-with-a-faster-paced-extraction-spin",
-          "summary": "On its surface, aesthetically Mistfall Hunter certainly looks like a game where if you were doomscrolling and briefly saw a gif of it in action, you'd be forgiven for thinking it's from Elden Ring . The game certainly apes FromSoftware's dark fantasy, selectively colourful vibe, but it is offering up something different under the hood at least, as rather than your dime a dozen soulslike , it's opted for the slightly trendier extraction approach. Read more",
-          "publishedAt": "Tue, 28 Jul 2026 16:30:23 +0000"
         }
       ]
     },
@@ -2775,7 +2732,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 8.3,
-      "recommendations": 45854,
+      "recommendations": 45875,
       "owners": "1,000,000 .. 2,000,000",
       "peakConcurrent": 1573,
       "sourceEvidence": [
@@ -2787,7 +2744,7 @@
         "steamSpy": "https://steamspy.com/app/1282100",
         "metacritic": ""
       },
-      "popularityScore": 9916.138669778176,
+      "popularityScore": 9916.158554406666,
       "igropoiskRating": 8.3,
       "editorialSources": [],
       "materials": {
@@ -2852,7 +2809,7 @@
       "movies": [],
       "criticRating": 8.5,
       "steamUserRating": 8.7,
-      "recommendations": 49334,
+      "recommendations": 49355,
       "owners": "1,000,000 .. 2,000,000",
       "peakConcurrent": 648,
       "sourceEvidence": [
@@ -2865,7 +2822,7 @@
         "steamSpy": "https://steamspy.com/app/870780",
         "metacritic": "https://www.metacritic.com/game/pc/control?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9909.315513253834,
+      "popularityScore": 9909.33399555568,
       "igropoiskRating": 8.6,
       "editorialSources": [],
       "materials": {
@@ -2948,7 +2905,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 8.9,
-      "recommendations": 110124,
+      "recommendations": 110131,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 10961,
       "sourceEvidence": [
@@ -2960,7 +2917,7 @@
         "steamSpy": "https://steamspy.com/app/1604030",
         "metacritic": ""
       },
-      "popularityScore": 9894.18859214201,
+      "popularityScore": 9894.191352609441,
       "igropoiskRating": 8.9,
       "editorialSources": [],
       "materials": {
@@ -3024,16 +2981,16 @@
       "platforms": [
         "windows"
       ],
-      "headerImage": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/230410/a000b4bf98dde5d51cd44206f1ac21d04841017e/header.jpg?t=1785169127",
+      "headerImage": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/230410/a000b4bf98dde5d51cd44206f1ac21d04841017e/header.jpg?t=1786540562",
       "capsuleImage": "https://cdn.cloudflare.steamstatic.com/steam/apps/230410/library_600x900.jpg",
       "heroImage": "https://cdn.cloudflare.steamstatic.com/steam/apps/230410/library_hero.jpg",
       "screenshots": [
-        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/230410/ss_2e4077f215eccde84171a4b8e0f2bc8a3264c776.1920x1080.jpg?t=1785169127",
-        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/230410/ss_0a541a8bf59e212870ea8d82260ac1b3ae2d0354.1920x1080.jpg?t=1785169127",
-        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/230410/ss_ce00a212a29e9a6c1fc37b16dbd802b2844a901d.1920x1080.jpg?t=1785169127",
-        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/230410/ss_29355e0546599c72002b34b42fe952329df61c2e.1920x1080.jpg?t=1785169127",
-        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/230410/ss_e1d1bfebe225c85ea284ffecfe279c2695ddf3a5.1920x1080.jpg?t=1785169127",
-        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/230410/ss_b06620c448c51d2bc5b71144a184da9ba37b703e.1920x1080.jpg?t=1785169127"
+        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/230410/ss_2e4077f215eccde84171a4b8e0f2bc8a3264c776.1920x1080.jpg?t=1786540562",
+        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/230410/ss_0a541a8bf59e212870ea8d82260ac1b3ae2d0354.1920x1080.jpg?t=1786540562",
+        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/230410/ss_ce00a212a29e9a6c1fc37b16dbd802b2844a901d.1920x1080.jpg?t=1786540562",
+        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/230410/ss_29355e0546599c72002b34b42fe952329df61c2e.1920x1080.jpg?t=1786540562",
+        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/230410/ss_e1d1bfebe225c85ea284ffecfe279c2695ddf3a5.1920x1080.jpg?t=1786540562",
+        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/230410/ss_b06620c448c51d2bc5b71144a184da9ba37b703e.1920x1080.jpg?t=1786540562"
       ],
       "movies": [],
       "criticRating": 6.9,
@@ -3138,7 +3095,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 7.1,
-      "recommendations": 235785,
+      "recommendations": 235856,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 6327,
       "sourceEvidence": [
@@ -3150,7 +3107,7 @@
         "steamSpy": "https://steamspy.com/app/1238810",
         "metacritic": ""
       },
-      "popularityScore": 9827.251801490984,
+      "popularityScore": 9827.26487701991,
       "igropoiskRating": 7.1,
       "editorialSources": [],
       "materials": {
@@ -3235,8 +3192,7 @@
       "sourceEvidence": [
         "Steam",
         "SteamSpy",
-        "Metacritic",
-        "Eurogamer"
+        "Metacritic"
       ],
       "sourceLinks": {
         "steam": "https://store.steampowered.com/app/238960/",
@@ -3245,37 +3201,15 @@
       },
       "popularityScore": 9821.199311465925,
       "igropoiskRating": 8.7,
-      "editorialSources": [
-        "Eurogamer"
-      ],
+      "editorialSources": [],
       "materials": {
-        "articles": [
-          {
-            "source": "Eurogamer",
-            "language": "en",
-            "title": "Path of Exile 2 finally has a fix for two of its longest-lasting, and most frustrating, technical problems",
-            "normalizedTitle": "path of exile 2 finally has a fix for two of its longest lasting and most frustrating technical problems",
-            "url": "https://www.eurogamer.net/path-of-exile-2-shaders-device-remove-fixed-champagne",
-            "summary": "Path of Exile 2 finally has a fix for two of its longest-lasting and most frustrating technical problems, with director Jonathan Rogers celebrating the occasion by popping open a bottle of champagne. Read more",
-            "publishedAt": "Thu, 30 Jul 2026 14:48:53 +0000"
-          }
-        ],
+        "articles": [],
         "reviews": [],
         "guides": [],
         "tips": [],
         "news": []
       },
-      "articles": [
-        {
-          "source": "Eurogamer",
-          "language": "en",
-          "title": "Path of Exile 2 finally has a fix for two of its longest-lasting, and most frustrating, technical problems",
-          "normalizedTitle": "path of exile 2 finally has a fix for two of its longest lasting and most frustrating technical problems",
-          "url": "https://www.eurogamer.net/path-of-exile-2-shaders-device-remove-fixed-champagne",
-          "summary": "Path of Exile 2 finally has a fix for two of its longest-lasting and most frustrating technical problems, with director Jonathan Rogers celebrating the occasion by popping open a bottle of champagne. Read more",
-          "publishedAt": "Thu, 30 Jul 2026 14:48:53 +0000"
-        }
-      ]
+      "articles": []
     },
     {
       "id": "548430",
@@ -3341,7 +3275,7 @@
       "movies": [],
       "criticRating": 8.5,
       "steamUserRating": 9.7,
-      "recommendations": 302279,
+      "recommendations": 302323,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 5216,
       "sourceEvidence": [
@@ -3354,7 +3288,7 @@
         "steamSpy": "https://steamspy.com/app/548430",
         "metacritic": "https://www.metacritic.com/game/pc/deep-rock-galactic?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9818.040941354573,
+      "popularityScore": 9818.04726250271,
       "igropoiskRating": 8.9,
       "editorialSources": [],
       "materials": {
@@ -3425,7 +3359,7 @@
       "movies": [],
       "criticRating": 8.6,
       "steamUserRating": 9.1,
-      "recommendations": 66594,
+      "recommendations": 66610,
       "owners": "2,000,000 .. 5,000,000",
       "peakConcurrent": 1011,
       "sourceEvidence": [
@@ -3438,7 +3372,7 @@
         "steamSpy": "https://steamspy.com/app/1888160",
         "metacritic": "https://www.metacritic.com/game/pc/armored-core-vi-fires-of-rubicon?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9812.344162325551,
+      "popularityScore": 9812.354595356712,
       "igropoiskRating": 8.8,
       "editorialSources": [],
       "materials": {
@@ -3510,27 +3444,27 @@
         "windows",
         "mac"
       ],
-      "headerImage": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/275850/84d0df065c36eb8ded7bdf0d8fccd19d43b6c005/header.jpg?t=1786366888",
+      "headerImage": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/275850/84d0df065c36eb8ded7bdf0d8fccd19d43b6c005/header.jpg?t=1786529709",
       "capsuleImage": "https://cdn.cloudflare.steamstatic.com/steam/apps/275850/library_600x900.jpg",
       "heroImage": "https://cdn.cloudflare.steamstatic.com/steam/apps/275850/library_hero.jpg",
       "screenshots": [
-        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/275850/461fd47ac75ae169f274f0c8b222ad77fbc45ce7/ss_461fd47ac75ae169f274f0c8b222ad77fbc45ce7.1920x1080.jpg?t=1786366888",
-        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/275850/71f533720e58e1fb5dd61f23388abfe4f9caa6b5/ss_71f533720e58e1fb5dd61f23388abfe4f9caa6b5.1920x1080.jpg?t=1786366888",
-        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/275850/6db1fa75dba6d47fa8484c1565fc544023c300d0/ss_6db1fa75dba6d47fa8484c1565fc544023c300d0.1920x1080.jpg?t=1786366888",
-        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/275850/251992eb497ebef3bbd6e81e2c3e80a00d2770a6/ss_251992eb497ebef3bbd6e81e2c3e80a00d2770a6.1920x1080.jpg?t=1786366888",
-        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/275850/d8de91e4a87f0e2c0fb70c84bd0f798bd4617eaf/ss_d8de91e4a87f0e2c0fb70c84bd0f798bd4617eaf.1920x1080.jpg?t=1786366888",
-        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/275850/1712db8fdd282cb1a4c87598148e0fbb9bc0b744/ss_1712db8fdd282cb1a4c87598148e0fbb9bc0b744.1920x1080.jpg?t=1786366888",
-        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/275850/e7185644d3b019d8fc00453f860d227271cd256c/ss_e7185644d3b019d8fc00453f860d227271cd256c.1920x1080.jpg?t=1786366888",
-        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/275850/9cdcc33b0e694243494404e51678461b53154c33/ss_9cdcc33b0e694243494404e51678461b53154c33.1920x1080.jpg?t=1786366888",
-        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/275850/ss_d4884d4d208b3f6a3ecef898559da7a36102fc70.1920x1080.jpg?t=1786366888",
-        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/275850/91503b91cfbdcac193d9f49698f296b8f11c10c5/ss_91503b91cfbdcac193d9f49698f296b8f11c10c5.1920x1080.jpg?t=1786366888",
-        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/275850/c8c02777af9b4c846a0d940a0c29849283ef5655/ss_c8c02777af9b4c846a0d940a0c29849283ef5655.1920x1080.jpg?t=1786366888",
-        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/275850/ss_32256c21c6bfd9032debf56e1af47029e6d9f9b0.1920x1080.jpg?t=1786366888"
+        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/275850/461fd47ac75ae169f274f0c8b222ad77fbc45ce7/ss_461fd47ac75ae169f274f0c8b222ad77fbc45ce7.1920x1080.jpg?t=1786529709",
+        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/275850/71f533720e58e1fb5dd61f23388abfe4f9caa6b5/ss_71f533720e58e1fb5dd61f23388abfe4f9caa6b5.1920x1080.jpg?t=1786529709",
+        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/275850/6db1fa75dba6d47fa8484c1565fc544023c300d0/ss_6db1fa75dba6d47fa8484c1565fc544023c300d0.1920x1080.jpg?t=1786529709",
+        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/275850/251992eb497ebef3bbd6e81e2c3e80a00d2770a6/ss_251992eb497ebef3bbd6e81e2c3e80a00d2770a6.1920x1080.jpg?t=1786529709",
+        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/275850/d8de91e4a87f0e2c0fb70c84bd0f798bd4617eaf/ss_d8de91e4a87f0e2c0fb70c84bd0f798bd4617eaf.1920x1080.jpg?t=1786529709",
+        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/275850/1712db8fdd282cb1a4c87598148e0fbb9bc0b744/ss_1712db8fdd282cb1a4c87598148e0fbb9bc0b744.1920x1080.jpg?t=1786529709",
+        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/275850/e7185644d3b019d8fc00453f860d227271cd256c/ss_e7185644d3b019d8fc00453f860d227271cd256c.1920x1080.jpg?t=1786529709",
+        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/275850/9cdcc33b0e694243494404e51678461b53154c33/ss_9cdcc33b0e694243494404e51678461b53154c33.1920x1080.jpg?t=1786529709",
+        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/275850/ss_d4884d4d208b3f6a3ecef898559da7a36102fc70.1920x1080.jpg?t=1786529709",
+        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/275850/91503b91cfbdcac193d9f49698f296b8f11c10c5/ss_91503b91cfbdcac193d9f49698f296b8f11c10c5.1920x1080.jpg?t=1786529709",
+        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/275850/c8c02777af9b4c846a0d940a0c29849283ef5655/ss_c8c02777af9b4c846a0d940a0c29849283ef5655.1920x1080.jpg?t=1786529709",
+        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/275850/ss_32256c21c6bfd9032debf56e1af47029e6d9f9b0.1920x1080.jpg?t=1786529709"
       ],
       "movies": [],
       "criticRating": 6.1,
       "steamUserRating": 8.3,
-      "recommendations": 311110,
+      "recommendations": 311223,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 12291,
       "sourceEvidence": [
@@ -3538,33 +3472,40 @@
         "SteamSpy",
         "Metacritic",
         "GamesRadar+",
-        "Eurogamer",
-        "PC Gamer",
-        "Rock Paper Shotgun"
+        "Rock Paper Shotgun",
+        "Eurogamer"
       ],
       "sourceLinks": {
         "steam": "https://store.steampowered.com/app/275850/",
         "steamSpy": "https://steamspy.com/app/275850",
         "metacritic": "https://www.metacritic.com/game/pc/no-mans-sky?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9809.29153667977,
+      "popularityScore": 9809.30730801739,
       "igropoiskRating": 6.9,
       "editorialSources": [
         "GamesRadar+",
-        "Eurogamer",
-        "PC Gamer",
-        "Rock Paper Shotgun"
+        "Rock Paper Shotgun",
+        "Eurogamer"
       ],
       "materials": {
         "articles": [
           {
             "source": "GamesRadar+",
             "language": "en",
-            "title": "No Man's Sky lead planned to show more Light No Fire, but \"why do any marketing\" when it's already topping Steam wishlists",
-            "normalizedTitle": "no man s sky lead planned to show more light no fire but why do any marketing when it s already topping steam wishlists",
-            "url": "https://www.gamesradar.com/games/survival/no-mans-sky-lead-planned-to-show-more-light-no-fire-but-why-do-any-marketing-when-its-already-topping-steam-wishlists/",
-            "summary": "Hello Games doesn't feel more is needed right now",
-            "publishedAt": "Mon, 10 Aug 2026 16:56:34 +0000"
+            "title": "10 years later, Sean Murray still plays the launch version of No Man's Sky, and he still likes it: \"It does feel quite barebones in places, but I kind of enjoy that\"",
+            "normalizedTitle": "10 years later sean murray still plays the launch version of no man s sky and he still likes it it does feel quite barebones in places but i kind of enjoy that",
+            "url": "https://www.gamesradar.com/games/survival/10-years-later-sean-murray-still-plays-the-launch-version-of-no-mans-sky-and-he-still-likes-it-it-does-feel-quite-barebones-in-places-but-i-kind-of-enjoy-that/",
+            "summary": "\"A game is obviously owned by the players,\" says Sean Murray",
+            "publishedAt": "Tue, 11 Aug 2026 17:30:00 +0000"
+          },
+          {
+            "source": "Rock Paper Shotgun",
+            "language": "en",
+            "title": "Even 10 years on, Sean Murray feels like he could work on No Man's Sky \"forever,\" even if he knows \"there probably is some end date\" for it",
+            "normalizedTitle": "even 10 years on sean murray feels like he could work on no man s sky forever even if he knows there probably is some end date for it",
+            "url": "https://www.rockpapershotgun.com/even-10-years-on-sean-murray-feels-like-he-could-work-on-no-mans-sky-forever-even-if-he-knows-there-probably-is-some-end-date-for-it",
+            "summary": "What's that? It's been 10 years since No Man's Sky launched? Oh! That's gone by a bit too quick! In that time the planet hopping survival game has changed drastically, starting life frequently derided for missing promised features, slowly morphing into what it is now. The game now has a massive mish mash of features that have kept people coming back year after year, and according to Hello Games co-founder Sean Murray, he could keep going as long as they do. Read more",
+            "publishedAt": "Tue, 11 Aug 2026 16:28:30 +0000"
           },
           {
             "source": "Eurogamer",
@@ -3574,33 +3515,6 @@
             "url": "https://www.eurogamer.net/no-mans-sky-boss-sean-murray-updates-on-light-no-fire",
             "summary": "It's a big moment for No Man's Sky . This week sees developer Hello Games' exploratory space sim celebrating its tenth anniversary, and to mark the occasion, I recently spoke with studio boss Sean Murray . Read more",
             "publishedAt": "Mon, 10 Aug 2026 13:34:01 +0000"
-          },
-          {
-            "source": "PC Gamer",
-            "language": "en",
-            "title": "Light No Fire will 'absolutely' be like No Man's Sky, with new features coming post-release: Sean Murray says he'd like to still be working on it '10 years after launch'",
-            "normalizedTitle": "light no fire will absolutely be like no man s sky with new features coming post release sean murray says he d like to still be working on it 10 years after launch",
-            "url": "https://www.pcgamer.com/games/survival-crafting/light-no-fire-will-absolutely-be-like-no-mans-sky-with-new-features-coming-post-release-sean-murray-says-hed-like-to-still-be-working-on-it-10-years-after-launch/",
-            "summary": "\"I've worked on it for seven years now, and I'm still really enjoying it.\"",
-            "publishedAt": "Mon, 10 Aug 2026 13:00:00 +0000"
-          },
-          {
-            "source": "PC Gamer",
-            "language": "en",
-            "title": "Sean Murray still loves playing the 2016 version of No Man's Sky: 'It's a little bit weirder, but it's got its charm'",
-            "normalizedTitle": "sean murray still loves playing the 2016 version of no man s sky it s a little bit weirder but it s got its charm",
-            "url": "https://www.pcgamer.com/games/action/sean-murray-still-loves-playing-the-2016-version-of-no-mans-sky-its-a-little-bit-weirder-but-its-got-its-charm/",
-            "summary": "\"I've got a real soft spot for it,\" says the founder of Hello Games.",
-            "publishedAt": "Mon, 10 Aug 2026 13:00:00 +0000"
-          },
-          {
-            "source": "GamesRadar+",
-            "language": "en",
-            "title": "Light No Fire only has \"between 12 and 20\" devs, says lead – but that's ok because a similar number worked on No Man's Sky at launch",
-            "normalizedTitle": "light no fire only has between 12 and 20 devs says lead but that s ok because a similar number worked on no man s sky at launch",
-            "url": "https://www.gamesradar.com/games/survival/light-no-fire-only-has-between-12-and-20-devs-says-lead-but-thats-ok-because-a-similar-number-worked-on-no-mans-sky-at-launch/",
-            "summary": "The team is \"very small\" but has \"a lot of tools and tech\" at its disposal",
-            "publishedAt": "Mon, 10 Aug 2026 13:00:00 +0000"
           },
           {
             "source": "Eurogamer",
@@ -3626,24 +3540,6 @@
             "publishedAt": "Mon, 10 Aug 2026 13:34:41 +0000"
           },
           {
-            "source": "GamesRadar+",
-            "language": "en",
-            "title": "No Man's Sky Cosmos is the next big update as Hello Games refuses to slow down after 10 years",
-            "normalizedTitle": "no man s sky cosmos is the next big update as hello games refuses to slow down after 10 years",
-            "url": "https://www.gamesradar.com/games/survival/no-mans-sky-cosmos-is-the-next-big-update-as-hello-games-refuses-to-slow-down-after-10-years/",
-            "summary": "Right after The Swarm and Xeno Arena and…",
-            "publishedAt": "Mon, 10 Aug 2026 13:00:00 +0000"
-          },
-          {
-            "source": "GamesRadar+",
-            "language": "en",
-            "title": "Sean Murray doesn't care how much money No Man's Sky DLC would've made, and \"it doesn't matter\" because updates will stay free",
-            "normalizedTitle": "sean murray doesn t care how much money no man s sky dlc would ve made and it doesn t matter because updates will stay free",
-            "url": "https://www.gamesradar.com/games/survival/sean-murray-doesnt-care-how-much-money-no-mans-sky-dlc-wouldve-made-and-it-doesnt-matter-because-updates-will-stay-free/",
-            "summary": "\"Every player that we have is going to experience this\"",
-            "publishedAt": "Mon, 10 Aug 2026 13:00:00 +0000"
-          },
-          {
             "source": "Rock Paper Shotgun",
             "language": "en",
             "title": "Space News Network is No Man's Sky but you're a roving journalist, blasting bandits while trying to keep your subscribers happy",
@@ -3658,11 +3554,20 @@
         {
           "source": "GamesRadar+",
           "language": "en",
-          "title": "No Man's Sky lead planned to show more Light No Fire, but \"why do any marketing\" when it's already topping Steam wishlists",
-          "normalizedTitle": "no man s sky lead planned to show more light no fire but why do any marketing when it s already topping steam wishlists",
-          "url": "https://www.gamesradar.com/games/survival/no-mans-sky-lead-planned-to-show-more-light-no-fire-but-why-do-any-marketing-when-its-already-topping-steam-wishlists/",
-          "summary": "Hello Games doesn't feel more is needed right now",
-          "publishedAt": "Mon, 10 Aug 2026 16:56:34 +0000"
+          "title": "10 years later, Sean Murray still plays the launch version of No Man's Sky, and he still likes it: \"It does feel quite barebones in places, but I kind of enjoy that\"",
+          "normalizedTitle": "10 years later sean murray still plays the launch version of no man s sky and he still likes it it does feel quite barebones in places but i kind of enjoy that",
+          "url": "https://www.gamesradar.com/games/survival/10-years-later-sean-murray-still-plays-the-launch-version-of-no-mans-sky-and-he-still-likes-it-it-does-feel-quite-barebones-in-places-but-i-kind-of-enjoy-that/",
+          "summary": "\"A game is obviously owned by the players,\" says Sean Murray",
+          "publishedAt": "Tue, 11 Aug 2026 17:30:00 +0000"
+        },
+        {
+          "source": "Rock Paper Shotgun",
+          "language": "en",
+          "title": "Even 10 years on, Sean Murray feels like he could work on No Man's Sky \"forever,\" even if he knows \"there probably is some end date\" for it",
+          "normalizedTitle": "even 10 years on sean murray feels like he could work on no man s sky forever even if he knows there probably is some end date for it",
+          "url": "https://www.rockpapershotgun.com/even-10-years-on-sean-murray-feels-like-he-could-work-on-no-mans-sky-forever-even-if-he-knows-there-probably-is-some-end-date-for-it",
+          "summary": "What's that? It's been 10 years since No Man's Sky launched? Oh! That's gone by a bit too quick! In that time the planet hopping survival game has changed drastically, starting life frequently derided for missing promised features, slowly morphing into what it is now. The game now has a massive mish mash of features that have kept people coming back year after year, and according to Hello Games co-founder Sean Murray, he could keep going as long as they do. Read more",
+          "publishedAt": "Tue, 11 Aug 2026 16:28:30 +0000"
         },
         {
           "source": "Eurogamer",
@@ -3681,51 +3586,6 @@
           "url": "https://www.eurogamer.net/no-mans-sky-boss-sean-murray-updates-on-light-no-fire",
           "summary": "It's a big moment for No Man's Sky . This week sees developer Hello Games' exploratory space sim celebrating its tenth anniversary, and to mark the occasion, I recently spoke with studio boss Sean Murray . Read more",
           "publishedAt": "Mon, 10 Aug 2026 13:34:01 +0000"
-        },
-        {
-          "source": "PC Gamer",
-          "language": "en",
-          "title": "Light No Fire will 'absolutely' be like No Man's Sky, with new features coming post-release: Sean Murray says he'd like to still be working on it '10 years after launch'",
-          "normalizedTitle": "light no fire will absolutely be like no man s sky with new features coming post release sean murray says he d like to still be working on it 10 years after launch",
-          "url": "https://www.pcgamer.com/games/survival-crafting/light-no-fire-will-absolutely-be-like-no-mans-sky-with-new-features-coming-post-release-sean-murray-says-hed-like-to-still-be-working-on-it-10-years-after-launch/",
-          "summary": "\"I've worked on it for seven years now, and I'm still really enjoying it.\"",
-          "publishedAt": "Mon, 10 Aug 2026 13:00:00 +0000"
-        },
-        {
-          "source": "PC Gamer",
-          "language": "en",
-          "title": "Sean Murray still loves playing the 2016 version of No Man's Sky: 'It's a little bit weirder, but it's got its charm'",
-          "normalizedTitle": "sean murray still loves playing the 2016 version of no man s sky it s a little bit weirder but it s got its charm",
-          "url": "https://www.pcgamer.com/games/action/sean-murray-still-loves-playing-the-2016-version-of-no-mans-sky-its-a-little-bit-weirder-but-its-got-its-charm/",
-          "summary": "\"I've got a real soft spot for it,\" says the founder of Hello Games.",
-          "publishedAt": "Mon, 10 Aug 2026 13:00:00 +0000"
-        },
-        {
-          "source": "GamesRadar+",
-          "language": "en",
-          "title": "No Man's Sky Cosmos is the next big update as Hello Games refuses to slow down after 10 years",
-          "normalizedTitle": "no man s sky cosmos is the next big update as hello games refuses to slow down after 10 years",
-          "url": "https://www.gamesradar.com/games/survival/no-mans-sky-cosmos-is-the-next-big-update-as-hello-games-refuses-to-slow-down-after-10-years/",
-          "summary": "Right after The Swarm and Xeno Arena and…",
-          "publishedAt": "Mon, 10 Aug 2026 13:00:00 +0000"
-        },
-        {
-          "source": "GamesRadar+",
-          "language": "en",
-          "title": "Sean Murray doesn't care how much money No Man's Sky DLC would've made, and \"it doesn't matter\" because updates will stay free",
-          "normalizedTitle": "sean murray doesn t care how much money no man s sky dlc would ve made and it doesn t matter because updates will stay free",
-          "url": "https://www.gamesradar.com/games/survival/sean-murray-doesnt-care-how-much-money-no-mans-sky-dlc-wouldve-made-and-it-doesnt-matter-because-updates-will-stay-free/",
-          "summary": "\"Every player that we have is going to experience this\"",
-          "publishedAt": "Mon, 10 Aug 2026 13:00:00 +0000"
-        },
-        {
-          "source": "GamesRadar+",
-          "language": "en",
-          "title": "Light No Fire only has \"between 12 and 20\" devs, says lead – but that's ok because a similar number worked on No Man's Sky at launch",
-          "normalizedTitle": "light no fire only has between 12 and 20 devs says lead but that s ok because a similar number worked on no man s sky at launch",
-          "url": "https://www.gamesradar.com/games/survival/light-no-fire-only-has-between-12-and-20-devs-says-lead-but-thats-ok-because-a-similar-number-worked-on-no-mans-sky-at-launch/",
-          "summary": "The team is \"very small\" but has \"a lot of tools and tech\" at its disposal",
-          "publishedAt": "Mon, 10 Aug 2026 13:00:00 +0000"
         },
         {
           "source": "Eurogamer",
@@ -3802,53 +3662,30 @@
       "movies": [],
       "criticRating": 8.7,
       "steamUserRating": 9.7,
-      "recommendations": 339515,
+      "recommendations": 339587,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 2719,
       "sourceEvidence": [
         "Steam",
         "SteamSpy",
-        "Metacritic",
-        "Rock Paper Shotgun"
+        "Metacritic"
       ],
       "sourceLinks": {
         "steam": "https://store.steampowered.com/app/264710/",
         "steamSpy": "https://steamspy.com/app/264710",
         "metacritic": "https://www.metacritic.com/game/pc/subnautica?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9803.086024562086,
+      "popularityScore": 9803.0952335206,
       "igropoiskRating": 9,
-      "editorialSources": [
-        "Rock Paper Shotgun"
-      ],
+      "editorialSources": [],
       "materials": {
-        "articles": [
-          {
-            "source": "Rock Paper Shotgun",
-            "language": "en",
-            "title": "Krafton have big plans for Subnautica, after the second game's once-divisive co-op \"confirmed the potential to expand beyond the existing fan base\"",
-            "normalizedTitle": "krafton have big plans for subnautica after the second game s once divisive co op confirmed the potential to expand beyond the existing fan base",
-            "url": "https://www.rockpapershotgun.com/krafton-have-big-plans-for-subnautica-after-the-second-games-once-divisive-co-op-confirmed-the-potential-to-expand-beyond-the-existing-fan-base",
-            "summary": "Subnautica 2 publishers Krafton may have had to pay Unknown Worlds a massive earn-out , after losing a farcical courtroom battle with ousted studio execs , but they're tickled pink by the ocean survival game's sales. According to Krafton's latest quarter-year financials, Subnautica 2 has sold over five million units since the early access launch. They're now trumpeting its potential to become \"our second franchise IP\" after PUBG, in the words of head of investor relations Sophie Lee, which indicates that they're not only thinking about a possible Subnautica 3, but eyeing up Subnautica crossove",
-            "publishedAt": "Wed, 29 Jul 2026 13:18:54 +0000"
-          }
-        ],
+        "articles": [],
         "reviews": [],
         "guides": [],
         "tips": [],
         "news": []
       },
-      "articles": [
-        {
-          "source": "Rock Paper Shotgun",
-          "language": "en",
-          "title": "Krafton have big plans for Subnautica, after the second game's once-divisive co-op \"confirmed the potential to expand beyond the existing fan base\"",
-          "normalizedTitle": "krafton have big plans for subnautica after the second game s once divisive co op confirmed the potential to expand beyond the existing fan base",
-          "url": "https://www.rockpapershotgun.com/krafton-have-big-plans-for-subnautica-after-the-second-games-once-divisive-co-op-confirmed-the-potential-to-expand-beyond-the-existing-fan-base",
-          "summary": "Subnautica 2 publishers Krafton may have had to pay Unknown Worlds a massive earn-out , after losing a farcical courtroom battle with ousted studio execs , but they're tickled pink by the ocean survival game's sales. According to Krafton's latest quarter-year financials, Subnautica 2 has sold over five million units since the early access launch. They're now trumpeting its potential to become \"our second franchise IP\" after PUBG, in the words of head of investor relations Sophie Lee, which indicates that they're not only thinking about a possible Subnautica 3, but eyeing up Subnautica crossove",
-          "publishedAt": "Wed, 29 Jul 2026 13:18:54 +0000"
-        }
-      ]
+      "articles": []
     },
     {
       "id": "526870",
@@ -3921,7 +3758,7 @@
       "movies": [],
       "criticRating": 9.1,
       "steamUserRating": 9.7,
-      "recommendations": 233331,
+      "recommendations": 233479,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 12596,
       "sourceEvidence": [
@@ -3934,7 +3771,7 @@
         "steamSpy": "https://steamspy.com/app/526870",
         "metacritic": "https://www.metacritic.com/game/pc/satisfactory?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9766.797430360475,
+      "popularityScore": 9766.824968463812,
       "igropoiskRating": 9.3,
       "editorialSources": [],
       "materials": {
@@ -4019,7 +3856,7 @@
       "movies": [],
       "criticRating": 9,
       "steamUserRating": 9.7,
-      "recommendations": 194278,
+      "recommendations": 194337,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 16426,
       "sourceEvidence": [
@@ -4032,7 +3869,7 @@
         "steamSpy": "https://steamspy.com/app/427520",
         "metacritic": "https://www.metacritic.com/game/pc/factorio?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9748.842585939025,
+      "popularityScore": 9748.855772894114,
       "igropoiskRating": 9.2,
       "editorialSources": [],
       "materials": {
@@ -4105,7 +3942,7 @@
       "movies": [],
       "criticRating": 8.7,
       "steamUserRating": 9.8,
-      "recommendations": 207089,
+      "recommendations": 207172,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 19211,
       "sourceEvidence": [
@@ -4118,7 +3955,7 @@
         "steamSpy": "https://steamspy.com/app/294100",
         "metacritic": "https://www.metacritic.com/game/pc/rimworld?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9741.615912810797,
+      "popularityScore": 9741.633315495797,
       "igropoiskRating": 9.1,
       "editorialSources": [],
       "materials": {
@@ -4182,52 +4019,29 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 9.1,
-      "recommendations": 99042,
+      "recommendations": 99048,
       "owners": "2,000,000 .. 5,000,000",
       "peakConcurrent": 698,
       "sourceEvidence": [
         "Steam",
-        "SteamSpy",
-        "Rock Paper Shotgun"
+        "SteamSpy"
       ],
       "sourceLinks": {
         "steam": "https://store.steampowered.com/app/848450/",
         "steamSpy": "https://steamspy.com/app/848450",
         "metacritic": ""
       },
-      "popularityScore": 9739.582378660045,
+      "popularityScore": 9739.585009525392,
       "igropoiskRating": 9.1,
-      "editorialSources": [
-        "Rock Paper Shotgun"
-      ],
+      "editorialSources": [],
       "materials": {
-        "articles": [
-          {
-            "source": "Rock Paper Shotgun",
-            "language": "en",
-            "title": "Krafton have big plans for Subnautica, after the second game's once-divisive co-op \"confirmed the potential to expand beyond the existing fan base\"",
-            "normalizedTitle": "krafton have big plans for subnautica after the second game s once divisive co op confirmed the potential to expand beyond the existing fan base",
-            "url": "https://www.rockpapershotgun.com/krafton-have-big-plans-for-subnautica-after-the-second-games-once-divisive-co-op-confirmed-the-potential-to-expand-beyond-the-existing-fan-base",
-            "summary": "Subnautica 2 publishers Krafton may have had to pay Unknown Worlds a massive earn-out , after losing a farcical courtroom battle with ousted studio execs , but they're tickled pink by the ocean survival game's sales. According to Krafton's latest quarter-year financials, Subnautica 2 has sold over five million units since the early access launch. They're now trumpeting its potential to become \"our second franchise IP\" after PUBG, in the words of head of investor relations Sophie Lee, which indicates that they're not only thinking about a possible Subnautica 3, but eyeing up Subnautica crossove",
-            "publishedAt": "Wed, 29 Jul 2026 13:18:54 +0000"
-          }
-        ],
+        "articles": [],
         "reviews": [],
         "guides": [],
         "tips": [],
         "news": []
       },
-      "articles": [
-        {
-          "source": "Rock Paper Shotgun",
-          "language": "en",
-          "title": "Krafton have big plans for Subnautica, after the second game's once-divisive co-op \"confirmed the potential to expand beyond the existing fan base\"",
-          "normalizedTitle": "krafton have big plans for subnautica after the second game s once divisive co op confirmed the potential to expand beyond the existing fan base",
-          "url": "https://www.rockpapershotgun.com/krafton-have-big-plans-for-subnautica-after-the-second-games-once-divisive-co-op-confirmed-the-potential-to-expand-beyond-the-existing-fan-base",
-          "summary": "Subnautica 2 publishers Krafton may have had to pay Unknown Worlds a massive earn-out , after losing a farcical courtroom battle with ousted studio execs , but they're tickled pink by the ocean survival game's sales. According to Krafton's latest quarter-year financials, Subnautica 2 has sold over five million units since the early access launch. They're now trumpeting its potential to become \"our second franchise IP\" after PUBG, in the words of head of investor relations Sophie Lee, which indicates that they're not only thinking about a possible Subnautica 3, but eyeing up Subnautica crossove",
-          "publishedAt": "Wed, 29 Jul 2026 13:18:54 +0000"
-        }
-      ]
+      "articles": []
     },
     {
       "id": "394360",
@@ -4281,7 +4095,7 @@
       "movies": [],
       "criticRating": 8.3,
       "steamUserRating": 8.9,
-      "recommendations": 281300,
+      "recommendations": 281374,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 32112,
       "sourceEvidence": [
@@ -4294,7 +4108,7 @@
         "steamSpy": "https://steamspy.com/app/394360",
         "metacritic": "https://www.metacritic.com/game/pc/hearts-of-iron-iv?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9734.917127604615,
+      "popularityScore": 9734.928550800858,
       "igropoiskRating": 8.5,
       "editorialSources": [],
       "materials": {
@@ -4380,7 +4194,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 9.7,
-      "recommendations": 1086006,
+      "recommendations": 1086342,
       "owners": "20,000,000 .. 50,000,000",
       "peakConcurrent": 18400,
       "sourceEvidence": [
@@ -4392,7 +4206,7 @@
         "steamSpy": "https://steamspy.com/app/4000",
         "metacritic": ""
       },
-      "popularityScore": 9723.583262456366,
+      "popularityScore": 9723.596697026955,
       "igropoiskRating": 9.7,
       "editorialSources": [],
       "materials": {
@@ -4454,7 +4268,7 @@
       "movies": [],
       "criticRating": 7.8,
       "steamUserRating": 8.6,
-      "recommendations": 142470,
+      "recommendations": 142482,
       "owners": "2,000,000 .. 5,000,000",
       "peakConcurrent": 13727,
       "sourceEvidence": [
@@ -4467,7 +4281,7 @@
         "steamSpy": "https://steamspy.com/app/281990",
         "metacritic": "https://www.metacritic.com/game/pc/stellaris?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9715.37264726133,
+      "popularityScore": 9715.376305068407,
       "igropoiskRating": 8.1,
       "editorialSources": [],
       "materials": {
@@ -4537,7 +4351,7 @@
       "movies": [],
       "criticRating": 8.5,
       "steamUserRating": 9.2,
-      "recommendations": 654084,
+      "recommendations": 654205,
       "owners": "20,000,000 .. 50,000,000",
       "peakConcurrent": 3832,
       "sourceEvidence": [
@@ -4550,7 +4364,7 @@
         "steamSpy": "https://steamspy.com/app/945360",
         "metacritic": "https://www.metacritic.com/game/pc/among-us?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9711.5634189658,
+      "popularityScore": 9711.571452290566,
       "igropoiskRating": 8.7,
       "editorialSources": [],
       "materials": {
@@ -4631,7 +4445,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 9.6,
-      "recommendations": 681699,
+      "recommendations": 681790,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 9978,
       "sourceEvidence": [
@@ -4643,7 +4457,7 @@
         "steamSpy": "https://steamspy.com/app/739630",
         "metacritic": ""
       },
-      "popularityScore": 9683.359329399846,
+      "popularityScore": 9683.365126401499,
       "igropoiskRating": 9.6,
       "editorialSources": [],
       "materials": {
@@ -4714,7 +4528,7 @@
       "movies": [],
       "criticRating": 8.7,
       "steamUserRating": 8.7,
-      "recommendations": 95566,
+      "recommendations": 95576,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 12445,
       "sourceEvidence": [
@@ -4727,7 +4541,7 @@
         "steamSpy": "https://steamspy.com/app/236850",
         "metacritic": "https://www.metacritic.com/game/pc/europa-universalis-iv?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9678.030795302879,
+      "popularityScore": 9678.035339463118,
       "igropoiskRating": 8.7,
       "editorialSources": [],
       "materials": {
@@ -4806,7 +4620,7 @@
       "movies": [],
       "criticRating": 9.1,
       "steamUserRating": 9,
-      "recommendations": 95938,
+      "recommendations": 95968,
       "owners": "2,000,000 .. 5,000,000",
       "peakConcurrent": 14302,
       "sourceEvidence": [
@@ -4819,7 +4633,7 @@
         "steamSpy": "https://steamspy.com/app/1158310",
         "metacritic": "https://www.metacritic.com/game/pc/crusader-kings-iii?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9668.199518737623,
+      "popularityScore": 9668.213096946518,
       "igropoiskRating": 9.1,
       "editorialSources": [],
       "materials": {
@@ -4909,7 +4723,7 @@
       "movies": [],
       "criticRating": 8.3,
       "steamUserRating": 9.5,
-      "recommendations": 374498,
+      "recommendations": 374579,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 30542,
       "sourceEvidence": [
@@ -4922,7 +4736,7 @@
         "steamSpy": "https://steamspy.com/app/322330",
         "metacritic": "https://www.metacritic.com/game/pc/dont-starve-together?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9667.34506623691,
+      "popularityScore": 9667.354458531494,
       "igropoiskRating": 8.7,
       "editorialSources": [],
       "materials": {
@@ -5005,7 +4819,7 @@
       "movies": [],
       "criticRating": 7.9,
       "steamUserRating": 9.7,
-      "recommendations": 778578,
+      "recommendations": 778785,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 17281,
       "sourceEvidence": [
@@ -5018,7 +4832,7 @@
         "steamSpy": "https://steamspy.com/app/227300",
         "metacritic": "https://www.metacritic.com/game/pc/euro-truck-simulator-2?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9659.130268565608,
+      "popularityScore": 9659.141813573782,
       "igropoiskRating": 8.5,
       "editorialSources": [],
       "materials": {
@@ -5083,7 +4897,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 9.7,
-      "recommendations": 410979,
+      "recommendations": 410997,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 6199,
       "sourceEvidence": [
@@ -5095,7 +4909,7 @@
         "steamSpy": "https://steamspy.com/app/1966720",
         "metacritic": ""
       },
-      "popularityScore": 9651.382068781042,
+      "popularityScore": 9651.383970851579,
       "igropoiskRating": 9.7,
       "editorialSources": [],
       "materials": {
@@ -5166,7 +4980,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 8.8,
-      "recommendations": 281573,
+      "recommendations": 281638,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 4450,
       "sourceEvidence": [
@@ -5178,7 +4992,7 @@
         "steamSpy": "https://steamspy.com/app/1326470",
         "metacritic": ""
       },
-      "popularityScore": 9624.959255040672,
+      "popularityScore": 9624.969279362358,
       "igropoiskRating": 8.8,
       "editorialSources": [],
       "materials": {
@@ -5247,53 +5061,30 @@
       "movies": [],
       "criticRating": 8.1,
       "steamUserRating": 5.7,
-      "recommendations": 24252,
+      "recommendations": 24264,
       "owners": "1,000,000 .. 2,000,000",
       "peakConcurrent": 2183,
       "sourceEvidence": [
         "Steam",
         "SteamSpy",
-        "Metacritic",
-        "Rock Paper Shotgun"
+        "Metacritic"
       ],
       "sourceLinks": {
         "steam": "https://store.steampowered.com/app/1677280/",
         "steamSpy": "https://steamspy.com/app/1677280",
         "metacritic": "https://www.metacritic.com/game/pc/company-of-heroes-3?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9588.476546676762,
+      "popularityScore": 9588.498029565131,
       "igropoiskRating": 7.3,
-      "editorialSources": [
-        "Rock Paper Shotgun"
-      ],
+      "editorialSources": [],
       "materials": {
-        "articles": [
-          {
-            "source": "Rock Paper Shotgun",
-            "language": "en",
-            "title": "I'm not going to 100% roguelite strategy spinoff Company of Heroes 3: Final Stand, but it does breathe new life into some of the series' oldest features",
-            "normalizedTitle": "i m not going to 100 roguelite strategy spinoff company of heroes 3 final stand but it does breathe new life into some of the series oldest features",
-            "url": "https://www.rockpapershotgun.com/roguelite-strategy-spinoff-company-of-heroes-3-final-stand-breathes-fresh-live-into-some-of-the-series-oldest-features",
-            "summary": "I&rsquo;d put my six-pounder anti-tank guns in the perfect position to halt the Tigers&rsquo; advance. The German tanks would have to cross the bridge, keeping them packed together, and the derailed train on their flank would keep them from spreading out too much before they came into range of my British gunners&rsquo; heavy ordnance. Being the twelfth and last wave of this game of Company of Heroes 3: Final Stand , if I could put down the tanks' advance I'd win the match and take home a healthy bushel of perk points to upgrade my faction for future matches. But then the blasted Luftwaffe arri",
-            "publishedAt": "Wed, 29 Jul 2026 17:00:00 +0000"
-          }
-        ],
+        "articles": [],
         "reviews": [],
         "guides": [],
         "tips": [],
         "news": []
       },
-      "articles": [
-        {
-          "source": "Rock Paper Shotgun",
-          "language": "en",
-          "title": "I'm not going to 100% roguelite strategy spinoff Company of Heroes 3: Final Stand, but it does breathe new life into some of the series' oldest features",
-          "normalizedTitle": "i m not going to 100 roguelite strategy spinoff company of heroes 3 final stand but it does breathe new life into some of the series oldest features",
-          "url": "https://www.rockpapershotgun.com/roguelite-strategy-spinoff-company-of-heroes-3-final-stand-breathes-fresh-live-into-some-of-the-series-oldest-features",
-          "summary": "I&rsquo;d put my six-pounder anti-tank guns in the perfect position to halt the Tigers&rsquo; advance. The German tanks would have to cross the bridge, keeping them packed together, and the derailed train on their flank would keep them from spreading out too much before they came into range of my British gunners&rsquo; heavy ordnance. Being the twelfth and last wave of this game of Company of Heroes 3: Final Stand , if I could put down the tanks' advance I'd win the match and take home a healthy bushel of perk points to upgrade my faction for future matches. But then the blasted Luftwaffe arri",
-          "publishedAt": "Wed, 29 Jul 2026 17:00:00 +0000"
-        }
-      ]
+      "articles": []
     },
     {
       "id": "244210",
@@ -5353,7 +5144,7 @@
       "movies": [],
       "criticRating": 8.5,
       "steamUserRating": 9.3,
-      "recommendations": 135128,
+      "recommendations": 135164,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 8961,
       "sourceEvidence": [
@@ -5366,7 +5157,7 @@
         "steamSpy": "https://steamspy.com/app/244210",
         "metacritic": "https://www.metacritic.com/game/pc/assetto-corsa?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9573.074856285195,
+      "popularityScore": 9573.08642487454,
       "igropoiskRating": 8.8,
       "editorialSources": [],
       "materials": {
@@ -5436,7 +5227,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 8.1,
-      "recommendations": 14319,
+      "recommendations": 14323,
       "owners": "500,000 .. 1,000,000",
       "peakConcurrent": 873,
       "sourceEvidence": [
@@ -5448,7 +5239,7 @@
         "steamSpy": "https://steamspy.com/app/1611600",
         "metacritic": ""
       },
-      "popularityScore": 9555.594301797184,
+      "popularityScore": 9555.606431233986,
       "igropoiskRating": 8.1,
       "editorialSources": [],
       "materials": {
@@ -5520,7 +5311,7 @@
       "movies": [],
       "criticRating": 8.9,
       "steamUserRating": 9.8,
-      "recommendations": 192327,
+      "recommendations": 192383,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 15038,
       "sourceEvidence": [
@@ -5533,7 +5324,7 @@
         "steamSpy": "https://steamspy.com/app/646570",
         "metacritic": "https://www.metacritic.com/game/pc/slay-the-spire?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9528.404251544118,
+      "popularityScore": 9528.416895023478,
       "igropoiskRating": 9.2,
       "editorialSources": [],
       "materials": {
@@ -5606,7 +5397,7 @@
       "movies": [],
       "criticRating": 9,
       "steamUserRating": 9.8,
-      "recommendations": 159044,
+      "recommendations": 159137,
       "owners": "2,000,000 .. 5,000,000",
       "peakConcurrent": 17123,
       "sourceEvidence": [
@@ -5619,7 +5410,7 @@
         "steamSpy": "https://steamspy.com/app/2379780",
         "metacritic": "https://www.metacritic.com/game/pc/balatro?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9510.152002046292,
+      "popularityScore": 9510.177389567289,
       "igropoiskRating": 9.3,
       "editorialSources": [],
       "materials": {
@@ -5686,7 +5477,7 @@
       "movies": [],
       "criticRating": 7.7,
       "steamUserRating": 9.3,
-      "recommendations": 33407,
+      "recommendations": 33419,
       "owners": "1,000,000 .. 2,000,000",
       "peakConcurrent": 1479,
       "sourceEvidence": [
@@ -5699,7 +5490,7 @@
         "steamSpy": "https://steamspy.com/app/805550",
         "metacritic": "https://www.metacritic.com/game/pc/assetto-corsa-competizione?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9502.385047698615,
+      "popularityScore": 9502.400644555737,
       "igropoiskRating": 8.3,
       "editorialSources": [],
       "materials": {
@@ -5761,7 +5552,7 @@
       "movies": [],
       "criticRating": 8.5,
       "steamUserRating": 9.7,
-      "recommendations": 134289,
+      "recommendations": 134328,
       "owners": "2,000,000 .. 5,000,000",
       "peakConcurrent": 1301,
       "sourceEvidence": [
@@ -5774,7 +5565,7 @@
         "steamSpy": "https://steamspy.com/app/1092790",
         "metacritic": "https://www.metacritic.com/game/pc/inscryption?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9492.804367382645,
+      "popularityScore": 9492.816978169607,
       "igropoiskRating": 8.9,
       "editorialSources": [],
       "materials": {
@@ -5840,30 +5631,73 @@
       "movies": [],
       "criticRating": 8.6,
       "steamUserRating": 9.8,
-      "recommendations": 250578,
+      "recommendations": 250600,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 2966,
       "sourceEvidence": [
         "Steam",
         "SteamSpy",
-        "Metacritic"
+        "Metacritic",
+        "Polygon",
+        "Rock Paper Shotgun"
       ],
       "sourceLinks": {
         "steam": "https://store.steampowered.com/app/1794680/",
         "steamSpy": "https://steamspy.com/app/1794680",
         "metacritic": "https://www.metacritic.com/game/pc/vampire-survivors?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9489.894467174085,
+      "popularityScore": 9489.898279967336,
       "igropoiskRating": 9,
-      "editorialSources": [],
+      "editorialSources": [
+        "Polygon",
+        "Rock Paper Shotgun"
+      ],
       "materials": {
-        "articles": [],
+        "articles": [
+          {
+            "source": "Polygon",
+            "language": "en",
+            "title": "Steam is Getting an Absurd New Vampire Survivors Clone in 2 Weeks",
+            "normalizedTitle": "steam is getting an absurd new vampire survivors clone in 2 weeks",
+            "url": "https://www.polygon.com/blood-dungeon-steam-release-date/",
+            "summary": "If you love Vampire Survivors, you need to know about Messhof’s Blood Dungeon, launching on August 25.",
+            "publishedAt": "Wed, 12 Aug 2026 12:00:12 GMT"
+          },
+          {
+            "source": "Rock Paper Shotgun",
+            "language": "en",
+            "title": "Spaceship bullet heaven Seven Suns of Orion has what Vampire Survivors lacks: semi-Newtonian physics and railguns",
+            "normalizedTitle": "spaceship bullet heaven seven suns of orion has what vampire survivors lacks semi newtonian physics and railguns",
+            "url": "https://www.rockpapershotgun.com/spaceship-bullet-heaven-seven-suns-of-orion-has-what-vampire-survivors-lacks-semi-newtonian-physics-and-railguns",
+            "summary": "I don't truly want to say a bad word about Vampire Survivors . I've adored the many hours I've spent in its endearingly slapdash dungeons. It's also responsible for spawning a thousand imitators, many of which I have also poured hours of my life into playing. But, for all of its joys and successes, I can't defend its lack of railguns. I don't know what Poncle were thinking when they let you loose on a world filled with monsters and ghouls and didn't arm you with an electromagnetic gun that launches projectiles at more than 3 km/s. It may not be a stake doused in holy water, but I reckon the ra",
+            "publishedAt": "Wed, 12 Aug 2026 08:00:00 +0000"
+          }
+        ],
         "reviews": [],
         "guides": [],
         "tips": [],
         "news": []
       },
-      "articles": []
+      "articles": [
+        {
+          "source": "Polygon",
+          "language": "en",
+          "title": "Steam is Getting an Absurd New Vampire Survivors Clone in 2 Weeks",
+          "normalizedTitle": "steam is getting an absurd new vampire survivors clone in 2 weeks",
+          "url": "https://www.polygon.com/blood-dungeon-steam-release-date/",
+          "summary": "If you love Vampire Survivors, you need to know about Messhof’s Blood Dungeon, launching on August 25.",
+          "publishedAt": "Wed, 12 Aug 2026 12:00:12 GMT"
+        },
+        {
+          "source": "Rock Paper Shotgun",
+          "language": "en",
+          "title": "Spaceship bullet heaven Seven Suns of Orion has what Vampire Survivors lacks: semi-Newtonian physics and railguns",
+          "normalizedTitle": "spaceship bullet heaven seven suns of orion has what vampire survivors lacks semi newtonian physics and railguns",
+          "url": "https://www.rockpapershotgun.com/spaceship-bullet-heaven-seven-suns-of-orion-has-what-vampire-survivors-lacks-semi-newtonian-physics-and-railguns",
+          "summary": "I don't truly want to say a bad word about Vampire Survivors . I've adored the many hours I've spent in its endearingly slapdash dungeons. It's also responsible for spawning a thousand imitators, many of which I have also poured hours of my life into playing. But, for all of its joys and successes, I can't defend its lack of railguns. I don't know what Poncle were thinking when they let you loose on a world filled with monsters and ghouls and didn't arm you with an electromagnetic gun that launches projectiles at more than 3 km/s. It may not be a stake doused in holy water, but I reckon the ra",
+          "publishedAt": "Wed, 12 Aug 2026 08:00:00 +0000"
+        }
+      ]
     },
     {
       "id": "1778820",
@@ -5923,7 +5757,7 @@
       "movies": [],
       "criticRating": 9.1,
       "steamUserRating": 5.4,
-      "recommendations": 46967,
+      "recommendations": 46980,
       "owners": "1,000,000 .. 2,000,000",
       "peakConcurrent": 4409,
       "sourceEvidence": [
@@ -5936,7 +5770,7 @@
         "steamSpy": "https://steamspy.com/app/1778820",
         "metacritic": "https://www.metacritic.com/game/pc/tekken-8?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9487.18020673696,
+      "popularityScore": 9487.192225658506,
       "igropoiskRating": 7.8,
       "editorialSources": [],
       "materials": {
@@ -6011,7 +5845,7 @@
       "movies": [],
       "criticRating": 8.8,
       "steamUserRating": 9.7,
-      "recommendations": 130473,
+      "recommendations": 130541,
       "owners": "2,000,000 .. 5,000,000",
       "peakConcurrent": 1174,
       "sourceEvidence": [
@@ -6024,7 +5858,7 @@
         "steamSpy": "https://steamspy.com/app/504230",
         "metacritic": "https://www.metacritic.com/game/pc/celeste?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9481.552397695003,
+      "popularityScore": 9481.575026212364,
       "igropoiskRating": 9.1,
       "editorialSources": [],
       "materials": {
@@ -6094,13 +5928,12 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 9.7,
-      "recommendations": 402989,
+      "recommendations": 403643,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 14904,
       "sourceEvidence": [
         "Steam",
         "SteamSpy",
-        "GamesRadar+",
         "Eurogamer"
       ],
       "sourceLinks": {
@@ -6108,24 +5941,13 @@
         "steamSpy": "https://steamspy.com/app/250900",
         "metacritic": ""
       },
-      "popularityScore": 9470.52942694694,
+      "popularityScore": 9470.599850126076,
       "igropoiskRating": 9.7,
       "editorialSources": [
-        "GamesRadar+",
         "Eurogamer"
       ],
       "materials": {
-        "articles": [
-          {
-            "source": "GamesRadar+",
-            "language": "en",
-            "title": "Final Fantasy 7 Rebirth multi-platform push and Final Fantasy 14 Evercold hype give Square Enix a welcome win as profits surge over 88%",
-            "normalizedTitle": "final fantasy 7 rebirth multi platform push and final fantasy 14 evercold hype give square enix a welcome win as profits surge over 88",
-            "url": "https://www.gamesradar.com/games/final-fantasy/final-fantasy-7-rebirth-multi-platform-push-and-final-fantasy-14-evercold-hype-give-square-enix-a-welcome-win-as-profits-surge-over-88-percent/",
-            "summary": "The publisher's flagship franchise is doing business",
-            "publishedAt": "Mon, 10 Aug 2026 10:25:15 +0000"
-          }
-        ],
+        "articles": [],
         "reviews": [],
         "guides": [],
         "tips": [
@@ -6142,15 +5964,6 @@
         "news": []
       },
       "articles": [
-        {
-          "source": "GamesRadar+",
-          "language": "en",
-          "title": "Final Fantasy 7 Rebirth multi-platform push and Final Fantasy 14 Evercold hype give Square Enix a welcome win as profits surge over 88%",
-          "normalizedTitle": "final fantasy 7 rebirth multi platform push and final fantasy 14 evercold hype give square enix a welcome win as profits surge over 88",
-          "url": "https://www.gamesradar.com/games/final-fantasy/final-fantasy-7-rebirth-multi-platform-push-and-final-fantasy-14-evercold-hype-give-square-enix-a-welcome-win-as-profits-surge-over-88-percent/",
-          "summary": "The publisher's flagship franchise is doing business",
-          "publishedAt": "Mon, 10 Aug 2026 10:25:15 +0000"
-        },
         {
           "source": "Eurogamer",
           "language": "en",
@@ -6221,7 +6034,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 9.7,
-      "recommendations": 110255,
+      "recommendations": 110308,
       "owners": "2,000,000 .. 5,000,000",
       "peakConcurrent": 6389,
       "sourceEvidence": [
@@ -6233,7 +6046,7 @@
         "steamSpy": "https://steamspy.com/app/1942280",
         "metacritic": ""
       },
-      "popularityScore": 9444.240223257062,
+      "popularityScore": 9444.26109475343,
       "igropoiskRating": 9.7,
       "editorialSources": [],
       "materials": {
@@ -6304,7 +6117,7 @@
       "movies": [],
       "criticRating": 8.4,
       "steamUserRating": 9.5,
-      "recommendations": 79185,
+      "recommendations": 79187,
       "owners": "2,000,000 .. 5,000,000",
       "peakConcurrent": 1165,
       "sourceEvidence": [
@@ -6317,7 +6130,7 @@
         "steamSpy": "https://steamspy.com/app/311690",
         "metacritic": "https://www.metacritic.com/game/pc/enter-the-gungeon?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9409.864840557693,
+      "popularityScore": 9409.865937440974,
       "igropoiskRating": 8.8,
       "editorialSources": [],
       "materials": {
@@ -6393,7 +6206,7 @@
       "movies": [],
       "criticRating": 9.1,
       "steamUserRating": 9.3,
-      "recommendations": 19663,
+      "recommendations": 19666,
       "owners": "1,000,000 .. 2,000,000",
       "peakConcurrent": 313,
       "sourceEvidence": [
@@ -6406,7 +6219,7 @@
         "steamSpy": "https://steamspy.com/app/418530",
         "metacritic": "https://www.metacritic.com/game/pc/spelunky-2?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9389.367186554238,
+      "popularityScore": 9389.373811778352,
       "igropoiskRating": 9.2,
       "editorialSources": [],
       "materials": {
@@ -6470,7 +6283,7 @@
       "movies": [],
       "criticRating": 8.2,
       "steamUserRating": 9.3,
-      "recommendations": 33755,
+      "recommendations": 33761,
       "owners": "1,000,000 .. 2,000,000",
       "peakConcurrent": 348,
       "sourceEvidence": [
@@ -6483,7 +6296,7 @@
         "steamSpy": "https://steamspy.com/app/1282730",
         "metacritic": "https://www.metacritic.com/game/pc/loop-hero?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9382.835097821282,
+      "popularityScore": 9382.842816553764,
       "igropoiskRating": 8.6,
       "editorialSources": [],
       "materials": {
@@ -6516,6 +6329,9 @@
       "genres": [
         "Экшены",
         "Приключенческие игры",
+        "Казуальные игры",
+        "Многопользовательские игры",
+        "Гонки",
         "Ролевые игры",
         "Симуляторы",
         "Стратегии",
@@ -6540,22 +6356,22 @@
       "platforms": [
         "windows"
       ],
-      "headerImage": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2139460/c18b08a2f93dec32fcc5fa71bc2da44ee42de1f0/header.jpg?t=1785930822",
+      "headerImage": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2139460/c18b08a2f93dec32fcc5fa71bc2da44ee42de1f0/header.jpg?t=1786428179",
       "capsuleImage": "https://cdn.cloudflare.steamstatic.com/steam/apps/2139460/library_600x900.jpg",
       "heroImage": "https://cdn.cloudflare.steamstatic.com/steam/apps/2139460/library_hero.jpg",
       "screenshots": [
-        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2139460/d4a1bcb2b2ce32e46fed9f6b0d5024762bfa5cc2/ss_d4a1bcb2b2ce32e46fed9f6b0d5024762bfa5cc2.1920x1080.jpg?t=1785930822",
-        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2139460/6b54d3d82b3497a8bec69372e0eec4c1352bb5bc/ss_6b54d3d82b3497a8bec69372e0eec4c1352bb5bc.1920x1080.jpg?t=1785930822",
-        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2139460/ae02d8ce10f7613c9132227271298ad8266707dc/ss_ae02d8ce10f7613c9132227271298ad8266707dc.1920x1080.jpg?t=1785930822",
-        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2139460/a0db6e237ba1dd6db657ae396f523f81812b0ed0/ss_a0db6e237ba1dd6db657ae396f523f81812b0ed0.1920x1080.jpg?t=1785930822",
-        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2139460/ss_c22678575e3790f85d1ee047022bfef5c3555056.1920x1080.jpg?t=1785930822",
-        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2139460/ss_78c7278d10652c5369891393782d84b6934176c5.1920x1080.jpg?t=1785930822",
-        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2139460/ss_ce690aa878d1d6bb8ccb0840b45d86fcb7508ee5.1920x1080.jpg?t=1785930822",
-        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2139460/ss_bab7e8dff3944d83d08310b47b8facb64a7abca9.1920x1080.jpg?t=1785930822",
-        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2139460/ss_1ae7debe7f68a4cdde727d984d9e724f65767d66.1920x1080.jpg?t=1785930822",
-        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2139460/ss_2d7faf83b6942dcf69a4035f71ce4f1662826bc6.1920x1080.jpg?t=1785930822",
-        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2139460/ss_ea57d1446c92dbbfc273d7c69c01994562793061.1920x1080.jpg?t=1785930822",
-        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2139460/ss_63e6bef4f24438fc84ac9385ca340d307d1c8bcc.1920x1080.jpg?t=1785930822"
+        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2139460/d4a1bcb2b2ce32e46fed9f6b0d5024762bfa5cc2/ss_d4a1bcb2b2ce32e46fed9f6b0d5024762bfa5cc2.1920x1080.jpg?t=1786428179",
+        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2139460/6b54d3d82b3497a8bec69372e0eec4c1352bb5bc/ss_6b54d3d82b3497a8bec69372e0eec4c1352bb5bc.1920x1080.jpg?t=1786428179",
+        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2139460/ae02d8ce10f7613c9132227271298ad8266707dc/ss_ae02d8ce10f7613c9132227271298ad8266707dc.1920x1080.jpg?t=1786428179",
+        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2139460/a0db6e237ba1dd6db657ae396f523f81812b0ed0/ss_a0db6e237ba1dd6db657ae396f523f81812b0ed0.1920x1080.jpg?t=1786428179",
+        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2139460/ss_c22678575e3790f85d1ee047022bfef5c3555056.1920x1080.jpg?t=1786428179",
+        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2139460/ss_78c7278d10652c5369891393782d84b6934176c5.1920x1080.jpg?t=1786428179",
+        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2139460/ss_ce690aa878d1d6bb8ccb0840b45d86fcb7508ee5.1920x1080.jpg?t=1786428179",
+        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2139460/ss_bab7e8dff3944d83d08310b47b8facb64a7abca9.1920x1080.jpg?t=1786428179",
+        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2139460/ss_1ae7debe7f68a4cdde727d984d9e724f65767d66.1920x1080.jpg?t=1786428179",
+        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2139460/ss_2d7faf83b6942dcf69a4035f71ce4f1662826bc6.1920x1080.jpg?t=1786428179",
+        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2139460/ss_ea57d1446c92dbbfc273d7c69c01994562793061.1920x1080.jpg?t=1786428179",
+        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2139460/ss_63e6bef4f24438fc84ac9385ca340d307d1c8bcc.1920x1080.jpg?t=1786428179"
       ],
       "movies": [],
       "criticRating": null,
@@ -6717,7 +6533,7 @@
       "movies": [],
       "criticRating": 8,
       "steamUserRating": 9.6,
-      "recommendations": 103673,
+      "recommendations": 103698,
       "owners": "2,000,000 .. 5,000,000",
       "peakConcurrent": 215,
       "sourceEvidence": [
@@ -6730,7 +6546,7 @@
         "steamSpy": "https://steamspy.com/app/238320",
         "metacritic": "https://www.metacritic.com/game/pc/outlast?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9341.566985501675,
+      "popularityScore": 9341.577456837964,
       "igropoiskRating": 8.6,
       "editorialSources": [],
       "materials": {
@@ -6800,7 +6616,7 @@
       "movies": [],
       "criticRating": 8.3,
       "steamUserRating": 9.6,
-      "recommendations": 578935,
+      "recommendations": 578988,
       "owners": "20,000,000 .. 50,000,000",
       "peakConcurrent": 2892,
       "sourceEvidence": [
@@ -6814,7 +6630,7 @@
         "steamSpy": "https://steamspy.com/app/242760",
         "metacritic": "https://www.metacritic.com/game/pc/the-forest?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9316.26305561573,
+      "popularityScore": 9316.267031280398,
       "igropoiskRating": 8.8,
       "editorialSources": [
         "StopGame"
@@ -6899,30 +6715,53 @@
       "movies": [],
       "criticRating": 8.1,
       "steamUserRating": 9.5,
-      "recommendations": 52081,
+      "recommendations": 52087,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 222,
       "sourceEvidence": [
         "Steam",
         "SteamSpy",
-        "Metacritic"
+        "Metacritic",
+        "Eurogamer"
       ],
       "sourceLinks": {
         "steam": "https://store.steampowered.com/app/424840/",
         "steamSpy": "https://steamspy.com/app/424840",
         "metacritic": "https://www.metacritic.com/game/pc/little-nightmares?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9301.66876532154,
+      "popularityScore": 9301.673768233884,
       "igropoiskRating": 8.6,
-      "editorialSources": [],
+      "editorialSources": [
+        "Eurogamer"
+      ],
       "materials": {
-        "articles": [],
+        "articles": [
+          {
+            "source": "Eurogamer",
+            "language": "en",
+            "title": "Until Dawn and Little Nightmares 3 studio Supermassive announces further layoffs, with as many as 75 people expected to lose their jobs",
+            "normalizedTitle": "until dawn and little nightmares 3 studio supermassive announces further layoffs with as many as 75 people expected to lose their jobs",
+            "url": "https://www.eurogamer.net/little-nightmares-3-dark-pictures-supermassive-layoffs",
+            "summary": "Supermassive - the UK studio best known for its cinematic horror games including Until Dawn, The Quarry , and the Dark Pictures Anthology series - has announced more layoffs, this time affecting as many as 75 employees. Read more",
+            "publishedAt": "Tue, 11 Aug 2026 13:12:33 +0000"
+          }
+        ],
         "reviews": [],
         "guides": [],
         "tips": [],
         "news": []
       },
-      "articles": []
+      "articles": [
+        {
+          "source": "Eurogamer",
+          "language": "en",
+          "title": "Until Dawn and Little Nightmares 3 studio Supermassive announces further layoffs, with as many as 75 people expected to lose their jobs",
+          "normalizedTitle": "until dawn and little nightmares 3 studio supermassive announces further layoffs with as many as 75 people expected to lose their jobs",
+          "url": "https://www.eurogamer.net/little-nightmares-3-dark-pictures-supermassive-layoffs",
+          "summary": "Supermassive - the UK studio best known for its cinematic horror games including Until Dawn, The Quarry , and the Dark Pictures Anthology series - has announced more layoffs, this time affecting as many as 75 employees. Read more",
+          "publishedAt": "Tue, 11 Aug 2026 13:12:33 +0000"
+        }
+      ]
     },
     {
       "id": "860510",
@@ -6979,7 +6818,7 @@
       "movies": [],
       "criticRating": 8.3,
       "steamUserRating": 9.4,
-      "recommendations": 49977,
+      "recommendations": 49992,
       "owners": "1,000,000 .. 2,000,000",
       "peakConcurrent": 229,
       "sourceEvidence": [
@@ -6992,7 +6831,7 @@
         "steamSpy": "https://steamspy.com/app/860510",
         "metacritic": "https://www.metacritic.com/game/pc/little-nightmares-ii?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9289.877887271194,
+      "popularityScore": 9289.890919885207,
       "igropoiskRating": 8.7,
       "editorialSources": [],
       "materials": {
@@ -7062,7 +6901,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 7.7,
-      "recommendations": 386097,
+      "recommendations": 386157,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 37066,
       "sourceEvidence": [
@@ -7074,7 +6913,7 @@
         "steamSpy": "https://steamspy.com/app/221100",
         "metacritic": ""
       },
-      "popularityScore": 9288.669755197056,
+      "popularityScore": 9288.67650365067,
       "igropoiskRating": 7.7,
       "editorialSources": [],
       "materials": {
@@ -7146,29 +6985,52 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 9.4,
-      "recommendations": 356191,
+      "recommendations": 356610,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 22864,
       "sourceEvidence": [
         "Steam",
-        "SteamSpy"
+        "SteamSpy",
+        "StopGame"
       ],
       "sourceLinks": {
         "steam": "https://store.steampowered.com/app/108600/",
         "steamSpy": "https://steamspy.com/app/108600",
         "metacritic": ""
       },
-      "popularityScore": 9275.168416107088,
+      "popularityScore": 9275.219473526564,
       "igropoiskRating": 9.4,
-      "editorialSources": [],
+      "editorialSources": [
+        "StopGame"
+      ],
       "materials": {
         "articles": [],
         "reviews": [],
         "guides": [],
         "tips": [],
-        "news": []
+        "news": [
+          {
+            "source": "StopGame",
+            "language": "ru",
+            "title": "Project Zomboid. Релиз, которого нет",
+            "normalizedTitle": "project zomboid релиз которого нет",
+            "url": "https://stopgame.ru/show/163188/project_zomboid_reliz_kotorogo_net",
+            "summary": "Жизнь в небольшом городке Риверсайд текла размеренно, пока в один из мрачных дней не пришли они… Ребята из Стопгейма!",
+            "publishedAt": "Tue, 11 Aug 2026 09:35:05 +0300"
+          }
+        ]
       },
-      "articles": []
+      "articles": [
+        {
+          "source": "StopGame",
+          "language": "ru",
+          "title": "Project Zomboid. Релиз, которого нет",
+          "normalizedTitle": "project zomboid релиз которого нет",
+          "url": "https://stopgame.ru/show/163188/project_zomboid_reliz_kotorogo_net",
+          "summary": "Жизнь в небольшом городке Риверсайд текла размеренно, пока в один из мрачных дней не пришли они… Ребята из Стопгейма!",
+          "publishedAt": "Tue, 11 Aug 2026 09:35:05 +0300"
+        }
+      ]
     },
     {
       "id": "251570",
@@ -7240,7 +7102,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 8.9,
-      "recommendations": 278039,
+      "recommendations": 278108,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 17045,
       "sourceEvidence": [
@@ -7252,7 +7114,7 @@
         "steamSpy": "https://steamspy.com/app/251570",
         "metacritic": ""
       },
-      "popularityScore": 9254.41072798376,
+      "popularityScore": 9254.421504347434,
       "igropoiskRating": 8.9,
       "editorialSources": [],
       "materials": {
@@ -7310,7 +7172,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 9.2,
-      "recommendations": 93815,
+      "recommendations": 93855,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 1208,
       "sourceEvidence": [
@@ -7322,7 +7184,7 @@
         "steamSpy": "https://steamspy.com/app/286690",
         "metacritic": ""
       },
-      "popularityScore": 9167.227691214386,
+      "popularityScore": 9167.246204130046,
       "igropoiskRating": 9.2,
       "editorialSources": [],
       "materials": {
@@ -7402,7 +7264,7 @@
       "movies": [],
       "criticRating": 9.3,
       "steamUserRating": 9.6,
-      "recommendations": 179912,
+      "recommendations": 179954,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 3510,
       "sourceEvidence": [
@@ -7416,7 +7278,7 @@
         "steamSpy": "https://steamspy.com/app/435150",
         "metacritic": "https://www.metacritic.com/game/pc/divinity-original-sin-ii?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9165.506254535936,
+      "popularityScore": 9165.516391790887,
       "igropoiskRating": 9.4,
       "editorialSources": [
         "VG247"
@@ -7508,35 +7370,35 @@
       "movies": [],
       "criticRating": 8.8,
       "steamUserRating": 8.5,
-      "recommendations": 79454,
+      "recommendations": 79467,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 3123,
       "sourceEvidence": [
         "Steam",
         "SteamSpy",
         "Metacritic",
-        "PC Gamer"
+        "GamesRadar+"
       ],
       "sourceLinks": {
         "steam": "https://store.steampowered.com/app/268500/",
         "steamSpy": "https://steamspy.com/app/268500",
         "metacritic": "https://www.metacritic.com/game/pc/xcom-2?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9120.012123199129,
+      "popularityScore": 9120.019228310757,
       "igropoiskRating": 8.7,
       "editorialSources": [
-        "PC Gamer"
+        "GamesRadar+"
       ],
       "materials": {
         "articles": [
           {
-            "source": "PC Gamer",
+            "source": "GamesRadar+",
             "language": "en",
-            "title": "Cancelled Quake 4 expansion gets surprise GitHub release after former XCOM 2 developer discovers it on an old hard drive: 'This essentially saved my life'",
-            "normalizedTitle": "cancelled quake 4 expansion gets surprise github release after former xcom 2 developer discovers it on an old hard drive this essentially saved my life",
-            "url": "https://www.pcgamer.com/games/fps/cancelled-quake-4-expansion-gets-surprise-github-release-after-former-xcom-2-developer-discovers-it-on-an-old-hard-drive-this-essentially-saved-my-life/",
-            "summary": "Quake 4: Awakening was in development at Ritual Entertainment before being scrapped.",
-            "publishedAt": "Sun, 09 Aug 2026 12:00:00 +0000"
+            "title": "12 hours in, Star Wars Zero Company is a solid strategy RPG, but it's missing XCOM 2 or Baldur's Gate 3's spark",
+            "normalizedTitle": "12 hours in star wars zero company is a solid strategy rpg but it s missing xcom 2 or baldur s gate 3 s spark",
+            "url": "https://www.gamesradar.com/games/strategy/12-hours-in-star-wars-zero-company-is-a-solid-strategy-rpg-but-its-missing-xcom-2-or-baldurs-gate-3s-spark/",
+            "summary": "Zero Company is on the council, but I do not grant it the rank of master",
+            "publishedAt": "Tue, 11 Aug 2026 14:00:00 +0000"
           }
         ],
         "reviews": [],
@@ -7546,13 +7408,13 @@
       },
       "articles": [
         {
-          "source": "PC Gamer",
+          "source": "GamesRadar+",
           "language": "en",
-          "title": "Cancelled Quake 4 expansion gets surprise GitHub release after former XCOM 2 developer discovers it on an old hard drive: 'This essentially saved my life'",
-          "normalizedTitle": "cancelled quake 4 expansion gets surprise github release after former xcom 2 developer discovers it on an old hard drive this essentially saved my life",
-          "url": "https://www.pcgamer.com/games/fps/cancelled-quake-4-expansion-gets-surprise-github-release-after-former-xcom-2-developer-discovers-it-on-an-old-hard-drive-this-essentially-saved-my-life/",
-          "summary": "Quake 4: Awakening was in development at Ritual Entertainment before being scrapped.",
-          "publishedAt": "Sun, 09 Aug 2026 12:00:00 +0000"
+          "title": "12 hours in, Star Wars Zero Company is a solid strategy RPG, but it's missing XCOM 2 or Baldur's Gate 3's spark",
+          "normalizedTitle": "12 hours in star wars zero company is a solid strategy rpg but it s missing xcom 2 or baldur s gate 3 s spark",
+          "url": "https://www.gamesradar.com/games/strategy/12-hours-in-star-wars-zero-company-is-a-solid-strategy-rpg-but-its-missing-xcom-2-or-baldurs-gate-3s-spark/",
+          "summary": "Zero Company is on the council, but I do not grant it the rank of master",
+          "publishedAt": "Tue, 11 Aug 2026 14:00:00 +0000"
         }
       ]
     }
