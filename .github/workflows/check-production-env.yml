@@ -1,0 +1,33 @@
+name: Check production deployment secrets
+
+on:
+  push:
+    branches:
+      - fix/google-health-cloud-sleep-v2
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      SSH_PRIVATE_KEY: ${{ secrets.POCKETBASE_SSH_PRIVATE_KEY || secrets.VPS_SSH_KEY || secrets.SSH_PRIVATE_KEY }}
+      SSH_USER: ${{ secrets.POCKETBASE_SSH_USER || secrets.VPS_SSH_USER || secrets.SSH_USER }}
+      SSH_HOST: ${{ secrets.POCKETBASE_SSH_HOST || secrets.VPS_HOST || secrets.SSH_HOST }}
+      POCKETBASE_SERVICE: ${{ secrets.POCKETBASE_SERVICE }}
+      POCKETBASE_DEPLOY_DIR: ${{ secrets.POCKETBASE_DEPLOY_DIR }}
+      GOOGLE_HEALTH_CLIENT_ID: ${{ secrets.GOOGLE_HEALTH_CLIENT_ID }}
+      GOOGLE_HEALTH_CLIENT_SECRET: ${{ secrets.GOOGLE_HEALTH_CLIENT_SECRET }}
+    steps:
+      - name: Check presence only
+        shell: bash
+        run: |
+          [[ -n "$SSH_PRIVATE_KEY" ]] && echo 'SSH_KEY=present' || echo 'SSH_KEY=missing'
+          [[ -n "$SSH_USER" ]] && echo 'SSH_USER=present' || echo 'SSH_USER=default'
+          [[ -n "$SSH_HOST" ]] && echo 'SSH_HOST=present' || echo 'SSH_HOST=default'
+          [[ -n "$POCKETBASE_SERVICE" ]] && echo 'PB_SERVICE=present' || echo 'PB_SERVICE=auto'
+          [[ -n "$POCKETBASE_DEPLOY_DIR" ]] && echo 'PB_DIR=present' || echo 'PB_DIR=auto'
+          [[ -n "$GOOGLE_HEALTH_CLIENT_ID" ]] && echo 'GOOGLE_HEALTH_ID=present' || echo 'GOOGLE_HEALTH_ID=missing'
+          [[ -n "$GOOGLE_HEALTH_CLIENT_SECRET" ]] && echo 'GOOGLE_HEALTH_SECRET=present' || echo 'GOOGLE_HEALTH_SECRET=missing'
