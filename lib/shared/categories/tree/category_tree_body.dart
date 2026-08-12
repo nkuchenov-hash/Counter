@@ -7,7 +7,6 @@ import 'package:counter/l10n/dictionary.dart';
 import 'package:counter/shared/categories/picker/category_picker_contracts.dart';
 import 'package:counter/shared/categories/picker/category_picker_models.dart';
 import 'package:counter/shared/categories/tree/category_tree_filter.dart';
-import 'package:counter/shared/categories/visibility/category_visibility_prefs.dart';
 import 'package:flutter/material.dart';
 
 const Duration _kTreeOpacityDuration = Duration(milliseconds: 80);
@@ -26,12 +25,10 @@ class CategoryTreeBody extends StatefulWidget {
     required this.roots,
     required this.selectedCategoryId,
     this.expandSelectionPath = false,
+    this.expandAll = false,
     required this.onSelect,
     required this.showEditChrome,
     this.showPickerCreateChrome = false,
-    this.showVisibilityCheckboxes = false,
-    this.filterHiddenCategories = true,
-    this.onVisibilityChanged,
     this.onPickerAddChild,
     this.onFullSettingsTap,
     this.onAppearanceTap,
@@ -41,23 +38,16 @@ class CategoryTreeBody extends StatefulWidget {
   final List<CategoryRule> roots;
   final int? selectedCategoryId;
 
-  /// When false, tree opens fully collapsed.
+  /// When false, tree opens fully collapsed unless [expandAll] is true.
   final bool expandSelectionPath;
+
+  /// Opens every branch immediately. Used by assignment/edit pickers so the
+  /// complete category hierarchy is available without extra navigation taps.
+  final bool expandAll;
+
   final ValueChanged<int> onSelect;
   final bool showEditChrome;
   final bool showPickerCreateChrome;
-
-  /// When true, hidden nodes stay in the tree and expose a visibility checkbox.
-  /// Descendants of a hidden parent are shown unchecked and disabled until the
-  /// parent is made visible again, matching [CategoryVisibilityPrefs] semantics.
-  final bool showVisibilityCheckboxes;
-
-  /// Whether normal tree rendering should apply device-local category visibility
-  /// preferences. Selection pickers pass false: hidden-from-navigation is not
-  /// hidden-from-assignment, so the complete category hierarchy remains usable.
-  final bool filterHiddenCategories;
-  final void Function(CategoryRule rule, bool visible)? onVisibilityChanged;
-
   final void Function(CategoryRule parent)? onPickerAddChild;
   final void Function(CategoryRule r)? onFullSettingsTap;
   final void Function(CategoryRule r)? onAppearanceTap;
@@ -73,9 +63,7 @@ class _CategoryTreeBodyState extends State<CategoryTreeBody> {
   @override
   void initState() {
     super.initState();
-    _expandedIds = widget.expandSelectionPath
-        ? _initialExpandedForSelection(widget.selectedCategoryId)
-        : <int>{};
+    _expandedIds = _initialExpandedForSelection(widget.selectedCategoryId);
   }
 
   @override
@@ -83,11 +71,10 @@ class _CategoryTreeBodyState extends State<CategoryTreeBody> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.selectedCategoryId != widget.selectedCategoryId ||
         oldWidget.expandSelectionPath != widget.expandSelectionPath ||
-        oldWidget.filterHiddenCategories != widget.filterHiddenCategories) {
+        oldWidget.expandAll != widget.expandAll ||
+        oldWidget.roots != widget.roots) {
       setState(() {
-        _expandedIds = widget.expandSelectionPath
-            ? _initialExpandedForSelection(widget.selectedCategoryId)
-            : <int>{};
+        _expandedIds = _initialExpandedForSelection(widget.selectedCategoryId);
       });
     }
   }
@@ -108,14 +95,10 @@ class _CategoryTreeBodyState extends State<CategoryTreeBody> {
   }
 
   Set<int> _initialExpandedForSelection(int? selectedCategoryId) {
-    // Assignment/edit pickers disable local hidden-category filtering. In that
-    // mode expose the complete hierarchy immediately instead of presenting only
-    // root folders behind small chevrons. This behavior is shared by every app
-    // platform because the picker itself is shared.
-    if (!widget.filterHiddenCategories) {
+    if (widget.expandAll) {
       return _allExpandableIds(widget.roots);
     }
-    if (selectedCategoryId == null) return {};
+    if (!widget.expandSelectionPath || selectedCategoryId == null) return {};
     final spine = CategoryTreeSource.pathFromRoot(selectedCategoryId);
     if (spine.length <= 1) return {};
     return spine.take(spine.length - 1).toSet();
@@ -149,9 +132,6 @@ class _CategoryTreeBodyState extends State<CategoryTreeBody> {
             onSelect: widget.onSelect,
             showEditChrome: widget.showEditChrome,
             showPickerCreateChrome: widget.showPickerCreateChrome,
-            showVisibilityCheckboxes: widget.showVisibilityCheckboxes,
-            filterHiddenCategories: widget.filterHiddenCategories,
-            onVisibilityChanged: widget.onVisibilityChanged,
             onPickerAddChild: widget.onPickerAddChild,
             onFullSettingsTap: widget.onFullSettingsTap,
             onAppearanceTap: widget.onAppearanceTap,
@@ -172,9 +152,6 @@ class _CategoryTreeNode extends StatelessWidget {
     required this.onSelect,
     required this.showEditChrome,
     this.showPickerCreateChrome = false,
-    this.showVisibilityCheckboxes = false,
-    this.filterHiddenCategories = true,
-    this.onVisibilityChanged,
     this.onPickerAddChild,
     this.onFullSettingsTap,
     this.onAppearanceTap,
@@ -189,32 +166,15 @@ class _CategoryTreeNode extends StatelessWidget {
   final ValueChanged<int> onSelect;
   final bool showEditChrome;
   final bool showPickerCreateChrome;
-  final bool showVisibilityCheckboxes;
-  final bool filterHiddenCategories;
-  final void Function(CategoryRule rule, bool visible)? onVisibilityChanged;
   final void Function(CategoryRule parent)? onPickerAddChild;
   final void Function(CategoryRule r)? onFullSettingsTap;
   final void Function(CategoryRule r)? onAppearanceTap;
   final void Function(CategoryRule parent)? onAddChild;
 
-  bool _hasHiddenAncestor() {
-    final hidden = CategoryVisibilityPrefs.hiddenIds.value.toSet();
-    if (hidden.isEmpty) return false;
-    final path = CategoryTreeSource.pathFromRoot(rule.id);
-    if (path.length <= 1) return false;
-    return path.take(path.length - 1).any(hidden.contains);
-  }
-
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final childrenRaw = rule.children ?? const <CategoryRule>[];
-    final children = showVisibilityCheckboxes || !filterHiddenCategories
-        ? childrenRaw
-        : [
-            for (final c in childrenRaw)
-              if (!CategoryVisibilityPrefs.isHiddenOrAncestor(c.id)) c,
-          ];
+    final children = rule.children ?? const <CategoryRule>[];
     final hasChildren = children.isNotEmpty;
     final expanded = expandedIds.contains(rule.id);
     final opacity = categoryBranchOpacityForSelection(
@@ -229,10 +189,6 @@ class _CategoryTreeNode extends StatelessWidget {
     final showRowAdd = categoryTreeNodeShowsPickerAddChild(
       showPickerCreateChrome: showPickerCreateChrome,
       onPickerAddChild: onPickerAddChild,
-    );
-    final hiddenByAncestor = showVisibilityCheckboxes && _hasHiddenAncestor();
-    final effectivelyVisible = !CategoryVisibilityPrefs.isHiddenOrAncestor(
-      rule.id,
     );
 
     final row = AnimatedOpacity(
@@ -260,17 +216,6 @@ class _CategoryTreeNode extends StatelessWidget {
               )
             else
               const SizedBox(width: 12),
-            if (showVisibilityCheckboxes)
-              Checkbox(
-                key: ValueKey<String>('category-visibility-${rule.id}'),
-                value: effectivelyVisible,
-                onChanged: hiddenByAncestor || onVisibilityChanged == null
-                    ? null
-                    : (value) {
-                        if (value == null) return;
-                        onVisibilityChanged!(rule, value);
-                      },
-              ),
             Expanded(
               child: InkWell(
                 onTap: () => onSelect(rule.id),
@@ -368,9 +313,6 @@ class _CategoryTreeNode extends StatelessWidget {
                     onSelect: onSelect,
                     showEditChrome: showEditChrome,
                     showPickerCreateChrome: showPickerCreateChrome,
-                    showVisibilityCheckboxes: showVisibilityCheckboxes,
-                    filterHiddenCategories: filterHiddenCategories,
-                    onVisibilityChanged: onVisibilityChanged,
                     onPickerAddChild: onPickerAddChild,
                     onFullSettingsTap: onFullSettingsTap,
                     onAppearanceTap: onAppearanceTap,

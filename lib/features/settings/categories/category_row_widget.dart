@@ -1,7 +1,6 @@
 import 'package:counter/core/app_colors.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
-import 'package:counter/shared/categories/visibility/category_visibility_prefs.dart';
 import 'package:counter/l10n/category_db_display.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
@@ -174,7 +173,6 @@ class CategoryRowWidget extends StatelessWidget {
     this.showAdd = false,
     this.editMode = false,
     this.layout = CategoryBandLayout.wrapGrid,
-    this.onToggleCategoryVisibility,
   });
 
   final List<CategoryRule> items;
@@ -193,9 +191,6 @@ class CategoryRowWidget extends StatelessWidget {
   final bool editMode;
   final CategoryBandLayout layout;
 
-  /// Edit mode: eye toggles [CategoryVisibilityPrefs] (client-side quarantine).
-  final void Function(int categoryId)? onToggleCategoryVisibility;
-
   /// Single category cell: glass fill; fixed [layout.side]×[layout.side] square (no stretch).
   static Widget _buildCategoryTile({
     required BuildContext context,
@@ -208,8 +203,6 @@ class CategoryRowWidget extends StatelessWidget {
     required void Function(CategoryRule r) onLongPressOpenEditor,
     required void Function(CategoryRule r) onFullSettingsTap,
     required void Function(CategoryRule r) onAppearanceTap,
-    VoidCallback? onVisibilityToggle,
-    bool isQuarantined = false,
   }) {
     final scheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
@@ -235,10 +228,6 @@ class CategoryRowWidget extends StatelessWidget {
       fontWeight: layout.fontWeight,
       height: 1.15,
       color: textTheme.bodyLarge?.color,
-      decoration: (editMode && isQuarantined)
-          ? TextDecoration.lineThrough
-          : null,
-      decorationColor: scheme.onSurfaceVariant,
     );
 
     final iconWidget = Icon(
@@ -276,27 +265,9 @@ class CategoryRowWidget extends StatelessWidget {
           )
         : null;
 
-    final visibilityBtn = editMode && onVisibilityToggle != null
-        ? IconButton(
-            icon: Icon(
-              isQuarantined
-                  ? Icons.visibility_off_outlined
-                  : Icons.visibility_outlined,
-            ),
-            iconSize: layout.gearIconSize,
-            style: IconButton.styleFrom(
-              minimumSize: Size(minTap, minTap),
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              padding: EdgeInsets.zero,
-            ),
-            onPressed: onVisibilityToggle,
-            tooltip: t(loc, 'category_visibility_toggle'),
-          )
-        : null;
-
     final radius = layout.borderRadius;
 
-    Widget tileCore = SizedBox(
+    return SizedBox(
       width: layout.side,
       height: layout.side,
       child: Material(
@@ -329,7 +300,6 @@ class CategoryRowWidget extends StatelessWidget {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           iconHitTarget,
-                          ?visibilityBtn,
                           gear,
                         ],
                       ),
@@ -360,11 +330,6 @@ class CategoryRowWidget extends StatelessWidget {
         ),
       ),
     );
-
-    if (editMode && onVisibilityToggle != null && isQuarantined) {
-      tileCore = Opacity(opacity: 0.55, child: tileCore);
-    }
-    return tileCore;
   }
 
   Widget _addTile(BuildContext context, CategoryDepthLayout layout) {
@@ -447,9 +412,6 @@ class CategoryRowWidget extends StatelessWidget {
 
           Widget cell(CategoryRule r) {
             final isSelected = selectedId == r.id;
-            final quarantined = CategoryVisibilityPrefs.isHiddenOrAncestor(
-              r.id,
-            );
             return _buildCategoryTile(
               context: context,
               r: r,
@@ -461,10 +423,6 @@ class CategoryRowWidget extends StatelessWidget {
               onLongPressOpenEditor: onLongPressOpenEditor,
               onFullSettingsTap: onFullSettingsTap,
               onAppearanceTap: onAppearanceTap,
-              onVisibilityToggle: onToggleCategoryVisibility != null
-                  ? () => onToggleCategoryVisibility!(r.id)
-                  : null,
-              isQuarantined: quarantined,
             );
           }
 
