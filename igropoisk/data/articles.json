@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-12T18:41:29.616Z",
+  "updatedAt": "2026-08-12T19:00:39.077Z",
   "count": 495,
   "sources": [
     "IGN",
@@ -14,6 +14,24 @@
     "Игромания"
   ],
   "articles": [
+    {
+      "source": "Polygon",
+      "language": "en",
+      "title": "Is 'The End of Oak Street' a Cloverfield Spin-Off? A Spoiler Free Guide",
+      "normalizedTitle": "is the end of oak street a cloverfield spin off a spoiler free guide",
+      "url": "https://www.polygon.com/the-end-of-oak-street-ending-cloverfield-spin-off/",
+      "summary": "With JJ Abrams and Bad Robot Productions in the picture, fans are certain that 'The End of Oak Street' has a connection to the 'Cloverfield' franchise",
+      "publishedAt": "Wed, 12 Aug 2026 19:00:12 GMT"
+    },
+    {
+      "source": "Polygon",
+      "language": "en",
+      "title": "The 13 Most Influential Games of All Time",
+      "normalizedTitle": "the 13 most influential games of all time",
+      "url": "https://www.polygon.com/most-influential-video-games-ever/",
+      "summary": "Games come and go, but the lingering influence of the 13 games on this list, drawn from across the decades, will always remain.",
+      "publishedAt": "Wed, 12 Aug 2026 19:00:12 GMT"
+    },
     {
       "source": "Polygon",
       "language": "en",
@@ -193,24 +211,6 @@
       "url": "https://www.polygon.com/coyote-vs-acme-release-date-looney-tunes/",
       "summary": "We didn't think it would ever happen, but Coyote vs. Acme is finally coming to the silver screen.",
       "publishedAt": "Wed, 12 Aug 2026 17:07:58 GMT"
-    },
-    {
-      "source": "Polygon",
-      "language": "en",
-      "title": "Amazon Further Abandons Gaming, Dropping MMOs Lost Ark & Throne And Liberty",
-      "normalizedTitle": "amazon further abandons gaming dropping mmos lost ark throne and liberty",
-      "url": "https://www.polygon.com/amazon-games-mmo-lost-ark-throne-and-liberty/",
-      "summary": "Amazon Game Studios will no longer publish Lost Ark or Throne and Liberty as it shifts focus to games like Tomb Raider: Legacy of Atlantis.",
-      "publishedAt": "Wed, 12 Aug 2026 17:05:49 GMT"
-    },
-    {
-      "source": "Polygon",
-      "language": "en",
-      "title": "Xbox Reveals Limited Edition Controllers for October 2026 Release",
-      "normalizedTitle": "xbox reveals limited edition controllers for october 2026 release",
-      "url": "https://www.polygon.com/gears-of-war-e-day-xbox-limited-edition-controllers/",
-      "summary": "Gears of War: E-Day is getting two limited edition Xbox controllers",
-      "publishedAt": "Wed, 12 Aug 2026 16:55:59 GMT"
     },
     {
       "source": "Rock Paper Shotgun",
