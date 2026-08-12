@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-12T20:28:18.471Z",
+  "updatedAt": "2026-08-12T20:48:16.130Z",
   "count": 495,
   "sources": [
     "IGN",
@@ -14,6 +14,24 @@
     "Игромания"
   ],
   "articles": [
+    {
+      "source": "GamesRadar+",
+      "language": "en",
+      "title": "Echoing Palworld dev, video game lawyer says all her clients have anti-AI contracts because gamers hate it and it's a copyright landmine: \"I think we're going to see lawsuits\"",
+      "normalizedTitle": "echoing palworld dev video game lawyer says all her clients have anti ai contracts because gamers hate it and it s a copyright landmine i think we re going to see lawsuits",
+      "url": "https://www.gamesradar.com/games/echoing-palworld-dev-video-game-lawyer-says-all-her-clients-have-anti-ai-contracts-because-gamers-hate-it-and-its-a-copyright-landmine-i-think-were-going-to-see-lawsuits/",
+      "summary": "\"Don't touch it. It's not worth the legal liability\"",
+      "publishedAt": "Wed, 12 Aug 2026 20:37:36 +0000"
+    },
+    {
+      "source": "Polygon",
+      "language": "en",
+      "title": "D23's Kingdom Hearts Panel Will Only Be Streamed Live",
+      "normalizedTitle": "d23 s kingdom hearts panel will only be streamed live",
+      "url": "https://www.polygon.com/d23-kingdom-hearts-25th-anniversary-deep-dive-panel-kh4/",
+      "summary": "Disney’s Kingdom Hearts panel streams live from D23 on Aug. 15, and it won’t be available to watch afterward, Square Enix warns.",
+      "publishedAt": "Wed, 12 Aug 2026 20:30:06 GMT"
+    },
     {
       "source": "Polygon",
       "language": "en",
@@ -202,15 +220,6 @@
       "url": "https://www.polygon.com/steam-wardogs-bulkhead-10-reasons-not-buy-tactical-fps-early-access/",
       "summary": "Wardogs, a tactical 100-player FPS that will soon launch on Steam's early access, is taking an unusual marketing approach aimed at PC gamers",
       "publishedAt": "Wed, 12 Aug 2026 18:19:40 GMT"
-    },
-    {
-      "source": "Polygon",
-      "language": "en",
-      "title": "Warhammer 40K: Dawn Of War 4 Delayed",
-      "normalizedTitle": "warhammer 40k dawn of war 4 delayed",
-      "url": "https://www.polygon.com/warhammer-dawn-of-war-4-delayed-december/",
-      "summary": "'Warhammer 40,000: Dawn of War 4' has been delayed to early December, putting it within 2 weeks of 'GTA 6''s release.",
-      "publishedAt": "Wed, 12 Aug 2026 18:15:23 GMT"
     },
     {
       "source": "GameSpot",
@@ -1336,15 +1345,6 @@
       "url": "https://www.rockpapershotgun.com/im-enjoying-leaving-my-body-behind-in-project-looking-glass-an-astral-horror-game-in-which-you-telewarp-around-a-map-of-your-terrible-memories",
       "summary": "The great enemy of my sanity is 4.15pm. That's 45 minutes of workday remaining - just enough time to find and turn around a news story before Julian sounds the Thrice-Girdled Klaxon of Labour's End. The sensible thing to do would be to pick a nice, easy write-up like \"Developers XYZ are still making that videogame they were making before, say it's going pretty well\". But inevitably, my appetite defeats my reason, and I find myself firing up the demo for something like Project Looking Glass , a cathode ray horror game in which you are a grieving woman participating in secret Cold War astral pro",
       "publishedAt": "Tue, 11 Aug 2026 17:00:00 +0000"
-    },
-    {
-      "source": "GamesRadar+",
-      "language": "en",
-      "title": "\"Crimson Desert is not a one-off title\": Pearl Abyss is open to \"sequel titles,\" multiplayer expansions, and even more DLC",
-      "normalizedTitle": "crimson desert is not a one off title pearl abyss is open to sequel titles multiplayer expansions and even more dlc",
-      "url": "https://www.gamesradar.com/games/open-world/crimson-desert-is-not-a-one-off-title-pearl-abyss-is-open-to-sequel-titles-multiplayer-expansions-and-even-more-dlc/",
-      "summary": "This crimson desert is turning into a crimson kingdom",
-      "publishedAt": "Tue, 11 Aug 2026 16:55:16 +0000"
     },
     {
       "source": "PC Gamer",
