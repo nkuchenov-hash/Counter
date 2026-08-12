@@ -1,0 +1,62 @@
+name: Temporary auth/catalog diagnostic
+
+on:
+  push:
+    paths:
+      - '.github/workflows/diag-auth-catalog-20260812.yml'
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install SSH key
+        shell: bash
+        env:
+          SSH_KEY: ${{ secrets.POCKETBASE_SSH_PRIVATE_KEY || secrets.VPS_SSH_KEY || secrets.SSH_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          test -n "$SSH_KEY"
+          mkdir -p ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H 217.114.0.201 >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Inspect recent PocketBase auth/catalog requests
+        shell: bash
+        run: |
+          set -euo pipefail
+          ssh -i ~/.ssh/id_ed25519 root@217.114.0.201 'bash -s' <<'REMOTE'
+          set -euo pipefail
+          echo '=== REQUEST TABLE SCHEMA ==='
+          sqlite3 -readonly /root/pb/pb_data/auxiliary.db "PRAGMA table_info(_requests);"
+          echo '=== RECENT AUTH / PROFILE / CATEGORY / TAG / PLAN / RECORD REQUESTS ==='
+          sqlite3 -readonly -header -column /root/pb/pb_data/auxiliary.db "
+            SELECT created, method, url, status, substr(error,1,300) AS error
+            FROM _requests
+            WHERE created >= datetime('now','-75 minutes')
+              AND (
+                url LIKE '%/api/collections/profiles/%'
+                OR url LIKE '%/api/collections/categories/%'
+                OR url LIKE '%/api/collections/tags/%'
+                OR url LIKE '%/api/collections/plans/%'
+                OR url LIKE '%/api/collections/records/%'
+              )
+            ORDER BY created DESC
+            LIMIT 250;
+          "
+          echo '=== LIVE DATA COUNTS (READ ONLY) ==='
+          sqlite3 -readonly -header -column /root/pb/pb_data/data.db "
+            SELECT 'profiles' AS entity, count(*) AS n FROM profiles
+            UNION ALL SELECT 'categories', count(*) FROM categories
+            UNION ALL SELECT 'tags', count(*) FROM tags
+            UNION ALL SELECT 'plans', count(*) FROM plans
+            UNION ALL SELECT 'records', count(*) FROM records;
+          "
+          echo '=== USER PROFILE ROW ==='
+          sqlite3 -readonly -header -column /root/pb/pb_data/data.db "
+            SELECT id, user_id, is_admin, created, updated
+            FROM profiles
+            WHERE id='xhjy54inue73piz' OR user_id='11111111-1111-4111-8111-111111111111';
+          " || true
+          REMOTE
