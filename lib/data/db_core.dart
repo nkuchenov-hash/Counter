@@ -514,6 +514,9 @@ extension DbCoreExtension on DatabaseService {
   }
 
   Future<void> _loadInnerWearLiteAfterProfile() async {
+    // Category hydration is cache-safe under PocketBase backoff. Never render
+    // a partial shell with records but an empty category tree.
+    await _loadRulesFromNoco();
     if (_pbHttpBackoffActive) {
       await bootstrapTimelineRecordsCacheFromPrefsAtBoot();
       _loadErrorMessage ??= 'PocketBase unreachable; retry scheduled.';
@@ -523,7 +526,6 @@ extension DbCoreExtension on DatabaseService {
       _isInitialized = true;
       return;
     }
-    await _loadRulesFromNoco();
     await bootstrapTimelineRecordsCacheFromPrefsAtBoot();
     try {
       await _fetchRecordsIntoCache(forceNetwork: true);
@@ -542,6 +544,10 @@ extension DbCoreExtension on DatabaseService {
   }
 
   Future<void> _loadInnerAfterProfile() async {
+    // Always hydrate categories before the shell is marked initialized.
+    // _loadRulesFromNoco() falls back to the last-known local catalog when
+    // PocketBase is unavailable, so transient backoff cannot blank categories.
+    await _loadRulesFromNoco();
     if (_pbHttpBackoffActive) {
       await bootstrapTimelineRecordsCacheFromPrefsAtBoot(criticalOnly: true);
       await restorePlansWarmSnapshotsFromDiskAtBoot();
@@ -560,7 +566,6 @@ extension DbCoreExtension on DatabaseService {
       );
       return;
     }
-    await _loadRulesFromNoco();
     await bootstrapTimelineRecordsCacheFromPrefsAtBoot(criticalOnly: true);
     await restorePlansWarmSnapshotsFromDiskAtBoot();
     await restoreTimelineWarmSnapshotsFromDiskAtBoot();
