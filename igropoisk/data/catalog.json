@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-12T14:19:36.045Z",
+  "updatedAt": "2026-08-12T14:58:11.904Z",
   "count": 78,
   "sourcePool": [
     "Steam",
@@ -79,7 +79,7 @@
       "movies": [],
       "criticRating": 9.4,
       "steamUserRating": 9.3,
-      "recommendations": 826795,
+      "recommendations": 826804,
       "owners": "20,000,000 .. 50,000,000",
       "peakConcurrent": 29529,
       "sourceEvidence": [
@@ -94,7 +94,7 @@
         "steamSpy": "https://steamspy.com/app/1245620",
         "metacritic": "https://www.metacritic.com/game/pc/elden-ring?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10591.739836686414,
+      "popularityScore": 10591.740309430485,
       "igropoiskRating": 9.4,
       "editorialSources": [
         "StopGame",
@@ -223,14 +223,13 @@
       "movies": [],
       "criticRating": 9.6,
       "steamUserRating": 9.7,
-      "recommendations": 750313,
+      "recommendations": 750319,
       "owners": "20,000,000 .. 50,000,000",
       "peakConcurrent": 54771,
       "sourceEvidence": [
         "Steam",
         "SteamSpy",
         "Metacritic",
-        "GamesRadar+",
         "Eurogamer",
         "Rock Paper Shotgun",
         "VG247"
@@ -240,25 +239,15 @@
         "steamSpy": "https://steamspy.com/app/1086940",
         "metacritic": "https://www.metacritic.com/game/pc/baldurs-gate-3?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10577.524304996346,
+      "popularityScore": 10577.524652285143,
       "igropoiskRating": 9.6,
       "editorialSources": [
-        "GamesRadar+",
         "Eurogamer",
         "Rock Paper Shotgun",
         "VG247"
       ],
       "materials": {
         "articles": [
-          {
-            "source": "GamesRadar+",
-            "language": "en",
-            "title": "12 hours in, Star Wars Zero Company is a solid strategy RPG, but it's missing XCOM 2 or Baldur's Gate 3's spark",
-            "normalizedTitle": "12 hours in star wars zero company is a solid strategy rpg but it s missing xcom 2 or baldur s gate 3 s spark",
-            "url": "https://www.gamesradar.com/games/strategy/12-hours-in-star-wars-zero-company-is-a-solid-strategy-rpg-but-its-missing-xcom-2-or-baldurs-gate-3s-spark/",
-            "summary": "Zero Company is on the council, but I do not grant it the rank of master",
-            "publishedAt": "Tue, 11 Aug 2026 14:00:00 +0000"
-          },
           {
             "source": "Eurogamer",
             "language": "en",
@@ -293,15 +282,6 @@
         "news": []
       },
       "articles": [
-        {
-          "source": "GamesRadar+",
-          "language": "en",
-          "title": "12 hours in, Star Wars Zero Company is a solid strategy RPG, but it's missing XCOM 2 or Baldur's Gate 3's spark",
-          "normalizedTitle": "12 hours in star wars zero company is a solid strategy rpg but it s missing xcom 2 or baldur s gate 3 s spark",
-          "url": "https://www.gamesradar.com/games/strategy/12-hours-in-star-wars-zero-company-is-a-solid-strategy-rpg-but-its-missing-xcom-2-or-baldurs-gate-3s-spark/",
-          "summary": "Zero Company is on the council, but I do not grant it the rank of master",
-          "publishedAt": "Tue, 11 Aug 2026 14:00:00 +0000"
-        },
         {
           "source": "Eurogamer",
           "language": "en",
@@ -397,7 +377,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 8.7,
-      "recommendations": 5216308,
+      "recommendations": 5216378,
       "owners": "100,000,000 .. 200,000,000",
       "peakConcurrent": 1013936,
       "sourceEvidence": [
@@ -409,7 +389,7 @@
         "steamSpy": "https://steamspy.com/app/730",
         "metacritic": ""
       },
-      "popularityScore": 10541.73633099133,
+      "popularityScore": 10541.736913786746,
       "igropoiskRating": 8.7,
       "editorialSources": [],
       "materials": {
@@ -560,7 +540,7 @@
       "movies": [],
       "criticRating": 9.3,
       "steamUserRating": 9.8,
-      "recommendations": 284745,
+      "recommendations": 284747,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 2253,
       "sourceEvidence": [
@@ -573,7 +553,7 @@
         "steamSpy": "https://steamspy.com/app/1145360",
         "metacritic": "https://www.metacritic.com/game/pc/hades?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10485.445763199563,
+      "popularityScore": 10485.44606823841,
       "igropoiskRating": 9.5,
       "editorialSources": [],
       "materials": {
@@ -829,6 +809,7 @@
         "Steam",
         "SteamSpy",
         "Metacritic",
+        "GameSpot",
         "GamesRadar+"
       ],
       "sourceLinks": {
@@ -839,6 +820,7 @@
       "popularityScore": 10436.470426918437,
       "igropoiskRating": 7.5,
       "editorialSources": [
+        "GameSpot",
         "GamesRadar+"
       ],
       "materials": {
@@ -856,9 +838,28 @@
         ],
         "guides": [],
         "tips": [],
-        "news": []
+        "news": [
+          {
+            "source": "GameSpot",
+            "language": "en",
+            "title": "Palworld Update Fixes The Game&#8217;s Biggest Frustration",
+            "normalizedTitle": "palworld update fixes the game 8217 s biggest frustration",
+            "url": "https://www.gamespot.com/articles/palworld-update-fixes-the-games-biggest-frustration/",
+            "summary": "Palworld recently launched its long-awaited 1.0 update, and developer Pocketpair is wasting no time making further improvements to the game. The patch notes for the latest v1.0.3 update reveal positive changes that should reduce the frustration of Palworld 1.0's biggest hassle of collecting World Tree Holy Water. It also addresses the bug that previously caused some Pals to freeze and stop attacking. https://youtu.be/1fpGg9wNM9A?si=3s3gO22Cy7ob99Vd Palworld 1.0 added plenty of new pals and features to the game, including the explorable new area around the World Tree. The update also added a va",
+            "publishedAt": "Wed, 12 Aug 2026 14:28:41 +0000"
+          }
+        ]
       },
       "articles": [
+        {
+          "source": "GameSpot",
+          "language": "en",
+          "title": "Palworld Update Fixes The Game&#8217;s Biggest Frustration",
+          "normalizedTitle": "palworld update fixes the game 8217 s biggest frustration",
+          "url": "https://www.gamespot.com/articles/palworld-update-fixes-the-games-biggest-frustration/",
+          "summary": "Palworld recently launched its long-awaited 1.0 update, and developer Pocketpair is wasting no time making further improvements to the game. The patch notes for the latest v1.0.3 update reveal positive changes that should reduce the frustration of Palworld 1.0's biggest hassle of collecting World Tree Holy Water. It also addresses the bug that previously caused some Pals to freeze and stop attacking. https://youtu.be/1fpGg9wNM9A?si=3s3gO22Cy7ob99Vd Palworld 1.0 added plenty of new pals and features to the game, including the explorable new area around the World Tree. The update also added a va",
+          "publishedAt": "Wed, 12 Aug 2026 14:28:41 +0000"
+        },
         {
           "source": "GamesRadar+",
           "language": "en",
@@ -936,7 +937,7 @@
       "movies": [],
       "criticRating": 7,
       "steamUserRating": 8.4,
-      "recommendations": 584488,
+      "recommendations": 584494,
       "owners": "20,000,000 .. 50,000,000",
       "peakConcurrent": 22170,
       "sourceEvidence": [
@@ -949,7 +950,7 @@
         "steamSpy": "https://steamspy.com/app/346110",
         "metacritic": "https://www.metacritic.com/game/pc/ark-survival-evolved?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10396.677634221427,
+      "popularityScore": 10396.678080038802,
       "igropoiskRating": 7.5,
       "editorialSources": [],
       "materials": {
@@ -1041,7 +1042,7 @@
       "movies": [],
       "criticRating": 8.9,
       "steamUserRating": 9.8,
-      "recommendations": 811188,
+      "recommendations": 811195,
       "owners": "50,000,000 .. 100,000,000",
       "peakConcurrent": 25122,
       "sourceEvidence": [
@@ -1054,7 +1055,7 @@
         "steamSpy": "https://steamspy.com/app/550",
         "metacritic": "https://www.metacritic.com/game/pc/left-4-dead-2?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10390.912205284763,
+      "popularityScore": 10390.912580049246,
       "igropoiskRating": 9.2,
       "editorialSources": [],
       "materials": {
@@ -1242,30 +1243,53 @@
       "movies": [],
       "criticRating": 8.9,
       "steamUserRating": 9.8,
-      "recommendations": 887252,
+      "recommendations": 887268,
       "owners": "20,000,000 .. 50,000,000",
       "peakConcurrent": 50662,
       "sourceEvidence": [
         "Steam",
         "SteamSpy",
-        "Metacritic"
+        "Metacritic",
+        "Polygon"
       ],
       "sourceLinks": {
         "steam": "https://store.steampowered.com/app/413150/",
         "steamSpy": "https://steamspy.com/app/413150",
         "metacritic": "https://www.metacritic.com/game/pc/stardew-valley?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10364.804747646847,
+      "popularityScore": 10364.805530811183,
       "igropoiskRating": 9.2,
-      "editorialSources": [],
+      "editorialSources": [
+        "Polygon"
+      ],
       "materials": {
-        "articles": [],
+        "articles": [
+          {
+            "source": "Polygon",
+            "language": "en",
+            "title": "Stardew Valley Nintendo Switch 2 Edition Goes Old School With Physical Game and Manual",
+            "normalizedTitle": "stardew valley nintendo switch 2 edition goes old school with physical game and manual",
+            "url": "https://www.polygon.com/stardew-valley-switch-2-edition-cartridge-manual/",
+            "summary": "The physical edition of Stardew Valley for the Switch 2 has 18-page game manual with beautiful illustrations.",
+            "publishedAt": "Wed, 12 Aug 2026 14:52:13 GMT"
+          }
+        ],
         "reviews": [],
         "guides": [],
         "tips": [],
         "news": []
       },
-      "articles": []
+      "articles": [
+        {
+          "source": "Polygon",
+          "language": "en",
+          "title": "Stardew Valley Nintendo Switch 2 Edition Goes Old School With Physical Game and Manual",
+          "normalizedTitle": "stardew valley nintendo switch 2 edition goes old school with physical game and manual",
+          "url": "https://www.polygon.com/stardew-valley-switch-2-edition-cartridge-manual/",
+          "summary": "The physical edition of Stardew Valley for the Switch 2 has 18-page game manual with beautiful illustrations.",
+          "publishedAt": "Wed, 12 Aug 2026 14:52:13 GMT"
+        }
+      ]
     },
     {
       "id": "620",
@@ -1435,7 +1459,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 9.4,
-      "recommendations": 457098,
+      "recommendations": 457103,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 14439,
       "sourceEvidence": [
@@ -1447,7 +1471,7 @@
         "steamSpy": "https://steamspy.com/app/892970",
         "metacritic": ""
       },
-      "popularityScore": 10326.001027118004,
+      "popularityScore": 10326.001502170571,
       "igropoiskRating": 9.4,
       "editorialSources": [],
       "materials": {
@@ -1776,7 +1800,7 @@
       "movies": [],
       "criticRating": 8.9,
       "steamUserRating": 9.4,
-      "recommendations": 277385,
+      "recommendations": 277387,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 4381,
       "sourceEvidence": [
@@ -1789,7 +1813,7 @@
         "steamSpy": "https://steamspy.com/app/374320",
         "metacritic": "https://www.metacritic.com/game/pc/dark-souls-iii?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10264.308453793345,
+      "popularityScore": 10264.308766925886,
       "igropoiskRating": 9.1,
       "editorialSources": [],
       "materials": {
@@ -1860,7 +1884,7 @@
       "movies": [],
       "criticRating": 8.9,
       "steamUserRating": 9.7,
-      "recommendations": 155570,
+      "recommendations": 155574,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 2559,
       "sourceEvidence": [
@@ -1873,7 +1897,7 @@
         "steamSpy": "https://steamspy.com/app/588650",
         "metacritic": "https://www.metacritic.com/game/pc/dead-cells?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10259.192864333634,
+      "popularityScore": 10259.19398096565,
       "igropoiskRating": 9.2,
       "editorialSources": [],
       "materials": {
@@ -2279,7 +2303,7 @@
       "movies": [],
       "criticRating": 8,
       "steamUserRating": 7.4,
-      "recommendations": 62738,
+      "recommendations": 62740,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 14345,
       "sourceEvidence": [
@@ -2292,7 +2316,7 @@
         "steamSpy": "https://steamspy.com/app/582660",
         "metacritic": "https://www.metacritic.com/game/pc/black-desert-online-land-of-the-morning-light-edition?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9949.753759217583,
+      "popularityScore": 9949.75514364373,
       "igropoiskRating": 7.8,
       "editorialSources": [],
       "materials": {
@@ -2450,6 +2474,7 @@
       "sourceEvidence": [
         "Steam",
         "SteamSpy",
+        "GameSpot",
         "GamesRadar+",
         "Eurogamer"
       ],
@@ -2461,6 +2486,7 @@
       "popularityScore": 9940.181671829529,
       "igropoiskRating": 9.4,
       "editorialSources": [
+        "GameSpot",
         "GamesRadar+",
         "Eurogamer"
       ],
@@ -2489,9 +2515,28 @@
             "publishedAt": "Wed, 12 Aug 2026 11:00:45 +0000"
           }
         ],
-        "news": []
+        "news": [
+          {
+            "source": "GameSpot",
+            "language": "en",
+            "title": "Palworld Update Fixes The Game&#8217;s Biggest Frustration",
+            "normalizedTitle": "palworld update fixes the game 8217 s biggest frustration",
+            "url": "https://www.gamespot.com/articles/palworld-update-fixes-the-games-biggest-frustration/",
+            "summary": "Palworld recently launched its long-awaited 1.0 update, and developer Pocketpair is wasting no time making further improvements to the game. The patch notes for the latest v1.0.3 update reveal positive changes that should reduce the frustration of Palworld 1.0's biggest hassle of collecting World Tree Holy Water. It also addresses the bug that previously caused some Pals to freeze and stop attacking. https://youtu.be/1fpGg9wNM9A?si=3s3gO22Cy7ob99Vd Palworld 1.0 added plenty of new pals and features to the game, including the explorable new area around the World Tree. The update also added a va",
+            "publishedAt": "Wed, 12 Aug 2026 14:28:41 +0000"
+          }
+        ]
       },
       "articles": [
+        {
+          "source": "GameSpot",
+          "language": "en",
+          "title": "Palworld Update Fixes The Game&#8217;s Biggest Frustration",
+          "normalizedTitle": "palworld update fixes the game 8217 s biggest frustration",
+          "url": "https://www.gamespot.com/articles/palworld-update-fixes-the-games-biggest-frustration/",
+          "summary": "Palworld recently launched its long-awaited 1.0 update, and developer Pocketpair is wasting no time making further improvements to the game. The patch notes for the latest v1.0.3 update reveal positive changes that should reduce the frustration of Palworld 1.0's biggest hassle of collecting World Tree Holy Water. It also addresses the bug that previously caused some Pals to freeze and stop attacking. https://youtu.be/1fpGg9wNM9A?si=3s3gO22Cy7ob99Vd Palworld 1.0 added plenty of new pals and features to the game, including the explorable new area around the World Tree. The update also added a va",
+          "publishedAt": "Wed, 12 Aug 2026 14:28:41 +0000"
+        },
         {
           "source": "GamesRadar+",
           "language": "en",
@@ -2732,7 +2777,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 8.3,
-      "recommendations": 45875,
+      "recommendations": 45877,
       "owners": "1,000,000 .. 2,000,000",
       "peakConcurrent": 1573,
       "sourceEvidence": [
@@ -2744,7 +2789,7 @@
         "steamSpy": "https://steamspy.com/app/1282100",
         "metacritic": ""
       },
-      "popularityScore": 9916.158554406666,
+      "popularityScore": 9916.160447706061,
       "igropoiskRating": 8.3,
       "editorialSources": [],
       "materials": {
@@ -3095,7 +3140,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 7.1,
-      "recommendations": 235856,
+      "recommendations": 235860,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 6327,
       "sourceEvidence": [
@@ -3107,7 +3152,7 @@
         "steamSpy": "https://steamspy.com/app/1238810",
         "metacritic": ""
       },
-      "popularityScore": 9827.26487701991,
+      "popularityScore": 9827.2656135523,
       "igropoiskRating": 7.1,
       "editorialSources": [],
       "materials": {
@@ -3275,7 +3320,7 @@
       "movies": [],
       "criticRating": 8.5,
       "steamUserRating": 9.7,
-      "recommendations": 302323,
+      "recommendations": 302322,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 5216,
       "sourceEvidence": [
@@ -3288,7 +3333,7 @@
         "steamSpy": "https://steamspy.com/app/548430",
         "metacritic": "https://www.metacritic.com/game/pc/deep-rock-galactic?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9818.04726250271,
+      "popularityScore": 9818.047118850469,
       "igropoiskRating": 8.9,
       "editorialSources": [],
       "materials": {
@@ -3662,7 +3707,7 @@
       "movies": [],
       "criticRating": 8.7,
       "steamUserRating": 9.7,
-      "recommendations": 339587,
+      "recommendations": 339591,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 2719,
       "sourceEvidence": [
@@ -3675,7 +3720,7 @@
         "steamSpy": "https://steamspy.com/app/264710",
         "metacritic": "https://www.metacritic.com/game/pc/subnautica?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9803.0952335206,
+      "popularityScore": 9803.095745072156,
       "igropoiskRating": 9,
       "editorialSources": [],
       "materials": {
@@ -3856,7 +3901,7 @@
       "movies": [],
       "criticRating": 9,
       "steamUserRating": 9.7,
-      "recommendations": 194337,
+      "recommendations": 194339,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 16426,
       "sourceEvidence": [
@@ -3869,7 +3914,7 @@
         "steamSpy": "https://steamspy.com/app/427520",
         "metacritic": "https://www.metacritic.com/game/pc/factorio?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9748.855772894114,
+      "popularityScore": 9748.856219839381,
       "igropoiskRating": 9.2,
       "editorialSources": [],
       "materials": {
@@ -4095,7 +4140,7 @@
       "movies": [],
       "criticRating": 8.3,
       "steamUserRating": 8.9,
-      "recommendations": 281374,
+      "recommendations": 281380,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 32112,
       "sourceEvidence": [
@@ -4108,7 +4153,7 @@
         "steamSpy": "https://steamspy.com/app/394360",
         "metacritic": "https://www.metacritic.com/game/pc/hearts-of-iron-iv?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9734.928550800858,
+      "popularityScore": 9734.929476874286,
       "igropoiskRating": 8.5,
       "editorialSources": [],
       "materials": {
@@ -4194,7 +4239,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 9.7,
-      "recommendations": 1086342,
+      "recommendations": 1086353,
       "owners": "20,000,000 .. 50,000,000",
       "peakConcurrent": 18400,
       "sourceEvidence": [
@@ -4206,7 +4251,7 @@
         "steamSpy": "https://steamspy.com/app/4000",
         "metacritic": ""
       },
-      "popularityScore": 9723.596697026955,
+      "popularityScore": 9723.597136778959,
       "igropoiskRating": 9.7,
       "editorialSources": [],
       "materials": {
@@ -4351,7 +4396,7 @@
       "movies": [],
       "criticRating": 8.5,
       "steamUserRating": 9.2,
-      "recommendations": 654205,
+      "recommendations": 654212,
       "owners": "20,000,000 .. 50,000,000",
       "peakConcurrent": 3832,
       "sourceEvidence": [
@@ -4364,7 +4409,7 @@
         "steamSpy": "https://steamspy.com/app/945360",
         "metacritic": "https://www.metacritic.com/game/pc/among-us?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9711.571452290566,
+      "popularityScore": 9711.571916982897,
       "igropoiskRating": 8.7,
       "editorialSources": [],
       "materials": {
@@ -4445,7 +4490,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 9.6,
-      "recommendations": 681790,
+      "recommendations": 681798,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 9978,
       "sourceEvidence": [
@@ -4457,7 +4502,7 @@
         "steamSpy": "https://steamspy.com/app/739630",
         "metacritic": ""
       },
-      "popularityScore": 9683.365126401499,
+      "popularityScore": 9683.365635991018,
       "igropoiskRating": 9.6,
       "editorialSources": [],
       "materials": {
@@ -4528,7 +4573,7 @@
       "movies": [],
       "criticRating": 8.7,
       "steamUserRating": 8.7,
-      "recommendations": 95576,
+      "recommendations": 95577,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 12445,
       "sourceEvidence": [
@@ -4541,7 +4586,7 @@
         "steamSpy": "https://steamspy.com/app/236850",
         "metacritic": "https://www.metacritic.com/game/pc/europa-universalis-iv?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9678.035339463118,
+      "popularityScore": 9678.035793852992,
       "igropoiskRating": 8.7,
       "editorialSources": [],
       "materials": {
@@ -4723,7 +4768,7 @@
       "movies": [],
       "criticRating": 8.3,
       "steamUserRating": 9.5,
-      "recommendations": 374579,
+      "recommendations": 374582,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 30542,
       "sourceEvidence": [
@@ -4736,7 +4781,7 @@
         "steamSpy": "https://steamspy.com/app/322330",
         "metacritic": "https://www.metacritic.com/game/pc/dont-starve-together?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9667.354458531494,
+      "popularityScore": 9667.35480635525,
       "igropoiskRating": 8.7,
       "editorialSources": [],
       "materials": {
@@ -4819,7 +4864,7 @@
       "movies": [],
       "criticRating": 7.9,
       "steamUserRating": 9.7,
-      "recommendations": 778785,
+      "recommendations": 778795,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 17281,
       "sourceEvidence": [
@@ -4832,7 +4877,7 @@
         "steamSpy": "https://steamspy.com/app/227300",
         "metacritic": "https://www.metacritic.com/game/pc/euro-truck-simulator-2?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9659.141813573782,
+      "popularityScore": 9659.14237122594,
       "igropoiskRating": 8.5,
       "editorialSources": [],
       "materials": {
@@ -4897,7 +4942,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 9.7,
-      "recommendations": 410997,
+      "recommendations": 410994,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 6199,
       "sourceEvidence": [
@@ -4909,7 +4954,7 @@
         "steamSpy": "https://steamspy.com/app/1966720",
         "metacritic": ""
       },
-      "popularityScore": 9651.383970851579,
+      "popularityScore": 9651.383653845607,
       "igropoiskRating": 9.7,
       "editorialSources": [],
       "materials": {
@@ -5144,7 +5189,7 @@
       "movies": [],
       "criticRating": 8.5,
       "steamUserRating": 9.3,
-      "recommendations": 135164,
+      "recommendations": 135168,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 8961,
       "sourceEvidence": [
@@ -5157,7 +5202,7 @@
         "steamSpy": "https://steamspy.com/app/244210",
         "metacritic": "https://www.metacritic.com/game/pc/assetto-corsa?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9573.08642487454,
+      "popularityScore": 9573.087710083155,
       "igropoiskRating": 8.8,
       "editorialSources": [],
       "materials": {
@@ -5397,7 +5442,7 @@
       "movies": [],
       "criticRating": 9,
       "steamUserRating": 9.8,
-      "recommendations": 159137,
+      "recommendations": 159139,
       "owners": "2,000,000 .. 5,000,000",
       "peakConcurrent": 17123,
       "sourceEvidence": [
@@ -5410,7 +5455,7 @@
         "steamSpy": "https://steamspy.com/app/2379780",
         "metacritic": "https://www.metacritic.com/game/pc/balatro?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9510.177389567289,
+      "popularityScore": 9510.177935372507,
       "igropoiskRating": 9.3,
       "editorialSources": [],
       "materials": {
@@ -5631,14 +5676,13 @@
       "movies": [],
       "criticRating": 8.6,
       "steamUserRating": 9.8,
-      "recommendations": 250600,
+      "recommendations": 250601,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 2966,
       "sourceEvidence": [
         "Steam",
         "SteamSpy",
         "Metacritic",
-        "Polygon",
         "Rock Paper Shotgun"
       ],
       "sourceLinks": {
@@ -5646,23 +5690,13 @@
         "steamSpy": "https://steamspy.com/app/1794680",
         "metacritic": "https://www.metacritic.com/game/pc/vampire-survivors?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9489.898279967336,
+      "popularityScore": 9489.898453268166,
       "igropoiskRating": 9,
       "editorialSources": [
-        "Polygon",
         "Rock Paper Shotgun"
       ],
       "materials": {
         "articles": [
-          {
-            "source": "Polygon",
-            "language": "en",
-            "title": "Steam is Getting an Absurd New Vampire Survivors Clone in 2 Weeks",
-            "normalizedTitle": "steam is getting an absurd new vampire survivors clone in 2 weeks",
-            "url": "https://www.polygon.com/blood-dungeon-steam-release-date/",
-            "summary": "If you love Vampire Survivors, you need to know about Messhof’s Blood Dungeon, launching on August 25.",
-            "publishedAt": "Wed, 12 Aug 2026 12:00:12 GMT"
-          },
           {
             "source": "Rock Paper Shotgun",
             "language": "en",
@@ -5679,15 +5713,6 @@
         "news": []
       },
       "articles": [
-        {
-          "source": "Polygon",
-          "language": "en",
-          "title": "Steam is Getting an Absurd New Vampire Survivors Clone in 2 Weeks",
-          "normalizedTitle": "steam is getting an absurd new vampire survivors clone in 2 weeks",
-          "url": "https://www.polygon.com/blood-dungeon-steam-release-date/",
-          "summary": "If you love Vampire Survivors, you need to know about Messhof’s Blood Dungeon, launching on August 25.",
-          "publishedAt": "Wed, 12 Aug 2026 12:00:12 GMT"
-        },
         {
           "source": "Rock Paper Shotgun",
           "language": "en",
@@ -5845,7 +5870,7 @@
       "movies": [],
       "criticRating": 8.8,
       "steamUserRating": 9.7,
-      "recommendations": 130541,
+      "recommendations": 130543,
       "owners": "2,000,000 .. 5,000,000",
       "peakConcurrent": 1174,
       "sourceEvidence": [
@@ -5858,7 +5883,7 @@
         "steamSpy": "https://steamspy.com/app/504230",
         "metacritic": "https://www.metacritic.com/game/pc/celeste?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9481.575026212364,
+      "popularityScore": 9481.575691578537,
       "igropoiskRating": 9.1,
       "editorialSources": [],
       "materials": {
@@ -5933,8 +5958,7 @@
       "peakConcurrent": 14904,
       "sourceEvidence": [
         "Steam",
-        "SteamSpy",
-        "Eurogamer"
+        "SteamSpy"
       ],
       "sourceLinks": {
         "steam": "https://store.steampowered.com/app/250900/",
@@ -5943,37 +5967,15 @@
       },
       "popularityScore": 9470.599850126076,
       "igropoiskRating": 9.7,
-      "editorialSources": [
-        "Eurogamer"
-      ],
+      "editorialSources": [],
       "materials": {
         "articles": [],
         "reviews": [],
         "guides": [],
-        "tips": [
-          {
-            "source": "Eurogamer",
-            "language": "en",
-            "title": "As hype builds for Final Fantasy 7 Revelation, Remake and Rebirth continue to sell well",
-            "normalizedTitle": "as hype builds for final fantasy 7 revelation remake and rebirth continue to sell well",
-            "url": "https://www.eurogamer.net/final-fantasy-7-revelation-remake-rebirth-sales",
-            "summary": "Final Fantasy 7 Remake and Rebirth have been selling \"several times better\" than expected in the wake of Revelation's Summer Game Fest 2026 reveal. Read more",
-            "publishedAt": "Sun, 02 Aug 2026 20:43:09 +0000"
-          }
-        ],
+        "tips": [],
         "news": []
       },
-      "articles": [
-        {
-          "source": "Eurogamer",
-          "language": "en",
-          "title": "As hype builds for Final Fantasy 7 Revelation, Remake and Rebirth continue to sell well",
-          "normalizedTitle": "as hype builds for final fantasy 7 revelation remake and rebirth continue to sell well",
-          "url": "https://www.eurogamer.net/final-fantasy-7-revelation-remake-rebirth-sales",
-          "summary": "Final Fantasy 7 Remake and Rebirth have been selling \"several times better\" than expected in the wake of Revelation's Summer Game Fest 2026 reveal. Read more",
-          "publishedAt": "Sun, 02 Aug 2026 20:43:09 +0000"
-        }
-      ]
+      "articles": []
     },
     {
       "id": "1942280",
@@ -6616,7 +6618,7 @@
       "movies": [],
       "criticRating": 8.3,
       "steamUserRating": 9.6,
-      "recommendations": 578988,
+      "recommendations": 578990,
       "owners": "20,000,000 .. 50,000,000",
       "peakConcurrent": 2892,
       "sourceEvidence": [
@@ -6630,7 +6632,7 @@
         "steamSpy": "https://steamspy.com/app/242760",
         "metacritic": "https://www.metacritic.com/game/pc/the-forest?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9316.267031280398,
+      "popularityScore": 9316.267181298354,
       "igropoiskRating": 8.8,
       "editorialSources": [
         "StopGame"
@@ -7264,7 +7266,7 @@
       "movies": [],
       "criticRating": 9.3,
       "steamUserRating": 9.6,
-      "recommendations": 179954,
+      "recommendations": 179955,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 3510,
       "sourceEvidence": [
@@ -7278,7 +7280,7 @@
         "steamSpy": "https://steamspy.com/app/435150",
         "metacritic": "https://www.metacritic.com/game/pc/divinity-original-sin-ii?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9165.516391790887,
+      "popularityScore": 9165.516633125262,
       "igropoiskRating": 9.4,
       "editorialSources": [
         "VG247"
@@ -7376,8 +7378,7 @@
       "sourceEvidence": [
         "Steam",
         "SteamSpy",
-        "Metacritic",
-        "GamesRadar+"
+        "Metacritic"
       ],
       "sourceLinks": {
         "steam": "https://store.steampowered.com/app/268500/",
@@ -7386,37 +7387,15 @@
       },
       "popularityScore": 9120.019228310757,
       "igropoiskRating": 8.7,
-      "editorialSources": [
-        "GamesRadar+"
-      ],
+      "editorialSources": [],
       "materials": {
-        "articles": [
-          {
-            "source": "GamesRadar+",
-            "language": "en",
-            "title": "12 hours in, Star Wars Zero Company is a solid strategy RPG, but it's missing XCOM 2 or Baldur's Gate 3's spark",
-            "normalizedTitle": "12 hours in star wars zero company is a solid strategy rpg but it s missing xcom 2 or baldur s gate 3 s spark",
-            "url": "https://www.gamesradar.com/games/strategy/12-hours-in-star-wars-zero-company-is-a-solid-strategy-rpg-but-its-missing-xcom-2-or-baldurs-gate-3s-spark/",
-            "summary": "Zero Company is on the council, but I do not grant it the rank of master",
-            "publishedAt": "Tue, 11 Aug 2026 14:00:00 +0000"
-          }
-        ],
+        "articles": [],
         "reviews": [],
         "guides": [],
         "tips": [],
         "news": []
       },
-      "articles": [
-        {
-          "source": "GamesRadar+",
-          "language": "en",
-          "title": "12 hours in, Star Wars Zero Company is a solid strategy RPG, but it's missing XCOM 2 or Baldur's Gate 3's spark",
-          "normalizedTitle": "12 hours in star wars zero company is a solid strategy rpg but it s missing xcom 2 or baldur s gate 3 s spark",
-          "url": "https://www.gamesradar.com/games/strategy/12-hours-in-star-wars-zero-company-is-a-solid-strategy-rpg-but-its-missing-xcom-2-or-baldurs-gate-3s-spark/",
-          "summary": "Zero Company is on the council, but I do not grant it the rank of master",
-          "publishedAt": "Tue, 11 Aug 2026 14:00:00 +0000"
-        }
-      ]
+      "articles": []
     }
   ]
 }
