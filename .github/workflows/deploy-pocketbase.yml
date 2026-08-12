@@ -182,9 +182,9 @@ jobs:
           $SUDO systemctl restart "$service_name"
 
           for attempt in {1..20}; do
-            health="$(curl -sS -o /dev/null -w '%{http_code}' http://127.0.0.1:8090/api/health || true)"
-            sleep_route="$(curl -sS -o /dev/null -w '%{http_code}' http://127.0.0.1:8090/api/sleep-sync/status || true)"
-            calendar_route="$(curl -sS -o /dev/null -w '%{http_code}' http://127.0.0.1:8090/api/calendar-integrations/status || true)"
+            health="$(curl -sS -o /dev/null -w '%{http_code}' https://217-114-0-201.sslip.io/api/health || true)"
+            sleep_route="$(curl -sS -o /dev/null -w '%{http_code}' https://217-114-0-201.sslip.io/api/sleep-sync/status || true)"
+            calendar_route="$(curl -sS -o /dev/null -w '%{http_code}' https://217-114-0-201.sslip.io/api/calendar-integrations/status || true)"
             if [[ "$health" == "200" && ( "$sleep_route" == "401" || "$sleep_route" == "403" ) && ( "$calendar_route" == "401" || "$calendar_route" == "403" ) ]]; then
               echo "PocketBase is healthy and protected sleep/calendar routes are loaded."
               exit 0
