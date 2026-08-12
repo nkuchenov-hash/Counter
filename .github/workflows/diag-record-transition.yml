@@ -1,58 +1,71 @@
-name: Diagnose record transition
+name: Emergency PocketBase startup timeout patch
 
 on:
   push:
     branches: [main]
     paths:
       - '.github/workflows/diag-record-transition.yml'
+  workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  diagnose:
+  patch:
     runs-on: ubuntu-latest
-    environment: production
-    env:
-      SSH_PRIVATE_KEY: ${{ secrets.POCKETBASE_SSH_PRIVATE_KEY || secrets.VPS_SSH_KEY || secrets.SSH_PRIVATE_KEY }}
-      SSH_USER: ${{ secrets.POCKETBASE_SSH_USER || secrets.VPS_SSH_USER || secrets.SSH_USER }}
-      SSH_HOST: ${{ secrets.POCKETBASE_SSH_HOST || secrets.VPS_HOST || secrets.SSH_HOST }}
-      SSH_PORT: ${{ secrets.POCKETBASE_SSH_PORT || secrets.VPS_SSH_PORT || '22' }}
     steps:
-      - name: Prepare SSH
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Bound PocketBase startup waits
         run: |
-          set -euo pipefail
-          test -n "$SSH_PRIVATE_KEY"
-          echo "SSH_USER=${SSH_USER:-root}" >> "$GITHUB_ENV"
-          echo "SSH_HOST=${SSH_HOST:-217.114.0.201}" >> "$GITHUB_ENV"
-          install -m 700 -d ~/.ssh
-          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/lifeos_pocketbase
-          chmod 600 ~/.ssh/lifeos_pocketbase
-          ssh-keyscan -p "$SSH_PORT" -H "${SSH_HOST:-217.114.0.201}" >> ~/.ssh/known_hosts
-      - name: Read record transition evidence
-        run: |
-          set -euo pipefail
-          ssh -i ~/.ssh/lifeos_pocketbase -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
-          set -eu
-          echo '--- service restarts today ---'
-          journalctl -u pocketbase.service --since '2026-08-12 12:00:00 UTC' --until '2026-08-12 20:00:00 UTC' --no-pager | grep -E 'Started PocketBase|Stopping PocketBase|Stopped PocketBase|Started pocketbase|Starting PocketBase' || true
-          echo '--- record writes around transition ---'
-          AUX_PATH=/root/pb/pb_data/auxiliary.db python3 - <<'PY'
-          import os, sqlite3, json
-          con=sqlite3.connect(f"file:{os.environ['AUX_PATH']}?mode=ro", uri=True)
-          rows=con.execute("select created, message, data from _logs where created >= '2026-08-12 12:00:00.000Z' and created <= '2026-08-12 20:00:00.000Z' order by created asc").fetchall()
-          picked=[]
-          for created,msg,raw in rows:
-              m=msg or ''
-              if '/api/collections/records/records' not in m: continue
-              if not (m.startswith('POST ') or m.startswith('PATCH ')): continue
-              try: data=json.loads(raw) if isinstance(raw,str) and raw.strip() else (raw or {})
-              except Exception: data={}
-              picked.append((created,m,data.get('status'),data.get('error')))
-          for created,m,status,error in picked:
-              if created < '2026-08-12 17:40:00.000Z' or created >= '2026-08-12 17:40:00.000Z':
-                  print(created, 'status=', status, m, 'error=', (error or '')[:220])
-          print('TOTAL_WRITES', len(picked))
-          con.close()
+          python3 - <<'PY'
+          from pathlib import Path
+
+          auth = Path('lib/data/auth_bridge.dart')
+          s = auth.read_text()
+          old = "await pb.collection(PbCollections.profiles).authRefresh();"
+          new = """await pb
+            .collection(PbCollections.profiles)
+            .authRefresh()
+            .timeout(const Duration(seconds: 3));"""
+          if old not in s:
+              raise SystemExit('authRefresh target not found')
+          s = s.replace(old, new, 1)
+          auth.write_text(s)
+
+          core = Path('lib/data/db_core.dart')
+          s = core.read_text()
+          old_health = "await _pb.health.check();"
+          new_health = "await _pb.health.check().timeout(const Duration(seconds: 3));"
+          if old_health not in s:
+              raise SystemExit('health target not found')
+          s = s.replace(old_health, new_health, 1)
+
+          old_fg = "await _pb.collection(PbCollections.profiles).authRefresh();"
+          new_fg = """await _pb
+          .collection(PbCollections.profiles)
+          .authRefresh()
+          .timeout(const Duration(seconds: 3));"""
+          if old_fg not in s:
+              raise SystemExit('foreground authRefresh target not found')
+          s = s.replace(old_fg, new_fg, 1)
+          core.write_text(s)
           PY
-          REMOTE
+
+      - name: Commit recovery
+        run: |
+          set -euo pipefail
+          git config user.name 'nkuchenov-hash'
+          git config user.email 'nkuchenov@gmail.com'
+          git add lib/data/auth_bridge.dart lib/data/db_core.dart
+          git diff --cached --check
+          if git diff --cached --quiet; then
+            echo 'Recovery patch already present.'
+            exit 0
+          fi
+          git commit -m 'Bound PocketBase startup network waits'
+          git push origin HEAD:main
