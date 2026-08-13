@@ -8,9 +8,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 /// Lightweight gate that asks for a morning check-in once per waking day.
 ///
-/// It does not create a second sleep record. Imported/manual sleep remains the
-/// Timeline source of truth; the check-in stores the user's confirmation and
-/// subjective quality locally and can immediately start the first real record.
+/// The confirmed sleep interval is persisted to Timeline. Existing manual or
+/// imported sleep is updated in place; otherwise a completed Sleep record is
+/// created. The server's singleton Timeline sanitizer remains the authority for
+/// reconciling any ordinary activity that overlaps the confirmed sleep span.
 class MorningStartGate extends StatefulWidget {
   const MorningStartGate({
     super.key,
@@ -131,10 +132,44 @@ class _MorningStartGateState extends State<MorningStartGate> {
       return;
     }
 
-    await prefs.setBool('$prefix.done', true);
+    // The sheet edits profile wall-clock values. Convert them back to real UTC
+    // instants before touching Timeline; device timezone must not leak here.
+    final bedtimeUtc = db.displayTimeToUtc(result.bedtime);
+    final wakeUtc = db.displayTimeToUtc(result.wake);
+    if (!wakeUtc.isAfter(bedtimeUtc)) return;
+
+    var sleepSaved = false;
+    if (mainSleep != null && mainSleep.id.trim().isNotEmpty) {
+      final updated = await db.updateRecord(
+        recordId: mainSleep.id,
+        startTime: bedtimeUtc,
+        endTime: wakeUtc,
+      );
+      sleepSaved = updated != null;
+    } else {
+      final ru = currentLocale.value.toLowerCase().startsWith('ru');
+      final sleepTitle = ru ? 'Сон' : 'Sleep';
+      final sleepCategory =
+          db.identifyCategory(sleepTitle) ??
+          db.identifyCategory(ru ? 'Sleep' : 'Сон');
+      final created = await db.writeRecord(
+        key,
+        sleepTitle,
+        categoryId: sleepCategory?.id,
+        explicitStartTime: bedtimeUtc,
+        explicitEndTime: wakeUtc,
+      );
+      sleepSaved = created != null;
+    }
+
+    // Never consume the morning check-in until the Timeline mutation exists.
+    // This keeps a failed/offline create retryable instead of silently losing it.
+    if (!sleepSaved) return;
+
     await prefs.setInt('$prefix.sleep_quality', result.sleepQuality);
     await prefs.setString('$prefix.bedtime', result.bedtime.toIso8601String());
     await prefs.setString('$prefix.wake', result.wake.toIso8601String());
+    await prefs.setBool('$prefix.done', true);
     _lastCheckedDay = key;
 
     final firstActivity = result.firstActivity.trim();
