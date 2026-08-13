@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/data/plan_time_sequential_cascade.dart';
 import 'package:counter/features/planning/plan_time_view_layout.dart';
+import 'package:counter/features/planning/planning_sort_mode.dart';
 import 'package:counter/features/planning/time_view/time_view_drag_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart' show Ticker;
@@ -9,7 +12,25 @@ import 'package:flutter/scheduler.dart' show Ticker;
 import 'package:counter/features/planning/time_view/planning_time_view_host.dart';
 
 class PlanningTimeViewCoordinator {
-  PlanningTimeViewCoordinator(this.host);
+  PlanningTimeViewCoordinator(this.host) {
+    Timer.periodic(const Duration(seconds: 15), (timer) {
+      if (!host.mounted) {
+        timer.cancel();
+        return;
+      }
+      if (host.sortMode != PlanSortMode.time ||
+          !host.pageWidget.isActivePlanningDay ||
+          !host.pageWidget.shellTabActive) {
+        return;
+      }
+      final selectedDay = host.pageWidget.selectedDateString.trim();
+      final todayKey = DatabaseService.instance.getProjectedTodayDateKey();
+      if (selectedDay.length < 10 || selectedDay.substring(0, 10) != todayKey) {
+        return;
+      }
+      host.notifySetState();
+    });
+  }
 
   final PlanningTimeViewHost host;
 
