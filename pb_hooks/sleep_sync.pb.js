@@ -30,7 +30,9 @@ routerAdd("DELETE", "/api/sleep-sync/connection", function(e) {
     return sync.remove(e);
 }, $apis.requireAuth("profiles"));
 
-cronAdd("lifeos_google_fit_sleep_sync", "*/15 * * * *", function() {
+// Lightweight watchdog: cron checks every minute, while the runtime only calls
+// Google Fit for unfinished backfill, the configured daily run, or a 6-hour catch-up.
+cronAdd("lifeos_google_fit_sleep_sync", "* * * * *", function() {
     var sync = require(__hooks + "/google_fit_sleep_runtime.js");
     return sync.cron($app);
 });
