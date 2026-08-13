@@ -1,0 +1,21 @@
+name: Validate Google Fit sleep runtime
+
+on:
+  pull_request:
+    paths:
+      - 'pb_hooks/google_fit_sleep_runtime.js'
+      - 'pb_hooks/sleep_sync.pb.js'
+      - 'pb_hooks/01_sleep_sync_runtime_bootcheck.pb.js'
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          node --check pb_hooks/google_fit_sleep_runtime.js
+          node --check pb_hooks/sleep_sync.pb.js
+          node --check pb_hooks/01_sleep_sync_runtime_bootcheck.pb.js
