@@ -33,7 +33,7 @@ jobs:
           chmod 600 ~/.ssh/lifeos_pocketbase
           ssh-keyscan -p "$SSH_PORT" -H "$SSH_HOST" >> ~/.ssh/known_hosts
 
-      - name: Read Google Fit sleep coverage
+      - name: Read Google Fit recovery state
         shell: bash
         run: |
           set -euo pipefail
@@ -47,41 +47,39 @@ jobs:
           DB_PATH="$db" python3 - <<'PY'
           import os, sqlite3
           from datetime import datetime, timezone, timedelta
-
-          db = os.environ['DB_PATH']
-          con = sqlite3.connect(f'file:{db}?mode=ro', uri=True)
+          con = sqlite3.connect(f'file:{os.environ["DB_PATH"]}?mode=ro', uri=True)
           con.row_factory = sqlite3.Row
           conn = con.execute('''
             SELECT user_id, status, last_error, last_sync_at, last_session_count,
-                   last_imported_count, last_sleep_count, enabled, last_full_sync_at
+                   last_imported_count, last_sleep_count, enabled, last_full_sync_at,
+                   segment_backfill_complete
             FROM sleep_sync_connections
-            WHERE provider = 'google_fit'
-            ORDER BY rowid DESC LIMIT 1
+            WHERE provider='google_fit' ORDER BY rowid DESC LIMIT 1
           ''').fetchone()
           if conn is None:
               print('NO_CONNECTION'); raise SystemExit(0)
-          print(f'SYNC status={conn["status"]} last_sync={conn["last_sync_at"]} sessions={conn["last_session_count"]} imported={conn["last_imported_count"]} full_sync={conn["last_full_sync_at"]}')
+          print('SYNC status=%s last_sync=%s sessions=%s imported=%s full_sync=%s segment_backfill=%s' % (
+              conn['status'], conn['last_sync_at'], conn['last_session_count'], conn['last_imported_count'],
+              conn['last_full_sync_at'], conn['segment_backfill_complete']))
+          print('SYNC_ERROR=' + str(conn['last_error'] or ''))
           rows = con.execute('''
-            SELECT start_time, end_time
+            SELECT start_time,end_time,external_id
             FROM records
-            WHERE user_id = ? AND (external_source='google_fit' OR sleep_source='google_fit')
+            WHERE user_id=? AND external_source='google_fit' AND external_kind='sleep'
             ORDER BY start_time ASC
-          ''', (conn['user_id'],)).fetchall()
+          ''',(conn['user_id'],)).fetchall()
           print('TOTAL=' + str(len(rows)))
           if rows:
               print('EARLIEST=' + str(rows[0]['start_time']))
               print('LATEST=' + str(rows[-1]['end_time']))
-          cutoff = datetime.now(timezone.utc) - timedelta(days=60)
-          recent=[]
-          for r in rows:
-              try:
-                  s=datetime.fromisoformat(str(r['start_time']).replace('Z','+00:00'))
-                  e=datetime.fromisoformat(str(r['end_time']).replace('Z','+00:00'))
-              except Exception:
-                  continue
-              if e >= cutoff: recent.append((s,e))
-          print('RECENT60=' + str(len(recent)))
-          for s,e in recent:
-              print('SLEEP ' + s.isoformat() + ' -> ' + e.isoformat() + ' duration_min=' + str(round((e-s).total_seconds()/60)))
+          cutoff=(datetime.now(timezone.utc)-timedelta(days=14)).isoformat().replace('+00:00','Z')
+          recent=con.execute('''
+            SELECT start_time,end_time,external_id FROM records
+            WHERE user_id=? AND external_source='google_fit' AND external_kind='sleep' AND end_time>=?
+            ORDER BY start_time ASC
+          ''',(conn['user_id'],cutoff)).fetchall()
+          print('RECENT14=' + str(len(recent)))
+          for r in recent:
+              print('SLEEP %s -> %s id=%s' % (r['start_time'],r['end_time'],str(r['external_id'])[:80]))
           PY
           REMOTE
