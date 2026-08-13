@@ -33,7 +33,7 @@ jobs:
           chmod 600 ~/.ssh/lifeos_pocketbase
           ssh-keyscan -p "$SSH_PORT" -H "$SSH_HOST" >> ~/.ssh/known_hosts
 
-      - name: Read imported Google Fit sleep records
+      - name: Read Google Fit sleep coverage
         shell: bash
         run: |
           set -euo pipefail
@@ -56,31 +56,32 @@ jobs:
                    last_imported_count, last_sleep_count, enabled, last_full_sync_at
             FROM sleep_sync_connections
             WHERE provider = 'google_fit'
-            ORDER BY rowid DESC
-            LIMIT 1
+            ORDER BY rowid DESC LIMIT 1
           ''').fetchone()
           if conn is None:
-              print('NO_CONNECTION')
-              raise SystemExit(0)
-
-          print(f'SYNC status={conn["status"]} enabled={conn["enabled"]} last_sync={conn["last_sync_at"]} sessions={conn["last_session_count"]} imported={conn["last_imported_count"]} sleep={conn["last_sleep_count"]} full_sync={conn["last_full_sync_at"]}')
-          print('SYNC_ERROR=' + str(conn['last_error'] or ''))
-
-          cutoff = datetime.now(timezone.utc) - timedelta(days=8)
-          cutoff_s = cutoff.isoformat().replace('+00:00', 'Z')
+              print('NO_CONNECTION'); raise SystemExit(0)
+          print(f'SYNC status={conn["status"]} last_sync={conn["last_sync_at"]} sessions={conn["last_session_count"]} imported={conn["last_imported_count"]} full_sync={conn["last_full_sync_at"]}')
           rows = con.execute('''
-            SELECT start_time, end_time, external_source, sleep_source
+            SELECT start_time, end_time
             FROM records
-            WHERE user_id = ?
-              AND (external_source = 'google_fit' OR sleep_source = 'google_fit')
-              AND end_time >= ?
+            WHERE user_id = ? AND (external_source='google_fit' OR sleep_source='google_fit')
             ORDER BY start_time ASC
-          ''', (conn['user_id'], cutoff_s)).fetchall()
-
-          print('RECENT_COUNT=' + str(len(rows)))
-          for row in rows:
-              start = str(row['start_time'] or '')
-              end = str(row['end_time'] or '')
-              print(f'SLEEP start={start} end={end}')
+          ''', (conn['user_id'],)).fetchall()
+          print('TOTAL=' + str(len(rows)))
+          if rows:
+              print('EARLIEST=' + str(rows[0]['start_time']))
+              print('LATEST=' + str(rows[-1]['end_time']))
+          cutoff = datetime.now(timezone.utc) - timedelta(days=60)
+          recent=[]
+          for r in rows:
+              try:
+                  s=datetime.fromisoformat(str(r['start_time']).replace('Z','+00:00'))
+                  e=datetime.fromisoformat(str(r['end_time']).replace('Z','+00:00'))
+              except Exception:
+                  continue
+              if e >= cutoff: recent.append((s,e))
+          print('RECENT60=' + str(len(recent)))
+          for s,e in recent:
+              print('SLEEP ' + s.isoformat() + ' -> ' + e.isoformat() + ' duration_min=' + str(round((e-s).total_seconds()/60)))
           PY
           REMOTE
