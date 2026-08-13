@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-13T13:01:17.543Z",
+  "updatedAt": "2026-08-13T13:22:21.784Z",
   "count": 495,
   "sources": [
     "IGN",
@@ -14,6 +14,15 @@
     "Игромания"
   ],
   "articles": [
+    {
+      "source": "Rock Paper Shotgun",
+      "language": "en",
+      "title": "Necrons are \"extremely arrogant aliens that feel like they cannot die,\" so their weakness in Dawn of War 4 is an obvious one: greed",
+      "normalizedTitle": "necrons are extremely arrogant aliens that feel like they cannot die so their weakness in dawn of war 4 is an obvious one greed",
+      "url": "https://www.rockpapershotgun.com/necrons-are-extremely-arrogant-aliens-that-feel-like-they-cannot-die-so-their-weakness-in-dawn-of-war-4-is-an-obvious-one-greed",
+      "summary": "Dawn of War 4 's Necrons are the hard nuts of Warhammer 40,000. Each one of their soldiers is a &gt;soul trapped in a living metal body, practically immortal thanks to the faction's reanimation technology. Like a clothes moth infestation, once they've made their home on a planet, they're virtually impossible to get rid of. They lend themselves to wars of attrition, constantly expanding their borders while absorbing enemy attacks. \"Players love this type of playstyle,\" Dawn of War 4's senior game designer Elliott Verbiest tells me, \"but it's something that isn't necessarily conducive to interes",
+      "publishedAt": "Thu, 13 Aug 2026 13:02:02 +0000"
+    },
     {
       "source": "Eurogamer",
       "language": "en",
@@ -40,6 +49,24 @@
       "url": "https://www.polygon.com/fire-emblem-fortunes-weave-preview/",
       "summary": "After playing 10 hours of Fire Emblem Fortune's Weave, it's shaping up to be the best Fire Emblem game in years",
       "publishedAt": "Thu, 13 Aug 2026 13:00:12 GMT"
+    },
+    {
+      "source": "GameSpot",
+      "language": "en",
+      "title": "Fire Emblem: Fortune&#8217;s Weave Feels Like Four Games&#8217; Worth Of Fire Emblem &#8211; Preview",
+      "normalizedTitle": "fire emblem fortune 8217 s weave feels like four games 8217 worth of fire emblem 8211 preview",
+      "url": "https://www.gamespot.com/videos/fire-emblem-fortunes-weave-feels-like-four-games-worth-of-fire-emblem-preview/",
+      "summary": "With four campaigns that each have multiple systems of their own, Fortune's Weave may be the most ambitious Fire Emblem to date.",
+      "publishedAt": "Thu, 13 Aug 2026 13:00:00 +0000"
+    },
+    {
+      "source": "GameSpot",
+      "language": "en",
+      "title": "Fire Emblem: Fortune&#8217;s Weave Feels Like Four Games&#8217; Worth Of Fire Emblem",
+      "normalizedTitle": "fire emblem fortune 8217 s weave feels like four games 8217 worth of fire emblem",
+      "url": "https://www.gamespot.com/articles/fire-emblem-fortunes-weave-feels-like-four-games-worth-of-fire-emblem/",
+      "summary": "Fire Emblem has always been known for its mechanical density and complexity, but Fortune's Weave applies a force multiplier. With an array of four differentiated but intertwining story campaigns, it feels complex in a way that could prove overwhelming. Having played the first several chapters of two of the campaigns, each had its own wrinkles and elements that could have supported their own standalone campaigns--all composing a sprawling narrative that appears to reward exploring it in full to see every scene and interaction. Fortune's Weave looks to be a conscious effort to restore some of th",
+      "publishedAt": "Thu, 13 Aug 2026 13:00:00 +0000"
     },
     {
       "source": "GamesRadar+",
@@ -3417,15 +3444,6 @@
       "publishedAt": "Fri, 31 Jul 2026 09:52:45 +0000"
     },
     {
-      "source": "Rock Paper Shotgun",
-      "language": "en",
-      "title": "A former Assassin's Creed dev is making a ghost-hunting horror mystery based on visits to abandoned convents, in which your greatest weapon is a chunky instant camera",
-      "normalizedTitle": "a former assassin s creed dev is making a ghost hunting horror mystery based on visits to abandoned convents in which your greatest weapon is a chunky instant camera",
-      "url": "https://www.rockpapershotgun.com/a-former-assassins-creed-dev-is-making-a-ghost-hunting-horror-mystery-based-on-visits-to-abandoned-convents-in-which-your-greatest-weapon-is-a-chunky-instant-camera",
-      "summary": "What's the next logical games industry career step after being a cinematic director on Deus Ex: Human Revolution , a lead cinematic consultant on XCOM: The Bureau, and a director at Ubisoft Montreal working on Assassin's Creed Unity and the recently reborn 1666: Amsterdam ? If you answered \"explore abandoned convents with a camera crew, proceed to make a horror game about it\", then you are clearly Jesse Malcolm Sweet, developer of Sisters of Solitude, and I'll thank you to keep your nose out of my drafts. G'wan, get thee to a nunnery! Read more",
-      "publishedAt": "Fri, 31 Jul 2026 09:27:37 +0000"
-    },
-    {
       "source": "StopGame",
       "language": "ru",
       "title": "Детектив от ветеранов BioWare, геймплей Некронов в Dawn of War 4, мультиплеер Gears of War: E-Day…",
@@ -3586,15 +3604,6 @@
       "url": "https://www.vg247.com/forza-horizon-6-review",
       "summary": "There is this idea that, for a long-running series to remain as consistently popular as Forza Horizon has been, it needs to diminish itself somewhat with each new entry, gradually losing more and more of its edge in a bid to appeal to the widest possible audience. Read more",
       "publishedAt": "Thu, 14 May 2026 12:00:03 +0000"
-    },
-    {
-      "source": "GameSpot",
-      "language": "en",
-      "title": "The Best Games Of 2026 (So Far)",
-      "normalizedTitle": "the best games of 2026 so far",
-      "url": "https://www.gamespot.com/gallery/the-best-games-of-2026/2900-7436/",
-      "summary": "Once again, the year in gaming has seen no shortage of high-quality releases and GOTY contenders. Looking ahead, there are many highly anticipated games coming out in 2026 , but how well will they score when they arrive? That remains to be seen, but, as in previous years, we'll keep track of all the games that hit a review score of at least 8 and list them below. That doesn't mean that games that fall below that threshold aren't worth your time, as they can still entertain you for hours on end if you can overlook some of their flaws. We'll also be keeping track of those titles below, but for n",
-      "publishedAt": "Fri, 08 May 2026 16:28:00 +0000"
     },
     {
       "source": "VG247",
@@ -4459,15 +4468,6 @@
       "url": "https://www.vg247.com/battlefield-6-free-trial-dates-details",
       "summary": "Even if you don&rsquo;t care about the rivalries between the top multiplayer first-person shooters series, it&rsquo;s hard to ignore how much EA wanted to stick it to Call of Duty this year with Battlefield 6. Read more",
       "publishedAt": "Tue, 25 Nov 2025 10:53:25 +0000"
-    },
-    {
-      "source": "GameSpot",
-      "language": "en",
-      "title": "How To Craft All Omni-Tool Upgrades In Grounded 2",
-      "normalizedTitle": "how to craft all omni tool upgrades in grounded 2",
-      "url": "https://www.gamespot.com/articles/how-to-craft-all-omni-tool-upgrades-in-grounded-2/1100-6533466/",
-      "summary": "The Omni-Tool is like the Swiss Army knife of Grounded 2 . This device starts out as a simple chopping axe, but it can be upgraded several times and provide multiple functions. This lets you chop, dig, and hammer items to gain valuable resources for your survival. Here we'll guide you through everything you need to know in order to upgrade your Omni-Tool in Grounded 2. If you're a returning player, the new Into the Abyss update has added the ability to craft the omni-tool's new cutting function and make additional upgrades. For new players, you'll find a complete guide on how to get your omni-",
-      "publishedAt": "Fri, 08 Aug 2025 17:34:00 +0000"
     }
   ]
 }
