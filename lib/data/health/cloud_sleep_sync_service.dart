@@ -93,6 +93,17 @@ class CloudSleepSyncService {
     throw const FormatException('Unexpected sleep-sync response');
   }
 
+  String _failureMessage(http.Response response, String fallback) {
+    var detail = '';
+    try {
+      final data = _decode(response);
+      detail = (data['error'] ?? data['message'] ?? '').toString().trim();
+    } catch (_) {}
+    return detail.isEmpty
+        ? '$fallback (${response.statusCode})'
+        : '$fallback (${response.statusCode}: $detail)';
+  }
+
   CloudSleepSyncPhase _phaseFromWire(String raw, bool configured) {
     return switch (raw.trim().toLowerCase()) {
       'connecting' => CloudSleepSyncPhase.connecting,
@@ -148,7 +159,7 @@ class CloudSleepSyncService {
         return;
       }
       if (response.statusCode < 200 || response.statusCode >= 300) {
-        throw StateError('Sleep sync status failed (${response.statusCode})');
+        throw StateError(_failureMessage(response, 'Sleep sync status failed'));
       }
       _applyStatus(_decode(response));
     } catch (error) {
@@ -178,7 +189,7 @@ class CloudSleepSyncService {
           .timeout(const Duration(seconds: 20));
       if (response.statusCode < 200 || response.statusCode >= 300) {
         throw StateError(
-          'Google health connection failed (${response.statusCode})',
+          _failureMessage(response, 'Google Health connection failed'),
         );
       }
       final authorizationUrl =
@@ -226,7 +237,7 @@ class CloudSleepSyncService {
           )
           .timeout(const Duration(seconds: 20));
       if (response.statusCode < 200 || response.statusCode >= 300) {
-        throw StateError('Sleep sync settings failed (${response.statusCode})');
+        throw StateError(_failureMessage(response, 'Sleep sync settings failed'));
       }
       _applyStatus(_decode(response));
       return true;
@@ -252,7 +263,7 @@ class CloudSleepSyncService {
           .timeout(const Duration(seconds: 90));
       if (response.statusCode < 200 || response.statusCode >= 300) {
         throw StateError(
-          'Sleep synchronization failed (${response.statusCode})',
+          _failureMessage(response, 'Sleep synchronization failed'),
         );
       }
       await loadStatus();
@@ -275,7 +286,7 @@ class CloudSleepSyncService {
           .timeout(const Duration(seconds: 20));
       if (response.statusCode < 200 || response.statusCode >= 300) {
         throw StateError(
-          'Sleep source disconnect failed (${response.statusCode})',
+          _failureMessage(response, 'Sleep source disconnect failed'),
         );
       }
       state.value = const CloudSleepSyncState.initial();
