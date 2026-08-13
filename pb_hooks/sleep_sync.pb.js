@@ -25,6 +25,11 @@ routerAdd("POST", "/api/sleep-sync/run", function(e) {
     return sync.run(e);
 }, $apis.requireAuth("profiles"));
 
+routerAdd("DELETE", "/api/sleep-sync/connection", function(e) {
+    var sync = require(__hooks + "/google_fit_sleep_runtime.js");
+    return sync.remove(e);
+}, $apis.requireAuth("profiles"));
+
 cronAdd("lifeos_google_fit_sleep_sync", "*/15 * * * *", function() {
     var sync = require(__hooks + "/google_fit_sleep_runtime.js");
     return sync.cron($app);
