@@ -33,7 +33,7 @@ jobs:
           chmod 600 ~/.ssh/lifeos_pocketbase
           ssh-keyscan -p "$SSH_PORT" -H "$SSH_HOST" >> ~/.ssh/known_hosts
 
-      - name: Read recent PocketBase sleep-sync errors
+      - name: Read stored PocketBase sleep-sync failure
         shell: bash
         run: |
           set -euo pipefail
@@ -41,9 +41,25 @@ jobs:
             "SERVICE='${POCKETBASE_SERVICE:-pocketbase.service}' bash -s" <<'REMOTE'
           set -euo pipefail
           service="${SERVICE:-pocketbase.service}"
-          echo "=== recent sleep sync errors ==="
-          journalctl -u "$service" --since '90 minutes ago' --no-pager -o cat \
-            | grep -Ei 'google health|sleep sync|provider_sync_failed|token refresh|token exchange' \
-            | tail -n 120 \
-            | sed -E 's/(Bearer |access_token[=: ]+|refresh_token[=: ]+|client_secret[=: ]+)[^ ,}\"]+/\1[REDACTED]/Ig' || true
+          app_dir="$(systemctl show "$service" -p WorkingDirectory --value)"
+          db="$app_dir/pb_data/data.db"
+          test -f "$db"
+          DB_PATH="$db" python3 - <<'PY'
+          import os, sqlite3, re
+          db = os.environ['DB_PATH']
+          con = sqlite3.connect(f'file:{db}?mode=ro', uri=True)
+          con.row_factory = sqlite3.Row
+          rows = con.execute('''
+            SELECT status, last_error, last_sync_at, last_session_count,
+                   last_imported_count, last_sleep_count, enabled, last_full_sync_at
+            FROM sleep_sync_connections
+            ORDER BY updated DESC
+            LIMIT 5
+          ''').fetchall()
+          for i, row in enumerate(rows, 1):
+              err = str(row['last_error'] or '')
+              err = re.sub(r'(?i)(Bearer\s+|access_token[=: ]+|refresh_token[=: ]+|client_secret[=: ]+)[^ ,}\"]+', r'\1[REDACTED]', err)
+              print(f'connection {i}: status={row["status"]} enabled={row["enabled"]} last_sync={row["last_sync_at"]} sessions={row["last_session_count"]} imported={row["last_imported_count"]} sleep={row["last_sleep_count"]} full_sync={row["last_full_sync_at"]}')
+              print('last_error=' + err)
+          PY
           REMOTE
