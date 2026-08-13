@@ -1,11 +1,9 @@
 name: Validate Google Fit sleep runtime
 
 on:
-  pull_request:
-    paths:
-      - 'pb_hooks/google_fit_sleep_runtime.js'
-      - 'pb_hooks/sleep_sync.pb.js'
-      - 'pb_hooks/01_sleep_sync_runtime_bootcheck.pb.js'
+  push:
+    branches:
+      - fix/server-google-fit-rest-sleep-20260813
 
 permissions:
   contents: read
