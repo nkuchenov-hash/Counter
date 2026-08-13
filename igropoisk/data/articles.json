@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-13T13:22:21.784Z",
+  "updatedAt": "2026-08-13T13:28:04.733Z",
   "count": 495,
   "sources": [
     "IGN",
@@ -14,6 +14,15 @@
     "Игромания"
   ],
   "articles": [
+    {
+      "source": "Polygon",
+      "language": "en",
+      "title": "McDonald's Happy Meals Get Hello Kitty x Godzilla Crossover Toys",
+      "normalizedTitle": "mcdonald s happy meals get hello kitty x godzilla crossover toys",
+      "url": "https://www.polygon.com/hello-kitty-godzilla-mcdonalds-happy-meals-release-date-images/",
+      "summary": "Sanrio characters are dressing up as Monsterverse creatures in McDonald's upcoming Happy Meal toys.",
+      "publishedAt": "Thu, 13 Aug 2026 13:23:32 GMT"
+    },
     {
       "source": "Rock Paper Shotgun",
       "language": "en",
@@ -49,6 +58,42 @@
       "url": "https://www.polygon.com/fire-emblem-fortunes-weave-preview/",
       "summary": "After playing 10 hours of Fire Emblem Fortune's Weave, it's shaping up to be the best Fire Emblem game in years",
       "publishedAt": "Thu, 13 Aug 2026 13:00:12 GMT"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "An American Werewolf in London's 45th Anniversary Steelbook Edition is Up for Preorder",
+      "normalizedTitle": "an american werewolf in london s 45th anniversary steelbook edition is up for preorder",
+      "url": "https://www.ign.com/articles/american-werewolf-in-london-4k-steelbook-where-to-buy",
+      "summary": "Preorders for the 45th Anniversary 4K UHD Steelbook of An American Werewolf in London are live on Amazon for $34.99 ahead of its October release.",
+      "publishedAt": "Thu, 13 Aug 2026 13:00:00 +0000"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "Fire Emblem: Fortune’s Weave – The Final Preview",
+      "normalizedTitle": "fire emblem fortune s weave the final preview",
+      "url": "https://www.ign.com/articles/fire-emblem-fortunes-weave-the-final-preview",
+      "summary": "There are plenty of ways that Fire Emblem: Fortune's Weave is building out the features that defined Three Houses. I remain very interested to see how your decisions in the past will have an effect on characters teaming up in the present timeline, and I’m more excited than ever to see each of the story paths to completion to see how they’ll help me turn the tides and save the world from its ultimate destruction.",
+      "publishedAt": "Thu, 13 Aug 2026 13:00:00 +0000"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "Phantom Blade Zero: How Donnie Yen is Pushing Action Games to New Heights",
+      "normalizedTitle": "phantom blade zero how donnie yen is pushing action games to new heights",
+      "url": "https://www.ign.com/articles/phantom-blade-zero-how-donnie-yen-is-pushing-action-games-to-new-heights",
+      "summary": "Get an exclusive look behind the scenes into the motion capture process of a martial arts master.",
+      "publishedAt": "Thu, 13 Aug 2026 13:00:00 +0000"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "Star Trek: Strange New Worlds Season 4, Episode 4 Recap and Review - (Please Don’t) Play It Again, Sam",
+      "normalizedTitle": "star trek strange new worlds season 4 episode 4 recap and review please don t play it again sam",
+      "url": "https://www.ign.com/articles/star-trek-strange-new-worlds-season-4-episode-4-recap-and-review",
+      "summary": "Star Trek: Strange New Worlds Episode 4 Recap and Review: “A Case of Chiaroscuro” is a high-concept, low-impact installment of Strange New Worlds that looks cool, sure, but also reminds us that a gimmick is not enough to carry an episode.",
+      "publishedAt": "Thu, 13 Aug 2026 13:00:00 +0000"
     },
     {
       "source": "GameSpot",
@@ -166,6 +211,24 @@
       "url": "https://www.gamesradar.com/hardware/handhelds/the-handheld-gaming-pc-scene-might-be-in-tatters-but-theres-no-scenario-where-id-pay-usd750-for-one-of-the-worst-received-portables/",
       "summary": "Handheld gaming PC prices are rough, but the MSI Claw from 2024 shouldn't cost anywhere near $750 even within the current climate.",
       "publishedAt": "Thu, 13 Aug 2026 11:53:14 +0000"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "Amazon's '80s Horror 5-Film Steelbook Collection Is Up for Preorder",
+      "normalizedTitle": "amazon s 80s horror 5 film steelbook collection is up for preorder",
+      "url": "https://www.ign.com/articles/amazon-80s-horror-steelbook-collection-preorder",
+      "summary": "Amazon's exclusive '80s Horror 5-Film Steelbook Library Case is now available for preorder for $144.99.",
+      "publishedAt": "Thu, 13 Aug 2026 11:48:28 +0000"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "Nintendo Now Warning In-Store Customers of Switch 2 Price Hike, With Just Over 2 Weeks to Go Until Cost Increases",
+      "normalizedTitle": "nintendo now warning in store customers of switch 2 price hike with just over 2 weeks to go until cost increases",
+      "url": "https://www.ign.com/articles/nintendo-now-warning-in-store-customers-of-switch-2-price-hike-with-just-over-2-weeks-to-go-until-cost-increases",
+      "summary": "Nintendo has begun displaying in-store warnings of its impending Switch 2 price increase.",
+      "publishedAt": "Thu, 13 Aug 2026 11:43:54 +0000"
     },
     {
       "source": "GamesRadar+",
@@ -447,15 +510,6 @@
       "publishedAt": "Thu, 13 Aug 2026 09:18:47 GMT"
     },
     {
-      "source": "Polygon",
-      "language": "en",
-      "title": "Why horses are so hard for video games to get right",
-      "normalizedTitle": "why horses are so hard for video games to get right",
-      "url": "https://www.polygon.com/video/why-horses-are-so-hard-for-video-games-to-get-right/",
-      "summary": "If a horse is in a video game, that means someone busted their butt to get it there. Horses are WEIRD — they're massive animals with weird bendy joints and many, many gaits. It's no wonder why so many games choose to simply treat them as transportation. Even so, some games go the extra mile to make horses unique and meaningful to the gameplay — and they benefit from it massively. Here's why horses are so difficult to get into games, and what we're missing out on when horses aren't given their due.#breathofthewild #eldenring",
-      "publishedAt": "Thu, 13 Aug 2026 09:07:46 GMT"
-    },
-    {
       "source": "PC Gamer",
       "language": "en",
       "title": "PC Gamer magazine's new issue is on sale now: Onimusha: Way of the Sword, with a huge A1 poster and Top 100 games mini-mag",
@@ -627,15 +681,6 @@
       "publishedAt": "Wed, 12 Aug 2026 22:15:00 +0000"
     },
     {
-      "source": "IGN",
-      "language": "en",
-      "title": "Dataminers Uncover Five Possible DLC Characters for Marvel Tokon: Fighting Souls",
-      "normalizedTitle": "dataminers uncover five possible dlc characters for marvel tokon fighting souls",
-      "url": "https://www.ign.com/articles/dataminers-uncover-five-possible-dlc-characters-for-marvel-tokon-fighting-souls",
-      "summary": "Now that Marvel Tokon: Fighting Souls is officially out in the wild, dataminers have wasted no time digging through the game’s files, and they’ve found some interesting heroes mentioned within them.",
-      "publishedAt": "Wed, 12 Aug 2026 21:57:23 +0000"
-    },
-    {
       "source": "GamesRadar+",
       "language": "en",
       "title": "The Elder Scrolls 6: Sentinel could be the title of Bethesda's next RPG according to a solid fan theory that dates back to a Starfield teaser",
@@ -652,15 +697,6 @@
       "url": "https://www.pcgamer.com/games/third-person-shooter/helldivers-2-borrows-from-dead-space-and-silent-hill-for-its-horrific-new-aliens/",
       "summary": "Attack the void!",
       "publishedAt": "Wed, 12 Aug 2026 21:32:04 +0000"
-    },
-    {
-      "source": "IGN",
-      "language": "en",
-      "title": "Hogwarts Legacy 2 Is Officially in the Works, Confirms Warner Bros.",
-      "normalizedTitle": "hogwarts legacy 2 is officially in the works confirms warner bros",
-      "url": "https://www.ign.com/articles/hogwarts-legacy-2-is-officially-in-the-works-confirms-warner-bros",
-      "summary": "A sequel to Hogwarts Legacy is actively in development, according to Warner Bros.",
-      "publishedAt": "Wed, 12 Aug 2026 21:22:23 +0000"
     },
     {
       "source": "GamesRadar+",
@@ -688,42 +724,6 @@
       "url": "https://stopgame.ru/show/163198/beast_of_reincarnation_review_novoy_igry_ot_avtorov_pok_mon",
       "summary": "Студия Game Freak известна прежде всего благодаря серии Pokémon, а её новая игра, Beast of Reincarnation, как уверяют разработчики, вещь совершенно другого порядка и жанра. Дескать, проект начался с желания создать игру с уникальной атмосферой, которую больше нигде не получишь. А идея возникла в рамках внутренней программы Gear Project, где сотрудники предлагают оригинальные концепции. Тем не менее игра напоминает смесь Sekiro: Shadows Die Twice и NieR: Automata, да и знакомые нотки «покемонов» на месте — мы путешествуем в компании зверушки, которую можно прокачивать и&amp;nbs… […]",
       "publishedAt": "Thu, 13 Aug 2026 00:07:55 +0300"
-    },
-    {
-      "source": "IGN",
-      "language": "en",
-      "title": "The Wolfbox MF60 Cordless Electric Air Duster Delivers Tons of Dust Busting Airflow for Just $28",
-      "normalizedTitle": "the wolfbox mf60 cordless electric air duster delivers tons of dust busting airflow for just 28",
-      "url": "https://www.ign.com/articles/wolfbox-mega-flow-mf60-cordless-electric-air-duster-deal-august-2026",
-      "summary": "An essential tool for PC maintenance.",
-      "publishedAt": "Wed, 12 Aug 2026 21:00:00 +0000"
-    },
-    {
-      "source": "IGN",
-      "language": "en",
-      "title": "Brandon Sanderson Shares a Look Into Tolkien's Life as a Professor Before He Authored The Lord of the Rings",
-      "normalizedTitle": "brandon sanderson shares a look into tolkien s life as a professor before he authored the lord of the rings",
-      "url": "https://www.ign.com/articles/brandon-sanderson-shares-a-look-into-tolkiens-life-as-a-professor-before-he-authored-the-lord-of-the-rings-books",
-      "summary": "Brandon Sanderson revealed a rather interesting Tolkien tidbit during his weekly podcast, saying he encountered an illustration of Helm's Deep he'd never seen before, and it just so happened to be in a rather unlikely place.",
-      "publishedAt": "Wed, 12 Aug 2026 20:57:14 +0000"
-    },
-    {
-      "source": "IGN",
-      "language": "en",
-      "title": "The Full Teenage Mutant Ninja Turtles Trilogy in 4K Is on Sale for $29.99",
-      "normalizedTitle": "the full teenage mutant ninja turtles trilogy in 4k is on sale for 29 99",
-      "url": "https://www.ign.com/articles/teenage-mutant-ninja-turtles-4k-trilogy-walmart-deal-august-2026",
-      "summary": "The '90s Teenage Mutant Ninja Turtles movie trilogy is on sale for an all-time low price.",
-      "publishedAt": "Wed, 12 Aug 2026 20:51:10 +0000"
-    },
-    {
-      "source": "IGN",
-      "language": "en",
-      "title": "Theater Employee Makes Their Own Spider-Man: Brand New Day Poster After Cinema Never Received Official One",
-      "normalizedTitle": "theater employee makes their own spider man brand new day poster after cinema never received official one",
-      "url": "https://www.ign.com/articles/theater-employee-makes-their-own-spider-man-brand-new-day-poster-after-cinema-never-receives-official-one",
-      "summary": "An employee at a Cineplex theater in Prince George, British Columbia took matters into their own hands after their workplace didn’t get an official poster for the newest Spidey film.",
-      "publishedAt": "Wed, 12 Aug 2026 20:50:27 +0000"
     },
     {
       "source": "PC Gamer",
