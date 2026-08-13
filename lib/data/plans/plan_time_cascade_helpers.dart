@@ -335,61 +335,56 @@ extension PlanTimeCascadeExtension on DatabaseService {
     late final DateTime startWall;
     if (explicitStartWall != null) {
       startWall = explicitStartWall;
-    } else if (_planAutoPlacementMode ==
-        PlanAutoPlacementMode.nearestFreeSlot) {
-      final windowStart = PlanTimeVisibleWindow.windowStartWall(
-        wallDay,
-        timelineDayStartHour,
-      );
-      final profileNow =
-          currentWall ?? applyUserOffset(DatabaseService.getPlanetaryNow());
-      final earliestStart =
-          _samePlanWallDay(profileNow, wallDay) &&
-              profileNow.isAfter(windowStart)
-          ? profileNow
-          : windowStart;
-      startWall = _firstAvailablePlanWallStart(
-        earliestStartWall: earliestStart,
-        durationMin: durationMin,
-        existingDayPlans: existingDayPlans,
-      );
     } else {
-      DateTime? latestEnd;
-      for (final p in existingDayPlans) {
-        if (p.startTime == null) continue;
-        final end = _resolvedPlanWallEnd(p);
-        if (end == null) continue;
-        if (latestEnd == null || end.isAfter(latestEnd)) latestEnd = end;
-      }
-      if (latestEnd != null) {
-        startWall = _snapPlanWallDateTime(latestEnd);
+      final catSchedule = effectiveDefaultPlanScheduleForCategory(categoryId);
+      final hhmm = catSchedule?.hhmm;
+      final h = hhmm != null && hhmm.length >= 5
+          ? int.tryParse(hhmm.substring(0, 2))
+          : null;
+      final m = hhmm != null && hhmm.length >= 5
+          ? int.tryParse(hhmm.substring(3, 5))
+          : null;
+
+      if (h != null && m != null) {
+        usedCategoryDefault = true;
+        categoryDefaultTimezoneIana = catSchedule!.timezoneIana;
+        startWall = _snapPlanWallDateTime(
+          DateTime(wallDay.year, wallDay.month, wallDay.day, h, m),
+        );
+      } else if (_planAutoPlacementMode ==
+          PlanAutoPlacementMode.nearestFreeSlot) {
+        final windowStart = PlanTimeVisibleWindow.windowStartWall(
+          wallDay,
+          timelineDayStartHour,
+        );
+        final profileNow =
+            currentWall ?? applyUserOffset(DatabaseService.getPlanetaryNow());
+        final earliestStart =
+            _samePlanWallDay(profileNow, wallDay) &&
+                profileNow.isAfter(windowStart)
+            ? profileNow
+            : windowStart;
+        startWall = _firstAvailablePlanWallStart(
+          earliestStartWall: earliestStart,
+          durationMin: durationMin,
+          existingDayPlans: existingDayPlans,
+        );
       } else {
-        final catSchedule = effectiveDefaultPlanScheduleForCategory(categoryId);
-        if (catSchedule?.hhmm != null) {
-          final h = int.tryParse(catSchedule!.hhmm!.substring(0, 2));
-          final m = int.tryParse(catSchedule.hhmm!.substring(3, 5));
-          if (h != null && m != null) {
-            usedCategoryDefault = true;
-            categoryDefaultTimezoneIana = catSchedule.timezoneIana;
-            startWall = _snapPlanWallDateTime(
-              DateTime(wallDay.year, wallDay.month, wallDay.day, h, m),
-            );
-          } else {
-            startWall = _snapPlanWallDateTime(
-              PlanTimeVisibleWindow.windowStartWall(
-                wallDay,
-                timelineDayStartHour,
-              ),
-            );
-          }
-        } else {
-          startWall = _snapPlanWallDateTime(
-            PlanTimeVisibleWindow.windowStartWall(
-              wallDay,
-              timelineDayStartHour,
-            ),
-          );
+        DateTime? latestEnd;
+        for (final p in existingDayPlans) {
+          if (p.startTime == null) continue;
+          final end = _resolvedPlanWallEnd(p);
+          if (end == null) continue;
+          if (latestEnd == null || end.isAfter(latestEnd)) latestEnd = end;
         }
+        startWall = latestEnd != null
+            ? _snapPlanWallDateTime(latestEnd)
+            : _snapPlanWallDateTime(
+                PlanTimeVisibleWindow.windowStartWall(
+                  wallDay,
+                  timelineDayStartHour,
+                ),
+              );
       }
     }
 
