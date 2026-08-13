@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-13T13:28:04.733Z",
+  "updatedAt": "2026-08-13T13:44:25.625Z",
   "count": 495,
   "sources": [
     "IGN",
@@ -14,6 +14,15 @@
     "Игромания"
   ],
   "articles": [
+    {
+      "source": "GamesRadar+",
+      "language": "en",
+      "title": "Resident Evil Requiem is selling just as many physical copies as digital globally, with near-50% splits according to analysts – except for in the US, that is",
+      "normalizedTitle": "resident evil requiem is selling just as many physical copies as digital globally with near 50 splits according to analysts except for in the us that is",
+      "url": "https://www.gamesradar.com/games/survival-horror/resident-evil-requiem-is-selling-just-as-many-physical-copies-as-digital-globally-with-near-50-percent-splits-according-to-analysts-except-for-in-the-us-that-is/",
+      "summary": "There, only 22% of sales were physical",
+      "publishedAt": "Thu, 13 Aug 2026 13:29:10 +0000"
+    },
     {
       "source": "Polygon",
       "language": "en",
@@ -1372,15 +1381,6 @@
       "url": "https://www.gamesradar.com/hardware/retro/im-not-interested-in-bypassing-drm-preservationist-brings-back-physical-pc-games-using-discs-and-even-mechanical-hdd-cartridges/",
       "summary": "A preservationist has come up with an easy way to turn digital PC games into physical discs and cartridges without bypassing DRM on storefronts like Steam.",
       "publishedAt": "Wed, 12 Aug 2026 11:15:50 +0000"
-    },
-    {
-      "source": "GamesRadar+",
-      "language": "en",
-      "title": "New to 3D printing? You need to see these machines, and they just got a major discount",
-      "normalizedTitle": "new to 3d printing you need to see these machines and they just got a major discount",
-      "url": "https://www.gamesradar.com/hardware/new-to-3d-printing-you-need-to-see-these-machines-and-they-just-got-a-major-discount/",
-      "summary": "Elegoo is running a major sale on many of its 3D printers, and you can save hundreds on my two favorite beginner machines.",
-      "publishedAt": "Wed, 12 Aug 2026 11:14:39 +0000"
     },
     {
       "source": "Eurogamer",
