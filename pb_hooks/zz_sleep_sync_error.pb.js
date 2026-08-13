@@ -19,8 +19,8 @@ routerUse(function(e) {
             e.app.logger().error("google health connect failed", "error", detail);
         } catch (_) {}
         return e.json(400, {
-            error: "google_health_connect_failed",
-            detail: detail
+            code: "google_health_connect_failed",
+            error: detail
         });
     }
 });
