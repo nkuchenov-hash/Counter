@@ -96,8 +96,29 @@ class CloudSleepSyncService {
   String _failureMessage(http.Response response, String fallback) {
     var detail = '';
     try {
-      final data = _decode(response);
-      detail = (data['error'] ?? data['message'] ?? '').toString().trim();
+      final payload = _decode(response);
+      detail = (payload['error'] ?? payload['message'] ?? '').toString().trim();
+      final validation = payload['data'];
+      if (validation is Map && validation.isNotEmpty) {
+        final fields = <String>[];
+        for (final entry in validation.entries) {
+          final field = entry.key.toString();
+          var message = '';
+          final value = entry.value;
+          if (value is Map) {
+            message = (value['message'] ?? value['code'] ?? '').toString().trim();
+          } else if (value != null) {
+            message = value.toString().trim();
+          }
+          fields.add(message.isEmpty ? field : '$field: $message');
+        }
+        final validationDetail = fields.join(', ');
+        if (validationDetail.isNotEmpty) {
+          detail = detail.isEmpty
+              ? validationDetail
+              : '$detail — $validationDetail';
+        }
+      }
     } catch (_) {}
     return detail.isEmpty
         ? '$fallback (${response.statusCode})'
