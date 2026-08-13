@@ -33,7 +33,7 @@ jobs:
           chmod 600 ~/.ssh/lifeos_pocketbase
           ssh-keyscan -p "$SSH_PORT" -H "$SSH_HOST" >> ~/.ssh/known_hosts
 
-      - name: Read stored PocketBase sleep-sync failure
+      - name: Read imported Google Fit sleep records
         shell: bash
         run: |
           set -euo pipefail
@@ -45,21 +45,42 @@ jobs:
           db="$app_dir/pb_data/data.db"
           test -f "$db"
           DB_PATH="$db" python3 - <<'PY'
-          import os, sqlite3, re
+          import os, sqlite3
+          from datetime import datetime, timezone, timedelta
+
           db = os.environ['DB_PATH']
           con = sqlite3.connect(f'file:{db}?mode=ro', uri=True)
           con.row_factory = sqlite3.Row
-          rows = con.execute('''
-            SELECT status, last_error, last_sync_at, last_session_count,
+          conn = con.execute('''
+            SELECT user_id, status, last_error, last_sync_at, last_session_count,
                    last_imported_count, last_sleep_count, enabled, last_full_sync_at
             FROM sleep_sync_connections
+            WHERE provider = 'google_fit'
             ORDER BY rowid DESC
-            LIMIT 5
-          ''').fetchall()
-          for i, row in enumerate(rows, 1):
-              err = str(row['last_error'] or '')
-              err = re.sub(r'(?i)(Bearer\s+|access_token[=: ]+|refresh_token[=: ]+|client_secret[=: ]+)[^ ,}\"]+', r'\1[REDACTED]', err)
-              print(f'connection {i}: status={row["status"]} enabled={row["enabled"]} last_sync={row["last_sync_at"]} sessions={row["last_session_count"]} imported={row["last_imported_count"]} sleep={row["last_sleep_count"]} full_sync={row["last_full_sync_at"]}')
-              print('last_error=' + err)
+            LIMIT 1
+          ''').fetchone()
+          if conn is None:
+              print('NO_CONNECTION')
+              raise SystemExit(0)
+
+          print(f'SYNC status={conn["status"]} enabled={conn["enabled"]} last_sync={conn["last_sync_at"]} sessions={conn["last_session_count"]} imported={conn["last_imported_count"]} sleep={conn["last_sleep_count"]} full_sync={conn["last_full_sync_at"]}')
+          print('SYNC_ERROR=' + str(conn['last_error'] or ''))
+
+          cutoff = datetime.now(timezone.utc) - timedelta(days=8)
+          cutoff_s = cutoff.isoformat().replace('+00:00', 'Z')
+          rows = con.execute('''
+            SELECT start_time, end_time, external_source, sleep_source
+            FROM records
+            WHERE user_id = ?
+              AND (external_source = 'google_fit' OR sleep_source = 'google_fit')
+              AND end_time >= ?
+            ORDER BY start_time ASC
+          ''', (conn['user_id'], cutoff_s)).fetchall()
+
+          print('RECENT_COUNT=' + str(len(rows)))
+          for row in rows:
+              start = str(row['start_time'] or '')
+              end = str(row['end_time'] or '')
+              print(f'SLEEP start={start} end={end}')
           PY
           REMOTE
