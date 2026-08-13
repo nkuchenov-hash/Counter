@@ -53,7 +53,7 @@ jobs:
             SELECT status, last_error, last_sync_at, last_session_count,
                    last_imported_count, last_sleep_count, enabled, last_full_sync_at
             FROM sleep_sync_connections
-            ORDER BY updated DESC
+            ORDER BY rowid DESC
             LIMIT 5
           ''').fetchall()
           for i, row in enumerate(rows, 1):
