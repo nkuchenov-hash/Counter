@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-13T21:24:12.530Z",
+  "updatedAt": "2026-08-13T21:27:12.870Z",
   "count": 78,
   "sourcePool": [
     "Steam",
@@ -843,7 +843,7 @@
       "movies": [],
       "criticRating": 6.9,
       "steamUserRating": 8.7,
-      "recommendations": 1160937,
+      "recommendations": 1160954,
       "owners": "20,000,000 .. 50,000,000",
       "peakConcurrent": 143870,
       "sourceEvidence": [
@@ -856,7 +856,7 @@
         "steamSpy": "https://steamspy.com/app/252490",
         "metacritic": "https://www.metacritic.com/game/pc/rust?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10436.480902682139,
+      "popularityScore": 10436.481538629288,
       "igropoiskRating": 7.5,
       "editorialSources": [],
       "materials": {
@@ -1217,7 +1217,7 @@
       "movies": [],
       "criticRating": 8.9,
       "steamUserRating": 9.8,
-      "recommendations": 887542,
+      "recommendations": 887537,
       "owners": "20,000,000 .. 50,000,000",
       "peakConcurrent": 50662,
       "sourceEvidence": [
@@ -1230,7 +1230,7 @@
         "steamSpy": "https://steamspy.com/app/413150",
         "metacritic": "https://www.metacritic.com/game/pc/stardew-valley?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10364.81894030909,
+      "popularityScore": 10364.818695647307,
       "igropoiskRating": 9.2,
       "editorialSources": [],
       "materials": {
@@ -1492,7 +1492,7 @@
       "movies": [],
       "criticRating": 8.7,
       "steamUserRating": 9.7,
-      "recommendations": 498683,
+      "recommendations": 498685,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 4912,
       "sourceEvidence": [
@@ -1505,7 +1505,7 @@
         "steamSpy": "https://steamspy.com/app/367520",
         "metacritic": "https://www.metacritic.com/game/pc/hollow-knight?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10319.782543434392,
+      "popularityScore": 10319.782717610267,
       "igropoiskRating": 9,
       "editorialSources": [],
       "materials": {
@@ -2155,7 +2155,7 @@
       "movies": [],
       "criticRating": 8.3,
       "steamUserRating": 8,
-      "recommendations": 139193,
+      "recommendations": 139195,
       "owners": "20,000,000 .. 50,000,000",
       "peakConcurrent": 24619,
       "sourceEvidence": [
@@ -2168,7 +2168,7 @@
         "steamSpy": "https://steamspy.com/app/1085660",
         "metacritic": "https://www.metacritic.com/game/pc/destiny-2?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10064.362051528136,
+      "popularityScore": 10064.362675536875,
       "igropoiskRating": 8.2,
       "editorialSources": [],
       "materials": {
@@ -2519,7 +2519,7 @@
       "movies": [],
       "criticRating": 8.1,
       "steamUserRating": 7.3,
-      "recommendations": 211826,
+      "recommendations": 211821,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 6300,
       "sourceEvidence": [
@@ -2537,7 +2537,7 @@
         "steamSpy": "https://steamspy.com/app/594650",
         "metacritic": "https://www.metacritic.com/game/pc/hunt-showdown?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9932.598131556217,
+      "popularityScore": 9932.597106428146,
       "igropoiskRating": 7.8,
       "editorialSources": [
         "GameSpot",
@@ -3268,7 +3268,7 @@
       "movies": [],
       "criticRating": 8.5,
       "steamUserRating": 9.7,
-      "recommendations": 302350,
+      "recommendations": 302347,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 5216,
       "sourceEvidence": [
@@ -3281,7 +3281,7 @@
         "steamSpy": "https://steamspy.com/app/548430",
         "metacritic": "https://www.metacritic.com/game/pc/deep-rock-galactic?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9818.051140933609,
+      "popularityScore": 9818.050710013946,
       "igropoiskRating": 8.9,
       "editorialSources": [],
       "materials": {
@@ -3655,7 +3655,7 @@
       "movies": [],
       "criticRating": 8.7,
       "steamUserRating": 9.7,
-      "recommendations": 339647,
+      "recommendations": 339644,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 2719,
       "sourceEvidence": [
@@ -3669,7 +3669,7 @@
         "steamSpy": "https://steamspy.com/app/264710",
         "metacritic": "https://www.metacritic.com/game/pc/subnautica?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9803.102906161328,
+      "popularityScore": 9803.102522561483,
       "igropoiskRating": 9,
       "editorialSources": [
         "Rock Paper Shotgun"
@@ -3774,7 +3774,7 @@
       "movies": [],
       "criticRating": 9.1,
       "steamUserRating": 9.7,
-      "recommendations": 233545,
+      "recommendations": 233543,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 12596,
       "sourceEvidence": [
@@ -3787,7 +3787,7 @@
         "steamSpy": "https://steamspy.com/app/526870",
         "metacritic": "https://www.metacritic.com/game/pc/satisfactory?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9766.837243341868,
+      "popularityScore": 9766.836871426836,
       "igropoiskRating": 9.3,
       "editorialSources": [],
       "materials": {
@@ -5562,7 +5562,7 @@
       "movies": [],
       "criticRating": 7.7,
       "steamUserRating": 9.3,
-      "recommendations": 33429,
+      "recommendations": 33428,
       "owners": "1,000,000 .. 2,000,000",
       "peakConcurrent": 1479,
       "sourceEvidence": [
@@ -5575,7 +5575,7 @@
         "steamSpy": "https://steamspy.com/app/805550",
         "metacritic": "https://www.metacritic.com/game/pc/assetto-corsa-competizione?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9502.413637659256,
+      "popularityScore": 9502.412338523816,
       "igropoiskRating": 8.3,
       "editorialSources": [],
       "materials": {
@@ -6575,7 +6575,7 @@
       "movies": [],
       "criticRating": 8,
       "steamUserRating": 9.6,
-      "recommendations": 103704,
+      "recommendations": 103703,
       "owners": "2,000,000 .. 5,000,000",
       "peakConcurrent": 215,
       "sourceEvidence": [
@@ -6588,7 +6588,7 @@
         "steamSpy": "https://steamspy.com/app/238320",
         "metacritic": "https://www.metacritic.com/game/pc/outlast?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9341.579969583032,
+      "popularityScore": 9341.579550802284,
       "igropoiskRating": 8.6,
       "editorialSources": [],
       "materials": {
