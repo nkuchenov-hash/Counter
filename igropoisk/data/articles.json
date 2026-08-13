@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-13T22:16:24.013Z",
+  "updatedAt": "2026-08-13T23:19:00.387Z",
   "count": 495,
   "sources": [
     "IGN",
@@ -14,6 +14,15 @@
     "Игромания"
   ],
   "articles": [
+    {
+      "source": "Polygon",
+      "language": "en",
+      "title": "Rami Malek’s $60 Million Spy-Thriller Flop Is Officially a Streaming Hit on Prime Video",
+      "normalizedTitle": "rami malek s 60 million spy thriller flop is officially a streaming hit on prime video",
+      "url": "https://www.polygon.com/prime-video-streaming-august-2026-the-amateur/",
+      "summary": "Rami Malek’s ‘The Amateur’ is a hit on Prime Video more than a year after the $60 million spy thriller struggled at the box office.",
+      "publishedAt": "Thu, 13 Aug 2026 23:00:12 GMT"
+    },
     {
       "source": "PC Gamer",
       "language": "en",
@@ -58,6 +67,24 @@
       "url": "https://www.pcgamer.com/games/vr/nightdives-system-shock-remake-is-coming-to-vr/",
       "summary": "Strap Shodan on your face. Insect.",
       "publishedAt": "Thu, 13 Aug 2026 21:52:13 +0000"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "'It Doesn't Make Sense' — Uncharted Designer Doesn't Want a Remake of Drake's Fortune",
+      "normalizedTitle": "it doesn t make sense uncharted designer doesn t want a remake of drake s fortune",
+      "url": "https://www.ign.com/articles/it-doesnt-make-sense-uncharted-designer-doesnt-want-a-remake-of-drakes-fortune",
+      "summary": "Benson Russell, designer for two of the original Uncharted games, explained why he’s hesitant to welcome a potential remake of Drake’s Fortune.",
+      "publishedAt": "Thu, 13 Aug 2026 21:49:39 +0000"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "The FED Fitness DS2 Adjustable Dumbbells Can Turn Into an Adjustable Kettlebell or Barbell for Just $56.60",
+      "normalizedTitle": "the fed fitness ds2 adjustable dumbbells can turn into an adjustable kettlebell or barbell for just 56 60",
+      "url": "https://www.ign.com/articles/fed-fitness-adjustable-dumbbell-deal-august-2026",
+      "summary": "Adjustable dumbbells, kettle bell, barbell, pushup stands, and weight plates in one.",
+      "publishedAt": "Thu, 13 Aug 2026 21:40:00 +0000"
     },
     {
       "source": "PC Gamer",
@@ -139,6 +166,15 @@
       "url": "https://www.gamespot.com/articles/fields-of-mistria-1-0-gift-guide/",
       "summary": "Every NPC in Fields Of Mistria loves to receive gifts, but they can be pretty picky about which ones come their way. In general, gifts fall into six categories, and your friendship will improve (or stagnate) depending on how well you're attuned to your friends' preferences. Getting gifts right can also lead to romance, so keep our guide handy when you're exploring Fields Of Mistria's many romance and marriage options . This updated gift guide has all you need to know about gifting, including what gifts to get the new 1.0 vendor NPCs and who to give the newly introduced items to. THIS GUIDE CON",
       "publishedAt": "Thu, 13 Aug 2026 20:42:00 +0000"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "The Thin and Light Gigabyte AERO X16 16\" Gaming Laptop Is Perfect for Students Heading Back to School",
+      "normalizedTitle": "the thin and light gigabyte aero x16 16 gaming laptop is perfect for students heading back to school",
+      "url": "https://www.ign.com/articles/gigabyte-aero-x16-16-gaming-laptop-deal-2026",
+      "summary": "This 16\" laptop weighs in at only 4.2 pounds but has plenty of gaming chops.",
+      "publishedAt": "Thu, 13 Aug 2026 20:40:00 +0000"
     },
     {
       "source": "GamesRadar+",
@@ -310,15 +346,6 @@
       "url": "https://www.rockpapershotgun.com/phasmophobia-devs-kinetic-games-mosey-into-publishing-with-a-witchy-delivery-game-a-parasitic-metroidvania-and-more",
       "summary": "Kinetic Games are keeping busy! You may have heard yesterday that the Phasmophobia developer is publishing the next game from Her Story and Immortality's Sam Barlow (who's roped in Brandon Cronenberg this time around). That's not all that was announced however, as there's a bevy of other, not even scary at all, actually, games that are coming up from the new publisher. Read more",
       "publishedAt": "Thu, 13 Aug 2026 19:01:11 +0000"
-    },
-    {
-      "source": "Polygon",
-      "language": "en",
-      "title": "6 Divisive 'Buffy the Vampire Slayer' Episodes That Fans Hated But Have Aged Like Fine Wine",
-      "normalizedTitle": "6 divisive buffy the vampire slayer episodes that fans hated but have aged like fine wine",
-      "url": "https://www.polygon.com/buffy-the-vampire-slayer-controversial-episodes/",
-      "summary": "Buffy the Vampire Slayer marked a before and after for television, taking many creative swings. Here are 5 of its most divisive and impactful episodes",
-      "publishedAt": "Thu, 13 Aug 2026 19:00:12 GMT"
     },
     {
       "source": "GameSpot",
@@ -618,15 +645,6 @@
       "publishedAt": "Thu, 13 Aug 2026 16:02:53 +0000"
     },
     {
-      "source": "IGN",
-      "language": "en",
-      "title": "The 10 Most Expensive MTG Cards in The Hobbit Set",
-      "normalizedTitle": "the 10 most expensive mtg cards in the hobbit set",
-      "url": "https://www.ign.com/articles/magic-the-gathering-the-hobbit-most-valuable-cards",
-      "summary": "Here are the most valuable cards in the Magic: The Gathering x The Hobbit set.",
-      "publishedAt": "Thu, 13 Aug 2026 16:00:00 +0000"
-    },
-    {
       "source": "Rock Paper Shotgun",
       "language": "en",
       "title": "\"Obvious tells and subtle hints\" - Alien: Isolation's lead designer on the lethal variety of The Lost Wild's dinosaurs",
@@ -652,15 +670,6 @@
       "url": "https://www.gamesradar.com/games/action-rpg/beast-of-reincarnation-director-truly-sorry-that-pokemon-devs-new-action-rpg-hasnt-provided-a-sufficiently-enjoyable-experience/",
       "summary": "That said, he's confident a lot of the game is resonating with fans all the same",
       "publishedAt": "Thu, 13 Aug 2026 15:52:11 +0000"
-    },
-    {
-      "source": "IGN",
-      "language": "en",
-      "title": "'Halo Studios Went Too Far in the Wrong Direction' — Co-Creator of Halo Hits Out at the Main Menu Ring in Xbox's New Remake",
-      "normalizedTitle": "halo studios went too far in the wrong direction co creator of halo hits out at the main menu ring in xbox s new remake",
-      "url": "https://www.ign.com/articles/halo-studios-went-too-far-in-the-wrong-direction-co-creator-of-halo-hits-out-at-the-main-menu-ring-in-xboxs-new-remake",
-      "summary": "One of the creators of Halo has issued a few choice words for Xbox’s latest remake of Combat Evolved, specifically the ring we see in the main menu and the lack of PvP.",
-      "publishedAt": "Thu, 13 Aug 2026 15:47:06 +0000"
     },
     {
       "source": "GamesRadar+",
@@ -724,15 +733,6 @@
       "url": "https://www.gamesradar.com/hardware/ssd-hard-drives/brand-dapustor-has-unveiled-a-gargantuan-512-tb-ssd-at-this-years-fms-2026-event-but-its-sadly-not-for-gaming/",
       "summary": "This year's Future of Memory and Storage 2026 event saw the unveiling of a massive 512 TB SSD, but this huge drive is sadly not intended for our gaming rigs.",
       "publishedAt": "Thu, 13 Aug 2026 15:22:36 +0000"
-    },
-    {
-      "source": "IGN",
-      "language": "en",
-      "title": "Krispy Kreme Is Getting 6 New Pokémon-Themed Donuts",
-      "normalizedTitle": "krispy kreme is getting 6 new pokémon themed donuts",
-      "url": "https://www.ign.com/articles/krispy-kreme-pokemon-doughnut-30th-anniversary-announcement",
-      "summary": "Krispy Kreme has announced a Pokémon doughnut collection that will be available for a limited time starting August 18.",
-      "publishedAt": "Thu, 13 Aug 2026 15:17:46 +0000"
     },
     {
       "source": "GamesRadar+",
