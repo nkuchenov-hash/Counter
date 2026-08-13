@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-13T21:27:28.620Z",
+  "updatedAt": "2026-08-13T21:31:27.949Z",
   "count": 495,
   "sources": [
     "IGN",
@@ -14,6 +14,15 @@
     "Игромания"
   ],
   "articles": [
+    {
+      "source": "GamesRadar+",
+      "language": "en",
+      "title": "Marvel Tokon sold 485,000 copies in a week but it could have been \"closer to 1M\" with a better PC port and Steam reviews, analyst says",
+      "normalizedTitle": "marvel tokon sold 485 000 copies in a week but it could have been closer to 1m with a better pc port and steam reviews analyst says",
+      "url": "https://www.gamesradar.com/games/fighting/marvel-tokon-sold-485-000-copies-in-a-week-but-it-could-have-been-closer-to-1m-with-a-better-pc-port-and-steam-reviews-analyst-says/",
+      "summary": "The consequences of a Mixed Steam rating…",
+      "publishedAt": "Thu, 13 Aug 2026 21:26:26 +0000"
+    },
     {
       "source": "Polygon",
       "language": "en",
@@ -1309,15 +1318,6 @@
       "url": "https://www.gamesradar.com/entertainment/dc-tv-shows/dcus-waller-and-wonder-woman-show-paradise-lost-have-reportedly-been-scrapped-but-lanterns-may-get-a-second-season/",
       "summary": "The DCU is making some changes to its previously announced roster",
       "publishedAt": "Wed, 12 Aug 2026 18:10:03 +0000"
-    },
-    {
-      "source": "GamesRadar+",
-      "language": "en",
-      "title": "Now that The Elder Scrolls 6 is playable, Bethesda's RPG nightmare of its own making is nearly over",
-      "normalizedTitle": "now that the elder scrolls 6 is playable bethesda s rpg nightmare of its own making is nearly over",
-      "url": "https://www.gamesradar.com/games/the-elder-scrolls/now-that-the-elder-scrolls-6-is-playable-bethesdas-rpg-nightmare-of-its-own-making-is-nearly-over/",
-      "summary": "But that 8-year wait is far from over yet",
-      "publishedAt": "Wed, 12 Aug 2026 18:00:00 +0000"
     },
     {
       "source": "Rock Paper Shotgun",
