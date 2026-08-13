@@ -2,12 +2,15 @@
 // Shared logic lives in a CommonJS module because PocketBase route/cron handlers
 // execute in isolated JS contexts.
 
+var __fitRecovery = require(__hooks + "/google_fit_sleep_recovery.js");
 var __fitCollection = "sleep_sync_connections";
 var __fitProviderStorage = "google_fit";
 var __fitDefaultMinutes = 21 * 60;
-var __fitCorrectionLookbackDays = 7;
+var __fitCorrectionLookbackDays = 30;
+var __fitCatchupIntervalMs = 6 * 60 * 60 * 1000;
 var __fitScope = "https://www.googleapis.com/auth/fitness.sleep.read";
 var __fitHistoryStart = new Date(Date.UTC(2000, 0, 1));
+var __fitSegmentHistoryStart = new Date(Date.UTC(2014, 9, 1));
 
 function __fitEnv(name) {
     try { return String($os.getenv(name) || "").trim(); } catch (_) { return ""; }
@@ -33,9 +36,6 @@ function __fitTokenKey(app) {
 }
 
 function __fitGoogleConfig() {
-    // The current production OAuth client was originally stored under the
-    // GOOGLE_HEALTH secret names. Reuse the same OAuth web client while preferring
-    // correctly named Google Fit env vars when present.
     var clientId = __fitEnv("SLEEP_SYNC_GOOGLE_FIT_CLIENT_ID") || __fitEnv("SLEEP_SYNC_GOOGLE_HEALTH_CLIENT_ID");
     var clientSecret = __fitEnv("SLEEP_SYNC_GOOGLE_FIT_CLIENT_SECRET") || __fitEnv("SLEEP_SYNC_GOOGLE_HEALTH_CLIENT_SECRET");
     if (!clientId || !clientSecret) throw new Error("Google Fit OAuth is not configured");
@@ -92,7 +92,8 @@ function __fitNeedsReconnect(errorText) {
         raw.indexOf("google health sleep request") >= 0 ||
         raw.indexOf("insufficient authentication scopes") >= 0 ||
         raw.indexOf("insufficientpermissions") >= 0 ||
-        raw.indexOf("insufficient permission") >= 0;
+        raw.indexOf("insufficient permission") >= 0 ||
+        raw.indexOf("invalid_grant") >= 0;
 }
 
 function __fitStatus(connection) {
@@ -127,7 +128,7 @@ function __fitStatus(connection) {
         last_imported_count: Number(connection.get("last_imported_count") || 0),
         last_sleep_count: Number(connection.get("last_sleep_count") || 0),
         last_activity_count: 0,
-        history_complete: String(connection.get("last_full_sync_at") || "").length > 0,
+        history_complete: String(connection.get("last_full_sync_at") || "").length > 0 && !!connection.get("segment_backfill_complete"),
         last_error: reconnectRequired ? "Google Fit authorization is required" : (lastError || null)
     };
 }
@@ -190,12 +191,13 @@ function __fitAccessToken(app, connection) {
     return String(res.json.access_token);
 }
 
-function __fitSessionsUrl(start, end) {
+function __fitSessionsUrl(start, end, pageToken) {
     var params = {
         startTime: start.toISOString(),
         endTime: end.toISOString(),
         activityType: "72"
     };
+    if (pageToken) params.pageToken = pageToken;
     return "https://www.googleapis.com/fitness/v1/users/me/sessions?" + __fitFormEncode(params);
 }
 
@@ -227,22 +229,31 @@ function __fitNormalizeSleep(row) {
 }
 
 function __fitFetchSleep(accessToken, start, end) {
-    var res = $http.send({
-        url: __fitSessionsUrl(start, end),
-        method: "GET",
-        headers: {
-            "authorization": "Bearer " + accessToken,
-            "accept": "application/json"
-        },
-        timeout: 60
-    });
-    if (res.statusCode < 200 || res.statusCode >= 300 || !res.json) {
-        var detail = "";
-        try { detail = JSON.stringify(res.json || {}); } catch (_) {}
-        throw new Error("Google Fit sleep request failed: HTTP " + res.statusCode + (detail ? " " + detail : ""));
-    }
+    var rows = [];
+    var pageToken = "";
+    var page = 0;
+    do {
+        var res = $http.send({
+            url: __fitSessionsUrl(start, end, pageToken),
+            method: "GET",
+            headers: {
+                "authorization": "Bearer " + accessToken,
+                "accept": "application/json"
+            },
+            timeout: 60
+        });
+        if (res.statusCode < 200 || res.statusCode >= 300 || !res.json) {
+            var detail = "";
+            try { detail = JSON.stringify(res.json || {}); } catch (_) {}
+            throw new Error("Google Fit sleep request failed: HTTP " + res.statusCode + (detail ? " " + detail : ""));
+        }
+        var pageRows = res.json.session || [];
+        for (var r = 0; r < pageRows.length; r++) rows.push(pageRows[r]);
+        pageToken = String(res.json.nextPageToken || "").trim();
+        page++;
+        if (page > 1000) throw new Error("Google Fit returned too many sleep session pages");
+    } while (pageToken);
 
-    var rows = res.json.session || [];
     var byId = {};
     for (var i = 0; i < rows.length; i++) {
         var session = __fitNormalizeSleep(rows[i]);
@@ -253,7 +264,7 @@ function __fitFetchSleep(accessToken, start, end) {
         if (Object.prototype.hasOwnProperty.call(byId, id)) out.push(byId[id]);
     }
     out.sort(function(a, b) { return a.start.getTime() - b.start.getTime(); });
-    return out;
+    return __fitRecovery.cleanSessions(out);
 }
 
 function __fitProfile(app, userId) {
@@ -284,6 +295,10 @@ function __fitSleepCategory(app, userId, language) {
     return category;
 }
 
+function __fitOverlapMs(aStart, aEnd, bStart, bEnd) {
+    return Math.max(0, Math.min(aEnd.getTime(), bEnd.getTime()) - Math.max(aStart.getTime(), bStart.getTime()));
+}
+
 function __fitFindExisting(app, userId, session) {
     try {
         return app.findFirstRecordByFilter(
@@ -300,7 +315,35 @@ function __fitFindExisting(app, userId, session) {
         );
     } catch (_) {}
 
-    // Compatibility with records created during the abandoned Google Health attempt.
+    // Provider-owned overlap fallback lets segment-derived episodes repair truncated
+    // or duplicated Google Fit sessions instead of creating another record.
+    try {
+        var candidates = app.findRecordsByFilter(
+            "records",
+            "user_id = {:uid} && external_source = 'google_fit' && external_kind = 'sleep' && start_time < {:end} && end_time > {:start}",
+            "",
+            20,
+            0,
+            { uid: userId, start: session.start.toISOString(), end: session.end.toISOString() }
+        );
+        var sessionDuration = session.end.getTime() - session.start.getTime();
+        var best = null;
+        var bestRatio = 0;
+        for (var i = 0; i < candidates.length; i++) {
+            var rs = __fitDate(candidates[i].get("start_time"));
+            var re = __fitDate(candidates[i].get("end_time"));
+            if (!rs || !re || re.getTime() <= rs.getTime()) continue;
+            var overlap = __fitOverlapMs(session.start, session.end, rs, re);
+            var shorter = Math.min(sessionDuration, re.getTime() - rs.getTime());
+            var ratio = shorter > 0 ? overlap / shorter : 0;
+            if (ratio >= 0.80 && ratio > bestRatio) {
+                best = candidates[i];
+                bestRatio = ratio;
+            }
+        }
+        if (best) return best;
+    } catch (_) {}
+
     try {
         return app.findFirstRecordByFilter(
             "records",
@@ -335,6 +378,45 @@ function __fitUpsert(app, userId, profile, category, session) {
     return existing ? 0 : 1;
 }
 
+function __fitCleanupOwnedRecords(app, userId, start, sessions) {
+    var removed = 0;
+    var records = [];
+    try {
+        records = app.findRecordsByFilter(
+            "records",
+            "user_id = {:uid} && external_source = 'google_fit' && external_kind = 'sleep' && end_time >= {:start}",
+            "",
+            3000,
+            0,
+            { uid: userId, start: start.toISOString() }
+        );
+    } catch (_) { return 0; }
+
+    for (var i = 0; i < records.length; i++) {
+        var record = records[i];
+        var rs = __fitDate(record.get("start_time"));
+        var re = __fitDate(record.get("end_time"));
+        if (!rs || !re || re.getTime() <= rs.getTime()) {
+            try { app.delete(record); removed++; } catch (_) {}
+            continue;
+        }
+        var rid = String(record.get("external_id") || "");
+        var exact = false;
+        var duplicate = false;
+        for (var j = 0; j < sessions.length; j++) {
+            var s = sessions[j];
+            if (rid && rid === s.externalId) { exact = true; break; }
+            var overlap = __fitOverlapMs(rs, re, s.start, s.end);
+            var shorter = Math.min(re.getTime() - rs.getTime(), s.end.getTime() - s.start.getTime());
+            if (shorter > 0 && overlap / shorter >= 0.80) duplicate = true;
+        }
+        if (!exact && duplicate) {
+            try { app.delete(record); removed++; } catch (_) {}
+        }
+    }
+    return removed;
+}
+
 function __fitLocalClock(profile, now) {
     var offsetHours = Number(profile.get("timezone_offset") || 0);
     var local = new Date(now.getTime() + offsetHours * 3600000);
@@ -351,15 +433,24 @@ function __fitRunConnection(app, connection) {
     var accessToken = __fitAccessToken(app, connection);
     var now = new Date();
     var historyComplete = String(connection.get("last_full_sync_at") || "").length > 0;
-    var start = historyComplete
+    var segmentBackfillComplete = !!connection.get("segment_backfill_complete");
+    var sessionStart = historyComplete
         ? new Date(now.getTime() - __fitCorrectionLookbackDays * 86400000)
         : __fitHistoryStart;
-    var sessions = __fitFetchSleep(accessToken, start, now);
+    var segmentStart = segmentBackfillComplete
+        ? new Date(now.getTime() - __fitCorrectionLookbackDays * 86400000)
+        : __fitSegmentHistoryStart;
+
+    var sessions = __fitFetchSleep(accessToken, sessionStart, now);
+    var recovery = __fitRecovery.recover(accessToken, segmentStart, now, sessions);
+    sessions = recovery.sessions;
+
     var category = __fitSleepCategory(app, userId, profile.get("primary_language"));
     var imported = 0;
     for (var i = 0; i < sessions.length; i++) {
         imported += __fitUpsert(app, userId, profile, category, sessions[i]);
     }
+    var cleaned = __fitCleanupOwnedRecords(app, userId, segmentStart, sessions);
 
     var local = __fitLocalClock(profile, now);
     connection.set("status", "connected");
@@ -370,9 +461,20 @@ function __fitRunConnection(app, connection) {
     connection.set("last_sleep_count", sessions.length);
     connection.set("last_activity_count", 0);
     if (!historyComplete) connection.set("last_full_sync_at", now.toISOString());
+    if (!segmentBackfillComplete) connection.set("segment_backfill_complete", true);
     connection.set("last_error", "");
     app.save(connection);
-    return { sessions: sessions.length, imported: imported, sleep: sessions.length };
+    try {
+        app.logger().info("google fit sleep sync complete", "sessions", sessions.length, "imported", imported, "segment_points", recovery.segmentPoints, "segment_episodes", recovery.recoveredEpisodes, "cleaned", cleaned);
+    } catch (_) {}
+    return {
+        sessions: sessions.length,
+        imported: imported,
+        sleep: sessions.length,
+        segmentPoints: recovery.segmentPoints,
+        recoveredEpisodes: recovery.recoveredEpisodes,
+        cleaned: cleaned
+    };
 }
 
 function __fitRunSafe(app, connection) {
@@ -444,11 +546,10 @@ function callback(e) {
         connection.set("oauth_state", "");
         connection.set("oauth_state_expires_at", "");
         connection.set("last_full_sync_at", "");
+        connection.set("segment_backfill_complete", false);
         connection.set("last_error", "");
         e.app.save(connection);
 
-        // First authorization attempts the full available history immediately.
-        // If Google is temporarily unavailable, the cron retry keeps last_full_sync_at empty.
         try { __fitRunSafe(e.app, connection); } catch (_) {}
         var returnUrl = __fitReturnUrl();
         return e.html(200,
@@ -482,7 +583,15 @@ function run(e) {
     }
     try {
         var result = __fitRunSafe(e.app, connection);
-        return e.json(200, { ok: true, sessions: result.sessions, imported: result.imported, sleep: result.sleep });
+        return e.json(200, {
+            ok: true,
+            sessions: result.sessions,
+            imported: result.imported,
+            sleep: result.sleep,
+            segment_points: result.segmentPoints,
+            recovered_episodes: result.recoveredEpisodes,
+            cleaned: result.cleaned
+        });
     } catch (err) {
         return e.json(502, { ok: false, error: String(err) });
     }
@@ -511,7 +620,7 @@ function cron(app) {
         try {
             var connection = connections[i];
             if (__fitNeedsReconnect(connection.get("last_error"))) continue;
-            if (!String(connection.get("last_full_sync_at") || "")) {
+            if (!String(connection.get("last_full_sync_at") || "") || !connection.get("segment_backfill_complete")) {
                 __fitRunSafe(app, connection);
                 continue;
             }
@@ -519,7 +628,10 @@ function cron(app) {
             var local = __fitLocalClock(profile, now);
             var dueMinutes = Number(connection.get("daily_sync_minutes") || __fitDefaultMinutes);
             var lastDay = String(connection.get("last_sync_local_day") || "");
-            if (local.minutes < dueMinutes || lastDay === local.day) continue;
+            var lastSync = __fitDate(connection.get("last_sync_at"));
+            var stale = !lastSync || now.getTime() - lastSync.getTime() >= __fitCatchupIntervalMs;
+            var dailyDue = local.minutes >= dueMinutes && lastDay !== local.day;
+            if (!stale && !dailyDue) continue;
             __fitRunSafe(app, connection);
         } catch (_) {}
     }
