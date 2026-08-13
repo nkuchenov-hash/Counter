@@ -93,6 +93,38 @@ class CloudSleepSyncService {
     throw const FormatException('Unexpected sleep-sync response');
   }
 
+  String _failureMessage(http.Response response, String fallback) {
+    var detail = '';
+    try {
+      final payload = _decode(response);
+      detail = (payload['error'] ?? payload['message'] ?? '').toString().trim();
+      final validation = payload['data'];
+      if (validation is Map && validation.isNotEmpty) {
+        final fields = <String>[];
+        for (final entry in validation.entries) {
+          final field = entry.key.toString();
+          var message = '';
+          final value = entry.value;
+          if (value is Map) {
+            message = (value['message'] ?? value['code'] ?? '').toString().trim();
+          } else if (value != null) {
+            message = value.toString().trim();
+          }
+          fields.add(message.isEmpty ? field : '$field: $message');
+        }
+        final validationDetail = fields.join(', ');
+        if (validationDetail.isNotEmpty) {
+          detail = detail.isEmpty
+              ? validationDetail
+              : '$detail — $validationDetail';
+        }
+      }
+    } catch (_) {}
+    return detail.isEmpty
+        ? '$fallback (${response.statusCode})'
+        : '$fallback (${response.statusCode}: $detail)';
+  }
+
   CloudSleepSyncPhase _phaseFromWire(String raw, bool configured) {
     return switch (raw.trim().toLowerCase()) {
       'connecting' => CloudSleepSyncPhase.connecting,
@@ -148,7 +180,7 @@ class CloudSleepSyncService {
         return;
       }
       if (response.statusCode < 200 || response.statusCode >= 300) {
-        throw StateError('Sleep sync status failed (${response.statusCode})');
+        throw StateError(_failureMessage(response, 'Sleep sync status failed'));
       }
       _applyStatus(_decode(response));
     } catch (error) {
@@ -178,7 +210,7 @@ class CloudSleepSyncService {
           .timeout(const Duration(seconds: 20));
       if (response.statusCode < 200 || response.statusCode >= 300) {
         throw StateError(
-          'Google health connection failed (${response.statusCode})',
+          _failureMessage(response, 'Google Health connection failed'),
         );
       }
       final authorizationUrl =
@@ -226,7 +258,7 @@ class CloudSleepSyncService {
           )
           .timeout(const Duration(seconds: 20));
       if (response.statusCode < 200 || response.statusCode >= 300) {
-        throw StateError('Sleep sync settings failed (${response.statusCode})');
+        throw StateError(_failureMessage(response, 'Sleep sync settings failed'));
       }
       _applyStatus(_decode(response));
       return true;
@@ -252,7 +284,7 @@ class CloudSleepSyncService {
           .timeout(const Duration(seconds: 90));
       if (response.statusCode < 200 || response.statusCode >= 300) {
         throw StateError(
-          'Sleep synchronization failed (${response.statusCode})',
+          _failureMessage(response, 'Sleep synchronization failed'),
         );
       }
       await loadStatus();
@@ -275,7 +307,7 @@ class CloudSleepSyncService {
           .timeout(const Duration(seconds: 20));
       if (response.statusCode < 200 || response.statusCode >= 300) {
         throw StateError(
-          'Sleep source disconnect failed (${response.statusCode})',
+          _failureMessage(response, 'Sleep source disconnect failed'),
         );
       }
       state.value = const CloudSleepSyncState.initial();
