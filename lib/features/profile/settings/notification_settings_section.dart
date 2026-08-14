@@ -8,7 +8,7 @@ import 'package:counter/services/notification_service.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 
-/// OS notification permission, Health Connect sleep sync, and reminder settings.
+/// OS notification permission, sleep-source sync, and reminder settings.
 class ProfileNotificationsSection extends StatefulWidget {
   const ProfileNotificationsSection({this.embedded = false});
 
@@ -101,7 +101,7 @@ class ProfileNotificationsSectionState
         const SizedBox(height: 20),
         const Divider(),
         const SizedBox(height: 16),
-        const HealthConnectSettingsSection(),
+        const SleepSyncSettingsSection(),
         const SizedBox(height: 20),
         const Divider(),
         const SizedBox(height: 16),
