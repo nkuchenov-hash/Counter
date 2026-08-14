@@ -20,8 +20,23 @@ class _ShellTopStatusBarsState extends State<ShellTopStatusBars> {
   @override
   void initState() {
     super.initState();
-    unawaited(HealthSleepSyncService.instance.start());
+    unawaited(_startHealthSleepSync());
     unawaited(UnfilledTimeGapService.instance.start());
+  }
+
+  Future<void> _startHealthSleepSync() async {
+    final service = HealthSleepSyncService.instance;
+    await service.start();
+    final current = service.state.value;
+    if (!current.enabled || !service.isSupported) return;
+
+    final lastSync = current.lastSyncUtc;
+    final needsDailyCatchUp =
+        lastSync == null ||
+        DateTime.now().toUtc().difference(lastSync) >= const Duration(days: 1);
+    if (needsDailyCatchUp) {
+      await service.sync();
+    }
   }
 
   @override
