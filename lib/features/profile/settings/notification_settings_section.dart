@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:counter/core/widgets/app_button.dart';
+import 'package:counter/features/settings/health/device_health_sleep_settings_section.dart';
 import 'package:counter/features/settings/health/health_connect_settings_section.dart';
 import 'package:counter/features/settings/notifications/unfilled_time_notifications_section.dart';
 import 'package:counter/l10n/dictionary.dart';
@@ -8,7 +9,7 @@ import 'package:counter/services/notification_service.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 
-/// OS notification permission, Health Connect sleep sync, and reminder settings.
+/// OS notification permission, sleep-source sync, and reminder settings.
 class ProfileNotificationsSection extends StatefulWidget {
   const ProfileNotificationsSection({this.embedded = false});
 
@@ -101,7 +102,11 @@ class ProfileNotificationsSectionState
         const SizedBox(height: 20),
         const Divider(),
         const SizedBox(height: 16),
-        const HealthConnectSettingsSection(),
+        const DeviceHealthSleepSettingsSection(),
+        const SizedBox(height: 20),
+        const Divider(),
+        const SizedBox(height: 16),
+        const SleepSyncSettingsSection(),
         const SizedBox(height: 20),
         const Divider(),
         const SizedBox(height: 16),
