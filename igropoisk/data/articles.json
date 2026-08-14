@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-13T23:44:13.790Z",
+  "updatedAt": "2026-08-14T00:05:57.274Z",
   "count": 495,
   "sources": [
     "IGN",
@@ -14,6 +14,15 @@
     "Игромания"
   ],
   "articles": [
+    {
+      "source": "GamesRadar+",
+      "language": "en",
+      "title": "Halo co-creator says the remake's lack of PvP is a \"misstep\" resulting \"from lack of oversight and poor planning\"",
+      "normalizedTitle": "halo co creator says the remake s lack of pvp is a misstep resulting from lack of oversight and poor planning",
+      "url": "https://www.gamesradar.com/games/halo/halo-co-creator-says-the-remakes-lack-of-pvp-is-a-misstep-resulting-from-lack-of-oversight-and-poor-planning/",
+      "summary": "\"So sad this wasn't included\"",
+      "publishedAt": "Thu, 13 Aug 2026 23:52:21 +0000"
+    },
     {
       "source": "Polygon",
       "language": "en",
@@ -1309,15 +1318,6 @@
       "url": "https://www.pcgamer.com/games/wes-fenlons-recommendations/",
       "summary": "What has Senior Editor Wes Fenlon been into lately?",
       "publishedAt": "Wed, 12 Aug 2026 20:49:17 +0000"
-    },
-    {
-      "source": "GamesRadar+",
-      "language": "en",
-      "title": "Echoing Palworld dev, video game lawyer says all her clients have anti-AI contracts because gamers hate it and it's a copyright landmine: \"I think we're going to see lawsuits\"",
-      "normalizedTitle": "echoing palworld dev video game lawyer says all her clients have anti ai contracts because gamers hate it and it s a copyright landmine i think we re going to see lawsuits",
-      "url": "https://www.gamesradar.com/games/echoing-palworld-dev-video-game-lawyer-says-all-her-clients-have-anti-ai-contracts-because-gamers-hate-it-and-its-a-copyright-landmine-i-think-were-going-to-see-lawsuits/",
-      "summary": "\"Don't touch it. It's not worth the legal liability\"",
-      "publishedAt": "Wed, 12 Aug 2026 20:37:36 +0000"
     },
     {
       "source": "PC Gamer",
