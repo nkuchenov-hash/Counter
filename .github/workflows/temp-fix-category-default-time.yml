@@ -6,6 +6,7 @@ on:
       - '.github/workflows/temp-fix-category-default-time.yml'
       - '.github/scripts/temp_project_plan_approval_gate.py'
       - '.github/scripts/temp_project_plan_approval_audit.py'
+      - '.github/scripts/temp_project_plan_approval_followup.py'
 
 permissions:
   contents: write
@@ -24,6 +25,7 @@ jobs:
         run: |
           python .github/scripts/temp_project_plan_approval_gate.py
           python .github/scripts/temp_project_plan_approval_audit.py
+          python .github/scripts/temp_project_plan_approval_followup.py
 
       - name: Architecture guard
         shell: pwsh
