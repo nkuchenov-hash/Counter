@@ -908,7 +908,8 @@ Future<PathWeekPlanReportV4> planCurrentWeekFromPathsV4() async {
     }
     final title = (row['title'] ?? '').toString().trim().toLowerCase();
     final start = (row['start_time'] ?? row['startTime'])?.toString() ?? '';
-    final dt = DateTime.tryParse(start)?.toLocal();
+    final parsedUtc = DateTime.tryParse(start);
+    final dt = parsedUtc == null ? null : db.applyUserOffset(parsedUtc.toUtc());
     if (title.isNotEmpty && dt != null) {
       existingTitlesByDate.putIfAbsent(_dateKeyV4(dt), () => <String>{}).add(title);
     }
@@ -954,7 +955,7 @@ Future<PathWeekPlanReportV4> planCurrentWeekFromPathsV4() async {
   }
 
   var created = 0;
-  final now = DateTime.now();
+  final now = db.applyUserOffset(DateTime.now().toUtc());
 
   final atozed = _findCategoryByAliasesV4(const [
     'Atozed / IntraWeb17',
@@ -1088,7 +1089,5 @@ Future<PathWeekPlanReportV4> planCurrentWeekFromPathsV4() async {
   );
 }
 
-Future<PathWeekPlanReportV4> runPathGovernanceAndPlanCurrentWeekV4() async {
-  await upgradeRealityPathsV4();
-  return planCurrentWeekFromPathsV4();
-}
+Future<PathWeekPlanReportV4> runPathGovernanceAndPlanCurrentWeekV4() =>
+    planCurrentWeekFromPathsV4();

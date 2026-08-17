@@ -1132,7 +1132,29 @@ String _v3TrackLabel(String track, bool ru) {
       'android' => 'Android / RuStore',
       'support' => 'Support',
       'release' => 'Release process',
-      _ => 'Execution',
+      'reliability' => 'Reliability',
+      'distribution' => 'Distribution',
+      'privacy' => 'Privacy',
+      'operations' => 'Operations',
+      'content' => 'Content',
+      'seo' => 'Search / SEO',
+      'validation' => 'Validation',
+      'sales' => 'Sales',
+      'finance' => 'Finance',
+      'automation' => 'Automation',
+      'career' => 'Work value',
+      'people' => 'People / roles',
+      'learning' => 'Learning',
+      'course_assignment' => 'Course assignments',
+      'channel' => 'Channels',
+      'playbook' => 'Skills playbook',
+      'transfer' => 'Transfer to projects',
+      'offer' => 'Free / paid',
+      'website' => 'Website',
+      'licensing' => 'Licensing',
+      'support' => 'Support',
+      'execution' => 'Execution',
+      _ => track,
     };
   }
   return switch (track) {
@@ -1149,7 +1171,29 @@ String _v3TrackLabel(String track, bool ru) {
     'android' => 'Android / RuStore',
     'support' => 'Поддержка',
     'release' => 'Выпуск версий',
-    _ => 'Исполнение',
+    'reliability' => 'Надёжность',
+    'distribution' => 'Распространение',
+    'privacy' => 'Приватность',
+    'operations' => 'Операционка',
+    'content' => 'Контент',
+    'seo' => 'Поиск / SEO',
+    'validation' => 'Проверка результата',
+    'sales' => 'Продажи',
+    'finance' => 'Финансы',
+    'automation' => 'Автоматизация',
+    'career' => 'Рабочая ценность',
+    'people' => 'Люди / роли',
+    'learning' => 'Обучение',
+    'course_assignment' => 'Задания курса',
+    'channel' => 'Каналы',
+    'playbook' => 'База навыков',
+    'transfer' => 'Перенос в проекты',
+    'offer' => 'Бесплатное / платное',
+    'website' => 'Сайт',
+    'licensing' => 'Лицензирование',
+    'support' => 'Поддержка',
+    'execution' => 'Исполнение',
+    _ => track,
   };
 }
 
@@ -1342,42 +1386,14 @@ class _V3RealityCheck {
 }
 
 _V3RealityCheck _v3CheckPath(CategoryRule category, PlanningTask root) {
-  final stages = _v3ParseStages(root);
-  final structure = <String>[];
-  final covered = <String>{};
-  if (stages.isEmpty) structure.add('Нет этапов.');
-  for (var si = 0; si < stages.length; si++) {
-    final stage = stages[si];
-    if (stage.doneWhen.isEmpty) {
-      structure.add('Этап ${si + 1}: не записано, когда он считается завершённым.');
-    }
-    if (!stage.done && stage.actions.isEmpty) {
-      structure.add('Этап ${si + 1}: нет конкретных действий.');
-    }
-    for (var ai = 0; ai < stage.actions.length; ai++) {
-      final action = stage.actions[ai];
-      if (action.track.isNotEmpty) covered.add(action.track);
-      if (action.minutes < 1 || action.minutes > 30) {
-        structure.add('Этап ${si + 1}, действие ${ai + 1}: нужно разбить до 30 минут.');
-      }
-      if (action.result.isEmpty) {
-        structure.add('Этап ${si + 1}, действие ${ai + 1}: не указан результат.');
-      }
-    }
-  }
-
-  final normalized = _v3NormalizeProjectName(category.name);
-  final audited = (normalized == 'кадр' || normalized == 'kadr') &&
-      _v3ChecklistIsKadrReality(root.checklist);
-  final required = audited ? _v3KadrRequiredTracks : const <String>[];
-  final missing = <String>[
-    for (final track in required)
-      if (!covered.contains(track)) track,
-  ];
+  final audit = auditExecutableProjectPathV4(category, root);
   return _V3RealityCheck(
-    structureProblems: structure,
-    missingTracks: missing,
-    audited: audited,
+    structureProblems: <String>[
+      ...audit.structureProblems,
+      for (final topic in audit.missingTopics) 'Слепая зона: $topic.',
+    ],
+    missingTracks: audit.missingTracks,
+    audited: audit.audited,
   );
 }
 
@@ -1407,6 +1423,7 @@ class _ProjectPathsV3PageState extends State<ProjectPathsV3Page> {
     try {
       await bootstrapExecutablePortfolioPaths();
       await _upgradeKadrRealityPathV3();
+      await runPathGovernanceAndPlanCurrentWeekV4();
     } catch (e) {
       _error = e.toString();
     }
