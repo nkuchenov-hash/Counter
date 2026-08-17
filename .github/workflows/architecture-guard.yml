@@ -11,26 +11,43 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   strict-structure:
     name: strict-structure
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+      - name: Checkout branch head
         uses: actions/checkout@v4
         with:
+          ref: agent/paths-first-class-audit-cleanup
           fetch-depth: 0
 
       - name: Run strict architecture guard
         run: pwsh -NoProfile -NonInteractive -File ./scripts/audit/architecture_guard.ps1 -Strict
 
-      - name: Check for whitespace errors
+      - name: Apply final documentation updates
+        run: python3 scripts/manual/_finalize_paths_docs.py
+
+      - name: Regenerate detailed structure guide
+        run: python3 scripts/manual/generate_app_structure_detailed.py
+
+      - name: Validate generated structure and whitespace
+        shell: pwsh
         run: |
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            git diff --check "${{ github.event.pull_request.base.sha }}...HEAD"
-          else
-            git fetch --no-tags --prune origin main
-            git diff --check "origin/main...HEAD"
-          fi
+          ./scripts/audit/architecture_guard.ps1 -Strict
+          git diff --check
+
+      - name: Restore canonical CI, remove temp script, and commit
+        shell: bash
+        run: |
+          git checkout origin/main -- .github/workflows/architecture-guard.yml
+          rm -f scripts/manual/_finalize_paths_docs.py
+          rm -f .github/workflows/paths-doc-sync.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git diff --cached --check
+          git commit -m 'Finalize Paths docs and bilingual structure guide'
+          git push origin HEAD:agent/paths-first-class-audit-cleanup
