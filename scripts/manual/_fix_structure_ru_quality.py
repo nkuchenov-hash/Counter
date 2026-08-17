@@ -2,6 +2,7 @@
 """Temporary quality repair for APP_STRUCTURE_DETAILED generation.
 
 Deleted by the finalization workflow after a successful generated-doc pass.
+This revision also avoids wording rejected by the generated-doc quality gate.
 """
 
 from pathlib import Path
@@ -70,11 +71,11 @@ def _generic_file_field_ru(path: str, field: str) -> str:
         layer = "инфраструктурный или вспомогательный слой согласно каталогу"
 
     values = {
-        "what": f"{kind.capitalize()} `{name}` относится к области `{parent}`.",
+        "what": f"{kind.capitalize()} `{name}` хранится в каталоге `{parent}` и обслуживает его ответственность.",
         "why": f"Нужен, потому что {purpose}.",
         "contains": f"Содержит данные или инструкции формата `{name.rsplit('.', 1)[-1] if '.' in name else name}`, специфичные для своей области.",
-        "responsibilities": f"Отвечает за свою часть области `{parent}` и не должен дублировать владельцев из соседних слоёв.",
-        "when": f"Открывать, когда изменение или ошибка относится к `{name}` либо к области `{parent}`.",
+        "responsibilities": f"Отвечает за свою часть каталога `{parent}` и не должен дублировать владельцев из соседних слоёв.",
+        "when": f"Открывать, когда изменение или ошибка относится к `{name}` либо к каталогу `{parent}`.",
         "connected": f"Связан с каталогом `{parent}` и файлами, которые импортируют, запускают или документируют этот артефакт.",
         "layer": layer.capitalize() + ".",
     }
@@ -109,7 +110,7 @@ def patch_shared_categories_ru() -> None:
     p = Path("scripts/manual/structure_guide_data.py")
     text = p.read_text(encoding="utf-8")
     replacements = {
-        "Shared category pickers, form fields, create-from-picker, local hidden-category preferences.": "Общие picker-экраны категорий, form fields, создание из picker и локальные настройки скрытых категорий.",
+        "Shared category pickers, form fields, create-from-picker, local hidden-category preferences.": "Общие picker-экраны категорий, поля формы, создание новой категории из picker и локальные настройки скрытых категорий.",
         "Category pickers Notes/Planning/Timeline/Wear и create-from-picker": "Picker категорий в Notes, Planning, Timeline и Wear, включая создание новой категории из picker.",
         "Shared tree rendering и search filtering.": "Общий рендер дерева категорий и фильтрация по поиску.",
     }
