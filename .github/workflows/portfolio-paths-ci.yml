@@ -1,0 +1,34 @@
+name: Portfolio Paths CI
+
+on:
+  push:
+    branches:
+      - feat/bootstrap-portfolio-paths
+
+permissions:
+  contents: read
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Flutter 3.41.6
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.6'
+          channel: stable
+      - name: Create env.dart
+        shell: bash
+        run: |
+          mkdir -p lib/core/env
+          cat > lib/core/env/env.dart <<'EOF'
+          abstract final class Env {
+            static const String placeholder = '';
+          }
+          EOF
+      - name: Install dependencies
+        run: flutter pub get
+      - name: Analyze
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
