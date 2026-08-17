@@ -228,6 +228,105 @@ class _ListsCategoryChipBarState extends State<ListsCategoryChipBar> {
                   _applyQuickChipIds(selected);
                 }
 
+                Future<String?> promptCategoryName(CategoryRule? parent) async {
+                  final controller = TextEditingController();
+                  try {
+                    return await showDialog<String>(
+                      context: ctx,
+                      builder: (dialogCtx) {
+                        void submit() {
+                          final value = controller.text.trim();
+                          if (value.isEmpty) return;
+                          Navigator.of(dialogCtx).pop(value);
+                        }
+
+                        return AlertDialog(
+                          title: Text(
+                            parent == null
+                                ? t(currentLocale.value, 'category_label')
+                                : categoryRawName(parent.id),
+                          ),
+                          content: TextField(
+                            key: ValueKey<String>(
+                              parent == null
+                                  ? 'notes-category-create-root-input'
+                                  : 'notes-category-create-child-input-${parent.id}',
+                            ),
+                            controller: controller,
+                            autofocus: true,
+                            textInputAction: TextInputAction.done,
+                            decoration: InputDecoration(
+                              labelText: t(
+                                currentLocale.value,
+                                'category_label',
+                              ),
+                            ),
+                            onSubmitted: (_) => submit(),
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.of(dialogCtx).pop(),
+                              child: Text(t(currentLocale.value, 'cancel')),
+                            ),
+                            FilledButton(
+                              onPressed: submit,
+                              child: Text(t(currentLocale.value, 'add')),
+                            ),
+                          ],
+                        );
+                      },
+                    );
+                  } finally {
+                    controller.dispose();
+                  }
+                }
+
+                Future<void> createCategoryUnder(
+                  CategoryRule? parent, {
+                  String? explicitName,
+                }) async {
+                  if (creatingCategory) return;
+                  final name = (explicitName ?? await promptCategoryName(parent))
+                      ?.trim();
+                  if (name == null || name.isEmpty || !ctx.mounted) return;
+
+                  setModal(() {
+                    creatingCategory = true;
+                    if (parent != null) expandedIds.add(parent.id);
+                  });
+
+                  final createFuture = db.addNestedCategory(
+                    parent?.id,
+                    CategoryRule(id: 0, name: name),
+                  );
+                  // addNestedCategory mutates the Brain tree optimistically before
+                  // its first network await; rebuild the open branch immediately.
+                  if (ctx.mounted) {
+                    setModal(() {
+                      if (parent != null) expandedIds.add(parent.id);
+                    });
+                  }
+
+                  final createdId = await createFuture;
+                  if (!mounted || !ctx.mounted) return;
+                  if (createdId == null) {
+                    setModal(() => creatingCategory = false);
+                    ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+                      SnackBar(
+                        content: Text(t(currentLocale.value, 'toast_error')),
+                      ),
+                    );
+                    return;
+                  }
+
+                  selected.add(createdId);
+                  _applyQuickChipIds(selected);
+                  setModal(() {
+                    creatingCategory = false;
+                    if (parent != null) expandedIds.add(parent.id);
+                  });
+                }
+
                 final allRules = widget.glmPresentation
                     ? _flattenCategoryRules(db.rules)
                     : const <CategoryRule>[];
@@ -247,29 +346,6 @@ class _ListsCategoryChipBarState extends State<ListsCategoryChipBar> {
                           categoryRawName(rule.id).trim().toLowerCase() ==
                           normalizedQuery,
                     );
-
-                Future<void> createCategoryFromSearch() async {
-                  final name = searchQuery.trim();
-                  if (name.isEmpty || creatingCategory) return;
-                  setModal(() => creatingCategory = true);
-                  final createdId = await db.addNestedCategory(
-                    null,
-                    CategoryRule(id: 0, name: name),
-                  );
-                  if (!mounted || !ctx.mounted) return;
-                  if (createdId == null) {
-                    setModal(() => creatingCategory = false);
-                    ScaffoldMessenger.maybeOf(context)?.showSnackBar(
-                      SnackBar(
-                        content: Text(t(currentLocale.value, 'toast_error')),
-                      ),
-                    );
-                    return;
-                  }
-                  selected.add(createdId);
-                  _applyQuickChipIds(selected);
-                  Navigator.of(ctx).pop();
-                }
 
                 final pickerChildren = <Widget>[];
                 if (widget.glmPresentation && normalizedQuery.isNotEmpty) {
@@ -293,7 +369,12 @@ class _ListsCategoryChipBarState extends State<ListsCategoryChipBar> {
                         enabled: !creatingCategory,
                         onTap: creatingCategory
                             ? null
-                            : () => unawaited(createCategoryFromSearch()),
+                            : () => unawaited(
+                                createCategoryUnder(
+                                  null,
+                                  explicitName: searchQuery,
+                                ),
+                              ),
                       ),
                     );
                   }
@@ -318,6 +399,21 @@ class _ListsCategoryChipBarState extends State<ListsCategoryChipBar> {
                     );
                   }
                 } else {
+                  if (widget.glmPresentation) {
+                    pickerChildren.add(
+                      ListTile(
+                        key: const ValueKey<String>(
+                          'notes-category-create-root',
+                        ),
+                        leading: const Icon(Icons.create_new_folder_outlined),
+                        title: Text(t(currentLocale.value, 'add')),
+                        enabled: !creatingCategory,
+                        onTap: creatingCategory
+                            ? null
+                            : () => unawaited(createCategoryUnder(null)),
+                      ),
+                    );
+                  }
                   for (final rule in db.rules) {
                     pickerChildren.add(
                       buildListsManualCategoryTreeTile(
@@ -330,6 +426,11 @@ class _ListsCategoryChipBarState extends State<ListsCategoryChipBar> {
                           expandedIds,
                         ),
                         applyPickerMutation,
+                        onCreateChild: widget.glmPresentation
+                            ? (parent) => unawaited(
+                                createCategoryUnder(parent),
+                              )
+                            : null,
                       ),
                     );
                   }
@@ -377,7 +478,12 @@ class _ListsCategoryChipBarState extends State<ListsCategoryChipBar> {
                             if (!exactMatchExists &&
                                 normalizedQuery.isNotEmpty &&
                                 !creatingCategory) {
-                              unawaited(createCategoryFromSearch());
+                              unawaited(
+                                createCategoryUnder(
+                                  null,
+                                  explicitName: searchQuery,
+                                ),
+                              );
                             }
                           },
                         ),
@@ -683,6 +789,7 @@ Widget buildListsManualCategoryTreeTile(
   void Function(int id) onToggleExpand,
   void Function(void Function()) setModal, {
   int depth = 0,
+  void Function(CategoryRule parent)? onCreateChild,
 }) {
   final kids = r.children ?? const <CategoryRule>[];
   final titleName = categoryRawName(r.id);
@@ -697,7 +804,8 @@ Widget buildListsManualCategoryTreeTile(
     });
   }
 
-  if (kids.isEmpty) {
+  // Outside the Notes picker, preserve the old compact leaf behavior.
+  if (kids.isEmpty && onCreateChild == null) {
     return Padding(
       padding: depthPad,
       child: CheckboxListTile(
@@ -709,6 +817,7 @@ Widget buildListsManualCategoryTreeTile(
       ),
     );
   }
+
   final expanded = expandedIds.contains(r.id);
   return Padding(
     padding: depthPad,
@@ -732,6 +841,18 @@ Widget buildListsManualCategoryTreeTile(
         ],
       ),
       children: [
+        if (onCreateChild != null)
+          ListTile(
+            key: ValueKey<String>('notes-category-create-child-${r.id}'),
+            contentPadding: const EdgeInsetsDirectional.only(
+              start: 28,
+              end: 8,
+            ),
+            leading: const Icon(Icons.create_new_folder_outlined),
+            title: Text(t(currentLocale.value, 'add')),
+            dense: true,
+            onTap: () => onCreateChild(r),
+          ),
         for (final c in kids)
           buildListsManualCategoryTreeTile(
             c,
@@ -740,6 +861,7 @@ Widget buildListsManualCategoryTreeTile(
             onToggleExpand,
             setModal,
             depth: depth + 1,
+            onCreateChild: onCreateChild,
           ),
       ],
     ),
