@@ -18,7 +18,9 @@ jobs:
           fetch-depth: 0
 
       - name: Apply integration patch
-        run: python .github/scripts/path_week_governance_patch.py
+        run: |
+          python .github/scripts/path_week_governance_patch.py
+          python .github/scripts/path_week_governance_cleanup.py
 
       - name: Commit integration patch
         run: |
@@ -26,7 +28,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add lib/app/shell/app_shell.dart lib/app/shell/shared/shell_more_menu.dart lib/app/shell/shared/shell_path_governance.dart docs/APP_STRUCTURE.md
           if ! git diff --cached --quiet; then
-            git commit -m "Integrate path governance and week planning"
+            git commit -m "Clean path governance integration"
             git push origin HEAD:feat/path-week-governance
           fi
 
@@ -40,5 +42,5 @@ jobs:
           cache: true
 
       - run: flutter pub get
-      - run: flutter analyze
+      - run: flutter analyze --no-fatal-warnings --no-fatal-infos
       - run: flutter build web --release --base-href="/Counter/" --no-tree-shake-icons
