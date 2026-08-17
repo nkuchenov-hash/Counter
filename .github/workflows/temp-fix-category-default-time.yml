@@ -156,6 +156,7 @@ jobs:
           entry = '''\n## [2026-08-13] - Category default plan time precedence [shipped]\n\n* **`lib/data/plans/plan_time_cascade_helpers.dart`:** New plans with no explicit user-entered time now honor the nearest inherited category `default_plan_time` before generic auto-placement; the configured category timezone continues through the existing wall→UTC conversion.\n'''
           marker = '# 📖 DEV_JOURNAL (Changelog)'
           if entry.strip() not in c:
+              # Insert before the first dated entry, preserving the journal header/instructions.
               idx = c.find('\n## [')
               if idx < 0:
                   raise SystemExit('CHANGELOG dated-entry marker not found')
