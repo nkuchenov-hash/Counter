@@ -23,6 +23,10 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-08-17] - Project Paths content width parity [shipped]
+
+* **`lib/features/settings/categories/category_list_view.dart`:** Project Paths list and detail bodies now use the same centered 1440px content rail and responsive 24px desktop / 20px compact gutters as Lists; removed their extra local horizontal ListView padding so card edges align.
+
 ## [2026-08-05] - Push-first multi-device sync reliability [shipped]
 
 * **Plans/Lists durability:** create and edit mutations now use a serialized local write-ahead outbox before PocketBase POST/PATCH; revision-specific acknowledgements prevent stale responses or concurrent flushes from deleting newer mobile edits, while auth/network failures keep one coalesced replay item.

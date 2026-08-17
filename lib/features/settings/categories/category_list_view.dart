@@ -394,6 +394,33 @@ List<_LivingPathStage> _livingPathStages(PlanningTask task) {
   return result;
 }
 
+/// Keeps Project Paths on the same responsive content rail as Lists.
+/// Lists uses a 1440px max frame with 24px desktop / 20px compact gutters.
+class _PathContentFrame extends StatelessWidget {
+  const _PathContentFrame({required this.child});
+
+  static const double _maxWidth = 1440;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final size = MediaQuery.sizeOf(context);
+    final wide = size.width >= 900;
+    final width = size.width > _maxWidth ? _maxWidth : size.width;
+    return Align(
+      alignment: Alignment.topCenter,
+      child: SizedBox(
+        width: width,
+        height: double.infinity,
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: wide ? 24 : 20),
+          child: child,
+        ),
+      ),
+    );
+  }
+}
+
 /// Shows every existing category/project and whether it already has a Path.
 class CategoryPathsPage extends StatefulWidget {
   const CategoryPathsPage({super.key});
@@ -438,27 +465,29 @@ class _CategoryPathsPageState extends State<CategoryPathsPage> {
 
     return Scaffold(
       appBar: AppBar(title: Text(copy.title)),
-      body: _loading
-          ? const AppLoading()
-          : RefreshIndicator(
-              onRefresh: _load,
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(12, 12, 12, 24),
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(4, 0, 4, 12),
-                    child: Text(
-                      copy.subtitle,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+      body: _PathContentFrame(
+        child: _loading
+            ? const AppLoading()
+            : RefreshIndicator(
+                onRefresh: _load,
+                child: ListView(
+                  padding: const EdgeInsets.fromLTRB(0, 12, 0, 24),
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(4, 0, 4, 12),
+                      child: Text(
+                        copy.subtitle,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
                       ),
                     ),
-                  ),
-                  for (final pair in pairs)
-                    _buildProjectTile(context, pair.id, pair.path, copy),
-                ],
+                    for (final pair in pairs)
+                      _buildProjectTile(context, pair.id, pair.path, copy),
+                  ],
+                ),
               ),
-            ),
+      ),
     );
   }
 
@@ -775,11 +804,13 @@ class _CategoryPathPageState extends State<CategoryPathPage> {
     final root = _root;
     return Scaffold(
       appBar: AppBar(title: Text('${copy.path}: ${widget.categoryPathLabel}')),
-      body: _loading && root == null
-          ? const AppLoading()
-          : root == null
-          ? _empty(copy)
-          : _pathBody(root, copy),
+      body: _PathContentFrame(
+        child: _loading && root == null
+            ? const AppLoading()
+            : root == null
+            ? _empty(copy)
+            : _pathBody(root, copy),
+      ),
     );
   }
 
@@ -820,7 +851,7 @@ class _CategoryPathPageState extends State<CategoryPathPage> {
     }
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
+      padding: const EdgeInsets.fromLTRB(0, 12, 0, 32),
       children: [
         Card(
           child: ListTile(
