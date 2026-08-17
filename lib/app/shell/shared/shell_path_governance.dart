@@ -251,9 +251,8 @@ const List<_PathAuditProfileV4> _pathAuditProfilesV4 = [
   _PathAuditProfileV4(
     name: 'Price Reporter',
     aliases: ['Price Reporter'],
-    requiredTracks: ['finance', 'operations', 'reliability', 'legal', 'automation', 'career'],
+    requiredTracks: ['operations', 'reliability', 'legal', 'automation', 'career'],
     requiredTopics: {
-      'фактический доход': ['доход', 'income', 'bonus'],
       'автоматизация': ['автомат'],
       'compliance': ['compliance', 'риск'],
       'доказательства ценности': ['ценност', 'value'],
@@ -797,6 +796,66 @@ Future<void> _replacePathV4({
   if (!created) throw StateError('Could not create revised Path for ${category.name}');
 }
 
+Future<void> _detachPriceReporterMoneyWorkV5() async {
+  final category = _findCategoryByAliasesV4(const ['Price Reporter']);
+  if (category == null) return;
+  final root = await _activePathForCategoryV4(category.id);
+  if (root == null) return;
+
+  var changed = false;
+  final next = <Map<String, dynamic>>[];
+  for (final rawStage in root.checklist) {
+    final stage = Map<String, dynamic>.from(rawStage);
+    final id = (stage['id'] ?? '').toString();
+    final actions = _pathActionsFromStageRawV4(stage);
+
+    if (id == 'exec-pricereporter-stage-1') {
+      stage['text'] = 'Зафиксировать фактическую рабочую нагрузку и критичные виды работы';
+      stage['definitionOfDone'] =
+          'Есть наблюдение реального рабочего дня и список основных повторяющихся/критичных типов работы; расчёты выплат и среднего дохода ведутся отдельно в «Управление деньгами / ZenMoney».';
+      final kept = <Map<String, dynamic>>[
+        for (final action in actions)
+          if ((action['track'] ?? '').toString() != 'finance') action,
+      ];
+      if (!kept.any((a) => (a['id'] ?? '').toString() == 'pr-v5-work-types')) {
+        kept.add(_actionV4(
+          'pr-v5-',
+          'work-types',
+          'Выписать пять основных типов работы Price Reporter, которые регулярно занимают время или несут compliance-риск',
+          'Список 5 рабочих типов с понятной ролью в нагрузке',
+          15,
+          'operations',
+        ));
+      }
+      stage['actions'] = kept;
+      changed = true;
+    } else if (id == 'exec-pricereporter-stage-4') {
+      stage['text'] = 'Снизить операционную уязвимость Price Reporter';
+      stage['definitionOfDone'] =
+          'Критические рабочие процессы документированы так, чтобы отпуск, болезнь или передача части рутины не создавали compliance/continuity риска; финансовый порог зависимости ведётся в ZenMoney-проекте.';
+      stage['actions'] = <Map<String, dynamic>>[
+        for (final action in actions)
+          if ((action['track'] ?? '').toString() != 'finance') action,
+      ];
+      changed = true;
+    }
+    next.add(stage);
+  }
+
+  if (!changed) return;
+  final ok = await DatabaseService.instance.updatePlanningTask(
+    root.planRowIdForBackend,
+    planBusinessId: root.planRowId,
+    title: root.title,
+    categoryId: root.categoryId,
+    isDone: true,
+    notesPlain: _activePathMarkerV4,
+    checklist: next,
+    suppressAppSnack: true,
+  );
+  if (!ok) throw StateError('Could not detach Price Reporter money work');
+}
+
 Future<void> upgradeRealityPathsV4() async {
   final db = DatabaseService.instance;
   await db.refreshCategoryRulesFromServer();
@@ -863,6 +922,7 @@ Future<void> upgradeRealityPathsV4() async {
   }
 
   await _ensureMoneyManagementPathV5();
+  await _detachPriceReporterMoneyWorkV5();
   await _ensureProjectPlanApprovalGatesV5();
 }
 
@@ -1115,10 +1175,52 @@ Future<void> _removeSupersededWeekRoutinesV5() async {
   }
 }
 
+Future<void> _removePrematurePathActionsV5() async {
+  final db = DatabaseService.instance;
+  final roots = await db.fetchBacklogPlans(includeCompleted: true);
+  final approvalByRootId = <String, bool>{};
+  for (final root in roots) {
+    if ((root.notesPlain ?? '').trim() != _activePathMarkerV4) continue;
+    final rootId = (root.pocketRecordId ?? root.planRowIdForBackend).trim();
+    if (rootId.isEmpty) continue;
+    approvalByRootId[rootId] = _projectPlanApprovedV5(root);
+  }
+
+  final today = db.getTimelineDeviceLocalToday();
+  final monday = _mondayOfV4(today);
+  final ids = <String>{};
+  for (var i = 0; i < 7; i++) {
+    final day = monday.add(Duration(days: i));
+    final tasks = await db.getPlanningTasksForWallDate(day);
+    for (final task in tasks) {
+      if (task.isDone) continue;
+      final firstLine = (task.notesPlain ?? '').split('\n').first.trim();
+      if (!firstLine.startsWith(_pathActionPlanMarkerV4)) continue;
+      final payload = firstLine.substring(_pathActionPlanMarkerV4.length);
+      final parts = payload.split('|');
+      if (parts.length < 3) continue;
+      final rootId = parts[0].trim();
+      final stageId = parts[1].trim();
+      if (stageId.startsWith('approval-v5-')) continue;
+      if (approvalByRootId[rootId] == true) continue;
+      final id = task.planRowIdForBackend.trim();
+      if (id.isEmpty || id.startsWith('virt-') || id.startsWith('optimistic-')) {
+        continue;
+      }
+      ids.add(id);
+    }
+  }
+  if (ids.isNotEmpty) {
+    await db.deletePlanningTasksBulk(ids);
+  }
+}
+
+
 Future<PathWeekPlanReportV4> planCurrentWeekFromPathsV4() async {
   final db = DatabaseService.instance;
   await upgradeRealityPathsV4();
   await _removeSupersededWeekRoutinesV5();
+  await _removePrematurePathActionsV5();
 
   final backlog = await db.fetchBacklogPlans(includeCompleted: true);
   final roots = <PlanningTask>[
