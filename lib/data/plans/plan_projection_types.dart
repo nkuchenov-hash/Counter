@@ -225,6 +225,44 @@ extension PlanProfileTimezoneProjectionExtension on DatabaseService {
     );
   }
 
+  /// Canonical create guard: dated plans without an explicit time must still
+  /// honor the effective category default (own value or nearest parent).
+  /// [titleForLog] is supplied by [addPlanningTask], so cache/read projection
+  /// paths do not retroactively schedule existing unscheduled rows.
+  PlanningTask _applyCategoryDefaultPlanScheduleForCreate(
+    PlanningTask task, {
+    required String titleForLog,
+  }) {
+    if (task.startTime != null || task.startUtcInstant != null) return task;
+    final dateKey = task.dateKey.trim();
+    if (dateKey.length < 10) return task;
+    final effectiveDefault = effectiveDefaultPlanScheduleForCategory(
+      task.categoryId,
+    );
+    if (effectiveDefault?.hhmm == null) return task;
+
+    final parsedDay = DateTime.tryParse(dateKey.substring(0, 10));
+    if (parsedDay == null) return task;
+    final wallDay = DateTime(parsedDay.year, parsedDay.month, parsedDay.day);
+    final existingDayPlans = planningDayTasksSnapshot(wallDay);
+    final schedule = resolveAutoPlanSchedule(
+      wallDay: wallDay,
+      categoryId: task.categoryId,
+      tags: task.tags,
+      existingDayPlans: existingDayPlans,
+      timelineDayStartHour: 0,
+    );
+    final scheduled = planningTaskWithAutoSchedule(task, schedule);
+    if (kDebugMode) {
+      debugPrint(
+        'PLAN_DEFAULT_TIME_APPLIED title=$titleForLog '
+        'category=${task.categoryId} default=${effectiveDefault!.hhmm} '
+        'tz=${effectiveDefault.timezoneIana ?? 'profile'}',
+      );
+    }
+    return scheduled;
+  }
+
   /// Ensures [PlanningTask.startTime]/[PlanningTask.endDateTime] are profile wall-clock
   /// and [PlanningTask.startUtcInstant]/[PlanningTask.endUtcInstant] hold UTC source of truth.
   PlanningTask _coalescePlanningTaskWallUtcFields(
@@ -232,19 +270,28 @@ extension PlanProfileTimezoneProjectionExtension on DatabaseService {
     bool logCreate = false,
     String? titleForLog,
   }) {
-    if (task.startTime == null && task.startUtcInstant == null) return task;
-    // UTC instant from PocketBase/cache is source of truth; wall fields are projected.
-    if (task.startUtcInstant != null) {
-      return _reprojectPlanningTaskWallTimes(task);
+    var input = task;
+    if (titleForLog != null &&
+        input.startTime == null &&
+        input.startUtcInstant == null) {
+      input = _applyCategoryDefaultPlanScheduleForCreate(
+        input,
+        titleForLog: titleForLog,
+      );
     }
-    if (task.startTime != null) {
-      final inputWall = task.startTime;
-      final projected = _reprojectPlanningTaskWallTimesFromWallInput(task);
+    if (input.startTime == null && input.startUtcInstant == null) return input;
+    // UTC instant from PocketBase/cache is source of truth; wall fields are projected.
+    if (input.startUtcInstant != null) {
+      return _reprojectPlanningTaskWallTimes(input);
+    }
+    if (input.startTime != null) {
+      final inputWall = input.startTime;
+      final projected = _reprojectPlanningTaskWallTimesFromWallInput(input);
       if (logCreate && inputWall != null && projected.startTime != null) {
         final instants = _planUtcInstants(projected);
         if (instants != null) {
           _logPlanTimeCreateWallToUtc(
-            title: titleForLog ?? task.title,
+            title: titleForLog ?? input.title,
             inputWall: inputWall,
             storedUtc: instants.startUtc,
             projectedWall: projected.startTime!,
@@ -253,7 +300,7 @@ extension PlanProfileTimezoneProjectionExtension on DatabaseService {
       }
       return projected;
     }
-    return task;
+    return input;
   }
 
   /// Derive UTC instants from profile wall fields only (create/edit path).
