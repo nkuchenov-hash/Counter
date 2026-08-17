@@ -1,6 +1,9 @@
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 
+export 'package:counter/features/settings/categories/portfolio_path_bootstrap.dart'
+    show bootstrapDiscussedPortfolioPaths;
+
 // --- Shell-local time helpers (Planetary: UTC + profile offset). ---
 DateTime shellDateOnly(DateTime dt) => DateTime(dt.year, dt.month, dt.day);
 
