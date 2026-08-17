@@ -19,6 +19,35 @@ mixin ShellMoreMenu on ShellCoreLogic {
     return visible;
   }
 
+  void openProjectPaths() {
+    final formFactor = shellFormFactorForWidth(MediaQuery.sizeOf(context).width);
+    if (formFactor != ShellFormFactor.desktop) {
+      Navigator.of(context).push<void>(
+        MaterialPageRoute<void>(
+          builder: (_) => const CategoryPathsPage(),
+        ),
+      );
+      return;
+    }
+
+    Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (routeContext) => DesktopShellFrame(
+          selectedIndex: 6,
+          onTabSelected: (navIndex) {
+            if (navIndex == 6) return;
+            Navigator.of(routeContext).pop();
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (!mounted) return;
+              onDesktopSideNavSelected(navIndex);
+            });
+          },
+          child: const CategoryPathsPage(),
+        ),
+      ),
+    );
+  }
+
   void openMoreMenu({bool secondaryOnly = false}) {
     final loc = currentLocale.value;
     final isRu = loc.toLowerCase().startsWith('ru');
@@ -68,11 +97,7 @@ mixin ShellMoreMenu on ShellCoreLogic {
                   ),
                   onTap: () {
                     Navigator.of(ctx).pop();
-                    Navigator.of(context).push<void>(
-                      MaterialPageRoute<void>(
-                        builder: (_) => const CategoryPathsPage(),
-                      ),
-                    );
+                    openProjectPaths();
                   },
                 ),
                 if (isAdmin)
@@ -131,8 +156,12 @@ mixin ShellMoreMenu on ShellCoreLogic {
   }
 
   void onDesktopSideNavSelected(int navIndex) {
-    // 0–3 primary tabs, 4 Categories, 5 Profile, 6 More (secondary overflow).
+    // 0–3 primary tabs, 4 Categories, 5 Profile, 6 Paths, 7 More.
     if (navIndex == 6) {
+      openProjectPaths();
+      return;
+    }
+    if (navIndex == 7) {
       openMoreMenu(secondaryOnly: true);
       return;
     }
@@ -148,7 +177,7 @@ mixin ShellMoreMenu on ShellCoreLogic {
   int desktopSideNavSelectedIndex(int shellPageIndex) {
     return switch (shellPageIndex) {
       0 || 1 || 2 || 3 || 4 || 5 => shellPageIndex,
-      _ => 6,
+      _ => 7,
     };
   }
 }
