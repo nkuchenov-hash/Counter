@@ -7,6 +7,7 @@ on:
       - '.github/scripts/temp_project_plan_approval_gate.py'
       - '.github/scripts/temp_project_plan_approval_audit.py'
       - '.github/scripts/temp_project_plan_approval_followup.py'
+      - '.github/scripts/temp_project_plan_cleanup.py'
 
 permissions:
   contents: write
@@ -26,6 +27,7 @@ jobs:
           python .github/scripts/temp_project_plan_approval_gate.py
           python .github/scripts/temp_project_plan_approval_audit.py
           python .github/scripts/temp_project_plan_approval_followup.py
+          python .github/scripts/temp_project_plan_cleanup.py
 
       - name: Architecture guard
         shell: pwsh
