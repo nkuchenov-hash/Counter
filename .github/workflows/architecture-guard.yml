@@ -35,6 +35,9 @@ jobs:
       - name: Apply final documentation updates
         run: python3 scripts/manual/_finalize_paths_docs.py
 
+      - name: Repair generated RU quality fallbacks
+        run: python3 scripts/manual/_fix_structure_ru_quality.py
+
       - name: Regenerate detailed structure guide
         run: python3 scripts/manual/generate_app_structure_detailed.py
 
@@ -44,11 +47,12 @@ jobs:
           ./scripts/audit/architecture_guard.ps1 -Strict
           git diff --check
 
-      - name: Restore canonical CI, remove temp script, and commit
+      - name: Restore canonical CI, remove temporary finalizers, and commit
         shell: bash
         run: |
           git checkout origin/main -- .github/workflows/architecture-guard.yml
           rm -f scripts/manual/_finalize_paths_docs.py
+          rm -f scripts/manual/_fix_structure_ru_quality.py
           rm -f .github/workflows/paths-doc-sync.yml
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
