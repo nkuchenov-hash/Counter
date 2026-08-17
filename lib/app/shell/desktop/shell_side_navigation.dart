@@ -17,6 +17,7 @@ class ShellSideNavigation extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final loc = currentLocale.value;
+    final isRu = loc.toLowerCase().startsWith('ru');
     final items = <({IconData icon, IconData selectedIcon, String label, int index})>[
       (
         icon: Icons.timeline_outlined,
@@ -43,6 +44,12 @@ class ShellSideNavigation extends StatelessWidget {
         index: 3,
       ),
       (
+        icon: Icons.alt_route_outlined,
+        selectedIcon: Icons.alt_route_rounded,
+        label: isRu ? 'Пути' : 'Paths',
+        index: 6,
+      ),
+      (
         icon: Icons.label_outlined,
         selectedIcon: Icons.label_rounded,
         label: t(loc, 'more_menu_categories'),
@@ -58,7 +65,7 @@ class ShellSideNavigation extends StatelessWidget {
         icon: Icons.more_horiz_rounded,
         selectedIcon: Icons.more_horiz_rounded,
         label: t(loc, 'tab_more'),
-        index: 6,
+        index: 7,
       ),
     ];
     return Material(
