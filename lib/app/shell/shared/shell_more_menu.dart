@@ -21,6 +21,7 @@ mixin ShellMoreMenu on ShellCoreLogic {
 
   void openMoreMenu({bool secondaryOnly = false}) {
     final loc = currentLocale.value;
+    final isRu = loc.toLowerCase().startsWith('ru');
     showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
@@ -56,6 +57,24 @@ mixin ShellMoreMenu on ShellCoreLogic {
                     },
                   ),
                 ],
+                ListTile(
+                  leading: const Icon(Icons.alt_route_rounded),
+                  title: Text(isRu ? 'Пути проектов' : 'Project paths'),
+                  subtitle: Text(
+                    isRu
+                        ? 'Живой план от цели к следующим действиям'
+                        : 'A living plan from the goal to next actions',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  onTap: () {
+                    Navigator.of(ctx).pop();
+                    Navigator.of(context).push<void>(
+                      MaterialPageRoute<void>(
+                        builder: (_) => const CategoryPathsPage(),
+                      ),
+                    );
+                  },
+                ),
                 if (isAdmin)
                   ListTile(
                     leading: const Icon(Icons.design_services_rounded),
