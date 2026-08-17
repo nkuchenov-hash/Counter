@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-17T21:08:10.774Z",
+  "updatedAt": "2026-08-17T21:12:13.874Z",
   "count": 78,
   "sourcePool": [
     "Steam",
@@ -767,7 +767,7 @@
       "movies": [],
       "criticRating": 9.7,
       "steamUserRating": 9.3,
-      "recommendations": 117249,
+      "recommendations": 117247,
       "owners": "2,000,000 .. 5,000,000",
       "peakConcurrent": 918,
       "sourceEvidence": [
@@ -781,7 +781,7 @@
         "steamSpy": "https://steamspy.com/app/632470",
         "metacritic": "https://www.metacritic.com/game/pc/disco-elysium-the-final-cut?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10436.911285138713,
+      "popularityScore": 10436.910544331571,
       "igropoiskRating": 9.6,
       "editorialSources": [
         "StopGame"
@@ -1304,7 +1304,7 @@
       "movies": [],
       "criticRating": 8.9,
       "steamUserRating": 9.8,
-      "recommendations": 888457,
+      "recommendations": 888449,
       "owners": "20,000,000 .. 50,000,000",
       "peakConcurrent": 50662,
       "sourceEvidence": [
@@ -1317,7 +1317,7 @@
         "steamSpy": "https://steamspy.com/app/413150",
         "metacritic": "https://www.metacritic.com/game/pc/stardew-valley?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10364.86369022602,
+      "popularityScore": 10364.863299169663,
       "igropoiskRating": 9.2,
       "editorialSources": [],
       "materials": {
@@ -1497,7 +1497,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 9.4,
-      "recommendations": 457363,
+      "recommendations": 457365,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 14439,
       "sourceEvidence": [
@@ -1509,7 +1509,7 @@
         "steamSpy": "https://steamspy.com/app/892970",
         "metacritic": ""
       },
-      "popularityScore": 10326.026197746214,
+      "popularityScore": 10326.026387657765,
       "igropoiskRating": 9.4,
       "editorialSources": [],
       "materials": {
@@ -1838,7 +1838,7 @@
       "movies": [],
       "criticRating": 8.9,
       "steamUserRating": 9.4,
-      "recommendations": 277493,
+      "recommendations": 277491,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 4381,
       "sourceEvidence": [
@@ -1851,7 +1851,7 @@
         "steamSpy": "https://steamspy.com/app/374320",
         "metacritic": "https://www.metacritic.com/game/pc/dark-souls-iii?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10264.325359720622,
+      "popularityScore": 10264.325046707694,
       "igropoiskRating": 9.1,
       "editorialSources": [],
       "materials": {
@@ -2466,7 +2466,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 9.4,
-      "recommendations": 402724,
+      "recommendations": 402703,
       "owners": "50,000,000 .. 100,000,000",
       "peakConcurrent": 18028,
       "sourceEvidence": [
@@ -2480,7 +2480,7 @@
         "steamSpy": "https://steamspy.com/app/1623730",
         "metacritic": ""
       },
-      "popularityScore": 9940.500859018613,
+      "popularityScore": 9940.49859434125,
       "igropoiskRating": 9.4,
       "editorialSources": [
         "GamesRadar+",
@@ -2596,6 +2596,7 @@
         "Steam",
         "SteamSpy",
         "Metacritic",
+        "IGN",
         "GameSpot",
         "Rock Paper Shotgun",
         "StopGame"
@@ -2608,12 +2609,22 @@
       "popularityScore": 9932.62539108423,
       "igropoiskRating": 7.8,
       "editorialSources": [
+        "IGN",
         "GameSpot",
         "Rock Paper Shotgun",
         "StopGame"
       ],
       "materials": {
         "articles": [
+          {
+            "source": "IGN",
+            "language": "en",
+            "title": "Spider-Man: Brand New Day Nearly Featured a Different Identity-Swapping Villain Before Sony's Kraven the Hunter Got in the Way",
+            "normalizedTitle": "spider man brand new day nearly featured a different identity swapping villain before sony s kraven the hunter got in the way",
+            "url": "https://www.ign.com/articles/spider-man-brand-new-day-nearly-featured-a-different-identity-swapping-villain-before-sonys-kraven-the-hunter-got-in-the-way",
+            "summary": "Spider-Man: Brand New Day almost introduced a very different identity-swapping villain to the MCU than the one it ended up going with.",
+            "publishedAt": "Mon, 17 Aug 2026 20:41:50 +0000"
+          },
           {
             "source": "GameSpot",
             "language": "en",
@@ -2649,6 +2660,15 @@
         ]
       },
       "articles": [
+        {
+          "source": "IGN",
+          "language": "en",
+          "title": "Spider-Man: Brand New Day Nearly Featured a Different Identity-Swapping Villain Before Sony's Kraven the Hunter Got in the Way",
+          "normalizedTitle": "spider man brand new day nearly featured a different identity swapping villain before sony s kraven the hunter got in the way",
+          "url": "https://www.ign.com/articles/spider-man-brand-new-day-nearly-featured-a-different-identity-swapping-villain-before-sonys-kraven-the-hunter-got-in-the-way",
+          "summary": "Spider-Man: Brand New Day almost introduced a very different identity-swapping villain to the MCU than the one it ended up going with.",
+          "publishedAt": "Mon, 17 Aug 2026 20:41:50 +0000"
+        },
         {
           "source": "GameSpot",
           "language": "en",
@@ -3765,7 +3785,7 @@
       "movies": [],
       "criticRating": 9.1,
       "steamUserRating": 9.7,
-      "recommendations": 233734,
+      "recommendations": 233727,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 12596,
       "sourceEvidence": [
@@ -3778,7 +3798,7 @@
         "steamSpy": "https://steamspy.com/app/526870",
         "metacritic": "https://www.metacritic.com/game/pc/satisfactory?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9766.87237494857,
+      "popularityScore": 9766.871074284614,
       "igropoiskRating": 9.3,
       "editorialSources": [],
       "materials": {
@@ -4381,7 +4401,7 @@
       "movies": [],
       "criticRating": 8.5,
       "steamUserRating": 9.2,
-      "recommendations": 654825,
+      "recommendations": 654819,
       "owners": "20,000,000 .. 50,000,000",
       "peakConcurrent": 3832,
       "sourceEvidence": [
@@ -4394,7 +4414,7 @@
         "steamSpy": "https://steamspy.com/app/945360",
         "metacritic": "https://www.metacritic.com/game/pc/among-us?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9711.61259148333,
+      "popularityScore": 9711.61219354879,
       "igropoiskRating": 8.7,
       "editorialSources": [],
       "materials": {
@@ -4475,7 +4495,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 9.6,
-      "recommendations": 682131,
+      "recommendations": 682125,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 9978,
       "sourceEvidence": [
@@ -4488,7 +4508,7 @@
         "steamSpy": "https://steamspy.com/app/739630",
         "metacritic": ""
       },
-      "popularityScore": 9683.386842351947,
+      "popularityScore": 9683.386460346946,
       "igropoiskRating": 9.6,
       "editorialSources": [
         "Rock Paper Shotgun"
@@ -4950,7 +4970,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 9.7,
-      "recommendations": 411094,
+      "recommendations": 411091,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 6199,
       "sourceEvidence": [
@@ -4962,7 +4982,7 @@
         "steamSpy": "https://steamspy.com/app/1966720",
         "metacritic": ""
       },
-      "popularityScore": 9651.394219464555,
+      "popularityScore": 9651.393902533384,
       "igropoiskRating": 9.7,
       "editorialSources": [],
       "materials": {
@@ -6007,7 +6027,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 9.7,
-      "recommendations": 405800,
+      "recommendations": 405781,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 14904,
       "sourceEvidence": [
@@ -6020,7 +6040,7 @@
         "steamSpy": "https://steamspy.com/app/250900",
         "metacritic": ""
       },
-      "popularityScore": 9470.831311291406,
+      "popularityScore": 9470.82927783453,
       "igropoiskRating": 9.7,
       "editorialSources": [
         "IGN"
@@ -6035,15 +6055,6 @@
             "url": "https://www.ign.com/articles/best-deals-for-august-17-2026",
             "summary": "Plus, don’t miss additional video game discounts, TCG savings, and more.",
             "publishedAt": "Mon, 17 Aug 2026 18:40:00 +0000"
-          },
-          {
-            "source": "IGN",
-            "language": "en",
-            "title": "Final Fantasy 7 Rebirth Hits New Low Price of $35 on Switch 2 at Amazon",
-            "normalizedTitle": "final fantasy 7 rebirth hits new low price of 35 on switch 2 at amazon",
-            "url": "https://www.ign.com/articles/final-fantasy-7-rebirth-switch-2-amazon-deal",
-            "summary": "Save $15 on Final Fantasy 7 Rebirth for Nintendo Switch 2 at Amazon, down to a new low of $34.99 with an exclusive MTG Zack Fair promo card included.",
-            "publishedAt": "Mon, 17 Aug 2026 15:30:00 +0000"
           }
         ],
         "reviews": [],
@@ -6060,15 +6071,6 @@
           "url": "https://www.ign.com/articles/best-deals-for-august-17-2026",
           "summary": "Plus, don’t miss additional video game discounts, TCG savings, and more.",
           "publishedAt": "Mon, 17 Aug 2026 18:40:00 +0000"
-        },
-        {
-          "source": "IGN",
-          "language": "en",
-          "title": "Final Fantasy 7 Rebirth Hits New Low Price of $35 on Switch 2 at Amazon",
-          "normalizedTitle": "final fantasy 7 rebirth hits new low price of 35 on switch 2 at amazon",
-          "url": "https://www.ign.com/articles/final-fantasy-7-rebirth-switch-2-amazon-deal",
-          "summary": "Save $15 on Final Fantasy 7 Rebirth for Nintendo Switch 2 at Amazon, down to a new low of $34.99 with an exclusive MTG Zack Fair promo card included.",
-          "publishedAt": "Mon, 17 Aug 2026 15:30:00 +0000"
         }
       ]
     },
@@ -6713,7 +6715,7 @@
       "movies": [],
       "criticRating": 8.3,
       "steamUserRating": 9.6,
-      "recommendations": 579262,
+      "recommendations": 579264,
       "owners": "20,000,000 .. 50,000,000",
       "peakConcurrent": 2892,
       "sourceEvidence": [
@@ -6727,7 +6729,7 @@
         "steamSpy": "https://steamspy.com/app/242760",
         "metacritic": "https://www.metacritic.com/game/pc/the-forest?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9316.28757891429,
+      "popularityScore": 9316.287728861287,
       "igropoiskRating": 8.8,
       "editorialSources": [
         "StopGame"
@@ -7082,7 +7084,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 9.4,
-      "recommendations": 358022,
+      "recommendations": 358038,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 22864,
       "sourceEvidence": [
@@ -7095,7 +7097,7 @@
         "steamSpy": "https://steamspy.com/app/108600",
         "metacritic": ""
       },
-      "popularityScore": 9275.391092734842,
+      "popularityScore": 9275.393033547709,
       "igropoiskRating": 9.4,
       "editorialSources": [
         "StopGame"

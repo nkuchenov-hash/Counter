@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-17T21:08:10.774Z",
+  "updatedAt": "2026-08-17T21:12:13.874Z",
   "count": 495,
   "sources": [
     "IGN",
@@ -17,6 +17,15 @@
     {
       "source": "Polygon",
       "language": "en",
+      "title": "Marvel's Ghost Rider Movie Gets Official 2028 Release Date",
+      "normalizedTitle": "marvel s ghost rider movie gets official 2028 release date",
+      "url": "https://www.polygon.com/ghost-rider-ryan-gosling-2028-release-date/",
+      "summary": "Ryan Gosling finally joins the MCU in 2028, and now we know exactly when. Ghost Rider will premiere shortly after Marvel's X-Men reboot.",
+      "publishedAt": "Mon, 17 Aug 2026 21:07:31 GMT"
+    },
+    {
+      "source": "Polygon",
+      "language": "en",
       "title": "Luna Abyss is quietly one of the best shooters of 2026",
       "normalizedTitle": "luna abyss is quietly one of the best shooters of 2026",
       "url": "https://www.polygon.com/luna-abyss-impressions-game-pass/",
@@ -24,13 +33,13 @@
       "publishedAt": "Mon, 17 Aug 2026 20:59:06 GMT"
     },
     {
-      "source": "GameSpot",
+      "source": "IGN",
       "language": "en",
-      "title": "An Exclusive Castlevania Game Is Shutting Down",
-      "normalizedTitle": "an exclusive castlevania game is shutting down",
-      "url": "https://www.gamespot.com/articles/an-exclusive-castlevania-game-is-shutting-down/",
-      "summary": "The Apple Arcade-exclusive Castlevania: Grimoire of Souls won't be playable for much longer, developer Konami has announced. In a post on social media and the game's official website , Konami confirmed Castlevania: Grimoire of Souls will be removed from Apple's gaming subscription service on August 20. Despite Konami stating the game has \"continued to be supported by many players,\" it will also shut down permanently and no longer be playable on September 3. \"We would like to express our gratitude to all of our players for their enthusiastic support throughout the years,\" Konami said. \"The enti",
-      "publishedAt": "Mon, 17 Aug 2026 20:48:15 +0000"
+      "title": "GPU Swapping Spree Halted After Suspected Thieves Lose Power During Esports Hotel Heist",
+      "normalizedTitle": "gpu swapping spree halted after suspected thieves lose power during esports hotel heist",
+      "url": "https://www.ign.com/articles/gpu-swapping-spree-halted-after-suspected-thieves-lose-power-during-esports-hotel-heist",
+      "summary": "They would have gotten away with it, too, if it weren't for that meddling electrician.",
+      "publishedAt": "Mon, 17 Aug 2026 20:57:42 +0000"
     },
     {
       "source": "GamesRadar+",
@@ -42,6 +51,51 @@
       "publishedAt": "Mon, 17 Aug 2026 20:42:15 +0000"
     },
     {
+      "source": "IGN",
+      "language": "en",
+      "title": "Spider-Man: Brand New Day Nearly Featured a Different Identity-Swapping Villain Before Sony's Kraven the Hunter Got in the Way",
+      "normalizedTitle": "spider man brand new day nearly featured a different identity swapping villain before sony s kraven the hunter got in the way",
+      "url": "https://www.ign.com/articles/spider-man-brand-new-day-nearly-featured-a-different-identity-swapping-villain-before-sonys-kraven-the-hunter-got-in-the-way",
+      "summary": "Spider-Man: Brand New Day almost introduced a very different identity-swapping villain to the MCU than the one it ended up going with.",
+      "publishedAt": "Mon, 17 Aug 2026 20:41:50 +0000"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "The $200 TCL 55\" 4K Roku TV Is One of the Best Deals to Come Out of Best Buy's 60th Anniversary Sale",
+      "normalizedTitle": "the 200 tcl 55 4k roku tv is one of the best deals to come out of best buy s 60th anniversary sale",
+      "url": "https://www.ign.com/articles/best-budget-tv-deal-best-buy-anniversary-sale",
+      "summary": "Everything you need in a TV at a rock bottom price.",
+      "publishedAt": "Mon, 17 Aug 2026 20:40:00 +0000"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "Every Disney Game on the Nintendo Switch and Switch 2 in 2026",
+      "normalizedTitle": "every disney game on the nintendo switch and switch 2 in 2026",
+      "url": "https://www.ign.com/articles/all-disney-games-on-nintendo-switch-in-order",
+      "summary": "If you're looking to get your Disney (or Pixar) fix on the Switch, we've got you covered.",
+      "publishedAt": "Mon, 17 Aug 2026 20:32:00 +0000"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "We Build LEGO Boba Fett, Complete With Jet Pack And Wookiee Scalps",
+      "normalizedTitle": "we build lego boba fett complete with jet pack and wookiee scalps",
+      "url": "https://www.ign.com/articles/we-build-lego-boba-fett-set-75455",
+      "summary": "Take a look as we put together the best Boba Fett set ever released in the LEGO Star Wars line.",
+      "publishedAt": "Mon, 17 Aug 2026 20:28:12 +0000"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "Scientists Name New Lizard Species After House of the Dragon’s Syrax",
+      "normalizedTitle": "scientists name new lizard species after house of the dragon s syrax",
+      "url": "https://www.ign.com/articles/new-lizard-species-named-house-of-the-dragon-syrax",
+      "summary": "Scientists have named a newly discovered lizard species after Syrax, the iconic golden dragon ridden by Rhaenyra Targaryen in House of the Dragon.",
+      "publishedAt": "Mon, 17 Aug 2026 20:19:05 +0000"
+    },
+    {
       "source": "GamesRadar+",
       "language": "en",
       "title": "It: Welcome to Derry season 2 has finally been officially announced by HBO after months of radio silence",
@@ -49,6 +103,24 @@
       "url": "https://www.gamesradar.com/entertainment/horror-shows/it-welcome-to-derry-season-2-has-finally-been-officially-announced-by-hbo-after-months-of-radio-silence/",
       "summary": "After 10 long months, Pennywise has finally been given the go-ahead for an on-screen return",
       "publishedAt": "Mon, 17 Aug 2026 20:15:24 +0000"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "New ACOTAR Book Titles and Covers Revealed by Sarah J. Maas",
+      "normalizedTitle": "new acotar book titles and covers revealed by sarah j maas",
+      "url": "https://www.ign.com/articles/new-acotar-book-titles-and-covers-revealed-by-sarah-j-maas",
+      "summary": "It&#39;s a great day to be a fan of hot faerie folk, because A Court of Thorns and Roses author Sarah J. Maas has revealed the titles — A Court of Splintered Harmony and A Court of Forgotten Melody — and covers for books six and seven on her Instagram . She also teased the descriptions &quot;What was broken will be remade&quot; and &quot;What was lost will be reclaimed,&quot; alongside the new covers. Maas has already dropped the ACOTAR 6 and 7 release dates on the Call Her Daddy podcast , so we know that A Court of Splintered Harmony will hit shelves and Kindles on October 27, 2026, with A Co",
+      "publishedAt": "Mon, 17 Aug 2026 20:08:53 +0000"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "Kingdom Hearts Becomes Second Top-Selling Steam Game in the U.S. After Extended D23 Trailer Sparks Fan Excitement",
+      "normalizedTitle": "kingdom hearts becomes second top selling steam game in the u s after extended d23 trailer sparks fan excitement",
+      "url": "https://www.ign.com/articles/kingdom-hearts-becomes-second-top-selling-steam-game-in-the-us-after-extended-d23-trailer-sparks-fan-excitement",
+      "summary": "Kingdom Hearts is having a big moment on Steam, becoming the platform’s second best-selling game in the United States following the Kingdom Hearts IV gameplay trailer that was shown at D23 over the weekend.",
+      "publishedAt": "Mon, 17 Aug 2026 20:05:22 +0000"
     },
     {
       "source": "GamesRadar+",
@@ -69,6 +141,15 @@
       "publishedAt": "Mon, 17 Aug 2026 20:00:12 GMT"
     },
     {
+      "source": "IGN",
+      "language": "en",
+      "title": "The Bambu P1S Combo 3D Printer Drops to Its Lowest Price of the Year During Best Buy's Anniversary Sale",
+      "normalizedTitle": "the bambu p1s combo 3d printer drops to its lowest price of the year during best buy s anniversary sale",
+      "url": "https://www.ign.com/articles/bambu-lab-p1s-combo-multi-color-3d-printer-best-buy-anniversary-sale",
+      "summary": "One of the most highly recommended 3D printers for both novices and seasoned enthusiasts.",
+      "publishedAt": "Mon, 17 Aug 2026 20:00:00 +0000"
+    },
+    {
       "source": "GameSpot",
       "language": "en",
       "title": "The Best Games Under $10",
@@ -85,6 +166,24 @@
       "url": "https://www.gamespot.com/articles/remembering-the-lord-of-the-rings-game-that-ripped-off-final-fantasy-10/",
       "summary": "With a surprise remaster of The Lord of the Rings: War in the North dropping earlier this month and Andy Serkis’ film, Hunt for Gollum, now in production, I’ve had a real desire to jump back into Middle-earth recently. It was a formative fictional world for millions, whether you read J. R. R. Tolkien’s classic novels or fell deeply in love with the fantasy universe through Peter Jackson’s masterful film trilogy. If you have a beating heart, chances are you love LOTR. But as a lifelong fan of turn-based JRPGs who grew up with classics like Final Fantasy and Chrono Trigger, there is one LOTR vid",
       "publishedAt": "Mon, 17 Aug 2026 19:44:05 +0000"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "Marvel Studios' Ghost Rider Sets July 2028 Release Date",
+      "normalizedTitle": "marvel studios ghost rider sets july 2028 release date",
+      "url": "https://www.ign.com/articles/marvel-studios-ghost-rider-sets-july-2028-release-date",
+      "summary": "Marvel Studios has officially set a firm release date for its Ghost Rider film.",
+      "publishedAt": "Mon, 17 Aug 2026 19:42:13 +0000"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "Streamer Finally Gets Perfect Game in MVP Baseball 2005 After Nearly 2,000 Consecutive Attempts",
+      "normalizedTitle": "streamer finally gets perfect game in mvp baseball 2005 after nearly 2 000 consecutive attempts",
+      "url": "https://www.ign.com/articles/streamer-finally-gets-perfect-game-in-mvp-baseball-2005-after-nearly-2000-consecutive-attempts",
+      "summary": "Tik-Tok streamer Jay Lucarelli tried for nearly 2000 attempts over the course of a week to throw a perfect game with now-retired Astros pitcher Roy Oswalt in MVP Baseball 2005, the classic pro baseball sim – and last one ever made by EA. On attempt number 1,993, Lucraelli finally did it.",
+      "publishedAt": "Mon, 17 Aug 2026 19:39:34 +0000"
     },
     {
       "source": "Polygon",
@@ -121,6 +220,24 @@
       "url": "https://www.gamespot.com/articles/call-of-duty-modern-warfare-4-beta-trailer-shows-off-franchises-most-ambitious-map-yet/",
       "summary": "Activision has released a teaser trailer for the upcoming Call of Duty: Modern Warfare 4 first beta weekend , and it looks pretty great. The trailer shows off some of the content in the beta, and that includes, for the first time in the franchise's history, a slice of the game's single-player campaign. The first beta runs April 21-25, and it's available for those who preorder the game on PS5, Xbox Series X|S, and PC. The beta allows players to try the campaign mission, Entrenched, along with the modular map Kill Block (among others). Kill Block, the most ambitious Call of Duty multiplayer map ",
       "publishedAt": "Mon, 17 Aug 2026 19:20:06 +0000"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "The 10 Most Expensive Pokémon Cards of 2026 (So Far)",
+      "normalizedTitle": "the 10 most expensive pokémon cards of 2026 so far",
+      "url": "https://www.ign.com/articles/most-expensive-pokemon-cards-2026",
+      "summary": "These are the most expensive Pokémon TCG cards of 2026 so far, including high-value Ascended Heroes pulls like SIR Pikachu ex and SIR Mega Gengar ex, along with a couple of surprises as well.",
+      "publishedAt": "Mon, 17 Aug 2026 19:15:00 +0000"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "The Alienware RTX 5090 Gaming PC Drops to $4,780, Nearly the Same Price as Buying the GPU By Itself",
+      "normalizedTitle": "the alienware rtx 5090 gaming pc drops to 4 780 nearly the same price as buying the gpu by itself",
+      "url": "https://www.ign.com/articles/dell-alienware-area-51-intel-edition-rtx-5090-gaming-pc-deal-july-2026",
+      "summary": "An RTX 5090 graphics card nowadays goes for at least $4,500 new and $4,000 used.",
+      "publishedAt": "Mon, 17 Aug 2026 19:15:00 +0000"
     },
     {
       "source": "GameSpot",
@@ -240,15 +357,6 @@
       "publishedAt": "Mon, 17 Aug 2026 21:18:54 +0300"
     },
     {
-      "source": "Polygon",
-      "language": "en",
-      "title": "Everything we know about PS6, Sony’s next-gen PlayStation console",
-      "normalizedTitle": "everything we know about ps6 sony s next gen playstation console",
-      "url": "https://www.polygon.com/ps6-sony-playstation-6-release-date-price/",
-      "summary": "A rundown of everything announced, reported, leaked, and rumored about PlayStation 6, including release date, price, and specs",
-      "publishedAt": "Mon, 17 Aug 2026 18:10:51 GMT"
-    },
-    {
       "source": "IGN",
       "language": "en",
       "title": "IT: Welcome to Derry Season 2 Renewed, Will Cover Bradley Gang Massacre",
@@ -312,33 +420,6 @@
       "publishedAt": "Mon, 17 Aug 2026 17:28:06 +0000"
     },
     {
-      "source": "IGN",
-      "language": "en",
-      "title": "'Garbage Universe That Disrespects the Characters of DC' — Lanterns' Episode One Ending Has Upset a Lot of Green Lantern Fans",
-      "normalizedTitle": "garbage universe that disrespects the characters of dc lanterns episode one ending has upset a lot of green lantern fans",
-      "url": "https://www.ign.com/articles/garbage-universe-that-disrespects-the-characters-of-dc-lanterns-episode-one-ending-has-upset-a-lot-of-green-lantern-fans",
-      "summary": "The ending to the first episode of Lanterns has upset a lot of fans, though the creators expected this response.",
-      "publishedAt": "Mon, 17 Aug 2026 17:27:55 +0000"
-    },
-    {
-      "source": "IGN",
-      "language": "en",
-      "title": "Walmart Is Offering a Great Deal on a RTX 5070 Ti Gaming PC, and It Includes Two Upcoming AAA Games",
-      "normalizedTitle": "walmart is offering a great deal on a rtx 5070 ti gaming pc and it includes two upcoming aaa games",
-      "url": "https://www.ign.com/articles/acer-predator-orion-rtx-5070-ti-gaming-pc-deal-intel-gamer-days-sale-updated",
-      "summary": "The RTX 5070 Ti graphics card is powerful enough to run the latest games smoothly at 4K.",
-      "publishedAt": "Mon, 17 Aug 2026 17:05:00 +0000"
-    },
-    {
-      "source": "IGN",
-      "language": "en",
-      "title": "You Can Now Buy Digital Video Games on DoorDash",
-      "normalizedTitle": "you can now buy digital video games on doordash",
-      "url": "https://www.ign.com/articles/you-can-now-buy-digital-video-games-on-doordash",
-      "summary": "DoorDash has added the ability to buy digital video games through the app, alongside physical games, consoles, gaming accessories, discounted gift cards for services like Xbox and Roblox, and snacks and drinks. So now you can get all your game-night essentials in one place, and DashPass members also get additional perks. To celebrate the launch, customers who spend $50 or more on a digital game can earn a free DoorDash eGift Card. Through August 31, eligible DashPass members receive $25 and eligible non-DashPass customers receive $10. For the remainder of the year, eligible DashPass members re",
-      "publishedAt": "Mon, 17 Aug 2026 17:00:00 +0000"
-    },
-    {
       "source": "PC Gamer",
       "language": "en",
       "title": "I'm modding GTA 5 every day until it becomes GTA 6 or breaks, starting with a new vehicle and enough missiles to level a city block",
@@ -348,24 +429,6 @@
       "publishedAt": "Mon, 17 Aug 2026 17:00:00 +0000"
     },
     {
-      "source": "IGN",
-      "language": "en",
-      "title": "Tributes to Hayden Panettiere Pour in From Scream Co-Stars, Plus Fans of Kingdom Hearts and Until Dawn",
-      "normalizedTitle": "tributes to hayden panettiere pour in from scream co stars plus fans of kingdom hearts and until dawn",
-      "url": "https://www.ign.com/articles/tributes-to-hayden-panettiere-pour-in-from-scream-co-stars-plus-fans-of-kingdom-hearts-and-until-dawn",
-      "summary": "Fans, friends, and co-stars have flooded social media with tributes as they remember Kingdom Hearts and Scream actress Hayden Panettiere.",
-      "publishedAt": "Mon, 17 Aug 2026 16:56:25 +0000"
-    },
-    {
-      "source": "IGN",
-      "language": "en",
-      "title": "Supreme’s 2026 Fall/Winter Collection Features a 24K Gold Analogue Pocket",
-      "normalizedTitle": "supreme s 2026 fall winter collection features a 24k gold analogue pocket",
-      "url": "https://www.ign.com/articles/supremes-2026-fall-winter-collection-features-a-24k-gold-analogue-pocket",
-      "summary": "Streetwear brand Supreme has unveiled its Fall/Winter 2026 collection, and it features a collab with Analogue Pocket, the fantastic retro handheld that lets you play your Game Boy cartridges on FPGA-based hardware. Also in the collection is a Supreme-branded Dyson Vacuum, Kodak Super-8 Camera, and a galvanized steel mailbox, all bright red, of course.",
-      "publishedAt": "Mon, 17 Aug 2026 16:55:00 +0000"
-    },
-    {
       "source": "PC Gamer",
       "language": "en",
       "title": "Resident Evil Requiem's Angela Sant'Albano reportedly joins Tides of Annihilation, replacing Jennifer English as the new voice of its protagonist",
@@ -373,15 +436,6 @@
       "url": "https://www.pcgamer.com/games/action/resident-evil-requiems-angela-santalbano-reportedly-joins-tides-of-annihilation-replacing-jennifer-english-as-the-new-voice-of-its-protagonist/",
       "summary": "\"No more screaming 'Leon!!'\"",
       "publishedAt": "Mon, 17 Aug 2026 16:52:11 +0000"
-    },
-    {
-      "source": "IGN",
-      "language": "en",
-      "title": "Fortnite Goes 32-Bit to Reveal New Gaming Legend Season With Legally Distinct Mario Kart, Mortal Kombat Parodies, Plus Actual Sonic the Hedgehog",
-      "normalizedTitle": "fortnite goes 32 bit to reveal new gaming legend season with legally distinct mario kart mortal kombat parodies plus actual sonic the hedgehog",
-      "url": "https://www.ign.com/articles/fortnite-goes-32-bit-to-reveal-new-gaming-legend-season-with-legally-distinct-mario-kart-mortal-kombat-parodies-plus-actual-sonic-the-hedgehog",
-      "summary": "Fortnite has shown off its character roster for Overdrive, the battle royale's upcoming season themed around legendary video games.",
-      "publishedAt": "Mon, 17 Aug 2026 16:46:49 +0000"
     },
     {
       "source": "GamesRadar+",
@@ -445,15 +499,6 @@
       "url": "https://www.gamespot.com/articles/gta-6-does-look-a-bit-different-in-new-ps5-promo/",
       "summary": "Sony is flexing its video game muscle with a new \"It Happens On PS5\" ad campaign , and the one-minute video features arguably the most anticipated title ever: Grand Theft Auto VI . Now, to be clear, there are only snippets of old footage for the open-world experience. But you should know by now that won't stop the internet from poring over every single little detail. For example, the X account DriftRespawn notes that letterboxing has been removed in the new PS5 promo from a clip where Jason Duval is hanging on to the back of a convertible, with Lucia driving the car. This scene first appeared ",
       "publishedAt": "Mon, 17 Aug 2026 16:29:08 +0000"
-    },
-    {
-      "source": "IGN",
-      "language": "en",
-      "title": "The Complete Calvin and Hobbes Collection Gets Huge Discount With Amazon Coupon, Dropping It Below $100",
-      "normalizedTitle": "the complete calvin and hobbes collection gets huge discount with amazon coupon dropping it below 100",
-      "url": "https://www.ign.com/articles/the-complete-calvin-and-hobbes-collection-amazon-deal-august-2026",
-      "summary": "The Complete Calvin and Hobbes Collection has received a huge 59% discount at Amazon with the help of a coupon on the store page, dropping it from $225 to $93.10.",
-      "publishedAt": "Mon, 17 Aug 2026 16:28:21 +0000"
     },
     {
       "source": "GamesRadar+",
@@ -537,15 +582,6 @@
       "publishedAt": "Mon, 17 Aug 2026 16:00:08 +0000"
     },
     {
-      "source": "IGN",
-      "language": "en",
-      "title": "Aliens: Fireteam Elite 2 – The Final Preview",
-      "normalizedTitle": "aliens fireteam elite 2 the final preview",
-      "url": "https://www.ign.com/articles/aliens-fireteam-elite-2-the-final-preview",
-      "summary": "Aliens: Fireteam Elite 2 seems like one of those lazy Sunday games, where you kill part of an afternoon playing a couple hours with friends. It gets Aliens and understands that forty miles of bad road Cameron envisioned. As a co-op game, it’s not going to change the world. Aliens already did that. But it’s a great excuse to play around in that world again, and I’m eager to see what else LV-558 has in store.",
-      "publishedAt": "Mon, 17 Aug 2026 16:00:00 +0000"
-    },
-    {
       "source": "GameSpot",
       "language": "en",
       "title": "Welcome To GameSpot Cheap Week",
@@ -580,15 +616,6 @@
       "url": "https://www.gamesradar.com/hardware/gaming-controllers/paying-usd200-for-a-ps5-pro-controller-is-crazy-so-pay-usd87-for-this-razer-one-instead/",
       "summary": "Woot's Summer sale for gamers has brought the price of the Razer Raiju V3 Pro down to historically low levels, and it's currently more than half off.",
       "publishedAt": "Mon, 17 Aug 2026 15:56:43 +0000"
-    },
-    {
-      "source": "IGN",
-      "language": "en",
-      "title": "There's Now a Fortnite Star Wars Skin You Need to Visit Disneyland to Unlock",
-      "normalizedTitle": "there s now a fortnite star wars skin you need to visit disneyland to unlock",
-      "url": "https://www.ign.com/articles/theres-now-a-fortnite-star-wars-skin-you-need-to-visit-disneyland-to-unlock",
-      "summary": "Fortnite now has an exclusive Star Wars skin available only to those who visit two Disneyland parks.",
-      "publishedAt": "Mon, 17 Aug 2026 15:55:32 +0000"
     },
     {
       "source": "GamesRadar+",
@@ -654,24 +681,6 @@
       "publishedAt": "Mon, 17 Aug 2026 15:34:40 +0000"
     },
     {
-      "source": "IGN",
-      "language": "en",
-      "title": "Final Fantasy 7 Rebirth Hits New Low Price of $35 on Switch 2 at Amazon",
-      "normalizedTitle": "final fantasy 7 rebirth hits new low price of 35 on switch 2 at amazon",
-      "url": "https://www.ign.com/articles/final-fantasy-7-rebirth-switch-2-amazon-deal",
-      "summary": "Save $15 on Final Fantasy 7 Rebirth for Nintendo Switch 2 at Amazon, down to a new low of $34.99 with an exclusive MTG Zack Fair promo card included.",
-      "publishedAt": "Mon, 17 Aug 2026 15:30:00 +0000"
-    },
-    {
-      "source": "IGN",
-      "language": "en",
-      "title": "The Original Mass Effect Is the Trilogy’s Best Story, Hands Down",
-      "normalizedTitle": "the original mass effect is the trilogy s best story hands down",
-      "url": "https://www.ign.com/articles/the-original-mass-effect-is-the-trilogys-best-story-hands-down",
-      "summary": "The entire Mass Effect trilogy is fantastic, but the first game's story is head-and-shoulders above the tales told in the later games.",
-      "publishedAt": "Mon, 17 Aug 2026 15:30:00 +0000"
-    },
-    {
       "source": "GameSpot",
       "language": "en",
       "title": "Top 16 Things You Need To Know Before You Play Mortal Shell 2",
@@ -688,6 +697,15 @@
       "url": "https://www.pcgamer.com/hardware/handheld-gaming-pcs/intel-might-be-cooking-up-a-budget-friendly-handheld-chip-but-id-still-be-surprised-if-its-cheap-enough-or-fast-enough-to-matter/",
       "summary": "Could this take some of the sting out of the handheld market?",
       "publishedAt": "Mon, 17 Aug 2026 15:26:59 +0000"
+    },
+    {
+      "source": "GameSpot",
+      "language": "en",
+      "title": "All Bosses In Mortal Shell 2 And How To Beat Them",
+      "normalizedTitle": "all bosses in mortal shell 2 and how to beat them",
+      "url": "https://www.gamespot.com/articles/mortal-shell-2-all-bosses-how-to-defeat/",
+      "summary": "Are you keen on wanting to defeat all major bosses in Mortal Shell 2 ? There are 10 of these opponents in the regions of Fainweald, Mammon, and beyond, and they’re all salivating at the chance to finish off your character, the Harbinger. Our guide has tips to help you gain an advantage, but be forewarned that there are massive spoilers ahead. In This Article Mortal Shell 2 major bosses versus minibosses Glutted Mire boss: Magdalena, Lady of the Woods Sanguine Caverns boss: The Lost Child Prisoners’ Domain boss: The Nameless Captive Conquered Temple boss: Droeg the Conqueror Withered Shoals bos",
+      "publishedAt": "Mon, 17 Aug 2026 15:22:37 +0000"
     },
     {
       "source": "GamesRadar+",
@@ -762,15 +780,6 @@
       "publishedAt": "Mon, 17 Aug 2026 14:48:23 +0000"
     },
     {
-      "source": "IGN",
-      "language": "en",
-      "title": "The End of Oak Street 4K Steelbook Is Up for Preorder",
-      "normalizedTitle": "the end of oak street 4k steelbook is up for preorder",
-      "url": "https://www.ign.com/articles/the-end-of-oak-street-4k-steelbook-is-up-for-preorder",
-      "summary": "Preorders are already live for the dinosaur thriller The End of Oak Street in 4K Blu-ray, including a limited-edition 4K steelbook.",
-      "publishedAt": "Mon, 17 Aug 2026 14:43:39 +0000"
-    },
-    {
       "source": "PC Gamer",
       "language": "en",
       "title": "SSD price increases might be with us for the long haul, as Phison's CEO says NAND supply won't catch up with demand for four years",
@@ -843,15 +852,6 @@
       "publishedAt": "Mon, 17 Aug 2026 13:59:42 +0000"
     },
     {
-      "source": "IGN",
-      "language": "en",
-      "title": "Marvel Confirms Your List of Avengers: Doomsday Homework, Featuring 15 Movies and TV Series, And a Couple of Deep Cuts",
-      "normalizedTitle": "marvel confirms your list of avengers doomsday homework featuring 15 movies and tv series and a couple of deep cuts",
-      "url": "https://www.ign.com/articles/marvel-confirms-your-list-of-avengers-doomsday-homework-featuring-15-movies-and-tv-series-and-a-couple-of-deep-cuts",
-      "summary": "Ready for your Avengers Doomsday homework? Marvel has released a watchlist of 15 movies and TV shows you should watch before December 18 rolls around.",
-      "publishedAt": "Mon, 17 Aug 2026 13:58:41 +0000"
-    },
-    {
       "source": "Rock Paper Shotgun",
       "language": "en",
       "title": "Sraëka Lillian's one-a-week RPG \"sketches\" are a lovely series of experiments with hoary old conventions from Final Fantasy and Dragon Quest",
@@ -899,6 +899,15 @@
     {
       "source": "GamesRadar+",
       "language": "en",
+      "title": "Should you equip the Mortal Shell 2 Slayer Seal?",
+      "normalizedTitle": "should you equip the mortal shell 2 slayer seal",
+      "url": "https://www.gamesradar.com/games/rpg/mortal-shell-2-slayer-seal-difficulty/",
+      "summary": "The Slayer Seal is Mortal Shell 2 a powerful item that helps you defeat tough enemies, but it comes at a cost",
+      "publishedAt": "Mon, 17 Aug 2026 13:00:00 +0000"
+    },
+    {
+      "source": "GamesRadar+",
+      "language": "en",
       "title": "Mortal Shell 2 map and how to reveal it",
       "normalizedTitle": "mortal shell 2 map and how to reveal it",
       "url": "https://www.gamesradar.com/games/rpg/mortal-shell-2-map/",
@@ -930,15 +939,6 @@
       "normalizedTitle": "how to unlock mortal shell 2 fast travel",
       "url": "https://www.gamesradar.com/games/rpg/mortal-shell-2-fast-travel/",
       "summary": "You'll unlock Mortal Shell 2 fast travel by meeting a very reasonable requirement, allowing you to travel between beacons",
-      "publishedAt": "Mon, 17 Aug 2026 13:00:00 +0000"
-    },
-    {
-      "source": "GamesRadar+",
-      "language": "en",
-      "title": "Should you equip the Mortal Shell 2 Slayer Seal?",
-      "normalizedTitle": "should you equip the mortal shell 2 slayer seal",
-      "url": "https://www.gamesradar.com/games/rpg/mortal-shell-2-slayer-seal-difficulty/",
-      "summary": "The Slayer Seal is Mortal Shell 2 a powerful item that helps you defeat tough enemies, but it comes at a cost",
       "publishedAt": "Mon, 17 Aug 2026 13:00:00 +0000"
     },
     {
