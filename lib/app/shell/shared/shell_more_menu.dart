@@ -20,6 +20,17 @@ mixin ShellMoreMenu on ShellCoreLogic {
   }
 
   void openProjectPaths() {
+    unawaited(_openProjectPathsAfterPortfolioBootstrap());
+  }
+
+  Future<void> _openProjectPathsAfterPortfolioBootstrap() async {
+    try {
+      await bootstrapDiscussedPortfolioPaths();
+    } catch (e) {
+      debugPrint('[PORTFOLIO_PATHS] bootstrap failed: $e');
+    }
+    if (!mounted) return;
+
     final formFactor = shellFormFactorForWidth(MediaQuery.sizeOf(context).width);
     if (formFactor != ShellFormFactor.desktop) {
       Navigator.of(context).push<void>(
