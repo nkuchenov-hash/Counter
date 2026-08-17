@@ -1,0 +1,300 @@
+name: Apply Paths app cleanup
+
+on:
+  push:
+    paths:
+      - '.github/workflows/refactor-paths-app-cleanup.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  refactor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: refactor/paths-app-cleanup-20260817
+          fetch-depth: 0
+
+      - name: Apply structural refactor and documentation sync
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          def replace_once(text: str, old: str, new: str, label: str) -> str:
+              if old not in text:
+                  raise SystemExit(f'missing expected block: {label}')
+              return text.replace(old, new, 1)
+
+          # 1) Move Paths UI/compatibility presentation out of shell ownership.
+          shell_more = Path('lib/app/shell/shared/shell_more_menu.dart')
+          source = shell_more.read_text(encoding='utf-8')
+          header = "part of '../app_shell.dart';\n\n"
+          split_token = 'mixin ShellMoreMenu on ShellCoreLogic {'
+          if not source.startswith(header) or split_token not in source:
+              raise SystemExit('unexpected shell_more_menu.dart structure')
+          before, after = source[len(header):].split(split_token, 1)
+          paths_text = "part of '../../app/shell/app_shell.dart';\n\n" + before.rstrip() + '\n'
+
+          old_init = '''  @override
+          void initState() {
+            super.initState();
+            unawaited(_bootstrapAndLoad());
+          }
+
+          Future<void> _bootstrapAndLoad() async {
+            try {
+              await bootstrapExecutablePortfolioPaths();
+              await _upgradeKadrRealityPathV3();
+              await runPathGovernanceAndPlanCurrentWeekV4();
+            } catch (e) {
+              _error = e.toString();
+            }
+            await _load();
+          }
+          '''
+          new_init = '''  @override
+          void initState() {
+            super.initState();
+            unawaited(_load());
+          }
+          '''
+          paths_text = replace_once(paths_text, old_init, new_init, 'Paths init side effects')
+
+          paths_file = Path('lib/features/paths/paths_view.dart')
+          paths_file.parent.mkdir(parents=True, exist_ok=True)
+          paths_file.write_text(paths_text, encoding='utf-8')
+
+          shell_text = header + split_token + after
+          open_pattern = re.compile(
+              r"  void openProjectPaths\(\) \{.*?\n  \}\n\n  void openMoreMenu",
+              re.S,
+          )
+          shell_text, count = open_pattern.subn(
+              "  void openProjectPaths() {\n"
+              "    setState(() => setShellPageIndex(6));\n"
+              "  }\n\n"
+              "  void openMoreMenu",
+              shell_text,
+              count=1,
+          )
+          if count != 1:
+              raise SystemExit(f'openProjectPaths replacement count={count}')
+
+          shell_text = replace_once(
+              shell_text,
+              '''    if (navIndex == 6) {
+                openProjectPaths();
+                return;
+              }
+          ''',
+              '''    if (navIndex == 6) {
+                setState(() => setShellPageIndex(6));
+                return;
+              }
+          ''',
+              'desktop Paths routing',
+          )
+          shell_text = replace_once(
+              shell_text,
+              '''      0 || 1 || 2 || 3 || 4 || 5 => shellPageIndex,
+                _ => 7,
+          ''',
+              '''      0 || 1 || 2 || 3 || 4 || 5 || 6 => shellPageIndex,
+                _ => 7,
+          ''',
+              'desktop selected index',
+          )
+          shell_more.write_text(shell_text, encoding='utf-8')
+
+          # 2) Make Paths an actual AppShell page (index 6).
+          app_shell = Path('lib/app/shell/app_shell.dart')
+          app = app_shell.read_text(encoding='utf-8')
+          app = replace_once(
+              app,
+              "part 'shared/shell_more_menu.dart';\n",
+              "part 'shared/shell_more_menu.dart';\npart '../../features/paths/paths_view.dart';\n",
+              'Paths part registration',
+          )
+          app = replace_once(
+              app,
+              '  /// 0 Timeline, 1 Planning, 2 Calendar, 3 Lists, 4 Categories, 5 Profile.\n',
+              '  /// 0 Timeline, 1 Planning, 2 Calendar, 3 Lists, 4 Categories, 5 Profile, 6 Paths.\n',
+              'shell index comment',
+          )
+          app = replace_once(
+              app,
+              "      4 => 'more',\n      5 => 'settings',\n",
+              "      4 => 'categories',\n      5 => 'profile',\n      6 => 'paths',\n",
+              'shell diagnostic labels',
+          )
+          profile_block = '''      ProfilePage(
+                onSaved: () {
+                  if (mounted) setState(() {});
+                  unawaited(refreshDesktopTrayMenu());
+                },
+                onDesktopVoiceHotkeyChanged: (_) => reattachDesktopVoiceHotkey(),
+                onTestDesktopVoice: () {
+                  unawaited(toggleDesktopVoiceWidget());
+                },
+              ),
+            ];
+          '''
+          profile_with_paths = profile_block.replace('      ),\n    ];\n', '      ),\n      const ProjectPathsV3Page(),\n    ];\n')
+          app = replace_once(app, profile_block, profile_with_paths, 'AppShell Paths page')
+          app_shell.write_text(app, encoding='utf-8')
+
+          # 3) Guard the ownership/routing contract so the regression cannot return.
+          guard_path = Path('scripts/audit/architecture_guard.ps1')
+          guard = guard_path.read_text(encoding='utf-8')
+          guard_block = r'''
+          # --- 9. Paths first-class ownership / navigation ---
+          $pathsFeaturePath = Get-RepoPath @('lib', 'features', 'paths', 'paths_view.dart')
+          if (-not (Test-Path -LiteralPath $pathsFeaturePath)) {
+              Add-Violation "PATHS_FEATURE_MISSING lib/features/paths/paths_view.dart"
+          }
+          $shellMorePath = Get-RepoPath @('lib', 'app', 'shell', 'shared', 'shell_more_menu.dart')
+          if (Test-Path -LiteralPath $shellMorePath) {
+              $shellMoreText = Get-Content -LiteralPath $shellMorePath -Raw
+              if ($shellMoreText -match 'class\s+ProjectPathsV3Page') {
+                  Add-Violation "PATHS_UI_IN_SHELL shell_more_menu.dart must not own ProjectPathsV3Page"
+              }
+              if ($shellMoreText -match 'DesktopShellFrame[\s\S]{0,1200}ProjectPathsV3Page') {
+                  Add-Violation "PATHS_NESTED_SHELL Paths must be selected in the main AppShell, not pushed inside another DesktopShellFrame"
+              }
+          }
+          if (Test-Path -LiteralPath $pathsFeaturePath) {
+              $pathsFeatureText = Get-Content -LiteralPath $pathsFeaturePath -Raw
+              if ($pathsFeatureText -match '_bootstrapAndLoad\s*\(') {
+                  Add-Violation "PATHS_OPEN_SIDE_EFFECT Paths screen must not bootstrap/migrate/plan merely because it was opened"
+              }
+          }
+
+          '''
+          if '# --- 9. Paths first-class ownership / navigation ---' not in guard:
+              guard = replace_once(guard, '# --- Report ---\n', guard_block + '# --- Report ---\n', 'guard report anchor')
+          guard_path.write_text(guard, encoding='utf-8')
+
+          # 4) Canonical documentation: current architecture, no deleted generated guide.
+          app_doc_path = Path('docs/APP_STRUCTURE.md')
+          app_doc = app_doc_path.read_text(encoding='utf-8')
+          app_doc = app_doc.replace('## 0. Current status (2026-07-23)', '## 0. Current status (2026-08-17)', 1)
+          app_doc = re.sub(r'^\| \*\*Detailed file guide\*\*.*\n', '', app_doc, count=1, flags=re.M)
+          app_doc = re.sub(
+              r'\nRegenerate the detailed guide after large tree changes:\n\n```powershell\npython scripts/manual/generate_app_structure_detailed\.py\n\.\\scripts\\manual\\structure_scan\.ps1\n```\n',
+              '\n',
+              app_doc,
+              count=1,
+          )
+          app_doc = app_doc.replace(
+              '**Shell tabs (bottom nav index):** 0 Timeline · 1 Plans · 2 Calendar · 3 Lists · 4 More (Categories, Profile, admin Component Lab).',
+              '**Shell pages:** 0 Timeline · 1 Plans · 2 Calendar · 3 Lists · 4 Categories · 5 Profile · 6 Paths. Phone/tablet bottom navigation keeps the compact four primary tabs plus More; desktop exposes Categories, Profile, Paths, and More directly.',
+              1,
+          )
+          app_doc = app_doc.replace(
+              '| `app/shell/shared/shell_more_menu.dart` | More bottom sheet *(part)* |',
+              '| `app/shell/shared/shell_more_menu.dart` | More bottom sheet and shell-level destination selection only *(part)* |',
+              1,
+          )
+          app_doc = app_doc.replace(
+              '| `app/shell/shared/shell_path_governance.dart` | Project Path reality audit, targeted Path upgrades, Path-action → current-week Planner orchestration |',
+              '| `app/shell/shared/shell_path_governance.dart` | Current Path audit / Planner bridge retained during the structured Path-domain migration |',
+              1,
+          )
+          anchor = '| `app/shell/desktop/desktop_shell_frame.dart` | Desktop wide frame (side nav + content) |\n'
+          if anchor in app_doc and 'features/paths/paths_view.dart' not in app_doc:
+              app_doc = app_doc.replace(
+                  anchor,
+                  anchor + '| `features/paths/paths_view.dart` | First-class Paths page and compatibility presentation for existing plan-backed Path records; opening the page is read-only with respect to bootstrap/planning |\n',
+                  1,
+              )
+          status_anchor = '| **Strict architecture guard** |'
+          status_line_start = app_doc.find(status_anchor)
+          if status_line_start >= 0 and '**2026-08-17 Paths review**' not in app_doc:
+              line_end = app_doc.find('\n', status_line_start)
+              app_doc = app_doc[:line_end+1] + '| **2026-08-17 Paths review** | Paths is a real AppShell destination; feature UI is owned under `lib/features/paths/`; page-open migration/planning side effects are prohibited by the architecture guard. |\n' + app_doc[line_end+1:]
+          app_doc = app_doc.replace('APP_STRUCTURE_DETAILED.md', 'APP_STRUCTURE.md')
+          app_doc = app_doc.replace('generate_app_structure_detailed.py', 'architecture_guard.ps1')
+          app_doc_path.write_text(app_doc, encoding='utf-8')
+
+          nav_path = Path('AGENT_NAVIGATION.md')
+          nav = nav_path.read_text(encoding='utf-8')
+          nav = re.sub(r'^> \*\*Legacy filename:.*\n\n', '> Repository-local AI orientation for LIFE OS. Use the canonical documents below before editing.\n\n', nav, count=1, flags=re.M)
+          nav = re.sub(r'^\*\*Current velocity track.*$', '**Current structural track (2026-08-17):** Paths first-class AppShell integration, safe repository hygiene, and governing-document synchronization. Preserve current optimistic/offline/runtime contracts while this refactor is in progress.', nav, count=1, flags=re.M)
+          nav = re.sub(r'^\| `docs/APP_STRUCTURE_DETAILED\.md`.*\n', '', nav, flags=re.M)
+          nav = nav.replace('Verified 2026-06-10 (shell paths 2026-07-21; time/diagnostics/voice/categories ownership 2026-07-21–23; Stage B drift audit 2026-07-23).', 'Verified through 2026-08-17 (including Paths shell ownership and repository/documentation review).', 1)
+          lists_row = '| **Lists screen** | `lib/features/lists/lists_view.dart` | `ListsPage` — wired in `app_shell.dart` IndexedStack index 3 |\n'
+          if lists_row in nav and '**Paths screen**' not in nav:
+              nav = nav.replace(lists_row, lists_row + '| **Paths screen** | `lib/features/paths/paths_view.dart` | `ProjectPathsV3Page` — real AppShell page index 6; opening it must not trigger migrations or Planner mutations |\n', 1)
+          nav = nav.replace('| **More overflow menu** | `lib/app_shell.dart` | `_openMoreMenu()` modal bottom sheet — Categories, Profile, admin Component Lab (removed orphan `more_view.dart` in Stage A) |', '| **More overflow menu** | `lib/app/shell/shared/shell_more_menu.dart` | `openMoreMenu()`; shell-level routing only. Paths itself is AppShell page 6, not a nested pushed desktop shell. |', 1)
+          nav_path.write_text(nav, encoding='utf-8')
+
+          agents_path = Path('AGENTS.md')
+          agents = agents_path.read_text(encoding='utf-8')
+          agents = re.sub(r'^- Structure cleanup is governed by .*APP_STRUCTURE_DETAILED.*\n', '- Structure changes are governed by `docs/APP_STRUCTURE.md`, `docs/ARCHITECTURE.md`, the strict architecture guard, and task-specific audit evidence.\n', agents, flags=re.M)
+          agents = agents.replace('read `docs/APP_STRUCTURE.md`, `docs/APP_STRUCTURE_DETAILED.md`, and `docs/reports/FINAL_STRUCTURE_PARITY_AND_DOC_CLEANUP_2026-07-03.md`.', 'read `docs/APP_STRUCTURE.md`, `docs/ARCHITECTURE.md`, and the relevant repository audit/report.', 1)
+          agents = agents.replace('- Active foundation tracks are V3/V7: `docs/UX_CONTRACT.md`, `docs/DESIGN_SYSTEM.md`, canonical Flutter components, and admin-only Component Lab.', '- Active structural scope (2026-08-17): first-class Paths integration and repository/documentation cleanup explicitly requested by the owner; correctness/performance rules remain higher priority.', 1)
+          paths_boundary_anchor = '- `lib/features/` owns screens, sheets, and feature-specific layout. It composes Brain APIs and canonical core/shared widgets.\n'
+          if paths_boundary_anchor in agents and '`lib/features/paths/`' not in agents:
+              agents = agents.replace(paths_boundary_anchor, paths_boundary_anchor + '- `lib/features/paths/` owns the Paths screen/presentation. Shell selects it as destination index 6; shell must not own or push a nested Paths shell.\n', 1)
+          agents_path.write_text(agents, encoding='utf-8')
+
+          arch_path = Path('docs/ARCHITECTURE.md')
+          arch = arch_path.read_text(encoding='utf-8')
+          row_anchor = '| `lib/features/settings/categories/` | **Categories manager UI** | More → Categories band grid, editor/appearance sheets, create dialog, browse panel. |\n'
+          if row_anchor in arch and '`lib/features/paths/`' not in arch:
+              arch = arch.replace(row_anchor, row_anchor + '| `lib/features/paths/` | **Paths UI** | First-class project-path screen. Shell owns destination selection only; Path presentation does not own app bootstrap. |\n', 1)
+          reconcile = '- **STATE_RECONCILIATION:** 404 → purge ghost rows / revert optimistic state.\n'
+          if reconcile in arch and 'PATH_PUBLISHING_LAW' not in arch:
+              arch = arch.replace(reconcile, reconcile + '- **PATH_PUBLISHING_LAW:** A Path may be discussed and revised as a draft without changing Planner. Planner automation consumes only the current active/published Path. Opening the Paths screen is a read operation; migrations, bootstrap, governance runs, and schedule generation require an explicit application-service action. Existing plan-backed `LIFEOS_PATH::V2` records remain readable until structured Path migration is complete.\n', 1)
+          arch = arch.replace('| **Docs/scripts** | Generated or reference material may be large if clearly marked generated/reference |', '| **Docs/scripts** | Keep canonical docs concise; large generated inventories belong outside git unless they are required build/test inputs |', 1)
+          arch = arch.replace('6. Do **docs / tests / APP_STRUCTURE_DETAILED** need updates?', '6. Do **docs / tests / APP_STRUCTURE / AGENT_NAVIGATION** need updates?', 1)
+          arch = arch.replace('Run `.\\scripts\\audit\\architecture_guard.ps1 -Strict` after structural edits. Regenerate `docs/APP_STRUCTURE_DETAILED.md` after tree changes.', 'Run `.\\scripts\\audit\\architecture_guard.ps1 -Strict` after structural edits and update `docs/APP_STRUCTURE.md` when ownership or files move.', 1)
+          arch_path.write_text(arch, encoding='utf-8')
+
+          roadmap_path = Path('docs/ROADMAP.md')
+          roadmap = roadmap_path.read_text(encoding='utf-8')
+          roadmap = roadmap.replace('Updated 2026-06-09.', 'Updated 2026-08-17.', 1)
+          roadmap = roadmap.replace('Build the best time tracker possible. Every UI component lives in one place and changes everywhere when you touch it once. Designed to last.', 'Build LIFE OS as a coherent personal operating system for time, planning, project execution, routines, lists, and connected personal data. Each product area must have one clear architectural owner and remain fast, optimistic, and maintainable.', 1)
+          old_active = '**O1, V1, F1, F2A, and F2C are shipped/accepted.** Feature work is paused unless explicitly requested. The active project is **V3/V7 only**: `docs/UX_CONTRACT.md`, `docs/DESIGN_SYSTEM.md`, canonical Flutter components, and the admin-only Component Lab.'
+          roadmap = roadmap.replace(old_active, '**O1, V1, F1, F2A, and F2C are shipped/accepted.** Current explicitly requested structural scope is **PTH1**: make Paths a first-class application area, remove post-audit repository junk, and synchronize governing documentation. V3/V7 remains the design-system baseline.', 1)
+          active_section = '''\n## PTH1 — Paths + application structure review (active 2026-08-17)\n\n**Goal:** Paths must be a real LIFE OS feature, not shell-owned business logic or a nested navigation trick. The repository must match its governing documents after the change.\n\n- Paths is AppShell page index 6 on desktop and the same page is reachable from compact More navigation.\n- `lib/features/paths/` owns the Paths page/presentation; `shell_more_menu.dart` owns navigation/menu behavior only.\n- Opening Paths must not run migrations, bootstrap project data, governance, or Planner scheduling.\n- Existing `LIFEOS_PATH::V2` records are preserved and readable during the structured-domain migration.\n- Next domain step: explicit Path repository/model with draft → reviewed → active → archived/versioned lifecycle; only active Path feeds Planner.\n- Remove repository artifacts only when they are proven unused or one-shot; do not classify independent project subtrees as LIFE OS junk.\n- `README.md`, `AGENTS.md`, `AGENT_NAVIGATION.md`, `APP_STRUCTURE.md`, `ARCHITECTURE.md`, and this roadmap must agree on current ownership.\n\n**Tracking:** GitHub issue #93.\n\n---\n'''
+          if '## PTH1 — Paths + application structure review' not in roadmap:
+              roadmap = roadmap.replace('\n## 🔴 Correctness Track\n', active_section + '\n## 🔴 Correctness Track\n', 1)
+          cleanup_old = '**Status:** Repository cleanup complete with explicitly deferred feature work. Ordinary repository-structure cleanup is **formally closed** as of Phase 2G (2026-07-23). Do not open another generic structure-cleanup pass; remaining items need separate product/design approval (V7 adoption, Phase 2D wiring, Notes/Lists/Voice watchlist orphans, Stage E seams, notifications/alarms — not cleanup).'
+          cleanup_new = '**Status:** The 2026-07-23 baseline cleanup remains historical evidence, but the 2026-08-17 review found new post-baseline drift in Paths navigation/ownership plus isolated generated/one-shot repository artifacts. PTH1 is a targeted corrective pass, not a line-count-driven rewrite.'
+          roadmap = roadmap.replace(cleanup_old, cleanup_new, 1)
+          roadmap = roadmap.replace('`lib/core/perf_flags.dart` · `lib/core/p0u_feature_flags.dart`', '`lib/shared/diagnostics/performance/runtime_flags.dart` · `lib/shared/diagnostics/performance/shell_flags.dart`')
+          roadmap_path.write_text(roadmap, encoding='utf-8')
+
+          audit_path = Path('docs/reports/REPOSITORY_REVIEW_2026-08-17.md')
+          audit_path.write_text('''# LIFE OS repository review — 2026-08-17\n\n## Scope\n\nOwner-requested whole-application structure review focused on current code ownership, Paths integration, repository hygiene, and governing-document accuracy. Independent project subtrees in the repository are outside LIFE OS cleanup unless explicitly scoped.\n\n## Confirmed findings\n\n- Paths was not a real AppShell page: desktop navigation pushed another `DesktopShellFrame` around `ProjectPathsV3Page`.\n- Paths UI/business presentation lived inside `lib/app/shell/shared/shell_more_menu.dart`.\n- Opening Paths ran compatibility upgrades/bootstrap and `runPathGovernanceAndPlanCurrentWeekV4()`, so navigation itself could mutate data and Planner state.\n- Path storage currently uses plan-backed `LIFEOS_PATH::V2` records. Those records must be preserved while the domain becomes structured/versioned.\n- `.github/workflows/temp-fix-category-default-time.yml` was a completed one-shot self-patching workflow and had no permanent CI role.\n- `docs/APP_STRUCTURE_DETAILED.md` (~2.48 MB) and `scripts/manual/generate_app_structure_detailed.py` (~101 KB) formed an isolated generated-document pair and were not runtime/build/CI inputs.\n- Root `README.md` was the default Flutter starter text and did not describe LIFE OS.\n- `.gitignore` contained a mojibake BOM prefix.\n\n## Applied corrections\n\n- Paths is AppShell page 6 instead of a nested pushed shell.\n- Paths page/presentation moved physically under `lib/features/paths/paths_view.dart`.\n- `shell_more_menu.dart` retains menu/routing responsibility only.\n- Paths page initialization loads current records only; bootstrap/governance/Planner work is no longer triggered by opening the page.\n- Architecture guard now enforces Paths feature ownership and blocks nested-shell/page-open-side-effect regressions.\n- Removed the proven one-shot/generated repository artifacts listed above.\n- Replaced the starter README, normalized `.gitignore`, and synchronized governing docs.\n\n## Preserved intentionally\n\n- Existing `LIFEOS_PATH::V2` interpretation and plan-backed Path data.\n- Current audit/governance and Path → Planner bridge until the structured Path repository/model migration has coverage.\n- Historical audit reports.\n- Independent project folders such as `igropoisk/`.\n\n## Next domain migration\n\nIssue #93 tracks the remaining Path-domain work: explicit repository/model, draft/reviewed/active/archive lifecycle, version history, generic project knowledge instead of hard-coded project profiles, and safe AI proposal/application tools.\n''', encoding='utf-8')
+
+          # Canonical docs must not point to the deleted generated guide/generator.
+          governing = [
+              Path('README.md'), Path('AGENTS.md'), Path('AGENT_NAVIGATION.md'),
+              Path('docs/APP_STRUCTURE.md'), Path('docs/ARCHITECTURE.md'), Path('docs/ROADMAP.md'),
+          ]
+          for p in governing:
+              text = p.read_text(encoding='utf-8')
+              if 'APP_STRUCTURE_DETAILED' in text or 'generate_app_structure_detailed' in text:
+                  raise SystemExit(f'stale detailed-structure reference remains in {p}')
+          PY
+
+      - name: Verify structure and whitespace
+        shell: bash
+        run: |
+          pwsh -NoProfile -NonInteractive -File ./scripts/audit/architecture_guard.ps1 -Strict
+          git diff --check
+
+      - name: Commit refactor
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "refactor: make Paths a first-class app feature and sync docs"
+          git push origin HEAD:refactor/paths-app-cleanup-20260817
