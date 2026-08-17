@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('daily routine bootstrap defines six daily recurring anchors', () {
+  test('daily routine uses one deterministic recurring series per anchor', () {
     final source = File(
       'lib/app/shell/shared/shell_daily_routine.dart',
     ).readAsStringSync();
@@ -18,20 +18,43 @@ void main() {
     ]) {
       expect(source, contains("title: '$title'"));
     }
-    expect(RegExp(r"rrule: 'FREQ=DAILY'").allMatches(source).length, 1);
+    expect(source, contains("rrule: 'FREQ=DAILY'"));
     expect(source, contains("planRrule: 'FREQ=DAILY'"));
-    expect(source, contains('recurringTitles.contains'));
+    expect(source, contains('clientPlanId: deterministicPlanId'));
+    expect(source, contains("'lifeos-routine-v1-"));
+    expect(source, contains('_dailyRoutineEnsureInFlightV7'));
+    expect(source, contains('startTime: start'));
+    expect(source, contains('endDateTime: end'));
+    expect(source, isNot(contains('backendId = businessId')));
   });
 
-  test('weekly planner canonicalizes roots and de-duplicates approvals', () {
+  test('path actions use unique deterministic plan ids and normal scheduling does not clean duplicates', () {
     final source = File(
       'lib/app/shell/shared/shell_path_governance.dart',
     ).readAsStringSync();
 
     expect(source, contains('_canonicalActivePathRootsV6'));
-    expect(source, contains('_dedupeCurrentWeekApprovalPlansV6'));
-    expect(source, contains('_projectPlanApprovalStageIdV5'));
-    expect(source, contains('_projectPlanApprovalActionIdV5'));
-    expect(source, contains('existingApprovalCategoryIds'));
+    expect(source, contains('_pathActionBusinessIdV7'));
+    expect(source, contains("'lifeos-path-action-v1-"));
+    expect(source, contains('existingBusinessIds.contains(planBusinessId)'));
+    expect(source, contains('clientPlanId: planBusinessId'));
+    expect(source, contains('_currentWeekApprovalCategoryIdsV7'));
+    expect(source, isNot(contains('_dedupeCurrentWeekApprovalPlansV6')));
+    expect(source, contains('_migrateLegacyApprovalDuplicatesV7'));
+    expect(source, contains('_plannerBaselineMigrationV7'));
+  });
+
+  test('ordinary shell startup ensures planner baseline without scheduling project actions', () {
+    final shell = File('lib/app/shell/app_shell.dart').readAsStringSync();
+    final governance = File(
+      'lib/app/shell/shared/shell_path_governance.dart',
+    ).readAsStringSync();
+    expect(shell, contains('await ensurePlannerBaselineV7();'));
+    expect(governance, contains('Future<void> ensurePlannerBaselineV7()'));
+    final start = governance.indexOf('Future<void> ensurePlannerBaselineV7()');
+    final body = governance.substring(start, governance.indexOf('\n}', start) + 2);
+    expect(body, contains('ensureDailyRoutineV6'));
+    expect(body, contains('_migrateLegacyApprovalDuplicatesV7'));
+    expect(body, isNot(contains('planCurrentWeekFromPathsV4')));
   });
 }
