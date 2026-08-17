@@ -18,6 +18,7 @@ Physical map of the Flutter application: what exists, which layer owns it, who m
 | **Voice ownership** | Phase 2C (2026-07-22): shared Voice contracts/adapters under `lib/shared/voice/`; Brain execution under `lib/data/voice/`; desktop Flutter Voice UI under `lib/features/voice/`; settings under `features/settings/voice/`; Shell keeps `shell_voice_routing` |
 | **Categories ownership** | Phase 2D (2026-07-23): shared presentation/tree/picker/visibility under `lib/shared/categories/`; Brain CRUD remains `lib/data/categories/`; manager UI under `lib/features/settings/categories/`; Lists owns `category_filter_tree_field.dart`; plan/record draft helpers under `features/shared/edit_sheet/category_edit_draft.dart` |
 | **Paths ownership** | 2026-08-17: first-class UI under `lib/features/paths/`; Path domain transition adapter under `lib/data/paths/`; shell owns navigation only; opening Paths performs no migration or Planner generation |
+| **Health / unfilled-time doc parity** | 2026-08-17: Health Connect sleep, cloud sleep, unfilled Timeline-gap detection/notifications and settings modules added to the canonical manifest after strict guard exposed post-audit drift |
 | **Strict architecture guard** | Baseline 2026-07-17 cleanup **complete**: 63 → 0 (A=0, B=0); hygiene audit 2026-07-21; diagnostics Phase 2B + voice Phase 2C 2026-07-22; categories Phase 2D 2026-07-23 |
 | **Detailed file guide** | [`docs/APP_STRUCTURE_DETAILED.md`](APP_STRUCTURE_DETAILED.md) — owner-readable **evidence-backed** EN/RU entry per tracked folder and file (role, necessity, confidence, deletion consequence); regenerate via `generate_app_structure_detailed.py` |
 | **Project Knowledge pack** | [`docs/PROJECT_KNOWLEDGE_PACK.md`](PROJECT_KNOWLEDGE_PACK.md) — 14-doc upload checklist |
@@ -140,6 +141,11 @@ Compatibility re-exports (remove when callers migrate): root `lib/app_shell.dart
 | `records/record_overlap_helpers.dart` | Highlander local apply, singleton reconcile, overlap probes *(part)* |
 | `records/record_ghost_cleanup.dart` | 404 deadletter prune against live cache *(part)* |
 | `records/record_cache_helpers.dart` | Per-day filter, `recordsStream`, display-time helpers *(part)* |
+| `records/unfilled_time_gap_policy.dart` | Pure Timeline-gap detection policy over record intervals |
+| `records/unfilled_time_gap_service.dart` | Gap settings/state, periodic/resume refresh, fill-gap action and notification eligibility orchestration |
+| `health/health_sleep_policy.dart` | Pure imported-sleep matching and overlap conflict policy |
+| `health/health_sleep_sync_service.dart` | Device-health sleep sync state/scheduling/import orchestration across supported source adapters |
+| `health/cloud_sleep_sync_service.dart` | Authenticated server-side sleep sync status/connect/sync client for cloud sources |
 | `plan_service.dart` | Plans/lists coordinator: cache fetch/realtime and CRUD entry points *(part)* |
 | `plans/plan_projection_types.dart` | Time Mode projected DTO, UTC/profile-wall conversion, timezone reproject lifecycle, projection cache signature, wall-day visibility/filtering, projection diagnostics *(part)* |
 | `plans/plan_recurrence_helpers.dart` | RRULE JIT expansion, virtual/materialized occurrence identity, exception-date mutation, concrete instance materialization, and recurrence edit/delete scope *(part)* |
@@ -484,7 +490,7 @@ Parser, live category/domain resolution, normalization, command execution (`writ
 | Folder | Files | Role |
 | :--- | :--- | :--- |
 | `auth/` | `auth_view.dart`, `auth_screen.dart`, `oauth_session.dart` | Sign-in, register, OAuth, password reset |
-| `timeline/` | `timeline_view.dart`, `timeline_continuous_history.dart`, `timeline_header_controls.dart`, `timeline_day_page.dart`, `timeline_record_card.dart`, `timeline_helpers.dart` | Timeline coordinator; continuous reverse-chronological history with pinned date headers in List mode; per-day Stats pager; header controls + record cards |
+| `timeline/` | `timeline_view.dart`, `timeline_continuous_history.dart`, `timeline_header_controls.dart`, `timeline_day_page.dart`, `timeline_record_card.dart`, `timeline_helpers.dart`, `unfilled_time_gap_banner.dart` | Timeline coordinator; continuous history; per-day stats; header controls; record cards; current unfilled-time recovery banner |
 | `stats/` | `stats_view.dart`, `day_stats_dashboard.dart`, `stats_detail_tree.dart`, `plan_vs_fact_tab.dart` | Productivity stats (embedded in Timeline): switchable day dashboards, preserved detailed tree, plan vs fact |
 | `planning/` | `planning_view.dart` (barrel), **`planning_page.dart`**, **`planning_quick_add_tags_controller.dart`**, **`planning_page_shell.dart`**, **`planning_sort_mode.dart`**, `plan_time_view_layout.dart`, `plan_time_gesture_contract.dart`, `planning_day_start_prefs.dart`, `bulk_planning_edit_sheet.dart`, `recurrence_scope_dialog.dart`, `smart_plan_sheet.dart`, **`time_view/`**, **`settings/`**, **`widgets/`** | Plans tab: date pager shell + day page body, quick-add tag controller, Time View modules, settings, bulk edit |
 | `paths/` | `paths_page.dart` | First-class Paths destination: project list/detail, goal/stage/action progress, generic structure audit; opening the page is read-only |
@@ -492,7 +498,7 @@ Parser, live category/domain resolution, normalization, command execution (`writ
 | `notes/` | `drawing_canvas_page.dart`, `notes_audio_controller.dart`, `notes_image_tools.dart`, `notes_editor_document_controller.dart`, `notes_glm_surface.dart`, `notes_library_page.dart`, `notes_visual_tokens.dart`, `notes_figma_tokens.dart`, `note_editor_page.dart`, **`widgets/`** (`notes_library_body.dart`, `notes_library_production_shell.dart`, `note_card.dart`, `note_editor_block_widgets.dart`, `notes_editor_tools.dart`, `notes_special_block_widgets.dart`, `notes_canonical_components.dart`, `notes_component_text_blocks.dart`, `notes_component_structural_blocks.dart`, `notes_component_media_blocks.dart`, `notes_component_tools.dart`) | Notes library/editor/drawing feature UI; exact roles in §3.4 Notes below |
 | `calendar/` | `calendar_view.dart` (orchestrator), `calendar_chrome_header.dart`, `calendar_month_grid.dart`, `calendar_week_grid.dart`, `calendar_day_panel.dart`, `calendar_day_events.dart`, `calendar_helpers.dart` | Calendar tab: month/week grids, chrome header, focused-day task panel |
 | `profile/` | `profile_view.dart`, **`settings/`** (account, notification, security sections), `tag_manager_page.dart`, `tag_settings_hub.dart`, `tag_settings_view.dart`, `tag_default_duration_settings_view.dart` | Profile & tag settings |
-| `settings/` | `timezone_settings.dart`, **`voice/`** (`desktop_voice_settings_section.dart`, `desktop_voice_settings_desktop.dart`, `desktop_voice_attempt_dialog.dart`), **`categories/`** (`category_list_view.dart`, `category_row_widget.dart`, `category_editor_sheet.dart`, `category_appearance_sheet.dart`, `category_tag_input_field.dart`, `category_helpers.dart`, `create_category_dialog.dart`, `category_recursive_browse_panel.dart`) | Settings-owned timezone helpers + Voice settings + Categories manager UI (More → Categories) |
+| `settings/` | `timezone_settings.dart`, **`voice/`** (`desktop_voice_settings_section.dart`, `desktop_voice_settings_desktop.dart`, `desktop_voice_attempt_dialog.dart`), **`categories/`** (`category_list_view.dart`, `category_row_widget.dart`, `category_editor_sheet.dart`, `category_appearance_sheet.dart`, `category_tag_input_field.dart`, `category_helpers.dart`, `create_category_dialog.dart`, `category_recursive_browse_panel.dart`), **`notifications/`** (`unfilled_time_notifications_section.dart`), **`health/`** (`health_connect_settings_section.dart`) | Settings-owned timezone helpers + Voice settings + Categories manager + unfilled-time notification settings + health/sleep integration settings |
 | `voice/` | `desktop_voice_widget.dart`, `desktop_voice_capsule.dart`, `desktop_voice_correction_sheet.dart`, `desktop_voice_command_panel.dart` | Desktop Flutter Voice overlay UI (GOLOS STT capsule / correction / panel) |
 | `dev/` | `component_lab_view.dart`, `component_lab_cards_demo.dart`, `component_lab_notes_demo.dart` | Admin-only Component Lab including canonical Notes block/media/tool states |
 | `wear/` | `wear_timer_screen.dart`, `wear_main_wrapper.dart`, `wear_platform.dart`, `wear_runtime.dart` | Wear OS companion |
@@ -547,6 +553,11 @@ Every production Notes feature/shared editor module above must be listed by exac
 | :--- | :--- |
 | `notification_service.dart` | Local notifications and plan alarms |
 | `plan_alarm_schedule.dart` | UI-free plan reminder schedule specifications, wall-time conversion, dedupe, and limits |
+| `unfilled_time_notification_service.dart` | OS notification bridge for unfilled Timeline-gap reminders |
+| `health_connect/health_connect_sleep_models.dart` | Health Connect sleep-session/value objects shared by platform adapters |
+| `health_connect/health_connect_sleep_service.dart` | Conditional export/facade for Health Connect sleep reads and permissions |
+| `health_connect/health_connect_sleep_service_io.dart` | Android/IO Health Connect sleep implementation |
+| `health_connect/health_connect_sleep_service_stub.dart` | Unsupported-platform Health Connect stub |
 
 ---
 
