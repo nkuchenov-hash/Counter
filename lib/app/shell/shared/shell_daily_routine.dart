@@ -2,6 +2,7 @@ import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 
 const String _dailyRoutineMarkerV6 = 'LIFEOS_DAILY_ROUTINE_V1|';
+Future<void>? _dailyRoutineEnsureInFlightV7;
 
 class _DailyRoutineSpecV6 {
   const _DailyRoutineSpecV6({
@@ -143,6 +144,36 @@ DateTime _routineBaseStartV6(
   return start;
 }
 
+String _systemIdTokenV7(String value) {
+  final normalized = value
+      .trim()
+      .toLowerCase()
+      .replaceAll(RegExp(r'[^a-z0-9_-]+'), '-')
+      .replaceAll(RegExp(r'-+'), '-')
+      .replaceAll(RegExp(r'^-+|-+$'), '');
+  return normalized.isEmpty ? 'unknown' : normalized;
+}
+
+String _routineSeriesPlanIdV7(
+  CategoryRule category,
+  _DailyRoutineSpecV6 spec,
+) {
+  final scope = (category.backendRowId ?? category.categoryKey).trim();
+  return 'lifeos-routine-v1-${_systemIdTokenV7(scope)}-${_systemIdTokenV7(spec.key)}';
+}
+
+String _routineBackendIdV7(Map<String, dynamic> row) =>
+    (row['id'] ?? row['_pb_record_id'] ?? '').toString().trim();
+
+String _routineBusinessIdV7(Map<String, dynamic> row) =>
+    (row['plan_id'] ?? '').toString().trim();
+
+bool _routineRowHasScheduleV7(Map<String, dynamic> row) {
+  final rrule = (row['rrule'] ?? '').toString().trim();
+  final start = (row['start_time'] ?? row['startTime'])?.toString().trim() ?? '';
+  return rrule.isNotEmpty && start.isNotEmpty;
+}
+
 Future<bool> _scheduleRoutineSeriesV6({
   required CategoryRule category,
   required _DailyRoutineSpecV6 spec,
@@ -154,33 +185,36 @@ Future<bool> _scheduleRoutineSeriesV6({
   final end = start.add(Duration(minutes: spec.durationMinutes));
   final dateKey = _routineDateKeyV6(start);
   final marker = '$_dailyRoutineMarkerV6${spec.key}';
+  final deterministicPlanId = _routineSeriesPlanIdV7(category, spec);
 
-  var backendId = existingBackendId?.trim() ?? '';
-  var businessId = existingBusinessId?.trim() ?? '';
+  final backendId = existingBackendId?.trim() ?? '';
   if (backendId.isEmpty) {
-    businessId = DatabaseService.newClientUuid();
-    final created = await db.addPlanningTask(
+    final wallDay = DateTime(start.year, start.month, start.day);
+    return db.addPlanningTask(
       PlanningTask(
         id: 0,
         title: spec.title,
         categoryId: category.id,
         isDone: false,
-        dateKey: '',
-        order: await db.nextBacklogPlanningOrder(),
+        dateKey: dateKey,
+        order: await db.nextPlanningOrderForDate(wallDay),
+        startTime: start,
+        endDateTime: end,
+        initialDateKey: dateKey,
         notesPlain:
             '$marker\nСистемная ежедневная опора LIFE OS. Время можно менять обычным редактированием повторяющейся серии.',
         rrule: 'FREQ=DAILY',
         isSynced: false,
       ),
-      clientPlanId: businessId,
+      // DATA_MAP: plans.plan_id is unique. This is the hard idempotency anchor,
+      // so a second copy of the same LIFE OS series cannot be inserted.
+      clientPlanId: deterministicPlanId,
     );
-    if (!created) return false;
-    backendId = businessId;
   }
 
   return db.updatePlanningTask(
     backendId,
-    planBusinessId: businessId.isEmpty ? null : businessId,
+    planBusinessId: deterministicPlanId,
     title: spec.title,
     categoryId: category.id,
     startTimeDisplay: start,
@@ -195,17 +229,26 @@ Future<bool> _scheduleRoutineSeriesV6({
 
 /// Creates the six baseline personal-routine series once. Existing recurring
 /// user plans with the same title win: their times are never overwritten.
-Future<void> ensureDailyRoutineV6() async {
+Future<void> ensureDailyRoutineV6() {
+  final running = _dailyRoutineEnsureInFlightV7;
+  if (running != null) return running;
+  late final Future<void> work;
+  work = _ensureDailyRoutineOnceV7().whenComplete(() {
+    if (identical(_dailyRoutineEnsureInFlightV7, work)) {
+      _dailyRoutineEnsureInFlightV7 = null;
+    }
+  });
+  _dailyRoutineEnsureInFlightV7 = work;
+  return work;
+}
+
+Future<void> _ensureDailyRoutineOnceV7() async {
   final db = DatabaseService.instance;
   final category = await _ensureDailyRoutineCategoryV6();
   if (category == null) return;
 
   final rawPlans = await db.fetchPlans();
-  // On a transient empty read, do not risk creating a second set of series.
-  // This user already has normal Planner rows; the bootstrap can retry later.
-  if (rawPlans.isEmpty) return;
-
-  final markerRows = <String, Map<String, dynamic>>{};
+  final markerRows = <String, List<Map<String, dynamic>>>{};
   final recurringTitles = <String>{};
   for (final row in rawPlans) {
     final title = (row['title'] ?? '').toString().trim();
@@ -217,29 +260,57 @@ Future<void> ensureDailyRoutineV6() async {
     final firstLine = notes.split('\n').first.trim();
     if (!firstLine.startsWith(_dailyRoutineMarkerV6)) continue;
     final key = firstLine.substring(_dailyRoutineMarkerV6.length).trim();
-    if (key.isNotEmpty) markerRows.putIfAbsent(key, () => row);
+    if (key.isNotEmpty) {
+      markerRows.putIfAbsent(key, () => <Map<String, dynamic>>[]).add(row);
+    }
   }
 
   for (final spec in _dailyRoutineSpecsV6) {
-    final existing = markerRows[spec.key];
-    if (existing != null) {
-      final rrule = (existing['rrule'] ?? '').toString().trim();
-      final start = (existing['start_time'] ?? existing['startTime'])
-          ?.toString()
-          .trim();
-      if (rrule.isNotEmpty && start != null && start.isNotEmpty) {
+    final deterministicPlanId = _routineSeriesPlanIdV7(category, spec);
+    final rows = List<Map<String, dynamic>>.from(
+      markerRows[spec.key] ?? const <Map<String, dynamic>>[],
+    );
+
+    if (rows.isNotEmpty) {
+      // Adopt exactly one legacy row into the deterministic identity. Prefer an
+      // already-normalized row, then a valid scheduled row, then any row that
+      // has a real PB id. This is migration of old bad data, not the steady-state
+      // duplicate-prevention mechanism.
+      rows.sort((a, b) {
+        int rank(Map<String, dynamic> row) {
+          if (_routineBusinessIdV7(row) == deterministicPlanId) return 0;
+          if (_routineRowHasScheduleV7(row)) return 1;
+          if (_routineBackendIdV7(row).isNotEmpty) return 2;
+          return 3;
+        }
+        return rank(a).compareTo(rank(b));
+      });
+      final keep = rows.first;
+      final keepBackendId = _routineBackendIdV7(keep);
+      final duplicateIds = <String>{
+        for (final row in rows.skip(1))
+          if (_routineBackendIdV7(row).isNotEmpty) _routineBackendIdV7(row),
+      };
+      if (duplicateIds.isNotEmpty) {
+        await db.deletePlanningTasksBulk(duplicateIds);
+      }
+      if (keepBackendId.isNotEmpty) {
+        final alreadyReady = _routineRowHasScheduleV7(keep) &&
+            _routineBusinessIdV7(keep) == deterministicPlanId;
+        if (!alreadyReady) {
+          await _scheduleRoutineSeriesV6(
+            category: category,
+            spec: spec,
+            existingBackendId: keepBackendId,
+            existingBusinessId: _routineBusinessIdV7(keep),
+          );
+        }
         continue;
       }
-      await _scheduleRoutineSeriesV6(
-        category: category,
-        spec: spec,
-        existingBackendId: (existing['id'] ?? existing['_pb_record_id'])
-            ?.toString(),
-        existingBusinessId: existing['plan_id']?.toString(),
-      );
-      continue;
     }
 
+    // A user's own recurring plan with the same title wins. LIFE OS does not
+    // create a second baseline series next to it.
     if (recurringTitles.contains(_normalizeRoutineTitleV6(spec.title))) {
       continue;
     }

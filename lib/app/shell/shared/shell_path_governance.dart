@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'shell_daily_routine.dart';
 
@@ -9,6 +10,26 @@ const String _activePathMarkerV4 = 'LIFEOS_PATH::V2';
 const String _retiredPathMarkerV4 = 'LIFEOS_PATH::V2_RETIRED';
 const String _pathActionPlanMarkerV4 = 'LIFEOS_PATH_ACTION_V4|';
 const String _weekRoutinePlanMarkerV4 = 'LIFEOS_WEEK_ROUTINE_V4|';
+const String _plannerBaselineMigrationV7 = 'lifeos_planner_baseline_migration_v7';
+
+String _pathSystemIdTokenV7(String value) {
+  final normalized = value
+      .trim()
+      .toLowerCase()
+      .replaceAll(RegExp(r'[^a-z0-9_-]+'), '-')
+      .replaceAll(RegExp(r'-+'), '-')
+      .replaceAll(RegExp(r'^-+|-+$'), '');
+  return normalized.isEmpty ? 'unknown' : normalized;
+}
+
+String _pathActionBusinessIdV7({
+  required String rootId,
+  required String stageId,
+  required String actionId,
+}) =>
+    'lifeos-path-action-v1-${_pathSystemIdTokenV7(rootId)}-'
+    '${_pathSystemIdTokenV7(stageId)}-${_pathSystemIdTokenV7(actionId)}';
+
 const String _projectPlanApprovalStageIdV5 = 'approval-v5-gate';
 const String _projectPlanApprovalActionIdV5 = 'approval-v5-review';
 
@@ -1159,6 +1180,7 @@ Future<bool> _createScheduledTaskV4({
   required String notes,
   required DateTime start,
   required int minutes,
+  String? clientPlanId,
 }) async {
   final db = DatabaseService.instance;
   final wallDay = DateTime(start.year, start.month, start.day);
@@ -1184,7 +1206,7 @@ Future<bool> _createScheduledTaskV4({
     ),
     schedule,
   );
-  return db.addPlanningTask(task);
+  return db.addPlanningTask(task, clientPlanId: clientPlanId);
 }
 
 Future<void> _removeSupersededWeekRoutinesV5() async {
@@ -1252,61 +1274,141 @@ Future<void> _removePrematurePathActionsV5() async {
 }
 
 
-bool _isApprovalPlannerTaskV6(PlanningTask task) {
+List<String>? _pathMarkerPartsV7(PlanningTask task) {
   final firstLine = (task.notesPlain ?? '').split('\n').first.trim();
-  if (!firstLine.startsWith(_pathActionPlanMarkerV4)) return false;
-  final payload = firstLine.substring(_pathActionPlanMarkerV4.length);
-  final parts = payload.split('|');
-  if (parts.length < 3) return false;
-  return parts[1].trim() == _projectPlanApprovalStageIdV5 &&
-      parts[2].trim() == _projectPlanApprovalActionIdV5;
+  if (!firstLine.startsWith(_pathActionPlanMarkerV4)) return null;
+  final parts = firstLine
+      .substring(_pathActionPlanMarkerV4.length)
+      .split('|')
+      .map((e) => e.trim())
+      .toList(growable: false);
+  return parts.length >= 3 ? parts : null;
 }
 
-Future<Set<int>> _dedupeCurrentWeekApprovalPlansV6() async {
+String _normalizeApprovalTitleV7(String value) => value
+    .trim()
+    .toLowerCase()
+    .replaceAll('ё', 'е')
+    .replaceAll(RegExp(r'[^a-zа-я0-9]+'), '');
+
+bool _isApprovalPlannerTaskV6(PlanningTask task) {
+  final parts = _pathMarkerPartsV7(task);
+  if (parts == null) return false;
+  if (parts[1] == _projectPlanApprovalStageIdV5 &&
+      parts[2] == _projectPlanApprovalActionIdV5) {
+    return true;
+  }
+  final normalizedTitle = _normalizeApprovalTitleV7(task.title);
+  return normalizedTitle.endsWith('согласоватьпланпроекта') ||
+      normalizedTitle.endsWith('approveprojectplan');
+}
+
+Future<Set<int>> _currentWeekApprovalCategoryIdsV7() async {
   final db = DatabaseService.instance;
   final today = db.getTimelineDeviceLocalToday();
   final monday = _mondayOfV4(today);
-  final byCategory = <int, List<PlanningTask>>{};
-  final categoriesWithApproval = <int>{};
-
+  final categories = <int>{};
   for (var i = 0; i < 7; i++) {
-    final day = monday.add(Duration(days: i));
-    final tasks = await db.getPlanningTasksForWallDate(day);
+    final tasks = await db.getPlanningTasksForWallDate(
+      monday.add(Duration(days: i)),
+    );
     for (final task in tasks) {
-      if (!_isApprovalPlannerTaskV6(task)) continue;
-      categoriesWithApproval.add(task.categoryId);
+      if (!task.isDone && _isApprovalPlannerTaskV6(task)) {
+        categories.add(task.categoryId);
+      }
+    }
+  }
+  return categories;
+}
+
+Future<void> _migrateLegacyApprovalDuplicatesV7() async {
+  final db = DatabaseService.instance;
+  final prefs = await SharedPreferences.getInstance();
+  if (prefs.getBool(_plannerBaselineMigrationV7) == true) return;
+
+  final roots = _canonicalActivePathRootsV6(
+    await db.fetchBacklogPlans(includeCompleted: true),
+  );
+  final canonicalRootByCategory = <int, String>{
+    for (final root in roots)
+      root.categoryId:
+          (root.pocketRecordId ?? root.planRowIdForBackend).trim(),
+  };
+
+  final today = db.getTimelineDeviceLocalToday();
+  final monday = _mondayOfV4(today);
+  final byCategory = <int, List<PlanningTask>>{};
+  for (var i = 0; i < 7; i++) {
+    final tasks = await db.getPlanningTasksForWallDate(
+      monday.add(Duration(days: i)),
+    );
+    for (final task in tasks) {
+      if (task.isDone || !_isApprovalPlannerTaskV6(task)) continue;
       byCategory.putIfAbsent(task.categoryId, () => <PlanningTask>[]).add(task);
     }
   }
 
-  final deleteIds = <String>{};
-  for (final tasks in byCategory.values) {
-    final unfinished = tasks.where((task) => !task.isDone).toList()
-      ..sort((a, b) {
-        final at = a.startTime;
-        final bt = b.startTime;
-        if (at == null && bt == null) {
-          return a.planRowIdForBackend.compareTo(b.planRowIdForBackend);
-        }
-        if (at == null) return 1;
-        if (bt == null) return -1;
+  for (final entry in byCategory.entries) {
+    final tasks = entry.value;
+    if (tasks.isEmpty) continue;
+    final canonicalRootId = canonicalRootByCategory[entry.key] ?? '';
+    tasks.sort((a, b) {
+      int rank(PlanningTask task) {
+        final parts = _pathMarkerPartsV7(task);
+        if (parts != null && parts[0] == canonicalRootId) return 0;
+        return 1;
+      }
+      final byRank = rank(a).compareTo(rank(b));
+      if (byRank != 0) return byRank;
+      final at = a.startTime;
+      final bt = b.startTime;
+      if (at != null && bt != null) {
         final byTime = at.compareTo(bt);
         if (byTime != 0) return byTime;
-        return a.planRowIdForBackend.compareTo(b.planRowIdForBackend);
-      });
-    if (unfinished.length <= 1) continue;
-    for (final duplicate in unfinished.skip(1)) {
-      final id = duplicate.planRowIdForBackend.trim();
-      if (id.isEmpty || id.startsWith('virt-') || id.startsWith('optimistic-')) {
-        continue;
       }
-      deleteIds.add(id);
+      return a.planRowIdForBackend.compareTo(b.planRowIdForBackend);
+    });
+
+    final keep = tasks.first;
+    final deleteIds = <String>{
+      for (final duplicate in tasks.skip(1))
+        if (duplicate.planRowIdForBackend.trim().isNotEmpty &&
+            !duplicate.planRowIdForBackend.startsWith('virt-') &&
+            !duplicate.planRowIdForBackend.startsWith('optimistic-'))
+          duplicate.planRowIdForBackend.trim(),
+    };
+    if (deleteIds.isNotEmpty) {
+      await db.deletePlanningTasksBulk(deleteIds);
+    }
+
+    final parts = _pathMarkerPartsV7(keep);
+    if (parts != null && parts[0].isNotEmpty) {
+      final deterministicPlanId = _pathActionBusinessIdV7(
+        rootId: parts[0],
+        stageId: parts[1],
+        actionId: parts[2],
+      );
+      if ((keep.planRowId ?? '').trim() != deterministicPlanId) {
+        await db.updatePlanningTask(
+          keep.planRowIdForBackend,
+          planBusinessId: deterministicPlanId,
+          suppressAppSnack: true,
+        );
+      }
     }
   }
-  if (deleteIds.isNotEmpty) {
-    await db.deletePlanningTasksBulk(deleteIds);
-  }
-  return categoriesWithApproval;
+
+  await prefs.setBool(_plannerBaselineMigrationV7, true);
+}
+
+/// Startup baseline only: ensure recurring routine and migrate old broken
+/// generated rows. It does not schedule new project work.
+Future<void> ensurePlannerBaselineV7() async {
+  final db = DatabaseService.instance;
+  await db.refreshCategoryRulesFromServer();
+  await ensureDailyRoutineV6();
+  await _removeSupersededWeekRoutinesV5();
+  await _migrateLegacyApprovalDuplicatesV7();
 }
 
 
@@ -1315,7 +1417,7 @@ Future<PathWeekPlanReportV4> planCurrentWeekFromPathsV4() async {
   await upgradeRealityPathsV4();
   await _removeSupersededWeekRoutinesV5();
   final existingApprovalCategoryIds =
-      await _dedupeCurrentWeekApprovalPlansV6();
+      await _currentWeekApprovalCategoryIdsV7();
   await _removePrematurePathActionsV5();
 
   final backlog = await db.fetchBacklogPlans(includeCompleted: true);
@@ -1327,8 +1429,11 @@ Future<PathWeekPlanReportV4> planCurrentWeekFromPathsV4() async {
   }
 
   final existingMarkers = <String>{};
+  final existingBusinessIds = <String>{};
   final existingTitlesByDate = <String, Set<String>>{};
   for (final row in allPlans) {
+    final businessId = (row['plan_id'] ?? '').toString().trim();
+    if (businessId.isNotEmpty) existingBusinessIds.add(businessId);
     final notes = (row['notes_plain'] ?? row['notesPlain'] ?? '').toString();
     final firstLine = notes.split('\n').first.trim();
     if (firstLine.startsWith(_pathActionPlanMarkerV4) ||
@@ -1436,7 +1541,13 @@ Future<PathWeekPlanReportV4> planCurrentWeekFromPathsV4() async {
     }
     final rootId = (candidate.root.pocketRecordId ?? candidate.root.planRowIdForBackend).trim();
     final marker = '$_pathActionPlanMarkerV4$rootId|${candidate.stageId}|${candidate.actionId}';
-    if (existingMarkers.contains(marker)) {
+    final planBusinessId = _pathActionBusinessIdV7(
+      rootId: rootId,
+      stageId: candidate.stageId,
+      actionId: candidate.actionId,
+    );
+    if (existingMarkers.contains(marker) ||
+        existingBusinessIds.contains(planBusinessId)) {
       remainingBudget[profile] = budget - candidate.minutes;
       if ((indexes[profile] ?? 0) < candidates.length && (remainingBudget[profile] ?? 0) > 0) {
         activeProfiles.add(profile);
@@ -1470,10 +1581,12 @@ Future<PathWeekPlanReportV4> planCurrentWeekFromPathsV4() async {
         notes: '$marker\nОжидаемый результат: ${candidate.result}',
         start: cursor,
         minutes: candidate.minutes,
+        clientPlanId: planBusinessId,
       );
       if (ok) {
         created++;
         existingMarkers.add(marker);
+        existingBusinessIds.add(planBusinessId);
         if (approvalTask) {
           existingApprovalCategoryIds.add(candidate.category.id);
         }
