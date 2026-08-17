@@ -180,7 +180,7 @@ const List<_PathAuditProfileV4> _pathAuditProfilesV4 = [
       'продажи/дистрибуция': ['sales', 'продаж', 'distribution'],
     },
     weeklyMinutes: 60,
-    planningStageIndex: 1,
+    planningStageIndex: 2,
   ),
   _PathAuditProfileV4(
     name: 'Etnika Studio',
@@ -237,7 +237,6 @@ const List<_PathAuditProfileV4> _pathAuditProfilesV4 = [
       'Управление деньгами',
       'ZenMoney',
       'Zen Money',
-      'Финансы',
     ],
     requiredTracks: ['finance', 'operations', 'validation'],
     requiredTopics: {
@@ -390,6 +389,9 @@ ProjectPathAuditV4 auditExecutableProjectPathV4(
     if (!entry.value.any((token) => searchable.contains(token.toLowerCase()))) {
       missingTopics.add(entry.key);
     }
+  }
+  if (!_projectPlanApprovedV5(root)) {
+    missingTopics.insert(0, 'план проекта ещё не согласован');
   }
 
   return ProjectPathAuditV4(
@@ -655,7 +657,6 @@ Future<CategoryRule?> _ensureMoneyManagementCategoryV5() async {
     'Управление деньгами',
     'ZenMoney',
     'Zen Money',
-    'Финансы',
   ]);
   if (existing != null) return existing;
 
@@ -679,7 +680,13 @@ Future<CategoryRule?> _ensureMoneyManagementCategoryV5() async {
     ),
   );
   if (created == null) return null;
-  return db.getCategoryRuleById(created);
+  await db.refreshCategoryRulesFromServer();
+  return _findCategoryByAliasesV4(const [
+    'Управление деньгами / ZenMoney',
+    'Управление деньгами',
+    'ZenMoney',
+    'Zen Money',
+  ]);
 }
 
 Future<void> _ensureMoneyManagementPathV5() async {
@@ -967,7 +974,9 @@ List<_WeekActionCandidateV4> _currentActionsForRootV4(
   CategoryRule category,
   PlanningTask root,
 ) {
-  var targetStage = profile.planningStageIndex;
+  var targetStage = _projectPlanApprovedV5(root)
+      ? profile.planningStageIndex
+      : 0;
   if (targetStage == null) {
     for (var i = 0; i < root.checklist.length; i++) {
       if (root.checklist[i]['isDone'] != true) {
@@ -1006,6 +1015,49 @@ List<_WeekActionCandidateV4> _currentActionsForRootV4(
   return out;
 }
 
+DateTime? _firstFreeProjectSlotV5(
+  DatabaseService db, {
+  required DateTime earliest,
+  required int minutes,
+  required DateTime latestEnd,
+  required List<PlanningTask> existing,
+}) {
+  var candidate = _roundUp5V4(earliest);
+  final busy = <(DateTime, DateTime)>[];
+  for (final task in existing) {
+    final rawStart = task.startTime;
+    if (rawStart == null) continue;
+    final start = rawStart;
+    if (start.year != candidate.year ||
+        start.month != candidate.month ||
+        start.day != candidate.day) {
+      continue;
+    }
+    final rawEnd = task.endDateTime;
+    final end = rawEnd == null
+        ? start.add(const Duration(minutes: 30))
+        : rawEnd;
+    if (!end.isAfter(start)) continue;
+    busy.add((start, end));
+  }
+  busy.sort((a, b) => a.$1.compareTo(b.$1));
+
+  for (final interval in busy) {
+    if (!interval.$2.isAfter(candidate)) continue;
+    final requestedEnd = candidate.add(Duration(minutes: minutes));
+    if (!requestedEnd.isAfter(interval.$1)) {
+      return requestedEnd.isAfter(latestEnd) ? null : candidate;
+    }
+    candidate = _roundUp5V4(interval.$2);
+    if (candidate.add(Duration(minutes: minutes)).isAfter(latestEnd)) {
+      return null;
+    }
+  }
+  return candidate.add(Duration(minutes: minutes)).isAfter(latestEnd)
+      ? null
+      : candidate;
+}
+
 Future<bool> _createScheduledTaskV4({
   required CategoryRule category,
   required String title,
@@ -1040,9 +1092,33 @@ Future<bool> _createScheduledTaskV4({
   return db.addPlanningTask(task);
 }
 
+Future<void> _removeSupersededWeekRoutinesV5() async {
+  final db = DatabaseService.instance;
+  final today = db.getTimelineDeviceLocalToday();
+  final monday = _mondayOfV4(today);
+  final ids = <String>{};
+  for (var i = 0; i < 7; i++) {
+    final day = monday.add(Duration(days: i));
+    final tasks = await db.getPlanningTasksForWallDate(day);
+    for (final task in tasks) {
+      final notes = (task.notesPlain ?? '').trim();
+      if (!notes.startsWith(_weekRoutinePlanMarkerV4)) continue;
+      final id = task.planRowIdForBackend.trim();
+      if (id.isEmpty || id.startsWith('virt-') || id.startsWith('optimistic-')) {
+        continue;
+      }
+      ids.add(id);
+    }
+  }
+  if (ids.isNotEmpty) {
+    await db.deletePlanningTasksBulk(ids);
+  }
+}
+
 Future<PathWeekPlanReportV4> planCurrentWeekFromPathsV4() async {
   final db = DatabaseService.instance;
   await upgradeRealityPathsV4();
+  await _removeSupersededWeekRoutinesV5();
 
   final backlog = await db.fetchBacklogPlans(includeCompleted: true);
   final roots = <PlanningTask>[
@@ -1170,12 +1246,25 @@ Future<PathWeekPlanReportV4> planCurrentWeekFromPathsV4() async {
     for (var attempt = 0; attempt < weekdays.length; attempt++) {
       final day = weekdays[(dayIndex + attempt) % weekdays.length];
       final dk = _dateKeyV4(day);
-      final cursor = dayCursor[dk] ?? DateTime(day.year, day.month, day.day, 9);
+      final earliest = dayCursor[dk] ?? DateTime(day.year, day.month, day.day, 9);
+      final existingDay = await db.getPlanningTasksForWallDate(
+        DateTime(day.year, day.month, day.day),
+      );
+      final cursor = _firstFreeProjectSlotV5(
+        db,
+        earliest: earliest,
+        minutes: candidate.minutes,
+        latestEnd: DateTime(day.year, day.month, day.day, 15, 30),
+        existing: existingDay,
+      );
+      if (cursor == null) continue;
       final end = cursor.add(Duration(minutes: candidate.minutes));
-      if (end.isAfter(DateTime(day.year, day.month, day.day, 15, 30))) continue;
+      final approvalTask = candidate.stageId.startsWith('approval-v5-');
       final ok = await _createScheduledTaskV4(
         category: candidate.category,
-        title: '${candidate.profile.name}: ${candidate.text}',
+        title: approvalTask
+            ? '${candidate.profile.name}: согласовать план проекта'
+            : '${candidate.profile.name}: ${candidate.text}',
         notes: '$marker\nОжидаемый результат: ${candidate.result}',
         start: cursor,
         minutes: candidate.minutes,
