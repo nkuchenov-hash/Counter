@@ -1252,14 +1252,29 @@ Future<void> _removePrematurePathActionsV5() async {
 }
 
 
+String _normalizeApprovalTitleV7(String value) => value
+    .trim()
+    .toLowerCase()
+    .replaceAll('ё', 'е')
+    .replaceAll(RegExp(r'[^a-zа-я0-9]+'), '');
+
 bool _isApprovalPlannerTaskV6(PlanningTask task) {
   final firstLine = (task.notesPlain ?? '').split('\n').first.trim();
   if (!firstLine.startsWith(_pathActionPlanMarkerV4)) return false;
   final payload = firstLine.substring(_pathActionPlanMarkerV4.length);
   final parts = payload.split('|');
-  if (parts.length < 3) return false;
-  return parts[1].trim() == _projectPlanApprovalStageIdV5 &&
-      parts[2].trim() == _projectPlanApprovalActionIdV5;
+  if (parts.length >= 3 &&
+      parts[1].trim() == _projectPlanApprovalStageIdV5 &&
+      parts[2].trim() == _projectPlanApprovalActionIdV5) {
+    return true;
+  }
+
+  // PR #89 generated this user-visible title. Keep the LIFEOS marker as a
+  // safety boundary, but accept older marker-id variants so already-created
+  // duplicates are actually removable after an upgrade.
+  final normalizedTitle = _normalizeApprovalTitleV7(task.title);
+  return normalizedTitle.endsWith('согласоватьпланпроекта') ||
+      normalizedTitle.endsWith('approveprojectplan');
 }
 
 Future<Set<int>> _dedupeCurrentWeekApprovalPlansV6() async {
@@ -1307,6 +1322,17 @@ Future<Set<int>> _dedupeCurrentWeekApprovalPlansV6() async {
     await db.deletePlanningTasksBulk(deleteIds);
   }
   return categoriesWithApproval;
+}
+
+
+/// Repairs persistent Planner infrastructure on ordinary app startup.
+/// This deliberately does NOT schedule project Path actions.
+Future<void> repairPlannerBaselineV7() async {
+  final db = DatabaseService.instance;
+  await db.refreshCategoryRulesFromServer();
+  await ensureDailyRoutineV6();
+  await _removeSupersededWeekRoutinesV5();
+  await _dedupeCurrentWeekApprovalPlansV6();
 }
 
 

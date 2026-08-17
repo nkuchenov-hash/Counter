@@ -20,6 +20,11 @@ void main() {
     }
     expect(RegExp(r"rrule: 'FREQ=DAILY'").allMatches(source).length, 1);
     expect(source, contains("planRrule: 'FREQ=DAILY'"));
+    expect(source, contains('dateKey: dateKey'));
+    expect(source, contains('startTime: start'));
+    expect(source, contains('endDateTime: end'));
+    expect(source, contains('initialDateKey: dateKey'));
+    expect(source, isNot(contains('backendId = businessId')));
     expect(source, contains('recurringTitles.contains'));
   });
 
@@ -33,5 +38,12 @@ void main() {
     expect(source, contains('_projectPlanApprovalStageIdV5'));
     expect(source, contains('_projectPlanApprovalActionIdV5'));
     expect(source, contains('existingApprovalCategoryIds'));
+    expect(source, contains('repairPlannerBaselineV7'));
+    expect(source, contains("endsWith('согласоватьпланпроекта')"));
+  });
+
+  test('ordinary shell startup runs the planner baseline repair', () {
+    final source = File('lib/app/shell/app_shell.dart').readAsStringSync();
+    expect(source, contains('await repairPlannerBaselineV7();'));
   });
 }

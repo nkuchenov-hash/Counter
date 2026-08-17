@@ -199,7 +199,17 @@ class ShellDashboardState extends State<LifeOSDashboard> with ShellDashboardBase
         name: 'timelineTasksLoad',
         reason: 'notNeededForFirstFrame',
       );
-      unawaited(loadTasksAndExtras());
+      unawaited(() async {
+        try {
+          await loadTasksAndExtras();
+        } finally {
+          try {
+            await repairPlannerBaselineV7();
+          } catch (e) {
+            debugPrint('[PLANNER_BASELINE_V7] repair failed: $e');
+          }
+        }
+      }());
       StartupLog.deferred(
         name: 'syncBootstrap',
         reason: 'canRunAfterShell',
