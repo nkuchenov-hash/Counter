@@ -1,0 +1,45 @@
+name: Temporary document daily routine shell
+
+on:
+  push:
+    branches:
+      - fix/planner-dedup-daily-routine
+    paths:
+      - '.github/workflows/temp-document-daily-routine.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/planner-dedup-daily-routine
+          fetch-depth: 0
+      - name: Document shell daily routine
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('docs/APP_STRUCTURE.md')
+          s = p.read_text(encoding='utf-8')
+          anchor = '| `app/shell/shared/shell_path_governance.dart` | Project Path reality audit, targeted Path upgrades, Path-action → current-week Planner orchestration |\n'
+          row = '| `app/shell/shared/shell_daily_routine.dart` | One-time bootstrap for baseline personal daily recurring Planner series; preserves existing/user-edited recurrence |\n'
+          if row not in s:
+              if anchor not in s:
+                  raise SystemExit('APP_STRUCTURE shell governance row not found')
+              s = s.replace(anchor, anchor + row, 1)
+              p.write_text(s, encoding='utf-8')
+          PY
+          git diff --check
+      - name: Commit documentation
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add docs/APP_STRUCTURE.md
+          if ! git diff --cached --quiet; then
+            git commit -m 'Document daily routine shell bootstrap'
+            git pull --rebase origin fix/planner-dedup-daily-routine
+            git push origin HEAD:fix/planner-dedup-daily-routine
+          fi
