@@ -11,6 +11,7 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
         with:
@@ -38,9 +39,20 @@ jobs:
 
       - uses: subosito/flutter-action@v2
         with:
+          flutter-version: '3.41.6'
           channel: stable
-          cache: true
+
+      - name: Create env.dart
+        run: |
+          mkdir -p lib/core/env
+          printf '%s\n' 'abstract final class Env {' '  static const String placeholder = '\'''\'';' '}' > lib/core/env/env.dart
 
       - run: flutter pub get
       - run: flutter analyze --no-fatal-warnings --no-fatal-infos
-      - run: flutter build web --release --base-href="/Counter/" --no-tree-shake-icons
+
+      - name: Critical regressions
+        run: |
+          flutter test --platform chrome test/notes_mobile_keyboard_regression_test.dart
+          flutter test test/category_catalog_resilience_contract_test.dart
+
+      - run: flutter build web --release --base-href="/Counter/" --no-tree-shake-icons --no-wasm-dry-run --pwa-strategy=none
