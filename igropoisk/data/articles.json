@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-17T17:56:46.069Z",
+  "updatedAt": "2026-08-17T18:29:11.437Z",
   "count": 495,
   "sources": [
     "IGN",
@@ -14,6 +14,42 @@
     "Игромания"
   ],
   "articles": [
+    {
+      "source": "Polygon",
+      "language": "en",
+      "title": "Fan-favorite Star Wars The Clone Wars Character Officially Confirmed for New Game",
+      "normalizedTitle": "fan favorite star wars the clone wars character officially confirmed for new game",
+      "url": "https://www.polygon.com/star-wars-zero-company-rex-return/",
+      "summary": "Star Wars Zero Company is the next big Star Wars video game. It's set during The Clone Wars, and will feature a fan-favorite clone captain.",
+      "publishedAt": "Mon, 17 Aug 2026 18:27:16 GMT"
+    },
+    {
+      "source": "Polygon",
+      "language": "en",
+      "title": "Everything we know about PS6, Sony’s next-gen PlayStation console",
+      "normalizedTitle": "everything we know about ps6 sony s next gen playstation console",
+      "url": "https://www.polygon.com/ps6-sony-playstation-6-release-date-price/",
+      "summary": "A rundown of everything announced, reported, leaked, and rumored about PlayStation 6, including release date, price, and specs",
+      "publishedAt": "Mon, 17 Aug 2026 18:10:51 GMT"
+    },
+    {
+      "source": "Polygon",
+      "language": "en",
+      "title": "Netflix's Sydney Sweeney Gundam Movie is a 'Big Action-Romance Space' Epic",
+      "normalizedTitle": "netflix s sydney sweeney gundam movie is a big action romance space epic",
+      "url": "https://www.polygon.com/netflix-live-action-gundam-movie-sydney-sweeney-romance/",
+      "summary": "Noah Centineo says Netflix's Mobile Suit Gundam Movie with Sydney Sweeney is a 'non-Shakespearian Romeo and Juliet' story",
+      "publishedAt": "Mon, 17 Aug 2026 18:05:04 GMT"
+    },
+    {
+      "source": "GameSpot",
+      "language": "en",
+      "title": "Someone Finally Made Another Game For People Who Miss Peggle",
+      "normalizedTitle": "someone finally made another game for people who miss peggle",
+      "url": "https://www.gamespot.com/articles/someone-finally-made-another-game-for-people-who-miss-peggle/",
+      "summary": "We're closing in on the 20th anniversary of Peggle , and since then, nothing has come quite as close to matching the pure, joyous sensory overload of Popcap's little peg-clearing masterpiece. Can Hyperdrop fill that gap for juggling skill and luck to clear stages? Maybe! Coming soon to PC, Hyperdrop is the debut game from developer Dark Dark Goose and publisher Devolver Digital is billed as a pachinko roguelite. The setup is deviously simple, as you're tasked with turning an empty pegboard into an unstoppable scoring machine. You'll be able to do just that by upgrading pegs, allowing you to ac",
+      "publishedAt": "Mon, 17 Aug 2026 17:55:54 +0000"
+    },
     {
       "source": "Polygon",
       "language": "en",
@@ -105,13 +141,13 @@
       "publishedAt": "Mon, 17 Aug 2026 17:04:39 GMT"
     },
     {
-      "source": "Polygon",
+      "source": "IGN",
       "language": "en",
-      "title": "Fields of Mistria Time Mods Let You Freeze or Speed Up Your Day",
-      "normalizedTitle": "fields of mistria time mods let you freeze or speed up your day",
-      "url": "https://www.polygon.com/fields-of-mistria-time-mods/",
-      "summary": "Fields of Mistria's 1.0 update made modding easier, and players wasted no time using it to fix the game's biggest annoyance: never having enough time",
-      "publishedAt": "Mon, 17 Aug 2026 17:00:12 GMT"
+      "title": "You Can Now Buy Digital Video Games on DoorDash",
+      "normalizedTitle": "you can now buy digital video games on doordash",
+      "url": "https://www.ign.com/articles/you-can-now-buy-digital-video-games-on-doordash",
+      "summary": "DoorDash has added the ability to buy digital video games through the app, alongside physical games, consoles, gaming accessories, discounted gift cards for services like Xbox and Roblox, and snacks and drinks. So now you can get all your game-night essentials in one place, and DashPass members also get additional perks. To celebrate the launch, customers who spend $50 or more on a digital game can earn a free DoorDash eGift Card. Through August 31, eligible DashPass members receive $25 and eligible non-DashPass customers receive $10. For the remainder of the year, eligible DashPass members re",
+      "publishedAt": "Mon, 17 Aug 2026 17:00:00 +0000"
     },
     {
       "source": "PC Gamer",
@@ -123,6 +159,24 @@
       "publishedAt": "Mon, 17 Aug 2026 17:00:00 +0000"
     },
     {
+      "source": "IGN",
+      "language": "en",
+      "title": "Tributes to Hayden Panettiere Pour in From Scream Co-Stars, Plus Fans of Kingdom Hearts and Until Dawn",
+      "normalizedTitle": "tributes to hayden panettiere pour in from scream co stars plus fans of kingdom hearts and until dawn",
+      "url": "https://www.ign.com/articles/tributes-to-hayden-panettiere-pour-in-from-scream-co-stars-plus-fans-of-kingdom-hearts-and-until-dawn",
+      "summary": "Fans, friends, and co-stars have flooded social media with tributes as they remember Kingdom Hearts and Scream actress Hayden Panettiere.",
+      "publishedAt": "Mon, 17 Aug 2026 16:56:25 +0000"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "Supreme’s 2026 Fall/Winter Collection Features a 24K Gold Analogue Pocket",
+      "normalizedTitle": "supreme s 2026 fall winter collection features a 24k gold analogue pocket",
+      "url": "https://www.ign.com/articles/supremes-2026-fall-winter-collection-features-a-24k-gold-analogue-pocket",
+      "summary": "Streetwear brand Supreme has unveiled its Fall/Winter 2026 collection, and it features a collab with Analogue Pocket, the fantastic retro handheld that lets you play your Game Boy cartridges on FPGA-based hardware. Also in the collection is a Supreme-branded Dyson Vacuum, Kodak Super-8 Camera, and a galvanized steel mailbox, all bright red, of course.",
+      "publishedAt": "Mon, 17 Aug 2026 16:55:00 +0000"
+    },
+    {
       "source": "PC Gamer",
       "language": "en",
       "title": "Resident Evil Requiem's Angela Sant'Albano reportedly joins Tides of Annihilation, replacing Jennifer English as the new voice of its protagonist",
@@ -132,13 +186,13 @@
       "publishedAt": "Mon, 17 Aug 2026 16:52:11 +0000"
     },
     {
-      "source": "Polygon",
+      "source": "IGN",
       "language": "en",
-      "title": "Dragon Ball Finally Reveals Vegeta's Mother in New Artwork",
-      "normalizedTitle": "dragon ball finally reveals vegeta s mother in new artwork",
-      "url": "https://www.polygon.com/dragon-ball-super-vegeta-mother-revealed/",
-      "summary": "Dragon Ball fans have met plenty of Vegeta's family members, but never before his mother. That changed recently when new artwork finally revealed her.",
-      "publishedAt": "Mon, 17 Aug 2026 16:46:50 GMT"
+      "title": "Fortnite Goes 32-Bit to Reveal New Gaming Legend Season With Legally Distinct Mario Kart, Mortal Kombat Parodies, Plus Actual Sonic the Hedgehog",
+      "normalizedTitle": "fortnite goes 32 bit to reveal new gaming legend season with legally distinct mario kart mortal kombat parodies plus actual sonic the hedgehog",
+      "url": "https://www.ign.com/articles/fortnite-goes-32-bit-to-reveal-new-gaming-legend-season-with-legally-distinct-mario-kart-mortal-kombat-parodies-plus-actual-sonic-the-hedgehog",
+      "summary": "Fortnite has shown off its character roster for Overdrive, the battle royale's upcoming season themed around legendary video games.",
+      "publishedAt": "Mon, 17 Aug 2026 16:46:49 +0000"
     },
     {
       "source": "GamesRadar+",
@@ -186,15 +240,6 @@
       "publishedAt": "Mon, 17 Aug 2026 16:35:59 +0000"
     },
     {
-      "source": "Polygon",
-      "language": "en",
-      "title": "Wild Steam Game Lets You Deal Drugs From Your Ice Cream Truck",
-      "normalizedTitle": "wild steam game lets you deal drugs from your ice cream truck",
-      "url": "https://www.polygon.com/mr-trippy-ice-cream-truck-drug-dealing/",
-      "summary": "Mr. Trippy finally gives everyone the job of their dreams: selling drugs from an ice cream truck while evading the police.",
-      "publishedAt": "Mon, 17 Aug 2026 16:30:11 GMT"
-    },
-    {
       "source": "Rock Paper Shotgun",
       "language": "en",
       "title": "The US Senate are investigating Roblox for prioritising \"revenue and engagement metrics over the safety and well-being of our children\"",
@@ -211,6 +256,15 @@
       "url": "https://www.gamespot.com/articles/gta-6-does-look-a-bit-different-in-new-ps5-promo/",
       "summary": "Sony is flexing its video game muscle with a new \"It Happens On PS5\" ad campaign , and the one-minute video features arguably the most anticipated title ever: Grand Theft Auto VI . Now, to be clear, there are only snippets of old footage for the open-world experience. But you should know by now that won't stop the internet from poring over every single little detail. For example, the X account DriftRespawn notes that letterboxing has been removed in the new PS5 promo from a clip where Jason Duval is hanging on to the back of a convertible, with Lucia driving the car. This scene first appeared ",
       "publishedAt": "Mon, 17 Aug 2026 16:29:08 +0000"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "The Complete Calvin and Hobbes Collection Gets Huge Discount With Amazon Coupon, Dropping It Below $100",
+      "normalizedTitle": "the complete calvin and hobbes collection gets huge discount with amazon coupon dropping it below 100",
+      "url": "https://www.ign.com/articles/the-complete-calvin-and-hobbes-collection-amazon-deal-august-2026",
+      "summary": "The Complete Calvin and Hobbes Collection has received a huge 59% discount at Amazon with the help of a coupon on the store page, dropping it from $225 to $93.10.",
+      "publishedAt": "Mon, 17 Aug 2026 16:28:21 +0000"
     },
     {
       "source": "GamesRadar+",
@@ -564,15 +618,6 @@
       "publishedAt": "Mon, 17 Aug 2026 14:49:49 +0000"
     },
     {
-      "source": "GameSpot",
-      "language": "en",
-      "title": "Where To Go First In Mortal Shell 2",
-      "normalizedTitle": "where to go first in mortal shell 2",
-      "url": "https://www.gamespot.com/articles/mortal-shell-2-where-to-go-first/",
-      "summary": "Do you want to know where you should go first in Mortal Shell 2 ? The lands of Fallgrim, now broken up into multiple regions, remain vast. Setting out on a trek isn’t for the faint of heart given all the challenges along the way. Fortunately, our guide here will walk you through what you can expect within the first few hours of playing the campaign proper--i.e. after the prologue. In This Article Where to go first in Fainweald Widow’s Overlook and Glimpse from pre-cleansed beacons Revered Gland and Gloombound Flame A quick trek to the south: The Martyr’s Tomb, region map, and Tiel shell Headin",
-      "publishedAt": "Mon, 17 Aug 2026 14:49:28 +0000"
-    },
-    {
       "source": "GamesRadar+",
       "language": "en",
       "title": "Deus Ex director Warren Spector is \"a little bitter\" new Disney Plus series won’t credit him or the other Epic Mickey devs for Oswald's revival",
@@ -737,6 +782,15 @@
     {
       "source": "GamesRadar+",
       "language": "en",
+      "title": "Should you equip the Mortal Shell 2 Slayer Seal?",
+      "normalizedTitle": "should you equip the mortal shell 2 slayer seal",
+      "url": "https://www.gamesradar.com/games/rpg/mortal-shell-2-slayer-seal-difficulty/",
+      "summary": "The Slayer Seal is Mortal Shell 2 a powerful item that helps you defeat tough enemies, but it comes at a cost",
+      "publishedAt": "Mon, 17 Aug 2026 13:00:00 +0000"
+    },
+    {
+      "source": "GamesRadar+",
+      "language": "en",
       "title": "Mortal Shell 2 map and how to reveal it",
       "normalizedTitle": "mortal shell 2 map and how to reveal it",
       "url": "https://www.gamesradar.com/games/rpg/mortal-shell-2-map/",
@@ -768,15 +822,6 @@
       "normalizedTitle": "how to unlock mortal shell 2 fast travel",
       "url": "https://www.gamesradar.com/games/rpg/mortal-shell-2-fast-travel/",
       "summary": "You'll unlock Mortal Shell 2 fast travel by meeting a very reasonable requirement, allowing you to travel between beacons",
-      "publishedAt": "Mon, 17 Aug 2026 13:00:00 +0000"
-    },
-    {
-      "source": "GamesRadar+",
-      "language": "en",
-      "title": "Should you equip the Mortal Shell 2 Slayer Seal?",
-      "normalizedTitle": "should you equip the mortal shell 2 slayer seal",
-      "url": "https://www.gamesradar.com/games/rpg/mortal-shell-2-slayer-seal-difficulty/",
-      "summary": "The Slayer Seal is Mortal Shell 2 a powerful item that helps you defeat tough enemies, but it comes at a cost",
       "publishedAt": "Mon, 17 Aug 2026 13:00:00 +0000"
     },
     {
@@ -1005,15 +1050,6 @@
       "publishedAt": "Mon, 17 Aug 2026 10:20:47 +0000"
     },
     {
-      "source": "IGN",
-      "language": "en",
-      "title": "'I'm Actually Spiralling': Star Wars Fans Are Convinced The Hunt for Ben Solo is Back on After Adam Driver's X-Men Announcement Video",
-      "normalizedTitle": "i m actually spiralling star wars fans are convinced the hunt for ben solo is back on after adam driver s x men announcement video",
-      "url": "https://www.ign.com/articles/im-actually-spiralling-star-wars-fans-are-convinced-the-hunt-for-ben-solo-is-back-on-after-adam-drivers-x-men-announcement-video",
-      "summary": "Star Wars fans are convinced Adam Driver's X-Men announcement video suggests his scrapped Hunt for Ben Solo movie is now back in development.",
-      "publishedAt": "Mon, 17 Aug 2026 10:19:36 +0000"
-    },
-    {
       "source": "Eurogamer",
       "language": "en",
       "title": "Call of Duty studio Sledgehammer reportedly worked on a Halo multiplayer prototype before it got canned",
@@ -1095,24 +1131,6 @@
       "publishedAt": "Mon, 17 Aug 2026 09:00:00 +0000"
     },
     {
-      "source": "IGN",
-      "language": "en",
-      "title": "Robert Downey Jr. Returns as Iron Man in Avengers Infinity Defense, a New Attraction Where You'll Fight Thanos at Disneyland's Avengers Campus",
-      "normalizedTitle": "robert downey jr returns as iron man in avengers infinity defense a new attraction where you ll fight thanos at disneyland s avengers campus",
-      "url": "https://www.ign.com/articles/robert-downey-jr-returns-as-iron-man-in-avengers-infinity-defense-a-new-attraction-where-youll-fight-thanos-at-disneylands-avengers-campus",
-      "summary": "Robert Downey Jr. will reprise his iconic role of Iron Man for Avengers Infinity Defense, a star-studded new battle against Thanos coming to Disneyland's Avengers Campus.",
-      "publishedAt": "Mon, 17 Aug 2026 08:59:15 +0000"
-    },
-    {
-      "source": "IGN",
-      "language": "en",
-      "title": "Halloween: The Game Will Actually Be Available in New Zealand After All",
-      "normalizedTitle": "halloween the game will actually be available in new zealand after all",
-      "url": "https://www.ign.com/articles/halloween-the-game-will-actually-be-available-in-new-zealand-after-all",
-      "summary": "Developer IllFonic alters course, and the game will now be made available digitally for NZ.",
-      "publishedAt": "Mon, 17 Aug 2026 08:39:53 +0000"
-    },
-    {
       "source": "Eurogamer",
       "language": "en",
       "title": "For the first time ever in a Call of Duty beta, the Modern Warfare 4 beta includes a campaign mission",
@@ -1140,15 +1158,6 @@
       "publishedAt": "Mon, 17 Aug 2026 06:16:36 +0000"
     },
     {
-      "source": "IGN",
-      "language": "en",
-      "title": "Heroes Star Hayden Panettiere Dies at 36",
-      "normalizedTitle": "heroes star hayden panettiere dies at 36",
-      "url": "https://www.ign.com/articles/heroes-star-hayden-panettiere-dies-at-36",
-      "summary": "The former child actor’s entertainment career spanned three decades.",
-      "publishedAt": "Mon, 17 Aug 2026 03:37:01 +0000"
-    },
-    {
       "source": "StopGame",
       "language": "ru",
       "title": "Скандал в Saber, возвращение The Simpsons: Hit &amp; Run, издатель ReStory отнял ключи…",
@@ -1156,15 +1165,6 @@
       "url": "https://stopgame.ru/show/163466/skandal_v_saber_vozvraschenie_the_simpsons_hit_and_run_izdatel_restory_otnyal_klyuchi",
       "summary": "Бывшая сценаристка Rideshare «Stimulator» обвинила Saber Interactive в том, что её заменили на ChatGPT; авторы Star Wars: Zero Company выпустили обзорный трейлер; создатели Have a Nice Death и Unruly Heroes анонсировали NAUTUS; Remedy показала боссфайт из Control Resonant; Мэтт Гроунинг случайно намекнул на «возвращение»",
       "publishedAt": "Mon, 17 Aug 2026 06:00:08 +0300"
-    },
-    {
-      "source": "IGN",
-      "language": "en",
-      "title": "Lanterns Showrunner Says That Episode 1 Surprise Ending Was ‘Big and Scary’ to Commit To",
-      "normalizedTitle": "lanterns showrunner says that episode 1 surprise ending was big and scary to commit to",
-      "url": "https://www.ign.com/articles/lanterns-showrunner-hbo-surprise-ending-kyle-chandler-hal-jordan-big-and-scary-to-commit-to",
-      "summary": "Chris Mundy, the showrunner on James Gunn's new DC series Lanterns, says the surprise ending of Episode 1 was ‘big and scary’ to commit to.",
-      "publishedAt": "Mon, 17 Aug 2026 02:00:00 +0000"
     },
     {
       "source": "GamesRadar+",
