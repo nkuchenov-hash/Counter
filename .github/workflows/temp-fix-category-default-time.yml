@@ -8,6 +8,7 @@ on:
       - '.github/scripts/temp_project_plan_approval_audit.py'
       - '.github/scripts/temp_project_plan_approval_followup.py'
       - '.github/scripts/temp_project_plan_cleanup.py'
+      - '.github/scripts/temp_project_plan_price_reporter_split.py'
 
 permissions:
   contents: write
@@ -28,6 +29,7 @@ jobs:
           python .github/scripts/temp_project_plan_approval_audit.py
           python .github/scripts/temp_project_plan_approval_followup.py
           python .github/scripts/temp_project_plan_cleanup.py
+          python .github/scripts/temp_project_plan_price_reporter_split.py
 
       - name: Architecture guard
         shell: pwsh
