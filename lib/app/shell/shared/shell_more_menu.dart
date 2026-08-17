@@ -1149,10 +1149,6 @@ String _v3TrackLabel(String track, bool ru) {
       'channel' => 'Channels',
       'playbook' => 'Skills playbook',
       'transfer' => 'Transfer to projects',
-      'offer' => 'Free / paid',
-      'website' => 'Website',
-      'licensing' => 'Licensing',
-      'support' => 'Support',
       'execution' => 'Execution',
       _ => track,
     };
@@ -1188,10 +1184,6 @@ String _v3TrackLabel(String track, bool ru) {
     'channel' => 'Каналы',
     'playbook' => 'База навыков',
     'transfer' => 'Перенос в проекты',
-    'offer' => 'Бесплатное / платное',
-    'website' => 'Сайт',
-    'licensing' => 'Лицензирование',
-    'support' => 'Поддержка',
     'execution' => 'Исполнение',
     _ => track,
   };
