@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-17T15:51:49.838Z",
+  "updatedAt": "2026-08-17T17:18:07.283Z",
   "count": 495,
   "sources": [
     "IGN",
@@ -17,11 +17,362 @@
     {
       "source": "Polygon",
       "language": "en",
-      "title": "Marvel Reveals New Jean Grey Comic Hot Off MCU X-Men Casting",
-      "normalizedTitle": "marvel reveals new jean grey comic hot off mcu x men casting",
-      "url": "https://www.polygon.com/marvel-comics-x-men-jean-grey-solo-series-announced/",
-      "summary": "With Sadie Sink debuting as Jean Grey in Spider-Man: Brand New Day, Marvel is giving the X-Men character a solo series",
-      "publishedAt": "Mon, 17 Aug 2026 15:49:37 GMT"
+      "title": "'Lanterns' Episode 1 Ending Explained: What That Big Twist Means for Hal Jordan and John Stewart",
+      "normalizedTitle": "lanterns episode 1 ending explained what that big twist means for hal jordan and john stewart",
+      "url": "https://www.polygon.com/lanterns-episode-1-cliffhanger-hal-jordan-death-2026-timeline/",
+      "summary": "We break down Lanterns’ shocking episode 1 ending, what the creators have said about it, and what it means for Hal Jordan and John Stewart.",
+      "publishedAt": "Mon, 17 Aug 2026 17:15:09 GMT"
+    },
+    {
+      "source": "Polygon",
+      "language": "en",
+      "title": "Fortnite's New Star Wars Skin Requires Going to Disneyland",
+      "normalizedTitle": "fortnite s new star wars skin requires going to disneyland",
+      "url": "https://www.polygon.com/fortnite-star-wars-free-disney-park-skin-expensive/",
+      "summary": "Star Wars fans who ride a themed ride at a Disney Resort and play through the Fortnite experience will be eligible to receive a free skin in-game.",
+      "publishedAt": "Mon, 17 Aug 2026 17:12:21 GMT"
+    },
+    {
+      "source": "Polygon",
+      "language": "en",
+      "title": "Marvel Officially Confirms a Star Wars Fan Favorite as Its Next Great X-Men Villain",
+      "normalizedTitle": "marvel officially confirms a star wars fan favorite as its next great x men villain",
+      "url": "https://www.polygon.com/sinister-x-men-live-action-adam-driver/",
+      "summary": "The new X-Men film is paying off a 10-year-old teaser",
+      "publishedAt": "Mon, 17 Aug 2026 17:11:05 GMT"
+    },
+    {
+      "source": "Polygon",
+      "language": "en",
+      "title": "Castlevania's Underrated Mobile Game is About to be Shutdown Forever",
+      "normalizedTitle": "castlevania s underrated mobile game is about to be shutdown forever",
+      "url": "https://www.polygon.com/castlevania-grimoire-of-souls-end-of-service-announced/",
+      "summary": "Konami has announced service for Castelvania: Grimoire of Souls will be terminated in a matter of days",
+      "publishedAt": "Mon, 17 Aug 2026 17:04:39 GMT"
+    },
+    {
+      "source": "Polygon",
+      "language": "en",
+      "title": "Fields of Mistria Time Mods Let You Freeze or Speed Up Your Day",
+      "normalizedTitle": "fields of mistria time mods let you freeze or speed up your day",
+      "url": "https://www.polygon.com/fields-of-mistria-time-mods/",
+      "summary": "Fields of Mistria's 1.0 update made modding easier, and players wasted no time using it to fix the game's biggest annoyance: never having enough time",
+      "publishedAt": "Mon, 17 Aug 2026 17:00:12 GMT"
+    },
+    {
+      "source": "PC Gamer",
+      "language": "en",
+      "title": "I'm modding GTA 5 every day until it becomes GTA 6 or breaks, starting with a new vehicle and enough missiles to level a city block",
+      "normalizedTitle": "i m modding gta 5 every day until it becomes gta 6 or breaks starting with a new vehicle and enough missiles to level a city block",
+      "url": "https://www.pcgamer.com/games/grand-theft-auto/im-modding-gta-5-every-day-until-it-becomes-gta-6-or-breaks-starting-with-a-new-vehicle-and-enough-missiles-to-level-a-city-block/",
+      "summary": "Baby steps.",
+      "publishedAt": "Mon, 17 Aug 2026 17:00:00 +0000"
+    },
+    {
+      "source": "PC Gamer",
+      "language": "en",
+      "title": "Resident Evil Requiem's Angela Sant'Albano reportedly joins Tides of Annihilation, replacing Jennifer English as the new voice of its protagonist",
+      "normalizedTitle": "resident evil requiem s angela sant albano reportedly joins tides of annihilation replacing jennifer english as the new voice of its protagonist",
+      "url": "https://www.pcgamer.com/games/action/resident-evil-requiems-angela-santalbano-reportedly-joins-tides-of-annihilation-replacing-jennifer-english-as-the-new-voice-of-its-protagonist/",
+      "summary": "\"No more screaming 'Leon!!'\"",
+      "publishedAt": "Mon, 17 Aug 2026 16:52:11 +0000"
+    },
+    {
+      "source": "Polygon",
+      "language": "en",
+      "title": "Dragon Ball Finally Reveals Vegeta's Mother in New Artwork",
+      "normalizedTitle": "dragon ball finally reveals vegeta s mother in new artwork",
+      "url": "https://www.polygon.com/dragon-ball-super-vegeta-mother-revealed/",
+      "summary": "Dragon Ball fans have met plenty of Vegeta's family members, but never before his mother. That changed recently when new artwork finally revealed her.",
+      "publishedAt": "Mon, 17 Aug 2026 16:46:50 GMT"
+    },
+    {
+      "source": "GamesRadar+",
+      "language": "en",
+      "title": "The Philips Evnia 32M2N8900 is a testament to 4K QD-OLED monitor tech, but I can see room for improvement",
+      "normalizedTitle": "the philips evnia 32m2n8900 is a testament to 4k qd oled monitor tech but i can see room for improvement",
+      "url": "https://www.gamesradar.com/hardware/tvs-monitors/philips-evnia-32m2n8900-review/",
+      "summary": "QD-OLED monitors can be hit or miss, but the Philips Evnia 32M2N8900 exemplifies why the display tech is catching on.",
+      "publishedAt": "Mon, 17 Aug 2026 16:46:47 +0000"
+    },
+    {
+      "source": "GamesRadar+",
+      "language": "en",
+      "title": "Kratos actor Christopher Judge clarifies he doesn't want to join the God of War TV show because he's \"old as balls,\" but wants game devs to \"get the love and respect they deserve\"",
+      "normalizedTitle": "kratos actor christopher judge clarifies he doesn t want to join the god of war tv show because he s old as balls but wants game devs to get the love and respect they deserve",
+      "url": "https://www.gamesradar.com/games/action/kratos-actor-christopher-judge-clarifies-he-doesnt-want-to-join-the-god-of-war-tv-show-because-hes-old-as-balls-but-wants-game-devs-to-get-the-love-and-respect-they-deserve/",
+      "summary": "The voice of Kratos wants those he collaborates with to be respected",
+      "publishedAt": "Mon, 17 Aug 2026 16:46:33 +0000"
+    },
+    {
+      "source": "GamesRadar+",
+      "language": "en",
+      "title": "Fable deserves a \"chance to shine\" – which is why Xbox should delay it one final time",
+      "normalizedTitle": "fable deserves a chance to shine which is why xbox should delay it one final time",
+      "url": "https://www.gamesradar.com/games/rpg/fable-deserves-a-chance-to-shine-which-is-why-xbox-should-delay-it-one-final-time/",
+      "summary": "Fable is one of my most anticipated RPGs of 2027, but it deserves a clearer release window",
+      "publishedAt": "Mon, 17 Aug 2026 16:44:49 +0000"
+    },
+    {
+      "source": "PC Gamer",
+      "language": "en",
+      "title": "Beastfolk Barber is an adorable hairdressing sim that offers up more than just shop talk",
+      "normalizedTitle": "beastfolk barber is an adorable hairdressing sim that offers up more than just shop talk",
+      "url": "https://www.pcgamer.com/games/sim/beastfolk-barber-is-an-adorable-hairdressing-sim-that-offers-up-more-than-just-shop-talk/",
+      "summary": "I turned up for the hairdressing and stayed for the juicy goss.",
+      "publishedAt": "Mon, 17 Aug 2026 16:37:59 +0000"
+    },
+    {
+      "source": "GamesRadar+",
+      "language": "en",
+      "title": "Two new Discworld board games are on the way, and one of them adapts fan-favorite Blue Moon City",
+      "normalizedTitle": "two new discworld board games are on the way and one of them adapts fan favorite blue moon city",
+      "url": "https://www.gamesradar.com/games/board-games/two-new-discworld-board-games-are-on-the-way-and-one-of-them-adapts-fan-favorite-blue-moon-city/",
+      "summary": "A pair of new Discworld board games based on the City Watch and Unseen University are on the way, and one adapts a fan-favorite project from a legendary designer",
+      "publishedAt": "Mon, 17 Aug 2026 16:35:59 +0000"
+    },
+    {
+      "source": "Polygon",
+      "language": "en",
+      "title": "Wild Steam Game Lets You Deal Drugs From Your Ice Cream Truck",
+      "normalizedTitle": "wild steam game lets you deal drugs from your ice cream truck",
+      "url": "https://www.polygon.com/mr-trippy-ice-cream-truck-drug-dealing/",
+      "summary": "Mr. Trippy finally gives everyone the job of their dreams: selling drugs from an ice cream truck while evading the police.",
+      "publishedAt": "Mon, 17 Aug 2026 16:30:11 GMT"
+    },
+    {
+      "source": "Rock Paper Shotgun",
+      "language": "en",
+      "title": "The US Senate are investigating Roblox for prioritising \"revenue and engagement metrics over the safety and well-being of our children\"",
+      "normalizedTitle": "the us senate are investigating roblox for prioritising revenue and engagement metrics over the safety and well being of our children",
+      "url": "https://www.rockpapershotgun.com/the-us-senate-are-investigating-roblox-for-prioritising-revenue-and-engagement-metrics-over-the-safety-and-well-being-of-our-children",
+      "summary": "US senators have launched an investigation of game creation platform Roblox on a broad charge of putting money before child safety. They accuse Roblox of being a venue for \"sexually explicit (and often violent) virtual 'experiences' with children\", and have requested a range of documents and records, including details of the company's collaborations with Sesame Street, the NFL and FIFA. Read more",
+      "publishedAt": "Mon, 17 Aug 2026 16:30:00 +0000"
+    },
+    {
+      "source": "GameSpot",
+      "language": "en",
+      "title": "GTA 6 Does Look A Bit Different In New PS5 Promo",
+      "normalizedTitle": "gta 6 does look a bit different in new ps5 promo",
+      "url": "https://www.gamespot.com/articles/gta-6-does-look-a-bit-different-in-new-ps5-promo/",
+      "summary": "Sony is flexing its video game muscle with a new \"It Happens On PS5\" ad campaign , and the one-minute video features arguably the most anticipated title ever: Grand Theft Auto VI . Now, to be clear, there are only snippets of old footage for the open-world experience. But you should know by now that won't stop the internet from poring over every single little detail. For example, the X account DriftRespawn notes that letterboxing has been removed in the new PS5 promo from a clip where Jason Duval is hanging on to the back of a convertible, with Lucia driving the car. This scene first appeared ",
+      "publishedAt": "Mon, 17 Aug 2026 16:29:08 +0000"
+    },
+    {
+      "source": "GamesRadar+",
+      "language": "en",
+      "title": "\"This win was purely out of spite\" – Fighting game icon SonicFox says winning Marvel Tokon's first major tournament was fuelled by catching flak for criticizing it",
+      "normalizedTitle": "this win was purely out of spite fighting game icon sonicfox says winning marvel tokon s first major tournament was fuelled by catching flak for criticizing it",
+      "url": "https://www.gamesradar.com/games/fighting/this-win-was-purely-out-of-spite-fighting-game-icon-sonicfox-says-winning-marvel-tokons-first-major-tournament-was-fuelled-by-catching-flak-for-criticizing-it/",
+      "summary": "\"Delusion to believe that I don’t like a game because I can’t be 'good' at it.\"",
+      "publishedAt": "Mon, 17 Aug 2026 16:23:25 +0000"
+    },
+    {
+      "source": "GamesRadar+",
+      "language": "en",
+      "title": "Anime Origins codes (August 2026) for Rerolls, Gems, Prisms, and more",
+      "normalizedTitle": "anime origins codes august 2026 for rerolls gems prisms and more",
+      "url": "https://www.gamesradar.com/games/strategy/anime-origins-codes/",
+      "summary": "Codes for Anime Origins will keep you stocked up with free rerolls and plenty of resources to help defend your towers",
+      "publishedAt": "Mon, 17 Aug 2026 16:22:23 +0000"
+    },
+    {
+      "source": "Polygon",
+      "language": "en",
+      "title": "The Pokémon Center just dropped a bunch of rare ETBs for TCG sets everyone wants",
+      "normalizedTitle": "the pokémon center just dropped a bunch of rare etbs for tcg sets everyone wants",
+      "url": "https://www.polygon.com/pokemon-center-etb-new-release-prismatic-destined-rivals-30th-in-stock/",
+      "summary": "The demand for these older Pokémon ETB products will be higher than typical booster bundles, as they include Prismatic Evolutions and Destined Rivals",
+      "publishedAt": "Mon, 17 Aug 2026 16:22:11 GMT"
+    },
+    {
+      "source": "GamesRadar+",
+      "language": "en",
+      "title": "The new Avengers: Doomsday trailer has fans convinced there's a huge Doctor Doom twist hiding in plain sight, and Cillian Murphy is a key part of the theory",
+      "normalizedTitle": "the new avengers doomsday trailer has fans convinced there s a huge doctor doom twist hiding in plain sight and cillian murphy is a key part of the theory",
+      "url": "https://www.gamesradar.com/entertainment/marvel-movies/the-new-avengers-doomsday-trailer-has-fans-convinced-theres-a-huge-doctor-doom-twist-hiding-in-plain-sight-and-cillian-murphy-is-a-key-part-of-the-theory/",
+      "summary": "There could be two Dooms in Avengers: Doomsday, and the proof's in the eyes…",
+      "publishedAt": "Mon, 17 Aug 2026 16:21:59 +0000"
+    },
+    {
+      "source": "GamesRadar+",
+      "language": "en",
+      "title": "If you need a break from Pokopia, Woot's Summer of Gaming Switch game deals could hold your next big obsession",
+      "normalizedTitle": "if you need a break from pokopia woot s summer of gaming switch game deals could hold your next big obsession",
+      "url": "https://www.gamesradar.com/games/if-you-need-a-break-from-pokopia-woots-summer-of-gaming-switch-game-deals-could-hold-your-next-big-obsession/",
+      "summary": "Woot's Summer of Gaming Sale couldn't have arrived at a better time, as I'm on the lookout for my next Nintendo Switch game obsession.",
+      "publishedAt": "Mon, 17 Aug 2026 16:21:03 +0000"
+    },
+    {
+      "source": "GamesRadar+",
+      "language": "en",
+      "title": "Ex PlayStation boss told Clair Obscur Expedition 33 devs not to call it a turn-based RPG: \"That alone might cause players to overlook it\"",
+      "normalizedTitle": "ex playstation boss told clair obscur expedition 33 devs not to call it a turn based rpg that alone might cause players to overlook it",
+      "url": "https://www.gamesradar.com/games/rpg/ex-playstation-boss-told-clair-obscur-expedition-33-devs-not-to-call-it-a-turn-based-rpg-that-alone-might-cause-players-to-overlook-it/",
+      "summary": "Yeah, right",
+      "publishedAt": "Mon, 17 Aug 2026 16:19:47 +0000"
+    },
+    {
+      "source": "GamesRadar+",
+      "language": "en",
+      "title": "The PS6 doesn't have a release date yet, Sony CEO says, largely because getting parts is still a nightmare thanks to AI",
+      "normalizedTitle": "the ps6 doesn t have a release date yet sony ceo says largely because getting parts is still a nightmare thanks to ai",
+      "url": "https://www.gamesradar.com/games/the-ps6-doesnt-have-a-release-date-yet-sony-ceo-says-largely-because-getting-parts-is-still-a-nightmare-thanks-to-ai/",
+      "summary": "Based on usual patterns, PS5's sequel would probably have been due late next year",
+      "publishedAt": "Mon, 17 Aug 2026 16:19:16 +0000"
+    },
+    {
+      "source": "PC Gamer",
+      "language": "en",
+      "title": "Intel is keeping Raptor Lake CPUs around for 'years to come' as a cheaper alternative to DDR5-compatible chips",
+      "normalizedTitle": "intel is keeping raptor lake cpus around for years to come as a cheaper alternative to ddr5 compatible chips",
+      "url": "https://www.pcgamer.com/hardware/processors/intel-is-keeping-raptor-lake-cpus-around-for-years-to-come-as-a-cheaper-alternative-to-ddr5-compatible-chips/",
+      "summary": "Because of the memory cri.... do I even need to say it?",
+      "publishedAt": "Mon, 17 Aug 2026 16:15:42 +0000"
+    },
+    {
+      "source": "Polygon",
+      "language": "en",
+      "title": "Anya Taylor-Joy’s 'The Gorge' Remains A Streaming Hit Almost 2 Years After Release",
+      "normalizedTitle": "anya taylor joy s the gorge remains a streaming hit almost 2 years after release",
+      "url": "https://www.polygon.com/the-gorge-thriller-romance-streaming-hit-apple-tv/",
+      "summary": "The 2025 sci-fi thriller 'The Gorge' remains in Apple TV's top 10 streaming charts despite coming out almost 2 years ago.",
+      "publishedAt": "Mon, 17 Aug 2026 16:06:18 GMT"
+    },
+    {
+      "source": "GameSpot",
+      "language": "en",
+      "title": "Star Wars Zero Company &#8211; Official Final Trailer",
+      "normalizedTitle": "star wars zero company 8211 official final trailer",
+      "url": "https://www.gamespot.com/videos/star-wars-zero-company-official-final-trailer/",
+      "summary": "“I’m asking you to join me in going after Fathom with everything we got.” Command an elite squad through a gritty and authentic story in Star Wars Zero Company, a single-player turn-based tactics game launching on PC, PlayStation 5, and Xbox Series X|S on August 27, 2026. Each tactical decision you make on the battlefield could be the difference between life and death for Zero Company Operators in this cinematic original story set in the twilight of the Clone Wars Era. Lead the Clone Wars’ Most Cunning Operatives - Command the galaxy’s finest in tactical operations, investigations and other he",
+      "publishedAt": "Mon, 17 Aug 2026 16:01:53 +0000"
+    },
+    {
+      "source": "Polygon",
+      "language": "en",
+      "title": "Netflix's 3-Part Sci-fi Masterpiece Is Officially Getting the Collector's Edition it Deserves",
+      "normalizedTitle": "netflix s 3 part sci fi masterpiece is officially getting the collector s edition it deserves",
+      "url": "https://www.polygon.com/3-body-problem-illustrated-exclusive/",
+      "summary": "The Three-Body Problem Trilogy is packed with illustrations and scientific models",
+      "publishedAt": "Mon, 17 Aug 2026 16:00:12 GMT"
+    },
+    {
+      "source": "Eurogamer",
+      "language": "en",
+      "title": "Long-awaited Switch 2 version of Diablo 4 reportedly releases days after BlizzCon, and includes both game expansions",
+      "normalizedTitle": "long awaited switch 2 version of diablo 4 reportedly releases days after blizzcon and includes both game expansions",
+      "url": "https://www.eurogamer.net/diablo-4-switch-2-release-date-rumour-expansions",
+      "summary": "The much-rumoured Switch 2 version of Diablo 4 apparently includes both expansions of the action role-playing game - Vessel of Hatred and Lord of Hatred - all in one Age of Hatred Collection. And it's reportedly being released 15th September. Read more",
+      "publishedAt": "Mon, 17 Aug 2026 16:00:08 +0000"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "Aliens: Fireteam Elite 2 – The Final Preview",
+      "normalizedTitle": "aliens fireteam elite 2 the final preview",
+      "url": "https://www.ign.com/articles/aliens-fireteam-elite-2-the-final-preview",
+      "summary": "Aliens: Fireteam Elite 2 seems like one of those lazy Sunday games, where you kill part of an afternoon playing a couple hours with friends. It gets Aliens and understands that forty miles of bad road Cameron envisioned. As a co-op game, it’s not going to change the world. Aliens already did that. But it’s a great excuse to play around in that world again, and I’m eager to see what else LV-558 has in store.",
+      "publishedAt": "Mon, 17 Aug 2026 16:00:00 +0000"
+    },
+    {
+      "source": "GameSpot",
+      "language": "en",
+      "title": "Welcome To GameSpot Cheap Week",
+      "normalizedTitle": "welcome to gamespot cheap week",
+      "url": "https://www.gamespot.com/articles/welcome-to-gamespot-cheap-week/",
+      "summary": "Gaming is expensive. That's always been true, even if other hobbies could be worse in that regard, but recent years have seen the situation only become more extreme. Enter GameSpot Cheap Week. All this week, we'll be publishing assorted features looking at how we got here--why are consoles so expensive, what goes into game pricing--and ways in which you can play more while spending less, be it through mods, libraries, or games that just don't cost an arm and a leg. Check back with this page as we publish more all throughout the week! Why Are Video Game Consoles So Expensive These Days (And Gam",
+      "publishedAt": "Mon, 17 Aug 2026 16:00:00 +0000"
+    },
+    {
+      "source": "GameSpot",
+      "language": "en",
+      "title": "Why Are Video Game Consoles So Expensive These Days (And Games Historically Cheap)?",
+      "normalizedTitle": "why are video game consoles so expensive these days and games historically cheap",
+      "url": "https://www.gamespot.com/articles/why-are-video-game-consoles-so-expensive-these-days-and-games-historically-cheap/",
+      "summary": "Gaming has never been more expensive. We're here to investigate why, and help you play more while spending less. Welcome to GameSpot Cheap Week . Like seemingly everything else in life these days--from gas and groceries to coffee and ground beef--video games and the systems they're played on are getting more expensive. There are numerous reasons for this, and the overall picture for the near future is a bleak one. \"A few separate pressures all landed at once, and it's the pile-up, not any single one, that's made gaming feel suddenly expensive,\" Rhys Elliott of Alinea Analytics told GameSpot. A",
+      "publishedAt": "Mon, 17 Aug 2026 16:00:00 +0000"
+    },
+    {
+      "source": "GameSpot",
+      "language": "en",
+      "title": "A Call Of Duty Studio Could Work On Halo, Report Says",
+      "normalizedTitle": "a call of duty studio could work on halo report says",
+      "url": "https://www.gamespot.com/articles/a-call-of-duty-studio-could-work-on-halo-report-says/",
+      "summary": "After Microsoft acquired Activision Blizzard, one of the first things people theorized was that the company would have one of Activision's numerous Call of Duty studios work on Halo. That already happened, according to a new report, and though it hasn't led to anything yet, that could change down the road. According to Rebs Gaming , who has accurately reported on unannounced Halo news before, Microsoft enlisted Sledgehammer Games to help develop a Halo multiplayer game. Halo Infinite Sledgehammer reportedly began work on a prototype in June of this year, but whatever this was ended up getting ",
+      "publishedAt": "Mon, 17 Aug 2026 15:57:25 +0000"
+    },
+    {
+      "source": "GamesRadar+",
+      "language": "en",
+      "title": "Paying $200+ for a PS5 pro controller is crazy, so pay $87 for this Razer one instead",
+      "normalizedTitle": "paying 200 for a ps5 pro controller is crazy so pay 87 for this razer one instead",
+      "url": "https://www.gamesradar.com/hardware/gaming-controllers/paying-usd200-for-a-ps5-pro-controller-is-crazy-so-pay-usd87-for-this-razer-one-instead/",
+      "summary": "Woot's Summer sale for gamers has brought the price of the Razer Raiju V3 Pro down to historically low levels, and it's currently more than half off.",
+      "publishedAt": "Mon, 17 Aug 2026 15:56:43 +0000"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "There's Now a Fortnite Star Wars Skin You Need to Visit Disneyland to Unlock",
+      "normalizedTitle": "there s now a fortnite star wars skin you need to visit disneyland to unlock",
+      "url": "https://www.ign.com/articles/theres-now-a-fortnite-star-wars-skin-you-need-to-visit-disneyland-to-unlock",
+      "summary": "Fortnite now has an exclusive Star Wars skin available only to those who visit two Disneyland parks.",
+      "publishedAt": "Mon, 17 Aug 2026 15:55:32 +0000"
+    },
+    {
+      "source": "GamesRadar+",
+      "language": "en",
+      "title": "How to get Mortal Shell 2 Shades for a fresh look",
+      "normalizedTitle": "how to get mortal shell 2 shades for a fresh look",
+      "url": "https://www.gamesradar.com/games/rpg/mortal-shell-2-shades/",
+      "summary": "Mortal Shell 2 Shades are alternate skins for your Shells, and each character has one to unlock",
+      "publishedAt": "Mon, 17 Aug 2026 15:55:30 +0000"
+    },
+    {
+      "source": "GamesRadar+",
+      "language": "en",
+      "title": "\"It's a relentless onslaught\": As Marvel's Wolverine faces backlash, Insomniac community lead calls out social media algorithms for pushing \"negativity\"",
+      "normalizedTitle": "it s a relentless onslaught as marvel s wolverine faces backlash insomniac community lead calls out social media algorithms for pushing negativity",
+      "url": "https://www.gamesradar.com/games/action/its-a-relentless-onslaught-as-marvels-wolverine-faces-backlash-insomniac-community-lead-calls-out-social-media-algorithms-for-pushing-negativity/",
+      "summary": "It's not \"representative,\" says James Stevenson",
+      "publishedAt": "Mon, 17 Aug 2026 15:53:33 +0000"
+    },
+    {
+      "source": "GamesRadar+",
+      "language": "en",
+      "title": "After Lanterns goes full murder mystery, James Gunn defends DCU from tonal whiplash criticisms",
+      "normalizedTitle": "after lanterns goes full murder mystery james gunn defends dcu from tonal whiplash criticisms",
+      "url": "https://www.gamesradar.com/entertainment/dc-tv-shows/after-lanterns-goes-full-murder-mystery-james-gunn-defends-dcu-from-tonal-whiplash-criticisms/",
+      "summary": "There's no such thing as a formulaic DCU project. For the DC Studios boss, that's only a good thing",
+      "publishedAt": "Mon, 17 Aug 2026 15:52:55 +0000"
+    },
+    {
+      "source": "GameSpot",
+      "language": "en",
+      "title": "Mortal Shell 2 &#8211; Guides Hub",
+      "normalizedTitle": "mortal shell 2 8211 guides hub",
+      "url": "https://www.gamespot.com/articles/mortal-shell-2-guides-hub/",
+      "summary": "Are you looking for Mortal Shell 2 guides? This sequel to the 2020 soulslike game puts you in the shoes of the Harbinger, an empty vessel who must venture across broken and war-torn lands. Along the way, you'll discover various shells, the husks and remains of forgotten warriors, that can aid you in vanquishing dangerous foes. Our Mortal Shell 2 guides hub has everything you need, from starting with the basics to discovering all the secrets in the game. In This Article Mortal Shell 2 guides hub General guides and how tos Shells, gear, and upgrades Notable locations and items Progression guides",
+      "publishedAt": "Mon, 17 Aug 2026 15:52:49 +0000"
+    },
+    {
+      "source": "Eurogamer",
+      "language": "en",
+      "title": "Battlefield 6's Top Gun collaboration is more involved than I expected, and it convinced me that Carrier Strike should be a permanent mode",
+      "normalizedTitle": "battlefield 6 s top gun collaboration is more involved than i expected and it convinced me that carrier strike should be a permanent mode",
+      "url": "https://www.eurogamer.net/battlefield-6-top-gun-carrier-strike-wake-island",
+      "summary": "Battlefield 6 's fourth season has been a highlight. From introducing naval combat to the game to adding its largest map yet - there's a lot for older Battlefield fans to enjoy. That same cohort, I wager - counting myself among them - will naturally be very excited for Top Gun to cross over with Battlefield 6. Read more",
+      "publishedAt": "Mon, 17 Aug 2026 15:52:08 +0000"
+    },
+    {
+      "source": "Rock Paper Shotgun",
+      "language": "en",
+      "title": "I'm not saying Bethesda are trolling me specifically, but Fallout 4 and Skyrim updates are imminent just as I've modded up the latter for the first time in ages",
+      "normalizedTitle": "i m not saying bethesda are trolling me specifically but fallout 4 and skyrim updates are imminent just as i ve modded up the latter for the first time in ages",
+      "url": "https://www.rockpapershotgun.com/fallout-4-and-skyrim-updates-are-imminent-just-as-ive-modded-up-the-latter-for-the-first-time-in-ages",
+      "summary": "Right, just a couple more location overhauls and there we go. A fresh Skyrim load order created for my first modded toe-dip into Tamriel for quite a while, outside of grabbing the odd article image. Phew, now to relax and sink another 50 hou-wait. Fallout 4 and Skyrim updates are inbound, say Bethesda? Well, that would be my luck, wouldn't it? Read more",
+      "publishedAt": "Mon, 17 Aug 2026 15:51:22 +0000"
     },
     {
       "source": "GamesRadar+",
@@ -31,6 +382,24 @@
       "url": "https://www.gamesradar.com/entertainment/marvel-movies/disney-has-released-a-list-of-essential-marvel-movies-to-watch-before-avengers-doomsday-and-fans-are-debating-the-most-confusing-omissions/",
       "summary": "There's a fan-made 'road map' to Doomsday that some think makes a bit more sense",
       "publishedAt": "Mon, 17 Aug 2026 15:34:40 +0000"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "Final Fantasy 7 Rebirth Hits New Low Price of $35 on Switch 2 at Amazon",
+      "normalizedTitle": "final fantasy 7 rebirth hits new low price of 35 on switch 2 at amazon",
+      "url": "https://www.ign.com/articles/final-fantasy-7-rebirth-switch-2-amazon-deal",
+      "summary": "Save $15 on Final Fantasy 7 Rebirth for Nintendo Switch 2 at Amazon, down to a new low of $34.99 with an exclusive MTG Zack Fair promo card included.",
+      "publishedAt": "Mon, 17 Aug 2026 15:30:00 +0000"
+    },
+    {
+      "source": "IGN",
+      "language": "en",
+      "title": "The Original Mass Effect Is the Trilogy’s Best Story, Hands Down",
+      "normalizedTitle": "the original mass effect is the trilogy s best story hands down",
+      "url": "https://www.ign.com/articles/the-original-mass-effect-is-the-trilogys-best-story-hands-down",
+      "summary": "The entire Mass Effect trilogy is fantastic, but the first game's story is head-and-shoulders above the tales told in the later games.",
+      "publishedAt": "Mon, 17 Aug 2026 15:30:00 +0000"
     },
     {
       "source": "GameSpot",
@@ -87,15 +456,6 @@
       "publishedAt": "Mon, 17 Aug 2026 15:15:37 +0000"
     },
     {
-      "source": "Polygon",
-      "language": "en",
-      "title": "Nintendo Just Teased a Big Story Twist for 'Fire Emblem: Fortune’s Weave' in New Trailer",
-      "normalizedTitle": "nintendo just teased a big story twist for fire emblem fortune s weave in new trailer",
-      "url": "https://www.polygon.com/fire-emblem-fortunes-weave-time-skip/",
-      "summary": "Eagle-eyed fans took to social media to point out that a time-skip could be featured in Nintendo's latest Fire Emblem game.",
-      "publishedAt": "Mon, 17 Aug 2026 15:10:54 GMT"
-    },
-    {
       "source": "GameSpot",
       "language": "en",
       "title": "This Switch Game That Reached 1 Million Players Is Closing Official Servers Soon",
@@ -112,15 +472,6 @@
       "url": "https://www.gamesradar.com/games/rpg/the-best-mortal-shell-2-build-for-ultimate-synergy/",
       "summary": "The best Mortal Shell 2 build combines the top choices for Shell, Seal, Tarstones, Weapons, and Sidearms",
       "publishedAt": "Mon, 17 Aug 2026 15:02:39 +0000"
-    },
-    {
-      "source": "Polygon",
-      "language": "en",
-      "title": "Marvel Cosmic Invasion Doctor Doom DLC Arrives this Fall",
-      "normalizedTitle": "marvel cosmic invasion doctor doom dlc arrives this fall",
-      "url": "https://www.polygon.com/marvel-cosmic-invasion-doctor-doom-dlc-announced/",
-      "summary": "Marvel Cosmic Invasion The Siege of Castle Doom DLC is on the way just in time for Doctor Doom's reign of villainy in December's Avengers Doomsday.",
-      "publishedAt": "Mon, 17 Aug 2026 15:00:12 GMT"
     },
     {
       "source": "PC Gamer",
@@ -164,7 +515,7 @@
       "title": "Best Items To Get Early In Mortal Shell 2",
       "normalizedTitle": "best items to get early in mortal shell 2",
       "url": "https://www.gamespot.com/articles/mortal-shell-2-best-items-to-get-early/",
-      "summary": "Are you thinking about the best items to get early in Mortal Shell 2 ? There are plenty of goodies to be found all over the ruined lands of Fallgrim. These include melee weapons, sidearms, and consumables. Some, like Tarstones, also help you greatly as they add new effects to your equipped gear. Our guide has all the details that you need as you explore some nearby locales. Best early-game items in Mortal Shell 2 Before we get started, we do recommend a couple of articles that you can check out. The first is our beacons and maps guide , which gives you a lay of the land while you’re roaming ar",
+      "summary": "Are you thinking about the best items to get early in Mortal Shell 2 ? There are plenty of goodies to be found all over the ruined lands of Fallgrim. These include melee weapons, sidearms, and consumables. Some, like Tarstones, also help you greatly as they add new effects to your equipped gear. Our guide has all the details that you need as you explore some nearby locales. In This Article Best early-game items in Mortal Shell 2 Marsh Peals Leech effect Tarstones Troubadour’s Lute Grisha Remnant Justiciar’s Stone and Gloombound Stone Axatana Best early-game items in Mortal Shell 2 Before we ge",
       "publishedAt": "Mon, 17 Aug 2026 14:54:14 +0000"
     },
     {
@@ -213,24 +564,6 @@
       "publishedAt": "Mon, 17 Aug 2026 14:43:39 +0000"
     },
     {
-      "source": "Polygon",
-      "language": "en",
-      "title": "'Resident Evil Requiem' Star Has Reportedly Found Her Next Starring Role",
-      "normalizedTitle": "resident evil requiem star has reportedly found her next starring role",
-      "url": "https://www.polygon.com/tides-of-annihilation-lead-actor-resident-evil-requiem-grace/",
-      "summary": "A Resident Evil Requiem star is reportedly taking over for Jennifer English in an upcoming RPG after the Expedition 33 lead had to step away.",
-      "publishedAt": "Mon, 17 Aug 2026 14:41:21 GMT"
-    },
-    {
-      "source": "Polygon",
-      "language": "en",
-      "title": "'Skip and Loafer' Season 2 Anime Finally Coming in 2027",
-      "normalizedTitle": "skip and loafer season 2 anime finally coming in 2027",
-      "url": "https://www.polygon.com/skip-and-loafer-season-2-release-date-announced/",
-      "summary": "2023's charming romcom anime perfect for fans of Horimiya and You and I Are Polar Opposites returns April 2027.",
-      "publishedAt": "Mon, 17 Aug 2026 14:37:16 GMT"
-    },
-    {
       "source": "PC Gamer",
       "language": "en",
       "title": "SSD price increases might be with us for the long haul, as Phison's CEO says NAND supply won't catch up with demand for four years",
@@ -267,15 +600,6 @@
       "publishedAt": "Mon, 17 Aug 2026 14:33:22 +0000"
     },
     {
-      "source": "Polygon",
-      "language": "en",
-      "title": "'Marvel Rivals' Players Are Exploiting a Cheat That Lets Them End Matches Without Penalties",
-      "normalizedTitle": "marvel rivals players are exploiting a cheat that lets them end matches without penalties",
-      "url": "https://www.polygon.com/marvel-rivals-match-quit-hack/",
-      "summary": "Marvel Rivals players discovered that by editing the game's config files mid-match, they can end a game without being penalized.",
-      "publishedAt": "Mon, 17 Aug 2026 14:27:51 GMT"
-    },
-    {
       "source": "GameSpot",
       "language": "en",
       "title": "Canceled Star Wars RPG Magellan Looked Like A Star Wars Take On Borderlands",
@@ -283,15 +607,6 @@
       "url": "https://www.gamespot.com/articles/canceled-star-wars-rpg-magellan-looked-like-a-star-wars-take-on-borderlands/",
       "summary": "There's no shortage of Star Wars games in development right now, but one game set in a galaxy far (far!) away that you won't be playing is an AAA action-RPG set in that sci-fi series. Developed under the codename Magellan--it's worth noting that Zynga has never officially confirmed this project--the project would have allowed players to pick up a lightsaber and play as a Jedi, or, if they wanted to be cool, a Mandalorian. According to official development materials seen and uploaded by MP1st , Magellan was in development at Echtra Games, but the studio was shut down last year by its owner, Zyn",
       "publishedAt": "Mon, 17 Aug 2026 14:25:04 +0000"
-    },
-    {
-      "source": "Polygon",
-      "language": "en",
-      "title": "Mortal Shell 2 Reviews Say It's One of 2026's Best New Soulslikes",
-      "normalizedTitle": "mortal shell 2 reviews say it s one of 2026 s best new soulslikes",
-      "url": "https://www.polygon.com/mortal-shell-review-roundup/",
-      "summary": "Mortal Shell 2 is a hit with critics, as the Soulslike sequel is reviewing much better than its predecessor.",
-      "publishedAt": "Mon, 17 Aug 2026 14:14:08 GMT"
     },
     {
       "source": "GamesRadar+",
@@ -339,24 +654,6 @@
       "publishedAt": "Mon, 17 Aug 2026 13:58:41 +0000"
     },
     {
-      "source": "Polygon",
-      "language": "en",
-      "title": "Hayden Panettiere, Star of Heroes and Kingdom Hearts, Dies at 36",
-      "normalizedTitle": "hayden panettiere star of heroes and kingdom hearts dies at 36",
-      "url": "https://www.polygon.com/hayden-panetierre-death-heroes-kingdom-hearts/",
-      "summary": "The actor known for roles in Heroes, Nashville, Until Dawn, and Kingdom Hearts as Kairi has died at age 36, according to Hayden Panettiere's father.",
-      "publishedAt": "Mon, 17 Aug 2026 13:50:06 GMT"
-    },
-    {
-      "source": "GameSpot",
-      "language": "en",
-      "title": "Kingdom Hearts 4 Delay, You Say? No Way, Series Co-Creator States",
-      "normalizedTitle": "kingdom hearts 4 delay you say no way series co creator states",
-      "url": "https://www.gamespot.com/articles/kingdom-hearts-4-delay-you-say-no-way-series-co-creator-states/",
-      "summary": "Over the weekend, Disney's D23 expo not only revealed that Kingdom Hearts 4 will feature Pixar's Coco, but also that the action-RPG is set to arrive in late 2027. Now, it's been a long time since we've seen a new mainline installment in the Square Enix series--already over seven years at this point. So people are expressing skepticism about the release window, but franchise co-creator Tetsuya Nomura is promising Kingdom Hearts 4 will come out next year. VGC reports that Nomura, who's co-directing Kingdom Hearts 4, appeared on stage Saturday at D23 to discuss the new title. \"We announced that t",
-      "publishedAt": "Mon, 17 Aug 2026 13:43:21 +0000"
-    },
-    {
       "source": "Rock Paper Shotgun",
       "language": "en",
       "title": "Sraëka Lillian's one-a-week RPG \"sketches\" are a lovely series of experiments with hoary old conventions from Final Fantasy and Dragon Quest",
@@ -393,15 +690,6 @@
       "publishedAt": "Mon, 17 Aug 2026 13:35:30 +0000"
     },
     {
-      "source": "GameSpot",
-      "language": "en",
-      "title": "Disney Is Bringing Fortnite Into Its Real-World Star Wars Rides",
-      "normalizedTitle": "disney is bringing fortnite into its real world star wars rides",
-      "url": "https://www.gamespot.com/articles/disney-is-bringing-fortnite-into-its-real-world-star-wars-rides/",
-      "summary": "Disney invested more than $1.5 billion into Epic Games to help create synergies between Fortnite and the company's lucrative theme park business, and now how that integration works is coming to light. As revealed at Disney's D23 event this weekend, Fortnite is integrating with the Smuggler's Run ride at Disneyland and Walt Disney World. For anyone just catching up, Smugglers Run is an interactive motion simulator attraction that has six people piling into the Millennium Falcon as they work together to collect crates for the fan-favorite pirate, Hondo . With this new Fortnite collaboration, tho",
-      "publishedAt": "Mon, 17 Aug 2026 13:29:57 +0000"
-    },
-    {
       "source": "StopGame",
       "language": "ru",
       "title": "Beast of Reincarnation: Видеообзор",
@@ -409,24 +697,6 @@
       "url": "https://stopgame.ru/show/162375/beast_of_reincarnation_videoreview",
       "summary": "Попытка студии, которая в формате конвейера клепает игры про покемонов, сделать экшн-RPG, ожидаемо, не удалась на 100 %. Beast of Reincarnation может одновременно и отталкивать, и очаровывать (местами). Разбираемся, что пошло не так, а что — как надо, в свежем обзоре.",
       "publishedAt": "Mon, 17 Aug 2026 16:26:19 +0300"
-    },
-    {
-      "source": "GameSpot",
-      "language": "en",
-      "title": "Marvel&#8217;s Wolverine Is Another Victim Of The Internet&#8217;s Endless Gaming Negativity",
-      "normalizedTitle": "marvel 8217 s wolverine is another victim of the internet 8217 s endless gaming negativity",
-      "url": "https://www.gamespot.com/articles/marvels-wolverine-is-another-victim-of-the-internets-endless-gaming-negativity/",
-      "summary": "Marvel's Wolverine looks like it could be a major highlight of a stacked September, but if you look online, many people are already calling the game dead on arrival for a number of reasons. One of the primary complaints stems from Marvel's Wolverine being a linear single-player action game instead of an open-world one like Marvel's Spider-Man 2--which ironically, was chided for being just that prior to release by people online who claimed to have open-world fatigue. That's hardly surprising, given how platforms like X literally pay users for manufacturing drama that, in turn, drives engagement",
-      "publishedAt": "Mon, 17 Aug 2026 13:01:52 +0000"
-    },
-    {
-      "source": "Polygon",
-      "language": "en",
-      "title": "The Most Bonkers Thriller of 2025 Officially Lands on Free Streaming",
-      "normalizedTitle": "the most bonkers thriller of 2025 officially lands on free streaming",
-      "url": "https://www.polygon.com/bambi-the-reckoning-streaming-free-tubi/",
-      "summary": "Bambi: The Reckoning reimagines a beloved children’s classic as a bloody environmental horror movie. It’s now free to stream on Tubi.",
-      "publishedAt": "Mon, 17 Aug 2026 13:00:12 GMT"
     },
     {
       "source": "IGN",
@@ -447,66 +717,12 @@
       "publishedAt": "Mon, 17 Aug 2026 13:00:00 +0000"
     },
     {
-      "source": "GameSpot",
-      "language": "en",
-      "title": "Mortal Shell 2 Is A Fresh And Exciting Shake Up Of The Souls-like Formula &#8211; Review",
-      "normalizedTitle": "mortal shell 2 is a fresh and exciting shake up of the souls like formula 8211 review",
-      "url": "https://www.gamespot.com/videos/mortal-shell-2-is-a-fresh-and-exciting-shake-up-of-the-souls-like-formula-review/",
-      "summary": "Cold Symmetry's sequel improves upon its predecessor by continuing to deconstruct familiar souls-like mechanics.",
-      "publishedAt": "Mon, 17 Aug 2026 13:00:00 +0000"
-    },
-    {
-      "source": "GameSpot",
-      "language": "en",
-      "title": "Mortal Shell 2 Is A Fresh And Exciting Shake Up Of The Souls-like Formula",
-      "normalizedTitle": "mortal shell 2 is a fresh and exciting shake up of the souls like formula",
-      "url": "https://www.gamespot.com/reviews/mortal-shell-2-is-a-fresh-and-exciting-shake-up-of-the-souls-like-formula/",
-      "summary": "Mortal Shell 2 features most of the familiar hallmarks of the souls-like genre: It's set in a dark fantasy world and incorporates gothic, medieval, and otherworldly themes into its aesthetic. Its combat is deep, challenging, satisfyingly hard-hitting, and will punish you for being overzealous. There are bonfires (called beacons) where you can rest and recover lost health at the expense of respawning enemies, and you also drop the level-up currency each time you die, forcing you to retrieve it in the next life or lose it completely. On the surface, Mortal Shell 2 might sound like your standard ",
-      "publishedAt": "Mon, 17 Aug 2026 13:00:00 +0000"
-    },
-    {
-      "source": "GameSpot",
-      "language": "en",
-      "title": "All Weapon And Sidearm Locations In Mortal Shell 2",
-      "normalizedTitle": "all weapon and sidearm locations in mortal shell 2",
-      "url": "https://www.gamespot.com/articles/mortal-shell-2-all-weapon-sidearm-locations/",
-      "summary": "Are you ready to find all weapons and sidearms in Mortal Shell 2 ? There are over a dozen armaments in the game, ranging from your standard blades and axes to machine gun-like contraptions and effigies that suck the souls of your opponents. Our guide has all the information that you need for the journey ahead, but be forewarned--a few spoilers , too. In This Article All weapon and sidearm locations Weapon #1: The Iconoclast and Sidearm #1: Naylshotte Weapons and sidearms in Fainweald Sidearm #2: Forgotten Crossbow Weapon #2: Veteran’s Battle Axe Weapon #3: Axe &amp; Dagger Sidearm #3: Troubado",
-      "publishedAt": "Mon, 17 Aug 2026 13:00:00 +0000"
-    },
-    {
-      "source": "GamesRadar+",
-      "language": "en",
-      "title": "How to unlock Mortal Shell 2 fast travel",
-      "normalizedTitle": "how to unlock mortal shell 2 fast travel",
-      "url": "https://www.gamesradar.com/games/rpg/mortal-shell-2-fast-travel/",
-      "summary": "You'll unlock Mortal Shell 2 fast travel by meeting a very reasonable requirement, allowing you to travel between beacons",
-      "publishedAt": "Mon, 17 Aug 2026 13:00:00 +0000"
-    },
-    {
-      "source": "GamesRadar+",
-      "language": "en",
-      "title": "Mortal Shell 2 review: \"The best Soulslike I've played since Elden Ring thanks to brilliant death-dealing toys and speedy combat\"",
-      "normalizedTitle": "mortal shell 2 review the best soulslike i ve played since elden ring thanks to brilliant death dealing toys and speedy combat",
-      "url": "https://www.gamesradar.com/games/action-rpg/mortal-shell-2-review/",
-      "summary": "This speedy sequel speeds up action and stuffs secrets and ideas in every corner of its beautiful open world.",
-      "publishedAt": "Mon, 17 Aug 2026 13:00:00 +0000"
-    },
-    {
       "source": "GamesRadar+",
       "language": "en",
       "title": "Should you equip the Mortal Shell 2 Slayer Seal?",
       "normalizedTitle": "should you equip the mortal shell 2 slayer seal",
       "url": "https://www.gamesradar.com/games/rpg/mortal-shell-2-slayer-seal-difficulty/",
       "summary": "The Slayer Seal is Mortal Shell 2 a powerful item that helps you defeat tough enemies, but it comes at a cost",
-      "publishedAt": "Mon, 17 Aug 2026 13:00:00 +0000"
-    },
-    {
-      "source": "GamesRadar+",
-      "language": "en",
-      "title": "How long is Mortal Shell 2?",
-      "normalizedTitle": "how long is mortal shell 2",
-      "url": "https://www.gamesradar.com/games/rpg/mortal-shell-2-how-long-length/",
-      "summary": "If you're wondering how long it takes to beat Mortal Shell 2, the answer does depend on you",
       "publishedAt": "Mon, 17 Aug 2026 13:00:00 +0000"
     },
     {
@@ -521,10 +737,37 @@
     {
       "source": "GamesRadar+",
       "language": "en",
+      "title": "How long is Mortal Shell 2?",
+      "normalizedTitle": "how long is mortal shell 2",
+      "url": "https://www.gamesradar.com/games/rpg/mortal-shell-2-how-long-length/",
+      "summary": "If you're wondering how long it takes to beat Mortal Shell 2, the answer does depend on you",
+      "publishedAt": "Mon, 17 Aug 2026 13:00:00 +0000"
+    },
+    {
+      "source": "GamesRadar+",
+      "language": "en",
+      "title": "How to unlock Mortal Shell 2 fast travel",
+      "normalizedTitle": "how to unlock mortal shell 2 fast travel",
+      "url": "https://www.gamesradar.com/games/rpg/mortal-shell-2-fast-travel/",
+      "summary": "You'll unlock Mortal Shell 2 fast travel by meeting a very reasonable requirement, allowing you to travel between beacons",
+      "publishedAt": "Mon, 17 Aug 2026 13:00:00 +0000"
+    },
+    {
+      "source": "GamesRadar+",
+      "language": "en",
       "title": "Mortal Shell 2 map and how to reveal it",
       "normalizedTitle": "mortal shell 2 map and how to reveal it",
       "url": "https://www.gamesradar.com/games/rpg/mortal-shell-2-map/",
       "summary": "Revealing the Mortal Shell 2 Map requires speaking to an old friend at various locations",
+      "publishedAt": "Mon, 17 Aug 2026 13:00:00 +0000"
+    },
+    {
+      "source": "GamesRadar+",
+      "language": "en",
+      "title": "Mortal Shell 2 review: \"The best Soulslike I've played since Elden Ring thanks to brilliant death-dealing toys and speedy combat\"",
+      "normalizedTitle": "mortal shell 2 review the best soulslike i ve played since elden ring thanks to brilliant death dealing toys and speedy combat",
+      "url": "https://www.gamesradar.com/games/action-rpg/mortal-shell-2-review/",
+      "summary": "This speedy sequel speeds up action and stuffs secrets and ideas in every corner of its beautiful open world.",
       "publishedAt": "Mon, 17 Aug 2026 13:00:00 +0000"
     },
     {
@@ -535,15 +778,6 @@
       "url": "https://www.gamesradar.com/hardware/retro/irl-homescreen-for-wii-physical-discs-now-includes-a-secret-bookshelf-mechanism-that-will-save-you-from-the-horrors-of-deciding-what-to-play/",
       "summary": "The IRL Homescreen is going from strength to strength with a new \"Roulette Randomizer\" that will pick a physical Wii game from your shelf.",
       "publishedAt": "Mon, 17 Aug 2026 12:35:12 +0000"
-    },
-    {
-      "source": "Polygon",
-      "language": "en",
-      "title": "Canceled Star Wars Game Was the Bioware-Style ARPG That Fans Deserved",
-      "normalizedTitle": "canceled star wars game was the bioware style arpg that fans deserved",
-      "url": "https://www.polygon.com/star-wars-magellan-action-rpg-canceled/",
-      "summary": "An unannounced Star Wars game leaked online when a former employee added gameplay clips and images to their portfolio.",
-      "publishedAt": "Mon, 17 Aug 2026 12:33:18 GMT"
     },
     {
       "source": "GamesRadar+",
@@ -942,33 +1176,6 @@
       "publishedAt": "Mon, 17 Aug 2026 01:01:49 +0000"
     },
     {
-      "source": "IGN",
-      "language": "en",
-      "title": "'Look Forward to Meetin' Ya, Sugah!' — Rogue Voice Actress Lenore Zann Reacts to MCU X-Men Casting With Special Video Message for Inde Navarrette",
-      "normalizedTitle": "look forward to meetin ya sugah rogue voice actress lenore zann reacts to mcu x men casting with special video message for inde navarrette",
-      "url": "https://www.ign.com/articles/look-forward-to-meetin-ya-sugah-rogue-voice-actress-lenore-zann-reacts-to-mcu-x-men-casting-with-special-video-message-for-inde-navarrette",
-      "summary": "Lenore Zann, the voice of Rogue in animated Marvel projects since the '90s, published a special video to congratulate Inde Navarrette after she was confirmed to play the live-action version of her character in Marvel's upcoming X-Men reboot.",
-      "publishedAt": "Mon, 17 Aug 2026 00:04:09 +0000"
-    },
-    {
-      "source": "IGN",
-      "language": "en",
-      "title": "Avengers: Doomsday Trailer Sparks Theories About 2 Doctor Dooms as Fans Hope for a Surprise Cameo from Cillian Murphy",
-      "normalizedTitle": "avengers doomsday trailer sparks theories about 2 doctor dooms as fans hope for a surprise cameo from cillian murphy",
-      "url": "https://www.ign.com/articles/avengers-doomsday-trailer-sparks-theories-about-2-doctor-dooms-as-fans-hope-for-a-surprise-cameo-from-cillian-murphy",
-      "summary": "The new Avengers: Doomsday trailer is here, and some fans believe it has a few clues that suggest the film is hiding two Doctor Dooms – and maybe even a cameo from Cillian Murphy.",
-      "publishedAt": "Sun, 16 Aug 2026 21:51:24 +0000"
-    },
-    {
-      "source": "IGN",
-      "language": "en",
-      "title": "The Best Deals Today: Final Fantasy VII Rebirth for Switch 2, Nioh 3, Project Hail Mary, and More",
-      "normalizedTitle": "the best deals today final fantasy vii rebirth for switch 2 nioh 3 project hail mary and more",
-      "url": "https://www.ign.com/articles/best-deals-for-august-16-2026",
-      "summary": "A new weekend has arrived, and today, you can save on Final Fantasy VII Rebirth, Resident Evil Requiem, Project Hail Mary, Civilization VII, Final Fantasy VII Remake Intergrade, select LEGO sets, AirPods Pro 3, and more. Check out our top picks for Sunday, August 16, below. Final Fantasy VII Rebirth with MTG Card for $34.99 Final Fantasy VII Rebirth for Nintendo Switch 2 is on sale today for $34.99 at Amazon. This physical version of the game includes an exclusive Zack Fair Magic: The Gathering - Final Fantasy card, which is perfect for fans and collectors alike. If you&#39;ve yet to experienc",
-      "publishedAt": "Sun, 16 Aug 2026 21:20:54 +0000"
-    },
-    {
       "source": "StopGame",
       "language": "ru",
       "title": "ReStory: Chill Electronics Repairs: Обзор уютного симулятора мастерской",
@@ -976,15 +1183,6 @@
       "url": "https://stopgame.ru/show/163401/restory_chill_electronics_repairs_review_uyutnogo_simulyatora_masterskoy",
       "summary": "Когда узнаёшь о существовании ReStory, удивляешься тому, насколько мало существует игр с похожей задумкой. Из относительно популярных релизов можно вспомнить лишь Assemble with Care, где главная героиня тоже занимается ремонтом всякой всячины, но та игра очень короткая (меньше двух часов), да и повествование в ней важнее, нежели простенький геймплей. На ум ещё приходит PC Building Simulator, где мы занимаемся сборкой и обслуживанием компьютеров, но в ReStory компьютеров нет. Да и сборке здесь всегда предшествует разборка — каждый гаджет, попадающий в наши руки… […]",
       "publishedAt": "Sun, 16 Aug 2026 22:00:23 +0300"
-    },
-    {
-      "source": "IGN",
-      "language": "en",
-      "title": "Simu Liu Says Sleeping Dogs Movie Has 'a REAL Path Forward' Amid Dealmaking With Square Enix",
-      "normalizedTitle": "simu liu says sleeping dogs movie has a real path forward amid dealmaking with square enix",
-      "url": "https://www.ign.com/articles/simu-liu-says-sleeping-dogs-movie-has-a-real-path-forward-amid-dealmaking-with-square-enix",
-      "summary": "Marvel star Simu Liu has offered a positive update on his long-in-development Sleeping Dogs movie adaptation, saying the film has \"a REAL path forward\" as discussions with game publisher Square Enix continue.",
-      "publishedAt": "Sun, 16 Aug 2026 18:31:08 +0000"
     },
     {
       "source": "GamesRadar+",
@@ -1131,24 +1329,6 @@
       "publishedAt": "Sun, 16 Aug 2026 14:09:31 +0000"
     },
     {
-      "source": "GamesRadar+",
-      "language": "en",
-      "title": "Here's the 8 Wolverine features we love after 2 hours playing, from Team X to truly brutal combat",
-      "normalizedTitle": "here s the 8 wolverine features we love after 2 hours playing from team x to truly brutal combat",
-      "url": "https://www.gamesradar.com/games/action/best-marvels-wolverine-features-hands-on/",
-      "summary": "After 2 hours of Marvel's Wolverine gameplay, we've found plenty to impress us across its combat and characters",
-      "publishedAt": "Sun, 16 Aug 2026 13:00:00 +0000"
-    },
-    {
-      "source": "GamesRadar+",
-      "language": "en",
-      "title": "Sean Murray says No Man's Sky's record player count wasn't the true peak for him – it was seeing the team \"solving problems\" and \"just meshing together\"",
-      "normalizedTitle": "sean murray says no man s sky s record player count wasn t the true peak for him it was seeing the team solving problems and just meshing together",
-      "url": "https://www.gamesradar.com/games/survival/sean-murray-says-no-mans-skys-record-player-count-wasnt-the-true-peak-for-him-it-was-seeing-the-team-solving-problems-and-just-meshing-together/",
-      "summary": "\"That's when I'm going home and I'm just buzzing about it\"",
-      "publishedAt": "Sun, 16 Aug 2026 12:28:47 +0000"
-    },
-    {
       "source": "PC Gamer",
       "language": "en",
       "title": "You could win a slice of €30,000 by building the best mod for Mount & Blade 2's controversial seafaring expansion",
@@ -1156,24 +1336,6 @@
       "url": "https://www.pcgamer.com/games/rpg/you-could-win-a-slice-of-eur30-000-by-building-the-best-mod-for-mount-and-blade-2s-controversial-seafaring-expansion/",
       "summary": "War Sails finally gets modding tools of its own.",
       "publishedAt": "Sun, 16 Aug 2026 11:49:24 +0000"
-    },
-    {
-      "source": "GamesRadar+",
-      "language": "en",
-      "title": "Sony ending PlayStation discs \"was always going to happen,\" says analyst, as the PS6 costing $1,000 would \"limit your audience quite significantly\"",
-      "normalizedTitle": "sony ending playstation discs was always going to happen says analyst as the ps6 costing 1 000 would limit your audience quite significantly",
-      "url": "https://www.gamesradar.com/games/sony-ending-playstation-discs-was-always-going-to-happen-says-analyst-as-the-ps6-costing-usd1-000-would-limit-your-audience-quite-significantly/",
-      "summary": "Good for Sony, not so good if you like owning stuff",
-      "publishedAt": "Sun, 16 Aug 2026 11:32:39 +0000"
-    },
-    {
-      "source": "GamesRadar+",
-      "language": "en",
-      "title": "Kingdom Hearts 4's Goofy and Donald are playable for the first time ever, and Mickey's Paper Mario-style sections are \"very different from Sora's adventure\"",
-      "normalizedTitle": "kingdom hearts 4 s goofy and donald are playable for the first time ever and mickey s paper mario style sections are very different from sora s adventure",
-      "url": "https://www.gamesradar.com/games/kingdom-hearts/kingdom-hearts-4s-goofy-and-donald-are-playable-for-the-first-time-ever-and-mickeys-paper-mario-style-sections-are-very-different-from-soras-adventure/",
-      "summary": "Co-director Tai Yasue says \"you could create paper-thin Mickeys, giant Mickeys, a tiny Mickey, box Mickeys\"",
-      "publishedAt": "Sun, 16 Aug 2026 11:08:14 +0000"
     },
     {
       "source": "PC Gamer",
@@ -1203,15 +1365,6 @@
       "publishedAt": "Sun, 16 Aug 2026 11:55:47 +0300"
     },
     {
-      "source": "GamesRadar+",
-      "language": "en",
-      "title": "Ahsoka season 2 trailer breakdown: 16 Star Wars details and our theories",
-      "normalizedTitle": "ahsoka season 2 trailer breakdown 16 star wars details and our theories",
-      "url": "https://www.gamesradar.com/entertainment/star-wars-tv-shows/ahsoka-season-2-trailer-breakdown-16-star-wars-details-and-our-theories/",
-      "summary": "Breaking down the Ahsoka season 2 trailer",
-      "publishedAt": "Sun, 16 Aug 2026 08:16:00 +0000"
-    },
-    {
       "source": "PC Gamer",
       "language": "en",
       "title": "Poll: Do you turn your PC off at night?",
@@ -1219,24 +1372,6 @@
       "url": "https://www.pcgamer.com/hardware/poll-do-you-turn-your-pc-off-at-night/",
       "summary": "Sleep mode counts as leaving it on.",
       "publishedAt": "Sun, 16 Aug 2026 04:53:38 +0000"
-    },
-    {
-      "source": "GamesRadar+",
-      "language": "en",
-      "title": "Jean Grey making her MCU debut in Spider-Man: Brand New Day \"came out of the story,\" says Marvel boss Kevin Feige",
-      "normalizedTitle": "jean grey making her mcu debut in spider man brand new day came out of the story says marvel boss kevin feige",
-      "url": "https://www.gamesradar.com/entertainment/marvel-movies/jean-grey-making-her-mcu-debut-in-spider-man-brand-new-day-came-out-of-the-story-says-marvel-boss-kevin-feige/",
-      "summary": "Kevin Feige explains why X-Men character Jean Grey debuted in Spider-Man: Brand New Day",
-      "publishedAt": "Sun, 16 Aug 2026 00:46:02 +0000"
-    },
-    {
-      "source": "GamesRadar+",
-      "language": "en",
-      "title": "Marvel boss Kevin Feige says they knew they couldn't make Spider-Man: Brand New Day \"bigger\" than No Way Home, so they decided to \"go deeper and make it special\"",
-      "normalizedTitle": "marvel boss kevin feige says they knew they couldn t make spider man brand new day bigger than no way home so they decided to go deeper and make it special",
-      "url": "https://www.gamesradar.com/entertainment/marvel-movies/marvel-boss-kevin-feige-says-they-knew-they-couldnt-make-spider-man-brand-new-day-bigger-than-no-way-home-so-they-decided-to-go-deeper-and-make-it-special/",
-      "summary": "Kevin Feige opens up on Brand New Day at D23",
-      "publishedAt": "Sun, 16 Aug 2026 00:00:22 +0000"
     },
     {
       "source": "PC Gamer",
@@ -1320,15 +1455,6 @@
       "publishedAt": "Sat, 15 Aug 2026 17:04:02 +0000"
     },
     {
-      "source": "GamesRadar+",
-      "language": "en",
-      "title": "Nintendo's stinking \"nap room\" for overworked devs haunted legendary Super Metroid director for years: \"It’s quite sad only having these kinds of memories!\"",
-      "normalizedTitle": "nintendo s stinking nap room for overworked devs haunted legendary super metroid director for years it s quite sad only having these kinds of memories",
-      "url": "https://www.gamesradar.com/games/metroid/nintendos-stinking-nap-room-for-overworked-devs-haunted-legendary-super-metroid-director-for-years-its-quite-sad-only-having-these-kinds-of-memories/",
-      "summary": "\"One morning staff from another area came to wake us up and told us that the room smelled like a zoo\"",
-      "publishedAt": "Sat, 15 Aug 2026 17:00:00 +0000"
-    },
-    {
       "source": "Eurogamer",
       "language": "en",
       "title": "Simpsons creator Matt Groening seemingly lets slip that Hit & Run is coming back",
@@ -1383,15 +1509,6 @@
       "publishedAt": "Sat, 15 Aug 2026 16:00:00 +0000"
     },
     {
-      "source": "GamesRadar+",
-      "language": "en",
-      "title": "Sean Murray says a \"weight had lifted\" when No Man's Sky players were finally talking more about its new content than its controversial launch",
-      "normalizedTitle": "sean murray says a weight had lifted when no man s sky players were finally talking more about its new content than its controversial launch",
-      "url": "https://www.gamesradar.com/games/survival/sean-murray-says-a-weight-had-lifted-when-no-mans-sky-players-were-finally-talking-more-about-its-new-content-than-its-controversial-launch/",
-      "summary": "\"Every reply was laced with some slightly mean things\" for years",
-      "publishedAt": "Sat, 15 Aug 2026 15:50:22 +0000"
-    },
-    {
       "source": "PC Gamer",
       "language": "en",
       "title": "Star Wars: The Old Republic hopes to recapture the 'classic' experience with difficulty options and a new way to start from scratch",
@@ -1407,15 +1524,6 @@
       "normalizedTitle": "rpg companions need to be hateable otherwise nobody s going to love them",
       "url": "https://www.pcgamer.com/games/rpg/rpg-companions-need-to-be-hateable-otherwise-nobodys-going-to-love-them/",
       "summary": "You're in this together.",
-      "publishedAt": "Sat, 15 Aug 2026 15:00:00 +0000"
-    },
-    {
-      "source": "GamesRadar+",
-      "language": "en",
-      "title": "Lanterns creators say the show \"transcends\" fan service and is about \"bringing out the visions\" of Green Lantern comic book writers",
-      "normalizedTitle": "lanterns creators say the show transcends fan service and is about bringing out the visions of green lantern comic book writers",
-      "url": "https://www.gamesradar.com/entertainment/dc-tv-shows/lanterns-creators-say-the-show-transcends-fan-service-and-is-about-bringing-out-the-visions-of-green-lantern-comic-book-writers/",
-      "summary": "Damon Lindelof and Tom King talk bringing Hal and John's comic book origins to the forefront",
       "publishedAt": "Sat, 15 Aug 2026 15:00:00 +0000"
     },
     {
@@ -1435,42 +1543,6 @@
       "url": "https://www.pcgamer.com/games/this-solitaire-game-is-so-tiny-it-can-load-from-a-qr-code-which-is-just-what-i-need-in-the-age-of-massive-games-and-expensive-storage/",
       "summary": "TinySol is a mini marvel.",
       "publishedAt": "Sat, 15 Aug 2026 13:31:09 +0000"
-    },
-    {
-      "source": "GamesRadar+",
-      "language": "en",
-      "title": "These Mass Effect veterans are carrying the RPG's \"principles\" into a new game that sounds like Dispatch meets The X-Files",
-      "normalizedTitle": "these mass effect veterans are carrying the rpg s principles into a new game that sounds like dispatch meets the x files",
-      "url": "https://www.gamesradar.com/games/adventure/these-mass-effect-veterans-are-carrying-the-rpgs-principles-into-a-new-game-that-sounds-like-dispatch-meets-the-x-files/",
-      "summary": "After 20 years in RPGs, meet the ex-BioWare devs \"taking a risk to make a heartfelt, focused, passionate game\" with The Eventide",
-      "publishedAt": "Sat, 15 Aug 2026 13:00:00 +0000"
-    },
-    {
-      "source": "GamesRadar+",
-      "language": "en",
-      "title": "\"Please let your imaginations run wild\" - The Kingdom Hearts 4 team and Tetsuya Nomura are involved in the new Disney Plus anime",
-      "normalizedTitle": "please let your imaginations run wild the kingdom hearts 4 team and tetsuya nomura are involved in the new disney plus anime",
-      "url": "https://www.gamesradar.com/games/kingdom-hearts/please-let-your-imaginations-run-wild-the-kingdom-hearts-4-team-and-tetsuya-nomura-are-involved-in-the-new-disney-plus-anime/",
-      "summary": "The series creator is in close discussions with the show's writers",
-      "publishedAt": "Sat, 15 Aug 2026 12:43:15 +0000"
-    },
-    {
-      "source": "GamesRadar+",
-      "language": "en",
-      "title": "The Witcher 3 lead says designing for player curiosity \"really came to haunt us\" when making sure it felt like \"people truly exist\" in the RPG's villages",
-      "normalizedTitle": "the witcher 3 lead says designing for player curiosity really came to haunt us when making sure it felt like people truly exist in the rpg s villages",
-      "url": "https://www.gamesradar.com/games/the-witcher/the-witcher-3-lead-says-designing-for-player-curiosity-really-came-to-haunt-us-when-making-sure-it-felt-like-people-truly-exist-in-the-rpgs-villages/",
-      "summary": "\"For a few weeks, women were just dropping their babies, left and right.\"",
-      "publishedAt": "Sat, 15 Aug 2026 12:09:25 +0000"
-    },
-    {
-      "source": "GamesRadar+",
-      "language": "en",
-      "title": "Insomniac had to ditch Spider-Man's open-world for Marvel's Wolverine because Logan is \"not somebody who has a friendly neighborhood\"",
-      "normalizedTitle": "insomniac had to ditch spider man s open world for marvel s wolverine because logan is not somebody who has a friendly neighborhood",
-      "url": "https://www.gamesradar.com/games/action/insomniac-had-to-ditch-spider-mans-open-world-for-marvels-wolverine-because-logan-is-not-somebody-who-has-a-friendly-neighborhood/",
-      "summary": "Big Preview | Wolverine is a very different character from Spider-Man, and the developers wanted to reflect that every step of the way",
-      "publishedAt": "Sat, 15 Aug 2026 12:00:00 +0000"
     },
     {
       "source": "PC Gamer",
@@ -1716,15 +1788,6 @@
       "publishedAt": "Fri, 14 Aug 2026 14:45:06 +0000"
     },
     {
-      "source": "PC Gamer",
-      "language": "en",
-      "title": "The Epic Games Launcher will be available on Linux 'soon' says dev, after it's had a bit of work",
-      "normalizedTitle": "the epic games launcher will be available on linux soon says dev after it s had a bit of work",
-      "url": "https://www.pcgamer.com/hardware/the-epic-games-launcher-will-be-available-on-linux-soon-says-dev-after-its-had-a-bit-of-work/",
-      "summary": "Another year of Linux PC gaming, perhaps?",
-      "publishedAt": "Fri, 14 Aug 2026 14:37:07 +0000"
-    },
-    {
       "source": "Eurogamer",
       "language": "en",
       "title": "UK video game industry charity football match raises over £63,000 for physically disabled gamers",
@@ -1743,24 +1806,6 @@
       "publishedAt": "Fri, 14 Aug 2026 14:17:44 +0000"
     },
     {
-      "source": "PC Gamer",
-      "language": "en",
-      "title": "Palworld fans 'do not realize the sheer number of collabs we've rejected' even with the survival game's 'fun-first approach'",
-      "normalizedTitle": "palworld fans do not realize the sheer number of collabs we ve rejected even with the survival game s fun first approach",
-      "url": "https://www.pcgamer.com/games/survival-crafting/palworld-fans-do-not-realize-the-sheer-number-of-collabs-weve-rejected-even-with-the-survival-games-fun-first-approach/",
-      "summary": "I think Terraria is a great fit.",
-      "publishedAt": "Fri, 14 Aug 2026 13:47:27 +0000"
-    },
-    {
-      "source": "PC Gamer",
-      "language": "en",
-      "title": "Marvel Tokon: Fighting Souls review",
-      "normalizedTitle": "marvel tokon fighting souls review",
-      "url": "https://www.pcgamer.com/games/fighting/marvel-tokon-fighting-souls-review/",
-      "summary": "Performance anxiety.",
-      "publishedAt": "Fri, 14 Aug 2026 13:23:17 +0000"
-    },
-    {
       "source": "Eurogamer",
       "language": "en",
       "title": "Nintendo announces Pokémon Pokopia has sold over 5m copies, meaning that roughly one in four Switch 2 users now owns the game",
@@ -1768,15 +1813,6 @@
       "url": "https://www.eurogamer.net/pokemon-pokopia-5m-sales",
       "summary": "It looks like we've got another massive Pok&eacute;mon-flavoured hit on our hands. Nintendo and The Pok&eacute;mon Company have confirmed that Pok&eacute;mon Pokopia has sold more than five million units globally - a pretty impressive number given the game has been out for \"just over four months\". These sales include both physical and digital editions of the game. Read more",
       "publishedAt": "Fri, 14 Aug 2026 13:19:08 +0000"
-    },
-    {
-      "source": "PC Gamer",
-      "language": "en",
-      "title": "GameSir T7 Pro Sugar Whirl review",
-      "normalizedTitle": "gamesir t7 pro sugar whirl review",
-      "url": "https://www.pcgamer.com/hardware/game-pads/gamesir-t7-pro-sugar-whirl-review/",
-      "summary": "Not quite the sweetest of treats.",
-      "publishedAt": "Fri, 14 Aug 2026 13:13:19 +0000"
     },
     {
       "source": "Rock Paper Shotgun",
@@ -3102,24 +3138,6 @@
       "publishedAt": "Fri, 07 Aug 2026 13:10:07 +0000"
     },
     {
-      "source": "Eurogamer",
-      "language": "en",
-      "title": "Sony appears to be putting labels on PS5 console boxes to warn people it's ending disc production",
-      "normalizedTitle": "sony appears to be putting labels on ps5 console boxes to warn people it s ending disc production",
-      "url": "https://www.eurogamer.net/ps5-boxes-labels-physical-media-2028",
-      "summary": "In case it was ever in doubt, it seems Sony is not backing down from its controversial decision to stop manufacturing physical disc-based games . It appears a notice is being shipped with new PS5 consoles that have disc drives to warn users that, as announced, PlayStation will cease to support physical media at the beginning of 2028. Read more",
-      "publishedAt": "Fri, 07 Aug 2026 12:01:00 +0000"
-    },
-    {
-      "source": "Eurogamer",
-      "language": "en",
-      "title": "Doom creator id Software used Taiwanese pirates to help distribute the game, John Romero reveals",
-      "normalizedTitle": "doom creator id software used taiwanese pirates to help distribute the game john romero reveals",
-      "url": "https://www.eurogamer.net/john-romero-doom-id-software-taiwanese-pirates",
-      "summary": "John Romero, the legendarily long-haired co-founder of id Software and father of game series Quake and Doom, has recounted a tale about when id Software worked with Taiwanese pirates to spread Doom. Read more",
-      "publishedAt": "Fri, 07 Aug 2026 12:00:44 +0000"
-    },
-    {
       "source": "Rock Paper Shotgun",
       "language": "en",
       "title": "\"Credible military storytelling\": Ubisoft announce playtests for new Ghost Recon game alongside a sizeable Wildlands update and a Future Soldier giveaway",
@@ -3496,24 +3514,6 @@
       "url": "https://www.rockpapershotgun.com/sci-fi-mmo-cinder-city-is-getting-a-pre-alpha-playtest-later-this-month-so-you-can-put-its-ram-hogging-requirements-to-the-test",
       "summary": "I haven't the foggiest idea whether Cinder City will be any good or not. Visually, if you showed it to me without a logo or any form of identifying information, I'm not even sure I could distinguish it from any other sci-fi shooter . But the shooting looks PS3 as hell, with slightly awkward movements made moreso by the realistic look, and a futuristic HUD that seems like it's meant to be diegetic. How it actually feels is another question, but one that some of us can soon answer, as sign ups for a playtest are now open. Read more",
       "publishedAt": "Tue, 04 Aug 2026 16:23:04 +0000"
-    },
-    {
-      "source": "Rock Paper Shotgun",
-      "language": "en",
-      "title": "Is 8GB VRAM enough for a graphics card in 2026? Yes, but GPU makers should still try harder",
-      "normalizedTitle": "is 8gb vram enough for a graphics card in 2026 yes but gpu makers should still try harder",
-      "url": "https://www.rockpapershotgun.com/is-8gb-vram-enough-for-a-graphics-card-in-2026-yes-but-gpu-makers-should-still-try-harder",
-      "summary": "The amount of memory a PC needs is a matter that's divided PC owners since before the days of DDR1. Different apps, games, and in-game settings all have different demands, so what works for one rig can be quite different to what works for another. In 2026, with component prices so stratospherically high - Nvidia and AMD are both cranking theirs up still - what truly constitutes a need is up for even further debate. There&rsquo;s no better example of this argument than around VRAM, or video RAM. While a - shall we say enthusiastic - school of thought has developed around 8GB becoming insufficie",
-      "publishedAt": "Tue, 04 Aug 2026 15:07:03 +0000"
-    },
-    {
-      "source": "Rock Paper Shotgun",
-      "language": "en",
-      "title": "13th century Mongolian courier sim The Legend of Khiimori becomes a battle against supernatural \"poison of the earth spirit\" with its Corruption Update",
-      "normalizedTitle": "13th century mongolian courier sim the legend of khiimori becomes a battle against supernatural poison of the earth spirit with its corruption update",
-      "url": "https://www.rockpapershotgun.com/13th-century-mongolian-courier-sim-the-legend-of-khiimori-becomes-a-battle-against-supernatural-poison-of-the-earth-spirit-with-its-corruption-update",
-      "summary": "Up to this point, The Legend of Khiimori is a game I've primarily known as that pretty chill-looking Mongolian mail delivery game heavy on horses. Sure it's clearly got some survival elements to it, but the main draw has always - and from what Edwin's told me based on his time with it - been in galloping across pleasant plains. However, with Khiimori's latest update, those plains have become infected by a supernatural scourge. Read more",
-      "publishedAt": "Tue, 04 Aug 2026 14:00:00 +0000"
     },
     {
       "source": "StopGame",
