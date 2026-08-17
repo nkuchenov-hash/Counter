@@ -1,7 +1,7 @@
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 
-/// Compatibility marker for the currently shipped plan-backed Path storage.
+/// Marker for the currently shipped plan-backed Path storage.
 ///
 /// New Paths code must go through [PathRepository] instead of reading marker
 /// rows directly. This lets the storage move later without changing feature UI.
@@ -121,7 +121,7 @@ class PathCatalogSnapshot {
 
   final List<ProjectPathSnapshot> paths;
 
-  /// Categories with more than one active legacy root. Load is intentionally
+  /// Categories with more than one active old-format root. Load is intentionally
   /// read-only: the repository reports duplicates but never retires rows just
   /// because the screen was opened.
   final Set<int> duplicateActiveRootCategoryIds;
@@ -134,11 +134,56 @@ class PathStructureAudit {
   bool get isValid => problems.isEmpty;
 }
 
+/// Pure, project-independent Path quality check.
+///
+/// Keep this free of PocketBase/DatabaseService access so it can be used by UI,
+/// future AI proposal validation, and focused unit tests.
+PathStructureAudit auditPathStructure({
+  required String goal,
+  required List<PathStageSnapshot> stages,
+}) {
+  final problems = <String>[];
+  if (goal.trim().isEmpty) problems.add('Path goal is empty.');
+  if (stages.isEmpty) problems.add('Path has no stages.');
+
+  for (var stageIndex = 0; stageIndex < stages.length; stageIndex++) {
+    final stage = stages[stageIndex];
+    final number = stageIndex + 1;
+    if (stage.title.trim().isEmpty) {
+      problems.add('Stage $number has no outcome title.');
+    }
+    if (stage.completionCriteria.trim().isEmpty) {
+      problems.add('Stage $number has no completion criteria.');
+    }
+    if (!stage.isDone && stage.actions.isEmpty) {
+      problems.add('Stage $number has no executable actions.');
+    }
+    for (var actionIndex = 0; actionIndex < stage.actions.length; actionIndex++) {
+      final action = stage.actions[actionIndex];
+      final actionNumber = actionIndex + 1;
+      if (action.text.trim().isEmpty) {
+        problems.add('Stage $number action $actionNumber has no action text.');
+      }
+      if (action.expectedResult.trim().isEmpty) {
+        problems.add(
+          'Stage $number action $actionNumber has no expected result.',
+        );
+      }
+      if (action.minutes <= 0 || action.minutes > 30) {
+        problems.add(
+          'Stage $number action $actionNumber must fit in 1–30 minutes.',
+        );
+      }
+    }
+  }
+  return PathStructureAudit(problems);
+}
+
 /// First-class domain boundary for Paths.
 ///
-/// Today it is a compatibility adapter over the existing `plans` rows. It is
-/// deliberately free of page-open migrations, Planner generation and
-/// project-specific profiles. Those concerns must be explicit services/actions.
+/// Today it adapts the existing `plans` rows. It is deliberately free of
+/// page-open migrations, Planner generation and project-specific profiles.
+/// Those concerns must be explicit services/actions.
 class PathRepository {
   PathRepository({DatabaseService? database})
       : _database = database ?? DatabaseService.instance;
@@ -199,39 +244,10 @@ class PathRepository {
     );
   }
 
-  PathStructureAudit audit(ProjectPathSnapshot path) {
-    final problems = <String>[];
-    if (path.goal.trim().isEmpty) problems.add('Path goal is empty.');
-    if (path.stages.isEmpty) problems.add('Path has no stages.');
-
-    for (var stageIndex = 0; stageIndex < path.stages.length; stageIndex++) {
-      final stage = path.stages[stageIndex];
-      final number = stageIndex + 1;
-      if (stage.title.trim().isEmpty) {
-        problems.add('Stage $number has no outcome title.');
-      }
-      if (stage.completionCriteria.trim().isEmpty) {
-        problems.add('Stage $number has no completion criteria.');
-      }
-      if (!stage.isDone && stage.actions.isEmpty) {
-        problems.add('Stage $number has no executable actions.');
-      }
-      for (var actionIndex = 0; actionIndex < stage.actions.length; actionIndex++) {
-        final action = stage.actions[actionIndex];
-        final actionNumber = actionIndex + 1;
-        if (action.text.trim().isEmpty) {
-          problems.add('Stage $number action $actionNumber has no action text.');
-        }
-        if (action.expectedResult.trim().isEmpty) {
-          problems.add('Stage $number action $actionNumber has no expected result.');
-        }
-        if (action.minutes <= 0 || action.minutes > 30) {
-          problems.add('Stage $number action $actionNumber must fit in 1–30 minutes.');
-        }
-      }
-    }
-    return PathStructureAudit(problems);
-  }
+  PathStructureAudit audit(ProjectPathSnapshot path) => auditPathStructure(
+        goal: path.goal,
+        stages: path.stages,
+      );
 
   PlanningTask _selectCanonicalRoot(List<PlanningTask> roots) {
     if (roots.length == 1) return roots.single;
