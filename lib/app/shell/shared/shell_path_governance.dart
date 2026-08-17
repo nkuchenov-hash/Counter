@@ -7,6 +7,8 @@ const String _activePathMarkerV4 = 'LIFEOS_PATH::V2';
 const String _retiredPathMarkerV4 = 'LIFEOS_PATH::V2_RETIRED';
 const String _pathActionPlanMarkerV4 = 'LIFEOS_PATH_ACTION_V4|';
 const String _weekRoutinePlanMarkerV4 = 'LIFEOS_WEEK_ROUTINE_V4|';
+const String _projectPlanApprovalStageIdV5 = 'project-plan-approval-v5';
+const String _projectPlanApprovalActionIdV5 = 'project-plan-approval-v5-review';
 
 class ProjectPathAuditV4 {
   const ProjectPathAuditV4({
@@ -178,7 +180,7 @@ const List<_PathAuditProfileV4> _pathAuditProfilesV4 = [
       'продажи/дистрибуция': ['sales', 'продаж', 'distribution'],
     },
     weeklyMinutes: 60,
-    planningStageIndex: 1,
+    planningStageIndex: 2,
   ),
   _PathAuditProfileV4(
     name: 'Etnika Studio',
@@ -229,11 +231,28 @@ const List<_PathAuditProfileV4> _pathAuditProfilesV4 = [
     weeklyMinutes: 75,
   ),
   _PathAuditProfileV4(
+    name: 'Управление деньгами / ZenMoney',
+    aliases: [
+      'Управление деньгами / ZenMoney',
+      'Управление деньгами',
+      'ZenMoney',
+      'Zen Money',
+    ],
+    requiredTracks: ['finance', 'operations', 'validation'],
+    requiredTopics: {
+      'ZenMoney как источник фактов': ['zenmoney'],
+      'фактический доход по источникам': ['доход', 'источник'],
+      'Price Reporter fixed/bonus': ['price reporter', 'бонус'],
+      'расходы': ['расход'],
+      'разрыв до 600 000': ['600 000', 'разрыв'],
+    },
+    weeklyMinutes: 45,
+  ),
+  _PathAuditProfileV4(
     name: 'Price Reporter',
     aliases: ['Price Reporter'],
-    requiredTracks: ['finance', 'operations', 'reliability', 'legal', 'automation', 'career'],
+    requiredTracks: ['operations', 'reliability', 'legal', 'automation', 'career'],
     requiredTopics: {
-      'фактический доход': ['доход', 'income', 'bonus'],
       'автоматизация': ['автомат'],
       'compliance': ['compliance', 'риск'],
       'доказательства ценности': ['ценност', 'value'],
@@ -369,6 +388,9 @@ ProjectPathAuditV4 auditExecutableProjectPathV4(
     if (!entry.value.any((token) => searchable.contains(token.toLowerCase()))) {
       missingTopics.add(entry.key);
     }
+  }
+  if (!_projectPlanApprovedV5(root)) {
+    missingTopics.insert(0, 'план проекта ещё не согласован');
   }
 
   return ProjectPathAuditV4(
@@ -572,6 +594,145 @@ List<Map<String, dynamic>> _rulersWebsiteAdditionsV4() {
   ];
 }
 
+Map<String, dynamic> _projectPlanApprovalStageV5() => _stageV4(
+  'approval-v5-',
+  'gate',
+  'Согласовать план проекта',
+  'Мы вместе прошли цель, последовательность этапов, конкретные действия и слепые зоны; все замечания внесены, после чего пользователь явно подтвердил, что эту версию плана можно использовать для дальнейшего планирования.',
+  [
+    _actionV4(
+      'approval-v5-',
+      'review',
+      'Согласовать со мной текущий план проекта: пройти цель, этапы, действия и возможные слепые зоны',
+      'Либо подтверждённая рабочая версия плана, либо конкретный список правок, после которых согласование продолжается',
+      30,
+      'strategy',
+    ),
+  ],
+);
+
+bool _hasProjectPlanApprovalGateV5(PlanningTask root) =>
+    root.checklist.isNotEmpty &&
+    (root.checklist.first['id'] ?? '').toString() ==
+        'approval-v5-gate';
+
+bool _projectPlanApprovedV5(PlanningTask root) =>
+    _hasProjectPlanApprovalGateV5(root) && root.checklist.first['isDone'] == true;
+
+List<Map<String, dynamic>> _moneyManagementPathV5() {
+  const p = 'money-v5-';
+  return <Map<String, dynamic>>[
+    _stageV4(
+      p,
+      'baseline',
+      'Собрать фактическую картину личных денег',
+      'В ZenMoney и LIFE OS есть проверенная картина доходов и расходов минимум за последние 3 полных месяца, доход разбит по источникам, отдельно видны фактические выплаты Price Reporter и бонусы, рассчитан средний месячный доход и разрыв до 600 000 ₽.',
+      [
+        _actionV4(p, 'baseline-01', 'Открыть ZenMoney и разобрать первые 15 минут неразнесённых операций', 'Меньше неразнесённых операций; исправленные категории сохранены', 15, 'operations'),
+        _actionV4(p, 'baseline-02', 'Выписать все источники дохода, по которым были реальные поступления за последние 3 полных месяца', 'Список фактических источников дохода, а не потенциальных проектов', 20, 'finance'),
+        _actionV4(p, 'baseline-03', 'Выписать фактические поступления Price Reporter по месяцам, отдельно фиксированную часть и полученные бонусы', 'Таблица фактических выплат Price Reporter по месяцам', 25, 'finance'),
+        _actionV4(p, 'baseline-04', 'Выписать фактические поступления Atozed и остальных источников по тем же месяцам', 'Сопоставимая таблица остальных доходов', 25, 'finance'),
+        _actionV4(p, 'baseline-05', 'Выписать общие расходы за те же 3 месяца из ZenMoney без попытки оптимизировать их', 'Три фактических месячных значения расходов', 15, 'finance'),
+        _actionV4(p, 'baseline-06', 'Посчитать средний фактический месячный доход и разрыв до 600 000 ₽', 'Одно текущее число среднего дохода и одно число разрыва до цели', 15, 'validation'),
+      ],
+    ),
+    _stageV4(
+      p,
+      'review',
+      'Сделать денежную картину регулярно обновляемой',
+      'Есть короткая повторяемая процедура: разнести операции, проверить поступления по источникам, обновить средний доход/расход и разрыв до 600 000 ₽ без ручного пересчёта с нуля.',
+      [
+        _actionV4(p, 'review-01', 'Записать пятишаговый еженедельный порядок проверки ZenMoney', 'Короткий денежный review, который можно превратить в повторяющийся план', 15, 'operations'),
+        _actionV4(p, 'review-02', 'Определить, какие итоговые цифры LIFE OS должен читать из ZenMoney или получать вручную', 'Минимальный набор финансовых показателей LIFE OS без копирования бухгалтерии', 20, 'operations'),
+        _actionV4(p, 'review-03', 'Проверить процедуру на одном фактическом обновлении и записать, что пришлось считать вручную', 'Список оставшихся ручных операций для будущей автоматизации', 20, 'validation'),
+      ],
+    ),
+  ];
+}
+
+Future<CategoryRule?> _ensureMoneyManagementCategoryV5() async {
+  final existing = _findCategoryByAliasesV4(const [
+    'Управление деньгами / ZenMoney',
+    'Управление деньгами',
+    'ZenMoney',
+    'Zen Money',
+  ]);
+  if (existing != null) return existing;
+
+  final db = DatabaseService.instance;
+  final status = db.classifyCategoryDisplayNameInput('Управление деньгами / ZenMoney');
+  if (status.activeLocalId != null) {
+    return db.getCategoryRuleById(status.activeLocalId!);
+  }
+  if (status.archivedPbRowId != null) {
+    final restored = await db.restoreArchivedCategory(status.archivedPbRowId!);
+    if (restored != null) return db.getCategoryRuleById(restored);
+  }
+  final created = await db.addNestedCategory(
+    null,
+    CategoryRule(
+      id: db.newId(),
+      name: 'Управление деньгами / ZenMoney',
+      colorValue: 0xFF2E7D32,
+      iconCodePoint: 0xe263,
+      isSynced: false,
+    ),
+  );
+  if (created == null) return null;
+  await db.refreshCategoryRulesFromServer();
+  return _findCategoryByAliasesV4(const [
+    'Управление деньгами / ZenMoney',
+    'Управление деньгами',
+    'ZenMoney',
+    'Zen Money',
+  ]);
+}
+
+Future<void> _ensureMoneyManagementPathV5() async {
+  final category = await _ensureMoneyManagementCategoryV5();
+  if (category == null) return;
+  final root = await _activePathForCategoryV4(category.id);
+  if (root != null) return;
+  final order = await DatabaseService.instance.nextBacklogPlanningOrder();
+  await DatabaseService.instance.addPlanningTask(
+    PlanningTask(
+      id: 0,
+      title: 'Поддерживать актуальную картину личных денег и управлять движением к 600 000 ₽ в месяц на основании фактических данных ZenMoney и реальных поступлений по каждому источнику.',
+      categoryId: category.id,
+      isDone: true,
+      dateKey: '',
+      order: order,
+      checklist: _moneyManagementPathV5(),
+      notesPlain: _activePathMarkerV4,
+      isSynced: false,
+    ),
+  );
+}
+
+Future<void> _ensureProjectPlanApprovalGatesV5() async {
+  final db = DatabaseService.instance;
+  final roots = await db.fetchBacklogPlans(includeCompleted: true);
+  for (final root in roots) {
+    if ((root.notesPlain ?? '').trim() != _activePathMarkerV4) continue;
+    if (_hasProjectPlanApprovalGateV5(root)) continue;
+    final checklist = <Map<String, dynamic>>[
+      _projectPlanApprovalStageV5(),
+      ...root.checklist.map((e) => Map<String, dynamic>.from(e)),
+    ];
+    final ok = await db.updatePlanningTask(
+      root.planRowIdForBackend,
+      planBusinessId: root.planRowId,
+      title: root.title,
+      categoryId: root.categoryId,
+      isDone: true,
+      notesPlain: _activePathMarkerV4,
+      checklist: checklist,
+      suppressAppSnack: true,
+    );
+    if (!ok) throw StateError('Could not add plan approval gate to category ${root.categoryId}');
+  }
+}
+
 bool _checklistHasPrefixV4(List<Map<String, dynamic>> checklist, String prefix) =>
     checklist.any((row) => (row['id'] ?? '').toString().startsWith(prefix));
 
@@ -633,6 +794,66 @@ Future<void> _replacePathV4({
     ),
   );
   if (!created) throw StateError('Could not create revised Path for ${category.name}');
+}
+
+Future<void> _detachPriceReporterMoneyWorkV5() async {
+  final category = _findCategoryByAliasesV4(const ['Price Reporter']);
+  if (category == null) return;
+  final root = await _activePathForCategoryV4(category.id);
+  if (root == null) return;
+
+  var changed = false;
+  final next = <Map<String, dynamic>>[];
+  for (final rawStage in root.checklist) {
+    final stage = Map<String, dynamic>.from(rawStage);
+    final id = (stage['id'] ?? '').toString();
+    final actions = _pathActionsFromStageRawV4(stage);
+
+    if (id == 'exec-pricereporter-stage-1') {
+      stage['text'] = 'Зафиксировать фактическую рабочую нагрузку и критичные виды работы';
+      stage['definitionOfDone'] =
+          'Есть наблюдение реального рабочего дня и список основных повторяющихся/критичных типов работы; расчёты выплат и среднего дохода ведутся отдельно в «Управление деньгами / ZenMoney».';
+      final kept = <Map<String, dynamic>>[
+        for (final action in actions)
+          if ((action['track'] ?? '').toString() != 'finance') action,
+      ];
+      if (!kept.any((a) => (a['id'] ?? '').toString() == 'pr-v5-work-types')) {
+        kept.add(_actionV4(
+          'pr-v5-',
+          'work-types',
+          'Выписать пять основных типов работы Price Reporter, которые регулярно занимают время или несут compliance-риск',
+          'Список 5 рабочих типов с понятной ролью в нагрузке',
+          15,
+          'operations',
+        ));
+      }
+      stage['actions'] = kept;
+      changed = true;
+    } else if (id == 'exec-pricereporter-stage-4') {
+      stage['text'] = 'Снизить операционную уязвимость Price Reporter';
+      stage['definitionOfDone'] =
+          'Критические рабочие процессы документированы так, чтобы отпуск, болезнь или передача части рутины не создавали compliance/continuity риска; финансовый порог зависимости ведётся в ZenMoney-проекте.';
+      stage['actions'] = <Map<String, dynamic>>[
+        for (final action in actions)
+          if ((action['track'] ?? '').toString() != 'finance') action,
+      ];
+      changed = true;
+    }
+    next.add(stage);
+  }
+
+  if (!changed) return;
+  final ok = await DatabaseService.instance.updatePlanningTask(
+    root.planRowIdForBackend,
+    planBusinessId: root.planRowId,
+    title: root.title,
+    categoryId: root.categoryId,
+    isDone: true,
+    notesPlain: _activePathMarkerV4,
+    checklist: next,
+    suppressAppSnack: true,
+  );
+  if (!ok) throw StateError('Could not detach Price Reporter money work');
 }
 
 Future<void> upgradeRealityPathsV4() async {
@@ -699,6 +920,10 @@ Future<void> upgradeRealityPathsV4() async {
       if (!ok) throw StateError('Could not extend Rulers Path');
     }
   }
+
+  await _ensureMoneyManagementPathV5();
+  await _detachPriceReporterMoneyWorkV5();
+  await _ensureProjectPlanApprovalGatesV5();
 }
 
 String _weekKeyV4(DateTime monday) =>
@@ -809,7 +1034,9 @@ List<_WeekActionCandidateV4> _currentActionsForRootV4(
   CategoryRule category,
   PlanningTask root,
 ) {
-  var targetStage = profile.planningStageIndex;
+  var targetStage = _projectPlanApprovedV5(root)
+      ? profile.planningStageIndex
+      : 0;
   if (targetStage == null) {
     for (var i = 0; i < root.checklist.length; i++) {
       if (root.checklist[i]['isDone'] != true) {
@@ -848,6 +1075,49 @@ List<_WeekActionCandidateV4> _currentActionsForRootV4(
   return out;
 }
 
+DateTime? _firstFreeProjectSlotV5(
+  DatabaseService db, {
+  required DateTime earliest,
+  required int minutes,
+  required DateTime latestEnd,
+  required List<PlanningTask> existing,
+}) {
+  var candidate = _roundUp5V4(earliest);
+  final busy = <(DateTime, DateTime)>[];
+  for (final task in existing) {
+    final rawStart = task.startTime;
+    if (rawStart == null) continue;
+    final start = rawStart;
+    if (start.year != candidate.year ||
+        start.month != candidate.month ||
+        start.day != candidate.day) {
+      continue;
+    }
+    final rawEnd = task.endDateTime;
+    final end = rawEnd == null
+        ? start.add(const Duration(minutes: 30))
+        : rawEnd;
+    if (!end.isAfter(start)) continue;
+    busy.add((start, end));
+  }
+  busy.sort((a, b) => a.$1.compareTo(b.$1));
+
+  for (final interval in busy) {
+    if (!interval.$2.isAfter(candidate)) continue;
+    final requestedEnd = candidate.add(Duration(minutes: minutes));
+    if (!requestedEnd.isAfter(interval.$1)) {
+      return requestedEnd.isAfter(latestEnd) ? null : candidate;
+    }
+    candidate = _roundUp5V4(interval.$2);
+    if (candidate.add(Duration(minutes: minutes)).isAfter(latestEnd)) {
+      return null;
+    }
+  }
+  return candidate.add(Duration(minutes: minutes)).isAfter(latestEnd)
+      ? null
+      : candidate;
+}
+
 Future<bool> _createScheduledTaskV4({
   required CategoryRule category,
   required String title,
@@ -882,9 +1152,75 @@ Future<bool> _createScheduledTaskV4({
   return db.addPlanningTask(task);
 }
 
+Future<void> _removeSupersededWeekRoutinesV5() async {
+  final db = DatabaseService.instance;
+  final today = db.getTimelineDeviceLocalToday();
+  final monday = _mondayOfV4(today);
+  final ids = <String>{};
+  for (var i = 0; i < 7; i++) {
+    final day = monday.add(Duration(days: i));
+    final tasks = await db.getPlanningTasksForWallDate(day);
+    for (final task in tasks) {
+      final notes = (task.notesPlain ?? '').trim();
+      if (!notes.startsWith(_weekRoutinePlanMarkerV4)) continue;
+      final id = task.planRowIdForBackend.trim();
+      if (id.isEmpty || id.startsWith('virt-') || id.startsWith('optimistic-')) {
+        continue;
+      }
+      ids.add(id);
+    }
+  }
+  if (ids.isNotEmpty) {
+    await db.deletePlanningTasksBulk(ids);
+  }
+}
+
+Future<void> _removePrematurePathActionsV5() async {
+  final db = DatabaseService.instance;
+  final roots = await db.fetchBacklogPlans(includeCompleted: true);
+  final approvalByRootId = <String, bool>{};
+  for (final root in roots) {
+    if ((root.notesPlain ?? '').trim() != _activePathMarkerV4) continue;
+    final rootId = (root.pocketRecordId ?? root.planRowIdForBackend).trim();
+    if (rootId.isEmpty) continue;
+    approvalByRootId[rootId] = _projectPlanApprovedV5(root);
+  }
+
+  final today = db.getTimelineDeviceLocalToday();
+  final monday = _mondayOfV4(today);
+  final ids = <String>{};
+  for (var i = 0; i < 7; i++) {
+    final day = monday.add(Duration(days: i));
+    final tasks = await db.getPlanningTasksForWallDate(day);
+    for (final task in tasks) {
+      if (task.isDone) continue;
+      final firstLine = (task.notesPlain ?? '').split('\n').first.trim();
+      if (!firstLine.startsWith(_pathActionPlanMarkerV4)) continue;
+      final payload = firstLine.substring(_pathActionPlanMarkerV4.length);
+      final parts = payload.split('|');
+      if (parts.length < 3) continue;
+      final rootId = parts[0].trim();
+      final stageId = parts[1].trim();
+      if (stageId.startsWith('approval-v5-')) continue;
+      if (approvalByRootId[rootId] == true) continue;
+      final id = task.planRowIdForBackend.trim();
+      if (id.isEmpty || id.startsWith('virt-') || id.startsWith('optimistic-')) {
+        continue;
+      }
+      ids.add(id);
+    }
+  }
+  if (ids.isNotEmpty) {
+    await db.deletePlanningTasksBulk(ids);
+  }
+}
+
+
 Future<PathWeekPlanReportV4> planCurrentWeekFromPathsV4() async {
   final db = DatabaseService.instance;
   await upgradeRealityPathsV4();
+  await _removeSupersededWeekRoutinesV5();
+  await _removePrematurePathActionsV5();
 
   final backlog = await db.fetchBacklogPlans(includeCompleted: true);
   final roots = <PlanningTask>[
@@ -930,6 +1266,16 @@ Future<PathWeekPlanReportV4> planCurrentWeekFromPathsV4() async {
     final profile = _profileForProjectV4(category.name);
     if (profile == null) continue;
     final audit = auditExecutableProjectPathV4(category, root);
+    if (!_projectPlanApprovedV5(root)) {
+      // Until the user explicitly checks the first stage as agreed, the only
+      // permissible Path-derived task is the approval review itself. Price
+      // Reporter stays user-planned and is never auto-scheduled here.
+      if (profile.name != 'Price Reporter') {
+        pools[profile] = _currentActionsForRootV4(profile, category, root);
+      }
+      blocked.add('${profile.name}: план не согласован');
+      continue;
+    }
     if (!audit.audited) {
       blocked.add(profile.name);
       continue;
@@ -957,16 +1303,6 @@ Future<PathWeekPlanReportV4> planCurrentWeekFromPathsV4() async {
   var created = 0;
   final now = db.applyUserOffset(DateTime.now().toUtc());
 
-  final atozed = _findCategoryByAliasesV4(const [
-    'Atozed / IntraWeb17',
-    'Atozed',
-    'IntraWeb17',
-    'IntraWeb 17',
-    'IW17',
-    'IntraWeb',
-  ]);
-  final priceReporter = _findCategoryByAliasesV4(const ['Price Reporter']);
-
   final dayCursor = <String, DateTime>{};
   for (final day in weekdays) {
     var start = DateTime(day.year, day.month, day.day, 9);
@@ -975,57 +1311,14 @@ Future<PathWeekPlanReportV4> planCurrentWeekFromPathsV4() async {
       if (rounded.isAfter(start)) start = rounded;
     }
     dayCursor[_dateKeyV4(day)] = start;
-
-    if (atozed != null && start.isBefore(DateTime(day.year, day.month, day.day, 15))) {
-      final routines = <(String, int)>[
-        ('Atozed: открыть входящие и выписать письма, требующие действия', 15),
-        ('Atozed: проверить покупки и лицензии, ожидающие действия', 10),
-        ('Atozed: закрыть самое срочное клиентское обращение', 20),
-      ];
-      for (var ri = 0; ri < routines.length; ri++) {
-        final marker = '$_weekRoutinePlanMarkerV4$weekKey|${_dateKeyV4(day)}|atozed-$ri';
-        if (!existingMarkers.contains(marker)) {
-          final ok = await _createScheduledTaskV4(
-            category: atozed,
-            title: routines[ri].$1,
-            notes: marker,
-            start: dayCursor[_dateKeyV4(day)]!,
-            minutes: routines[ri].$2,
-          );
-          if (ok) {
-            created++;
-            existingMarkers.add(marker);
-          }
-        }
-        dayCursor[_dateKeyV4(day)] = dayCursor[_dateKeyV4(day)]!
-            .add(Duration(minutes: routines[ri].$2 + 5));
-      }
-    }
-
-    if (priceReporter != null) {
-      final dk = _dateKeyV4(day);
-      final existingTitles = existingTitlesByDate[dk] ?? const <String>{};
-      if (!existingTitles.any((title) => title.contains('price reporter'))) {
-        final marker = '$_weekRoutinePlanMarkerV4$weekKey|$dk|price-reporter';
-        if (!existingMarkers.contains(marker)) {
-          final ok = await _createScheduledTaskV4(
-            category: priceReporter,
-            title: 'Price Reporter — рабочая смена',
-            notes: marker,
-            start: DateTime(day.year, day.month, day.day, 16),
-            minutes: 8 * 60,
-          );
-          if (ok) {
-            created++;
-            existingMarkers.add(marker);
-          }
-        }
-      }
-    }
   }
 
   final remainingBudget = <_PathAuditProfileV4, int>{
-    for (final profile in pools.keys) profile: profile.weeklyMinutes,
+    for (final profile in pools.keys)
+      profile: (pools[profile]?.isNotEmpty == true &&
+              (pools[profile]!.first.stageId.startsWith('approval-v5-')))
+          ? 30
+          : profile.weeklyMinutes,
   };
   final indexes = <_PathAuditProfileV4, int>{for (final p in pools.keys) p: 0};
   var dayIndex = 0;
@@ -1055,12 +1348,25 @@ Future<PathWeekPlanReportV4> planCurrentWeekFromPathsV4() async {
     for (var attempt = 0; attempt < weekdays.length; attempt++) {
       final day = weekdays[(dayIndex + attempt) % weekdays.length];
       final dk = _dateKeyV4(day);
-      final cursor = dayCursor[dk] ?? DateTime(day.year, day.month, day.day, 9);
+      final earliest = dayCursor[dk] ?? DateTime(day.year, day.month, day.day, 9);
+      final existingDay = await db.getPlanningTasksForWallDate(
+        DateTime(day.year, day.month, day.day),
+      );
+      final cursor = _firstFreeProjectSlotV5(
+        db,
+        earliest: earliest,
+        minutes: candidate.minutes,
+        latestEnd: DateTime(day.year, day.month, day.day, 15, 30),
+        existing: existingDay,
+      );
+      if (cursor == null) continue;
       final end = cursor.add(Duration(minutes: candidate.minutes));
-      if (end.isAfter(DateTime(day.year, day.month, day.day, 15, 30))) continue;
+      final approvalTask = candidate.stageId.startsWith('approval-v5-');
       final ok = await _createScheduledTaskV4(
         category: candidate.category,
-        title: '${candidate.profile.name}: ${candidate.text}',
+        title: approvalTask
+            ? '${candidate.profile.name}: согласовать план проекта'
+            : '${candidate.profile.name}: ${candidate.text}',
         notes: '$marker\nОжидаемый результат: ${candidate.result}',
         start: cursor,
         minutes: candidate.minutes,
