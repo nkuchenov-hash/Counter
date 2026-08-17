@@ -38,6 +38,35 @@ jobs:
       - name: Repair generated RU quality fallbacks
         run: python3 scripts/manual/_fix_structure_ru_quality.py
 
+      - name: Refine generic wording and category RU sources
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          replacements = {
+              "Shared category pickers, form fields, create-from-picker, local hidden-category preferences.":
+                  "Общие picker-экраны категорий, поля формы, создание новой категории из picker и локальные настройки скрытых категорий.",
+              "Category pickers Notes/Planning/Timeline/Wear и create-from-picker":
+                  "Picker категорий в Notes, Planning, Timeline и Wear, включая создание новой категории из picker.",
+              "Shared tree rendering и search filtering.":
+                  "Общий рендер дерева категорий и фильтрация по поиску.",
+          }
+
+          for source in Path("scripts/manual").glob("*.py"):
+              text = source.read_text(encoding="utf-8")
+              updated = text
+              for old, new in replacements.items():
+                  updated = updated.replace(old, new)
+              if source.name == "structure_en_ru_adapt.py":
+                  updated = updated.replace(
+                      'f"{kind.capitalize()} `{name}` относится к области `{parent}`."',
+                      'f"{kind.capitalize()} `{name}` хранится в каталоге `{parent}` и обслуживает его ответственность."',
+                  )
+              if updated != text:
+                  source.write_text(updated, encoding="utf-8")
+          PY
+
       - name: Regenerate detailed structure guide
         run: python3 scripts/manual/generate_app_structure_detailed.py
 
