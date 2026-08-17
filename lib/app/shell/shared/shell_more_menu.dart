@@ -1,5 +1,33 @@
 part of '../app_shell.dart';
 
+const String _legacyProjectPathMarkerV1 = 'LIFEOS_PATH::V1';
+const String _retiredProjectPathMarkerV1 = 'LIFEOS_PATH::V1_RETIRED';
+
+/// V2 replaced the original flat Path model. Keep old generated rows as an
+/// inert backup instead of deleting them, then let ExecutableCategoryPathsPage
+/// materialize the V2 row for the same category. This deliberately does not
+/// touch V2 rows or ordinary completed plans.
+Future<void> _retireLegacyProjectPathsV1() async {
+  final db = DatabaseService.instance;
+  final tasks = await db.fetchBacklogPlans(includeCompleted: true);
+  for (final task in tasks) {
+    if ((task.notesPlain ?? '').trim() != _legacyProjectPathMarkerV1) continue;
+    final ok = await db.updatePlanningTask(
+      task.planRowIdForBackend,
+      planBusinessId: task.planRowId,
+      title: task.title,
+      categoryId: task.categoryId,
+      isDone: true,
+      notesPlain: _retiredProjectPathMarkerV1,
+      checklist: task.checklist,
+      suppressAppSnack: true,
+    );
+    if (!ok) {
+      throw StateError('Could not retire legacy Path for category ${task.categoryId}');
+    }
+  }
+}
+
 mixin ShellMoreMenu on ShellCoreLogic {
   static bool _moreMenuDiagnosticsMarkerLogged = false;
 
@@ -20,6 +48,29 @@ mixin ShellMoreMenu on ShellCoreLogic {
   }
 
   void openProjectPaths() {
+    unawaited(_openProjectPathsV2());
+  }
+
+  Future<void> _openProjectPathsV2() async {
+    var migrationFailed = false;
+    try {
+      await _retireLegacyProjectPathsV1();
+    } catch (e) {
+      migrationFailed = true;
+      debugPrint('[PROJECT_PATHS_V2] legacy migration failed: $e');
+    }
+    if (!mounted) return;
+
+    if (migrationFailed) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Не удалось автоматически обновить старый Path. V2 всё равно открыт.',
+          ),
+        ),
+      );
+    }
+
     final formFactor = shellFormFactorForWidth(MediaQuery.sizeOf(context).width);
     if (formFactor != ShellFormFactor.desktop) {
       Navigator.of(context).push<void>(
@@ -42,7 +93,14 @@ mixin ShellMoreMenu on ShellCoreLogic {
               onDesktopSideNavSelected(navIndex);
             });
           },
-          child: const ExecutableCategoryPathsPage(),
+          // Keep all Path drill-down routes inside this child navigator. The
+          // desktop shell stays mounted exactly like the Lists workspace.
+          child: Navigator(
+            onGenerateRoute: (_) => MaterialPageRoute<void>(
+              settings: const RouteSettings(name: '/project-paths-v2'),
+              builder: (_) => const ExecutableCategoryPathsPage(),
+            ),
+          ),
         ),
       ),
     );
