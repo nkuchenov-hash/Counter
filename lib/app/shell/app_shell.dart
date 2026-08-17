@@ -35,6 +35,7 @@ import 'package:counter/features/calendar/calendar_view.dart';
 import 'package:counter/features/settings/categories/category_list_view.dart';
 import 'package:counter/features/dev/component_lab_view.dart';
 import 'package:counter/features/lists/lists_view.dart';
+import 'package:counter/features/paths/paths_page.dart';
 import 'package:counter/features/planning/planning_view.dart';
 import 'package:counter/features/settings/voice/desktop_voice_attempt_dialog.dart';
 import 'package:counter/features/profile/profile_view.dart';
@@ -66,7 +67,8 @@ part 'shared/shell_more_menu.dart';
 part 'shared/shell_voice_routing.dart';
 
 mixin ShellDashboardBase on State<LifeOSDashboard> {
-  /// 0 Timeline, 1 Planning, 2 Calendar, 3 Lists, 4 Categories, 5 Profile.
+  /// 0 Timeline, 1 Planning, 2 Calendar, 3 Lists, 4 Categories, 5 Profile,
+  /// 6 Paths.
   int shellPageIndex = 0;
 
   int get navBarSelectedIndex => shellPageIndex <= 3 ? shellPageIndex : 4;
@@ -77,8 +79,9 @@ mixin ShellDashboardBase on State<LifeOSDashboard> {
       1 => 'plan',
       2 => 'calendar',
       3 => 'lists',
-      4 => 'more',
-      5 => 'settings',
+      4 => 'categories',
+      5 => 'profile',
+      6 => 'paths',
       _ => 'tab$shellPageIndex',
     };
   }
@@ -245,11 +248,26 @@ class ShellDashboardState extends State<LifeOSDashboard> with ShellDashboardBase
     );
   }
 
+  /// Paths is a real shell destination. This override replaces the legacy
+  /// nested-route implementation inherited from ShellMoreMenu. Opening Paths
+  /// is therefore navigation only; the page itself performs read-only load.
+  @override
+  void openProjectPaths() {
+    if (shellPageIndex == 6) return;
+    setState(() => setShellPageIndex(6));
+  }
 
+  /// Keep the real Paths item selected in desktop navigation while the new
+  /// first-class page is active.
+  @override
+  int desktopSideNavSelectedIndex(int shellPageIndex) {
+    return switch (shellPageIndex) {
+      0 || 1 || 2 || 3 || 4 || 5 || 6 => shellPageIndex,
+      _ => 7,
+    };
+  }
 
   /// Updates shared calendar day without rebuilding the full shell (date-swipe path).
-
-
 
   @override
   void dispose() {
@@ -306,6 +324,7 @@ class ShellDashboardState extends State<LifeOSDashboard> with ShellDashboardBase
           unawaited(toggleDesktopVoiceWidget());
         },
       ),
+      const PathsPage(),
     ];
 
     return AnimatedBuilder(
@@ -440,9 +459,10 @@ class ShellDashboardState extends State<LifeOSDashboard> with ShellDashboardBase
                 floatingActionButton: ListenableBuilder(
                   listenable: selectedDateListenable,
                   builder: (context, _) {
-                    final showFab = shellPageIndex == 1 ||
-                        shellPageIndex == 3 ||
-                        !isFutureDate;
+                    final showFab = shellPageIndex != 6 &&
+                        (shellPageIndex == 1 ||
+                            shellPageIndex == 3 ||
+                            !isFutureDate);
                     if (!showFab) return const SizedBox.shrink();
                     return ListenableBuilder(
                       listenable: shellLayout,
