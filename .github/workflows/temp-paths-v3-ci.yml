@@ -1,0 +1,26 @@
+name: Temp Paths V3 CI
+
+on:
+  push:
+    branches:
+      - fix/paths-v3-reality-kadr
+
+permissions:
+  contents: read
+
+jobs:
+  analyze-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.6'
+          channel: stable
+      - name: Create env.dart
+        run: |
+          mkdir -p lib/core/env
+          printf '%s\n' 'abstract final class Env {' '  static const String placeholder = '\'''\'';' '}' > lib/core/env/env.dart
+      - run: flutter pub get
+      - run: flutter analyze --no-fatal-infos --no-fatal-warnings
+      - run: flutter build web --release --base-href="/Counter/" --no-tree-shake-icons --no-wasm-dry-run --pwa-strategy=none
