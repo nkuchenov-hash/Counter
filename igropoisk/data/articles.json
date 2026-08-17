@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-17T14:39:21.318Z",
+  "updatedAt": "2026-08-17T15:03:58.547Z",
   "count": 495,
   "sources": [
     "IGN",
@@ -14,6 +14,87 @@
     "Игромания"
   ],
   "articles": [
+    {
+      "source": "Polygon",
+      "language": "en",
+      "title": "Marvel Cosmic Invasion Doctor Doom DLC Arrives this Fall",
+      "normalizedTitle": "marvel cosmic invasion doctor doom dlc arrives this fall",
+      "url": "https://www.polygon.com/marvel-cosmic-invasion-doctor-doom-dlc-announced/",
+      "summary": "Marvel Cosmic Invasion The Siege of Castle Doom DLC is on the way just in time for Doctor Doom's reign of villainy in December's Avengers Doomsday.",
+      "publishedAt": "Mon, 17 Aug 2026 15:00:12 GMT"
+    },
+    {
+      "source": "PC Gamer",
+      "language": "en",
+      "title": "The Sinking City 2 review",
+      "normalizedTitle": "the sinking city 2 review",
+      "url": "https://www.pcgamer.com/games/horror/the-sinking-city-2-review/",
+      "summary": "An improved sequel that doubles down on the basics.",
+      "publishedAt": "Mon, 17 Aug 2026 15:00:00 +0000"
+    },
+    {
+      "source": "GamesRadar+",
+      "language": "en",
+      "title": "The Sinking City 2 review: \"A Lovecraftian fusion of Resident Evil and Silent Hill that boasts its own delightfully gruesome pleasures\"",
+      "normalizedTitle": "the sinking city 2 review a lovecraftian fusion of resident evil and silent hill that boasts its own delightfully gruesome pleasures",
+      "url": "https://www.gamesradar.com/games/survival-horror/the-sinking-city-2-review/",
+      "summary": "Lovecraftian twists on survival horror work so well to deliver some unsettling, unexpected moments of terror",
+      "publishedAt": "Mon, 17 Aug 2026 15:00:00 +0000"
+    },
+    {
+      "source": "GamesRadar+",
+      "language": "en",
+      "title": "Singing sirens, angry gods and cannibalized crews: Sunless Sea is The Odyssey as an RPG",
+      "normalizedTitle": "singing sirens angry gods and cannibalized crews sunless sea is the odyssey as an rpg",
+      "url": "https://www.gamesradar.com/games/rpg/singing-sirens-angry-gods-and-cannibalized-crews-sunless-sea-is-the-odyssey-as-an-rpg/",
+      "summary": "My lads would dream of being turned into pigs. That'd be a calm Tuesday for them",
+      "publishedAt": "Mon, 17 Aug 2026 15:00:00 +0000"
+    },
+    {
+      "source": "Eurogamer",
+      "language": "en",
+      "title": "Even Sony hasn't made its mind up about the PlayStation 6 release date, admits CEO Hiroki Totoki",
+      "normalizedTitle": "even sony hasn t made its mind up about the playstation 6 release date admits ceo hiroki totoki",
+      "url": "https://www.eurogamer.net/sony-ps6-internal-release-date-component-shortage",
+      "summary": "We already know that console manufacturing is being heavily impacted by the on-going component shortage , driven by the proliferation of AI datacenters, the war in Iran, and accusations of price fixing . It turns out that these factors are putting so much pressure on console manufacturers that Sony hasn't even got a release date for the PlayStation 6 internally. Read more",
+      "publishedAt": "Mon, 17 Aug 2026 14:58:18 +0000"
+    },
+    {
+      "source": "GamesRadar+",
+      "language": "en",
+      "title": "No, it's not Towelie - but this South Park x SteelSeries mouse pad is nearly half price until midnight",
+      "normalizedTitle": "no it s not towelie but this south park x steelseries mouse pad is nearly half price until midnight",
+      "url": "https://www.gamesradar.com/hardware/no-its-not-towelie-but-this-south-park-x-steelseries-mouse-pad-is-nearly-half-price-until-midnight/",
+      "summary": "SteelSeries' South Park collab mouse pad is on sale for nearly half price today, but this promo code will expire before midnight.",
+      "publishedAt": "Mon, 17 Aug 2026 14:50:20 +0000"
+    },
+    {
+      "source": "GamesRadar+",
+      "language": "en",
+      "title": "Woot's Summer of Gaming Sale only runs for another 15 hours but includes record-breaking discounts across PS5, Switch, and more",
+      "normalizedTitle": "woot s summer of gaming sale only runs for another 15 hours but includes record breaking discounts across ps5 switch and more",
+      "url": "https://www.gamesradar.com/hardware/woots-summer-of-gaming-sale-only-runs-for-another-15-hours-but-includes-record-breaking-discounts-across-ps5-switch-and-more/",
+      "summary": "Woot's Summer of Gaming sale drops PS5, Nintendo Switch, PC, and Xbox prices to new record-lows, but these offers won't last much longer.",
+      "publishedAt": "Mon, 17 Aug 2026 14:49:49 +0000"
+    },
+    {
+      "source": "GamesRadar+",
+      "language": "en",
+      "title": "Deus Ex director Warren Spector is \"a little bitter\" new Disney Plus series won’t credit him or the other Epic Mickey devs for Oswald's revival",
+      "normalizedTitle": "deus ex director warren spector is a little bitter new disney plus series won t credit him or the other epic mickey devs for oswald s revival",
+      "url": "https://www.gamesradar.com/games/platformer/deus-ex-director-warren-spector-is-a-little-bitter-new-disney-plus-series-wont-credit-him-or-the-other-epic-mickey-devs-for-oswalds-revival/",
+      "summary": "\"I was blown away that Disney trusted us and saw fit to reintroduce the little guy in a game\"",
+      "publishedAt": "Mon, 17 Aug 2026 14:48:23 +0000"
+    },
+    {
+      "source": "Polygon",
+      "language": "en",
+      "title": "'Resident Evil Requiem' Star Has Reportedly Found Her Next Starring Role",
+      "normalizedTitle": "resident evil requiem star has reportedly found her next starring role",
+      "url": "https://www.polygon.com/tides-of-annihilation-lead-actor-resident-evil-requiem-grace/",
+      "summary": "A Resident Evil Requiem star is reportedly taking over for Jennifer English in an upcoming RPG after the Expedition 33 lead had to step away.",
+      "publishedAt": "Mon, 17 Aug 2026 14:41:21 GMT"
+    },
     {
       "source": "Polygon",
       "language": "en",
@@ -67,6 +148,15 @@
       "url": "https://www.polygon.com/marvel-rivals-match-quit-hack/",
       "summary": "Marvel Rivals players discovered that by editing the game's config files mid-match, they can end a game without being penalized.",
       "publishedAt": "Mon, 17 Aug 2026 14:27:51 GMT"
+    },
+    {
+      "source": "GameSpot",
+      "language": "en",
+      "title": "Canceled Star Wars RPG Magellan Looked Like A Star Wars Take On Borderlands",
+      "normalizedTitle": "canceled star wars rpg magellan looked like a star wars take on borderlands",
+      "url": "https://www.gamespot.com/articles/canceled-star-wars-rpg-magellan-looked-like-a-star-wars-take-on-borderlands/",
+      "summary": "There's no shortage of Star Wars games in development right now, but one game set in a galaxy far (far!) away that you won't be playing is an AAA action-RPG set in that sci-fi series. Developed under the codename Magellan--it's worth noting that Zynga has never officially confirmed this project--the project would have allowed players to pick up a lightsaber and play as a Jedi, or, if they wanted to be cool, a Mandalorian. According to official development materials seen and uploaded by MP1st , Magellan was in development at Echtra Games, but the studio was shut down last year by its owner, Zyn",
+      "publishedAt": "Mon, 17 Aug 2026 14:25:04 +0000"
     },
     {
       "source": "Polygon",
@@ -332,19 +422,19 @@
     {
       "source": "GamesRadar+",
       "language": "en",
-      "title": "Should you equip the Mortal Shell 2 Slayer Seal?",
-      "normalizedTitle": "should you equip the mortal shell 2 slayer seal",
-      "url": "https://www.gamesradar.com/games/rpg/mortal-shell-2-slayer-seal-difficulty/",
-      "summary": "The Slayer Seal is Mortal Shell 2 a powerful item that helps you defeat tough enemies, but it comes at a cost",
+      "title": "Mortal Shell 2 review: \"The best Soulslike I've played since Elden Ring thanks to brilliant death-dealing toys and speedy combat\"",
+      "normalizedTitle": "mortal shell 2 review the best soulslike i ve played since elden ring thanks to brilliant death dealing toys and speedy combat",
+      "url": "https://www.gamesradar.com/games/action-rpg/mortal-shell-2-review/",
+      "summary": "This speedy sequel speeds up action and stuffs secrets and ideas in every corner of its beautiful open world.",
       "publishedAt": "Mon, 17 Aug 2026 13:00:00 +0000"
     },
     {
       "source": "GamesRadar+",
       "language": "en",
-      "title": "Who is Franz in Mortal Shell 2, and where can you find him?",
-      "normalizedTitle": "who is franz in mortal shell 2 and where can you find him",
-      "url": "https://www.gamesradar.com/games/rpg/mortal-shell-2-franz-tarforge/",
-      "summary": "You'll need to find Franz in Mortal Shell 2 when you pick up certain items that require his specific knowledge",
+      "title": "Should you equip the Mortal Shell 2 Slayer Seal?",
+      "normalizedTitle": "should you equip the mortal shell 2 slayer seal",
+      "url": "https://www.gamesradar.com/games/rpg/mortal-shell-2-slayer-seal-difficulty/",
+      "summary": "The Slayer Seal is Mortal Shell 2 a powerful item that helps you defeat tough enemies, but it comes at a cost",
       "publishedAt": "Mon, 17 Aug 2026 13:00:00 +0000"
     },
     {
@@ -368,10 +458,10 @@
     {
       "source": "GamesRadar+",
       "language": "en",
-      "title": "Mortal Shell 2 review: \"The best Soulslike I've played since Elden Ring thanks to brilliant death-dealing toys and speedy combat\"",
-      "normalizedTitle": "mortal shell 2 review the best soulslike i ve played since elden ring thanks to brilliant death dealing toys and speedy combat",
-      "url": "https://www.gamesradar.com/games/action-rpg/mortal-shell-2-review/",
-      "summary": "This speedy sequel speeds up action and stuffs secrets and ideas in every corner of its beautiful open world.",
+      "title": "Who is Franz in Mortal Shell 2, and where can you find him?",
+      "normalizedTitle": "who is franz in mortal shell 2 and where can you find him",
+      "url": "https://www.gamesradar.com/games/rpg/mortal-shell-2-franz-tarforge/",
+      "summary": "You'll need to find Franz in Mortal Shell 2 when you pick up certain items that require his specific knowledge",
       "publishedAt": "Mon, 17 Aug 2026 13:00:00 +0000"
     },
     {
@@ -382,15 +472,6 @@
       "url": "https://www.gamesradar.com/games/rpg/mortal-shell-2-map/",
       "summary": "Revealing the Mortal Shell 2 Map requires speaking to an old friend at various locations",
       "publishedAt": "Mon, 17 Aug 2026 13:00:00 +0000"
-    },
-    {
-      "source": "GameSpot",
-      "language": "en",
-      "title": "The Simpsons: Hit & Run Revival? Series Creator Offers Biggest Hint Yet",
-      "normalizedTitle": "the simpsons hit run revival series creator offers biggest hint yet",
-      "url": "https://www.gamespot.com/articles/the-simpsons-hit-run-revival-series-creator-offers-biggest-hint-yet/",
-      "summary": "2003's The Simpsons: Hit &amp; Run is a cult-classic, GTA-inspired open-world game. Fans have been clamoring for a remake, remaster, sequel, or some kind of revival for years. It may finally actually be happening, as series creator Matt Groening offered a tantalizing tease at Disney's D23 event this weekend. A fan in the audience said since Disney is producing a The Simpsons Movie sequel, might that also mean Hit &amp; Run will get a follow-up? Groening, admitting he might be \"speaking out of turn,\" teased, \"I think the original game is coming back in some form.\" This led to cheers from the au",
-      "publishedAt": "Mon, 17 Aug 2026 12:58:21 +0000"
     },
     {
       "source": "GamesRadar+",
@@ -654,15 +735,6 @@
       "publishedAt": "Mon, 17 Aug 2026 10:11:42 +0000"
     },
     {
-      "source": "Polygon",
-      "language": "en",
-      "title": "Ryan Gosling's 100-Minute 10/10 Crime-Thriller Cult Classic Is Officially Free on Streaming",
-      "normalizedTitle": "ryan gosling s 100 minute 10 10 crime thriller cult classic is officially free on streaming",
-      "url": "https://www.polygon.com/movies-free-streaming-august-2026-drive/",
-      "summary": "This slick, neo-soaked adventure is quite impossible to forget.",
-      "publishedAt": "Mon, 17 Aug 2026 10:00:12 GMT"
-    },
-    {
       "source": "GamesRadar+",
       "language": "en",
       "title": "Kingdom Hearts 4 delay \"is not happening,\" Tetsuya Nomura says after fans immediately doubt the RPG's late 2027 launch window: \"I want to set the record straight\"",
@@ -670,15 +742,6 @@
       "url": "https://www.gamesradar.com/games/kingdom-hearts/kingdom-hearts-4-delay-is-not-happening-tetsuya-nomura-says-after-fans-immediately-doubt-the-rpgs-late-2027-launch-window-i-want-to-set-the-record-straight/",
       "summary": "Co-director Tai Yasue says Kingdom Hearts 4's 2027 launch is \"a 100% thing\"",
       "publishedAt": "Mon, 17 Aug 2026 09:52:09 +0000"
-    },
-    {
-      "source": "Polygon",
-      "language": "en",
-      "title": "Marvel Reveals Official Watchlist for Avengers: Doomsday — With One Surprising Absence",
-      "normalizedTitle": "marvel reveals official watchlist for avengers doomsday with one surprising absence",
-      "url": "https://www.polygon.com/avengers-doomsday-watchlist/",
-      "summary": "Marvel and Disney have unveiled a list of key films fans need to watch to prepare for Doomsday, with one surprising omission.",
-      "publishedAt": "Mon, 17 Aug 2026 09:52:02 GMT"
     },
     {
       "source": "GamesRadar+",
@@ -1482,51 +1545,6 @@
       "publishedAt": "Sat, 15 Aug 2026 07:00:00 +0000"
     },
     {
-      "source": "GamesRadar+",
-      "language": "en",
-      "title": "Marvel's X-Men movie release date, cast, story speculation, and more news",
-      "normalizedTitle": "marvel s x men movie release date cast story speculation and more news",
-      "url": "https://www.gamesradar.com/entertainment/marvel-x-men-movie-release-date-story-cast-trailer-news/",
-      "summary": "Calling all mutants! Here's everything that you need to know about Marvel's X-Men movie",
-      "publishedAt": "Sat, 15 Aug 2026 05:17:12 +0000"
-    },
-    {
-      "source": "GamesRadar+",
-      "language": "en",
-      "title": "Star Wars: Starfighter teaser shown behind closed doors at D23, read an exclusive description",
-      "normalizedTitle": "star wars starfighter teaser shown behind closed doors at d23 read an exclusive description",
-      "url": "https://www.gamesradar.com/entertainment/star-wars-movies/star-wars-starfighter-teaser-shown-behind-closed-doors-at-d23-read-an-exclusive-description/",
-      "summary": "The first footage from Star Wars: Starfighter has been revealed at D23",
-      "publishedAt": "Sat, 15 Aug 2026 05:06:09 +0000"
-    },
-    {
-      "source": "GamesRadar+",
-      "language": "en",
-      "title": "Ahsoka season 2 trailer features Anakin, Clone Wars-era flashbacks and Grand Admiral Thrawn declaring war on the Rebel Alliance",
-      "normalizedTitle": "ahsoka season 2 trailer features anakin clone wars era flashbacks and grand admiral thrawn declaring war on the rebel alliance",
-      "url": "https://www.gamesradar.com/entertainment/star-wars-tv-shows/ahsoka-season-2-trailer/",
-      "summary": "The first trailer for Ahsoka season 2 has arrived, along with a confirmed release date",
-      "publishedAt": "Sat, 15 Aug 2026 04:50:41 +0000"
-    },
-    {
-      "source": "GamesRadar+",
-      "language": "en",
-      "title": "Avengers: Doomsday D23 special look teases a major Doctor Doom moment and the new Marvel mega-villain's backstory",
-      "normalizedTitle": "avengers doomsday d23 special look teases a major doctor doom moment and the new marvel mega villain s backstory",
-      "url": "https://www.gamesradar.com/entertainment/marvel-movies/avengers-doomsday-d23-trailer/",
-      "summary": "A new Avengers: Doomsday special look has dropped at D23",
-      "publishedAt": "Sat, 15 Aug 2026 04:48:49 +0000"
-    },
-    {
-      "source": "GamesRadar+",
-      "language": "en",
-      "title": "Marvel's X-Men reveals full cast at D23, including Adam Driver as Mr. Sinister and Inde Navarette as Rogue",
-      "normalizedTitle": "marvel s x men reveals full cast at d23 including adam driver as mr sinister and inde navarette as rogue",
-      "url": "https://www.gamesradar.com/entertainment/marvel-movies/marvels-x-men-cast-announced-d23/",
-      "summary": "The cast of Marvel's X-Men has been revealed at D23",
-      "publishedAt": "Sat, 15 Aug 2026 04:22:47 +0000"
-    },
-    {
       "source": "PC Gamer",
       "language": "en",
       "title": "Before Grand Theft Auto Online, GTA 4's multiplayer added 'glorious chaos' to the open world sandbox",
@@ -1768,15 +1786,6 @@
       "url": "https://www.pcgamer.com/gaming-industry/game-development/after-a-public-scrap-between-ceo-and-former-writer-saber-interactive-finally-adds-ai-disclaimer-to-steam-page-and-doubles-down-ai-can-and-should-help-shape-gamer-experiences/",
       "summary": "It's been a wild ride.",
       "publishedAt": "Fri, 14 Aug 2026 12:10:02 +0000"
-    },
-    {
-      "source": "PC Gamer",
-      "language": "en",
-      "title": "Asus ROG Harpe II Extreme Edition 20 review",
-      "normalizedTitle": "asus rog harpe ii extreme edition 20 review",
-      "url": "https://www.pcgamer.com/hardware/gaming-mice/asus-rog-harpe-ii-extreme-edition-20-review/",
-      "summary": "The most luxurious gaming mouse I've managed to get grubby.",
-      "publishedAt": "Fri, 14 Aug 2026 12:04:08 +0000"
     },
     {
       "source": "Eurogamer",
@@ -3109,15 +3118,6 @@
       "url": "https://www.eurogamer.net/john-romero-doom-id-software-taiwanese-pirates",
       "summary": "John Romero, the legendarily long-haired co-founder of id Software and father of game series Quake and Doom, has recounted a tale about when id Software worked with Taiwanese pirates to spread Doom. Read more",
       "publishedAt": "Fri, 07 Aug 2026 12:00:44 +0000"
-    },
-    {
-      "source": "Eurogamer",
-      "language": "en",
-      "title": "Marvel Tokon: Fighting Souls suffers from widespread PC issues at launch",
-      "normalizedTitle": "marvel tokon fighting souls suffers from widespread pc issues at launch",
-      "url": "https://www.eurogamer.net/marvel-tokon-fighting-souls-pc-problems-stuttering-lag",
-      "summary": "Marvel Tokonn: Fighting Souls finally released, and while console players appear to be having a decent time with the 4v4 tag fighting game, PC players are reporting significant technical issues ranging from stuttering to netcode issues. Read more",
-      "publishedAt": "Fri, 07 Aug 2026 11:35:35 +0000"
     },
     {
       "source": "Rock Paper Shotgun",
