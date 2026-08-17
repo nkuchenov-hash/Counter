@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-17T21:27:26.802Z",
+  "updatedAt": "2026-08-17T21:40:53.729Z",
   "count": 495,
   "sources": [
     "IGN",
@@ -14,6 +14,24 @@
     "Игромания"
   ],
   "articles": [
+    {
+      "source": "GamesRadar+",
+      "language": "en",
+      "title": "Ryan Gosling's Ghost Rider movie has a release date – and it's right after Marvel's X-Men",
+      "normalizedTitle": "ryan gosling s ghost rider movie has a release date and it s right after marvel s x men",
+      "url": "https://www.gamesradar.com/entertainment/marvel-movies/ryan-goslings-ghost-rider-movie-has-a-release-date-and-its-right-after-marvels-x-men/",
+      "summary": "The film was surprise-announced at San Diego Comic-Con",
+      "publishedAt": "Mon, 17 Aug 2026 21:37:16 +0000"
+    },
+    {
+      "source": "GameSpot",
+      "language": "en",
+      "title": "Fortnite&#8217;s New Gaming Battle Pass Only Has One Gaming Collab",
+      "normalizedTitle": "fortnite 8217 s new gaming battle pass only has one gaming collab",
+      "url": "https://www.gamespot.com/articles/fortnites-new-gaming-battle-pass-only-has-one-gaming-collab/",
+      "summary": "The official Fortnite Twitter account appeared to unveil the battle pass lineup for its upcoming retro-gaming-themed season on Monday morning. But, even though the season trailer teased several new collab skins from other video games--like Crash Bandicoot and Mega Man--it looks the Chapter 7 Season 4 battle pass will have Sonic the Hedgehog as its only collab skin when the new season kicks off on Thursday. It is possible, and maybe even likely, that Epic Games is holding something. The current battle pass, for Chapter 7 Season 3, included a Simpsons-fied version of John Wick that remained secr",
+      "publishedAt": "Mon, 17 Aug 2026 21:24:52 +0000"
+    },
     {
       "source": "Polygon",
       "language": "en",
@@ -699,15 +717,6 @@
       "publishedAt": "Mon, 17 Aug 2026 15:34:40 +0000"
     },
     {
-      "source": "GameSpot",
-      "language": "en",
-      "title": "Top 16 Things You Need To Know Before You Play Mortal Shell 2",
-      "normalizedTitle": "top 16 things you need to know before you play mortal shell 2",
-      "url": "https://www.gamespot.com/articles/mortal-shell-2-tips-beginners-guide/",
-      "summary": "Are you excited to venture across the lands of Fallgrim in Mortal Shell 2 ? If you played the first game, then you’re bound to see many differences, including an even more expansive world. If you’re a newcomer, then you might feel overwhelmed. Our Mortal Shell 2 guide has over a dozen tips to help you get started on your journey. In This Article The broken realm of Fallgrim: World map and fast travel beacons Make the game easier or harder Unlock shells with powerful abilities Leveling up: Gloom and Glimpse Shell bonds and builds: Maxing out bonds, choosing shell perks, and status effect immuni",
-      "publishedAt": "Mon, 17 Aug 2026 15:30:00 +0000"
-    },
-    {
       "source": "PC Gamer",
       "language": "en",
       "title": "Intel might be cooking up a budget-friendly handheld chip but I'd still be surprised if it's cheap enough or fast enough to matter",
@@ -908,6 +917,15 @@
     {
       "source": "GamesRadar+",
       "language": "en",
+      "title": "How to unlock Mortal Shell 2 fast travel",
+      "normalizedTitle": "how to unlock mortal shell 2 fast travel",
+      "url": "https://www.gamesradar.com/games/rpg/mortal-shell-2-fast-travel/",
+      "summary": "You'll unlock Mortal Shell 2 fast travel by meeting a very reasonable requirement, allowing you to travel between beacons",
+      "publishedAt": "Mon, 17 Aug 2026 13:00:00 +0000"
+    },
+    {
+      "source": "GamesRadar+",
+      "language": "en",
       "title": "Should you equip the Mortal Shell 2 Slayer Seal?",
       "normalizedTitle": "should you equip the mortal shell 2 slayer seal",
       "url": "https://www.gamesradar.com/games/rpg/mortal-shell-2-slayer-seal-difficulty/",
@@ -917,19 +935,10 @@
     {
       "source": "GamesRadar+",
       "language": "en",
-      "title": "Mortal Shell 2 map and how to reveal it",
-      "normalizedTitle": "mortal shell 2 map and how to reveal it",
-      "url": "https://www.gamesradar.com/games/rpg/mortal-shell-2-map/",
-      "summary": "Revealing the Mortal Shell 2 Map requires speaking to an old friend at various locations",
-      "publishedAt": "Mon, 17 Aug 2026 13:00:00 +0000"
-    },
-    {
-      "source": "GamesRadar+",
-      "language": "en",
-      "title": "Who is Franz in Mortal Shell 2, and where can you find him?",
-      "normalizedTitle": "who is franz in mortal shell 2 and where can you find him",
-      "url": "https://www.gamesradar.com/games/rpg/mortal-shell-2-franz-tarforge/",
-      "summary": "You'll need to find Franz in Mortal Shell 2 when you pick up certain items that require his specific knowledge",
+      "title": "Mortal Shell 2 review: \"The best Soulslike I've played since Elden Ring thanks to brilliant death-dealing toys and speedy combat\"",
+      "normalizedTitle": "mortal shell 2 review the best soulslike i ve played since elden ring thanks to brilliant death dealing toys and speedy combat",
+      "url": "https://www.gamesradar.com/games/action-rpg/mortal-shell-2-review/",
+      "summary": "This speedy sequel speeds up action and stuffs secrets and ideas in every corner of its beautiful open world.",
       "publishedAt": "Mon, 17 Aug 2026 13:00:00 +0000"
     },
     {
@@ -944,19 +953,19 @@
     {
       "source": "GamesRadar+",
       "language": "en",
-      "title": "How to unlock Mortal Shell 2 fast travel",
-      "normalizedTitle": "how to unlock mortal shell 2 fast travel",
-      "url": "https://www.gamesradar.com/games/rpg/mortal-shell-2-fast-travel/",
-      "summary": "You'll unlock Mortal Shell 2 fast travel by meeting a very reasonable requirement, allowing you to travel between beacons",
+      "title": "Who is Franz in Mortal Shell 2, and where can you find him?",
+      "normalizedTitle": "who is franz in mortal shell 2 and where can you find him",
+      "url": "https://www.gamesradar.com/games/rpg/mortal-shell-2-franz-tarforge/",
+      "summary": "You'll need to find Franz in Mortal Shell 2 when you pick up certain items that require his specific knowledge",
       "publishedAt": "Mon, 17 Aug 2026 13:00:00 +0000"
     },
     {
       "source": "GamesRadar+",
       "language": "en",
-      "title": "Mortal Shell 2 review: \"The best Soulslike I've played since Elden Ring thanks to brilliant death-dealing toys and speedy combat\"",
-      "normalizedTitle": "mortal shell 2 review the best soulslike i ve played since elden ring thanks to brilliant death dealing toys and speedy combat",
-      "url": "https://www.gamesradar.com/games/action-rpg/mortal-shell-2-review/",
-      "summary": "This speedy sequel speeds up action and stuffs secrets and ideas in every corner of its beautiful open world.",
+      "title": "Mortal Shell 2 map and how to reveal it",
+      "normalizedTitle": "mortal shell 2 map and how to reveal it",
+      "url": "https://www.gamesradar.com/games/rpg/mortal-shell-2-map/",
+      "summary": "Revealing the Mortal Shell 2 Map requires speaking to an old friend at various locations",
       "publishedAt": "Mon, 17 Aug 2026 13:00:00 +0000"
     },
     {
@@ -1129,15 +1138,6 @@
       "url": "https://www.eurogamer.net/halo-multiplayer-activision--sledgehammer-games",
       "summary": "A Halo game made by an Activision studio doesn't sound like a far-fetched idea, and is actually something Xbox considered per a new report. Sledgehammer Games, the studio behind several Call of Duty games like WW2, Vanguard, and Modern Warfare 3, is said to have been sought out to develop a Halo multiplayer game. Read more",
       "publishedAt": "Mon, 17 Aug 2026 10:11:42 +0000"
-    },
-    {
-      "source": "GamesRadar+",
-      "language": "en",
-      "title": "Kingdom Hearts 4 delay \"is not happening,\" Tetsuya Nomura says after fans immediately doubt the RPG's late 2027 launch window: \"I want to set the record straight\"",
-      "normalizedTitle": "kingdom hearts 4 delay is not happening tetsuya nomura says after fans immediately doubt the rpg s late 2027 launch window i want to set the record straight",
-      "url": "https://www.gamesradar.com/games/kingdom-hearts/kingdom-hearts-4-delay-is-not-happening-tetsuya-nomura-says-after-fans-immediately-doubt-the-rpgs-late-2027-launch-window-i-want-to-set-the-record-straight/",
-      "summary": "Co-director Tai Yasue says Kingdom Hearts 4's 2027 launch is \"a 100% thing\"",
-      "publishedAt": "Mon, 17 Aug 2026 09:52:09 +0000"
     },
     {
       "source": "Eurogamer",
