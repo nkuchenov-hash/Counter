@@ -107,18 +107,60 @@ def _generic_file_field_ru(path: str, field: str) -> str:
 
 
 def patch_shared_categories_ru() -> None:
-    p = Path("scripts/manual/structure_guide_data.py")
+    # Register explicit final overrides in the adapter registry. This is more
+    # reliable than translating the English FOLDERS entries after inference.
+    p = Path("scripts/manual/structure_en_ru_adapt.py")
     text = p.read_text(encoding="utf-8")
-    replacements = {
-        "Shared category pickers, form fields, create-from-picker, local hidden-category preferences.": "Общие picker-экраны категорий, поля формы, создание новой категории из picker и локальные настройки скрытых категорий.",
-        "Category pickers Notes/Planning/Timeline/Wear и create-from-picker": "Picker категорий в Notes, Planning, Timeline и Wear, включая создание новой категории из picker.",
-        "Shared tree rendering и search filtering.": "Общий рендер дерева категорий и фильтрация по поиску.",
-    }
-    for old, new in replacements.items():
-        text = text.replace(old, new)
+    marker = "# Curated final Shared Categories RU overrides."
+    if marker not in text:
+        text += r'''
+
+# Curated final Shared Categories RU overrides.
+register_folder_ru(
+    "lib/shared/categories",
+    affects_ru=(
+        "Общие picker-экраны категорий, поля формы, создание новой категории "
+        "из picker и локальные настройки скрытых категорий."
+    ),
+)
+register_folder_ru(
+    "lib/shared/categories/picker",
+    affects_ru=(
+        "Picker категорий в Notes, Planning, Timeline и Wear, включая создание "
+        "новой категории из picker."
+    ),
+)
+register_folder_ru(
+    "lib/shared/categories/tree",
+    affects_ru="Общий рендер дерева категорий и фильтрация по поиску.",
+)
+'''
+    p.write_text(text, encoding="utf-8")
+
+
+def patch_license_ru() -> None:
+    p = Path("scripts/manual/structure_file_ru_curated.py")
+    text = p.read_text(encoding="utf-8")
+    marker = "# Curated LICENSE RU entry."
+    if marker not in text:
+        text += r'''
+
+# Curated LICENSE RU entry.
+FILE_RU_CURATED["LICENSE"] = {
+    "what_ru": "`LICENSE` фиксирует юридические условия использования и распространения исходного кода проекта.",
+    "why_ru": "Нужен, чтобы права и ограничения на копирование, изменение и распространение проекта были определены однозначно.",
+    "contains_ru": "Содержит полный текст лицензии, применяемой к репозиторию.",
+    "responsibilities_ru": "Определяет лицензионный режим проекта; не управляет runtime-поведением приложения.",
+    "when_ru": "Открывать при публикации исходников, передаче кода, проверке прав на распространение или изменении лицензионной политики.",
+    "delete_ru": "Нет — удаление лишит репозиторий явного лицензионного условия.",
+    "connected_ru": "Связан с публичным репозиторием, дистрибуцией и юридическими условиями использования кода.",
+    "layer_ru": "Юридическая документация репозитория; не runtime приложения.",
+}
+'''
     p.write_text(text, encoding="utf-8")
 
 
 if __name__ == "__main__":
     patch_file_fallback()
     patch_shared_categories_ru()
+    patch_license_ru()
