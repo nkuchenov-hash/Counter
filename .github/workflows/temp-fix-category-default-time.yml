@@ -5,6 +5,7 @@ on:
     paths:
       - '.github/workflows/temp-fix-category-default-time.yml'
       - '.github/scripts/temp_project_plan_approval_gate.py'
+      - '.github/scripts/temp_project_plan_approval_audit.py'
 
 permissions:
   contents: write
@@ -20,7 +21,9 @@ jobs:
           fetch-depth: 0
 
       - name: Apply project plan approval gate
-        run: python .github/scripts/temp_project_plan_approval_gate.py
+        run: |
+          python .github/scripts/temp_project_plan_approval_gate.py
+          python .github/scripts/temp_project_plan_approval_audit.py
 
       - name: Architecture guard
         shell: pwsh
