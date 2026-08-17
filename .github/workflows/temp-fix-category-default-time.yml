@@ -55,5 +55,6 @@ jobs:
           git add lib/app/shell/shared/shell_path_governance.dart
           if ! git diff --cached --quiet; then
             git commit -m 'Require project plan approval before scheduling'
+            git pull --rebase origin feat/project-plan-approval-gate
             git push origin HEAD:feat/project-plan-approval-gate
           fi
