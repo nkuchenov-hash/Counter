@@ -63,7 +63,6 @@ jobs:
               changelog.write_text(c)
           PY
 
-          dart format lib/features/settings/categories/category_list_view.dart
           git diff --check
           git diff -- lib/features/settings/categories/category_list_view.dart CHANGELOG.md
 
