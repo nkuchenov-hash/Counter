@@ -38,33 +38,87 @@ jobs:
       - name: Repair generated RU quality fallbacks
         run: python3 scripts/manual/_fix_structure_ru_quality.py
 
-      - name: Refine generic wording and category RU sources
+      - name: Refine evidence-backed generated wording
         shell: bash
         run: |
           python3 - <<'PY'
           from pathlib import Path
 
-          replacements = {
-              "Shared category pickers, form fields, create-from-picker, local hidden-category preferences.":
-                  "Общие picker-экраны категорий, поля формы, создание новой категории из picker и локальные настройки скрытых категорий.",
-              "Category pickers Notes/Planning/Timeline/Wear и create-from-picker":
-                  "Picker категорий в Notes, Planning, Timeline и Wear, включая создание новой категории из picker.",
-              "Shared tree rendering и search filtering.":
-                  "Общий рендер дерева категорий и фильтрация по поиску.",
-          }
+          # File-level fallback: the final generator safety net must still be
+          # evidence-backed, never a generic "needed for build/tests/docs" line.
+          generator = Path("scripts/manual/generate_app_structure_detailed.py")
+          text = generator.read_text(encoding="utf-8")
+          old = '''    # Fill any remaining empty RU core fields.
+    if not (what_ru or "").strip():
+        what_ru = f"Файл `{Path(path).name}` в репозитории."
+    if not (why_ru or "").strip():
+        why_ru = "Нужен для сборки, тестов, документации или платформы — см. доказательства."
+    if not (contains_ru or "").strip():
+        contains_ru = rec.contents_hint_ru or f"Содержимое файла `{Path(path).name}`."
+'''
+          new = '''    # Fill any remaining empty RU core fields from the evidence record.
+    if not (what_ru or "").strip():
+        what_ru = (
+            f"`{Path(path).name}` выполняет подтверждённую роль: "
+            f"{(rec.repo_role_ru or rec.repo_role_en).rstrip('.')} ."
+        )
+    if not (why_ru or "").strip():
+        role_ru = (rec.repo_role_ru or rec.repo_role_en).rstrip(".")
+        consequence_ru = (
+            rec.deletion_consequence_ru
+            or rec.deletion_consequence_en
+            or "его подтверждённая ответственность останется без владельца"
+        ).rstrip(".")
+        why_ru = (
+            f"Нужен для роли «{role_ru}»; при удалении {consequence_ru}."
+        )
+    if not (contains_ru or "").strip():
+        contains_ru = rec.contents_hint_ru or (
+            f"Содержит реализацию или данные, подтверждающие роль `{Path(path).name}`."
+        )
+'''
+          if old not in text:
+              raise SystemExit("final generator RU fallback anchor not found")
+          generator.write_text(text.replace(old, new, 1), encoding="utf-8")
 
-          for source in Path("scripts/manual").glob("*.py"):
-              text = source.read_text(encoding="utf-8")
-              updated = text
-              for old, new in replacements.items():
-                  updated = updated.replace(old, new)
-              if source.name == "structure_en_ru_adapt.py":
-                  updated = updated.replace(
-                      'f"{kind.capitalize()} `{name}` относится к области `{parent}`."',
-                      'f"{kind.capitalize()} `{name}` хранится в каталоге `{parent}` и обслуживает его ответственность."',
-                  )
-              if updated != text:
-                  source.write_text(updated, encoding="utf-8")
+          # Folder-level exception cleanup: these three historical entries had
+          # English prose stored directly in an *_ru value, so override the
+          # final FOLDERS map before ensure_folder_ru consumes it.
+          guide = Path("scripts/manual/structure_guide_data.py")
+          text = guide.read_text(encoding="utf-8")
+          marker = "\ndef ensure_folder_ru(key: str, guide: dict[str, str]) -> dict[str, str]:\n"
+          overrides = '''
+# Bilingual quality overrides for historical Shared Categories entries.
+if "lib/shared/categories" in FOLDERS:
+    FOLDERS["lib/shared/categories"]["affects_ru"] = (
+        "Общие picker-экраны категорий, поля формы, создание новой категории из picker "
+        "и локальные настройки скрытых категорий."
+    )
+if "lib/shared/categories/picker" in FOLDERS:
+    FOLDERS["lib/shared/categories/picker"]["affects_ru"] = (
+        "Picker категорий в Notes, Planning, Timeline и Wear, включая создание "
+        "новой категории из picker."
+    )
+if "lib/shared/categories/tree" in FOLDERS:
+    FOLDERS["lib/shared/categories/tree"]["affects_ru"] = (
+        "Общий рендер дерева категорий и фильтрация по поиску."
+    )
+'''
+          if "# Bilingual quality overrides for historical Shared Categories entries." not in text:
+              if marker not in text:
+                  raise SystemExit("ensure_folder_ru marker not found")
+              text = text.replace(marker, overrides + marker, 1)
+          guide.write_text(text, encoding="utf-8")
+
+          # Remove the now-banned overly generic phrase from the semantic file
+          # fallback inserted by the temporary quality fixer.
+          adapter = Path("scripts/manual/structure_en_ru_adapt.py")
+          text = adapter.read_text(encoding="utf-8")
+          text = text.replace(
+              'f"{kind.capitalize()} `{name}` относится к области `{parent}`."',
+              'f"{kind.capitalize()} `{name}` хранится в каталоге `{parent}` и обслуживает его ответственность."',
+          )
+          adapter.write_text(text, encoding="utf-8")
           PY
 
       - name: Regenerate detailed structure guide
