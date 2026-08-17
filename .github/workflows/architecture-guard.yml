@@ -11,175 +11,26 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   strict-structure:
     name: strict-structure
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout branch head
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          ref: agent/paths-first-class-audit-cleanup
           fetch-depth: 0
 
       - name: Run strict architecture guard
         run: pwsh -NoProfile -NonInteractive -File ./scripts/audit/architecture_guard.ps1 -Strict
 
-      - name: Finalize governing docs
-        shell: bash
+      - name: Check for whitespace errors
         run: |
-          python3 - <<'PY'
-          from pathlib import Path
-
-          def replace_once(path, old, new):
-              p = Path(path)
-              text = p.read_text(encoding='utf-8')
-              if old not in text:
-                  raise SystemExit(f'anchor not found in {path}: {old[:120]!r}')
-              p.write_text(text.replace(old, new, 1), encoding='utf-8')
-
-          # Agent navigation: point future work at the new owners and record current drift audit.
-          p = Path('AGENT_NAVIGATION.md')
-          text = p.read_text(encoding='utf-8')
-          if 'docs/reports/PATHS_FIRST_CLASS_AND_REPO_AUDIT_2026-08-17.md' not in text:
-              text = text.replace(
-                  '| `docs/reports/FINAL_STRUCTURE_AUDIT_2026-07-06.md` | Final structure audit verdict + watchlist (repo-only). |',
-                  '| `docs/reports/FINAL_STRUCTURE_AUDIT_2026-07-06.md` | Final structure audit verdict + watchlist (repo-only). |\n| `docs/reports/PATHS_FIRST_CLASS_AND_REPO_AUDIT_2026-08-17.md` | Current Paths ownership migration + repository/doc-drift audit. |',
-                  1,
-              )
-          text = text.replace(
-              '`lib/data/` (Brain + part files + `data/voice/` + `data/categories/`), `lib/data/local_sync/` (offline outboxes), `lib/features/` (UI modules + `settings/voice/` + `settings/categories/`),',
-              '`lib/data/` (Brain + part files + `data/voice/` + `data/categories/` + `data/paths/` + `data/health/`), `lib/data/local_sync/` (offline outboxes), `lib/features/` (UI modules + `paths/` + `settings/voice/` + `settings/categories/` + `settings/health/` + `settings/notifications/`),',
-              1,
-          )
-          if '| **Paths screen** |' not in text:
-              text = text.replace(
-                  '| **Plans screen** | `lib/features/planning/planning_view.dart` (barrel), `planning_page.dart`, `planning_page_shell.dart` | `PlanningSwipeWrapper` → `PlanningPage`; shell index 1 |',
-                  '| **Plans screen** | `lib/features/planning/planning_view.dart` (barrel), `planning_page.dart`, `planning_page_shell.dart` | `PlanningSwipeWrapper` → `PlanningPage`; shell index 1 |\n| **Paths screen** | `lib/features/paths/paths_page.dart` | `PathsPage`; shell index 6 on every form factor; desktop side nav and mobile/tablet More select the same destination |\n| **Paths domain** | `lib/data/paths/path_repository.dart` | `PathRepository`, `ProjectPathSnapshot`, `auditPathStructure`; transition adapter over existing active Path roots |',
-                  1,
-              )
-          p.write_text(text, encoding='utf-8')
-
-          # Roadmap: make issue #93 an explicit phased project instead of a parallel hidden plan.
-          p = Path('docs/ROADMAP.md')
-          text = p.read_text(encoding='utf-8')
-          text = text.replace('Updated 2026-06-09.', 'Updated 2026-08-17.', 1)
-          if '### P1P — Paths first-class architecture (#93)' not in text:
-              anchor = '**Docs:** `docs/ARCHITECTURE.md` § PERFORMANCE_KILL_SWITCH_LAW · `docs/UX_CONTRACT.md` § Performance & Responsiveness Contract · `AGENT_NAVIGATION.md` · `lib/core/perf_flags.dart` · `lib/core/p0u_feature_flags.dart`\n\n'
-              section = '''### P1P — Paths first-class architecture (#93) — in progress\n\n**Goal:** make Paths a real domain and app destination that can later support safe AI-assisted Draft → Review → Publish → Planner workflows without granting AI direct application/database authority.\n\n**Foundation completed 2026-08-17:**\n- ✅ `lib/data/paths/path_repository.dart` is the Path domain/transition boundary over current active roots; feature UI no longer parses storage markers.\n- ✅ `lib/features/paths/paths_page.dart` is the first-class responsive destination; opening it is read-only with respect to migration/bootstrap/governance/Planner generation.\n- ✅ Main shell index 6 owns Paths on desktop/mobile/tablet; desktop no longer needs a nested second shell for the active destination.\n- ✅ Duplicate active roots are detected without read-time deletion.\n- ✅ Generic Path structure validation is pure and covered by three focused tests.\n- ✅ Existing Health Connect/sleep/unfilled-time production modules discovered by strict audit were added to the canonical structure manifest.\n- ✅ Completed one-off category-default-time self-patching workflow removed.\n\n**Remaining phases:**\n1. extract legacy Path migration/repair and Planner bridge/governance out of shell;\n2. durable `draft` / `reviewed` / `active` / `archived` revisions plus Project Memory fields;\n3. move hard-coded project-specific policy from Dart into stored project/Path context;\n4. provider-neutral `/api/ai/...` Path proposal layer with whitelisted tools, validation, approval for sensitive actions, audit and undo;\n5. idempotent live migration and parity proof; only then delete old V1/V2/V3/project-specific shell code.\n\nReport: `docs/reports/PATHS_FIRST_CLASS_AND_REPO_AUDIT_2026-08-17.md`.\n\n'''
-              if anchor not in text:
-                  raise SystemExit('ROADMAP P0V docs anchor not found')
-              text = text.replace(anchor, anchor + section, 1)
-          p.write_text(text, encoding='utf-8')
-
-          # Changelog: one concise engineering entry; no claim that the remaining #93 migration is complete.
-          p = Path('CHANGELOG.md')
-          text = p.read_text(encoding='utf-8')
-          marker = '## 2026-08-17 — Paths first-class foundation and repository audit'
-          if marker not in text:
-              entry = '''## 2026-08-17 — Paths first-class foundation and repository audit [engineering]\n\n- Added `lib/data/paths/path_repository.dart` + `lib/features/paths/paths_page.dart`; Paths is now main-shell destination 6 and page-open no longer requires migration/bootstrap/governance/Planner side effects.\n- Preserved current Path rows through a transition repository, report duplicate active roots without deleting on read, and added three focused structure-audit tests.\n- Strict repository audit exposed 13 already-shipped Health Connect/sleep/unfilled-time Dart files missing from `APP_STRUCTURE.md`; the canonical manifest was repaired instead of weakening the guard.\n- Removed completed `.github/workflows/temp-fix-category-default-time.yml`; synchronized Architecture, UX, structure, agent routing, Roadmap and generated detailed structure documentation.\n- Verification: strict architecture guard + `git diff --check`, analyzer, 3 Paths tests, release web build and Android arm64 release build all pass on the production Flutter 3.41.6 toolchain.\n\n'''
-              p.write_text(entry + text, encoding='utf-8')
-
-          # Curated folder descriptions needed by the generated owner-readable guide.
-          p = Path('scripts/manual/structure_guide_data.py')
-          text = p.read_text(encoding='utf-8')
-          insert_anchor = '    "lib/data/profile": {'
-          folder_blocks = ''
-          if '"lib/data/paths": {' not in text:
-              folder_blocks += '''    "lib/data/paths": {\n        "what": "First-class Path domain boundary — structured project paths, transition storage interpretation, and generic validation.",\n        "why": "Paths must be usable by UI, Planner, and future AI proposals without feature/shell code parsing storage markers.",\n        "inside": "`path_repository.dart`: Path snapshots, status vocabulary, compatibility load/save, duplicate-root reporting, structure audit.",\n        "affects": "Paths screen and future explicit Path → Planner / AI proposal services.",\n        "when": "Path loading, stage/action structure, active-root conflicts, or Path storage migration.",\n        "delete": "No — first-class Paths depends on this domain boundary.",\n        "related": "`lib/features/paths/`, `docs/ARCHITECTURE.md` §6.1, issue #93.",\n    },\n'''
-          if '"lib/data/health": {' not in text:
-              folder_blocks += '''    "lib/data/health": {\n        "what": "Sleep/health Brain services — pure sleep policy plus device/cloud sleep synchronization orchestration.",\n        "why": "Imported health sleep must be normalized and conflict-checked before becoming Life OS timeline data.",\n        "inside": "Health sleep policy, device sync service, cloud sleep sync service.",\n        "affects": "Sleep history, Morning Start Day, health integration status and background sync.",\n        "when": "Recent sleep is missing, duplicated, overlaps manual records, or a health sync reports stale/error state.",\n        "delete": "No — shipped health/sleep integration depends on it.",\n        "related": "`lib/services/health_connect/`, Timeline sleep policy, health settings.",\n    },\n'''
-          if folder_blocks:
-              if insert_anchor not in text:
-                  raise SystemExit('structure guide data profile anchor missing')
-              text = text.replace(insert_anchor, folder_blocks + insert_anchor, 1)
-
-          feature_anchor = '    "lib/features/planning": {'
-          feature_blocks = ''
-          if '"lib/features/paths": {' not in text:
-              feature_blocks += '''    "lib/features/paths": {\n        "what": "First-class Paths UI — project list/detail, goal, stages, actions, progress, and structure warnings.",\n        "why": "Paths is a real app destination rather than product UI embedded inside shell/More code.",\n        "inside": "`paths_page.dart`.",\n        "affects": "Desktop side-nav Paths and phone/tablet More → Paths.",\n        "when": "Path navigation, responsive layout, Path goal/stage/action editing.",\n        "delete": "No — the Paths destination disappears.",\n        "related": "`lib/data/paths/path_repository.dart`, `lib/app/shell/app_shell.dart`.",\n    },\n'''
-          if '"lib/features/settings/health": {' not in text:
-              feature_blocks += '''    "lib/features/settings/health": {\n        "what": "Health integration settings UI.",\n        "why": "Users need connection/sync state and explicit controls for supported health sleep sources.",\n        "inside": "`health_connect_settings_section.dart`.",\n        "affects": "Profile/settings health integration controls.",\n        "when": "Health Connect setup, sync status, or permissions UI is wrong.",\n        "delete": "No — shipped health settings depend on it.",\n        "related": "`lib/data/health/`, `lib/services/health_connect/`.",\n    },\n'''
-          if '"lib/features/settings/notifications": {' not in text:
-              feature_blocks += '''    "lib/features/settings/notifications": {\n        "what": "Notification-specific settings UI.",\n        "why": "Users control reminder behavior separately from Timeline rendering and OS notification delivery.",\n        "inside": "`unfilled_time_notifications_section.dart`.",\n        "affects": "Unfilled Timeline-gap reminder preferences.",\n        "when": "Gap reminder enable/disable or notification preference UI is wrong.",\n        "delete": "No — shipped notification settings depend on it.",\n        "related": "`lib/data/records/unfilled_time_gap_service.dart`, `lib/services/unfilled_time_notification_service.dart`.",\n    },\n'''
-          if '"lib/services/health_connect": {' not in text:
-              feature_blocks += '''    "lib/services/health_connect": {\n        "what": "Platform bridge for Health Connect sleep reads and permissions.",\n        "why": "Brain health sync needs one capability-gated interface across Android and unsupported platforms.",\n        "inside": "Sleep models, conditional facade, Android/IO implementation, unsupported-platform stub.",\n        "affects": "Android Health Connect sleep import only; other platforms safely stub the capability.",\n        "when": "Health Connect permission/read behavior or platform gating breaks.",\n        "delete": "No — Android health integration depends on it.",\n        "related": "`lib/data/health/health_sleep_sync_service.dart`.",\n    },\n'''
-          if feature_blocks:
-              if feature_anchor not in text:
-                  raise SystemExit('structure guide data planning anchor missing')
-              text = text.replace(feature_anchor, feature_blocks + feature_anchor, 1)
-          p.write_text(text, encoding='utf-8')
-
-          # Turn the audit report's future-tense verification checklist into recorded evidence.
-          p = Path('docs/reports/PATHS_FIRST_CLASS_AND_REPO_AUDIT_2026-08-17.md')
-          text = p.read_text(encoding='utf-8')
-          start = '## Verification required before merge\n\n'
-          if start in text:
-              prefix, _ = text.split(start, 1)
-              verification = '''## Repository-wide structural drift found by this pass\n\nStrict `architecture_guard.ps1 -Strict` initially found 13 production Dart files that already existed on `main` but were absent from `APP_STRUCTURE.md`: Health Connect sleep services/models, health sleep sync/policy, cloud sleep sync, unfilled-time gap service/policy/banner, notification bridge/settings, and health settings. These were documented in the canonical manifest; the guard was not weakened.\n\nThe guard also continues to report its pre-existing watchlist warnings for large/mixed shell files and raw legacy Material controls. Those are not automatic delete/split targets; `shell_more_menu.dart` remains especially relevant to issue #93 because old Path migration/UI code still lives there.\n\n## Verification recorded 2026-08-17\n\n- `architecture_guard.ps1 -Strict` — passed after manifest parity repair.\n- `git diff --check` — passed.\n- `flutter analyze --no-fatal-infos --no-fatal-warnings` — passed.\n- `flutter test test/paths/path_structure_audit_test.dart` — 3/3 passed.\n- Release web build — passed with the production Flutter **3.41.6** toolchain.\n- Android arm64 release APK build — passed with the same production toolchain.\n- A first verifier attempt used floating Flutter `stable` (3.47.0) and failed inside `flutter_quill 11.5.0` because that dependency is incompatible with the newer `TextInputClient` API. The repository production deploy pins Flutter 3.41.6, so verification was corrected to the production toolchain rather than changing application code for a false gate.\n\n## Merge boundary\n\nThis pass is safe to review/merge as the **foundation** of #93, but #93 itself remains open. Old Path migration/bootstrap/governance code is deliberately retained until an idempotent migration/repair service, durable revisions/Project Memory, and Planner bridge parity exist.\n'''
-              p.write_text(prefix + verification, encoding='utf-8')
-          PY
-
-      - name: Regenerate detailed structure guide
-        run: python3 scripts/manual/generate_app_structure_detailed.py
-
-      - name: Remove temporary workflow and restore canonical guard
-        shell: bash
-        run: |
-          rm -f .github/workflows/paths-doc-sync.yml
-          cat > .github/workflows/architecture-guard.yml <<'YAML'
-          name: Architecture Guard
-
-          on:
-            pull_request:
-              branches:
-                - main
-            workflow_dispatch:
-
-          concurrency:
-            group: architecture-guard-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-            cancel-in-progress: true
-
-          permissions:
-            contents: read
-
-          jobs:
-            strict-structure:
-              name: strict-structure
-              runs-on: ubuntu-latest
-              steps:
-                - name: Checkout repository
-                  uses: actions/checkout@v4
-                  with:
-                    fetch-depth: 0
-
-                - name: Run strict architecture guard
-                  run: pwsh -NoProfile -NonInteractive -File ./scripts/audit/architecture_guard.ps1 -Strict
-
-                - name: Check for whitespace errors
-                  run: |
-                    if [ "${{ github.event_name }}" = "pull_request" ]; then
-                      git diff --check "${{ github.event.pull_request.base.sha }}...HEAD"
-                    else
-                      git fetch --no-tags --prune origin main
-                      git diff --check "origin/main...HEAD"
-                    fi
-          YAML
-
-      - name: Validate final diff
-        run: git diff --check
-
-      - name: Commit finalized docs and cleanup
-        shell: bash
-        run: |
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -A
-          if git diff --cached --quiet; then
-            echo 'No finalization changes.'
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            git diff --check "${{ github.event.pull_request.base.sha }}...HEAD"
           else
-            git commit -m 'Finalize Paths docs and repository audit'
-            git push origin HEAD:agent/paths-first-class-audit-cleanup
+            git fetch --no-tags --prune origin main
+            git diff --check "origin/main...HEAD"
           fi
