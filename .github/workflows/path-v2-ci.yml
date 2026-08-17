@@ -30,6 +30,56 @@ jobs:
           EOF
       - name: Install dependencies
         run: flutter pub get
+      - name: Verify nested checklist round-trip
+        shell: bash
+        run: |
+          cat > test/path_v2_nested_checklist_temp_test.dart <<'EOF'
+          import 'dart:convert';
+          import 'package:counter/data/models.dart';
+          import 'package:flutter_test/flutter_test.dart';
+
+          void main() {
+            test('Path V2 nested actions survive PlanningTask checklist parsing', () {
+              final nested = <Map<String, dynamic>>[
+                <String, dynamic>{
+                  'type': 'stage',
+                  'id': 'stage-1',
+                  'text': 'Prepare launch',
+                  'definitionOfDone': 'Checkout works',
+                  'isDone': false,
+                  'actions': <Map<String, dynamic>>[
+                    <String, dynamic>{
+                      'id': 'action-1',
+                      'text': 'Run sandbox payment',
+                      'result': 'Successful transaction',
+                      'minutes': 20,
+                      'track': 'payments',
+                      'isDone': false,
+                    },
+                  ],
+                },
+              ];
+              final task = PlanningTask.fromJson(<String, dynamic>{
+                'id': 1,
+                'title': 'Goal',
+                'category_id': 1,
+                'is_done': true,
+                'date_key': '',
+                'checklist': jsonEncode(nested),
+              });
+              expect(task.checklist, hasLength(1));
+              expect(task.checklist.first['definitionOfDone'], 'Checkout works');
+              final actions = task.checklist.first['actions'];
+              expect(actions, isA<List<dynamic>>());
+              final first = Map<String, dynamic>.from((actions as List<dynamic>).first as Map);
+              expect(first['result'], 'Successful transaction');
+              expect(first['minutes'], 20);
+              expect(first['track'], 'payments');
+            });
+          }
+          EOF
+          flutter test test/path_v2_nested_checklist_temp_test.dart
+          rm test/path_v2_nested_checklist_temp_test.dart
       - name: Analyze
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
       - name: Build web
