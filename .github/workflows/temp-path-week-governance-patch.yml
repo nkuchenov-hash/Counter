@@ -1,0 +1,147 @@
+name: Temp Path Week Governance Patch
+
+on:
+  push:
+    branches:
+      - feat/path-week-governance
+
+permissions:
+  contents: write
+
+jobs:
+  patch-and-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/path-week-governance
+          fetch-depth: 0
+      - name: Integrate governance helper
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          app = Path('lib/app/shell/app_shell.dart')
+          more = Path('lib/app/shell/shared/shell_more_menu.dart')
+          structure = Path('docs/APP_STRUCTURE.md')
+
+          a = app.read_text(encoding='utf-8')
+          if "shell_path_governance.dart" not in a:
+              needle = "import 'package:counter/app/shell/shared/shell_shared.dart';\n"
+              repl = needle + "import 'package:counter/app/shell/shared/shell_path_governance.dart';\n"
+              if needle not in a:
+                  raise SystemExit('app import anchor missing')
+              a = a.replace(needle, repl, 1)
+          app.write_text(a, encoding='utf-8')
+
+          s = more.read_text(encoding='utf-8')
+          old_boot = """      await bootstrapExecutablePortfolioPaths();\n      await _upgradeKadrRealityPathV3();\n"""
+          new_boot = """      await bootstrapExecutablePortfolioPaths();\n      await _upgradeKadrRealityPathV3();\n      await runPathGovernanceAndPlanCurrentWeekV4();\n"""
+          if 'runPathGovernanceAndPlanCurrentWeekV4();' not in s:
+              if old_boot not in s:
+                  raise SystemExit('bootstrap anchor missing')
+              s = s.replace(old_boot, new_boot, 1)
+
+          pattern = re.compile(r"_V3RealityCheck _v3CheckPath\(CategoryRule category, PlanningTask root\) \{.*?\n\}\n\nclass ProjectPathsV3Page", re.S)
+          replacement = """_V3RealityCheck _v3CheckPath(CategoryRule category, PlanningTask root) {
+  final audit = auditExecutableProjectPathV4(category, root);
+  return _V3RealityCheck(
+    structureProblems: <String>[
+      ...audit.structureProblems,
+      for (final topic in audit.missingTopics) 'Слепая зона: $topic.',
+    ],
+    missingTracks: audit.missingTracks,
+    audited: audit.audited,
+  );
+}
+
+class ProjectPathsV3Page"""
+          if pattern.search(s):
+              s = pattern.sub(replacement, s, count=1)
+          elif 'final audit = auditExecutableProjectPathV4(category, root);' not in s:
+              raise SystemExit('v3 check function anchor missing')
+
+          # Extend labels so coverage errors are readable for every project.
+          ru_anchor = """    'release' => 'Выпуск версий',\n    _ => 'Исполнение',\n"""
+          ru_repl = """    'release' => 'Выпуск версий',
+    'reliability' => 'Надёжность',
+    'distribution' => 'Распространение',
+    'privacy' => 'Приватность',
+    'operations' => 'Операционка',
+    'content' => 'Контент',
+    'seo' => 'Поиск / SEO',
+    'validation' => 'Проверка результата',
+    'sales' => 'Продажи',
+    'finance' => 'Финансы',
+    'automation' => 'Автоматизация',
+    'career' => 'Рабочая ценность',
+    'people' => 'Люди / роли',
+    'learning' => 'Обучение',
+    'course_assignment' => 'Задания курса',
+    'channel' => 'Каналы',
+    'playbook' => 'База навыков',
+    'transfer' => 'Перенос в проекты',
+    'execution' => 'Исполнение',
+    _ => track,
+"""
+          if ru_anchor in s:
+              s = s.replace(ru_anchor, ru_repl, 1)
+
+          en_anchor = """      'release' => 'Release process',\n      _ => 'Execution',\n"""
+          en_repl = """      'release' => 'Release process',
+      'reliability' => 'Reliability',
+      'distribution' => 'Distribution',
+      'privacy' => 'Privacy',
+      'operations' => 'Operations',
+      'content' => 'Content',
+      'seo' => 'Search / SEO',
+      'validation' => 'Validation',
+      'sales' => 'Sales',
+      'finance' => 'Finance',
+      'automation' => 'Automation',
+      'career' => 'Work value',
+      'people' => 'People / roles',
+      'learning' => 'Learning',
+      'course_assignment' => 'Course assignments',
+      'channel' => 'Channels',
+      'playbook' => 'Skills playbook',
+      'transfer' => 'Transfer to projects',
+      'execution' => 'Execution',
+      _ => track,
+"""
+          if en_anchor in s:
+              s = s.replace(en_anchor, en_repl, 1)
+
+          more.write_text(s, encoding='utf-8')
+
+          d = structure.read_text(encoding='utf-8')
+          if 'shell_path_governance.dart' not in d:
+              needle = "| `app/shell/shared/shell_more_menu.dart` | More bottom sheet *(part)* |"
+              repl = needle + "\n| `app/shell/shared/shell_path_governance.dart` | Project Path reality audit, targeted Path upgrades, Path-action → current-week Planner orchestration |"
+              if needle not in d:
+                  raise SystemExit('APP_STRUCTURE anchor missing')
+              d = d.replace(needle, repl, 1)
+          structure.write_text(d, encoding='utf-8')
+          PY
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add lib/app/shell/app_shell.dart lib/app/shell/shared/shell_more_menu.dart docs/APP_STRUCTURE.md
+          if ! git diff --cached --quiet; then
+            git commit -m "Integrate path governance and week planning"
+            git push origin HEAD:feat/path-week-governance
+          fi
+
+      - name: Architecture guard
+        shell: pwsh
+        run: ./scripts/audit/architecture_guard.ps1
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter build web --release --base-href="/Counter/" --no-tree-shake-icons
