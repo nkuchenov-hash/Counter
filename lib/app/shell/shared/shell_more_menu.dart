@@ -338,12 +338,21 @@ mixin ShellMoreMenu on ShellCoreLogic {
   }
 
   Future<void> _openProjectPathsAfterPortfolioBootstrap() async {
+    var bootstrapFailed = false;
     try {
       await _bootstrapDiscussedPortfolioPaths();
     } catch (e) {
+      bootstrapFailed = true;
       debugPrint('[PORTFOLIO_PATHS] bootstrap failed: $e');
     }
     if (!mounted) return;
+    if (bootstrapFailed) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Не удалось создать часть портфеля. Пути всё равно открыты.'),
+        ),
+      );
+    }
 
     final formFactor = shellFormFactorForWidth(MediaQuery.sizeOf(context).width);
     if (formFactor != ShellFormFactor.desktop) {
