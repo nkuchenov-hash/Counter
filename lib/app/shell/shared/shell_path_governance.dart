@@ -3,12 +3,14 @@ import 'dart:async';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 
+import 'shell_daily_routine.dart';
+
 const String _activePathMarkerV4 = 'LIFEOS_PATH::V2';
 const String _retiredPathMarkerV4 = 'LIFEOS_PATH::V2_RETIRED';
 const String _pathActionPlanMarkerV4 = 'LIFEOS_PATH_ACTION_V4|';
 const String _weekRoutinePlanMarkerV4 = 'LIFEOS_WEEK_ROUTINE_V4|';
-const String _projectPlanApprovalStageIdV5 = 'project-plan-approval-v5';
-const String _projectPlanApprovalActionIdV5 = 'project-plan-approval-v5-review';
+const String _projectPlanApprovalStageIdV5 = 'approval-v5-gate';
+const String _projectPlanApprovalActionIdV5 = 'approval-v5-review';
 
 class ProjectPathAuditV4 {
   const ProjectPathAuditV4({
@@ -614,10 +616,41 @@ Map<String, dynamic> _projectPlanApprovalStageV5() => _stageV4(
 bool _hasProjectPlanApprovalGateV5(PlanningTask root) =>
     root.checklist.isNotEmpty &&
     (root.checklist.first['id'] ?? '').toString() ==
-        'approval-v5-gate';
+        _projectPlanApprovalStageIdV5;
 
 bool _projectPlanApprovedV5(PlanningTask root) =>
     _hasProjectPlanApprovalGateV5(root) && root.checklist.first['isDone'] == true;
+
+List<PlanningTask> _canonicalActivePathRootsV6(
+  Iterable<PlanningTask> roots,
+) {
+  final byCategory = <int, PlanningTask>{};
+  for (final root in roots) {
+    if ((root.notesPlain ?? '').trim() != _activePathMarkerV4) continue;
+    final current = byCategory[root.categoryId];
+    if (current == null) {
+      byCategory[root.categoryId] = root;
+      continue;
+    }
+    final currentAt = current.updatedAt ?? current.createdAt;
+    final candidateAt = root.updatedAt ?? root.createdAt;
+    if (currentAt == null && candidateAt != null) {
+      byCategory[root.categoryId] = root;
+      continue;
+    }
+    if (currentAt != null &&
+        candidateAt != null &&
+        candidateAt.isAfter(currentAt)) {
+      byCategory[root.categoryId] = root;
+      continue;
+    }
+    if (currentAt == candidateAt &&
+        root.planRowIdForBackend.compareTo(current.planRowIdForBackend) > 0) {
+      byCategory[root.categoryId] = root;
+    }
+  }
+  return byCategory.values.toList();
+}
 
 List<Map<String, dynamic>> _moneyManagementPathV5() {
   const p = 'money-v5-';
@@ -711,9 +744,10 @@ Future<void> _ensureMoneyManagementPathV5() async {
 
 Future<void> _ensureProjectPlanApprovalGatesV5() async {
   final db = DatabaseService.instance;
-  final roots = await db.fetchBacklogPlans(includeCompleted: true);
+  final roots = _canonicalActivePathRootsV6(
+    await db.fetchBacklogPlans(includeCompleted: true),
+  );
   for (final root in roots) {
-    if ((root.notesPlain ?? '').trim() != _activePathMarkerV4) continue;
     if (_hasProjectPlanApprovalGateV5(root)) continue;
     final checklist = <Map<String, dynamic>>[
       _projectPlanApprovalStageV5(),
@@ -859,6 +893,7 @@ Future<void> _detachPriceReporterMoneyWorkV5() async {
 Future<void> upgradeRealityPathsV4() async {
   final db = DatabaseService.instance;
   await db.refreshCategoryRulesFromServer();
+  await ensureDailyRoutineV6();
 
   final flow = _findCategoryByAliasesV4(const ['FLOW', 'Flow']);
   if (flow != null) {
@@ -1177,10 +1212,11 @@ Future<void> _removeSupersededWeekRoutinesV5() async {
 
 Future<void> _removePrematurePathActionsV5() async {
   final db = DatabaseService.instance;
-  final roots = await db.fetchBacklogPlans(includeCompleted: true);
+  final roots = _canonicalActivePathRootsV6(
+    await db.fetchBacklogPlans(includeCompleted: true),
+  );
   final approvalByRootId = <String, bool>{};
   for (final root in roots) {
-    if ((root.notesPlain ?? '').trim() != _activePathMarkerV4) continue;
     final rootId = (root.pocketRecordId ?? root.planRowIdForBackend).trim();
     if (rootId.isEmpty) continue;
     approvalByRootId[rootId] = _projectPlanApprovedV5(root);
@@ -1216,17 +1252,74 @@ Future<void> _removePrematurePathActionsV5() async {
 }
 
 
+bool _isApprovalPlannerTaskV6(PlanningTask task) {
+  final firstLine = (task.notesPlain ?? '').split('\n').first.trim();
+  if (!firstLine.startsWith(_pathActionPlanMarkerV4)) return false;
+  final payload = firstLine.substring(_pathActionPlanMarkerV4.length);
+  final parts = payload.split('|');
+  if (parts.length < 3) return false;
+  return parts[1].trim() == _projectPlanApprovalStageIdV5 &&
+      parts[2].trim() == _projectPlanApprovalActionIdV5;
+}
+
+Future<Set<int>> _dedupeCurrentWeekApprovalPlansV6() async {
+  final db = DatabaseService.instance;
+  final today = db.getTimelineDeviceLocalToday();
+  final monday = _mondayOfV4(today);
+  final byCategory = <int, List<PlanningTask>>{};
+  final categoriesWithApproval = <int>{};
+
+  for (var i = 0; i < 7; i++) {
+    final day = monday.add(Duration(days: i));
+    final tasks = await db.getPlanningTasksForWallDate(day);
+    for (final task in tasks) {
+      if (!_isApprovalPlannerTaskV6(task)) continue;
+      categoriesWithApproval.add(task.categoryId);
+      byCategory.putIfAbsent(task.categoryId, () => <PlanningTask>[]).add(task);
+    }
+  }
+
+  final deleteIds = <String>{};
+  for (final tasks in byCategory.values) {
+    final unfinished = tasks.where((task) => !task.isDone).toList()
+      ..sort((a, b) {
+        final at = a.startTime;
+        final bt = b.startTime;
+        if (at == null && bt == null) {
+          return a.planRowIdForBackend.compareTo(b.planRowIdForBackend);
+        }
+        if (at == null) return 1;
+        if (bt == null) return -1;
+        final byTime = at.compareTo(bt);
+        if (byTime != 0) return byTime;
+        return a.planRowIdForBackend.compareTo(b.planRowIdForBackend);
+      });
+    if (unfinished.length <= 1) continue;
+    for (final duplicate in unfinished.skip(1)) {
+      final id = duplicate.planRowIdForBackend.trim();
+      if (id.isEmpty || id.startsWith('virt-') || id.startsWith('optimistic-')) {
+        continue;
+      }
+      deleteIds.add(id);
+    }
+  }
+  if (deleteIds.isNotEmpty) {
+    await db.deletePlanningTasksBulk(deleteIds);
+  }
+  return categoriesWithApproval;
+}
+
+
 Future<PathWeekPlanReportV4> planCurrentWeekFromPathsV4() async {
   final db = DatabaseService.instance;
   await upgradeRealityPathsV4();
   await _removeSupersededWeekRoutinesV5();
+  final existingApprovalCategoryIds =
+      await _dedupeCurrentWeekApprovalPlansV6();
   await _removePrematurePathActionsV5();
 
   final backlog = await db.fetchBacklogPlans(includeCompleted: true);
-  final roots = <PlanningTask>[
-    for (final task in backlog)
-      if ((task.notesPlain ?? '').trim() == _activePathMarkerV4) task,
-  ];
+  final roots = _canonicalActivePathRootsV6(backlog);
   var allPlans = await db.fetchPlans();
   final reconciled = await _reconcileCompletedPathActionsV4(roots, allPlans);
   if (reconciled > 0) {
@@ -1287,7 +1380,6 @@ Future<PathWeekPlanReportV4> planCurrentWeekFromPathsV4() async {
 
   final today = db.getTimelineDeviceLocalToday();
   final monday = _mondayOfV4(today);
-  final weekKey = _weekKeyV4(monday);
   final weekdays = <DateTime>[
     for (var i = 0; i < 5; i++) monday.add(Duration(days: i)),
   ].where((d) => !d.isBefore(DateTime(today.year, today.month, today.day))).toList();
@@ -1316,7 +1408,7 @@ Future<PathWeekPlanReportV4> planCurrentWeekFromPathsV4() async {
   final remainingBudget = <_PathAuditProfileV4, int>{
     for (final profile in pools.keys)
       profile: (pools[profile]?.isNotEmpty == true &&
-              (pools[profile]!.first.stageId.startsWith('approval-v5-')))
+              (pools[profile]!.first.stageId == _projectPlanApprovalStageIdV5))
           ? 30
           : profile.weeklyMinutes,
   };
@@ -1334,6 +1426,14 @@ Future<PathWeekPlanReportV4> planCurrentWeekFromPathsV4() async {
     final candidate = candidates[idx];
     indexes[profile] = idx + 1;
     if (candidate.minutes > budget) continue;
+    final isApprovalTask =
+        candidate.stageId == _projectPlanApprovalStageIdV5 &&
+        candidate.actionId == _projectPlanApprovalActionIdV5;
+    if (isApprovalTask &&
+        existingApprovalCategoryIds.contains(candidate.category.id)) {
+      remainingBudget[profile] = budget - candidate.minutes;
+      continue;
+    }
     final rootId = (candidate.root.pocketRecordId ?? candidate.root.planRowIdForBackend).trim();
     final marker = '$_pathActionPlanMarkerV4$rootId|${candidate.stageId}|${candidate.actionId}';
     if (existingMarkers.contains(marker)) {
@@ -1361,7 +1461,7 @@ Future<PathWeekPlanReportV4> planCurrentWeekFromPathsV4() async {
       );
       if (cursor == null) continue;
       final end = cursor.add(Duration(minutes: candidate.minutes));
-      final approvalTask = candidate.stageId.startsWith('approval-v5-');
+      final approvalTask = isApprovalTask;
       final ok = await _createScheduledTaskV4(
         category: candidate.category,
         title: approvalTask
@@ -1374,6 +1474,9 @@ Future<PathWeekPlanReportV4> planCurrentWeekFromPathsV4() async {
       if (ok) {
         created++;
         existingMarkers.add(marker);
+        if (approvalTask) {
+          existingApprovalCategoryIds.add(candidate.category.id);
+        }
         dayCursor[dk] = end.add(const Duration(minutes: 5));
         dayIndex = (dayIndex + attempt + 1) % weekdays.length;
         placed = true;

@@ -106,6 +106,7 @@ Product sections own section-specific code later; this phase only separates shel
 | `app/shell/shared/shell_edit_hosts.dart` | Timeline/plan edit modal hosts *(part)* |
 | `app/shell/shared/shell_more_menu.dart` | More bottom sheet *(part)* |
 | `app/shell/shared/shell_path_governance.dart` | Project Path reality audit, targeted Path upgrades, Path-action → current-week Planner orchestration |
+| `app/shell/shared/shell_daily_routine.dart` | One-time bootstrap for baseline personal daily recurring Planner series; preserves existing/user-edited recurrence |
 | `app/shell/shared/shell_voice_routing.dart` | Voice hotkey + submit routing *(part)* |
 | `app/shell/shared/shell_offline_banner.dart` | Offline sync banner column slot |
 | `app/shell/shared/shell_shared.dart` | Shell-local date helpers |
