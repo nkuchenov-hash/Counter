@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-17T12:45:49.615Z",
+  "updatedAt": "2026-08-17T13:03:21.845Z",
   "count": 78,
   "sourcePool": [
     "Steam",
@@ -79,13 +79,14 @@
       "movies": [],
       "criticRating": 9.4,
       "steamUserRating": 9.3,
-      "recommendations": 827343,
+      "recommendations": 827348,
       "owners": "20,000,000 .. 50,000,000",
       "peakConcurrent": 29529,
       "sourceEvidence": [
         "Steam",
         "SteamSpy",
         "Metacritic",
+        "GamesRadar+",
         "StopGame",
         "Rock Paper Shotgun"
       ],
@@ -94,9 +95,10 @@
         "steamSpy": "https://steamspy.com/app/1245620",
         "metacritic": "https://www.metacritic.com/game/pc/elden-ring?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10591.768612169117,
+      "popularityScore": 10591.768874631387,
       "igropoiskRating": 9.4,
       "editorialSources": [
+        "GamesRadar+",
         "StopGame",
         "Rock Paper Shotgun"
       ],
@@ -112,7 +114,17 @@
             "publishedAt": "Wed, 12 Aug 2026 15:17:32 +0000"
           }
         ],
-        "reviews": [],
+        "reviews": [
+          {
+            "source": "GamesRadar+",
+            "language": "en",
+            "title": "Mortal Shell 2 review: \"The best Soulslike I've played since Elden Ring thanks to brilliant death-dealing toys and speedy combat\"",
+            "normalizedTitle": "mortal shell 2 review the best soulslike i ve played since elden ring thanks to brilliant death dealing toys and speedy combat",
+            "url": "https://www.gamesradar.com/games/action-rpg/mortal-shell-2-review/",
+            "summary": "This speedy sequel speeds up action and stuffs secrets and ideas in every corner of its beautiful open world.",
+            "publishedAt": "Mon, 17 Aug 2026 13:00:00 +0000"
+          }
+        ],
         "guides": [
           {
             "source": "StopGame",
@@ -137,6 +149,15 @@
         "news": []
       },
       "articles": [
+        {
+          "source": "GamesRadar+",
+          "language": "en",
+          "title": "Mortal Shell 2 review: \"The best Soulslike I've played since Elden Ring thanks to brilliant death-dealing toys and speedy combat\"",
+          "normalizedTitle": "mortal shell 2 review the best soulslike i ve played since elden ring thanks to brilliant death dealing toys and speedy combat",
+          "url": "https://www.gamesradar.com/games/action-rpg/mortal-shell-2-review/",
+          "summary": "This speedy sequel speeds up action and stuffs secrets and ideas in every corner of its beautiful open world.",
+          "publishedAt": "Mon, 17 Aug 2026 13:00:00 +0000"
+        },
         {
           "source": "StopGame",
           "language": "ru",
@@ -241,7 +262,7 @@
       "movies": [],
       "criticRating": 9.6,
       "steamUserRating": 9.7,
-      "recommendations": 751039,
+      "recommendations": 751046,
       "owners": "20,000,000 .. 50,000,000",
       "peakConcurrent": 54771,
       "sourceEvidence": [
@@ -257,7 +278,7 @@
         "steamSpy": "https://steamspy.com/app/1086940",
         "metacritic": "https://www.metacritic.com/game/pc/baldurs-gate-3?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10577.56630679185,
+      "popularityScore": 10577.566711570185,
       "igropoiskRating": 9.6,
       "editorialSources": [
         "GamesRadar+",
@@ -395,7 +416,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 8.7,
-      "recommendations": 5223901,
+      "recommendations": 5223976,
       "owners": "100,000,000 .. 200,000,000",
       "peakConcurrent": 1013936,
       "sourceEvidence": [
@@ -407,7 +428,7 @@
         "steamSpy": "https://steamspy.com/app/730",
         "metacritic": ""
       },
-      "popularityScore": 10541.799502101234,
+      "popularityScore": 10541.800125616996,
       "igropoiskRating": 8.7,
       "editorialSources": [],
       "materials": {
@@ -723,7 +744,7 @@
       "movies": [],
       "criticRating": 9.7,
       "steamUserRating": 9.3,
-      "recommendations": 117236,
+      "recommendations": 117235,
       "owners": "2,000,000 .. 5,000,000",
       "peakConcurrent": 918,
       "sourceEvidence": [
@@ -737,7 +758,7 @@
         "steamSpy": "https://steamspy.com/app/632470",
         "metacritic": "https://www.metacritic.com/game/pc/disco-elysium-the-final-cut?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10436.906469666408,
+      "popularityScore": 10436.906099223344,
       "igropoiskRating": 9.6,
       "editorialSources": [
         "StopGame"
@@ -1260,7 +1281,7 @@
       "movies": [],
       "criticRating": 8.9,
       "steamUserRating": 9.8,
-      "recommendations": 888370,
+      "recommendations": 888375,
       "owners": "20,000,000 .. 50,000,000",
       "peakConcurrent": 50662,
       "sourceEvidence": [
@@ -1273,7 +1294,7 @@
         "steamSpy": "https://steamspy.com/app/413150",
         "metacritic": "https://www.metacritic.com/game/pc/stardew-valley?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10364.859437299041,
+      "popularityScore": 10364.859681731412,
       "igropoiskRating": 9.2,
       "editorialSources": [],
       "materials": {
@@ -1453,7 +1474,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 9.4,
-      "recommendations": 457348,
+      "recommendations": 457349,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 14439,
       "sourceEvidence": [
@@ -1465,7 +1486,7 @@
         "steamSpy": "https://steamspy.com/app/892970",
         "metacritic": ""
       },
-      "popularityScore": 10326.024773383113,
+      "popularityScore": 10326.024868342107,
       "igropoiskRating": 9.4,
       "editorialSources": [],
       "materials": {
@@ -1878,7 +1899,7 @@
       "movies": [],
       "criticRating": 8.9,
       "steamUserRating": 9.7,
-      "recommendations": 155659,
+      "recommendations": 155660,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 2559,
       "sourceEvidence": [
@@ -1891,7 +1912,7 @@
         "steamSpy": "https://steamspy.com/app/588650",
         "metacritic": "https://www.metacritic.com/game/pc/dead-cells?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10259.217702611275,
+      "popularityScore": 10259.217981612359,
       "igropoiskRating": 9.2,
       "editorialSources": [],
       "materials": {
@@ -1952,7 +1973,7 @@
       "movies": [],
       "criticRating": 8.4,
       "steamUserRating": 9.2,
-      "recommendations": 99542,
+      "recommendations": 99543,
       "owners": "2,000,000 .. 5,000,000",
       "peakConcurrent": 2879,
       "sourceEvidence": [
@@ -1967,7 +1988,7 @@
         "steamSpy": "https://steamspy.com/app/570940",
         "metacritic": "https://www.metacritic.com/game/pc/dark-souls-remastered?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10209.801072525483,
+      "popularityScore": 10209.80150881161,
       "igropoiskRating": 8.7,
       "editorialSources": [
         "Eurogamer",
@@ -2335,7 +2356,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 9.7,
-      "recommendations": 876840,
+      "recommendations": 876853,
       "owners": "50,000,000 .. 100,000,000",
       "peakConcurrent": 15004,
       "sourceEvidence": [
@@ -2347,7 +2368,7 @@
         "steamSpy": "https://steamspy.com/app/2358720",
         "metacritic": ""
       },
-      "popularityScore": 9944.292084868757,
+      "popularityScore": 9944.292728746772,
       "igropoiskRating": 9.7,
       "editorialSources": [],
       "materials": {
@@ -2428,8 +2449,7 @@
       "sourceEvidence": [
         "Steam",
         "SteamSpy",
-        "PC Gamer",
-        "GamesRadar+"
+        "PC Gamer"
       ],
       "sourceLinks": {
         "steam": "https://store.steampowered.com/app/1623730/",
@@ -2439,8 +2459,7 @@
       "popularityScore": 9940.482954059613,
       "igropoiskRating": 9.4,
       "editorialSources": [
-        "PC Gamer",
-        "GamesRadar+"
+        "PC Gamer"
       ],
       "materials": {
         "articles": [
@@ -2466,15 +2485,6 @@
             "url": "https://www.pcgamer.com/games/survival-crafting/pocketpair-not-planning-to-spend-a-year-making-a-massive-update-for-palworld-1-1/",
             "summary": "Careful what you ask for.",
             "publishedAt": "Fri, 14 Aug 2026 20:08:31 +0000"
-          },
-          {
-            "source": "GamesRadar+",
-            "language": "en",
-            "title": "Palworld devs \"not planning to spend a year\" making a \"massive\" 1.1 update, publishing lead clarifies after quickly regretting asking fans for ideas",
-            "normalizedTitle": "palworld devs not planning to spend a year making a massive 1 1 update publishing lead clarifies after quickly regretting asking fans for ideas",
-            "url": "https://www.gamesradar.com/games/survival/palworld-devs-not-planning-to-spend-a-year-making-a-massive-1-1-update-publishing-lead-clarifies-after-quickly-regretting-asking-fans-for-ideas/",
-            "summary": "\"Shot myself in the foot here\"",
-            "publishedAt": "Fri, 14 Aug 2026 19:11:09 +0000"
           }
         ]
       },
@@ -2487,15 +2497,6 @@
           "url": "https://www.pcgamer.com/games/survival-crafting/pocketpair-not-planning-to-spend-a-year-making-a-massive-update-for-palworld-1-1/",
           "summary": "Careful what you ask for.",
           "publishedAt": "Fri, 14 Aug 2026 20:08:31 +0000"
-        },
-        {
-          "source": "GamesRadar+",
-          "language": "en",
-          "title": "Palworld devs \"not planning to spend a year\" making a \"massive\" 1.1 update, publishing lead clarifies after quickly regretting asking fans for ideas",
-          "normalizedTitle": "palworld devs not planning to spend a year making a massive 1 1 update publishing lead clarifies after quickly regretting asking fans for ideas",
-          "url": "https://www.gamesradar.com/games/survival/palworld-devs-not-planning-to-spend-a-year-making-a-massive-1-1-update-publishing-lead-clarifies-after-quickly-regretting-asking-fans-for-ideas/",
-          "summary": "\"Shot myself in the foot here\"",
-          "publishedAt": "Fri, 14 Aug 2026 19:11:09 +0000"
         },
         {
           "source": "PC Gamer",
@@ -2570,8 +2571,8 @@
         "Steam",
         "SteamSpy",
         "Metacritic",
-        "GamesRadar+",
         "IGN",
+        "GamesRadar+",
         "Rock Paper Shotgun",
         "StopGame"
       ],
@@ -2583,13 +2584,22 @@
       "popularityScore": 9932.621702825774,
       "igropoiskRating": 7.8,
       "editorialSources": [
-        "GamesRadar+",
         "IGN",
+        "GamesRadar+",
         "Rock Paper Shotgun",
         "StopGame"
       ],
       "materials": {
         "articles": [
+          {
+            "source": "IGN",
+            "language": "en",
+            "title": "'I'm Actually Spiralling': Star Wars Fans Are Convinced The Hunt for Ben Solo is Back on After Adam Driver's X-Men Announcement Video",
+            "normalizedTitle": "i m actually spiralling star wars fans are convinced the hunt for ben solo is back on after adam driver s x men announcement video",
+            "url": "https://www.ign.com/articles/im-actually-spiralling-star-wars-fans-are-convinced-the-hunt-for-ben-solo-is-back-on-after-adam-drivers-x-men-announcement-video",
+            "summary": "Star Wars fans are convinced Adam Driver's X-Men announcement video suggests his scrapped Hunt for Ben Solo movie is now back in development.",
+            "publishedAt": "Mon, 17 Aug 2026 10:19:36 +0000"
+          },
           {
             "source": "GamesRadar+",
             "language": "en",
@@ -2598,15 +2608,6 @@
             "url": "https://www.gamesradar.com/entertainment/star-wars-movies/dave-filoni-dashes-star-wars-fan-hopes-with-hunt-for-ben-solo-denial-the-force-is-not-with-us/",
             "summary": "The Hunt for Ben Solo isn't happening at Lucasfilm",
             "publishedAt": "Mon, 17 Aug 2026 09:06:04 +0000"
-          },
-          {
-            "source": "IGN",
-            "language": "en",
-            "title": "Dave Filoni Confirms Disney Isn't Making Scrapped Star Wars Movie The Hunt for Ben Solo 'Right Now' | D23 2026",
-            "normalizedTitle": "dave filoni confirms disney isn t making scrapped star wars movie the hunt for ben solo right now d23 2026",
-            "url": "https://www.ign.com/articles/dave-filoni-confirms-disney-isnt-making-scrapped-star-wars-movie-the-hunt-for-ben-solo-right-now-d23-2026",
-            "summary": "Lucasfilm president Dave Filoni has confirmed that, despite the push from fans, Disney still isn't working on its scrapped Star Wars movie The Hunt for Ben Solo.",
-            "publishedAt": "Sat, 15 Aug 2026 21:10:54 +0000"
           },
           {
             "source": "Rock Paper Shotgun",
@@ -2635,6 +2636,15 @@
       },
       "articles": [
         {
+          "source": "IGN",
+          "language": "en",
+          "title": "'I'm Actually Spiralling': Star Wars Fans Are Convinced The Hunt for Ben Solo is Back on After Adam Driver's X-Men Announcement Video",
+          "normalizedTitle": "i m actually spiralling star wars fans are convinced the hunt for ben solo is back on after adam driver s x men announcement video",
+          "url": "https://www.ign.com/articles/im-actually-spiralling-star-wars-fans-are-convinced-the-hunt-for-ben-solo-is-back-on-after-adam-drivers-x-men-announcement-video",
+          "summary": "Star Wars fans are convinced Adam Driver's X-Men announcement video suggests his scrapped Hunt for Ben Solo movie is now back in development.",
+          "publishedAt": "Mon, 17 Aug 2026 10:19:36 +0000"
+        },
+        {
           "source": "GamesRadar+",
           "language": "en",
           "title": "Dave Filoni dashes Star Wars fan hopes with Hunt for Ben Solo denial: \"The Force is not with us\"",
@@ -2642,15 +2652,6 @@
           "url": "https://www.gamesradar.com/entertainment/star-wars-movies/dave-filoni-dashes-star-wars-fan-hopes-with-hunt-for-ben-solo-denial-the-force-is-not-with-us/",
           "summary": "The Hunt for Ben Solo isn't happening at Lucasfilm",
           "publishedAt": "Mon, 17 Aug 2026 09:06:04 +0000"
-        },
-        {
-          "source": "IGN",
-          "language": "en",
-          "title": "Dave Filoni Confirms Disney Isn't Making Scrapped Star Wars Movie The Hunt for Ben Solo 'Right Now' | D23 2026",
-          "normalizedTitle": "dave filoni confirms disney isn t making scrapped star wars movie the hunt for ben solo right now d23 2026",
-          "url": "https://www.ign.com/articles/dave-filoni-confirms-disney-isnt-making-scrapped-star-wars-movie-the-hunt-for-ben-solo-right-now-d23-2026",
-          "summary": "Lucasfilm president Dave Filoni has confirmed that, despite the push from fans, Disney still isn't working on its scrapped Star Wars movie The Hunt for Ben Solo.",
-          "publishedAt": "Sat, 15 Aug 2026 21:10:54 +0000"
         },
         {
           "source": "Rock Paper Shotgun",
@@ -3895,7 +3896,7 @@
       "movies": [],
       "criticRating": 9,
       "steamUserRating": 9.7,
-      "recommendations": 194523,
+      "recommendations": 194525,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 16426,
       "sourceEvidence": [
@@ -3908,7 +3909,7 @@
         "steamSpy": "https://steamspy.com/app/427520",
         "metacritic": "https://www.metacritic.com/game/pc/factorio?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9748.897319139207,
+      "popularityScore": 9748.897765657115,
       "igropoiskRating": 9.2,
       "editorialSources": [],
       "materials": {
@@ -3981,7 +3982,7 @@
       "movies": [],
       "criticRating": 8.7,
       "steamUserRating": 9.8,
-      "recommendations": 207416,
+      "recommendations": 207419,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 19211,
       "sourceEvidence": [
@@ -3994,7 +3995,7 @@
         "steamSpy": "https://steamspy.com/app/294100",
         "metacritic": "https://www.metacritic.com/game/pc/rimworld?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9741.684434850253,
+      "popularityScore": 9741.685062992605,
       "igropoiskRating": 9.1,
       "editorialSources": [],
       "materials": {
@@ -4413,7 +4414,7 @@
       "movies": [],
       "criticRating": 8.5,
       "steamUserRating": 9.2,
-      "recommendations": 654778,
+      "recommendations": 654774,
       "owners": "20,000,000 .. 50,000,000",
       "peakConcurrent": 3832,
       "sourceEvidence": [
@@ -4426,7 +4427,7 @@
         "steamSpy": "https://steamspy.com/app/945360",
         "metacritic": "https://www.metacritic.com/game/pc/among-us?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9711.609474231846,
+      "popularityScore": 9711.609208923514,
       "igropoiskRating": 8.7,
       "editorialSources": [],
       "materials": {
@@ -4507,7 +4508,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 9.6,
-      "recommendations": 682097,
+      "recommendations": 682099,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 9978,
       "sourceEvidence": [
@@ -4520,7 +4521,7 @@
         "steamSpy": "https://steamspy.com/app/739630",
         "metacritic": ""
       },
-      "popularityScore": 9683.384677612514,
+      "popularityScore": 9683.384804953115,
       "igropoiskRating": 9.6,
       "editorialSources": [
         "Rock Paper Shotgun"
@@ -4982,7 +4983,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 9.7,
-      "recommendations": 411091,
+      "recommendations": 411090,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 6199,
       "sourceEvidence": [
@@ -4994,7 +4995,7 @@
         "steamSpy": "https://steamspy.com/app/1966720",
         "metacritic": ""
       },
-      "popularityScore": 9651.393902533384,
+      "popularityScore": 9651.393796889146,
       "igropoiskRating": 9.7,
       "editorialSources": [],
       "materials": {
@@ -5065,7 +5066,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 8.8,
-      "recommendations": 281946,
+      "recommendations": 281953,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 4450,
       "sourceEvidence": [
@@ -5077,7 +5078,7 @@
         "steamSpy": "https://steamspy.com/app/1326470",
         "metacritic": ""
       },
-      "popularityScore": 9625.01674779264,
+      "popularityScore": 9625.01782601785,
       "igropoiskRating": 8.8,
       "editorialSources": [],
       "materials": {
@@ -6039,7 +6040,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 9.7,
-      "recommendations": 405631,
+      "recommendations": 405647,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 14904,
       "sourceEvidence": [
@@ -6052,7 +6053,7 @@
         "steamSpy": "https://steamspy.com/app/250900",
         "metacritic": ""
       },
-      "popularityScore": 9470.813220883816,
+      "popularityScore": 9470.814933908103,
       "igropoiskRating": 9.7,
       "editorialSources": [
         "IGN"
@@ -6727,7 +6728,7 @@
       "movies": [],
       "criticRating": 8.3,
       "steamUserRating": 9.6,
-      "recommendations": 579239,
+      "recommendations": 579240,
       "owners": "20,000,000 .. 50,000,000",
       "peakConcurrent": 2892,
       "sourceEvidence": [
@@ -6741,7 +6742,7 @@
         "steamSpy": "https://steamspy.com/app/242760",
         "metacritic": "https://www.metacritic.com/game/pc/the-forest?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9316.285854486632,
+      "popularityScore": 9316.28592946317,
       "igropoiskRating": 8.8,
       "editorialSources": [
         "StopGame"
@@ -7096,7 +7097,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 9.4,
-      "recommendations": 357908,
+      "recommendations": 357915,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 22864,
       "sourceEvidence": [
@@ -7109,7 +7110,7 @@
         "steamSpy": "https://steamspy.com/app/108600",
         "metacritic": ""
       },
-      "popularityScore": 9275.377261932097,
+      "popularityScore": 9275.378111318852,
       "igropoiskRating": 9.4,
       "editorialSources": [
         "StopGame"
@@ -7283,7 +7284,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 9.2,
-      "recommendations": 94003,
+      "recommendations": 94004,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 1208,
       "sourceEvidence": [
@@ -7295,7 +7296,7 @@
         "steamSpy": "https://steamspy.com/app/286690",
         "metacritic": ""
       },
-      "popularityScore": 9167.314633382275,
+      "popularityScore": 9167.315095375565,
       "igropoiskRating": 9.2,
       "editorialSources": [],
       "materials": {
@@ -7481,7 +7482,7 @@
       "movies": [],
       "criticRating": 8.8,
       "steamUserRating": 8.5,
-      "recommendations": 79513,
+      "recommendations": 79514,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 3123,
       "sourceEvidence": [
@@ -7494,7 +7495,7 @@
         "steamSpy": "https://steamspy.com/app/268500",
         "metacritic": "https://www.metacritic.com/game/pc/xcom-2?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9120.044360145463,
+      "popularityScore": 9120.04490632821,
       "igropoiskRating": 8.7,
       "editorialSources": [],
       "materials": {
