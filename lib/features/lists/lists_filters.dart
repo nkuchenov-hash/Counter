@@ -188,64 +188,217 @@ class _ListsCategoryChipBarState extends State<ListsCategoryChipBar> {
     unawaited(_persistQuickChipIds(next));
   }
 
+  List<CategoryRule> _flattenCategoryRules(Iterable<CategoryRule> roots) {
+    final out = <CategoryRule>[];
+    void visit(Iterable<CategoryRule> rules) {
+      for (final rule in rules) {
+        if (rule.isArchived) continue;
+        out.add(rule);
+        final children = rule.children;
+        if (children != null && children.isNotEmpty) visit(children);
+      }
+    }
+
+    visit(roots);
+    return out;
+  }
+
   Future<void> _openCategoryPicker(BuildContext context) async {
     final db = DatabaseService.instance;
     final selected = Set<int>.from(_displayChipIds);
     final expandedIds = <int>{};
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      useSafeArea: true,
-      builder: (ctx) {
-        final sheetHeight =
-            (MediaQuery.sizeOf(ctx).height * 0.82).clamp(320.0, 720.0);
-        return SizedBox(
-          height: sheetHeight,
-          child: StatefulBuilder(
-            builder: (ctx, setModal) {
-              void applyPickerMutation(void Function() mutation) {
-                setModal(mutation);
-                _applyQuickChipIds(selected);
-              }
+    final searchController = TextEditingController();
+    var searchQuery = '';
+    var creatingCategory = false;
+    try {
+      await showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        showDragHandle: true,
+        useSafeArea: true,
+        builder: (ctx) {
+          final sheetHeight =
+              (MediaQuery.sizeOf(ctx).height * 0.82).clamp(320.0, 720.0);
+          return SizedBox(
+            height: sheetHeight,
+            child: StatefulBuilder(
+              builder: (ctx, setModal) {
+                void applyPickerMutation(void Function() mutation) {
+                  setModal(mutation);
+                  _applyQuickChipIds(selected);
+                }
 
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-                    child: Text(
-                      t(currentLocale.value, 'category_label'),
-                      style: Theme.of(ctx).textTheme.titleMedium,
+                final allRules = widget.glmPresentation
+                    ? _flattenCategoryRules(db.rules)
+                    : const <CategoryRule>[];
+                final normalizedQuery = searchQuery.trim().toLowerCase();
+                final matchingRules = normalizedQuery.isEmpty
+                    ? const <CategoryRule>[]
+                    : allRules
+                          .where(
+                            (rule) => categoryRawName(
+                              rule.id,
+                            ).trim().toLowerCase().contains(normalizedQuery),
+                          )
+                          .toList(growable: false);
+                final exactMatchExists = normalizedQuery.isNotEmpty &&
+                    allRules.any(
+                      (rule) =>
+                          categoryRawName(rule.id).trim().toLowerCase() ==
+                          normalizedQuery,
+                    );
+
+                Future<void> createCategoryFromSearch() async {
+                  final name = searchQuery.trim();
+                  if (name.isEmpty || creatingCategory) return;
+                  setModal(() => creatingCategory = true);
+                  final createdId = await db.addNestedCategory(
+                    null,
+                    CategoryRule(id: 0, name: name),
+                  );
+                  if (!mounted || !ctx.mounted) return;
+                  if (createdId == null) {
+                    setModal(() => creatingCategory = false);
+                    ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+                      SnackBar(
+                        content: Text(t(currentLocale.value, 'toast_error')),
+                      ),
+                    );
+                    return;
+                  }
+                  selected.add(createdId);
+                  _applyQuickChipIds(selected);
+                  Navigator.of(ctx).pop();
+                }
+
+                final pickerChildren = <Widget>[];
+                if (widget.glmPresentation && normalizedQuery.isNotEmpty) {
+                  if (!exactMatchExists) {
+                    pickerChildren.add(
+                      ListTile(
+                        key: const ValueKey<String>(
+                          'notes-category-create-from-search',
+                        ),
+                        leading: creatingCategory
+                            ? const SizedBox.square(
+                                dimension: 22,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Icon(Icons.add_circle_outline_rounded),
+                        title: Text(
+                          '${t(currentLocale.value, 'add')} “${searchQuery.trim()}”',
+                        ),
+                        enabled: !creatingCategory,
+                        onTap: creatingCategory
+                            ? null
+                            : () => unawaited(createCategoryFromSearch()),
+                      ),
+                    );
+                  }
+                  for (final rule in matchingRules) {
+                    pickerChildren.add(
+                      CheckboxListTile(
+                        key: ValueKey<int>(rule.id),
+                        value: selected.contains(rule.id),
+                        onChanged: (checked) {
+                          applyPickerMutation(() {
+                            if (checked == true) {
+                              selected.add(rule.id);
+                            } else {
+                              selected.remove(rule.id);
+                            }
+                          });
+                        },
+                        title: Text(categoryRawName(rule.id)),
+                        controlAffinity: ListTileControlAffinity.leading,
+                        dense: true,
+                      ),
+                    );
+                  }
+                } else {
+                  for (final rule in db.rules) {
+                    pickerChildren.add(
+                      buildListsManualCategoryTreeTile(
+                        rule,
+                        selected,
+                        expandedIds,
+                        (id) => toggleListsManualTreeExpand(
+                          id,
+                          setModal,
+                          expandedIds,
+                        ),
+                        applyPickerMutation,
+                      ),
+                    );
+                  }
+                }
+
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+                      child: Text(
+                        t(currentLocale.value, 'category_label'),
+                        style: Theme.of(ctx).textTheme.titleMedium,
+                      ),
                     ),
-                  ),
-                  const Divider(height: 1),
-                  Expanded(
-                    child: ListView(
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      children: [
-                        for (final r in db.rules)
-                          buildListsManualCategoryTreeTile(
-                            r,
-                            selected,
-                            expandedIds,
-                            (id) => toggleListsManualTreeExpand(
-                              id,
-                              setModal,
-                              expandedIds,
-                            ),
-                            applyPickerMutation,
+                    if (widget.glmPresentation)
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
+                        child: TextField(
+                          key: const ValueKey<String>(
+                            'notes-category-search-field',
                           ),
-                      ],
+                          controller: searchController,
+                          autofocus: false,
+                          textInputAction: TextInputAction.search,
+                          decoration: InputDecoration(
+                            hintText: '${t(currentLocale.value, 'category_label')}…',
+                            prefixIcon: const Icon(Icons.search_rounded),
+                            suffixIcon: normalizedQuery.isEmpty
+                                ? null
+                                : IconButton(
+                                    tooltip: t(currentLocale.value, 'close'),
+                                    onPressed: () {
+                                      searchController.clear();
+                                      setModal(() => searchQuery = '');
+                                    },
+                                    icon: const Icon(Icons.close_rounded),
+                                  ),
+                            border: const OutlineInputBorder(),
+                            isDense: true,
+                          ),
+                          onChanged: (value) =>
+                              setModal(() => searchQuery = value),
+                          onSubmitted: (_) {
+                            if (!exactMatchExists &&
+                                normalizedQuery.isNotEmpty &&
+                                !creatingCategory) {
+                              unawaited(createCategoryFromSearch());
+                            }
+                          },
+                        ),
+                      ),
+                    const Divider(height: 1),
+                    Expanded(
+                      child: ListView(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        children: pickerChildren,
+                      ),
                     ),
-                  ),
-                ],
-              );
-            },
-          ),
-        );
-      },
-    );
+                  ],
+                );
+              },
+            ),
+          );
+        },
+      );
+    } finally {
+      searchController.dispose();
+    }
   }
 
   Widget _addCategoryButton(BuildContext context) {
