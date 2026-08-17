@@ -1,5 +1,9 @@
 import 'dart:async';
 
+import 'package:counter/core/widgets/app_button.dart';
+import 'package:counter/core/widgets/app_icon_button.dart';
+import 'package:counter/core/widgets/app_loading.dart';
+import 'package:counter/core/widgets/app_state_views.dart';
 import 'package:counter/data/paths/path_repository.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
@@ -41,6 +45,7 @@ class _PathsPageState extends State<PathsPage> {
         _error = null;
       });
     }
+
     try {
       final catalog = await _repository.loadActivePaths();
       if (!mounted) return;
@@ -54,11 +59,11 @@ class _PathsPageState extends State<PathsPage> {
             : (catalog.paths.isEmpty ? null : catalog.paths.first.category.id);
         _loading = false;
       });
-    } catch (e) {
+    } catch (error) {
       if (!mounted) return;
       setState(() {
         _loading = false;
-        _error = e.toString();
+        _error = error.toString();
       });
     }
   }
@@ -68,6 +73,20 @@ class _PathsPageState extends State<PathsPage> {
     if (id == null) return null;
     for (final path in _catalog.paths) {
       if (path.category.id == id) return path;
+    }
+    return null;
+  }
+
+  PathStageSnapshot? _firstPendingStage(ProjectPathSnapshot path) {
+    for (final stage in path.stages) {
+      if (!stage.isDone) return stage;
+    }
+    return null;
+  }
+
+  PathActionSnapshot? _firstPendingAction(PathStageSnapshot stage) {
+    for (final action in stage.actions) {
+      if (!action.isDone) return action;
     }
     return null;
   }
@@ -85,17 +104,23 @@ class _PathsPageState extends State<PathsPage> {
     );
   }
 
-  Future<void> _saveOptimistic(ProjectPathSnapshot before, ProjectPathSnapshot after) async {
+  Future<void> _saveOptimistic(
+    ProjectPathSnapshot before,
+    ProjectPathSnapshot after,
+  ) async {
     _replaceLocal(after);
     final ok = await _repository.saveActivePath(after);
     if (ok || !mounted) return;
+
     _replaceLocal(before);
     ScaffoldMessenger.of(context)
       ..clearSnackBars()
       ..showSnackBar(
         SnackBar(
           content: Text(
-            _ru ? 'Не удалось сохранить изменение пути.' : 'Could not save the Path change.',
+            _ru
+                ? 'Не удалось сохранить изменение пути.'
+                : 'Could not save the Path change.',
           ),
         ),
       );
@@ -115,26 +140,31 @@ class _PathsPageState extends State<PathsPage> {
             minLines: 2,
             maxLines: 6,
             decoration: InputDecoration(
-              labelText: _ru ? 'Конечное состояние проекта' : 'Project end state',
+              labelText: _ru
+                  ? 'Конечное состояние проекта'
+                  : 'Project end state',
             ),
           ),
         ),
         actions: [
-          TextButton(
+          AppButton.ghost(
+            label: _ru ? 'Отмена' : 'Cancel',
             onPressed: () => Navigator.of(dialogContext).pop(),
-            child: Text(_ru ? 'Отмена' : 'Cancel'),
           ),
-          FilledButton(
+          AppButton.primary(
+            label: _ru ? 'Сохранить' : 'Save',
             onPressed: () {
               final value = controller.text.trim();
-              if (value.isNotEmpty) Navigator.of(dialogContext).pop(value);
+              if (value.isNotEmpty) {
+                Navigator.of(dialogContext).pop(value);
+              }
             },
-            child: Text(_ru ? 'Сохранить' : 'Save'),
           ),
         ],
       ),
     );
     controller.dispose();
+
     if (result == null || result == path.goal) return;
     unawaited(_saveOptimistic(path, path.copyWith(goal: result)));
   }
@@ -156,6 +186,7 @@ class _PathsPageState extends State<PathsPage> {
     final stages = List<PathStageSnapshot>.from(path.stages);
     final stage = stages[stageIndex];
     if (actionIndex < 0 || actionIndex >= stage.actions.length) return;
+
     final actions = List<PathActionSnapshot>.from(stage.actions);
     actions[actionIndex] = actions[actionIndex].copyWith(isDone: done);
     stages[stageIndex] = stage.copyWith(actions: actions);
@@ -211,10 +242,11 @@ class _PathsPageState extends State<PathsPage> {
               ],
             ),
           ),
-          IconButton(
-            onPressed: _loading ? null : () => unawaited(_load()),
+          AppIconButton(
+            icon: Icons.refresh_rounded,
             tooltip: _ru ? 'Обновить' : 'Refresh',
-            icon: const Icon(Icons.refresh_rounded),
+            onPressed: _loading ? null : () => unawaited(_load()),
+            loading: _loading,
           ),
         ],
       ),
@@ -222,57 +254,50 @@ class _PathsPageState extends State<PathsPage> {
   }
 
   Widget _body() {
-    if (_loading) return const Center(child: CircularProgressIndicator());
+    if (_loading) {
+      return const AppLoading(size: AppLoadingSize.large);
+    }
     if (_error != null) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.error_outline_rounded, size: 36),
-              const SizedBox(height: 10),
-              Text(_ru ? 'Не удалось загрузить пути.' : 'Could not load Paths.'),
-              const SizedBox(height: 10),
-              OutlinedButton(
-                onPressed: () => unawaited(_load()),
-                child: Text(_ru ? 'Повторить' : 'Retry'),
-              ),
-            ],
-          ),
-        ),
+      return AppErrorState(
+        message: _ru ? 'Не удалось загрузить пути.' : 'Could not load Paths.',
+        retryLabel: _ru ? 'Повторить' : 'Retry',
+        onRetry: () => unawaited(_load()),
       );
     }
     if (_catalog.paths.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Text(
-            _ru
-                ? 'Активных путей пока нет. Старые данные не создаются и не мигрируют автоматически при открытии этого экрана.'
-                : 'There are no active Paths yet. Opening this screen does not auto-create or migrate Path data.',
-            textAlign: TextAlign.center,
-          ),
-        ),
+      return AppEmptyState(
+        icon: Icons.alt_route_rounded,
+        message: _ru
+            ? 'Активных путей пока нет. Открытие этого экрана не создаёт и не мигрирует данные автоматически.'
+            : 'There are no active Paths yet. Opening this screen does not auto-create or migrate Path data.',
       );
     }
 
     return LayoutBuilder(
       builder: (context, constraints) {
+        final selected = _selectedPath;
+        if (selected == null) {
+          return AppEmptyState(
+            message: _ru ? 'Путь не выбран.' : 'No Path selected.',
+            icon: Icons.alt_route_rounded,
+          );
+        }
+
         if (constraints.maxWidth >= 900) {
           return Row(
             children: [
               SizedBox(width: 320, child: _pathList()),
               const VerticalDivider(width: 1),
-              Expanded(child: _pathDetail(_selectedPath!)),
+              Expanded(child: _pathDetail(selected)),
             ],
           );
         }
+
         return Column(
           children: [
-            _mobileSelector(),
+            _mobileSelector(selected),
             const Divider(height: 1),
-            Expanded(child: _pathDetail(_selectedPath!)),
+            Expanded(child: _pathDetail(selected)),
           ],
         );
       },
@@ -288,7 +313,8 @@ class _PathsPageState extends State<PathsPage> {
       itemBuilder: (context, index) {
         final path = _catalog.paths[index];
         final selected = path.category.id == _selectedCategoryId;
-        final nextStage = path.stages.where((stage) => !stage.isDone).firstOrNull;
+        final nextStage = _firstPendingStage(path);
+
         return Material(
           color: selected
               ? scheme.primaryContainer.withValues(alpha: 0.55)
@@ -296,9 +322,13 @@ class _PathsPageState extends State<PathsPage> {
           borderRadius: BorderRadius.circular(12),
           child: ListTile(
             selected: selected,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
             leading: CircleAvatar(
-              backgroundColor: path.category.colorOrDefault.withValues(alpha: 0.14),
+              backgroundColor: path.category.colorOrDefault.withValues(
+                alpha: 0.14,
+              ),
               foregroundColor: path.category.colorOrDefault,
               child: Icon(path.category.iconOrDefault, size: 20),
             ),
@@ -315,15 +345,16 @@ class _PathsPageState extends State<PathsPage> {
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
-            onTap: () => setState(() => _selectedCategoryId = path.category.id),
+            onTap: () => setState(
+              () => _selectedCategoryId = path.category.id,
+            ),
           ),
         );
       },
     );
   }
 
-  Widget _mobileSelector() {
-    final selected = _selectedPath!;
+  Widget _mobileSelector(ProjectPathSnapshot selected) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
       child: DropdownButtonFormField<int>(
@@ -337,11 +368,16 @@ class _PathsPageState extends State<PathsPage> {
           for (final path in _catalog.paths)
             DropdownMenuItem<int>(
               value: path.category.id,
-              child: Text(path.category.name, overflow: TextOverflow.ellipsis),
+              child: Text(
+                path.category.name,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
         ],
         onChanged: (value) {
-          if (value != null) setState(() => _selectedCategoryId = value);
+          if (value != null) {
+            setState(() => _selectedCategoryId = value);
+          }
         },
       ),
     );
@@ -349,14 +385,10 @@ class _PathsPageState extends State<PathsPage> {
 
   Widget _pathDetail(ProjectPathSnapshot path) {
     final audit = _repository.audit(path);
-    final duplicate = _catalog.duplicateActiveRootCategoryIds.contains(path.category.id);
-    var currentStageIndex = -1;
-    for (var i = 0; i < path.stages.length; i++) {
-      if (!path.stages[i].isDone) {
-        currentStageIndex = i;
-        break;
-      }
-    }
+    final duplicate = _catalog.duplicateActiveRootCategoryIds.contains(
+      path.category.id,
+    );
+    final currentStageIndex = path.stages.indexWhere((stage) => !stage.isDone);
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 18, 20, 40),
@@ -383,14 +415,17 @@ class _PathsPageState extends State<PathsPage> {
                     ],
                   ),
                   const SizedBox(height: 7),
-                  Text(path.goal, style: Theme.of(context).textTheme.bodyLarge),
+                  Text(
+                    path.goal,
+                    style: Theme.of(context).textTheme.bodyLarge,
+                  ),
                 ],
               ),
             ),
-            IconButton(
-              onPressed: () => unawaited(_editGoal(path)),
+            AppIconButton(
+              icon: Icons.edit_outlined,
               tooltip: _ru ? 'Изменить цель' : 'Edit goal',
-              icon: const Icon(Icons.edit_outlined),
+              onPressed: () => unawaited(_editGoal(path)),
             ),
           ],
         ),
@@ -398,8 +433,8 @@ class _PathsPageState extends State<PathsPage> {
           const SizedBox(height: 14),
           _warningCard(
             _ru
-                ? 'Обнаружено несколько активных legacy-root для этого проекта. Экран ничего не удаляет автоматически; требуется отдельное безопасное объединение.'
-                : 'Multiple active legacy roots were detected for this project. The screen does not delete anything automatically; an explicit safe repair is required.',
+                ? 'Для этого проекта найдено несколько активных корневых записей старого формата. Экран ничего не удаляет автоматически; нужен отдельный безопасный ремонт данных.'
+                : 'Multiple active old-format root rows were detected for this project. The screen does not delete anything automatically; an explicit safe repair is required.',
           ),
         ],
         const SizedBox(height: 14),
@@ -409,8 +444,14 @@ class _PathsPageState extends State<PathsPage> {
           _currentStageCard(path.stages[currentStageIndex]),
         ],
         const SizedBox(height: 16),
-        for (var stageIndex = 0; stageIndex < path.stages.length; stageIndex++)
-          _stageCard(path, stageIndex, stageIndex == currentStageIndex),
+        for (var stageIndex = 0;
+            stageIndex < path.stages.length;
+            stageIndex++)
+          _stageCard(
+            path,
+            stageIndex,
+            stageIndex == currentStageIndex,
+          ),
       ],
     );
   }
@@ -448,13 +489,22 @@ class _PathsPageState extends State<PathsPage> {
         children: [
           Row(
             children: [
-              Icon(ok ? Icons.verified_outlined : Icons.rule_folder_outlined, size: 20),
+              Icon(
+                ok ? Icons.verified_outlined : Icons.rule_folder_outlined,
+                size: 20,
+              ),
               const SizedBox(width: 8),
-              Text(
-                ok
-                    ? (_ru ? 'Структура пути исполнима' : 'Path structure is executable')
-                    : (_ru ? 'Нужно исправить структуру' : 'Structure needs attention'),
-                style: const TextStyle(fontWeight: FontWeight.w800),
+              Expanded(
+                child: Text(
+                  ok
+                      ? (_ru
+                          ? 'Структура пути исполнима'
+                          : 'Path structure is executable')
+                      : (_ru
+                          ? 'Нужно исправить структуру'
+                          : 'Structure needs attention'),
+                  style: const TextStyle(fontWeight: FontWeight.w800),
+                ),
               ),
             ],
           ),
@@ -490,7 +540,7 @@ class _PathsPageState extends State<PathsPage> {
 
   Widget _currentStageCard(PathStageSnapshot stage) {
     final scheme = Theme.of(context).colorScheme;
-    final next = stage.actions.where((action) => !action.isDone).firstOrNull;
+    final next = _firstPendingAction(stage);
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -516,7 +566,8 @@ class _PathsPageState extends State<PathsPage> {
           if (next != null) ...[
             const SizedBox(height: 7),
             Text(
-              '${_ru ? 'Следующее действие' : 'Next action'}: ${next.text} · ${next.minutes} ${_ru ? 'мин' : 'min'}',
+              '${_ru ? 'Следующее действие' : 'Next action'}: '
+              '${next.text} · ${next.minutes} ${_ru ? 'мин' : 'min'}',
             ),
           ],
         ],
@@ -524,24 +575,34 @@ class _PathsPageState extends State<PathsPage> {
     );
   }
 
-  Widget _stageCard(ProjectPathSnapshot path, int stageIndex, bool current) {
+  Widget _stageCard(
+    ProjectPathSnapshot path,
+    int stageIndex,
+    bool current,
+  ) {
     final scheme = Theme.of(context).colorScheme;
     final stage = path.stages[stageIndex];
     final doneActions = stage.actions.where((action) => action.isDone).length;
-    return Card(
-      elevation: 0,
+
+    return Container(
       margin: const EdgeInsets.only(bottom: 10),
-      shape: RoundedRectangleBorder(
+      decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(
-          color: current ? scheme.primary.withValues(alpha: 0.5) : scheme.outlineVariant,
+        border: Border.all(
+          color: current
+              ? scheme.primary.withValues(alpha: 0.5)
+              : scheme.outlineVariant,
         ),
       ),
       child: ExpansionTile(
         initiallyExpanded: current,
         leading: Checkbox(
           value: stage.isDone,
-          onChanged: (value) => _toggleStage(path, stageIndex, value ?? false),
+          onChanged: (value) => _toggleStage(
+            path,
+            stageIndex,
+            value ?? false,
+          ),
         ),
         title: Text(
           '${stageIndex + 1}. ${stage.title}',
@@ -553,23 +614,31 @@ class _PathsPageState extends State<PathsPage> {
         subtitle: Padding(
           padding: const EdgeInsets.only(top: 5),
           child: Text(
-            '${_ru ? 'Готово, когда' : 'Done when'}: ${stage.completionCriteria.isEmpty ? '—' : stage.completionCriteria}',
+            '${_ru ? 'Готово, когда' : 'Done when'}: '
+            '${stage.completionCriteria.isEmpty ? '—' : stage.completionCriteria}',
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
         ),
         trailing: Text('$doneActions/${stage.actions.length}'),
         children: [
-          for (var actionIndex = 0; actionIndex < stage.actions.length; actionIndex++)
+          for (var actionIndex = 0;
+              actionIndex < stage.actions.length;
+              actionIndex++)
             _actionRow(path, stageIndex, actionIndex),
         ],
       ),
     );
   }
 
-  Widget _actionRow(ProjectPathSnapshot path, int stageIndex, int actionIndex) {
+  Widget _actionRow(
+    ProjectPathSnapshot path,
+    int stageIndex,
+    int actionIndex,
+  ) {
     final scheme = Theme.of(context).colorScheme;
     final action = path.stages[stageIndex].actions[actionIndex];
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
       child: Row(
@@ -577,8 +646,12 @@ class _PathsPageState extends State<PathsPage> {
         children: [
           Checkbox(
             value: action.isDone,
-            onChanged: (value) =>
-                _toggleAction(path, stageIndex, actionIndex, value ?? false),
+            onChanged: (value) => _toggleAction(
+              path,
+              stageIndex,
+              actionIndex,
+              value ?? false,
+            ),
           ),
           const SizedBox(width: 4),
           Expanded(
@@ -591,13 +664,16 @@ class _PathsPageState extends State<PathsPage> {
                     action.text,
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
-                      decoration: action.isDone ? TextDecoration.lineThrough : null,
+                      decoration: action.isDone
+                          ? TextDecoration.lineThrough
+                          : null,
                     ),
                   ),
                   if (action.expectedResult.isNotEmpty) ...[
                     const SizedBox(height: 4),
                     Text(
-                      '${_ru ? 'Результат' : 'Output'}: ${action.expectedResult}',
+                      '${_ru ? 'Результат' : 'Output'}: '
+                      '${action.expectedResult}',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: scheme.onSurfaceVariant,
                           ),
