@@ -50,6 +50,7 @@ import 'package:counter/app/shell/phone/phone_shell_frame.dart';
 import 'package:counter/app/shell/shared/shell_form_factor.dart';
 import 'package:counter/app/shell/shared/shell_offline_banner.dart';
 import 'package:counter/app/shell/shared/shell_shared.dart';
+import 'package:counter/app/shell/shared/shell_path_governance.dart';
 import 'package:counter/app/shell/tablet/tablet_shell_frame.dart';
 import 'package:flutter/foundation.dart' show kDebugMode, kIsWeb;
 import 'package:flutter/material.dart';
