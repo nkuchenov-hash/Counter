@@ -86,31 +86,34 @@ if '_removeSupersededWeekRoutinesV5()' not in s:
     if anchor not in s: raise SystemExit('week-plan function anchor missing')
     s = s.replace(anchor, helper + anchor, 1)
 elif '_removePrematurePathActionsV5()' not in s:
-    insertion = s.find(anchor)
-    if insertion == -1: raise SystemExit('week-plan function anchor missing')
-    existing_start = s.rfind('Future<void> _removeSupersededWeekRoutinesV5()', 0, insertion)
-    if existing_start == -1: raise SystemExit('existing cleanup helper missing')
-    # Insert only the new helper after the existing cleanup helper block.
     marker = '\nFuture<PathWeekPlanReportV4> planCurrentWeekFromPathsV4() async {'
     new_helper = helper[helper.find('Future<void> _removePrematurePathActionsV5()'):]
+    if marker not in s: raise SystemExit('week-plan function marker missing')
     s = s.replace(marker, '\n' + new_helper + marker, 1)
 
-old = """  final db = DatabaseService.instance;
+no_cleanup = """  final db = DatabaseService.instance;
+  await upgradeRealityPathsV4();
+
+  final backlog = await db.fetchBacklogPlans(includeCompleted: true);
+"""
+only_routines = """  final db = DatabaseService.instance;
   await upgradeRealityPathsV4();
   await _removeSupersededWeekRoutinesV5();
 
   final backlog = await db.fetchBacklogPlans(includeCompleted: true);
 """
-new = """  final db = DatabaseService.instance;
+full_cleanup = """  final db = DatabaseService.instance;
   await upgradeRealityPathsV4();
   await _removeSupersededWeekRoutinesV5();
   await _removePrematurePathActionsV5();
 
   final backlog = await db.fetchBacklogPlans(includeCompleted: true);
 """
-if old in s:
-    s = s.replace(old, new, 1)
-elif 'await _removePrematurePathActionsV5();' not in s:
+if no_cleanup in s:
+    s = s.replace(no_cleanup, full_cleanup, 1)
+elif only_routines in s:
+    s = s.replace(only_routines, full_cleanup, 1)
+elif full_cleanup not in s:
     raise SystemExit('cleanup invocation anchor missing')
 
 p.write_text(s, encoding='utf-8')
