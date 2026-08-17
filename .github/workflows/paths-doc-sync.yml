@@ -1,0 +1,181 @@
+name: Paths documentation sync
+
+on:
+  push:
+    branches:
+      - agent/paths-first-class-audit-cleanup
+    paths:
+      - '.github/workflows/paths-doc-sync.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/paths-first-class-audit-cleanup
+          fetch-depth: 0
+
+      - name: Patch governing docs
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path, old, new):
+              p = Path(path)
+              text = p.read_text(encoding='utf-8')
+              if old not in text:
+                  raise SystemExit(f'anchor not found in {path}: {old[:120]!r}')
+              p.write_text(text.replace(old, new, 1), encoding='utf-8')
+
+          # APP_STRUCTURE — manifest + ownership.
+          replace_once(
+              'docs/APP_STRUCTURE.md',
+              '| **Categories ownership** | Phase 2D (2026-07-23): shared presentation/tree/picker/visibility under `lib/shared/categories/`; Brain CRUD remains `lib/data/categories/`; manager UI under `lib/features/settings/categories/`; Lists owns `category_filter_tree_field.dart`; plan/record draft helpers under `features/shared/edit_sheet/category_edit_draft.dart` |',
+              '| **Categories ownership** | Phase 2D (2026-07-23): shared presentation/tree/picker/visibility under `lib/shared/categories/`; Brain CRUD remains `lib/data/categories/`; manager UI under `lib/features/settings/categories/`; Lists owns `category_filter_tree_field.dart`; plan/record draft helpers under `features/shared/edit_sheet/category_edit_draft.dart` |\n| **Paths ownership** | 2026-08-17: first-class UI under `lib/features/paths/`; Path domain compatibility repository under `lib/data/paths/`; shell owns navigation only; opening Paths performs no migration or Planner generation |'
+          )
+          replace_once(
+              'docs/APP_STRUCTURE.md',
+              '**Shell tabs (bottom nav index):** 0 Timeline · 1 Plans · 2 Calendar · 3 Lists · 4 More (Categories, Profile, admin Component Lab).',
+              '**Shell destinations:** 0 Timeline · 1 Plans · 2 Calendar · 3 Lists · 4 Categories · 5 Profile · 6 Paths. Phone/tablet bottom navigation keeps four primary tabs + More; More → Paths opens the same shell-owned index 6 destination used by desktop side navigation.'
+          )
+          replace_once(
+              'docs/APP_STRUCTURE.md',
+              '| `app/shell/shared/shell_more_menu.dart` | More bottom sheet *(part)* |',
+              '| `app/shell/shared/shell_more_menu.dart` | More bottom sheet and secondary navigation entries *(part)*; Paths feature UI is not owned here |'
+          )
+          replace_once(
+              'docs/APP_STRUCTURE.md',
+              '| `app/shell/shared/shell_path_governance.dart` | Project Path reality audit, targeted Path upgrades, Path-action → current-week Planner orchestration |',
+              '| `app/shell/shared/shell_path_governance.dart` | Compatibility Path audit / Planner orchestration retained during the storage transition; first-class Paths does not invoke it on page open |'
+          )
+          replace_once(
+              'docs/APP_STRUCTURE.md',
+              '| `plans/diagnostics/plan_duplicate_log.dart` | Planning-domain duplicate / stream lifecycle markers inside Brain (not shared diagnostics, not feature UI) |',
+              '| `plans/diagnostics/plan_duplicate_log.dart` | Planning-domain duplicate / stream lifecycle markers inside Brain (not shared diagnostics, not feature UI) |\n| `paths/path_repository.dart` | First-class Path domain boundary; reads/writes current marker-backed Path rows through existing Brain APIs, parses explicit Path/stage/action snapshots, reports duplicate active roots, and performs generic structure audit |'
+          )
+          replace_once(
+              'docs/APP_STRUCTURE.md',
+              '| `planning/` | `planning_view.dart` (barrel), **`planning_page.dart`**, **`planning_quick_add_tags_controller.dart`**, **`planning_page_shell.dart`**, **`planning_sort_mode.dart`**, `plan_time_view_layout.dart`, `plan_time_gesture_contract.dart`, `planning_day_start_prefs.dart`, `bulk_planning_edit_sheet.dart`, `recurrence_scope_dialog.dart`, `smart_plan_sheet.dart`, **`time_view/`**, **`settings/`**, **`widgets/`** | Plans tab: date pager shell + day page body, quick-add tag controller, Time View modules, settings, bulk edit |',
+              '| `planning/` | `planning_view.dart` (barrel), **`planning_page.dart`**, **`planning_quick_add_tags_controller.dart`**, **`planning_page_shell.dart`**, **`planning_sort_mode.dart`**, `plan_time_view_layout.dart`, `plan_time_gesture_contract.dart`, `planning_day_start_prefs.dart`, `bulk_planning_edit_sheet.dart`, `recurrence_scope_dialog.dart`, `smart_plan_sheet.dart`, **`time_view/`**, **`settings/`**, **`widgets/`** | Plans tab: date pager shell + day page body, quick-add tag controller, Time View modules, settings, bulk edit |\n| `paths/` | `paths_page.dart` | First-class Paths destination: project list/detail, goal/stage/action progress, generic structure audit; opening the page is read-only |'
+          )
+
+          # ARCHITECTURE — domain laws.
+          replace_once(
+              'docs/ARCHITECTURE.md',
+              '| `lib/data/plans/diagnostics/` | **Brain plans diagnostics** | Planning-domain duplicate / stream lifecycle log (`plan_duplicate_log.dart`). Lives inside Brain; not shared diagnostics and not feature UI. |',
+              '| `lib/data/plans/diagnostics/` | **Brain plans diagnostics** | Planning-domain duplicate / stream lifecycle log (`plan_duplicate_log.dart`). Lives inside Brain; not shared diagnostics and not feature UI. |\n| `lib/data/paths/` | **Path domain** | `PathRepository` owns first-class Path interpretation and generic validation. Current storage is an adapter over existing plan-backed Path rows; feature UI must not read marker rows directly. |\n| `lib/features/paths/` | **Paths UI** | First-class Paths destination. Displays/edits Path domain data only; no project bootstrap, migration, or Planner generation on page open. |'
+          )
+          replace_once(
+              'docs/ARCHITECTURE.md',
+              '- **STATE_RECONCILIATION:** 404 → purge ghost rows / revert optimistic state.',
+              '- **STATE_RECONCILIATION:** 404 → purge ghost rows / revert optimistic state.\n- **PATH_DOMAIN_OWNERSHIP:** Paths is a first-class domain: feature UI lives in `lib/features/paths/`; storage interpretation and validation live in `lib/data/paths/`; shell owns navigation only. New Paths code must not parse `LIFEOS_PATH::*` markers directly outside the compatibility repository/migration layer.\n- **PATH_OPEN_IS_READ_ONLY:** Opening or switching to Paths must never create, migrate, retire, canonicalize, publish, or schedule data. Repair/migration/publish/Planner generation are explicit actions/services.\n- **ACTIVE_PATH_GATE:** Planner may consume only an explicitly active/published Path revision. Draft/review proposals must not leak into the executable schedule. Current marker-backed storage is compatibility only until durable Path revision storage ships.\n- **AI_PATH_TOOL_BOUNDARY:** AI never receives SQL, PocketBase-admin, shell, filesystem, or arbitrary write access. Future AI Path editing must produce validated proposals through app-owned Path tools; sensitive publish/delete/bulk operations require explicit approval plus audit/undo.'
+          )
+          replace_once(
+              'docs/ARCHITECTURE.md',
+              '- **Recurring virtual occurrence edit:** Editing time/metadata on a virtual recurring instance materializes a one-off plan row and appends the instance date to the parent series `exception_dates` (see `plan_service.dart`).\n\n---\n\n## 7. Tags & many-to-many',
+              '- **Recurring virtual occurrence edit:** Editing time/metadata on a virtual recurring instance materializes a one-off plan row and appends the instance date to the parent series `exception_dates` (see `plan_service.dart`).\n\n### 6.1 Paths → Planner\n\n- A Path describes **why/where** a project is going; Planner owns **when** executable actions occur.\n- Path structure is project-agnostic: goal, ordered stages, stage completion criteria, concrete actions, expected results, dependencies/constraints/risks/decisions as those fields become durable.\n- The current `PathRepository` is a compatibility adapter over existing plan-backed Path roots; this does **not** redefine `plans` as the permanent Path schema.\n- Opening Paths is read-only. User edits are explicit and local-first; migration/repair/publish/scheduling are separate operations.\n- Planner generation must be idempotent and traceable to one active Path revision so revising a draft cannot silently reschedule the user.\n\n---\n\n## 7. Tags & many-to-many'
+          )
+          replace_once(
+              'docs/ARCHITECTURE.md',
+              '| **Brain/Data** | Domain parts under `records/*`, `plans/*`, `categories/*`, `profile/*`, `local_sync/*`; keep coordinators thin |',
+              '| **Brain/Data** | Domain parts under `records/*`, `plans/*`, `paths/*`, `categories/*`, `profile/*`, `local_sync/*`; keep coordinators thin |'
+          )
+
+          # UX_CONTRACT — user-visible Path behavior.
+          replace_once(
+              'docs/UX_CONTRACT.md',
+              '- Saves that affect records, plans, lists, categories, tags, or profile settings must update local state before network sync when the current architecture supports it.',
+              '- Saves that affect records, plans, lists, Paths, categories, tags, or profile settings must update local state before network sync when the current architecture supports it.'
+          )
+          replace_once(
+              'docs/UX_CONTRACT.md',
+              '## Selection / Bulk Mode',
+              '''## Paths\n\n- **One destination:** desktop side navigation and phone/tablet More → Paths must open the same shell-owned Paths destination. Do not push a second shell or a separate desktop frame.\n- **Opening is read-only:** entering Paths may load categories/Path data, but must not create/migrate/retire Path rows, run project bootstrap, generate Planner tasks, or apply AI proposals.\n- **Project-independent structure:** Path UI and validation must work from stored Path data; do not hard-code KADR/GOLOS/Igropoisk/Price Reporter/etc. requirements into the generic feature.\n- **Local-first explicit edits:** goal/stage/action completion edits reflect immediately; failed non-retriable saves roll back once with one concise error.\n- **Duplicate roots are not silently deleted:** if compatibility storage contains more than one active root for a project, surface the condition and repair it only through an explicit idempotent migration/repair action.\n- **Draft/review/active separation:** future AI or user restructuring works on a draft/review revision. Planner consumes only the explicitly active/published Path.\n- **AI proposal safety:** AI suggestions are proposals until validated/applied through app-owned tools. Publish/delete/bulk scheduling must remain auditable and reversible.\n\n## Selection / Bulk Mode'''
+          )
+
+          # AGENTS — routing and guardrails.
+          replace_once(
+              'AGENTS.md',
+              '- PocketBase, schema, auth, records, plans, categories, tags: read `docs/DATA_MAP.md` and `docs/POCKETBASE_MANIFEST.md`.',
+              '- PocketBase, schema, auth, records, plans, categories, tags: read `docs/DATA_MAP.md` and `docs/POCKETBASE_MANIFEST.md`.\n- Paths / project strategy / Path → Planner / future AI Path tooling: start with `lib/features/paths/paths_page.dart`, `lib/data/paths/path_repository.dart`, `docs/ARCHITECTURE.md` §6.1, and issue #93. Read `docs/reports/PATHS_FIRST_CLASS_AND_REPO_AUDIT_2026-08-17.md` for the migration boundary.'
+          )
+          replace_once(
+              'AGENTS.md',
+              '- `lib/data/database_service.dart` is the Brain root. Domain logic lives in its `part of` files: `db_core.dart`; coordinators `record_service.dart`, `plan_service.dart`, `category_service.dart`, `profile_service.dart`; and focused parts under `records/*`, `plans/*`, `categories/*`, `profile/*`.',
+              '- `lib/data/database_service.dart` is the Brain root. Domain logic lives in its `part of` files: `db_core.dart`; coordinators `record_service.dart`, `plan_service.dart`, `category_service.dart`, `profile_service.dart`; and focused parts under `records/*`, `plans/*`, `categories/*`, `profile/*`.\n- `lib/data/paths/` owns first-class Path interpretation/validation. `PathRepository` currently adapts existing plan-backed Path roots; feature UI must not read marker rows directly.\n- `lib/features/paths/` owns Paths screens/interactions. `lib/app/shell/` only selects the destination; it must not own new Path UI/domain policy.'
+          )
+          replace_once(
+              'AGENTS.md',
+              '- Do not make active pages depend only on snapshots/render caches.',
+              '- Do not make active pages depend only on snapshots/render caches.\n- Do not run Path bootstrap/migration/governance/Planner generation as a side effect of opening Paths.\n- Do not give AI arbitrary PocketBase/SQL/filesystem/shell writes; future Path AI uses whitelisted app-owned tools with validation, approval for sensitive actions, audit, and undo.'
+          )
+
+          # Agent navigation map.
+          replace_once(
+              'AGENT_NAVIGATION.md',
+              '`lib/data/` (Brain + part files + `data/voice/` + `data/categories/`), `lib/data/local_sync/` (offline outboxes), `lib/features/` (UI modules + `settings/voice/` + `settings/categories/`),',
+              '`lib/data/` (Brain + part files + `data/voice/` + `data/categories/` + `data/paths/`), `lib/data/local_sync/` (offline outboxes), `lib/features/` (UI modules + `paths/` + `settings/voice/` + `settings/categories/`),'
+          )
+          replace_once(
+              'AGENT_NAVIGATION.md',
+              '| **Plans screen** | `lib/features/planning/planning_view.dart` (barrel), `planning_page.dart`, `planning_page_shell.dart` | `PlanningSwipeWrapper` → `PlanningPage`; shell index 1 |',
+              '| **Plans screen** | `lib/features/planning/planning_view.dart` (barrel), `planning_page.dart`, `planning_page_shell.dart` | `PlanningSwipeWrapper` → `PlanningPage`; shell index 1 |\n| **Paths screen** | `lib/features/paths/paths_page.dart` | `PathsPage`; shell index 6 on all form factors; mobile/tablet enter through More, desktop through side nav |\n| **Paths domain** | `lib/data/paths/path_repository.dart` | `PathRepository`, `ProjectPathSnapshot`, `PathStructureAudit`; compatibility adapter over current marker-backed Path roots |'
+          )
+
+          # ROADMAP — issue #93 phased architecture work.
+          replace_once(
+              'docs/ROADMAP.md',
+              '**Docs:** `docs/ARCHITECTURE.md` § PERFORMANCE_KILL_SWITCH_LAW · `docs/UX_CONTRACT.md` § Performance & Responsiveness Contract · `AGENT_NAVIGATION.md` · `lib/core/perf_flags.dart` · `lib/core/p0u_feature_flags.dart`\n\n### ~~O1 — Offline-first core reliability~~ ✅ (shipped 2026-06-09)',
+              '''**Docs:** `docs/ARCHITECTURE.md` § PERFORMANCE_KILL_SWITCH_LAW · `docs/UX_CONTRACT.md` § Performance & Responsiveness Contract · `AGENT_NAVIGATION.md` · `lib/core/perf_flags.dart` · `lib/core/p0u_feature_flags.dart`\n\n### P1P — Paths first-class architecture (#93) — in progress\n\n**Goal:** Paths becomes a real domain and app destination that can later support safe AI-assisted Draft → Review → Publish → Planner workflows without giving AI direct application/database authority.\n\n**2026-08-17 foundation implemented:**\n- ✅ `lib/data/paths/path_repository.dart` compatibility boundary over current marker-backed roots; generic Path/stage/action model + structure audit.\n- ✅ `lib/features/paths/paths_page.dart` first-class responsive destination; opening is read-only and project-agnostic.\n- ✅ Main shell index 6 owns Paths on desktop/mobile/tablet; no second desktop shell.\n- ✅ Duplicate active roots are detected without read-time deletion.\n- ✅ Completed one-off category-default-time patch workflow removed.\n\n**Remaining phases:**\n1. extract compatibility migration/repair and Planner bridge/governance out of shell;\n2. durable draft/reviewed/active/archived revisions + Project Memory fields;\n3. move project-specific policy from Dart into stored project/Path context;\n4. provider-neutral `/api/ai/...` Path proposal layer with whitelisted tools, validation, audit/undo and approval for sensitive actions;\n5. idempotent live migration, then delete old page/bootstrap/governance code only after parity proof.\n\nReport: `docs/reports/PATHS_FIRST_CLASS_AND_REPO_AUDIT_2026-08-17.md`.\n\n### ~~O1 — Offline-first core reliability~~ ✅ (shipped 2026-06-09)'''
+          )
+
+          # CHANGELOG — branch engineering entry (not marked shipped before merge/deploy verification).
+          changelog = Path('CHANGELOG.md')
+          c = changelog.read_text(encoding='utf-8')
+          entry = '''## [2026-08-17] - Paths first-class architecture [engineering]\n\n* **Paths ownership:** Added `lib/data/paths/path_repository.dart` and `lib/features/paths/paths_page.dart`; Paths is now main-shell destination index 6, page open is read-only, and the generic feature no longer needs project-specific bootstrap/governance to render.\n* **Compatibility safety:** Existing `LIFEOS_PATH::V2` rows remain authoritative during transition; duplicate active roots are reported without read-time deletion, and explicit Path edits remain on the existing Brain write path.\n* **Repository cleanup:** Removed the completed `.github/workflows/temp-fix-category-default-time.yml` self-patching workflow; the target category-default scheduling logic is already present in production code.\n* **Docs:** Added the Paths architecture/repository audit report and synchronized APP_STRUCTURE, Architecture, UX Contract, agent routing, Roadmap, and generated detailed structure guide.\n\n'''
+          if not c.startswith('## [2026-08-17] - Paths first-class architecture'):
+              changelog.write_text(entry + c, encoding='utf-8')
+
+          # Generator folder guides for the two new first-class owners.
+          guide = Path('scripts/manual/structure_guide_data.py')
+          g = guide.read_text(encoding='utf-8')
+          if '"lib/data/paths": {' not in g:
+              marker = '    "lib/data/profile": {'
+              block = '''    "lib/data/paths": {\n        "what": "Path domain boundary — structured project paths, compatibility storage interpretation, and generic validation.",\n        "why": "Paths must be usable by UI/Planner/AI without parsing marker-backed plan rows in feature or shell code.",\n        "inside": "`path_repository.dart`: Path snapshots, status vocabulary, compatibility load/save, duplicate-root reporting, structure audit.",\n        "affects": "Paths page and future explicit Path → Planner / AI proposal services.",\n        "when": "Path loading, stage/action structure, active-root conflicts, or Path storage migration.",\n        "delete": "No — first-class Paths feature depends on this domain boundary.",\n        "related": "`lib/features/paths/`, `docs/ARCHITECTURE.md` §6.1, issue #93.",\n    },\n'''
+              if marker not in g: raise SystemExit('structure guide data paths marker missing')
+              g = g.replace(marker, block + marker, 1)
+          if '"lib/features/paths": {' not in g:
+              marker = '    "lib/features/planning": {'
+              block = '''    "lib/features/paths": {\n        "what": "First-class Paths UI — project list/detail, goal, stages, actions, progress, and structure warnings.",\n        "why": "Paths is a real app destination rather than UI embedded in shell/More code.",\n        "inside": "`paths_page.dart`.",\n        "affects": "Desktop side-nav Paths and phone/tablet More → Paths.",\n        "when": "Path navigation, responsive layout, Path goal/stage/action editing.",\n        "delete": "No — Paths destination disappears.",\n        "related": "`lib/data/paths/path_repository.dart`, `lib/app/shell/app_shell.dart`.",\n    },\n'''
+              if marker not in g: raise SystemExit('structure guide feature paths marker missing')
+              g = g.replace(marker, block + marker, 1)
+          guide.write_text(g, encoding='utf-8')
+          PY
+
+      - name: Regenerate detailed structure guide
+        shell: bash
+        run: python3 scripts/manual/generate_app_structure_detailed.py
+
+      - name: Verify structure and whitespace
+        shell: pwsh
+        run: |
+          ./scripts/audit/architecture_guard.ps1 -Strict
+          git diff --check
+
+      - name: Commit documentation sync
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add AGENTS.md AGENT_NAVIGATION.md CHANGELOG.md docs/APP_STRUCTURE.md docs/APP_STRUCTURE_DETAILED.md docs/ARCHITECTURE.md docs/UX_CONTRACT.md docs/ROADMAP.md scripts/manual/structure_guide_data.py
+          if git diff --cached --quiet; then
+            echo 'No documentation changes to commit.'
+          else
+            git commit -m 'Sync Paths architecture documentation'
+            git push origin HEAD:agent/paths-first-class-audit-cleanup
+          fi
