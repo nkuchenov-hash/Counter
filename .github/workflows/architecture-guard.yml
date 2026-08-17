@@ -27,6 +27,11 @@ jobs:
       - name: Run strict architecture guard
         run: pwsh -NoProfile -NonInteractive -File ./scripts/audit/architecture_guard.ps1 -Strict
 
+      - name: Repair temporary finalizer marker
+        shell: bash
+        run: |
+          sed -i 's|^    end_marker = .*|    end_marker = "\\ndef adapt_file_field_ru("|' scripts/manual/_finalize_paths_docs.py
+
       - name: Apply final documentation updates
         run: python3 scripts/manual/_finalize_paths_docs.py
 
