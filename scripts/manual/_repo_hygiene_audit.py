@@ -9,6 +9,7 @@ from pathlib import Path, PurePosixPath
 
 ROOT = Path(__file__).resolve().parents[2]
 DART_EDGE_RE = re.compile(r"^\s*(?:import|export|part)\s+['\"]([^'\"]+)['\"]", re.M)
+EXPORT_RE = re.compile(r"^\s*export\s+['\"]([^'\"]+)['\"]\s*;", re.M)
 
 
 def tracked() -> list[str]:
@@ -40,7 +41,6 @@ def resolve_dart_edge(source: str, uri: str) -> str | None:
 
 files = tracked()
 tracked_set = set(files)
-
 incoming: dict[str, list[str]] = {}
 for source in files:
     if not source.endswith(".dart"):
@@ -60,25 +60,34 @@ print("=== TRACKED WATCHLIST EXACT DART INCOMING ===")
 for target, reason in WATCHLIST_PATHS.items():
     if target not in tracked_set:
         continue
-    size = (ROOT / target).stat().st_size
-    exact_incoming = sorted(set(incoming.get(target, [])))
     refs: list[str] = []
     needle_full = target.replace("\\", "/")
     needle_pkg = "package:counter/" + needle_full.removeprefix("lib/")
     for p in files:
-        if p == target or p in {
-            "docs/APP_STRUCTURE_DETAILED.md",
-            "scripts/manual/structure_evidence_index.py",
-            "scripts/manual/_repo_hygiene_audit.py",
-        }:
+        if p == target or p in {"docs/APP_STRUCTURE_DETAILED.md", "scripts/manual/structure_evidence_index.py", "scripts/manual/_repo_hygiene_audit.py"}:
             continue
         text = readable_text(ROOT / p)
-        if text is None:
-            continue
-        if needle_full in text or needle_pkg in text:
+        if text is not None and (needle_full in text or needle_pkg in text):
             refs.append(p)
-    print(json.dumps({"path": target, "size": size, "reason": reason,
-                      "dart_incoming": exact_incoming, "literal_refs": refs}, ensure_ascii=False))
+    print(json.dumps({"path": target, "size": (ROOT / target).stat().st_size, "reason": reason,
+                      "dart_incoming": sorted(set(incoming.get(target, []))), "literal_refs": refs}, ensure_ascii=False))
+
+print("=== ZERO-INCOMING PURE DART RE-EXPORTS ===")
+for p in files:
+    if not p.endswith(".dart"):
+        continue
+    text = readable_text(ROOT / p)
+    if text is None or not EXPORT_RE.search(text):
+        continue
+    # Remove comments + export directives; pure aliases/barrels have no declarations/imports/parts left.
+    stripped = re.sub(r"//.*", "", text)
+    stripped = EXPORT_RE.sub("", stripped).strip()
+    if stripped:
+        continue
+    if incoming.get(p):
+        continue
+    print(json.dumps({"path": p, "size": (ROOT / p).stat().st_size,
+                      "exports": EXPORT_RE.findall(text)}, ensure_ascii=False))
 
 print("=== LARGE TRACKED FILES >= 50 KB ===")
 large: list[tuple[int, str]] = []
@@ -102,8 +111,6 @@ for size, p in sorted(large, reverse=True):
         if other == p or other in {"docs/APP_STRUCTURE_DETAILED.md", "scripts/manual/_repo_hygiene_audit.py"}:
             continue
         text = readable_text(ROOT / other)
-        if text is None:
-            continue
-        if p in text or base in text:
+        if text is not None and (p in text or base in text):
             refs.append(other)
     print(json.dumps({"path": p, "size": size, "refs": refs}, ensure_ascii=False))
