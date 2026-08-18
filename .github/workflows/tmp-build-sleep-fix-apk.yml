@@ -1,0 +1,70 @@
+name: One-time Health Connect sleep APK
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/tmp-build-sleep-fix-apk.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.6'
+          channel: stable
+
+      - name: Prepare Flutter
+        run: |
+          mkdir -p lib/core/env
+          printf '%s\n' 'abstract final class Env {' '  static const String placeholder = '\'''\'';' '}' > lib/core/env/env.dart
+          flutter pub get
+
+      - name: Build arm64 release APK
+        run: flutter build apk --release --target-platform android-arm64 --split-per-abi --no-tree-shake-icons
+
+      - name: Upload APK
+        id: artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: life-os-health-connect-sleep-${{ github.sha }}
+          path: build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Publish build result branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          SOURCE_SHA=$(git rev-parse HEAD)
+          ARTIFACT_ID='${{ steps.artifact.outputs.artifact-id }}'
+          ARTIFACT_URL='${{ steps.artifact.outputs.artifact-url }}'
+          DIGEST='${{ steps.artifact.outputs.artifact-digest }}'
+          rm -rf /tmp/android-result
+          mkdir -p /tmp/android-result
+          cd /tmp/android-result
+          git init -q
+          git checkout -q -b diag/android-sleep-apk-result
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          {
+            echo "source_sha=$SOURCE_SHA"
+            echo "artifact_id=$ARTIFACT_ID"
+            echo "artifact_url=$ARTIFACT_URL"
+            echo "artifact_digest=$DIGEST"
+          } > android-sleep-apk-result.txt
+          git add android-sleep-apk-result.txt
+          git commit -q -m 'Record Android sleep APK artifact'
+          git remote add origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git push -f origin HEAD:refs/heads/diag/android-sleep-apk-result
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
