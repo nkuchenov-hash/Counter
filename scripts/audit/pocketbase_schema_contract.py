@@ -42,6 +42,9 @@ def main() -> int:
 
     if "LIFEOS_PATH::" in repository:
         violations.append("PATH_REPOSITORY_LEGACY_MARKER")
+    for token in ("category_link", "active_revision_link"):
+        if token not in repository:
+            violations.append(f"PATH_REPOSITORY_RELATION_MISSING {token}")
 
     path_migrations = sorted(MIGRATIONS.glob("*_durable_paths.js"))
     if len(path_migrations) != 1:
@@ -50,14 +53,20 @@ def main() -> int:
         )
     else:
         migration = path_migrations[0].read_text(encoding="utf-8")
-        for token in ("paths", "path_revisions", "active_revision_id"):
+        for token in (
+            "paths",
+            "path_revisions",
+            'name: "category_link"',
+            'name: "active_revision_link"',
+        ):
             if token not in migration:
                 violations.append(f"DURABLE_PATH_MIGRATION_MISSING {token}")
 
     required_manifest_tokens = (
         "`paths`",
         "`path_revisions`",
-        "active_revision_id",
+        "category_link",
+        "active_revision_link",
         "pb_migrations/",
     )
     for token in required_manifest_tokens:
