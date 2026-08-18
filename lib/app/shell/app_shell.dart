@@ -168,7 +168,9 @@ class ShellDashboardState extends State<LifeOSDashboard>
         ShellTabHost,
         ShellEditHosts,
         ShellMoreMenu,
-        ShellVoiceRouting {
+        ShellVoiceRouting,
+        ShellLifecycle,
+        ShellChrome {
   @override
   void initState() {
     super.initState();
