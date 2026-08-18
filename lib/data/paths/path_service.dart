@@ -17,7 +17,7 @@ extension PathServiceExtension on DatabaseService {
     final ownerId = _pathOwnerIdOrThrow();
     final records = await _pb.collection(PbCollections.paths).getFullList(
           filter: 'user_id = "${_escapeForPbFilter(ownerId)}" && archived = false',
-          sort: 'category_id,path_id',
+          sort: 'category_link,path_id',
         );
     return records.map(_pathRecordData).toList(growable: false);
   }
@@ -67,17 +67,25 @@ extension PathServiceExtension on DatabaseService {
 
   Future<Map<String, dynamic>> createOwnedPath({
     required String pathId,
-    required int categoryId,
+    required String categoryPocketBaseId,
     required String title,
     required String activeRevisionId,
   }) async {
     await ensurePocketBaseReady();
     final ownerId = _pathOwnerIdOrThrow();
+    final categoryId = categoryPocketBaseId.trim();
+    if (!DatabaseService._isLikelyPocketBaseRowId(categoryId)) {
+      throw ArgumentError.value(
+        categoryPocketBaseId,
+        'categoryPocketBaseId',
+        'Expected a PocketBase categories row id.',
+      );
+    }
     final record = await _pb.collection(PbCollections.paths).create(
       body: <String, dynamic>{
         'user_id': ownerId,
         'path_id': pathId.trim(),
-        'category_id': categoryId,
+        'category_link': categoryId,
         'title': title.trim(),
         'active_revision_id': activeRevisionId.trim(),
         'archived': false,
