@@ -1,3 +1,12 @@
+## 2026-08-18 — Shell lifecycle/chrome/task-action recomposition [engineering]
+
+- Reduced `lib/app/shell/app_shell.dart` to the dashboard composition root and shared state contract.
+- Extracted dashboard initialization/disposal wiring to `shell_lifecycle.dart` and responsive scaffold/chrome to `shell_chrome.dart`.
+- Extracted quick start/plan, record stop/delete, Planning→record start, and source-plan suggestion orchestration from `shell_core.dart` into `shell_task_actions.dart`; `shell_core.dart` is again limited to selected-day/task-loading coordination and shared shell sync UI.
+- Moved Paths selected-index ownership fully into `shell_more_menu.dart` instead of a dashboard-state override.
+- Registered concurrently added `timeline_sleep_details.dart` in the canonical structure manifest; sleep behavior itself is unchanged.
+- No persistence schema, Planner semantics, Timeline semantics, or navigation behavior changed.
+
 ## 2026-08-18 — Shell / Paths ownership cleanup [engineering]
 
 - Removed the retired embedded Paths V2/V3 UI/bootstrap stack from `shell_shared.dart` and `shell_more_menu.dart`; shell now only navigates to the first-class `PathsPage` destination.

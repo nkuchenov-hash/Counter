@@ -2935,6 +2935,69 @@ RU:
 
 ---
 
+### `lib/app/shell/shared/shell_lifecycle.dart`
+
+EN:
+
+- **Human purpose:** Shell lifecycle wiring for dashboard initialization, deferred startup work, subscriptions, midnight watch, and disposal.
+- **What this is:** Focused `part of app_shell.dart` module inside the Entry/shell layer.
+- **Why needed:** Keeps the dashboard composition root and core shell state readable without moving shell-owned behavior into feature or Brain layers.
+- **Responsibilities:** Preserve current shell behavior while isolating one coherent shell responsibility.
+- **Owner / layer:** Entry / app shell.
+- **Connected to:** `lib/app/shell/app_shell.dart` and sibling shell parts.
+
+RU:
+
+- **Зачем файл человеку:** Shell lifecycle: инициализация dashboard, deferred startup, подписки, контроль смены дня и освобождение ресурсов.
+- **Что это:** Focused `part of app_shell.dart` модуль внутри Entry/shell слоя.
+- **Зачем:** Сохраняет `app_shell.dart` и core shell state читаемыми и не переносит shell-owned поведение в feature или Brain слои.
+- **Обязанности:** Сохранять текущее поведение shell, изолируя одну связанную ответственность.
+- **Владелец / слой:** Entry / app shell.
+- **Связано с:** `lib/app/shell/app_shell.dart` и соседними shell parts.
+
+
+### `lib/app/shell/shared/shell_chrome.dart`
+
+EN:
+
+- **Human purpose:** Responsive shell chrome and destination composition: app bar, form-factor frames, FAB, bottom navigation, and desktop voice shortcuts.
+- **What this is:** Focused `part of app_shell.dart` module inside the Entry/shell layer.
+- **Why needed:** Keeps the dashboard composition root and core shell state readable without moving shell-owned behavior into feature or Brain layers.
+- **Responsibilities:** Preserve current shell behavior while isolating one coherent shell responsibility.
+- **Owner / layer:** Entry / app shell.
+- **Connected to:** `lib/app/shell/app_shell.dart` and sibling shell parts.
+
+RU:
+
+- **Зачем файл человеку:** Responsive chrome shell и композиция экранов: app bar, form-factor frames, FAB, нижняя навигация и desktop voice shortcuts.
+- **Что это:** Focused `part of app_shell.dart` модуль внутри Entry/shell слоя.
+- **Зачем:** Сохраняет `app_shell.dart` и core shell state читаемыми и не переносит shell-owned поведение в feature или Brain слои.
+- **Обязанности:** Сохранять текущее поведение shell, изолируя одну связанную ответственность.
+- **Владелец / слой:** Entry / app shell.
+- **Связано с:** `lib/app/shell/app_shell.dart` и соседними shell parts.
+
+
+### `lib/app/shell/shared/shell_task_actions.dart`
+
+EN:
+
+- **Human purpose:** Shell task/record action orchestration shared by Timeline, Planning, Calendar, and quick input surfaces.
+- **What this is:** Focused `part of app_shell.dart` module inside the Entry/shell layer.
+- **Why needed:** Keeps the dashboard composition root and core shell state readable without moving shell-owned behavior into feature or Brain layers.
+- **Responsibilities:** Preserve current shell behavior while isolating one coherent shell responsibility.
+- **Owner / layer:** Entry / app shell.
+- **Connected to:** `lib/app/shell/app_shell.dart` and sibling shell parts.
+
+RU:
+
+- **Зачем файл человеку:** Shell-оркестрация действий задач и записей для Timeline, Planning, Calendar и quick input.
+- **Что это:** Focused `part of app_shell.dart` модуль внутри Entry/shell слоя.
+- **Зачем:** Сохраняет `app_shell.dart` и core shell state читаемыми и не переносит shell-owned поведение в feature или Brain слои.
+- **Обязанности:** Сохранять текущее поведение shell, изолируя одну связанную ответственность.
+- **Владелец / слой:** Entry / app shell.
+- **Связано с:** `lib/app/shell/app_shell.dart` и соседними shell parts.
+
+
 ## Folder: `lib/app/shell/tablet/`
 
 EN:
