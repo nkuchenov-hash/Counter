@@ -31,10 +31,18 @@ replace_once(
     '| `app/shell/shared/shell_lifecycle.dart` | Dashboard startup/dispose wiring: tab host initialization, deferred bootstrap, subscriptions, midnight watcher, desktop voice detach *(part)* |\n'
     '| `app/shell/shared/shell_chrome.dart` | Responsive shell scaffold/chrome: destination pages, app bar, form-factor frame, FAB, bottom navigation, desktop voice shortcuts *(part)* |',
 )
+# Concurrent sleep/Timeline work landed in main while this branch was active;
+# keep the canonical manifest in parity instead of reverting or ignoring it.
+replace_once(
+    app_structure,
+    '| `timeline/timeline_record_card.dart` | `TimelineRecordCard` |',
+    '| `timeline/timeline_record_card.dart` | `TimelineRecordCard` |\n'
+    '| `timeline/timeline_sleep_details.dart` | Detailed sleep-stage presentation opened from Timeline sleep records |',
+)
 
 changelog = ROOT / 'CHANGELOG.md'
 text = changelog.read_text(encoding='utf-8')
-entry = '''## 2026-08-18 — Shell lifecycle/chrome/task-action recomposition [engineering]\n\n- Reduced `lib/app/shell/app_shell.dart` to the dashboard composition root and shared state contract.\n- Extracted dashboard initialization/disposal wiring to `shell_lifecycle.dart` and responsive scaffold/chrome to `shell_chrome.dart`.\n- Extracted quick start/plan, record stop/delete, Planning→record start, and source-plan suggestion orchestration from `shell_core.dart` into `shell_task_actions.dart`; `shell_core.dart` is again limited to selected-day/task-loading coordination and shared shell sync UI.\n- Moved Paths selected-index ownership fully into `shell_more_menu.dart` instead of a dashboard-state override.\n- No persistence schema, Planner semantics, Timeline semantics, or navigation behavior changed.\n\n'''
+entry = '''## 2026-08-18 — Shell lifecycle/chrome/task-action recomposition [engineering]\n\n- Reduced `lib/app/shell/app_shell.dart` to the dashboard composition root and shared state contract.\n- Extracted dashboard initialization/disposal wiring to `shell_lifecycle.dart` and responsive scaffold/chrome to `shell_chrome.dart`.\n- Extracted quick start/plan, record stop/delete, Planning→record start, and source-plan suggestion orchestration from `shell_core.dart` into `shell_task_actions.dart`; `shell_core.dart` is again limited to selected-day/task-loading coordination and shared shell sync UI.\n- Moved Paths selected-index ownership fully into `shell_more_menu.dart` instead of a dashboard-state override.\n- Registered concurrently added `timeline_sleep_details.dart` in the canonical structure manifest; sleep behavior itself is unchanged.\n- No persistence schema, Planner semantics, Timeline semantics, or navigation behavior changed.\n\n'''
 if not text.startswith('## 2026-08-18 — Shell lifecycle/chrome/task-action recomposition [engineering]'):
     changelog.write_text(entry + text, encoding='utf-8')
 
