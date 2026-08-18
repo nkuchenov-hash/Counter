@@ -62,10 +62,11 @@ class _ShellTopStatusBarsState extends State<ShellTopStatusBars>
   }
 
   Future<void> _reconcileSleep() async {
-    await Future.wait<void>([
-      _startHealthSleepSync(),
-      _startCloudSleepSync(),
-    ]);
+    // Avoid racing two ingestion adapters against the same new night.
+    // Device health writes first; cloud sync then reconciles into the same
+    // canonical PocketBase record. On web the device step is a no-op.
+    await _startHealthSleepSync();
+    await _startCloudSleepSync();
   }
 
   @override
