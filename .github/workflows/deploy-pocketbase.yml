@@ -28,6 +28,9 @@ jobs:
       - name: Validate PocketBase JavaScript
         run: |
           node --check pb_hooks/sleep_sync.pb.js
+          node --check pb_hooks/google_health_sleep_runtime.js
+          node --check pb_hooks/google_fit_sleep_runtime.js
+          node --check pb_hooks/google_fit_sleep_recovery.js
           node --check pb_migrations/1785390000_server_sleep_sync.js
           node --check pb_migrations/1786470000_google_fit_records.js
           node --check pb_migrations/1786550000_google_health_history.js
