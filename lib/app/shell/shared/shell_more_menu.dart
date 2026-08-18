@@ -152,7 +152,7 @@ mixin ShellMoreMenu on ShellCoreLogic {
 
   int desktopSideNavSelectedIndex(int shellPageIndex) {
     return switch (shellPageIndex) {
-      0 || 1 || 2 || 3 || 4 || 5 => shellPageIndex,
+      0 || 1 || 2 || 3 || 4 || 5 || 6 => shellPageIndex,
       _ => 7,
     };
   }
