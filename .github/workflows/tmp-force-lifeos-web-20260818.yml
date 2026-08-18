@@ -1,4 +1,4 @@
-# trigger: 2026-08-18T10:06Z
+# trigger: 2026-08-18T10:09Z
 name: One-time force LIFE OS web deploy
 
 on:
@@ -36,10 +36,12 @@ jobs:
       - name: Build LIFE OS web
         run: |
           SHORT_SHA=$(git rev-parse --short HEAD)
+          FULL_SHA=$(git rev-parse HEAD)
           BUILD_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)
           flutter build web --release --base-href="/Counter/" --no-tree-shake-icons --no-wasm-dry-run --pwa-strategy=none \
             --dart-define=GIT_COMMIT="$SHORT_SHA" \
             --dart-define=BUILD_TIME="$BUILD_TIME"
+          printf '%s\n%s\n' "$FULL_SHA" "$BUILD_TIME" > build/web/lifeos-build.txt
 
       - name: Preserve current Igropoisk
         run: |
