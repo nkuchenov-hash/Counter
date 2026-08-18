@@ -1,3 +1,10 @@
+## 2026-08-18 — Final architecture/documentation parity [engineering]
+
+- Restored the O1 offline/sync indicator under its correct shell-presentation owner and wired it into `ShellTopStatusBars`; Brain queue/retry semantics remain in `OfflineSyncController`.
+- Removed stale structure rows and updated Shell, Voice, Planning, Profile, tag-picker, cache/performance, and navigation ownership references to current paths.
+- Architecture Guard now checks `APP_STRUCTURE.md` in both directions; `documentation_parity.py` rejects live governing-doc references to missing repo paths.
+- Repaired the detailed-structure generator fallback so generated RU folder descriptions cannot silently copy synthesized EN prose, then regenerated the full tree guide from tracked files.
+
 ## 2026-08-18 — Shell generic voice-input boundary [engineering]
 
 - Split generic FAB/`VoiceInputSheet` submission into `shell_voice_input.dart`.

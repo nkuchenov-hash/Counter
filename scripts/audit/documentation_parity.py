@@ -56,6 +56,12 @@ ROOT_FILES = {
 GENERATED_PATH_EXEMPTIONS = {
     "lib/core/env/env.dart",  # generated/gitignored from environment setup
 }
+GENERATED_OUTPUT_PREFIXES = (
+    "build/",
+    "android/build/",
+    "ios/Pods/",
+    "installer/windows/output/",
+)
 HISTORICAL_MARKERS = (
     "removed",
     "superseded",
@@ -117,6 +123,8 @@ def check_explicit_references() -> list[str]:
             for raw in BACKTICK_RE.findall(line):
                 ref = _normalize_reference(raw)
                 if ref is None or ref in GENERATED_PATH_EXEMPTIONS:
+                    continue
+                if any(ref.startswith(prefix) for prefix in GENERATED_OUTPUT_PREFIXES):
                     continue
                 if not (ROOT / ref).exists():
                     rel = doc.relative_to(ROOT).as_posix()

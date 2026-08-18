@@ -29,19 +29,7 @@ Flutter time tracker. Owner: Nick (UX designer, not a developer). Goal: best tim
 
 ## Structure check (vs `docs/APP_STRUCTURE.md`)
 
-Verified 2026-06-10 (shell paths 2026-07-21; time/diagnostics/voice/categories ownership 2026-07-21–23; Stage B drift audit 2026-07-23). **Core layout matches** the documented map: `lib/data/` (Brain + part files + `data/voice/` + `data/categories/`), `lib/data/local_sync/` (offline outboxes), `lib/features/` (UI modules + `settings/voice/` + `settings/categories/`), `lib/shared/time/`, `lib/shared/diagnostics/`, `lib/shared/voice/`, `lib/shared/categories/`, `lib/core/` (theme + widgets + tray/window), `lib/app/shell/` (form-factor shell), `lib/l10n/`, `lib/services/`, `app_shell.dart`, `main.dart`.
-
-**Known drift** (harmless; do not “fix” unless asked):
-
-| Item | Actual | Doc says |
-| :--- | :--- | :--- |
-| Brain import path | `package:counter/data/database_service.dart` | canonical — no root barrel |
-| Models import path | `package:counter/data/models.dart` | canonical — no root barrel |
-| Planning widget name | `PlanningPage` / `PlanningSwipeWrapper` in `planning_view.dart` | file name only (no `PlanningView` class) |
-| Lists widget name | `ListsPage` in `lists_view.dart` | file name only |
-| Root `lib/*.dart` | Only `main.dart` + `app_shell.dart` (compat re-export); former `auth_*` / root barrels stay gone (guard) | matches `APP_STRUCTURE` + guard allowlist |
-| Local sync (O1) | `lib/data/local_sync/*.dart` | not in older `APP_STRUCTURE.md` tree — see **Local sync** section below |
-| Governing docs path | `counter/docs/*.md` | some older refs say `lib/DATA_MAP.md` |
+Verified 2026-08-18 after the Shell/Profile/Planning/Voice ownership pass and repo-wide documentation parity audit. **Current governing docs have no accepted structure drift.** Historical reports may describe earlier paths, but this navigation map points only at live canonical owners.
 
 ---
 
@@ -61,7 +49,7 @@ SharedPreferences mutation queues + global sync indicator. Retriable network/aut
 | **Flush record queue** | `lib/data/records/record_outbox_helpers.dart` | `RecordOutboxSyncExtension.flushPendingRecordMutations` |
 | **Flush plan/list queue** | `lib/data/plans/plan_outbox_helpers.dart` | `PlanOutboxSyncExtension.flushPendingPlanMutations` (alias: `flushPendingPlanCreates`) |
 | **Boot / resume flush** | `lib/data/db_core.dart` | `loadInitialData` → `_loadInner` ends with `flushPendingLocalMutations`; lifecycle `onResumed` same |
-| **Offline / sync banner** | `lib/features/shared/offline_sync_status_bar.dart` | `OfflineSyncStatusBar` — tap → `flushPendingLocalMutations`; labels via `offline_sync_*` in `dictionary.dart` |
+| **Offline / sync banner** | `lib/app/shell/shared/offline_sync_status_bar.dart` | `OfflineSyncStatusBar` — shell presentation over `OfflineSyncController`; tap → `flushPendingLocalMutations`; labels via `offline_sync_*` |
 | Record offline enqueue (start) | `lib/data/records/record_outbox_helpers.dart` | `_enqueueHighlanderStartMutation`, `_highlanderPrimaryServerSync` |
 | Record offline enqueue (stop/edit/delete) | `lib/data/records/record_outbox_helpers.dart` | `_enqueueStopPatchMutation`, `_enqueueRecordUpdateMutation`, `_enqueueRecordDeleteMutation` |
 | Plan offline enqueue | `lib/data/plan_service.dart` | `_enqueuePlanCreateMutation`, `_enqueuePlanUpdateMutation`, `_enqueuePlanDeleteMutation` |
@@ -80,7 +68,7 @@ Short routing map for Cursor / AI. Symbols in backticks.
 | **Shared edit sheets** | `lib/features/shared/activity_detail_sheet.dart` | `ActivityDetailSheet` (router) → `PlanningTaskEditSheet` (plans/lists) or `TimelineRecordSheetContent` (timeline records); barrel: `shared_widgets.dart` |
 | **Omni-Picker / autosave** | `lib/features/shared/edit_sheet/sheet_time_picker.dart`, `sheet_autosave_gate.dart` | `showAppDateTimePicker`, `EditSheetAutosaveGate` |
 | **Bulk plan edit** | `lib/features/planning/bulk_planning_edit_sheet.dart` | bulk date/time moves (also uses `showAppDateTimePicker`) |
-| **Sheet host (modal)** | `lib/app_shell.dart` | `_openEditDialog` / `_showEditRecordSheetForTimeline` → `showModalBottomSheet` + `ActivityDetailSheet` |
+| **Sheet host (modal)** | `lib/app/shell/shared/shell_edit_hosts.dart` | Timeline/Planning edit-sheet host methods → `ActivityDetailSheet` |
 | **Category create** | `lib/features/settings/categories/create_category_dialog.dart` | dialog; calls `DatabaseService.addNestedCategory` |
 | **Category edit** | `lib/features/settings/categories/category_list_view.dart` | `CategoryEditorSheet`, `_showCategoryEditorSheet`; appearance quick sheet `_showCategoryAppearanceSheet` |
 | **Category tree picker** | `lib/shared/categories/picker/category_tree_picker.dart` | `showCategoryTreePicker` |
@@ -89,12 +77,12 @@ Short routing map for Cursor / AI. Symbols in backticks.
 | **Tag UI — manager** | `lib/features/profile/tag_manager_page.dart` | `TagManagerPage` (`pocketTagDomain: 'plan'` or `'list'`) |
 | **Tag UI — display prefs** | `lib/features/profile/tag_settings_view.dart` | `tag_display_mode` on profile |
 | **Tag UI — default durations** | `lib/features/profile/tag_default_duration_settings_view.dart` | per-tag `default_plan_duration_minutes` (Durations tab) |
-| **Tag UI — pickers** | `lib/features/shared/chip_component.dart` | `TagQuickPickStrip`, `TagChip` |
+| **Tag UI — pickers** | `lib/core/widgets/chip_component.dart` | `TagQuickPickStrip`, `TagChip`, `CategoryChip` |
 | **Tag UI in edit sheet** | `lib/features/shared/planning_task_edit_sheet.dart` | tag strip inside `PlanningTaskEditSheet` |
 | **PB config** | `lib/data/pb_config.dart` | `kPocketBaseUrl`, `PbCollections`, expand constants |
 | **PB — records** | `lib/data/records/record_crud.dart` + coordinator | `writeRecord`, `stopRecordByDocId`, `updateRecord`, `patchRecord`, `deleteRecordByDocId`, `flushPendingRecordMutations`, realtime |
 | **PB — plans & lists** | `lib/data/plan_service.dart` | `fetchPlans`, `fetchBacklogPlans`, `addPlanningTask`, `updatePlanningTask`, `deletePlanningTask`, `deletePlanningTasksBulk`, `flushPendingPlanMutations`, `planningStream`, `_syncPlanTagsPocket` |
-| **Offline sync banner** | `lib/features/shared/offline_sync_status_bar.dart` | `OfflineSyncStatusBar` (top of shell `IndexedStack`) |
+| **Offline sync banner** | `lib/app/shell/shared/offline_sync_status_bar.dart` | `OfflineSyncStatusBar` via `ShellTopStatusBars` |
 | **PB — categories** | `lib/data/categories/category_crud.dart` + `category_lookup.dart` + coordinator | `addNestedCategory`, `updateCategory`, `findCategoryByFuzzyMatch` |
 | **PB — tags** | `lib/data/profile/tag_catalog.dart` | (same as tag data row above) |
 | **PB — auth / bootstrap** | `lib/data/auth_bridge.dart`, `lib/data/db_core.dart` | session, `ensurePocketBaseReady`, `loadInitialData`, `flushPendingLocalMutations` |
@@ -102,7 +90,7 @@ Short routing map for Cursor / AI. Symbols in backticks.
 | **Per-screen header chrome** | `lib/features/timeline/timeline_view.dart` | List/stats `SegmentedButton` + day PageView chrome **inlined** (removed orphan `timeline_widgets.dart` in Stage A) |
 | | `lib/features/planning/planning_view.dart` | custom `Material` + `kToolbarHeight` row hosting `GlobalAppHeader` (~L2286) |
 | | `lib/features/lists/lists_view.dart` | same pattern (~L1137) |
-| **More overflow menu** | `lib/app_shell.dart` | `_openMoreMenu()` modal bottom sheet — Categories, Profile, admin Component Lab (removed orphan `more_view.dart` in Stage A) |
+| **More overflow menu** | `lib/app/shell/shared/shell_more_menu.dart` | More bottom sheet + shell navigation actions |
 | **Material `AppBar` (opaque nav bar)** | not on main tabs | Main tabs use **no** `Scaffold.appBar`; header is the surface strip above. `AppBar` remains on secondary routes: `category_list_view.dart`, `profile_view.dart`, `tag_settings_*.dart`, `SettingsPage` in `app_shell.dart`, and nested Lists tag-manager push |
 
 ---
@@ -113,7 +101,7 @@ Routing map for AI assistants: open these first instead of grepping. Update this
 
 | Concept | File | Symbol |
 | :--- | :--- | :--- |
-| Voice input dispatcher (routes by active tab) | `lib/app/shell/shared/shell_voice_routing.dart` | Shell Voice routing mixin (via `app_shell.dart`) |
+| Generic voice input dispatcher (routes by active tab) | `lib/app/shell/shared/shell_voice_input.dart` | `ShellVoiceInput` — FAB/VoiceInputSheet → Timeline/Planning/Backlog |
 | Desktop Price Reporter voice command (kill switch) | `lib/app/shell/shared/shell_voice_routing.dart` | Desktop Voice submit / toggle wiring |
 | Voice command parser (one system) | `lib/data/voice/voice_command_parser.dart` | `parsePriceReporterVoiceCommand`, `VoiceCommandCategoryIndex`, `parseVoiceCommand` |
 | Voice record submit (Brain) | `lib/data/voice/desktop_voice_record_submit.dart` | `DesktopVoiceRecordSubmit` — parse → normalize → `writeRecord` |
@@ -125,8 +113,9 @@ Routing map for AI assistants: open these first instead of grepping. Update this
 | Desktop voice settings (local prefs) | `lib/shared/voice/platforms/desktop/desktop_voice_settings.dart` | `DesktopVoiceSettings` |
 | Desktop voice hotkey | `lib/shared/voice/platforms/desktop/desktop_voice_hotkey.dart` | `DesktopVoiceHotkey` |
 | Voice settings UI | `lib/features/settings/voice/desktop_voice_settings_section.dart` | `DesktopVoiceSettingsSection` |
-| Desktop voice shell wiring | `lib/app/shell/shared/shell_voice_routing.dart` | `toggleDesktopVoiceWidget`, submit parsed, init layer |
-| UI dispatch wrappers (shell-side, debounced) | `lib/app_shell.dart` | `_stopRecordByDocId` / `_deleteRecordByDocId` / `_startTaskFromInput` |
+| Desktop voice command routing | `lib/app/shell/shared/shell_voice_routing.dart` | `toggleDesktopVoiceWidget`, overlay/command submit routing |
+| Desktop voice attachment lifecycle | `lib/app/shell/shared/shell_voice_integration.dart` | tray/global-hotkey attach and reattach |
+| UI task/record action orchestration | `lib/app/shell/shared/shell_task_actions.dart` | start/stop/delete/retry and source-plan suggestion presentation |
 | Start a record (user taps Start) | `lib/data/records/record_crud.dart` | `DatabaseService.writeRecord` (`RecordCrudExtension`) |
 | Stop a record (user taps Stop) | `lib/data/records/record_crud.dart` | `DatabaseService.stopRecordByDocId` (`RecordCrudExtension`) |
 | Update / edit a record | `lib/data/records/record_crud.dart` | `DatabaseService.updateRecord` (`RecordCrudExtension`) |
@@ -140,7 +129,7 @@ Routing map for AI assistants: open these first instead of grepping. Update this
 | Flush pending plans / lists | `lib/data/plan_service.dart` | `DatabaseService.flushPendingPlanMutations` (extension) |
 | Sync state / auth resume | `lib/data/local_sync/offline_sync_state.dart` | `OfflineSyncController` on `DatabaseService.offlineSync`; `resumeAfterAuthIfNeeded` |
 | Connectivity watcher | `lib/data/local_sync/sync_manager.dart` | `SyncManager.instance` |
-| Shell sync / offline banner | `lib/features/shared/offline_sync_status_bar.dart` | `OfflineSyncStatusBar` |
+| Shell sync / offline banner | `lib/app/shell/shared/offline_sync_status_bar.dart` | `OfflineSyncStatusBar` |
 | Singleton / stale-open detection | `lib/data/records/record_overlap_helpers.dart` | `_rowStartWallDayIsBeforeProjectedToday` / `_mergeSacredStaleOpenCandidates` (`RecordOverlapExtension`) |
 | Realtime subscribe handler | `lib/data/records/record_realtime.dart` | `DatabaseService._onPbRecordsSubscriptionEvent` (`RecordRealtimeExtension`) |
 | Record cache mutation (atomic upsert) | `lib/data/record_service.dart` | `DatabaseService._upsertFlatRecordFromPbModel` (extension) |
@@ -187,30 +176,25 @@ Routing map for AI assistants: open these first instead of grepping. Update this
 
 ---
 
-## P0 / performance layer (active architecture debt)
+## Performance / diagnostics layer (current owners)
 
-**Not random garbage — active diagnostics + warm-cache for Timeline/Planning date paging (P0U track).** Consolidate later; do not delete while paging work is open. Full file list: `docs/APP_STRUCTURE.md` §5.3–5.4. Structure guard: `scripts/audit/architecture_guard.ps1 -Strict`.
+Performance law is permanent, but the old P0U experiment filenames are retired. Current diagnostics, caches, and strip owners are below; use these paths instead of resurrecting old experiment modules.
 
 | Concept | File | Notes |
 | :--- | :--- | :--- |
-| Master perf probe | `lib/core/perf_diag.dart` | `--dart-define=PERF_DIAG=true` |
-| Bisect toggles | `lib/core/perf_flags.dart` | LazyIndexedStack, pager sync |
 | Runtime diagnostics | `lib/shared/diagnostics/runtime_log.dart` | Release-safe runtime markers |
-| Runtime flags | `lib/shared/diagnostics/performance/runtime_flags.dart` | Kill switches (default off) |
+| Runtime flags | `lib/shared/diagnostics/performance/runtime_flags.dart` | Kill switches and focused diagnostics |
 | Startup log | `lib/shared/diagnostics/startup_log.dart` | Boot timing |
-| Rebuild metrics | `lib/shared/diagnostics/performance/rebuild_metrics.dart` | `--dart-define=PERF_DIAG=true` only |
+| Rebuild metrics | `lib/shared/diagnostics/performance/rebuild_metrics.dart` | Rebuild instrumentation |
 | Shell flags | `lib/shared/diagnostics/performance/shell_flags.dart` | Shell + Planning Time View canvas bisect toggles |
-| Day cache | `lib/data/cache/day_snapshot_window.dart` | Warm day snapshot window |
-| Render cache | `lib/data/cache/render_snapshot.dart`, `rendered_day_body_cache.dart` | Rendered day-body cache |
-| Structure guard | `scripts/audit/architecture_guard.ps1` | `-Strict` enforces `docs/APP_STRUCTURE.md` |
-| Structure guide (RU) | `docs/APP_STRUCTURE_DETAILED.md` | Bilingual EN/RU per-file guide |
-| Plan duplicate log | `lib/data/plans/diagnostics/plan_duplicate_log.dart` | Planning-domain Brain duplicate / stream lifecycle markers |
-| Warm snapshot data | `lib/data/warm_day_window.dart` | WarmSnapshotWindow |
-| Rendered body cache | `lib/data/rendered_day_body_cache.dart` | Day-body LRU |
-| Render snapshot | `lib/data/p0t_render_snapshot.dart` | Snapshot helpers |
-| Eager day strip | `lib/core/widgets/eager_day_content_strip.dart` | P0U widget |
-| Mounted day window | `lib/core/widgets/mounted_day_window.dart` | P0U widget |
-| Structure guard | `scripts/audit/architecture_guard.ps1` | Warning-mode audit |
+| Warm day snapshots | `lib/data/cache/day_snapshot_window.dart` | `WarmSnapshotWindow` + day snapshot DTOs |
+| Render snapshots | `lib/data/cache/render_snapshot.dart` | Timeline/Planning render snapshot DTOs + cache |
+| Rendered body cache | `lib/data/cache/rendered_day_body_cache.dart` | Day-body LRU |
+| Mounted/eager day strip | `lib/core/widgets/day_content_strip.dart` | `EagerDayContentStrip` + mounted slot implementation |
+| Plan duplicate log | `lib/data/plans/diagnostics/plan_duplicate_log.dart` | Planning-domain duplicate/stream lifecycle markers |
+| Structure guard | `scripts/audit/architecture_guard.ps1` | `-Strict` enforces architecture boundaries + APP_STRUCTURE manifest |
+| Documentation parity | `scripts/audit/documentation_parity.py` | Live governing-doc path checks + reverse APP_STRUCTURE check |
+| Detailed structure guide | `docs/APP_STRUCTURE_DETAILED.md` | Generated bilingual per-file guide |
 
 ---
 

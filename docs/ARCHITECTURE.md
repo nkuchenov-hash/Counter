@@ -42,7 +42,7 @@
 - **OWNERSHIP:** Every query filters by current user, e.g. `user_id = "<uuid>"` in PB filter strings.
 - **INSTANT_PURGE_PROTOCOL:** Optimistic UI before await where the Brain already does so; revert on failure.
 - **LAW_OF_OPTIMISTIC_UI (Shadow State):** No user-driven **Start / Stop / Update** on records may block the UI on a network round-trip. The Brain applies a **local shadow** (cache + timeline/active streams) in **<100 ms**, then runs PocketBase **PATCH/POST** asynchronously; on failure it **rolls back** to the last stable snapshot and surfaces a **single** sync error (see `database_service.dart`).
-- **OFFLINE-FIRST / LOCAL MUTATION QUEUE LAW:** Retriable network/backoff failures enqueue local mutations and keep the optimistic UI. Do **not** roll back on normal internet loss; roll back only on non-retriable validation/schema errors. Pending mutations drain on boot, reconnect, app resume, login/session restore, and tap-to-retry. 401/403 pauses sync until valid auth/session is restored. The server remains final authority for Singleton Timeline Law and overlap cleanup. Anchors: `lib/data/local_sync/record_mutation_outbox.dart`, `lib/data/local_sync/plan_mutation_outbox.dart`, `lib/data/local_sync/offline_sync_state.dart`, `lib/data/local_sync/sync_manager.dart`, `DbCoreExtension.flushPendingLocalMutations`, `RecordServiceExtension.flushPendingRecordMutations`, `PlanServiceExtension.flushPendingPlanMutations`, `_OfflineSyncStatusBar` in `app_shell.dart`.
+- **OFFLINE-FIRST / LOCAL MUTATION QUEUE LAW:** Retriable network/backoff failures enqueue local mutations and keep the optimistic UI. Do **not** roll back on normal internet loss; roll back only on non-retriable validation/schema errors. Pending mutations drain on boot, reconnect, app resume, login/session restore, and tap-to-retry. 401/403 pauses sync until valid auth/session is restored. The server remains final authority for Singleton Timeline Law and overlap cleanup. Anchors: `lib/data/local_sync/record_mutation_outbox.dart`, `lib/data/local_sync/plan_mutation_outbox.dart`, `lib/data/local_sync/offline_sync_state.dart`, `lib/data/local_sync/sync_manager.dart`, `DbCoreExtension.flushPendingLocalMutations`, `RecordServiceExtension.flushPendingRecordMutations`, `PlanServiceExtension.flushPendingPlanMutations`, and shell presentation `lib/app/shell/shared/offline_sync_status_bar.dart`.
 - **LAW_OF_THE_MAIN_THREAD (Iron Rules):**
   - **~100ms visual feedback:** User gestures must reflect in the UI within about **100ms** (optimistic/shadow first).
   - **Zero-await UI:** Do not `await` network, DB writes, or Wear sync **before** the UI updates for that action; use **`unawaited`** background sync with rollback on failure.
@@ -160,7 +160,6 @@ Web vs. Mobile STT: Web (kIsWeb) MUST use strict BCP-47 tags (e.g., ru-RU) bypas
 | :--- | :--- |
 | **POCKETBASE_MANIFEST.md** | PB URL, collections, `category_id` / `category_link`, auth. |
 | **DATA_MAP.md** | Field naming reference (legacy Noco table UIDs are historical only). |
-| **NOCODB_MANIFEST.md** | Legacy Noco contract — do not use for new work. |
 | **APP_STRUCTURE.md** | Layer map, import boundaries, Structure Growth Law. |
 
 ---

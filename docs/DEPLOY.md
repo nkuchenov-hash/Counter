@@ -115,13 +115,6 @@ git commit --allow-empty -m "Redeploy"
 git push origin main
 ```
 
-## Legacy scripts
-
-- `Archive/root_cleanup_backup/f.ps1` — commit + push only (no analyze/build)
-- `lib/deploy.ps1` — Firebase hosting (not used for GitHub Pages)
-
----
-
 ## Windows desktop release
 
 **Normal user path:** one installer — **`CounterSetup.exe`**. No Visual Studio, Flutter SDK, or manual Release-folder copying on the target PC.

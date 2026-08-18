@@ -1546,69 +1546,77 @@ def synthesize_folder_guide(key: str) -> dict[str, str]:
 
 
 def _folder_ru_auto(key: str, en: dict[str, str]) -> dict[str, str]:
-    """Generate Russian folder fields from English guide when no curated RU exists."""
+    """Return a clean Russian fallback for folders without curated RU text."""
     k = key.replace("\\", "/").strip("/")
     top = k.split("/")[0] if k else ""
-    plat_ru = {
+    platform = {
         "android": "Android",
         "ios": "iOS",
         "web": "Web",
         "windows": "Windows",
         "linux": "Linux",
         "macos": "macOS",
-    }.get(top, "")
-    if plat_ru:
+    }.get(top)
+    if platform:
         return {
-            "what_ru": f"Платформенная папка {plat_ru}: `{k}/` — native-обёртка и конфиги Flutter для этой платформы.",
-            "why_ru": f"Flutter собирает {plat_ru}-версию из файлов под `{top}/`; это не Dart-код экранов.",
-            "inside_ru": f"Native-конфиги и generated-файлы embedder в `{k}/`.",
-            "affects_ru": f"Только сборка и native-поведение {plat_ru} — не экраны в `lib/`.",
-            "when_ru": f"Ошибка сборки {plat_ru} или native-проблема в `{k}/`.",
-            "delete_ru": "Нет — нужна для сборки платформы.",
+            "what_ru": f"Каталог системной части Flutter-сборки для {platform}: `{k}/`.",
+            "why_ru": f"Содержит платформенные файлы, которые нужны инструментам Flutter и {platform} при сборке.",
+            "inside_ru": "Конфигурация платформы, ресурсы и исходники системной части; конкретные файлы описаны ниже.",
+            "affects_ru": f"Влияет на сборку и системное поведение версии для {platform}; интерфейс приложения в `lib/` остаётся отдельным слоем.",
+            "when_ru": f"Открывать при ошибках сборки {platform}, разрешений, ресурсов или системного запуска.",
+            "delete_ru": "Нет — каталог участвует в поддерживаемой платформенной сборке.",
             "related_ru": f"`{top}/`, `docs/APP_STRUCTURE.md`.",
         }
     if k.startswith("lib/"):
-        sub = k[4:] if k.startswith("lib/") else k
+        area = k[4:]
         return {
-            "what_ru": f"Dart-модули `{k}/` — UI, Brain или shared код Counter.",
-            "why_ru": "Всё под `lib/` попадает в APK/web/desktop build и задаёт поведение продукта.",
-            "inside_ru": f"Файлы и подпапки `{k}/` — список ниже.",
-            "affects_ru": f"Экраны и data-flow, связанные с `{sub}`.",
-            "when_ru": f"Правки или баги в `{sub}`.",
-            "delete_ru": "Нет — нужен для работы приложения.",
+            "what_ru": f"Каталог исходного Dart-кода `{k}/`, отвечающий за область `{area}`.",
+            "why_ru": "Собирает рядом файлы одного владельца, чтобы UI, данные и общая инфраструктура не смешивали обязанности.",
+            "inside_ru": "Dart-файлы и дочерние каталоги этого владельца; каждый файл описан ниже.",
+            "affects_ru": f"Поведение приложения в области `{area}` и связанные с ней потоки данных или интерфейс.",
+            "when_ru": f"Открывать при изменениях или ошибках в области `{area}`.",
+            "delete_ru": "Нет — это часть исходного кода приложения, пока владелец присутствует в архитектуре.",
             "related_ru": "`lib/`, `docs/APP_STRUCTURE.md`.",
         }
     if k.startswith("docs/"):
         return {
-            "what_ru": f"Документация в `{k}/` — written specs, не runtime-код.",
-            "why_ru": "Текстовые правила и отчёты для owner и AI; приложение их не исполняет.",
-            "inside_ru": "Markdown-файлы с правилами и отчётами — список ниже.",
-            "affects_ru": "Решения при разработке — не бинарник приложения.",
-            "when_ru": "Нужно прочитать или обновить документацию по теме папки.",
-            "delete_ru": "Нет — governing или report документация.",
-            "related_ru": "`docs/PROJECT_KNOWLEDGE_PACK.md`.",
+            "what_ru": f"Тематический каталог документации `{k}/`.",
+            "why_ru": "Группирует правила, спецификации и справочные материалы по одной теме, не смешивая их с runtime-кодом.",
+            "inside_ru": "Текстовые спецификации и связанные справочные материалы; конкретный состав описан ниже.",
+            "affects_ru": "Определяет контекст разработки и проверки решений; в пользовательскую сборку не входит.",
+            "when_ru": "Открывать при проверке или обновлении документации по этой теме.",
+            "delete_ru": "Нет — сначала нужно подтвердить, что документы действительно утратили роль и ссылки на них отсутствуют.",
+            "related_ru": "`docs/PROJECT_KNOWLEDGE_PACK.md`, `docs/APP_STRUCTURE.md`.",
         }
-    if k.startswith("scripts/") or k.startswith("test/"):
-        kind = "скрипты" if k.startswith("scripts") else "автотесты"
+    if k.startswith("scripts/"):
         return {
-            "what_ru": f"Папка {kind}: `{k}/`.",
-            "why_ru": "Поддержка CI, deploy, audit или регрессионных проверок.",
-            "inside_ru": "Файлы перечислены ниже по одному.",
-            "affects_ru": "Качество и workflow — не экраны приложения.",
-            "when_ru": "Запуск workflow или падение CI.",
-            "delete_ru": "Нет — задокументированный workflow.",
-            "related_ru": "`docs/APP_STRUCTURE.md`.",
+            "what_ru": f"Каталог автоматизации `{k}/`.",
+            "why_ru": "Хранит воспроизводимые команды для проверки, сборки, публикации или обслуживания репозитория.",
+            "inside_ru": "Скрипты PowerShell, Python, Dart или вспомогательные файлы; конкретный состав описан ниже.",
+            "affects_ru": "Влияет на процессы разработки и CI, но не является пользовательским экраном приложения.",
+            "when_ru": "Открывать при запуске или изменении соответствующей автоматизированной процедуры.",
+            "delete_ru": "Нет — пока на эти сценарии опираются задокументированные процессы.",
+            "related_ru": "`scripts/`, `docs/DEPLOY.md`, `docs/APP_STRUCTURE.md`.",
+        }
+    if k.startswith("test/") or k == "test":
+        return {
+            "what_ru": f"Каталог автоматических проверок `{k}/`.",
+            "why_ru": "Собирает регрессионные тесты и их вспомогательные данные по одной области продукта.",
+            "inside_ru": "Тестовые Dart-файлы, фикстуры или вспомогательные данные; конкретный состав описан ниже.",
+            "affects_ru": "Влияет на качество и проверки CI; в пользовательскую сборку не входит.",
+            "when_ru": "Открывать при падении соответствующего теста или изменении покрываемого поведения.",
+            "delete_ru": "Нет — удаление уменьшит регрессионное покрытие без замены.",
+            "related_ru": "`test/`, соответствующие владельцы под `lib/`.",
         }
     return {
-        "what_ru": f"Служебная папка `{k}/` в репозитории Counter.",
-        "why_ru": "Поддерживает сборку, CI или сопровождение проекта.",
-        "inside_ru": "Файлы этой папки перечислены ниже.",
-        "affects_ru": "Workflow или tooling, связанный с этим путём.",
-        "when_ru": f"Сборка или maintenance затрагивает `{k}/`.",
-        "delete_ru": "Нет — часть репозитория.",
-        "related_ru": "`docs/APP_STRUCTURE.md`.",
+        "what_ru": f"Служебный каталог репозитория `{k}/`.",
+        "why_ru": "Хранит файлы, необходимые отдельной части сборки, данных проекта или сопровождения репозитория.",
+        "inside_ru": "Отслеживаемые Git файлы и дочерние каталоги; каждый элемент описан ниже.",
+        "affects_ru": "Влияет на ту часть продукта или процесса сборки, которой принадлежит этот путь.",
+        "when_ru": f"Открывать при работе с файлами и процессами, связанными с `{k}/`.",
+        "delete_ru": "Нет — сначала нужно подтвердить отсутствие runtime, build, data и CI-зависимостей.",
+        "related_ru": "`docs/APP_STRUCTURE.md`, `CHANGELOG.md`.",
     }
-
 
 def ensure_folder_ru(key: str, data: dict[str, str]) -> dict[str, str]:
     """Merge curated + inline RU; fill gaps by adapting EN meaning (never path templates)."""
@@ -1693,6 +1701,24 @@ def ensure_folder_ru(key: str, data: dict[str, str]) -> dict[str, str]:
         from structure_ru_helpers import delete_en_to_ru
 
         merged["delete_ru"] = delete_en_to_ru(en_delete)
+
+    # Final safety net: synthesized EN must never leak into the RU half of the
+    # generated guide. Curated/adapted text wins when valid; only invalid or
+    # missing prose is replaced by the clean class fallback above.
+    auto = _folder_ru_auto(k, merged)
+    for suffix in (
+        "what_ru",
+        "why_ru",
+        "inside_ru",
+        "affects_ru",
+        "when_ru",
+        "delete_ru",
+    ):
+        current = merged.get(suffix, "")
+        if not ru_field_ok(current, min_cyrillic=6):
+            merged[suffix] = auto[suffix]
+    if not merged.get("related_ru"):
+        merged["related_ru"] = auto["related_ru"]
     return merged
 
 
