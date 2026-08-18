@@ -64,38 +64,27 @@ jobs:
               conn['status'], conn['enabled'], conn['last_sync_at'], conn['last_session_count'], conn['last_imported_count'],
               conn['last_sleep_count'], conn['last_full_sync_at'], conn['segment_backfill_complete']))
           print('SYNC_ERROR=' + str(conn['last_error'] or ''))
-          print('USER_ID=' + uid)
 
           cols = {r['name'] for r in con.execute('PRAGMA table_info(records)').fetchall()}
           wanted = ['id','record_id','user_id','title','status','type','start_time','end_time','category_id','category_link','parent_id','external_source','external_id','external_kind','sleep_source','sleep_external_id','created','updated']
           selected = [c for c in wanted if c in cols]
           qcols = ','.join('"%s"' % c for c in selected)
-          rows = con.execute(f'''SELECT {qcols} FROM records
+          cutoff=(datetime.now(timezone.utc)-timedelta(days=14)).isoformat().replace('+00:00','Z')
+
+          fit = con.execute(f'''SELECT {qcols} FROM records
             WHERE user_id=? AND (external_source='google_fit' OR sleep_source='google_fit')
             ORDER BY start_time ASC''',(uid,)).fetchall()
-          print('SLEEP_TOTAL=' + str(len(rows)))
-          if rows:
-              print('SLEEP_EARLIEST=' + str(rows[0]['start_time']))
-              print('SLEEP_LATEST=' + str(rows[-1]['end_time']))
+          print('GOOGLE_FIT_SLEEP_TOTAL=' + str(len(fit)))
+          if fit: print('GOOGLE_FIT_LATEST=' + str(fit[-1]['end_time']))
 
-          cutoff=(datetime.now(timezone.utc)-timedelta(days=45)).isoformat().replace('+00:00','Z')
-          recent=[r for r in rows if str(r['end_time'] or '') >= cutoff]
-          print('SLEEP_RECENT45=' + str(len(recent)))
-          for r in recent[-30:]:
-              print('ROW ' + ' | '.join('%s=%s' % (c, str(r[c])[:160]) for c in selected))
-
-          cat_ids=set()
-          for r in rows:
-              for k in ('category_link','category_id'):
-                  if k in r.keys() and r[k] is not None and str(r[k]).strip(): cat_ids.add(str(r[k]).strip())
-          print('SLEEP_CATEGORY_IDS=' + ','.join(sorted(cat_ids)))
-          for cid in sorted(cat_ids):
-              cr=con.execute('SELECT * FROM categories WHERE id=?',(cid,)).fetchone()
-              if cr:
-                  keys=['id','user_id','category_id','name','normalized_id','is_archived','parent_id']
-                  print('CATEGORY ' + ' | '.join('%s=%s' % (k,str(cr[k])) for k in keys if k in cr.keys()))
-
-          total_owned=con.execute('SELECT COUNT(*) AS n FROM records WHERE user_id=?',(uid,)).fetchone()['n']
-          print('OWNED_RECORDS_TOTAL=' + str(total_owned))
+          all_sleep = con.execute(f'''SELECT {qcols} FROM records
+            WHERE user_id=?
+              AND lower(trim(title)) IN ('sleep','сон')
+              AND end_time>=?
+            ORDER BY start_time ASC''',(uid,cutoff)).fetchall()
+          print('ALL_SLEEP_RECENT14=' + str(len(all_sleep)))
+          if all_sleep: print('ALL_SLEEP_LATEST=' + str(all_sleep[-1]['end_time']))
+          for r in all_sleep:
+              print('SLEEP ' + ' | '.join('%s=%s' % (c, str(r[c])[:160]) for c in selected))
           PY
           REMOTE
