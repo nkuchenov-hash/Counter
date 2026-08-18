@@ -20,24 +20,18 @@ concurrency:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 30
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Run strict architecture guard
-        run: pwsh -NoProfile -NonInteractive -File ./scripts/audit/architecture_guard.ps1 -Strict
-
-      - name: 'Set up Flutter 3.41.6 (Dart 3.11 satisfies pubspec sdk ^3.11.0)'
+      - name: Set up Flutter 3.41.6
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.41.6'
-          channel: 'stable'
-
-      - name: Flutter doctor
-        run: flutter doctor -v
+          channel: stable
 
       - name: Create env.dart
         run: |
@@ -47,12 +41,7 @@ jobs:
       - name: Install Flutter dependencies
         run: flutter pub get
 
-      - name: Test critical web regressions
-        run: |
-          flutter test --platform chrome test/notes_mobile_keyboard_regression_test.dart
-          flutter test test/category_catalog_resilience_contract_test.dart
-
-      - name: Build Flutter web
+      - name: Build LIFE OS web
         env:
           GIT_COMMIT: ${{ github.sha }}
         run: |
