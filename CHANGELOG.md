@@ -1,3 +1,9 @@
+## 2026-08-18 — Planning edit result ownership [engineering]
+
+- `shell_edit_hosts.dart` now only hosts/routes the Planning sheet; persisted field edits remain owned by the editor autosave flow.
+- New-draft create/collision handling and persisted delete/rollback/undo moved to `features/shared/edit_sheet/planning_edit_result_actions.dart`.
+- Removed the Planning optimistic-delete sentinel and duplicated persistence orchestration from shell ownership.
+
 ## 2026-08-18 — Shell lifecycle/chrome/task-action recomposition [engineering]
 
 - Reduced `lib/app/shell/app_shell.dart` to the dashboard composition root and shared state contract.

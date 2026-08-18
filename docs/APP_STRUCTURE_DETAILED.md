@@ -3310,6 +3310,19 @@ RU:
 
 ---
 
+### `lib/features/shared/edit_sheet/planning_edit_result_actions.dart`
+
+EN:
+- **Human purpose:** Planning edit result orchestration for new-draft creation and persisted delete/rollback/undo.
+- **Owner / layer:** Feature UI / shared Planning edit-sheet layer.
+- **Connected to:** `planning_task_edit_sheet.dart`, `activity_detail_sheet.dart`, Planning data APIs, and the shell edit host.
+
+RU:
+- **Зачем файл человеку:** Оркестрация результатов Planning editor: создание нового draft и удаление сохранённого плана с rollback/undo.
+- **Владелец / слой:** Feature UI / shared Planning edit-sheet layer.
+- **Связано с:** `planning_task_edit_sheet.dart`, `activity_detail_sheet.dart`, data API Planning и shell edit host.
+
+
 ## Folder: `lib/features/shared/notes_editor/`
 
 EN:
