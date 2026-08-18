@@ -1,0 +1,48 @@
+name: Shell recompose verify
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: shell-recompose-verify-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    if: github.head_ref == 'refactor/shell-lifecycle-chrome-20260818'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Strict architecture guard
+        shell: pwsh
+        run: ./scripts/audit/architecture_guard.ps1 -Strict
+      - name: Set up Flutter 3.41.6
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.6'
+          channel: stable
+          cache: true
+      - name: Prepare environment
+        shell: bash
+        run: |
+          mkdir -p lib/core/env
+          printf '%s\n' 'abstract final class Env {' "  static const String placeholder = '';" '}' > lib/core/env/env.dart
+          flutter pub get
+      - name: Analyzer — errors are fatal, existing warning/info baseline is not
+        run: flutter analyze --no-fatal-warnings --no-fatal-infos
+      - name: Focused shell contracts
+        shell: bash
+        run: |
+          flutter test test/shell_form_factor_test.dart
+          flutter test test/daily_routine_contract_test.dart
+      - name: Hygiene
+        shell: bash
+        run: |
+          rm -f lib/core/env/env.dart
+          git diff --check
