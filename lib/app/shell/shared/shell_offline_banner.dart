@@ -19,7 +19,7 @@ class ShellTopStatusBars extends StatefulWidget {
 
 class _ShellTopStatusBarsState extends State<ShellTopStatusBars>
     with WidgetsBindingObserver {
-  static const Duration _foregroundSleepSyncInterval = Duration(minutes: 10);
+  bool _sleepReconcileRunning = false;
 
   @override
   void initState() {
@@ -35,14 +35,10 @@ class _ShellTopStatusBarsState extends State<ShellTopStatusBars>
     final current = service.state.value;
     if (!current.enabled || !service.isSupported) return;
 
-    final lastSync = current.lastSyncUtc;
-    final needsForegroundCatchUp =
-        lastSync == null ||
-        DateTime.now().toUtc().difference(lastSync) >=
-            _foregroundSleepSyncInterval;
-    if (needsForegroundCatchUp) {
-      await service.sync();
-    }
+    // Foreground is the strongest wake-up signal available to the app. Always
+    // re-read device sleep immediately instead of trusting a recent background
+    // timestamp that may have been recorded just before the user woke up.
+    await service.sync(force: true);
   }
 
   Future<void> _startCloudSleepSync() async {
@@ -51,22 +47,23 @@ class _ShellTopStatusBarsState extends State<ShellTopStatusBars>
     final current = service.state.value;
     if (!current.configured || !current.enabled) return;
 
-    final lastSync = current.lastSyncUtc;
-    final needsForegroundCatchUp =
-        lastSync == null ||
-        DateTime.now().toUtc().difference(lastSync) >=
-            _foregroundSleepSyncInterval;
-    if (needsForegroundCatchUp) {
-      await service.syncNow();
-    }
+    // Same behavior on web and native clients: opening/resuming LIFE OS asks
+    // the server to reconcile Google Fit immediately, then refreshes records.
+    await service.syncNow();
   }
 
   Future<void> _reconcileSleep() async {
-    // Avoid racing two ingestion adapters against the same new night.
-    // Device health writes first; cloud sync then reconciles into the same
-    // canonical PocketBase record. On web the device step is a no-op.
-    await _startHealthSleepSync();
-    await _startCloudSleepSync();
+    if (_sleepReconcileRunning) return;
+    _sleepReconcileRunning = true;
+    try {
+      // Avoid racing two ingestion adapters against the same new night.
+      // Device health writes first; cloud sync then reconciles into the same
+      // canonical PocketBase record. On web the device step is a no-op.
+      await _startHealthSleepSync();
+      await _startCloudSleepSync();
+    } finally {
+      _sleepReconcileRunning = false;
+    }
   }
 
   @override
