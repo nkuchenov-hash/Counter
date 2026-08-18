@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:counter/app/shell/shared/profile_hydration_status_bar.dart';
+import 'package:counter/data/health/cloud_sleep_sync_service.dart';
 import 'package:counter/data/health/health_sleep_sync_service.dart';
 import 'package:counter/data/records/unfilled_time_gap_service.dart';
 import 'package:counter/features/timeline/unfilled_time_gap_banner.dart';
@@ -25,6 +26,7 @@ class _ShellTopStatusBarsState extends State<ShellTopStatusBars>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     unawaited(_startHealthSleepSync());
+    unawaited(CloudSleepSyncService.instance.loadStatus());
     unawaited(UnfilledTimeGapService.instance.start());
   }
 
@@ -48,6 +50,7 @@ class _ShellTopStatusBarsState extends State<ShellTopStatusBars>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       unawaited(_startHealthSleepSync());
+      unawaited(CloudSleepSyncService.instance.loadStatus());
     }
   }
 
