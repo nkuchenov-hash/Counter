@@ -30,8 +30,10 @@ jobs:
         run: |
           python scripts/manual/_shell_boundary_cleanup_finalizer.py
           python scripts/manual/_patch_structure_detailed_paths_parity.py
+          python scripts/manual/_rename_paths_compatibility_layer.py
           git rm scripts/manual/_shell_boundary_cleanup_finalizer.py
           git rm scripts/manual/_patch_structure_detailed_paths_parity.py
+          git rm scripts/manual/_rename_paths_compatibility_layer.py
 
       - name: Set up Flutter 3.41.6
         uses: subosito/flutter-action@v2
@@ -47,7 +49,7 @@ jobs:
             lib/app/shell/app_shell.dart \
             lib/app/shell/shared/shell_shared.dart \
             lib/app/shell/shared/shell_more_menu.dart \
-            lib/data/paths/legacy/path_governance_service.dart \
+            lib/data/paths/compatibility/path_governance_service.dart \
             lib/data/plans/daily_routine_service.dart \
             test/daily_routine_contract_test.dart
 
@@ -55,19 +57,19 @@ jobs:
         shell: bash
         run: |
           if git grep -n -E 'LIFEOS_PATH::V[12]|ExecutableCategoryPathsPage|ProjectPathsV3Page|_retireLegacyProjectPathsV1|bootstrapExecutablePortfolioPaths' -- lib/app/shell; then
-            echo 'Legacy Path implementation still exists in shell.' >&2
+            echo 'Retired Path implementation still exists in shell.' >&2
             exit 1
           fi
           test ! -e lib/app/shell/shared/shell_path_governance.dart
           test ! -e lib/app/shell/shared/shell_daily_routine.dart
-          test -e lib/data/paths/legacy/path_governance_service.dart
+          test -e lib/data/paths/compatibility/path_governance_service.dart
           test -e lib/data/plans/daily_routine_service.dart
           grep -q "setShellPageIndex(6)" lib/app/shell/shared/shell_more_menu.dart
           ! grep -q 'lib/app/shell/shared/shell_path_governance.dart' docs/APP_STRUCTURE_DETAILED.md
           ! grep -q 'lib/app/shell/shared/shell_daily_routine.dart' docs/APP_STRUCTURE_DETAILED.md
-          grep -q 'lib/data/paths/legacy/path_governance_service.dart' docs/APP_STRUCTURE_DETAILED.md
+          grep -q 'lib/data/paths/compatibility/path_governance_service.dart' docs/APP_STRUCTURE_DETAILED.md
           grep -q 'lib/data/plans/daily_routine_service.dart' docs/APP_STRUCTURE_DETAILED.md
-          grep -q '## Folder: `lib/data/paths/legacy/`' docs/APP_STRUCTURE_DETAILED.md
+          grep -q '## Folder: `lib/data/paths/compatibility/`' docs/APP_STRUCTURE_DETAILED.md
 
       - name: Run strict architecture guard
         shell: pwsh
@@ -101,6 +103,7 @@ jobs:
           fi
           test ! -e scripts/manual/_shell_boundary_cleanup_finalizer.py
           test ! -e scripts/manual/_patch_structure_detailed_paths_parity.py
+          test ! -e scripts/manual/_rename_paths_compatibility_layer.py
 
       - name: Commit verified cleanup
         shell: bash
