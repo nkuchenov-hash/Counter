@@ -26,6 +26,7 @@ jobs:
           python scripts/manual/_durable_paths_relation_docs.py
           python scripts/manual/_enforce_release_order.py
           python scripts/manual/_cleanup_temporary_workflows.py
+          python scripts/manual/_clean_durable_paths_lints.py
           git diff --check
 
       - name: Check migration, schema, and release contracts
@@ -66,6 +67,7 @@ jobs:
           git rm -f scripts/manual/_durable_paths_relation_docs.py
           git rm -f scripts/manual/_enforce_release_order.py
           git rm -f scripts/manual/_cleanup_temporary_workflows.py
+          git rm -f scripts/manual/_clean_durable_paths_lints.py
           git rm -f .github/workflows/tmp-durable-paths-finalizer.yml
 
           python scripts/manual/generate_app_structure_detailed.py
