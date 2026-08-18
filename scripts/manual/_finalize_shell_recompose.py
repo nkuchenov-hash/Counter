@@ -5,22 +5,12 @@ ROOT = Path(__file__).resolve().parents[2]
 
 def replace_once(path: Path, old: str, new: str) -> None:
     text = path.read_text(encoding='utf-8')
+    if new in text:
+        return
     if old not in text:
         raise RuntimeError(f'Anchor not found in {path}: {old[:120]}')
     path.write_text(text.replace(old, new, 1), encoding='utf-8')
 
-
-# Remove task/action orchestration from shell_core now that the focused part exists.
-shell_core = ROOT / 'lib/app/shell/shared/shell_core.dart'
-core = shell_core.read_text(encoding='utf-8')
-start_marker = '  Future<void> retryWriteNewTask(\n'
-end_marker = '  void jumpToConflictDate(DateTime d) {\n'
-start = core.find(start_marker)
-end = core.find(end_marker)
-if start == -1 or end == -1 or end <= start:
-    raise RuntimeError('Cannot locate shell_core task-action block')
-core = core[:start] + core[end:]
-shell_core.write_text(core, encoding='utf-8')
 
 app_structure = ROOT / 'docs/APP_STRUCTURE.md'
 replace_once(
@@ -48,7 +38,8 @@ entry = '''## 2026-08-18 — Shell lifecycle/chrome/task-action recomposition [e
 if not text.startswith('## 2026-08-18 — Shell lifecycle/chrome/task-action recomposition [engineering]'):
     changelog.write_text(entry + text, encoding='utf-8')
 
-# Detailed guide: add focused shell-part entries without invoking the noisy global generator.
+# Targeted detailed-guide parity. The global generator currently has unrelated
+# historical RU/EN quality failures, so do not weaken that quality gate here.
 detailed = ROOT / 'docs/APP_STRUCTURE_DETAILED.md'
 text = detailed.read_text(encoding='utf-8')
 entries = [
