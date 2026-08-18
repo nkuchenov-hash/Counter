@@ -358,6 +358,7 @@ function __fitUpsert(app, userId, profile, category, session) {
     var existing = __fitFindExisting(app, userId, session);
     var record = existing || new Record(app.findCollectionByNameOrId("records"));
     var ru = String(profile.get("primary_language") || "").toLowerCase() === "ru";
+    var stages = Array.isArray(session.stages) ? session.stages : [];
     record.set("user_id", userId);
     record.set("record_id", existing ? record.get("record_id") : __fitUuid());
     record.set("status", "completed");
@@ -374,6 +375,10 @@ function __fitUpsert(app, userId, profile, category, session) {
     record.set("external_updated_at", session.modifiedAt.toISOString());
     record.set("sleep_source", "google_fit");
     record.set("sleep_external_id", session.externalId);
+    record.set("sleep_stages", stages);
+    record.set("sleep_source_name", String(session.application || "google_fit"));
+    record.set("sleep_recovered_from_segments", !!session.recoveredFromSegments);
+    record.set("sleep_segment_points", Number(session.segmentPoints || stages.length || 0));
     app.save(record);
     return existing ? 0 : 1;
 }
