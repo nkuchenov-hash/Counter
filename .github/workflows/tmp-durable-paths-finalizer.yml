@@ -22,12 +22,13 @@ jobs:
         run: |
           python scripts/manual/_finalize_durable_paths.py
           python scripts/manual/_patch_structure_evidence_for_paths.py
-          dart --version || true
+          python scripts/manual/_durable_paths_followup.py
           git diff --check
 
       - name: Check migration syntax and schema contract
         run: |
-          node --check pb_migrations/1787076000_durable_paths.js
+          mapfile -d '' files < <(find pb_hooks pb_migrations -type f -name '*.js' -print0 | sort -z)
+          for file in "${files[@]}"; do node --check "$file"; done
           python scripts/audit/pocketbase_schema_contract.py
 
       - uses: subosito/flutter-action@v2
@@ -44,7 +45,8 @@ jobs:
             lib/data/paths/path_repository.dart \
             lib/data/paths/path_service.dart \
             lib/data/plans/path_planner_bridge.dart \
-            lib/data/plans/planner_startup_service.dart
+            lib/data/plans/planner_startup_service.dart \
+            lib/features/paths/paths_page.dart
           mkdir -p lib/core/env
           printf '%s\n' 'abstract final class Env {' "  static const String placeholder = '';" '}' > lib/core/env/env.dart
           flutter pub get
@@ -56,6 +58,7 @@ jobs:
         run: |
           git rm -f scripts/manual/_finalize_durable_paths.py
           git rm -f scripts/manual/_patch_structure_evidence_for_paths.py
+          git rm -f scripts/manual/_durable_paths_followup.py
           git rm -f .github/workflows/tmp-durable-paths-finalizer.yml
 
           python scripts/manual/generate_app_structure_detailed.py
@@ -67,7 +70,8 @@ jobs:
           python scripts/audit/repository_hygiene.py
           python scripts/audit/pocketbase_schema_contract.py
           pwsh -NoProfile -NonInteractive -File ./scripts/audit/architecture_guard.ps1 -Strict
-          node --check pb_migrations/1787076000_durable_paths.js
+          mapfile -d '' files < <(find pb_hooks pb_migrations -type f -name '*.js' -print0 | sort -z)
+          for file in "${files[@]}"; do node --check "$file"; done
           git diff --check
 
       - name: Commit verified architecture
