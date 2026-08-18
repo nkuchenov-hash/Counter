@@ -13,6 +13,12 @@ migrate(function(app) {
             maxSize: 200000
         }));
     }
+    if (!hasField(records.fields, "sleep_metrics")) {
+        records.fields.add(new JSONField({
+            name: "sleep_metrics",
+            maxSize: 500000
+        }));
+    }
     if (!hasField(records.fields, "sleep_source_name")) {
         records.fields.add(new TextField({
             name: "sleep_source_name",
@@ -31,13 +37,22 @@ migrate(function(app) {
             onlyInt: true
         }));
     }
+    if (!hasField(records.fields, "sleep_metric_points")) {
+        records.fields.add(new NumberField({
+            name: "sleep_metric_points",
+            min: 0,
+            onlyInt: true
+        }));
+    }
 
     app.save(records);
 }, function(app) {
     var records = app.findCollectionByNameOrId("records");
     records.fields.removeByName("sleep_stages");
+    records.fields.removeByName("sleep_metrics");
     records.fields.removeByName("sleep_source_name");
     records.fields.removeByName("sleep_recovered_from_segments");
     records.fields.removeByName("sleep_segment_points");
+    records.fields.removeByName("sleep_metric_points");
     app.save(records);
 });
