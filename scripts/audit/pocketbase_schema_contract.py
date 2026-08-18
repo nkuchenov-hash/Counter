@@ -11,6 +11,7 @@ ROOT = Path(__file__).resolve().parents[2]
 CONFIG = ROOT / "lib/data/pb_config.dart"
 MANIFEST = ROOT / "docs/POCKETBASE_MANIFEST.md"
 PATH_REPOSITORY = ROOT / "lib/data/paths/path_repository.dart"
+PATH_SERVICE = ROOT / "lib/data/paths/path_service.dart"
 MIGRATIONS = ROOT / "pb_migrations"
 
 
@@ -18,6 +19,7 @@ def main() -> int:
     config = CONFIG.read_text(encoding="utf-8")
     manifest = MANIFEST.read_text(encoding="utf-8")
     repository = PATH_REPOSITORY.read_text(encoding="utf-8")
+    path_service = PATH_SERVICE.read_text(encoding="utf-8")
     violations: list[str] = []
 
     block_match = re.search(
@@ -45,6 +47,8 @@ def main() -> int:
     for token in ("category_link", "active_revision_link"):
         if token not in repository:
             violations.append(f"PATH_REPOSITORY_RELATION_MISSING {token}")
+    if "deleteOwnedPathRevision" in path_service:
+        violations.append("PATH_REVISION_CLIENT_DELETE_API_FORBIDDEN")
 
     path_migrations = sorted(MIGRATIONS.glob("*_durable_paths.js"))
     if len(path_migrations) != 1:
@@ -61,12 +65,24 @@ def main() -> int:
         ):
             if token not in migration:
                 violations.append(f"DURABLE_PATH_MIGRATION_MISSING {token}")
+        revision_collection = migration.split('name: "path_revisions"', 1)
+        if len(revision_collection) != 2:
+            violations.append("PATH_REVISION_COLLECTION_BLOCK_MISSING")
+        else:
+            revision_rules = revision_collection[1].split(
+                'name: "paths"', 1
+            )[0]
+            if "updateRule: null" not in revision_rules:
+                violations.append("PATH_REVISION_UPDATE_RULE_MUST_BE_CLOSED")
+            if "deleteRule: null" not in revision_rules:
+                violations.append("PATH_REVISION_DELETE_RULE_MUST_BE_CLOSED")
 
     required_manifest_tokens = (
         "`paths`",
         "`path_revisions`",
         "category_link",
         "active_revision_link",
+        "append-only",
         "pb_migrations/",
     )
     for token in required_manifest_tokens:
