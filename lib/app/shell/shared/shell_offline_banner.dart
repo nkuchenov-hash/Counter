@@ -25,8 +25,7 @@ class _ShellTopStatusBarsState extends State<ShellTopStatusBars>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    unawaited(_startHealthSleepSync());
-    unawaited(CloudSleepSyncService.instance.loadStatus());
+    unawaited(_reconcileSleep());
     unawaited(UnfilledTimeGapService.instance.start());
   }
 
@@ -46,11 +45,33 @@ class _ShellTopStatusBarsState extends State<ShellTopStatusBars>
     }
   }
 
+  Future<void> _startCloudSleepSync() async {
+    final service = CloudSleepSyncService.instance;
+    await service.loadStatus();
+    final current = service.state.value;
+    if (!current.configured || !current.enabled) return;
+
+    final lastSync = current.lastSyncUtc;
+    final needsForegroundCatchUp =
+        lastSync == null ||
+        DateTime.now().toUtc().difference(lastSync) >=
+            _foregroundSleepSyncInterval;
+    if (needsForegroundCatchUp) {
+      await service.syncNow();
+    }
+  }
+
+  Future<void> _reconcileSleep() async {
+    await Future.wait<void>([
+      _startHealthSleepSync(),
+      _startCloudSleepSync(),
+    ]);
+  }
+
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      unawaited(_startHealthSleepSync());
-      unawaited(CloudSleepSyncService.instance.loadStatus());
+      unawaited(_reconcileSleep());
     }
   }
 
