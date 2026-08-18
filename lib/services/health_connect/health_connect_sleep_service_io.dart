@@ -144,42 +144,47 @@ class DeviceHealthSleepService {
     required DateTime startUtc,
     required DateTime endUtc,
   }) async {
-    try {
-      if (Platform.isAndroid) {
-        final authorized = await _health.hasPermissions(
-              _metricTypes,
-              permissions: _readPermissions(_metricTypes),
-            ) ??
-            false;
-        if (!authorized) return const <HealthSleepMetricPoint>[];
-      }
-      final raw = await _health.getHealthDataFromTypes(
-        types: _metricTypes,
-        startTime: startUtc.toLocal(),
-        endTime: endUtc.toLocal(),
-      );
-      final points = _health.removeDuplicates(raw);
-      final out = <HealthSleepMetricPoint>[];
-      for (final point in points) {
-        final metric = _metricForType(point.type);
-        final value = point.value;
-        if (metric == null || value is! NumericHealthValue) continue;
-        out.add(
-          HealthSleepMetricPoint(
-            metric: metric,
-            timeUtc: point.dateFrom.toUtc(),
-            value: value.numericValue,
-            unit: point.unit.name,
-            sourceId: point.sourceId.trim(),
-            sourceName: point.sourceName.trim(),
+    final raw = <HealthDataPoint>[];
+    for (final type in _metricTypes) {
+      try {
+        if (Platform.isAndroid) {
+          final authorized = await _health.hasPermissions(
+                <HealthDataType>[type],
+                permissions: const <HealthDataAccess>[HealthDataAccess.READ],
+              ) ??
+              false;
+          if (!authorized) continue;
+        }
+        raw.addAll(
+          await _health.getHealthDataFromTypes(
+            types: <HealthDataType>[type],
+            startTime: startUtc.toLocal(),
+            endTime: endUtc.toLocal(),
           ),
         );
+      } catch (_) {
+        // Each vital is optional and independent from the others.
       }
-      out.sort((a, b) => a.timeUtc.compareTo(b.timeUtc));
-      return out;
-    } catch (_) {
-      return const <HealthSleepMetricPoint>[];
     }
+    final points = _health.removeDuplicates(raw);
+    final out = <HealthSleepMetricPoint>[];
+    for (final point in points) {
+      final metric = _metricForType(point.type);
+      final value = point.value;
+      if (metric == null || value is! NumericHealthValue) continue;
+      out.add(
+        HealthSleepMetricPoint(
+          metric: metric,
+          timeUtc: point.dateFrom.toUtc(),
+          value: value.numericValue,
+          unit: point.unit.name,
+          sourceId: point.sourceId.trim(),
+          sourceName: point.sourceName.trim(),
+        ),
+      );
+    }
+    out.sort((a, b) => a.timeUtc.compareTo(b.timeUtc));
+    return out;
   }
 
   String? _metricForType(HealthDataType type) {
