@@ -28,10 +28,15 @@ class PathRepository {
     for (final row in pathRows) {
       final pathId = (row['path_id'] ?? '').toString().trim();
       final revisionId = (row['active_revision_id'] ?? '').toString().trim();
-      final categoryId = _asInt(row['category_id']);
-      if (pathId.isEmpty || revisionId.isEmpty || categoryId <= 0) continue;
+      final categoryPocketBaseId = (row['category_link'] ?? '').toString().trim();
+      if (pathId.isEmpty ||
+          revisionId.isEmpty ||
+          categoryPocketBaseId.isEmpty) {
+        continue;
+      }
 
-      final category = _database.getCategoryRuleById(categoryId);
+      final category =
+          _database.getCategoryRuleByBackendRowId(categoryPocketBaseId);
       if (category == null || category.isArchived) continue;
 
       final revision = await _database.fetchOwnedPathRevisionRow(
@@ -61,10 +66,12 @@ class PathRepository {
     final pathRow = await _database.fetchOwnedPathRowByBusinessId(pathId);
     if (pathRow == null || pathRow['archived'] == true) return null;
 
-    final categoryId = _asInt(pathRow['category_id']);
+    final categoryPocketBaseId =
+        (pathRow['category_link'] ?? '').toString().trim();
     final revisionId = (pathRow['active_revision_id'] ?? '').toString().trim();
-    if (categoryId <= 0 || revisionId.isEmpty) return null;
-    final category = _database.getCategoryRuleById(categoryId);
+    if (categoryPocketBaseId.isEmpty || revisionId.isEmpty) return null;
+    final category =
+        _database.getCategoryRuleByBackendRowId(categoryPocketBaseId);
     if (category == null || category.isArchived) return null;
 
     final revision = await _database.fetchOwnedPathRevisionRow(
@@ -87,7 +94,8 @@ class PathRepository {
   }) async {
     final cleanGoal = goal.trim();
     final audit = auditPathStructure(goal: cleanGoal, stages: stages);
-    if (!audit.isValid) return null;
+    final categoryPocketBaseId = category.backendRowId?.trim() ?? '';
+    if (!audit.isValid || categoryPocketBaseId.isEmpty) return null;
 
     final pathId = _uuid.v4();
     final revisionId = _uuid.v4();
@@ -104,7 +112,7 @@ class PathRepository {
       );
       final path = await _database.createOwnedPath(
         pathId: pathId,
-        categoryId: category.id,
+        categoryPocketBaseId: categoryPocketBaseId,
         title: category.name,
         activeRevisionId: revisionId,
       );
