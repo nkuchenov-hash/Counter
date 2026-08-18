@@ -1,3 +1,9 @@
+## 2026-08-18 — Source-plan link policy ownership [engineering]
+
+- Moved source-plan suggestion enable/mode/dismissal preferences and auto-link threshold policy from shell into Brain `plan_record_link_helpers.dart`.
+- Brain now prepares/auto-applies source-plan suggestions and owns accepted/dismissed persistence.
+- `shell_task_actions.dart` only hosts the user-facing suggestion prompt and forwards accept/skip/disable actions.
+
 ## 2026-08-18 — Shared STT engine lifecycle [engineering]
 
 - Added `SpeechEngineController` under `shared/voice/recognition` as the owner of SpeechToText initialization, readiness/error state, hard reset and locale diagnostics.
