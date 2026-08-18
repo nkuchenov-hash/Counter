@@ -1,0 +1,79 @@
+name: Temporary repository hygiene finalizer
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    if: github.head_ref == 'cleanup/repo-hygiene-20260818'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: cleanup/repo-hygiene-20260818
+          fetch-depth: 1
+
+      - name: Apply proven-dead cleanup
+        run: |
+          python scripts/manual/_finalize_repo_hygiene.py
+          git diff --check
+
+      - name: Check PowerShell syntax
+        shell: pwsh
+        run: |
+          $errors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path 'installer/windows/build_stt_helper_en.ps1'), [ref]$null, [ref]$errors) | Out-Null
+          if ($errors.Count -gt 0) { $errors | ForEach-Object { Write-Error $_ }; exit 1 }
+          $errors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path 'installer/windows/prepare_stt_payload.ps1'), [ref]$null, [ref]$errors) | Out-Null
+          if ($errors.Count -gt 0) { $errors | ForEach-Object { Write-Error $_ }; exit 1 }
+
+      - name: Repository hygiene preflight
+        run: python scripts/audit/repository_hygiene.py
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.6'
+          channel: stable
+          cache: true
+
+      - name: Analyze compile errors after dead-code removal
+        shell: bash
+        run: |
+          mkdir -p lib/core/env
+          printf '%s\n' 'abstract final class Env {' "  static const String placeholder = '';" '}' > lib/core/env/env.dart
+          flutter pub get
+          flutter analyze --no-fatal-warnings --no-fatal-infos
+          rm -f lib/core/env/env.dart
+
+      - name: Remove temporary audit/finalizer and build final structure map
+        shell: bash
+        run: |
+          git rm -f scripts/manual/_repo_hygiene_audit.py
+          git rm -f scripts/manual/_finalize_repo_hygiene.py
+          git rm -f .github/workflows/tmp-repo-hygiene-audit.yml
+          git rm -f .github/workflows/tmp-repo-hygiene-finalize.yml
+
+          python scripts/manual/generate_app_structure_detailed.py
+          cp docs/APP_STRUCTURE_DETAILED.md /tmp/app_structure_detailed_first.md
+          python scripts/manual/generate_app_structure_detailed.py
+          cmp /tmp/app_structure_detailed_first.md docs/APP_STRUCTURE_DETAILED.md
+
+          python scripts/audit/documentation_parity.py
+          python scripts/audit/repository_hygiene.py
+          pwsh -NoProfile -NonInteractive -File ./scripts/audit/architecture_guard.ps1 -Strict
+          git diff --check
+
+      - name: Commit verified cleanup
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'Remove dead repository baggage'
+          git push origin HEAD:cleanup/repo-hygiene-20260818
