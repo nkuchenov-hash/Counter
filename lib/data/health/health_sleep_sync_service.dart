@@ -552,6 +552,7 @@ class HealthSleepSyncService {
       externalId: session.externalId,
       sourceName: sourceName,
       stages: session.stages.map((stage) => stage.toJson()).toList(growable: false),
+      metrics: session.metrics.map((metric) => metric.toJson()).toList(growable: false),
       recoveredFromSegments: session.recoveredFromStages,
     );
 
