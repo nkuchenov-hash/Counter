@@ -23,6 +23,7 @@ jobs:
           python scripts/manual/_finalize_durable_paths.py
           python scripts/manual/_patch_structure_evidence_for_paths.py
           python scripts/manual/_durable_paths_followup.py
+          python scripts/manual/_cleanup_temporary_workflows.py
           git diff --check
 
       - name: Check migration syntax and schema contract
@@ -59,6 +60,7 @@ jobs:
           git rm -f scripts/manual/_finalize_durable_paths.py
           git rm -f scripts/manual/_patch_structure_evidence_for_paths.py
           git rm -f scripts/manual/_durable_paths_followup.py
+          git rm -f scripts/manual/_cleanup_temporary_workflows.py
           git rm -f .github/workflows/tmp-durable-paths-finalizer.yml
 
           python scripts/manual/generate_app_structure_detailed.py
