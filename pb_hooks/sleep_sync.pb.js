@@ -32,6 +32,7 @@ routerAdd("DELETE", "/api/sleep-sync/connection", function(e) {
 
 // Lightweight watchdog: cron checks every minute, while the runtime only calls
 // Google Fit for unfinished backfill, the configured daily run, or a 30-minute catch-up.
+// This is the server-side fallback when a device has not yet run Health Connect sync.
 cronAdd("lifeos_google_fit_sleep_sync", "* * * * *", function() {
     var sync = require(__hooks + "/google_fit_sleep_runtime.js");
     return sync.cron($app);
