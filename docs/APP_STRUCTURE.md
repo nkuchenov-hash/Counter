@@ -110,7 +110,7 @@ Product sections own section-specific code later; this phase only separates shel
 | `app/shell/shared/shell_chrome.dart` | Responsive shell scaffold/chrome: destination pages, app bar, form-factor frame, FAB, bottom navigation, desktop voice shortcuts *(part)* |
 | `app/shell/shared/shell_edit_hosts.dart` | Timeline/plan edit modal hosts *(part)* |
 | `app/shell/shared/shell_more_menu.dart` | More bottom sheet and shell navigation actions only; Paths opens shell destination 6 *(part)* |
-| `app/shell/shared/shell_voice_routing.dart` | Voice command/STT routing and submit flows *(part)* |
+| `app/shell/shared/shell_voice_routing.dart` | Voice command routing, submit flows and voice-sheet hosting; SpeechToText engine lifecycle belongs to shared recognition *(part)* |
 | `app/shell/shared/shell_voice_integration.dart` | Desktop tray/global-hotkey attachment and reattachment at the shell boundary *(part)* |
 | `app/shell/shared/shell_offline_banner.dart` | Presentation-only top status bars; no Health/Cloud ingestion side effects |
 | `app/shell/shared/shell_shared.dart` | Shell-local date helpers |
@@ -388,6 +388,7 @@ Must not import `features/`, `data/voice/`, `database_service.dart`, or `app/she
 | File | Role |
 | :--- | :--- |
 | `speech_engine_handle.dart` | Speech-to-text engine holder |
+| `speech_engine_controller.dart` | Shared SpeechToText instance lifecycle: initialization, readiness/error state, hard reset and locale diagnostics |
 | `speech_listen_locale.dart` | STT locale resolution |
 | `desktop_voice_recognizer.dart` | Recognizer interface + result types |
 | `desktop_voice_recognizer_factory.dart` | Platform-conditional recognizer factory |

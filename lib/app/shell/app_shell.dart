@@ -23,7 +23,7 @@ import 'package:counter/shared/voice/platforms/desktop/desktop_voice_hotkey.dart
 import 'package:counter/shared/voice/platforms/desktop/desktop_voice_hotkey_markers.dart';
 import 'package:counter/shared/voice/platforms/desktop/desktop_voice_settings.dart';
 import 'package:counter/shared/voice/platforms/desktop/desktop_voice_smoke_bridge.dart';
-import 'package:counter/shared/voice/recognition/speech_engine_handle.dart';
+import 'package:counter/shared/voice/recognition/speech_engine_controller.dart';
 import 'package:counter/core/shell_layout_state.dart';
 import 'package:counter/core/widgets/global_app_header.dart';
 import 'package:counter/core/widgets/lazy_indexed_stack.dart';
@@ -60,7 +60,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 part 'shared/shell_core.dart';
 part 'shared/shell_task_actions.dart';
@@ -114,15 +113,8 @@ mixin ShellDashboardBase on State<LifeOSDashboard> {
   StreamSubscription<List<CategoryRule>>? categoryRulesSub;
 
   final ShellLayoutController shellLayout = ShellLayoutController();
-
-  stt.SpeechToText? speech;
-  SpeechEngineHandle? speechHandle;
-  bool speechReady = false;
-
-  /// Last engine init failure (shown with [speech_unavailable] snackbar detail).
-  String? speechLastInitError;
+  final SpeechEngineController speechEngine = SpeechEngineController();
   bool isVoiceListening = false;
-  void Function(String)? speechStatusCallback;
 
   /// Tracks device-local calendar day so an open session can follow midnight without restart.
   Timer? deviceLocalMidnightWatchTimer;
