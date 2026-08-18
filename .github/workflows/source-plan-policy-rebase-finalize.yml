@@ -1,0 +1,34 @@
+name: Source-plan policy rebase finalize
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    if: github.head_ref == 'refactor/source-plan-link-policy-20260818'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: refactor/source-plan-link-policy-20260818
+      - name: Restore docs parity
+        shell: bash
+        run: |
+          python scripts/manual/_finalize_source_plan_policy_rebase.py
+          git rm scripts/manual/_finalize_source_plan_policy_rebase.py
+          git diff --check
+      - name: Architecture
+        shell: pwsh
+        run: ./scripts/audit/architecture_guard.ps1 -Strict
+      - name: Commit parity
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'Restore source-plan policy ownership after rebase'
+          git push origin HEAD:refactor/source-plan-link-policy-20260818
