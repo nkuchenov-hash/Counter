@@ -21,6 +21,7 @@ jobs:
         shell: bash
         run: |
           python scripts/manual/_finalize_architecture_doc_parity.py
+          python scripts/manual/_finalize_architecture_doc_parity_extra.py
           git diff --check
       - name: Generate detailed structure guide
         shell: bash
@@ -52,6 +53,7 @@ jobs:
         run: |
           rm -f lib/core/env/env.dart
           git rm -f scripts/manual/_finalize_architecture_doc_parity.py
+          git rm -f scripts/manual/_finalize_architecture_doc_parity_extra.py
           git rm -f .github/workflows/final-architecture-doc-audit.yml
           git rm -f .github/workflows/final-architecture-doc-finalize.yml
           git diff --check
