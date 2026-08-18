@@ -1,6 +1,6 @@
 name: Android release APK
 
-# Manual artifact trigger: 2026-08-10 category tree + canonical edit sheet.
+# Temporary trigger: verify 2026-08-18 sleep Timeline reconciliation.
 on:
   workflow_dispatch:
   push:
