@@ -1,3 +1,10 @@
+## 2026-08-18 — Shell generic voice-input boundary [engineering]
+
+- Split generic FAB/`VoiceInputSheet` submission into `shell_voice_input.dart`.
+- `shell_voice_routing.dart` now stays focused on desktop hotkey/overlay command routing and confirmation.
+- Shared failed record-start retry moved to `ShellTaskActions`, so desktop and generic voice siblings do not depend on each other.
+- Timeline/Planning/Backlog persistence and retry semantics are unchanged.
+
 ## 2026-08-18 — Planning startup ownership [engineering]
 
 - Added `PlannerStartupService` under `data/plans`; shell startup now delegates Planning baseline work there.

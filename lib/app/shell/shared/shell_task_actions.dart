@@ -60,6 +60,65 @@ mixin ShellTaskActions on ShellCoreLogic {
     }
   }
 
+  Future<void> retryVoiceWriteNewTask(
+    String title,
+    int? cid,
+    String pathTag, {
+    String? sourcePlanPocketRecordId,
+  }) async {
+    try {
+      final now = DatabaseService.getPlanetaryNow();
+      final serverId = await DatabaseService.instance.writeRecord(
+        timelineVoiceDateKey,
+        title,
+        categoryId: cid,
+        explicitStartTime: now,
+        sourcePlanPocketRecordId: sourcePlanPocketRecordId,
+      );
+      if (!mounted) return;
+      if (serverId == null || serverId.trim().isEmpty) {
+        showSyncFailedSnackBar(
+          onRetry: () => unawaited(
+            retryVoiceWriteNewTask(
+              title,
+              cid,
+              pathTag,
+              sourcePlanPocketRecordId: sourcePlanPocketRecordId,
+            ),
+          ),
+        );
+        return;
+      }
+      setState(() {
+        tasks.add(
+          Task(
+            title: title,
+            startTime: now,
+            endTime: null,
+            tags: [pathTag],
+            isActive: true,
+          ),
+        );
+        tasks.sort((a, b) => a.startTime.compareTo(b.startTime));
+      });
+      await saveTasks();
+    } catch (e) {
+      debugPrint('UI ERROR: $e');
+      if (mounted) {
+        showSyncFailedSnackBar(
+          onRetry: () => unawaited(
+            retryVoiceWriteNewTask(
+              title,
+              cid,
+              pathTag,
+              sourcePlanPocketRecordId: sourcePlanPocketRecordId,
+            ),
+          ),
+        );
+      }
+    }
+  }
+
   Future<void> startTaskFromInput() async {
     final title = titleController.text.trim();
     if (title.isEmpty) return;
