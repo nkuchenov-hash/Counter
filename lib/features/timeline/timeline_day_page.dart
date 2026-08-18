@@ -9,6 +9,7 @@ import 'package:counter/features/shared/shared_widgets.dart';
 import 'package:counter/features/stats/stats_view.dart';
 import 'package:counter/features/timeline/timeline_helpers.dart';
 import 'package:counter/features/timeline/timeline_record_card.dart';
+import 'package:counter/features/timeline/timeline_sleep_details.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
 
@@ -52,16 +53,30 @@ class TimelineDayCardListState extends State<TimelineDayCardList>
   bool get wantKeepAlive => true;
 
   List<Map<String, dynamic>> _recordMaps() {
+    final db = DatabaseService.instance;
     final live = widget.liveRecordMaps;
-    if (live != null) {
-      return live;
+    final startDayRecords = live ??
+        (widget.isActive
+            ? db.peekTimelineRecordsForDate(widget.date)
+            : db.timelineBodyEntryForDate(widget.date).records);
+
+    // The canonical Timeline index is start-time based for ordinary activity.
+    // Sleep is a cross-midnight interval, so project it onto the wake date
+    // without mutating its real timestamps. Two prior start-days safely cover
+    // normal overnight sleep plus long recovery sessions.
+    final priorStartDayRecords = <Map<String, dynamic>>[];
+    for (var daysBack = 1; daysBack <= 2; daysBack++) {
+      priorStartDayRecords.addAll(
+        db.peekTimelineRecordsForDate(
+          widget.date.subtract(Duration(days: daysBack)),
+        ),
+      );
     }
-    if (widget.isActive) {
-      return DatabaseService.instance.peekTimelineRecordsForDate(widget.date);
-    }
-    return DatabaseService.instance
-        .timelineBodyEntryForDate(widget.date)
-        .records;
+    return timelineProjectRecordsToWakeDay(
+      targetDateKey: widget.dateKey,
+      startDayRecords: startDayRecords,
+      priorStartDayRecords: priorStartDayRecords,
+    );
   }
 
   @override
@@ -108,7 +123,7 @@ class TimelineDayCardListState extends State<TimelineDayCardList>
   }
 }
 
-/// Virtualized timeline record list вЂ” no [StreamBuilder] over full list; active overlay optional.
+/// Virtualized timeline record list — no [StreamBuilder] over full list; active overlay optional.
 class TimelineLazyRecordList extends StatefulWidget {
   const TimelineLazyRecordList({
     required this.recordMaps,
