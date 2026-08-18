@@ -112,7 +112,7 @@ Product sections own section-specific code later; this phase only separates shel
 | `app/shell/shared/shell_more_menu.dart` | More bottom sheet and shell navigation actions only; Paths opens shell destination 6 *(part)* |
 | `app/shell/shared/shell_voice_routing.dart` | Voice command/STT routing and submit flows *(part)* |
 | `app/shell/shared/shell_voice_integration.dart` | Desktop tray/global-hotkey attachment and reattachment at the shell boundary *(part)* |
-| `app/shell/shared/shell_offline_banner.dart` | Offline sync banner column slot |
+| `app/shell/shared/shell_offline_banner.dart` | Presentation-only top status bars; no Health/Cloud ingestion side effects |
 | `app/shell/shared/shell_shared.dart` | Shell-local date helpers |
 | `app/shell/shared/shell_form_factor.dart` | Phone / tablet / desktop form-factor resolve from width |
 | `app/shell/shared/profile_hydration_status_bar.dart` | Compatibility re-export → `features/profile/profile_hydration_status_bar.dart`; shell does not own Profile hydration UI |
@@ -149,6 +149,7 @@ Compatibility re-exports (remove when callers migrate): root `lib/app_shell.dart
 | `records/unfilled_time_gap_service.dart` | Gap settings/state, periodic/resume refresh, fill-gap action and notification eligibility orchestration |
 | `health/health_sleep_policy.dart` | Pure imported-sleep matching and overlap conflict policy |
 | `health/health_sleep_sync_service.dart` | Device-health sleep sync state/scheduling/import orchestration across supported source adapters |
+| `health/sleep_foreground_reconcile_service.dart` | App-lifecycle sleep ingestion coordinator: device-first then cloud reconciliation on startup/resume; UI does not own sync lifecycle |
 | `health/cloud_sleep_sync_service.dart` | Authenticated server-side sleep sync status/connect/sync client for cloud sources |
 | `plan_service.dart` | Plans/lists coordinator: cache fetch/realtime and CRUD entry points *(part)* |
 | `plans/plan_projection_types.dart` | Time Mode projected DTO, UTC/profile-wall conversion, timezone reproject lifecycle, projection cache signature, wall-day visibility/filtering, projection diagnostics *(part)* |
