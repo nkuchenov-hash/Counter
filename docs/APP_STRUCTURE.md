@@ -115,7 +115,6 @@ Product sections own section-specific code later; this phase only separates shel
 | `app/shell/shared/shell_top_status_bars.dart` | Presentation-only top status bars for Profile hydration and unfilled-time notices |
 | `app/shell/shared/shell_shared.dart` | Shell-local date helpers |
 | `app/shell/shared/shell_form_factor.dart` | Phone / tablet / desktop form-factor resolve from width |
-| `app/shell/shared/profile_hydration_status_bar.dart` | Compatibility re-export → `features/profile/profile_hydration_status_bar.dart`; shell does not own Profile hydration UI |
 | `features/profile/profile_hydration_status_bar.dart` | Profile-owned hydration error/retry status UI |
 | `app/shell/shared/settings_page.dart` | Compatibility re-export → `features/profile/settings/settings_page.dart`; shell does not own Settings UI |
 | `features/profile/settings/settings_page.dart` | Profile-owned language/timezone Settings page; persists through Profile/DatabaseService APIs |

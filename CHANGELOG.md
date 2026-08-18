@@ -1,3 +1,9 @@
+## 2026-08-18 — Profile hydration alias cleanup [engineering]
+
+- `ShellTopStatusBars` now imports the Profile-owned hydration UI directly.
+- Removed obsolete shell/shared and features/shared compatibility re-exports for `ProfileHydrationStatusBar`.
+- No UI or hydration behavior changes.
+
 ## 2026-08-18 — Shell tab/edit-host dependency graph [engineering]
 
 - Declared `ShellTabHost`'s dependency on `ShellEditHosts` explicitly.
