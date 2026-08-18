@@ -26,6 +26,9 @@ jobs:
       - name: Run strict architecture guard
         run: pwsh -NoProfile -NonInteractive -File ./scripts/audit/architecture_guard.ps1 -Strict
 
+      - name: Check governing documentation parity
+        run: python scripts/audit/documentation_parity.py
+
       - name: Check for whitespace errors
         run: |
           if [ "${{ github.event_name }}" = "pull_request" ]; then
