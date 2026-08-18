@@ -1,0 +1,19 @@
+name: Temporary repository hygiene audit
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    if: github.head_ref == 'cleanup/repo-hygiene-20260818'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Audit tracked watchlist and large files
+        run: python scripts/manual/_repo_hygiene_audit.py
