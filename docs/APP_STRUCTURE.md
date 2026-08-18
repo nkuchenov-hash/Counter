@@ -104,13 +104,14 @@ Product sections own section-specific code later; this phase only separates shel
 | :--- | :--- |
 | `app/shell/app_shell.dart` | `LifeOSDashboard` composition root + shared shell state contract; lifecycle and responsive chrome are delegated to focused shell parts |
 | `app/shell/shared/shell_core.dart` | Core shell date/task-loading state, selected-day coordination and sync-failure UI *(part)* |
-| `app/shell/shared/shell_task_actions.dart` | Shell task/record action orchestration and source-plan suggestion prompt presentation; preference/matching/link policy lives in Brain *(part)* |
+| `app/shell/shared/shell_task_actions.dart` | Shell task/record action orchestration, shared record-start retry and source-plan suggestion prompt presentation; preference/matching/link policy lives in Brain *(part)* |
 | `app/shell/shared/shell_tab_host.dart` | Timeline/Planning/Calendar/Lists tab composition; depends explicitly on `ShellEditHosts` instead of concrete dashboard casts *(part)* |
 | `app/shell/shared/shell_lifecycle.dart` | Shell startup/dispose wiring; delegates Planning baseline to `PlannerStartupService` and does not import Paths compatibility *(part)* |
 | `app/shell/shared/shell_chrome.dart` | Responsive shell scaffold/chrome: destination pages, app bar, form-factor frame, FAB, bottom navigation, desktop voice shortcuts *(part)* |
 | `app/shell/shared/shell_edit_hosts.dart` | Timeline/plan edit modal hosts *(part)* |
 | `app/shell/shared/shell_more_menu.dart` | More bottom sheet and shell navigation actions only; Paths opens shell destination 6 *(part)* |
-| `app/shell/shared/shell_voice_routing.dart` | Voice command routing, submit flows and voice-sheet hosting; SpeechToText engine lifecycle belongs to shared recognition *(part)* |
+| `app/shell/shared/shell_voice_routing.dart` | Desktop voice command, hotkey/overlay submission and confirmation routing; generic FAB voice input is separate *(part)* |
+| `app/shell/shared/shell_voice_input.dart` | Generic FAB / VoiceInputSheet orchestration for Timeline record, Planning task and Backlog task submission *(part)* |
 | `app/shell/shared/shell_voice_integration.dart` | Desktop tray/global-hotkey attachment and reattachment at the shell boundary *(part)* |
 | `app/shell/shared/shell_top_status_bars.dart` | Presentation-only top status bars for Profile hydration and unfilled-time notices |
 | `app/shell/shared/shell_shared.dart` | Shell-local date helpers |
