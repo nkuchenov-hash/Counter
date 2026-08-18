@@ -24,6 +24,7 @@ jobs:
           python scripts/manual/_harden_final_architecture_parity.py
           python scripts/manual/_finalize_architecture_doc_parity.py
           python scripts/manual/_finalize_architecture_doc_parity_extra.py
+          python scripts/manual/_finalize_architecture_doc_parity_last.py
           git diff --check
 
       - name: Preliminary governing parity
@@ -56,6 +57,7 @@ jobs:
           git rm -f scripts/manual/_harden_final_architecture_parity.py
           git rm -f scripts/manual/_finalize_architecture_doc_parity.py
           git rm -f scripts/manual/_finalize_architecture_doc_parity_extra.py
+          git rm -f scripts/manual/_finalize_architecture_doc_parity_last.py
           git rm -f .github/workflows/final-architecture-doc-audit.yml
           git rm -f .github/workflows/final-architecture-doc-finalize.yml
 
