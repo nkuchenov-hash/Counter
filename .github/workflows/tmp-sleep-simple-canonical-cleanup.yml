@@ -1,0 +1,160 @@
+name: One-time simple canonical sleep cleanup
+
+on:
+  push:
+    paths:
+      - '.github/workflows/tmp-sleep-simple-canonical-cleanup.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Remove sleep detail overengineering
+        run: |
+          set -euo pipefail
+          BASE=3b1b613384cf9664e730b5f10f54fe9e4cf024cf
+
+          for path in \
+            android/app/src/main/AndroidManifest.xml \
+            lib/data/health/health_sleep_sync_service.dart \
+            lib/services/health_connect/health_connect_sleep_models.dart \
+            lib/services/health_connect/health_connect_sleep_service_io.dart \
+            lib/features/timeline/timeline_record_card.dart \
+            pb_hooks/google_fit_sleep_recovery.js \
+            pb_hooks/google_fit_sleep_runtime.js
+          do
+            git show "$BASE:$path" > "$path"
+          done
+
+          rm -f lib/data/health/sleep_record_metadata.dart
+          rm -f pb_migrations/1787044200_sleep_stage_details.js
+          rm -f pb_migrations/1787045700_sleep_metrics_and_full_backfill.js
+
+          cat > lib/features/timeline/timeline_sleep_details.dart <<'DART'
+          import 'package:counter/features/timeline/timeline_helpers.dart';
+
+          bool timelineRecordIsSleep(Map<String, dynamic> data) {
+            final kind = (data['external_kind'] ?? '').toString().trim().toLowerCase();
+            final source = (data['sleep_source'] ?? '').toString().trim();
+            final title = (data['title'] ?? '').toString().trim().toLowerCase();
+            return kind == 'sleep' || source.isNotEmpty || title == 'sleep' || title == 'сон';
+          }
+
+          String? timelineSleepWakeDateKey(Map<String, dynamic> data) {
+            if (!timelineRecordIsSleep(data)) return null;
+            final raw = data['end_time'] ?? data['endTime'];
+            final endUtc = raw is DateTime
+                ? raw.toUtc()
+                : DateTime.tryParse(raw?.toString() ?? '')?.toUtc();
+            if (endUtc == null) return null;
+            final wall = timelineUtcToDisplay(endUtc);
+            return '${wall.year}-${wall.month.toString().padLeft(2, '0')}-${wall.day.toString().padLeft(2, '0')}';
+          }
+
+          List<Map<String, dynamic>> timelineProjectRecordsToWakeDay({
+            required String targetDateKey,
+            required Iterable<Map<String, dynamic>> startDayRecords,
+            required Iterable<Map<String, dynamic>> priorStartDayRecords,
+          }) {
+            final out = <Map<String, dynamic>>[];
+            final seen = <String>{};
+
+            void add(Map<String, dynamic> row) {
+              final businessId = (row['record_id'] ?? '').toString().trim();
+              final systemId = (row['id'] ?? row['_pb_record_id'] ?? '').toString().trim();
+              final key = businessId.isNotEmpty
+                  ? businessId
+                  : systemId.isNotEmpty
+                      ? systemId
+                      : '${row['title']}|${row['start_time']}|${row['end_time']}';
+              if (seen.add(key)) out.add(row);
+            }
+
+            for (final row in startDayRecords) {
+              if (!timelineRecordIsSleep(row) ||
+                  timelineSleepWakeDateKey(row) == targetDateKey) {
+                add(row);
+              }
+            }
+            for (final row in priorStartDayRecords) {
+              if (timelineRecordIsSleep(row) &&
+                  timelineSleepWakeDateKey(row) == targetDateKey) {
+                add(row);
+              }
+            }
+            return out;
+          }
+          DART
+
+          # Google Fit and device Health Connect are ingestion adapters only.
+          # Whichever runs first, reuse an existing canonical Sleep row by overlap.
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('pb_hooks/google_fit_sleep_runtime.js')
+          text = path.read_text(encoding='utf-8')
+          marker = '''    try {\n        return app.findFirstRecordByFilter(\n            "records",\n            "user_id = {:uid} && external_source = 'google_health' && start_time = {:start} && end_time = {:end}",\n            { uid: userId, start: session.start.toISOString(), end: session.end.toISOString() }\n        );\n    } catch (_) {}\n    return null;\n}'''
+          replacement = '''    try {\n        return app.findFirstRecordByFilter(\n            "records",\n            "user_id = {:uid} && external_source = 'google_health' && start_time = {:start} && end_time = {:end}",\n            { uid: userId, start: session.start.toISOString(), end: session.end.toISOString() }\n        );\n    } catch (_) {}\n\n    // Canonical fallback across ingestion adapters. Health Connect, Google Fit\n    // or a future adapter may have created the same Sleep interval first.\n    // Reuse that row so every client sees one PocketBase record.\n    try {\n        var allSleep = app.findRecordsByFilter(\n            "records",\n            "user_id = {:uid} && (title = 'Sleep' || title = 'Сон') && start_time < {:end} && end_time > {:start}",\n            "",\n            20,\n            0,\n            { uid: userId, start: session.start.toISOString(), end: session.end.toISOString() }\n        );\n        var bestAny = null;\n        var bestAnyRatio = 0;\n        var sessionDurationAny = session.end.getTime() - session.start.getTime();\n        for (var a = 0; a < allSleep.length; a++) {\n            var as = __fitDate(allSleep[a].get("start_time"));\n            var ae = __fitDate(allSleep[a].get("end_time"));\n            if (!as || !ae || ae.getTime() <= as.getTime()) continue;\n            var anyOverlap = __fitOverlapMs(session.start, session.end, as, ae);\n            var anyShorter = Math.min(sessionDurationAny, ae.getTime() - as.getTime());\n            var anyRatio = anyShorter > 0 ? anyOverlap / anyShorter : 0;\n            if (anyRatio >= 0.80 && anyRatio > bestAnyRatio) {\n                bestAny = allSleep[a];\n                bestAnyRatio = anyRatio;\n            }\n        }\n        if (bestAny) return bestAny;\n    } catch (_) {}\n    return null;\n}'''
+          if marker not in text:
+              raise SystemExit('Google Fit canonical dedupe marker not found')
+          path.write_text(text.replace(marker, replacement, 1), encoding='utf-8')
+          PY
+
+          cat > pb_migrations/1787049000_remove_sleep_detail_fields.js <<'JS'
+          /// <reference path="../pb_data/types.d.ts" />
+
+          migrate(function(app) {
+              var records = app.findCollectionByNameOrId("records");
+              var names = [
+                  "sleep_stages",
+                  "sleep_metrics",
+                  "sleep_source_name",
+                  "sleep_recovered_from_segments",
+                  "sleep_segment_points",
+                  "sleep_metric_points"
+              ];
+              var changed = false;
+              for (var i = 0; i < names.length; i++) {
+                  if (records.fields.fieldNames().indexOf(names[i]) >= 0) {
+                      records.fields.removeByName(names[i]);
+                      changed = true;
+                  }
+              }
+              if (changed) app.save(records);
+          }, function(app) {});
+          JS
+
+      - name: Validate touched code
+        run: |
+          node --check pb_hooks/google_fit_sleep_runtime.js
+          node --check pb_hooks/google_fit_sleep_recovery.js
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.6'
+          channel: stable
+
+      - name: Analyze Flutter
+        run: |
+          mkdir -p lib/core/env
+          printf '%s\n' 'abstract final class Env {' '  static const String placeholder = '\'''\'';' '}' > lib/core/env/env.dart
+          flutter pub get
+          flutter analyze --no-fatal-infos --no-fatal-warnings
+
+      - name: Publish cleanup
+        run: |
+          rm .github/workflows/tmp-sleep-simple-canonical-cleanup.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --check
+          git commit -m "Keep sleep simple and canonical across clients"
+          git pull --rebase origin main
+          git push origin HEAD:main
