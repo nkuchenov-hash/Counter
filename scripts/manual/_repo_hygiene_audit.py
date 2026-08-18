@@ -35,8 +35,7 @@ def resolve_dart_edge(source: str, uri: str) -> str | None:
         return "lib/" + uri.removeprefix("package:counter/")
     if uri.startswith("package:"):
         return None
-    parent = PurePosixPath(source).parent
-    return str(parent.joinpath(uri))
+    return str(PurePosixPath(source).parent.joinpath(uri))
 
 
 files = tracked()
@@ -61,8 +60,7 @@ print("=== TRACKED WATCHLIST EXACT DART INCOMING ===")
 for target, reason in WATCHLIST_PATHS.items():
     if target not in tracked_set:
         continue
-    target_path = ROOT / target
-    size = target_path.stat().st_size
+    size = (ROOT / target).stat().st_size
     exact_incoming = sorted(set(incoming.get(target, [])))
     refs: list[str] = []
     needle_full = target.replace("\\", "/")
@@ -79,20 +77,14 @@ for target, reason in WATCHLIST_PATHS.items():
             continue
         if needle_full in text or needle_pkg in text:
             refs.append(p)
-    print(json.dumps({
-        "path": target,
-        "size": size,
-        "reason": reason,
-        "dart_incoming": exact_incoming,
-        "literal_refs": refs,
-    }, ensure_ascii=False))
+    print(json.dumps({"path": target, "size": size, "reason": reason,
+                      "dart_incoming": exact_incoming, "literal_refs": refs}, ensure_ascii=False))
 
 print("=== LARGE TRACKED FILES >= 50 KB ===")
 large: list[tuple[int, str]] = []
 for p in files:
-    path = ROOT / p
     try:
-        size = path.stat().st_size
+        size = (ROOT / p).stat().st_size
     except OSError:
         continue
     if size >= 50_000:
@@ -100,9 +92,9 @@ for p in files:
 for size, p in sorted(large, reverse=True):
     print(json.dumps({"path": p, "size": size}, ensure_ascii=False))
 
-print("=== LARGE BINARIES >= 1 MB WITH TEXT REFS ===")
+print("=== LARGE BINARIES >= 500 KB WITH TEXT REFS ===")
 for size, p in sorted(large, reverse=True):
-    if size < 1_000_000 or readable_text(ROOT / p) is not None:
+    if size < 500_000 or readable_text(ROOT / p) is not None:
         continue
     refs: list[str] = []
     base = Path(p).name
