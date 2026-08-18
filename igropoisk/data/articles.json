@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-18T08:42:21.604Z",
+  "updatedAt": "2026-08-18T09:04:03.909Z",
   "count": 495,
   "sources": [
     "IGN",
@@ -14,6 +14,15 @@
     "Игромания"
   ],
   "articles": [
+    {
+      "source": "Eurogamer",
+      "language": "en",
+      "title": "\"I'm pretty sure I mean it\" - Legendary game developer Warren Spector announces retirement",
+      "normalizedTitle": "i m pretty sure i mean it legendary game developer warren spector announces retirement",
+      "url": "https://www.eurogamer.net/warren-spector-announces-retirement",
+      "summary": "Warren Spector, the legendary game developer known for being a key part in the development of the Deus Ex series as well as his role in Epic Mickey, Ultima, and System Shock , has announced his retirement. Read more",
+      "publishedAt": "Tue, 18 Aug 2026 08:58:05 +0000"
+    },
     {
       "source": "Eurogamer",
       "language": "en",
@@ -1007,10 +1016,19 @@
     {
       "source": "GamesRadar+",
       "language": "en",
-      "title": "Mortal Shell 2 map and how to reveal it",
-      "normalizedTitle": "mortal shell 2 map and how to reveal it",
-      "url": "https://www.gamesradar.com/games/rpg/mortal-shell-2-map/",
-      "summary": "Revealing the Mortal Shell 2 Map requires speaking to an old friend at various locations",
+      "title": "How to unlock Mortal Shell 2 fast travel",
+      "normalizedTitle": "how to unlock mortal shell 2 fast travel",
+      "url": "https://www.gamesradar.com/games/rpg/mortal-shell-2-fast-travel/",
+      "summary": "You'll unlock Mortal Shell 2 fast travel by meeting a very reasonable requirement, allowing you to travel between beacons",
+      "publishedAt": "Mon, 17 Aug 2026 13:00:00 +0000"
+    },
+    {
+      "source": "GamesRadar+",
+      "language": "en",
+      "title": "Who is Franz in Mortal Shell 2, and where can you find him?",
+      "normalizedTitle": "who is franz in mortal shell 2 and where can you find him",
+      "url": "https://www.gamesradar.com/games/rpg/mortal-shell-2-franz-tarforge/",
+      "summary": "You'll need to find Franz in Mortal Shell 2 when you pick up certain items that require his specific knowledge",
       "publishedAt": "Mon, 17 Aug 2026 13:00:00 +0000"
     },
     {
@@ -1025,19 +1043,10 @@
     {
       "source": "GamesRadar+",
       "language": "en",
-      "title": "How to unlock Mortal Shell 2 fast travel",
-      "normalizedTitle": "how to unlock mortal shell 2 fast travel",
-      "url": "https://www.gamesradar.com/games/rpg/mortal-shell-2-fast-travel/",
-      "summary": "You'll unlock Mortal Shell 2 fast travel by meeting a very reasonable requirement, allowing you to travel between beacons",
-      "publishedAt": "Mon, 17 Aug 2026 13:00:00 +0000"
-    },
-    {
-      "source": "GamesRadar+",
-      "language": "en",
-      "title": "Who is Franz in Mortal Shell 2, and where can you find him?",
-      "normalizedTitle": "who is franz in mortal shell 2 and where can you find him",
-      "url": "https://www.gamesradar.com/games/rpg/mortal-shell-2-franz-tarforge/",
-      "summary": "You'll need to find Franz in Mortal Shell 2 when you pick up certain items that require his specific knowledge",
+      "title": "Mortal Shell 2 map and how to reveal it",
+      "normalizedTitle": "mortal shell 2 map and how to reveal it",
+      "url": "https://www.gamesradar.com/games/rpg/mortal-shell-2-map/",
+      "summary": "Revealing the Mortal Shell 2 Map requires speaking to an old friend at various locations",
       "publishedAt": "Mon, 17 Aug 2026 13:00:00 +0000"
     },
     {
@@ -1394,19 +1403,19 @@
     {
       "source": "PC Gamer",
       "language": "en",
-      "title": "I played the economic simulator that could 'make a convert out of Karl Marx himself' to see if it could convert me",
-      "normalizedTitle": "i played the economic simulator that could make a convert out of karl marx himself to see if it could convert me",
-      "url": "https://www.pcgamer.com/games/sim/i-played-the-economic-simulator-that-could-make-a-convert-out-of-karl-marx-himself-to-see-if-it-could-convert-me/",
-      "summary": "Though I'm not Karl Marx, just in case you're confused.",
+      "title": "Marvel Tōkon's simple but effective combo trials are an elegant tutorial solution that I wish more fighting games had",
+      "normalizedTitle": "marvel tōkon s simple but effective combo trials are an elegant tutorial solution that i wish more fighting games had",
+      "url": "https://www.pcgamer.com/games/fighting/marvel-tokons-simple-but-effective-combo-trials-are-an-elegant-tutorial-solution-that-i-wish-more-fighting-games-had/",
+      "summary": "Make me use my noggin, please.",
       "publishedAt": "Sun, 16 Aug 2026 15:00:00 +0000"
     },
     {
       "source": "PC Gamer",
       "language": "en",
-      "title": "Marvel Tōkon's simple but effective combo trials are an elegant tutorial solution that I wish more fighting games had",
-      "normalizedTitle": "marvel tōkon s simple but effective combo trials are an elegant tutorial solution that i wish more fighting games had",
-      "url": "https://www.pcgamer.com/games/fighting/marvel-tokons-simple-but-effective-combo-trials-are-an-elegant-tutorial-solution-that-i-wish-more-fighting-games-had/",
-      "summary": "Make me use my noggin, please.",
+      "title": "I played the economic simulator that could 'make a convert out of Karl Marx himself' to see if it could convert me",
+      "normalizedTitle": "i played the economic simulator that could make a convert out of karl marx himself to see if it could convert me",
+      "url": "https://www.pcgamer.com/games/sim/i-played-the-economic-simulator-that-could-make-a-convert-out-of-karl-marx-himself-to-see-if-it-could-convert-me/",
+      "summary": "Though I'm not Karl Marx, just in case you're confused.",
       "publishedAt": "Sun, 16 Aug 2026 15:00:00 +0000"
     },
     {
@@ -3145,15 +3154,6 @@
       "url": "https://www.eurogamer.net/strauss-zelnick-take-two-streaming-gta-6",
       "summary": "In Take-Two's latest financial report, CEO Strauss Zelnick makes some bold statements about the future of the games industry. As the industry reels from Sony's controversial decision to stop manufacturing physical disc-based games ,and to pivot to an 'all-digital future', Zelnick reckons we won't only embrace digital games in the future but stream our games, too. Read more",
       "publishedAt": "Fri, 07 Aug 2026 14:35:00 +0000"
-    },
-    {
-      "source": "Eurogamer",
-      "language": "en",
-      "title": "As GTA 6 publisher Take-Two revises its 2027 net bookings up to $8.2bn, Strauss Zelnick confirms its sales are \"well over 90% digital\"",
-      "normalizedTitle": "as gta 6 publisher take two revises its 2027 net bookings up to 8 2bn strauss zelnick confirms its sales are well over 90 digital",
-      "url": "https://www.eurogamer.net/take-two-stock-digital-gta6-physical",
-      "summary": "Take-Two's latest financials are in, and they come with a few surprises. First off, Take-Two CEO Strauss Zelnick has confirmed that the publisher's sales are mostly digital, in response to Sony's controversial decision to stop manufacturing physical disc-based games . \"Our business is well over 90% digitally distributed,\" he said during the call (thanks, Jason Schreier ). \"It's already a digital business.\" Read more",
-      "publishedAt": "Fri, 07 Aug 2026 13:33:56 +0000"
     },
     {
       "source": "Rock Paper Shotgun",
