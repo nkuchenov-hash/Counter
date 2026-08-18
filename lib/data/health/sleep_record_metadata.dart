@@ -3,14 +3,14 @@ import 'package:counter/data/pb_config.dart';
 
 extension SleepRecordMetadataExtension on DatabaseService {
   Future<bool> writeSleepRecordMetadata({
-    required String recordKey,
+    required String? recordKey,
     required String source,
     required String externalId,
     required String sourceName,
     required List<Map<String, dynamic>> stages,
     bool recoveredFromSegments = false,
   }) async {
-    final key = recordKey.trim();
+    final key = (recordKey ?? '').trim();
     if (key.isEmpty) return false;
     try {
       await ensurePocketBaseReady();
