@@ -5,6 +5,7 @@ import 'dart:ui' show DartPluginRegistrant;
 import 'package:counter/data/auth_bridge.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/health/health_sleep_policy.dart';
+import 'package:counter/data/health/sleep_record_metadata.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/data/records/unfilled_time_gap_service.dart';
 import 'package:counter/l10n/app_locales.dart';
@@ -509,6 +510,7 @@ class HealthSleepSyncService {
       throw StateError('Sleep category could not be resolved');
     }
     final title = t(currentLocale.value, 'health_sleep_record_title');
+    String? persistedRecordKey;
 
     if (existingKey != null && existingKey.isNotEmpty) {
       final updated = await db.updateRecord(
@@ -522,6 +524,7 @@ class HealthSleepSyncService {
       if (updated == null) {
         throw StateError('Existing sleep record could not be updated');
       }
+      persistedRecordKey = existingKey;
     } else {
       final wall = db.applyUserOffset(session.startUtc);
       final dateKey =
@@ -536,7 +539,21 @@ class HealthSleepSyncService {
       if (createdId == null || createdId.isEmpty) {
         throw StateError('Sleep record could not be created');
       }
+      persistedRecordKey = createdId;
     }
+
+    final source = Platform.isIOS ? 'apple_health' : 'health_connect';
+    final sourceName = session.sourceName.trim().isNotEmpty
+        ? session.sourceName.trim()
+        : activeDeviceSourceName;
+    await db.writeSleepRecordMetadata(
+      recordKey: persistedRecordKey,
+      source: source,
+      externalId: session.externalId,
+      sourceName: sourceName,
+      stages: session.stages.map((stage) => stage.toJson()).toList(growable: false),
+      recoveredFromSegments: session.recoveredFromStages,
+    );
 
     state.value = state.value.copyWith(
       lastImportedStartUtc: session.startUtc,
