@@ -8,6 +8,7 @@ extension SleepRecordMetadataExtension on DatabaseService {
     required String externalId,
     required String sourceName,
     required List<Map<String, dynamic>> stages,
+    required List<Map<String, dynamic>> metrics,
     bool recoveredFromSegments = false,
   }) async {
     final key = (recordKey ?? '').trim();
@@ -37,8 +38,10 @@ extension SleepRecordMetadataExtension on DatabaseService {
           'sleep_external_id': externalId,
           'sleep_source_name': sourceName,
           'sleep_stages': stages,
+          'sleep_metrics': metrics,
           'sleep_recovered_from_segments': recoveredFromSegments,
           'sleep_segment_points': stages.length,
+          'sleep_metric_points': metrics.length,
         },
       );
       await fetchRecords(forceNetwork: true);
