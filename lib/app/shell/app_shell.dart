@@ -61,6 +61,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 part 'shared/shell_core.dart';
+part 'shared/shell_task_actions.dart';
 part 'shared/shell_tab_host.dart';
 part 'shared/shell_edit_hosts.dart';
 part 'shared/shell_more_menu.dart';
@@ -163,6 +164,7 @@ class ShellDashboardState extends State<LifeOSDashboard>
     with
         ShellDashboardBase,
         ShellCoreLogic,
+        ShellTaskActions,
         ShellTabHost,
         ShellEditHosts,
         ShellMoreMenu,
