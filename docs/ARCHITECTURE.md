@@ -20,6 +20,8 @@
 | `lib/features/settings/voice/` | **Voice settings UI** | Microphone / hotkey / recognizer / diagnostics settings pages. |
 | `lib/features/settings/categories/` | **Categories manager UI** | More → Categories band grid, editor/appearance sheets, create dialog, browse panel. |
 | `lib/data/plans/diagnostics/` | **Brain plans diagnostics** | Planning-domain duplicate / stream lifecycle log (`plan_duplicate_log.dart`). Lives inside Brain; not shared diagnostics and not feature UI. |
+| `lib/data/paths/` | **Path domain** | `PathRepository` owns first-class Path interpretation and generic validation. Current storage is an adapter over existing plan-backed Path rows; feature UI must not parse marker rows directly. |
+| `lib/features/paths/` | **Paths UI** | First-class Paths destination. Displays/edits Path domain data only; no project bootstrap, migration, or Planner generation on page open. |
 | `lib/app_shell.dart` | **The Navigator** | Thin entry re-export; canonical shell under `lib/app/shell/`. |
 | `lib/main.dart` | **The ignition** | Calls `ensurePocketBaseReady()`, then restores session and loads profile. |
 
@@ -39,7 +41,7 @@
 - **SINGLETON_STOP:** Starting a new primary timer stops other open primaries for the same wall-clock rules before create.
 - **OWNERSHIP:** Every query filters by current user, e.g. `user_id = "<uuid>"` in PB filter strings.
 - **INSTANT_PURGE_PROTOCOL:** Optimistic UI before await where the Brain already does so; revert on failure.
-- **LAW_OF_OPTIMISTIC_UI (Shadow State):** No user-driven **Start / Stop / Update** on records may block the UI on a network round-trip. The Brain applies a **local shadow** (cache + timeline/active streams) in **&lt;100 ms**, then runs PocketBase **PATCH/POST** asynchronously; on failure it **rolls back** to the last stable snapshot and surfaces a **single** sync error (see `database_service.dart`).
+- **LAW_OF_OPTIMISTIC_UI (Shadow State):** No user-driven **Start / Stop / Update** on records may block the UI on a network round-trip. The Brain applies a **local shadow** (cache + timeline/active streams) in **<100 ms**, then runs PocketBase **PATCH/POST** asynchronously; on failure it **rolls back** to the last stable snapshot and surfaces a **single** sync error (see `database_service.dart`).
 - **OFFLINE-FIRST / LOCAL MUTATION QUEUE LAW:** Retriable network/backoff failures enqueue local mutations and keep the optimistic UI. Do **not** roll back on normal internet loss; roll back only on non-retriable validation/schema errors. Pending mutations drain on boot, reconnect, app resume, login/session restore, and tap-to-retry. 401/403 pauses sync until valid auth/session is restored. The server remains final authority for Singleton Timeline Law and overlap cleanup. Anchors: `lib/data/local_sync/record_mutation_outbox.dart`, `lib/data/local_sync/plan_mutation_outbox.dart`, `lib/data/local_sync/offline_sync_state.dart`, `lib/data/local_sync/sync_manager.dart`, `DbCoreExtension.flushPendingLocalMutations`, `RecordServiceExtension.flushPendingRecordMutations`, `PlanServiceExtension.flushPendingPlanMutations`, `_OfflineSyncStatusBar` in `app_shell.dart`.
 - **LAW_OF_THE_MAIN_THREAD (Iron Rules):**
   - **~100ms visual feedback:** User gestures must reflect in the UI within about **100ms** (optimistic/shadow first).
@@ -81,6 +83,10 @@
 
   **Code anchors:** `lib/shared/diagnostics/performance/runtime_flags.dart`, `lib/shared/diagnostics/performance/shell_flags.dart`. Experimental preload/render paths default **off** until proven stable on **web and Android**.
 - **STATE_RECONCILIATION:** 404 → purge ghost rows / revert optimistic state.
+- **PATH_DOMAIN_OWNERSHIP:** Paths is a first-class domain: feature UI lives in `lib/features/paths/`; storage interpretation and validation live in `lib/data/paths/`; shell owns navigation only. New Paths code must not parse `LIFEOS_PATH::*` markers directly outside the compatibility repository/migration layer.
+- **PATH_OPEN_IS_READ_ONLY:** Opening or switching to Paths must never create, migrate, retire, canonicalize, publish, or schedule data. Repair/migration/publish/Planner generation are explicit actions/services.
+- **ACTIVE_PATH_GATE:** Planner may consume only an explicitly active/published Path revision. Draft/review proposals must not leak into the executable schedule. Current marker-backed storage is compatibility only until durable Path revision storage ships.
+- **AI_PATH_TOOL_BOUNDARY:** AI never receives SQL, PocketBase-admin, shell, filesystem, or arbitrary write access. Future AI Path editing must produce validated proposals through app-owned Path tools; sensitive publish/delete/bulk operations require explicit approval plus audit/undo.
 
 ---
 
@@ -105,6 +111,14 @@
 - **WORD_MATCH_LAW:** Whole-word matching on `title.split` for auto-category (no substring fuzzy).
 - **Planning tasks:** Loaded from PocketBase `plans` collection with expands as implemented in `database_service.dart` (not a separate Dart `Plan` model — use `PlanningTask` / record maps).
 - **Recurring virtual occurrence edit:** Editing time/metadata on a virtual recurring instance materializes a one-off plan row and appends the instance date to the parent series `exception_dates` (see `plan_service.dart`).
+
+### 6.1 Paths → Planner
+
+- A Path describes **why/where** a project is going; Planner owns **when** executable actions occur.
+- Path structure is project-agnostic: goal, ordered stages, stage completion criteria, concrete actions, expected results, dependencies/constraints/risks/decisions as those fields become durable.
+- The current `PathRepository` is a compatibility adapter over existing plan-backed Path roots; this does **not** redefine `plans` as the permanent Path schema.
+- Opening Paths is read-only. User edits are explicit and local-first; migration/repair/publish/scheduling are separate operations.
+- Planner generation must be idempotent and traceable to one active Path revision so revising a draft cannot silently reschedule the user.
 
 ---
 
@@ -167,7 +181,7 @@ Large files must **not** grow without bound. When a file mixes responsibilities 
 | Layer | Split pattern |
 | :--- | :--- |
 | **Feature UI** | Screen shell · widgets · controllers/helpers · sheets |
-| **Brain/Data** | Domain parts under `records/*`, `plans/*`, `categories/*`, `profile/*`, `local_sync/*`; keep coordinators thin |
+| **Brain/Data** | Domain parts under `records/*`, `plans/*`, `paths/*`, `categories/*`, `profile/*`, `local_sync/*`; keep coordinators thin |
 | **Core widgets** | One canonical component per file; small private layout helpers only |
 | **Platform** | Native/runner/config only — **never** absorb product logic |
 | **Docs/scripts** | Generated or reference material may be large if clearly marked generated/reference |

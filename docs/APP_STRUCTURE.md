@@ -6,7 +6,7 @@ Physical map of the Flutter application: what exists, which layer owns it, who m
 
 ---
 
-## 0. Current status (2026-07-23)
+## 0. Current status (2026-08-17)
 
 | Item | Value |
 | :--- | :--- |
@@ -17,6 +17,8 @@ Physical map of the Flutter application: what exists, which layer owns it, who m
 | **Diagnostics ownership** | Phase 2B (2026-07-22): runtime logs + kill switches under `lib/shared/diagnostics/`; plan duplicate log under `lib/data/plans/diagnostics/` (Brain); desktop voice pipeline under `lib/shared/voice/diagnostics/` |
 | **Voice ownership** | Phase 2C (2026-07-22): shared Voice contracts/adapters under `lib/shared/voice/`; Brain execution under `lib/data/voice/`; desktop Flutter Voice UI under `lib/features/voice/`; settings under `features/settings/voice/`; Shell keeps `shell_voice_routing` |
 | **Categories ownership** | Phase 2D (2026-07-23): shared presentation/tree/picker/visibility under `lib/shared/categories/`; Brain CRUD remains `lib/data/categories/`; manager UI under `lib/features/settings/categories/`; Lists owns `category_filter_tree_field.dart`; plan/record draft helpers under `features/shared/edit_sheet/category_edit_draft.dart` |
+| **Paths ownership** | 2026-08-17: first-class UI under `lib/features/paths/`; Path domain transition adapter under `lib/data/paths/`; shell owns navigation only; opening Paths performs no migration or Planner generation |
+| **Health / unfilled-time doc parity** | 2026-08-17: Health Connect sleep, cloud sleep, unfilled Timeline-gap detection/notifications and settings modules added to the canonical manifest after strict guard exposed post-audit drift |
 | **Strict architecture guard** | Baseline 2026-07-17 cleanup **complete**: 63 → 0 (A=0, B=0); hygiene audit 2026-07-21; diagnostics Phase 2B + voice Phase 2C 2026-07-22; categories Phase 2D 2026-07-23 |
 | **Detailed file guide** | [`docs/APP_STRUCTURE_DETAILED.md`](APP_STRUCTURE_DETAILED.md) — owner-readable **evidence-backed** EN/RU entry per tracked folder and file (role, necessity, confidence, deletion consequence); regenerate via `generate_app_structure_detailed.py` |
 | **Project Knowledge pack** | [`docs/PROJECT_KNOWLEDGE_PACK.md`](PROJECT_KNOWLEDGE_PACK.md) — 14-doc upload checklist |
@@ -37,13 +39,13 @@ python scripts/manual/generate_app_structure_detailed.py
 | Layer | Path | Owns | May import | Must NOT import |
 | :--- | :--- | :--- | :--- | :--- |
 | **Entry** | `lib/main.dart`, `lib/app_shell.dart`, `lib/app/shell/` | Boot, auth gate, form-factor shell navigation, cross-tab wiring | `data/`, `core/`, `shared/`, `features/`, `l10n/`, `services/` | — |
-| **Brain** | `lib/data/` | PocketBase I/O, in-memory cache, optimistic UI, offline outboxes, domain models; Planning-domain diagnostics under `plans/diagnostics/`; Voice parser/domain/cloud STT under `voice/` | `core/` (utilities only), `shared/` (time + diagnostics + voice + categories contracts), `services/` (device bridge), other `data/` | `features/` |
+| **Brain** | `lib/data/` | PocketBase I/O, in-memory cache, optimistic UI, offline outboxes, domain models; Planning-domain diagnostics under `plans/diagnostics/`; Voice parser/domain/cloud STT under `voice/`; Path interpretation under `paths/` | `core/` (utilities only), `shared/` (time + diagnostics + voice + categories contracts), `services/` (device bridge), other `data/` | `features/` |
 | **Shared time** | `lib/shared/time/` | Multi-consumer UTC/wall-clock, timezone catalog, app clock hooks, shared plan-time math used by Brain + UI | `core/` (utilities), `data/models.dart` (types only) | `features/`, `data/database_service.dart` |
 | **Shared diagnostics** | `lib/shared/diagnostics/` | General runtime logs (`runtime_log`, `platform_log`, `startup_log`); performance metrics + kill-switch registry under `performance/` | `core/` (utilities), `data/models.dart` (types only) | `features/`, `data/database_service.dart` |
 | **Shared Voice** | `lib/shared/voice/` | One Voice system: commands, recognition, routing contracts, reusable UI, platform adapters (desktop/mobile), diagnostics | `core/` (utilities), `shared/`, `data/models.dart` (types only where contracts need them) | `features/`, `data/voice/`, `data/database_service.dart`, `app/shell/` |
 | **Shared Categories** | `lib/shared/categories/` | Reusable category presentation, tree, picker UI/models, local visibility prefs; narrow injected tree/create contracts | `core/` (utilities), `shared/`, `data/models.dart` (`CategoryRule` type only) | `features/`, `data/database_service.dart`, `app/shell/` |
 | **Foundation** | `lib/core/` | Theme, tokens, shared widgets, desktop tray/main-window infrastructure | `core/`, `shared/` (time + diagnostics + voice + categories), `data/models.dart` (types only) | `features/`, `data/database_service.dart` |
-| **UI modules** | `lib/features/` | Screens, sheets, feature-specific layout; desktop Voice overlay UI under `voice/`; Voice + Categories settings under `settings/` | `data/`, `core/`, `shared/`, `l10n/`, `features/shared/` | other features except via `shared/` or explicit shell routing |
+| **UI modules** | `lib/features/` | Screens, sheets, feature-specific layout; first-class Paths under `paths/`; desktop Voice overlay UI under `voice/`; Voice + Categories settings under `settings/` | `data/`, `core/`, `shared/`, `l10n/`, `features/shared/` | other features except via `shared/` or explicit shell routing |
 | **Localization** | `lib/l10n/` | Locale catalog and `t()` lookup | Flutter SDK only | `data/`, `features/` |
 | **Device bridge** | `lib/services/` | OS capabilities without UI | `data/models.dart`, `shared/time/`, Flutter/plugins | `features/` |
 
@@ -63,7 +65,7 @@ l10n      →  (self + langs)                       ✓
 main/app_shell → all layers                       ✓
 ```
 
-**Brain rule:** `lib/data/database_service.dart` is the only file that performs HTTP/PocketBase calls. Domain logic lives in `part of` extensions (`db_core.dart`, `record_service.dart`, `records/*`, `plan_service.dart`, `plans/*`, `category_service.dart`, `categories/*`, `profile_service.dart`, `profile/*`).
+**Brain rule:** `lib/data/database_service.dart` is the only file that performs HTTP/PocketBase calls. Domain logic lives in `part of` extensions (`db_core.dart`, `record_service.dart`, `records/*`, `plan_service.dart`, `plans/*`, `category_service.dart`, `categories/*`, `profile_service.dart`, `profile/*`) plus focused domain adapters such as `paths/path_repository.dart` that delegate persistence to existing Brain APIs.
 
 **Optimistic UI rule:** User mutations update local Brain cache first, notify UI, then sync PocketBase in the background (`database_service.dart` and its parts).
 
@@ -92,7 +94,7 @@ These abstractions stay free of Brain imports in the UI layer; `main.dart` and `
 | `main.dart` | `runApp`, PocketBase bootstrap, auth gate, Wear entry, locale init, shell injection |
 | `app_shell.dart` | Thin compatibility re-export of `app/shell/app_shell.dart` |
 
-**Shell tabs (bottom nav index):** 0 Timeline · 1 Plans · 2 Calendar · 3 Lists · 4 More (Categories, Profile, admin Component Lab).
+**Shell destinations:** 0 Timeline · 1 Plans · 2 Calendar · 3 Lists · 4 Categories · 5 Profile · 6 Paths. Phone/tablet bottom navigation keeps four primary tabs + More; More → Paths selects the same shell-owned index 6 used by desktop side navigation.
 
 ### 3.1.1 `lib/app/shell/` — form-factor app shell (Phase 1)
 
@@ -100,12 +102,12 @@ Product sections own section-specific code later; this phase only separates shel
 
 | Path | Role |
 | :--- | :--- |
-| `app/shell/app_shell.dart` | `LifeOSDashboard`, `ShellDashboardBase`, scaffold orchestration |
+| `app/shell/app_shell.dart` | `LifeOSDashboard`, `ShellDashboardBase`, scaffold orchestration; shell index 6 hosts `PathsPage` |
 | `app/shell/shared/shell_core.dart` | Core shell logic mixin (date header, tasks load, nav) *(part)* |
 | `app/shell/shared/shell_tab_host.dart` | Tab `IndexedStack` builders *(part)* |
 | `app/shell/shared/shell_edit_hosts.dart` | Timeline/plan edit modal hosts *(part)* |
-| `app/shell/shared/shell_more_menu.dart` | More bottom sheet *(part)* |
-| `app/shell/shared/shell_path_governance.dart` | Project Path reality audit, targeted Path upgrades, Path-action → current-week Planner orchestration |
+| `app/shell/shared/shell_more_menu.dart` | More bottom sheet plus retained transition Path code; new Paths UI is owned by `features/paths/` *(part)* |
+| `app/shell/shared/shell_path_governance.dart` | Transition Path audit and Path-action → Planner orchestration; first-class Paths does not invoke it on page open |
 | `app/shell/shared/shell_daily_routine.dart` | One-time bootstrap for baseline personal daily recurring Planner series; preserves existing/user-edited recurrence |
 | `app/shell/shared/shell_voice_routing.dart` | Voice hotkey + submit routing *(part)* |
 | `app/shell/shared/shell_offline_banner.dart` | Offline sync banner column slot |
@@ -139,6 +141,11 @@ Compatibility re-exports (remove when callers migrate): root `lib/app_shell.dart
 | `records/record_overlap_helpers.dart` | Highlander local apply, singleton reconcile, overlap probes *(part)* |
 | `records/record_ghost_cleanup.dart` | 404 deadletter prune against live cache *(part)* |
 | `records/record_cache_helpers.dart` | Per-day filter, `recordsStream`, display-time helpers *(part)* |
+| `records/unfilled_time_gap_policy.dart` | Pure Timeline-gap detection policy over record intervals |
+| `records/unfilled_time_gap_service.dart` | Gap settings/state, periodic/resume refresh, fill-gap action and notification eligibility orchestration |
+| `health/health_sleep_policy.dart` | Pure imported-sleep matching and overlap conflict policy |
+| `health/health_sleep_sync_service.dart` | Device-health sleep sync state/scheduling/import orchestration across supported source adapters |
+| `health/cloud_sleep_sync_service.dart` | Authenticated server-side sleep sync status/connect/sync client for cloud sources |
 | `plan_service.dart` | Plans/lists coordinator: cache fetch/realtime and CRUD entry points *(part)* |
 | `plans/plan_projection_types.dart` | Time Mode projected DTO, UTC/profile-wall conversion, timezone reproject lifecycle, projection cache signature, wall-day visibility/filtering, projection diagnostics *(part)* |
 | `plans/plan_recurrence_helpers.dart` | RRULE JIT expansion, virtual/materialized occurrence identity, exception-date mutation, concrete instance materialization, and recurrence edit/delete scope *(part)* |
@@ -155,6 +162,7 @@ Compatibility re-exports (remove when callers migrate): root `lib/app_shell.dart
 | `plans/plan_alarm_helpers.dart` | Hydrated-cache plan reminder reconciliation and debounced OS alarm bridge *(part)* |
 | `plans/notes_brain_helpers.dart` | Notes Brain extension — parse/apply/pin/done + debounced `notes_delta` PATCH *(part)* |
 | `plans/diagnostics/plan_duplicate_log.dart` | Planning-domain duplicate / stream lifecycle markers inside Brain (not shared diagnostics, not feature UI) |
+| `paths/path_repository.dart` | First-class Path domain boundary: transition storage interpretation, explicit Path/stage/action snapshots, duplicate-root reporting, generic structure audit, writes delegated to existing Brain plan APIs |
 | `category_service.dart` | Category coordinator: flatten/PB bridge statics, stats duration helpers, local task prefs helpers *(part)* |
 | `categories/category_cache_helpers.dart` | Category fetch, slug reservation, `_loadRulesFromNoco` *(part)* |
 | `categories/category_order_helpers.dart` | Category sibling optimistic reorder, baseline tracking, debounced PocketBase order synchronization, immediate lifecycle flush *(part)* |
@@ -477,20 +485,20 @@ Parser, live category/domain resolution, normalization, command execution (`writ
 | `desktop_stt_benchmark_harness.dart` | Golden text STT quality gate (no mic) |
 | `desktop_voice_real_helper_latency_benchmark.dart` | Per-iteration latency trace against installed helper |
 
-
 ### 3.4 `lib/features/` — UI modules
 
 | Folder | Files | Role |
 | :--- | :--- | :--- |
 | `auth/` | `auth_view.dart`, `auth_screen.dart`, `oauth_session.dart` | Sign-in, register, OAuth, password reset |
-| `timeline/` | `timeline_view.dart`, `timeline_continuous_history.dart`, `timeline_header_controls.dart`, `timeline_day_page.dart`, `timeline_record_card.dart`, `timeline_helpers.dart` | Timeline coordinator; continuous reverse-chronological history with pinned date headers in List mode; per-day Stats pager; header controls + record cards |
+| `timeline/` | `timeline_view.dart`, `timeline_continuous_history.dart`, `timeline_header_controls.dart`, `timeline_day_page.dart`, `timeline_record_card.dart`, `timeline_helpers.dart`, `unfilled_time_gap_banner.dart` | Timeline coordinator; continuous history; per-day stats; header controls; record cards; current unfilled-time recovery banner |
 | `stats/` | `stats_view.dart`, `day_stats_dashboard.dart`, `stats_detail_tree.dart`, `plan_vs_fact_tab.dart` | Productivity stats (embedded in Timeline): switchable day dashboards, preserved detailed tree, plan vs fact |
 | `planning/` | `planning_view.dart` (barrel), **`planning_page.dart`**, **`planning_quick_add_tags_controller.dart`**, **`planning_page_shell.dart`**, **`planning_sort_mode.dart`**, `plan_time_view_layout.dart`, `plan_time_gesture_contract.dart`, `planning_day_start_prefs.dart`, `bulk_planning_edit_sheet.dart`, `recurrence_scope_dialog.dart`, `smart_plan_sheet.dart`, **`time_view/`**, **`settings/`**, **`widgets/`** | Plans tab: date pager shell + day page body, quick-add tag controller, Time View modules, settings, bulk edit |
+| `paths/` | `paths_page.dart` | First-class Paths destination: project list/detail, goal/stage/action progress, generic structure audit; opening the page is read-only |
 | `lists/` | `lists_view.dart`, `lists_filters.dart`, `lists_bulk_actions.dart`, `lists_inline_add.dart`, `lists_empty_state.dart`, `lists_card.dart`, `lists_export.dart`, `category_filter_tree_field.dart` | Lists/backlog coordinator + filter/bulk/inline/empty modules + card + export + Lists-only “All categories” filter field |
 | `notes/` | `drawing_canvas_page.dart`, `notes_audio_controller.dart`, `notes_image_tools.dart`, `notes_editor_document_controller.dart`, `notes_glm_surface.dart`, `notes_library_page.dart`, `notes_visual_tokens.dart`, `notes_figma_tokens.dart`, `note_editor_page.dart`, **`widgets/`** (`notes_library_body.dart`, `notes_library_production_shell.dart`, `note_card.dart`, `note_editor_block_widgets.dart`, `notes_editor_tools.dart`, `notes_special_block_widgets.dart`, `notes_canonical_components.dart`, `notes_component_text_blocks.dart`, `notes_component_structural_blocks.dart`, `notes_component_media_blocks.dart`, `notes_component_tools.dart`) | Notes library/editor/drawing feature UI; exact roles in §3.4 Notes below |
 | `calendar/` | `calendar_view.dart` (orchestrator), `calendar_chrome_header.dart`, `calendar_month_grid.dart`, `calendar_week_grid.dart`, `calendar_day_panel.dart`, `calendar_day_events.dart`, `calendar_helpers.dart` | Calendar tab: month/week grids, chrome header, focused-day task panel |
 | `profile/` | `profile_view.dart`, **`settings/`** (account, notification, security sections), `tag_manager_page.dart`, `tag_settings_hub.dart`, `tag_settings_view.dart`, `tag_default_duration_settings_view.dart` | Profile & tag settings |
-| `settings/` | `timezone_settings.dart`, **`voice/`** (`desktop_voice_settings_section.dart`, `desktop_voice_settings_desktop.dart`, `desktop_voice_attempt_dialog.dart`), **`categories/`** (`category_list_view.dart`, `category_row_widget.dart`, `category_editor_sheet.dart`, `category_appearance_sheet.dart`, `category_tag_input_field.dart`, `category_helpers.dart`, `create_category_dialog.dart`, `category_recursive_browse_panel.dart`) | Settings-owned timezone helpers + Voice settings + Categories manager UI (More → Categories) |
+| `settings/` | `timezone_settings.dart`, **`voice/`** (`desktop_voice_settings_section.dart`, `desktop_voice_settings_desktop.dart`, `desktop_voice_attempt_dialog.dart`), **`categories/`** (`category_list_view.dart`, `category_row_widget.dart`, `category_editor_sheet.dart`, `category_appearance_sheet.dart`, `category_tag_input_field.dart`, `category_helpers.dart`, `create_category_dialog.dart`, `category_recursive_browse_panel.dart`), **`notifications/`** (`unfilled_time_notifications_section.dart`), **`health/`** (`health_connect_settings_section.dart`) | Settings-owned timezone helpers + Voice settings + Categories manager + unfilled-time notification settings + health/sleep integration settings |
 | `voice/` | `desktop_voice_widget.dart`, `desktop_voice_capsule.dart`, `desktop_voice_correction_sheet.dart`, `desktop_voice_command_panel.dart` | Desktop Flutter Voice overlay UI (GOLOS STT capsule / correction / panel) |
 | `dev/` | `component_lab_view.dart`, `component_lab_cards_demo.dart`, `component_lab_notes_demo.dart` | Admin-only Component Lab including canonical Notes block/media/tool states |
 | `wear/` | `wear_timer_screen.dart`, `wear_main_wrapper.dart`, `wear_platform.dart`, `wear_runtime.dart` | Wear OS companion |
@@ -545,6 +553,11 @@ Every production Notes feature/shared editor module above must be listed by exac
 | :--- | :--- |
 | `notification_service.dart` | Local notifications and plan alarms |
 | `plan_alarm_schedule.dart` | UI-free plan reminder schedule specifications, wall-time conversion, dedupe, and limits |
+| `unfilled_time_notification_service.dart` | OS notification bridge for unfilled Timeline-gap reminders |
+| `health_connect/health_connect_sleep_models.dart` | Health Connect sleep-session/value objects shared by platform adapters |
+| `health_connect/health_connect_sleep_service.dart` | Conditional export/facade for Health Connect sleep reads and permissions |
+| `health_connect/health_connect_sleep_service_io.dart` | Android/IO Health Connect sleep implementation |
+| `health_connect/health_connect_sleep_service_stub.dart` | Unsupported-platform Health Connect stub |
 
 ---
 
@@ -724,7 +737,7 @@ Run from repo root:
 ### Integration
 
 - Pick **one owner layer** per new file: Entry/Shell · Brain/Data · Core/Foundation · Feature UI · Services · l10n · Platform · Tests · Scripts · Docs.
-- Extend existing Brain coordinators and `part` domains (`records/*`, `plans/*`, …) instead of new PocketBase I/O paths.
+- Extend existing Brain coordinators and focused domains (`records/*`, `plans/*`, `paths/*`, …) instead of new PocketBase I/O paths.
 - Compose **canonical** core widgets (`AppButton`, `PlanTimeTaskCard`, `AppLoading`, …) — see `docs/DESIGN_SYSTEM.md`.
 - Platform folders stay embedder/config only; product logic stays in `lib/data/` and `lib/features/`.
 
@@ -758,31 +771,3 @@ Before implementation, answer: **owner layer?** · **extends which module?** · 
 | Platform folders (`android/`, `ios/`, …) | Flutter-generated runners — not product logic |
 
 One-off Pass 3/Pass 2 extraction scripts (`scripts/pass3_*`, `scripts/extract_*`, `scripts/split_planning_page.py`) were **removed** 2026-07-03 after decomposition shipped. See `docs/reports/FINAL_STRUCTURE_PARITY_AND_DOC_CLEANUP_2026-07-03.md` for acceptance summary.
-
-Pass 4 regex/line Brain split scripts (`pass4_brain_split.py`, `pass4_split_fast.py`) were **removed** after a failed attempt. Pass 4A–4D used symbol-aware batches only.
-
----
-
-## 9. Next product priorities (not structure)
-
-From `docs/ROADMAP.md` — active velocity track is **V3 UX_CONTRACT / V7 Design System** (canonical components, Component Lab). Feature work (F2B plan category filter, list pin schema, etc.) remains paused unless explicitly requested.
-
----
-
-### Health Connect sleep and Timeline gap integrity (2026-07-27)
-
-| File | Role |
-| :--- | :--- |
-| `services/health_connect/health_connect_sleep_models.dart` | Pure Health Connect sleep-session transport model. |
-| `services/health_connect/health_connect_sleep_service.dart` | Conditional Android/stub export for Health Connect sleep reads. |
-| `services/health_connect/health_connect_sleep_service_io.dart` | Android Health Connect permission and `SLEEP_SESSION` reader. |
-| `services/health_connect/health_connect_sleep_service_stub.dart` | Safe unsupported-platform implementation. |
-| `services/unfilled_time_notification_service.dart` | Android local notification bridge for Timeline gaps. |
-| `data/health/health_sleep_policy.dart` | Pure dedupe and authoritative sleep-overlap policy. |
-| `data/health/health_sleep_sync_service.dart` | Health sleep import coordinator using existing record/category Brain APIs. |
-| `data/health/cloud_sleep_sync_service.dart` | Authenticated client for server-owned cloud sleep status, OAuth connection, schedule settings, manual sync, and disconnect routes. |
-| `data/records/unfilled_time_gap_policy.dart` | Pure interval merge and unfilled-time detection. |
-| `data/records/unfilled_time_gap_service.dart` | Gap lifecycle, settings, fill action, and notification eligibility. |
-| `features/settings/health/health_connect_settings_section.dart` | Health Connect permission, enable, status, and manual sync UI. |
-| `features/settings/notifications/unfilled_time_notifications_section.dart` | Generic gap notification controls. |
-| `features/timeline/unfilled_time_gap_banner.dart` | Persistent in-app gap prompt and fill sheet. |

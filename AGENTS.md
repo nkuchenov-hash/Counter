@@ -36,6 +36,7 @@ Use `CHANGELOG.md` and `docs/ROADMAP.md` to understand what is already built bef
 ## Task-Specific Document Routing
 
 - PocketBase, schema, auth, records, plans, categories, tags: read `docs/DATA_MAP.md` and `docs/POCKETBASE_MANIFEST.md`.
+- Paths / project strategy / Path → Planner / future AI Path tooling: start with `lib/features/paths/paths_page.dart`, `lib/data/paths/path_repository.dart`, `docs/ARCHITECTURE.md` §6.1, issue #93, and `docs/reports/PATHS_FIRST_CLASS_AND_REPO_AUDIT_2026-08-17.md`.
 - UI components, design system, cards, buttons, chips, tabs, sheets, Component Lab: read `docs/DESIGN_SYSTEM.md` and `docs/reports/DESIGN_SYSTEM_INVENTORY.md`.
 - Deploy, build, release, GitHub Pages, OAuth/admin production setup: read `docs/DEPLOY.md`.
 - File structure, moves, import boundaries, architecture cleanup: read `docs/APP_STRUCTURE.md`, `docs/APP_STRUCTURE_DETAILED.md`, and `docs/reports/FINAL_STRUCTURE_PARITY_AND_DOC_CLEANUP_2026-07-03.md`.
@@ -50,6 +51,8 @@ Use `CHANGELOG.md` and `docs/ROADMAP.md` to understand what is already built bef
 - `lib/main.dart` and `lib/app/shell/` (via root `lib/app_shell.dart` re-export) own boot, form-factor shell, auth gate, global wiring, and navigation.
 - `lib/data/` is the Brain. It owns PocketBase I/O, domain models, in-memory cache, optimistic state, and offline outboxes.
 - `lib/data/database_service.dart` is the Brain root. Domain logic lives in its `part of` files: `db_core.dart`; coordinators `record_service.dart`, `plan_service.dart`, `category_service.dart`, `profile_service.dart`; and focused parts under `records/*`, `plans/*`, `categories/*`, `profile/*`.
+- `lib/data/paths/` owns first-class Path interpretation and validation. `PathRepository` currently adapts existing plan-backed Path roots; feature UI must not parse marker rows directly.
+- `lib/features/paths/` owns Paths screens and interactions. `lib/app/shell/` only selects the destination; new Path UI/domain policy must not move back into shell files.
 - `lib/data/` must not import `lib/features/`.
 - `lib/data/plans/diagnostics/` owns Planning-domain Brain diagnostics (`plan_duplicate_log.dart`) — not shared diagnostics, not feature UI. Brain plan helpers emit these logs.
 - `lib/core/` owns theme, tokens, shared widgets, and desktop tray/main-window infrastructure. It must not import feature UI or `database_service.dart` except where the documented structure explicitly allows model-only types.
@@ -151,6 +154,8 @@ For any production Notes editor change, `docs/NOTES_EDITOR_CONTRACT.md` is manda
 - Do not mount 7/21/41 day bodies or other large offscreen widget windows by default.
 - Do not create log storms or repeated success logs from background loops.
 - Do not make active pages depend only on snapshots/render caches.
+- Do not run Path bootstrap/migration/governance/Planner generation as a side effect of opening Paths.
+- Do not give AI arbitrary PocketBase/SQL/filesystem/shell writes; future Path AI must use whitelisted app-owned tools with validation, approval for sensitive actions, audit, and undo.
 - Do not duplicate local UI components where canonical components already exist.
 - Do not modify archived, quarantine, generated, or cleanup-report-listed legacy files unless explicitly requested.
 - Do not commit or push unless explicitly asked.

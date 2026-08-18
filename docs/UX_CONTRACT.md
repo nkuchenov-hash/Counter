@@ -19,7 +19,7 @@ This document defines how Life OS behaves when people interact with it. It is th
 
 ## Save Behavior
 
-- Saves that affect records, plans, lists, categories, tags, or profile settings must update local state before network sync when the current architecture supports it.
+- Saves that affect records, plans, lists, Paths, categories, tags, or profile settings must update local state before network sync when the current architecture supports it.
 - Retriable network failures keep the optimistic state and enqueue where an outbox exists.
 - Non-retriable validation/schema failures roll back and show one concise error.
 - Silent success is preferred; no success log spam for background sync.
@@ -81,11 +81,21 @@ This document defines how Life OS behaves when people interact with it. It is th
 - Category pickers opened from edit sheets or category-selection controls must expose **visible create actions immediately** when the picker opens — not only at the end of a long scrollable list.
 - Layout: sheet header → search (optional) → **always-visible top “+ Add root category” row** → scrollable tree → **sticky bottom “+ Add root category” row** (root level only in nested tree pickers).
 - Every category row in the picker tree must show a trailing **“+”** (`add_subcategory`) that creates a **child under that exact row**; row tap still selects the category; the trailing **“+”** must be a separate tap target outside the row selection hit area.
-- Each **expanded folder** must show a folder-scoped **“Add category inside &lt;folder&gt;”** row after its visible children.
+- Each **expanded folder** must show a folder-scoped **“Add category inside <folder>”** row after its visible children.
 - Create actions must pass an **explicit parent** to the Brain create path — never infer parent from selected category, expanded folder, search UI, or global name lookup.
-- When search/filter text does not match an existing category, show a contextual **Create “&lt;name&gt;”** action near the empty-result area.
+- When search/filter text does not match an existing category, show a contextual **Create “<name>”** action near the empty-result area.
 - Category creation requires network connection; do not invent client-only temporary categories or fake ids.
 - After successful creation, refresh the in-memory category cache via the Brain path, close only the create dialog, auto-select the new category through the **same selection callback** as tapping an existing row (`CategoryTreeSheetPicked` → edit-sheet draft → autosave), then close the picker and return to the edit sheet. The parent edit sheet must stay open; category field and entity draft must update immediately without reopening the picker.
+
+## Paths
+
+- **One destination:** desktop side navigation and phone/tablet More → Paths open the same shell-owned Paths destination. Do not push a second shell or a separate desktop frame.
+- **Opening is read-only:** entering Paths may load category/Path data, but must not create, migrate, retire, canonicalize, publish, generate Planner tasks, or apply AI proposals.
+- **Project-independent structure:** generic Path UI and validation operate from stored Path data. Do not hard-code KADR, GOLOS, Igropoisk, Price Reporter, or any other project’s required topics into the feature.
+- **Local-first explicit edits:** goal/stage/action completion edits reflect immediately. A rejected save restores the prior local state once and shows one concise error.
+- **Duplicate roots are not silently deleted:** when transition storage contains more than one active root for a project, surface the condition and repair it only through an explicit idempotent repair/migration action.
+- **Draft/review/active separation:** future AI or user restructuring happens on a draft/review revision. Planner consumes only the explicitly active/published Path revision.
+- **AI proposal safety:** AI suggestions remain proposals until validated/applied through app-owned tools. Publish, delete, and bulk schedule changes must remain auditable and reversible.
 
 ## Selection / Bulk Mode
 
