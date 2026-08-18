@@ -40,6 +40,9 @@ mixin ShellLifecycle on ShellTabHost, ShellVoiceIntegration {
     unawaited(DesktopVoiceSmokeBridge.ensureVoiceEnabledForSmoke());
     DesktopVoiceSmokeBridge.startPolling();
 
+    SleepForegroundReconcileService.instance.start();
+    unawaited(UnfilledTimeGapService.instance.start());
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       StartupLog.deferred(
         name: 'timelineTasksLoad',
@@ -85,6 +88,7 @@ mixin ShellLifecycle on ShellTabHost, ShellVoiceIntegration {
   }
 
   void disposeShellLifecycle() {
+    SleepForegroundReconcileService.instance.stop();
     deviceLocalMidnightWatchTimer?.cancel();
     notificationSub?.cancel();
     categoryRulesSub?.cancel();

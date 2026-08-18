@@ -29,6 +29,8 @@ import 'package:counter/core/widgets/global_app_header.dart';
 import 'package:counter/core/widgets/lazy_indexed_stack.dart';
 import 'package:counter/core/widgets/tag_display_mode_scope.dart';
 import 'package:counter/data/database_service.dart';
+import 'package:counter/data/health/sleep_foreground_reconcile_service.dart';
+import 'package:counter/data/records/unfilled_time_gap_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/data/voice/voice_command_parser.dart';
 import 'package:counter/features/calendar/calendar_view.dart';

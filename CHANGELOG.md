@@ -1,3 +1,9 @@
+## 2026-08-18 — Sleep foreground lifecycle ownership [engineering]
+
+- `ShellTopStatusBars` is presentation-only again; Health Connect/cloud ingestion no longer starts from a UI widget.
+- Added `SleepForegroundReconcileService` under `data/health` for device-first then cloud reconciliation on startup/resume.
+- Shell lifecycle starts/stops the coordinator and starts unfilled-time tracking; sync semantics are unchanged.
+
 ## 2026-08-18 — Profile hydration UI ownership [engineering]
 
 - Moved `ProfileHydrationStatusBar` implementation into `features/profile/`.
