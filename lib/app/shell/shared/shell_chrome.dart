@@ -1,6 +1,6 @@
 part of '../app_shell.dart';
 
-mixin ShellChrome on ShellLifecycle {
+mixin ShellChrome on ShellLifecycle, ShellMoreMenu {
   List<Widget> buildShellPages() => <Widget>[
         timelineTabHost,
         planningTabHost,
