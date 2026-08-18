@@ -110,7 +110,8 @@ Product sections own section-specific code later; this phase only separates shel
 | `app/shell/shared/shell_chrome.dart` | Responsive shell scaffold/chrome: destination pages, app bar, form-factor frame, FAB, bottom navigation, desktop voice shortcuts *(part)* |
 | `app/shell/shared/shell_edit_hosts.dart` | Timeline/plan edit modal hosts *(part)* |
 | `app/shell/shared/shell_more_menu.dart` | More bottom sheet and shell navigation actions only; Paths opens shell destination 6 *(part)* |
-| `app/shell/shared/shell_voice_routing.dart` | Voice hotkey + submit routing *(part)* |
+| `app/shell/shared/shell_voice_routing.dart` | Voice command/STT routing and submit flows *(part)* |
+| `app/shell/shared/shell_voice_integration.dart` | Desktop tray/global-hotkey attachment and reattachment at the shell boundary *(part)* |
 | `app/shell/shared/shell_offline_banner.dart` | Offline sync banner column slot |
 | `app/shell/shared/shell_shared.dart` | Shell-local date helpers |
 | `app/shell/shared/shell_form_factor.dart` | Phone / tablet / desktop form-factor resolve from width |

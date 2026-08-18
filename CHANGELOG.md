@@ -1,3 +1,9 @@
+## 2026-08-18 — Shell desktop voice integration boundary [engineering]
+
+- Split desktop tray/global-hotkey attach/reattach lifecycle from `shell_voice_routing.dart` into `shell_voice_integration.dart`.
+- `ShellVoiceRouting` remains responsible for voice command/STT routing and submission; the integration mixin only connects desktop voice infrastructure to shell lifecycle/chrome.
+- Voice behavior, hotkey semantics, tray actions, and recognition flow are unchanged.
+
 ## 2026-08-18 — Planning edit result ownership [engineering]
 
 - `shell_edit_hosts.dart` now only hosts/routes the Planning sheet; persisted field edits remain owned by the editor autosave flow.
