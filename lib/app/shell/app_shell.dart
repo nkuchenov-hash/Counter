@@ -53,7 +53,7 @@ import 'package:counter/app/shell/phone/phone_shell_frame.dart';
 import 'package:counter/app/shell/shared/shell_form_factor.dart';
 import 'package:counter/app/shell/shared/shell_top_status_bars.dart';
 import 'package:counter/app/shell/shared/shell_shared.dart';
-import 'package:counter/data/paths/compatibility/path_governance_service.dart';
+import 'package:counter/data/plans/planner_startup_service.dart';
 import 'package:counter/app/shell/tablet/tablet_shell_frame.dart';
 import 'package:flutter/foundation.dart' show kDebugMode, kIsWeb;
 import 'package:flutter/material.dart';
