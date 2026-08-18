@@ -10,13 +10,15 @@ export 'path_models.dart';
 /// Storage is the dedicated PocketBase `paths` + `path_revisions` pair.
 /// `paths.active_revision_id` is the only execution gate. Revisions are
 /// append-only snapshots: editing an active Path publishes a new revision and
-/// atomically switches the project pointer only after the new snapshot exists.
+/// switches the project pointer only after the new snapshot exists.
 class PathRepository {
   PathRepository({DatabaseService? database})
       : _database = database ?? DatabaseService.instance;
 
   final DatabaseService _database;
   static const Uuid _uuid = Uuid();
+  final Map<String, Future<ProjectPathSnapshot?>> _saveChains =
+      <String, Future<ProjectPathSnapshot?>>{};
 
   Future<PathCatalogSnapshot> loadActivePaths() async {
     await _database.refreshCategoryRulesFromServer();
@@ -124,31 +126,73 @@ class PathRepository {
     }
   }
 
-  Future<bool> saveActivePath(ProjectPathSnapshot path) async {
-    final audit = auditPathStructure(goal: path.goal, stages: path.stages);
-    if (!audit.isValid || path.status != PathStatus.active) return false;
+  /// Serializes writes per Path so rapid optimistic edits cannot race for the
+  /// same version number or fork revision ancestry.
+  Future<ProjectPathSnapshot?> saveActivePath(ProjectPathSnapshot path) {
+    final pathId = path.pathId.trim();
+    if (pathId.isEmpty) return Future<ProjectPathSnapshot?>.value(null);
+
+    final previous =
+        _saveChains[pathId] ?? Future<ProjectPathSnapshot?>.value(null);
+    late final Future<ProjectPathSnapshot?> next;
+    next = previous.then((_) => _saveActivePathNow(path));
+    _saveChains[pathId] = next;
+    return next.whenComplete(() {
+      if (identical(_saveChains[pathId], next)) {
+        _saveChains.remove(pathId);
+      }
+    });
+  }
+
+  Future<ProjectPathSnapshot?> _saveActivePathNow(
+    ProjectPathSnapshot requested,
+  ) async {
+    final audit = auditPathStructure(
+      goal: requested.goal,
+      stages: requested.stages,
+    );
+    if (!audit.isValid || requested.status != PathStatus.active) return null;
+
+    // The caller may hold an older optimistic snapshot while an earlier edit is
+    // still saving. Always anchor the next immutable revision to the current
+    // server-active revision, but persist the caller's latest full content.
+    final current = await loadActivePath(requested.pathId);
+    if (current == null || current.status != PathStatus.active) return null;
 
     final revisionId = _uuid.v4();
+    final version = current.version + 1;
     Map<String, dynamic>? revision;
     try {
       revision = await _database.createOwnedPathRevision(
-        pathId: path.pathId,
+        pathId: current.pathId,
         revisionId: revisionId,
-        version: path.version + 1,
+        version: version,
         lifecycle: 'published',
-        goal: path.goal,
-        stages: path.stages
+        goal: requested.goal,
+        stages: requested.stages
             .map((stage) => stage.toJson())
             .toList(growable: false),
         source: 'manual',
-        parentRevisionId: path.revisionId,
+        parentRevisionId: current.revisionId,
       );
       await _database.setOwnedPathActiveRevision(
-        pathRecordId: path.pathRecordId,
+        pathRecordId: current.pathRecordId,
         revisionId: revisionId,
-        title: path.category.name,
+        title: current.category.name,
       );
-      return true;
+      final revisionRecordId = (revision['id'] ?? '').toString().trim();
+      if (revisionRecordId.isEmpty) return null;
+      return ProjectPathSnapshot(
+        pathRecordId: current.pathRecordId,
+        pathId: current.pathId,
+        revisionRecordId: revisionRecordId,
+        revisionId: revisionId,
+        category: current.category,
+        goal: requested.goal,
+        status: PathStatus.active,
+        version: version,
+        stages: requested.stages,
+      );
     } catch (_) {
       final revisionRecordId = (revision?['id'] ?? '').toString().trim();
       if (revisionRecordId.isNotEmpty) {
@@ -158,7 +202,7 @@ class PathRepository {
           // Safe to leave: only the pointer in `paths` grants active status.
         }
       }
-      return false;
+      return null;
     }
   }
 
