@@ -15,7 +15,7 @@ class DeviceHealthSleepService {
   final Health _health = Health();
   bool _configured = false;
 
-  List<HealthDataType> get _types => Platform.isIOS
+  List<HealthDataType> get _sleepTypes => Platform.isIOS
       ? const <HealthDataType>[
           HealthDataType.SLEEP_IN_BED,
           HealthDataType.SLEEP_ASLEEP,
@@ -36,11 +36,18 @@ class DeviceHealthSleepService {
           HealthDataType.SLEEP_AWAKE_IN_BED,
         ];
 
-  List<HealthDataAccess> get _permissions => List<HealthDataAccess>.filled(
-    _types.length,
-    HealthDataAccess.READ,
-    growable: false,
-  );
+  static const List<HealthDataType> _metricTypes = <HealthDataType>[
+    HealthDataType.HEART_RATE,
+    HealthDataType.BLOOD_OXYGEN,
+    HealthDataType.RESPIRATORY_RATE,
+  ];
+
+  List<HealthDataAccess> _readPermissions(List<HealthDataType> types) =>
+      List<HealthDataAccess>.filled(
+        types.length,
+        HealthDataAccess.READ,
+        growable: false,
+      );
 
   bool get isSupported => Platform.isAndroid || Platform.isIOS;
 
@@ -61,14 +68,31 @@ class DeviceHealthSleepService {
       // HealthKit returns only the samples the user allowed.
       return true;
     }
-    return await _health.hasPermissions(_types, permissions: _permissions) ??
+    return await _health.hasPermissions(
+          _sleepTypes,
+          permissions: _readPermissions(_sleepTypes),
+        ) ??
         false;
   }
 
   Future<bool> requestAuthorization() async {
     if (!isSupported) return false;
     await _ensureConfigured();
-    return _health.requestAuthorization(_types, permissions: _permissions);
+    final sleepGranted = await _health.requestAuthorization(
+      _sleepTypes,
+      permissions: _readPermissions(_sleepTypes),
+    );
+    if (!sleepGranted) return false;
+
+    // Vitals enrich sleep but are deliberately optional. A user can decline
+    // heart-rate/SpO2/respiratory access without disabling base sleep import.
+    try {
+      await _health.requestAuthorization(
+        _metricTypes,
+        permissions: _readPermissions(_metricTypes),
+      );
+    } catch (_) {}
+    return true;
   }
 
   Future<bool> isBackgroundReadAvailable() async {
@@ -101,17 +125,73 @@ class DeviceHealthSleepService {
     }
     await _ensureConfigured();
     final raw = await _health.getHealthDataFromTypes(
-      types: _types,
+      types: _sleepTypes,
       startTime: startUtc.toLocal(),
       endTime: endUtc.toLocal(),
     );
-    final points = _health.removeDuplicates(raw);
-    if (Platform.isIOS) return _appleHealthSessions(points);
-    return _androidHealthSessions(points);
+    final sleepPoints = _health.removeDuplicates(raw);
+    final metricPoints = await _readOptionalMetrics(
+      startUtc: startUtc,
+      endUtc: endUtc,
+    );
+    if (Platform.isIOS) {
+      return _appleHealthSessions(sleepPoints, metricPoints);
+    }
+    return _androidHealthSessions(sleepPoints, metricPoints);
+  }
+
+  Future<List<HealthSleepMetricPoint>> _readOptionalMetrics({
+    required DateTime startUtc,
+    required DateTime endUtc,
+  }) async {
+    try {
+      if (Platform.isAndroid) {
+        final authorized = await _health.hasPermissions(
+              _metricTypes,
+              permissions: _readPermissions(_metricTypes),
+            ) ??
+            false;
+        if (!authorized) return const <HealthSleepMetricPoint>[];
+      }
+      final raw = await _health.getHealthDataFromTypes(
+        types: _metricTypes,
+        startTime: startUtc.toLocal(),
+        endTime: endUtc.toLocal(),
+      );
+      final points = _health.removeDuplicates(raw);
+      final out = <HealthSleepMetricPoint>[];
+      for (final point in points) {
+        final metric = _metricForType(point.type);
+        final value = point.value;
+        if (metric == null || value is! NumericHealthValue) continue;
+        out.add(
+          HealthSleepMetricPoint(
+            metric: metric,
+            timeUtc: point.dateFrom.toUtc(),
+            value: value.numericValue,
+            unit: point.unit.name,
+            sourceId: point.sourceId.trim(),
+            sourceName: point.sourceName.trim(),
+          ),
+        );
+      }
+      out.sort((a, b) => a.timeUtc.compareTo(b.timeUtc));
+      return out;
+    } catch (_) {
+      return const <HealthSleepMetricPoint>[];
+    }
+  }
+
+  String? _metricForType(HealthDataType type) {
+    if (type == HealthDataType.HEART_RATE) return 'heart_rate';
+    if (type == HealthDataType.BLOOD_OXYGEN) return 'blood_oxygen';
+    if (type == HealthDataType.RESPIRATORY_RATE) return 'respiratory_rate';
+    return null;
   }
 
   List<HealthSleepSession> _androidHealthSessions(
     List<HealthDataPoint> points,
+    List<HealthSleepMetricPoint> metrics,
   ) {
     final stagePoints = _sleepStages(points);
     final sessions = points
@@ -119,6 +199,7 @@ class DeviceHealthSleepService {
         .map((point) => _sessionFromPoint(point, idPrefix: 'health-connect'))
         .whereType<HealthSleepSession>()
         .map((session) => _sessionWithStages(session, stagePoints))
+        .map((session) => _sessionWithMetrics(session, metrics))
         .toList(growable: true);
 
     if (sessions.isEmpty && stagePoints.isNotEmpty) {
@@ -126,20 +207,24 @@ class DeviceHealthSleepService {
         _sessionsRecoveredFromStages(
           stagePoints,
           idPrefix: 'health-connect-stages',
-        ),
+        ).map((session) => _sessionWithMetrics(session, metrics)),
       );
     }
     sessions.sort((a, b) => a.endUtc.compareTo(b.endUtc));
     return sessions;
   }
 
-  List<HealthSleepSession> _appleHealthSessions(List<HealthDataPoint> points) {
+  List<HealthSleepSession> _appleHealthSessions(
+    List<HealthDataPoint> points,
+    List<HealthSleepMetricPoint> metrics,
+  ) {
     final stagePoints = _sleepStages(points);
     final inBed = points
         .where((point) => point.type == HealthDataType.SLEEP_IN_BED)
         .map((point) => _sessionFromPoint(point, idPrefix: 'apple-health'))
         .whereType<HealthSleepSession>()
         .map((session) => _sessionWithStages(session, stagePoints))
+        .map((session) => _sessionWithMetrics(session, metrics))
         .toList(growable: false);
     if (inBed.isNotEmpty) {
       final out = List<HealthSleepSession>.of(inBed)
@@ -150,7 +235,9 @@ class DeviceHealthSleepService {
     return _sessionsRecoveredFromStages(
       stagePoints,
       idPrefix: 'apple-health-stages',
-    );
+    ).map((session) => _sessionWithMetrics(session, metrics)).toList(
+          growable: false,
+        );
   }
 
   int? _stageForType(HealthDataType type) {
@@ -217,6 +304,31 @@ class DeviceHealthSleepService {
       sourceId: session.sourceId,
       sourceName: session.sourceName,
       stages: matching,
+      metrics: session.metrics,
+      recoveredFromStages: session.recoveredFromStages,
+    );
+  }
+
+  HealthSleepSession _sessionWithMetrics(
+    HealthSleepSession session,
+    List<HealthSleepMetricPoint> metrics,
+  ) {
+    final matching = <HealthSleepMetricPoint>[];
+    for (final metric in metrics) {
+      if (metric.timeUtc.isBefore(session.startUtc) ||
+          metric.timeUtc.isAfter(session.endUtc)) {
+        continue;
+      }
+      matching.add(metric);
+    }
+    return HealthSleepSession(
+      externalId: session.externalId,
+      startUtc: session.startUtc,
+      endUtc: session.endUtc,
+      sourceId: session.sourceId,
+      sourceName: session.sourceName,
+      stages: session.stages,
+      metrics: matching,
       recoveredFromStages: session.recoveredFromStages,
     );
   }
