@@ -30,6 +30,7 @@ jobs:
           python scripts/manual/_enforce_append_only_paths.py
           python scripts/manual/_tighten_path_api_rules.py
           python scripts/manual/_semantic_governing_docs_cleanup.py
+          python scripts/manual/_strengthen_global_architecture_boundaries.py
           git diff --check
 
       - name: Check migration, schema, and release contracts
@@ -74,6 +75,7 @@ jobs:
           git rm -f scripts/manual/_enforce_append_only_paths.py
           git rm -f scripts/manual/_tighten_path_api_rules.py
           git rm -f scripts/manual/_semantic_governing_docs_cleanup.py
+          git rm -f scripts/manual/_strengthen_global_architecture_boundaries.py
           git rm -f .github/workflows/tmp-durable-paths-finalizer.yml
 
           python scripts/manual/generate_app_structure_detailed.py
