@@ -4,6 +4,7 @@ import 'package:counter/data/database_service.dart';
 import 'package:counter/features/timeline/timeline_header_controls.dart';
 import 'package:counter/features/timeline/timeline_morning_start.dart';
 import 'package:counter/features/timeline/timeline_record_card.dart';
+import 'package:counter/features/timeline/timeline_sleep_details.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -12,9 +13,8 @@ import 'package:intl/intl.dart';
 ///
 /// Days are not pages. Scrolling down keeps extending into the past. Each day
 /// owns a pinned date header, so the date is always visible and naturally
-/// changes as the next day reaches the top. Sleep is intentionally not filtered
-/// here: Timeline is the complete life record, while Stats may use a waking-day
-/// projection.
+/// changes as the next day reaches the top. Overnight sleep is projected onto
+/// its wake day, matching the canonical daily Timeline presentation.
 class TimelineContinuousPage extends StatefulWidget {
   const TimelineContinuousPage({
     super.key,
@@ -236,7 +236,19 @@ class _ContinuousTimelineHistoryState extends State<ContinuousTimelineHistory> {
   }
 
   List<Map<String, dynamic>> _recordsFor(DateTime date) {
-    return DatabaseService.instance.peekTimelineRecordsForDate(date);
+    final db = DatabaseService.instance;
+    final startDayRecords = db.peekTimelineRecordsForDate(date);
+    final priorStartDayRecords = <Map<String, dynamic>>[];
+    for (var daysBack = 1; daysBack <= 2; daysBack++) {
+      priorStartDayRecords.addAll(
+        db.peekTimelineRecordsForDate(date.subtract(Duration(days: daysBack))),
+      );
+    }
+    return timelineProjectRecordsToWakeDay(
+      targetDateKey: _dateKey(date),
+      startDayRecords: startDayRecords,
+      priorStartDayRecords: priorStartDayRecords,
+    );
   }
 
   @override
