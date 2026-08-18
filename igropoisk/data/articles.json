@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-18T09:04:03.909Z",
+  "updatedAt": "2026-08-18T09:12:14.926Z",
   "count": 495,
   "sources": [
     "IGN",
@@ -14,6 +14,15 @@
     "Игромания"
   ],
   "articles": [
+    {
+      "source": "GamesRadar+",
+      "language": "en",
+      "title": "Final Fast and Furious movie went through \"four sets of writers\" to ensure it matched Vin Diesel's vision for the finale",
+      "normalizedTitle": "final fast and furious movie went through four sets of writers to ensure it matched vin diesel s vision for the finale",
+      "url": "https://www.gamesradar.com/entertainment/action-movies/final-fast-and-furious-movie-went-through-four-sets-of-writers-to-ensure-it-matched-vin-diesels-vision-for-the-finale/",
+      "summary": "The 11th movie will conclude the franchise",
+      "publishedAt": "Tue, 18 Aug 2026 09:05:16 +0000"
+    },
     {
       "source": "Eurogamer",
       "language": "en",
@@ -836,19 +845,19 @@
     {
       "source": "GamesRadar+",
       "language": "en",
-      "title": "The Sinking City 2 review: \"A Lovecraftian fusion of Resident Evil and Silent Hill that boasts its own delightfully gruesome pleasures\"",
-      "normalizedTitle": "the sinking city 2 review a lovecraftian fusion of resident evil and silent hill that boasts its own delightfully gruesome pleasures",
-      "url": "https://www.gamesradar.com/games/survival-horror/the-sinking-city-2-review/",
-      "summary": "Lovecraftian twists on survival horror work so well to deliver some unsettling, unexpected moments of terror",
+      "title": "Singing sirens, angry gods and cannibalized crews: Sunless Sea is The Odyssey as an RPG",
+      "normalizedTitle": "singing sirens angry gods and cannibalized crews sunless sea is the odyssey as an rpg",
+      "url": "https://www.gamesradar.com/games/rpg/singing-sirens-angry-gods-and-cannibalized-crews-sunless-sea-is-the-odyssey-as-an-rpg/",
+      "summary": "My lads would dream of being turned into pigs. That'd be a calm Tuesday for them",
       "publishedAt": "Mon, 17 Aug 2026 15:00:00 +0000"
     },
     {
       "source": "GamesRadar+",
       "language": "en",
-      "title": "Singing sirens, angry gods and cannibalized crews: Sunless Sea is The Odyssey as an RPG",
-      "normalizedTitle": "singing sirens angry gods and cannibalized crews sunless sea is the odyssey as an rpg",
-      "url": "https://www.gamesradar.com/games/rpg/singing-sirens-angry-gods-and-cannibalized-crews-sunless-sea-is-the-odyssey-as-an-rpg/",
-      "summary": "My lads would dream of being turned into pigs. That'd be a calm Tuesday for them",
+      "title": "The Sinking City 2 review: \"A Lovecraftian fusion of Resident Evil and Silent Hill that boasts its own delightfully gruesome pleasures\"",
+      "normalizedTitle": "the sinking city 2 review a lovecraftian fusion of resident evil and silent hill that boasts its own delightfully gruesome pleasures",
+      "url": "https://www.gamesradar.com/games/survival-horror/the-sinking-city-2-review/",
+      "summary": "Lovecraftian twists on survival horror work so well to deliver some unsettling, unexpected moments of terror",
       "publishedAt": "Mon, 17 Aug 2026 15:00:00 +0000"
     },
     {
@@ -1007,15 +1016,6 @@
     {
       "source": "GamesRadar+",
       "language": "en",
-      "title": "Mortal Shell 2 review: \"The best Soulslike I've played since Elden Ring thanks to brilliant death-dealing toys and speedy combat\"",
-      "normalizedTitle": "mortal shell 2 review the best soulslike i ve played since elden ring thanks to brilliant death dealing toys and speedy combat",
-      "url": "https://www.gamesradar.com/games/action-rpg/mortal-shell-2-review/",
-      "summary": "This speedy sequel speeds up action and stuffs secrets and ideas in every corner of its beautiful open world.",
-      "publishedAt": "Mon, 17 Aug 2026 13:00:00 +0000"
-    },
-    {
-      "source": "GamesRadar+",
-      "language": "en",
       "title": "How to unlock Mortal Shell 2 fast travel",
       "normalizedTitle": "how to unlock mortal shell 2 fast travel",
       "url": "https://www.gamesradar.com/games/rpg/mortal-shell-2-fast-travel/",
@@ -1025,10 +1025,19 @@
     {
       "source": "GamesRadar+",
       "language": "en",
-      "title": "Who is Franz in Mortal Shell 2, and where can you find him?",
-      "normalizedTitle": "who is franz in mortal shell 2 and where can you find him",
-      "url": "https://www.gamesradar.com/games/rpg/mortal-shell-2-franz-tarforge/",
-      "summary": "You'll need to find Franz in Mortal Shell 2 when you pick up certain items that require his specific knowledge",
+      "title": "Mortal Shell 2 review: \"The best Soulslike I've played since Elden Ring thanks to brilliant death-dealing toys and speedy combat\"",
+      "normalizedTitle": "mortal shell 2 review the best soulslike i ve played since elden ring thanks to brilliant death dealing toys and speedy combat",
+      "url": "https://www.gamesradar.com/games/action-rpg/mortal-shell-2-review/",
+      "summary": "This speedy sequel speeds up action and stuffs secrets and ideas in every corner of its beautiful open world.",
+      "publishedAt": "Mon, 17 Aug 2026 13:00:00 +0000"
+    },
+    {
+      "source": "GamesRadar+",
+      "language": "en",
+      "title": "Mortal Shell 2 map and how to reveal it",
+      "normalizedTitle": "mortal shell 2 map and how to reveal it",
+      "url": "https://www.gamesradar.com/games/rpg/mortal-shell-2-map/",
+      "summary": "Revealing the Mortal Shell 2 Map requires speaking to an old friend at various locations",
       "publishedAt": "Mon, 17 Aug 2026 13:00:00 +0000"
     },
     {
@@ -1043,10 +1052,10 @@
     {
       "source": "GamesRadar+",
       "language": "en",
-      "title": "Mortal Shell 2 map and how to reveal it",
-      "normalizedTitle": "mortal shell 2 map and how to reveal it",
-      "url": "https://www.gamesradar.com/games/rpg/mortal-shell-2-map/",
-      "summary": "Revealing the Mortal Shell 2 Map requires speaking to an old friend at various locations",
+      "title": "Who is Franz in Mortal Shell 2, and where can you find him?",
+      "normalizedTitle": "who is franz in mortal shell 2 and where can you find him",
+      "url": "https://www.gamesradar.com/games/rpg/mortal-shell-2-franz-tarforge/",
+      "summary": "You'll need to find Franz in Mortal Shell 2 when you pick up certain items that require his specific knowledge",
       "publishedAt": "Mon, 17 Aug 2026 13:00:00 +0000"
     },
     {
@@ -1174,15 +1183,6 @@
       "url": "https://www.gamesradar.com/hardware/retro/im-remaking-all-of-ocarina-of-times-prerenders-in-3d-id-play-this-devs-zelda-n64-romhack-over-the-remake-and-better-still-no-genai-was-used-for-any-part/",
       "summary": "A modder is creating a Zelda Ocarina of Time ROM hack for N64 that swaps out the prerendered backdrops with full 3D buildings and a free camera.",
       "publishedAt": "Mon, 17 Aug 2026 11:13:22 +0000"
-    },
-    {
-      "source": "GamesRadar+",
-      "language": "en",
-      "title": "Leaks suggest a Lego Batman Returns Batmobile is on the way, with the best minifigure of the Dark Knight I've seen",
-      "normalizedTitle": "leaks suggest a lego batman returns batmobile is on the way with the best minifigure of the dark knight i ve seen",
-      "url": "https://www.gamesradar.com/toys-collectibles/leaks-suggest-a-lego-batman-returns-batmobile-is-on-the-way-with-the-best-minifigure-of-the-dark-knight-ive-seen/",
-      "summary": "Leaked Lego Batman Returns set has a really neat secret, and the best minifigure I've seen in ages",
-      "publishedAt": "Mon, 17 Aug 2026 11:11:45 +0000"
     },
     {
       "source": "PC Gamer",
@@ -1403,19 +1403,19 @@
     {
       "source": "PC Gamer",
       "language": "en",
-      "title": "Marvel Tōkon's simple but effective combo trials are an elegant tutorial solution that I wish more fighting games had",
-      "normalizedTitle": "marvel tōkon s simple but effective combo trials are an elegant tutorial solution that i wish more fighting games had",
-      "url": "https://www.pcgamer.com/games/fighting/marvel-tokons-simple-but-effective-combo-trials-are-an-elegant-tutorial-solution-that-i-wish-more-fighting-games-had/",
-      "summary": "Make me use my noggin, please.",
+      "title": "I played the economic simulator that could 'make a convert out of Karl Marx himself' to see if it could convert me",
+      "normalizedTitle": "i played the economic simulator that could make a convert out of karl marx himself to see if it could convert me",
+      "url": "https://www.pcgamer.com/games/sim/i-played-the-economic-simulator-that-could-make-a-convert-out-of-karl-marx-himself-to-see-if-it-could-convert-me/",
+      "summary": "Though I'm not Karl Marx, just in case you're confused.",
       "publishedAt": "Sun, 16 Aug 2026 15:00:00 +0000"
     },
     {
       "source": "PC Gamer",
       "language": "en",
-      "title": "I played the economic simulator that could 'make a convert out of Karl Marx himself' to see if it could convert me",
-      "normalizedTitle": "i played the economic simulator that could make a convert out of karl marx himself to see if it could convert me",
-      "url": "https://www.pcgamer.com/games/sim/i-played-the-economic-simulator-that-could-make-a-convert-out-of-karl-marx-himself-to-see-if-it-could-convert-me/",
-      "summary": "Though I'm not Karl Marx, just in case you're confused.",
+      "title": "Marvel Tōkon's simple but effective combo trials are an elegant tutorial solution that I wish more fighting games had",
+      "normalizedTitle": "marvel tōkon s simple but effective combo trials are an elegant tutorial solution that i wish more fighting games had",
+      "url": "https://www.pcgamer.com/games/fighting/marvel-tokons-simple-but-effective-combo-trials-are-an-elegant-tutorial-solution-that-i-wish-more-fighting-games-had/",
+      "summary": "Make me use my noggin, please.",
       "publishedAt": "Sun, 16 Aug 2026 15:00:00 +0000"
     },
     {

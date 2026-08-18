@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-18T09:04:03.909Z",
+  "updatedAt": "2026-08-18T09:12:14.926Z",
   "count": 78,
   "sourcePool": [
     "Steam",
@@ -396,7 +396,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 8.7,
-      "recommendations": 5225752,
+      "recommendations": 5225800,
       "owners": "100,000,000 .. 200,000,000",
       "peakConcurrent": 1013936,
       "sourceEvidence": [
@@ -408,7 +408,7 @@
         "steamSpy": "https://steamspy.com/app/730",
         "metacritic": ""
       },
-      "popularityScore": 10541.814887855011,
+      "popularityScore": 10541.815286764782,
       "igropoiskRating": 8.7,
       "editorialSources": [],
       "materials": {
@@ -1126,7 +1126,7 @@
       "movies": [],
       "criticRating": 8.9,
       "steamUserRating": 9.8,
-      "recommendations": 812212,
+      "recommendations": 812221,
       "owners": "50,000,000 .. 100,000,000",
       "peakConcurrent": 25122,
       "sourceEvidence": [
@@ -1139,7 +1139,7 @@
         "steamSpy": "https://steamspy.com/app/550",
         "metacritic": "https://www.metacritic.com/game/pc/left-4-dead-2?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 10390.966993637672,
+      "popularityScore": 10390.96747486965,
       "igropoiskRating": 9.2,
       "editorialSources": [],
       "materials": {
@@ -3668,7 +3668,7 @@
       "movies": [],
       "criticRating": 8.7,
       "steamUserRating": 9.7,
-      "recommendations": 339873,
+      "recommendations": 339874,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 2719,
       "sourceEvidence": [
@@ -3682,7 +3682,7 @@
         "steamSpy": "https://steamspy.com/app/264710",
         "metacritic": "https://www.metacritic.com/game/pc/subnautica?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9803.13179427872,
+      "popularityScore": 9803.131922059556,
       "igropoiskRating": 9,
       "editorialSources": [
         "Rock Paper Shotgun"
@@ -3787,7 +3787,7 @@
       "movies": [],
       "criticRating": 9.1,
       "steamUserRating": 9.7,
-      "recommendations": 233757,
+      "recommendations": 233755,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 12596,
       "sourceEvidence": [
@@ -3800,7 +3800,7 @@
         "steamSpy": "https://steamspy.com/app/526870",
         "metacritic": "https://www.metacritic.com/game/pc/satisfactory?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9766.876648284468,
+      "popularityScore": 9766.876276706733,
       "igropoiskRating": 9.3,
       "editorialSources": [],
       "materials": {
@@ -3885,7 +3885,7 @@
       "movies": [],
       "criticRating": 9,
       "steamUserRating": 9.7,
-      "recommendations": 194548,
+      "recommendations": 194549,
       "owners": "5,000,000 .. 10,000,000",
       "peakConcurrent": 16426,
       "sourceEvidence": [
@@ -3898,7 +3898,7 @@
         "steamSpy": "https://steamspy.com/app/427520",
         "metacritic": "https://www.metacritic.com/game/pc/factorio?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9748.902900283138,
+      "popularityScore": 9748.903123513976,
       "igropoiskRating": 9.2,
       "editorialSources": [],
       "materials": {
@@ -4403,7 +4403,7 @@
       "movies": [],
       "criticRating": 8.5,
       "steamUserRating": 9.2,
-      "recommendations": 654885,
+      "recommendations": 654887,
       "owners": "20,000,000 .. 50,000,000",
       "peakConcurrent": 3832,
       "sourceEvidence": [
@@ -4416,7 +4416,7 @@
         "steamSpy": "https://steamspy.com/app/945360",
         "metacritic": "https://www.metacritic.com/game/pc/among-us?ftag=MCD-06-10aaa1f"
       },
-      "popularityScore": 9711.6165706282,
+      "popularityScore": 9711.616703260084,
       "igropoiskRating": 8.7,
       "editorialSources": [],
       "materials": {
@@ -5055,7 +5055,7 @@
       "movies": [],
       "criticRating": null,
       "steamUserRating": 8.8,
-      "recommendations": 282004,
+      "recommendations": 282007,
       "owners": "10,000,000 .. 20,000,000",
       "peakConcurrent": 4450,
       "sourceEvidence": [
@@ -5067,7 +5067,7 @@
         "steamSpy": "https://steamspy.com/app/1326470",
         "metacritic": ""
       },
-      "popularityScore": 9625.025680850787,
+      "popularityScore": 9625.026142855544,
       "igropoiskRating": 8.8,
       "editorialSources": [],
       "materials": {
