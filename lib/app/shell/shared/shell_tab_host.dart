@@ -1,6 +1,6 @@
 part of '../app_shell.dart';
 
-mixin ShellTabHost on ShellCoreLogic {
+mixin ShellTabHost on ShellTaskActions {
   Widget buildTimelineSwipeTab() {
     final sw = Stopwatch()..start();
     final child = TimelineSwipeWrapper(
@@ -23,7 +23,8 @@ mixin ShellTabHost on ShellCoreLogic {
       onStopRecord: stopRecordByDocId,
       onDeleteRecord: deleteRecordByDocId,
       rules: rules,
-      onShowEditRecordSheet: (this as ShellDashboardState).showEditRecordSheetForTimeline,
+      onShowEditRecordSheet:
+          (this as ShellDashboardState).showEditRecordSheetForTimeline,
     );
     sw.stop();
     StartupLog.tabBuild(
