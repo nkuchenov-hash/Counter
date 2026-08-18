@@ -1,6 +1,6 @@
 part of '../app_shell.dart';
 
-mixin ShellVoiceRouting on ShellCoreLogic {
+mixin ShellVoiceRouting on ShellTaskActions {
   Future<void> refreshDesktopTrayMenu() async {
     if (!DesktopTrayService.isSupported) return;
     final loc = currentLocale.value;
