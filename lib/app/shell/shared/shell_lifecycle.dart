@@ -51,9 +51,9 @@ mixin ShellLifecycle on ShellTabHost, ShellVoiceIntegration {
       unawaited(() async {
         await loadTasksAndExtras();
         try {
-          await ensurePlannerBaselineV7();
+          await PlannerStartupService.instance.ensureBaseline();
         } catch (e) {
-          debugPrint('[PLANNER_BASELINE_V7] ensure failed: $e');
+          debugPrint('[PLANNER_STARTUP] ensure failed: $e');
         }
       }());
       StartupLog.deferred(name: 'syncBootstrap', reason: 'canRunAfterShell');

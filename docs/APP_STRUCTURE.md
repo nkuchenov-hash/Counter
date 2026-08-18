@@ -106,7 +106,7 @@ Product sections own section-specific code later; this phase only separates shel
 | `app/shell/shared/shell_core.dart` | Core shell date/task-loading state, selected-day coordination and sync-failure UI *(part)* |
 | `app/shell/shared/shell_task_actions.dart` | Shell task/record action orchestration and source-plan suggestion prompt presentation; preference/matching/link policy lives in Brain *(part)* |
 | `app/shell/shared/shell_tab_host.dart` | Timeline/Planning/Calendar/Lists tab composition; depends explicitly on `ShellEditHosts` instead of concrete dashboard casts *(part)* |
-| `app/shell/shared/shell_lifecycle.dart` | Dashboard startup/dispose wiring: tab host initialization, deferred bootstrap, subscriptions, midnight watcher, desktop voice detach *(part)* |
+| `app/shell/shared/shell_lifecycle.dart` | Shell startup/dispose wiring; delegates Planning baseline to `PlannerStartupService` and does not import Paths compatibility *(part)* |
 | `app/shell/shared/shell_chrome.dart` | Responsive shell scaffold/chrome: destination pages, app bar, form-factor frame, FAB, bottom navigation, desktop voice shortcuts *(part)* |
 | `app/shell/shared/shell_edit_hosts.dart` | Timeline/plan edit modal hosts *(part)* |
 | `app/shell/shared/shell_more_menu.dart` | More bottom sheet and shell navigation actions only; Paths opens shell destination 6 *(part)* |
@@ -166,9 +166,10 @@ Compatibility re-exports (remove when callers migrate): root `lib/app_shell.dart
 | `plans/plan_alarm_helpers.dart` | Hydrated-cache plan reminder reconciliation and debounced OS alarm bridge *(part)* |
 | `plans/notes_brain_helpers.dart` | Notes Brain extension — parse/apply/pin/done + debounced `notes_delta` PATCH *(part)* |
 | `plans/daily_routine_service.dart` | Baseline personal recurring Planner series bootstrap and prior-format dedupe; Brain-owned mutation service, not shell UI |
+| `plans/planner_startup_service.dart` | Planning-owned startup baseline: category refresh, daily routine ensure, and isolated historical Path-generated-row cleanup |
 | `plans/diagnostics/plan_duplicate_log.dart` | Planning-domain duplicate / stream lifecycle markers inside Brain (not shared diagnostics, not feature UI) |
 | `paths/path_repository.dart` | First-class Path domain boundary: transition storage interpretation, explicit Path/stage/action snapshots, duplicate-root reporting, generic structure audit, writes delegated to existing Brain plan APIs |
-| `paths/compatibility/path_governance_service.dart` | Marker-era Path audit and Path-action → Planner compatibility orchestration; isolated from shell and not invoked by opening Paths |
+| `paths/compatibility/path_governance_service.dart` | Compatibility-era project-specific Paths governance/migrations; exposes a cleanup hook but is not a shell startup dependency |
 | `category_service.dart` | Category coordinator: flatten/PB bridge statics, stats duration helpers, local task prefs helpers *(part)* |
 | `categories/category_cache_helpers.dart` | Category fetch, slug reservation, `_loadRulesFromNoco` *(part)* |
 | `categories/category_order_helpers.dart` | Category sibling optimistic reorder, baseline tracking, debounced PocketBase order synchronization, immediate lifecycle flush *(part)* |

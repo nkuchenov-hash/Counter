@@ -1,3 +1,9 @@
+## 2026-08-18 — Planning startup ownership [engineering]
+
+- Added `PlannerStartupService` under `data/plans`; shell startup now delegates Planning baseline work there.
+- Shell no longer imports Paths compatibility governance directly.
+- Historical Path-generated-row cleanup is exposed as an explicit compatibility hook; daily routine and migration behavior are preserved and project governance is still not auto-scheduled at startup.
+
 ## 2026-08-18 — Profile hydration alias cleanup [engineering]
 
 - `ShellTopStatusBars` now imports the Profile-owned hydration UI directly.
