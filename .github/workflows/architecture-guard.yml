@@ -11,135 +11,26 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   strict-structure:
     name: strict-structure
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout branch head
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          ref: agent/paths-first-class-audit-cleanup
           fetch-depth: 0
 
       - name: Run strict architecture guard
         run: pwsh -NoProfile -NonInteractive -File ./scripts/audit/architecture_guard.ps1 -Strict
 
-      - name: Repair temporary finalizer marker
-        shell: bash
+      - name: Check for whitespace errors
         run: |
-          sed -i 's|^    end_marker = .*|    end_marker = "\\ndef adapt_file_field_ru("|' scripts/manual/_finalize_paths_docs.py
-
-      - name: Apply final documentation updates
-        run: python3 scripts/manual/_finalize_paths_docs.py
-
-      - name: Repair generated RU quality fallbacks
-        run: python3 scripts/manual/_fix_structure_ru_quality.py
-
-      - name: Refine evidence-backed generated wording
-        shell: bash
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-
-          # File-level fallback: the final generator safety net must still be
-          # evidence-backed, never a generic "needed for build/tests/docs" line.
-          generator = Path("scripts/manual/generate_app_structure_detailed.py")
-          text = generator.read_text(encoding="utf-8")
-          old = '''    # Fill any remaining empty RU core fields.
-    if not (what_ru or "").strip():
-        what_ru = f"Файл `{Path(path).name}` в репозитории."
-    if not (why_ru or "").strip():
-        why_ru = "Нужен для сборки, тестов, документации или платформы — см. доказательства."
-    if not (contains_ru or "").strip():
-        contains_ru = rec.contents_hint_ru or f"Содержимое файла `{Path(path).name}`."
-'''
-          new = '''    # Fill any remaining empty RU core fields from the evidence record.
-    if not (what_ru or "").strip():
-        what_ru = (
-            f"`{Path(path).name}` выполняет подтверждённую роль: "
-            f"{(rec.repo_role_ru or rec.repo_role_en).rstrip('.')} ."
-        )
-    if not (why_ru or "").strip():
-        role_ru = (rec.repo_role_ru or rec.repo_role_en).rstrip(".")
-        consequence_ru = (
-            rec.deletion_consequence_ru
-            or rec.deletion_consequence_en
-            or "его подтверждённая ответственность останется без владельца"
-        ).rstrip(".")
-        why_ru = (
-            f"Нужен для роли «{role_ru}»; при удалении {consequence_ru}."
-        )
-    if not (contains_ru or "").strip():
-        contains_ru = rec.contents_hint_ru or (
-            f"Содержит реализацию или данные, подтверждающие роль `{Path(path).name}`."
-        )
-'''
-          if old not in text:
-              raise SystemExit("final generator RU fallback anchor not found")
-          generator.write_text(text.replace(old, new, 1), encoding="utf-8")
-
-          # Folder-level exception cleanup: these three historical entries had
-          # English prose stored directly in an *_ru value, so override the
-          # final FOLDERS map before ensure_folder_ru consumes it.
-          guide = Path("scripts/manual/structure_guide_data.py")
-          text = guide.read_text(encoding="utf-8")
-          marker = "\ndef ensure_folder_ru(key: str, guide: dict[str, str]) -> dict[str, str]:\n"
-          overrides = '''
-# Bilingual quality overrides for historical Shared Categories entries.
-if "lib/shared/categories" in FOLDERS:
-    FOLDERS["lib/shared/categories"]["affects_ru"] = (
-        "Общие picker-экраны категорий, поля формы, создание новой категории из picker "
-        "и локальные настройки скрытых категорий."
-    )
-if "lib/shared/categories/picker" in FOLDERS:
-    FOLDERS["lib/shared/categories/picker"]["affects_ru"] = (
-        "Picker категорий в Notes, Planning, Timeline и Wear, включая создание "
-        "новой категории из picker."
-    )
-if "lib/shared/categories/tree" in FOLDERS:
-    FOLDERS["lib/shared/categories/tree"]["affects_ru"] = (
-        "Общий рендер дерева категорий и фильтрация по поиску."
-    )
-'''
-          if "# Bilingual quality overrides for historical Shared Categories entries." not in text:
-              if marker not in text:
-                  raise SystemExit("ensure_folder_ru marker not found")
-              text = text.replace(marker, overrides + marker, 1)
-          guide.write_text(text, encoding="utf-8")
-
-          # Remove the now-banned overly generic phrase from the semantic file
-          # fallback inserted by the temporary quality fixer.
-          adapter = Path("scripts/manual/structure_en_ru_adapt.py")
-          text = adapter.read_text(encoding="utf-8")
-          text = text.replace(
-              'f"{kind.capitalize()} `{name}` относится к области `{parent}`."',
-              'f"{kind.capitalize()} `{name}` хранится в каталоге `{parent}` и обслуживает его ответственность."',
-          )
-          adapter.write_text(text, encoding="utf-8")
-          PY
-
-      - name: Regenerate detailed structure guide
-        run: python3 scripts/manual/generate_app_structure_detailed.py
-
-      - name: Validate generated structure and whitespace
-        shell: pwsh
-        run: |
-          ./scripts/audit/architecture_guard.ps1 -Strict
-          git diff --check
-
-      - name: Restore canonical CI, remove temporary finalizers, and commit
-        shell: bash
-        run: |
-          git checkout origin/main -- .github/workflows/architecture-guard.yml
-          rm -f scripts/manual/_finalize_paths_docs.py
-          rm -f scripts/manual/_fix_structure_ru_quality.py
-          rm -f .github/workflows/paths-doc-sync.yml
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -A
-          git diff --cached --check
-          git commit -m 'Finalize Paths docs and bilingual structure guide'
-          git push origin HEAD:agent/paths-first-class-audit-cleanup
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            git diff --check "${{ github.event.pull_request.base.sha }}...HEAD"
+          else
+            git fetch --no-tags --prune origin main
+            git diff --check "origin/main...HEAD"
+          fi
