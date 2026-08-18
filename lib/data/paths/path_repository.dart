@@ -1,223 +1,49 @@
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
+import 'package:counter/data/paths/path_models.dart';
+import 'package:uuid/uuid.dart';
 
-/// Marker for the currently shipped plan-backed Path storage.
+export 'path_models.dart';
+
+/// Durable first-class repository for Paths.
 ///
-/// New Paths code must go through [PathRepository] instead of reading marker
-/// rows directly. This lets the storage move later without changing feature UI.
-const String kLegacyActivePathMarker = 'LIFEOS_PATH::V2';
-
-enum PathStatus { draft, reviewed, active, archived }
-
-class PathActionSnapshot {
-  const PathActionSnapshot({
-    required this.id,
-    required this.text,
-    required this.expectedResult,
-    required this.minutes,
-    required this.track,
-    required this.isDone,
-  });
-
-  final String id;
-  final String text;
-  final String expectedResult;
-  final int minutes;
-  final String track;
-  final bool isDone;
-
-  PathActionSnapshot copyWith({bool? isDone}) => PathActionSnapshot(
-        id: id,
-        text: text,
-        expectedResult: expectedResult,
-        minutes: minutes,
-        track: track,
-        isDone: isDone ?? this.isDone,
-      );
-
-  Map<String, dynamic> toJson() => <String, dynamic>{
-        'id': id,
-        'text': text,
-        'result': expectedResult,
-        'minutes': minutes,
-        'track': track,
-        'isDone': isDone,
-      };
-}
-
-class PathStageSnapshot {
-  const PathStageSnapshot({
-    required this.id,
-    required this.title,
-    required this.completionCriteria,
-    required this.isDone,
-    required this.actions,
-  });
-
-  final String id;
-  final String title;
-  final String completionCriteria;
-  final bool isDone;
-  final List<PathActionSnapshot> actions;
-
-  PathStageSnapshot copyWith({
-    bool? isDone,
-    List<PathActionSnapshot>? actions,
-  }) =>
-      PathStageSnapshot(
-        id: id,
-        title: title,
-        completionCriteria: completionCriteria,
-        isDone: isDone ?? this.isDone,
-        actions: actions ?? this.actions,
-      );
-
-  Map<String, dynamic> toJson() => <String, dynamic>{
-        'type': 'stage',
-        'id': id,
-        'text': title,
-        'definitionOfDone': completionCriteria,
-        'isDone': isDone,
-        'actions': actions.map((action) => action.toJson()).toList(growable: false),
-      };
-}
-
-class ProjectPathSnapshot {
-  const ProjectPathSnapshot({
-    required this.category,
-    required this.root,
-    required this.goal,
-    required this.status,
-    required this.version,
-    required this.stages,
-  });
-
-  final CategoryRule category;
-  final PlanningTask root;
-  final String goal;
-  final PathStatus status;
-  final int version;
-  final List<PathStageSnapshot> stages;
-
-  ProjectPathSnapshot copyWith({
-    String? goal,
-    List<PathStageSnapshot>? stages,
-  }) =>
-      ProjectPathSnapshot(
-        category: category,
-        root: root,
-        goal: goal ?? this.goal,
-        status: status,
-        version: version,
-        stages: stages ?? this.stages,
-      );
-}
-
-class PathCatalogSnapshot {
-  const PathCatalogSnapshot({
-    required this.paths,
-    required this.duplicateActiveRootCategoryIds,
-  });
-
-  final List<ProjectPathSnapshot> paths;
-
-  /// Categories with more than one active old-format root. Load is intentionally
-  /// read-only: the repository reports duplicates but never retires rows just
-  /// because the screen was opened.
-  final Set<int> duplicateActiveRootCategoryIds;
-}
-
-class PathStructureAudit {
-  const PathStructureAudit(this.problems);
-
-  final List<String> problems;
-  bool get isValid => problems.isEmpty;
-}
-
-/// Pure, project-independent Path quality check.
-///
-/// Keep this free of PocketBase/DatabaseService access so it can be used by UI,
-/// future AI proposal validation, and focused unit tests.
-PathStructureAudit auditPathStructure({
-  required String goal,
-  required List<PathStageSnapshot> stages,
-}) {
-  final problems = <String>[];
-  if (goal.trim().isEmpty) problems.add('Path goal is empty.');
-  if (stages.isEmpty) problems.add('Path has no stages.');
-
-  for (var stageIndex = 0; stageIndex < stages.length; stageIndex++) {
-    final stage = stages[stageIndex];
-    final number = stageIndex + 1;
-    if (stage.title.trim().isEmpty) {
-      problems.add('Stage $number has no outcome title.');
-    }
-    if (stage.completionCriteria.trim().isEmpty) {
-      problems.add('Stage $number has no completion criteria.');
-    }
-    if (!stage.isDone && stage.actions.isEmpty) {
-      problems.add('Stage $number has no executable actions.');
-    }
-    for (var actionIndex = 0; actionIndex < stage.actions.length; actionIndex++) {
-      final action = stage.actions[actionIndex];
-      final actionNumber = actionIndex + 1;
-      if (action.text.trim().isEmpty) {
-        problems.add('Stage $number action $actionNumber has no action text.');
-      }
-      if (action.expectedResult.trim().isEmpty) {
-        problems.add(
-          'Stage $number action $actionNumber has no expected result.',
-        );
-      }
-      if (action.minutes <= 0 || action.minutes > 30) {
-        problems.add(
-          'Stage $number action $actionNumber must fit in 1–30 minutes.',
-        );
-      }
-    }
-  }
-  return PathStructureAudit(problems);
-}
-
-/// First-class domain boundary for Paths.
-///
-/// Today it adapts the existing `plans` rows. It is deliberately free of
-/// page-open migrations, Planner generation and project-specific profiles.
-/// Those concerns must be explicit services/actions.
+/// Storage is the dedicated PocketBase `paths` + `path_revisions` pair.
+/// `paths.active_revision_id` is the only execution gate. Revisions are
+/// append-only snapshots: editing an active Path publishes a new revision and
+/// atomically switches the project pointer only after the new snapshot exists.
 class PathRepository {
   PathRepository({DatabaseService? database})
       : _database = database ?? DatabaseService.instance;
 
   final DatabaseService _database;
+  static const Uuid _uuid = Uuid();
 
   Future<PathCatalogSnapshot> loadActivePaths() async {
     await _database.refreshCategoryRulesFromServer();
-    final tasks = await _database.fetchBacklogPlans(includeCompleted: true);
-
-    final grouped = <int, List<PlanningTask>>{};
-    for (final task in tasks) {
-      if ((task.notesPlain ?? '').trim() != kLegacyActivePathMarker) continue;
-      grouped.putIfAbsent(task.categoryId, () => <PlanningTask>[]).add(task);
-    }
-
-    final duplicates = <int>{};
+    final pathRows = await _database.fetchOwnedPathRows();
     final paths = <ProjectPathSnapshot>[];
-    for (final entry in grouped.entries) {
-      final category = _database.getCategoryRuleById(entry.key);
-      if (category == null || category.isArchived) continue;
-      if (entry.value.length > 1) duplicates.add(entry.key);
 
-      final root = _selectCanonicalRoot(entry.value);
-      paths.add(
-        ProjectPathSnapshot(
-          category: category,
-          root: root,
-          goal: root.title.trim(),
-          status: PathStatus.active,
-          version: 1,
-          stages: _parseStages(root.checklist),
-        ),
+    for (final row in pathRows) {
+      final pathId = (row['path_id'] ?? '').toString().trim();
+      final revisionId = (row['active_revision_id'] ?? '').toString().trim();
+      final categoryId = _asInt(row['category_id']);
+      if (pathId.isEmpty || revisionId.isEmpty || categoryId <= 0) continue;
+
+      final category = _database.getCategoryRuleById(categoryId);
+      if (category == null || category.isArchived) continue;
+
+      final revision = await _database.fetchOwnedPathRevisionRow(
+        pathId: pathId,
+        revisionId: revisionId,
       );
+      if (revision == null) continue;
+
+      final snapshot = _snapshotFromRows(
+        pathRow: row,
+        revisionRow: revision,
+        category: category,
+      );
+      if (snapshot != null) paths.add(snapshot);
     }
 
     paths.sort(
@@ -225,23 +51,115 @@ class PathRepository {
             b.category.name.toLowerCase(),
           ),
     );
-    return PathCatalogSnapshot(
-      paths: paths,
-      duplicateActiveRootCategoryIds: duplicates,
+    return PathCatalogSnapshot(paths: paths);
+  }
+
+  Future<ProjectPathSnapshot?> loadActivePath(String pathId) async {
+    await _database.refreshCategoryRulesFromServer();
+    final pathRow = await _database.fetchOwnedPathRowByBusinessId(pathId);
+    if (pathRow == null || pathRow['archived'] == true) return null;
+
+    final categoryId = _asInt(pathRow['category_id']);
+    final revisionId = (pathRow['active_revision_id'] ?? '').toString().trim();
+    if (categoryId <= 0 || revisionId.isEmpty) return null;
+    final category = _database.getCategoryRuleById(categoryId);
+    if (category == null || category.isArchived) return null;
+
+    final revision = await _database.fetchOwnedPathRevisionRow(
+      pathId: pathId,
+      revisionId: revisionId,
+    );
+    if (revision == null) return null;
+    return _snapshotFromRows(
+      pathRow: pathRow,
+      revisionRow: revision,
+      category: category,
     );
   }
 
-  Future<bool> saveActivePath(ProjectPathSnapshot path) {
-    return _database.updatePlanningTask(
-      path.root.planRowIdForBackend,
-      planBusinessId: path.root.planRowId,
-      title: path.goal,
-      categoryId: path.category.id,
-      isDone: true,
-      notesPlain: kLegacyActivePathMarker,
-      checklist: path.stages.map((stage) => stage.toJson()).toList(growable: false),
-      suppressAppSnack: true,
-    );
+  Future<ProjectPathSnapshot?> createPath({
+    required CategoryRule category,
+    required String goal,
+    required List<PathStageSnapshot> stages,
+    String source = 'manual',
+  }) async {
+    final cleanGoal = goal.trim();
+    final audit = auditPathStructure(goal: cleanGoal, stages: stages);
+    if (!audit.isValid) return null;
+
+    final pathId = _uuid.v4();
+    final revisionId = _uuid.v4();
+    Map<String, dynamic>? revision;
+    try {
+      revision = await _database.createOwnedPathRevision(
+        pathId: pathId,
+        revisionId: revisionId,
+        version: 1,
+        lifecycle: 'published',
+        goal: cleanGoal,
+        stages: stages.map((stage) => stage.toJson()).toList(growable: false),
+        source: source,
+      );
+      final path = await _database.createOwnedPath(
+        pathId: pathId,
+        categoryId: category.id,
+        title: category.name,
+        activeRevisionId: revisionId,
+      );
+      return _snapshotFromRows(
+        pathRow: path,
+        revisionRow: revision,
+        category: category,
+      );
+    } catch (_) {
+      final revisionRecordId = (revision?['id'] ?? '').toString().trim();
+      if (revisionRecordId.isNotEmpty) {
+        try {
+          await _database.deleteOwnedPathRevision(revisionRecordId);
+        } catch (_) {
+          // Orphan revisions are not executable because no Path points to them.
+        }
+      }
+      return null;
+    }
+  }
+
+  Future<bool> saveActivePath(ProjectPathSnapshot path) async {
+    final audit = auditPathStructure(goal: path.goal, stages: path.stages);
+    if (!audit.isValid || path.status != PathStatus.active) return false;
+
+    final revisionId = _uuid.v4();
+    Map<String, dynamic>? revision;
+    try {
+      revision = await _database.createOwnedPathRevision(
+        pathId: path.pathId,
+        revisionId: revisionId,
+        version: path.version + 1,
+        lifecycle: 'published',
+        goal: path.goal,
+        stages: path.stages
+            .map((stage) => stage.toJson())
+            .toList(growable: false),
+        source: 'manual',
+        parentRevisionId: path.revisionId,
+      );
+      await _database.setOwnedPathActiveRevision(
+        pathRecordId: path.pathRecordId,
+        revisionId: revisionId,
+        title: path.category.name,
+      );
+      return true;
+    } catch (_) {
+      final revisionRecordId = (revision?['id'] ?? '').toString().trim();
+      if (revisionRecordId.isNotEmpty) {
+        try {
+          await _database.deleteOwnedPathRevision(revisionRecordId);
+        } catch (_) {
+          // Safe to leave: only the pointer in `paths` grants active status.
+        }
+      }
+      return false;
+    }
   }
 
   PathStructureAudit audit(ProjectPathSnapshot path) => auditPathStructure(
@@ -249,65 +167,63 @@ class PathRepository {
         stages: path.stages,
       );
 
-  PlanningTask _selectCanonicalRoot(List<PlanningTask> roots) {
-    if (roots.length == 1) return roots.single;
+  ProjectPathSnapshot? _snapshotFromRows({
+    required Map<String, dynamic> pathRow,
+    required Map<String, dynamic> revisionRow,
+    required CategoryRule category,
+  }) {
+    final pathRecordId = (pathRow['id'] ?? '').toString().trim();
+    final pathId = (pathRow['path_id'] ?? '').toString().trim();
+    final revisionRecordId = (revisionRow['id'] ?? '').toString().trim();
+    final revisionId = (revisionRow['revision_id'] ?? '').toString().trim();
+    final goal = (revisionRow['goal'] ?? '').toString().trim();
+    final version = _asInt(revisionRow['version']);
+    if (pathRecordId.isEmpty ||
+        pathId.isEmpty ||
+        revisionRecordId.isEmpty ||
+        revisionId.isEmpty ||
+        goal.isEmpty ||
+        version <= 0) {
+      return null;
+    }
 
-    // Existing data can contain duplicate active roots. Do not mutate them on
-    // read. Pick deterministically so opening Paths is safe and stable, and
-    // surface the duplicate through PathCatalogSnapshot for explicit repair.
-    final copy = List<PlanningTask>.from(roots)
-      ..sort(
-        (a, b) => a.planRowIdForBackend
-            .toString()
-            .compareTo(b.planRowIdForBackend.toString()),
-      );
-    return copy.first;
+    final content = _asStringMap(revisionRow['content']);
+    final rawStages = content['stages'];
+    final stages = <PathStageSnapshot>[];
+    if (rawStages is List) {
+      for (var index = 0; index < rawStages.length; index++) {
+        final raw = rawStages[index];
+        if (raw is! Map) continue;
+        final stage = PathStageSnapshot.fromJson(
+          Map<String, dynamic>.from(raw),
+          stageIndex: index,
+        );
+        if (stage.title.isNotEmpty) stages.add(stage);
+      }
+    }
+
+    return ProjectPathSnapshot(
+      pathRecordId: pathRecordId,
+      pathId: pathId,
+      revisionRecordId: revisionRecordId,
+      revisionId: revisionId,
+      category: category,
+      goal: goal,
+      status: PathStatus.active,
+      version: version,
+      stages: stages,
+    );
   }
 
-  List<PathStageSnapshot> _parseStages(List<Map<String, dynamic>> checklist) {
-    final stages = <PathStageSnapshot>[];
-    for (var stageIndex = 0; stageIndex < checklist.length; stageIndex++) {
-      final rawStage = checklist[stageIndex];
-      final title = (rawStage['text'] ?? '').toString().trim();
-      if (title.isEmpty) continue;
+  static int _asInt(dynamic value) {
+    if (value is int) return value;
+    if (value is num) return value.round();
+    return int.tryParse(value?.toString() ?? '') ?? 0;
+  }
 
-      final actions = <PathActionSnapshot>[];
-      final rawActions = rawStage['actions'];
-      if (rawActions is List) {
-        for (var actionIndex = 0; actionIndex < rawActions.length; actionIndex++) {
-          final raw = rawActions[actionIndex];
-          if (raw is! Map) continue;
-          final map = Map<String, dynamic>.from(raw);
-          final text = (map['text'] ?? '').toString().trim();
-          if (text.isEmpty) continue;
-          final rawMinutes = map['minutes'];
-          final minutes = rawMinutes is int
-              ? rawMinutes
-              : int.tryParse(rawMinutes?.toString() ?? '') ?? 0;
-          actions.add(
-            PathActionSnapshot(
-              id: (map['id'] ?? 'action-$stageIndex-$actionIndex').toString(),
-              text: text,
-              expectedResult: (map['result'] ?? '').toString().trim(),
-              minutes: minutes,
-              track: (map['track'] ?? 'execution').toString().trim(),
-              isDone: map['isDone'] == true,
-            ),
-          );
-        }
-      }
-
-      stages.add(
-        PathStageSnapshot(
-          id: (rawStage['id'] ?? 'stage-$stageIndex').toString(),
-          title: title,
-          completionCriteria:
-              (rawStage['definitionOfDone'] ?? '').toString().trim(),
-          isDone: rawStage['isDone'] == true,
-          actions: actions,
-        ),
-      );
-    }
-    return stages;
+  static Map<String, dynamic> _asStringMap(dynamic value) {
+    if (value is Map<String, dynamic>) return value;
+    if (value is Map) return Map<String, dynamic>.from(value);
+    return const <String, dynamic>{};
   }
 }
