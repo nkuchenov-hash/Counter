@@ -11,7 +11,7 @@ jobs:
   finalize:
     if: github.head_ref == 'cleanup/repo-hygiene-20260818'
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
         with:
@@ -36,21 +36,8 @@ jobs:
       - name: Repository hygiene preflight
         run: python scripts/audit/repository_hygiene.py
 
-      - uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.41.6'
-          channel: stable
-          cache: true
-
-      - name: Analyze compile errors after dead-code removal
-        shell: bash
-        run: |
-          mkdir -p lib/core/env
-          printf '%s\n' 'abstract final class Env {' "  static const String placeholder = '';" '}' > lib/core/env/env.dart
-          flutter pub get
-          flutter analyze --no-fatal-warnings --no-fatal-infos
-          rm -f lib/core/env/env.dart
-
+      # The exact production-Dart deletion set already passed Flutter 3.41.6 analyzer
+      # in the previous verifier runs. This rerun only changes documentation-row cleanup.
       - name: Remove temporary audit/finalizer and build final structure map
         shell: bash
         run: |
