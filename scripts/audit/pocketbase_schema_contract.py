@@ -62,6 +62,9 @@ def main() -> int:
             "path_revisions",
             'name: "category_link"',
             'name: "active_revision_link"',
+            "@request.body.path_id:changed = false",
+            "active_revision_link.lifecycle = \\\"published\\\"",
+            "active_revision_link.path_id = @request.body.path_id",
         ):
             if token not in migration:
                 violations.append(f"DURABLE_PATH_MIGRATION_MISSING {token}")
@@ -69,9 +72,7 @@ def main() -> int:
         if len(revision_collection) != 2:
             violations.append("PATH_REVISION_COLLECTION_BLOCK_MISSING")
         else:
-            revision_rules = revision_collection[1].split(
-                'name: "paths"', 1
-            )[0]
+            revision_rules = revision_collection[1].split('name: "paths"', 1)[0]
             if "updateRule: null" not in revision_rules:
                 violations.append("PATH_REVISION_UPDATE_RULE_MUST_BE_CLOSED")
             if "deleteRule: null" not in revision_rules:
@@ -83,6 +84,8 @@ def main() -> int:
         "category_link",
         "active_revision_link",
         "append-only",
+        "same owner",
+        "published",
         "pb_migrations/",
     )
     for token in required_manifest_tokens:
