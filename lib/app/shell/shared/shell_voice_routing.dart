@@ -272,88 +272,6 @@ mixin ShellVoiceRouting on ShellTaskActions {
     }
   }
 
-  Future<void> ensureSpeechReady() async {
-    if (speechReady) return;
-    speech ??= stt.SpeechToText();
-    await initializeSpeechInstance();
-  }
-
-  Future<void> speechEngineHardReset() async {
-    if (!mounted) return;
-    try {
-      await speech?.stop();
-    } catch (_) {}
-    try {
-      await speech?.cancel();
-    } catch (_) {}
-    speech = stt.SpeechToText();
-    speechHandle?.speech = speech!;
-    speechReady = false;
-    speechLastInitError = null;
-    if (!mounted) return;
-    await initializeSpeechInstance();
-  }
-
-  Future<void> initializeSpeechInstance() async {
-    speechLastInitError = null;
-    try {
-      final available = await speech!.initialize(
-        onStatus: (s) => speechStatusCallback?.call(s),
-        onError: (e) {
-          final msg = e.errorMsg;
-          debugPrint('[STT] onError: $msg (permanent=${e.permanent})');
-          speechStatusCallback?.call('error:$msg');
-        },
-        debugLogging: false,
-      );
-      if (!mounted) return;
-      if (available) {
-        if (kIsWeb) {
-          // Web: never block ready state on [locales] (often 0 or 1 synthetic tag until post-listen).
-          unawaited(logSttLocalesBestEffortWeb());
-        } else {
-          try {
-            final locales = await speech!.locales();
-            final ids = <String>[
-              for (final l in locales) l.localeId.toString(),
-            ];
-            debugPrint(
-              '[STT] initialize OK; locales (${locales.length}): ${ids.join(", ")}',
-            );
-          } catch (e, st) {
-            debugPrint('[STT] locales() after init failed: $e\n$st');
-          }
-        }
-        setState(() {
-          speechReady = true;
-          speechLastInitError = null;
-        });
-      } else {
-        const msg = 'initialize() returned false';
-        speechLastInitError = msg;
-        debugPrint('[STT] $msg');
-        setState(() => speechReady = false);
-      }
-    } catch (e, st) {
-      debugPrint('[STT] initialize exception: $e\n$st');
-      speechLastInitError = e.toString();
-      if (!mounted) return;
-      setState(() => speechReady = false);
-    }
-  }
-
-  Future<void> logSttLocalesBestEffortWeb() async {
-    try {
-      final locales = await speech!.locales();
-      final ids = <String>[for (final l in locales) l.localeId.toString()];
-      debugPrint(
-        '[STT] Web init OK; locales async (${locales.length}): ${ids.join(", ")}',
-      );
-    } catch (e, st) {
-      debugPrint('[STT] Web locales() log failed: $e\n$st');
-    }
-  }
-
   Future<String?> desktopVoiceSubmitParsed(
     VoiceCommandParseResult result, {
     DateTime? explicitStartTime,
@@ -596,11 +514,11 @@ if (outcome == null) {
         '[STT] Web: SpeechToText uses the browser Web Speech API (HTTPS + user gesture).',
       );
     }
-    await ensureSpeechReady();
-    if (!speechReady) {
+    await speechEngine.ensureReady();
+    if (!speechEngine.ready) {
       if (!mounted) return;
       final loc = currentLocale.value;
-      final detail = speechLastInitError?.trim();
+      final detail = speechEngine.lastInitError?.trim();
       final text = detail != null && detail.isNotEmpty
           ? t(loc, 'speech_error_prefix').replaceFirst('%s', detail)
           : t(loc, 'speech_unavailable');
@@ -620,19 +538,16 @@ if (outcome == null) {
     final voicePrimaryKey = shellPageIndex == 1 || shellPageIndex == 3
         ? 'add_task'
         : 'start_task';
-    speechHandle ??= SpeechEngineHandle(speech!);
-    speechHandle!.speech = speech!;
+    final speechHandle = speechEngine.handle;
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
       builder: (ctx) {
         return VoiceInputSheet(
-          speechHandle: speechHandle!,
-          setSpeechStatusCallback: (cb) {
-            if (mounted) setState(() => speechStatusCallback = cb);
-          },
-          onSpeechEngineHardReset: speechEngineHardReset,
+          speechHandle: speechHandle,
+          setSpeechStatusCallback: speechEngine.setStatusCallback,
+          onSpeechEngineHardReset: speechEngine.hardReset,
           onListeningChanged: (listening) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (mounted) setState(() => isVoiceListening = listening);
@@ -647,7 +562,7 @@ if (outcome == null) {
       },
     );
     if (!mounted) return;
-    setState(() => speechStatusCallback = null);
+    speechEngine.setStatusCallback(null);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) setState(() => isVoiceListening = false);
     });

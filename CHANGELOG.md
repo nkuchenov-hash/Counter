@@ -1,3 +1,9 @@
+## 2026-08-18 — Shared STT engine lifecycle [engineering]
+
+- Added `SpeechEngineController` under `shared/voice/recognition` as the owner of SpeechToText initialization, readiness/error state, hard reset and locale diagnostics.
+- Removed SpeechToText engine state and initialization/reset methods from shell state and `shell_voice_routing.dart`.
+- Shell now only prewarms/disposes the controller and hosts the voice sheet/submit routing.
+
 ## 2026-08-18 — Sleep foreground lifecycle ownership [engineering]
 
 - `ShellTopStatusBars` is presentation-only again; Health Connect/cloud ingestion no longer starts from a UI widget.

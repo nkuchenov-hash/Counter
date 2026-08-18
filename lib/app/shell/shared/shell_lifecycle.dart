@@ -63,7 +63,7 @@ mixin ShellLifecycle on ShellTabHost, ShellVoiceIntegration {
         );
       }());
       StartupLog.deferred(name: 'sttInit', reason: 'notNeededForFirstFrame');
-      unawaited(ensureSpeechReady());
+      unawaited(speechEngine.ensureReady());
       unawaited(initDesktopVoiceLayer());
     });
 
@@ -88,6 +88,7 @@ mixin ShellLifecycle on ShellTabHost, ShellVoiceIntegration {
   }
 
   void disposeShellLifecycle() {
+    unawaited(speechEngine.dispose());
     SleepForegroundReconcileService.instance.stop();
     deviceLocalMidnightWatchTimer?.cancel();
     notificationSub?.cancel();
