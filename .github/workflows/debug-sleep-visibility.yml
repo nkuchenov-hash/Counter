@@ -1,0 +1,101 @@
+name: Debug sleep visibility
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      SSH_PRIVATE_KEY: ${{ secrets.POCKETBASE_SSH_PRIVATE_KEY || secrets.VPS_SSH_KEY || secrets.SSH_PRIVATE_KEY }}
+      SSH_USER: ${{ secrets.POCKETBASE_SSH_USER || secrets.VPS_SSH_USER || secrets.SSH_USER }}
+      SSH_HOST: ${{ secrets.POCKETBASE_SSH_HOST || secrets.VPS_HOST || secrets.SSH_HOST }}
+      SSH_PORT: ${{ secrets.POCKETBASE_SSH_PORT || secrets.VPS_SSH_PORT || '22' }}
+      POCKETBASE_SERVICE: ${{ secrets.POCKETBASE_SERVICE }}
+    steps:
+      - name: Prepare SSH
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$SSH_PRIVATE_KEY"
+          SSH_USER="${SSH_USER:-root}"
+          SSH_HOST="${SSH_HOST:-217.114.0.201}"
+          echo "SSH_USER=$SSH_USER" >> "$GITHUB_ENV"
+          echo "SSH_HOST=$SSH_HOST" >> "$GITHUB_ENV"
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/lifeos_pocketbase
+          chmod 600 ~/.ssh/lifeos_pocketbase
+          ssh-keyscan -p "$SSH_PORT" -H "$SSH_HOST" >> ~/.ssh/known_hosts
+
+      - name: Inspect production sleep rows
+        shell: bash
+        run: |
+          set -euo pipefail
+          ssh -i ~/.ssh/lifeos_pocketbase -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" \
+            "SERVICE='${POCKETBASE_SERVICE:-pocketbase.service}' bash -s" <<'REMOTE'
+          set -euo pipefail
+          service="${SERVICE:-pocketbase.service}"
+          app_dir="$(systemctl show "$service" -p WorkingDirectory --value)"
+          db="$app_dir/pb_data/data.db"
+          test -f "$db"
+          DB_PATH="$db" python3 - <<'PY'
+          import os, sqlite3
+          from datetime import datetime, timezone, timedelta
+
+          con = sqlite3.connect(f'file:{os.environ["DB_PATH"]}?mode=ro', uri=True)
+          con.row_factory = sqlite3.Row
+          conn = con.execute('''
+            SELECT user_id, status, last_error, last_sync_at, last_session_count,
+                   last_imported_count, last_sleep_count, enabled, last_full_sync_at,
+                   segment_backfill_complete
+            FROM sleep_sync_connections
+            WHERE provider='google_fit' ORDER BY rowid DESC LIMIT 1
+          ''').fetchone()
+          if conn is None:
+              print('NO_CONNECTION'); raise SystemExit(0)
+          uid = str(conn['user_id'])
+          print('SYNC status=%s enabled=%s last_sync=%s sessions=%s imported=%s sleep=%s full_sync=%s segment_backfill=%s' % (
+              conn['status'], conn['enabled'], conn['last_sync_at'], conn['last_session_count'], conn['last_imported_count'],
+              conn['last_sleep_count'], conn['last_full_sync_at'], conn['segment_backfill_complete']))
+          print('SYNC_ERROR=' + str(conn['last_error'] or ''))
+          print('USER_ID=' + uid)
+
+          cols = {r['name'] for r in con.execute('PRAGMA table_info(records)').fetchall()}
+          wanted = ['id','record_id','user_id','title','status','type','start_time','end_time','category_id','category_link','parent_id','external_source','external_id','external_kind','sleep_source','sleep_external_id','created','updated']
+          selected = [c for c in wanted if c in cols]
+          qcols = ','.join('"%s"' % c for c in selected)
+          rows = con.execute(f'''SELECT {qcols} FROM records
+            WHERE user_id=? AND (external_source='google_fit' OR sleep_source='google_fit')
+            ORDER BY start_time ASC''',(uid,)).fetchall()
+          print('SLEEP_TOTAL=' + str(len(rows)))
+          if rows:
+              print('SLEEP_EARLIEST=' + str(rows[0]['start_time']))
+              print('SLEEP_LATEST=' + str(rows[-1]['end_time']))
+
+          cutoff=(datetime.now(timezone.utc)-timedelta(days=45)).isoformat().replace('+00:00','Z')
+          recent=[r for r in rows if str(r['end_time'] or '') >= cutoff]
+          print('SLEEP_RECENT45=' + str(len(recent)))
+          for r in recent[-30:]:
+              print('ROW ' + ' | '.join('%s=%s' % (c, str(r[c])[:160]) for c in selected))
+
+          cat_ids=set()
+          for r in rows:
+              for k in ('category_link','category_id'):
+                  if k in r.keys() and r[k] is not None and str(r[k]).strip(): cat_ids.add(str(r[k]).strip())
+          print('SLEEP_CATEGORY_IDS=' + ','.join(sorted(cat_ids)))
+          for cid in sorted(cat_ids):
+              cr=con.execute('SELECT * FROM categories WHERE id=?',(cid,)).fetchone()
+              if cr:
+                  keys=['id','user_id','category_id','name','normalized_id','is_archived','parent_id']
+                  print('CATEGORY ' + ' | '.join('%s=%s' % (k,str(cr[k])) for k in keys if k in cr.keys()))
+
+          total_owned=con.execute('SELECT COUNT(*) AS n FROM records WHERE user_id=?',(uid,)).fetchone()['n']
+          print('OWNED_RECORDS_TOTAL=' + str(total_owned))
+          PY
+          REMOTE
