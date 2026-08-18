@@ -1,0 +1,87 @@
+name: Final architecture documentation parity audit
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    if: github.head_ref == 'agent/final-architecture-doc-parity-20260818'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Scan governing documentation references
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          root = Path('.')
+          docs = [
+              Path('docs/APP_STRUCTURE.md'),
+              Path('docs/ARCHITECTURE.md'),
+              Path('docs/ROADMAP.md'),
+              Path('docs/PROJECT_KNOWLEDGE_PACK.md'),
+              Path('AGENTS.md'),
+              Path('AGENT_NAVIGATION.md'),
+          ]
+          candidate_prefixes = ('lib/', 'docs/', 'scripts/', '.github/')
+          root_files = {'AGENTS.md', 'AGENT_NAVIGATION.md', 'CHANGELOG.md', 'README.md'}
+          code_refs = []
+          for doc in docs:
+              text = doc.read_text(encoding='utf-8')
+              for line_no, line in enumerate(text.splitlines(), 1):
+                  for raw in re.findall(r'`([^`]+)`', line):
+                      value = raw.strip().strip('.,;:()[]')
+                      if '#' in value:
+                          value = value.split('#', 1)[0]
+                      if not value or '*' in value or '…' in value or '<' in value or '>' in value:
+                          continue
+                      if value.startswith(candidate_prefixes) or value in root_files:
+                          code_refs.append((doc.as_posix(), line_no, value, line.strip()))
+          print('=== BROKEN EXPLICIT REPO REFERENCES ===')
+          broken = []
+          for doc, line_no, value, line in code_refs:
+              if not (root / value).exists():
+                  broken.append((doc, line_no, value, line))
+                  print(f'{doc}:{line_no}: {value} :: {line}')
+          print(f'BROKEN_EXPLICIT_REFS={len(broken)}')
+
+          app = Path('docs/APP_STRUCTURE.md')
+          lib_files = [p.relative_to('lib').as_posix() for p in Path('lib').rglob('*.dart')]
+          print('=== APP_STRUCTURE REVERSE MANIFEST ===')
+          missing_rows = []
+          for line_no, line in enumerate(app.read_text(encoding='utf-8').splitlines(), 1):
+              m = re.match(r'^\|\s*`([^`]+\.dart)`\s*\|', line)
+              if not m:
+                  continue
+              declared = m.group(1).strip().lstrip('./')
+              candidates = [declared]
+              if declared.startswith('lib/'):
+                  candidates.append(declared[4:])
+              exists = any(
+                  f == c or f.endswith('/' + c)
+                  for f in lib_files
+                  for c in candidates
+              )
+              if not exists:
+                  missing_rows.append((line_no, declared, line.strip()))
+                  print(f'{app}:{line_no}: {declared} :: {line.strip()}')
+          print(f'APP_STRUCTURE_STALE_DART_ROWS={len(missing_rows)}')
+          PY
+      - name: Verify detailed structure generator
+        shell: bash
+        run: |
+          python scripts/manual/generate_app_structure_detailed.py
+          echo '=== APP_STRUCTURE_DETAILED GENERATOR DIFF ==='
+          git diff --numstat -- docs/APP_STRUCTURE_DETAILED.md || true
+          git diff --stat -- docs/APP_STRUCTURE_DETAILED.md || true
+          git checkout -- docs/APP_STRUCTURE_DETAILED.md
+      - name: Current strict architecture guard
+        shell: pwsh
+        run: ./scripts/audit/architecture_guard.ps1 -Strict
