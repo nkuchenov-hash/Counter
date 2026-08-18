@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:counter/data/database_service.dart';
@@ -73,6 +74,7 @@ class CloudSleepSyncService {
       ValueNotifier<CloudSleepSyncState>(const CloudSleepSyncState.initial());
 
   bool _loading = false;
+  DateTime? _lastRecordsRefreshSyncUtc;
 
   Map<String, String>? _headers({bool json = false}) {
     final token = DatabaseService.instance.pocketBase.authStore.token.trim();
@@ -160,6 +162,21 @@ class CloudSleepSyncService {
     );
   }
 
+  void _refreshRecordsForNewServerSync() {
+    final current = state.value;
+    final syncUtc = current.lastSyncUtc;
+    if (!current.configured || syncUtc == null) return;
+    if (_lastRecordsRefreshSyncUtc == syncUtc) return;
+    _lastRecordsRefreshSyncUtc = syncUtc;
+    unawaited(
+      DatabaseService.instance.fetchRecords(forceNetwork: true).catchError((_) {
+        // A later foreground refresh/realtime event will retry. Sleep status itself
+        // remains valid; do not turn a cache reconciliation miss into sync failure.
+        return <Map<String, dynamic>>[];
+      }),
+    );
+  }
+
   Future<void> loadStatus() async {
     if (_loading) return;
     final headers = _headers();
@@ -183,6 +200,7 @@ class CloudSleepSyncService {
         throw StateError(_failureMessage(response, 'Sleep sync status failed'));
       }
       _applyStatus(_decode(response));
+      _refreshRecordsForNewServerSync();
     } catch (error) {
       state.value = state.value.copyWith(
         phase: CloudSleepSyncPhase.error,
@@ -315,6 +333,7 @@ class CloudSleepSyncService {
         );
       }
       state.value = const CloudSleepSyncState.initial();
+      _lastRecordsRefreshSyncUtc = null;
       return true;
     } catch (error) {
       state.value = state.value.copyWith(
