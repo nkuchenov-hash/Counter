@@ -1,6 +1,6 @@
 part of '../app_shell.dart';
 
-mixin ShellLifecycle on ShellVoiceRouting {
+mixin ShellLifecycle on ShellTabHost, ShellVoiceRouting {
   void initializeShellLifecycle() {
     selectedDate = DatabaseService.instance.getTimelineDeviceLocalToday();
     focusedDay = DatabaseService.instance.getTimelineDeviceLocalToday();
