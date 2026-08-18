@@ -7,12 +7,7 @@ on:
       - 'pb_migrations/**'
       - '.github/workflows/deploy-pocketbase.yml'
   push:
-    branches:
-      - main
-    paths:
-      - 'pb_hooks/**'
-      - 'pb_migrations/**'
-      - '.github/workflows/deploy-pocketbase.yml'
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -24,19 +19,29 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Validate PocketBase JavaScript
+      - name: Validate main architecture contracts
         run: |
-          node --check pb_hooks/sleep_sync.pb.js
-          node --check pb_hooks/google_health_sleep_runtime.js
-          node --check pb_hooks/google_fit_sleep_runtime.js
-          node --check pb_hooks/google_fit_sleep_recovery.js
-          node --check pb_migrations/1785390000_server_sleep_sync.js
-          node --check pb_migrations/1786470000_google_fit_records.js
-          node --check pb_migrations/1786550000_google_health_history.js
-          node --check pb_hooks/calendar_integrations.pb.js
-          node --check pb_migrations/1785960000_calendar_integrations.js
+          pwsh -NoProfile -NonInteractive -File ./scripts/audit/architecture_guard.ps1 -Strict
+          python scripts/audit/documentation_parity.py
+          python scripts/audit/repository_hygiene.py
+          python scripts/audit/pocketbase_schema_contract.py
+          python scripts/audit/deployment_contract.py
 
+      - name: Validate all PocketBase JavaScript
+        shell: bash
+        run: |
+          mapfile -d '' files < <(find pb_hooks pb_migrations -type f -name '*.js' -print0 | sort -z)
+          if (( ${#files[@]} == 0 )); then
+            echo 'No PocketBase JavaScript files found.' >&2
+            exit 1
+          fi
+          for file in "${files[@]}"; do
+            echo "node --check $file"
+            node --check "$file"
+          done
       - name: Check production deploy credentials
         env:
           SSH_PRIVATE_KEY: ${{ secrets.POCKETBASE_SSH_PRIVATE_KEY || secrets.VPS_SSH_KEY || secrets.SSH_PRIVATE_KEY }}
@@ -81,7 +86,28 @@ jobs:
       GOOGLE_HEALTH_CLIENT_SECRET: ${{ secrets.GOOGLE_HEALTH_CLIENT_SECRET }}
       SLEEP_SYNC_TOKEN_KEY: ${{ secrets.SLEEP_SYNC_TOKEN_KEY }}
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect PocketBase bundle changes
+        shell: bash
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+        run: |
+          set -euo pipefail
+          changed=true
+          if [[ "${{ github.event_name }}" == "push" && -n "${BEFORE_SHA:-}" && ! "$BEFORE_SHA" =~ ^0+$ ]]; then
+            if git diff --quiet "$BEFORE_SHA" "$GITHUB_SHA" -- pb_hooks pb_migrations .github/workflows/deploy-pocketbase.yml; then
+              changed=false
+            fi
+          fi
+          echo "SERVER_CHANGED=$changed" >> "$GITHUB_ENV"
+          echo "PocketBase bundle changed: $changed"
+
       - name: Require production credentials
+        if: env.SERVER_CHANGED == 'true'
         run: |
           if [[ -z "$SSH_PRIVATE_KEY" ]]; then
             echo "PocketBase deployment cannot run: SSH private key is missing." >&2
@@ -98,10 +124,8 @@ jobs:
           echo "SSH_USER=${SSH_USER:-root}" >> "$GITHUB_ENV"
           echo "SSH_HOST=${SSH_HOST:-217.114.0.201}" >> "$GITHUB_ENV"
 
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
       - name: Prepare SSH
+        if: env.SERVER_CHANGED == 'true'
         run: |
           install -m 700 -d ~/.ssh
           printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/lifeos_pocketbase
@@ -109,6 +133,7 @@ jobs:
           ssh-keyscan -p "$SSH_PORT" -H "$SSH_HOST" >> ~/.ssh/known_hosts
 
       - name: Prepare Google Health environment
+        if: env.SERVER_CHANGED == 'true'
         run: |
           umask 077
           {
@@ -120,6 +145,7 @@ jobs:
           } > /tmp/lifeos-google-health.env
 
       - name: Upload server bundle
+        if: env.SERVER_CHANGED == 'true'
         run: |
           ARCHIVE="/tmp/lifeos-pocketbase-${GITHUB_SHA}.tar.gz"
           tar -czf "$ARCHIVE" pb_hooks pb_migrations
@@ -129,6 +155,7 @@ jobs:
             "$SSH_USER@$SSH_HOST:/tmp/lifeos-google-health.env"
 
       - name: Install and restart PocketBase
+        if: env.SERVER_CHANGED == 'true'
         run: |
           ssh -i ~/.ssh/lifeos_pocketbase -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" \
             "POCKETBASE_SERVICE='$POCKETBASE_SERVICE' POCKETBASE_DEPLOY_DIR='$POCKETBASE_DEPLOY_DIR' ARCHIVE='/tmp/lifeos-pocketbase-${GITHUB_SHA}.tar.gz' bash -s" <<'REMOTE'

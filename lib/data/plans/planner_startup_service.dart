@@ -1,13 +1,11 @@
 import 'package:counter/data/database_service.dart';
-import 'package:counter/data/paths/compatibility/path_governance_service.dart';
 import 'package:counter/data/plans/daily_routine_service.dart';
 
 /// Planning-owned startup baseline.
 ///
-/// The shell asks Planning to prepare its runtime baseline; it does not know
-/// about compatibility-era Paths migrations. The cleanup remains isolated
-/// behind [runLegacyPathPlannerCleanupV7] until old generated Path rows are
-/// fully retired.
+/// Startup prepares Planning data only. Paths migrations are server-side
+/// PocketBase migrations and Path → Planner projection is explicit through
+/// `PathPlannerBridge`; neither concern is allowed on app/shell startup.
 final class PlannerStartupService {
   PlannerStartupService._();
 
@@ -29,6 +27,5 @@ final class PlannerStartupService {
     final db = DatabaseService.instance;
     await db.refreshCategoryRulesFromServer();
     await ensureDailyRoutineV6();
-    await runLegacyPathPlannerCleanupV7();
   }
 }

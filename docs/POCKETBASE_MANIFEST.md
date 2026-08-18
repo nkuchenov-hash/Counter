@@ -22,7 +22,7 @@ This file is the **single source of truth** for how this app talks to **PocketBa
 ## 2. Auth & identification
 
 - **`profiles`** is the **Auth** collection. The authenticated user’s primary key is the **15-char** system **`id`** on that auth record.
-- **Child collections** (`records`, `categories`, `plans`, `tags`, …) store **`user_id` as a Relation** to **`profiles.id`** (same 15-char value), not arbitrary UUIDs in new rows.
+- **Child collections** (`records`, `categories`, `plans`, `tags`, `paths`, `path_revisions`, …) store **`user_id` as a Relation** to **`profiles.id`** (same 15-char value), not arbitrary UUIDs in new rows.
 - **Client source of truth for mutating `user_id`:** on every **POST/PATCH** for owned rows, the Brain sets **`user_id`** from **`pb.authStore.record.id`** (SDK 0.21+: alias of deprecated `model.id`). Session invalid → no writes; **401/403** must surface in UI (snackbar), not “silent null”.
 - **Legacy:** Text field **`profiles.user_id`** (UUID) may still exist for historical NocoDB mapping; filters may OR legacy and auth id — see `DatabaseService` — but **new writes** target the **relation id**.
 
@@ -39,6 +39,10 @@ This file is the **single source of truth** for how this app talks to **PocketBa
 | **plans** | `user_id` | `profiles.id` | **Owner** | Plan rows are tenant-scoped the same way as records. |
 | **plans** | `tags_link` | `tags` | Tags | Expand per `kPbPlanTagsExpand`. |
 | **categories** | `user_id` | `profiles.id` | **Owner** | Same ownership pattern. |
+| **paths** | `user_id` | `profiles.id` | **Owner** | Stable Path/project identity + category relation + single `active_revision_link` execution relation. |
+| **path_revisions** | `user_id` | `profiles.id` | **Owner** | Append-only Path snapshots; project linkage by stable `path_id`. |
+| **sleep_sync_connections** | `user_id` | `profiles.id` | **Owner (server-only)** | Closed collection for encrypted Google Fit connection/sync state; clients use `/api/sleep-sync/*`. |
+| **calendar_integrations** | `user_id` | `profiles.id` | **Owner (server-only)** | Closed Microsoft/Google calendar connection state; clients use `/api/calendar-integrations/*`. |
 
 **Cross-rule intent:** A **record** is always owned via **`records.user_id`**. If **`source_plan_id`** is set, the linked **plan must belong to the same user** so analytics and security stay consistent (enforce in PocketBase rules or hooks).
 
@@ -102,6 +106,77 @@ Password reset is app-owned through `POST /api/auth/request-password-reset`; do 
 | `user_id` | relation | → `profiles.id`. |
 | `default_plan_duration_minutes` | number | Optional minutes for auto-scheduled plan blocks when this tag is on the task. PB may return `10.0` (double); client accepts `num` / `int` / `double`. |
 
+
+### 4.6 `paths`
+
+| Field | Type | Notes |
+| :--- | :--- | :--- |
+| **`id`** | **system** | PocketBase row id. |
+| `user_id` | relation | → `profiles.id`; tenant owner. |
+| `path_id` | text | Stable business identity; unique per owner. |
+| `category_link` | relation | → `categories.id`; stable server relation; one Path per owner/category. |
+| **`active_revision_link`** | relation | → `path_revisions.id`; **only executable revision relation**. API rules require the referenced revision to have the same owner and `path_id`. |
+| `archived` | bool | Archived Paths are excluded from normal repository reads. |
+
+### 4.7 `path_revisions`
+
+| Field | Type | Notes |
+| :--- | :--- | :--- |
+| **`id`** | **system** | PocketBase row id. |
+| `user_id` | relation | → `profiles.id`; tenant owner. |
+| `path_id` | text | Parent Path business id. |
+| `revision_id` | text | Immutable business revision id; unique within owner/path. |
+| `version` | integer | Monotonic revision number per Path. |
+| `lifecycle` | select | `draft` / `reviewed` / `published`; publication alone does not execute it — `paths.active_revision_link` does. |
+| `goal` | text | Revision goal/end state. |
+| `content` | JSON | Ordered `stages[]`, each with completion criteria and executable `actions[]`. |
+| `source` | select | `manual` / `migration` / `ai` / `system`. |
+| `parent_revision_id` | text | Previous revision business id when applicable. |
+
+**Immutability:** client API has neither update nor delete rules for `path_revisions`. Edit = create next revision, then switch `paths.active_revision_link`. If pointer update fails, the unreferenced revision remains immutable audit history and is non-executable.
+
+
+### 4.8 `sleep_sync_connections` (server-owned)
+
+Created by `pb_migrations/1785390000_server_sleep_sync.js`. Direct client collection rules are closed; authenticated Flutter uses the app-owned `/api/sleep-sync/*` routes.
+
+| Field | Type | Notes |
+| :--- | :--- | :--- |
+| `user_id` | relation | → `profiles.id`; cascade delete. |
+| `provider` | select | `google_fit`; unique together with owner. |
+| `enabled` | bool | Background sync enabled. |
+| `daily_sync_minutes` | integer | Profile-local minute of day, 0–1439. |
+| `status` | select | `disconnected` / `connecting` / `connected` / `syncing` / `error`. |
+| `refresh_token_enc`, `access_token_enc` | text | Server-encrypted OAuth credentials; never exposed as client data. |
+| `access_token_expires_at` | date | OAuth token expiry. |
+| `oauth_state`, `oauth_state_expires_at` | text/date | OAuth handshake state. |
+| `last_sync_at`, `last_sync_local_day` | date/text | Last completed server sync. |
+| `last_session_count`, `last_imported_count` | integer | Last sync diagnostics. |
+| `last_error` | text | Bounded server diagnostic. |
+
+The same migration adds `records.sleep_source` and `records.sleep_external_id` plus a partial unique owner/source/external-id index for idempotent imported sleep.
+
+### 4.9 `calendar_integrations` (server-owned)
+
+Created by `pb_migrations/1785960000_calendar_integrations.js`. Direct client collection rules are closed; authenticated Flutter uses `/api/calendar-integrations/*` routes.
+
+| Field | Type | Notes |
+| :--- | :--- | :--- |
+| `user_id` | relation | → `profiles.id`; cascade delete. |
+| `provider` | select | `microsoft` / `google`; unique together with owner. |
+| `account_id`, `account_label` | text | Provider account identity/display label. |
+| `enabled` | bool | Integration enabled. |
+| `status` | select | `disconnected` / `connecting` / `connected` / `syncing` / `error`. |
+| `calendars_json` | JSON | Selected calendars and per-calendar settings/fallbacks. |
+| `sync_past_days`, `sync_future_days` | integer | Bounded server sync window. |
+| `refresh_token_enc`, `access_token_enc` | text | Server-encrypted OAuth credentials. |
+| `access_token_expires_at` | date | OAuth token expiry. |
+| `oauth_state`, `oauth_state_expires_at` | text/date | OAuth handshake state. |
+| `last_sync_at` | date | Last completed provider sync. |
+| `last_error` | text | Bounded server diagnostic. |
+
+The migration also adds the `plans.external_*` fields documented in `docs/CALENDAR_INTEGRATIONS.md` and a partial unique provider-occurrence index.
+
 ---
 
 ## 5. API rules (server contract)
@@ -110,8 +185,9 @@ PocketBase Admin should enforce **multi-tenant isolation** and **plan integrity*
 
 ### 5.1 Global
 
-- **Authenticated-only** mutations: **Create / Update / Delete** on `records`, `plans`, `categories`, `tags` require **`@request.auth.id != ""`** (or stricter).
+- **Authenticated-only** mutations: **Create / Update / Delete** on `records`, `plans`, `categories`, `tags`, `paths`, `path_revisions` require **`@request.auth.id != ""`** (or stricter).
 - **List / View** on those collections: restrict rows to the current user (e.g. **`user_id = @request.auth.id`** on the row’s relation).
+- **Path revisions:** client update is forbidden; revision snapshots are append-only. Only the `paths.active_revision_link` relation activates a revision.
 
 ### 5.2 `records`
 
@@ -125,6 +201,13 @@ PocketBase Admin should enforce **multi-tenant isolation** and **plan integrity*
 
 - **Create / Update / Delete:** **`plans.user_id = @request.auth.id`** (same isolation as records).
 
+### 5.4 `paths` / `path_revisions`
+
+- `user_id` must equal `@request.auth.id` on create and remain unchanged; `path_id` and `category_link` are immutable after Path creation.
+- `path_revisions` are append-only through the client API: update and delete are both closed.
+- `paths.active_revision_link` is the sole active gate and may relate only to a `published` revision with the same owner and `path_id`; draft/review rows cannot be activated.
+- Owner + `path_id` and owner + category are unique for `paths`; owner + path + revision/version are unique for revisions.
+
 ---
 
 ## 6. Client (Brain) obligations
@@ -133,6 +216,11 @@ PocketBase Admin should enforce **multi-tenant isolation** and **plan integrity*
 - **POST `records`:** Body always includes **`user_id`** from **`authStore.record.id`**; optional **`source_plan_id`** when starting from a plan or after user confirmation / manual dropdown.
 - **PATCH `records`:** Optional **`source_plan_id`** updates only when the user changes link; **`null`** clears the relation.
 - **Errors:** **401** (session) and **403** (forbidden / wrong plan owner) → snackbar + log; no silent failure.
+
+
+### 6.1 PocketBase migrations
+
+Versioned server schema/data migrations live in **`pb_migrations/`** and are part of the release contract. Apply them before deploying a client that depends on the new schema. `1787076000_durable_paths.js` creates `paths` / `path_revisions` and imports existing `LIFEOS_PATH::V2` roots deterministically without mutating the source rows.
 
 ---
 

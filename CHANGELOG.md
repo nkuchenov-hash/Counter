@@ -1,3 +1,10 @@
+## 2026-08-18 — Durable Paths architecture [engineering]
+
+- Replaced plan-backed Path runtime compatibility with dedicated PocketBase `paths` + immutable `path_revisions` and a versioned server migration that imports existing V2 roots.
+- Added `path_models.dart`, DatabaseService-owned `path_service.dart`, append-only `PathRepository` revision publishing, and Planning-owned `path_planner_bridge.dart`.
+- Removed the mixed project-specific `path_governance_service.dart`; Planner startup no longer performs Path cleanup/migration.
+- Added hard Architecture Guard laws for Path ownership/marker leakage/project-specific runtime templates and a PocketBase schema parity guard.
+
 ## 2026-08-18 — Repository hygiene closure [engineering]
 
 - Removed unreachable compatibility aliases, superseded Notes/desktop-voice UI, and two unreferenced raw voice fixtures; active runtime/design-system owners are unchanged.

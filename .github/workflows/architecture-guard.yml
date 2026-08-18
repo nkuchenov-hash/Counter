@@ -4,6 +4,8 @@ on:
   pull_request:
     branches:
       - main
+  push:
+    branches: [main]
   workflow_dispatch:
 
 concurrency:
@@ -31,6 +33,22 @@ jobs:
 
       - name: Check repository hygiene
         run: python scripts/audit/repository_hygiene.py
+
+      - name: Check PocketBase schema parity
+        run: python scripts/audit/pocketbase_schema_contract.py
+
+      - name: Check deployment ordering contract
+        run: python scripts/audit/deployment_contract.py
+
+      - name: Check all PocketBase JavaScript syntax
+        shell: bash
+        run: |
+          mapfile -d '' files < <(find pb_hooks pb_migrations -type f -name '*.js' -print0 | sort -z)
+          if (( ${#files[@]} == 0 )); then
+            echo 'No PocketBase JavaScript files found.' >&2
+            exit 1
+          fi
+          for file in "${files[@]}"; do node --check "$file"; done
 
       - name: Check for whitespace errors
         run: |

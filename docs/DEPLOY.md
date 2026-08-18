@@ -164,3 +164,20 @@ Unsigned builds may trigger SmartScreen — **More info → Run anyway** for tru
 ### Debug fallback (engineers only)
 
 Download artifact **`counter-windows-release-debug-<run_number>`** (not `CounterSetup`), extract, run `counter.exe` **inside** the folder with all DLLs and `data/`. Do not move only `counter.exe` out of the folder.
+
+
+## PocketBase schema migrations
+
+`pb_migrations/` is version-controlled server schema/data history. `.github/workflows/deploy-pocketbase.yml` syntax-checks **every** tracked `pb_hooks/**/*.js` and `pb_migrations/**/*.js` on pull requests. On push to `main` that changes either directory, the production job uploads the complete hooks+migrations bundle and restarts PocketBase; PocketBase applies unapplied migrations during startup before the new client release uses the schema.
+
+For durable Paths, `1787076000_durable_paths.js` creates/imports the server schema. The PR validates it; merging the migration to `main` triggers the existing production PocketBase deployment before normal client use of `PbCollections.paths` / `PbCollections.pathRevisions`.
+
+
+### Production release ordering law
+
+Every `main` push starts `.github/workflows/deploy-pocketbase.yml`. It validates the complete tracked PocketBase JS bundle; if `pb_hooks/`, `pb_migrations/`, or the server workflow changed, it deploys/restarts PocketBase and lets unapplied migrations finish. `.github/workflows/deploy.yml` has **no direct/manual production entry**: it is triggered only by the successful server **workflow_run** and checks out that exact `head_sha` before publishing LIFE OS Web. Therefore a schema-dependent Web client cannot be published ahead of its server migration.
+
+A main push with no PocketBase bundle change still completes the server validation workflow but skips SSH/restart; Web remains downstream of the successful gate. To repeat a release, rerun the already-gated workflow chain rather than bypassing the server gate.
+
+
+**Main integrity gate:** Architecture Guard runs on PRs and on every `main` push. Independently, the PocketBase release workflow reruns strict architecture, documentation parity, repository hygiene, PocketBase schema, and deployment-order contracts before its server stage. Web publication is downstream of that successful workflow, so a structurally invalid direct push cannot be released even when repository branch-protection settings are unavailable.

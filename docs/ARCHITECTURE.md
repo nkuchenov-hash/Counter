@@ -9,18 +9,18 @@
 | Vault | Responsibility | Rule |
 | :--- | :--- | :--- |
 | `lib/data/models.dart` | **Data DNA** | Pure data classes. No DB/UI imports. |
-| `lib/data/database_service.dart` | **The Brain** | PocketBase SDK for profiles, categories, records, plans. Single place for server I/O. |
+| `lib/data/database_service.dart` | **The Brain** | PocketBase SDK coordinator for profiles, categories, records, plans, Paths, and other app-owned collections; focused `part of` modules own domain persistence while this library remains the server-I/O boundary. |
 | `lib/data/auth_bridge.dart` | **The Gate** | PocketBase `authWithPassword`, session + secure storage. |
 | `lib/shared/time/` | **Shared time** | UTC ↔ profile wall-clock, timezone catalog, `AppClock` / `ProfileTimezoneActions`. No feature or Brain I/O imports. |
 | `lib/shared/diagnostics/` | **Shared diagnostics** | Runtime logs (`runtime_log`, `platform_log`, `startup_log`) + kill switches / metrics under `performance/` (`runtime_flags`, `shell_flags`, `rebuild_metrics`). No feature or Brain I/O imports. |
 | `lib/shared/voice/` | **Shared Voice (one system)** | Commands, recognition, acceptance routing bridge, reusable UI, platform adapters (`platforms/desktop`, `platforms/mobile`), and diagnostics. Phone/desktop/web/Wear activation paths converge on the same command interpretation. Must not import `features/`, `data/voice/`, `database_service.dart`, or shell tab-state ownership. |
 | `lib/shared/categories/` | **Shared Categories** | Presentation lookup, tree helpers/body, picker sheet/form/create dialog, local visibility prefs. Narrow injected contracts only — no `database_service` / `features` / shell imports. |
 | `lib/data/voice/` | **Brain Voice** | Parser, domain resolution, normalize, record-submit / command execution, glossary builder, contamination/postprocess, PocketBase cloud STT backend, parser-tied benchmarks. |
-| `lib/features/voice/` | **Desktop Voice UI** | Flutter overlay widget, capsule, correction sheet, command panel. |
+| `lib/features/voice/` | **Desktop Voice UI** | Flutter desktop overlay widget, capsule, and correction sheet. |
 | `lib/features/settings/voice/` | **Voice settings UI** | Microphone / hotkey / recognizer / diagnostics settings pages. |
 | `lib/features/settings/categories/` | **Categories manager UI** | More → Categories band grid, editor/appearance sheets, create dialog, browse panel. |
 | `lib/data/plans/diagnostics/` | **Brain plans diagnostics** | Planning-domain duplicate / stream lifecycle log (`plan_duplicate_log.dart`). Lives inside Brain; not shared diagnostics and not feature UI. |
-| `lib/data/paths/` | **Path domain** | `PathRepository` owns first-class Path interpretation and generic validation. Current storage is an adapter over existing plan-backed Path rows; marker-era Path → Planner compatibility is isolated under `paths/compatibility/`; feature UI and shell must not parse marker rows directly. |
+| `lib/data/paths/` | **Path domain** | Durable Path models/revisions + repository; PocketBase I/O is `path_service.dart` as a DatabaseService part. No project-specific templates, Planner scheduling, or marker parsing. |
 | `lib/features/paths/` | **Paths UI** | First-class Paths destination. Displays/edits Path domain data only; no project bootstrap, migration, or Planner generation on page open. |
 | `lib/app_shell.dart` | **The Navigator** | Thin entry re-export; canonical shell under `lib/app/shell/`. |
 | `lib/main.dart` | **The ignition** | Calls `ensurePocketBaseReady()`, then restores session and loads profile. |
@@ -30,7 +30,7 @@
 ## 2. IDs
 
 - **PocketBase row id:** string primary key on each collection (used in `update` / `delete`).
-- **Business IDs:** `user_id` (UUID string), `record_id`, `plan_id`, `categories.category_id` (business slug) — carried in row data for filtering and matching. **Record REST category payloads** use 15-char `categories.id`, not the business slug.
+- **Ownership vs business IDs:** child-collection `user_id` is a PocketBase Relation to 15-char `profiles.id`. Domain business identifiers such as `record_id`, `plan_id`, and `categories.category_id` remain separate application identifiers. **Record REST category payloads** use 15-char `categories.id`, not the category business key.
 - **Timeline PATCH/DELETE:** Prefer PB row id from cache (`_pb_record_id` / `id`); resolve business `record_id` to row id when needed.
 
 ---
@@ -83,9 +83,9 @@
 
   **Code anchors:** `lib/shared/diagnostics/performance/runtime_flags.dart`, `lib/shared/diagnostics/performance/shell_flags.dart`. Experimental preload/render paths default **off** until proven stable on **web and Android**.
 - **STATE_RECONCILIATION:** 404 → purge ghost rows / revert optimistic state.
-- **PATH_DOMAIN_OWNERSHIP:** Paths is a first-class domain: feature UI lives in `lib/features/paths/`; storage interpretation and validation live in `lib/data/paths/`; shell owns navigation only. New Paths code must not parse `LIFEOS_PATH::*` markers directly outside the compatibility repository/migration layer.
+- **PATH_DOMAIN_OWNERSHIP:** Paths is a first-class domain: feature UI lives in `lib/features/paths/`; models/revision orchestration live in `lib/data/paths/`; PocketBase I/O stays in the DatabaseService part `paths/path_service.dart`; shell owns navigation only. Runtime marker parsing and project-specific Path templates are forbidden.
 - **PATH_OPEN_IS_READ_ONLY:** Opening or switching to Paths must never create, migrate, retire, canonicalize, publish, or schedule data. Repair/migration/publish/Planner generation are explicit actions/services.
-- **ACTIVE_PATH_GATE:** Planner may consume only an explicitly active/published Path revision. Draft/review proposals must not leak into the executable schedule. Current marker-backed storage is compatibility only until durable Path revision storage ships.
+- **ACTIVE_PATH_GATE:** `paths.active_revision_link` is the sole executable revision relation. Planner may consume only that revision through `PathPlannerBridge`; draft/review/unreferenced published revisions never leak into the schedule.
 - **AI_PATH_TOOL_BOUNDARY:** AI never receives SQL, PocketBase-admin, shell, filesystem, or arbitrary write access. Future AI Path editing must produce validated proposals through app-owned Path tools; sensitive publish/delete/bulk operations require explicit approval plus audit/undo.
 
 ---
@@ -116,10 +116,11 @@
 
 - A Path describes **why/where** a project is going; Planner owns **when** executable actions occur.
 - Path structure is project-agnostic: goal, ordered stages, stage completion criteria, concrete actions, expected results, dependencies/constraints/risks/decisions as those fields become durable.
-- The current `PathRepository` is a compatibility adapter over existing plan-backed Path roots; this does **not** redefine `plans` as the permanent Path schema.
-- Marker-era audit and Path-action → Planner orchestration is transitional Brain logic under `lib/data/paths/compatibility/`; it is never a shell/page-open responsibility and must disappear when durable Path revisions + the explicit Planner bridge replace it.
-- Opening Paths is read-only. User edits are explicit and local-first; migration/repair/publish/scheduling are separate operations.
-- Planner generation must be idempotent and traceable to one active Path revision so revising a draft cannot silently reschedule the user.
+- Durable project identity lives in PocketBase `paths`; append-only snapshots live in `path_revisions`. `plans` is not Path storage.
+- `paths.active_revision_link` relates the project to one executable revision; editing an active Path writes a new revision before switching the pointer.
+- Opening Paths is read-only. User edits publish explicit revisions; schema/data migration is server-owned under `pb_migrations/`; scheduling is Planner-owned.
+- Every Path → Planner flow must enter through `lib/data/plans/path_planner_bridge.dart`, whose source tuple is `path_id + revision_id + action_id`; direct Path scheduling elsewhere is forbidden.
+- Project names/content are data, never runtime architecture. No KADR/GOLOS/Игропоиск/etc. bootstrap profiles may live in `lib/data/paths/`.
 
 ---
 
@@ -166,7 +167,7 @@ Web vs. Mobile STT: Web (kIsWeb) MUST use strict BCP-47 tags (e.g., ru-RU) bypas
 
 ## 11. Structure Growth Law
 
-New features must integrate into the **existing** architecture — not parallel folders, duplicate Brain paths, or feature-local “mini frameworks.” Every new file must have **one clear owner layer**: Entry/Shell, Brain/Data, Core/Foundation, Feature UI, Services, l10n, Platform, Tests, Scripts, or Docs.
+New features must integrate into the **existing** architecture — not parallel folders, duplicate Brain paths, or feature-local “mini frameworks.” Every new file must have **one clear owner layer**: Entry/Shell, Brain/Data, Core/Foundation, Feature UI, Services, l10n, Platform, Tests, Scripts, or Docs. Under `lib/`, the only top-level owner directories are `app/`, `core/`, `data/`, `features/`, `l10n/`, `services/`, and `shared/`; introducing another top-level runtime layer is an architecture violation, not a convenience.
 
 **Integration rules:**
 
