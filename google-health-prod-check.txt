@@ -1,0 +1,12 @@
+service_found=1
+health_runtime_present=1
+routes_use_health=1
+health_scope_present=1
+protected_route_http=401
+db_exists=1
+connection_table=1
+active_connections=1
+error_none=0
+error_auth_required=1
+error_api_disabled=0
+error_other=0
