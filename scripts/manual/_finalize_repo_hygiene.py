@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -34,12 +35,6 @@ DELETE_PATHS = [
     "test/fixtures/desktop_voice_wav/scw_delmod_submit_counter_native_raw_2026_07_08_f69fb1b.wav",
 ]
 
-VANISHED_DIRS = [
-    "lib/core/widgets/notes/",
-    "lib/core/widgets/plan_card/",
-    "lib/features/shared/notes_editor/",
-]
-
 
 def read(path: str) -> str:
     return (ROOT / path).read_text(encoding="utf-8-sig")
@@ -49,15 +44,15 @@ def write(path: str, body: str) -> None:
     (ROOT / path).write_text(body, encoding="utf-8", newline="\n")
 
 
-# Delete only files already proven unreachable by exact import/export graph or unreferenced fixture scan.
+# Delete only files proven unreachable by exact Dart import/export graph or unreferenced fixture scan.
 for rel in DELETE_PATHS:
     p = ROOT / rel
     if not p.exists():
         raise SystemExit(f"delete target unexpectedly missing: {rel}")
     p.unlink()
 
-# The retained-product watchlist has been fully resolved: dead entries were deleted;
-# LifeCard + confirm dialog were proven production-reachable and therefore are not watchlist items.
+# Resolve the retained-product watchlist completely: dead entries are deleted;
+# LifeCard + confirm dialog were proven production-reachable and are normal code.
 evidence = read("scripts/manual/structure_evidence_index.py")
 start = evidence.index("WATCHLIST_PATHS: dict[str, str] = {")
 end_marker = "# Test/bench-only modules that are not production-reachable but are tooling-required."
@@ -65,20 +60,14 @@ end = evidence.index(end_marker, start)
 evidence = evidence[:start] + "WATCHLIST_PATHS: dict[str, str] = {}\n\n" + evidence[end:]
 write("scripts/manual/structure_evidence_index.py", evidence)
 
-# Live navigation: remove the obsolete outbox alias row and the deleted duplicate SettingsPage reference.
+# Live navigation: remove obsolete alias row and duplicate SettingsPage mention.
 nav = read("AGENT_NAVIGATION.md")
-nav_lines = [
-    line for line in nav.splitlines()
-    if "lib/data/local_sync/plan_create_outbox.dart" not in line
-]
+nav_lines = [line for line in nav.splitlines() if "lib/data/local_sync/plan_create_outbox.dart" not in line]
 nav = "\n".join(nav_lines)
-nav = nav.replace(
-    ", `SettingsPage` in `app_shell.dart`, and nested Lists tag-manager push",
-    ", and nested Lists tag-manager push",
-)
+nav = nav.replace("`SettingsPage` in `app_shell.dart`, and ", "")
 write("AGENT_NAVIGATION.md", nav.rstrip() + "\n")
 
-# Product inventory: point generic voice and desktop voice at current owners.
+# Product inventory: current generic and desktop voice owners.
 product = read("docs/website/PRODUCT_INVENTORY.md")
 product = product.replace(
     "`lib/shared/voice/ui/voice_input_sheet.dart`; `lib/app/shell/shared/shell_voice_routing.dart`; `docs/ARCHITECTURE.md` § Voice Input Protocol",
@@ -90,41 +79,64 @@ product = product.replace(
 )
 write("docs/website/PRODUCT_INVENTORY.md", product)
 
-# APP_STRUCTURE uses a mix of full and relative/suffix paths. Remove every safe suffix
-# for deleted Dart files; only use a bare basename when no remaining Dart file shares it.
+# APP_STRUCTURE has both summary rows and exact-file rows. Edit summary rows surgically,
+# then delete only table rows whose FIRST cell is an exact/safe suffix for a removed Dart file.
 structure = read("docs/APP_STRUCTURE.md")
-remaining_basename_counts: dict[str, int] = {}
-for p in (ROOT / "lib").rglob("*.dart"):
-    remaining_basename_counts[p.name] = remaining_basename_counts.get(p.name, 0) + 1
+summary_replacements = {
+    "`lists_view.dart`, `lists_filters.dart`, `lists_bulk_actions.dart`, `lists_inline_add.dart`, `lists_empty_state.dart`":
+        "`lists_view.dart`, `lists_filters.dart`, `lists_bulk_actions.dart`, `lists_empty_state.dart`",
+    " + filter/bulk/inline/empty modules + ": " + filter/bulk/empty modules + ",
+    "`notes_glm_surface.dart`, `notes_library_page.dart`, `notes_visual_tokens.dart`":
+        "`notes_glm_surface.dart`, `notes_visual_tokens.dart`",
+    "`desktop_voice_widget.dart`, `desktop_voice_capsule.dart`, `desktop_voice_correction_sheet.dart`, `desktop_voice_command_panel.dart`":
+        "`desktop_voice_widget.dart`, `desktop_voice_capsule.dart`, `desktop_voice_correction_sheet.dart`",
+    ", **`notes_editor/`** (`notes_editor_launcher.dart`, `notes_editor_sheet.dart`)": "",
+    "Activity edit sheets, Notes launch/sheet routing, Omni-Picker entry":
+        "Activity edit sheets, Omni-Picker entry",
+}
+for old, new in summary_replacements.items():
+    structure = structure.replace(old, new)
 
-needles: set[str] = set()
+first_cell_candidates: set[str] = set()
 for rel in DELETE_PATHS:
     if not rel.endswith(".dart"):
         continue
     no_lib = rel.removeprefix("lib/")
     parts = no_lib.split("/")
-    needles.add(rel)
-    needles.add(no_lib)
+    first_cell_candidates.add(no_lib)
+    # APP_STRUCTURE sections often omit leading owner directories. Include all suffixes
+    # with at least directory + filename, and the basename only when it is globally unique
+    # among the deleted paths/remaining source names checked below.
     for i in range(len(parts) - 1):
-        needles.add("/".join(parts[i:]))
-    basename = parts[-1]
-    if remaining_basename_counts.get(basename, 0) == 0:
-        needles.add(basename)
+        first_cell_candidates.add("/".join(parts[i:]))
 
-for rel in VANISHED_DIRS:
-    no_lib = rel.removeprefix("lib/")
-    parts = no_lib.rstrip("/").split("/")
-    needles.add(rel)
-    needles.add(no_lib)
-    for i in range(len(parts)):
-        needles.add("/".join(parts[i:]) + "/")
+remaining_names = {p.name for p in (ROOT / "lib").rglob("*.dart")}
+for rel in DELETE_PATHS:
+    if rel.endswith(".dart"):
+        basename = Path(rel).name
+        if basename not in remaining_names:
+            first_cell_candidates.add(basename)
 
-kept = [line for line in structure.splitlines() if not any(needle in line for needle in needles)]
-write("docs/APP_STRUCTURE.md", "\n".join(kept).rstrip() + "\n")
+row_re = re.compile(r"^\|\s*`([^`]+)`\s*\|")
+kept: list[str] = []
+for line in structure.splitlines():
+    m = row_re.match(line)
+    if m and m.group(1) in first_cell_candidates:
+        continue
+    kept.append(line)
+structure = "\n".join(kept)
+structure = structure.replace(
+    "Every production Notes widget under `core/widgets/notes/` must be listed by exact filename above (no wildcard substitutes).\n\n",
+    "",
+)
+structure = structure.replace(
+    "Every production Notes feature/shared editor module above must be listed by exact filename (no wildcard substitutes).",
+    "Every production Notes feature module above must be listed by exact filename (no wildcard substitutes).",
+)
+write("docs/APP_STRUCTURE.md", structure.rstrip() + "\n")
 
-# Remove workstation-specific absolute paths from STT build tooling without pretending
-# the helper is reproducible in CI. The tracked helper remains required until source/artifact
-# dependency is solved.
+# Remove workstation-specific absolute paths from STT tooling without pretending that the
+# tracked HTTP helper is reproducible in CI yet.
 builder = read("installer/windows/build_stt_helper_en.ps1")
 old_builder = "$ErrorActionPreference = 'Stop'\n$repoRoot = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent\n$backendSrcRoot = 'C:\\Users\\nkuch\\Development\\Apps\\_cleanup_backup_20260615_110428\\backend-rs'"
 new_builder = "param(\n    [string]$BackendSourceRoot = $env:COUNTER_STT_BACKEND_ROOT\n)\n\n$ErrorActionPreference = 'Stop'\n$repoRoot = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent\nif ([string]::IsNullOrWhiteSpace($BackendSourceRoot)) {\n    throw 'STT backend source is required. Pass -BackendSourceRoot <path> or set COUNTER_STT_BACKEND_ROOT.'\n}\n$backendSrcRoot = [System.IO.Path]::GetFullPath($BackendSourceRoot)"
@@ -150,7 +162,7 @@ if "C:\\Users\\nkuch\\Development\\Apps" in payload:
     raise SystemExit("hardcoded STT payload workstation path still present")
 write("installer/windows/prepare_stt_payload.ps1", payload)
 
-# Deploy doc states the real STT build inputs instead of implying clean-runner reproducibility.
+# Deploy docs state the real external STT inputs rather than implying clean-runner reproducibility.
 deploy = read("docs/DEPLOY.md")
 deploy = deploy.replace(
     "4. *(Recommended)* `powershell -ExecutionPolicy Bypass -File installer\\windows\\build_stt_helper_en.ps1`\n5. `powershell -ExecutionPolicy Bypass -File installer\\windows\\prepare_stt_payload.ps1`",
