@@ -24,14 +24,16 @@ jobs:
           python scripts/manual/_patch_structure_evidence_for_paths.py
           python scripts/manual/_durable_paths_followup.py
           python scripts/manual/_durable_paths_relation_docs.py
+          python scripts/manual/_enforce_release_order.py
           python scripts/manual/_cleanup_temporary_workflows.py
           git diff --check
 
-      - name: Check migration syntax and schema contract
+      - name: Check migration, schema, and release contracts
         run: |
           mapfile -d '' files < <(find pb_hooks pb_migrations -type f -name '*.js' -print0 | sort -z)
           for file in "${files[@]}"; do node --check "$file"; done
           python scripts/audit/pocketbase_schema_contract.py
+          python scripts/audit/deployment_contract.py
 
       - uses: subosito/flutter-action@v2
         with:
@@ -62,6 +64,7 @@ jobs:
           git rm -f scripts/manual/_patch_structure_evidence_for_paths.py
           git rm -f scripts/manual/_durable_paths_followup.py
           git rm -f scripts/manual/_durable_paths_relation_docs.py
+          git rm -f scripts/manual/_enforce_release_order.py
           git rm -f scripts/manual/_cleanup_temporary_workflows.py
           git rm -f .github/workflows/tmp-durable-paths-finalizer.yml
 
@@ -73,6 +76,7 @@ jobs:
           python scripts/audit/documentation_parity.py
           python scripts/audit/repository_hygiene.py
           python scripts/audit/pocketbase_schema_contract.py
+          python scripts/audit/deployment_contract.py
           pwsh -NoProfile -NonInteractive -File ./scripts/audit/architecture_guard.ps1 -Strict
           mapfile -d '' files < <(find pb_hooks pb_migrations -type f -name '*.js' -print0 | sort -z)
           for file in "${files[@]}"; do node --check "$file"; done
