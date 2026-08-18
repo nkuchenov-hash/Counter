@@ -163,7 +163,7 @@
 | Field | Detail |
 | :--- | :--- |
 | **User-facing capability** | Start/stop/edit/delete records offline. Create/update/delete/toggle plans and lists offline. Pending mutations queue locally; flush on reconnect, boot, resume, tap banner. States: offline pending, syncing, auth paused. |
-| **Proof** | `lib/data/local_sync/*`; `lib/app_shell.dart` — `_OfflineSyncStatusBar`; `docs/ROADMAP.md` O1 ✅ |
+| **Proof** | `lib/data/local_sync/*`; `lib/app/shell/shared/offline_sync_status_bar.dart`; `docs/ROADMAP.md` O1 ✅ |
 | **User value** | App stays usable on bad connectivity; actions feel instant |
 | **Status** | **public-ready** |
 | **Risks / caveats** | Outbox is device-global (single-user-per-device assumption). Virtual recurring edits need network. Bulk plan ops not fully offline. Optimistic overlays lost on process death until replay. |

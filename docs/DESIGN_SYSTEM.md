@@ -160,7 +160,7 @@ Canonical widget: `PlanTimeTaskCard` in `lib/core/widgets/plan_time_task_card.da
 
 ### Chips / Tags
 
-- Current shared feature components: `CategoryChip`, `TagQuickPickStrip`, `CategoryBreadcrumb`.
+- Current shared chip implementation: `CategoryChip`, `TagChip`, `TagQuickPickStrip`, and `CategoryBreadcrumb` in `lib/core/widgets/chip_component.dart`.
 - Future canonical split: `AppTagChip`, `AppCategoryChip`, `AppBreadcrumbChip`.
 - Tag/category visual variations should be parameters.
 - **Tag pill variants (enforced):**
@@ -187,7 +187,7 @@ Canonical widget: `PlanTimeTaskCard` in `lib/core/widgets/plan_time_task_card.da
 
 ### Sheets
 
-- Current canonical primary edit-sheet host: `showAppEditSheet` in `lib/core/widgets/app_edit_sheet.dart`.
+- Current canonical primary edit-sheet host: `showAppEditSheet` in `lib/features/shared/activity_detail_sheet.dart`.
 - Current canonical primary edit-sheet surface/tokens: `AppEditSheetSurface` and `AppEditSheetTokens` in the same file.
 - The host owns modal transparency, keyboard inset, `DraggableScrollableSheet`, and the standard 0.88 / 0.42 / 0.95 height behavior. Feature code must not copy those values.
 - `ActivityDetailSheet` remains the single domain router: record content → `TimelineRecordSheetContent`; plan/list content → `PlanningTaskEditSheet`.

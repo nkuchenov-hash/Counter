@@ -113,7 +113,8 @@ Product sections own section-specific code later; this phase only separates shel
 | `app/shell/shared/shell_voice_routing.dart` | Desktop voice command, hotkey/overlay submission and confirmation routing; generic FAB voice input is separate *(part)* |
 | `app/shell/shared/shell_voice_input.dart` | Generic FAB / VoiceInputSheet orchestration for Timeline record, Planning task and Backlog task submission *(part)* |
 | `app/shell/shared/shell_voice_integration.dart` | Desktop tray/global-hotkey attachment and reattachment at the shell boundary *(part)* |
-| `app/shell/shared/shell_top_status_bars.dart` | Presentation-only top status bars for Profile hydration and unfilled-time notices |
+| `app/shell/shared/shell_top_status_bars.dart` | Presentation-only top status stack for offline sync, Profile hydration, and unfilled-time notices |
+| `app/shell/shared/offline_sync_status_bar.dart` | Shell-owned O1 offline/sync status UI; renders Brain `OfflineSyncController` state and forwards tap-to-retry |
 | `app/shell/shared/shell_shared.dart` | Shell-local date helpers |
 | `app/shell/shared/shell_form_factor.dart` | Phone / tablet / desktop form-factor resolve from width |
 | `features/profile/profile_hydration_status_bar.dart` | Profile-owned hydration error/retry status UI |
@@ -127,7 +128,7 @@ Product sections own section-specific code later; this phase only separates shel
 
 Wear shell/layout remains under `lib/features/wear/` (entered from `main.dart`); `app/shell/wear/` is reserved for a later move when Wear chrome is extracted — no dead placeholders.
 
-Compatibility re-exports (remove when callers migrate): root `lib/app_shell.dart`, `core/navigation/shell_side_navigation.dart`, `features/shared/profile_hydration_status_bar.dart`, `features/profile/settings/settings_page.dart`.
+Compatibility re-exports (remove when callers migrate): root `lib/app_shell.dart`, `core/navigation/shell_side_navigation.dart`, `app/shell/shared/settings_page.dart`.
 
 ### 3.2 `lib/data/` — Brain & models
 
@@ -348,7 +349,7 @@ General runtime diagnostics and the compile-time kill-switch registry. Multi-con
 
 ### 3.38 `lib/shared/categories/` — reusable category UI contracts (Phase 2D)
 
-Multi-feature category presentation, tree, picker, and local visibility prefs. Brain keeps PocketBase CRUD under `lib/data/categories/`. Settings manager UI lives under `lib/features/settings/categories/`.
+Multi-feature category presentation, tree, and picker contracts. Brain keeps PocketBase CRUD under `lib/data/categories/`. Settings manager UI lives under `lib/features/settings/categories/`.
 
 Must not import `features/`, `database_service.dart`, or `app/shell/`. Composition root wires `CategoryTreeSource` / `CategoryPickerActions` / `PlanCategoryLookup` from `main.dart`.
 
@@ -361,7 +362,6 @@ Must not import `features/`, `database_service.dart`, or `app/shell/`. Compositi
 | `picker/category_picker_models.dart` | Create targets, sheet results, chrome keys/helpers |
 | `picker/create_category_from_picker.dart` | Create dialog + submit via injected actions |
 | `picker/category_tree_picker.dart` | `showCategoryTreePicker`, `CategoryTreeFormField`, picker sheet |
-| `visibility/category_visibility_prefs.dart` | Local hidden ids (`hidden_category_ids_json`) |
 
 ### 3.37 `lib/shared/voice/` — one Voice system (Phase 2C)
 
@@ -511,7 +511,7 @@ Parser, live category/domain resolution, normalization, command execution (`writ
 | `voice/` | `desktop_voice_widget.dart`, `desktop_voice_capsule.dart`, `desktop_voice_correction_sheet.dart`, `desktop_voice_command_panel.dart` | Desktop Flutter Voice overlay UI (GOLOS STT capsule / correction / panel) |
 | `dev/` | `component_lab_view.dart`, `component_lab_cards_demo.dart`, `component_lab_notes_demo.dart` | Admin-only Component Lab including canonical Notes block/media/tool states |
 | `wear/` | `wear_timer_screen.dart`, `wear_main_wrapper.dart`, `wear_platform.dart`, `wear_runtime.dart` | Wear OS companion |
-| `shared/` | `shared_widgets.dart` (barrel), `activity_detail_sheet.dart`, `planning_task_edit_sheet.dart`, `timeline_record_edit_sheet.dart`, `empty_state_placeholder.dart`, **`edit_sheet/`** (autosave gate, time helpers/picker, checklist, repeat RRULE helpers, quill toolbar, parallel record panels, **`category_edit_draft.dart`**, **`planning_edit_result_actions.dart`**, **`timeline_edit_result_actions.dart`**), **`notes_editor/`** (`notes_editor_launcher.dart`, `notes_editor_sheet.dart`), `offline_sync_status_bar.dart` | Activity edit sheets, Notes launch/sheet routing, Omni-Picker entry, offline sync banner, plan/record category draft helpers |
+| `shared/` | `shared_widgets.dart` (barrel), `activity_detail_sheet.dart`, `planning_task_edit_sheet.dart`, `timeline_record_edit_sheet.dart`, `empty_state_placeholder.dart`, **`edit_sheet/`** (autosave gate, time helpers/picker, checklist, repeat RRULE helpers, quill toolbar, parallel record panels, **`category_edit_draft.dart`**, **`planning_edit_result_actions.dart`**, **`timeline_edit_result_actions.dart`**), **`notes_editor/`** (`notes_editor_launcher.dart`, `notes_editor_sheet.dart`) | Activity edit sheets, Notes launch/sheet routing, Omni-Picker entry, and plan/record category draft helpers |
 
 **Key symbols:** `ActivityDetailSheet` router → `features/shared/activity_detail_sheet.dart`; `PlanningTaskEditSheet` / `TimelineRecordSheetContent` in dedicated files; `showAppDateTimePicker` / `EditSheetAutosaveGate` in `features/shared/edit_sheet/`; re-exported via `shared_widgets.dart`.
 
@@ -531,13 +531,12 @@ Parser, live category/domain resolution, normalization, command execution (`writ
 | `notes/widgets/note_editor_block_widgets.dart` | Editor block rows + add-block chrome; callbacks only; no Brain ownership |
 | `notes/widgets/notes_editor_tools.dart` | Contextual primary toolbar, Aa formatting panel, Insert panel, table/link dialogs |
 | `notes/widgets/notes_editor_screen.dart` | Shared responsive Figma production screen shell for mobile/web/desktop: header, title/meta, visible document viewport, desktop glass surface, pinned finite toolbar |
-| `notes/widgets/notes_special_block_widgets.dart` | Divider, table, link card, and Life OS reference block renderers |
 | `notes/widgets/notes_library_body.dart` | Grid/list body of `NoteCard`s for Lists tab |
 | `notes/widgets/notes_library_production_shell.dart` | Production Lists-tab GLM library shell + inline add row |
 | `notes/widgets/note_card.dart` | Grid/list note card with block preview, pin/done badges |
 | `notes/widgets/notes_canonical_components.dart` | Public barrel, shared enums, rich text controller, semantic Notes geometry/helpers |
 | `notes/widgets/notes_component_text_blocks.dart` | Canonical responsive Body/H1/H2/H3, list, and checklist block components *(part)* |
-| `notes/widgets/notes_component_structural_blocks.dart` | Canonical quote, divider, table, and parameterized compact/extended table picker *(part)* |
+| `notes/widgets/notes_component_structural_blocks.dart` | Canonical quote, divider, table, link/reference structural blocks, and parameterized compact/extended table picker *(part)* |
 | `notes/widgets/notes_component_media_blocks.dart` | Canonical image/drawing frame and audio block states shared across widths *(part)* |
 | `notes/widgets/notes_component_tools.dart` | Canonical toolbar button/toolbar plus heading, formatting, and insert menu surfaces *(part)* |
 | `shared/notes_editor/notes_editor_launcher.dart` | `showNotesEditorSheet` — full-screen route launcher for Notes editor |
@@ -632,13 +631,19 @@ Copy `pb_hooks/` beside the PocketBase executable on the server. Client Brain co
 | `lists/lists_empty_state.dart` | Loading / filtered / no-category empty panels |
 | `lists/lists_card.dart` | `BacklogPlanCard`, filter chips, semicircle menu |
 | `lists/lists_export.dart` | Export visible list as clipboard text |
-| `app/shell/app_shell.dart` | Shell dashboard entry (see §3.1.1) |
-| `app/shell/shared/shell_core.dart` | Shell core logic *(part)* |
-| `app/shell/shared/shell_tab_host.dart` | Tab host builders *(part)* |
-| `app/shell/shared/shell_edit_hosts.dart` | Edit sheet hosts *(part)* |
-| `app/shell/shared/shell_more_menu.dart` | More menu *(part)* |
-| `app/shell/shared/shell_voice_routing.dart` | Voice routing *(part)* |
-| `app/shell/shared/shell_offline_banner.dart` | Offline banner slot |
+| `app/shell/app_shell.dart` | Shell dashboard entry/composition root (see §3.1.1) |
+| `app/shell/shared/shell_core.dart` | Core shell date/task-loading state *(part)* |
+| `app/shell/shared/shell_task_actions.dart` | Shell task/record action orchestration *(part)* |
+| `app/shell/shared/shell_edit_hosts.dart` | Timeline/Planning edit-sheet hosts *(part)* |
+| `app/shell/shared/shell_tab_host.dart` | Feature tab composition; depends on edit hosts *(part)* |
+| `app/shell/shared/shell_more_menu.dart` | More navigation actions *(part)* |
+| `app/shell/shared/shell_voice_routing.dart` | Desktop voice command/hotkey/overlay routing *(part)* |
+| `app/shell/shared/shell_voice_input.dart` | Generic FAB / VoiceInputSheet routing *(part)* |
+| `app/shell/shared/shell_voice_integration.dart` | Desktop tray/global-hotkey attachment *(part)* |
+| `app/shell/shared/shell_lifecycle.dart` | Shell startup/dispose wiring *(part)* |
+| `app/shell/shared/shell_chrome.dart` | Responsive shell scaffold/chrome *(part)* |
+| `app/shell/shared/shell_top_status_bars.dart` | Top status stack for sync/Profile/time-gap notices |
+| `app/shell/shared/offline_sync_status_bar.dart` | O1 offline/sync tap-to-retry status bar |
 | `app/shell/shared/shell_shared.dart` | Shell shared helpers |
 | `app/shell/shared/shell_form_factor.dart` | Form-factor width resolve |
 | `app/shell/phone/shell_bottom_navigation.dart` | `ShellCompactBottomNav` — equal-column phone-safe bottom tab bar |
@@ -684,7 +689,6 @@ Explicit manifest entries for `architecture_guard.ps1 -Strict`:
 | `planning/widgets/planning_tag_grouped_list.dart` | Tags-sort grouped plan list |
 | `planning/widgets/planning_group_section.dart` | Shared grouped-list section widgets |
 | `profile/settings/settings_page.dart` | Language/TZ settings page (shell route) |
-| `shared/profile_hydration_status_bar.dart` | Profile hydration error banner |
 | `core/navigation/shell_side_navigation.dart` | Desktop/web side navigation rail |
 | `profile/settings/account_settings_section.dart` | Signed-in identity + logout row |
 | `profile/calendar_integrations/calendar_integrations_section.dart` | In-app Microsoft/Google calendar connection, calendar selection, sync, and per-calendar fallback-category settings |
@@ -694,7 +698,6 @@ Explicit manifest entries for `architecture_guard.ps1 -Strict`:
 | `shared/planning_task_edit_sheet.dart` | Plan/list task edit sheet |
 | `shared/timeline_record_edit_sheet.dart` | Timeline record edit sheet |
 | `shared/empty_state_placeholder.dart` | Shared empty-state placeholder |
-| `shared/offline_sync_status_bar.dart` | O1 offline/sync tap-to-retry banner |
 | `shared/edit_sheet/sheet_autosave_gate.dart` | Debounced edit-sheet autosave gate |
 | `shared/edit_sheet/sheet_time_helpers.dart` | UTC/display time format helpers |
 | `shared/edit_sheet/sheet_time_picker.dart` | `showAppDateTimePicker`, `AppEditSheetTimeButton` |

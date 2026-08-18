@@ -1,6 +1,6 @@
 # Life OS — Roadmap
 
-**Single canonical plan.** Drawn from the April 2026 audit (findings captured in Phase 1 below). Updated 2026-06-09.
+**Single canonical plan.** Drawn from the April 2026 audit (findings captured in Phase 1 below). Last architecture/documentation parity verification: 2026-08-18.
 
 > Other docs (`AGENT_NAVIGATION.md`, `AGENTS.md`) link here — do not maintain a second roadmap copy.
 
@@ -25,7 +25,7 @@ The velocity rule exists because Nick is a UX designer working with AI assistant
 ## Execution order
 
 ```
-~~C1~~ ✅ → ~~O1~~ ✅ (Offline-first) → ~~V1~~ ✅ (CLAUDE.md nav map) → ~~F1~~ ✅ (Lists completion) → F2A/F2C ✅ accepted → V3 (UX_CONTRACT) → V7 (Design System)
+~~C1~~ ✅ → ~~O1~~ ✅ (Offline-first) → ~~V1~~ ✅ (AGENT_NAVIGATION.md nav map) → ~~F1~~ ✅ (Lists completion) → F2A/F2C ✅ accepted → V3 (UX_CONTRACT) → V7 (Design System)
 ```
 
 **O1, V1, F1, F2A, and F2C are shipped/accepted.** Feature work is paused unless explicitly requested. The active project is **V3/V7 only**: `docs/UX_CONTRACT.md`, `docs/DESIGN_SYSTEM.md`, canonical Flutter components, and the admin-only Component Lab.
@@ -47,7 +47,7 @@ Performance, responsiveness, and stability are sacred. Preload/cache/render expe
 | Console/logcat spam, invisible-plan projection storm | Gate verbose logs; stop hot-path full scans |
 | Memory/mounted-widget explosion | Kill mounted-window default; shrink boot work |
 
-**Docs:** `docs/ARCHITECTURE.md` § PERFORMANCE_KILL_SWITCH_LAW · `docs/UX_CONTRACT.md` § Performance & Responsiveness Contract · `AGENT_NAVIGATION.md` · `lib/core/perf_flags.dart` · `lib/core/p0u_feature_flags.dart`
+**Docs:** `docs/ARCHITECTURE.md` § PERFORMANCE_KILL_SWITCH_LAW · `docs/UX_CONTRACT.md` § Performance & Responsiveness Contract · `AGENT_NAVIGATION.md` · `lib/shared/diagnostics/performance/runtime_flags.dart` · `lib/shared/diagnostics/performance/shell_flags.dart`
 
 ### ~~O1 — Offline-first core reliability~~ ✅ (shipped 2026-06-09)
 
@@ -92,7 +92,7 @@ Performance, responsiveness, and stability are sacred. Preload/cache/render expe
 - 401/403 pauses sync and surfaces session/sign-in error
 - 404 reconciles or purges ghost state using existing architecture
 
-**UI (`app_shell.dart`):**
+**UI (`lib/app/shell/shared/offline_sync_status_bar.dart` via `ShellTopStatusBars`):**
 - Subtle global sync/offline indicator
 - Online and synced: no noisy UI
 - Offline with pending changes: show “Offline · X pending”
@@ -131,7 +131,7 @@ Performance, responsiveness, and stability are sacred. Preload/cache/render expe
 | 🟡 High | `models/record.dart` | Same timezone bug in date parsing (`_parseFlexDateOnly`) | ✅ Already fixed — `_parseFlexDateOnly` not present in production code post-split |
 | 🟠 Medium | `category_service.dart` | Category silently drops from saved records during cold start — no error thrown | ✅ Fixed in C1 — `_mapCategoryIdToLinkForPb` now logs `[CAT_MAP]` debugPrint on drop |
 
-Low severity (defer): `auth_service.dart:134, 163` — non-deterministic UID fallbacks.
+No open Phase 1 architecture item remains in the retired root auth-service path; authentication now lives behind `lib/data/auth_bridge.dart` and `lib/features/auth/`.
 
 ---
 
@@ -149,13 +149,13 @@ Low severity (defer): `auth_service.dart:134, 163` — non-deterministic UID fal
 
 ### Codebase cleanup (2026-06-22 — 2026-07-23)
 
-**Status:** Repository cleanup complete with explicitly deferred feature work. Ordinary repository-structure cleanup is **formally closed** as of Phase 2G (2026-07-23). Do not open another generic structure-cleanup pass; remaining items need separate product/design approval (V7 adoption, Phase 2D wiring, Notes/Lists/Voice watchlist orphans, Stage E seams, notifications/alarms — not cleanup).
+**Status:** Repository cleanup is complete. The 2026-08-18 targeted ownership/parity pass additionally aligned Shell, Profile, Planning startup, Voice, Paths compatibility boundaries, restored the O1 sync indicator to its shell owner, and made documentation parity machine-checked. Do not open generic cleanup by line count; future structural work must be triggered by a concrete ownership violation or product requirement.
 
 | Stage | Scope | Status |
 | :--- | :--- | :--- |
 | **A** | Safe deletes — orphan Dart + non-code in `lib/` | ✅ |
 | **A.1** | Compile baseline repair | ✅ |
-| **C** | Doc sync (APP_STRUCTURE, CLAUDE, audit) | ✅ |
+| **C** | Doc sync (`APP_STRUCTURE`, `AGENT_NAVIGATION`, audit) | ✅ |
 | **Lockdown** | Full-repo manifest + APP_STRUCTURE contract + `architecture_guard.ps1` | ✅ 2026-06-23 |
 | **Release structure** | Delete/migrate non-release files; strict guard; bilingual `APP_STRUCTURE_DETAILED.md`; l10n SSOT | ✅ 2026-06-23 |
 | **E.0 Blueprint** | Large-file split plan (executed as Pass 3–4D) | ✅ 2026-07-02 |
@@ -177,9 +177,9 @@ Reports: `docs/reports/FINAL_REPOSITORY_COMPLETENESS_AUDIT_2026-07-23.md`, `docs
 
 ---
 
-### ~~V1. Sharpen `CLAUDE.md` into a navigation map~~ ✅ (shipped 2026-06-10)
+### ~~V1. Maintain `AGENT_NAVIGATION.md` as the navigation map~~ ✅ (shipped 2026-06-10; renamed later)
 
-`CLAUDE.md` updated for O1 local sync (`lib/data/local_sync/`), flush/resume symbols, offline banner, and shipped F1 status. Goal: any AI session answers "where do I open first?" from `CLAUDE.md` alone — **keep this table current when symbols move.**
+`AGENT_NAVIGATION.md` is the canonical symbol/path navigation map for AI work. It covers O1 local sync (`lib/data/local_sync/`), shell ownership, feature entry points, and current diagnostics/cache owners. Keep it synchronized whenever canonical symbols move.
 
 ---
 

@@ -3,7 +3,7 @@ import 'package:counter/data/local_sync/record_mutation_outbox.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Global offline / sync indicator state for [app_shell.dart].
+/// Global offline / sync indicator state rendered by shell presentation.
 ///
 /// **Invariant:** red sync-error banner only when [hasBlockingSyncError] is true
 /// (pending work exists + [lastError]). Stale [lastError] with empty outbox is suppressed.
@@ -32,7 +32,7 @@ class OfflineSyncController extends ChangeNotifier {
   bool get shouldShowBanner =>
       isSyncing || authPaused || hasBlockingSyncError || pendingCount > 0;
 
-  /// Mirrors [_OfflineSyncStatusBar] label branch for diagnostics.
+  /// Mirrors [OfflineSyncStatusBar] label branches for diagnostics.
   String get bannerKindLabel {
     if (isSyncing) return 'syncing';
     if (authPaused) return 'auth_paused';

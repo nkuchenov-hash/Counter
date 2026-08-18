@@ -146,6 +146,42 @@ foreach ($f in $libDart) {
     }
 }
 
+# --- 4b. APP_STRUCTURE rows pointing at deleted Dart files ---
+# Section 4 guarantees code -> docs. This reverse pass guarantees docs -> code,
+# preventing renamed/deleted implementation rows from lingering indefinitely.
+$appStructureDartRowMatches = [regex]::Matches(
+    $appStructure,
+    '(?m)^\|\s*`([^`]+\.dart)`\s*\|'
+)
+$appStructureReverseExemptions = @(
+    'env.dart',
+    'core/env/env.dart',
+    'lib/core/env/env.dart'
+)
+foreach ($match in $appStructureDartRowMatches) {
+    $declared = $match.Groups[1].Value.Trim().TrimStart('.', '/')
+    if ($appStructureReverseExemptions -contains $declared) { continue }
+    $candidates = [System.Collections.Generic.List[string]]::new()
+    $candidates.Add($declared)
+    if ($declared.StartsWith('lib/')) {
+        $candidates.Add($declared.Substring(4))
+    }
+    $found = $false
+    foreach ($f in $libDart) {
+        $actual = (Get-RepoRelativePath $f.FullName) -replace '^lib/', ''
+        foreach ($candidate in $candidates) {
+            if ($actual -eq $candidate -or $actual.EndsWith('/' + $candidate)) {
+                $found = $true
+                break
+            }
+        }
+        if ($found) { break }
+    }
+    if (-not $found) {
+        Add-Violation "STALE_APP_STRUCTURE_DART $declared"
+    }
+}
+
 # --- 5. Deleted-file regressions ---
 $deletedMustStayGone = @(
   'Archive',

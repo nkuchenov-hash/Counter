@@ -58,7 +58,7 @@ Use `CHANGELOG.md` and `docs/ROADMAP.md` to understand what is already built bef
 - `lib/core/` owns theme, tokens, shared widgets, and desktop tray/main-window infrastructure. It must not import feature UI or `database_service.dart` except where the documented structure explicitly allows model-only types.
 - `lib/shared/time/` owns multi-consumer wall-clock, timezone catalog, and injectable clock/timezone hooks. It must not import `features/` or `database_service.dart`. Feature-only time math belongs under the owning feature; shell date coordination stays in `lib/app/shell/`.
 - `lib/shared/diagnostics/` owns general runtime logs (`runtime_log`, `platform_log`, `startup_log`) and performance kill switches / metrics under `performance/` (`runtime_flags.dart`, `shell_flags.dart`, `rebuild_metrics.dart`). It must not import `features/` or `database_service.dart`.
-- `lib/shared/voice/` owns the one Voice system used by phone, desktop, web, and Wear: `commands/`, `recognition/`, `routing/` (acceptance bridge only), `ui/`, `platforms/{desktop,mobile}/`, and `diagnostics/`. Desktop Voice activation/recognition/overlay adapters live here — not a separate product. It must not import `features/`, `data/voice/`, `database_service.dart`, or `app/shell/`. Active-tab Voice routing stays in `lib/app/shell/shared/shell_voice_routing.dart`.
+- `lib/shared/voice/` owns the one Voice system used by phone, desktop, web, and Wear: `commands/`, `recognition/`, `routing/` (acceptance bridge only), `ui/`, `platforms/{desktop,mobile}/`, and `diagnostics/`. Desktop Voice activation/recognition/overlay adapters live here — not a separate product. It must not import `features/`, `data/voice/`, `database_service.dart`, or `app/shell/`. Generic active-tab FAB/VoiceInputSheet routing lives in `lib/app/shell/shared/shell_voice_input.dart`; desktop overlay/command routing lives in `shell_voice_routing.dart`; tray/global-hotkey attachment lives in `shell_voice_integration.dart`.
 - `lib/shared/categories/` owns reusable category presentation, tree, and picker (`presentation/`, `tree/`, `picker/`). It may import `data/models.dart` for `CategoryRule` only. It must not import `features/`, `database_service.dart`, or `app/shell/`. Brain wires `CategoryTreeSource` / `CategoryPickerActions` / `PlanCategoryLookup` from `main.dart`.
 - `lib/data/voice/` owns Brain-coupled Voice work: command parser, domain resolver, normalize, record-submit / command execution, glossary builder, contamination/postprocess, PocketBase cloud STT transport, and parser-tied benchmarks.
 - `lib/features/voice/` owns desktop Flutter Voice overlay UI (widget, capsule, correction sheet, command panel).
@@ -87,7 +87,7 @@ Use `CHANGELOG.md` and `docs/ROADMAP.md` to understand what is already built bef
 - Retriable network/backoff failures should keep optimistic state and enqueue through existing outboxes where supported.
 - Non-retriable validation/schema failures should roll back stable state and show one concise, debounced error.
 - Do not introduce full refetch fan-out after small mutations unless unavoidable and justified.
-- Pending sync and auth-paused sync belong in the existing offline/sync banner paths, not per-row noise.
+- Pending sync and auth-paused sync belong in `lib/app/shell/shared/offline_sync_status_bar.dart` via `ShellTopStatusBars`, not per-row noise.
 
 ## Time and Wall-Clock Rules
 
@@ -95,7 +95,7 @@ Use `CHANGELOG.md` and `docs/ROADMAP.md` to understand what is already built bef
 - Profile `timezone_offset` and `preferred_timezone` drive wall-clock day grouping, labels, projections, and stats.
 - Do not use `DateTime.now().toLocal()` for persisted grid keys or durable day bucketing.
 - Date/time picking must use the Omni-Picker flow (`showAppDateTimePicker`) when both date and time are part of the user intent. Date-only navigation may use date-only controls.
-- Planning Time mode uses profile-projected wall time, 5-minute snap/min duration, and no out-of-visible-range fallback bucket.
+- Planning Time mode uses profile-projected wall time, a 10-minute minimum scheduled duration (`kPlanTimeMinDurationMinutes`), and no out-of-visible-range fallback bucket; interaction snapping must follow the current Time View controller policy rather than a duplicated doc constant.
 
 ## Performance Kill Switch
 
@@ -128,7 +128,7 @@ Emergency response:
 - New icon-only app actions should use `AppIconButton` when it covers the action, with tooltip/semantic label where practical.
 - Use `AppLoading`, `AppEmptyState`, and `AppErrorState` for canonical loading/empty/error surfaces where applicable.
 - `LifeCard` / `AppTaskCard` are card foundations; production card migration is scoped work, not a mass replacement.
-- `CategoryChip`, `TagQuickPickStrip`, and related shared chip components are current shared/legacy-safe paths; future canonical chip work must follow `docs/DESIGN_SYSTEM.md`.
+- `CategoryChip`, `TagChip`, and `TagQuickPickStrip` currently live in the canonical shared widget file `lib/core/widgets/chip_component.dart`; future API renaming still follows `docs/DESIGN_SYSTEM.md`.
 - Component Lab is admin-only, mock-data-only, and must not write to PocketBase or expose production user data.
 - Do not add duplicate local UI components when a canonical component exists unless the inventory explicitly marks the old pattern as temporary legacy.
 
@@ -186,11 +186,11 @@ For Android-impacting shared runtime/UI changes when requested or relevant:
 flutter build apk --release --target-platform android-arm64 --split-per-abi --no-tree-shake-icons
 ```
 
-For structure/import-boundary work, also consider:
+For structure/import-boundary work, also run:
 
 ```powershell
-.\scripts\audit\architecture_guard.ps1
 .\scripts\audit\architecture_guard.ps1 -Strict
+python scripts/audit/documentation_parity.py
 ```
 
 Before merge, architecture-changing branches must pass the GitHub Actions `Architecture Guard / strict-structure` check.
