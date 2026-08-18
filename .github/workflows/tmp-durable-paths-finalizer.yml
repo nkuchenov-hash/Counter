@@ -37,6 +37,7 @@ jobs:
           python scripts/manual/_strengthen_global_architecture_boundaries.py
           python scripts/manual/_enforce_main_integrity_gate.py
           python scripts/manual/_remove_redundant_path_title.py
+          python scripts/manual/_remove_legacy_category_paths.py
           git diff --check
 
       - name: Check migration, schema, and release contracts
@@ -61,7 +62,8 @@ jobs:
             lib/data/paths/path_service.dart \
             lib/data/plans/path_planner_bridge.dart \
             lib/data/plans/planner_startup_service.dart \
-            lib/features/paths/paths_page.dart
+            lib/features/paths/paths_page.dart \
+            lib/features/settings/categories/category_list_view.dart
           mkdir -p lib/core/env
           printf '%s\n' 'abstract final class Env {' "  static const String placeholder = '';" '}' > lib/core/env/env.dart
           flutter pub get
@@ -84,6 +86,7 @@ jobs:
           git rm -f scripts/manual/_strengthen_global_architecture_boundaries.py
           git rm -f scripts/manual/_enforce_main_integrity_gate.py
           git rm -f scripts/manual/_remove_redundant_path_title.py
+          git rm -f scripts/manual/_remove_legacy_category_paths.py
           git rm -f .github/workflows/tmp-durable-paths-finalizer.yml
 
           python scripts/manual/generate_app_structure_detailed.py
