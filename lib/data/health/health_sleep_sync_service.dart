@@ -190,9 +190,9 @@ class HealthSleepSyncService {
       'health_sleep_background_periodic_v1';
   static const String _backgroundTaskTag = 'health_sleep_background_tag_v1';
   static const Duration _automaticSyncThrottle = Duration(minutes: 10);
-  static const Duration _firstSyncLookback = Duration(days: 14);
+  static const Duration _firstSyncLookback = Duration(days: 30);
   static const Duration _correctionLookback = Duration(days: 2);
-  static const Duration _backgroundFrequency = Duration(days: 1);
+  static const Duration _backgroundFrequency = Duration(minutes: 30);
 
   final ValueNotifier<HealthSleepSyncState> state =
       ValueNotifier<HealthSleepSyncState>(const HealthSleepSyncState.initial());
@@ -408,20 +408,6 @@ class HealthSleepSyncService {
     await _applyBackgroundSchedule();
   }
 
-  Duration _delayUntilNextDailyRun() {
-    final now = DateTime.now();
-    final minutes = state.value.dailySyncMinutes.clamp(0, 1439).toInt();
-    var target = DateTime(
-      now.year,
-      now.month,
-      now.day,
-      minutes ~/ 60,
-      minutes % 60,
-    );
-    if (!target.isAfter(now)) target = target.add(const Duration(days: 1));
-    return target.difference(now);
-  }
-
   Future<void> _ensureWorkmanagerInitialized() async {
     if (_workmanagerInitialized ||
         kIsWeb ||
@@ -463,7 +449,7 @@ class HealthSleepSyncService {
         _backgroundTaskUniqueName,
         backgroundTaskName,
         frequency: _backgroundFrequency,
-        initialDelay: _delayUntilNextDailyRun(),
+        initialDelay: Duration.zero,
         tag: _backgroundTaskTag,
         existingWorkPolicy: ExistingPeriodicWorkPolicy.update,
         constraints: Constraints(networkType: NetworkType.connected),
