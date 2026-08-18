@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:counter/data/database_service.dart';
 import 'package:counter/features/timeline/timeline_helpers.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
@@ -9,6 +10,31 @@ bool timelineRecordIsSleep(Map<String, dynamic> data) {
   final source = (data['sleep_source'] ?? '').toString().trim();
   final title = (data['title'] ?? '').toString().trim().toLowerCase();
   return kind == 'sleep' || source.isNotEmpty || title == 'sleep' || title == 'сон';
+}
+
+Future<Map<String, dynamic>> timelineHydrateSleepData(
+  Map<String, dynamic> projected,
+) async {
+  if (!timelineRecordIsSleep(projected)) return projected;
+  final businessId = (projected['record_id'] ?? '').toString().trim();
+  final systemId = (projected['id'] ?? projected['_pb_record_id'] ?? '')
+      .toString()
+      .trim();
+  try {
+    final rows = await DatabaseService.instance.fetchRecords(forceNetwork: false);
+    for (final raw in rows) {
+      final rawBusinessId = (raw['record_id'] ?? '').toString().trim();
+      final rawSystemId = (raw['_pb_record_id'] ?? raw['id'] ?? '')
+          .toString()
+          .trim();
+      final same = businessId.isNotEmpty
+          ? rawBusinessId == businessId
+          : systemId.isNotEmpty && rawSystemId == systemId;
+      if (!same) continue;
+      return <String, dynamic>{...projected, ...raw};
+    }
+  } catch (_) {}
+  return projected;
 }
 
 String? timelineSleepWakeDateKey(Map<String, dynamic> data) {
@@ -137,13 +163,18 @@ String _sleepStageLabel(String locale, int stage) {
   };
 }
 
-String _sleepDuration(Duration duration) {
+String _sleepDuration(Duration duration, String locale) {
   final minutes = duration.inMinutes;
   final h = minutes ~/ 60;
   final m = minutes.remainder(60);
-  if (h > 0 && m > 0) return '${h}ч ${m}м';
-  if (h > 0) return '${h}ч';
-  return '${m}м';
+  if (locale == 'ru') {
+    if (h > 0 && m > 0) return '${h}ч ${m}м';
+    if (h > 0) return '${h}ч';
+    return '${m}м';
+  }
+  if (h > 0 && m > 0) return '${h}h ${m}m';
+  if (h > 0) return '${h}h';
+  return '${m}m';
 }
 
 Map<int, Duration> _sleepStageTotals(List<TimelineSleepStage> stages) {
@@ -171,14 +202,13 @@ class TimelineSleepSummary extends StatelessWidget {
 
   final Map<String, dynamic> data;
 
-  @override
-  Widget build(BuildContext context) {
-    final stages = timelineSleepStages(data);
+  Widget _buildSummary(BuildContext context, Map<String, dynamic> hydrated) {
+    final stages = timelineSleepStages(hydrated);
     final totals = _sleepStageTotals(stages);
     final locale = currentLocale.value;
-    final source = timelineSleepSource(data);
-    final recovered = data['sleep_recovered_from_segments'] == true;
-    final pointsRaw = data['sleep_segment_points'];
+    final source = timelineSleepSource(hydrated);
+    final recovered = hydrated['sleep_recovered_from_segments'] == true;
+    final pointsRaw = hydrated['sleep_segment_points'];
     final points = pointsRaw is num
         ? pointsRaw.toInt()
         : int.tryParse(pointsRaw?.toString() ?? '') ?? stages.length;
@@ -194,7 +224,7 @@ class TimelineSleepSummary extends StatelessWidget {
             borderRadius: BorderRadius.circular(999),
           ),
           child: Text(
-            '${_sleepStageLabel(locale, entry.key)} ${_sleepDuration(entry.value)}',
+            '${_sleepStageLabel(locale, entry.key)} ${_sleepDuration(entry.value, locale)}',
             style: Theme.of(context).textTheme.labelSmall,
           ),
         ),
@@ -224,19 +254,37 @@ class TimelineSleepSummary extends StatelessWidget {
       ],
     );
   }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<Map<String, dynamic>>(
+      future: timelineHydrateSleepData(data),
+      initialData: data,
+      builder: (context, snapshot) =>
+          _buildSummary(context, snapshot.data ?? data),
+    );
+  }
 }
 
 Future<void> showTimelineSleepDetails(
   BuildContext context,
   Map<String, dynamic> data,
 ) async {
-  final stages = timelineSleepStages(data);
+  final hydrated = await timelineHydrateSleepData(data);
+  if (!context.mounted) return;
+  final stages = timelineSleepStages(hydrated);
   final totals = _sleepStageTotals(stages);
   final locale = currentLocale.value;
-  final source = timelineSleepSource(data);
-  final recovered = data['sleep_recovered_from_segments'] == true;
-  final startUtc = DateTime.tryParse((data['start_time'] ?? '').toString())?.toUtc();
-  final endUtc = DateTime.tryParse((data['end_time'] ?? '').toString())?.toUtc();
+  final source = timelineSleepSource(hydrated);
+  final recovered = hydrated['sleep_recovered_from_segments'] == true;
+  final startRaw = hydrated['start_time'] ?? hydrated['startTime'];
+  final endRaw = hydrated['end_time'] ?? hydrated['endTime'];
+  final startUtc = startRaw is DateTime
+      ? startRaw.toUtc()
+      : DateTime.tryParse(startRaw?.toString() ?? '')?.toUtc();
+  final endUtc = endRaw is DateTime
+      ? endRaw.toUtc()
+      : DateTime.tryParse(endRaw?.toString() ?? '')?.toUtc();
 
   await showModalBottomSheet<void>(
     context: context,
@@ -296,7 +344,7 @@ Future<void> showTimelineSleepDetails(
                     dense: true,
                     contentPadding: EdgeInsets.zero,
                     title: Text(_sleepStageLabel(locale, entry.key)),
-                    trailing: Text(_sleepDuration(entry.value)),
+                    trailing: Text(_sleepDuration(entry.value, locale)),
                   ),
               ],
               const SizedBox(height: 12),
@@ -324,7 +372,7 @@ Future<void> showTimelineSleepDetails(
                     trailing: Text(
                       '${timelineFormatTimeOfDay(timelineUtcToDisplay(stage.startUtc))}–'
                       '${timelineFormatTimeOfDay(timelineUtcToDisplay(stage.endUtc))} · '
-                      '${_sleepDuration(stage.duration)}',
+                      '${_sleepDuration(stage.duration, locale)}',
                     ),
                   ),
             ],
