@@ -1,0 +1,134 @@
+name: Temporary production sleep diagnostic
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/tmp-sleep-prod-diag-main.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 10
+    env:
+      SSH_PRIVATE_KEY: ${{ secrets.POCKETBASE_SSH_PRIVATE_KEY || secrets.VPS_SSH_KEY || secrets.SSH_PRIVATE_KEY }}
+      SSH_USER: ${{ secrets.POCKETBASE_SSH_USER || secrets.VPS_SSH_USER || secrets.SSH_USER }}
+      SSH_HOST: ${{ secrets.POCKETBASE_SSH_HOST || secrets.VPS_HOST || secrets.SSH_HOST }}
+      SSH_PORT: ${{ secrets.POCKETBASE_SSH_PORT || secrets.VPS_SSH_PORT || '22' }}
+      POCKETBASE_SERVICE: ${{ secrets.POCKETBASE_SERVICE }}
+      POCKETBASE_DEPLOY_DIR: ${{ secrets.POCKETBASE_DEPLOY_DIR }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Read sanitized production state
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$SSH_PRIVATE_KEY"
+          SSH_USER="${SSH_USER:-root}"
+          SSH_HOST="${SSH_HOST:-217.114.0.201}"
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/lifeos_pocketbase
+          chmod 600 ~/.ssh/lifeos_pocketbase
+          ssh-keyscan -p "$SSH_PORT" -H "$SSH_HOST" >> ~/.ssh/known_hosts
+
+          ssh -i ~/.ssh/lifeos_pocketbase -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" \
+            "POCKETBASE_SERVICE='$POCKETBASE_SERVICE' POCKETBASE_DEPLOY_DIR='$POCKETBASE_DEPLOY_DIR' bash -s" > sleep-prod-diag.txt <<'REMOTE'
+          set -euo pipefail
+          service_name="${POCKETBASE_SERVICE:-}"
+          if [[ -z "$service_name" ]]; then
+            service_name="$(systemctl list-unit-files --type=service --no-legend 2>/dev/null | awk 'tolower($1) ~ /pocketbase/ {print $1; exit}')"
+          fi
+          app_dir="${POCKETBASE_DEPLOY_DIR:-}"
+          if [[ -z "$app_dir" && -n "$service_name" ]]; then
+            app_dir="$(systemctl show "$service_name" -p WorkingDirectory --value 2>/dev/null || true)"
+          fi
+          if [[ -z "$app_dir" || ! -d "$app_dir" ]]; then
+            pid="$(pgrep -f '[p]ocketbase.*serve' | head -n1 || true)"
+            [[ -n "$pid" ]] && app_dir="$(readlink -f "/proc/$pid/cwd" 2>/dev/null || true)"
+          fi
+          if [[ -z "$app_dir" || ! -d "$app_dir" ]]; then
+            echo 'service_found=0'
+            exit 0
+          fi
+          echo 'service_found=1'
+          grep -Fq 'var __fitCatchupIntervalMs = 30 * 60 * 1000;' "$app_dir/pb_hooks/google_fit_sleep_runtime.js" 2>/dev/null && echo 'runtime_30m=1' || echo 'runtime_30m=0'
+
+          python3 - "$app_dir/pb_data/data.db" <<'PY'
+          import datetime as dt, os, sqlite3, sys
+          p=sys.argv[1]
+          print('db_exists='+('1' if os.path.exists(p) else '0'))
+          if not os.path.exists(p): raise SystemExit
+          c=sqlite3.connect(f'file:{p}?mode=ro',uri=True); c.row_factory=sqlite3.Row
+          tabs={r[0] for r in c.execute("select name from sqlite_master where type='table'")}
+          if not {'sleep_sync_connections','records'} <= tabs:
+              print('schema_ok=0'); raise SystemExit
+          print('schema_ok=1')
+          rows=list(c.execute("select user_id,enabled,refresh_token_enc,last_error,last_sync_at,last_session_count,last_imported_count from sleep_sync_connections where provider='google_fit'"))
+          active=[r for r in rows if str(r['enabled']).lower() in ('1','true') and str(r['refresh_token_enc'] or '').strip()]
+          print('google_fit_connections='+str(len(rows)))
+          print('google_fit_active='+str(len(active)))
+          now=dt.datetime.now(dt.timezone.utc)
+          def t(v):
+              s=str(v or '').strip().replace('Z','+00:00')
+              if not s:return None
+              try:x=dt.datetime.fromisoformat(s)
+              except:return None
+              if x.tzinfo is None:x=x.replace(tzinfo=dt.timezone.utc)
+              return x.astimezone(dt.timezone.utc)
+          sync1=sync3=pos=zero=errs=autherrs=0
+          uids=[]
+          for r in active:
+              uids.append(str(r['user_id']))
+              x=t(r['last_sync_at'])
+              if x and now-x<=dt.timedelta(hours=1):sync1+=1
+              if x and now-x<=dt.timedelta(hours=3):sync3+=1
+              if int(r['last_session_count'] or 0)>0:pos+=1
+              else:zero+=1
+              e=str(r['last_error'] or '').lower().strip()
+              if e:
+                  errs+=1
+                  if any(k in e for k in ('invalid_grant','authentication','authorization','permission','reconnect','token')):autherrs+=1
+          print('sync_recent_1h='+str(sync1)); print('sync_recent_3h='+str(sync3))
+          print('last_run_sessions_positive='+str(pos)); print('last_run_sessions_zero='+str(zero))
+          print('connections_with_error='+str(errs)); print('connections_auth_error='+str(autherrs))
+          rc={r[1] for r in c.execute('pragma table_info(records)')}
+          cond=[]
+          if 'title' in rc:cond.append("title in ('Sleep','Сон')")
+          if 'external_kind' in rc:cond.append("external_kind='sleep'")
+          if 'sleep_source' in rc:cond.append("coalesce(trim(sleep_source),'')<>''")
+          if not cond or 'end_time' not in rc:
+              print('sleep_query_supported=0'); raise SystemExit
+          print('sleep_query_supported=1')
+          q='select end_time from records where ('+' or '.join(cond)+')'
+          params=[]
+          if uids and 'user_id' in rc:
+              q+=' and user_id in ('+','.join('?' for _ in uids)+')'; params=uids
+          ends=[t(r[0]) for r in c.execute(q,params)]; ends=[x for x in ends if x]
+          print('sleep_records_total='+str(len(ends)))
+          for d in (2,7,30): print(f'sleep_records_{d}d='+str(sum(1 for x in ends if now-x<=dt.timedelta(days=d))))
+          PY
+
+          if [[ -n "$service_name" ]]; then
+            echo "sync_success_logs_3h=$(journalctl -u "$service_name" --since '3 hours ago' --no-pager 2>/dev/null | grep -c 'google fit sleep sync complete' || true)"
+            echo "sync_failure_logs_3h=$(journalctl -u "$service_name" --since '3 hours ago' --no-pager 2>/dev/null | grep -c 'google fit sleep sync failed' || true)"
+          fi
+          REMOTE
+
+          cat sleep-prod-diag.txt
+
+      - name: Publish sanitized result to temporary branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -f sleep-prod-diag.txt
+          git commit -m 'Record sanitized sleep production diagnostic'
+          git push --force origin HEAD:refs/heads/diag/sleep-production-result
