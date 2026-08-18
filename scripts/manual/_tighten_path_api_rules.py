@@ -7,9 +7,9 @@ text = path.read_text(encoding="utf-8-sig")
 
 text = text.replace(
     '        "active_revision_link.user_id = @request.auth.id && " +\n        "active_revision_link.path_id = path_id",',
-    r'''        "active_revision_link.user_id = @request.auth.id && " +
-        "active_revision_link.lifecycle = \"published\" && " +
-        "active_revision_link.path_id = @request.body.path_id","'',
+    '''        "active_revision_link.user_id = @request.auth.id && " +
+        "active_revision_link.lifecycle = 'published' && " +
+        "active_revision_link.path_id = @request.body.path_id",''',
     1,
 )
 text = text.replace(
@@ -19,15 +19,15 @@ text = text.replace(
 )
 text = text.replace(
     '        "active_revision_link.user_id = @request.auth.id && " +\n        "active_revision_link.path_id = path_id",',
-    r'''        "active_revision_link.user_id = @request.auth.id && " +
-        "active_revision_link.lifecycle = \"published\" && " +
-        "active_revision_link.path_id = path_id","'',
+    '''        "active_revision_link.user_id = @request.auth.id && " +
+        "active_revision_link.lifecycle = 'published' && " +
+        "active_revision_link.path_id = path_id",''',
     1,
 )
 
 required = (
     '@request.body.path_id:changed = false',
-    'active_revision_link.lifecycle = \\"published\\"',
+    "active_revision_link.lifecycle = 'published'",
     'active_revision_link.path_id = @request.body.path_id',
 )
 for token in required:
