@@ -1,0 +1,61 @@
+name: Debug final production sleep
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      SSH_PRIVATE_KEY: ${{ secrets.POCKETBASE_SSH_PRIVATE_KEY || secrets.VPS_SSH_KEY || secrets.SSH_PRIVATE_KEY }}
+      SSH_USER: ${{ secrets.POCKETBASE_SSH_USER || secrets.VPS_SSH_USER || secrets.SSH_USER }}
+      SSH_HOST: ${{ secrets.POCKETBASE_SSH_HOST || secrets.VPS_HOST || secrets.SSH_HOST }}
+      SSH_PORT: ${{ secrets.POCKETBASE_SSH_PORT || secrets.VPS_SSH_PORT || '22' }}
+      POCKETBASE_SERVICE: ${{ secrets.POCKETBASE_SERVICE }}
+    steps:
+      - name: Prepare SSH
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$SSH_PRIVATE_KEY"
+          SSH_USER="${SSH_USER:-root}"
+          SSH_HOST="${SSH_HOST:-217.114.0.201}"
+          echo "SSH_USER=$SSH_USER" >> "$GITHUB_ENV"
+          echo "SSH_HOST=$SSH_HOST" >> "$GITHUB_ENV"
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/lifeos_pocketbase
+          chmod 600 ~/.ssh/lifeos_pocketbase
+          ssh-keyscan -p "$SSH_PORT" -H "$SSH_HOST" >> ~/.ssh/known_hosts
+      - name: Inspect production DB
+        shell: bash
+        run: |
+          set -euo pipefail
+          ssh -i ~/.ssh/lifeos_pocketbase -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "SERVICE='${POCKETBASE_SERVICE:-pocketbase.service}' bash -s" <<'REMOTE'
+          set -euo pipefail
+          service="${SERVICE:-pocketbase.service}"
+          app_dir="$(systemctl show "$service" -p WorkingDirectory --value)"
+          db="$app_dir/pb_data/data.db"
+          DB_PATH="$db" python3 - <<'PY'
+          import os, sqlite3
+          con=sqlite3.connect(f'file:{os.environ["DB_PATH"]}?mode=ro',uri=True)
+          con.row_factory=sqlite3.Row
+          conn=con.execute("SELECT user_id,status,last_error,last_sync_at,last_session_count,last_imported_count,last_sleep_count,enabled,last_full_sync_at,segment_backfill_complete FROM sleep_sync_connections WHERE provider='google_fit' ORDER BY rowid DESC LIMIT 1").fetchone()
+          if conn is None:
+              print('NO_CONNECTION'); raise SystemExit(0)
+          print('SYNC status=%s enabled=%s last_sync=%s sessions=%s imported=%s sleep=%s full_sync=%s segment_backfill=%s' % (conn['status'],conn['enabled'],conn['last_sync_at'],conn['last_session_count'],conn['last_imported_count'],conn['last_sleep_count'],conn['last_full_sync_at'],conn['segment_backfill_complete']))
+          print('SYNC_ERROR=' + str(conn['last_error'] or ''))
+          cols={r['name'] for r in con.execute('PRAGMA table_info(records)').fetchall()}
+          for c in ['sleep_stages','sleep_source_name','sleep_recovered_from_segments','sleep_segment_points']:
+              print('FIELD_%s=%s' % (c.upper(), 'present' if c in cols else 'missing'))
+          uid=str(conn['user_id'])
+          rows=con.execute("SELECT start_time,end_time FROM records WHERE user_id=? AND (external_source='google_fit' OR sleep_source='google_fit') ORDER BY end_time ASC",(uid,)).fetchall()
+          print('SLEEP_TOTAL=' + str(len(rows)))
+          if rows: print('SLEEP_LATEST=' + str(rows[-1]['end_time']))
+          PY
+          REMOTE
