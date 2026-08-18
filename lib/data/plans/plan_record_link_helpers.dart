@@ -2,6 +2,15 @@ part of '../database_service.dart';
 
 /// Plan-to-record source linkage, actual-time aggregation, and plan-vs-fact day stats.
 
+const String _recordLinkSuggestionsEnabledPref =
+    'plans_record_link_suggestions_enabled';
+const String _recordLinkSuggestionModePref =
+    'plans_record_link_suggestion_mode';
+const String _recordLinkSuggestionDismissedPref =
+    'plans_record_link_suggestion_dismissed_record_ids';
+const String _recordLinkSuggestionModeAsk = 'ask';
+const String _recordLinkSuggestionModeAuto = 'auto';
+
 extension PlanRecordLinkExtension on DatabaseService {
   /// One pass over [_cachedFlatRecords]: seconds tracked per plan PocketBase id on [wallCalendarDay]
   /// (same day bucketing as timeline). Includes optimistic end overlay; running rows use [getPlanetaryNow].
@@ -133,6 +142,98 @@ extension PlanRecordLinkExtension on DatabaseService {
       actualSecByCategory: actualSecByCat,
       plansScheduledThisDay: dayPlans,
     );
+  }
+
+  Future<SharedPreferences> _recordLinkSuggestionPrefs() =>
+      SharedPreferences.getInstance();
+
+  Future<bool> recordLinkSuggestionsEnabled() async {
+    final prefs = await _recordLinkSuggestionPrefs();
+    return prefs.getBool(_recordLinkSuggestionsEnabledPref) ?? true;
+  }
+
+  Future<String> recordLinkSuggestionMode() async {
+    final prefs = await _recordLinkSuggestionPrefs();
+    final raw = prefs.getString(_recordLinkSuggestionModePref);
+    return raw == _recordLinkSuggestionModeAuto
+        ? _recordLinkSuggestionModeAuto
+        : _recordLinkSuggestionModeAsk;
+  }
+
+  Future<bool> recordLinkSuggestionDismissed(String recordBusinessId) async {
+    final rid = recordBusinessId.trim();
+    if (rid.isEmpty) return true;
+    final prefs = await _recordLinkSuggestionPrefs();
+    return (prefs.getStringList(_recordLinkSuggestionDismissedPref) ??
+            const <String>[])
+        .contains(rid);
+  }
+
+  Future<void> dismissSourcePlanLinkSuggestion(String recordBusinessId) async {
+    final rid = recordBusinessId.trim();
+    if (rid.isEmpty) return;
+    final prefs = await _recordLinkSuggestionPrefs();
+    final existing =
+        prefs.getStringList(_recordLinkSuggestionDismissedPref) ?? <String>[];
+    if (existing.contains(rid)) return;
+    existing.add(rid);
+    if (existing.length > 300) {
+      existing.removeRange(0, existing.length - 300);
+    }
+    await prefs.setStringList(_recordLinkSuggestionDismissedPref, existing);
+  }
+
+  Future<void> disableSourcePlanLinkSuggestions() async {
+    final prefs = await _recordLinkSuggestionPrefs();
+    await prefs.setBool(_recordLinkSuggestionsEnabledPref, false);
+  }
+
+  /// Applies a suggestion after the primary record create has left its critical
+  /// path. Dismissal is recorded before the PATCH, matching the historical UI
+  /// behavior and preventing repeated prompts if a retry is needed later.
+  Future<bool> acceptSourcePlanLinkSuggestion({
+    required String recordBusinessId,
+    required String planPocketRecordId,
+  }) async {
+    final rid = recordBusinessId.trim();
+    if (rid.isEmpty) return false;
+    await dismissSourcePlanLinkSuggestion(rid);
+    try {
+      await primaryRecordWriteNetworkChain;
+    } catch (_) {}
+    return patchRecordSourcePlanLink(
+      recordId: rid,
+      sourcePlanPocketRecordId: planPocketRecordId,
+    );
+  }
+
+  /// Owns enable/dismiss/mode thresholds and auto-link policy. A non-null
+  /// result means the UI should ask the user; auto mode is resolved here.
+  Future<SourcePlanLinkSuggestion?> prepareSourcePlanLinkSuggestionForFreeStart({
+    required String recordTitle,
+    required String wallDateKey,
+    required String recordBusinessId,
+  }) async {
+    final rid = recordBusinessId.trim();
+    if (rid.isEmpty) return null;
+    if (!await recordLinkSuggestionsEnabled()) return null;
+    if (await recordLinkSuggestionDismissed(rid)) return null;
+
+    final mode = await recordLinkSuggestionMode();
+    final suggestion = await suggestSourcePlanForFreeStart(
+      recordTitle: recordTitle,
+      wallDateKey: wallDateKey,
+      minSimilarity: mode == _recordLinkSuggestionModeAuto ? 0.92 : 0.72,
+    );
+    if (suggestion == null) return null;
+    if (mode == _recordLinkSuggestionModeAuto) {
+      await acceptSourcePlanLinkSuggestion(
+        recordBusinessId: rid,
+        planPocketRecordId: suggestion.planPocketRecordId,
+      );
+      return null;
+    }
+    return suggestion;
   }
 
   DateTime? _wallDateKeyToLocalDate(String dateKey) {
