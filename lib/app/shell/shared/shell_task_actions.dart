@@ -228,53 +228,7 @@ mixin ShellTaskActions on ShellCoreLogic {
     }
   }
 
-  Future<SharedPreferences> recordLinkPrefs() => SharedPreferences.getInstance();
-
-  Future<bool> recordLinkSuggestionsEnabled() async {
-    final prefs = await recordLinkPrefs();
-    return prefs.getBool(shellPrefsRecordLinkSuggestionsEnabled) ?? true;
-  }
-
-  Future<String> recordLinkSuggestionMode() async {
-    final prefs = await recordLinkPrefs();
-    final raw = prefs.getString(shellPrefsRecordLinkSuggestionMode);
-    return raw == shellRecordLinkSuggestionModeAuto
-        ? shellRecordLinkSuggestionModeAuto
-        : shellRecordLinkSuggestionModeAsk;
-  }
-
-  Future<bool> recordLinkSuggestionDismissed(String recordBusinessId) async {
-    final rid = recordBusinessId.trim();
-    if (rid.isEmpty) return true;
-    final prefs = await recordLinkPrefs();
-    return (prefs.getStringList(shellPrefsRecordLinkSuggestionDismissed) ??
-            const [])
-        .contains(rid);
-  }
-
-  Future<void> markRecordLinkSuggestionDismissed(
-    String recordBusinessId,
-  ) async {
-    final rid = recordBusinessId.trim();
-    if (rid.isEmpty) return;
-    final prefs = await recordLinkPrefs();
-    final existing =
-        prefs.getStringList(shellPrefsRecordLinkSuggestionDismissed) ?? [];
-    if (existing.contains(rid)) return;
-    existing.add(rid);
-    if (existing.length > 300) {
-      existing.removeRange(0, existing.length - 300);
-    }
-    await prefs.setStringList(shellPrefsRecordLinkSuggestionDismissed, existing);
-  }
-
-  Future<void> disableRecordLinkSuggestions() async {
-    final prefs = await recordLinkPrefs();
-    await prefs.setBool(shellPrefsRecordLinkSuggestionsEnabled, false);
-  }
-
   void showSourcePlanSuggestionSnack({
-    required String title,
     required String recordBusinessId,
     required SourcePlanLinkSuggestion suggestion,
   }) {
@@ -305,10 +259,7 @@ mixin ShellTaskActions on ShellCoreLogic {
                   onPressed: () {
                     messenger.clearSnackBars();
                     unawaited(
-                      markRecordLinkSuggestionDismissed(recordBusinessId),
-                    );
-                    unawaited(
-                      patchSuggestedSourcePlanLink(
+                      DatabaseService.instance.acceptSourcePlanLinkSuggestion(
                         recordBusinessId: recordBusinessId,
                         planPocketRecordId: suggestion.planPocketRecordId,
                       ),
@@ -320,7 +271,9 @@ mixin ShellTaskActions on ShellCoreLogic {
                   onPressed: () {
                     messenger.clearSnackBars();
                     unawaited(
-                      markRecordLinkSuggestionDismissed(recordBusinessId),
+                      DatabaseService.instance.dismissSourcePlanLinkSuggestion(
+                        recordBusinessId,
+                      ),
                     );
                   },
                   child: Text(t(loc, 'skip_link_plan')),
@@ -329,9 +282,13 @@ mixin ShellTaskActions on ShellCoreLogic {
                   onPressed: () {
                     messenger.clearSnackBars();
                     unawaited(
-                      markRecordLinkSuggestionDismissed(recordBusinessId),
+                      DatabaseService.instance.dismissSourcePlanLinkSuggestion(
+                        recordBusinessId,
+                      ),
                     );
-                    unawaited(disableRecordLinkSuggestions());
+                    unawaited(
+                      DatabaseService.instance.disableSourcePlanLinkSuggestions(),
+                    );
                   },
                   child: Text(t(loc, 'record_link_suggestion_turn_off')),
                 ),
@@ -343,54 +300,21 @@ mixin ShellTaskActions on ShellCoreLogic {
     );
   }
 
-  Future<void> patchSuggestedSourcePlanLink({
-    required String recordBusinessId,
-    required String planPocketRecordId,
-  }) async {
-    try {
-      await DatabaseService.instance.primaryRecordWriteNetworkChain;
-    } catch (_) {}
-    if (!mounted) return;
-    try {
-      await DatabaseService.instance.patchRecordSourcePlanLink(
-        recordId: recordBusinessId,
-        sourcePlanPocketRecordId: planPocketRecordId,
-      );
-    } catch (e) {
-      debugPrint('UI ERROR: $e');
-    }
-  }
-
   Future<void> deferSourcePlanLinkAfterFreeStart({
     required String title,
     required String dateKey,
     required String recordBusinessId,
   }) async {
-    final rid = recordBusinessId.trim();
-    if (rid.isEmpty) return;
     if (!mounted) return;
-    if (!await recordLinkSuggestionsEnabled()) return;
-    if (await recordLinkSuggestionDismissed(rid)) return;
-    final mode = await recordLinkSuggestionMode();
-    final minSimilarity =
-        mode == shellRecordLinkSuggestionModeAuto ? 0.92 : 0.72;
-    final suggestion = await DatabaseService.instance.suggestSourcePlanForFreeStart(
-      recordTitle: title,
-      wallDateKey: dateKey,
-      minSimilarity: minSimilarity,
-    );
+    final suggestion = await DatabaseService.instance
+        .prepareSourcePlanLinkSuggestionForFreeStart(
+          recordTitle: title,
+          wallDateKey: dateKey,
+          recordBusinessId: recordBusinessId,
+        );
     if (!mounted || suggestion == null) return;
-    if (mode == shellRecordLinkSuggestionModeAuto) {
-      await markRecordLinkSuggestionDismissed(rid);
-      await patchSuggestedSourcePlanLink(
-        recordBusinessId: rid,
-        planPocketRecordId: suggestion.planPocketRecordId,
-      );
-      return;
-    }
     showSourcePlanSuggestionSnack(
-      title: title,
-      recordBusinessId: rid,
+      recordBusinessId: recordBusinessId,
       suggestion: suggestion,
     );
   }

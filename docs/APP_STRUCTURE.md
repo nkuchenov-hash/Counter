@@ -104,7 +104,7 @@ Product sections own section-specific code later; this phase only separates shel
 | :--- | :--- |
 | `app/shell/app_shell.dart` | `LifeOSDashboard` composition root + shared shell state contract; lifecycle and responsive chrome are delegated to focused shell parts |
 | `app/shell/shared/shell_core.dart` | Core shell date/task-loading state, selected-day coordination and sync-failure UI *(part)* |
-| `app/shell/shared/shell_task_actions.dart` | Shell-owned task/record action orchestration: quick start/plan, record stop/delete, Planning→record start, source-plan suggestion UX/preferences *(part)* |
+| `app/shell/shared/shell_task_actions.dart` | Shell task/record action orchestration and source-plan suggestion prompt presentation; preference/matching/link policy lives in Brain *(part)* |
 | `app/shell/shared/shell_tab_host.dart` | Feature destination host builders *(part)* |
 | `app/shell/shared/shell_lifecycle.dart` | Dashboard startup/dispose wiring: tab host initialization, deferred bootstrap, subscriptions, midnight watcher, desktop voice detach *(part)* |
 | `app/shell/shared/shell_chrome.dart` | Responsive shell scaffold/chrome: destination pages, app bar, form-factor frame, FAB, bottom navigation, desktop voice shortcuts *(part)* |
@@ -162,7 +162,7 @@ Compatibility re-exports (remove when callers migrate): root `lib/app_shell.dart
 | `plans/plan_stream_helpers.dart` | Shared Planning day-stream hubs, refresh-event publication, ref-counted lifecycle, cache-first/network-pump coordination, 400ms refresh debounce *(part)* |
 | `plans/plan_optimistic_helpers.dart` | Dated/backlog optimistic overlay state, apply/clear lifecycle, cross-day hiding, server/cache overlay merge, timezone rekey *(part)* |
 | `plans/plan_order_helpers.dart` | Planning optimistic reorder, first-drag baseline tracking, debounced diff-only PocketBase order synchronization, rollback, and lifecycle flush *(part)* |
-| `plans/plan_record_link_helpers.dart` | Plan-to-record source linkage, actual-time aggregation, plan-vs-fact day statistics, title-based source-plan suggestion, and category inheritance for record start *(part)* |
+| `plans/plan_record_link_helpers.dart` | Plan↔record linkage, source-plan matching, suggestion preferences/dismissal/auto-link policy, actual-time aggregation and plan-vs-fact day statistics *(part)* |
 | `plans/plan_ai_parse_helpers.dart` | AI `parse-task` helpers: `parseTaskViaAiBackend`, `parsePlanningItemsViaAiBackend` *(part)* |
 | `plans/plan_alarm_helpers.dart` | Hydrated-cache plan reminder reconciliation and debounced OS alarm bridge *(part)* |
 | `plans/notes_brain_helpers.dart` | Notes Brain extension — parse/apply/pin/done + debounced `notes_delta` PATCH *(part)* |
