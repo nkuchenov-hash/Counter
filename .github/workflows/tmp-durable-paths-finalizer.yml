@@ -4,6 +4,10 @@ on:
   pull_request:
     branches: [main]
 
+concurrency:
+  group: durable-paths-finalizer
+  cancel-in-progress: true
+
 permissions:
   contents: write
 
