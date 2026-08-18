@@ -73,7 +73,6 @@ detect_block = """      - name: Detect PocketBase bundle changes
           echo "PocketBase bundle changed: $changed"
 
 """
-# Remove old checkout and put checkout + change detection before credential requirements.
 pb = pb[:require_start] + checkout_block + detect_block + require_block + pb[prepare_ssh_start:]
 
 for step_name in (
@@ -90,9 +89,8 @@ for step_name in (
     pb = pb.replace(needle, replacement, 1)
 write(pb_path, pb)
 
-# Web deployment is downstream of the server workflow. Every main push therefore
-# completes PocketBase validation (and migrations when needed) before publishing
-# a client that may depend on the new schema.
+# Web publication has exactly one production entry: successful server workflow
+# completion for a main-push SHA. There is intentionally no manual bypass.
 web = """name: Deploy LIFE OS Flutter Web to GitHub Pages
 
 # LIFE OS deploy is independent from Igropoisk data collection.
@@ -103,7 +101,6 @@ on:
   workflow_run:
     workflows: ["Deploy PocketBase hooks and migrations"]
     types: [completed]
-  workflow_dispatch:
 
 permissions:
   contents: write
@@ -115,13 +112,12 @@ concurrency:
 jobs:
   build-and-deploy:
     if: >-
-      github.event_name == 'workflow_dispatch' ||
-      (github.event.workflow_run.conclusion == 'success' &&
-       github.event.workflow_run.event == 'push')
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
-      TARGET_SHA: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
+      TARGET_SHA: ${{ github.event.workflow_run.head_sha }}
     steps:
       - name: Checkout release commit
         uses: actions/checkout@v4
@@ -170,16 +166,15 @@ jobs:
 """
 write(".github/workflows/deploy.yml", web)
 
-# Keep governing deploy docs aligned with the actual ordered workflow chain.
 deploy_path = "docs/DEPLOY.md"
 deploy = read(deploy_path)
 ordered = """
 
 ### Production release ordering law
 
-Every `main` push starts `.github/workflows/deploy-pocketbase.yml`. It validates the complete tracked PocketBase JS bundle; if `pb_hooks/`, `pb_migrations/`, or the server workflow changed, it deploys/restarts PocketBase and lets unapplied migrations finish. `.github/workflows/deploy.yml` is triggered by the successful **workflow_run** and checks out that exact `head_sha` before publishing LIFE OS Web. Therefore a schema-dependent Web client cannot be published ahead of its server migration.
+Every `main` push starts `.github/workflows/deploy-pocketbase.yml`. It validates the complete tracked PocketBase JS bundle; if `pb_hooks/`, `pb_migrations/`, or the server workflow changed, it deploys/restarts PocketBase and lets unapplied migrations finish. `.github/workflows/deploy.yml` has **no direct/manual production entry**: it is triggered only by the successful server **workflow_run** and checks out that exact `head_sha` before publishing LIFE OS Web. Therefore a schema-dependent Web client cannot be published ahead of its server migration.
 
-A main push with no PocketBase bundle change still completes the server validation workflow but skips SSH/restart; Web remains downstream of the successful gate. Manual Web dispatch is a deliberate redeploy of an already-released main state.
+A main push with no PocketBase bundle change still completes the server validation workflow but skips SSH/restart; Web remains downstream of the successful gate. To repeat a release, rerun the already-gated workflow chain rather than bypassing the server gate.
 """
 if "### Production release ordering law" not in deploy:
     deploy += ordered
