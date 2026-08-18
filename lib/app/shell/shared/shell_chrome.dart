@@ -139,12 +139,7 @@ mixin ShellChrome on ShellLifecycle, ShellMoreMenu {
                               );
                               final mainColumn = Column(
                                 children: [
-                                  ShellTopStatusBars(
-                                    routeTab:
-                                        ShellDashboardBase.shellTabDiagnosticLabel(
-                                      shellPageIndex,
-                                    ),
-                                  ),
+                                  const ShellTopStatusBars(),
                                   Expanded(
                                     child: kShellDeferHiddenTabsUntilFirstFrame
                                         ? LazyIndexedStack(

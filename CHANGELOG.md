@@ -1,3 +1,9 @@
+## 2026-08-18 — Shell top status naming cleanup [engineering]
+
+- Renamed obsolete `shell_offline_banner.dart` to `shell_top_status_bars.dart`; the widget is no longer an offline banner.
+- Removed the unused `routeTab` parameter from `ShellTopStatusBars`.
+- No UI or behavior changes.
+
 ## 2026-08-18 — Source-plan link policy ownership [engineering]
 
 - Moved source-plan suggestion enable/mode/dismissal preferences and auto-link threshold policy from shell into Brain `plan_record_link_helpers.dart`.

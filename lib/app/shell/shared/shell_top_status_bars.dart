@@ -4,9 +4,7 @@ import 'package:flutter/material.dart';
 
 /// Presentation-only top-of-shell status strip.
 class ShellTopStatusBars extends StatelessWidget {
-  const ShellTopStatusBars({super.key, required this.routeTab});
-
-  final String routeTab;
+  const ShellTopStatusBars({super.key});
 
   @override
   Widget build(BuildContext context) {

@@ -112,7 +112,7 @@ Product sections own section-specific code later; this phase only separates shel
 | `app/shell/shared/shell_more_menu.dart` | More bottom sheet and shell navigation actions only; Paths opens shell destination 6 *(part)* |
 | `app/shell/shared/shell_voice_routing.dart` | Voice command routing, submit flows and voice-sheet hosting; SpeechToText engine lifecycle belongs to shared recognition *(part)* |
 | `app/shell/shared/shell_voice_integration.dart` | Desktop tray/global-hotkey attachment and reattachment at the shell boundary *(part)* |
-| `app/shell/shared/shell_offline_banner.dart` | Presentation-only top status bars; no Health/Cloud ingestion side effects |
+| `app/shell/shared/shell_top_status_bars.dart` | Presentation-only top status bars for Profile hydration and unfilled-time notices |
 | `app/shell/shared/shell_shared.dart` | Shell-local date helpers |
 | `app/shell/shared/shell_form_factor.dart` | Phone / tablet / desktop form-factor resolve from width |
 | `app/shell/shared/profile_hydration_status_bar.dart` | Compatibility re-export → `features/profile/profile_hydration_status_bar.dart`; shell does not own Profile hydration UI |
