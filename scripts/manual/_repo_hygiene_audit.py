@@ -2,10 +2,13 @@
 from __future__ import annotations
 
 import json
+import re
 import subprocess
-from pathlib import Path
+import sys
+from pathlib import Path, PurePosixPath
 
 ROOT = Path(__file__).resolve().parents[2]
+DART_EDGE_RE = re.compile(r"^\s*(?:import|export|part)\s+['\"]([^'\"]+)['\"]", re.M)
 
 
 def tracked() -> list[str]:
@@ -25,25 +28,45 @@ def readable_text(path: Path) -> str | None:
         return None
 
 
+def resolve_dart_edge(source: str, uri: str) -> str | None:
+    if uri.startswith("dart:") or "://" in uri:
+        return None
+    if uri.startswith("package:counter/"):
+        return "lib/" + uri.removeprefix("package:counter/")
+    if uri.startswith("package:"):
+        return None
+    parent = PurePosixPath(source).parent
+    return str(parent.joinpath(uri))
+
+
 files = tracked()
 tracked_set = set(files)
 
-# Import the canonical watchlist without duplicating it here.
-import sys
+incoming: dict[str, list[str]] = {}
+for source in files:
+    if not source.endswith(".dart"):
+        continue
+    text = readable_text(ROOT / source)
+    if text is None:
+        continue
+    for uri in DART_EDGE_RE.findall(text):
+        target = resolve_dart_edge(source, uri)
+        if target:
+            incoming.setdefault(target, []).append(source)
+
 sys.path.insert(0, str(ROOT / "scripts" / "manual"))
 from structure_evidence_index import WATCHLIST_PATHS  # noqa: E402
 
-print("=== TRACKED WATCHLIST ===")
+print("=== TRACKED WATCHLIST EXACT DART INCOMING ===")
 for target, reason in WATCHLIST_PATHS.items():
     if target not in tracked_set:
         continue
     target_path = ROOT / target
     size = target_path.stat().st_size
+    exact_incoming = sorted(set(incoming.get(target, [])))
+    refs: list[str] = []
     needle_full = target.replace("\\", "/")
     needle_pkg = "package:counter/" + needle_full.removeprefix("lib/")
-    basename = Path(target).name
-    refs: list[str] = []
-    code_refs: list[str] = []
     for p in files:
         if p == target or p in {
             "docs/APP_STRUCTURE_DETAILED.md",
@@ -54,24 +77,18 @@ for target, reason in WATCHLIST_PATHS.items():
         text = readable_text(ROOT / p)
         if text is None:
             continue
-        hit = needle_full in text or needle_pkg in text
-        # For Dart import/export/part references, basename is sufficient and catches relatives.
-        if not hit and p.endswith(".dart") and basename in text:
-            hit = True
-        if hit:
+        if needle_full in text or needle_pkg in text:
             refs.append(p)
-            if p.endswith((".dart", ".yaml", ".yml", ".ps1", ".rs", ".kt", ".swift", ".cpp", ".h")):
-                code_refs.append(p)
     print(json.dumps({
         "path": target,
         "size": size,
         "reason": reason,
-        "code_refs": code_refs,
-        "all_refs": refs,
+        "dart_incoming": exact_incoming,
+        "literal_refs": refs,
     }, ensure_ascii=False))
 
 print("=== LARGE TRACKED FILES >= 50 KB ===")
-large = []
+large: list[tuple[int, str]] = []
 for p in files:
     path = ROOT / p
     try:
@@ -83,9 +100,18 @@ for p in files:
 for size, p in sorted(large, reverse=True):
     print(json.dumps({"path": p, "size": size}, ensure_ascii=False))
 
-print("=== LARGE BINARIES >= 1 MB ===")
+print("=== LARGE BINARIES >= 1 MB WITH TEXT REFS ===")
 for size, p in sorted(large, reverse=True):
-    if size < 1_000_000:
+    if size < 1_000_000 or readable_text(ROOT / p) is not None:
         continue
-    if readable_text(ROOT / p) is None:
-        print(json.dumps({"path": p, "size": size}, ensure_ascii=False))
+    refs: list[str] = []
+    base = Path(p).name
+    for other in files:
+        if other == p or other in {"docs/APP_STRUCTURE_DETAILED.md", "scripts/manual/_repo_hygiene_audit.py"}:
+            continue
+        text = readable_text(ROOT / other)
+        if text is None:
+            continue
+        if p in text or base in text:
+            refs.append(other)
+    print(json.dumps({"path": p, "size": size, "refs": refs}, ensure_ascii=False))
