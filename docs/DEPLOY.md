@@ -124,8 +124,8 @@ git push origin main
 1. `flutter pub get`
 2. `flutter test test/voice_command_parser_test.dart`
 3. `flutter build windows --release --dart-define=DESKTOP_VOICE_COMMAND=true`
-4. *(Recommended)* `powershell -ExecutionPolicy Bypass -File installer\windows\build_stt_helper_en.ps1`
-5. `powershell -ExecutionPolicy Bypass -File installer\windows\prepare_stt_payload.ps1`
+4. *(Only when rebuilding the helper)* `powershell -ExecutionPolicy Bypass -File installer\windows\build_stt_helper_en.ps1 -BackendSourceRoot <path-to-http-sidecar-source>` (or set `COUNTER_STT_BACKEND_ROOT`)
+5. `powershell -ExecutionPolicy Bypass -File installer\windows\prepare_stt_payload.ps1 -ModelsSourceRoot <path-to-models>` (or set `COUNTER_STT_MODELS_ROOT`)
 6. Compile Inno Setup (`installer/windows/counter.iss`)
 7. Output: **`installer/windows/output/CounterSetup.exe`**
 
@@ -135,7 +135,8 @@ git push origin main
 
 1. GitHub Actions → **Windows desktop build (manual)** ([`.github/workflows/windows-desktop-build.yml`](../.github/workflows/windows-desktop-build.yml))
 2. Download **`CounterSetup`** artifact
-3. Run **`CounterSetup.exe`**
+3. The clean-runner workflow does **not** provision the external offline STT model directories yet; treat the artifact as voice-complete only when the release payload has been prepared with the model source contract above.
+4. Run **`CounterSetup.exe`**
 
 ### After installation
 

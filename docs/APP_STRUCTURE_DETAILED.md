@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `287b8b4` on 2026-08-18.**
+**Generated from input HEAD `17e1f2f` on 2026-08-18.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 852 — each appears **exactly once** below.
+**Tracked files:** 853 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -26,29 +26,27 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Role | Count |
 | :--- | ---: |
-| `production UI` | 167 |
+| `production UI` | 173 |
 | `test` | 106 |
-| `Brain/data` | 85 |
+| `Brain/data` | 86 |
 | `platform build` | 83 |
+| `shared foundation` | 77 |
 | `developer tool` | 65 |
-| `shared foundation` | 62 |
 | `platform resource` | 44 |
-| `Desktop Voice runtime` | 36 |
+| `Desktop Voice runtime` | 38 |
 | `governing documentation` | 35 |
 | `test fixture` | 24 |
-| `shared Voice system` | 22 |
+| `shared Voice system` | 23 |
 | `historical engineering record` | 16 |
-| `intentionally retained product watchlist` | 16 |
 | `PocketBase backend` | 13 |
 | `localization` | 13 |
 | `installer` | 11 |
 | `Brain Voice` | 10 |
 | `CI/deployment` | 10 |
-| `compatibility layer` | 9 |
 | `shared time` | 7 |
 | `package metadata` | 6 |
 | `shared diagnostics` | 6 |
-| `audit tool` | 2 |
+| `audit tool` | 3 |
 | `mobile/web Voice adapters` | 2 |
 | `generated documentation` | 1 |
 | `runtime entry point` | 1 |
@@ -57,22 +55,19 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 447 |
-| `REQUIRED_FOR_TEST_OR_TOOLING` | 201 |
+| `PROVEN_REQUIRED` | 449 |
+| `REQUIRED_FOR_TEST_OR_TOOLING` | 225 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
 | `GOVERNING_DOCUMENTATION` | 35 |
 | `HISTORICAL_RECORD` | 16 |
-| `RETAINED_PRODUCT_WATCHLIST` | 16 |
-| `COMPATIBILITY_LAYER` | 9 |
 | `GENERATED_CANONICAL_OUTPUT` | 1 |
 
 ### By confidence
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 759 |
-| `MEDIUM` | 68 |
-| `WATCHLIST` | 25 |
+| `HIGH` | 762 |
+| `MEDIUM` | 91 |
 
 ---
 
@@ -9950,35 +9945,35 @@ RU:
 
 EN:
 
-- **Human purpose:** App shell wiring — Desktop/web side navigation rail. Connects bottom tabs, voice, edit sheets, and offline banner across the whole app.
-- **What this is:** App shell wiring — Desktop/web side navigation rail.
+- **Human purpose:** App shell wiring — Desktop side navigation. Connects bottom tabs, voice, edit sheets, and offline banner across the whole app.
+- **What this is:** App shell wiring — Desktop side navigation.
 - **Why needed:** Connects bottom tabs, voice, edit sheets, and offline banner across the whole app.
 - **Contents:** Shell mixin or widget (`ShellSideNavigation`, `ShellSideNavItem`).
 - **Key code names:** `ShellSideNavigation`, `ShellSideNavItem`
 - **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/desktop/desktop_shell_frame.dart`, `lib/core/navigation/shell_side_navigation.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/desktop/desktop_shell_frame.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
 - **Owner / layer:** app shell
-- **Responsibilities:** Desktop/web side navigation rail
+- **Responsibilities:** Desktop side navigation
 - **When to open:** Bottom tabs, voice routing, edit modal host, offline banner slot.
 - **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** All main tabs, `app_shell.dart`; APP_STRUCTURE role: Desktop/web side navigation rail
+- **Connected to:** All main tabs, `app_shell.dart`; APP_STRUCTURE role: Desktop side navigation
 
 RU:
 
-- **Зачем файл человеку:** Оболочка приложения (shell) — Desktop/web side navigation rail. Связывает вкладки, voice, edit sheets и offline banner.
-- **Что это:** Оболочка приложения (shell) — Desktop/web side navigation rail.
+- **Зачем файл человеку:** Оболочка приложения (shell) — Desktop side navigation. Связывает вкладки, voice, edit sheets и offline banner.
+- **Что это:** Оболочка приложения (shell) — Desktop side navigation.
 - **Зачем:** Связывает вкладки, voice, edit sheets и offline banner.
 - **Содержимое:** Shell mixin или виджет (logic in `shell_side_navigation`).
 - **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/desktop/desktop_shell_frame.dart`, `lib/core/navigation/shell_side_navigation.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/desktop/desktop_shell_frame.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
 - **Владелец / слой:** оболочка приложения
-- **Обязанности:** Реализует в shell: Desktop/web side navigation rail.
+- **Обязанности:** Реализует в shell: Desktop side navigation.
 - **Когда открывать:** Навигация, voice, edit host.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Все main tabs, `app_shell.dart`
@@ -10102,8 +10097,8 @@ RU:
 
 EN:
 
-- **Human purpose:** App shell wiring — Language/TZ settings page (shell route). Connects bottom tabs, voice, edit sheets, and offline banner across the whole app.
-- **What this is:** App shell wiring — Language/TZ settings page (shell route).
+- **Human purpose:** App shell wiring — settings page. Connects bottom tabs, voice, edit sheets, and offline banner across the whole app.
+- **What this is:** App shell wiring — settings page.
 - **Why needed:** Connects bottom tabs, voice, edit sheets, and offline banner across the whole app.
 - **Contents:** Shell mixin or widget (logic in `settings_page`).
 - **Repository role:** production UI
@@ -10112,15 +10107,15 @@ EN:
 - **Deletion consequence:** Removing it breaks a required repository capability.
 - **Confidence:** MEDIUM
 - **Owner / layer:** app shell
-- **Responsibilities:** Language/TZ settings page (shell route)
+- **Responsibilities:** settings page
 - **When to open:** Bottom tabs, voice routing, edit modal host, offline banner slot.
 - **Can it be deleted?** Removing it breaks a required repository capability.
-- **Connected to:** All main tabs, `app_shell.dart`; APP_STRUCTURE role: Language/TZ settings page (shell route)
+- **Connected to:** All main tabs, `app_shell.dart`; APP_STRUCTURE role: settings page
 
 RU:
 
-- **Зачем файл человеку:** Оболочка приложения (shell) — Language/TZ settings page (shell route). Связывает вкладки, voice, edit sheets и offline banner.
-- **Что это:** Оболочка приложения (shell) — Language/TZ settings page (shell route).
+- **Зачем файл человеку:** Оболочка приложения (shell) — settings page. Связывает вкладки, voice, edit sheets и offline banner.
+- **Что это:** Оболочка приложения (shell) — settings page.
 - **Зачем:** Связывает вкладки, voice, edit sheets и offline banner.
 - **Содержимое:** Shell mixin или виджет (logic in `settings_page`).
 - **Роль в репозитории:** production UI
@@ -10129,7 +10124,7 @@ RU:
 - **Что будет, если удалить:** Удаление ломает нужную возможность репозитория.
 - **Уверенность:** MEDIUM
 - **Владелец / слой:** оболочка приложения
-- **Обязанности:** Реализует в shell: Language/TZ settings page (shell route).
+- **Обязанности:** Реализует в shell: settings page.
 - **Когда открывать:** Навигация, voice, edit host.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Все main tabs, `app_shell.dart`
@@ -11120,36 +11115,36 @@ RU:
 
 EN:
 
-- **Human purpose:** Intentionally retained product/compat file — Compatibility re-export of shell/shell_side_navigation.dart; shell imports the canonical path. (see `docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`). Not reachable from current production `lib/main.dart` root; kept until a product decision removes or rewires it.
-- **What this is:** Intentionally retained product/compat file — Compatibility re-export of shell/shell_side_navigation.dart; shell imports the canonical path. (see `docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`).
-- **Why needed:** Not reachable from current production `lib/main.dart` root; kept until a product decision removes or rewires it.
-- **Contents:** Barrel `export` lines: `shell_side_navigation.dart`.
-- **Repository role:** compatibility layer
-- **Evidence of use:** (1) Hygiene audit watchlist (`docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`): Compatibility re-export of shell/shell_side_navigation.dart; shell imports the canonical path. (2) Current production reachability from `lib/main.dart`: none (retained intentionally — not proven runtime-required).
-- **Necessity status:** COMPATIBILITY_LAYER
-- **Deletion consequence:** No current production consequence established; product decision required before deletion (replace docs/imports or remove).
-- **Confidence:** WATCHLIST
+- **Human purpose:** Foundation module `shell_side_navigation.dart` (navigation) — Desktop side navigation. Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
+- **What this is:** Foundation module `shell_side_navigation.dart` (navigation) — Desktop side navigation.
+- **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
+- **Contents:** Dart module `shell_side_navigation.dart` — open file for classes and helpers.
+- **Repository role:** shared foundation
+- **Evidence of use:** Tracked Dart source; structural role inferred from path (no importer found in this scan).
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** May break tooling or future wiring; verify before delete.
+- **Confidence:** MEDIUM
 - **Owner / layer:** shared foundation
-- **Responsibilities:** Desktop/web side navigation rail
+- **Responsibilities:** Desktop side navigation
 - **When to open:** When behavior tied to `shell_side_navigation.dart` breaks or you need to change its documented role.
-- **Can it be deleted?** No current production consequence established; product decision required before deletion (replace docs/imports or remove).
-- **Connected to:** APP_STRUCTURE role: Desktop/web side navigation rail
+- **Can it be deleted?** May break tooling or future wiring; verify before delete.
+- **Connected to:** APP_STRUCTURE role: Desktop side navigation
 
 RU:
 
-- **Зачем файл человеку:** Намеренно сохранённый файл (watchlist) — см. hygiene-аудит. Файл: `shell_side_navigation.dart`. Сейчас не участвует в runtime из `lib/main.dart`; сохранён до продуктового решения об удалении или переподключении.
-- **Что это:** Намеренно сохранённый файл (watchlist) — см. hygiene-аудит. Файл: `shell_side_navigation.dart`.
-- **Зачем:** Сейчас не участвует в runtime из `lib/main.dart`; сохранён до продуктового решения об удалении или переподключении.
+- **Зачем файл человеку:** Foundation-модуль `shell_side_navigation.dart` (navigation) — Desktop side navigation. Общий код вне одного экрана: тема, время, voice, diagnostics.
+- **Что это:** Foundation-модуль `shell_side_navigation.dart` (navigation) — Desktop side navigation.
+- **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
 - **Содержимое:** Dart-модуль `shell_side_navigation.dart` — классы и helpers в исходнике.
-- **Роль в репозитории:** compatibility layer
-- **Доказательства использования:** (1) Список наблюдения hygiene-аудита (`docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`): Compatibility re-export of shell/shell_side_navigation.dart; shell imports the canonical path. (2) Сейчас не достижим из `lib/main.dart`; сохранён намеренно, не считать runtime-обязательным.
-- **Статус необходимости:** COMPATIBILITY_LAYER
-- **Что будет, если удалить:** Сейчас нет доказанного runtime-эффекта; перед удалением нужно продуктовое решение (обновить docs/imports или убрать файл).
-- **Уверенность:** WATCHLIST
+- **Роль в репозитории:** shared foundation
+- **Доказательства использования:** Отслеживаемый Dart; роль по пути (в этом скане импортеров не найдено).
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Может сломать tooling; проверять перед удалением.
+- **Уверенность:** MEDIUM
 - **Владелец / слой:** общая foundation
-- **Обязанности:** Не считать обязательным для текущего runtime.
+- **Обязанности:** Foundation-логика: Desktop side navigation.
 - **Когда открывать:** Когда ломается поведение, связанное с `shell_side_navigation.dart`.
-- **Можно удалить?** Сейчас нет доказанного runtime-эффекта; перед удалением нужно продуктовое решение (обновить docs/imports или убрать файл).
+- **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/navigation/`, `docs/APP_STRUCTURE.md`
 
 
@@ -11910,36 +11905,36 @@ RU:
 
 EN:
 
-- **Human purpose:** Intentionally retained product/compat file — Design-system showConfirmDialog with zero production call sites; retained for V7 migration. (see `docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`). Not reachable from current production `lib/main.dart` root; kept until a product decision removes or rewires it.
-- **What this is:** Intentionally retained product/compat file — Design-system showConfirmDialog with zero production call sites; retained for V7 migration. (see `docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`).
-- **Why needed:** Not reachable from current production `lib/main.dart` root; kept until a product decision removes or rewires it.
+- **Human purpose:** Shared design-system widget — `showConfirmDialog`. Plans, Timeline, and Lists reuse this instead of copying button/card styles.
+- **What this is:** Shared design-system widget — `showConfirmDialog`.
+- **Why needed:** Plans, Timeline, and Lists reuse this instead of copying button/card styles.
 - **Contents:** Canonical Flutter widget (logic in `confirm_dialog`).
-- **Repository role:** intentionally retained product watchlist
-- **Evidence of use:** (1) Hygiene audit watchlist (`docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`): Design-system showConfirmDialog with zero production call sites; retained for V7 migration. (2) Current production reachability from `lib/main.dart`: none (retained intentionally — not proven runtime-required).
-- **Necessity status:** RETAINED_PRODUCT_WATCHLIST
-- **Deletion consequence:** No current production consequence established; product decision required before deletion (replace docs/imports or remove).
-- **Confidence:** WATCHLIST
+- **Repository role:** shared foundation
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/profile/calendar_integrations/calendar_integrations_section.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
 - **Owner / layer:** shared design system
 - **Responsibilities:** `showConfirmDialog`
 - **When to open:** When behavior tied to `confirm_dialog.dart` breaks or you need to change its documented role.
-- **Can it be deleted?** No current production consequence established; product decision required before deletion (replace docs/imports or remove).
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
 - **Connected to:** APP_STRUCTURE role: `showConfirmDialog`
 
 RU:
 
-- **Зачем файл человеку:** Намеренно сохранённый файл (watchlist) — см. hygiene-аудит. Файл: `confirm_dialog.dart`. Сейчас не участвует в runtime из `lib/main.dart`; сохранён до продуктового решения об удалении или переподключении.
-- **Что это:** Намеренно сохранённый файл (watchlist) — см. hygiene-аудит. Файл: `confirm_dialog.dart`.
-- **Зачем:** Сейчас не участвует в runtime из `lib/main.dart`; сохранён до продуктового решения об удалении или переподключении.
+- **Зачем файл человеку:** Общий виджет design system — `showConfirmDialog`. Один стиль кнопок и карточек на Plans, Timeline и Lists.
+- **Что это:** Общий виджет design system — `showConfirmDialog`.
+- **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
 - **Содержимое:** Канонический Flutter-виджет (logic in `confirm_dialog`).
-- **Роль в репозитории:** intentionally retained product watchlist
-- **Доказательства использования:** (1) Список наблюдения hygiene-аудита (`docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`): Design-system showConfirmDialog with zero production call sites; retained for V7 migration. (2) Сейчас не достижим из `lib/main.dart`; сохранён намеренно, не считать runtime-обязательным.
-- **Статус необходимости:** RETAINED_PRODUCT_WATCHLIST
-- **Что будет, если удалить:** Сейчас нет доказанного runtime-эффекта; перед удалением нужно продуктовое решение (обновить docs/imports или убрать файл).
-- **Уверенность:** WATCHLIST
+- **Роль в репозитории:** shared foundation
+- **Доказательства использования:** Импортируется production Dart: `lib/features/profile/calendar_integrations/calendar_integrations_section.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
 - **Владелец / слой:** общий design system
-- **Обязанности:** Не считать обязательным для текущего runtime.
+- **Обязанности:** Реализует в UI: `showConfirmDialog`.
 - **Когда открывать:** Когда ломается поведение, связанное с `confirm_dialog.dart`.
-- **Можно удалить?** Сейчас нет доказанного runtime-эффекта; перед удалением нужно продуктовое решение (обновить docs/imports или убрать файл).
+- **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/widgets/`, `docs/APP_STRUCTURE.md`
 
 
@@ -12098,37 +12093,37 @@ RU:
 
 EN:
 
-- **Human purpose:** Intentionally retained product/compat file — Design-system LifeCard/AppTaskCard foundation; not yet wired into production screens. (see `docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`). Not reachable from current production `lib/main.dart` root; kept until a product decision removes or rewires it.
-- **What this is:** Intentionally retained product/compat file — Design-system LifeCard/AppTaskCard foundation; not yet wired into production screens. (see `docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`).
-- **Why needed:** Not reachable from current production `lib/main.dart` root; kept until a product decision removes or rewires it.
+- **Human purpose:** Shared design-system widget — Card foundation for Component Lab. Plans, Timeline, and Lists reuse this instead of copying button/card styles.
+- **What this is:** Shared design-system widget — Card foundation for Component Lab.
+- **Why needed:** Plans, Timeline, and Lists reuse this instead of copying button/card styles.
 - **Contents:** Canonical Flutter widget (`AppPhysicalCardPhase`, `AppPhysicalDragVisual`, `AppPhysicalDragSurface`, `_AppPhysicalDragSurfaceState`, `LifeCardState`, `LifeCardDensity`).
 - **Key code names:** `AppPhysicalCardPhase`, `AppPhysicalDragVisual`, `AppPhysicalDragSurface`, `_AppPhysicalDragSurfaceState`, `LifeCardState`, `LifeCardDensity`, `AppTaskCardType`, `LifeCard`, `AppTaskCard`
-- **Repository role:** intentionally retained product watchlist
-- **Evidence of use:** (1) Hygiene audit watchlist (`docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`): Design-system LifeCard/AppTaskCard foundation; not yet wired into production screens. (2) Current production reachability from `lib/main.dart`: none (retained intentionally — not proven runtime-required).
-- **Necessity status:** RETAINED_PRODUCT_WATCHLIST
-- **Deletion consequence:** No current production consequence established; product decision required before deletion (replace docs/imports or remove).
-- **Confidence:** WATCHLIST
+- **Repository role:** shared foundation
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/planning/time_view/time_view_hour_grid.dart`, `lib/features/planning/widgets/plan_card_reorder_settle.dart`, `lib/features/planning/widgets/planning_list_helpers.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
 - **Owner / layer:** shared design system
 - **Responsibilities:** Card foundation for Component Lab
 - **When to open:** When behavior tied to `life_card.dart` breaks or you need to change its documented role.
-- **Can it be deleted?** No current production consequence established; product decision required before deletion (replace docs/imports or remove).
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
 - **Connected to:** APP_STRUCTURE role: Card foundation for Component Lab
 
 RU:
 
-- **Зачем файл человеку:** Намеренно сохранённый файл (watchlist) — см. hygiene-аудит. Файл: `life_card.dart`. Сейчас не участвует в runtime из `lib/main.dart`; сохранён до продуктового решения об удалении или переподключении.
-- **Что это:** Намеренно сохранённый файл (watchlist) — см. hygiene-аудит. Файл: `life_card.dart`.
-- **Зачем:** Сейчас не участвует в runtime из `lib/main.dart`; сохранён до продуктового решения об удалении или переподключении.
+- **Зачем файл человеку:** Общий виджет design system — Card foundation for Component Lab. Один стиль кнопок и карточек на Plans, Timeline и Lists.
+- **Что это:** Общий виджет design system — Card foundation for Component Lab.
+- **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
 - **Содержимое:** Канонический Flutter-виджет (logic in `life_card`).
-- **Роль в репозитории:** intentionally retained product watchlist
-- **Доказательства использования:** (1) Список наблюдения hygiene-аудита (`docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`): Design-system LifeCard/AppTaskCard foundation; not yet wired into production screens. (2) Сейчас не достижим из `lib/main.dart`; сохранён намеренно, не считать runtime-обязательным.
-- **Статус необходимости:** RETAINED_PRODUCT_WATCHLIST
-- **Что будет, если удалить:** Сейчас нет доказанного runtime-эффекта; перед удалением нужно продуктовое решение (обновить docs/imports или убрать файл).
-- **Уверенность:** WATCHLIST
+- **Роль в репозитории:** shared foundation
+- **Доказательства использования:** Импортируется production Dart: `lib/features/planning/time_view/time_view_hour_grid.dart`, `lib/features/planning/widgets/plan_card_reorder_settle.dart`, `lib/features/planning/widgets/planning_list_helpers.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
 - **Владелец / слой:** общий design system
-- **Обязанности:** Не считать обязательным для текущего runtime.
+- **Обязанности:** Реализует в UI: Card foundation for Component Lab.
 - **Когда открывать:** Когда ломается поведение, связанное с `life_card.dart`.
-- **Можно удалить?** Сейчас нет доказанного runtime-эффекта; перед удалением нужно продуктовое решение (обновить docs/imports или убрать файл).
+- **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/widgets/`, `docs/APP_STRUCTURE.md`
 
 
@@ -12174,37 +12169,36 @@ RU:
 
 EN:
 
-- **Human purpose:** Intentionally retained product/compat file — Note preview card; only reachable via unused notes editor stack. (see `docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`). Not reachable from current production `lib/main.dart` root; kept until a product decision removes or rewires it.
-- **What this is:** Intentionally retained product/compat file — Note preview card; only reachable via unused notes editor stack. (see `docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`).
-- **Why needed:** Not reachable from current production `lib/main.dart` root; kept until a product decision removes or rewires it.
-- **Contents:** Canonical Flutter widget (`AppNotePreviewData`, `AppNotePreviewCard`, `_MetaPill`).
-- **Key code names:** `AppNotePreviewData`, `AppNotePreviewCard`, `_MetaPill`
-- **Repository role:** intentionally retained product watchlist
-- **Evidence of use:** (1) Hygiene audit watchlist (`docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`): Note preview card; only reachable via unused notes editor stack. (2) Current production reachability from `lib/main.dart`: none (retained intentionally — not proven runtime-required).
-- **Necessity status:** RETAINED_PRODUCT_WATCHLIST
-- **Deletion consequence:** No current production consequence established; product decision required before deletion (replace docs/imports or remove).
-- **Confidence:** WATCHLIST
+- **Human purpose:** Shared design-system widget — note preview card. Plans, Timeline, and Lists reuse this instead of copying button/card styles.
+- **What this is:** Shared design-system widget — note preview card.
+- **Why needed:** Plans, Timeline, and Lists reuse this instead of copying button/card styles.
+- **Contents:** Canonical Flutter widget (logic in `note_preview_card`).
+- **Repository role:** shared foundation
+- **Evidence of use:** Mentioned by tracked docs/scripts: `docs/reports/ARCHITECTURE_GUARD_BASELINE_2026-07-17.md`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Removing it breaks a required repository capability.
+- **Confidence:** MEDIUM
 - **Owner / layer:** shared design system
-- **Responsibilities:** `AppNotePreviewCard` — presentational library preview card (title/preview/checklist meta)
+- **Responsibilities:** note preview card
 - **When to open:** When behavior tied to `note_preview_card.dart` breaks or you need to change its documented role.
-- **Can it be deleted?** No current production consequence established; product decision required before deletion (replace docs/imports or remove).
-- **Connected to:** APP_STRUCTURE role: `AppNotePreviewCard` — presentational library preview card (title/preview/checklist meta)
+- **Can it be deleted?** Removing it breaks a required repository capability.
+- **Connected to:** APP_STRUCTURE role: note preview card
 
 RU:
 
-- **Зачем файл человеку:** Намеренно сохранённый файл (watchlist) — см. hygiene-аудит. Файл: `note_preview_card.dart`. Сейчас не участвует в runtime из `lib/main.dart`; сохранён до продуктового решения об удалении или переподключении.
-- **Что это:** Намеренно сохранённый файл (watchlist) — см. hygiene-аудит. Файл: `note_preview_card.dart`.
-- **Зачем:** Сейчас не участвует в runtime из `lib/main.dart`; сохранён до продуктового решения об удалении или переподключении.
+- **Зачем файл человеку:** Общий виджет design system — note preview card. Один стиль кнопок и карточек на Plans, Timeline и Lists.
+- **Что это:** Общий виджет design system — note preview card.
+- **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
 - **Содержимое:** Канонический Flutter-виджет (logic in `note_preview_card`).
-- **Роль в репозитории:** intentionally retained product watchlist
-- **Доказательства использования:** (1) Список наблюдения hygiene-аудита (`docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`): Note preview card; only reachable via unused notes editor stack. (2) Сейчас не достижим из `lib/main.dart`; сохранён намеренно, не считать runtime-обязательным.
-- **Статус необходимости:** RETAINED_PRODUCT_WATCHLIST
-- **Что будет, если удалить:** Сейчас нет доказанного runtime-эффекта; перед удалением нужно продуктовое решение (обновить docs/imports или убрать файл).
-- **Уверенность:** WATCHLIST
+- **Роль в репозитории:** shared foundation
+- **Доказательства использования:** Упоминается в docs/scripts: `docs/reports/ARCHITECTURE_GUARD_BASELINE_2026-07-17.md`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Удаление ломает нужную возможность репозитория.
+- **Уверенность:** MEDIUM
 - **Владелец / слой:** общий design system
-- **Обязанности:** Не считать обязательным для текущего runtime.
+- **Обязанности:** Реализует в UI: note preview card.
 - **Когда открывать:** Когда ломается поведение, связанное с `note_preview_card.dart`.
-- **Можно удалить?** Сейчас нет доказанного runtime-эффекта; перед удалением нужно продуктовое решение (обновить docs/imports или убрать файл).
+- **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/widgets/notes/`, `docs/APP_STRUCTURE.md`
 
 
@@ -12212,36 +12206,36 @@ RU:
 
 EN:
 
-- **Human purpose:** Intentionally retained product/compat file — Notes widget barrel only imported by unused notes_editor_sheet. (see `docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`). Not reachable from current production `lib/main.dart` root; kept until a product decision removes or rewires it.
-- **What this is:** Intentionally retained product/compat file — Notes widget barrel only imported by unused notes_editor_sheet. (see `docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`).
-- **Why needed:** Not reachable from current production `lib/main.dart` root; kept until a product decision removes or rewires it.
+- **Human purpose:** Shared design-system widget — notes. Plans, Timeline, and Lists reuse this instead of copying button/card styles.
+- **What this is:** Shared design-system widget — notes.
+- **Why needed:** Plans, Timeline, and Lists reuse this instead of copying button/card styles.
 - **Contents:** Canonical Flutter widget (logic in `notes`).
-- **Repository role:** intentionally retained product watchlist
-- **Evidence of use:** (1) Hygiene audit watchlist (`docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`): Notes widget barrel only imported by unused notes_editor_sheet. (2) Current production reachability from `lib/main.dart`: none (retained intentionally — not proven runtime-required).
-- **Necessity status:** RETAINED_PRODUCT_WATCHLIST
-- **Deletion consequence:** No current production consequence established; product decision required before deletion (replace docs/imports or remove).
-- **Confidence:** WATCHLIST
+- **Repository role:** shared foundation
+- **Evidence of use:** Mentioned by tracked docs/scripts: `docs/reports/ARCHITECTURE_GUARD_BASELINE_2026-07-17.md`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Removing it breaks a required repository capability.
+- **Confidence:** MEDIUM
 - **Owner / layer:** shared design system
-- **Responsibilities:** Barrel re-export of canonical Notes editor widgets (pure UI; no Brain/features imports)
+- **Responsibilities:** notes
 - **When to open:** When behavior tied to `notes.dart` breaks or you need to change its documented role.
-- **Can it be deleted?** No current production consequence established; product decision required before deletion (replace docs/imports or remove).
-- **Connected to:** APP_STRUCTURE role: Barrel re-export of canonical Notes editor widgets (pure UI
+- **Can it be deleted?** Removing it breaks a required repository capability.
+- **Connected to:** APP_STRUCTURE role: notes
 
 RU:
 
-- **Зачем файл человеку:** Намеренно сохранённый файл (watchlist) — см. hygiene-аудит. Файл: `notes.dart`. Сейчас не участвует в runtime из `lib/main.dart`; сохранён до продуктового решения об удалении или переподключении.
-- **Что это:** Намеренно сохранённый файл (watchlist) — см. hygiene-аудит. Файл: `notes.dart`.
-- **Зачем:** Сейчас не участвует в runtime из `lib/main.dart`; сохранён до продуктового решения об удалении или переподключении.
+- **Зачем файл человеку:** Общий виджет design system — notes. Один стиль кнопок и карточек на Plans, Timeline и Lists.
+- **Что это:** Общий виджет design system — notes.
+- **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
 - **Содержимое:** Канонический Flutter-виджет (logic in `notes`).
-- **Роль в репозитории:** intentionally retained product watchlist
-- **Доказательства использования:** (1) Список наблюдения hygiene-аудита (`docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`): Notes widget barrel only imported by unused notes_editor_sheet. (2) Сейчас не достижим из `lib/main.dart`; сохранён намеренно, не считать runtime-обязательным.
-- **Статус необходимости:** RETAINED_PRODUCT_WATCHLIST
-- **Что будет, если удалить:** Сейчас нет доказанного runtime-эффекта; перед удалением нужно продуктовое решение (обновить docs/imports или убрать файл).
-- **Уверенность:** WATCHLIST
+- **Роль в репозитории:** shared foundation
+- **Доказательства использования:** Упоминается в docs/scripts: `docs/reports/ARCHITECTURE_GUARD_BASELINE_2026-07-17.md`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Удаление ломает нужную возможность репозитория.
+- **Уверенность:** MEDIUM
 - **Владелец / слой:** общий design system
-- **Обязанности:** Не считать обязательным для текущего runtime.
+- **Обязанности:** Реализует в UI: notes.
 - **Когда открывать:** Когда ломается поведение, связанное с `notes.dart`.
-- **Можно удалить?** Сейчас нет доказанного runtime-эффекта; перед удалением нужно продуктовое решение (обновить docs/imports или убрать файл).
+- **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/widgets/notes/`, `docs/APP_STRUCTURE.md`
 
 
@@ -12249,37 +12243,36 @@ RU:
 
 EN:
 
-- **Human purpose:** Intentionally retained product/compat file — Notes context row; only reachable via unused notes editor stack. (see `docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`). Not reachable from current production `lib/main.dart` root; kept until a product decision removes or rewires it.
-- **What this is:** Intentionally retained product/compat file — Notes context row; only reachable via unused notes editor stack. (see `docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`).
-- **Why needed:** Not reachable from current production `lib/main.dart` root; kept until a product decision removes or rewires it.
-- **Contents:** Canonical Flutter widget (`AppNotesContextRowData`, `AppNotesContextTag`, `AppNotesContextRow`, `_ContextTagChip`).
-- **Key code names:** `AppNotesContextRowData`, `AppNotesContextTag`, `AppNotesContextRow`, `_ContextTagChip`
-- **Repository role:** intentionally retained product watchlist
-- **Evidence of use:** (1) Hygiene audit watchlist (`docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`): Notes context row; only reachable via unused notes editor stack. (2) Current production reachability from `lib/main.dart`: none (retained intentionally — not proven runtime-required).
-- **Necessity status:** RETAINED_PRODUCT_WATCHLIST
-- **Deletion consequence:** No current production consequence established; product decision required before deletion (replace docs/imports or remove).
-- **Confidence:** WATCHLIST
+- **Human purpose:** Shared design-system widget — notes context row. Plans, Timeline, and Lists reuse this instead of copying button/card styles.
+- **What this is:** Shared design-system widget — notes context row.
+- **Why needed:** Plans, Timeline, and Lists reuse this instead of copying button/card styles.
+- **Contents:** Canonical Flutter widget (logic in `notes_context_row`).
+- **Repository role:** shared foundation
+- **Evidence of use:** Mentioned by tracked docs/scripts: `docs/reports/ARCHITECTURE_GUARD_BASELINE_2026-07-17.md`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Removing it breaks a required repository capability.
+- **Confidence:** MEDIUM
 - **Owner / layer:** shared design system
-- **Responsibilities:** `AppNotesContextRow` — category/tag chips + trailing save status under title
+- **Responsibilities:** notes context row
 - **When to open:** When behavior tied to `notes_context_row.dart` breaks or you need to change its documented role.
-- **Can it be deleted?** No current production consequence established; product decision required before deletion (replace docs/imports or remove).
-- **Connected to:** APP_STRUCTURE role: `AppNotesContextRow` — category/tag chips + trailing save status under title
+- **Can it be deleted?** Removing it breaks a required repository capability.
+- **Connected to:** APP_STRUCTURE role: notes context row
 
 RU:
 
-- **Зачем файл человеку:** Намеренно сохранённый файл (watchlist) — см. hygiene-аудит. Файл: `notes_context_row.dart`. Сейчас не участвует в runtime из `lib/main.dart`; сохранён до продуктового решения об удалении или переподключении.
-- **Что это:** Намеренно сохранённый файл (watchlist) — см. hygiene-аудит. Файл: `notes_context_row.dart`.
-- **Зачем:** Сейчас не участвует в runtime из `lib/main.dart`; сохранён до продуктового решения об удалении или переподключении.
+- **Зачем файл человеку:** Общий виджет design system — notes context row. Один стиль кнопок и карточек на Plans, Timeline и Lists.
+- **Что это:** Общий виджет design system — notes context row.
+- **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
 - **Содержимое:** Канонический Flutter-виджет (logic in `notes_context_row`).
-- **Роль в репозитории:** intentionally retained product watchlist
-- **Доказательства использования:** (1) Список наблюдения hygiene-аудита (`docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`): Notes context row; only reachable via unused notes editor stack. (2) Сейчас не достижим из `lib/main.dart`; сохранён намеренно, не считать runtime-обязательным.
-- **Статус необходимости:** RETAINED_PRODUCT_WATCHLIST
-- **Что будет, если удалить:** Сейчас нет доказанного runtime-эффекта; перед удалением нужно продуктовое решение (обновить docs/imports или убрать файл).
-- **Уверенность:** WATCHLIST
+- **Роль в репозитории:** shared foundation
+- **Доказательства использования:** Упоминается в docs/scripts: `docs/reports/ARCHITECTURE_GUARD_BASELINE_2026-07-17.md`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Удаление ломает нужную возможность репозитория.
+- **Уверенность:** MEDIUM
 - **Владелец / слой:** общий design system
-- **Обязанности:** Не считать обязательным для текущего runtime.
+- **Обязанности:** Реализует в UI: notes context row.
 - **Когда открывать:** Когда ломается поведение, связанное с `notes_context_row.dart`.
-- **Можно удалить?** Сейчас нет доказанного runtime-эффекта; перед удалением нужно продуктовое решение (обновить docs/imports или убрать файл).
+- **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/widgets/notes/`, `docs/APP_STRUCTURE.md`
 
 
@@ -12287,37 +12280,36 @@ RU:
 
 EN:
 
-- **Human purpose:** Intentionally retained product/compat file — Notes editor surface; only reachable via unused notes editor stack. (see `docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`). Not reachable from current production `lib/main.dart` root; kept until a product decision removes or rewires it.
-- **What this is:** Intentionally retained product/compat file — Notes editor surface; only reachable via unused notes editor stack. (see `docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`).
-- **Why needed:** Not reachable from current production `lib/main.dart` root; kept until a product decision removes or rewires it.
-- **Contents:** Canonical Flutter widget (`NotesEditorPlaceholderBuilder`, `AppNotesEditorSurface`, `_AppNotesEditorSurfaceState`).
-- **Key code names:** `NotesEditorPlaceholderBuilder`, `AppNotesEditorSurface`, `_AppNotesEditorSurfaceState`
-- **Repository role:** intentionally retained product watchlist
-- **Evidence of use:** (1) Hygiene audit watchlist (`docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`): Notes editor surface; only reachable via unused notes editor stack. (2) Current production reachability from `lib/main.dart`: none (retained intentionally — not proven runtime-required).
-- **Necessity status:** RETAINED_PRODUCT_WATCHLIST
-- **Deletion consequence:** No current production consequence established; product decision required before deletion (replace docs/imports or remove).
-- **Confidence:** WATCHLIST
+- **Human purpose:** Shared design-system widget — notes editor surface. Plans, Timeline, and Lists reuse this instead of copying button/card styles.
+- **What this is:** Shared design-system widget — notes editor surface.
+- **Why needed:** Plans, Timeline, and Lists reuse this instead of copying button/card styles.
+- **Contents:** Canonical Flutter widget (logic in `notes_editor_surface`).
+- **Repository role:** shared foundation
+- **Evidence of use:** Mentioned by tracked docs/scripts: `docs/reports/ARCHITECTURE_GUARD_BASELINE_2026-07-17.md`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Removing it breaks a required repository capability.
+- **Confidence:** MEDIUM
 - **Owner / layer:** shared design system
-- **Responsibilities:** `AppNotesEditorSurface` — Apple-Notes-style title + Quill body + pinned toolbar
+- **Responsibilities:** notes editor surface
 - **When to open:** When behavior tied to `notes_editor_surface.dart` breaks or you need to change its documented role.
-- **Can it be deleted?** No current production consequence established; product decision required before deletion (replace docs/imports or remove).
-- **Connected to:** APP_STRUCTURE role: `AppNotesEditorSurface` — Apple-Notes-style title + Quill body + pinned toolbar
+- **Can it be deleted?** Removing it breaks a required repository capability.
+- **Connected to:** APP_STRUCTURE role: notes editor surface
 
 RU:
 
-- **Зачем файл человеку:** Намеренно сохранённый файл (watchlist) — см. hygiene-аудит. Файл: `notes_editor_surface.dart`. Сейчас не участвует в runtime из `lib/main.dart`; сохранён до продуктового решения об удалении или переподключении.
-- **Что это:** Намеренно сохранённый файл (watchlist) — см. hygiene-аудит. Файл: `notes_editor_surface.dart`.
-- **Зачем:** Сейчас не участвует в runtime из `lib/main.dart`; сохранён до продуктового решения об удалении или переподключении.
+- **Зачем файл человеку:** Общий виджет design system — notes editor surface. Один стиль кнопок и карточек на Plans, Timeline и Lists.
+- **Что это:** Общий виджет design system — notes editor surface.
+- **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
 - **Содержимое:** Канонический Flutter-виджет (logic in `notes_editor_surface`).
-- **Роль в репозитории:** intentionally retained product watchlist
-- **Доказательства использования:** (1) Список наблюдения hygiene-аудита (`docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`): Notes editor surface; only reachable via unused notes editor stack. (2) Сейчас не достижим из `lib/main.dart`; сохранён намеренно, не считать runtime-обязательным.
-- **Статус необходимости:** RETAINED_PRODUCT_WATCHLIST
-- **Что будет, если удалить:** Сейчас нет доказанного runtime-эффекта; перед удалением нужно продуктовое решение (обновить docs/imports или убрать файл).
-- **Уверенность:** WATCHLIST
+- **Роль в репозитории:** shared foundation
+- **Доказательства использования:** Упоминается в docs/scripts: `docs/reports/ARCHITECTURE_GUARD_BASELINE_2026-07-17.md`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Удаление ломает нужную возможность репозитория.
+- **Уверенность:** MEDIUM
 - **Владелец / слой:** общий design system
-- **Обязанности:** Не считать обязательным для текущего runtime.
+- **Обязанности:** Реализует в UI: notes editor surface.
 - **Когда открывать:** Когда ломается поведение, связанное с `notes_editor_surface.dart`.
-- **Можно удалить?** Сейчас нет доказанного runtime-эффекта; перед удалением нужно продуктовое решение (обновить docs/imports или убрать файл).
+- **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/widgets/notes/`, `docs/APP_STRUCTURE.md`
 
 
@@ -12325,36 +12317,36 @@ RU:
 
 EN:
 
-- **Human purpose:** Intentionally retained product/compat file — Notes markdown helper; only reachable via unused notes editor stack. (see `docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`). Not reachable from current production `lib/main.dart` root; kept until a product decision removes or rewires it.
-- **What this is:** Intentionally retained product/compat file — Notes markdown helper; only reachable via unused notes editor stack. (see `docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`).
-- **Why needed:** Not reachable from current production `lib/main.dart` root; kept until a product decision removes or rewires it.
+- **Human purpose:** Shared design-system widget — notes markdown. Plans, Timeline, and Lists reuse this instead of copying button/card styles.
+- **What this is:** Shared design-system widget — notes markdown.
+- **Why needed:** Plans, Timeline, and Lists reuse this instead of copying button/card styles.
 - **Contents:** Canonical Flutter widget (logic in `notes_markdown`).
-- **Repository role:** intentionally retained product watchlist
-- **Evidence of use:** (1) Hygiene audit watchlist (`docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`): Notes markdown helper; only reachable via unused notes editor stack. (2) Current production reachability from `lib/main.dart`: none (retained intentionally — not proven runtime-required).
-- **Necessity status:** RETAINED_PRODUCT_WATCHLIST
-- **Deletion consequence:** No current production consequence established; product decision required before deletion (replace docs/imports or remove).
-- **Confidence:** WATCHLIST
+- **Repository role:** shared foundation
+- **Evidence of use:** Mentioned by tracked docs/scripts: `docs/reports/ARCHITECTURE_GUARD_BASELINE_2026-07-17.md`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Removing it breaks a required repository capability.
+- **Confidence:** MEDIUM
 - **Owner / layer:** shared design system
-- **Responsibilities:** Quill Delta JSON ↔ Markdown helpers for copy/paste (no third-party markdown package)
+- **Responsibilities:** notes markdown
 - **When to open:** When behavior tied to `notes_markdown.dart` breaks or you need to change its documented role.
-- **Can it be deleted?** No current production consequence established; product decision required before deletion (replace docs/imports or remove).
-- **Connected to:** APP_STRUCTURE role: Quill Delta JSON ↔ Markdown helpers for copy/paste (no third-party markdown package)
+- **Can it be deleted?** Removing it breaks a required repository capability.
+- **Connected to:** APP_STRUCTURE role: notes markdown
 
 RU:
 
-- **Зачем файл человеку:** Намеренно сохранённый файл (watchlist) — см. hygiene-аудит. Файл: `notes_markdown.dart`. Сейчас не участвует в runtime из `lib/main.dart`; сохранён до продуктового решения об удалении или переподключении.
-- **Что это:** Намеренно сохранённый файл (watchlist) — см. hygiene-аудит. Файл: `notes_markdown.dart`.
-- **Зачем:** Сейчас не участвует в runtime из `lib/main.dart`; сохранён до продуктового решения об удалении или переподключении.
+- **Зачем файл человеку:** Общий виджет design system — notes markdown. Один стиль кнопок и карточек на Plans, Timeline и Lists.
+- **Что это:** Общий виджет design system — notes markdown.
+- **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
 - **Содержимое:** Канонический Flutter-виджет (logic in `notes_markdown`).
-- **Роль в репозитории:** intentionally retained product watchlist
-- **Доказательства использования:** (1) Список наблюдения hygiene-аудита (`docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`): Notes markdown helper; only reachable via unused notes editor stack. (2) Сейчас не достижим из `lib/main.dart`; сохранён намеренно, не считать runtime-обязательным.
-- **Статус необходимости:** RETAINED_PRODUCT_WATCHLIST
-- **Что будет, если удалить:** Сейчас нет доказанного runtime-эффекта; перед удалением нужно продуктовое решение (обновить docs/imports или убрать файл).
-- **Уверенность:** WATCHLIST
+- **Роль в репозитории:** shared foundation
+- **Доказательства использования:** Упоминается в docs/scripts: `docs/reports/ARCHITECTURE_GUARD_BASELINE_2026-07-17.md`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Удаление ломает нужную возможность репозитория.
+- **Уверенность:** MEDIUM
 - **Владелец / слой:** общий design system
-- **Обязанности:** Не считать обязательным для текущего runtime.
+- **Обязанности:** Реализует в UI: notes markdown.
 - **Когда открывать:** Когда ломается поведение, связанное с `notes_markdown.dart`.
-- **Можно удалить?** Сейчас нет доказанного runtime-эффекта; перед удалением нужно продуктовое решение (обновить docs/imports или убрать файл).
+- **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/widgets/notes/`, `docs/APP_STRUCTURE.md`
 
 
@@ -12362,37 +12354,36 @@ RU:
 
 EN:
 
-- **Human purpose:** Intentionally retained product/compat file — Notes save status chip; only reachable via unused notes editor stack. (see `docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`). Not reachable from current production `lib/main.dart` root; kept until a product decision removes or rewires it.
-- **What this is:** Intentionally retained product/compat file — Notes save status chip; only reachable via unused notes editor stack. (see `docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`).
-- **Why needed:** Not reachable from current production `lib/main.dart` root; kept until a product decision removes or rewires it.
-- **Contents:** Canonical Flutter widget (`NotesSaveStatusKind`, `AppNotesSaveStatusData`, `AppNotesSaveStatus`).
-- **Key code names:** `NotesSaveStatusKind`, `AppNotesSaveStatusData`, `AppNotesSaveStatus`
-- **Repository role:** intentionally retained product watchlist
-- **Evidence of use:** (1) Hygiene audit watchlist (`docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`): Notes save status chip; only reachable via unused notes editor stack. (2) Current production reachability from `lib/main.dart`: none (retained intentionally — not proven runtime-required).
-- **Necessity status:** RETAINED_PRODUCT_WATCHLIST
-- **Deletion consequence:** No current production consequence established; product decision required before deletion (replace docs/imports or remove).
-- **Confidence:** WATCHLIST
+- **Human purpose:** Shared design-system widget — notes save status. Plans, Timeline, and Lists reuse this instead of copying button/card styles.
+- **What this is:** Shared design-system widget — notes save status.
+- **Why needed:** Plans, Timeline, and Lists reuse this instead of copying button/card styles.
+- **Contents:** Canonical Flutter widget (logic in `notes_save_status`).
+- **Repository role:** shared foundation
+- **Evidence of use:** Mentioned by tracked docs/scripts: `docs/reports/ARCHITECTURE_GUARD_BASELINE_2026-07-17.md`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Removing it breaks a required repository capability.
+- **Confidence:** MEDIUM
 - **Owner / layer:** shared design system
-- **Responsibilities:** `AppNotesSaveStatus` — idle/editing/saving/saved/offline/error chip
+- **Responsibilities:** notes save status
 - **When to open:** When behavior tied to `notes_save_status.dart` breaks or you need to change its documented role.
-- **Can it be deleted?** No current production consequence established; product decision required before deletion (replace docs/imports or remove).
-- **Connected to:** APP_STRUCTURE role: `AppNotesSaveStatus` — idle/editing/saving/saved/offline/error chip
+- **Can it be deleted?** Removing it breaks a required repository capability.
+- **Connected to:** APP_STRUCTURE role: notes save status
 
 RU:
 
-- **Зачем файл человеку:** Намеренно сохранённый файл (watchlist) — см. hygiene-аудит. Файл: `notes_save_status.dart`. Сейчас не участвует в runtime из `lib/main.dart`; сохранён до продуктового решения об удалении или переподключении.
-- **Что это:** Намеренно сохранённый файл (watchlist) — см. hygiene-аудит. Файл: `notes_save_status.dart`.
-- **Зачем:** Сейчас не участвует в runtime из `lib/main.dart`; сохранён до продуктового решения об удалении или переподключении.
+- **Зачем файл человеку:** Общий виджет design system — notes save status. Один стиль кнопок и карточек на Plans, Timeline и Lists.
+- **Что это:** Общий виджет design system — notes save status.
+- **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
 - **Содержимое:** Канонический Flutter-виджет (logic in `notes_save_status`).
-- **Роль в репозитории:** intentionally retained product watchlist
-- **Доказательства использования:** (1) Список наблюдения hygiene-аудита (`docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`): Notes save status chip; only reachable via unused notes editor stack. (2) Сейчас не достижим из `lib/main.dart`; сохранён намеренно, не считать runtime-обязательным.
-- **Статус необходимости:** RETAINED_PRODUCT_WATCHLIST
-- **Что будет, если удалить:** Сейчас нет доказанного runtime-эффекта; перед удалением нужно продуктовое решение (обновить docs/imports или убрать файл).
-- **Уверенность:** WATCHLIST
+- **Роль в репозитории:** shared foundation
+- **Доказательства использования:** Упоминается в docs/scripts: `docs/reports/ARCHITECTURE_GUARD_BASELINE_2026-07-17.md`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Удаление ломает нужную возможность репозитория.
+- **Уверенность:** MEDIUM
 - **Владелец / слой:** общий design system
-- **Обязанности:** Не считать обязательным для текущего runtime.
+- **Обязанности:** Реализует в UI: notes save status.
 - **Когда открывать:** Когда ломается поведение, связанное с `notes_save_status.dart`.
-- **Можно удалить?** Сейчас нет доказанного runtime-эффекта; перед удалением нужно продуктовое решение (обновить docs/imports или убрать файл).
+- **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/widgets/notes/`, `docs/APP_STRUCTURE.md`
 
 
@@ -12400,37 +12391,36 @@ RU:
 
 EN:
 
-- **Human purpose:** Intentionally retained product/compat file — Notes toolbar; only reachable via unused notes editor stack. (see `docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`). Not reachable from current production `lib/main.dart` root; kept until a product decision removes or rewires it.
-- **What this is:** Intentionally retained product/compat file — Notes toolbar; only reachable via unused notes editor stack. (see `docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`).
-- **Why needed:** Not reachable from current production `lib/main.dart` root; kept until a product decision removes or rewires it.
-- **Contents:** Canonical Flutter widget (`AppNotesToolbarActions`, `AppNotesToolbarTooltips`, `AppNotesToolbar`, `_AppNotesToolbarState`, `_TogglableFormatButton`).
-- **Key code names:** `AppNotesToolbarActions`, `AppNotesToolbarTooltips`, `AppNotesToolbar`, `_AppNotesToolbarState`, `_TogglableFormatButton`
-- **Repository role:** intentionally retained product watchlist
-- **Evidence of use:** (1) Hygiene audit watchlist (`docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`): Notes toolbar; only reachable via unused notes editor stack. (2) Current production reachability from `lib/main.dart`: none (retained intentionally — not proven runtime-required).
-- **Necessity status:** RETAINED_PRODUCT_WATCHLIST
-- **Deletion consequence:** No current production consequence established; product decision required before deletion (replace docs/imports or remove).
-- **Confidence:** WATCHLIST
+- **Human purpose:** Shared design-system widget — notes toolbar. Plans, Timeline, and Lists reuse this instead of copying button/card styles.
+- **What this is:** Shared design-system widget — notes toolbar.
+- **Why needed:** Plans, Timeline, and Lists reuse this instead of copying button/card styles.
+- **Contents:** Canonical Flutter widget (logic in `notes_toolbar`).
+- **Repository role:** shared foundation
+- **Evidence of use:** Mentioned by tracked docs/scripts: `docs/reports/ARCHITECTURE_GUARD_BASELINE_2026-07-17.md`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Removing it breaks a required repository capability.
+- **Confidence:** MEDIUM
 - **Owner / layer:** shared design system
-- **Responsibilities:** `AppNotesToolbar` — fixed-height custom Quill format toolbar (web-safe; no QuillSimpleToolbar)
+- **Responsibilities:** notes toolbar
 - **When to open:** When behavior tied to `notes_toolbar.dart` breaks or you need to change its documented role.
-- **Can it be deleted?** No current production consequence established; product decision required before deletion (replace docs/imports or remove).
-- **Connected to:** APP_STRUCTURE role: `AppNotesToolbar` — fixed-height custom Quill format toolbar (web-safe
+- **Can it be deleted?** Removing it breaks a required repository capability.
+- **Connected to:** APP_STRUCTURE role: notes toolbar
 
 RU:
 
-- **Зачем файл человеку:** Намеренно сохранённый файл (watchlist) — см. hygiene-аудит. Файл: `notes_toolbar.dart`. Сейчас не участвует в runtime из `lib/main.dart`; сохранён до продуктового решения об удалении или переподключении.
-- **Что это:** Намеренно сохранённый файл (watchlist) — см. hygiene-аудит. Файл: `notes_toolbar.dart`.
-- **Зачем:** Сейчас не участвует в runtime из `lib/main.dart`; сохранён до продуктового решения об удалении или переподключении.
+- **Зачем файл человеку:** Общий виджет design system — notes toolbar. Один стиль кнопок и карточек на Plans, Timeline и Lists.
+- **Что это:** Общий виджет design system — notes toolbar.
+- **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
 - **Содержимое:** Канонический Flutter-виджет (logic in `notes_toolbar`).
-- **Роль в репозитории:** intentionally retained product watchlist
-- **Доказательства использования:** (1) Список наблюдения hygiene-аудита (`docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`): Notes toolbar; only reachable via unused notes editor stack. (2) Сейчас не достижим из `lib/main.dart`; сохранён намеренно, не считать runtime-обязательным.
-- **Статус необходимости:** RETAINED_PRODUCT_WATCHLIST
-- **Что будет, если удалить:** Сейчас нет доказанного runtime-эффекта; перед удалением нужно продуктовое решение (обновить docs/imports или убрать файл).
-- **Уверенность:** WATCHLIST
+- **Роль в репозитории:** shared foundation
+- **Доказательства использования:** Упоминается в docs/scripts: `docs/reports/ARCHITECTURE_GUARD_BASELINE_2026-07-17.md`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Удаление ломает нужную возможность репозитория.
+- **Уверенность:** MEDIUM
 - **Владелец / слой:** общий design system
-- **Обязанности:** Не считать обязательным для текущего runtime.
+- **Обязанности:** Реализует в UI: notes toolbar.
 - **Когда открывать:** Когда ломается поведение, связанное с `notes_toolbar.dart`.
-- **Можно удалить?** Сейчас нет доказанного runtime-эффекта; перед удалением нужно продуктовое решение (обновить docs/imports или убрать файл).
+- **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/widgets/notes/`, `docs/APP_STRUCTURE.md`
 
 
@@ -12514,36 +12504,36 @@ RU:
 
 EN:
 
-- **Human purpose:** Intentionally retained product/compat file — Compatibility re-export of plan_time_task_card controls; no current production importer. (see `docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`). Not reachable from current production `lib/main.dart` root; kept until a product decision removes or rewires it.
-- **What this is:** Intentionally retained product/compat file — Compatibility re-export of plan_time_task_card controls; no current production importer. (see `docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`).
-- **Why needed:** Not reachable from current production `lib/main.dart` root; kept until a product decision removes or rewires it.
+- **Human purpose:** Shared design-system widget — Checkbox/play/menu/title rail, body tap shell, control rail. Plans, Timeline, and Lists reuse this instead of copying button/card styles.
+- **What this is:** Shared design-system widget — Checkbox/play/menu/title rail, body tap shell, control rail.
+- **Why needed:** Plans, Timeline, and Lists reuse this instead of copying button/card styles.
 - **Contents:** Canonical Flutter widget (logic in `plan_card_controls`).
-- **Repository role:** compatibility layer
-- **Evidence of use:** (1) Hygiene audit watchlist (`docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`): Compatibility re-export of plan_time_task_card controls; no current production importer. (2) Current production reachability from `lib/main.dart`: none (retained intentionally — not proven runtime-required).
-- **Necessity status:** COMPATIBILITY_LAYER
-- **Deletion consequence:** No current production consequence established; product decision required before deletion (replace docs/imports or remove).
-- **Confidence:** WATCHLIST
+- **Repository role:** shared foundation
+- **Evidence of use:** Tracked Dart source; structural role inferred from path (no importer found in this scan).
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** May break tooling or future wiring; verify before delete.
+- **Confidence:** MEDIUM
 - **Owner / layer:** shared design system
-- **Responsibilities:** Re-export stub → `plan_time_task_card/plan_card_controls.dart`
+- **Responsibilities:** Checkbox/play/menu/title rail, body tap shell, control rail
 - **When to open:** When behavior tied to `plan_card_controls.dart` breaks or you need to change its documented role.
-- **Can it be deleted?** No current production consequence established; product decision required before deletion (replace docs/imports or remove).
-- **Connected to:** APP_STRUCTURE role: Re-export stub → `plan_time_task_card/plan_card_controls.dart`
+- **Can it be deleted?** May break tooling or future wiring; verify before delete.
+- **Connected to:** APP_STRUCTURE role: Checkbox/play/menu/title rail, body tap shell, control rail
 
 RU:
 
-- **Зачем файл человеку:** Намеренно сохранённый файл (watchlist) — см. hygiene-аудит. Файл: `plan_card_controls.dart`. Сейчас не участвует в runtime из `lib/main.dart`; сохранён до продуктового решения об удалении или переподключении.
-- **Что это:** Намеренно сохранённый файл (watchlist) — см. hygiene-аудит. Файл: `plan_card_controls.dart`.
-- **Зачем:** Сейчас не участвует в runtime из `lib/main.dart`; сохранён до продуктового решения об удалении или переподключении.
+- **Зачем файл человеку:** Общий виджет design system — Checkbox/play/menu/title rail, body tap shell, control rail. Один стиль кнопок и карточек на Plans, Timeline и Lists.
+- **Что это:** Общий виджет design system — Checkbox/play/menu/title rail, body tap shell, control rail.
+- **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
 - **Содержимое:** Канонический Flutter-виджет (logic in `plan_card_controls`).
-- **Роль в репозитории:** compatibility layer
-- **Доказательства использования:** (1) Список наблюдения hygiene-аудита (`docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`): Compatibility re-export of plan_time_task_card controls; no current production importer. (2) Сейчас не достижим из `lib/main.dart`; сохранён намеренно, не считать runtime-обязательным.
-- **Статус необходимости:** COMPATIBILITY_LAYER
-- **Что будет, если удалить:** Сейчас нет доказанного runtime-эффекта; перед удалением нужно продуктовое решение (обновить docs/imports или убрать файл).
-- **Уверенность:** WATCHLIST
+- **Роль в репозитории:** shared foundation
+- **Доказательства использования:** Отслеживаемый Dart; роль по пути (в этом скане импортеров не найдено).
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Может сломать tooling; проверять перед удалением.
+- **Уверенность:** MEDIUM
 - **Владелец / слой:** общий design system
-- **Обязанности:** Не считать обязательным для текущего runtime.
+- **Обязанности:** Реализует в UI: Checkbox/play/menu/title rail, body tap shell, control rail.
 - **Когда открывать:** Когда ломается поведение, связанное с `plan_card_controls.dart`.
-- **Можно удалить?** Сейчас нет доказанного runtime-эффекта; перед удалением нужно продуктовое решение (обновить docs/imports или убрать файл).
+- **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/widgets/plan_card/`, `docs/APP_STRUCTURE.md`
 
 
@@ -12551,36 +12541,36 @@ RU:
 
 EN:
 
-- **Human purpose:** Intentionally retained product/compat file — Compatibility re-export of plan_time_task_card geometry; no current production importer. (see `docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`). Not reachable from current production `lib/main.dart` root; kept until a product decision removes or rewires it.
-- **What this is:** Intentionally retained product/compat file — Compatibility re-export of plan_time_task_card geometry; no current production importer. (see `docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`).
-- **Why needed:** Not reachable from current production `lib/main.dart` root; kept until a product decision removes or rewires it.
+- **Human purpose:** Shared design-system widget — Figma geometry, vertical spacing, visual tokens. Plans, Timeline, and Lists reuse this instead of copying button/card styles.
+- **What this is:** Shared design-system widget — Figma geometry, vertical spacing, visual tokens.
+- **Why needed:** Plans, Timeline, and Lists reuse this instead of copying button/card styles.
 - **Contents:** Canonical Flutter widget (logic in `plan_card_geometry`).
-- **Repository role:** compatibility layer
-- **Evidence of use:** (1) Hygiene audit watchlist (`docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`): Compatibility re-export of plan_time_task_card geometry; no current production importer. (2) Current production reachability from `lib/main.dart`: none (retained intentionally — not proven runtime-required).
-- **Necessity status:** COMPATIBILITY_LAYER
-- **Deletion consequence:** No current production consequence established; product decision required before deletion (replace docs/imports or remove).
-- **Confidence:** WATCHLIST
+- **Repository role:** shared foundation
+- **Evidence of use:** Tracked Dart source; structural role inferred from path (no importer found in this scan).
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** May break tooling or future wiring; verify before delete.
+- **Confidence:** MEDIUM
 - **Owner / layer:** shared design system
-- **Responsibilities:** Re-export stub → `plan_time_task_card/plan_card_geometry.dart`
+- **Responsibilities:** Figma geometry, vertical spacing, visual tokens
 - **When to open:** When behavior tied to `plan_card_geometry.dart` breaks or you need to change its documented role.
-- **Can it be deleted?** No current production consequence established; product decision required before deletion (replace docs/imports or remove).
-- **Connected to:** APP_STRUCTURE role: Re-export stub → `plan_time_task_card/plan_card_geometry.dart`
+- **Can it be deleted?** May break tooling or future wiring; verify before delete.
+- **Connected to:** APP_STRUCTURE role: Figma geometry, vertical spacing, visual tokens
 
 RU:
 
-- **Зачем файл человеку:** Намеренно сохранённый файл (watchlist) — см. hygiene-аудит. Файл: `plan_card_geometry.dart`. Сейчас не участвует в runtime из `lib/main.dart`; сохранён до продуктового решения об удалении или переподключении.
-- **Что это:** Намеренно сохранённый файл (watchlist) — см. hygiene-аудит. Файл: `plan_card_geometry.dart`.
-- **Зачем:** Сейчас не участвует в runtime из `lib/main.dart`; сохранён до продуктового решения об удалении или переподключении.
+- **Зачем файл человеку:** Общий виджет design system — Figma geometry, vertical spacing, visual tokens. Один стиль кнопок и карточек на Plans, Timeline и Lists.
+- **Что это:** Общий виджет design system — Figma geometry, vertical spacing, visual tokens.
+- **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
 - **Содержимое:** Канонический Flutter-виджет (logic in `plan_card_geometry`).
-- **Роль в репозитории:** compatibility layer
-- **Доказательства использования:** (1) Список наблюдения hygiene-аудита (`docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`): Compatibility re-export of plan_time_task_card geometry; no current production importer. (2) Сейчас не достижим из `lib/main.dart`; сохранён намеренно, не считать runtime-обязательным.
-- **Статус необходимости:** COMPATIBILITY_LAYER
-- **Что будет, если удалить:** Сейчас нет доказанного runtime-эффекта; перед удалением нужно продуктовое решение (обновить docs/imports или убрать файл).
-- **Уверенность:** WATCHLIST
+- **Роль в репозитории:** shared foundation
+- **Доказательства использования:** Отслеживаемый Dart; роль по пути (в этом скане импортеров не найдено).
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Может сломать tooling; проверять перед удалением.
+- **Уверенность:** MEDIUM
 - **Владелец / слой:** общий design system
-- **Обязанности:** Не считать обязательным для текущего runtime.
+- **Обязанности:** Реализует в UI: Figma geometry, vertical spacing, visual tokens.
 - **Когда открывать:** Когда ломается поведение, связанное с `plan_card_geometry.dart`.
-- **Можно удалить?** Сейчас нет доказанного runtime-эффекта; перед удалением нужно продуктовое решение (обновить docs/imports или убрать файл).
+- **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/widgets/plan_card/`, `docs/APP_STRUCTURE.md`
 
 
@@ -12588,36 +12578,36 @@ RU:
 
 EN:
 
-- **Human purpose:** Intentionally retained product/compat file — Compatibility re-export of plan_time_task_card metrics; no current production importer. (see `docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`). Not reachable from current production `lib/main.dart` root; kept until a product decision removes or rewires it.
-- **What this is:** Intentionally retained product/compat file — Compatibility re-export of plan_time_task_card metrics; no current production importer. (see `docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`).
-- **Why needed:** Not reachable from current production `lib/main.dart` root; kept until a product decision removes or rewires it.
+- **Human purpose:** Shared design-system widget — Time View card height constants, `PlanCardSurface`, duration→px helpers. Plans, Timeline, and Lists reuse this instead of copying button/card styles.
+- **What this is:** Shared design-system widget — Time View card height constants, `PlanCardSurface`, duration→px helpers.
+- **Why needed:** Plans, Timeline, and Lists reuse this instead of copying button/card styles.
 - **Contents:** Canonical Flutter widget (logic in `plan_card_metrics`).
-- **Repository role:** compatibility layer
-- **Evidence of use:** (1) Hygiene audit watchlist (`docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`): Compatibility re-export of plan_time_task_card metrics; no current production importer. (2) Current production reachability from `lib/main.dart`: none (retained intentionally — not proven runtime-required).
-- **Necessity status:** COMPATIBILITY_LAYER
-- **Deletion consequence:** No current production consequence established; product decision required before deletion (replace docs/imports or remove).
-- **Confidence:** WATCHLIST
+- **Repository role:** shared foundation
+- **Evidence of use:** Tracked Dart source; structural role inferred from path (no importer found in this scan).
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** May break tooling or future wiring; verify before delete.
+- **Confidence:** MEDIUM
 - **Owner / layer:** shared design system
-- **Responsibilities:** Re-export stub → `plan_time_task_card/plan_card_metrics.dart`
+- **Responsibilities:** Time View card height constants, `PlanCardSurface`, duration→px helpers
 - **When to open:** When behavior tied to `plan_card_metrics.dart` breaks or you need to change its documented role.
-- **Can it be deleted?** No current production consequence established; product decision required before deletion (replace docs/imports or remove).
-- **Connected to:** APP_STRUCTURE role: Re-export stub → `plan_time_task_card/plan_card_metrics.dart`
+- **Can it be deleted?** May break tooling or future wiring; verify before delete.
+- **Connected to:** APP_STRUCTURE role: Time View card height constants, `PlanCardSurface`, duration→px helpers
 
 RU:
 
-- **Зачем файл человеку:** Намеренно сохранённый файл (watchlist) — см. hygiene-аудит. Файл: `plan_card_metrics.dart`. Сейчас не участвует в runtime из `lib/main.dart`; сохранён до продуктового решения об удалении или переподключении.
-- **Что это:** Намеренно сохранённый файл (watchlist) — см. hygiene-аудит. Файл: `plan_card_metrics.dart`.
-- **Зачем:** Сейчас не участвует в runtime из `lib/main.dart`; сохранён до продуктового решения об удалении или переподключении.
+- **Зачем файл человеку:** Общий виджет design system — Time View card height constants, `PlanCardSurface`, duration→px helpers. Один стиль кнопок и карточек на Plans, Timeline и Lists.
+- **Что это:** Общий виджет design system — Time View card height constants, `PlanCardSurface`, duration→px helpers.
+- **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
 - **Содержимое:** Канонический Flutter-виджет (logic in `plan_card_metrics`).
-- **Роль в репозитории:** compatibility layer
-- **Доказательства использования:** (1) Список наблюдения hygiene-аудита (`docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`): Compatibility re-export of plan_time_task_card metrics; no current production importer. (2) Сейчас не достижим из `lib/main.dart`; сохранён намеренно, не считать runtime-обязательным.
-- **Статус необходимости:** COMPATIBILITY_LAYER
-- **Что будет, если удалить:** Сейчас нет доказанного runtime-эффекта; перед удалением нужно продуктовое решение (обновить docs/imports или убрать файл).
-- **Уверенность:** WATCHLIST
+- **Роль в репозитории:** shared foundation
+- **Доказательства использования:** Отслеживаемый Dart; роль по пути (в этом скане импортеров не найдено).
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Может сломать tooling; проверять перед удалением.
+- **Уверенность:** MEDIUM
 - **Владелец / слой:** общий design system
-- **Обязанности:** Не считать обязательным для текущего runtime.
+- **Обязанности:** Реализует в UI: Time View card height constants, `PlanCardSurface`, duration→px helpers.
 - **Когда открывать:** Когда ломается поведение, связанное с `plan_card_metrics.dart`.
-- **Можно удалить?** Сейчас нет доказанного runtime-эффекта; перед удалением нужно продуктовое решение (обновить docs/imports или убрать файл).
+- **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/widgets/plan_card/`, `docs/APP_STRUCTURE.md`
 
 
@@ -12625,36 +12615,36 @@ RU:
 
 EN:
 
-- **Human purpose:** Intentionally retained product/compat file — Compatibility re-export of plan_time_task_card sections; no current production importer. (see `docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`). Not reachable from current production `lib/main.dart` root; kept until a product decision removes or rewires it.
-- **What this is:** Intentionally retained product/compat file — Compatibility re-export of plan_time_task_card sections; no current production importer. (see `docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`).
-- **Why needed:** Not reachable from current production `lib/main.dart` root; kept until a product decision removes or rewires it.
+- **Human purpose:** Shared design-system widget — Time text, footer, watermark. Plans, Timeline, and Lists reuse this instead of copying button/card styles.
+- **What this is:** Shared design-system widget — Time text, footer, watermark.
+- **Why needed:** Plans, Timeline, and Lists reuse this instead of copying button/card styles.
 - **Contents:** Canonical Flutter widget (logic in `plan_card_sections`).
-- **Repository role:** compatibility layer
-- **Evidence of use:** (1) Hygiene audit watchlist (`docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`): Compatibility re-export of plan_time_task_card sections; no current production importer. (2) Current production reachability from `lib/main.dart`: none (retained intentionally — not proven runtime-required).
-- **Necessity status:** COMPATIBILITY_LAYER
-- **Deletion consequence:** No current production consequence established; product decision required before deletion (replace docs/imports or remove).
-- **Confidence:** WATCHLIST
+- **Repository role:** shared foundation
+- **Evidence of use:** Tracked Dart source; structural role inferred from path (no importer found in this scan).
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** May break tooling or future wiring; verify before delete.
+- **Confidence:** MEDIUM
 - **Owner / layer:** shared design system
-- **Responsibilities:** Re-export stub → `plan_time_task_card/plan_card_sections.dart`
+- **Responsibilities:** Time text, footer, watermark
 - **When to open:** When behavior tied to `plan_card_sections.dart` breaks or you need to change its documented role.
-- **Can it be deleted?** No current production consequence established; product decision required before deletion (replace docs/imports or remove).
-- **Connected to:** APP_STRUCTURE role: Re-export stub → `plan_time_task_card/plan_card_sections.dart`
+- **Can it be deleted?** May break tooling or future wiring; verify before delete.
+- **Connected to:** APP_STRUCTURE role: Time text, footer, watermark
 
 RU:
 
-- **Зачем файл человеку:** Намеренно сохранённый файл (watchlist) — см. hygiene-аудит. Файл: `plan_card_sections.dart`. Сейчас не участвует в runtime из `lib/main.dart`; сохранён до продуктового решения об удалении или переподключении.
-- **Что это:** Намеренно сохранённый файл (watchlist) — см. hygiene-аудит. Файл: `plan_card_sections.dart`.
-- **Зачем:** Сейчас не участвует в runtime из `lib/main.dart`; сохранён до продуктового решения об удалении или переподключении.
+- **Зачем файл человеку:** Общий виджет design system — Time text, footer, watermark. Один стиль кнопок и карточек на Plans, Timeline и Lists.
+- **Что это:** Общий виджет design system — Time text, footer, watermark.
+- **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
 - **Содержимое:** Канонический Flutter-виджет (logic in `plan_card_sections`).
-- **Роль в репозитории:** compatibility layer
-- **Доказательства использования:** (1) Список наблюдения hygiene-аудита (`docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`): Compatibility re-export of plan_time_task_card sections; no current production importer. (2) Сейчас не достижим из `lib/main.dart`; сохранён намеренно, не считать runtime-обязательным.
-- **Статус необходимости:** COMPATIBILITY_LAYER
-- **Что будет, если удалить:** Сейчас нет доказанного runtime-эффекта; перед удалением нужно продуктовое решение (обновить docs/imports или убрать файл).
-- **Уверенность:** WATCHLIST
+- **Роль в репозитории:** shared foundation
+- **Доказательства использования:** Отслеживаемый Dart; роль по пути (в этом скане импортеров не найдено).
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Может сломать tooling; проверять перед удалением.
+- **Уверенность:** MEDIUM
 - **Владелец / слой:** общий design system
-- **Обязанности:** Не считать обязательным для текущего runtime.
+- **Обязанности:** Реализует в UI: Time text, footer, watermark.
 - **Когда открывать:** Когда ломается поведение, связанное с `plan_card_sections.dart`.
-- **Можно удалить?** Сейчас нет доказанного runtime-эффекта; перед удалением нужно продуктовое решение (обновить docs/imports или убрать файл).
+- **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/widgets/plan_card/`, `docs/APP_STRUCTURE.md`
 
 
@@ -12662,36 +12652,36 @@ RU:
 
 EN:
 
-- **Human purpose:** Intentionally retained product/compat file — Compatibility re-export of plan_card_density; no current production importer. (see `docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`). Not reachable from current production `lib/main.dart` root; kept until a product decision removes or rewires it.
-- **What this is:** Intentionally retained product/compat file — Compatibility re-export of plan_card_density; no current production importer. (see `docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`).
-- **Why needed:** Not reachable from current production `lib/main.dart` root; kept until a product decision removes or rewires it.
+- **Human purpose:** Shared design-system widget — plan time card density. Plans, Timeline, and Lists reuse this instead of copying button/card styles.
+- **What this is:** Shared design-system widget — plan time card density.
+- **Why needed:** Plans, Timeline, and Lists reuse this instead of copying button/card styles.
 - **Contents:** Canonical Flutter widget (logic in `plan_time_card_density`).
-- **Repository role:** compatibility layer
-- **Evidence of use:** (1) Hygiene audit watchlist (`docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`): Compatibility re-export of plan_card_density; no current production importer. (2) Current production reachability from `lib/main.dart`: none (retained intentionally — not proven runtime-required).
-- **Necessity status:** COMPATIBILITY_LAYER
-- **Deletion consequence:** No current production consequence established; product decision required before deletion (replace docs/imports or remove).
-- **Confidence:** WATCHLIST
+- **Repository role:** shared foundation
+- **Evidence of use:** Mentioned by tracked docs/scripts: `docs/reports/FINAL_REPOSITORY_COMPLETENESS_AUDIT_2026-07-23.md`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Removing it breaks a required repository capability.
+- **Confidence:** MEDIUM
 - **Owner / layer:** shared design system
-- **Responsibilities:** Re-export stub → `plan_time_task_card/plan_card_density.dart`
+- **Responsibilities:** plan time card density
 - **When to open:** When behavior tied to `plan_time_card_density.dart` breaks or you need to change its documented role.
-- **Can it be deleted?** No current production consequence established; product decision required before deletion (replace docs/imports or remove).
-- **Connected to:** APP_STRUCTURE role: Re-export stub → `plan_time_task_card/plan_card_density.dart`
+- **Can it be deleted?** Removing it breaks a required repository capability.
+- **Connected to:** APP_STRUCTURE role: plan time card density
 
 RU:
 
-- **Зачем файл человеку:** Намеренно сохранённый файл (watchlist) — см. hygiene-аудит. Файл: `plan_time_card_density.dart`. Сейчас не участвует в runtime из `lib/main.dart`; сохранён до продуктового решения об удалении или переподключении.
-- **Что это:** Намеренно сохранённый файл (watchlist) — см. hygiene-аудит. Файл: `plan_time_card_density.dart`.
-- **Зачем:** Сейчас не участвует в runtime из `lib/main.dart`; сохранён до продуктового решения об удалении или переподключении.
+- **Зачем файл человеку:** Общий виджет design system — plan time card density. Один стиль кнопок и карточек на Plans, Timeline и Lists.
+- **Что это:** Общий виджет design system — plan time card density.
+- **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
 - **Содержимое:** Канонический Flutter-виджет (logic in `plan_time_card_density`).
-- **Роль в репозитории:** compatibility layer
-- **Доказательства использования:** (1) Список наблюдения hygiene-аудита (`docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`): Compatibility re-export of plan_card_density; no current production importer. (2) Сейчас не достижим из `lib/main.dart`; сохранён намеренно, не считать runtime-обязательным.
-- **Статус необходимости:** COMPATIBILITY_LAYER
-- **Что будет, если удалить:** Сейчас нет доказанного runtime-эффекта; перед удалением нужно продуктовое решение (обновить docs/imports или убрать файл).
-- **Уверенность:** WATCHLIST
+- **Роль в репозитории:** shared foundation
+- **Доказательства использования:** Упоминается в docs/scripts: `docs/reports/FINAL_REPOSITORY_COMPLETENESS_AUDIT_2026-07-23.md`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Удаление ломает нужную возможность репозитория.
+- **Уверенность:** MEDIUM
 - **Владелец / слой:** общий design system
-- **Обязанности:** Не считать обязательным для текущего runtime.
+- **Обязанности:** Реализует в UI: plan time card density.
 - **Когда открывать:** Когда ломается поведение, связанное с `plan_time_card_density.dart`.
-- **Можно удалить?** Сейчас нет доказанного runtime-эффекта; перед удалением нужно продуктовое решение (обновить docs/imports или убрать файл).
+- **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/widgets/plan_card/`, `docs/APP_STRUCTURE.md`
 
 
@@ -12736,35 +12726,35 @@ RU:
 
 EN:
 
-- **Human purpose:** Shared design-system widget — Re-export stub → `plan_time_task_card/plan_card_controls.dart`. Plans, Timeline, and Lists reuse this instead of copying button/card styles.
-- **What this is:** Shared design-system widget — Re-export stub → `plan_time_task_card/plan_card_controls.dart`.
+- **Human purpose:** Shared design-system widget — Checkbox/play/menu/title rail, body tap shell, control rail. Plans, Timeline, and Lists reuse this instead of copying button/card styles.
+- **What this is:** Shared design-system widget — Checkbox/play/menu/title rail, body tap shell, control rail.
 - **Why needed:** Plans, Timeline, and Lists reuse this instead of copying button/card styles.
 - **Contents:** Canonical Flutter widget (`PlanCardCheckbox`, `PlanCardCheckboxState`, `PlanCardPlayButton`, `PlanCardPlayButtonState`, `PlanCardPlayIconPainter`, `PlanCardRecurringGlyph`).
 - **Key code names:** `PlanCardCheckbox`, `PlanCardCheckboxState`, `PlanCardPlayButton`, `PlanCardPlayButtonState`, `PlanCardPlayIconPainter`, `PlanCardRecurringGlyph`, `PlanCardMenuButton`, `PlanCardMenuButtonState`, `PlanCardMenuIconPainter`, `PlanCardTitleRow`
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/core/widgets/plan_card/plan_card_controls.dart`, `lib/core/widgets/plan_time_task_card/plan_card_layouts.dart`, `lib/core/widgets/plan_time_task_card/plan_card_progress.dart`, `lib/core/widgets/plan_time_task_card/plan_time_task_card.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/core/widgets/plan_time_task_card/plan_card_layouts.dart`, `lib/core/widgets/plan_time_task_card/plan_card_progress.dart`, `lib/core/widgets/plan_time_task_card/plan_time_task_card.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
 - **Owner / layer:** shared design system
-- **Responsibilities:** Re-export stub → `plan_time_task_card/plan_card_controls.dart`
+- **Responsibilities:** Checkbox/play/menu/title rail, body tap shell, control rail
 - **When to open:** Plan card look/feel: height, tags, play button, Time View density.
 - **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: Re-export stub → `plan_time_task_card/plan_card_controls.dart`
+- **Connected to:** APP_STRUCTURE role: Checkbox/play/menu/title rail, body tap shell, control rail
 
 RU:
 
-- **Зачем файл человеку:** Общий виджет design system — Re-export stub → `plan_time_task_card/plan_card_controls.dart`. Один стиль кнопок и карточек на Plans, Timeline и Lists.
-- **Что это:** Общий виджет design system — Re-export stub → `plan_time_task_card/plan_card_controls.dart`.
+- **Зачем файл человеку:** Общий виджет design system — Checkbox/play/menu/title rail, body tap shell, control rail. Один стиль кнопок и карточек на Plans, Timeline и Lists.
+- **Что это:** Общий виджет design system — Checkbox/play/menu/title rail, body tap shell, control rail.
 - **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
 - **Содержимое:** Канонический Flutter-виджет (logic in `plan_card_controls`).
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/core/widgets/plan_card/plan_card_controls.dart`, `lib/core/widgets/plan_time_task_card/plan_card_layouts.dart`, `lib/core/widgets/plan_time_task_card/plan_card_progress.dart`, `lib/core/widgets/plan_time_task_card/plan_time_task_card.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/core/widgets/plan_time_task_card/plan_card_layouts.dart`, `lib/core/widgets/plan_time_task_card/plan_card_progress.dart`, `lib/core/widgets/plan_time_task_card/plan_time_task_card.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
 - **Владелец / слой:** общий design system
-- **Обязанности:** Реализует в UI: Re-export stub → `plan_time_task_card/plan_card_controls.dart`.
+- **Обязанности:** Реализует в UI: Checkbox/play/menu/title rail, body tap shell, control rail.
 - **Когда открывать:** Внешний вид карточки плана.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/widgets/plan_time_task_card/`, `docs/APP_STRUCTURE.md`
@@ -12780,7 +12770,7 @@ EN:
 - **Contents:** Canonical Flutter widget (`PlanTimeCardVisualDensity`).
 - **Key code names:** `PlanTimeCardVisualDensity`
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/core/widgets/plan_card/plan_time_card_density.dart`, `lib/core/widgets/plan_time_task_card.dart`, `lib/core/widgets/plan_time_task_card/plan_card_layouts.dart`, `lib/core/widgets/plan_time_task_card/plan_time_task_card.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/core/widgets/plan_time_task_card.dart`, `lib/core/widgets/plan_time_task_card/plan_card_layouts.dart`, `lib/core/widgets/plan_time_task_card/plan_time_task_card.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -12797,7 +12787,7 @@ RU:
 - **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
 - **Содержимое:** Канонический Flutter-виджет (logic in `plan_card_density`).
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/core/widgets/plan_card/plan_time_card_density.dart`, `lib/core/widgets/plan_time_task_card.dart`, `lib/core/widgets/plan_time_task_card/plan_card_layouts.dart`, `lib/core/widgets/plan_time_task_card/plan_time_task_card.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/core/widgets/plan_time_task_card.dart`, `lib/core/widgets/plan_time_task_card/plan_card_layouts.dart`, `lib/core/widgets/plan_time_task_card/plan_time_task_card.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -12812,35 +12802,35 @@ RU:
 
 EN:
 
-- **Human purpose:** Shared design-system widget — Re-export stub → `plan_time_task_card/plan_card_geometry.dart`. Plans, Timeline, and Lists reuse this instead of copying button/card styles.
-- **What this is:** Shared design-system widget — Re-export stub → `plan_time_task_card/plan_card_geometry.dart`.
+- **Human purpose:** Shared design-system widget — Figma geometry, vertical spacing, visual tokens. Plans, Timeline, and Lists reuse this instead of copying button/card styles.
+- **What this is:** Shared design-system widget — Figma geometry, vertical spacing, visual tokens.
 - **Why needed:** Plans, Timeline, and Lists reuse this instead of copying button/card styles.
 - **Contents:** Canonical Flutter widget (`PlanCardGeom`, `PlanCardTokens`).
 - **Key code names:** `PlanCardGeom`, `PlanCardTokens`
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/core/widgets/plan_card/plan_card_geometry.dart`, `lib/core/widgets/plan_time_task_card/plan_card_controls.dart`, `lib/core/widgets/plan_time_task_card/plan_card_density.dart`, `lib/core/widgets/plan_time_task_card/plan_card_layouts.dart`, `lib/core/widgets/plan_time_task_card/plan_card_progress.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/core/widgets/plan_time_task_card/plan_card_controls.dart`, `lib/core/widgets/plan_time_task_card/plan_card_density.dart`, `lib/core/widgets/plan_time_task_card/plan_card_layouts.dart`, `lib/core/widgets/plan_time_task_card/plan_card_progress.dart`, `lib/core/widgets/plan_time_task_card/plan_card_sections.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
 - **Owner / layer:** shared design system
-- **Responsibilities:** Re-export stub → `plan_time_task_card/plan_card_geometry.dart`
+- **Responsibilities:** Figma geometry, vertical spacing, visual tokens
 - **When to open:** Plan card look/feel: height, tags, play button, Time View density.
 - **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: Re-export stub → `plan_time_task_card/plan_card_geometry.dart`
+- **Connected to:** APP_STRUCTURE role: Figma geometry, vertical spacing, visual tokens
 
 RU:
 
-- **Зачем файл человеку:** Общий виджет design system — Re-export stub → `plan_time_task_card/plan_card_geometry.dart`. Один стиль кнопок и карточек на Plans, Timeline и Lists.
-- **Что это:** Общий виджет design system — Re-export stub → `plan_time_task_card/plan_card_geometry.dart`.
+- **Зачем файл человеку:** Общий виджет design system — Figma geometry, vertical spacing, visual tokens. Один стиль кнопок и карточек на Plans, Timeline и Lists.
+- **Что это:** Общий виджет design system — Figma geometry, vertical spacing, visual tokens.
 - **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
 - **Содержимое:** Канонический Flutter-виджет (logic in `plan_card_geometry`).
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/core/widgets/plan_card/plan_card_geometry.dart`, `lib/core/widgets/plan_time_task_card/plan_card_controls.dart`, `lib/core/widgets/plan_time_task_card/plan_card_density.dart`, `lib/core/widgets/plan_time_task_card/plan_card_layouts.dart`, `lib/core/widgets/plan_time_task_card/plan_card_progress.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/core/widgets/plan_time_task_card/plan_card_controls.dart`, `lib/core/widgets/plan_time_task_card/plan_card_density.dart`, `lib/core/widgets/plan_time_task_card/plan_card_layouts.dart`, `lib/core/widgets/plan_time_task_card/plan_card_progress.dart`, `lib/core/widgets/plan_time_task_card/plan_card_sections.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
 - **Владелец / слой:** общий design system
-- **Обязанности:** Реализует в UI: Re-export stub → `plan_time_task_card/plan_card_geometry.dart`.
+- **Обязанности:** Реализует в UI: Figma geometry, vertical spacing, visual tokens.
 - **Когда открывать:** Внешний вид карточки плана.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/widgets/plan_time_task_card/`, `docs/APP_STRUCTURE.md`
@@ -12888,35 +12878,35 @@ RU:
 
 EN:
 
-- **Human purpose:** Shared design-system widget — Re-export stub → `plan_time_task_card/plan_card_metrics.dart`. Plans, Timeline, and Lists reuse this instead of copying button/card styles.
-- **What this is:** Shared design-system widget — Re-export stub → `plan_time_task_card/plan_card_metrics.dart`.
+- **Human purpose:** Shared design-system widget — Time View card height constants, `PlanCardSurface`, duration→px helpers. Plans, Timeline, and Lists reuse this instead of copying button/card styles.
+- **What this is:** Shared design-system widget — Time View card height constants, `PlanCardSurface`, duration→px helpers.
 - **Why needed:** Plans, Timeline, and Lists reuse this instead of copying button/card styles.
 - **Contents:** Canonical Flutter widget (`PlanTimeTaskCardDensity`, `PlanCardSurface`).
 - **Key code names:** `PlanTimeTaskCardDensity`, `PlanCardSurface`
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/core/widgets/plan_card/plan_card_metrics.dart`, `lib/core/widgets/plan_time_task_card.dart`, `lib/core/widgets/plan_time_task_card/plan_card_controls.dart`, `lib/core/widgets/plan_time_task_card/plan_card_density.dart`, `lib/core/widgets/plan_time_task_card/plan_card_geometry.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/core/widgets/plan_time_task_card.dart`, `lib/core/widgets/plan_time_task_card/plan_card_controls.dart`, `lib/core/widgets/plan_time_task_card/plan_card_density.dart`, `lib/core/widgets/plan_time_task_card/plan_card_geometry.dart`, `lib/core/widgets/plan_time_task_card/plan_card_progress.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
 - **Owner / layer:** shared design system
-- **Responsibilities:** Re-export stub → `plan_time_task_card/plan_card_metrics.dart`
+- **Responsibilities:** Time View card height constants, `PlanCardSurface`, duration→px helpers
 - **When to open:** Plan card look/feel: height, tags, play button, Time View density.
 - **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: Re-export stub → `plan_time_task_card/plan_card_metrics.dart`
+- **Connected to:** APP_STRUCTURE role: Time View card height constants, `PlanCardSurface`, duration→px helpers
 
 RU:
 
-- **Зачем файл человеку:** Общий виджет design system — Re-export stub → `plan_time_task_card/plan_card_metrics.dart`. Один стиль кнопок и карточек на Plans, Timeline и Lists.
-- **Что это:** Общий виджет design system — Re-export stub → `plan_time_task_card/plan_card_metrics.dart`.
+- **Зачем файл человеку:** Общий виджет design system — Time View card height constants, `PlanCardSurface`, duration→px helpers. Один стиль кнопок и карточек на Plans, Timeline и Lists.
+- **Что это:** Общий виджет design system — Time View card height constants, `PlanCardSurface`, duration→px helpers.
 - **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
 - **Содержимое:** Канонический Flutter-виджет (logic in `plan_card_metrics`).
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/core/widgets/plan_card/plan_card_metrics.dart`, `lib/core/widgets/plan_time_task_card.dart`, `lib/core/widgets/plan_time_task_card/plan_card_controls.dart`, `lib/core/widgets/plan_time_task_card/plan_card_density.dart`, `lib/core/widgets/plan_time_task_card/plan_card_geometry.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/core/widgets/plan_time_task_card.dart`, `lib/core/widgets/plan_time_task_card/plan_card_controls.dart`, `lib/core/widgets/plan_time_task_card/plan_card_density.dart`, `lib/core/widgets/plan_time_task_card/plan_card_geometry.dart`, `lib/core/widgets/plan_time_task_card/plan_card_progress.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
 - **Владелец / слой:** общий design system
-- **Обязанности:** Реализует в UI: Re-export stub → `plan_time_task_card/plan_card_metrics.dart`.
+- **Обязанности:** Реализует в UI: Time View card height constants, `PlanCardSurface`, duration→px helpers.
 - **Когда открывать:** Внешний вид карточки плана.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/widgets/plan_time_task_card/`, `docs/APP_STRUCTURE.md`
@@ -12964,35 +12954,35 @@ RU:
 
 EN:
 
-- **Human purpose:** Shared design-system widget — Re-export stub → `plan_time_task_card/plan_card_sections.dart`. Plans, Timeline, and Lists reuse this instead of copying button/card styles.
-- **What this is:** Shared design-system widget — Re-export stub → `plan_time_task_card/plan_card_sections.dart`.
+- **Human purpose:** Shared design-system widget — Time text, footer, watermark. Plans, Timeline, and Lists reuse this instead of copying button/card styles.
+- **What this is:** Shared design-system widget — Time text, footer, watermark.
 - **Why needed:** Plans, Timeline, and Lists reuse this instead of copying button/card styles.
 - **Contents:** Canonical Flutter widget (`PlanCardTagsRow`, `PlanCardTimeText`, `PlanCardFooterRow`, `PlanCardWatermark`).
 - **Key code names:** `PlanCardTagsRow`, `PlanCardTimeText`, `PlanCardFooterRow`, `PlanCardWatermark`
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/core/widgets/plan_card/plan_card_sections.dart`, `lib/core/widgets/plan_time_task_card/plan_card_layouts.dart`, `lib/core/widgets/plan_time_task_card/plan_card_progress.dart`, `lib/core/widgets/plan_time_task_card/plan_time_task_card.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/core/widgets/plan_time_task_card/plan_card_layouts.dart`, `lib/core/widgets/plan_time_task_card/plan_card_progress.dart`, `lib/core/widgets/plan_time_task_card/plan_time_task_card.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
 - **Owner / layer:** shared design system
-- **Responsibilities:** Re-export stub → `plan_time_task_card/plan_card_sections.dart`
+- **Responsibilities:** Time text, footer, watermark
 - **When to open:** Plan card look/feel: height, tags, play button, Time View density.
 - **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: Re-export stub → `plan_time_task_card/plan_card_sections.dart`
+- **Connected to:** APP_STRUCTURE role: Time text, footer, watermark
 
 RU:
 
-- **Зачем файл человеку:** Общий виджет design system — Re-export stub → `plan_time_task_card/plan_card_sections.dart`. Один стиль кнопок и карточек на Plans, Timeline и Lists.
-- **Что это:** Общий виджет design system — Re-export stub → `plan_time_task_card/plan_card_sections.dart`.
+- **Зачем файл человеку:** Общий виджет design system — Time text, footer, watermark. Один стиль кнопок и карточек на Plans, Timeline и Lists.
+- **Что это:** Общий виджет design system — Time text, footer, watermark.
 - **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
 - **Содержимое:** Канонический Flutter-виджет (logic in `plan_card_sections`).
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/core/widgets/plan_card/plan_card_sections.dart`, `lib/core/widgets/plan_time_task_card/plan_card_layouts.dart`, `lib/core/widgets/plan_time_task_card/plan_card_progress.dart`, `lib/core/widgets/plan_time_task_card/plan_time_task_card.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/core/widgets/plan_time_task_card/plan_card_layouts.dart`, `lib/core/widgets/plan_time_task_card/plan_card_progress.dart`, `lib/core/widgets/plan_time_task_card/plan_time_task_card.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
 - **Владелец / слой:** общий design system
-- **Обязанности:** Реализует в UI: Re-export stub → `plan_time_task_card/plan_card_sections.dart`.
+- **Обязанности:** Реализует в UI: Time text, footer, watermark.
 - **Когда открывать:** Внешний вид карточки плана.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/widgets/plan_time_task_card/`, `docs/APP_STRUCTURE.md`
@@ -14027,36 +14017,36 @@ RU:
 
 EN:
 
-- **Human purpose:** Intentionally retained product/compat file — Legacy re-export of plan_mutation_outbox.dart; zero current Dart importers. (see `docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`). Not reachable from current production `lib/main.dart` root; kept until a product decision removes or rewires it.
-- **What this is:** Intentionally retained product/compat file — Legacy re-export of plan_mutation_outbox.dart; zero current Dart importers. (see `docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`).
-- **Why needed:** Not reachable from current production `lib/main.dart` root; kept until a product decision removes or rewires it.
+- **Human purpose:** Legacy re-export file — points importers to `plan_mutation_outbox.dart`. Older code imported this name; kept so imports do not break.
+- **What this is:** Legacy re-export file — points importers to `plan_mutation_outbox.dart`.
+- **Why needed:** Older code imported this name; kept so imports do not break.
 - **Contents:** Single export line only — no logic.
-- **Repository role:** compatibility layer
-- **Evidence of use:** (1) Hygiene audit watchlist (`docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`): Legacy re-export of plan_mutation_outbox.dart; zero current Dart importers. (2) Current production reachability from `lib/main.dart`: none (retained intentionally — not proven runtime-required).
-- **Necessity status:** COMPATIBILITY_LAYER
-- **Deletion consequence:** No current production consequence established; product decision required before deletion (replace docs/imports or remove).
-- **Confidence:** WATCHLIST
+- **Repository role:** Brain/data
+- **Evidence of use:** Mentioned by tracked docs/scripts: `docs/reports/FINAL_REPOSITORY_COMPLETENESS_AUDIT_2026-07-23.md`, `docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Removing it breaks a required repository capability.
+- **Confidence:** MEDIUM
 - **Owner / layer:** Brain/data
-- **Responsibilities:** Re-export of `plan_mutation_outbox.dart`
+- **Responsibilities:** plan create outbox
 - **When to open:** When behavior tied to `plan_create_outbox.dart` breaks or you need to change its documented role.
-- **Can it be deleted?** No current production consequence established; product decision required before deletion (replace docs/imports or remove).
-- **Connected to:** UI calls via `DatabaseService.instance`; Offline banner in shell, reconnect flush; APP_STRUCTURE role: Re-export of `plan_mutation_outbox.dart`
+- **Can it be deleted?** Removing it breaks a required repository capability.
+- **Connected to:** UI calls via `DatabaseService.instance`; Offline banner in shell, reconnect flush; APP_STRUCTURE role: plan create outbox
 
 RU:
 
-- **Зачем файл человеку:** Намеренно сохранённый файл (watchlist) — см. hygiene-аудит. Файл: `plan_create_outbox.dart`. Сейчас не участвует в runtime из `lib/main.dart`; сохранён до продуктового решения об удалении или переподключении.
-- **Что это:** Намеренно сохранённый файл (watchlist) — см. hygiene-аудит. Файл: `plan_create_outbox.dart`.
-- **Зачем:** Сейчас не участвует в runtime из `lib/main.dart`; сохранён до продуктового решения об удалении или переподключении.
+- **Зачем файл человеку:** Сфокусированный модуль данных для offline sync — файл `plan_create_outbox`. Держит offline sync согласованным с PocketBase и экранами.
+- **Что это:** Сфокусированный модуль данных для offline sync — файл `plan_create_outbox`.
+- **Зачем:** Держит offline sync согласованным с PocketBase и экранами.
 - **Содержимое:** Dart-код (logic in `plan_create_outbox`).
-- **Роль в репозитории:** compatibility layer
-- **Доказательства использования:** (1) Список наблюдения hygiene-аудита (`docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`): Legacy re-export of plan_mutation_outbox.dart; zero current Dart importers. (2) Сейчас не достижим из `lib/main.dart`; сохранён намеренно, не считать runtime-обязательным.
-- **Статус необходимости:** COMPATIBILITY_LAYER
-- **Что будет, если удалить:** Сейчас нет доказанного runtime-эффекта; перед удалением нужно продуктовое решение (обновить docs/imports или убрать файл).
-- **Уверенность:** WATCHLIST
+- **Роль в репозитории:** Brain/data
+- **Доказательства использования:** Упоминается в docs/scripts: `docs/reports/FINAL_REPOSITORY_COMPLETENESS_AUDIT_2026-07-23.md`, `docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Удаление ломает нужную возможность репозитория.
+- **Уверенность:** MEDIUM
 - **Владелец / слой:** Brain/data
-- **Обязанности:** Не считать обязательным для текущего runtime.
+- **Обязанности:** Реализует назначение `plan_create_outbox.dart` для области `lib/data/local_sync`.
 - **Когда открывать:** Когда ломается поведение, связанное с `plan_create_outbox.dart`.
-- **Можно удалить?** Сейчас нет доказанного runtime-эффекта; перед удалением нужно продуктовое решение (обновить docs/imports или убрать файл).
+- **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** UI вызывает `DatabaseService.instance`; Offline banner в shell, flush при reconnect
 
 
@@ -14070,7 +14060,7 @@ EN:
 - **Contents:** SharedPreferences queue for plan mutations.
 - **Key code names:** `PlanMutationOutbox`
 - **Repository role:** Brain/data
-- **Evidence of use:** Imported/exported by production Dart: `lib/data/database_service.dart`, `lib/data/local_sync/offline_sync_state.dart`, `lib/data/local_sync/plan_create_outbox.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/data/database_service.dart`, `lib/data/local_sync/offline_sync_state.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -14087,7 +14077,7 @@ RU:
 - **Зачем:** Держит offline sync согласованным с PocketBase и экранами.
 - **Содержимое:** Dart-код (`PlanMutationOutbox`).
 - **Роль в репозитории:** Brain/data
-- **Доказательства использования:** Импортируется production Dart: `lib/data/database_service.dart`, `lib/data/local_sync/offline_sync_state.dart`, `lib/data/local_sync/plan_create_outbox.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/data/database_service.dart`, `lib/data/local_sync/offline_sync_state.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -17400,8 +17390,8 @@ RU:
 
 EN:
 
-- **Human purpose:** `category_filter_tree_field.dart` on Lists tab (fourth bottom tab) — Lists/backlog coordinator + filter/bulk/inline/empty modules + card + export + Lists-only “All categories” filter field. Users see `category_filter_tree_field.dart` when using Lists tab (fourth bottom tab).
-- **What this is:** `category_filter_tree_field.dart` on Lists tab (fourth bottom tab) — Lists/backlog coordinator + filter/bulk/inline/empty modules + card + export + Lists-only “All categories” filter field.
+- **Human purpose:** `category_filter_tree_field.dart` on Lists tab (fourth bottom tab) — Lists/backlog coordinator + filter/bulk/empty modules + card + export + Lists-only “All categories” filter field. Users see `category_filter_tree_field.dart` when using Lists tab (fourth bottom tab).
+- **What this is:** `category_filter_tree_field.dart` on Lists tab (fourth bottom tab) — Lists/backlog coordinator + filter/bulk/empty modules + card + export + Lists-only “All categories” filter field.
 - **Why needed:** Users see `category_filter_tree_field.dart` when using Lists tab (fourth bottom tab).
 - **Contents:** Primary symbols: `CategoryFilterTreeField`.
 - **Key code names:** `CategoryFilterTreeField`
@@ -17411,10 +17401,10 @@ EN:
 - **Deletion consequence:** Removing it breaks a required repository capability.
 - **Confidence:** MEDIUM
 - **Owner / layer:** Lists UI
-- **Responsibilities:** Lists/backlog coordinator + filter/bulk/inline/empty modules + card + export + Lists-only “All categories” filter field
+- **Responsibilities:** Lists/backlog coordinator + filter/bulk/empty modules + card + export + Lists-only “All categories” filter field
 - **When to open:** Lists tab: filters, done checkbox, bulk actions, export.
 - **Can it be deleted?** Removing it breaks a required repository capability.
-- **Connected to:** Lists tab (shell index 3); APP_STRUCTURE role: Lists/backlog coordinator + filter/bulk/inline/empty modules + card + export + Lists-only “All categories” filter field
+- **Connected to:** Lists tab (shell index 3); APP_STRUCTURE role: Lists/backlog coordinator + filter/bulk/empty modules + card + export + Lists-only “All categories” filter field
 
 RU:
 
@@ -17627,37 +17617,36 @@ RU:
 
 EN:
 
-- **Human purpose:** Intentionally retained product/compat file — ListsInlineAddRow unused; production shell embeds its own quick-add row. (see `docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`). Not reachable from current production `lib/main.dart` root; kept until a product decision removes or rewires it.
-- **What this is:** Intentionally retained product/compat file — ListsInlineAddRow unused; production shell embeds its own quick-add row. (see `docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`).
-- **Why needed:** Not reachable from current production `lib/main.dart` root; kept until a product decision removes or rewires it.
-- **Contents:** Primary symbols: `ListsInlineAddRow`.
-- **Key code names:** `ListsInlineAddRow`
-- **Repository role:** intentionally retained product watchlist
-- **Evidence of use:** (1) Hygiene audit watchlist (`docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`): ListsInlineAddRow unused; production shell embeds its own quick-add row. (2) Current production reachability from `lib/main.dart`: none (retained intentionally — not proven runtime-required).
-- **Necessity status:** RETAINED_PRODUCT_WATCHLIST
-- **Deletion consequence:** No current production consequence established; product decision required before deletion (replace docs/imports or remove).
-- **Confidence:** WATCHLIST
+- **Human purpose:** `lists_inline_add.dart` on Lists tab (fourth bottom tab) — lists inline add. Users see `lists_inline_add.dart` when using Lists tab (fourth bottom tab).
+- **What this is:** `lists_inline_add.dart` on Lists tab (fourth bottom tab) — lists inline add.
+- **Why needed:** Users see `lists_inline_add.dart` when using Lists tab (fourth bottom tab).
+- **Contents:** Dart module `lists_inline_add.dart` — open file for classes and helpers.
+- **Repository role:** production UI
+- **Evidence of use:** Mentioned by tracked docs/scripts: `docs/reports/FINAL_REPOSITORY_COMPLETENESS_AUDIT_2026-07-23.md`, `docs/reports/LARGE_FILE_DECOMPOSITION_PLAN_2026-07-06.md`, `docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Removing it breaks a required repository capability.
+- **Confidence:** MEDIUM
 - **Owner / layer:** Lists UI
-- **Responsibilities:** Inline quick-add input row
+- **Responsibilities:** Supports `lists_inline_add` behavior in this feature area.
 - **When to open:** Lists tab: filters, done checkbox, bulk actions, export.
-- **Can it be deleted?** No current production consequence established; product decision required before deletion (replace docs/imports or remove).
-- **Connected to:** Lists tab (shell index 3); APP_STRUCTURE role: Inline quick-add input row
+- **Can it be deleted?** Removing it breaks a required repository capability.
+- **Connected to:** Lists tab (shell index 3); APP_STRUCTURE role: lists inline add
 
 RU:
 
-- **Зачем файл человеку:** Намеренно сохранённый файл (watchlist) — см. hygiene-аудит. Файл: `lists_inline_add.dart`. Сейчас не участвует в runtime из `lib/main.dart`; сохранён до продуктового решения об удалении или переподключении.
-- **Что это:** Намеренно сохранённый файл (watchlist) — см. hygiene-аудит. Файл: `lists_inline_add.dart`.
-- **Зачем:** Сейчас не участвует в runtime из `lib/main.dart`; сохранён до продуктового решения об удалении или переподключении.
+- **Зачем файл человеку:** `lists_inline_add.dart` на вкладка Lists (четвёртая снизу) — Поддерживает поведение `lists_inline_add` в этой feature-зоне.. Пользователь видит UI из `lists_inline_add.dart` на вкладка Lists (четвёртая снизу).
+- **Что это:** `lists_inline_add.dart` на вкладка Lists (четвёртая снизу) — Поддерживает поведение `lists_inline_add` в этой feature-зоне..
+- **Зачем:** Пользователь видит UI из `lists_inline_add.dart` на вкладка Lists (четвёртая снизу).
 - **Содержимое:** Dart-модуль `lists_inline_add.dart` — классы и helpers в исходнике.
-- **Роль в репозитории:** intentionally retained product watchlist
-- **Доказательства использования:** (1) Список наблюдения hygiene-аудита (`docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`): ListsInlineAddRow unused; production shell embeds its own quick-add row. (2) Сейчас не достижим из `lib/main.dart`; сохранён намеренно, не считать runtime-обязательным.
-- **Статус необходимости:** RETAINED_PRODUCT_WATCHLIST
-- **Что будет, если удалить:** Сейчас нет доказанного runtime-эффекта; перед удалением нужно продуктовое решение (обновить docs/imports или убрать файл).
-- **Уверенность:** WATCHLIST
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Упоминается в docs/scripts: `docs/reports/FINAL_REPOSITORY_COMPLETENESS_AUDIT_2026-07-23.md`, `docs/reports/LARGE_FILE_DECOMPOSITION_PLAN_2026-07-06.md`, `docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Удаление ломает нужную возможность репозитория.
+- **Уверенность:** MEDIUM
 - **Владелец / слой:** UI списков
-- **Обязанности:** Не считать обязательным для текущего runtime.
+- **Обязанности:** Поддерживает поведение `lists_inline_add` в этой feature-зоне.
 - **Когда открывать:** Вкладка Lists: фильтры, done, экспорт.
-- **Можно удалить?** Сейчас нет доказанного runtime-эффекта; перед удалением нужно продуктовое решение (обновить docs/imports или убрать файл).
+- **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Вкладка Lists (shell index 3)
 
 
@@ -17665,8 +17654,8 @@ RU:
 
 EN:
 
-- **Human purpose:** `lists_view.dart` on Lists tab (fourth bottom tab) — Lists/backlog coordinator + filter/bulk/inline/empty modules + card + export + Lists-only “All categories” filter field. Users see `lists_view.dart` when using Lists tab (fourth bottom tab).
-- **What this is:** `lists_view.dart` on Lists tab (fourth bottom tab) — Lists/backlog coordinator + filter/bulk/inline/empty modules + card + export + Lists-only “All categories” filter field.
+- **Human purpose:** `lists_view.dart` on Lists tab (fourth bottom tab) — Lists/backlog coordinator + filter/bulk/empty modules + card + export + Lists-only “All categories” filter field. Users see `lists_view.dart` when using Lists tab (fourth bottom tab).
+- **What this is:** `lists_view.dart` on Lists tab (fourth bottom tab) — Lists/backlog coordinator + filter/bulk/empty modules + card + export + Lists-only “All categories” filter field.
 - **Why needed:** Users see `lists_view.dart` when using Lists tab (fourth bottom tab).
 - **Contents:** Primary symbols: `ListsPage`, `_ListsPageState`.
 - **Key code names:** `ListsPage`, `_ListsPageState`
@@ -17676,10 +17665,10 @@ EN:
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
 - **Owner / layer:** Lists UI
-- **Responsibilities:** Lists/backlog coordinator + filter/bulk/inline/empty modules + card + export + Lists-only “All categories” filter field
+- **Responsibilities:** Lists/backlog coordinator + filter/bulk/empty modules + card + export + Lists-only “All categories” filter field
 - **When to open:** Lists tab: filters, done checkbox, bulk actions, export.
 - **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** Lists tab (shell index 3); APP_STRUCTURE role: Lists/backlog coordinator + filter/bulk/inline/empty modules + card + export + Lists-only “All categories” filter field
+- **Connected to:** Lists tab (shell index 3); APP_STRUCTURE role: Lists/backlog coordinator + filter/bulk/empty modules + card + export + Lists-only “All categories” filter field
 
 RU:
 
@@ -17747,7 +17736,7 @@ EN:
 - **Contents:** Primary symbols: `_NotesStructuredClipboard`, `NoteEditorPage`, `_NoteEditorPageState`.
 - **Key code names:** `_NotesStructuredClipboard`, `NoteEditorPage`, `_NoteEditorPageState`
 - **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/lists/lists_view.dart`, `lib/features/notes/notes_library_page.dart`, `lib/features/notes/widgets/notes_library_body.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/lists/lists_view.dart`, `lib/features/notes/widgets/notes_library_body.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -17764,7 +17753,7 @@ RU:
 - **Зачем:** Пользователь видит UI из `note_editor_page.dart` на Notes library/editor (Lists + full-screen editor).
 - **Содержимое:** Компоновка экрана и state в `note_editor_page.dart`.
 - **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/features/lists/lists_view.dart`, `lib/features/notes/notes_library_page.dart`, `lib/features/notes/widgets/notes_library_body.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/features/lists/lists_view.dart`, `lib/features/notes/widgets/notes_library_body.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -17969,37 +17958,36 @@ RU:
 
 EN:
 
-- **Human purpose:** Intentionally retained product/compat file — Superseded Notes library page; Lists uses notes_library_production_shell instead. (see `docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`). Not reachable from current production `lib/main.dart` root; kept until a product decision removes or rewires it.
-- **What this is:** Intentionally retained product/compat file — Superseded Notes library page; Lists uses notes_library_production_shell instead. (see `docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`).
-- **Why needed:** Not reachable from current production `lib/main.dart` root; kept until a product decision removes or rewires it.
-- **Contents:** Primary symbols: `NotesLibraryPage`, `_NotesLibraryPageState`, `_LibraryHeader`.
-- **Key code names:** `NotesLibraryPage`, `_NotesLibraryPageState`, `_LibraryHeader`
-- **Repository role:** intentionally retained product watchlist
-- **Evidence of use:** (1) Hygiene audit watchlist (`docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`): Superseded Notes library page; Lists uses notes_library_production_shell instead. (2) Current production reachability from `lib/main.dart`: none (retained intentionally — not proven runtime-required).
-- **Necessity status:** RETAINED_PRODUCT_WATCHLIST
-- **Deletion consequence:** No current production consequence established; product decision required before deletion (replace docs/imports or remove).
-- **Confidence:** WATCHLIST
+- **Human purpose:** `notes_library_page.dart` on notes area — notes library page. Users see `notes_library_page.dart` when using notes area.
+- **What this is:** `notes_library_page.dart` on notes area — notes library page.
+- **Why needed:** Users see `notes_library_page.dart` when using notes area.
+- **Contents:** Screen composition and state for `notes_library_page.dart`.
+- **Repository role:** production UI
+- **Evidence of use:** Mentioned by tracked docs/scripts: `docs/reports/ARCHITECTURE_GUARD_BASELINE_2026-07-17.md`, `docs/reports/FINAL_REPOSITORY_COMPLETENESS_AUDIT_2026-07-23.md`, `docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Removing it breaks a required repository capability.
+- **Confidence:** MEDIUM
 - **Owner / layer:** Notes UI
-- **Responsibilities:** Standalone Notes library page (search, chips, grid/list, sort)
+- **Responsibilities:** Owns visible Timeline/Plans UI wired in `notes_library_page.dart`.
 - **When to open:** When behavior tied to `notes_library_page.dart` breaks or you need to change its documented role.
-- **Can it be deleted?** No current production consequence established; product decision required before deletion (replace docs/imports or remove).
-- **Connected to:** APP_STRUCTURE role: Standalone Notes library page (search, chips, grid/list, sort)
+- **Can it be deleted?** Removing it breaks a required repository capability.
+- **Connected to:** APP_STRUCTURE role: notes library page
 
 RU:
 
-- **Зачем файл человеку:** Намеренно сохранённый файл (watchlist) — см. hygiene-аудит. Файл: `notes_library_page.dart`. Сейчас не участвует в runtime из `lib/main.dart`; сохранён до продуктового решения об удалении или переподключении.
-- **Что это:** Намеренно сохранённый файл (watchlist) — см. hygiene-аудит. Файл: `notes_library_page.dart`.
-- **Зачем:** Сейчас не участвует в runtime из `lib/main.dart`; сохранён до продуктового решения об удалении или переподключении.
+- **Зачем файл человеку:** `notes_library_page.dart` на Notes library/editor (Lists + full-screen editor) — Отвечает за видимый UI, собранный в `notes_library_page.dart`.. Пользователь видит UI из `notes_library_page.dart` на Notes library/editor (Lists + full-screen editor).
+- **Что это:** `notes_library_page.dart` на Notes library/editor (Lists + full-screen editor) — Отвечает за видимый UI, собранный в `notes_library_page.dart`..
+- **Зачем:** Пользователь видит UI из `notes_library_page.dart` на Notes library/editor (Lists + full-screen editor).
 - **Содержимое:** Компоновка экрана и state в `notes_library_page.dart`.
-- **Роль в репозитории:** intentionally retained product watchlist
-- **Доказательства использования:** (1) Список наблюдения hygiene-аудита (`docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`): Superseded Notes library page; Lists uses notes_library_production_shell instead. (2) Сейчас не достижим из `lib/main.dart`; сохранён намеренно, не считать runtime-обязательным.
-- **Статус необходимости:** RETAINED_PRODUCT_WATCHLIST
-- **Что будет, если удалить:** Сейчас нет доказанного runtime-эффекта; перед удалением нужно продуктовое решение (обновить docs/imports или убрать файл).
-- **Уверенность:** WATCHLIST
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Упоминается в docs/scripts: `docs/reports/ARCHITECTURE_GUARD_BASELINE_2026-07-17.md`, `docs/reports/FINAL_REPOSITORY_COMPLETENESS_AUDIT_2026-07-23.md`, `docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Удаление ломает нужную возможность репозитория.
+- **Уверенность:** MEDIUM
 - **Владелец / слой:** UI заметок
-- **Обязанности:** Не считать обязательным для текущего runtime.
+- **Обязанности:** Отвечает за видимый UI, собранный в `notes_library_page.dart`.
 - **Когда открывать:** Когда ломается поведение, связанное с `notes_library_page.dart`.
-- **Можно удалить?** Сейчас нет доказанного runtime-эффекта; перед удалением нужно продуктовое решение (обновить docs/imports или убрать файл).
+- **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/features/notes/`, `docs/APP_STRUCTURE.md`
 
 
@@ -18050,7 +18038,7 @@ EN:
 - **Contents:** Primary symbols: `NotesLibraryView`, `NoteCardData`, `NoteCard`, `_GridCard`, `_ListRow`, `_BadgesRow`.
 - **Key code names:** `NotesLibraryView`, `NoteCardData`, `NoteCard`, `_GridCard`, `_ListRow`, `_BadgesRow`
 - **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/lists/lists_view.dart`, `lib/features/notes/notes_library_page.dart`, `lib/features/notes/widgets/notes_library_body.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/lists/lists_view.dart`, `lib/features/notes/widgets/notes_library_body.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -18067,7 +18055,7 @@ RU:
 - **Зачем:** Пользователь видит UI из `note_card.dart` на Notes library/editor (Lists + full-screen editor).
 - **Содержимое:** Dart-модуль `note_card.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/features/lists/lists_view.dart`, `lib/features/notes/notes_library_page.dart`, `lib/features/notes/widgets/notes_library_body.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/features/lists/lists_view.dart`, `lib/features/notes/widgets/notes_library_body.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -20394,37 +20382,36 @@ RU:
 
 EN:
 
-- **Human purpose:** Intentionally retained product/compat file — Compatibility re-export of shell/settings_page.dart; zero current Dart importers of this path. (see `docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`). Not reachable from current production `lib/main.dart` root; kept until a product decision removes or rewires it.
-- **What this is:** Intentionally retained product/compat file — Compatibility re-export of shell/settings_page.dart; zero current Dart importers of this path. (see `docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`).
-- **Why needed:** Not reachable from current production `lib/main.dart` root; kept until a product decision removes or rewires it.
-- **Contents:** Primary symbols: `SettingsPage`, `SettingsPageState`.
-- **Key code names:** `SettingsPage`, `SettingsPageState`
-- **Repository role:** compatibility layer
-- **Evidence of use:** (1) Hygiene audit watchlist (`docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`): Compatibility re-export of shell/settings_page.dart; zero current Dart importers of this path. (2) Current production reachability from `lib/main.dart`: none (retained intentionally — not proven runtime-required).
-- **Necessity status:** COMPATIBILITY_LAYER
-- **Deletion consequence:** No current production consequence established; product decision required before deletion (replace docs/imports or remove).
-- **Confidence:** WATCHLIST
+- **Human purpose:** `settings_page.dart` on More → Profile and settings — settings page. Users see `settings_page.dart` when using More → Profile and settings.
+- **What this is:** `settings_page.dart` on More → Profile and settings — settings page.
+- **Why needed:** Users see `settings_page.dart` when using More → Profile and settings.
+- **Contents:** Screen composition and state for `settings_page.dart`.
+- **Repository role:** production UI
+- **Evidence of use:** Mentioned by tracked docs/scripts: `docs/reports/FINAL_REPOSITORY_COMPLETENESS_AUDIT_2026-07-23.md`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Removing it breaks a required repository capability.
+- **Confidence:** MEDIUM
 - **Owner / layer:** Profile UI
-- **Responsibilities:** Language/TZ settings page (shell route)
+- **Responsibilities:** Owns visible Timeline/Plans UI wired in `settings_page.dart`.
 - **When to open:** When behavior tied to `settings_page.dart` breaks or you need to change its documented role.
-- **Can it be deleted?** No current production consequence established; product decision required before deletion (replace docs/imports or remove).
-- **Connected to:** APP_STRUCTURE role: Language/TZ settings page (shell route)
+- **Can it be deleted?** Removing it breaks a required repository capability.
+- **Connected to:** APP_STRUCTURE role: settings page
 
 RU:
 
-- **Зачем файл человеку:** Намеренно сохранённый файл (watchlist) — см. hygiene-аудит. Файл: `settings_page.dart`. Сейчас не участвует в runtime из `lib/main.dart`; сохранён до продуктового решения об удалении или переподключении.
-- **Что это:** Намеренно сохранённый файл (watchlist) — см. hygiene-аудит. Файл: `settings_page.dart`.
-- **Зачем:** Сейчас не участвует в runtime из `lib/main.dart`; сохранён до продуктового решения об удалении или переподключении.
+- **Зачем файл человеку:** `settings_page.dart` на More → Profile и настройки — Отвечает за видимый UI, собранный в `settings_page.dart`.. Пользователь видит UI из `settings_page.dart` на More → Profile и настройки.
+- **Что это:** `settings_page.dart` на More → Profile и настройки — Отвечает за видимый UI, собранный в `settings_page.dart`..
+- **Зачем:** Пользователь видит UI из `settings_page.dart` на More → Profile и настройки.
 - **Содержимое:** Компоновка экрана и state в `settings_page.dart`.
-- **Роль в репозитории:** compatibility layer
-- **Доказательства использования:** (1) Список наблюдения hygiene-аудита (`docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`): Compatibility re-export of shell/settings_page.dart; zero current Dart importers of this path. (2) Сейчас не достижим из `lib/main.dart`; сохранён намеренно, не считать runtime-обязательным.
-- **Статус необходимости:** COMPATIBILITY_LAYER
-- **Что будет, если удалить:** Сейчас нет доказанного runtime-эффекта; перед удалением нужно продуктовое решение (обновить docs/imports или убрать файл).
-- **Уверенность:** WATCHLIST
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Упоминается в docs/scripts: `docs/reports/FINAL_REPOSITORY_COMPLETENESS_AUDIT_2026-07-23.md`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Удаление ломает нужную возможность репозитория.
+- **Уверенность:** MEDIUM
 - **Владелец / слой:** UI профиля
-- **Обязанности:** Не считать обязательным для текущего runtime.
+- **Обязанности:** Отвечает за видимый UI, собранный в `settings_page.dart`.
 - **Когда открывать:** Когда ломается поведение, связанное с `settings_page.dart`.
-- **Можно удалить?** Сейчас нет доказанного runtime-эффекта; перед удалением нужно продуктовое решение (обновить docs/imports или убрать файл).
+- **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/features/profile/settings/`, `docs/APP_STRUCTURE.md`
 
 
@@ -21302,8 +21289,8 @@ RU:
 
 EN:
 
-- **Human purpose:** `planning_edit_result_actions.dart` on edit sheets and voice UI on every tab — Activity edit sheets, Notes launch/sheet routing, Omni-Picker entry, and plan/record category draft helpers. Users see `planning_edit_result_actions.dart` when using edit sheets and voice UI on every tab.
-- **What this is:** `planning_edit_result_actions.dart` on edit sheets and voice UI on every tab — Activity edit sheets, Notes launch/sheet routing, Omni-Picker entry, and plan/record category draft helpers.
+- **Human purpose:** `planning_edit_result_actions.dart` on edit sheets and voice UI on every tab — Activity edit sheets, Omni-Picker entry, and plan/record category draft helpers. Users see `planning_edit_result_actions.dart` when using edit sheets and voice UI on every tab.
+- **What this is:** `planning_edit_result_actions.dart` on edit sheets and voice UI on every tab — Activity edit sheets, Omni-Picker entry, and plan/record category draft helpers.
 - **Why needed:** Users see `planning_edit_result_actions.dart` when using edit sheets and voice UI on every tab.
 - **Contents:** Primary symbols: `PlanningEditResultActions`.
 - **Key code names:** `PlanningEditResultActions`
@@ -21313,10 +21300,10 @@ EN:
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
 - **Owner / layer:** shared edit sheets
-- **Responsibilities:** Activity edit sheets, Notes launch/sheet routing, Omni-Picker entry, and plan/record category draft helpers
+- **Responsibilities:** Activity edit sheets, Omni-Picker entry, and plan/record category draft helpers
 - **When to open:** Edit sheet, date/time picker, tags strip, voice sheet, offline banner UI.
 - **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** Edit sheets and voice UI on every tab; APP_STRUCTURE role: Activity edit sheets, Notes launch/sheet routing, Omni-Picker entry, and plan/record category draft helpers
+- **Connected to:** Edit sheets and voice UI on every tab; APP_STRUCTURE role: Activity edit sheets, Omni-Picker entry, and plan/record category draft helpers
 
 RU:
 
@@ -21458,7 +21445,7 @@ EN:
 - **Contents:** Primary symbols: `EditSheetAutosaveGate`.
 - **Key code names:** `EditSheetAutosaveGate`
 - **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/notes/note_editor_page.dart`, `lib/features/shared/notes_editor/notes_editor_sheet.dart`, `lib/features/shared/planning_task_edit_sheet.dart`, `lib/features/shared/shared_widgets.dart`, `lib/features/shared/timeline_record_edit_sheet.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/notes/note_editor_page.dart`, `lib/features/shared/planning_task_edit_sheet.dart`, `lib/features/shared/shared_widgets.dart`, `lib/features/shared/timeline_record_edit_sheet.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -21475,7 +21462,7 @@ RU:
 - **Зачем:** Пользователь видит UI из `sheet_autosave_gate.dart` на edit sheets и voice UI на всех вкладках.
 - **Содержимое:** Dart-модуль `sheet_autosave_gate.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/features/notes/note_editor_page.dart`, `lib/features/shared/notes_editor/notes_editor_sheet.dart`, `lib/features/shared/planning_task_edit_sheet.dart`, `lib/features/shared/shared_widgets.dart`, `lib/features/shared/timeline_record_edit_sheet.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/features/notes/note_editor_page.dart`, `lib/features/shared/planning_task_edit_sheet.dart`, `lib/features/shared/shared_widgets.dart`, `lib/features/shared/timeline_record_edit_sheet.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -21565,8 +21552,8 @@ RU:
 
 EN:
 
-- **Human purpose:** `timeline_edit_result_actions.dart` on edit sheets and voice UI on every tab — Activity edit sheets, Notes launch/sheet routing, Omni-Picker entry, and plan/record category draft helpers. Users see `timeline_edit_result_actions.dart` when using edit sheets and voice UI on every tab.
-- **What this is:** `timeline_edit_result_actions.dart` on edit sheets and voice UI on every tab — Activity edit sheets, Notes launch/sheet routing, Omni-Picker entry, and plan/record category draft helpers.
+- **Human purpose:** `timeline_edit_result_actions.dart` on edit sheets and voice UI on every tab — Activity edit sheets, Omni-Picker entry, and plan/record category draft helpers. Users see `timeline_edit_result_actions.dart` when using edit sheets and voice UI on every tab.
+- **What this is:** `timeline_edit_result_actions.dart` on edit sheets and voice UI on every tab — Activity edit sheets, Omni-Picker entry, and plan/record category draft helpers.
 - **Why needed:** Users see `timeline_edit_result_actions.dart` when using edit sheets and voice UI on every tab.
 - **Contents:** Primary symbols: `TimelineEditResultActions`.
 - **Key code names:** `TimelineEditResultActions`
@@ -21576,10 +21563,10 @@ EN:
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
 - **Owner / layer:** shared edit sheets
-- **Responsibilities:** Activity edit sheets, Notes launch/sheet routing, Omni-Picker entry, and plan/record category draft helpers
+- **Responsibilities:** Activity edit sheets, Omni-Picker entry, and plan/record category draft helpers
 - **When to open:** Edit sheet, date/time picker, tags strip, voice sheet, offline banner UI.
 - **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** Edit sheets and voice UI on every tab; APP_STRUCTURE role: Activity edit sheets, Notes launch/sheet routing, Omni-Picker entry, and plan/record category draft helpers
+- **Connected to:** Edit sheets and voice UI on every tab; APP_STRUCTURE role: Activity edit sheets, Omni-Picker entry, and plan/record category draft helpers
 
 RU:
 
@@ -21640,37 +21627,36 @@ RU:
 
 EN:
 
-- **Human purpose:** Intentionally retained product/compat file — Older Notes editor launcher; production uses note_editor_page.dart. (see `docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`). Not reachable from current production `lib/main.dart` root; kept until a product decision removes or rewires it.
-- **What this is:** Intentionally retained product/compat file — Older Notes editor launcher; production uses note_editor_page.dart. (see `docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`).
-- **Why needed:** Not reachable from current production `lib/main.dart` root; kept until a product decision removes or rewires it.
-- **Contents:** Primary symbols: `_NotesEditorRoute`, `_NotesEditorRouteHost`, `_NotesEditorRouteHostState`.
-- **Key code names:** `_NotesEditorRoute`, `_NotesEditorRouteHost`, `_NotesEditorRouteHostState`
-- **Repository role:** intentionally retained product watchlist
-- **Evidence of use:** (1) Hygiene audit watchlist (`docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`): Older Notes editor launcher; production uses note_editor_page.dart. (2) Current production reachability from `lib/main.dart`: none (retained intentionally — not proven runtime-required).
-- **Necessity status:** RETAINED_PRODUCT_WATCHLIST
-- **Deletion consequence:** No current production consequence established; product decision required before deletion (replace docs/imports or remove).
-- **Confidence:** WATCHLIST
+- **Human purpose:** `notes_editor_launcher.dart` on edit sheets and voice UI on every tab — notes editor launcher. Users see `notes_editor_launcher.dart` when using edit sheets and voice UI on every tab.
+- **What this is:** `notes_editor_launcher.dart` on edit sheets and voice UI on every tab — notes editor launcher.
+- **Why needed:** Users see `notes_editor_launcher.dart` when using edit sheets and voice UI on every tab.
+- **Contents:** Dart module `notes_editor_launcher.dart` — open file for classes and helpers.
+- **Repository role:** production UI
+- **Evidence of use:** Mentioned by tracked docs/scripts: `docs/reports/ARCHITECTURE_GUARD_BASELINE_2026-07-17.md`, `docs/reports/FINAL_REPOSITORY_COMPLETENESS_AUDIT_2026-07-23.md`, `docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`, `scripts/manual/structure_folder_ru_lib.py`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Removing it breaks a required repository capability.
+- **Confidence:** MEDIUM
 - **Owner / layer:** shared edit sheets
-- **Responsibilities:** showNotesEditorSheet
+- **Responsibilities:** Supports `notes_editor_launcher` behavior in this feature area.
 - **When to open:** Edit sheet, date/time picker, tags strip, voice sheet, offline banner UI.
-- **Can it be deleted?** No current production consequence established; product decision required before deletion (replace docs/imports or remove).
-- **Connected to:** Edit sheets and voice UI on every tab; APP_STRUCTURE role: `showNotesEditorSheet` — full-screen route launcher for Notes editor
+- **Can it be deleted?** Removing it breaks a required repository capability.
+- **Connected to:** Edit sheets and voice UI on every tab; APP_STRUCTURE role: notes editor launcher
 
 RU:
 
-- **Зачем файл человеку:** Намеренно сохранённый файл (watchlist) — см. hygiene-аудит. Файл: `notes_editor_launcher.dart`. Сейчас не участвует в runtime из `lib/main.dart`; сохранён до продуктового решения об удалении или переподключении.
-- **Что это:** Намеренно сохранённый файл (watchlist) — см. hygiene-аудит. Файл: `notes_editor_launcher.dart`.
-- **Зачем:** Сейчас не участвует в runtime из `lib/main.dart`; сохранён до продуктового решения об удалении или переподключении.
+- **Зачем файл человеку:** `notes_editor_launcher.dart` на edit sheets и voice UI на всех вкладках — Поддерживает поведение `notes_editor_launcher` в этой feature-зоне.. Пользователь видит UI из `notes_editor_launcher.dart` на edit sheets и voice UI на всех вкладках.
+- **Что это:** `notes_editor_launcher.dart` на edit sheets и voice UI на всех вкладках — Поддерживает поведение `notes_editor_launcher` в этой feature-зоне..
+- **Зачем:** Пользователь видит UI из `notes_editor_launcher.dart` на edit sheets и voice UI на всех вкладках.
 - **Содержимое:** Dart-модуль `notes_editor_launcher.dart` — классы и helpers в исходнике.
-- **Роль в репозитории:** intentionally retained product watchlist
-- **Доказательства использования:** (1) Список наблюдения hygiene-аудита (`docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`): Older Notes editor launcher; production uses note_editor_page.dart. (2) Сейчас не достижим из `lib/main.dart`; сохранён намеренно, не считать runtime-обязательным.
-- **Статус необходимости:** RETAINED_PRODUCT_WATCHLIST
-- **Что будет, если удалить:** Сейчас нет доказанного runtime-эффекта; перед удалением нужно продуктовое решение (обновить docs/imports или убрать файл).
-- **Уверенность:** WATCHLIST
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Упоминается в docs/scripts: `docs/reports/ARCHITECTURE_GUARD_BASELINE_2026-07-17.md`, `docs/reports/FINAL_REPOSITORY_COMPLETENESS_AUDIT_2026-07-23.md`, `docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`, `scripts/manual/structure_folder_ru_lib.py`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Удаление ломает нужную возможность репозитория.
+- **Уверенность:** MEDIUM
 - **Владелец / слой:** общие edit sheets
-- **Обязанности:** Не считать обязательным для текущего runtime.
+- **Обязанности:** Поддерживает поведение `notes_editor_launcher` в этой feature-зоне.
 - **Когда открывать:** Шторка редактирования, picker, voice, offline banner.
-- **Можно удалить?** Сейчас нет доказанного runtime-эффекта; перед удалением нужно продуктовое решение (обновить docs/imports или убрать файл).
+- **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Edit sheets и voice UI на всех вкладках
 
 
@@ -21678,37 +21664,36 @@ RU:
 
 EN:
 
-- **Human purpose:** Intentionally retained product/compat file — Older Notes editor sheet; only reachable from the unused launcher. (see `docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`). Not reachable from current production `lib/main.dart` root; kept until a product decision removes or rewires it.
-- **What this is:** Intentionally retained product/compat file — Older Notes editor sheet; only reachable from the unused launcher. (see `docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`).
-- **Why needed:** Not reachable from current production `lib/main.dart` root; kept until a product decision removes or rewires it.
-- **Contents:** Primary symbols: `_NotesStatus`, `NotesEditorSheet`, `_NotesEditorSheetState`.
-- **Key code names:** `_NotesStatus`, `NotesEditorSheet`, `_NotesEditorSheetState`
-- **Repository role:** intentionally retained product watchlist
-- **Evidence of use:** (1) Hygiene audit watchlist (`docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`): Older Notes editor sheet; only reachable from the unused launcher. (2) Current production reachability from `lib/main.dart`: none (retained intentionally — not proven runtime-required).
-- **Necessity status:** RETAINED_PRODUCT_WATCHLIST
-- **Deletion consequence:** No current production consequence established; product decision required before deletion (replace docs/imports or remove).
-- **Confidence:** WATCHLIST
+- **Human purpose:** `notes_editor_sheet.dart` on edit sheets and voice UI on every tab — notes editor sheet. Users see `notes_editor_sheet.dart` when using edit sheets and voice UI on every tab.
+- **What this is:** `notes_editor_sheet.dart` on edit sheets and voice UI on every tab — notes editor sheet.
+- **Why needed:** Users see `notes_editor_sheet.dart` when using edit sheets and voice UI on every tab.
+- **Contents:** Modal UI widgets and controllers in `notes_editor_sheet.dart`.
+- **Repository role:** production UI
+- **Evidence of use:** Mentioned by tracked docs/scripts: `docs/reports/ARCHITECTURE_GUARD_BASELINE_2026-07-17.md`, `scripts/manual/structure_folder_ru_lib.py`, `scripts/manual/structure_guide_data.py`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Removing it breaks a required repository capability.
+- **Confidence:** MEDIUM
 - **Owner / layer:** shared edit sheets
-- **Responsibilities:** NotesEditorSheet
+- **Responsibilities:** User opens this sheet/dialog from `notes_editor_sheet` entry points.
 - **When to open:** Edit sheet, date/time picker, tags strip, voice sheet, offline banner UI.
-- **Can it be deleted?** No current production consequence established; product decision required before deletion (replace docs/imports or remove).
-- **Connected to:** Edit sheets and voice UI on every tab; APP_STRUCTURE role: `NotesEditorSheet` — Quill Notes editor wired to Brain autosave
+- **Can it be deleted?** Removing it breaks a required repository capability.
+- **Connected to:** Edit sheets and voice UI on every tab; APP_STRUCTURE role: notes editor sheet
 
 RU:
 
-- **Зачем файл человеку:** Намеренно сохранённый файл (watchlist) — см. hygiene-аудит. Файл: `notes_editor_sheet.dart`. Сейчас не участвует в runtime из `lib/main.dart`; сохранён до продуктового решения об удалении или переподключении.
-- **Что это:** Намеренно сохранённый файл (watchlist) — см. hygiene-аудит. Файл: `notes_editor_sheet.dart`.
-- **Зачем:** Сейчас не участвует в runtime из `lib/main.dart`; сохранён до продуктового решения об удалении или переподключении.
-- **Содержимое:** Основные символы: `_NotesStatus`, `NotesEditorSheet`, `_NotesEditorSheetState`.
-- **Роль в репозитории:** intentionally retained product watchlist
-- **Доказательства использования:** (1) Список наблюдения hygiene-аудита (`docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`): Older Notes editor sheet; only reachable from the unused launcher. (2) Сейчас не достижим из `lib/main.dart`; сохранён намеренно, не считать runtime-обязательным.
-- **Статус необходимости:** RETAINED_PRODUCT_WATCHLIST
-- **Что будет, если удалить:** Сейчас нет доказанного runtime-эффекта; перед удалением нужно продуктовое решение (обновить docs/imports или убрать файл).
-- **Уверенность:** WATCHLIST
+- **Зачем файл человеку:** `notes_editor_sheet.dart` на edit sheets и voice UI на всех вкладках — Пользователь открывает sheet/dialog из entry `notes_editor_sheet`.. Пользователь видит UI из `notes_editor_sheet.dart` на edit sheets и voice UI на всех вкладках.
+- **Что это:** `notes_editor_sheet.dart` на edit sheets и voice UI на всех вкладках — Пользователь открывает sheet/dialog из entry `notes_editor_sheet`..
+- **Зачем:** Пользователь видит UI из `notes_editor_sheet.dart` на edit sheets и voice UI на всех вкладках.
+- **Содержимое:** Modal UI и controllers в `notes_editor_sheet.dart`.
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Упоминается в docs/scripts: `docs/reports/ARCHITECTURE_GUARD_BASELINE_2026-07-17.md`, `scripts/manual/structure_folder_ru_lib.py`, `scripts/manual/structure_guide_data.py`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Удаление ломает нужную возможность репозитория.
+- **Уверенность:** MEDIUM
 - **Владелец / слой:** общие edit sheets
-- **Обязанности:** Не считать обязательным для текущего runtime.
+- **Обязанности:** Пользователь открывает sheet/dialog из entry `notes_editor_sheet`.
 - **Когда открывать:** Шторка редактирования, picker, voice, offline banner.
-- **Можно удалить?** Сейчас нет доказанного runtime-эффекта; перед удалением нужно продуктовое решение (обновить docs/imports или убрать файл).
+- **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Edit sheets и voice UI на всех вкладках
 
 
@@ -21764,10 +21749,10 @@ EN:
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
 - **Owner / layer:** shared edit sheets
-- **Responsibilities:** Activity edit sheets, Notes launch/sheet routing, Omni-Picker entry, and plan/record category draft helpers
+- **Responsibilities:** Activity edit sheets, Omni-Picker entry, and plan/record category draft helpers
 - **When to open:** Edit sheet, date/time picker, tags strip, voice sheet, offline banner UI.
 - **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** Edit sheets and voice UI on every tab; APP_STRUCTURE role: Activity edit sheets, Notes launch/sheet routing, Omni-Picker entry, and plan/record category draft helpers
+- **Connected to:** Edit sheets and voice UI on every tab; APP_STRUCTURE role: Activity edit sheets, Omni-Picker entry, and plan/record category draft helpers
 
 RU:
 
@@ -22397,37 +22382,36 @@ RU:
 
 EN:
 
-- **Human purpose:** Intentionally retained product/compat file — Superseded desktop voice panel; shell uses desktop_voice_widget.dart. (see `docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`). Not reachable from current production `lib/main.dart` root; kept until a product decision removes or rewires it.
-- **What this is:** Intentionally retained product/compat file — Superseded desktop voice panel; shell uses desktop_voice_widget.dart. (see `docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`).
-- **Why needed:** Not reachable from current production `lib/main.dart` root; kept until a product decision removes or rewires it.
-- **Contents:** Primary symbols: `_DesktopVoicePanelPhase`, `DesktopVoiceCommandPanel`, `_DesktopVoiceCommandPanelState`.
-- **Key code names:** `_DesktopVoicePanelPhase`, `DesktopVoiceCommandPanel`, `_DesktopVoiceCommandPanelState`
-- **Repository role:** intentionally retained product watchlist
-- **Evidence of use:** (1) Hygiene audit watchlist (`docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`): Superseded desktop voice panel; shell uses desktop_voice_widget.dart. (2) Current production reachability from `lib/main.dart`: none (retained intentionally — not proven runtime-required).
-- **Necessity status:** RETAINED_PRODUCT_WATCHLIST
-- **Deletion consequence:** No current production consequence established; product decision required before deletion (replace docs/imports or remove).
-- **Confidence:** WATCHLIST
+- **Human purpose:** `desktop_voice_command_panel.dart` on voice area — desktop voice command panel. Users see `desktop_voice_command_panel.dart` when using voice area.
+- **What this is:** `desktop_voice_command_panel.dart` on voice area — desktop voice command panel.
+- **Why needed:** Users see `desktop_voice_command_panel.dart` when using voice area.
+- **Contents:** Dart module `desktop_voice_command_panel.dart` — open file for classes and helpers.
+- **Repository role:** production UI
+- **Evidence of use:** Mentioned by tracked docs/scripts: `docs/reports/FINAL_REPOSITORY_COMPLETENESS_AUDIT_2026-07-23.md`, `docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`, `docs/website/FEATURE_MATRIX.md`, `scripts/audit/architecture_guard.ps1`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Removing it breaks a required repository capability.
+- **Confidence:** MEDIUM
 - **Owner / layer:** Desktop Voice UI
-- **Responsibilities:** Desktop Flutter Voice overlay UI (GOLOS STT capsule / correction / panel)
+- **Responsibilities:** Supports `desktop_voice_command_panel` behavior in this feature area.
 - **When to open:** When behavior tied to `desktop_voice_command_panel.dart` breaks or you need to change its documented role.
-- **Can it be deleted?** No current production consequence established; product decision required before deletion (replace docs/imports or remove).
-- **Connected to:** APP_STRUCTURE role: Desktop Flutter Voice overlay UI (GOLOS STT capsule / correction / panel)
+- **Can it be deleted?** Removing it breaks a required repository capability.
+- **Connected to:** APP_STRUCTURE role: desktop voice command panel
 
 RU:
 
-- **Зачем файл человеку:** Намеренно сохранённый файл (watchlist) — см. hygiene-аудит. Файл: `desktop_voice_command_panel.dart`. Сейчас не участвует в runtime из `lib/main.dart`; сохранён до продуктового решения об удалении или переподключении.
-- **Что это:** Намеренно сохранённый файл (watchlist) — см. hygiene-аудит. Файл: `desktop_voice_command_panel.dart`.
-- **Зачем:** Сейчас не участвует в runtime из `lib/main.dart`; сохранён до продуктового решения об удалении или переподключении.
+- **Зачем файл человеку:** `desktop_voice_command_panel.dart` на voice — Поддерживает поведение `desktop_voice_command_panel` в этой feature-зоне.. Пользователь видит UI из `desktop_voice_command_panel.dart` на voice.
+- **Что это:** `desktop_voice_command_panel.dart` на voice — Поддерживает поведение `desktop_voice_command_panel` в этой feature-зоне..
+- **Зачем:** Пользователь видит UI из `desktop_voice_command_panel.dart` на voice.
 - **Содержимое:** Dart-модуль `desktop_voice_command_panel.dart` — классы и helpers в исходнике.
-- **Роль в репозитории:** intentionally retained product watchlist
-- **Доказательства использования:** (1) Список наблюдения hygiene-аудита (`docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`): Superseded desktop voice panel; shell uses desktop_voice_widget.dart. (2) Сейчас не достижим из `lib/main.dart`; сохранён намеренно, не считать runtime-обязательным.
-- **Статус необходимости:** RETAINED_PRODUCT_WATCHLIST
-- **Что будет, если удалить:** Сейчас нет доказанного runtime-эффекта; перед удалением нужно продуктовое решение (обновить docs/imports или убрать файл).
-- **Уверенность:** WATCHLIST
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Упоминается в docs/scripts: `docs/reports/FINAL_REPOSITORY_COMPLETENESS_AUDIT_2026-07-23.md`, `docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`, `docs/website/FEATURE_MATRIX.md`, `scripts/audit/architecture_guard.ps1`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Удаление ломает нужную возможность репозитория.
+- **Уверенность:** MEDIUM
 - **Владелец / слой:** Desktop Voice UI
-- **Обязанности:** Не считать обязательным для текущего runtime.
+- **Обязанности:** Поддерживает поведение `desktop_voice_command_panel` в этой feature-зоне.
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_command_panel.dart`.
-- **Можно удалить?** Сейчас нет доказанного runtime-эффекта; перед удалением нужно продуктовое решение (обновить docs/imports или убрать файл).
+- **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/features/voice/`, `docs/APP_STRUCTURE.md`
 
 
@@ -23528,7 +23512,7 @@ EN:
 - **Contents:** Path-specific code, data, configuration, or documentation for `lib/shared/categories/picker/category_tree_picker.dart`.
 - **Key code names:** `_CategoryTreePickerSheet`, `_CategoryTreePickerSheetState`, `CategoryTreeFormField`
 - **Repository role:** developer tool
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/lists/category_filter_tree_field.dart`, `lib/features/shared/notes_editor/notes_editor_sheet.dart`, `lib/features/shared/planning_task_edit_sheet.dart`, `lib/features/shared/timeline_record_edit_sheet.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/lists/category_filter_tree_field.dart`, `lib/features/shared/planning_task_edit_sheet.dart`, `lib/features/shared/timeline_record_edit_sheet.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -23545,7 +23529,7 @@ RU:
 - **Зачем:** Поддерживает процесс, сборку, данные или runtime-задачу области `lib/shared/categories/picker` для `category_tree_picker.dart`.
 - **Содержимое:** Данные или код `category_tree_picker.dart`, необходимые его подтверждённой роли и указанным ниже связям.
 - **Роль в репозитории:** developer tool
-- **Доказательства использования:** Импортируется production Dart: `lib/features/lists/category_filter_tree_field.dart`, `lib/features/shared/notes_editor/notes_editor_sheet.dart`, `lib/features/shared/planning_task_edit_sheet.dart`, `lib/features/shared/timeline_record_edit_sheet.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/features/lists/category_filter_tree_field.dart`, `lib/features/shared/planning_task_edit_sheet.dart`, `lib/features/shared/timeline_record_edit_sheet.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -24853,7 +24837,7 @@ EN:
 - **Contents:** Desktop Voice runtime module (`DesktopSttHelperService`).
 - **Key code names:** `DesktopSttHelperService`
 - **Repository role:** Desktop Voice runtime
-- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/features/settings/voice/desktop_voice_settings_desktop.dart`, `lib/features/voice/desktop_voice_widget.dart`, `lib/shared/voice/platforms/desktop/desktop_stt_orchestrator.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_benchmark_service.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/features/settings/voice/desktop_voice_settings_desktop.dart`, `lib/features/voice/desktop_voice_widget.dart`, `lib/shared/voice/platforms/desktop/desktop_stt_orchestrator.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_recognizer_io.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -24870,7 +24854,7 @@ RU:
 - **Зачем:** Горячие клавиши, STT helper, оверлей и захват микрофона — адаптеры одной системы голосового ввода.
 - **Содержимое:** Рантайм-модуль голосового ввода на компьютере (`desktop_stt_helper_service.dart`).
 - **Роль в репозитории:** Desktop Voice runtime
-- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/features/settings/voice/desktop_voice_settings_desktop.dart`, `lib/features/voice/desktop_voice_widget.dart`, `lib/shared/voice/platforms/desktop/desktop_stt_orchestrator.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_benchmark_service.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/features/settings/voice/desktop_voice_settings_desktop.dart`, `lib/features/voice/desktop_voice_widget.dart`, `lib/shared/voice/platforms/desktop/desktop_stt_orchestrator.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_recognizer_io.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -24967,7 +24951,7 @@ EN:
 - **Contents:** Desktop Voice runtime module (`DesktopVoiceAudioCapture`).
 - **Key code names:** `DesktopVoiceAudioCapture`
 - **Repository role:** Desktop Voice runtime
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/voice/desktop_voice_widget.dart`, `lib/shared/voice/platforms/desktop/desktop_stt_helper_service.dart`, `lib/shared/voice/platforms/desktop/desktop_stt_orchestrator.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_benchmark_service.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/voice/desktop_voice_widget.dart`, `lib/shared/voice/platforms/desktop/desktop_stt_helper_service.dart`, `lib/shared/voice/platforms/desktop/desktop_stt_orchestrator.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -24984,7 +24968,7 @@ RU:
 - **Зачем:** Горячие клавиши, STT helper, оверлей и захват микрофона — адаптеры одной системы голосового ввода.
 - **Содержимое:** Рантайм-модуль голосового ввода на компьютере (`desktop_voice_audio_capture.dart`).
 - **Роль в репозитории:** Desktop Voice runtime
-- **Доказательства использования:** Импортируется production Dart: `lib/features/voice/desktop_voice_widget.dart`, `lib/shared/voice/platforms/desktop/desktop_stt_helper_service.dart`, `lib/shared/voice/platforms/desktop/desktop_stt_orchestrator.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_benchmark_service.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/features/voice/desktop_voice_widget.dart`, `lib/shared/voice/platforms/desktop/desktop_stt_helper_service.dart`, `lib/shared/voice/platforms/desktop/desktop_stt_orchestrator.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -25037,37 +25021,36 @@ RU:
 
 EN:
 
-- **Human purpose:** Intentionally retained product/compat file — Side-by-side recognizer benchmark service with zero Dart callers. (see `docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`). Not reachable from current production `lib/main.dart` root; kept until a product decision removes or rewires it.
-- **What this is:** Intentionally retained product/compat file — Side-by-side recognizer benchmark service with zero Dart callers. (see `docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`).
-- **Why needed:** Not reachable from current production `lib/main.dart` root; kept until a product decision removes or rewires it.
-- **Contents:** Desktop Voice runtime module (`DesktopVoiceBenchmarkService`).
-- **Key code names:** `DesktopVoiceBenchmarkService`
-- **Repository role:** intentionally retained product watchlist
-- **Evidence of use:** (1) Hygiene audit watchlist (`docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`): Side-by-side recognizer benchmark service with zero Dart callers. (2) Current production reachability from `lib/main.dart`: none (retained intentionally — not proven runtime-required).
-- **Necessity status:** RETAINED_PRODUCT_WATCHLIST
-- **Deletion consequence:** No current production consequence established; product decision required before deletion (replace docs/imports or remove).
-- **Confidence:** WATCHLIST
+- **Human purpose:** Desktop Voice runtime — desktop voice benchmark service. Hotkey, STT helper, overlay, and capture are desktop adapters of one Voice system.
+- **What this is:** Desktop Voice runtime — desktop voice benchmark service.
+- **Why needed:** Hotkey, STT helper, overlay, and capture are desktop adapters of one Voice system.
+- **Contents:** Desktop Voice runtime module (logic in `desktop_voice_benchmark_service`).
+- **Repository role:** Desktop Voice runtime
+- **Evidence of use:** Mentioned by tracked docs/scripts: `docs/reports/FINAL_REPOSITORY_COMPLETENESS_AUDIT_2026-07-23.md`, `docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Removing it breaks a required repository capability.
+- **Confidence:** MEDIUM
 - **Owner / layer:** Desktop Voice runtime
-- **Responsibilities:** Desktop Voice benchmark harness
+- **Responsibilities:** desktop voice benchmark service
 - **When to open:** When behavior tied to `desktop_voice_benchmark_service.dart` breaks or you need to change its documented role.
-- **Can it be deleted?** No current production consequence established; product decision required before deletion (replace docs/imports or remove).
-- **Connected to:** APP_STRUCTURE role: Desktop Voice benchmark harness
+- **Can it be deleted?** Removing it breaks a required repository capability.
+- **Connected to:** APP_STRUCTURE role: desktop voice benchmark service
 
 RU:
 
-- **Зачем файл человеку:** Намеренно сохранённый файл (watchlist) — см. hygiene-аудит. Файл: `desktop_voice_benchmark_service.dart`. Сейчас не участвует в runtime из `lib/main.dart`; сохранён до продуктового решения об удалении или переподключении.
-- **Что это:** Намеренно сохранённый файл (watchlist) — см. hygiene-аудит. Файл: `desktop_voice_benchmark_service.dart`.
-- **Зачем:** Сейчас не участвует в runtime из `lib/main.dart`; сохранён до продуктового решения об удалении или переподключении.
+- **Зачем файл человеку:** Рантайм голосового ввода на компьютере — файл `desktop_voice_benchmark_service.dart`. Горячие клавиши, STT helper, оверлей и захват микрофона — адаптеры одной системы голосового ввода.
+- **Что это:** Рантайм голосового ввода на компьютере — файл `desktop_voice_benchmark_service.dart`.
+- **Зачем:** Горячие клавиши, STT helper, оверлей и захват микрофона — адаптеры одной системы голосового ввода.
 - **Содержимое:** Рантайм-модуль голосового ввода на компьютере (`desktop_voice_benchmark_service.dart`).
-- **Роль в репозитории:** intentionally retained product watchlist
-- **Доказательства использования:** (1) Список наблюдения hygiene-аудита (`docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`): Side-by-side recognizer benchmark service with zero Dart callers. (2) Сейчас не достижим из `lib/main.dart`; сохранён намеренно, не считать runtime-обязательным.
-- **Статус необходимости:** RETAINED_PRODUCT_WATCHLIST
-- **Что будет, если удалить:** Сейчас нет доказанного runtime-эффекта; перед удалением нужно продуктовое решение (обновить docs/imports или убрать файл).
-- **Уверенность:** WATCHLIST
+- **Роль в репозитории:** Desktop Voice runtime
+- **Доказательства использования:** Упоминается в docs/scripts: `docs/reports/FINAL_REPOSITORY_COMPLETENESS_AUDIT_2026-07-23.md`, `docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Удаление ломает нужную возможность репозитория.
+- **Уверенность:** MEDIUM
 - **Владелец / слой:** Desktop Voice runtime
-- **Обязанности:** Не считать обязательным для текущего runtime.
+- **Обязанности:** Реализует активацию, распознавание или оверлей голосового ввода на компьютере.
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_benchmark_service.dart`.
-- **Можно удалить?** Сейчас нет доказанного runtime-эффекта; перед удалением нужно продуктовое решение (обновить docs/imports или убрать файл).
+- **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/shared/voice/platforms/desktop/`, `docs/APP_STRUCTURE.md`
 
 
@@ -26021,36 +26004,36 @@ RU:
 
 EN:
 
-- **Human purpose:** Intentionally retained product/compat file — setDesktopVoiceOverlayActive helper with zero Dart callers. (see `docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`). Not reachable from current production `lib/main.dart` root; kept until a product decision removes or rewires it.
-- **What this is:** Intentionally retained product/compat file — setDesktopVoiceOverlayActive helper with zero Dart callers. (see `docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`).
-- **Why needed:** Not reachable from current production `lib/main.dart` root; kept until a product decision removes or rewires it.
+- **Human purpose:** Desktop Voice runtime — desktop voice window flags. Hotkey, STT helper, overlay, and capture are desktop adapters of one Voice system.
+- **What this is:** Desktop Voice runtime — desktop voice window flags.
+- **Why needed:** Hotkey, STT helper, overlay, and capture are desktop adapters of one Voice system.
 - **Contents:** Desktop Voice runtime module (logic in `desktop_voice_window_flags`).
-- **Repository role:** intentionally retained product watchlist
-- **Evidence of use:** (1) Hygiene audit watchlist (`docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`): setDesktopVoiceOverlayActive helper with zero Dart callers. (2) Current production reachability from `lib/main.dart`: none (retained intentionally — not proven runtime-required).
-- **Necessity status:** RETAINED_PRODUCT_WATCHLIST
-- **Deletion consequence:** No current production consequence established; product decision required before deletion (replace docs/imports or remove).
-- **Confidence:** WATCHLIST
+- **Repository role:** Desktop Voice runtime
+- **Evidence of use:** Mentioned by tracked docs/scripts: `docs/reports/FINAL_REPOSITORY_COMPLETENESS_AUDIT_2026-07-23.md`, `docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Removing it breaks a required repository capability.
+- **Confidence:** MEDIUM
 - **Owner / layer:** Desktop Voice runtime
-- **Responsibilities:** Desktop window always-on-top helper
+- **Responsibilities:** desktop voice window flags
 - **When to open:** When behavior tied to `desktop_voice_window_flags.dart` breaks or you need to change its documented role.
-- **Can it be deleted?** No current production consequence established; product decision required before deletion (replace docs/imports or remove).
-- **Connected to:** APP_STRUCTURE role: Desktop window always-on-top helper
+- **Can it be deleted?** Removing it breaks a required repository capability.
+- **Connected to:** APP_STRUCTURE role: desktop voice window flags
 
 RU:
 
-- **Зачем файл человеку:** Намеренно сохранённый файл (watchlist) — см. hygiene-аудит. Файл: `desktop_voice_window_flags.dart`. Сейчас не участвует в runtime из `lib/main.dart`; сохранён до продуктового решения об удалении или переподключении.
-- **Что это:** Намеренно сохранённый файл (watchlist) — см. hygiene-аудит. Файл: `desktop_voice_window_flags.dart`.
-- **Зачем:** Сейчас не участвует в runtime из `lib/main.dart`; сохранён до продуктового решения об удалении или переподключении.
+- **Зачем файл человеку:** Рантайм голосового ввода на компьютере — файл `desktop_voice_window_flags.dart`. Горячие клавиши, STT helper, оверлей и захват микрофона — адаптеры одной системы голосового ввода.
+- **Что это:** Рантайм голосового ввода на компьютере — файл `desktop_voice_window_flags.dart`.
+- **Зачем:** Горячие клавиши, STT helper, оверлей и захват микрофона — адаптеры одной системы голосового ввода.
 - **Содержимое:** Рантайм-модуль голосового ввода на компьютере (`desktop_voice_window_flags.dart`).
-- **Роль в репозитории:** intentionally retained product watchlist
-- **Доказательства использования:** (1) Список наблюдения hygiene-аудита (`docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`): setDesktopVoiceOverlayActive helper with zero Dart callers. (2) Сейчас не достижим из `lib/main.dart`; сохранён намеренно, не считать runtime-обязательным.
-- **Статус необходимости:** RETAINED_PRODUCT_WATCHLIST
-- **Что будет, если удалить:** Сейчас нет доказанного runtime-эффекта; перед удалением нужно продуктовое решение (обновить docs/imports или убрать файл).
-- **Уверенность:** WATCHLIST
+- **Роль в репозитории:** Desktop Voice runtime
+- **Доказательства использования:** Упоминается в docs/scripts: `docs/reports/FINAL_REPOSITORY_COMPLETENESS_AUDIT_2026-07-23.md`, `docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Удаление ломает нужную возможность репозитория.
+- **Уверенность:** MEDIUM
 - **Владелец / слой:** Desktop Voice runtime
-- **Обязанности:** Не считать обязательным для текущего runtime.
+- **Обязанности:** Реализует активацию, распознавание или оверлей голосового ввода на компьютере.
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_window_flags.dart`.
-- **Можно удалить?** Сейчас нет доказанного runtime-эффекта; перед удалением нужно продуктовое решение (обновить docs/imports или убрать файл).
+- **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/shared/voice/platforms/desktop/`, `docs/APP_STRUCTURE.md`
 
 
@@ -26246,36 +26229,36 @@ RU:
 
 EN:
 
-- **Human purpose:** Intentionally retained product/compat file — Compatibility re-export of DesktopVoiceFailureKind; zero current Dart importers of this path. (see `docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`). Not reachable from current production `lib/main.dart` root; kept until a product decision removes or rewires it.
-- **What this is:** Intentionally retained product/compat file — Compatibility re-export of DesktopVoiceFailureKind; zero current Dart importers of this path. (see `docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`).
-- **Why needed:** Not reachable from current production `lib/main.dart` root; kept until a product decision removes or rewires it.
+- **Human purpose:** Shared Voice system — desktop voice error classification. Phone, desktop, web, and Wear activation share one command interpretation path.
+- **What this is:** Shared Voice system — desktop voice error classification.
+- **Why needed:** Phone, desktop, web, and Wear activation share one command interpretation path.
 - **Contents:** Shared Voice module (logic in `desktop_voice_error_classification`).
-- **Repository role:** compatibility layer
-- **Evidence of use:** (1) Hygiene audit watchlist (`docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`): Compatibility re-export of DesktopVoiceFailureKind; zero current Dart importers of this path. (2) Current production reachability from `lib/main.dart`: none (retained intentionally — not proven runtime-required).
-- **Necessity status:** COMPATIBILITY_LAYER
-- **Deletion consequence:** No current production consequence established; product decision required before deletion (replace docs/imports or remove).
-- **Confidence:** WATCHLIST
+- **Repository role:** shared Voice system
+- **Evidence of use:** Mentioned by tracked docs/scripts: `docs/reports/ARCHITECTURE_GUARD_BASELINE_2026-07-17.md`, `docs/reports/FINAL_REPOSITORY_COMPLETENESS_AUDIT_2026-07-23.md`, `docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Removing it breaks a required repository capability.
+- **Confidence:** MEDIUM
 - **Owner / layer:** shared Voice system
-- **Responsibilities:** Re-export of `DesktopVoiceFailureKind`
+- **Responsibilities:** desktop voice error classification
 - **When to open:** When behavior tied to `desktop_voice_error_classification.dart` breaks or you need to change its documented role.
-- **Can it be deleted?** No current production consequence established; product decision required before deletion (replace docs/imports or remove).
-- **Connected to:** APP_STRUCTURE role: Re-export of `DesktopVoiceFailureKind`
+- **Can it be deleted?** Removing it breaks a required repository capability.
+- **Connected to:** APP_STRUCTURE role: desktop voice error classification
 
 RU:
 
-- **Зачем файл человеку:** Намеренно сохранённый файл (watchlist) — см. hygiene-аудит. Файл: `desktop_voice_error_classification.dart`. Сейчас не участвует в runtime из `lib/main.dart`; сохранён до продуктового решения об удалении или переподключении.
-- **Что это:** Намеренно сохранённый файл (watchlist) — см. hygiene-аудит. Файл: `desktop_voice_error_classification.dart`.
-- **Зачем:** Сейчас не участвует в runtime из `lib/main.dart`; сохранён до продуктового решения об удалении или переподключении.
+- **Зачем файл человеку:** Общая система голосового ввода — файл `desktop_voice_error_classification.dart`. Телефон, компьютер, web и Wear сходятся в один путь разбора команд.
+- **Что это:** Общая система голосового ввода — файл `desktop_voice_error_classification.dart`.
+- **Зачем:** Телефон, компьютер, web и Wear сходятся в один путь разбора команд.
 - **Содержимое:** Модуль общей системы голосового ввода (`desktop_voice_error_classification.dart`).
-- **Роль в репозитории:** compatibility layer
-- **Доказательства использования:** (1) Список наблюдения hygiene-аудита (`docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`): Compatibility re-export of DesktopVoiceFailureKind; zero current Dart importers of this path. (2) Сейчас не достижим из `lib/main.dart`; сохранён намеренно, не считать runtime-обязательным.
-- **Статус необходимости:** COMPATIBILITY_LAYER
-- **Что будет, если удалить:** Сейчас нет доказанного runtime-эффекта; перед удалением нужно продуктовое решение (обновить docs/imports или убрать файл).
-- **Уверенность:** WATCHLIST
+- **Роль в репозитории:** shared Voice system
+- **Доказательства использования:** Упоминается в docs/scripts: `docs/reports/ARCHITECTURE_GUARD_BASELINE_2026-07-17.md`, `docs/reports/FINAL_REPOSITORY_COMPLETENESS_AUDIT_2026-07-23.md`, `docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Удаление ломает нужную возможность репозитория.
+- **Уверенность:** MEDIUM
 - **Владелец / слой:** общий Voice system
-- **Обязанности:** Не считать обязательным для текущего runtime.
+- **Обязанности:** Держит контракт, интерфейс или диагностику общей системы голосового ввода.
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_error_classification.dart`.
-- **Можно удалить?** Сейчас нет доказанного runtime-эффекта; перед удалением нужно продуктовое решение (обновить docs/imports или убрать файл).
+- **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/shared/voice/recognition/`, `docs/APP_STRUCTURE.md`
 
 
@@ -26402,7 +26385,7 @@ EN:
 - **Contents:** Shared Voice module (`DesktopVoiceErrorStage`, `DesktopVoiceFailureKind`, `DesktopVoiceUserError`).
 - **Key code names:** `DesktopVoiceErrorStage`, `DesktopVoiceFailureKind`, `DesktopVoiceUserError`
 - **Repository role:** shared Voice system
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/voice/desktop_voice_widget.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_attempt_log.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_recognizer_io.dart`, `lib/shared/voice/recognition/desktop_voice_error_classification.dart`, `lib/shared/voice/recognition/desktop_voice_recognizer.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/voice/desktop_voice_widget.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_attempt_log.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_recognizer_io.dart`, `lib/shared/voice/recognition/desktop_voice_recognizer.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -26419,7 +26402,7 @@ RU:
 - **Зачем:** Телефон, компьютер, web и Wear сходятся в один путь разбора команд.
 - **Содержимое:** Модуль общей системы голосового ввода (`desktop_voice_user_error.dart`).
 - **Роль в репозитории:** shared Voice system
-- **Доказательства использования:** Импортируется production Dart: `lib/features/voice/desktop_voice_widget.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_attempt_log.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_recognizer_io.dart`, `lib/shared/voice/recognition/desktop_voice_error_classification.dart`, `lib/shared/voice/recognition/desktop_voice_recognizer.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/features/voice/desktop_voice_widget.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_attempt_log.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_recognizer_io.dart`, `lib/shared/voice/recognition/desktop_voice_recognizer.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -26476,7 +26459,7 @@ EN:
 - **Why needed:** Phone, desktop, web, and Wear activation share one command interpretation path.
 - **Contents:** Shared Voice module (logic in `speech_engine_handle`).
 - **Repository role:** shared Voice system
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/voice/desktop_voice_command_panel.dart`, `lib/shared/voice/recognition/speech_engine_controller.dart`, `lib/shared/voice/ui/voice_input_sheet.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/shared/voice/recognition/speech_engine_controller.dart`, `lib/shared/voice/ui/voice_input_sheet.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -26493,7 +26476,7 @@ RU:
 - **Зачем:** Телефон, компьютер, web и Wear сходятся в один путь разбора команд.
 - **Содержимое:** Модуль общей системы голосового ввода (`speech_engine_handle.dart`).
 - **Роль в репозитории:** shared Voice system
-- **Доказательства использования:** Импортируется production Dart: `lib/features/voice/desktop_voice_command_panel.dart`, `lib/shared/voice/recognition/speech_engine_controller.dart`, `lib/shared/voice/ui/voice_input_sheet.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/shared/voice/recognition/speech_engine_controller.dart`, `lib/shared/voice/ui/voice_input_sheet.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -26514,7 +26497,7 @@ EN:
 - **Contents:** Shared Voice module (`SpeechListenLocale`).
 - **Key code names:** `SpeechListenLocale`
 - **Repository role:** shared Voice system
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/planning/smart_plan_sheet.dart`, `lib/features/voice/desktop_voice_command_panel.dart`, `lib/shared/voice/ui/voice_input_sheet.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/planning/smart_plan_sheet.dart`, `lib/shared/voice/ui/voice_input_sheet.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -26531,7 +26514,7 @@ RU:
 - **Зачем:** Телефон, компьютер, web и Wear сходятся в один путь разбора команд.
 - **Содержимое:** Модуль общей системы голосового ввода (`speech_listen_locale.dart`).
 - **Роль в репозитории:** shared Voice system
-- **Доказательства использования:** Импортируется production Dart: `lib/features/planning/smart_plan_sheet.dart`, `lib/features/voice/desktop_voice_command_panel.dart`, `lib/shared/voice/ui/voice_input_sheet.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/features/planning/smart_plan_sheet.dart`, `lib/shared/voice/ui/voice_input_sheet.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -28984,6 +28967,43 @@ RU:
 - **Владелец / слой:** аудит
 - **Обязанности:** Workflow, описанный в header или `docs/DEPLOY.md`.
 - **Когда открывать:** Owner или CI запускает `documentation_parity.py` по инструкции в repo docs.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `scripts/manual/`, `docs/DEPLOY.md`.
+
+
+### `scripts/audit/repository_hygiene.py`
+
+EN:
+
+- **Human purpose:** Developer script `repository_hygiene.py` — run manually for maintenance, smoke test, or deploy helper. Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **What this is:** Developer script `repository_hygiene.py` — run manually for maintenance, smoke test, or deploy helper.
+- **Why needed:** Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **Contents:** PowerShell, Python, or Dart commands for `repository_hygiene.py`.
+- **Repository role:** audit tool
+- **Evidence of use:** Invoked or documented by: `.github/workflows/architecture-guard.yml`, `CHANGELOG.md`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Broken audit/deploy/manual maintenance command.
+- **Confidence:** HIGH
+- **Owner / layer:** audit tooling
+- **Responsibilities:** See script header comments for exact behavior.
+- **When to open:** When workflow documented for `repository_hygiene.py` is needed.
+- **Can it be deleted?** No — part of documented dev workflow unless cleanup report removed it.
+- **Connected to:** `scripts/manual/`, `docs/DEPLOY.md`.
+
+RU:
+
+- **Зачем файл человеку:** Dev/CI скрипт `repository_hygiene.py` — повторяемая команда из repo docs. Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Что это:** Dev/CI скрипт `repository_hygiene.py` — повторяемая команда из repo docs.
+- **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Содержимое:** Команды PowerShell/Python/Dart в `repository_hygiene.py`.
+- **Роль в репозитории:** audit tool
+- **Доказательства использования:** Вызывается или описан в: `.github/workflows/architecture-guard.yml`, `CHANGELOG.md`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Сломается audit/deploy или ручная команда сопровождения.
+- **Уверенность:** HIGH
+- **Владелец / слой:** аудит
+- **Обязанности:** Workflow, описанный в header или `docs/DEPLOY.md`.
+- **Когда открывать:** Owner или CI запускает `repository_hygiene.py` по инструкции в repo docs.
 - **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
 - **Связано с:** `scripts/manual/`, `docs/DEPLOY.md`.
 

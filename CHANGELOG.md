@@ -1,3 +1,10 @@
+## 2026-08-18 — Repository hygiene closure [engineering]
+
+- Removed unreachable compatibility aliases, superseded Notes/desktop-voice UI, and two unreferenced raw voice fixtures; active runtime/design-system owners are unchanged.
+- Resolved the retained-product watchlist: dead entries were deleted, while `LifeCard` and `showConfirmDialog` were proven production-reachable and reclassified as normal code.
+- Added `repository_hygiene.py` to CI so orphan pure re-exports and new unapproved huge tracked binaries fail automatically.
+- Kept the tracked `counter_stt_helper.exe` explicitly because desktop voice still requires that HTTP sidecar; removed developer-machine absolute paths from its build/payload scripts and documented the remaining external model/source inputs.
+
 ## 2026-08-18 — Final architecture/documentation parity [engineering]
 
 - Restored the O1 offline/sync indicator under its correct shell-presentation owner and wired it into `ShellTopStatusBars`; Brain queue/retry semantics remain in `OfflineSyncController`.

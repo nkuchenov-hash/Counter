@@ -41,7 +41,6 @@ SharedPreferences mutation queues + global sync indicator. Retriable network/aut
 | :--- | :--- | :--- |
 | **Record mutation outbox** | `lib/data/local_sync/record_mutation_outbox.dart` | `RecordMutationOutbox` — kinds: `highlander_start`, `stop_patch`, `record_update`, `record_delete`; `coalesceQueue` on enqueue |
 | **Plan / list mutation outbox** | `lib/data/local_sync/plan_mutation_outbox.dart` | `PlanMutationOutbox` — kinds: `plan_create`, `plan_update`, `plan_delete`; migrates legacy `plan_create_outbox_v1` |
-| **Legacy re-export** | `lib/data/local_sync/plan_create_outbox.dart` | `export 'plan_mutation_outbox.dart'` only |
 | **Sync UI state** | `lib/data/local_sync/offline_sync_state.dart` | `OfflineSyncController` — `pendingCount`, `isSyncing`, `authPaused`, `refreshPendingCount`, `resumeAfterAuthIfNeeded`, `isFullySynced` |
 | **Brain accessor** | `lib/data/database_service.dart` | `DatabaseService.instance.offlineSync` |
 | **Connectivity → drain** | `lib/data/local_sync/sync_manager.dart` | `SyncManager.instance.attachIfNeeded` — calls `flushPendingLocalMutations` when online |
@@ -91,7 +90,7 @@ Short routing map for Cursor / AI. Symbols in backticks.
 | | `lib/features/planning/planning_view.dart` | custom `Material` + `kToolbarHeight` row hosting `GlobalAppHeader` (~L2286) |
 | | `lib/features/lists/lists_view.dart` | same pattern (~L1137) |
 | **More overflow menu** | `lib/app/shell/shared/shell_more_menu.dart` | More bottom sheet + shell navigation actions |
-| **Material `AppBar` (opaque nav bar)** | not on main tabs | Main tabs use **no** `Scaffold.appBar`; header is the surface strip above. `AppBar` remains on secondary routes: `category_list_view.dart`, `profile_view.dart`, `tag_settings_*.dart`, `SettingsPage` in `app_shell.dart`, and nested Lists tag-manager push |
+| **Material `AppBar` (opaque nav bar)** | not on main tabs | Main tabs use **no** `Scaffold.appBar`; header is the surface strip above. `AppBar` remains on secondary routes: `category_list_view.dart`, `profile_view.dart`, `tag_settings_*.dart`, nested Lists tag-manager push |
 
 ---
 

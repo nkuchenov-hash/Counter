@@ -6,6 +6,11 @@
 
 
 
+param(
+    [string]$ModelsSourceRoot = $env:COUNTER_STT_MODELS_ROOT,
+    [string]$HelperSource = ''
+)
+
 $ErrorActionPreference = 'Stop'
 
 $repoRoot = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
@@ -20,19 +25,20 @@ $whisperDir = Join-Path $sttDir 'models\whisper-tiny'
 
 
 
-# Production GOLOS backend (parakeet-capable). EN whisper patch optional for debug.
-
-$enHelper = Join-Path $PSScriptRoot 'stt_helper_build\counter_stt_helper.exe'
-
-$backendSrc = if (Test-Path $enHelper) { $enHelper } else {
-
-    'C:\Users\nkuch\Development\Apps\_cleanup_backup_20260615_110428\Release\backend\golos-backend.exe'
-
+# Production GOLOS helper is currently retained in-repo because the old HTTP-sidecar
+# source is not yet reproducibly built by Counter CI. Models stay external build inputs.
+$trackedHelper = Join-Path $PSScriptRoot 'stt_helper_build\counter_stt_helper.exe'
+$backendSrc = if (-not [string]::IsNullOrWhiteSpace($HelperSource)) {
+    [System.IO.Path]::GetFullPath($HelperSource)
+} else {
+    $trackedHelper
 }
-
-$parakeetSrc = 'C:\Users\nkuch\Development\Apps\golos_flutter\Release\models\parakeet'
-
-$whisperSrc = 'C:\Users\nkuch\Development\Apps\golos_flutter\Release\models\whisper-tiny'
+if ([string]::IsNullOrWhiteSpace($ModelsSourceRoot)) {
+    throw 'STT models source is required. Pass -ModelsSourceRoot <path> or set COUNTER_STT_MODELS_ROOT.'
+}
+$modelsRoot = [System.IO.Path]::GetFullPath($ModelsSourceRoot)
+$parakeetSrc = Join-Path $modelsRoot 'parakeet'
+$whisperSrc = Join-Path $modelsRoot 'whisper-tiny'
 
 $winSpeechScript = Join-Path $PSScriptRoot 'scripts\win_speech_wav.ps1'
 
