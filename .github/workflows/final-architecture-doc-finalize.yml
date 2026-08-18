@@ -16,7 +16,26 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: agent/final-architecture-doc-parity-20260818
-          fetch-depth: 0
+          fetch-depth: 1
+      - name: Harden one section replacement
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('scripts/manual/_finalize_architecture_doc_parity.py')
+          text = p.read_text(encoding='utf-8')
+          old = 'nav = replace_once(nav, old_perf, new_perf, label="agent navigation performance section")'
+          new = '''nav = replace_regex(
+              nav,
+              r"## P0 / performance layer \\(active architecture debt\\).*?(?=\\n---\\n)",
+              new_perf,
+              label="agent navigation performance section",
+              flags=re.S,
+          )'''
+          if old not in text:
+              raise SystemExit('performance replacement call not found')
+          p.write_text(text.replace(old, new, 1), encoding='utf-8')
+          PY
       - name: Apply final parity patch
         shell: bash
         run: |
