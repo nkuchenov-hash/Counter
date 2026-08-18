@@ -68,6 +68,7 @@ def main() -> int:
         ):
             if token not in migration:
                 violations.append(f"DURABLE_PATH_MIGRATION_MISSING {token}")
+
         revision_collection = migration.split('name: "path_revisions"', 1)
         if len(revision_collection) != 2:
             violations.append("PATH_REVISION_COLLECTION_BLOCK_MISSING")
@@ -77,6 +78,14 @@ def main() -> int:
                 violations.append("PATH_REVISION_UPDATE_RULE_MUST_BE_CLOSED")
             if "deleteRule: null" not in revision_rules:
                 violations.append("PATH_REVISION_DELETE_RULE_MUST_BE_CLOSED")
+
+        path_collection = migration.split('name: "paths"', 1)
+        if len(path_collection) != 2:
+            violations.append("PATH_COLLECTION_BLOCK_MISSING")
+        else:
+            path_schema = path_collection[1].split("app.save(paths)", 1)[0]
+            if 'name: "title"' in path_schema:
+                violations.append("PATH_REDUNDANT_TITLE_FIELD_FORBIDDEN")
 
     required_manifest_tokens = (
         "`paths`",
