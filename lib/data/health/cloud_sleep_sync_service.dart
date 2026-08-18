@@ -287,6 +287,10 @@ class CloudSleepSyncService {
           _failureMessage(response, 'Sleep synchronization failed'),
         );
       }
+      // The server writes sleep directly into PocketBase records. Realtime is
+      // normally enough, but a missed/suspended SSE event must not leave the
+      // Timeline stale after the user explicitly requested a sync.
+      await DatabaseService.instance.fetchRecords(forceNetwork: true);
       await loadStatus();
       return state.value.phase != CloudSleepSyncPhase.error;
     } catch (error) {

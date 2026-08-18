@@ -16,10 +16,14 @@ class ShellTopStatusBars extends StatefulWidget {
   State<ShellTopStatusBars> createState() => _ShellTopStatusBarsState();
 }
 
-class _ShellTopStatusBarsState extends State<ShellTopStatusBars> {
+class _ShellTopStatusBarsState extends State<ShellTopStatusBars>
+    with WidgetsBindingObserver {
+  static const Duration _foregroundSleepSyncInterval = Duration(minutes: 10);
+
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     unawaited(_startHealthSleepSync());
     unawaited(UnfilledTimeGapService.instance.start());
   }
@@ -31,12 +35,26 @@ class _ShellTopStatusBarsState extends State<ShellTopStatusBars> {
     if (!current.enabled || !service.isSupported) return;
 
     final lastSync = current.lastSyncUtc;
-    final needsDailyCatchUp =
+    final needsForegroundCatchUp =
         lastSync == null ||
-        DateTime.now().toUtc().difference(lastSync) >= const Duration(days: 1);
-    if (needsDailyCatchUp) {
+        DateTime.now().toUtc().difference(lastSync) >=
+            _foregroundSleepSyncInterval;
+    if (needsForegroundCatchUp) {
       await service.sync();
     }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      unawaited(_startHealthSleepSync());
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
   }
 
   @override
