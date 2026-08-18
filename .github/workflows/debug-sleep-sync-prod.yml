@@ -33,7 +33,7 @@ jobs:
           chmod 600 ~/.ssh/lifeos_pocketbase
           ssh-keyscan -p "$SSH_PORT" -H "$SSH_HOST" >> ~/.ssh/known_hosts
 
-      - name: Inspect production sleep records and visibility fields
+      - name: Verify production sleep state
         shell: bash
         run: |
           set -euo pipefail
@@ -46,57 +46,19 @@ jobs:
           test -f "$db"
           DB_PATH="$db" python3 - <<'PY'
           import os, sqlite3
-          from datetime import datetime, timezone, timedelta
-
-          con = sqlite3.connect(f'file:{os.environ["DB_PATH"]}?mode=ro', uri=True)
-          con.row_factory = sqlite3.Row
-          conn = con.execute('''
-            SELECT user_id, status, last_error, last_sync_at, last_session_count,
-                   last_imported_count, last_sleep_count, enabled, last_full_sync_at,
-                   segment_backfill_complete
-            FROM sleep_sync_connections
-            WHERE provider='google_fit' ORDER BY rowid DESC LIMIT 1
-          ''').fetchone()
+          con=sqlite3.connect(f'file:{os.environ["DB_PATH"]}?mode=ro',uri=True)
+          con.row_factory=sqlite3.Row
+          conn=con.execute('''SELECT user_id,status,last_error,last_sync_at,last_session_count,last_imported_count,last_sleep_count,enabled,last_full_sync_at,segment_backfill_complete FROM sleep_sync_connections WHERE provider='google_fit' ORDER BY rowid DESC LIMIT 1''').fetchone()
           if conn is None:
               print('NO_CONNECTION'); raise SystemExit(0)
-          uid = conn['user_id']
-          print('SYNC status=%s enabled=%s last_sync=%s sessions=%s imported=%s sleep=%s full_sync=%s segment_backfill=%s' % (
-              conn['status'], conn['enabled'], conn['last_sync_at'], conn['last_session_count'], conn['last_imported_count'],
-              conn['last_sleep_count'], conn['last_full_sync_at'], conn['segment_backfill_complete']))
+          print('SYNC status=%s enabled=%s last_sync=%s sessions=%s imported=%s sleep=%s full_sync=%s segment_backfill=%s' % (conn['status'],conn['enabled'],conn['last_sync_at'],conn['last_session_count'],conn['last_imported_count'],conn['last_sleep_count'],conn['last_full_sync_at'],conn['segment_backfill_complete']))
           print('SYNC_ERROR=' + str(conn['last_error'] or ''))
-          print('USER_ID=' + str(uid))
-
-          cols = {r['name'] for r in con.execute('PRAGMA table_info(records)').fetchall()}
-          wanted = ['id','record_id','user_id','title','status','type','start_time','end_time','category_id','category_link','parent_id','external_source','external_id','external_kind','sleep_source','sleep_external_id','created','updated']
-          selected = [c for c in wanted if c in cols]
-          print('RECORD_COLUMNS=' + ','.join(selected))
-          qcols = ','.join('"%s"' % c for c in selected)
-          rows = con.execute(f'''SELECT {qcols} FROM records
-            WHERE user_id=? AND (external_source='google_fit' OR sleep_source='google_fit')
-            ORDER BY start_time ASC''',(uid,)).fetchall()
+          cols={r['name'] for r in con.execute('PRAGMA table_info(records)').fetchall()}
+          for c in ['sleep_stages','sleep_source_name','sleep_recovered_from_segments','sleep_segment_points']:
+              print('FIELD_%s=%s' % (c.upper(), 'present' if c in cols else 'missing'))
+          uid=str(conn['user_id'])
+          rows=con.execute("SELECT start_time,end_time,external_source,sleep_source FROM records WHERE user_id=? AND (external_source='google_fit' OR sleep_source='google_fit') ORDER BY end_time ASC",(uid,)).fetchall()
           print('SLEEP_TOTAL=' + str(len(rows)))
-          if rows:
-              print('SLEEP_EARLIEST=' + str(rows[0]['start_time']))
-              print('SLEEP_LATEST=' + str(rows[-1]['end_time']))
-
-          cutoff=(datetime.now(timezone.utc)-timedelta(days=40)).isoformat().replace('+00:00','Z')
-          recent=[r for r in rows if str(r['end_time'] or '') >= cutoff]
-          print('SLEEP_RECENT40=' + str(len(recent)))
-          for r in recent[-25:]:
-              print('ROW ' + ' | '.join('%s=%s' % (c, str(r[c])[:140]) for c in selected))
-
-          # Category rows referenced by sleep records.
-          cat_ids=sorted({str(r['category_link'] or r['category_id'] or '') for r in rows if ('category_link' in r.keys() or 'category_id' in r.keys()) and str((r['category_link'] if 'category_link' in r.keys() else '') or (r['category_id'] if 'category_id' in r.keys() else '') or '').strip()})
-          print('SLEEP_CATEGORY_IDS=' + ','.join(cat_ids[:20]))
-          ccols={r['name'] for r in con.execute('PRAGMA table_info(categories)').fetchall()}
-          for cid in cat_ids[:20]:
-              if 'id' not in ccols: break
-              cr=con.execute('SELECT * FROM categories WHERE id=?',(cid,)).fetchone()
-              if cr:
-                  keys=['id','user_id','category_id','name','normalized_id','is_archived','parent_id']
-                  print('CATEGORY ' + ' | '.join('%s=%s' % (k,str(cr[k])) for k in keys if k in cr.keys()))
-
-          total_owned=con.execute('SELECT COUNT(*) AS n FROM records WHERE user_id=?',(uid,)).fetchone()['n']
-          print('OWNED_RECORDS_TOTAL=' + str(total_owned))
+          if rows: print('SLEEP_LATEST=' + str(rows[-1]['end_time']))
           PY
           REMOTE
