@@ -1,38 +1,9 @@
 migrate((app) => {
   const profiles = app.findCollectionByNameOrId("profiles")
+  const categories = app.findCollectionByNameOrId("categories")
 
-  if (!app.hasTable("paths")) {
-    const paths = new Collection({
-      type: "base",
-      name: "paths",
-      listRule: "user_id = @request.auth.id",
-      viewRule: "user_id = @request.auth.id",
-      createRule: "@request.auth.id != '' && @request.body.user_id = @request.auth.id",
-      updateRule: "user_id = @request.auth.id && @request.body.user_id:changed = false",
-      deleteRule: "user_id = @request.auth.id",
-      fields: [
-        {
-          name: "user_id",
-          type: "relation",
-          required: true,
-          maxSelect: 1,
-          collectionId: profiles.id,
-          cascadeDelete: true,
-        },
-        { name: "path_id", type: "text", required: true, max: 80 },
-        { name: "category_id", type: "number", required: true, onlyInt: true },
-        { name: "title", type: "text", required: true, max: 300 },
-        { name: "active_revision_id", type: "text", required: true, max: 80 },
-        { name: "archived", type: "bool" },
-      ],
-      indexes: [
-        "CREATE UNIQUE INDEX idx_paths_owner_path ON paths (user_id, path_id)",
-        "CREATE UNIQUE INDEX idx_paths_owner_category ON paths (user_id, category_id)",
-      ],
-    })
-    app.save(paths)
-  }
-
+  // Revisions are created first because `paths.active_revision_link` is a real
+  // relation to this collection. Revisions remain append-only from the client.
   if (!app.hasTable("path_revisions")) {
     const revisions = new Collection({
       type: "base",
@@ -80,9 +51,94 @@ migrate((app) => {
     app.save(revisions)
   }
 
-  // Import the shipped V2 plan-backed roots once. The deterministic record id
-  // ordering matches the old read adapter's duplicate-root choice. Legacy rows
-  // are intentionally left untouched so this migration is reversible.
+  const revisionsCollection = app.findCollectionByNameOrId("path_revisions")
+
+  if (!app.hasTable("paths")) {
+    const paths = new Collection({
+      type: "base",
+      name: "paths",
+      listRule: "user_id = @request.auth.id",
+      viewRule: "user_id = @request.auth.id",
+      createRule:
+        "@request.auth.id != '' && " +
+        "@request.body.user_id = @request.auth.id && " +
+        "category_link.user_id = @request.auth.id && " +
+        "active_revision_link.user_id = @request.auth.id && " +
+        "active_revision_link.path_id = path_id",
+      updateRule:
+        "user_id = @request.auth.id && " +
+        "@request.body.user_id:changed = false && " +
+        "@request.body.category_link:changed = false && " +
+        "category_link.user_id = @request.auth.id && " +
+        "active_revision_link.user_id = @request.auth.id && " +
+        "active_revision_link.path_id = path_id",
+      deleteRule: "user_id = @request.auth.id",
+      fields: [
+        {
+          name: "user_id",
+          type: "relation",
+          required: true,
+          maxSelect: 1,
+          collectionId: profiles.id,
+          cascadeDelete: true,
+        },
+        { name: "path_id", type: "text", required: true, max: 80 },
+        {
+          name: "category_link",
+          type: "relation",
+          required: true,
+          maxSelect: 1,
+          collectionId: categories.id,
+          cascadeDelete: false,
+        },
+        { name: "title", type: "text", required: true, max: 300 },
+        {
+          name: "active_revision_link",
+          type: "relation",
+          required: true,
+          maxSelect: 1,
+          collectionId: revisionsCollection.id,
+          cascadeDelete: false,
+        },
+        { name: "archived", type: "bool" },
+      ],
+      indexes: [
+        "CREATE UNIQUE INDEX idx_paths_owner_path ON paths (user_id, path_id)",
+        "CREATE UNIQUE INDEX idx_paths_owner_category ON paths (user_id, category_link)",
+      ],
+    })
+    app.save(paths)
+  }
+
+  const pathsCollection = app.findCollectionByNameOrId("paths")
+
+  function resolveCategoryRecordId(ownerId, rawCategory) {
+    const raw = String(rawCategory || "").trim()
+    if (!raw) return ""
+
+    try {
+      const byId = app.findRecordById(categories, raw)
+      if (byId && byId.getString("user_id") === ownerId) return byId.id
+    } catch (_) {}
+
+    try {
+      const matches = app.findRecordsByFilter(
+        categories,
+        "user_id = {:owner} && category_id = {:category}",
+        "id",
+        1,
+        0,
+        { owner: ownerId, category: raw },
+      )
+      if (matches.length > 0) return matches[0].id
+    } catch (_) {}
+    return ""
+  }
+
+  // Import the shipped V2 plan-backed roots once. Current plan writes store
+  // `plans.category_id` as the categories PocketBase row id; the resolver also
+  // accepts older business category keys. Record-id ordering matches the old
+  // read adapter's deterministic duplicate-root choice. Source rows are kept.
   const legacyRoots = app.findRecordsByFilter(
     "plans",
     "notes_plain = {:marker}",
@@ -94,27 +150,30 @@ migrate((app) => {
   const selected = {}
   for (const root of legacyRoots) {
     const ownerId = root.getString("user_id")
-    const categoryId = root.getInt("category_id")
-    if (!ownerId || categoryId <= 0) continue
-    const key = ownerId + ":" + categoryId
-    if (!selected[key]) selected[key] = root
+    const categoryRecordId = resolveCategoryRecordId(
+      ownerId,
+      root.getString("category_id"),
+    )
+    if (!ownerId || !categoryRecordId) continue
+    const key = ownerId + ":" + categoryRecordId
+    if (!selected[key]) {
+      selected[key] = { root, ownerId, categoryRecordId }
+    }
   }
 
-  const pathsCollection = app.findCollectionByNameOrId("paths")
-  const revisionsCollection = app.findCollectionByNameOrId("path_revisions")
   for (const key in selected) {
-    const root = selected[key]
-    const ownerId = root.getString("user_id")
-    const categoryId = root.getInt("category_id")
+    const item = selected[key]
+    const root = item.root
+    const ownerId = item.ownerId
+    const categoryRecordId = item.categoryRecordId
 
-    let existing = []
-    existing = app.findRecordsByFilter(
+    const existing = app.findRecordsByFilter(
       pathsCollection,
-      "user_id = {:owner} && category_id = {:category}",
+      "user_id = {:owner} && category_link = {:category}",
       "id",
       1,
       0,
-      { owner: ownerId, category: categoryId },
+      { owner: ownerId, category: categoryRecordId },
     )
     if (existing.length > 0) continue
 
@@ -145,17 +204,17 @@ migrate((app) => {
     const path = new Record(pathsCollection)
     path.set("user_id", ownerId)
     path.set("path_id", pathId)
-    path.set("category_id", categoryId)
+    path.set("category_link", categoryRecordId)
     path.set("title", root.getString("title") || "Path")
-    path.set("active_revision_id", revisionId)
+    path.set("active_revision_link", revision.id)
     path.set("archived", false)
     app.save(path)
   }
 }, (app) => {
-  if (app.hasTable("path_revisions")) {
-    app.delete(app.findCollectionByNameOrId("path_revisions"))
-  }
   if (app.hasTable("paths")) {
     app.delete(app.findCollectionByNameOrId("paths"))
+  }
+  if (app.hasTable("path_revisions")) {
+    app.delete(app.findCollectionByNameOrId("path_revisions"))
   }
 })
