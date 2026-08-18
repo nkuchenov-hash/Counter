@@ -115,6 +115,22 @@ class TimelineSleepStage {
   Duration get duration => endUtc.difference(startUtc);
 }
 
+class TimelineSleepMetricPoint {
+  const TimelineSleepMetricPoint({
+    required this.metric,
+    required this.timeUtc,
+    required this.value,
+    required this.unit,
+    required this.source,
+  });
+
+  final String metric;
+  final DateTime timeUtc;
+  final num value;
+  final String unit;
+  final String source;
+}
+
 List<TimelineSleepStage> timelineSleepStages(Map<String, dynamic> data) {
   dynamic raw = data['sleep_stages'];
   if (raw is String && raw.trim().isNotEmpty) {
@@ -146,6 +162,41 @@ List<TimelineSleepStage> timelineSleepStages(Map<String, dynamic> data) {
     );
   }
   out.sort((a, b) => a.startUtc.compareTo(b.startUtc));
+  return out;
+}
+
+List<TimelineSleepMetricPoint> timelineSleepMetrics(Map<String, dynamic> data) {
+  dynamic raw = data['sleep_metrics'];
+  if (raw is String && raw.trim().isNotEmpty) {
+    try {
+      raw = jsonDecode(raw);
+    } catch (_) {
+      return const <TimelineSleepMetricPoint>[];
+    }
+  }
+  if (raw is! List) return const <TimelineSleepMetricPoint>[];
+
+  final out = <TimelineSleepMetricPoint>[];
+  for (final item in raw) {
+    if (item is! Map) continue;
+    final metric = (item['metric'] ?? '').toString().trim();
+    final time = DateTime.tryParse((item['time'] ?? '').toString())?.toUtc();
+    final rawValue = item['value'];
+    final value = rawValue is num
+        ? rawValue
+        : num.tryParse(rawValue?.toString() ?? '');
+    if (metric.isEmpty || time == null || value == null) continue;
+    out.add(
+      TimelineSleepMetricPoint(
+        metric: metric,
+        timeUtc: time,
+        value: value,
+        unit: (item['unit'] ?? '').toString().trim(),
+        source: (item['source'] ?? '').toString().trim(),
+      ),
+    );
+  }
+  out.sort((a, b) => a.timeUtc.compareTo(b.timeUtc));
   return out;
 }
 
@@ -185,6 +236,52 @@ Map<int, Duration> _sleepStageTotals(List<TimelineSleepStage> stages) {
   return totals;
 }
 
+Map<String, List<TimelineSleepMetricPoint>> _sleepMetricGroups(
+  List<TimelineSleepMetricPoint> metrics,
+) {
+  final out = <String, List<TimelineSleepMetricPoint>>{};
+  for (final metric in metrics) {
+    out.putIfAbsent(metric.metric, () => <TimelineSleepMetricPoint>[]).add(metric);
+  }
+  return out;
+}
+
+String _sleepMetricLabel(String locale, String metric) {
+  final ru = locale == 'ru';
+  return switch (metric) {
+    'heart_rate' => ru ? 'Пульс' : 'Heart rate',
+    'blood_oxygen' => 'SpO₂',
+    'respiratory_rate' => ru ? 'Дыхание' : 'Respiratory rate',
+    _ => metric,
+  };
+}
+
+String _sleepMetricValue(String metric, num value) {
+  final digits = metric == 'heart_rate' ? 0 : 1;
+  final formatted = value.toDouble().toStringAsFixed(digits);
+  return switch (metric) {
+    'heart_rate' => '$formatted bpm',
+    'blood_oxygen' => '$formatted%',
+    'respiratory_rate' => '$formatted/min',
+    _ => formatted,
+  };
+}
+
+String _sleepMetricSummary(
+  String locale,
+  String metric,
+  List<TimelineSleepMetricPoint> points,
+) {
+  if (points.isEmpty) return '';
+  final values = points.map((point) => point.value.toDouble()).toList();
+  final min = values.reduce((a, b) => a < b ? a : b);
+  final max = values.reduce((a, b) => a > b ? a : b);
+  final avg = values.reduce((a, b) => a + b) / values.length;
+  final avgLabel = locale == 'ru' ? 'ср.' : 'avg';
+  return '$avgLabel ${_sleepMetricValue(metric, avg)} · '
+      '${_sleepMetricValue(metric, min)}–${_sleepMetricValue(metric, max)}';
+}
+
 String timelineSleepSource(Map<String, dynamic> data) {
   final sourceName = (data['sleep_source_name'] ?? '').toString().trim();
   if (sourceName.isNotEmpty) return sourceName;
@@ -202,9 +299,23 @@ class TimelineSleepSummary extends StatelessWidget {
 
   final Map<String, dynamic> data;
 
+  Widget _chip(BuildContext context, String text) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(text, style: Theme.of(context).textTheme.labelSmall),
+    );
+  }
+
   Widget _buildSummary(BuildContext context, Map<String, dynamic> hydrated) {
     final stages = timelineSleepStages(hydrated);
     final totals = _sleepStageTotals(stages);
+    final metrics = timelineSleepMetrics(hydrated);
+    final metricGroups = _sleepMetricGroups(metrics);
     final locale = currentLocale.value;
     final source = timelineSleepSource(hydrated);
     final recovered = hydrated['sleep_recovered_from_segments'] == true;
@@ -212,21 +323,29 @@ class TimelineSleepSummary extends StatelessWidget {
     final points = pointsRaw is num
         ? pointsRaw.toInt()
         : int.tryParse(pointsRaw?.toString() ?? '') ?? stages.length;
+    final metricPointsRaw = hydrated['sleep_metric_points'];
+    final metricPoints = metricPointsRaw is num
+        ? metricPointsRaw.toInt()
+        : int.tryParse(metricPointsRaw?.toString() ?? '') ?? metrics.length;
     final scheme = Theme.of(context).colorScheme;
 
-    final summary = <Widget>[];
+    final chips = <Widget>[];
     for (final entry in totals.entries) {
-      summary.add(
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          decoration: BoxDecoration(
-            color: scheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(999),
-          ),
-          child: Text(
-            '${_sleepStageLabel(locale, entry.key)} ${_sleepDuration(entry.value, locale)}',
-            style: Theme.of(context).textTheme.labelSmall,
-          ),
+      chips.add(
+        _chip(
+          context,
+          '${_sleepStageLabel(locale, entry.key)} ${_sleepDuration(entry.value, locale)}',
+        ),
+      );
+    }
+    for (final entry in metricGroups.entries) {
+      final values = entry.value.map((point) => point.value.toDouble()).toList();
+      if (values.isEmpty) continue;
+      final avg = values.reduce((a, b) => a + b) / values.length;
+      chips.add(
+        _chip(
+          context,
+          '${_sleepMetricLabel(locale, entry.key)} ${_sleepMetricValue(entry.key, avg)}',
         ),
       );
     }
@@ -234,12 +353,16 @@ class TimelineSleepSummary extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (source.isNotEmpty || points > 0 || recovered) ...[
+        if (source.isNotEmpty || points > 0 || metricPoints > 0 || recovered) ...[
           const SizedBox(height: 6),
           Text(
             [
               if (source.isNotEmpty) source,
-              if (points > 0) locale == 'ru' ? '$points сегм.' : '$points segments',
+              if (points > 0) locale == 'ru' ? '$points стадий' : '$points stages',
+              if (metricPoints > 0)
+                locale == 'ru'
+                    ? '$metricPoints измерений'
+                    : '$metricPoints measurements',
               if (recovered) locale == 'ru' ? 'восстановлено' : 'recovered',
             ].join(' · '),
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
@@ -247,9 +370,9 @@ class TimelineSleepSummary extends StatelessWidget {
                 ),
           ),
         ],
-        if (summary.isNotEmpty) ...[
+        if (chips.isNotEmpty) ...[
           const SizedBox(height: 8),
-          Wrap(spacing: 6, runSpacing: 6, children: summary),
+          Wrap(spacing: 6, runSpacing: 6, children: chips),
         ],
       ],
     );
@@ -274,6 +397,8 @@ Future<void> showTimelineSleepDetails(
   if (!context.mounted) return;
   final stages = timelineSleepStages(hydrated);
   final totals = _sleepStageTotals(stages);
+  final metrics = timelineSleepMetrics(hydrated);
+  final metricGroups = _sleepMetricGroups(metrics);
   final locale = currentLocale.value;
   final source = timelineSleepSource(hydrated);
   final recovered = hydrated['sleep_recovered_from_segments'] == true;
@@ -347,9 +472,43 @@ Future<void> showTimelineSleepDetails(
                     trailing: Text(_sleepDuration(entry.value, locale)),
                   ),
               ],
-              const SizedBox(height: 12),
+              if (metricGroups.isNotEmpty) ...[
+                const SizedBox(height: 20),
+                Text(
+                  locale == 'ru' ? 'Показатели во сне' : 'Sleep vitals',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 8),
+                for (final entry in metricGroups.entries)
+                  ExpansionTile(
+                    tilePadding: EdgeInsets.zero,
+                    childrenPadding: EdgeInsets.zero,
+                    title: Text(_sleepMetricLabel(locale, entry.key)),
+                    subtitle: Text(
+                      _sleepMetricSummary(locale, entry.key, entry.value),
+                    ),
+                    trailing: Text('${entry.value.length}'),
+                    children: [
+                      for (final point in entry.value)
+                        ListTile(
+                          dense: true,
+                          contentPadding: const EdgeInsets.only(left: 12),
+                          title: Text(_sleepMetricValue(entry.key, point.value)),
+                          subtitle: point.source.isEmpty
+                              ? null
+                              : Text(point.source),
+                          trailing: Text(
+                            timelineFormatTimeOfDay(
+                              timelineUtcToDisplay(point.timeUtc),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+              ],
+              const SizedBox(height: 20),
               Text(
-                locale == 'ru' ? 'Хронология' : 'Timeline',
+                locale == 'ru' ? 'Хронология стадий' : 'Stage timeline',
                 style: Theme.of(context).textTheme.titleMedium,
               ),
               const SizedBox(height: 8),
