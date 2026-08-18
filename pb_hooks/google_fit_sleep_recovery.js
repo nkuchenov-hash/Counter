@@ -1,7 +1,6 @@
 // Google Fit sleep segment recovery helper.
 // Supplements sleep sessions with com.google.sleep.segment data so nights that are
 // present in Fit but missing/duplicated as sessions can still be reconstructed.
-// The original stage timeline is also retained for LIFE OS sleep details.
 
 var SLEEP_DATA_TYPE = "com.google.sleep.segment";
 var MIN_EPISODE_MS = 20 * 60 * 1000;
@@ -201,46 +200,11 @@ function mergeSessionsAndEpisodes(sessions, episodes) {
     return cleanSessions(out);
 }
 
-function stagesForSession(session, points) {
-    var out = [];
-    var seen = {};
-    for (var i = 0; i < points.length; i++) {
-        var point = points[i];
-        var startMs = Math.max(session.start.getTime(), point.start.getTime());
-        var endMs = Math.min(session.end.getTime(), point.end.getTime());
-        if (endMs <= startMs) continue;
-        var key = startMs + "|" + endMs + "|" + point.stage + "|" + point.source;
-        if (seen[key]) continue;
-        seen[key] = true;
-        out.push({
-            start: new Date(startMs).toISOString(),
-            end: new Date(endMs).toISOString(),
-            stage: Number(point.stage || 0),
-            source: String(point.source || "")
-        });
-    }
-    out.sort(function(a, b) {
-        var d = new Date(a.start).getTime() - new Date(b.start).getTime();
-        return d || (new Date(a.end).getTime() - new Date(b.end).getTime());
-    });
-    return out;
-}
-
-function attachStages(sessions, points) {
-    for (var i = 0; i < sessions.length; i++) {
-        var stages = stagesForSession(sessions[i], points);
-        sessions[i].stages = stages;
-        sessions[i].segmentPoints = stages.length;
-    }
-    return sessions;
-}
-
 function recover(accessToken, start, end, sessions) {
     var points = fetchPoints(accessToken, start, end);
     var episodes = buildEpisodes(points);
-    var merged = mergeSessionsAndEpisodes(sessions || [], episodes);
     return {
-        sessions: attachStages(merged, points),
+        sessions: mergeSessionsAndEpisodes(sessions || [], episodes),
         segmentPoints: points.length,
         recoveredEpisodes: episodes.length
     };

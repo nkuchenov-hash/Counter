@@ -351,6 +351,34 @@ function __fitFindExisting(app, userId, session) {
             { uid: userId, start: session.start.toISOString(), end: session.end.toISOString() }
         );
     } catch (_) {}
+
+    // Canonical fallback across ingestion adapters.
+    try {
+        var allSleep = app.findRecordsByFilter(
+            "records",
+            "user_id = {:uid} && (title = 'Sleep' || title = 'Сон') && start_time < {:end} && end_time > {:start}",
+            "",
+            20,
+            0,
+            { uid: userId, start: session.start.toISOString(), end: session.end.toISOString() }
+        );
+        var bestAny = null;
+        var bestAnyRatio = 0;
+        var sessionDurationAny = session.end.getTime() - session.start.getTime();
+        for (var a = 0; a < allSleep.length; a++) {
+            var as = __fitDate(allSleep[a].get("start_time"));
+            var ae = __fitDate(allSleep[a].get("end_time"));
+            if (!as || !ae || ae.getTime() <= as.getTime()) continue;
+            var anyOverlap = __fitOverlapMs(session.start, session.end, as, ae);
+            var anyShorter = Math.min(sessionDurationAny, ae.getTime() - as.getTime());
+            var anyRatio = anyShorter > 0 ? anyOverlap / anyShorter : 0;
+            if (anyRatio >= 0.80 && anyRatio > bestAnyRatio) {
+                bestAny = allSleep[a];
+                bestAnyRatio = anyRatio;
+            }
+        }
+        if (bestAny) return bestAny;
+    } catch (_) {}
     return null;
 }
 
@@ -358,7 +386,6 @@ function __fitUpsert(app, userId, profile, category, session) {
     var existing = __fitFindExisting(app, userId, session);
     var record = existing || new Record(app.findCollectionByNameOrId("records"));
     var ru = String(profile.get("primary_language") || "").toLowerCase() === "ru";
-    var stages = Array.isArray(session.stages) ? session.stages : [];
     record.set("user_id", userId);
     record.set("record_id", existing ? record.get("record_id") : __fitUuid());
     record.set("status", "completed");
@@ -375,10 +402,6 @@ function __fitUpsert(app, userId, profile, category, session) {
     record.set("external_updated_at", session.modifiedAt.toISOString());
     record.set("sleep_source", "google_fit");
     record.set("sleep_external_id", session.externalId);
-    record.set("sleep_stages", stages);
-    record.set("sleep_source_name", String(session.application || "google_fit"));
-    record.set("sleep_recovered_from_segments", !!session.recoveredFromSegments);
-    record.set("sleep_segment_points", Number(session.segmentPoints || stages.length || 0));
     app.save(record);
     return existing ? 0 : 1;
 }
