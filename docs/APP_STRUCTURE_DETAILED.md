@@ -3323,6 +3323,19 @@ RU:
 - **Связано с:** `planning_task_edit_sheet.dart`, `activity_detail_sheet.dart`, data API Planning и shell edit host.
 
 
+### `lib/features/shared/edit_sheet/timeline_edit_result_actions.dart`
+
+EN:
+- **Human purpose:** Feature-owned Timeline edit follow-up actions for persisted record delete/retry and stop.
+- **Owner / layer:** Feature UI / shared Timeline edit-sheet layer.
+- **Connected to:** `timeline_record_edit_sheet.dart`, Timeline record APIs, and the shell edit host.
+
+RU:
+- **Зачем файл человеку:** Feature-owned действия Timeline editor для удаления/retry и остановки сохранённой записи.
+- **Владелец / слой:** Feature UI / shared Timeline edit-sheet layer.
+- **Связано с:** `timeline_record_edit_sheet.dart`, data API Timeline и shell edit host.
+
+
 ## Folder: `lib/features/shared/notes_editor/`
 
 EN:

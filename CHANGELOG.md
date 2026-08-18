@@ -1,3 +1,9 @@
+## 2026-08-18 — Timeline edit result ownership [engineering]
+
+- `shell_edit_hosts.dart` no longer performs Timeline record DELETE/STOP mutations directly.
+- Timeline delete/retry and stop follow-up actions now live in `features/shared/edit_sheet/timeline_edit_result_actions.dart`.
+- Shell remains the edit-sheet host/router; persistence behavior is unchanged.
+
 ## 2026-08-18 — Shell desktop voice integration boundary [engineering]
 
 - Split desktop tray/global-hotkey attach/reattach lifecycle from `shell_voice_routing.dart` into `shell_voice_integration.dart`.
