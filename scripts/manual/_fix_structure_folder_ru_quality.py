@@ -8,8 +8,10 @@ anchor = """    merged = dict(data)
     if k in EXACT_FOLDER_RU:
 """
 replacement = """    merged = dict(data)
-    # Synthesized/inherited folder guides may carry EN text in *_ru fields.
-    # Reject those values before adaptation instead of treating them as curated RU.
+    # Synthesized/inherited guides can carry copied EN prose in *_ru fields.
+    # `_folder_ru_auto` already owns path-aware Russian fallbacks; normalize to
+    # those before curated/adapted values are considered.
+    auto_ru = _folder_ru_auto(k, merged)
     for ru_key in (
         "what_ru",
         "why_ru",
@@ -17,10 +19,14 @@ replacement = """    merged = dict(data)
         "affects_ru",
         "when_ru",
         "delete_ru",
+        "related_ru",
     ):
         current = merged.get(ru_key, "")
-        if current and not ru_field_ok(current, min_cyrillic=4):
-            merged[ru_key] = ""
+        current_ok = bool(current) and (
+            ru_key == "related_ru" or ru_field_ok(current, min_cyrillic=4)
+        )
+        if not current_ok and auto_ru.get(ru_key):
+            merged[ru_key] = auto_ru[ru_key]
     if k in EXACT_FOLDER_RU:
 """
 if anchor not in text:
