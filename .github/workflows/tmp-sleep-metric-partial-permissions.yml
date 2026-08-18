@@ -1,0 +1,87 @@
+name: One-time sleep metric partial permissions fix
+
+on:
+  push:
+    paths:
+      - '.github/workflows/tmp-sleep-metric-partial-permissions.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Make sleep vital reads independently optional
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('lib/services/health_connect/health_connect_sleep_service_io.dart')
+          text = path.read_text(encoding='utf-8')
+          start = text.index('  Future<List<HealthSleepMetricPoint>> _readOptionalMetrics({')
+          end = text.index('\n  String? _metricForType', start)
+          replacement = '''  Future<List<HealthSleepMetricPoint>> _readOptionalMetrics({
+    required DateTime startUtc,
+    required DateTime endUtc,
+  }) async {
+    final raw = <HealthDataPoint>[];
+    for (final type in _metricTypes) {
+      try {
+        if (Platform.isAndroid) {
+          final authorized = await _health.hasPermissions(
+                <HealthDataType>[type],
+                permissions: const <HealthDataAccess>[HealthDataAccess.READ],
+              ) ??
+              false;
+          if (!authorized) continue;
+        }
+        raw.addAll(
+          await _health.getHealthDataFromTypes(
+            types: <HealthDataType>[type],
+            startTime: startUtc.toLocal(),
+            endTime: endUtc.toLocal(),
+          ),
+        );
+      } catch (_) {
+        // Each vital is optional and independent from the others.
+      }
+    }
+    final points = _health.removeDuplicates(raw);
+    final out = <HealthSleepMetricPoint>[];
+    for (final point in points) {
+      final metric = _metricForType(point.type);
+      final value = point.value;
+      if (metric == null || value is! NumericHealthValue) continue;
+      out.add(
+        HealthSleepMetricPoint(
+          metric: metric,
+          timeUtc: point.dateFrom.toUtc(),
+          value: value.numericValue,
+          unit: point.unit.name,
+          sourceId: point.sourceId.trim(),
+          sourceName: point.sourceName.trim(),
+        ),
+      );
+    }
+    out.sort((a, b) => a.timeUtc.compareTo(b.timeUtc));
+    return out;
+  }
+'''
+          text = text[:start] + replacement + text[end:]
+          path.write_text(text, encoding='utf-8')
+          PY
+
+      - name: Remove temporary workflow and publish
+        run: |
+          rm .github/workflows/tmp-sleep-metric-partial-permissions.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add lib/services/health_connect/health_connect_sleep_service_io.dart .github/workflows/tmp-sleep-metric-partial-permissions.yml
+          git diff --cached --check
+          git commit -m "Read each sleep vital independently"
+          git pull --rebase origin main
+          git push origin HEAD:main
