@@ -116,7 +116,8 @@ Product sections own section-specific code later; this phase only separates shel
 | `app/shell/shared/shell_shared.dart` | Shell-local date helpers |
 | `app/shell/shared/shell_form_factor.dart` | Phone / tablet / desktop form-factor resolve from width |
 | `app/shell/shared/profile_hydration_status_bar.dart` | Profile hydration failure banner |
-| `app/shell/shared/settings_page.dart` | Language/TZ settings page (shell route) |
+| `app/shell/shared/settings_page.dart` | Compatibility re-export → `features/profile/settings/settings_page.dart`; shell does not own Settings UI |
+| `features/profile/settings/settings_page.dart` | Profile-owned language/timezone Settings page; persists through Profile/DatabaseService APIs |
 | `app/shell/phone/shell_bottom_navigation.dart` | `ShellCompactBottomNav` — equal-column phone-safe bottom tab bar |
 | `app/shell/phone/phone_shell_frame.dart` | Phone content frame + bottom nav chrome |
 | `app/shell/tablet/tablet_shell_frame.dart` | Tablet frame (currently same compact chrome as phone) |

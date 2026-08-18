@@ -1,3 +1,9 @@
+## 2026-08-18 — Settings feature ownership [engineering]
+
+- `features/profile/settings/settings_page.dart` now owns the real Settings UI.
+- `app/shell/shared/settings_page.dart` is a compatibility re-export only.
+- Language/timezone behavior and persistence are unchanged.
+
 ## 2026-08-18 — Timeline edit result ownership [engineering]
 
 - `shell_edit_hosts.dart` no longer performs Timeline record DELETE/STOP mutations directly.
