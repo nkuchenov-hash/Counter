@@ -25,8 +25,16 @@ jobs:
           ref: agent/shell-boundary-cleanup
           fetch-depth: 0
 
-      - name: Apply ownership cleanup
-        run: python scripts/manual/_shell_boundary_cleanup_finalizer.py
+      - name: Apply ownership and structure-generator cleanup
+        shell: bash
+        run: |
+          python scripts/manual/_shell_boundary_cleanup_finalizer.py
+          python scripts/manual/_fix_structure_folder_ru_quality.py
+          git rm scripts/manual/_shell_boundary_cleanup_finalizer.py
+          git rm scripts/manual/_fix_structure_folder_ru_quality.py
+          # The verifier workflow itself is temporary and will be deleted through
+          # the GitHub connector after success. Exclude it from generated tree docs.
+          git rm --cached .github/workflows/shell-boundary-cleanup-v2.yml
 
       - name: Set up Flutter 3.41.6
         uses: subosito/flutter-action@v2
@@ -46,6 +54,7 @@ jobs:
             lib/data/plans/daily_routine_service.dart \
             test/daily_routine_contract_test.dart
           python scripts/manual/generate_app_structure_detailed.py
+          git reset HEAD -- .github/workflows/shell-boundary-cleanup-v2.yml
 
       - name: Assert ownership boundary
         shell: bash
@@ -85,12 +94,13 @@ jobs:
         shell: bash
         run: |
           rm -f lib/core/env/env.dart
-          rm -f scripts/manual/_shell_boundary_cleanup_finalizer.py
           git diff --check
           if git status --porcelain | grep 'lib/core/env/env.dart'; then
             echo 'env.dart leaked into final tree' >&2
             exit 1
           fi
+          test ! -e scripts/manual/_shell_boundary_cleanup_finalizer.py
+          test ! -e scripts/manual/_fix_structure_folder_ru_quality.py
 
       - name: Commit verified cleanup
         shell: bash
