@@ -1,4 +1,4 @@
-import 'package:counter/app/shell/shared/profile_hydration_status_bar.dart';
+import 'package:counter/features/profile/profile_hydration_status_bar.dart';
 import 'package:counter/features/timeline/unfilled_time_gap_banner.dart';
 import 'package:flutter/material.dart';
 
