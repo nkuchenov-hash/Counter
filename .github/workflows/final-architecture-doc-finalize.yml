@@ -17,13 +17,27 @@ jobs:
         with:
           ref: agent/final-architecture-doc-parity-20260818
           fetch-depth: 1
-      - name: Harden one section replacement
+      - name: Harden navigation section replacements
         shell: bash
         run: |
           python - <<'PY'
           from pathlib import Path
           p = Path('scripts/manual/_finalize_architecture_doc_parity.py')
           text = p.read_text(encoding='utf-8')
+
+          drift_start = text.index('nav = replace_regex(\n    nav,\n    r"Verified 2026-06-10')
+          drift_end = text.index('\nnav = nav.replace(', drift_start)
+          drift_new = '''nav = replace_regex(
+              nav,
+              r"## Structure check .*?(?=## Local sync & offline-first)",
+              "## Structure check (vs `docs/APP_STRUCTURE.md`)\\n\\n"
+              "Verified 2026-08-18 after the Shell/Profile/Planning/Voice ownership pass and repo-wide documentation parity audit. "
+              "**Current governing docs have no accepted structure drift.** Historical reports may describe earlier paths, but this navigation map points only at live canonical owners.\\n\\n---\\n\\n",
+              label="agent navigation drift section",
+              flags=re.S,
+          )'''
+          text = text[:drift_start] + drift_new + text[drift_end:]
+
           old = 'nav = replace_once(nav, old_perf, new_perf, label="agent navigation performance section")'
           new = '''nav = replace_regex(
               nav,
