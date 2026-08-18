@@ -54,22 +54,11 @@ mixin ShellEditHosts on ShellCoreLogic {
             if (sheetCtx.mounted) Navigator.of(sheetCtx).pop();
           },
           onDelete: () async {
-            final ok = await DatabaseService.instance.deleteRecordByDocId(
-              record.id,
-            );
-            if (!mounted) return;
-            if (!ok) {
-              showSyncFailedSnackBar(
-                onRetry: () => unawaited(
-                  DatabaseService.instance.deleteRecordByDocId(record.id),
-                ),
-              );
-            }
+            await TimelineEditResultActions.deletePersisted(context, record.id);
             if (sheetCtx.mounted) Navigator.of(sheetCtx).pop();
           },
           onStop: () async {
-            await DatabaseService.instance.stopRecordByDocId(record.id);
-            if (!mounted) return;
+            await TimelineEditResultActions.stopPersisted(record.id);
             if (sheetCtx.mounted) Navigator.of(sheetCtx).pop();
           },
         );
@@ -97,7 +86,6 @@ mixin ShellEditHosts on ShellCoreLogic {
     );
     if (result is! PlanningTask || !mounted) return;
 
-    // Existing plans already autosave optimistically inside PlanningTaskEditSheet.
     if (shellIsNewPlanningDraft(task)) {
       try {
         await PlanningEditResultActions.createNewDraft(context, result);

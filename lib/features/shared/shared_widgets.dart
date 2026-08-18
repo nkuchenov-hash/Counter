@@ -10,6 +10,7 @@ export 'edit_sheet/checklist_helpers.dart';
 export 'edit_sheet/parallel_record_panels.dart';
 export 'edit_sheet/plan_repeat_helpers.dart';
 export 'edit_sheet/planning_edit_result_actions.dart';
+export 'edit_sheet/timeline_edit_result_actions.dart';
 export 'edit_sheet/quill_link_launcher.dart';
 export 'edit_sheet/quill_toolbar_config.dart';
 export 'edit_sheet/record_edit_save_policy.dart';
