@@ -1,3 +1,9 @@
+## 2026-08-18 — Shell / Paths ownership cleanup [engineering]
+
+- Removed the retired embedded Paths V2/V3 UI/bootstrap stack from `shell_shared.dart` and `shell_more_menu.dart`; shell now only navigates to the first-class `PathsPage` destination.
+- Moved marker-era Path → Planner compatibility/governance to `lib/data/paths/compatibility/` and daily-routine Planner bootstrap to `lib/data/plans/` without changing their scheduling/dedupe behavior or running them on Paths open.
+- Updated canonical architecture/structure docs and the existing focused contract test to the new owners.
+
 ## 2026-08-08 — Notes block actions and drawing preview
 
 - Active Notes blocks now expose a right-side delete action backed by the existing safe `deleteBlock()` document mutation; the action rail is reserved so activation does not reflow text.
