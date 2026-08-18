@@ -102,9 +102,12 @@ Product sections own section-specific code later; this phase only separates shel
 
 | Path | Role |
 | :--- | :--- |
-| `app/shell/app_shell.dart` | `LifeOSDashboard`, `ShellDashboardBase`, scaffold orchestration; shell index 6 hosts `PathsPage` |
-| `app/shell/shared/shell_core.dart` | Core shell logic mixin (date header, tasks load, nav) *(part)* |
-| `app/shell/shared/shell_tab_host.dart` | Tab `IndexedStack` builders *(part)* |
+| `app/shell/app_shell.dart` | `LifeOSDashboard` composition root + shared shell state contract; lifecycle and responsive chrome are delegated to focused shell parts |
+| `app/shell/shared/shell_core.dart` | Core shell date/task-loading state, selected-day coordination and sync-failure UI *(part)* |
+| `app/shell/shared/shell_task_actions.dart` | Shell-owned task/record action orchestration: quick start/plan, record stop/delete, Planning→record start, source-plan suggestion UX/preferences *(part)* |
+| `app/shell/shared/shell_tab_host.dart` | Feature destination host builders *(part)* |
+| `app/shell/shared/shell_lifecycle.dart` | Dashboard startup/dispose wiring: tab host initialization, deferred bootstrap, subscriptions, midnight watcher, desktop voice detach *(part)* |
+| `app/shell/shared/shell_chrome.dart` | Responsive shell scaffold/chrome: destination pages, app bar, form-factor frame, FAB, bottom navigation, desktop voice shortcuts *(part)* |
 | `app/shell/shared/shell_edit_hosts.dart` | Timeline/plan edit modal hosts *(part)* |
 | `app/shell/shared/shell_more_menu.dart` | More bottom sheet and shell navigation actions only; Paths opens shell destination 6 *(part)* |
 | `app/shell/shared/shell_voice_routing.dart` | Voice hotkey + submit routing *(part)* |
@@ -615,6 +618,7 @@ Copy `pb_hooks/` beside the PocketBase executable on the server. Client Brain co
 | `shared/sleep_record_policy.dart` | Shared Timeline/Stats policy for sleep detection and wake-to-bed day boundaries |
 | `timeline/timeline_day_page.dart` | `TimelineDayCardList`, lazy record list |
 | `timeline/timeline_record_card.dart` | `TimelineRecordCard` |
+| `timeline/timeline_sleep_details.dart` | Detailed sleep-stage presentation opened from Timeline sleep records |
 | `timeline/timeline_helpers.dart` | Shared timeline time/duration helpers |
 | `lists/lists_filters.dart` | Tag/category filter chips, chip bar, settings sheet |
 | `lists/lists_bulk_actions.dart` | Select-mode header + bulk action bottom bar |

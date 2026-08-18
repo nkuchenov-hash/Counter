@@ -50,11 +50,17 @@ void main() {
   test(
     'ordinary shell startup ensures planner baseline without scheduling project actions',
     () {
+      final lifecycle = File(
+        'lib/app/shell/shared/shell_lifecycle.dart',
+      ).readAsStringSync();
       final shell = File('lib/app/shell/app_shell.dart').readAsStringSync();
       final governance = File(
         'lib/data/paths/compatibility/path_governance_service.dart',
       ).readAsStringSync();
-      expect(shell, contains('await ensurePlannerBaselineV7();'));
+
+      expect(shell, contains('initializeShellLifecycle();'));
+      expect(lifecycle, contains('await ensurePlannerBaselineV7();'));
+      expect(lifecycle, isNot(contains('planCurrentWeekFromPathsV4')));
       expect(governance, contains('Future<void> ensurePlannerBaselineV7()'));
       final start = governance.indexOf(
         'Future<void> ensurePlannerBaselineV7()',
