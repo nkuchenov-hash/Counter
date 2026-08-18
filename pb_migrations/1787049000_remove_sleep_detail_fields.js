@@ -1,5 +1,7 @@
 /// <reference path="../pb_data/types.d.ts" />
 
+// Sleep is intentionally a plain canonical interval: start_time -> end_time.
+// Remove experimental detail fields if they reached an earlier deployment.
 migrate(function(app) {
     var records = app.findCollectionByNameOrId("records");
     var names = [
