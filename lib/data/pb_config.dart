@@ -79,6 +79,8 @@ abstract class PbCollections {
   static const String categories = TableNames.categories;
   static const String plans = TableNames.plans;
   static const String tags = 'tags';
+  static const String paths = 'paths';
+  static const String pathRevisions = 'path_revisions';
   static const String sleepSyncConnections = 'sleep_sync_connections';
   static const String calendarIntegrations = 'calendar_integrations';
 }
