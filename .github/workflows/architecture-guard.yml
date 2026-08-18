@@ -29,6 +29,9 @@ jobs:
       - name: Check governing documentation parity
         run: python scripts/audit/documentation_parity.py
 
+      - name: Check repository hygiene
+        run: python scripts/audit/repository_hygiene.py
+
       - name: Check for whitespace errors
         run: |
           if [ "${{ github.event_name }}" = "pull_request" ]; then
