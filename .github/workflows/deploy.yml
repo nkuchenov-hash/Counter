@@ -1,6 +1,8 @@
-name: Deploy Flutter Web and Igropoisk to GitHub Pages
+name: Deploy LIFE OS Flutter Web to GitHub Pages
 
-# Counter and Igropoisk share one Pages artifact; each validation gate must use its canonical output path.
+# LIFE OS deploy is independent from Igropoisk data collection.
+# Igropoisk has its own gh-pages updater; this workflow preserves its last
+# published directory while replacing only the LIFE OS web build.
 on:
   push:
     branches:
@@ -11,40 +13,19 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: life-os-web-deploy
+  cancel-in-progress: true
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 75
+    timeout-minutes: 45
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      - name: Setup Node for Igropoisk
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-
-      - name: Install Igropoisk collector
-        working-directory: igropoisk
-        run: npm install --no-audit --no-fund
-
-      - name: Build Igropoisk catalog
-        run: node igropoisk/scripts/update-curated.mjs
-
-      - name: Validate Igropoisk catalog
-        run: |
-          node - <<'NODE'
-          const fs = require('fs');
-          const d = JSON.parse(fs.readFileSync('./igropoisk/data/catalog.json','utf8'));
-          if (!Array.isArray(d.games) || d.games.length < 50 || d.games.length > 220) {
-            throw new Error(`Invalid Igropoisk catalog size: ${d.games?.length || 0}`);
-          }
-          const invalid = d.games.filter(g => !g.appid || !g.title || !g.description || !g.releaseDate || !g.capsuleImage || !g.heroImage || !Array.isArray(g.screenshots) || g.screenshots.length < 2);
-          if (invalid.length) throw new Error(`Incomplete games: ${invalid.slice(0,10).map(g=>g.title).join(', ')}`);
-          console.log(`Igropoisk: ${d.games.length} games validated`);
-          NODE
 
       - name: Run strict architecture guard
         run: pwsh -NoProfile -NonInteractive -File ./scripts/audit/architecture_guard.ps1 -Strict
@@ -81,15 +62,16 @@ jobs:
             --dart-define=GIT_COMMIT="$SHORT_SHA" \
             --dart-define=BUILD_TIME="$BUILD_TIME"
 
-      - name: Add Igropoisk to Pages build
+      - name: Preserve published Igropoisk
         run: |
-          rm -rf build/web/igropoisk
-          cp -R igropoisk build/web/igropoisk
-          rm -rf build/web/igropoisk/node_modules
-          if [ -f .github/workflows/igropoisk-update.yml ]; then
-            mkdir -p build/web/.github/workflows
-            cp .github/workflows/igropoisk-update.yml build/web/.github/workflows/igropoisk-update.yml
+          git fetch origin gh-pages:refs/remotes/origin/gh-pages
+          rm -rf /tmp/counter-gh-pages
+          git worktree add --detach /tmp/counter-gh-pages refs/remotes/origin/gh-pages
+          if [ -d /tmp/counter-gh-pages/igropoisk ]; then
+            rm -rf build/web/igropoisk
+            cp -R /tmp/counter-gh-pages/igropoisk build/web/igropoisk
           fi
+          git worktree remove --force /tmp/counter-gh-pages
 
       - name: Deploy to gh-pages
         uses: JamesIves/github-pages-deploy-action@v4
