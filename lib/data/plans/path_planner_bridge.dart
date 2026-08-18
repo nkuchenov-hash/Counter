@@ -1,4 +1,3 @@
-import 'package:counter/data/paths/path_models.dart';
 import 'package:counter/data/paths/path_repository.dart';
 
 class PathPlannerActionCandidate {
