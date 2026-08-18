@@ -37,9 +37,11 @@ def main() -> int:
         if token not in web:
             violations.append(f"WEB_DEPLOY_ORDERING_MISSING {token}")
 
-    # A direct main-push Web trigger would reintroduce the race with migrations.
+    # Any independent Web entry could reintroduce a race with migrations.
     if "branches:\n      - main" in web or "branches: [main]" in web:
         violations.append("WEB_DEPLOY_DIRECT_MAIN_PUSH_FORBIDDEN")
+    if "workflow_dispatch:" in web:
+        violations.append("WEB_DEPLOY_MANUAL_BYPASS_FORBIDDEN")
 
     if violations:
         print("deployment_contract: FAIL", file=sys.stderr)
