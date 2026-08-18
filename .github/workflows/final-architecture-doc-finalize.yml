@@ -27,7 +27,7 @@ jobs:
           old = 'nav = replace_once(nav, old_perf, new_perf, label="agent navigation performance section")'
           new = '''nav = replace_regex(
               nav,
-              r"## P0 / performance layer \\(active architecture debt\\).*?(?=\\n---\\n)",
+              r"## P0 / performance layer .*?(?=\\n---\\n)",
               new_perf,
               label="agent navigation performance section",
               flags=re.S,
