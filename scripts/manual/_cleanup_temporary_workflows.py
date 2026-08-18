@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -11,7 +12,7 @@ for rel in (
 ):
     path = ROOT / rel
     if path.exists():
-        path.unlink()
+        subprocess.run(["git", "rm", "-f", rel], cwd=ROOT, check=True)
 
 hygiene_path = ROOT / "scripts/audit/repository_hygiene.py"
 hygiene = hygiene_path.read_text(encoding="utf-8-sig")
