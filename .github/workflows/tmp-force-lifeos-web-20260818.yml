@@ -1,0 +1,58 @@
+name: One-time force LIFE OS web deploy
+
+on:
+  push:
+    paths:
+      - '.github/workflows/tmp-force-lifeos-web-20260818.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: force-life-os-web-deploy
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.6'
+          channel: stable
+
+      - name: Prepare Flutter
+        run: |
+          mkdir -p lib/core/env
+          printf '%s\n' 'abstract final class Env {' '  static const String placeholder = '\'''\'';' '}' > lib/core/env/env.dart
+          flutter pub get
+
+      - name: Build LIFE OS web
+        run: |
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          BUILD_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          flutter build web --release --base-href="/Counter/" --no-tree-shake-icons --no-wasm-dry-run --pwa-strategy=none \
+            --dart-define=GIT_COMMIT="$SHORT_SHA" \
+            --dart-define=BUILD_TIME="$BUILD_TIME"
+
+      - name: Preserve current Igropoisk
+        run: |
+          git fetch origin gh-pages:refs/remotes/origin/gh-pages
+          rm -rf /tmp/counter-gh-pages
+          git worktree add --detach /tmp/counter-gh-pages refs/remotes/origin/gh-pages
+          if [ -d /tmp/counter-gh-pages/igropoisk ]; then
+            rm -rf build/web/igropoisk
+            cp -R /tmp/counter-gh-pages/igropoisk build/web/igropoisk
+          fi
+          git worktree remove --force /tmp/counter-gh-pages
+
+      - name: Deploy
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: build/web
+          branch: gh-pages
