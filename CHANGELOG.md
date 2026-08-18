@@ -1,3 +1,9 @@
+## 2026-08-18 — Profile hydration UI ownership [engineering]
+
+- Moved `ProfileHydrationStatusBar` implementation into `features/profile/`.
+- Shell/shared and old `features/shared/` paths are compatibility re-exports only.
+- Hydration error/retry behavior is unchanged; Profile now owns its own status UI.
+
 ## 2026-08-18 — Settings feature ownership [engineering]
 
 - `features/profile/settings/settings_page.dart` now owns the real Settings UI.
