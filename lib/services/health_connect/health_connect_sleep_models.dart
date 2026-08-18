@@ -27,6 +27,33 @@ class HealthSleepStage {
 }
 
 @immutable
+class HealthSleepMetricPoint {
+  const HealthSleepMetricPoint({
+    required this.metric,
+    required this.timeUtc,
+    required this.value,
+    required this.unit,
+    required this.sourceId,
+    required this.sourceName,
+  });
+
+  final String metric;
+  final DateTime timeUtc;
+  final num value;
+  final String unit;
+  final String sourceId;
+  final String sourceName;
+
+  Map<String, dynamic> toJson() => <String, dynamic>{
+        'metric': metric,
+        'time': timeUtc.toIso8601String(),
+        'value': value,
+        'unit': unit,
+        'source': sourceId.isNotEmpty ? sourceId : sourceName,
+      };
+}
+
+@immutable
 class HealthSleepSession {
   const HealthSleepSession({
     required this.externalId,
@@ -35,6 +62,7 @@ class HealthSleepSession {
     required this.sourceId,
     required this.sourceName,
     this.stages = const <HealthSleepStage>[],
+    this.metrics = const <HealthSleepMetricPoint>[],
     this.recoveredFromStages = false,
   });
 
@@ -44,6 +72,7 @@ class HealthSleepSession {
   final String sourceId;
   final String sourceName;
   final List<HealthSleepStage> stages;
+  final List<HealthSleepMetricPoint> metrics;
   final bool recoveredFromStages;
 
   Duration get duration => endUtc.difference(startUtc);
