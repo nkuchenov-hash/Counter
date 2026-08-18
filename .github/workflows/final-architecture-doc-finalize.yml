@@ -17,6 +17,7 @@ jobs:
         with:
           ref: agent/final-architecture-doc-parity-20260818
           fetch-depth: 1
+
       - name: Harden navigation section replacements
         shell: bash
         run: |
@@ -48,40 +49,118 @@ jobs:
           )'''
           if old not in text:
               raise SystemExit('performance replacement call not found')
-          p.write_text(text.replace(old, new, 1), encoding='utf-8')
+          text = text.replace(old, new, 1)
+          text = text.replace(
+              '"inside_ru": "Markdown-документы и связанные справочные файлы; конкретный состав описан ниже.",',
+              '"inside_ru": "Текстовые спецификации и связанные справочные материалы; конкретный состав описан ниже.",',
+          )
+          p.write_text(text, encoding='utf-8')
           PY
+
       - name: Apply final parity patch
         shell: bash
         run: |
           python scripts/manual/_finalize_architecture_doc_parity.py
           python scripts/manual/_finalize_architecture_doc_parity_extra.py
           git diff --check
-      - name: Generate detailed structure guide
+
+      - name: Harden detailed file RU fallback
         shell: bash
         run: |
-          python scripts/manual/generate_app_structure_detailed.py
-          cp docs/APP_STRUCTURE_DETAILED.md /tmp/app_structure_detailed_first.md
-          python scripts/manual/generate_app_structure_detailed.py
-          cmp /tmp/app_structure_detailed_first.md docs/APP_STRUCTURE_DETAILED.md
-      - name: Governing documentation parity
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('scripts/manual/generate_app_structure_detailed.py')
+          text = p.read_text(encoding='utf-8')
+          marker = '    return FileGuide(\n        what=g.what,\n'
+          if marker not in text:
+              raise SystemExit('finalize_file_guide return marker not found')
+          helper = r'''    def safe_file_ru(field: str, value: str) -> str:
+              """Reject generic RU wrappers even when they contain enough Cyrillic."""
+              banned = tuple(BANNED_GENERIC_RU_WRAPPERS) + tuple(BANNED_GENERIC_DOC_WRAPPERS) + (
+                  "Файл `",
+                  "Markdown-документ",
+              )
+              if value and not any(token in value for token in banned):
+                  return value
+              pnorm = path.replace("\\", "/")
+              name = Path(pnorm).name
+              parent = PurePosixPath(pnorm).parent.as_posix() or "."
+              ext = Path(pnorm).suffix.lower()
+              if pnorm.startswith(".github/workflows/"):
+                  what = f"Автоматизация GitHub Actions `{name}` для CI и операций репозитория."
+                  why = f"GitHub Actions читает `{name}` и запускает описанные в нём события, проверки и служебные шаги."
+                  contains = f"YAML-триггеры, permissions и шаги CI, относящиеся к workflow `{name}`."
+                  resp = f"Управляет CI-сценарием `{name}` и его границами выполнения."
+              elif ext == ".md":
+                  what = f"Текстовая спецификация `{name}` в разделе `{parent}`."
+                  why = f"Фиксирует правила, состояние или справочную информацию, относящуюся к `{parent}`."
+                  contains = f"Структурированный Markdown-текст по теме `{name}` без runtime-логики приложения."
+                  resp = f"Хранит актуальную документацию по назначению `{name}`."
+              elif ext in {".js", ".mjs", ".cjs"}:
+                  what = f"JavaScript-модуль `{name}` в каталоге `{parent}`."
+                  why = f"Обеспечивает автоматизацию или web-логику, принадлежащую `{parent}`."
+                  contains = f"JavaScript-код и настройки, относящиеся к задаче `{name}`."
+                  resp = f"Реализует JavaScript-часть сценария `{name}` в своём каталоге."
+              elif ext in {".yml", ".yaml"}:
+                  what = f"YAML-конфигурация `{name}` в каталоге `{parent}`."
+                  why = f"Задаёт декларативные настройки процесса или инструмента, которому принадлежит `{parent}`."
+                  contains = f"Параметры YAML, необходимые сценарию `{name}`."
+                  resp = f"Хранит конфигурацию `{name}` для своего владельца."
+              elif ext == ".json":
+                  what = f"JSON-описание `{name}` в каталоге `{parent}`."
+                  why = f"Передаёт структурированные данные или настройки компонентам, связанным с `{parent}`."
+                  contains = f"Структурированные JSON-поля для сценария `{name}`."
+                  resp = f"Хранит машинно-читаемые данные `{name}` для своего владельца."
+              else:
+                  what = f"Элемент `{name}` в каталоге `{parent}` с отдельной ролью в репозитории."
+                  why = f"Поддерживает процесс, сборку, данные или runtime-область, которой принадлежит `{parent}`."
+                  contains = f"Содержимое `{name}`, используемое согласно роли его каталога и доказательствам ниже."
+                  resp = f"Отвечает за назначение `{name}` внутри `{parent}`."
+              return {
+                  "what": what,
+                  "why": why,
+                  "contains": contains,
+                  "responsibilities": resp,
+              }.get(field, value)
+
+'''
+          text = text.replace(marker, helper + marker, 1)
+          text = text.replace('what_ru=pick("what_ru"),', 'what_ru=safe_file_ru("what", pick("what_ru")),', 1)
+          text = text.replace('why_ru=pick("why_ru"),', 'why_ru=safe_file_ru("why", pick("why_ru")),', 1)
+          text = text.replace('contains_ru=pick("contains_ru"),', 'contains_ru=safe_file_ru("contains", pick("contains_ru")),', 1)
+          text = text.replace(
+              'responsibilities_ru=pick("responsibilities_ru"),',
+              'responsibilities_ru=safe_file_ru("responsibilities", pick("responsibilities_ru")),',
+              1,
+          )
+          p.write_text(text, encoding='utf-8')
+          PY
+          git diff --check
+
+      - name: Preliminary governing parity
         run: python scripts/audit/documentation_parity.py
-      - name: Strict architecture guard
+
+      - name: Preliminary strict architecture guard
         shell: pwsh
         run: ./scripts/audit/architecture_guard.ps1 -Strict
+
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.41.6'
           channel: stable
           cache: true
+
       - name: Prepare Flutter analyzer
         shell: bash
         run: |
           mkdir -p lib/core/env
           printf '%s\n' 'abstract final class Env {' "  static const String placeholder = '';" '}' > lib/core/env/env.dart
           flutter pub get
+
       - name: Analyze compile errors
         run: flutter analyze --no-fatal-warnings --no-fatal-infos
-      - name: Final hygiene
+
+      - name: Final tree hygiene and deterministic detailed map
         shell: bash
         run: |
           rm -f lib/core/env/env.dart
@@ -89,9 +168,16 @@ jobs:
           git rm -f scripts/manual/_finalize_architecture_doc_parity_extra.py
           git rm -f .github/workflows/final-architecture-doc-audit.yml
           git rm -f .github/workflows/final-architecture-doc-finalize.yml
+
+          python scripts/manual/generate_app_structure_detailed.py
+          cp docs/APP_STRUCTURE_DETAILED.md /tmp/app_structure_detailed_first.md
+          python scripts/manual/generate_app_structure_detailed.py
+          cmp /tmp/app_structure_detailed_first.md docs/APP_STRUCTURE_DETAILED.md
+
           git diff --check
           python scripts/audit/documentation_parity.py
           pwsh -NoProfile -NonInteractive -File ./scripts/audit/architecture_guard.ps1 -Strict
+
       - name: Commit verified parity
         shell: bash
         run: |
