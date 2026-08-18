@@ -8,9 +8,9 @@ export 'path_models.dart';
 /// Durable first-class repository for Paths.
 ///
 /// Storage is the dedicated PocketBase `paths` + `path_revisions` pair.
-/// `paths.active_revision_id` is the only execution gate. Revisions are
+/// `paths.active_revision_link` is the only execution gate. Revisions are
 /// append-only snapshots: editing an active Path publishes a new revision and
-/// switches the project pointer only after the new snapshot exists.
+/// switches the project relation only after the new snapshot exists.
 class PathRepository {
   PathRepository({DatabaseService? database})
       : _database = database ?? DatabaseService.instance;
@@ -27,10 +27,11 @@ class PathRepository {
 
     for (final row in pathRows) {
       final pathId = (row['path_id'] ?? '').toString().trim();
-      final revisionId = (row['active_revision_id'] ?? '').toString().trim();
+      final revisionRecordId =
+          (row['active_revision_link'] ?? '').toString().trim();
       final categoryPocketBaseId = (row['category_link'] ?? '').toString().trim();
       if (pathId.isEmpty ||
-          revisionId.isEmpty ||
+          revisionRecordId.isEmpty ||
           categoryPocketBaseId.isEmpty) {
         continue;
       }
@@ -41,7 +42,7 @@ class PathRepository {
 
       final revision = await _database.fetchOwnedPathRevisionRow(
         pathId: pathId,
-        revisionId: revisionId,
+        revisionRecordId: revisionRecordId,
       );
       if (revision == null) continue;
 
@@ -68,15 +69,16 @@ class PathRepository {
 
     final categoryPocketBaseId =
         (pathRow['category_link'] ?? '').toString().trim();
-    final revisionId = (pathRow['active_revision_id'] ?? '').toString().trim();
-    if (categoryPocketBaseId.isEmpty || revisionId.isEmpty) return null;
+    final revisionRecordId =
+        (pathRow['active_revision_link'] ?? '').toString().trim();
+    if (categoryPocketBaseId.isEmpty || revisionRecordId.isEmpty) return null;
     final category =
         _database.getCategoryRuleByBackendRowId(categoryPocketBaseId);
     if (category == null || category.isArchived) return null;
 
     final revision = await _database.fetchOwnedPathRevisionRow(
       pathId: pathId,
-      revisionId: revisionId,
+      revisionRecordId: revisionRecordId,
     );
     if (revision == null) return null;
     return _snapshotFromRows(
@@ -110,11 +112,13 @@ class PathRepository {
         stages: stages.map((stage) => stage.toJson()).toList(growable: false),
         source: source,
       );
+      final revisionRecordId = (revision['id'] ?? '').toString().trim();
+      if (revisionRecordId.isEmpty) return null;
       final path = await _database.createOwnedPath(
         pathId: pathId,
         categoryPocketBaseId: categoryPocketBaseId,
         title: category.name,
-        activeRevisionId: revisionId,
+        activeRevisionRecordId: revisionRecordId,
       );
       return _snapshotFromRows(
         pathRow: path,
@@ -183,13 +187,13 @@ class PathRepository {
         source: 'manual',
         parentRevisionId: current.revisionId,
       );
-      await _database.setOwnedPathActiveRevision(
-        pathRecordId: current.pathRecordId,
-        revisionId: revisionId,
-        title: current.category.name,
-      );
       final revisionRecordId = (revision['id'] ?? '').toString().trim();
       if (revisionRecordId.isEmpty) return null;
+      await _database.setOwnedPathActiveRevision(
+        pathRecordId: current.pathRecordId,
+        revisionRecordId: revisionRecordId,
+        title: current.category.name,
+      );
       return ProjectPathSnapshot(
         pathRecordId: current.pathRecordId,
         pathId: current.pathId,
@@ -207,7 +211,7 @@ class PathRepository {
         try {
           await _database.deleteOwnedPathRevision(revisionRecordId);
         } catch (_) {
-          // Safe to leave: only the pointer in `paths` grants active status.
+          // Safe to leave: only the relation in `paths` grants active status.
         }
       }
       return null;
