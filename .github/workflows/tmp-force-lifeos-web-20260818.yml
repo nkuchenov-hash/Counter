@@ -1,4 +1,4 @@
-# trigger: 2026-08-18T10:09Z
+# trigger: 2026-08-18T10:14Z
 name: One-time force LIFE OS web deploy
 
 on:
@@ -27,35 +27,62 @@ jobs:
           flutter-version: '3.41.6'
           channel: stable
 
-      - name: Prepare Flutter
+      - name: Build and directly publish LIFE OS
+        shell: bash
         run: |
+          set +e
+          SOURCE_SHA=$(git rev-parse HEAD)
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          BUILD_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          STATUS=0
+          STAGE=prepare
+
           mkdir -p lib/core/env
           printf '%s\n' 'abstract final class Env {' '  static const String placeholder = '\'''\'';' '}' > lib/core/env/env.dart
-          flutter pub get
+          flutter pub get > /tmp/lifeos-web.log 2>&1
+          STATUS=$?
 
-      - name: Build LIFE OS web
-        run: |
-          SHORT_SHA=$(git rev-parse --short HEAD)
-          FULL_SHA=$(git rev-parse HEAD)
-          BUILD_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-          flutter build web --release --base-href="/Counter/" --no-tree-shake-icons --no-wasm-dry-run --pwa-strategy=none \
-            --dart-define=GIT_COMMIT="$SHORT_SHA" \
-            --dart-define=BUILD_TIME="$BUILD_TIME"
-          printf '%s\n%s\n' "$FULL_SHA" "$BUILD_TIME" > build/web/lifeos-build.txt
-
-      - name: Preserve current Igropoisk
-        run: |
-          git fetch origin gh-pages:refs/remotes/origin/gh-pages
-          rm -rf /tmp/counter-gh-pages
-          git worktree add --detach /tmp/counter-gh-pages refs/remotes/origin/gh-pages
-          if [ -d /tmp/counter-gh-pages/igropoisk ]; then
-            rm -rf build/web/igropoisk
-            cp -R /tmp/counter-gh-pages/igropoisk build/web/igropoisk
+          if [ "$STATUS" -eq 0 ]; then
+            STAGE=build
+            flutter build web --release --base-href="/Counter/" --no-tree-shake-icons --no-wasm-dry-run --pwa-strategy=none \
+              --dart-define=GIT_COMMIT="$SHORT_SHA" \
+              --dart-define=BUILD_TIME="$BUILD_TIME" >> /tmp/lifeos-web.log 2>&1
+            STATUS=$?
           fi
-          git worktree remove --force /tmp/counter-gh-pages
 
-      - name: Deploy
-        uses: JamesIves/github-pages-deploy-action@v4
-        with:
-          folder: build/web
-          branch: gh-pages
+          git fetch origin gh-pages
+          rm -rf /tmp/counter-gh-pages
+          git worktree add --detach /tmp/counter-gh-pages origin/gh-pages
+
+          if [ "$STATUS" -eq 0 ]; then
+            STAGE=publish
+            if [ -d /tmp/counter-gh-pages/igropoisk ]; then
+              rm -rf build/web/igropoisk
+              cp -R /tmp/counter-gh-pages/igropoisk build/web/igropoisk
+            fi
+            printf '%s\n%s\n' "$SOURCE_SHA" "$BUILD_TIME" > build/web/lifeos-build.txt
+            rsync -a --delete --exclude='.git' build/web/ /tmp/counter-gh-pages/ >> /tmp/lifeos-web.log 2>&1
+            STATUS=$?
+          fi
+
+          cd /tmp/counter-gh-pages
+          {
+            echo "source_sha=$SOURCE_SHA"
+            echo "build_time=$BUILD_TIME"
+            echo "stage=$STAGE"
+            echo "status=$STATUS"
+            echo "--- tail ---"
+            tail -n 80 /tmp/lifeos-web.log 2>/dev/null || true
+          } > lifeos-deploy-diagnostic.txt
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Deploy LIFE OS web from $SHORT_SHA" || true
+          git push origin HEAD:gh-pages
+          PUSH_STATUS=$?
+
+          if [ "$STATUS" -ne 0 ]; then
+            exit "$STATUS"
+          fi
+          exit "$PUSH_STATUS"
