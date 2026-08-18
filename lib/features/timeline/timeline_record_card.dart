@@ -4,7 +4,6 @@ import 'package:counter/core/widgets/chip_component.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/timeline/timeline_helpers.dart';
-import 'package:counter/features/timeline/timeline_sleep_details.dart';
 import 'package:counter/l10n/category_db_display.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
@@ -112,7 +111,6 @@ class TimelineRecordCardState extends State<TimelineRecordCard> {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final isRunning = widget.vm.isCanonicalRunning;
-    final isSleep = timelineRecordIsSleep(widget.vm.rawData);
     final subtitle = _subtitleForBuild();
     final metaIcons = timelineRowMetaIconsFromVm(context, widget.vm);
 
@@ -184,7 +182,6 @@ class TimelineRecordCardState extends State<TimelineRecordCard> {
                     ),
                   ),
                 ],
-                if (isSleep) TimelineSleepSummary(data: widget.vm.rawData),
               ],
             ),
           ),
@@ -229,11 +226,7 @@ class TimelineRecordCardState extends State<TimelineRecordCard> {
       ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: isSleep
-            ? () => unawaited(
-                  showTimelineSleepDetails(context, widget.vm.rawData),
-                )
-            : widget.onEdit,
+        onTap: widget.onEdit,
         borderRadius: BorderRadius.circular(cardRadius),
         splashFactory: NoSplash.splashFactory,
         highlightColor: Colors.transparent,
