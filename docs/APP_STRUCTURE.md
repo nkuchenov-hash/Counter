@@ -118,8 +118,6 @@ Product sections own section-specific code later; this phase only separates shel
 | `app/shell/shared/shell_shared.dart` | Shell-local date helpers |
 | `app/shell/shared/shell_form_factor.dart` | Phone / tablet / desktop form-factor resolve from width |
 | `features/profile/profile_hydration_status_bar.dart` | Profile-owned hydration error/retry status UI |
-| `app/shell/shared/settings_page.dart` | Compatibility re-export → `features/profile/settings/settings_page.dart`; shell does not own Settings UI |
-| `features/profile/settings/settings_page.dart` | Profile-owned language/timezone Settings page; persists through Profile/DatabaseService APIs |
 | `app/shell/phone/shell_bottom_navigation.dart` | `ShellCompactBottomNav` — equal-column phone-safe bottom tab bar |
 | `app/shell/phone/phone_shell_frame.dart` | Phone content frame + bottom nav chrome |
 | `app/shell/tablet/tablet_shell_frame.dart` | Tablet frame (currently same compact chrome as phone) |
@@ -215,7 +213,6 @@ Compatibility re-exports (remove when callers migrate): root `lib/app_shell.dart
 | `cache/render_snapshot.dart` | Render snapshot helpers for day strips |
 | `local_sync/record_mutation_outbox.dart` | Offline queue: record start/stop/update/delete |
 | `local_sync/plan_mutation_outbox.dart` | Offline queue: plan/list create/update/delete |
-| `local_sync/plan_create_outbox.dart` | Re-export of `plan_mutation_outbox.dart` |
 | `local_sync/offline_sync_state.dart` | Pending count, syncing, auth-paused UI state |
 | `local_sync/sync_manager.dart` | Connectivity / resume → flush trigger |
 | `web_history.dart` | Web history API conditional export |
@@ -295,11 +292,6 @@ Desktop window/tray infrastructure only. Voice/STT production modules live under
 | `plan_time_task_card/plan_card_tags.dart` | Time View tag row/stack/pill widgets |
 | `plan_time_task_card/plan_card_progress.dart` | Progress slot, invariant body, rail shell |
 | `plan_time_task_card/plan_card_layouts.dart` | Time View CardPlan density layout variants |
-| `plan_card/plan_card_metrics.dart` | Re-export stub → `plan_time_task_card/plan_card_metrics.dart` |
-| `plan_card/plan_time_card_density.dart` | Re-export stub → `plan_time_task_card/plan_card_density.dart` |
-| `plan_card/plan_card_geometry.dart` | Re-export stub → `plan_time_task_card/plan_card_geometry.dart` |
-| `plan_card/plan_card_controls.dart` | Re-export stub → `plan_time_task_card/plan_card_controls.dart` |
-| `plan_card/plan_card_sections.dart` | Re-export stub → `plan_time_task_card/plan_card_sections.dart` |
 | `plan_card.dart` | `PlanCard` wrapper |
 | `life_card.dart` | Card foundation for Component Lab |
 | `day_content_strip.dart` | Day content pager strip |
@@ -308,15 +300,6 @@ Desktop window/tray infrastructure only. Voice/STT production modules live under
 | `mouse_drag_scroll_behavior.dart` | Desktop/web drag scroll |
 | `tag_display_mode_scope.dart` | Tag display mode inherited widget |
 | `radial_menu_viewport.dart` | `RadialMenuViewport` — clamp radial/semi-circle card menus inside the visible viewport |
-| `notes/notes.dart` | Barrel re-export of canonical Notes editor widgets (pure UI; no Brain/features imports) |
-| `notes/notes_context_row.dart` | `AppNotesContextRow` — category/tag chips + trailing save status under title |
-| `notes/notes_editor_surface.dart` | `AppNotesEditorSurface` — Apple-Notes-style title + Quill body + pinned toolbar |
-| `notes/notes_markdown.dart` | Quill Delta JSON ↔ Markdown helpers for copy/paste (no third-party markdown package) |
-| `notes/notes_save_status.dart` | `AppNotesSaveStatus` — idle/editing/saving/saved/offline/error chip |
-| `notes/notes_toolbar.dart` | `AppNotesToolbar` — fixed-height custom Quill format toolbar (web-safe; no QuillSimpleToolbar) |
-| `notes/note_preview_card.dart` | `AppNotePreviewCard` — presentational library preview card (title/preview/checklist meta) |
-
-Every production Notes widget under `core/widgets/notes/` must be listed by exact filename above (no wildcard substitutes).
 
 ### 3.35 `lib/shared/time/` — multi-consumer time (Phase 2A)
 
@@ -395,7 +378,6 @@ Must not import `features/`, `data/voice/`, `database_service.dart`, or `app/she
 | `desktop_voice_recognizer_factory.dart` | Platform-conditional recognizer factory |
 | `desktop_voice_recognizer_stub.dart` | Non-IO recognizer stub |
 | `desktop_voice_user_error.dart` | Friendly Voice error taxonomy / mapping |
-| `desktop_voice_error_classification.dart` | Re-export of `DesktopVoiceFailureKind` |
 
 #### `routing/` — acceptance bridge only (not tab state, not command execution)
 
@@ -437,7 +419,6 @@ Desktop-specific hotkey, STT helper, overlay, capture, settings storage, benchma
 | `desktop_voice_attempt_log.dart` | Persisted Voice attempt history for settings UI |
 | `desktop_voice_audio_capture.dart` | Mic capture for desktop Voice |
 | `desktop_voice_audio_presentation.dart` | Perceptual level meters + calibrated STT gain |
-| `desktop_voice_benchmark_service.dart` | Desktop Voice benchmark harness |
 | `desktop_voice_capture_endpoint.dart` | Windows WASAPI / MMDevice capture endpoint selection |
 | `desktop_voice_confirmation.dart` | Desktop start/stop confirmation feedback |
 | `desktop_voice_confirmation_timer.dart` | Three-second visual commit countdown before writeRecord |
@@ -463,7 +444,6 @@ Desktop-specific hotkey, STT helper, overlay, capture, settings storage, benchma
 | `desktop_voice_smoke_bridge.dart` | Smoke-test bridge for CI |
 | `desktop_voice_stt_processing.dart` | STT-only PCM processing variants for quiet WAVs |
 | `desktop_voice_wav_stt_benchmark.dart` | Real WAV → local STT helper benchmark |
-| `desktop_voice_window_flags.dart` | Desktop window always-on-top helper |
 | `desktop_voice_windows_audio_diagnostics.dart` | Windows Core Audio capture-endpoint diagnostics |
 | `desktop_win_speech_service.dart` | Windows System.Speech fallback adapter |
 | `pcm_audio_utils.dart` | PCM/WAV byte helpers (desktop consumers only) |
@@ -503,15 +483,15 @@ Parser, live category/domain resolution, normalization, command execution (`writ
 | `stats/` | `stats_view.dart`, `day_stats_dashboard.dart`, `stats_detail_tree.dart`, `plan_vs_fact_tab.dart` | Productivity stats (embedded in Timeline): switchable day dashboards, preserved detailed tree, plan vs fact |
 | `planning/` | `planning_view.dart` (barrel), **`planning_page.dart`**, **`planning_quick_add_tags_controller.dart`**, **`planning_page_shell.dart`**, **`planning_sort_mode.dart`**, `plan_time_view_layout.dart`, `plan_time_gesture_contract.dart`, `planning_day_start_prefs.dart`, `bulk_planning_edit_sheet.dart`, `recurrence_scope_dialog.dart`, `smart_plan_sheet.dart`, **`time_view/`**, **`settings/`**, **`widgets/`** | Plans tab: date pager shell + day page body, quick-add tag controller, Time View modules, settings, bulk edit |
 | `paths/` | `paths_page.dart` | First-class Paths destination: project list/detail, goal/stage/action progress, generic structure audit; opening the page is read-only |
-| `lists/` | `lists_view.dart`, `lists_filters.dart`, `lists_bulk_actions.dart`, `lists_inline_add.dart`, `lists_empty_state.dart`, `lists_card.dart`, `lists_export.dart`, `category_filter_tree_field.dart` | Lists/backlog coordinator + filter/bulk/inline/empty modules + card + export + Lists-only “All categories” filter field |
-| `notes/` | `drawing_canvas_page.dart`, `notes_audio_controller.dart`, `notes_image_tools.dart`, `notes_editor_document_controller.dart`, `notes_glm_surface.dart`, `notes_library_page.dart`, `notes_visual_tokens.dart`, `notes_figma_tokens.dart`, `note_editor_page.dart`, **`widgets/`** (`notes_library_body.dart`, `notes_library_production_shell.dart`, `note_card.dart`, `note_editor_block_widgets.dart`, `notes_editor_tools.dart`, `notes_special_block_widgets.dart`, `notes_canonical_components.dart`, `notes_component_text_blocks.dart`, `notes_component_structural_blocks.dart`, `notes_component_media_blocks.dart`, `notes_component_tools.dart`) | Notes library/editor/drawing feature UI; exact roles in §3.4 Notes below |
+| `lists/` | `lists_view.dart`, `lists_filters.dart`, `lists_bulk_actions.dart`, `lists_empty_state.dart`, `lists_card.dart`, `lists_export.dart`, `category_filter_tree_field.dart` | Lists/backlog coordinator + filter/bulk/empty modules + card + export + Lists-only “All categories” filter field |
+| `notes/` | `drawing_canvas_page.dart`, `notes_audio_controller.dart`, `notes_image_tools.dart`, `notes_editor_document_controller.dart`, `notes_glm_surface.dart`, `notes_visual_tokens.dart`, `notes_figma_tokens.dart`, `note_editor_page.dart`, **`widgets/`** (`notes_library_body.dart`, `notes_library_production_shell.dart`, `note_card.dart`, `note_editor_block_widgets.dart`, `notes_editor_tools.dart`, `notes_special_block_widgets.dart`, `notes_canonical_components.dart`, `notes_component_text_blocks.dart`, `notes_component_structural_blocks.dart`, `notes_component_media_blocks.dart`, `notes_component_tools.dart`) | Notes library/editor/drawing feature UI; exact roles in §3.4 Notes below |
 | `calendar/` | `calendar_view.dart` (orchestrator), `calendar_chrome_header.dart`, `calendar_month_grid.dart`, `calendar_week_grid.dart`, `calendar_day_panel.dart`, `calendar_day_events.dart`, `calendar_helpers.dart` | Calendar tab: month/week grids, chrome header, focused-day task panel |
 | `profile/` | `profile_view.dart`, **`settings/`** (account, notification, security sections), `tag_manager_page.dart`, `tag_settings_hub.dart`, `tag_settings_view.dart`, `tag_default_duration_settings_view.dart` | Profile & tag settings |
 | `settings/` | `timezone_settings.dart`, **`voice/`** (`desktop_voice_settings_section.dart`, `desktop_voice_settings_desktop.dart`, `desktop_voice_attempt_dialog.dart`), **`categories/`** (`category_list_view.dart`, `category_row_widget.dart`, `category_editor_sheet.dart`, `category_appearance_sheet.dart`, `category_tag_input_field.dart`, `category_helpers.dart`, `create_category_dialog.dart`, `category_recursive_browse_panel.dart`), **`notifications/`** (`unfilled_time_notifications_section.dart`), **`health/`** (`health_connect_settings_section.dart`) | Settings-owned timezone helpers + Voice settings + Categories manager + unfilled-time notification settings + health/sleep integration settings |
-| `voice/` | `desktop_voice_widget.dart`, `desktop_voice_capsule.dart`, `desktop_voice_correction_sheet.dart`, `desktop_voice_command_panel.dart` | Desktop Flutter Voice overlay UI (GOLOS STT capsule / correction / panel) |
+| `voice/` | `desktop_voice_widget.dart`, `desktop_voice_capsule.dart`, `desktop_voice_correction_sheet.dart` | Desktop Flutter Voice overlay UI (GOLOS STT capsule / correction / panel) |
 | `dev/` | `component_lab_view.dart`, `component_lab_cards_demo.dart`, `component_lab_notes_demo.dart` | Admin-only Component Lab including canonical Notes block/media/tool states |
 | `wear/` | `wear_timer_screen.dart`, `wear_main_wrapper.dart`, `wear_platform.dart`, `wear_runtime.dart` | Wear OS companion |
-| `shared/` | `shared_widgets.dart` (barrel), `activity_detail_sheet.dart`, `planning_task_edit_sheet.dart`, `timeline_record_edit_sheet.dart`, `empty_state_placeholder.dart`, **`edit_sheet/`** (autosave gate, time helpers/picker, checklist, repeat RRULE helpers, quill toolbar, parallel record panels, **`category_edit_draft.dart`**, **`planning_edit_result_actions.dart`**, **`timeline_edit_result_actions.dart`**), **`notes_editor/`** (`notes_editor_launcher.dart`, `notes_editor_sheet.dart`) | Activity edit sheets, Notes launch/sheet routing, Omni-Picker entry, and plan/record category draft helpers |
+| `shared/` | `shared_widgets.dart` (barrel), `activity_detail_sheet.dart`, `planning_task_edit_sheet.dart`, `timeline_record_edit_sheet.dart`, `empty_state_placeholder.dart`, **`edit_sheet/`** (autosave gate, time helpers/picker, checklist, repeat RRULE helpers, quill toolbar, parallel record panels, **`category_edit_draft.dart`**, **`planning_edit_result_actions.dart`**, **`timeline_edit_result_actions.dart`**) | Activity edit sheets, Omni-Picker entry, and plan/record category draft helpers |
 
 **Key symbols:** `ActivityDetailSheet` router → `features/shared/activity_detail_sheet.dart`; `PlanningTaskEditSheet` / `TimelineRecordSheetContent` in dedicated files; `showAppDateTimePicker` / `EditSheetAutosaveGate` in `features/shared/edit_sheet/`; re-exported via `shared_widgets.dart`.
 
@@ -524,7 +504,6 @@ Parser, live category/domain resolution, normalization, command execution (`writ
 | `notes/notes_image_tools.dart` | Shared file/gallery/camera picker, crop surface, caption dialog, rich-image clipboard, and save-to-device helpers |
 | `notes/notes_editor_document_controller.dart` | Stable-ID local document, selection, conversion, reorder, table/media mutation, and compatibility-preservation controller |
 | `notes/notes_glm_surface.dart` | GLM background + centered library/editor column frames |
-| `notes/notes_library_page.dart` | Standalone Notes library page (search, chips, grid/list, sort) |
 | `notes/notes_visual_tokens.dart` | GLM Notes spacing/typography/glass token helpers |
 | `notes/notes_figma_tokens.dart` | Executable Figma Notes colors, typography, editor geometry, glass, and exact 350×48 toolbar tokens |
 | `notes/note_editor_page.dart` | Full-screen block editor (primary Notes editing experience) |
@@ -539,10 +518,8 @@ Parser, live category/domain resolution, normalization, command execution (`writ
 | `notes/widgets/notes_component_structural_blocks.dart` | Canonical quote, divider, table, link/reference structural blocks, and parameterized compact/extended table picker *(part)* |
 | `notes/widgets/notes_component_media_blocks.dart` | Canonical image/drawing frame and audio block states shared across widths *(part)* |
 | `notes/widgets/notes_component_tools.dart` | Canonical toolbar button/toolbar plus heading, formatting, and insert menu surfaces *(part)* |
-| `shared/notes_editor/notes_editor_launcher.dart` | `showNotesEditorSheet` — full-screen route launcher for Notes editor |
-| `shared/notes_editor/notes_editor_sheet.dart` | `NotesEditorSheet` — Quill Notes editor wired to Brain autosave |
 
-Every production Notes feature/shared editor module above must be listed by exact filename (no wildcard substitutes). Test-only GLM capture fixtures live under `test/notes/fixtures/` and `scripts/manual/` — not production `lib/`.
+Every production Notes feature module above must be listed by exact filename (no wildcard substitutes). Test-only GLM capture fixtures live under `test/notes/fixtures/` and `scripts/manual/` — not production `lib/`.
 
 ### 3.5 `lib/l10n/`
 
@@ -627,7 +604,6 @@ Copy `pb_hooks/` beside the PocketBase executable on the server. Client Brain co
 | `timeline/timeline_helpers.dart` | Shared timeline time/duration helpers |
 | `lists/lists_filters.dart` | Tag/category filter chips, chip bar, settings sheet |
 | `lists/lists_bulk_actions.dart` | Select-mode header + bulk action bottom bar |
-| `lists/lists_inline_add.dart` | Inline quick-add input row |
 | `lists/lists_empty_state.dart` | Loading / filtered / no-category empty panels |
 | `lists/lists_card.dart` | `BacklogPlanCard`, filter chips, semicircle menu |
 | `lists/lists_export.dart` | Export visible list as clipboard text |
@@ -688,8 +664,6 @@ Explicit manifest entries for `architecture_guard.ps1 -Strict`:
 | `planning/widgets/planning_category_grouped_list.dart` | Category-sort grouped plan list |
 | `planning/widgets/planning_tag_grouped_list.dart` | Tags-sort grouped plan list |
 | `planning/widgets/planning_group_section.dart` | Shared grouped-list section widgets |
-| `profile/settings/settings_page.dart` | Language/TZ settings page (shell route) |
-| `core/navigation/shell_side_navigation.dart` | Desktop/web side navigation rail |
 | `profile/settings/account_settings_section.dart` | Signed-in identity + logout row |
 | `profile/calendar_integrations/calendar_integrations_section.dart` | In-app Microsoft/Google calendar connection, calendar selection, sync, and per-calendar fallback-category settings |
 | `profile/settings/notification_settings_section.dart` | OS notification permission block |

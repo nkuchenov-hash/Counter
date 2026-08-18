@@ -3,9 +3,16 @@
 # injects CPAL/WASAPI mic capture module (Handy-parity F32 native capture).
 # Output: installer/windows/stt_helper_build/counter_stt_helper.exe
 
+param(
+    [string]$BackendSourceRoot = $env:COUNTER_STT_BACKEND_ROOT
+)
+
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
-$backendSrcRoot = 'C:\Users\nkuch\Development\Apps\_cleanup_backup_20260615_110428\backend-rs'
+if ([string]::IsNullOrWhiteSpace($BackendSourceRoot)) {
+    throw 'STT backend source is required. Pass -BackendSourceRoot <path> or set COUNTER_STT_BACKEND_ROOT.'
+}
+$backendSrcRoot = [System.IO.Path]::GetFullPath($BackendSourceRoot)
 $outDir = Join-Path $PSScriptRoot 'stt_helper_build'
 $mainRs = Join-Path $backendSrcRoot 'src\main.rs'
 $captureSrc = Join-Path $PSScriptRoot 'stt_helper_src\capture.rs'
