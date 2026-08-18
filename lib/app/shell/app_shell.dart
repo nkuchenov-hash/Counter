@@ -66,6 +66,7 @@ part 'shared/shell_tab_host.dart';
 part 'shared/shell_edit_hosts.dart';
 part 'shared/shell_more_menu.dart';
 part 'shared/shell_voice_routing.dart';
+part 'shared/shell_voice_integration.dart';
 part 'shared/shell_lifecycle.dart';
 part 'shared/shell_chrome.dart';
 
@@ -169,6 +170,7 @@ class ShellDashboardState extends State<LifeOSDashboard>
         ShellEditHosts,
         ShellMoreMenu,
         ShellVoiceRouting,
+        ShellVoiceIntegration,
         ShellLifecycle,
         ShellChrome {
   @override
