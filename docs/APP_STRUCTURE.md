@@ -105,7 +105,7 @@ Product sections own section-specific code later; this phase only separates shel
 | `app/shell/app_shell.dart` | `LifeOSDashboard` composition root + shared shell state contract; lifecycle and responsive chrome are delegated to focused shell parts |
 | `app/shell/shared/shell_core.dart` | Core shell date/task-loading state, selected-day coordination and sync-failure UI *(part)* |
 | `app/shell/shared/shell_task_actions.dart` | Shell task/record action orchestration and source-plan suggestion prompt presentation; preference/matching/link policy lives in Brain *(part)* |
-| `app/shell/shared/shell_tab_host.dart` | Feature destination host builders *(part)* |
+| `app/shell/shared/shell_tab_host.dart` | Timeline/Planning/Calendar/Lists tab composition; depends explicitly on `ShellEditHosts` instead of concrete dashboard casts *(part)* |
 | `app/shell/shared/shell_lifecycle.dart` | Dashboard startup/dispose wiring: tab host initialization, deferred bootstrap, subscriptions, midnight watcher, desktop voice detach *(part)* |
 | `app/shell/shared/shell_chrome.dart` | Responsive shell scaffold/chrome: destination pages, app bar, form-factor frame, FAB, bottom navigation, desktop voice shortcuts *(part)* |
 | `app/shell/shared/shell_edit_hosts.dart` | Timeline/plan edit modal hosts *(part)* |
