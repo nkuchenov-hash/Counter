@@ -63,7 +63,7 @@ def main() -> int:
             'name: "category_link"',
             'name: "active_revision_link"',
             "@request.body.path_id:changed = false",
-            "active_revision_link.lifecycle = \\\"published\\\"",
+            "active_revision_link.lifecycle = 'published'",
             "active_revision_link.path_id = @request.body.path_id",
         ):
             if token not in migration:
