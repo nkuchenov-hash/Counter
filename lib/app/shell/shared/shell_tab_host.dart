@@ -1,6 +1,6 @@
 part of '../app_shell.dart';
 
-mixin ShellTabHost on ShellTaskActions {
+mixin ShellTabHost on ShellTaskActions, ShellEditHosts {
   Widget buildTimelineSwipeTab() {
     final sw = Stopwatch()..start();
     final child = TimelineSwipeWrapper(
@@ -19,12 +19,12 @@ mixin ShellTabHost on ShellTaskActions {
       onCategoryChanged: (id) => setState(() => selectedCategoryId = id),
       onStart: startTaskFromInput,
       onPlan: planTaskFromInput,
-      onNewTaskForPastDate: (this as ShellDashboardState).openNewTaskForPastDate,
+      onNewTaskForPastDate: openNewTaskForPastDate,
       onStopRecord: stopRecordByDocId,
       onDeleteRecord: deleteRecordByDocId,
       rules: rules,
       onShowEditRecordSheet:
-          (this as ShellDashboardState).showEditRecordSheetForTimeline,
+          showEditRecordSheetForTimeline,
     );
     sw.stop();
     StartupLog.tabBuild(
@@ -44,7 +44,7 @@ mixin ShellTabHost on ShellTaskActions {
       selectedCategoryId: selectedCategoryId,
       onCategoryChanged: (id) => setState(() => selectedCategoryId = id),
       onStartRecordFromTask: startRecordFromPlanning,
-      onEditTask: (task) => (this as ShellDashboardState).openEditDialog(task),
+      onEditTask: (task) => openEditDialog(task),
     );
     sw.stop();
     StartupLog.tabBuild(
@@ -66,7 +66,7 @@ mixin ShellTabHost on ShellTaskActions {
         });
         selectedDateListenable.value = selectedDate;
       },
-      onEditTask: (this as ShellDashboardState).openEditDialog,
+      onEditTask: openEditDialog,
       onStartRecordFromTask: startRecordFromPlanning,
     );
   }
@@ -79,7 +79,7 @@ mixin ShellTabHost on ShellTaskActions {
         setState(() => selectedDate = day);
         selectedDateListenable.value = day;
       },
-      onEditTask: (this as ShellDashboardState).openEditDialog,
+      onEditTask: openEditDialog,
     );
   }
 }

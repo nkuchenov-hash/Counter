@@ -1,3 +1,9 @@
+## 2026-08-18 — Shell tab/edit-host dependency graph [engineering]
+
+- Declared `ShellTabHost`'s dependency on `ShellEditHosts` explicitly.
+- Reordered shell mixins so edit hosts are available before tab composition.
+- Removed concrete `(this as ShellDashboardState)` casts from tab callbacks; behavior is unchanged.
+
 ## 2026-08-18 — Shell top status naming cleanup [engineering]
 
 - Renamed obsolete `shell_offline_banner.dart` to `shell_top_status_bars.dart`; the widget is no longer an offline banner.
