@@ -1,0 +1,274 @@
+import 'dart:convert';
+
+import 'package:counter/features/timeline/timeline_helpers.dart';
+import 'package:counter/l10n/dictionary.dart';
+import 'package:flutter/material.dart';
+
+bool timelineRecordIsSleep(Map<String, dynamic> data) {
+  final kind = (data['external_kind'] ?? '').toString().trim().toLowerCase();
+  final source = (data['sleep_source'] ?? '').toString().trim();
+  final title = (data['title'] ?? '').toString().trim().toLowerCase();
+  return kind == 'sleep' || source.isNotEmpty || title == 'sleep' || title == 'сон';
+}
+
+class TimelineSleepStage {
+  const TimelineSleepStage({
+    required this.startUtc,
+    required this.endUtc,
+    required this.stage,
+    required this.source,
+  });
+
+  final DateTime startUtc;
+  final DateTime endUtc;
+  final int stage;
+  final String source;
+
+  Duration get duration => endUtc.difference(startUtc);
+}
+
+List<TimelineSleepStage> timelineSleepStages(Map<String, dynamic> data) {
+  dynamic raw = data['sleep_stages'];
+  if (raw is String && raw.trim().isNotEmpty) {
+    try {
+      raw = jsonDecode(raw);
+    } catch (_) {
+      return const <TimelineSleepStage>[];
+    }
+  }
+  if (raw is! List) return const <TimelineSleepStage>[];
+
+  final out = <TimelineSleepStage>[];
+  for (final item in raw) {
+    if (item is! Map) continue;
+    final start = DateTime.tryParse((item['start'] ?? '').toString())?.toUtc();
+    final end = DateTime.tryParse((item['end'] ?? '').toString())?.toUtc();
+    final stageRaw = item['stage'];
+    final stage = stageRaw is num
+        ? stageRaw.toInt()
+        : int.tryParse(stageRaw?.toString() ?? '') ?? 0;
+    if (start == null || end == null || !end.isAfter(start)) continue;
+    out.add(
+      TimelineSleepStage(
+        startUtc: start,
+        endUtc: end,
+        stage: stage,
+        source: (item['source'] ?? '').toString().trim(),
+      ),
+    );
+  }
+  out.sort((a, b) => a.startUtc.compareTo(b.startUtc));
+  return out;
+}
+
+String _sleepStageLabel(String locale, int stage) {
+  final ru = locale == 'ru';
+  return switch (stage) {
+    1 => ru ? 'Бодрствование' : 'Awake',
+    2 => ru ? 'Сон' : 'Sleep',
+    3 => ru ? 'Вне кровати' : 'Out of bed',
+    4 => ru ? 'Лёгкий' : 'Light',
+    5 => ru ? 'Глубокий' : 'Deep',
+    6 => 'REM',
+    7 => ru ? 'Бодрствование в кровати' : 'Awake in bed',
+    _ => ru ? 'Не определено' : 'Unknown',
+  };
+}
+
+String _sleepDuration(Duration duration) {
+  final minutes = duration.inMinutes;
+  final h = minutes ~/ 60;
+  final m = minutes.remainder(60);
+  if (h > 0 && m > 0) return '${h}ч ${m}м';
+  if (h > 0) return '${h}ч';
+  return '${m}м';
+}
+
+Map<int, Duration> _sleepStageTotals(List<TimelineSleepStage> stages) {
+  final totals = <int, Duration>{};
+  for (final stage in stages) {
+    totals[stage.stage] = (totals[stage.stage] ?? Duration.zero) + stage.duration;
+  }
+  return totals;
+}
+
+String timelineSleepSource(Map<String, dynamic> data) {
+  final sourceName = (data['sleep_source_name'] ?? '').toString().trim();
+  if (sourceName.isNotEmpty) return sourceName;
+  final source = (data['sleep_source'] ?? data['external_source'] ?? '')
+      .toString()
+      .trim();
+  if (source == 'google_fit') return 'Google Fit';
+  if (source == 'health_connect') return 'Health Connect';
+  if (source == 'apple_health') return 'Apple Health';
+  return source;
+}
+
+class TimelineSleepSummary extends StatelessWidget {
+  const TimelineSleepSummary({super.key, required this.data});
+
+  final Map<String, dynamic> data;
+
+  @override
+  Widget build(BuildContext context) {
+    final stages = timelineSleepStages(data);
+    final totals = _sleepStageTotals(stages);
+    final locale = currentLocale.value;
+    final source = timelineSleepSource(data);
+    final recovered = data['sleep_recovered_from_segments'] == true;
+    final pointsRaw = data['sleep_segment_points'];
+    final points = pointsRaw is num
+        ? pointsRaw.toInt()
+        : int.tryParse(pointsRaw?.toString() ?? '') ?? stages.length;
+    final scheme = Theme.of(context).colorScheme;
+
+    final summary = <Widget>[];
+    for (final entry in totals.entries) {
+      summary.add(
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: scheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(999),
+          ),
+          child: Text(
+            '${_sleepStageLabel(locale, entry.key)} ${_sleepDuration(entry.value)}',
+            style: Theme.of(context).textTheme.labelSmall,
+          ),
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (source.isNotEmpty || points > 0 || recovered) ...[
+          const SizedBox(height: 6),
+          Text(
+            [
+              if (source.isNotEmpty) source,
+              if (points > 0) locale == 'ru' ? '$points сегм.' : '$points segments',
+              if (recovered) locale == 'ru' ? 'восстановлено' : 'recovered',
+            ].join(' · '),
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: scheme.onSurfaceVariant,
+                ),
+          ),
+        ],
+        if (summary.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          Wrap(spacing: 6, runSpacing: 6, children: summary),
+        ],
+      ],
+    );
+  }
+}
+
+Future<void> showTimelineSleepDetails(
+  BuildContext context,
+  Map<String, dynamic> data,
+) async {
+  final stages = timelineSleepStages(data);
+  final totals = _sleepStageTotals(stages);
+  final locale = currentLocale.value;
+  final source = timelineSleepSource(data);
+  final recovered = data['sleep_recovered_from_segments'] == true;
+  final startUtc = DateTime.tryParse((data['start_time'] ?? '').toString())?.toUtc();
+  final endUtc = DateTime.tryParse((data['end_time'] ?? '').toString())?.toUtc();
+
+  await showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    showDragHandle: true,
+    builder: (context) {
+      final scheme = Theme.of(context).colorScheme;
+      return SafeArea(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.sizeOf(context).height * 0.82,
+          ),
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+            children: [
+              Text(
+                locale == 'ru' ? 'Данные сна' : 'Sleep data',
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
+              const SizedBox(height: 8),
+              if (startUtc != null && endUtc != null)
+                Text(
+                  '${timelineFormatTimeOfDay(timelineUtcToDisplay(startUtc))} — '
+                  '${timelineFormatTimeOfDay(timelineUtcToDisplay(endUtc))} '
+                  '(${timelineFormatDuration(endUtc.difference(startUtc))})',
+                  style: Theme.of(context).textTheme.bodyLarge,
+                ),
+              if (source.isNotEmpty) ...[
+                const SizedBox(height: 4),
+                Text(
+                  '${locale == 'ru' ? 'Источник' : 'Source'}: $source',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: scheme.onSurfaceVariant,
+                      ),
+                ),
+              ],
+              if (recovered) ...[
+                const SizedBox(height: 4),
+                Text(
+                  locale == 'ru'
+                      ? 'Границы сна восстановлены по сегментам источника.'
+                      : 'Sleep boundaries were recovered from source segments.',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: scheme.onSurfaceVariant,
+                      ),
+                ),
+              ],
+              if (totals.isNotEmpty) ...[
+                const SizedBox(height: 20),
+                Text(
+                  locale == 'ru' ? 'По стадиям' : 'Stage totals',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 8),
+                for (final entry in totals.entries)
+                  ListTile(
+                    dense: true,
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(_sleepStageLabel(locale, entry.key)),
+                    trailing: Text(_sleepDuration(entry.value)),
+                  ),
+              ],
+              const SizedBox(height: 12),
+              Text(
+                locale == 'ru' ? 'Хронология' : 'Timeline',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 8),
+              if (stages.isEmpty)
+                Text(
+                  locale == 'ru'
+                      ? 'Источник не передал детализацию по стадиям для этой ночи.'
+                      : 'The source did not provide stage detail for this night.',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: scheme.onSurfaceVariant,
+                      ),
+                )
+              else
+                for (final stage in stages)
+                  ListTile(
+                    dense: true,
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(_sleepStageLabel(locale, stage.stage)),
+                    subtitle: stage.source.isEmpty ? null : Text(stage.source),
+                    trailing: Text(
+                      '${timelineFormatTimeOfDay(timelineUtcToDisplay(stage.startUtc))}–'
+                      '${timelineFormatTimeOfDay(timelineUtcToDisplay(stage.endUtc))} · '
+                      '${_sleepDuration(stage.duration)}',
+                    ),
+                  ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+}
