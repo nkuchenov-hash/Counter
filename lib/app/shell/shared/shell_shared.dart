@@ -16,12 +16,3 @@ bool shellIsNewPlanningDraft(PlanningTask t) {
   final p = t.planRowId?.trim() ?? '';
   return p.isEmpty;
 }
-
-const String shellPrefsRecordLinkSuggestionsEnabled =
-    'plans_record_link_suggestions_enabled';
-const String shellPrefsRecordLinkSuggestionMode =
-    'plans_record_link_suggestion_mode';
-const String shellPrefsRecordLinkSuggestionDismissed =
-    'plans_record_link_suggestion_dismissed_record_ids';
-const String shellRecordLinkSuggestionModeAsk = 'ask';
-const String shellRecordLinkSuggestionModeAuto = 'auto';
