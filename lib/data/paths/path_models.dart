@@ -20,13 +20,13 @@ class PathActionSnapshot {
   final bool isDone;
 
   PathActionSnapshot copyWith({bool? isDone}) => PathActionSnapshot(
-        id: id,
-        text: text,
-        expectedResult: expectedResult,
-        minutes: minutes,
-        track: track,
-        isDone: isDone ?? this.isDone,
-      );
+    id: id,
+    text: text,
+    expectedResult: expectedResult,
+    minutes: minutes,
+    track: track,
+    isDone: isDone ?? this.isDone,
+  );
 
   factory PathActionSnapshot.fromJson(
     Map<String, dynamic> json, {
@@ -36,8 +36,8 @@ class PathActionSnapshot {
     final minutes = rawMinutes is int
         ? rawMinutes
         : rawMinutes is num
-            ? rawMinutes.round()
-            : int.tryParse(rawMinutes?.toString() ?? '') ?? 0;
+        ? rawMinutes.round()
+        : int.tryParse(rawMinutes?.toString() ?? '') ?? 0;
     return PathActionSnapshot(
       id: (json['id'] ?? fallbackId).toString(),
       text: (json['text'] ?? '').toString().trim(),
@@ -49,13 +49,13 @@ class PathActionSnapshot {
   }
 
   Map<String, dynamic> toJson() => <String, dynamic>{
-        'id': id,
-        'text': text,
-        'result': expectedResult,
-        'minutes': minutes,
-        'track': track,
-        'isDone': isDone,
-      };
+    'id': id,
+    'text': text,
+    'result': expectedResult,
+    'minutes': minutes,
+    'track': track,
+    'isDone': isDone,
+  };
 }
 
 class PathStageSnapshot {
@@ -76,14 +76,13 @@ class PathStageSnapshot {
   PathStageSnapshot copyWith({
     bool? isDone,
     List<PathActionSnapshot>? actions,
-  }) =>
-      PathStageSnapshot(
-        id: id,
-        title: title,
-        completionCriteria: completionCriteria,
-        isDone: isDone ?? this.isDone,
-        actions: actions ?? this.actions,
-      );
+  }) => PathStageSnapshot(
+    id: id,
+    title: title,
+    completionCriteria: completionCriteria,
+    isDone: isDone ?? this.isDone,
+    actions: actions ?? this.actions,
+  );
 
   factory PathStageSnapshot.fromJson(
     Map<String, dynamic> json, {
@@ -92,9 +91,11 @@ class PathStageSnapshot {
     final actions = <PathActionSnapshot>[];
     final rawActions = json['actions'];
     if (rawActions is List) {
-      for (var actionIndex = 0;
-          actionIndex < rawActions.length;
-          actionIndex++) {
+      for (
+        var actionIndex = 0;
+        actionIndex < rawActions.length;
+        actionIndex++
+      ) {
         final raw = rawActions[actionIndex];
         if (raw is! Map) continue;
         final action = PathActionSnapshot.fromJson(
@@ -114,13 +115,13 @@ class PathStageSnapshot {
   }
 
   Map<String, dynamic> toJson() => <String, dynamic>{
-        'type': 'stage',
-        'id': id,
-        'text': title,
-        'definitionOfDone': completionCriteria,
-        'isDone': isDone,
-        'actions': actions.map((action) => action.toJson()).toList(growable: false),
-      };
+    'type': 'stage',
+    'id': id,
+    'text': title,
+    'definitionOfDone': completionCriteria,
+    'isDone': isDone,
+    'actions': actions.map((action) => action.toJson()).toList(growable: false),
+  };
 }
 
 class ProjectPathSnapshot {
@@ -149,18 +150,17 @@ class ProjectPathSnapshot {
   ProjectPathSnapshot copyWith({
     String? goal,
     List<PathStageSnapshot>? stages,
-  }) =>
-      ProjectPathSnapshot(
-        pathRecordId: pathRecordId,
-        pathId: pathId,
-        revisionRecordId: revisionRecordId,
-        revisionId: revisionId,
-        category: category,
-        goal: goal ?? this.goal,
-        status: status,
-        version: version,
-        stages: stages ?? this.stages,
-      );
+  }) => ProjectPathSnapshot(
+    pathRecordId: pathRecordId,
+    pathId: pathId,
+    revisionRecordId: revisionRecordId,
+    revisionId: revisionId,
+    category: category,
+    goal: goal ?? this.goal,
+    status: status,
+    version: version,
+    stages: stages ?? this.stages,
+  );
 }
 
 class PathCatalogSnapshot {
@@ -196,7 +196,11 @@ PathStructureAudit auditPathStructure({
     if (!stage.isDone && stage.actions.isEmpty) {
       problems.add('Stage $number has no executable actions.');
     }
-    for (var actionIndex = 0; actionIndex < stage.actions.length; actionIndex++) {
+    for (
+      var actionIndex = 0;
+      actionIndex < stage.actions.length;
+      actionIndex++
+    ) {
       final action = stage.actions[actionIndex];
       final actionNumber = actionIndex + 1;
       if (action.text.trim().isEmpty) {

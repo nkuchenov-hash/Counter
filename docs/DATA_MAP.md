@@ -197,3 +197,24 @@ description: Revisions and corrections for DATA_MAP.md.
 | **sort_order** | Number | UI | NO | Manual order in Tag Manager; lower = earlier. Planning **Sort by Tags** uses this order. |
 | **domain** | String (Select) | Data | NO | Tag isolation: `plan` (Planning / timeline tag pickers) vs `list` (Lists / backlog tag pickers). Legacy rows with empty domain are treated as **`plan`**. New list tags MUST be created with `list`. |
 | **default_plan_duration_minutes** | Number | Planning | NO | Optional default block length in minutes for auto-scheduled plans carrying this tag. Empty/null = no tag default. Client clamps 1–1440. PocketBase may return integer or double (e.g. `10.0`); client parser must accept `num` / `int` / `double`. |
+
+
+## Paths — durable revision vocabulary
+
+Paths are no longer encoded as Planner rows. Server schema is governed by `docs/POCKETBASE_MANIFEST.md` and `pb_migrations/`.
+
+| Collection | Field | Meaning |
+| :--- | :--- | :--- |
+| `paths` | `path_id` | Stable Path/project business id. |
+| `paths` | `category_link` | Stable PocketBase relation → `categories.id`; never a local `CategoryRule.id`. |
+| `paths` | `active_revision_link` | Relation → `path_revisions.id`; sole revision permitted to feed Planner. |
+| `paths` | `archived` | Path lifecycle archive flag. |
+| `path_revisions` | `revision_id` | Immutable revision business id. |
+| `path_revisions` | `version` | Monotonic revision number. |
+| `path_revisions` | `lifecycle` | `draft`, `reviewed`, or `published`; not an execution gate by itself. |
+| `path_revisions` | `goal` | Desired project end state for the revision. |
+| `path_revisions` | `content.stages[]` | Ordered stages, completion criteria, actions and expected results. |
+| `path_revisions` | `source` | `manual`, `migration`, `ai`, or `system`. |
+| `path_revisions` | `parent_revision_id` | Previous revision business id. |
+
+**Path → Planner source identity:** `path_id + revision_id + action_id`. Scheduling/materialization belongs only to `lib/data/plans/path_planner_bridge.dart` and downstream Planning code.

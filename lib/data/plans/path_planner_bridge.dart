@@ -49,7 +49,7 @@ class PathPlannerProjection {
 /// Path and never schedules by itself.
 class PathPlannerBridge {
   PathPlannerBridge({PathRepository? paths})
-      : _paths = paths ?? PathRepository();
+    : _paths = paths ?? PathRepository();
 
   final PathRepository _paths;
 

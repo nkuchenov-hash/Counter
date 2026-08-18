@@ -98,6 +98,11 @@ foreach ($pat in $debtPatterns) {
 # Path values use forward-slash repo-relative segments (resolved via Join-Path).
 $forbiddenImportRules = @(
     @{ Label = 'data->features'; Path = 'lib/data'; Pattern = "import 'package:counter/features/" },
+    @{ Label = 'features->pocketbase'; Path = 'lib/features'; Pattern = "import 'package:pocketbase/" },
+    @{ Label = 'app->pocketbase'; Path = 'lib/app'; Pattern = "import 'package:pocketbase/" },
+    @{ Label = 'core->pocketbase'; Path = 'lib/core'; Pattern = "import 'package:pocketbase/" },
+    @{ Label = 'shared->pocketbase'; Path = 'lib/shared'; Pattern = "import 'package:pocketbase/" },
+    @{ Label = 'services->pocketbase'; Path = 'lib/services'; Pattern = "import 'package:pocketbase/" },
     @{ Label = 'core->features'; Path = 'lib/core'; Pattern = "import 'package:counter/features/" },
     @{ Label = 'services->features'; Path = 'lib/services'; Pattern = "import 'package:counter/features/" },
     @{ Label = 'core->database_service'; Path = 'lib/core'; Pattern = "import 'package:counter/data/database_service.dart'" },
@@ -122,6 +127,14 @@ $libRoot = Get-RepoPath @('lib')
 Get-ChildItem -LiteralPath $libRoot -Filter '*.dart' -File -ErrorAction SilentlyContinue | ForEach-Object {
     if ($rootLibAllow -notcontains $_.Name) {
         Add-Violation "UNEXPECTED_ROOT_LIB lib/$($_.Name) (allowed: $($rootLibAllow -join ', '))"
+    }
+}
+
+# --- 2b. Fixed top-level owner layers under lib/ ---
+$libLayerAllow = @('app', 'core', 'data', 'features', 'l10n', 'services', 'shared')
+Get-ChildItem -LiteralPath $libRoot -Directory -ErrorAction SilentlyContinue | ForEach-Object {
+    if ($libLayerAllow -notcontains $_.Name) {
+        Add-Violation "UNEXPECTED_LIB_LAYER lib/$($_.Name) (allowed owner layers: $($libLayerAllow -join ', '))"
     }
 }
 
@@ -309,6 +322,45 @@ foreach ($w in $rawUi) {
     if ($fileCount -gt 0) {
         Add-Warning "RAW_UI $w present in $fileCount feature file(s) - migrate to AppButton/AppIconButton per DESIGN_SYSTEM"
     }
+}
+
+
+# --- 8b. Durable Paths ownership (hard structural law) ---
+$pathCompatDir = Get-RepoPath @('lib', 'data', 'paths', 'compatibility')
+if (Test-Path -LiteralPath $pathCompatDir) {
+    Add-Violation "PATH_COMPATIBILITY_REGRESSION lib/data/paths/compatibility must not return"
+}
+
+$pathMarkerLeaks = Find-DartFilesMatching 'lib' 'LIFEOS_PATH::|LIFEOS_PATH_ACTION|LIFEOS_WEEK_ROUTINE'
+foreach ($rel in $pathMarkerLeaks) {
+    Add-Violation "PATH_MARKER_RUNTIME_LEAK $rel"
+}
+
+$pathToPlannerImports = Find-DartFilesMatching 'lib/data/paths' "import 'package:counter/data/plans/"
+foreach ($rel in $pathToPlannerImports) {
+    Add-Violation "PATH_DOMAIN_IMPORTS_PLANNER $rel"
+}
+
+$plannerPathImports = Find-DartFilesMatching 'lib/data/plans' "import 'package:counter/data/paths/"
+foreach ($rel in $plannerPathImports) {
+    if ($rel -ne 'lib/data/plans/path_planner_bridge.dart') {
+        Add-Violation "PATH_PLANNER_BRIDGE_BYPASS $rel"
+    }
+}
+
+$projectSpecificPathLeaks = Find-DartFilesMatching 'lib/data/paths' '(?i)KADR|КАДР|GOLOS|Игропоиск|Igropoisk|Price Reporter|Etnika|ZenMoney'
+foreach ($rel in $projectSpecificPathLeaks) {
+    Add-Violation "PATH_PROJECT_TEMPLATE_LEAK $rel"
+}
+
+$pathRepositoryBody = Get-Content -LiteralPath (Get-RepoPath @('lib','data','paths','path_repository.dart')) -Raw
+if ($pathRepositoryBody -match "import 'package:pocketbase/|\.collection\(") {
+    Add-Violation "PATH_REPOSITORY_DIRECT_PB_IO path_repository.dart must delegate to DatabaseService path_service part"
+}
+
+$pathServiceBody = Get-Content -LiteralPath (Get-RepoPath @('lib','data','paths','path_service.dart')) -Raw
+if ($pathServiceBody -notmatch "part of '../database_service.dart';") {
+    Add-Violation "PATH_SERVICE_NOT_DATABASE_PART lib/data/paths/path_service.dart"
 }
 
 # --- Report ---

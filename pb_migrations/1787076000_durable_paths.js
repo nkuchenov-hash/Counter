@@ -12,7 +12,7 @@ migrate((app) => {
       viewRule: "user_id = @request.auth.id",
       createRule: "@request.auth.id != '' && @request.body.user_id = @request.auth.id",
       updateRule: null,
-      deleteRule: "user_id = @request.auth.id",
+      deleteRule: null,
       fields: [
         {
           name: "user_id",
@@ -64,13 +64,16 @@ migrate((app) => {
         "@request.body.user_id = @request.auth.id && " +
         "category_link.user_id = @request.auth.id && " +
         "active_revision_link.user_id = @request.auth.id && " +
-        "active_revision_link.path_id = path_id",
+        "active_revision_link.lifecycle = 'published' && " +
+        "active_revision_link.path_id = @request.body.path_id",
       updateRule:
         "user_id = @request.auth.id && " +
         "@request.body.user_id:changed = false && " +
+        "@request.body.path_id:changed = false && " +
         "@request.body.category_link:changed = false && " +
         "category_link.user_id = @request.auth.id && " +
         "active_revision_link.user_id = @request.auth.id && " +
+        "active_revision_link.lifecycle = 'published' && " +
         "active_revision_link.path_id = path_id",
       deleteRule: "user_id = @request.auth.id",
       fields: [
@@ -91,7 +94,6 @@ migrate((app) => {
           collectionId: categories.id,
           cascadeDelete: false,
         },
-        { name: "title", type: "text", required: true, max: 300 },
         {
           name: "active_revision_link",
           type: "relation",
@@ -205,7 +207,6 @@ migrate((app) => {
     path.set("user_id", ownerId)
     path.set("path_id", pathId)
     path.set("category_link", categoryRecordId)
-    path.set("title", root.getString("title") || "Path")
     path.set("active_revision_link", revision.id)
     path.set("archived", false)
     app.save(path)

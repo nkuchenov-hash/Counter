@@ -1,9 +1,9 @@
 part of '../database_service.dart';
 
 Map<String, dynamic> _pathRecordData(RecordModel record) => <String, dynamic>{
-      'id': record.id,
-      ...record.data,
-    };
+  'id': record.id,
+  ...record.data,
+};
 
 extension PathServiceExtension on DatabaseService {
   String _pathOwnerIdOrThrow() {
@@ -15,8 +15,11 @@ extension PathServiceExtension on DatabaseService {
   Future<List<Map<String, dynamic>>> fetchOwnedPathRows() async {
     await ensurePocketBaseReady();
     final ownerId = _pathOwnerIdOrThrow();
-    final records = await _pb.collection(PbCollections.paths).getFullList(
-          filter: 'user_id = "${_escapeForPbFilter(ownerId)}" && archived = false',
+    final records = await _pb
+        .collection(PbCollections.paths)
+        .getFullList(
+          filter:
+              'user_id = "${_escapeForPbFilter(ownerId)}" && archived = false',
           sort: 'category_link,path_id',
         );
     return records.map(_pathRecordData).toList(growable: false);
@@ -30,7 +33,9 @@ extension PathServiceExtension on DatabaseService {
     final cleanPathId = pathId.trim();
     if (cleanPathId.isEmpty) return null;
     try {
-      final record = await _pb.collection(PbCollections.paths).getFirstListItem(
+      final record = await _pb
+          .collection(PbCollections.paths)
+          .getFirstListItem(
             'user_id = "${_escapeForPbFilter(ownerId)}" && '
             'path_id = "${_escapeForPbFilter(cleanPathId)}"',
           );
@@ -68,7 +73,6 @@ extension PathServiceExtension on DatabaseService {
   Future<Map<String, dynamic>> createOwnedPath({
     required String pathId,
     required String categoryPocketBaseId,
-    required String title,
     required String activeRevisionRecordId,
   }) async {
     await ensurePocketBaseReady();
@@ -89,16 +93,17 @@ extension PathServiceExtension on DatabaseService {
         'Expected a PocketBase path_revisions row id.',
       );
     }
-    final record = await _pb.collection(PbCollections.paths).create(
-      body: <String, dynamic>{
-        'user_id': ownerId,
-        'path_id': pathId.trim(),
-        'category_link': categoryId,
-        'title': title.trim(),
-        'active_revision_link': revisionId,
-        'archived': false,
-      },
-    );
+    final record = await _pb
+        .collection(PbCollections.paths)
+        .create(
+          body: <String, dynamic>{
+            'user_id': ownerId,
+            'path_id': pathId.trim(),
+            'category_link': categoryId,
+            'active_revision_link': revisionId,
+            'archived': false,
+          },
+        );
     return _pathRecordData(record);
   }
 
@@ -114,26 +119,27 @@ extension PathServiceExtension on DatabaseService {
   }) async {
     await ensurePocketBaseReady();
     final ownerId = _pathOwnerIdOrThrow();
-    final record = await _pb.collection(PbCollections.pathRevisions).create(
-      body: <String, dynamic>{
-        'user_id': ownerId,
-        'path_id': pathId.trim(),
-        'revision_id': revisionId.trim(),
-        'version': version,
-        'lifecycle': lifecycle,
-        'goal': goal.trim(),
-        'content': <String, dynamic>{'stages': stages},
-        'source': source,
-        'parent_revision_id': parentRevisionId?.trim() ?? '',
-      },
-    );
+    final record = await _pb
+        .collection(PbCollections.pathRevisions)
+        .create(
+          body: <String, dynamic>{
+            'user_id': ownerId,
+            'path_id': pathId.trim(),
+            'revision_id': revisionId.trim(),
+            'version': version,
+            'lifecycle': lifecycle,
+            'goal': goal.trim(),
+            'content': <String, dynamic>{'stages': stages},
+            'source': source,
+            'parent_revision_id': parentRevisionId?.trim() ?? '',
+          },
+        );
     return _pathRecordData(record);
   }
 
   Future<void> setOwnedPathActiveRevision({
     required String pathRecordId,
     required String revisionRecordId,
-    required String title,
   }) async {
     await ensurePocketBaseReady();
     _pathOwnerIdOrThrow();
@@ -145,20 +151,11 @@ extension PathServiceExtension on DatabaseService {
         'Expected a PocketBase path_revisions row id.',
       );
     }
-    await _pb.collection(PbCollections.paths).update(
-      pathRecordId.trim(),
-      body: <String, dynamic>{
-        'active_revision_link': revisionId,
-        'title': title.trim(),
-      },
-    );
-  }
-
-  Future<void> deleteOwnedPathRevision(String revisionRecordId) async {
-    await ensurePocketBaseReady();
-    _pathOwnerIdOrThrow();
-    final id = revisionRecordId.trim();
-    if (id.isEmpty) return;
-    await _pb.collection(PbCollections.pathRevisions).delete(id);
+    await _pb
+        .collection(PbCollections.paths)
+        .update(
+          pathRecordId.trim(),
+          body: <String, dynamic>{'active_revision_link': revisionId},
+        );
   }
 }

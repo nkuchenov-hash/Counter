@@ -268,7 +268,7 @@ def build_path_refs(files: list[str]) -> dict[str, list[str]]:
     path_token_re = re.compile(
         r"(?<![A-Za-z0-9_/.-])"
         r"((?:lib|test|docs|scripts|android|ios|macos|linux|windows|web|"
-        r"installer|pb_hooks|\.github|\.cursor)/[A-Za-z0-9_./+-]+\.[A-Za-z0-9]+"
+        r"installer|pb_hooks|pb_migrations|\.github|\.cursor)/[A-Za-z0-9_./+-]+\.[A-Za-z0-9]+"
         r"|(?:update|android)\.ps1"
         r"|pubspec\.yaml|pubspec\.lock|analysis_options\.yaml"
         r"|AGENTS\.md|AGENT_NAVIGATION\.md|CHANGELOG\.md|\.cursorrules)"
@@ -390,6 +390,10 @@ def _owner_for(path: str) -> tuple[str, str]:
         return "tests", "тесты"
     if p.startswith("docs/"):
         return "documentation", "документация"
+    if p.startswith("pb_migrations/"):
+        return "PocketBase migrations", "миграции PocketBase"
+    if p.startswith("pb_migrations/"):
+        return "PocketBase migration"
     if p.startswith("pb_hooks/"):
         return "PocketBase backend", "PocketBase backend"
     return "repository root", "корень репозитория"
@@ -442,6 +446,8 @@ def _classify_role(path: str, rec_hints: dict) -> str:
         return "CI/deployment"
     if p.startswith("installer/"):
         return "installer"
+    if p.startswith("pb_migrations/"):
+        return "PocketBase migration"
     if p.startswith("pb_hooks/"):
         return "PocketBase backend"
     if p in (
@@ -885,6 +891,22 @@ def build_evidence_index(files: list[str] | None = None) -> EvidenceIndex:
             necessity = "PROVEN_REQUIRED"
             deletion_en = "Broken Windows installer or missing STT helper payload."
             deletion_ru = "Сломается Windows installer или пропадёт STT helper."
+
+        # --- PocketBase migrations ---
+        elif path.startswith("pb_migrations/"):
+            role = "PocketBase migration"
+            evidence_en.append(
+                "Versioned PocketBase schema/data migration; applied by PocketBase before "
+                "client code that depends on the schema (see `docs/DEPLOY.md`)."
+            )
+            evidence_ru.append(
+                "Версионированная миграция схемы/данных PocketBase; применяется до "
+                "клиента, который зависит от этой схемы (см. `docs/DEPLOY.md`)."
+            )
+            necessity = "PROVEN_REQUIRED"
+            confidence = "HIGH"
+            deletion_en = "Production schema history becomes incomplete or a required data migration is lost."
+            deletion_ru = "История production-схемы станет неполной или пропадёт нужная миграция данных."
 
         # --- PocketBase ---
         elif path.startswith("pb_hooks/"):

@@ -13,7 +13,7 @@ export 'path_models.dart';
 /// switches the project relation only after the new snapshot exists.
 class PathRepository {
   PathRepository({DatabaseService? database})
-      : _database = database ?? DatabaseService.instance;
+    : _database = database ?? DatabaseService.instance;
 
   final DatabaseService _database;
   static const Uuid _uuid = Uuid();
@@ -27,17 +27,21 @@ class PathRepository {
 
     for (final row in pathRows) {
       final pathId = (row['path_id'] ?? '').toString().trim();
-      final revisionRecordId =
-          (row['active_revision_link'] ?? '').toString().trim();
-      final categoryPocketBaseId = (row['category_link'] ?? '').toString().trim();
+      final revisionRecordId = (row['active_revision_link'] ?? '')
+          .toString()
+          .trim();
+      final categoryPocketBaseId = (row['category_link'] ?? '')
+          .toString()
+          .trim();
       if (pathId.isEmpty ||
           revisionRecordId.isEmpty ||
           categoryPocketBaseId.isEmpty) {
         continue;
       }
 
-      final category =
-          _database.getCategoryRuleByBackendRowId(categoryPocketBaseId);
+      final category = _database.getCategoryRuleByBackendRowId(
+        categoryPocketBaseId,
+      );
       if (category == null || category.isArchived) continue;
 
       final revision = await _database.fetchOwnedPathRevisionRow(
@@ -56,8 +60,8 @@ class PathRepository {
 
     paths.sort(
       (a, b) => a.category.name.toLowerCase().compareTo(
-            b.category.name.toLowerCase(),
-          ),
+        b.category.name.toLowerCase(),
+      ),
     );
     return PathCatalogSnapshot(paths: paths);
   }
@@ -67,13 +71,16 @@ class PathRepository {
     final pathRow = await _database.fetchOwnedPathRowByBusinessId(pathId);
     if (pathRow == null || pathRow['archived'] == true) return null;
 
-    final categoryPocketBaseId =
-        (pathRow['category_link'] ?? '').toString().trim();
-    final revisionRecordId =
-        (pathRow['active_revision_link'] ?? '').toString().trim();
+    final categoryPocketBaseId = (pathRow['category_link'] ?? '')
+        .toString()
+        .trim();
+    final revisionRecordId = (pathRow['active_revision_link'] ?? '')
+        .toString()
+        .trim();
     if (categoryPocketBaseId.isEmpty || revisionRecordId.isEmpty) return null;
-    final category =
-        _database.getCategoryRuleByBackendRowId(categoryPocketBaseId);
+    final category = _database.getCategoryRuleByBackendRowId(
+      categoryPocketBaseId,
+    );
     if (category == null || category.isArchived) return null;
 
     final revision = await _database.fetchOwnedPathRevisionRow(
@@ -117,7 +124,6 @@ class PathRepository {
       final path = await _database.createOwnedPath(
         pathId: pathId,
         categoryPocketBaseId: categoryPocketBaseId,
-        title: category.name,
         activeRevisionRecordId: revisionRecordId,
       );
       return _snapshotFromRows(
@@ -126,14 +132,8 @@ class PathRepository {
         category: category,
       );
     } catch (_) {
-      final revisionRecordId = (revision?['id'] ?? '').toString().trim();
-      if (revisionRecordId.isNotEmpty) {
-        try {
-          await _database.deleteOwnedPathRevision(revisionRecordId);
-        } catch (_) {
-          // Orphan revisions are not executable because no Path points to them.
-        }
-      }
+      // Revisions are immutable audit history. An unreferenced revision is
+      // non-executable because only `paths.active_revision_link` activates it.
       return null;
     }
   }
@@ -192,7 +192,6 @@ class PathRepository {
       await _database.setOwnedPathActiveRevision(
         pathRecordId: current.pathRecordId,
         revisionRecordId: revisionRecordId,
-        title: current.category.name,
       );
       return ProjectPathSnapshot(
         pathRecordId: current.pathRecordId,
@@ -206,22 +205,14 @@ class PathRepository {
         stages: requested.stages,
       );
     } catch (_) {
-      final revisionRecordId = (revision?['id'] ?? '').toString().trim();
-      if (revisionRecordId.isNotEmpty) {
-        try {
-          await _database.deleteOwnedPathRevision(revisionRecordId);
-        } catch (_) {
-          // Safe to leave: only the relation in `paths` grants active status.
-        }
-      }
+      // Failed pointer switches leave immutable, unreferenced audit revisions.
+      // They cannot execute because the Path relation still points elsewhere.
       return null;
     }
   }
 
-  PathStructureAudit audit(ProjectPathSnapshot path) => auditPathStructure(
-        goal: path.goal,
-        stages: path.stages,
-      );
+  PathStructureAudit audit(ProjectPathSnapshot path) =>
+      auditPathStructure(goal: path.goal, stages: path.stages);
 
   ProjectPathSnapshot? _snapshotFromRows({
     required Map<String, dynamic> pathRow,

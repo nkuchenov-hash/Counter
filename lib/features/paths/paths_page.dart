@@ -26,9 +26,11 @@ class _PathsPageState extends State<PathsPage> {
   String? _error;
   PathCatalogSnapshot _catalog = const PathCatalogSnapshot(
     paths: <ProjectPathSnapshot>[],
-    duplicateActiveRootCategoryIds: <int>{},
   );
   int? _selectedCategoryId;
+  final Map<String, ProjectPathSnapshot> _confirmedPaths =
+      <String, ProjectPathSnapshot>{};
+  final Map<String, int> _saveGenerationByPath = <String, int>{};
 
   bool get _ru => currentLocale.value.toLowerCase().startsWith('ru');
 
@@ -52,6 +54,9 @@ class _PathsPageState extends State<PathsPage> {
       final selectedStillExists = catalog.paths.any(
         (path) => path.category.id == _selectedCategoryId,
       );
+      _confirmedPaths
+        ..clear()
+        ..addEntries(catalog.paths.map((path) => MapEntry(path.pathId, path)));
       setState(() {
         _catalog = catalog;
         _selectedCategoryId = selectedStillExists
@@ -96,23 +101,32 @@ class _PathsPageState extends State<PathsPage> {
       for (final path in _catalog.paths)
         if (path.category.id == updated.category.id) updated else path,
     ];
-    setState(
-      () => _catalog = PathCatalogSnapshot(
-        paths: next,
-        duplicateActiveRootCategoryIds: _catalog.duplicateActiveRootCategoryIds,
-      ),
-    );
+    setState(() => _catalog = PathCatalogSnapshot(paths: next));
   }
 
   Future<void> _saveOptimistic(
     ProjectPathSnapshot before,
     ProjectPathSnapshot after,
   ) async {
+    final generation = (_saveGenerationByPath[after.pathId] ?? 0) + 1;
+    _saveGenerationByPath[after.pathId] = generation;
+    _confirmedPaths.putIfAbsent(after.pathId, () => before);
     _replaceLocal(after);
-    final ok = await _repository.saveActivePath(after);
-    if (ok || !mounted) return;
 
-    _replaceLocal(before);
+    final saved = await _repository.saveActivePath(after);
+    if (!mounted) return;
+    if (saved != null) {
+      _confirmedPaths[after.pathId] = saved;
+      if (_saveGenerationByPath[after.pathId] == generation) {
+        _replaceLocal(saved);
+      }
+      return;
+    }
+
+    // A newer optimistic edit owns the visible state and its queued save. Only
+    // the latest failed save rolls UI back to the last server-confirmed revision.
+    if (_saveGenerationByPath[after.pathId] != generation) return;
+    _replaceLocal(_confirmedPaths[after.pathId] ?? before);
     ScaffoldMessenger.of(context)
       ..clearSnackBars()
       ..showSnackBar(
@@ -225,9 +239,9 @@ class _PathsPageState extends State<PathsPage> {
               children: [
                 Text(
                   _ru ? 'Пути' : 'Paths',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w800,
-                      ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
                 ),
                 Text(
                   _ru
@@ -236,8 +250,8 @@ class _PathsPageState extends State<PathsPage> {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: scheme.onSurfaceVariant,
-                      ),
+                    color: scheme.onSurfaceVariant,
+                  ),
                 ),
               ],
             ),
@@ -345,9 +359,7 @@ class _PathsPageState extends State<PathsPage> {
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
-            onTap: () => setState(
-              () => _selectedCategoryId = path.category.id,
-            ),
+            onTap: () => setState(() => _selectedCategoryId = path.category.id),
           ),
         );
       },
@@ -368,10 +380,7 @@ class _PathsPageState extends State<PathsPage> {
           for (final path in _catalog.paths)
             DropdownMenuItem<int>(
               value: path.category.id,
-              child: Text(
-                path.category.name,
-                overflow: TextOverflow.ellipsis,
-              ),
+              child: Text(path.category.name, overflow: TextOverflow.ellipsis),
             ),
         ],
         onChanged: (value) {
@@ -385,9 +394,6 @@ class _PathsPageState extends State<PathsPage> {
 
   Widget _pathDetail(ProjectPathSnapshot path) {
     final audit = _repository.audit(path);
-    final duplicate = _catalog.duplicateActiveRootCategoryIds.contains(
-      path.category.id,
-    );
     final currentStageIndex = path.stages.indexWhere((stage) => !stage.isDone);
 
     return ListView(
@@ -407,18 +413,14 @@ class _PathsPageState extends State<PathsPage> {
                     children: [
                       Text(
                         path.category.name,
-                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                              fontWeight: FontWeight.w800,
-                            ),
+                        style: Theme.of(context).textTheme.headlineSmall
+                            ?.copyWith(fontWeight: FontWeight.w800),
                       ),
                       _statusChip(path),
                     ],
                   ),
                   const SizedBox(height: 7),
-                  Text(
-                    path.goal,
-                    style: Theme.of(context).textTheme.bodyLarge,
-                  ),
+                  Text(path.goal, style: Theme.of(context).textTheme.bodyLarge),
                 ],
               ),
             ),
@@ -429,14 +431,6 @@ class _PathsPageState extends State<PathsPage> {
             ),
           ],
         ),
-        if (duplicate) ...[
-          const SizedBox(height: 14),
-          _warningCard(
-            _ru
-                ? 'Для этого проекта найдено несколько активных корневых записей старого формата. Экран ничего не удаляет автоматически; нужен отдельный безопасный ремонт данных.'
-                : 'Multiple active old-format root rows were detected for this project. The screen does not delete anything automatically; an explicit safe repair is required.',
-          ),
-        ],
         const SizedBox(height: 14),
         _auditCard(audit),
         if (currentStageIndex >= 0) ...[
@@ -444,14 +438,8 @@ class _PathsPageState extends State<PathsPage> {
           _currentStageCard(path.stages[currentStageIndex]),
         ],
         const SizedBox(height: 16),
-        for (var stageIndex = 0;
-            stageIndex < path.stages.length;
-            stageIndex++)
-          _stageCard(
-            path,
-            stageIndex,
-            stageIndex == currentStageIndex,
-          ),
+        for (var stageIndex = 0; stageIndex < path.stages.length; stageIndex++)
+          _stageCard(path, stageIndex, stageIndex == currentStageIndex),
       ],
     );
   }
@@ -466,9 +454,9 @@ class _PathsPageState extends State<PathsPage> {
       ),
       child: Text(
         '${_ru ? 'Активный' : 'Active'} · v${path.version}',
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
+        style: Theme.of(
+          context,
+        ).textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w700),
       ),
     );
   }
@@ -498,11 +486,11 @@ class _PathsPageState extends State<PathsPage> {
                 child: Text(
                   ok
                       ? (_ru
-                          ? 'Структура пути исполнима'
-                          : 'Path structure is executable')
+                            ? 'Структура пути исполнима'
+                            : 'Path structure is executable')
                       : (_ru
-                          ? 'Нужно исправить структуру'
-                          : 'Structure needs attention'),
+                            ? 'Нужно исправить структуру'
+                            : 'Structure needs attention'),
                   style: const TextStyle(fontWeight: FontWeight.w800),
                 ),
               ),
@@ -514,25 +502,6 @@ class _PathsPageState extends State<PathsPage> {
                 padding: const EdgeInsets.only(top: 5),
                 child: Text('• $problem'),
               ),
-        ],
-      ),
-    );
-  }
-
-  Widget _warningCard(String text) {
-    final scheme = Theme.of(context).colorScheme;
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: scheme.tertiaryContainer.withValues(alpha: 0.45),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Icon(Icons.warning_amber_rounded, size: 20),
-          const SizedBox(width: 9),
-          Expanded(child: Text(text)),
         ],
       ),
     );
@@ -552,16 +521,16 @@ class _PathsPageState extends State<PathsPage> {
         children: [
           Text(
             _ru ? 'Сейчас' : 'Now',
-            style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  fontWeight: FontWeight.w800,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 4),
           Text(
             stage.title,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w800,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
           ),
           if (next != null) ...[
             const SizedBox(height: 7),
@@ -575,11 +544,7 @@ class _PathsPageState extends State<PathsPage> {
     );
   }
 
-  Widget _stageCard(
-    ProjectPathSnapshot path,
-    int stageIndex,
-    bool current,
-  ) {
+  Widget _stageCard(ProjectPathSnapshot path, int stageIndex, bool current) {
     final scheme = Theme.of(context).colorScheme;
     final stage = path.stages[stageIndex];
     final doneActions = stage.actions.where((action) => action.isDone).length;
@@ -598,11 +563,7 @@ class _PathsPageState extends State<PathsPage> {
         initiallyExpanded: current,
         leading: Checkbox(
           value: stage.isDone,
-          onChanged: (value) => _toggleStage(
-            path,
-            stageIndex,
-            value ?? false,
-          ),
+          onChanged: (value) => _toggleStage(path, stageIndex, value ?? false),
         ),
         title: Text(
           '${stageIndex + 1}. ${stage.title}',
@@ -622,20 +583,18 @@ class _PathsPageState extends State<PathsPage> {
         ),
         trailing: Text('$doneActions/${stage.actions.length}'),
         children: [
-          for (var actionIndex = 0;
-              actionIndex < stage.actions.length;
-              actionIndex++)
+          for (
+            var actionIndex = 0;
+            actionIndex < stage.actions.length;
+            actionIndex++
+          )
             _actionRow(path, stageIndex, actionIndex),
         ],
       ),
     );
   }
 
-  Widget _actionRow(
-    ProjectPathSnapshot path,
-    int stageIndex,
-    int actionIndex,
-  ) {
+  Widget _actionRow(ProjectPathSnapshot path, int stageIndex, int actionIndex) {
     final scheme = Theme.of(context).colorScheme;
     final action = path.stages[stageIndex].actions[actionIndex];
 
@@ -646,12 +605,8 @@ class _PathsPageState extends State<PathsPage> {
         children: [
           Checkbox(
             value: action.isDone,
-            onChanged: (value) => _toggleAction(
-              path,
-              stageIndex,
-              actionIndex,
-              value ?? false,
-            ),
+            onChanged: (value) =>
+                _toggleAction(path, stageIndex, actionIndex, value ?? false),
           ),
           const SizedBox(width: 4),
           Expanded(
@@ -675,8 +630,8 @@ class _PathsPageState extends State<PathsPage> {
                       '${_ru ? 'Результат' : 'Output'}: '
                       '${action.expectedResult}',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: scheme.onSurfaceVariant,
-                          ),
+                        color: scheme.onSurfaceVariant,
+                      ),
                     ),
                   ],
                 ],
@@ -689,9 +644,9 @@ class _PathsPageState extends State<PathsPage> {
             child: Text(
               '${action.minutes} ${_ru ? 'мин' : 'min'}',
               style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    color: scheme.onSurfaceVariant,
-                    fontWeight: FontWeight.w700,
-                  ),
+                color: scheme.onSurfaceVariant,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
         ],

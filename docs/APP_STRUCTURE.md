@@ -10,14 +10,14 @@ Physical map of the Flutter application: what exists, which layer owns it, who m
 
 | Item | Value |
 | :--- | :--- |
-| **Structure baseline SHA** | `dbba57d` (final structure audit + Structure Growth Law) |
-| **Structure audit verdict** | **ACCEPTED WITH WATCHLIST** — see [`docs/reports/FINAL_STRUCTURE_AUDIT_2026-07-06.md`](reports/FINAL_STRUCTURE_AUDIT_2026-07-06.md) |
+| **Structure baseline** | Live `main`; guarded by Architecture Guard + documentation parity + repository hygiene + PocketBase schema parity |
+| **Structure audit verdict** | **STRICT PARITY** — zero accepted structural drift; historical audit reports remain historical records only |
 | **UI decomposition** | Pass 3 / 3B complete (shell, planning, timeline, lists, shared edit sheets, plan card) |
 | **Brain decomposition** | Pass 4A–4D complete (`plans/*`, `records/*`, `categories/*`, `profile/*`) |
 | **Diagnostics ownership** | Phase 2B (2026-07-22): runtime logs + kill switches under `lib/shared/diagnostics/`; plan duplicate log under `lib/data/plans/diagnostics/` (Brain); desktop voice pipeline under `lib/shared/voice/diagnostics/` |
 | **Voice ownership** | Phase 2C (2026-07-22): shared Voice contracts/adapters under `lib/shared/voice/`; Brain execution under `lib/data/voice/`; desktop Flutter Voice UI under `lib/features/voice/`; settings under `features/settings/voice/`; Shell keeps `shell_voice_routing` |
 | **Categories ownership** | Phase 2D (2026-07-23): shared presentation/tree/picker/visibility under `lib/shared/categories/`; Brain CRUD remains `lib/data/categories/`; manager UI under `lib/features/settings/categories/`; Lists owns `category_filter_tree_field.dart`; plan/record draft helpers under `features/shared/edit_sheet/category_edit_draft.dart` |
-| **Paths ownership** | 2026-08-18: first-class UI under `lib/features/paths/`; Path repository + marker-era compatibility/governance under `lib/data/paths/`; shell owns navigation only; opening Paths performs no migration or Planner generation |
+| **Paths ownership** | 2026-08-18: durable revisions under dedicated PocketBase `paths` / `path_revisions`; domain in `lib/data/paths/`; the only Path → Planner boundary is `lib/data/plans/path_planner_bridge.dart`; shell owns navigation only |
 | **Health / unfilled-time doc parity** | 2026-08-17: Health Connect sleep, cloud sleep, unfilled Timeline-gap detection/notifications and settings modules added to the canonical manifest after strict guard exposed post-audit drift |
 | **Strict architecture guard** | Baseline 2026-07-17 cleanup **complete**: 63 → 0 (A=0, B=0); hygiene audit 2026-07-21; diagnostics Phase 2B + voice Phase 2C 2026-07-22; categories Phase 2D 2026-07-23 |
 | **Detailed file guide** | [`docs/APP_STRUCTURE_DETAILED.md`](APP_STRUCTURE_DETAILED.md) — owner-readable **evidence-backed** EN/RU entry per tracked folder and file (role, necessity, confidence, deletion consequence); regenerate via `generate_app_structure_detailed.py` |
@@ -65,7 +65,7 @@ l10n      →  (self + langs)                       ✓
 main/app_shell → all layers                       ✓
 ```
 
-**Brain rule:** `lib/data/database_service.dart` is the only file that performs HTTP/PocketBase calls. Domain logic lives in `part of` extensions (`db_core.dart`, `record_service.dart`, `records/*`, `plan_service.dart`, `plans/*`, `category_service.dart`, `categories/*`, `profile_service.dart`, `profile/*`) plus focused domain adapters such as `paths/path_repository.dart` that delegate persistence to existing Brain APIs.
+**Brain rule:** `lib/data/database_service.dart` and its `part of` extensions are the only files that perform HTTP/PocketBase calls. Domain logic lives in focused repositories/services; `paths/path_repository.dart` delegates durable persistence to `paths/path_service.dart` (a DatabaseService part).
 
 **Optimistic UI rule:** User mutations update local Brain cache first, notify UI, then sync PocketBase in the background (`database_service.dart` and its parts).
 
@@ -106,7 +106,7 @@ Product sections own section-specific code later; this phase only separates shel
 | `app/shell/shared/shell_core.dart` | Core shell date/task-loading state, selected-day coordination and sync-failure UI *(part)* |
 | `app/shell/shared/shell_task_actions.dart` | Shell task/record action orchestration, shared record-start retry and source-plan suggestion prompt presentation; preference/matching/link policy lives in Brain *(part)* |
 | `app/shell/shared/shell_tab_host.dart` | Timeline/Planning/Calendar/Lists tab composition; depends explicitly on `ShellEditHosts` instead of concrete dashboard casts *(part)* |
-| `app/shell/shared/shell_lifecycle.dart` | Shell startup/dispose wiring; delegates Planning baseline to `PlannerStartupService` and does not import Paths compatibility *(part)* |
+| `app/shell/shared/shell_lifecycle.dart` | Shell startup/dispose wiring; delegates Planning baseline to `PlannerStartupService`; no Path migration/governance runs from shell startup *(part)* |
 | `app/shell/shared/shell_chrome.dart` | Responsive shell scaffold/chrome: destination pages, app bar, form-factor frame, FAB, bottom navigation, desktop voice shortcuts *(part)* |
 | `app/shell/shared/shell_edit_hosts.dart` | Timeline/plan edit modal hosts *(part)* |
 | `app/shell/shared/shell_more_menu.dart` | More bottom sheet and shell navigation actions only; Paths opens shell destination 6 *(part)* |
@@ -126,7 +126,7 @@ Product sections own section-specific code later; this phase only separates shel
 
 Wear shell/layout remains under `lib/features/wear/` (entered from `main.dart`); `app/shell/wear/` is reserved for a later move when Wear chrome is extracted — no dead placeholders.
 
-Compatibility re-exports (remove when callers migrate): root `lib/app_shell.dart`, `core/navigation/shell_side_navigation.dart`, `app/shell/shared/settings_page.dart`.
+Compatibility entry surface retained intentionally: root `lib/app_shell.dart` is a thin re-export of the canonical shell root.
 
 ### 3.2 `lib/data/` — Brain & models
 
@@ -166,10 +166,12 @@ Compatibility re-exports (remove when callers migrate): root `lib/app_shell.dart
 | `plans/plan_alarm_helpers.dart` | Hydrated-cache plan reminder reconciliation and debounced OS alarm bridge *(part)* |
 | `plans/notes_brain_helpers.dart` | Notes Brain extension — parse/apply/pin/done + debounced `notes_delta` PATCH *(part)* |
 | `plans/daily_routine_service.dart` | Baseline personal recurring Planner series bootstrap and prior-format dedupe; Brain-owned mutation service, not shell UI |
-| `plans/planner_startup_service.dart` | Planning-owned startup baseline: category refresh, daily routine ensure, and isolated historical Path-generated-row cleanup |
+| `plans/planner_startup_service.dart` | Planning-owned startup baseline: category refresh + daily routine ensure only; no Paths migration or scheduling side effects |
+| `plans/path_planner_bridge.dart` | Sole Path → Planner boundary: exposes executable actions from the active durable revision; Planner alone owns scheduling/materialization |
 | `plans/diagnostics/plan_duplicate_log.dart` | Planning-domain duplicate / stream lifecycle markers inside Brain (not shared diagnostics, not feature UI) |
-| `paths/path_repository.dart` | First-class Path domain boundary: transition storage interpretation, explicit Path/stage/action snapshots, duplicate-root reporting, generic structure audit, writes delegated to existing Brain plan APIs |
-| `paths/compatibility/path_governance_service.dart` | Compatibility-era project-specific Paths governance/migrations; exposes a cleanup hook but is not a shell startup dependency |
+| `paths/path_models.dart` | Path lifecycle, immutable revision snapshot types, stages/actions, project-independent structure audit |
+| `paths/path_repository.dart` | Durable Path revision orchestration; reads active revision pointer and publishes append-only revisions through Brain persistence |
+| `paths/path_service.dart` | PocketBase `paths` / `path_revisions` persistence *(part of DatabaseService)* |
 | `category_service.dart` | Category coordinator: flatten/PB bridge statics, stats duration helpers, local task prefs helpers *(part)* |
 | `categories/category_cache_helpers.dart` | Category fetch, slug reservation, `_loadRulesFromNoco` *(part)* |
 | `categories/category_order_helpers.dart` | Category sibling optimistic reorder, baseline tracking, debounced PocketBase order synchronization, immediate lifecycle flush *(part)* |
@@ -559,6 +561,7 @@ Every production Notes feature module above must be listed by exact filename (no
 | `scripts/` | Tooling | `audit/architecture_guard.ps1`, `sync_locales.dart`, `manual/td.ps1` (deploy), structure scan/generator, desktop voice smoke scripts |
 | `installer/windows/` | Windows packaging | `counter.iss` (Inno Setup) → CI produces `CounterSetup.exe` |
 | `docs/` | Governing documents | See `docs/PROJECT_KNOWLEDGE_PACK.md` (14-doc upload list) |
+| `pb_migrations/` | PocketBase schema/data migrations | Versioned server migrations; applied before client release |
 | `pb_hooks/` | PocketBase server hooks (JS) | Deploy next to PocketBase binary on VPS |
 | `android.ps1` | Local Android APK build | `GIT_COMMIT` / `BUILD_TIME` dart-defines for build stamp |
 | `build/` | Flutter build output | **Gitignored** — must not be tracked |

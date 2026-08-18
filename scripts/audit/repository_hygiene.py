@@ -76,6 +76,10 @@ def main() -> int:
                 incoming.setdefault(target, set()).add(source)
 
     for path in files:
+        if path.startswith(".github/workflows/tmp-"):
+            violations.append(f"TEMP_WORKFLOW_TRACKED {path}")
+
+    for path in files:
         if not path.startswith("lib/") or not path.endswith(".dart"):
             continue
         body = text(ROOT / path)

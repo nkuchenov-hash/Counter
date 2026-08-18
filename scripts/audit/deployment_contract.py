@@ -22,6 +22,7 @@ def main() -> int:
         "Detect PocketBase bundle changes",
         "SERVER_CHANGED",
         "find pb_hooks pb_migrations",
+        "Validate main architecture contracts",
     ):
         if token not in pb:
             violations.append(f"POCKETBASE_DEPLOY_CONTRACT_MISSING {token}")

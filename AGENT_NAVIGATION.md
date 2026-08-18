@@ -81,6 +81,8 @@ Short routing map for Cursor / AI. Symbols in backticks.
 | **PB config** | `lib/data/pb_config.dart` | `kPocketBaseUrl`, `PbCollections`, expand constants |
 | **PB — records** | `lib/data/records/record_crud.dart` + coordinator | `writeRecord`, `stopRecordByDocId`, `updateRecord`, `patchRecord`, `deleteRecordByDocId`, `flushPendingRecordMutations`, realtime |
 | **PB — plans & lists** | `lib/data/plan_service.dart` | `fetchPlans`, `fetchBacklogPlans`, `addPlanningTask`, `updatePlanningTask`, `deletePlanningTask`, `deletePlanningTasksBulk`, `flushPendingPlanMutations`, `planningStream`, `_syncPlanTagsPocket` |
+| **Paths domain** | `lib/data/paths/path_models.dart`, `path_repository.dart`, `path_service.dart` | Durable revisions; `paths.active_revision_id` is the active gate |
+| **Path → Planner** | `lib/data/plans/path_planner_bridge.dart` | Sole executable projection boundary; no scheduling from Paths UI/domain |
 | **Offline sync banner** | `lib/app/shell/shared/offline_sync_status_bar.dart` | `OfflineSyncStatusBar` via `ShellTopStatusBars` |
 | **PB — categories** | `lib/data/categories/category_crud.dart` + `category_lookup.dart` + coordinator | `addNestedCategory`, `updateCategory`, `findCategoryByFuzzyMatch` |
 | **PB — tags** | `lib/data/profile/tag_catalog.dart` | (same as tag data row above) |
