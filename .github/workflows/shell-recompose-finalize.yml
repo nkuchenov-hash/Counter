@@ -34,7 +34,7 @@ jobs:
           python scripts/manual/_finalize_shell_recompose.py
           git rm scripts/manual/_finalize_shell_recompose.py
           git diff --check
-          ./scripts/audit/architecture_guard.ps1 -Strict
+          pwsh -File scripts/audit/architecture_guard.ps1 -Strict
       - name: Commit parity update
         shell: bash
         run: |
