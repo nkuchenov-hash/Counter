@@ -20,7 +20,7 @@
 | `lib/features/settings/voice/` | **Voice settings UI** | Microphone / hotkey / recognizer / diagnostics settings pages. |
 | `lib/features/settings/categories/` | **Categories manager UI** | More → Categories band grid, editor/appearance sheets, create dialog, browse panel. |
 | `lib/data/plans/diagnostics/` | **Brain plans diagnostics** | Planning-domain duplicate / stream lifecycle log (`plan_duplicate_log.dart`). Lives inside Brain; not shared diagnostics and not feature UI. |
-| `lib/data/paths/` | **Path domain** | `PathRepository` owns first-class Path interpretation and generic validation. Current storage is an adapter over existing plan-backed Path rows; feature UI must not parse marker rows directly. |
+| `lib/data/paths/` | **Path domain** | `PathRepository` owns first-class Path interpretation and generic validation. Current storage is an adapter over existing plan-backed Path rows; marker-era Path → Planner compatibility is isolated under `paths/compatibility/`; feature UI and shell must not parse marker rows directly. |
 | `lib/features/paths/` | **Paths UI** | First-class Paths destination. Displays/edits Path domain data only; no project bootstrap, migration, or Planner generation on page open. |
 | `lib/app_shell.dart` | **The Navigator** | Thin entry re-export; canonical shell under `lib/app/shell/`. |
 | `lib/main.dart` | **The ignition** | Calls `ensurePocketBaseReady()`, then restores session and loads profile. |
@@ -117,6 +117,7 @@
 - A Path describes **why/where** a project is going; Planner owns **when** executable actions occur.
 - Path structure is project-agnostic: goal, ordered stages, stage completion criteria, concrete actions, expected results, dependencies/constraints/risks/decisions as those fields become durable.
 - The current `PathRepository` is a compatibility adapter over existing plan-backed Path roots; this does **not** redefine `plans` as the permanent Path schema.
+- Marker-era audit and Path-action → Planner orchestration is transitional Brain logic under `lib/data/paths/compatibility/`; it is never a shell/page-open responsibility and must disappear when durable Path revisions + the explicit Planner bridge replace it.
 - Opening Paths is read-only. User edits are explicit and local-first; migration/repair/publish/scheduling are separate operations.
 - Planner generation must be idempotent and traceable to one active Path revision so revising a draft cannot silently reschedule the user.
 

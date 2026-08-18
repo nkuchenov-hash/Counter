@@ -1,0 +1,119 @@
+name: Shell boundary cleanup v2
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: shell-boundary-cleanup-v2-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  cleanup:
+    if: github.event_name == 'workflow_dispatch' || github.head_ref == 'agent/shell-boundary-cleanup'
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout cleanup branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/shell-boundary-cleanup
+          fetch-depth: 0
+
+      - name: Apply ownership cleanup and detailed-doc parity
+        shell: bash
+        run: |
+          python scripts/manual/_shell_boundary_cleanup_finalizer.py
+          python scripts/manual/_patch_structure_detailed_paths_parity.py
+          python scripts/manual/_rename_paths_compatibility_layer.py
+          git rm scripts/manual/_shell_boundary_cleanup_finalizer.py
+          git rm scripts/manual/_patch_structure_detailed_paths_parity.py
+          git rm scripts/manual/_rename_paths_compatibility_layer.py
+
+      - name: Set up Flutter 3.41.6
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.6'
+          channel: stable
+          cache: true
+
+      - name: Format changed Dart
+        shell: bash
+        run: |
+          dart format \
+            lib/app/shell/app_shell.dart \
+            lib/app/shell/shared/shell_shared.dart \
+            lib/app/shell/shared/shell_more_menu.dart \
+            lib/data/paths/compatibility/path_governance_service.dart \
+            lib/data/plans/daily_routine_service.dart \
+            test/daily_routine_contract_test.dart
+
+      - name: Assert ownership and docs parity
+        shell: bash
+        run: |
+          if git grep -n -E 'LIFEOS_PATH::V[12]|ExecutableCategoryPathsPage|ProjectPathsV3Page|_retireLegacyProjectPathsV1|bootstrapExecutablePortfolioPaths' -- lib/app/shell; then
+            echo 'Retired Path implementation still exists in shell.' >&2
+            exit 1
+          fi
+          test ! -e lib/app/shell/shared/shell_path_governance.dart
+          test ! -e lib/app/shell/shared/shell_daily_routine.dart
+          test -e lib/data/paths/compatibility/path_governance_service.dart
+          test -e lib/data/plans/daily_routine_service.dart
+          grep -q "setShellPageIndex(6)" lib/app/shell/shared/shell_more_menu.dart
+          ! grep -q 'lib/app/shell/shared/shell_path_governance.dart' docs/APP_STRUCTURE_DETAILED.md
+          ! grep -q 'lib/app/shell/shared/shell_daily_routine.dart' docs/APP_STRUCTURE_DETAILED.md
+          grep -q 'lib/data/paths/compatibility/path_governance_service.dart' docs/APP_STRUCTURE_DETAILED.md
+          grep -q 'lib/data/plans/daily_routine_service.dart' docs/APP_STRUCTURE_DETAILED.md
+          grep -q '## Folder: `lib/data/paths/compatibility/`' docs/APP_STRUCTURE_DETAILED.md
+
+      - name: Run strict architecture guard
+        shell: pwsh
+        run: ./scripts/audit/architecture_guard.ps1 -Strict
+
+      - name: Prepare Flutter environment
+        shell: bash
+        run: |
+          mkdir -p lib/core/env
+          printf '%s\n' 'abstract final class Env {' "  static const String placeholder = '';" '}' > lib/core/env/env.dart
+          flutter pub get
+
+      - name: Analyze for compile errors
+        run: flutter analyze --no-fatal-warnings --no-fatal-infos
+
+      - name: Run three focused contracts
+        shell: bash
+        run: |
+          flutter test test/paths/path_structure_audit_test.dart
+          flutter test test/daily_routine_contract_test.dart
+          flutter test test/shell_form_factor_test.dart
+
+      - name: Final hygiene
+        shell: bash
+        run: |
+          rm -f lib/core/env/env.dart
+          git diff --check
+          if git status --porcelain | grep 'lib/core/env/env.dart'; then
+            echo 'env.dart leaked into final tree' >&2
+            exit 1
+          fi
+          test ! -e scripts/manual/_shell_boundary_cleanup_finalizer.py
+          test ! -e scripts/manual/_patch_structure_detailed_paths_parity.py
+          test ! -e scripts/manual/_rename_paths_compatibility_layer.py
+
+      - name: Commit verified cleanup
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          if git diff --cached --quiet; then
+            echo 'No cleanup changes to commit.' >&2
+            exit 1
+          fi
+          git commit -m 'Align shell ownership with Paths architecture'
+          git push origin HEAD:agent/shell-boundary-cleanup

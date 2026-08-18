@@ -118,10 +118,7 @@ Future<CategoryRule?> _ensureDailyRoutineCategoryV6() async {
   return _findDailyRoutineCategoryV6();
 }
 
-DateTime _routineBaseStartV6(
-  DatabaseService db,
-  _DailyRoutineSpecV6 spec,
-) {
+DateTime _routineBaseStartV6(DatabaseService db, _DailyRoutineSpecV6 spec) {
   final today = db.getTimelineDeviceLocalToday();
   final nowWall = db.applyUserOffset(DateTime.now().toUtc());
   var start = DateTime(
@@ -154,10 +151,7 @@ String _systemIdTokenV7(String value) {
   return normalized.isEmpty ? 'unknown' : normalized;
 }
 
-String _routineSeriesPlanIdV7(
-  CategoryRule category,
-  _DailyRoutineSpecV6 spec,
-) {
+String _routineSeriesPlanIdV7(CategoryRule category, _DailyRoutineSpecV6 spec) {
   final scope = (category.backendRowId ?? category.categoryKey).trim();
   return 'lifeos-routine-v1-${_systemIdTokenV7(scope)}-${_systemIdTokenV7(spec.key)}';
 }
@@ -170,7 +164,8 @@ String _routineBusinessIdV7(Map<String, dynamic> row) =>
 
 bool _routineRowHasScheduleV7(Map<String, dynamic> row) {
   final rrule = (row['rrule'] ?? '').toString().trim();
-  final start = (row['start_time'] ?? row['startTime'])?.toString().trim() ?? '';
+  final start =
+      (row['start_time'] ?? row['startTime'])?.toString().trim() ?? '';
   return rrule.isNotEmpty && start.isNotEmpty;
 }
 
@@ -283,6 +278,7 @@ Future<void> _ensureDailyRoutineOnceV7() async {
           if (_routineBackendIdV7(row).isNotEmpty) return 2;
           return 3;
         }
+
         return rank(a).compareTo(rank(b));
       });
       final keep = rows.first;
@@ -295,7 +291,8 @@ Future<void> _ensureDailyRoutineOnceV7() async {
         await db.deletePlanningTasksBulk(duplicateIds);
       }
       if (keepBackendId.isNotEmpty) {
-        final alreadyReady = _routineRowHasScheduleV7(keep) &&
+        final alreadyReady =
+            _routineRowHasScheduleV7(keep) &&
             _routineBusinessIdV7(keep) == deterministicPlanId;
         if (!alreadyReady) {
           await _scheduleRoutineSeriesV6(

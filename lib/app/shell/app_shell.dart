@@ -51,7 +51,7 @@ import 'package:counter/app/shell/phone/phone_shell_frame.dart';
 import 'package:counter/app/shell/shared/shell_form_factor.dart';
 import 'package:counter/app/shell/shared/shell_offline_banner.dart';
 import 'package:counter/app/shell/shared/shell_shared.dart';
-import 'package:counter/app/shell/shared/shell_path_governance.dart';
+import 'package:counter/data/paths/compatibility/path_governance_service.dart';
 import 'package:counter/app/shell/tablet/tablet_shell_frame.dart';
 import 'package:flutter/foundation.dart' show kDebugMode, kIsWeb;
 import 'package:flutter/material.dart';
@@ -148,7 +148,6 @@ mixin ShellDashboardBase on State<LifeOSDashboard> {
 
   int? get effectiveCategoryId =>
       selectedCategoryId ?? DatabaseService.instance.defaultCategoryId;
-
 }
 
 class LifeOSDashboard extends StatefulWidget {
@@ -158,7 +157,14 @@ class LifeOSDashboard extends StatefulWidget {
   State<LifeOSDashboard> createState() => ShellDashboardState();
 }
 
-class ShellDashboardState extends State<LifeOSDashboard> with ShellDashboardBase, ShellCoreLogic, ShellTabHost, ShellEditHosts, ShellMoreMenu, ShellVoiceRouting {
+class ShellDashboardState extends State<LifeOSDashboard>
+    with
+        ShellDashboardBase,
+        ShellCoreLogic,
+        ShellTabHost,
+        ShellEditHosts,
+        ShellMoreMenu,
+        ShellVoiceRouting {
   @override
   void initState() {
     super.initState();
@@ -192,7 +198,8 @@ class ShellDashboardState extends State<LifeOSDashboard> with ShellDashboardBase
     rules = List.from(DatabaseService.instance.rules);
     selectedCategoryId = DatabaseService.instance.defaultCategoryId;
     DesktopVoiceAcceptanceBridge.runCommand = runDesktopVoiceAcceptanceCommand;
-    DesktopVoiceAcceptanceBridge.simulateHotkeyToggle = onDesktopVoiceHotkeyToggle;
+    DesktopVoiceAcceptanceBridge.simulateHotkeyToggle =
+        onDesktopVoiceHotkeyToggle;
     DesktopVoiceSmokeBridge.attachIfNeeded();
     DesktopVoiceSmokeBridge.onFireHotkey = onDesktopVoiceHotkeyToggle;
     unawaited(DesktopVoiceSmokeBridge.ensureVoiceEnabledForSmoke());
@@ -210,19 +217,13 @@ class ShellDashboardState extends State<LifeOSDashboard> with ShellDashboardBase
           debugPrint('[PLANNER_BASELINE_V7] ensure failed: $e');
         }
       }());
-      StartupLog.deferred(
-        name: 'syncBootstrap',
-        reason: 'canRunAfterShell',
-      );
+      StartupLog.deferred(name: 'syncBootstrap', reason: 'canRunAfterShell');
       unawaited(() async {
         await DatabaseService.instance.offlineSync.bootstrapFromOutboxes(
           pbBackoffActive: DatabaseService.instance.pbHttpBackoffActive,
         );
       }());
-      StartupLog.deferred(
-        name: 'sttInit',
-        reason: 'notNeededForFirstFrame',
-      );
+      StartupLog.deferred(name: 'sttInit', reason: 'notNeededForFirstFrame');
       unawaited(ensureSpeechReady());
       unawaited(initDesktopVoiceLayer());
     });
@@ -240,21 +241,11 @@ class ShellDashboardState extends State<LifeOSDashboard> with ShellDashboardBase
         .getTimelineDeviceLocalToday();
     deviceLocalDayKeyLast = DatabaseService.instance
         .getTimelineDeviceLocalTodayDateKey();
-    deviceLocalMidnightWatchTimer = Timer.periodic(
-      const Duration(minutes: 1),
-      (_) {
-        onDeviceLocalCalendarDayWatchTick();
-      },
-    );
-  }
-
-  /// Paths is a real shell destination. This override replaces the legacy
-  /// nested-route implementation inherited from ShellMoreMenu. Opening Paths
-  /// is therefore navigation only; the page itself performs read-only load.
-  @override
-  void openProjectPaths() {
-    if (shellPageIndex == 6) return;
-    setState(() => setShellPageIndex(6));
+    deviceLocalMidnightWatchTimer = Timer.periodic(const Duration(minutes: 1), (
+      _,
+    ) {
+      onDeviceLocalCalendarDayWatchTick();
+    });
   }
 
   /// Keep the real Paths item selected in desktop navigation while the new
@@ -339,215 +330,233 @@ class ShellDashboardState extends State<LifeOSDashboard> with ShellDashboardBase
                 child: SizedBox.expand(),
               );
             }
-        final shellSw = Stopwatch()..start();
-        final scheme = Theme.of(context).colorScheme;
-        shellLayout.applyShellFrame(shellPageIndex);
-        final loc = currentLocale.value;
-        final builtTabs = kShellDeferHiddenTabsUntilFirstFrame ? 1 : pages.length;
-        final shell = StreamBuilder<UserSettings>(
-          stream: DatabaseService.instance.userSettingsStream,
-          initialData: DatabaseService.instance.settings,
-          builder: (context, settingsSnap) {
-            final tagMode = settingsSnap.data?.tagDisplayMode ??
-                CategoryDisplayMode.letterChip;
-            return TagDisplayModeScope(
-              mode: tagMode,
-              child: AnnotatedRegion<SystemUiOverlayStyle>(
-          value: SystemUiOverlayStyle(
-            statusBarColor: Colors.transparent,
-            statusBarIconBrightness: Brightness.light,
-            systemNavigationBarColor: scheme.surface,
-          ),
-          child: Listener(
-            behavior: HitTestBehavior.translucent,
-            onPointerDown: (_) {
-              ScaffoldMessenger.of(context).clearSnackBars();
-            },
-            child: ShellLayoutScope(
-              controller: shellLayout,
-              child: Scaffold(
-                backgroundColor: scheme.surface,
-                resizeToAvoidBottomInset: true,
-                appBar: shellPageIndex <= 3
-                    ? AppBar(
-                        toolbarHeight: kGlobalCompactHeaderHeight,
-                        backgroundColor: kGlobalCompactHeaderColor,
-                        foregroundColor: kGlobalCompactHeaderForeground,
-                        surfaceTintColor: Colors.transparent,
-                        automaticallyImplyLeading: false,
-                        elevation: 0,
-                        scrolledUnderElevation: 0,
-                        titleSpacing: 16,
-                        title: Row(
-                          children: [
-                            Text(
-                              t(loc, 'app_title'),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: Theme.of(context).textTheme.titleMedium
-                                  ?.copyWith(
-                                    color: kGlobalCompactHeaderForeground,
-                                    fontWeight: FontWeight.w700,
-                                    height: 1.0,
-                                  ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Align(
-                                alignment: AlignmentDirectional.centerEnd,
-                                child: ListenableBuilder(
-                                  listenable: selectedDateListenable,
-                                  builder: (context, _) => GlobalAppHeader(
-                                    selectedDate: selectedDate,
-                                    onDateSelected: selectShellHeaderDate,
-                                    compact: true,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      )
-                    : null,
-                body: LayoutBuilder(
-                  builder: (context, constraints) {
-                    final formFactor = shellFormFactorForWidth(
-                      constraints.maxWidth,
-                    );
-                    final mainColumn = Column(
-                      children: [
-                        ShellTopStatusBars(
-                          routeTab: ShellDashboardBase.shellTabDiagnosticLabel(shellPageIndex),
-                        ),
-                        Expanded(
-                          child: kShellDeferHiddenTabsUntilFirstFrame
-                              ? LazyIndexedStack(
-                                  index: shellPageIndex,
-                                  children: pages,
-                                )
-                              : ShellFlags.useLazyIndexedStack
-                              ? LazyIndexedStack(
-                                  index: shellPageIndex,
-                                  children: pages,
-                                )
-                              : IndexedStack(
-                                  index: shellPageIndex,
-                                  sizing: StackFit.expand,
-                                  children: pages,
-                                ),
-                        ),
-                      ],
-                    );
-                    return switch (formFactor) {
-                      ShellFormFactor.desktop => DesktopShellFrame(
-                          selectedIndex:
-                              desktopSideNavSelectedIndex(shellPageIndex),
-                          onTabSelected: onDesktopSideNavSelected,
-                          child: mainColumn,
-                        ),
-                      ShellFormFactor.tablet => TabletShellFrame(
-                          child: mainColumn,
-                        ),
-                      ShellFormFactor.phone => PhoneShellFrame(
-                          child: mainColumn,
-                        ),
-                    };
-                  },
-                ),
-                floatingActionButtonLocation:
-                    FloatingActionButtonLocation.endFloat,
-                floatingActionButton: ListenableBuilder(
-                  listenable: selectedDateListenable,
-                  builder: (context, _) {
-                    final showFab = shellPageIndex != 6 &&
-                        (shellPageIndex == 1 ||
-                            shellPageIndex == 3 ||
-                            !isFutureDate);
-                    if (!showFab) return const SizedBox.shrink();
-                    return ListenableBuilder(
-                      listenable: shellLayout,
-                      builder: (context, child) {
-                        final bulkReservePx = shellLayout.fabBottomReservePx;
-                        return AnimatedPadding(
-                          duration: const Duration(milliseconds: 240),
-                          curve: Curves.easeOutCubic,
-                          padding: EdgeInsets.only(
-                            bottom:
-                                MediaQuery.paddingOf(context).bottom +
-                                bulkReservePx,
-                          ),
-                          child: child,
-                        );
+            final shellSw = Stopwatch()..start();
+            final scheme = Theme.of(context).colorScheme;
+            shellLayout.applyShellFrame(shellPageIndex);
+            final loc = currentLocale.value;
+            final builtTabs = kShellDeferHiddenTabsUntilFirstFrame
+                ? 1
+                : pages.length;
+            final shell = StreamBuilder<UserSettings>(
+              stream: DatabaseService.instance.userSettingsStream,
+              initialData: DatabaseService.instance.settings,
+              builder: (context, settingsSnap) {
+                final tagMode =
+                    settingsSnap.data?.tagDisplayMode ??
+                    CategoryDisplayMode.letterChip;
+                return TagDisplayModeScope(
+                  mode: tagMode,
+                  child: AnnotatedRegion<SystemUiOverlayStyle>(
+                    value: SystemUiOverlayStyle(
+                      statusBarColor: Colors.transparent,
+                      statusBarIconBrightness: Brightness.light,
+                      systemNavigationBarColor: scheme.surface,
+                    ),
+                    child: Listener(
+                      behavior: HitTestBehavior.translucent,
+                      onPointerDown: (_) {
+                        ScaffoldMessenger.of(context).clearSnackBars();
                       },
-                      child: FloatingActionButton(
-                        onPressed: startVoiceInput,
-                        tooltip: isVoiceListening
-                            ? t(currentLocale.value, 'listening')
-                            : t(currentLocale.value, 'voice_input'),
-                        child: Icon(
-                          isVoiceListening
-                              ? Icons.graphic_eq_rounded
-                              : Icons.mic_rounded,
+                      child: ShellLayoutScope(
+                        controller: shellLayout,
+                        child: Scaffold(
+                          backgroundColor: scheme.surface,
+                          resizeToAvoidBottomInset: true,
+                          appBar: shellPageIndex <= 3
+                              ? AppBar(
+                                  toolbarHeight: kGlobalCompactHeaderHeight,
+                                  backgroundColor: kGlobalCompactHeaderColor,
+                                  foregroundColor:
+                                      kGlobalCompactHeaderForeground,
+                                  surfaceTintColor: Colors.transparent,
+                                  automaticallyImplyLeading: false,
+                                  elevation: 0,
+                                  scrolledUnderElevation: 0,
+                                  titleSpacing: 16,
+                                  title: Row(
+                                    children: [
+                                      Text(
+                                        t(loc, 'app_title'),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .titleMedium
+                                            ?.copyWith(
+                                              color:
+                                                  kGlobalCompactHeaderForeground,
+                                              fontWeight: FontWeight.w700,
+                                              height: 1.0,
+                                            ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Align(
+                                          alignment:
+                                              AlignmentDirectional.centerEnd,
+                                          child: ListenableBuilder(
+                                            listenable: selectedDateListenable,
+                                            builder: (context, _) =>
+                                                GlobalAppHeader(
+                                                  selectedDate: selectedDate,
+                                                  onDateSelected:
+                                                      selectShellHeaderDate,
+                                                  compact: true,
+                                                ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                )
+                              : null,
+                          body: LayoutBuilder(
+                            builder: (context, constraints) {
+                              final formFactor = shellFormFactorForWidth(
+                                constraints.maxWidth,
+                              );
+                              final mainColumn = Column(
+                                children: [
+                                  ShellTopStatusBars(
+                                    routeTab:
+                                        ShellDashboardBase.shellTabDiagnosticLabel(
+                                          shellPageIndex,
+                                        ),
+                                  ),
+                                  Expanded(
+                                    child: kShellDeferHiddenTabsUntilFirstFrame
+                                        ? LazyIndexedStack(
+                                            index: shellPageIndex,
+                                            children: pages,
+                                          )
+                                        : ShellFlags.useLazyIndexedStack
+                                        ? LazyIndexedStack(
+                                            index: shellPageIndex,
+                                            children: pages,
+                                          )
+                                        : IndexedStack(
+                                            index: shellPageIndex,
+                                            sizing: StackFit.expand,
+                                            children: pages,
+                                          ),
+                                  ),
+                                ],
+                              );
+                              return switch (formFactor) {
+                                ShellFormFactor.desktop => DesktopShellFrame(
+                                  selectedIndex: desktopSideNavSelectedIndex(
+                                    shellPageIndex,
+                                  ),
+                                  onTabSelected: onDesktopSideNavSelected,
+                                  child: mainColumn,
+                                ),
+                                ShellFormFactor.tablet => TabletShellFrame(
+                                  child: mainColumn,
+                                ),
+                                ShellFormFactor.phone => PhoneShellFrame(
+                                  child: mainColumn,
+                                ),
+                              };
+                            },
+                          ),
+                          floatingActionButtonLocation:
+                              FloatingActionButtonLocation.endFloat,
+                          floatingActionButton: ListenableBuilder(
+                            listenable: selectedDateListenable,
+                            builder: (context, _) {
+                              final showFab =
+                                  shellPageIndex != 6 &&
+                                  (shellPageIndex == 1 ||
+                                      shellPageIndex == 3 ||
+                                      !isFutureDate);
+                              if (!showFab) return const SizedBox.shrink();
+                              return ListenableBuilder(
+                                listenable: shellLayout,
+                                builder: (context, child) {
+                                  final bulkReservePx =
+                                      shellLayout.fabBottomReservePx;
+                                  return AnimatedPadding(
+                                    duration: const Duration(milliseconds: 240),
+                                    curve: Curves.easeOutCubic,
+                                    padding: EdgeInsets.only(
+                                      bottom:
+                                          MediaQuery.paddingOf(context).bottom +
+                                          bulkReservePx,
+                                    ),
+                                    child: child,
+                                  );
+                                },
+                                child: FloatingActionButton(
+                                  onPressed: startVoiceInput,
+                                  tooltip: isVoiceListening
+                                      ? t(currentLocale.value, 'listening')
+                                      : t(currentLocale.value, 'voice_input'),
+                                  child: Icon(
+                                    isVoiceListening
+                                        ? Icons.graphic_eq_rounded
+                                        : Icons.mic_rounded,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                          bottomNavigationBar: LayoutBuilder(
+                            builder: (context, constraints) {
+                              final formFactor = shellFormFactorForWidth(
+                                constraints.maxWidth,
+                              );
+                              if (formFactor == ShellFormFactor.desktop) {
+                                return const SizedBox.shrink();
+                              }
+                              return PhoneShellBottomNavigation(
+                                viewportWidth: constraints.maxWidth,
+                                selectedIndex: navBarSelectedIndex,
+                                onDestinationSelected: onShellTabSelected,
+                              );
+                            },
+                          ),
                         ),
                       ),
-                    );
-                  },
-                ),
-                bottomNavigationBar: LayoutBuilder(
-                  builder: (context, constraints) {
-                    final formFactor = shellFormFactorForWidth(
-                      constraints.maxWidth,
-                    );
-                    if (formFactor == ShellFormFactor.desktop) {
-                      return const SizedBox.shrink();
-                    }
-                    return PhoneShellBottomNavigation(
-                      viewportWidth: constraints.maxWidth,
-                      selectedIndex: navBarSelectedIndex,
-                      onDestinationSelected: onShellTabSelected,
-                    );
-                  },
-                ),
-              ),
-            ),
-          ),
-        ),
-            );
-          },
-        );
-        shellSw.stop();
-        StartupLog.shellBuild(
-          activeTab: ShellDashboardBase.shellTabDiagnosticLabel(shellPageIndex),
-          ms: shellSw.elapsedMilliseconds,
-          builtTabs: builtTabs,
-        );
-        if (DesktopVoiceHotkey.isActive) {
-          return Shortcuts(
-            shortcuts: {
-              DesktopVoiceHotkey.inAppActivator: const DesktopVoiceCommandIntent(),
-            },
-            child: Actions(
-              actions: {
-                DesktopVoiceCommandIntent:
-                    CallbackAction<DesktopVoiceCommandIntent>(
-                  onInvoke: (_) {
-                    unawaited(toggleDesktopVoiceWidget());
-                    return null;
-                  },
-                ),
+                    ),
+                  ),
+                );
               },
-              child: shell,
-            ),
-          );
-        }
-        return shell;
+            );
+            shellSw.stop();
+            StartupLog.shellBuild(
+              activeTab: ShellDashboardBase.shellTabDiagnosticLabel(
+                shellPageIndex,
+              ),
+              ms: shellSw.elapsedMilliseconds,
+              builtTabs: builtTabs,
+            );
+            if (DesktopVoiceHotkey.isActive) {
+              return Shortcuts(
+                shortcuts: {
+                  DesktopVoiceHotkey.inAppActivator:
+                      const DesktopVoiceCommandIntent(),
+                },
+                child: Actions(
+                  actions: {
+                    DesktopVoiceCommandIntent:
+                        CallbackAction<DesktopVoiceCommandIntent>(
+                          onInvoke: (_) {
+                            unawaited(toggleDesktopVoiceWidget());
+                            return null;
+                          },
+                        ),
+                  },
+                  child: shell,
+                ),
+              );
+            }
+            return shell;
           },
         );
       },
     );
   }
 }
-
 
 class DesktopVoiceCommandIntent extends Intent {
   const DesktopVoiceCommandIntent();

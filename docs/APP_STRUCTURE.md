@@ -6,7 +6,7 @@ Physical map of the Flutter application: what exists, which layer owns it, who m
 
 ---
 
-## 0. Current status (2026-08-17)
+## 0. Current status (2026-08-18)
 
 | Item | Value |
 | :--- | :--- |
@@ -17,7 +17,7 @@ Physical map of the Flutter application: what exists, which layer owns it, who m
 | **Diagnostics ownership** | Phase 2B (2026-07-22): runtime logs + kill switches under `lib/shared/diagnostics/`; plan duplicate log under `lib/data/plans/diagnostics/` (Brain); desktop voice pipeline under `lib/shared/voice/diagnostics/` |
 | **Voice ownership** | Phase 2C (2026-07-22): shared Voice contracts/adapters under `lib/shared/voice/`; Brain execution under `lib/data/voice/`; desktop Flutter Voice UI under `lib/features/voice/`; settings under `features/settings/voice/`; Shell keeps `shell_voice_routing` |
 | **Categories ownership** | Phase 2D (2026-07-23): shared presentation/tree/picker/visibility under `lib/shared/categories/`; Brain CRUD remains `lib/data/categories/`; manager UI under `lib/features/settings/categories/`; Lists owns `category_filter_tree_field.dart`; plan/record draft helpers under `features/shared/edit_sheet/category_edit_draft.dart` |
-| **Paths ownership** | 2026-08-17: first-class UI under `lib/features/paths/`; Path domain transition adapter under `lib/data/paths/`; shell owns navigation only; opening Paths performs no migration or Planner generation |
+| **Paths ownership** | 2026-08-18: first-class UI under `lib/features/paths/`; Path repository + marker-era compatibility/governance under `lib/data/paths/`; shell owns navigation only; opening Paths performs no migration or Planner generation |
 | **Health / unfilled-time doc parity** | 2026-08-17: Health Connect sleep, cloud sleep, unfilled Timeline-gap detection/notifications and settings modules added to the canonical manifest after strict guard exposed post-audit drift |
 | **Strict architecture guard** | Baseline 2026-07-17 cleanup **complete**: 63 → 0 (A=0, B=0); hygiene audit 2026-07-21; diagnostics Phase 2B + voice Phase 2C 2026-07-22; categories Phase 2D 2026-07-23 |
 | **Detailed file guide** | [`docs/APP_STRUCTURE_DETAILED.md`](APP_STRUCTURE_DETAILED.md) — owner-readable **evidence-backed** EN/RU entry per tracked folder and file (role, necessity, confidence, deletion consequence); regenerate via `generate_app_structure_detailed.py` |
@@ -106,9 +106,7 @@ Product sections own section-specific code later; this phase only separates shel
 | `app/shell/shared/shell_core.dart` | Core shell logic mixin (date header, tasks load, nav) *(part)* |
 | `app/shell/shared/shell_tab_host.dart` | Tab `IndexedStack` builders *(part)* |
 | `app/shell/shared/shell_edit_hosts.dart` | Timeline/plan edit modal hosts *(part)* |
-| `app/shell/shared/shell_more_menu.dart` | More bottom sheet plus retained transition Path code; new Paths UI is owned by `features/paths/` *(part)* |
-| `app/shell/shared/shell_path_governance.dart` | Transition Path audit and Path-action → Planner orchestration; first-class Paths does not invoke it on page open |
-| `app/shell/shared/shell_daily_routine.dart` | One-time bootstrap for baseline personal daily recurring Planner series; preserves existing/user-edited recurrence |
+| `app/shell/shared/shell_more_menu.dart` | More bottom sheet and shell navigation actions only; Paths opens shell destination 6 *(part)* |
 | `app/shell/shared/shell_voice_routing.dart` | Voice hotkey + submit routing *(part)* |
 | `app/shell/shared/shell_offline_banner.dart` | Offline sync banner column slot |
 | `app/shell/shared/shell_shared.dart` | Shell-local date helpers |
@@ -161,8 +159,10 @@ Compatibility re-exports (remove when callers migrate): root `lib/app_shell.dart
 | `plans/plan_ai_parse_helpers.dart` | AI `parse-task` helpers: `parseTaskViaAiBackend`, `parsePlanningItemsViaAiBackend` *(part)* |
 | `plans/plan_alarm_helpers.dart` | Hydrated-cache plan reminder reconciliation and debounced OS alarm bridge *(part)* |
 | `plans/notes_brain_helpers.dart` | Notes Brain extension — parse/apply/pin/done + debounced `notes_delta` PATCH *(part)* |
+| `plans/daily_routine_service.dart` | Baseline personal recurring Planner series bootstrap and prior-format dedupe; Brain-owned mutation service, not shell UI |
 | `plans/diagnostics/plan_duplicate_log.dart` | Planning-domain duplicate / stream lifecycle markers inside Brain (not shared diagnostics, not feature UI) |
 | `paths/path_repository.dart` | First-class Path domain boundary: transition storage interpretation, explicit Path/stage/action snapshots, duplicate-root reporting, generic structure audit, writes delegated to existing Brain plan APIs |
+| `paths/compatibility/path_governance_service.dart` | Marker-era Path audit and Path-action → Planner compatibility orchestration; isolated from shell and not invoked by opening Paths |
 | `category_service.dart` | Category coordinator: flatten/PB bridge statics, stats duration helpers, local task prefs helpers *(part)* |
 | `categories/category_cache_helpers.dart` | Category fetch, slug reservation, `_loadRulesFromNoco` *(part)* |
 | `categories/category_order_helpers.dart` | Category sibling optimistic reorder, baseline tracking, debounced PocketBase order synchronization, immediate lifecycle flush *(part)* |
