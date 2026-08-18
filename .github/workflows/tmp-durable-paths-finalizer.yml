@@ -1,0 +1,80 @@
+name: Temporary durable Paths finalizer
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    if: github.head_ref == 'architecture/durable-path-revisions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: architecture/durable-path-revisions
+          fetch-depth: 1
+
+      - name: Apply durable Paths architecture
+        run: |
+          python scripts/manual/_finalize_durable_paths.py
+          python scripts/manual/_patch_structure_evidence_for_paths.py
+          dart --version || true
+          git diff --check
+
+      - name: Check migration syntax and schema contract
+        run: |
+          node --check pb_migrations/1787076000_durable_paths.js
+          python scripts/audit/pocketbase_schema_contract.py
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.6'
+          channel: stable
+          cache: true
+
+      - name: Compile gate after Path boundary replacement
+        shell: bash
+        run: |
+          dart format \
+            lib/data/paths/path_models.dart \
+            lib/data/paths/path_repository.dart \
+            lib/data/paths/path_service.dart \
+            lib/data/plans/path_planner_bridge.dart \
+            lib/data/plans/planner_startup_service.dart
+          mkdir -p lib/core/env
+          printf '%s\n' 'abstract final class Env {' "  static const String placeholder = '';" '}' > lib/core/env/env.dart
+          flutter pub get
+          flutter analyze --no-fatal-warnings --no-fatal-infos
+          rm -f lib/core/env/env.dart
+
+      - name: Remove temporary files and verify final tree
+        shell: bash
+        run: |
+          git rm -f scripts/manual/_finalize_durable_paths.py
+          git rm -f scripts/manual/_patch_structure_evidence_for_paths.py
+          git rm -f .github/workflows/tmp-durable-paths-finalizer.yml
+
+          python scripts/manual/generate_app_structure_detailed.py
+          cp docs/APP_STRUCTURE_DETAILED.md /tmp/app_structure_detailed_first.md
+          python scripts/manual/generate_app_structure_detailed.py
+          cmp /tmp/app_structure_detailed_first.md docs/APP_STRUCTURE_DETAILED.md
+
+          python scripts/audit/documentation_parity.py
+          python scripts/audit/repository_hygiene.py
+          python scripts/audit/pocketbase_schema_contract.py
+          pwsh -NoProfile -NonInteractive -File ./scripts/audit/architecture_guard.ps1 -Strict
+          node --check pb_migrations/1787076000_durable_paths.js
+          git diff --check
+
+      - name: Commit verified architecture
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'Replace Paths compatibility with durable revisions'
+          git push origin HEAD:architecture/durable-path-revisions
