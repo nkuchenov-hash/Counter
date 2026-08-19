@@ -52,7 +52,7 @@ abstract final class NotesFigmaTokens {
   static const double toolbarVerticalPadding = 8;
   static const double toolbarButtonSize = 32;
   static const double toolbarButtonRadius = 8;
-  static const double toolbarIconSize = 16;
+  static const double toolbarIconSize = 20;
 
   static const double floatingMenuRadius = 16;
   static const double glassBlur = 4;
