@@ -1,5 +1,19 @@
 part of 'notes_canonical_components.dart';
 
+class NotesToolbarMenuItem {
+  const NotesToolbarMenuItem({
+    required this.icon,
+    required this.tooltip,
+    required this.onPressed,
+    this.selected = false,
+  });
+
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback onPressed;
+  final bool selected;
+}
+
 class NotesToolbarAction {
   const NotesToolbarAction({
     required this.tool,
@@ -8,6 +22,7 @@ class NotesToolbarAction {
     required this.onPressed,
     this.selected = false,
     this.enabled = true,
+    this.menuItems = const <NotesToolbarMenuItem>[],
   });
 
   final NotesToolbarTool tool;
@@ -16,6 +31,7 @@ class NotesToolbarAction {
   final VoidCallback onPressed;
   final bool selected;
   final bool enabled;
+  final List<NotesToolbarMenuItem> menuItems;
 }
 
 class NotesToolbarButton extends StatelessWidget {
@@ -70,6 +86,224 @@ class NotesToolbarButton extends StatelessWidget {
                 icon,
                 size: NotesFigmaTokens.toolbarIconSize,
                 color: foreground,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _NotesToolbarMenuButton extends StatefulWidget {
+  const _NotesToolbarMenuButton({required this.action});
+
+  final NotesToolbarAction action;
+
+  @override
+  State<_NotesToolbarMenuButton> createState() =>
+      _NotesToolbarMenuButtonState();
+}
+
+class _NotesToolbarMenuButtonState extends State<_NotesToolbarMenuButton> {
+  static const _hoverCloseDelay = Duration(milliseconds: 140);
+  static const _menuGap = 4.0;
+
+  final LayerLink _layerLink = LayerLink();
+  final Object _tapRegionGroup = Object();
+  OverlayEntry? _overlayEntry;
+  bool _pointerOverTrigger = false;
+  bool _pointerOverMenu = false;
+  int _closeTicket = 0;
+
+  void _showMenu() {
+    if (!widget.action.enabled || _overlayEntry != null) return;
+    final overlay = Overlay.of(context);
+    final entry = OverlayEntry(
+      builder: (_) => CompositedTransformFollower(
+        link: _layerLink,
+        showWhenUnlinked: false,
+        targetAnchor: Alignment.topCenter,
+        followerAnchor: Alignment.bottomCenter,
+        offset: const Offset(0, -_menuGap),
+        child: Material(
+          type: MaterialType.transparency,
+          child: TapRegion(
+            groupId: _tapRegionGroup,
+            child: MouseRegion(
+              onEnter: (_) {
+                _pointerOverMenu = true;
+                _cancelScheduledClose();
+              },
+              onExit: (_) {
+                _pointerOverMenu = false;
+                _scheduleClose();
+              },
+              child: _NotesCompactToolbarMenu(
+                items: widget.action.menuItems,
+                onSelected: _selectItem,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    _overlayEntry = entry;
+    overlay.insert(entry);
+  }
+
+  void _toggleMenu() {
+    if (_overlayEntry == null) {
+      _showMenu();
+    } else {
+      _hideMenu();
+    }
+  }
+
+  void _selectItem(NotesToolbarMenuItem item) {
+    _hideMenu();
+    item.onPressed();
+  }
+
+  void _hideMenu() {
+    _cancelScheduledClose();
+    _overlayEntry?.remove();
+    _overlayEntry = null;
+    _pointerOverMenu = false;
+  }
+
+  void _cancelScheduledClose() {
+    _closeTicket++;
+  }
+
+  void _scheduleClose() {
+    final ticket = ++_closeTicket;
+    Future<void>.delayed(_hoverCloseDelay, () {
+      if (!mounted ||
+          ticket != _closeTicket ||
+          _pointerOverTrigger ||
+          _pointerOverMenu) {
+        return;
+      }
+      _hideMenu();
+    });
+  }
+
+  @override
+  void didUpdateWidget(covariant _NotesToolbarMenuButton oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!widget.action.enabled && _overlayEntry != null) _hideMenu();
+  }
+
+  @override
+  void dispose() {
+    _closeTicket++;
+    _overlayEntry?.remove();
+    _overlayEntry = null;
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return TapRegion(
+      groupId: _tapRegionGroup,
+      onTapOutside: (_) => _hideMenu(),
+      child: CompositedTransformTarget(
+        link: _layerLink,
+        child: MouseRegion(
+          onEnter: (_) {
+            _pointerOverTrigger = true;
+            _cancelScheduledClose();
+            _showMenu();
+          },
+          onExit: (_) {
+            _pointerOverTrigger = false;
+            _scheduleClose();
+          },
+          child: NotesToolbarButton(
+            tool: widget.action.tool,
+            icon: widget.action.icon,
+            tooltip: widget.action.tooltip,
+            onPressed: _toggleMenu,
+            selected: widget.action.selected,
+            enabled: widget.action.enabled,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _NotesCompactToolbarMenu extends StatelessWidget {
+  const _NotesCompactToolbarMenu({
+    required this.items,
+    required this.onSelected,
+  });
+
+  final List<NotesToolbarMenuItem> items;
+  final ValueChanged<NotesToolbarMenuItem> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: kNotesToolbarButtonSize,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(
+            NotesFigmaTokens.toolbarButtonRadius,
+          ),
+          boxShadow: [NotesFigmaTokens.floatingMenuShadow],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(
+            NotesFigmaTokens.toolbarButtonRadius,
+          ),
+          child: BackdropFilter(
+            filter: ui.ImageFilter.blur(
+              sigmaX: NotesFigmaTokens.floatingMenuBlur,
+              sigmaY: NotesFigmaTokens.floatingMenuBlur,
+            ),
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: NotesFigmaTokens.glassFill(context),
+                border: Border.all(
+                  color: NotesFigmaTokens.glassStroke(context),
+                ),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  for (final item in items)
+                    Tooltip(
+                      message: item.tooltip,
+                      child: Semantics(
+                        button: true,
+                        selected: item.selected,
+                        label: item.tooltip,
+                        child: Material(
+                          color: item.selected
+                              ? NotesFigmaTokens.selectedSurface(context)
+                              : Colors.transparent,
+                          child: InkWell(
+                            key: ValueKey(
+                              'notes-list-menu-${item.tooltip}',
+                            ),
+                            onTap: () => onSelected(item),
+                            child: SizedBox.square(
+                              dimension: kNotesToolbarButtonSize,
+                              child: Icon(
+                                item.icon,
+                                size: NotesFigmaTokens.toolbarIconSize,
+                                color: item.selected
+                                    ? NotesFigmaTokens.selectedIcon(context)
+                                    : NotesFigmaTokens.iconSecondary(context),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
           ),
@@ -136,14 +370,17 @@ class NotesEditorToolbar extends StatelessWidget {
                         : MainAxisAlignment.spaceBetween,
                     children: [
                       for (final action in actions)
-                        NotesToolbarButton(
-                          tool: action.tool,
-                          icon: action.icon,
-                          tooltip: action.tooltip,
-                          onPressed: action.onPressed,
-                          selected: action.selected,
-                          enabled: action.enabled,
-                        ),
+                        if (action.menuItems.isEmpty)
+                          NotesToolbarButton(
+                            tool: action.tool,
+                            icon: action.icon,
+                            tooltip: action.tooltip,
+                            onPressed: action.onPressed,
+                            selected: action.selected,
+                            enabled: action.enabled,
+                          )
+                        else
+                          _NotesToolbarMenuButton(action: action),
                     ],
                   );
                   final padded = Padding(

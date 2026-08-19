@@ -1,4 +1,3 @@
-import 'package:counter/app/shell/shared/offline_sync_status_bar.dart';
 import 'package:counter/features/profile/profile_hydration_status_bar.dart';
 import 'package:counter/features/timeline/unfilled_time_gap_banner.dart';
 import 'package:flutter/material.dart';
@@ -12,7 +11,8 @@ class ShellTopStatusBars extends StatelessWidget {
     return const Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        OfflineSyncStatusBar(),
+        // Background synchronization is intentionally silent. Never reserve
+        // shell layout space for sync progress/status UI.
         ProfileHydrationStatusBar(),
         UnfilledTimeGapBanner(),
       ],

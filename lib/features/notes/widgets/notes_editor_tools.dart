@@ -19,7 +19,7 @@ class NotesLinkDialogResult {
   final String? url;
 }
 
-class NotesEditorToolbarHost extends StatelessWidget {
+class NotesEditorToolbarHost extends StatefulWidget {
   const NotesEditorToolbarHost({
     super.key,
     required this.activeBlock,
@@ -52,8 +52,53 @@ class NotesEditorToolbarHost extends StatelessWidget {
   final VoidCallback? onAudio;
 
   @override
+  State<NotesEditorToolbarHost> createState() =>
+      _NotesEditorToolbarHostState();
+}
+
+class _NotesEditorToolbarHostState extends State<NotesEditorToolbarHost> {
+  bool _finishNumberedConversion = false;
+
+  @override
+  void didUpdateWidget(covariant NotesEditorToolbarHost oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!_finishNumberedConversion) return;
+    final type = widget.activeBlock?.type;
+    if (type == NoteBlockType.numberedList) {
+      _finishNumberedConversion = false;
+      return;
+    }
+    if (type != NoteBlockType.bulletedList) return;
+    _finishNumberedConversion = false;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      // The production callback toggles bullets -> numbers. Waiting for the
+      // rebuilt callback keeps the existing public toolbar contract intact.
+      widget.onList();
+    });
+  }
+
+  void _selectBulletedList() {
+    _finishNumberedConversion = false;
+    final type = widget.activeBlock?.type;
+    if (type == NoteBlockType.bulletedList) return;
+    widget.onList();
+  }
+
+  void _selectNumberedList() {
+    final type = widget.activeBlock?.type;
+    if (type == NoteBlockType.numberedList) return;
+    if (type == NoteBlockType.bulletedList) {
+      widget.onList();
+      return;
+    }
+    _finishNumberedConversion = true;
+    widget.onList();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final type = activeBlock?.type;
+    final type = widget.activeBlock?.type;
     final convertible = type != null && _isConvertibleText(type);
     final toolbar = NotesEditorToolbar(
       actions: [
@@ -63,19 +108,21 @@ class NotesEditorToolbarHost extends StatelessWidget {
           tooltip: 'Heading styles',
           selected: type == NoteBlockType.heading,
           enabled: convertible,
-          onPressed: onHeading,
+          onPressed: widget.onHeading,
         ),
         NotesToolbarAction(
           tool: NotesToolbarTool.text,
-          icon: onFormatting == null
+          icon: widget.onFormatting == null
               ? Icons.text_fields_rounded
               : Icons.format_bold_rounded,
-          tooltip: onFormatting == null ? 'Body text' : 'Text formatting',
-          selected: onFormatting == null
+          tooltip: widget.onFormatting == null
+              ? 'Body text'
+              : 'Text formatting',
+          selected: widget.onFormatting == null
               ? type == NoteBlockType.paragraph
-              : selectionFormats.isNotEmpty,
+              : widget.selectionFormats.isNotEmpty,
           enabled: convertible,
-          onPressed: onFormatting ?? onBody,
+          onPressed: widget.onFormatting ?? widget.onBody,
         ),
         NotesToolbarAction(
           tool: NotesToolbarTool.quote,
@@ -83,36 +130,49 @@ class NotesEditorToolbarHost extends StatelessWidget {
           tooltip: 'Quote',
           selected: type == NoteBlockType.quote,
           enabled: convertible,
-          onPressed: onQuote,
+          onPressed: widget.onQuote,
         ),
         NotesToolbarAction(
           tool: NotesToolbarTool.list,
-          icon: type == NoteBlockType.numberedList
-              ? Icons.format_list_numbered_rounded
-              : Icons.format_list_bulleted_rounded,
-          tooltip: type == NoteBlockType.bulletedList
-              ? 'Numbered list'
-              : 'Bulleted list',
+          icon: switch (type) {
+            NoteBlockType.numberedList => Icons.format_list_numbered_rounded,
+            NoteBlockType.checklist => Icons.checklist_rounded,
+            _ => Icons.format_list_bulleted_rounded,
+          },
+          tooltip: 'List',
           selected:
               type == NoteBlockType.bulletedList ||
-              type == NoteBlockType.numberedList,
+              type == NoteBlockType.numberedList ||
+              type == NoteBlockType.checklist,
           enabled: convertible,
-          onPressed: onList,
-        ),
-        NotesToolbarAction(
-          tool: NotesToolbarTool.checklist,
-          icon: Icons.checklist_rounded,
-          tooltip: 'Checklist',
-          selected: type == NoteBlockType.checklist,
-          enabled: convertible,
-          onPressed: onChecklist,
+          onPressed: _noop,
+          menuItems: [
+            NotesToolbarMenuItem(
+              icon: Icons.format_list_bulleted_rounded,
+              tooltip: 'Bulleted list',
+              selected: type == NoteBlockType.bulletedList,
+              onPressed: _selectBulletedList,
+            ),
+            NotesToolbarMenuItem(
+              icon: Icons.format_list_numbered_rounded,
+              tooltip: 'Numbered list',
+              selected: type == NoteBlockType.numberedList,
+              onPressed: _selectNumberedList,
+            ),
+            NotesToolbarMenuItem(
+              icon: Icons.checklist_rounded,
+              tooltip: 'Checklist',
+              selected: type == NoteBlockType.checklist,
+              onPressed: widget.onChecklist,
+            ),
+          ],
         ),
         NotesToolbarAction(
           tool: NotesToolbarTool.table,
           icon: Icons.table_chart_rounded,
           tooltip: 'Insert table',
           selected: type == NoteBlockType.table,
-          onPressed: onTable,
+          onPressed: widget.onTable,
         ),
         NotesToolbarAction(
           tool: NotesToolbarTool.drawing,
@@ -121,8 +181,8 @@ class NotesEditorToolbarHost extends StatelessWidget {
               ? 'Edit drawing'
               : 'Insert drawing',
           selected: type == NoteBlockType.drawing,
-          enabled: onDrawing != null,
-          onPressed: onDrawing ?? _noop,
+          enabled: widget.onDrawing != null,
+          onPressed: widget.onDrawing ?? _noop,
         ),
         NotesToolbarAction(
           tool: NotesToolbarTool.image,
@@ -131,8 +191,8 @@ class NotesEditorToolbarHost extends StatelessWidget {
               ? 'Replace image'
               : 'Insert image',
           selected: type == NoteBlockType.image,
-          enabled: onImage != null,
-          onPressed: onImage ?? _noop,
+          enabled: widget.onImage != null,
+          onPressed: widget.onImage ?? _noop,
         ),
         NotesToolbarAction(
           tool: NotesToolbarTool.audio,
@@ -141,13 +201,13 @@ class NotesEditorToolbarHost extends StatelessWidget {
               ? 'Record another audio'
               : 'Record audio',
           selected: type == NoteBlockType.audio,
-          enabled: onAudio != null,
-          onPressed: onAudio ?? _noop,
+          enabled: widget.onAudio != null,
+          onPressed: widget.onAudio ?? _noop,
         ),
       ],
     );
-    final showOptions = onMore;
-    if (showOptions == null || activeBlock == null) return toolbar;
+    final showOptions = widget.onMore;
+    if (showOptions == null || widget.activeBlock == null) return toolbar;
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onLongPress: showOptions,
