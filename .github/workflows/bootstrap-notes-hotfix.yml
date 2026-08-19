@@ -96,8 +96,27 @@ jobs:
           text = text[:drawing_start] + new_drawing + text[drawing_end:]
           path.write_text(text)
 
+          # Editing must not change line metrics relative to the selectable
+          # rendering. Remove the forced TextField struts only; keep row geometry.
+          path = Path('lib/features/notes/widgets/notes_component_text_blocks.dart')
+          text = path.read_text()
+          strut_text = '''        strutStyle: StrutStyle.fromTextStyle(
+          textStyle,
+          forceStrutHeight: true,
+        ),
+'''
+          strut_body = '''              strutStyle: StrutStyle.fromTextStyle(
+                baseStyle,
+                forceStrutHeight: true,
+              ),
+'''
+          if strut_text not in text or strut_body not in text:
+              raise SystemExit('Notes TextField strut blocks not found')
+          text = text.replace(strut_text, '', 1).replace(strut_body, '', 1)
+          path.write_text(text)
+
           # Reuse the preserved original patch for all other Notes changes,
-          # excluding the quick-add and drawing subsections handled above.
+          # excluding quick-add, drawing, and the old geometry-heavy section 8.
           original = Path(
               'automation/.github/notes-ux/bootstrap-notes-hotfix-original.txt'
           ).read_text().splitlines()
@@ -127,6 +146,8 @@ jobs:
                   if 'rep(path, old_drawing, new_drawing)' in line:
                       skipping_drawing = False
                   continue
+              if '# 8) Editing must not increase line/block spacing' in line:
+                  break
               body.append(line)
           exec(compile('\n'.join(body) + '\n', '<notes-ux-batch>', 'exec'))
           PY
