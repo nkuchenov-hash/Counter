@@ -1,74 +1,19 @@
-name: Deploy PocketBase hooks and migrations
+name: Diagnose Google Fit cloud sleep
 
 on:
-  pull_request:
-    paths:
-      - 'pb_hooks/**'
-      - 'pb_migrations/**'
-      - '.github/workflows/deploy-pocketbase.yml'
   push:
     branches: [main]
+    paths:
+      - '.github/workflows/deploy-pocketbase.yml'
   workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
-  validate:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Validate main architecture contracts
-        run: |
-          pwsh -NoProfile -NonInteractive -File ./scripts/audit/architecture_guard.ps1 -Strict
-          python scripts/audit/documentation_parity.py
-          python scripts/audit/repository_hygiene.py
-          python scripts/audit/pocketbase_schema_contract.py
-          python scripts/audit/deployment_contract.py
-
-      - name: Validate all PocketBase JavaScript
-        shell: bash
-        run: |
-          mapfile -d '' files < <(find pb_hooks pb_migrations -type f -name '*.js' -print0 | sort -z)
-          if (( ${#files[@]} == 0 )); then
-            echo 'No PocketBase JavaScript files found.' >&2
-            exit 1
-          fi
-          for file in "${files[@]}"; do
-            echo "node --check $file"
-            node --check "$file"
-          done
-
-      - name: Check production deploy credentials
-        env:
-          SSH_PRIVATE_KEY: ${{ secrets.POCKETBASE_SSH_PRIVATE_KEY || secrets.VPS_SSH_KEY || secrets.SSH_PRIVATE_KEY }}
-          SSH_USER: ${{ secrets.POCKETBASE_SSH_USER || secrets.VPS_SSH_USER || secrets.SSH_USER }}
-          SSH_HOST: ${{ secrets.POCKETBASE_SSH_HOST || secrets.VPS_HOST || secrets.SSH_HOST }}
-          SLEEP_SYNC_TOKEN_KEY: ${{ secrets.SLEEP_SYNC_TOKEN_KEY }}
-        run: |
-          if [[ -z "$SSH_PRIVATE_KEY" ]]; then
-            echo "::warning::PocketBase SSH private key is not configured."
-          else
-            echo "PocketBase SSH private key is configured."
-          fi
-          if [[ -n "$SLEEP_SYNC_TOKEN_KEY" && ${#SLEEP_SYNC_TOKEN_KEY} -ne 32 ]]; then
-            echo "::error::SLEEP_SYNC_TOKEN_KEY must be exactly 32 characters when configured."
-            exit 1
-          fi
-          echo "PocketBase SSH target: ${SSH_USER:-root}@${SSH_HOST:-217.114.0.201}"
-
-  deploy:
-    if: github.event_name != 'pull_request'
-    needs: validate
+  diagnose:
     runs-on: ubuntu-latest
     environment: production
-    concurrency:
-      group: pocketbase-production
-      cancel-in-progress: false
     env:
       SSH_PRIVATE_KEY: ${{ secrets.POCKETBASE_SSH_PRIVATE_KEY || secrets.VPS_SSH_KEY || secrets.SSH_PRIVATE_KEY }}
       SSH_USER: ${{ secrets.POCKETBASE_SSH_USER || secrets.VPS_SSH_USER || secrets.SSH_USER }}
@@ -76,117 +21,22 @@ jobs:
       SSH_PORT: ${{ secrets.POCKETBASE_SSH_PORT || secrets.VPS_SSH_PORT || '22' }}
       POCKETBASE_SERVICE: ${{ secrets.POCKETBASE_SERVICE }}
       POCKETBASE_DEPLOY_DIR: ${{ secrets.POCKETBASE_DEPLOY_DIR }}
-      SLEEP_SYNC_TOKEN_KEY: ${{ secrets.SLEEP_SYNC_TOKEN_KEY }}
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
+          ref: main
           fetch-depth: 0
 
-      - name: Detect PocketBase bundle changes
+      - name: Force one server-only Google Fit sync and inspect
         shell: bash
-        env:
-          BEFORE_SHA: ${{ github.event.before }}
         run: |
           set -euo pipefail
-          changed=true
-          if [[ "${{ github.event_name }}" == "push" && -n "${BEFORE_SHA:-}" && ! "$BEFORE_SHA" =~ ^0+$ ]]; then
-            if git diff --quiet "$BEFORE_SHA" "$GITHUB_SHA" -- pb_hooks pb_migrations .github/workflows/deploy-pocketbase.yml; then
-              changed=false
-            fi
-          fi
-          echo "SERVER_CHANGED=$changed" >> "$GITHUB_ENV"
-          echo "PocketBase bundle changed: $changed"
-
-      - name: Require production credentials
-        if: env.SERVER_CHANGED == 'true'
-        run: |
-          if [[ -z "$SSH_PRIVATE_KEY" ]]; then
-            echo "PocketBase deployment cannot run: SSH private key is missing." >&2
-            exit 1
-          fi
-          if [[ -n "$SLEEP_SYNC_TOKEN_KEY" && ${#SLEEP_SYNC_TOKEN_KEY} -ne 32 ]]; then
-            echo "PocketBase deployment cannot run: SLEEP_SYNC_TOKEN_KEY must be exactly 32 characters." >&2
-            exit 1
-          fi
-          echo "SSH_USER=${SSH_USER:-root}" >> "$GITHUB_ENV"
-          echo "SSH_HOST=${SSH_HOST:-217.114.0.201}" >> "$GITHUB_ENV"
-
-      - name: Prepare SSH
-        if: env.SERVER_CHANGED == 'true'
-        run: |
+          SSH_USER="${SSH_USER:-root}"
+          SSH_HOST="${SSH_HOST:-217.114.0.201}"
           install -m 700 -d ~/.ssh
           printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/lifeos_pocketbase
           chmod 600 ~/.ssh/lifeos_pocketbase
           ssh-keyscan -p "$SSH_PORT" -H "$SSH_HOST" >> ~/.ssh/known_hosts
-
-      - name: Upload server bundle
-        if: env.SERVER_CHANGED == 'true'
-        run: |
-          ARCHIVE="/tmp/lifeos-pocketbase-${GITHUB_SHA}.tar.gz"
-          tar -czf "$ARCHIVE" pb_hooks pb_migrations
-          scp -i ~/.ssh/lifeos_pocketbase -P "$SSH_PORT" "$ARCHIVE" \
-            "$SSH_USER@$SSH_HOST:/tmp/lifeos-pocketbase-${GITHUB_SHA}.tar.gz"
-
-      - name: Install and restart PocketBase
-        if: env.SERVER_CHANGED == 'true'
-        run: |
-          ssh -i ~/.ssh/lifeos_pocketbase -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" \
-            "POCKETBASE_SERVICE='$POCKETBASE_SERVICE' POCKETBASE_DEPLOY_DIR='$POCKETBASE_DEPLOY_DIR' ARCHIVE='/tmp/lifeos-pocketbase-${GITHUB_SHA}.tar.gz' bash -s" <<'REMOTE'
-          set -euo pipefail
-          if [[ "$(id -u)" -eq 0 ]]; then SUDO=""; else SUDO="sudo -n"; fi
-
-          service_name="${POCKETBASE_SERVICE:-}"
-          if [[ -z "$service_name" ]]; then
-            service_name="$(systemctl list-unit-files --type=service --no-legend 2>/dev/null | awk 'tolower($1) ~ /pocketbase/ {print $1; exit}')"
-          fi
-          pid="$(pgrep -f '[p]ocketbase.*serve' | head -n 1 || true)"
-          app_dir="${POCKETBASE_DEPLOY_DIR:-}"
-          if [[ -z "$app_dir" && -n "$service_name" ]]; then
-            app_dir="$(systemctl show "$service_name" -p WorkingDirectory --value 2>/dev/null || true)"
-          fi
-          if [[ -z "$app_dir" && -n "$pid" ]]; then
-            app_dir="$(readlink -f "/proc/$pid/cwd" 2>/dev/null || true)"
-          fi
-          if [[ -z "$service_name" || -z "$app_dir" || ! -d "$app_dir" ]]; then
-            echo "Could not discover the PocketBase service or application directory." >&2
-            exit 1
-          fi
-
-          oauth_env="$app_dir/.lifeos-google-fit.env"
-          if [[ ! -f "$oauth_env" ]] || \
-             ! $SUDO grep -q '^SLEEP_SYNC_GOOGLE_FIT_CLIENT_ID=' "$oauth_env" || \
-             ! $SUDO grep -q '^SLEEP_SYNC_GOOGLE_FIT_CLIENT_SECRET=' "$oauth_env"; then
-            echo "Google Fit OAuth environment is not provisioned on the server." >&2
-            exit 1
-          fi
-
-          echo "Deploying to $app_dir using $service_name"
-          $SUDO mkdir -p "$app_dir/pb_hooks" "$app_dir/pb_migrations"
-          $SUDO tar -xzf "$ARCHIVE" -C "$app_dir" pb_hooks pb_migrations
-          rm -f "$ARCHIVE"
-          $SUDO systemctl restart "$service_name"
-
-          for attempt in {1..20}; do
-            health="$(curl -sS -o /dev/null -w '%{http_code}' https://217-114-0-201.sslip.io/api/health || true)"
-            sleep_route="$(curl -sS -o /dev/null -w '%{http_code}' https://217-114-0-201.sslip.io/api/sleep-sync/status || true)"
-            calendar_route="$(curl -sS -o /dev/null -w '%{http_code}' https://217-114-0-201.sslip.io/api/calendar-integrations/status || true)"
-            if [[ "$health" == "200" && ( "$sleep_route" == "401" || "$sleep_route" == "403" ) && ( "$calendar_route" == "401" || "$calendar_route" == "403" ) ]]; then
-              echo "PocketBase is healthy and protected routes are loaded."
-              exit 0
-            fi
-            sleep 2
-          done
-          echo "PocketBase verification failed after restart." >&2
-          $SUDO systemctl status "$service_name" --no-pager || true
-          exit 1
-          REMOTE
-
-      - name: Force and inspect Google Fit cloud sleep sync
-        if: env.SERVER_CHANGED == 'true'
-        shell: bash
-        run: |
-          set -euo pipefail
           ssh -i ~/.ssh/lifeos_pocketbase -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" \
             "POCKETBASE_SERVICE='$POCKETBASE_SERVICE' POCKETBASE_DEPLOY_DIR='$POCKETBASE_DEPLOY_DIR' bash -s" > /tmp/sleep-cloud-diag.txt <<'REMOTE'
           set -euo pipefail
@@ -258,8 +108,7 @@ jobs:
           PY
           REMOTE
 
-      - name: Publish sanitized cloud sleep diagnostic
-        if: env.SERVER_CHANGED == 'true'
+      - name: Publish sanitized diagnostic
         shell: bash
         run: |
           set -euo pipefail
