@@ -1,0 +1,51 @@
+name: One-time sleep OAuth state race fix
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/tmp-fix-oauth-state-race.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Patch Google Fit OAuth state handling
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('pb_hooks/google_fit_sleep_runtime.js')
+          s = p.read_text()
+
+          old_connect = '''    var connection = __fitConnection(e.app, e.auth.id, true);\n    var state = $security.randomStringWithAlphabet(48, \"0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ\");\n    connection.set(\"oauth_state\", state);\n    connection.set(\"oauth_state_expires_at\", new Date(Date.now() + 10 * 60000).toISOString());\n    connection.set(\"status\", \"connecting\");'''
+          new_connect = '''    var connection = __fitConnection(e.app, e.auth.id, true);\n    var existingState = String(connection.get(\"oauth_state\") || \"\");\n    var existingExpires = __fitDate(connection.get(\"oauth_state_expires_at\"));\n    var state = \"\";\n    if (existingState &&\n        existingState.indexOf(connection.id + \".\") === 0 &&\n        existingExpires &&\n        existingExpires.getTime() > Date.now() + 60000) {\n        // Reuse an in-flight OAuth attempt. A second toggle/click must not\n        // invalidate the callback that is already open in the browser.\n        state = existingState;\n    } else {\n        state = connection.id + \".\" + $security.randomStringWithAlphabet(40, \"0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ\");\n        connection.set(\"oauth_state\", state);\n        connection.set(\"oauth_state_expires_at\", new Date(Date.now() + 20 * 60000).toISOString());\n    }\n    connection.set(\"status\", \"connecting\");'''
+          if old_connect not in s:
+              raise SystemExit('connect block not found')
+          s = s.replace(old_connect, new_connect, 1)
+
+          old_callback = '''    var connection = null;\n    try { connection = e.app.findFirstRecordByData(__fitCollection, \"oauth_state\", state); } catch (_) {}\n    if (!connection) return e.html(400, \"<h1>Google Fit connection failed</h1><p>Invalid or expired state.</p>\");'''
+          new_callback = '''    var connection = null;\n    var stateParts = state.split(\".\");\n    if (stateParts.length === 2 && stateParts[0]) {\n        try { connection = e.app.findRecordById(__fitCollection, stateParts[0]); } catch (_) {}\n        if (connection && String(connection.get(\"oauth_state\") || \"\") !== state) connection = null;\n    }\n    // Backward compatibility for an OAuth page that was opened just before\n    // this deployment and still carries the old random-only state format.\n    if (!connection) {\n        try { connection = e.app.findFirstRecordByData(__fitCollection, \"oauth_state\", state); } catch (_) {}\n    }\n    if (!connection) return e.html(400, \"<h1>Google Fit connection failed</h1><p>Invalid or expired state.</p>\");'''
+          if old_callback not in s:
+              raise SystemExit('callback block not found')
+          s = s.replace(old_callback, new_callback, 1)
+
+          p.write_text(s)
+          PY
+          node --check pb_hooks/google_fit_sleep_runtime.js
+
+      - name: Commit patch and self-delete workflow
+        run: |
+          rm -f .github/workflows/tmp-fix-oauth-state-race.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add pb_hooks/google_fit_sleep_runtime.js .github/workflows/tmp-fix-oauth-state-race.yml
+          git commit -m "Make sleep OAuth state race-safe"
+          git push origin HEAD:main
