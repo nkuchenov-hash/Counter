@@ -7,7 +7,7 @@ on:
       - '.github/workflows/tmp-sleep-prod-state.yml'
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   inspect:
@@ -21,6 +21,11 @@ jobs:
       POCKETBASE_SERVICE: ${{ secrets.POCKETBASE_SERVICE }}
       POCKETBASE_DEPLOY_DIR: ${{ secrets.POCKETBASE_DEPLOY_DIR }}
     steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
       - name: Inspect sanitized sleep state
         shell: bash
         run: |
@@ -32,7 +37,7 @@ jobs:
           chmod 600 ~/.ssh/lifeos_pocketbase
           ssh-keyscan -p "$SSH_PORT" -H "$SSH_HOST" >> ~/.ssh/known_hosts
           ssh -i ~/.ssh/lifeos_pocketbase -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" \
-            "POCKETBASE_SERVICE='$POCKETBASE_SERVICE' POCKETBASE_DEPLOY_DIR='$POCKETBASE_DEPLOY_DIR' bash -s" <<'REMOTE'
+            "POCKETBASE_SERVICE='$POCKETBASE_SERVICE' POCKETBASE_DEPLOY_DIR='$POCKETBASE_DEPLOY_DIR' bash -s" > /tmp/sleep-state.txt <<'REMOTE'
           set -euo pipefail
           service_name="${POCKETBASE_SERVICE:-}"
           if [[ -z "$service_name" ]]; then
@@ -70,3 +75,13 @@ jobs:
             print(f'conn{i}: enabled={r["enabled"]} status={r["status"]} refresh={r["refresh_len"]>0} access={r["access_len"]>0} error={classify(r["last_error"])} sessions={r["last_session_count"]} imported={r["last_imported_count"]} last_sync={bool(r["last_sync_at"])}')
           PY
           REMOTE
+
+      - name: Publish sanitized snapshot to diagnostic branch
+        shell: bash
+        run: |
+          cp /tmp/sleep-state.txt _tmp_sleep_prod_state.txt
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add _tmp_sleep_prod_state.txt
+          git commit -m 'Temporary sanitized sleep production state'
+          git push --force origin HEAD:refs/heads/diag-sleep-state
