@@ -187,7 +187,7 @@ Large files must **not** grow without bound. When a file mixes responsibilities 
 | **Platform** | Native/runner/config only — **never** absorb product logic |
 | **Docs/scripts** | Generated or reference material may be large if clearly marked generated/reference |
 
-**Risk thresholds (watchlist, not auto-split triggers):** Dart UI/coordinator files **>1000 lines** → plan decomposition; Brain domain parts **>1500 lines** → consider further `part` split; any file mixing unrelated domains → split regardless of line count.
+**Growth thresholds and CI ratchet:** Dart UI/coordinator files have a **1000-line** structural threshold; focused Brain domain parts have a **1500-line** threshold. These are not commands to split an existing file merely because of line count, but `scripts/audit/structure_growth_contract.py` prevents new files from starting above the applicable threshold, prevents a file from crossing it, and prevents an already-oversized grandfathered file from growing further. A file mixing unrelated responsibilities must still be split regardless of line count. The same ratchet rejects newly added developer-workstation absolute paths in runtime/build/tooling code.
 
 ### New-feature checklist (required before implementation)
 
@@ -200,4 +200,4 @@ Every new feature prompt must answer:
 5. Does it create a **file-size or mixed-responsibility** risk?
 6. Do **docs / tests / APP_STRUCTURE_DETAILED** need updates?
 
-Run `.\scripts\audit\architecture_guard.ps1 -Strict` after structural edits. Regenerate `docs/APP_STRUCTURE_DETAILED.md` after tree changes.
+Run `.\scripts\audit\architecture_guard.ps1 -Strict`, `python scripts/audit/structure_growth_contract.py`, and `python scripts/audit/documentation_parity.py` after structural edits. Regenerate `docs/APP_STRUCTURE_DETAILED.md` after tree changes.

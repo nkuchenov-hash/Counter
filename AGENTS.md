@@ -30,7 +30,6 @@ Use `CHANGELOG.md` and `docs/ROADMAP.md` to understand what is already built bef
 - Feature work is paused unless explicitly requested or required by the current task.
 - **Structure Growth Law:** new features must extend existing layers and canonical components; split mixed/large files early (`docs/ARCHITECTURE.md` §11, `docs/APP_STRUCTURE.md` §7). Final audit: `docs/reports/FINAL_STRUCTURE_AUDIT_2026-07-06.md`.
 - Structure cleanup is governed by `docs/APP_STRUCTURE.md`, `docs/APP_STRUCTURE_DETAILED.md`, and `docs/reports/FINAL_STRUCTURE_PARITY_AND_DOC_CLEANUP_2026-07-03.md`; do not perform opportunistic architecture moves.
-- **Structure Growth Law** (permanent): integrate new features into existing layers; split large files early — see `docs/ARCHITECTURE.md` §11 and `docs/APP_STRUCTURE.md` §7.
 - Brain/UI structure decomposition (Passes 3–4D) is **complete** as of 2026-07-03 (`d7e7c12`). Further splits need explicit product scope — see `docs/APP_STRUCTURE.md` §8.
 
 ## Task-Specific Document Routing
@@ -51,7 +50,7 @@ Use `CHANGELOG.md` and `docs/ROADMAP.md` to understand what is already built bef
 - `lib/main.dart` and `lib/app/shell/` (via root `lib/app_shell.dart` re-export) own boot, form-factor shell, auth gate, global wiring, and navigation.
 - `lib/data/` is the Brain. It owns PocketBase I/O, domain models, in-memory cache, optimistic state, and offline outboxes.
 - `lib/data/database_service.dart` is the Brain root. Domain logic lives in its `part of` files: `db_core.dart`; coordinators `record_service.dart`, `plan_service.dart`, `category_service.dart`, `profile_service.dart`; and focused parts under `records/*`, `plans/*`, `categories/*`, `profile/*`.
-- `lib/data/paths/` owns first-class Path interpretation and validation. `PathRepository` currently adapts existing plan-backed Path roots; feature UI must not parse marker rows directly.
+- `lib/data/paths/` owns durable first-class Path interpretation and validation over dedicated PocketBase `paths` plus append-only `path_revisions`. `PathRepository` is the domain-facing repository; durable PocketBase I/O stays in `path_service.dart` as a `DatabaseService` part. `plans` is not Path storage, and feature UI must not parse historical marker rows.
 - `lib/features/paths/` owns Paths screens and interactions. `lib/app/shell/` only selects the destination; new Path UI/domain policy must not move back into shell files.
 - `lib/data/` must not import `lib/features/`.
 - `lib/data/plans/diagnostics/` owns Planning-domain Brain diagnostics (`plan_duplicate_log.dart`) — not shared diagnostics, not feature UI. Brain plan helpers emit these logs.
@@ -190,6 +189,7 @@ For structure/import-boundary work, also run:
 
 ```powershell
 .\scripts\audit\architecture_guard.ps1 -Strict
+python scripts/audit/structure_growth_contract.py
 python scripts/audit/documentation_parity.py
 ```
 
