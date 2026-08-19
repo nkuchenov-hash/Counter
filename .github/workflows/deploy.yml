@@ -1,0 +1,76 @@
+name: Deploy LIFE OS Flutter Web to GitHub Pages
+
+# Server-schema-before-client law: every main push first completes the PocketBase
+# workflow. UI-only pushes make that workflow a validated no-op at deploy phase,
+# then this workflow publishes the exact validated SHA.
+on:
+  workflow_run:
+    workflows:
+      - Deploy PocketBase hooks and migrations
+    types: [completed]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: life-os-web-deploy-${{ github.event.workflow_run.head_sha }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_branch == 'main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout validated main revision
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 0
+
+      - name: Set up Flutter 3.41.6
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.6'
+          channel: stable
+
+      - name: Create env.dart
+        run: |
+          mkdir -p lib/core/env
+          printf '%s\n' 'abstract final class Env {' '  static const String placeholder = '\'''\'';' '}' > lib/core/env/env.dart
+
+      - name: Install Flutter dependencies
+        run: flutter pub get
+
+      - name: Build LIFE OS web
+        run: |
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          BUILD_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          flutter build web --release --base-href="/Counter/" --no-tree-shake-icons --no-wasm-dry-run --pwa-strategy=none \
+            --dart-define=GIT_COMMIT="$SHORT_SHA" \
+            --dart-define=BUILD_TIME="$BUILD_TIME"
+
+      - name: Preserve published Igropoisk
+        run: |
+          git fetch origin gh-pages:refs/remotes/origin/gh-pages
+          rm -rf /tmp/counter-gh-pages
+          git worktree add --detach /tmp/counter-gh-pages refs/remotes/origin/gh-pages
+          if [ -d /tmp/counter-gh-pages/igropoisk ]; then
+            rm -rf build/web/igropoisk
+            cp -R /tmp/counter-gh-pages/igropoisk build/web/igropoisk
+          fi
+          git worktree remove --force /tmp/counter-gh-pages
+
+      - name: Preserve workflow_run trigger on default branch
+        run: |
+          mkdir -p build/web/.github/workflows
+          cp .github/workflows/deploy.yml build/web/.github/workflows/deploy.yml
+
+      - name: Deploy to gh-pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: build/web
+          branch: gh-pages
