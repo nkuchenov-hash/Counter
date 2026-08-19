@@ -1,8 +1,6 @@
 # Deploy (GitHub Pages)
 
-One command from the **git repository root**:
-
-`C:\Users\nkuch\Development\Apps\counter` — contains `.github/workflows/deploy.yml` and `pubspec.yaml`.
+Run release commands from the **git repository root** (the directory containing `pubspec.yaml` and `.github/workflows/`).
 
 ## Commands
 
@@ -26,11 +24,15 @@ First time on Unix, if needed: `chmod +x scripts/manual/td`
 
 ## What deploys the live site
 
-Push to `main` triggers [`.github/workflows/deploy.yml`](../.github/workflows/deploy.yml):
+A push to `main` starts [`.github/workflows/deploy-pocketbase.yml`](../.github/workflows/deploy-pocketbase.yml) first. That workflow validates the architecture/schema/deployment contracts and either deploys changed PocketBase hooks/migrations or completes as a validated no-op. Only after that workflow succeeds does [`.github/workflows/deploy.yml`](../.github/workflows/deploy.yml) run via `workflow_run` for the **same validated `head_sha`**.
 
-- CI runs the strict architecture guard (`scripts/audit/architecture_guard.ps1 -Strict`) **before** Flutter setup/build
-- CI runs `flutter build web --release --base-href="/Counter/" --no-tree-shake-icons`
-- [JamesIves/github-pages-deploy-action](https://github.com/JamesIves/github-pages-deploy-action) publishes `build/web` to the **`gh-pages`** branch
+The Web workflow then:
+
+- checks out `github.event.workflow_run.head_sha` rather than an arbitrary newer `main`;
+- runs `flutter build web --release --base-href="/Counter/" --no-tree-shake-icons`;
+- uses [JamesIves/github-pages-deploy-action](https://github.com/JamesIves/github-pages-deploy-action) to publish `build/web` to the **`gh-pages`** branch.
+
+This ordering is deliberate: a schema-dependent Web client must never become live before the matching PocketBase migration/hook release is validated and applied. UI-only pushes are not forced through SSH deployment; the PocketBase workflow detects no server-bundle change and acts as a validation-only gate.
 
 **Live URL:** https://nkuchenov-hash.github.io/Counter/
 
@@ -38,15 +40,16 @@ The deploy scripts do **not** push to `gh-pages` directly; Actions owns that ste
 
 ## Architecture Guard (structure CI)
 
-Executable policy source: [`scripts/audit/architecture_guard.ps1`](../scripts/audit/architecture_guard.ps1) (do not duplicate rules in YAML).
+Executable policy sources live under `scripts/audit/`; workflow YAML invokes them rather than duplicating their rules.
 
-| Trigger | Workflow | When the guard runs |
+| Trigger | Workflow | What runs |
 | :--- | :--- | :--- |
-| Pull request targeting `main` (and manual `workflow_dispatch`) | [`.github/workflows/architecture-guard.yml`](../.github/workflows/architecture-guard.yml) (`Architecture Guard` / `strict-structure`) | Dedicated job: strict guard + `git diff --check` on the PR/`main` range (full history checkout; no Flutter) |
-| Push to `main` / `master` | [`.github/workflows/deploy.yml`](../.github/workflows/deploy.yml) | Immediately after checkout, before Flutter setup |
-| Manual Windows installer | [`.github/workflows/windows-desktop-build.yml`](../.github/workflows/windows-desktop-build.yml) | Immediately after checkout, before Flutter setup |
+| Pull request targeting `main`, push to `main`, or manual guard run | [`.github/workflows/architecture-guard.yml`](../.github/workflows/architecture-guard.yml) (`Architecture Guard` / `strict-structure`) | Strict architecture guard, structure-growth ratchet, documentation parity, repository hygiene, PocketBase schema/deployment contracts, PocketBase JS syntax, whitespace check |
+| Push to `main` | [`.github/workflows/deploy-pocketbase.yml`](../.github/workflows/deploy-pocketbase.yml) | Revalidates release-critical contracts, deploys server bundle only when changed, then completes the Web release gate |
+| Successful PocketBase workflow from a `main` push | [`.github/workflows/deploy.yml`](../.github/workflows/deploy.yml) | Checks out the exact validated `head_sha`, builds Web, publishes `gh-pages` |
+| Manual Windows installer | [`.github/workflows/windows-desktop-build.yml`](../.github/workflows/windows-desktop-build.yml) | Windows build/release checks before packaging |
 
-Making `Architecture Guard / strict-structure` a **required** branch-protection check is a repository settings step (not configured by this workflow file alone).
+Making `Architecture Guard / strict-structure` a **required** branch-protection check is a repository settings step (not configured by the workflow file alone). The release chain still reruns critical validation before production publication, so deployment correctness does not rely solely on branch protection.
 
 ## Why `--no-tree-shake-icons`
 
@@ -108,12 +111,14 @@ OAuth implementation note: Flutter currently uses the PocketBase Dart SDK all-in
 
 ## Redeploy without code changes
 
-If there is nothing to commit, `git push` is a no-op and Actions will not run. To force a redeploy:
+If there is nothing to commit, `git push` is a no-op and Actions will not run. To force a full gated redeploy, create an empty commit on `main`; the PocketBase workflow validates/no-ops as appropriate, then the Web workflow publishes that exact SHA:
 
 ```bash
 git commit --allow-empty -m "Redeploy"
 git push origin main
 ```
+
+Do not add a direct/manual Web deployment bypass around the server-before-client gate.
 
 ## Windows desktop release
 
@@ -165,19 +170,16 @@ Unsigned builds may trigger SmartScreen — **More info → Run anyway** for tru
 
 Download artifact **`counter-windows-release-debug-<run_number>`** (not `CounterSetup`), extract, run `counter.exe` **inside** the folder with all DLLs and `data/`. Do not move only `counter.exe` out of the folder.
 
-
 ## PocketBase schema migrations
 
-`pb_migrations/` is version-controlled server schema/data history. `.github/workflows/deploy-pocketbase.yml` syntax-checks **every** tracked `pb_hooks/**/*.js` and `pb_migrations/**/*.js` on pull requests. On push to `main` that changes either directory, the production job uploads the complete hooks+migrations bundle and restarts PocketBase; PocketBase applies unapplied migrations during startup before the new client release uses the schema.
+`pb_migrations/` is version-controlled server schema/data history. `.github/workflows/deploy-pocketbase.yml` syntax-checks **every** tracked `pb_hooks/**/*.js` and `pb_migrations/**/*.js` on pull requests. On push to `main` it validates the server bundle and, when the bundle changed, uploads the complete hooks+migrations package and restarts PocketBase; PocketBase applies unapplied migrations during startup before the new client release uses the schema.
 
 For durable Paths, `1787076000_durable_paths.js` creates/imports the server schema. The PR validates it; merging the migration to `main` triggers the existing production PocketBase deployment before normal client use of `PbCollections.paths` / `PbCollections.pathRevisions`.
 
-
 ### Production release ordering law
 
-Every `main` push starts `.github/workflows/deploy-pocketbase.yml`. It validates the complete tracked PocketBase JS bundle; if `pb_hooks/`, `pb_migrations/`, or the server workflow changed, it deploys/restarts PocketBase and lets unapplied migrations finish. `.github/workflows/deploy.yml` has **no direct/manual production entry**: it is triggered only by the successful server **workflow_run** and checks out that exact `head_sha` before publishing LIFE OS Web. Therefore a schema-dependent Web client cannot be published ahead of its server migration.
+Every `main` push starts `.github/workflows/deploy-pocketbase.yml`. It validates the complete tracked PocketBase JS bundle; if `pb_hooks/`, `pb_migrations/`, or the server workflow changed, it deploys/restarts PocketBase and lets unapplied migrations finish. `.github/workflows/deploy.yml` has **no direct/manual production entry**: it is triggered only by the successful server `workflow_run`, requires that run to be a `main` push, and checks out that exact `head_sha` before publishing LIFE OS Web. Therefore a schema-dependent Web client cannot be published ahead of its server migration.
 
-A main push with no PocketBase bundle change still completes the server validation workflow but skips SSH/restart; Web remains downstream of the successful gate. To repeat a release, rerun the already-gated workflow chain rather than bypassing the server gate.
-
+A `main` push with no PocketBase bundle change still completes the server validation workflow but skips SSH/restart; Web remains downstream of the successful gate. To repeat a release, create an empty `main` commit and let the same gated chain run again rather than bypassing the server gate.
 
 **Main integrity gate:** Architecture Guard runs on PRs and on every `main` push. Independently, the PocketBase release workflow reruns strict architecture, documentation parity, repository hygiene, PocketBase schema, and deployment-order contracts before its server stage. Web publication is downstream of that successful workflow, so a structurally invalid direct push cannot be released even when repository branch-protection settings are unavailable.
