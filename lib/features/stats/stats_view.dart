@@ -1,17 +1,15 @@
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/shared/sleep_record_policy.dart';
-import 'package:counter/features/stats/day_stats_dashboard.dart';
-import 'package:counter/features/stats/plan_vs_fact_tab.dart';
 import 'package:counter/features/stats/stats_detail_tree.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
 
-/// Daily statistics inside Timeline.
+/// Daily project/category time statistics inside Timeline.
 ///
-/// Stats is one Timeline mode. Inside Stats there is only one navigation level:
-/// Overview / Day / Plan-Fact / Details. The original summed/expandable tree is
-/// preserved in Details.
+/// Stats intentionally exposes only the original summed + expandable time tree.
+/// Experimental dashboard, day-visualization and plan/fact surfaces were removed
+/// so the feature can be rebuilt gradually from this proven baseline.
 class StatsView extends StatefulWidget {
   const StatsView({
     super.key,
@@ -36,12 +34,9 @@ class _StatsViewState extends State<StatsView> {
   static const int _statsPageCenter = 5000;
 
   final Set<String> _expandedKeys = {};
-  DayStatsDashboardMode _dashboardMode = DayStatsDashboardMode.overview;
 
   int? _lastAggregatedKey;
   List<StatsNode>? _cachedAggregated;
-  int? _lastDashboardKey;
-  DayStatsDashboardData? _cachedDashboard;
   PageController? _dayPageController;
 
   DateTime _dateOnly(DateTime value) =>
@@ -62,52 +57,6 @@ class _StatsViewState extends State<StatsView> {
       records,
       selectedDate,
     );
-  }
-
-  List<Map<String, dynamic>> _recordsWithResolvedCategoryIds(
-    List<Map<String, dynamic>> records,
-  ) {
-    final db = DatabaseService.instance;
-    return records
-        .map((record) {
-          final rawCategory =
-              record['categoryId'] ??
-              record['category_id'] ??
-              record['category'];
-          if (rawCategory == null) return record;
-
-          final probe = record['categoryId'] == rawCategory
-              ? record
-              : <String, dynamic>{...record, 'categoryId': rawCategory};
-          final resolved = db.resolvedCategoryIdForRecord(probe);
-          if (resolved == null) return record;
-
-          final existing = record['categoryId'];
-          if (existing is int && existing == resolved) return record;
-          return <String, dynamic>{...record, 'categoryId': resolved};
-        })
-        .toList(growable: false);
-  }
-
-  int _rulesVisualSignature(Iterable<CategoryRule> roots) {
-    var signature = 17;
-    void walk(CategoryRule rule) {
-      signature = Object.hash(
-        signature,
-        rule.id,
-        rule.name,
-        rule.colorValue,
-        rule.iconCodePoint,
-      );
-      for (final child in rule.children ?? const <CategoryRule>[]) {
-        walk(child);
-      }
-    }
-
-    for (final root in roots) {
-      walk(root);
-    }
-    return signature;
   }
 
   @override
@@ -192,6 +141,7 @@ class _StatsViewState extends State<StatsView> {
       wakingWindow.wakeWall,
       wakingWindow.bedWall,
     );
+
     final List<StatsNode> aggregated;
     if (aggregatedKey == _lastAggregatedKey && _cachedAggregated != null) {
       aggregated = _cachedAggregated!;
@@ -206,27 +156,25 @@ class _StatsViewState extends State<StatsView> {
       _cachedAggregated = aggregated;
     }
 
-    final dashboardKey = Object.hash(
-      aggregatedKey,
-      _rulesVisualSignature(widget.rules),
+    final totalDuration = aggregated.fold<Duration>(
+      Duration.zero,
+      (sum, node) => sum + node.total,
     );
-    final DayStatsDashboardData dashboard;
-    if (dashboardKey == _lastDashboardKey && _cachedDashboard != null) {
-      dashboard = _cachedDashboard!;
-    } else {
-      dashboard = DayStatsDashboardData.build(
-        records: _recordsWithResolvedCategoryIds(statsRecords),
-        rules: widget.rules,
-        aggregated: aggregated,
-        selectedDate: widget.selectedDate,
-        rangeStartWall: wakingWindow.wakeWall,
-        rangeEndWall: wakingWindow.bedWall,
-      );
-      _lastDashboardKey = dashboardKey;
-      _cachedDashboard = dashboard;
-    }
 
-    final content = _buildStatsContent(aggregated, dashboard, statsRecords);
+    final content = StatsDetailTree(
+      roots: aggregated,
+      totalDuration: totalDuration,
+      selectedDate: widget.selectedDate,
+      expandedKeys: _expandedKeys,
+      onToggle: (key) {
+        setState(() {
+          if (!_expandedKeys.remove(key)) {
+            _expandedKeys.add(key);
+          }
+        });
+      },
+    );
+
     final navigate = widget.onDayChanged;
     final controller = _dayPageController;
     if (navigate == null || controller == null) return content;
@@ -260,39 +208,6 @@ class _StatsViewState extends State<StatsView> {
         }
         return content;
       },
-    );
-  }
-
-  Widget _buildStatsContent(
-    List<StatsNode> aggregated,
-    DayStatsDashboardData dashboard,
-    List<Map<String, dynamic>> statsRecords,
-  ) {
-    return DayStatsDashboard(
-      mode: _dashboardMode,
-      onModeChanged: (mode) {
-        if (mode == _dashboardMode) return;
-        setState(() => _dashboardMode = mode);
-      },
-      data: dashboard,
-      planFactView: PlanVsFactV2Tab(
-        selectedDate: widget.selectedDate,
-        records: statsRecords,
-        isFutureDate: widget.isFutureDate,
-      ),
-      detailsView: StatsDetailTree(
-        roots: aggregated,
-        totalDuration: Duration(seconds: dashboard.totalSeconds),
-        selectedDate: widget.selectedDate,
-        expandedKeys: _expandedKeys,
-        onToggle: (key) {
-          setState(() {
-            if (!_expandedKeys.remove(key)) {
-              _expandedKeys.add(key);
-            }
-          });
-        },
-      ),
     );
   }
 }
