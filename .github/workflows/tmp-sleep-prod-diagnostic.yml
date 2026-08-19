@@ -7,7 +7,7 @@ on:
       - '.github/workflows/tmp-sleep-prod-diagnostic.yml'
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   diagnose:
@@ -21,6 +21,11 @@ jobs:
       POCKETBASE_SERVICE: ${{ secrets.POCKETBASE_SERVICE }}
       POCKETBASE_DEPLOY_DIR: ${{ secrets.POCKETBASE_DEPLOY_DIR }}
     steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
       - name: Prepare SSH
         run: |
           set -euo pipefail
@@ -37,7 +42,7 @@ jobs:
       - name: Read sanitized sleep sync state
         run: |
           ssh -i ~/.ssh/lifeos_pocketbase -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" \
-            "POCKETBASE_SERVICE='$POCKETBASE_SERVICE' POCKETBASE_DEPLOY_DIR='$POCKETBASE_DEPLOY_DIR' bash -s" <<'REMOTE'
+            "POCKETBASE_SERVICE='$POCKETBASE_SERVICE' POCKETBASE_DEPLOY_DIR='$POCKETBASE_DEPLOY_DIR' bash -s" > /tmp/sleep-prod-latest.txt <<'REMOTE'
           set -euo pipefail
           service_name="${POCKETBASE_SERVICE:-}"
           if [[ -z "$service_name" ]]; then
@@ -56,41 +61,38 @@ jobs:
           python3 - "$db" <<'PY'
           import sqlite3, sys
           from datetime import datetime, timedelta, timezone
-          db=sys.argv[1]
-          con=sqlite3.connect(f'file:{db}?mode=ro', uri=True)
+          con=sqlite3.connect(f'file:{sys.argv[1]}?mode=ro', uri=True)
           con.row_factory=sqlite3.Row
-          print('=== sleep_sync_connections ===')
+          print('=== latest sleep sync connection ===')
           rows=con.execute('''
             SELECT enabled,status,last_error,last_sync_at,last_session_count,last_imported_count,
                    length(coalesce(refresh_token_enc,'')) AS refresh_len, updated
             FROM sleep_sync_connections
-            ORDER BY updated DESC LIMIT 5
+            ORDER BY updated DESC LIMIT 1
           ''').fetchall()
-          for r in rows:
-            print(dict(r))
-          cutoff=(datetime.now(timezone.utc)-timedelta(days=2)).isoformat().replace('+00:00','Z')
-          print('=== sleep records last 48h ===')
-          rows=con.execute('''
-            SELECT count(*) AS n,
-                   min(end_time) AS first_end,
-                   max(end_time) AS last_end
-            FROM records
-            WHERE (title='Sleep' OR title='Сон' OR external_kind='sleep') AND end_time>=?
-          ''',(cutoff,)).fetchall()
-          for r in rows:
-            print(dict(r))
-          print('=== sleep records last 30d ===')
-          cutoff30=(datetime.now(timezone.utc)-timedelta(days=30)).isoformat().replace('+00:00','Z')
-          rows=con.execute('''
-            SELECT count(*) AS n, max(end_time) AS last_end
-            FROM records
-            WHERE (title='Sleep' OR title='Сон' OR external_kind='sleep') AND end_time>=?
-          ''',(cutoff30,)).fetchall()
-          for r in rows:
-            print(dict(r))
+          for r in rows: print(dict(r))
+          now=datetime.now(timezone.utc)
+          for hours in (24,48,168,720):
+            cutoff=(now-timedelta(hours=hours)).isoformat().replace('+00:00','Z')
+            n=con.execute('''SELECT count(*) FROM records
+              WHERE (title='Sleep' OR title='Сон' OR external_kind='sleep') AND end_time>=?''',(cutoff,)).fetchone()[0]
+            print(f'sleep_records_last_{hours}h={n}')
           PY
           echo '=== recent server sleep errors ==='
           if [[ -n "$service_name" ]]; then
-            journalctl -u "$service_name" --since '24 hours ago' --no-pager 2>/dev/null | grep -Ei 'google (health|fit) sleep|sleep sync failed|authorization' | tail -n 40 || true
+            journalctl -u "$service_name" --since '24 hours ago' --no-pager 2>/dev/null | grep -Ei 'google (health|fit) sleep|sleep sync failed|authorization|insufficient' | tail -n 50 || true
           fi
           REMOTE
+          cat /tmp/sleep-prod-latest.txt
+
+      - name: Publish sanitized diagnostic to temporary branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout --orphan sleep-diagnostic-output
+          git rm -rf . >/dev/null 2>&1 || true
+          mkdir -p diagnostics
+          cp /tmp/sleep-prod-latest.txt diagnostics/sleep-prod-latest.txt
+          git add diagnostics/sleep-prod-latest.txt
+          git commit -m "Update sanitized sleep production diagnostic"
+          git push --force origin HEAD:sleep-diagnostic-output
