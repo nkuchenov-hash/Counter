@@ -3,6 +3,7 @@
 // One-time production nudge after hardening the cloud Google Fit reader.
 // Keep OAuth/token state intact; only force the next server cron to reread
 // the recent 30-day sleep window with the current recovery implementation.
+// This migration also serves as the production rollout checkpoint for that reader.
 migrate(function(app) {
     var connections = [];
     try {
