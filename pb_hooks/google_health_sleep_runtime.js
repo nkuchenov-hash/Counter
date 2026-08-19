@@ -191,7 +191,7 @@ function __healthNormalizeSleep(row) {
     var start = __healthDate(interval.startTime);
     var end = __healthDate(interval.endTime);
     if (!start || !end || end.getTime() <= start.getTime() || end.getTime() > Date.now()) return null;
-    var name = String(row.name || "").trim();
+    var name = String(row.dataPointName || row.name || "").trim();
     var externalId = name || ("google-health|" + start.toISOString() + "|" + end.toISOString());
     var modifiedAt = __healthDate(sleep.updateTime) || __healthDate(sleep.createTime) || end;
     return {

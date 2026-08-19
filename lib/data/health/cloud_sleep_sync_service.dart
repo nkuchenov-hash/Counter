@@ -242,6 +242,10 @@ class CloudSleepSyncService {
         mode: kIsWeb
             ? LaunchMode.platformDefault
             : LaunchMode.externalApplication,
+        // The authorization URL is obtained asynchronously. Mobile browsers
+        // may block a delayed new-tab launch as a popup; same-tab navigation
+        // remains allowed and returns to LIFE OS through the OAuth callback.
+        webOnlyWindowName: kIsWeb ? '_self' : null,
       );
       if (!launched) throw StateError('Could not open Google authorization');
       return true;
