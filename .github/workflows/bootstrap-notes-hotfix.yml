@@ -29,7 +29,7 @@ jobs:
       - name: Checkout production hotfix source
         uses: actions/checkout@v4
         with:
-          ref: 3b74b4181b6c10a5571c9ac26c74683cfb431a16
+          ref: e945ebdd6205b08211b03ad1085b7e849b21cf3b
           fetch-depth: 0
 
       - name: Snapshot current Pages support files
@@ -77,4 +77,4 @@ jobs:
         with:
           folder: build/web
           branch: gh-pages
-          commit-message: 'Deploy compact Notes list drop-up from 3b74b4181b6c10a5571c9ac26c74683cfb431a16'
+          commit-message: 'Deploy larger Notes toolbar icons from e945ebdd6205b08211b03ad1085b7e849b21cf3b'
