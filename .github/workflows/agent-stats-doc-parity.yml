@@ -1,0 +1,78 @@
+name: Agent Stats Docs Parity
+
+on:
+  push:
+    branches:
+      - agent/simplify-stats-to-time-tree
+
+permissions:
+  contents: write
+
+jobs:
+  repair-docs:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout feature branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/simplify-stats-to-time-tree
+          fetch-depth: 0
+
+      - name: Remove one-shot workflow from resulting tree
+        run: git rm .github/workflows/agent-stats-doc-parity.yml
+
+      - name: Align Stats product and structure docs
+        shell: python
+        run: |
+          from pathlib import Path
+
+          app = Path('docs/APP_STRUCTURE.md')
+          text = app.read_text(encoding='utf-8')
+          old = "| `stats/` | `stats_view.dart`, `day_stats_dashboard.dart`, `stats_detail_tree.dart`, `plan_vs_fact_tab.dart` | Productivity stats (embedded in Timeline): switchable day dashboards, preserved detailed tree, plan vs fact |"
+          new = "| `stats/` | `stats_view.dart`, `stats_detail_tree.dart` | Productivity stats (embedded in Timeline): waking-day project/category time totals with expandable task groups and individual sessions |"
+          if old not in text:
+              raise SystemExit('Expected Stats row not found in APP_STRUCTURE.md')
+          app.write_text(text.replace(old, new, 1), encoding='utf-8')
+
+          inventory = Path('docs/website/PRODUCT_INVENTORY.md')
+          text = inventory.read_text(encoding='utf-8')
+          start = text.index('## 6. Stats & Plan vs Fact')
+          end = text.index('\n---\n\n## 7. Categories', start)
+          replacement = '''## 6. Stats
+
+| Field | Detail |
+| :--- | :--- |
+| **User-facing capability** | Hierarchical project/category time statistics for the selected waking day inside Timeline. Expand categories into grouped tasks and individual tracked sessions. |
+| **Proof** | `lib/features/stats/stats_view.dart` — `StatsView`; `lib/features/stats/stats_detail_tree.dart` — `StatsDetailTree`; `lib/data/category_service.dart` — stats aggregation/duration helpers |
+| **User value** | See where tracked time actually went across projects and categories |
+| **Status** | **public-ready** |
+| **Risks / caveats** | Stats respect profile timezone and wake-to-bed boundaries; this is intentionally a focused time breakdown, not a reporting/export dashboard. |
+| **Website angle** | “See where your time went.” |
+'''
+          inventory.write_text(text[:start] + replacement + text[end:], encoding='utf-8')
+
+          changelog = Path('CHANGELOG.md')
+          text = changelog.read_text(encoding='utf-8')
+          entry = '''## 2026-08-19 — Stats baseline simplification [product cleanup]
+
+- Removed the experimental Overview, Day, Plan-Fact, and dashboard presentation layers from Timeline > Stats.
+- Stats now directly renders the preserved expandable waking-day project/category time tree with grouped tasks and individual sessions.
+- Preserved existing waking-day boundaries, day swipe navigation, timezone behavior, aggregation, and Timeline record semantics; no PocketBase/schema changes.
+
+'''
+          if not text.startswith('## 2026-08-19 — Stats baseline simplification'):
+              changelog.write_text(entry + text, encoding='utf-8')
+
+      - name: Regenerate detailed repository guide
+        run: python scripts/manual/generate_app_structure_detailed.py
+
+      - name: Verify documentation parity
+        run: python scripts/audit/documentation_parity.py
+
+      - name: Commit generated documentation
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Align Stats documentation after cleanup"
+          git push origin HEAD:agent/simplify-stats-to-time-tree
