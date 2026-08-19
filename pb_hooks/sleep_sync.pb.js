@@ -3,8 +3,9 @@
 // Production sleep synchronization routes. Web/desktop use Google Fit REST,
 // because this is the cloud store backing the Google Fit app. The newer Google
 // Health API is the successor to Fitbit Web API and is not the source for the
-// user's Google Fit sleep history. OAuth state handling is race-safe in the
-// shared runtime so repeated clicks cannot invalidate an in-flight callback.
+// user's Google Fit sleep history. OAuth state handling is race-safe, and a
+// successful OAuth connection remains enabled even if sessions need segment
+// fallback for the first data read.
 routerAdd("GET", "/api/sleep-sync/status", function(e) {
     var sync = require(__hooks + "/google_fit_sleep_runtime.js");
     return sync.status(e);
