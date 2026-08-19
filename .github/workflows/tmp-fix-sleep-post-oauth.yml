@@ -1,0 +1,48 @@
+name: One-time post-OAuth sleep sync fix
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/tmp-fix-sleep-post-oauth.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Patch Google Fit post-OAuth behavior
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('pb_hooks/google_fit_sleep_runtime.js')
+          s=p.read_text()
+          old='''    return raw.indexOf("account_not_linked") >= 0 ||\n        raw.indexOf("google health authorization is required") >= 0 ||\n        raw.indexOf("google health sleep request") >= 0 ||\n        raw.indexOf("insufficient authentication scopes") >= 0 ||\n        raw.indexOf("insufficientpermissions") >= 0 ||\n        raw.indexOf("insufficient permission") >= 0 ||\n        raw.indexOf("invalid_grant") >= 0;'''
+          new='''    // Connection state and import state are separate. Once Google issued a\n    // refresh token, a data-read failure must not make the user's setting look\n    // disconnected. Only genuinely invalid/stale credentials require OAuth.\n    return raw.indexOf("account_not_linked") >= 0 ||\n        raw.indexOf("google health authorization is required") >= 0 ||\n        raw.indexOf("google health sleep request") >= 0 ||\n        raw.indexOf("invalid_grant") >= 0;'''
+          if old not in s:
+              raise SystemExit('reconnect block not found')
+          s=s.replace(old,new,1)
+
+          old2='''    var sessions = __fitFetchSleep(accessToken, sessionStart, now);\n    var recovery = __fitRecovery.recover(accessToken, segmentStart, now, sessions);\n    sessions = recovery.sessions;'''
+          new2='''    var sessions = [];\n    try {\n        sessions = __fitFetchSleep(accessToken, sessionStart, now);\n    } catch (sessionErr) {\n        var sessionErrText = String(sessionErr || "").toLowerCase();\n        var permissionLike = sessionErrText.indexOf("http 403") >= 0 ||\n            sessionErrText.indexOf("insufficient authentication scopes") >= 0 ||\n            sessionErrText.indexOf("insufficient permission") >= 0;\n        if (!permissionLike) throw sessionErr;\n        // Some Fit REST session reads can reject the dedicated sleep scope even\n        // though com.google.sleep.segment is available with fitness.sleep.read.\n        // LIFE OS only needs the canonical asleep -> awake interval, so recover\n        // it from sleep segments instead of treating OAuth as disconnected.\n        try { app.logger().warn("google fit sleep sessions unavailable; using sleep segments", "error", sessionErr); } catch (_) {}\n        sessions = [];\n    }\n    var recovery = __fitRecovery.recover(accessToken, segmentStart, now, sessions);\n    sessions = recovery.sessions;'''
+          if old2 not in s:
+              raise SystemExit('session fetch block not found')
+          s=s.replace(old2,new2,1)
+          p.write_text(s)
+          PY
+          node --check pb_hooks/google_fit_sleep_runtime.js
+          git diff --check
+      - name: Commit patch and remove workflow
+        run: |
+          rm -f .github/workflows/tmp-fix-sleep-post-oauth.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add pb_hooks/google_fit_sleep_runtime.js .github/workflows/tmp-fix-sleep-post-oauth.yml
+          git commit -m "Keep sleep sync enabled after OAuth and fall back to segments"
+          git push origin HEAD:main
