@@ -109,7 +109,7 @@ class _NotesToolbarMenuButtonState extends State<_NotesToolbarMenuButton> {
   static const _hoverCloseDelay = Duration(milliseconds: 140);
   static const _menuGap = 4.0;
 
-  final LayerLink _layerLink = LayerLink();
+  final GlobalKey _buttonKey = GlobalKey();
   final Object _tapRegionGroup = Object();
   OverlayEntry? _overlayEntry;
   bool _pointerOverTrigger = false;
@@ -118,31 +118,51 @@ class _NotesToolbarMenuButtonState extends State<_NotesToolbarMenuButton> {
 
   void _showMenu() {
     if (!widget.action.enabled || _overlayEntry != null) return;
+
+    final buttonRenderObject =
+        _buttonKey.currentContext?.findRenderObject();
     final overlay = Overlay.of(context);
+    final overlayRenderObject = overlay.context.findRenderObject();
+    if (buttonRenderObject is! RenderBox ||
+        overlayRenderObject is! RenderBox) {
+      return;
+    }
+
+    final buttonTopLeft = overlayRenderObject.globalToLocal(
+      buttonRenderObject.localToGlobal(Offset.zero),
+    );
+    final menuHeight =
+        widget.action.menuItems.length * kNotesToolbarButtonSize;
+    final maxLeft = math.max(
+      0.0,
+      overlayRenderObject.size.width - kNotesToolbarButtonSize,
+    );
+    final left = buttonTopLeft.dx.clamp(0.0, maxLeft).toDouble();
+    final top = math.max(
+      MediaQuery.paddingOf(context).top + _menuGap,
+      buttonTopLeft.dy - _menuGap - menuHeight,
+    );
+
     final entry = OverlayEntry(
-      builder: (_) => CompositedTransformFollower(
-        link: _layerLink,
-        showWhenUnlinked: false,
-        targetAnchor: Alignment.topCenter,
-        followerAnchor: Alignment.bottomCenter,
-        offset: const Offset(0, -_menuGap),
-        child: Material(
-          type: MaterialType.transparency,
-          child: TapRegion(
-            groupId: _tapRegionGroup,
-            child: MouseRegion(
-              onEnter: (_) {
-                _pointerOverMenu = true;
-                _cancelScheduledClose();
-              },
-              onExit: (_) {
-                _pointerOverMenu = false;
-                _scheduleClose();
-              },
-              child: _NotesCompactToolbarMenu(
-                items: widget.action.menuItems,
-                onSelected: _selectItem,
-              ),
+      builder: (_) => Positioned(
+        left: left,
+        top: top,
+        width: kNotesToolbarButtonSize,
+        height: menuHeight,
+        child: TapRegion(
+          groupId: _tapRegionGroup,
+          child: MouseRegion(
+            onEnter: (_) {
+              _pointerOverMenu = true;
+              _cancelScheduledClose();
+            },
+            onExit: (_) {
+              _pointerOverMenu = false;
+              _scheduleClose();
+            },
+            child: _NotesCompactToolbarMenu(
+              items: widget.action.menuItems,
+              onSelected: _selectItem,
             ),
           ),
         ),
@@ -208,26 +228,24 @@ class _NotesToolbarMenuButtonState extends State<_NotesToolbarMenuButton> {
     return TapRegion(
       groupId: _tapRegionGroup,
       onTapOutside: (_) => _hideMenu(),
-      child: CompositedTransformTarget(
-        link: _layerLink,
-        child: MouseRegion(
-          onEnter: (_) {
-            _pointerOverTrigger = true;
-            _cancelScheduledClose();
-            _showMenu();
-          },
-          onExit: (_) {
-            _pointerOverTrigger = false;
-            _scheduleClose();
-          },
-          child: NotesToolbarButton(
-            tool: widget.action.tool,
-            icon: widget.action.icon,
-            tooltip: widget.action.tooltip,
-            onPressed: _toggleMenu,
-            selected: widget.action.selected,
-            enabled: widget.action.enabled,
-          ),
+      child: MouseRegion(
+        onEnter: (_) {
+          _pointerOverTrigger = true;
+          _cancelScheduledClose();
+          _showMenu();
+        },
+        onExit: (_) {
+          _pointerOverTrigger = false;
+          _scheduleClose();
+        },
+        child: NotesToolbarButton(
+          key: _buttonKey,
+          tool: widget.action.tool,
+          icon: widget.action.icon,
+          tooltip: widget.action.tooltip,
+          onPressed: _toggleMenu,
+          selected: widget.action.selected,
+          enabled: widget.action.enabled,
         ),
       ),
     );
