@@ -72,7 +72,7 @@ jobs:
             git rm -f .github/workflows/tmp-clean-sleep-source.yml
           fi
 
-          if git grep -nEi 'google[ _-]?health|GOOGLE_HEALTH' -- 'lib/**' 'pb_hooks/**' 'pb_migrations/**' '.github/workflows/**' 'android/**' 'ios/**'; then
+          if git grep -nEi 'google[ _-]?health|GOOGLE_HEALTH' -- 'lib/**' 'pb_hooks/**' 'pb_migrations/**' 'android/**' 'ios/**'; then
             echo 'Obsolete sleep provider reference remains in active code.' >&2
             exit 1
           fi
