@@ -1,0 +1,77 @@
+name: Bootstrap Notes production hotfix
+
+on:
+  push:
+    branches: [gh-pages]
+    paths:
+      - '.github/workflows/bootstrap-notes-hotfix.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: notes-production-hotfix
+  cancel-in-progress: false
+
+jobs:
+  build-and-deploy:
+    if: github.event.head_commit.message == 'Trigger Notes production hotfix'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Snapshot current Pages support files
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: pages
+          fetch-depth: 1
+
+      - name: Checkout production hotfix source
+        uses: actions/checkout@v4
+        with:
+          ref: 1c251d4191a6733d7950a95ba1840cb29d884842
+          path: app
+          fetch-depth: 0
+
+      - name: Set up Flutter 3.41.6
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.6'
+          channel: stable
+
+      - name: Create env.dart
+        working-directory: app
+        run: |
+          mkdir -p lib/core/env
+          printf '%s\n' 'abstract final class Env {' '  static const String placeholder = '\'''\'';' '}' > lib/core/env/env.dart
+
+      - name: Install Flutter dependencies
+        working-directory: app
+        run: flutter pub get
+
+      - name: Build LIFE OS web hotfix
+        working-directory: app
+        run: |
+          SOURCE_SHA=$(git rev-parse HEAD)
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          BUILD_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          flutter build web --release --base-href="/Counter/" --no-tree-shake-icons --no-wasm-dry-run --pwa-strategy=none \
+            --dart-define=GIT_COMMIT="$SHORT_SHA" \
+            --dart-define=BUILD_TIME="$BUILD_TIME"
+          printf '%s\n' "$SOURCE_SHA" > build/web/.lifeos-source-sha
+
+      - name: Preserve published companion content and deploy trigger
+        run: |
+          if [ -d pages/igropoisk ]; then
+            rm -rf app/build/web/igropoisk
+            cp -R pages/igropoisk app/build/web/igropoisk
+          fi
+          mkdir -p app/build/web/.github/workflows
+          cp pages/.github/workflows/deploy.yml app/build/web/.github/workflows/deploy.yml
+
+      - name: Deploy hotfix to gh-pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: app/build/web
+          branch: gh-pages
+          commit-message: 'Deploy Notes toolbar production hotfix from 1c251d4191a6733d7950a95ba1840cb29d884842'
