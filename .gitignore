@@ -1,4 +1,4 @@
-ï»¿# Miscellaneous
+# Miscellaneous
 *.class
 *.log
 *.pyc
@@ -68,8 +68,9 @@ app.*.map.json
 
 installer/windows/wav_stt_replay/target/
 
-# Temporary STT helper rebuild sidecar (canonical is counter_stt_helper.exe)
-installer/windows/stt_helper_build/counter_stt_helper_new.exe
+# Windows STT helper executables are build/release artifacts, never Git inputs.
+# Production uses installer/windows/stt_helper_artifact.json + immutable GitHub Release.
+installer/windows/stt_helper_build/*.exe
 
 # Generated timestamped real-helper latency reports (keep real_helper_latency_latest.json)
 test/fixtures/desktop_voice_wav/benchmark_reports/real_helper_latency_[0-9]*.json
