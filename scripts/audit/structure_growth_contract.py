@@ -11,6 +11,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
+SELF_PATH = Path(__file__).resolve().relative_to(ROOT).as_posix()
 
 BRAIN_PART_PREFIXES = (
     "lib/data/records/",
@@ -126,6 +127,8 @@ def added_lines(base: str, path: str) -> list[str]:
 
 
 def scans_workstation_paths(path: str) -> bool:
+    if path == SELF_PATH:
+        return False
     return path in ROOT_BUILD_FILES or path.startswith(WORKSTATION_SCOPES)
 
 
