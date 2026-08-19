@@ -69,17 +69,15 @@ jobs:
           # the media block. Editing an existing drawing remains media-only.
           path = Path('lib/features/notes/note_editor_page.dart')
           text = path.read_text()
-          old_drawing = '''        if (!mounted) return;
-        final mutation = editBlockId == null
-            ? _editor.insertAfter(
-                _editor.activeBlockId,
-                NoteBlockType.drawing,
-                drawingData: dataUrl,
-              )
-            : _editor.updateMedia(editBlockId, drawingData: dataUrl);
-        _applyMutation(mutation);'''
-          new_drawing = '''        if (!mounted) return;
-        if (editBlockId == null) {
+          drawing_start = text.find('        final mutation = editBlockId == null')
+          if drawing_start < 0:
+              raise SystemExit('drawing mutation start not found')
+          drawing_end_marker = '        _applyMutation(mutation);'
+          drawing_end = text.find(drawing_end_marker, drawing_start)
+          if drawing_end < 0:
+              raise SystemExit('drawing mutation end not found')
+          drawing_end += len(drawing_end_marker)
+          new_drawing = '''        if (editBlockId == null) {
           _editor.insertAfter(
             _editor.activeBlockId,
             NoteBlockType.drawing,
@@ -95,9 +93,8 @@ jobs:
         _applyMutation(
           _editor.updateMedia(editBlockId, drawingData: dataUrl),
         );'''
-          if old_drawing not in text:
-              raise SystemExit('current drawing insertion block not found')
-          path.write_text(text.replace(old_drawing, new_drawing, 1))
+          text = text[:drawing_start] + new_drawing + text[drawing_end:]
+          path.write_text(text)
 
           # Reuse the preserved original patch for all other Notes changes,
           # excluding the quick-add and drawing subsections handled above.
