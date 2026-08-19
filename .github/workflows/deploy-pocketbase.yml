@@ -40,8 +40,24 @@ jobs:
           (( ${#files[@]} > 0 ))
           for file in "${files[@]}"; do node --check "$file"; done
 
-      - name: Prepare SSH
+      - name: Detect PocketBase bundle changes
         if: github.event_name != 'pull_request'
+        shell: bash
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+        run: |
+          set -euo pipefail
+          changed=true
+          if [[ "${{ github.event_name }}" == "push" && -n "${BEFORE_SHA:-}" && ! "$BEFORE_SHA" =~ ^0+$ ]]; then
+            if git diff --quiet "$BEFORE_SHA" "$GITHUB_SHA" -- pb_hooks pb_migrations; then
+              changed=false
+            fi
+          fi
+          echo "SERVER_CHANGED=$changed" >> "$GITHUB_ENV"
+          echo "PocketBase bundle changed: $changed"
+
+      - name: Prepare SSH
+        if: github.event_name != 'pull_request' && env.SERVER_CHANGED == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -54,7 +70,7 @@ jobs:
           ssh-keyscan -p "$SSH_PORT" -H "${SSH_HOST:-217.114.0.201}" >> ~/.ssh/known_hosts
 
       - name: Upload and install PocketBase bundle
-        if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request' && env.SERVER_CHANGED == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -123,7 +139,7 @@ jobs:
           REMOTE
 
       - name: Verify recent cloud sleep in production
-        if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request' && env.SERVER_CHANGED == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -167,13 +183,17 @@ jobs:
           REMOTE
 
       - name: Publish sanitized verification
-        if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request' && env.SERVER_CHANGED == 'true'
         shell: bash
         run: |
           cp /tmp/sleep-cloud-result.txt _tmp_sleep_cloud_result.txt
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git add _tmp_sleep_cloud_result.txt
+          if git diff --cached --quiet; then
+            echo "Sanitized verification unchanged; nothing to publish."
+            exit 0
+          fi
           git commit -m 'Record sanitized sleep cloud verification'
           git pull --rebase origin main
           git push origin HEAD:main
