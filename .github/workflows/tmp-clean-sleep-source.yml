@@ -1,0 +1,69 @@
+name: Final sleep source cleanup
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/tmp-clean-sleep-source.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  clean:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Keep only the Google Fit sleep adapter
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          runtime = Path('pb_hooks/google_fit_sleep_runtime.js')
+          text = runtime.read_text()
+          text = re.sub(
+              r'var clientId = (__fitEnv\("SLEEP_SYNC_GOOGLE_FIT_CLIENT_ID"\))(?: \|\| __fitEnv\("[^"]+"\))?;',
+              r'var clientId = \1;', text, count=1)
+          text = re.sub(
+              r'var clientSecret = (__fitEnv\("SLEEP_SYNC_GOOGLE_FIT_CLIENT_SECRET"\))(?: \|\| __fitEnv\("[^"]+"\))?;',
+              r'var clientSecret = \1;', text, count=1)
+          text = re.sub(
+              r'function __fitNeedsReconnect\(errorText\) \{.*?\n\}',
+              '''function __fitNeedsReconnect(errorText) {\n    var raw = String(errorText || "").toLowerCase();\n    if (!raw) return false;\n    return raw.indexOf("account_not_linked") >= 0 ||\n        raw.indexOf("invalid_grant") >= 0;\n}''',
+              text, count=1, flags=re.S)
+          text = re.sub(
+              r'    try \{\n        return app\.findFirstRecordByFilter\(\n            "records",\n            "user_id = \{:uid\} && external_source = \'[^\']+\' && start_time = \{:start\} && end_time = \{:end\}",\n            \{ uid: userId, start: session\.start\.toISOString\(\), end: session\.end\.toISOString\(\) \}\n        \);\n    \} catch \(_\) \{\}\n\n',
+              '', text, count=1)
+          runtime.write_text(text)
+
+          cloud = Path('lib/data/health/cloud_sleep_sync_service.dart')
+          c = cloud.read_text()
+          c = re.sub(r'Google [A-Za-z]+ connection failed', 'Google Fit connection failed', c)
+          cloud.write_text(c)
+          PY
+
+          node --check pb_hooks/google_fit_sleep_runtime.js
+          node --check pb_hooks/google_fit_sleep_recovery.js
+          git diff --check
+
+      - name: Prove active code has no obsolete provider references
+        shell: bash
+        run: |
+          set -euo pipefail
+          git rm .github/workflows/tmp-clean-sleep-source.yml
+          if git grep -nEi 'google[ _-]?health|GOOGLE_HEALTH' -- 'lib/**' 'pb_hooks/**' 'pb_migrations/**' '.github/workflows/**' 'android/**' 'ios/**'; then
+            echo 'Obsolete sleep provider reference remains in active code.' >&2
+            exit 1
+          fi
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -A
+          git commit -m 'Keep sleep synchronization Google Fit only'
+          git push origin HEAD:main
