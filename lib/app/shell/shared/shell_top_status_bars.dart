@@ -12,7 +12,7 @@ class ShellTopStatusBars extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         // Background synchronization is intentionally silent. Never reserve
-        // shell layout space for sync progress/status UI at the shell level.
+        // shell layout space for sync progress/status UI.
         ProfileHydrationStatusBar(),
         UnfilledTimeGapBanner(),
       ],
