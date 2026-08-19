@@ -65,8 +65,42 @@ jobs:
           text = text[:start] + new_button + text[end:]
           path.write_text(text)
 
+          # New drawings always receive an editable paragraph immediately after
+          # the media block. Editing an existing drawing remains media-only.
+          path = Path('lib/features/notes/note_editor_page.dart')
+          text = path.read_text()
+          old_drawing = '''        if (!mounted) return;
+        final mutation = editBlockId == null
+            ? _editor.insertAfter(
+                _editor.activeBlockId,
+                NoteBlockType.drawing,
+                drawingData: dataUrl,
+              )
+            : _editor.updateMedia(editBlockId, drawingData: dataUrl);
+        _applyMutation(mutation);'''
+          new_drawing = '''        if (!mounted) return;
+        if (editBlockId == null) {
+          _editor.insertAfter(
+            _editor.activeBlockId,
+            NoteBlockType.drawing,
+            drawingData: dataUrl,
+          );
+          final drawingId = _editor.activeBlockId;
+          if (drawingId == null) return;
+          _applyMutation(
+            _editor.insertAfter(drawingId, NoteBlockType.paragraph),
+          );
+          return;
+        }
+        _applyMutation(
+          _editor.updateMedia(editBlockId, drawingData: dataUrl),
+        );'''
+          if old_drawing not in text:
+              raise SystemExit('current drawing insertion block not found')
+          path.write_text(text.replace(old_drawing, new_drawing, 1))
+
           # Reuse the preserved original patch for all other Notes changes,
-          # explicitly excluding its old quick-add subsection.
+          # excluding the quick-add and drawing subsections handled above.
           original = Path(
               'automation/.github/notes-ux/bootstrap-notes-hotfix-original.txt'
           ).read_text().splitlines()
@@ -79,6 +113,7 @@ jobs:
           )
           body = []
           skipping_quick_add = False
+          skipping_drawing = False
           for raw in original[script_start:script_end]:
               line = raw[10:] if raw.startswith('          ') else raw
               if '# 3) Quick add:' in line:
@@ -87,6 +122,13 @@ jobs:
               if skipping_quick_add and '# 4) Keep Notes checkbox-mode' in line:
                   skipping_quick_add = False
               if skipping_quick_add:
+                  continue
+              if "old_drawing = '''" in line:
+                  skipping_drawing = True
+                  continue
+              if skipping_drawing:
+                  if 'rep(path, old_drawing, new_drawing)' in line:
+                      skipping_drawing = False
                   continue
               body.append(line)
           exec(compile('\n'.join(body) + '\n', '<notes-ux-batch>', 'exec'))
