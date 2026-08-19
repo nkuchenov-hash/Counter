@@ -1,9 +1,9 @@
 name: Publish pinned STT helper asset
 
 on:
-  push:
+  pull_request:
     branches:
-      - cleanup/stt-release-artifact-20260819
+      - main
 
 permissions:
   contents: write
@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   publish:
-    if: github.actor != 'github-actions[bot]'
+    if: github.event.pull_request.head.ref == 'cleanup/stt-release-artifact-20260819' && github.actor != 'github-actions[bot]'
     runs-on: windows-latest
     steps:
       - name: Checkout branch
