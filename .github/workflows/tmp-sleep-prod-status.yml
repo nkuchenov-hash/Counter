@@ -7,7 +7,7 @@ on:
       - '.github/workflows/tmp-sleep-prod-status.yml'
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   snapshot:
@@ -21,6 +21,10 @@ jobs:
       POCKETBASE_SERVICE: ${{ secrets.POCKETBASE_SERVICE }}
       POCKETBASE_DEPLOY_DIR: ${{ secrets.POCKETBASE_DEPLOY_DIR }}
     steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
       - name: Snapshot sanitized sleep state
         run: |
           set -euo pipefail
@@ -31,7 +35,7 @@ jobs:
           chmod 600 ~/.ssh/lifeos_pocketbase
           ssh-keyscan -p "$SSH_PORT" -H "$SSH_HOST" >> ~/.ssh/known_hosts
           ssh -i ~/.ssh/lifeos_pocketbase -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" \
-            "POCKETBASE_SERVICE='$POCKETBASE_SERVICE' POCKETBASE_DEPLOY_DIR='$POCKETBASE_DEPLOY_DIR' bash -s" <<'REMOTE'
+            "POCKETBASE_SERVICE='$POCKETBASE_SERVICE' POCKETBASE_DEPLOY_DIR='$POCKETBASE_DEPLOY_DIR' bash -s" > /tmp/sleep-status.txt <<'REMOTE'
           set -euo pipefail
           service_name="${POCKETBASE_SERVICE:-}"
           if [[ -z "$service_name" ]]; then
@@ -43,29 +47,55 @@ jobs:
           if [[ -z "$app_dir" && -n "$pid" ]]; then app_dir="$(readlink -f "/proc/$pid/cwd" 2>/dev/null || true)"; fi
           db="$app_dir/pb_data/data.db"
           python3 - "$db" <<'PY'
-          import sqlite3, sys
+          import re, sqlite3, sys
           from datetime import datetime, timedelta, timezone
           con=sqlite3.connect(f'file:{sys.argv[1]}?mode=ro', uri=True)
           con.row_factory=sqlite3.Row
-          rows=con.execute("""
-            SELECT enabled,status,last_error,last_sync_at,last_session_count,last_imported_count,
+          r=con.execute("""
+            SELECT enabled,status,last_error,last_session_count,last_imported_count,
                    length(coalesce(refresh_token_enc,'')) AS refresh_len,
-                   length(coalesce(access_token_enc,'')) AS access_len,
-                   oauth_state, oauth_state_expires_at, updated
+                   length(coalesce(access_token_enc,'')) AS access_len
             FROM sleep_sync_connections
             WHERE provider='google_fit'
-            ORDER BY updated DESC LIMIT 3
-          """).fetchall()
-          print('CONNECTIONS')
-          for r in rows:
-            d=dict(r); d['oauth_state']='present' if d.get('oauth_state') else ''
-            print(d)
+            ORDER BY updated DESC LIMIT 1
+          """).fetchone()
+          if not r:
+              print('connection=missing')
+          else:
+              err=(r['last_error'] or '').lower()
+              if not err: cls='none'
+              elif 'invalid_grant' in err: cls='invalid_grant'
+              elif 'insufficient authentication scopes' in err or 'insufficient permission' in err: cls='scope'
+              elif 'accessnotconfigured' in err or 'has not been used in project' in err or 'api has not been used' in err: cls='api_disabled'
+              elif 'sleep segment request failed: http 403' in err: cls='segment_403'
+              elif 'sleep request failed: http 403' in err: cls='sessions_403'
+              elif 'token exchange failed' in err: cls='token_exchange'
+              elif 'token refresh failed' in err: cls='token_refresh'
+              elif 'google health' in err: cls='stale_google_health'
+              else:
+                  m=re.search(r'http\s+(\d+)', err)
+                  cls='http_'+m.group(1) if m else 'other'
+              print('connection=present')
+              print(f'enabled={1 if r["enabled"] else 0}')
+              print(f'status={r["status"] or ""}')
+              print(f'refresh={1 if (r["refresh_len"] or 0)>0 else 0}')
+              print(f'access={1 if (r["access_len"] or 0)>0 else 0}')
+              print(f'error_class={cls}')
+              print(f'last_sessions={int(r["last_session_count"] or 0)}')
+              print(f'last_imported={int(r["last_imported_count"] or 0)}')
           cutoff=(datetime.now(timezone.utc)-timedelta(hours=48)).isoformat().replace('+00:00','Z')
           row=con.execute("""
-            SELECT count(*) AS n, max(end_time) AS last_end
-            FROM records
+            SELECT count(*) AS n FROM records
             WHERE (title='Sleep' OR title='Сон' OR external_kind='sleep') AND end_time>=?
           """,(cutoff,)).fetchone()
-          print('SLEEP48', dict(row))
+          print(f'sleep48={int(row["n"] or 0)}')
           PY
           REMOTE
+          cp /tmp/sleep-status.txt _tmp_sleep_status.txt
+      - name: Publish sanitized snapshot
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add _tmp_sleep_status.txt
+          git commit -m "Record sanitized sleep production status" || exit 0
+          git push origin HEAD:main
