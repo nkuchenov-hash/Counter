@@ -4,7 +4,9 @@
 from __future__ import annotations
 
 import re
+import subprocess
 import sys
+from collections import Counter
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -89,6 +91,8 @@ HISTORICAL_MARKERS = (
 
 BACKTICK_RE = re.compile(r"`([^`]+)`")
 APP_ROW_RE = re.compile(r"^\|\s*`([^`]+\.dart)`\s*\|")
+DETAIL_FILE_HEADING_RE = re.compile(r"^###\s+`([^`]+)`\s*$", re.M)
+DETAIL_TRACKED_COUNT_RE = re.compile(r"\*\*Tracked files:\*\*\s+(\d+)\b")
 
 
 def _is_historical_line(line: str) -> bool:
@@ -121,6 +125,11 @@ def _iter_live_lines(path: Path):
         if skip_removed_section or _is_historical_line(line):
             continue
         yield line_no, line
+
+
+def _tracked_files() -> list[str]:
+    output = subprocess.check_output(["git", "ls-files"], cwd=ROOT, text=True)
+    return [line.strip().replace("\\", "/") for line in output.splitlines() if line.strip()]
 
 
 def check_explicit_references() -> list[str]:
@@ -167,6 +176,39 @@ def check_app_structure_reverse_manifest() -> list[str]:
     return issues
 
 
+def check_detailed_structure_exact_manifest() -> list[str]:
+    detailed = ROOT / "docs" / "APP_STRUCTURE_DETAILED.md"
+    if not detailed.exists():
+        return ["MISSING_DETAILED_STRUCTURE docs/APP_STRUCTURE_DETAILED.md"]
+
+    body = detailed.read_text(encoding="utf-8")
+    tracked = _tracked_files()
+    tracked_set = set(tracked)
+    rendered = DETAIL_FILE_HEADING_RE.findall(body)
+    rendered_set = set(rendered)
+    issues: list[str] = []
+
+    duplicates = sorted(path for path, count in Counter(rendered).items() if count != 1)
+    for path in duplicates:
+        issues.append(f"DETAILED_DUPLICATE_FILE {path}")
+    for path in sorted(tracked_set - rendered_set):
+        issues.append(f"DETAILED_MISSING_TRACKED {path}")
+    for path in sorted(rendered_set - tracked_set):
+        issues.append(f"DETAILED_STALE_FILE {path}")
+
+    header_match = DETAIL_TRACKED_COUNT_RE.search(body)
+    if header_match is None:
+        issues.append("DETAILED_TRACKED_COUNT_HEADER_MISSING")
+    elif int(header_match.group(1)) != len(tracked):
+        issues.append(
+            f"DETAILED_TRACKED_COUNT_MISMATCH header={header_match.group(1)} actual={len(tracked)}"
+        )
+    if len(rendered) != len(tracked):
+        issues.append(f"DETAILED_RENDER_COUNT_MISMATCH rendered={len(rendered)} actual={len(tracked)}")
+
+    return issues
+
+
 def check_semantic_contract_drift() -> list[str]:
     issues: list[str] = []
     for doc in SEMANTIC_CONTRACT_DOCS:
@@ -184,6 +226,7 @@ def main() -> int:
     issues = (
         check_explicit_references()
         + check_app_structure_reverse_manifest()
+        + check_detailed_structure_exact_manifest()
         + check_semantic_contract_drift()
     )
     if issues:

@@ -194,7 +194,7 @@ Performance law is permanent, but the old P0U experiment filenames are retired. 
 | Mounted/eager day strip | `lib/core/widgets/day_content_strip.dart` | `EagerDayContentStrip` + mounted slot implementation |
 | Plan duplicate log | `lib/data/plans/diagnostics/plan_duplicate_log.dart` | Planning-domain duplicate/stream lifecycle markers |
 | Structure guard | `scripts/audit/architecture_guard.ps1` | `-Strict` enforces architecture boundaries + APP_STRUCTURE manifest |
-| Structure growth ratchet | `scripts/audit/structure_growth_contract.py` | CI blocks new oversized Dart files, further growth of already-oversized files, and new workstation-coupled paths |
+| Structure growth ratchet | `scripts/audit/repository_hygiene.py` | CI blocks new oversized Dart files, further growth of already-oversized files, and new workstation-coupled paths |
 | Documentation parity | `scripts/audit/documentation_parity.py` | Live path checks, reverse APP_STRUCTURE check, and durable semantic-contract drift checks |
 | Detailed structure guide | `docs/APP_STRUCTURE_DETAILED.md` | Generated bilingual per-file guide |
 

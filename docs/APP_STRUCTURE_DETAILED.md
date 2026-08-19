@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `8443ad1` on 2026-08-18.**
+**Generated from input HEAD `0754f7fd` on 2026-08-19.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 831 — each appears **exactly once** below.
+**Tracked files:** 830 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -28,7 +28,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | :--- | ---: |
 | `production UI` | 166 |
 | `test` | 106 |
-| `Brain/data` | 88 |
+| `Brain/data` | 87 |
 | `platform build` | 83 |
 | `shared foundation` | 64 |
 | `developer tool` | 58 |
@@ -57,7 +57,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | Necessity | Count |
 | :--- | ---: |
 | `PROVEN_REQUIRED` | 456 |
-| `REQUIRED_FOR_TEST_OR_TOOLING` | 196 |
+| `REQUIRED_FOR_TEST_OR_TOOLING` | 195 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
 | `GOVERNING_DOCUMENTATION` | 35 |
 | `HISTORICAL_RECORD` | 16 |
@@ -68,7 +68,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | Confidence | Count |
 | :--- | ---: |
 | `HIGH` | 770 |
-| `MEDIUM` | 61 |
+| `MEDIUM` | 60 |
 
 ---
 
@@ -144,7 +144,6 @@ Evidence is computed from Dart import/export/`part` graphs, bounded path referen
 - [`lib/app/shell/shared/`](#folder-libappshellshared)
 - [`lib/app/shell/tablet/`](#folder-libappshelltablet)
 - [`lib/core/widgets/plan_time_task_card/`](#folder-libcorewidgetsplan_time_task_card)
-- [`lib/data/paths/compatibility/`](#folder-libdatapathscompatibility)
 - [`lib/data/plans/diagnostics/`](#folder-libdataplansdiagnostics)
 - [`lib/features/notes/widgets/`](#folder-libfeaturesnoteswidgets)
 - [`lib/features/planning/settings/`](#folder-libfeaturesplanningsettings)
@@ -3280,30 +3279,6 @@ RU:
 
 ---
 
-## Folder: `lib/data/paths/compatibility/`
-
-EN:
-
-- **What this folder is:** Dart source subtree `lib/data/paths/compatibility/` — part of app code for data/paths/compatibility.
-- **Why it exists:** Code under `lib/` ships in every platform build; this folder groups related Dart modules.
-- **What lives here:** Dart modules listed in file entries below.
-- **What part of the app it affects:** App behavior for the feature or layer named in the path.
-- **When to open it:** Bug or feature work in `data/paths/compatibility`.
-- **Can it be deleted?** No — required for app runtime unless explicitly deprecated in ROADMAP.
-- **Main related paths:** `docs/APP_STRUCTURE.md`, parent `lib/` folders.
-
-RU:
-
-- **Что это за папка:** Каталог исходного Dart-кода `lib/data/paths/compatibility/`, отвечающий за область `data/paths/compatibility`.
-- **Зачем нужна:** Собирает рядом файлы одного владельца, чтобы UI, данные и общая инфраструктура не смешивали обязанности.
-- **Что здесь лежит:** Dart-файлы и дочерние каталоги этого владельца; каждый файл описан ниже.
-- **На что влияет в приложении:** Поведение приложения в области `data/paths/compatibility` и связанные с ней потоки данных или интерфейс.
-- **Когда открывать:** Открывать при изменениях или ошибках в области `data/paths/compatibility`.
-- **Можно удалить?** Нет — нужен для работы приложения unless explicitly deprecated in ROADMAP.
-- **Связанные пути:** `docs/APP_STRUCTURE.md`, parent `lib/` folders.
-
----
-
 ## Folder: `lib/data/plans/diagnostics/`
 
 EN:
@@ -4952,7 +4927,7 @@ EN:
 - **Why needed:** Faster than typing long `flutter build apk` commands; injects `GIT_COMMIT` and `BUILD_TIME` for About/build info screen.
 - **Contents:** `flutter pub get` → `flutter build apk --release --split-per-abi` with dart-defines; retries with `--no-tree-shake-icons` if icon tree-shake fails; prints APK sizes.
 - **Repository role:** developer tool
-- **Evidence of use:** Invoked or documented by: `docs/APP_STRUCTURE.md`, `docs/reports/FULL_REPO_NECESSITY_CLEANUP_2026-07-03.md`, `docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`, `scripts/manual/generate_app_structure_detailed.py`, `scripts/manual/structure_evidence_index.py`.
+- **Evidence of use:** Invoked or documented by: `docs/APP_STRUCTURE.md`, `docs/reports/FULL_REPO_NECESSITY_CLEANUP_2026-07-03.md`, `docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`, `scripts/audit/repository_hygiene.py`, `scripts/manual/generate_app_structure_detailed.py`.
 - **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Deletion consequence:** Broken audit/deploy/manual maintenance command.
 - **Confidence:** HIGH
@@ -4969,7 +4944,7 @@ RU:
 - **Зачем:** Короче ручного `flutter build apk`; подставляет `GIT_COMMIT` и `BUILD_TIME`.
 - **Содержимое:** `flutter pub get` → `flutter build apk --release --split-per-abi` с dart-defines; при ошибке icon tree-shake — повтор с `--no-tree-shake-icons`; выводит размеры APK.
 - **Роль в репозитории:** developer tool
-- **Доказательства использования:** Вызывается или описан в: `docs/APP_STRUCTURE.md`, `docs/reports/FULL_REPO_NECESSITY_CLEANUP_2026-07-03.md`, `docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`, `scripts/manual/generate_app_structure_detailed.py`, `scripts/manual/structure_evidence_index.py`.
+- **Доказательства использования:** Вызывается или описан в: `docs/APP_STRUCTURE.md`, `docs/reports/FULL_REPO_NECESSITY_CLEANUP_2026-07-03.md`, `docs/reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`, `scripts/audit/repository_hygiene.py`, `scripts/manual/generate_app_structure_detailed.py`.
 - **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Что будет, если удалить:** Сломается audit/deploy или ручная команда сопровождения.
 - **Уверенность:** HIGH
@@ -13874,43 +13849,6 @@ RU:
 - **Владелец / слой:** Brain/data
 - **Обязанности:** Реализует назначение `tag.dart` для области `lib/data/models`.
 - **Когда открывать:** Когда ломается поведение, связанное с `tag.dart`.
-- **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** UI вызывает `DatabaseService.instance`
-
-
-### `lib/data/paths/compatibility/path_governance_service.dart`
-
-EN:
-
-- **Human purpose:** Main coordinator for path_governance inside the brain. UI calls one path_governance entry point; this file delegates to focused modules in the subfolder.
-- **What this is:** Main coordinator for path_governance inside the brain.
-- **Why needed:** UI calls one path_governance entry point; this file delegates to focused modules in the subfolder.
-- **Contents:** Coordinator extensions plus links to `part` files under `path_governances/` or `path_governance/`.
-- **Repository role:** Brain/data
-- **Evidence of use:** Mentioned by tracked docs/scripts: `CHANGELOG.md`, `test/daily_routine_contract_test.dart`.
-- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
-- **Deletion consequence:** Removing it breaks a required repository capability.
-- **Confidence:** MEDIUM
-- **Owner / layer:** Brain/data
-- **Responsibilities:** path governance service
-- **When to open:** When behavior tied to `path_governance_service.dart` breaks or you need to change its documented role.
-- **Can it be deleted?** Removing it breaks a required repository capability.
-- **Connected to:** UI calls via `DatabaseService.instance`; APP_STRUCTURE role: path governance service
-
-RU:
-
-- **Зачем файл человеку:** Главный координатор для path_governance. UI вызывает один вход; детали — в модулях subfolder.
-- **Что это:** Главный координатор для path_governance.
-- **Зачем:** UI вызывает один вход; детали — в модулях subfolder.
-- **Содержимое:** Extensions + `part` файлы для path_governance.
-- **Роль в репозитории:** Brain/data
-- **Доказательства использования:** Упоминается в docs/scripts: `CHANGELOG.md`, `test/daily_routine_contract_test.dart`.
-- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
-- **Что будет, если удалить:** Удаление ломает нужную возможность репозитория.
-- **Уверенность:** MEDIUM
-- **Владелец / слой:** Brain/data
-- **Обязанности:** Координатор домена: path governance service.
-- **Когда открывать:** Когда ломается поведение, связанное с `path_governance_service.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** UI вызывает `DatabaseService.instance`
 
@@ -28168,7 +28106,7 @@ EN:
 - **Why needed:** Automates a repeatable task documented in repo notes or `DEPLOY.md`.
 - **Contents:** PowerShell, Python, or Dart commands for `repository_hygiene.py`.
 - **Repository role:** audit tool
-- **Evidence of use:** Invoked or documented by: `.github/workflows/architecture-guard.yml`, `.github/workflows/deploy-pocketbase.yml`, `CHANGELOG.md`.
+- **Evidence of use:** Invoked or documented by: `.github/workflows/architecture-guard.yml`, `.github/workflows/deploy-pocketbase.yml`, `AGENTS.md`, `AGENT_NAVIGATION.md`, `CHANGELOG.md`.
 - **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Deletion consequence:** Broken audit/deploy/manual maintenance command.
 - **Confidence:** HIGH
@@ -28185,7 +28123,7 @@ RU:
 - **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
 - **Содержимое:** Команды PowerShell/Python/Dart в `repository_hygiene.py`.
 - **Роль в репозитории:** audit tool
-- **Доказательства использования:** Вызывается или описан в: `.github/workflows/architecture-guard.yml`, `.github/workflows/deploy-pocketbase.yml`, `CHANGELOG.md`.
+- **Доказательства использования:** Вызывается или описан в: `.github/workflows/architecture-guard.yml`, `.github/workflows/deploy-pocketbase.yml`, `AGENTS.md`, `AGENT_NAVIGATION.md`, `CHANGELOG.md`.
 - **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Что будет, если удалить:** Сломается audit/deploy или ручная команда сопровождения.
 - **Уверенность:** HIGH

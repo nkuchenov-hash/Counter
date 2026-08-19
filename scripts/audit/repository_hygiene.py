@@ -1,14 +1,17 @@
 #!/usr/bin/env python3
-"""Repository hygiene gate: reject orphan aliases, runtime compatibility dirs, and accidental huge binaries."""
+"""Repository hygiene + structure-growth ratchet for current and future repo changes."""
 
 from __future__ import annotations
 
+import json
+import os
 import re
 import subprocess
 import sys
 from pathlib import Path, PurePosixPath
 
 ROOT = Path(__file__).resolve().parents[2]
+SELF_PATH = Path(__file__).resolve().relative_to(ROOT).as_posix()
 DART_EDGE_RE = re.compile(r"^\s*(?:import|export|part)\s+['\"]([^'\"]+)['\"]", re.M)
 EXPORT_STMT_RE = re.compile(r"export\s+['\"][^'\"]+['\"][^;]*;", re.S)
 MAX_BINARY_BYTES = 5_000_000
@@ -27,15 +30,48 @@ BINARY_SUFFIXES = {
     ".jpeg", ".webp", ".ico", ".jar", ".zip", ".7z", ".pdf",
 }
 
+BRAIN_PART_PREFIXES = (
+    "lib/data/records/",
+    "lib/data/plans/",
+    "lib/data/paths/",
+    "lib/data/categories/",
+    "lib/data/profile/",
+    "lib/data/local_sync/",
+    "lib/data/models/",
+    "lib/data/voice/",
+)
+DEFAULT_DART_LINE_LIMIT = 1000
+BRAIN_PART_LINE_LIMIT = 1500
+GENERATED_DART_SUFFIXES = (".g.dart", ".freezed.dart")
+WORKSTATION_PATH_RE = re.compile(
+    r"(?i)(?:[A-Z]:[\\/]+Users[\\/]+[^\\/\s]+[\\/]+|/Users/[^/\s]+/|/home/[^/\s]+/)"
+)
+WORKSTATION_SCOPES = (
+    "lib/",
+    "scripts/",
+    "installer/",
+    ".github/",
+    "pb_hooks/",
+    "pb_migrations/",
+)
+ROOT_BUILD_FILES = {"update.ps1", "android.ps1"}
+
+
+def git(*args: str, check: bool = True) -> str:
+    proc = subprocess.run(
+        ["git", *args], cwd=ROOT, text=True, capture_output=True, check=False
+    )
+    if check and proc.returncode != 0:
+        raise RuntimeError(proc.stderr.strip() or f"git {' '.join(args)} failed")
+    return proc.stdout
+
 
 def git_files() -> list[str]:
-    return subprocess.check_output(["git", "ls-files"], cwd=ROOT, text=True).splitlines()
+    return git("ls-files").splitlines()
 
 
 def git_blob_sha(path: str) -> str:
-    return subprocess.check_output(
-        ["git", "hash-object", "--", path], cwd=ROOT, text=True
-    ).strip()
+    return git("hash-object", "--", path).strip()
 
 
 def text(path: Path) -> str | None:
@@ -67,6 +103,140 @@ def pure_reexport(source: str) -> bool:
     if "export" not in cleaned:
         return False
     return not EXPORT_STMT_RE.sub("", cleaned).strip()
+
+
+def resolve_growth_base() -> str | None:
+    configured = os.environ.get("STRUCTURE_GROWTH_BASE", "").strip()
+    if configured and not re.fullmatch(r"0+", configured):
+        resolved = git("rev-parse", configured, check=False).strip()
+        if resolved:
+            return resolved
+
+    event_path = os.environ.get("GITHUB_EVENT_PATH", "").strip()
+    if event_path:
+        try:
+            event_payload = json.loads(Path(event_path).read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            event_payload = {}
+        before = str(event_payload.get("before") or "").strip()
+        if before and not re.fullmatch(r"0+", before):
+            resolved = git("rev-parse", before, check=False).strip()
+            if resolved:
+                return resolved
+
+    event = os.environ.get("GITHUB_EVENT_NAME", "")
+    base_ref = os.environ.get("GITHUB_BASE_REF", "").strip()
+    if event == "pull_request" and base_ref:
+        remote = f"origin/{base_ref}"
+        git("fetch", "--no-tags", "--prune", "origin", base_ref, check=False)
+        merge_base = git("merge-base", "HEAD", remote, check=False).strip()
+        if merge_base:
+            return merge_base
+
+    parent = git("rev-parse", "HEAD^", check=False).strip()
+    return parent or None
+
+
+def parse_changes(base: str) -> list[tuple[str, str | None, str]]:
+    raw = git("diff", "--name-status", "-M", f"{base}...HEAD")
+    changes: list[tuple[str, str | None, str]] = []
+    for line in raw.splitlines():
+        if not line.strip():
+            continue
+        cols = line.split("\t")
+        kind = cols[0][0]
+        if kind == "R" and len(cols) >= 3:
+            changes.append((kind, cols[1], cols[2]))
+        elif len(cols) >= 2:
+            changes.append((kind, cols[1] if kind == "D" else None, cols[1]))
+    return changes
+
+
+def dart_line_limit(path: str) -> int:
+    return BRAIN_PART_LINE_LIMIT if path.startswith(BRAIN_PART_PREFIXES) else DEFAULT_DART_LINE_LIMIT
+
+
+def current_line_count(path: str) -> int | None:
+    p = ROOT / path
+    if not p.is_file():
+        return None
+    try:
+        return len(p.read_text(encoding="utf-8", errors="replace").splitlines())
+    except OSError:
+        return None
+
+
+def base_line_count(base: str, path: str | None) -> int | None:
+    if not path:
+        return None
+    body = git("show", f"{base}:{path}", check=False)
+    if not body:
+        return None
+    return len(body.splitlines())
+
+
+def added_lines(base: str, path: str) -> list[str]:
+    diff = git("diff", "--unified=0", f"{base}...HEAD", "--", path, check=False)
+    return [
+        line[1:]
+        for line in diff.splitlines()
+        if line.startswith("+") and not line.startswith("+++")
+    ]
+
+
+def scans_workstation_paths(path: str) -> bool:
+    if path == SELF_PATH:
+        return False
+    return path in ROOT_BUILD_FILES or path.startswith(WORKSTATION_SCOPES)
+
+
+def check_structure_growth(violations: list[str]) -> tuple[str | None, int]:
+    try:
+        base = resolve_growth_base()
+    except RuntimeError as exc:
+        violations.append(f"STRUCTURE_GROWTH_BASE_RESOLUTION {exc}")
+        return None, 0
+    if not base:
+        return None, 0
+
+    changes = parse_changes(base)
+    for status, old_path, path in changes:
+        if (
+            status == "D"
+            or not path.endswith(".dart")
+            or path.endswith(GENERATED_DART_SUFFIXES)
+        ):
+            continue
+        current = current_line_count(path)
+        if current is None:
+            continue
+        limit = dart_line_limit(path)
+        previous = base_line_count(base, old_path if status == "R" else path)
+
+        if status == "A" or previous is None:
+            if current > limit:
+                violations.append(
+                    f"NEW_DART_EXCEEDS_LIMIT {path} lines={current} limit={limit}"
+                )
+            continue
+        if previous <= limit < current:
+            violations.append(
+                f"DART_CROSSED_SIZE_LIMIT {path} before={previous} after={current} limit={limit}"
+            )
+        elif previous > limit and current > previous:
+            violations.append(
+                f"OVERSIZE_DART_GREW {path} before={previous} after={current} limit={limit}"
+            )
+
+    for status, _old_path, path in changes:
+        if status == "D" or not scans_workstation_paths(path):
+            continue
+        for line in added_lines(base, path):
+            if WORKSTATION_PATH_RE.search(line):
+                violations.append(f"WORKSTATION_PATH_ADDED {path}: {line.strip()[:180]}")
+                break
+
+    return base, len(changes)
 
 
 def main() -> int:
@@ -128,10 +298,13 @@ def main() -> int:
         if path not in tracked:
             violations.append(f"STALE_WATCHLIST_PATH {path}")
 
+    growth_base, changed_count = check_structure_growth(violations)
+
     if violations:
         print("repository_hygiene: FAIL", file=sys.stderr)
         for item in violations:
             print(f"  - {item}", file=sys.stderr)
+        print(f"VIOLATIONS={len(violations)}", file=sys.stderr)
         return 1
 
     for path, spec in LARGE_BINARY_ALLOWLIST.items():
@@ -141,6 +314,10 @@ def main() -> int:
                 f"allowed_large_binary: {path} bytes={size} sha={spec['git_blob_sha']} "
                 f"reason={spec['reason']}"
             )
+    if growth_base:
+        print(f"structure_growth: OK base={growth_base[:12]} changed={changed_count}")
+    else:
+        print("structure_growth: OK no comparison baseline available")
     print("repository_hygiene: OK")
     return 0
 
