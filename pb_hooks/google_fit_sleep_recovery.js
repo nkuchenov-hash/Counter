@@ -92,7 +92,6 @@ function listVisibleSleepSources(accessToken) {
 }
 
 function datasetId(start, end) {
-    // Preserve nanosecond identifiers as decimal strings instead of JS Numbers.
     return String(start.getTime()) + "000000-" + String(end.getTime()) + "000000";
 }
 
@@ -107,17 +106,13 @@ function fetchVisibleSourcePoints(accessToken, start, end) {
         do {
             var query = { limit: 1000 };
             if (pageToken) query.pageToken = pageToken;
-            var url = "https://www.googleapis.com/fitness/v1/users/me/dataSources/" +
-                encodeURIComponent(sourceId) + "/datasets/" + datasetId(start, end) + "?" + formEncode(query);
+            var url = "https://www.googleapis.com/fitness/v1/users/me/dataSources/" + encodeURIComponent(sourceId) + "/datasets/" + datasetId(start, end) + "?" + formEncode(query);
             var res = null;
             try {
                 res = $http.send({
                     url: url,
                     method: "GET",
-                    headers: {
-                        "authorization": "Bearer " + accessToken,
-                        "accept": "application/json"
-                    },
+                    headers: { "authorization": "Bearer " + accessToken, "accept": "application/json" },
                     timeout: 60
                 });
             } catch (_) { break; }
@@ -139,6 +134,15 @@ function pointKey(point) {
     return point.start.getTime() + "|" + point.end.getTime() + "|" + point.stage;
 }
 
+function latestEndDay(points) {
+    var latest = 0;
+    for (var i = 0; i < points.length; i++) {
+        var value = points[i] && points[i].end ? points[i].end.getTime() : 0;
+        if (value > latest) latest = value;
+    }
+    return latest > 0 ? new Date(latest).toISOString().slice(0, 10) : "none";
+}
+
 function fetchPoints(accessToken, start, end) {
     var aggregatePoints = [];
     var cursor = new Date(start.getTime());
@@ -152,10 +156,6 @@ function fetchPoints(accessToken, start, end) {
         cursor = chunkEnd;
     }
 
-    // The aggregate-by-data-type stream remains canonical because Google merges
-    // data from different apps/devices there. Recent visible source streams are a
-    // supplementary freshness path for a night that has reached the fitness store
-    // but has not yet appeared in the merged aggregate response.
     var rawStart = new Date(Math.max(start.getTime(), end.getTime() - RAW_FALLBACK_LOOKBACK_MS));
     var raw = fetchVisibleSourcePoints(accessToken, rawStart, end);
     var byKey = {};
@@ -177,12 +177,14 @@ function fetchPoints(accessToken, start, end) {
         points: merged,
         aggregatePoints: aggregatePoints.length,
         rawPoints: raw.points.length,
-        rawSources: raw.sources
+        rawSources: raw.sources,
+        latestAggregateEndDay: latestEndDay(aggregatePoints),
+        latestRawEndDay: latestEndDay(raw.points),
+        latestMergedEndDay: latestEndDay(merged)
     };
 }
 
 function episodeId(start, end) {
-    // Stable enough across small provider corrections: key by UTC end date and rounded start hour.
     var y = end.getUTCFullYear();
     var m = String(end.getUTCMonth() + 1).padStart(2, "0");
     var d = String(end.getUTCDate()).padStart(2, "0");
@@ -198,12 +200,7 @@ function buildEpisodes(points) {
         var p = points[i];
         if (!current || p.start.getTime() - current.end.getTime() > MAX_SEGMENT_GAP_MS) {
             if (current) groups.push(current);
-            current = {
-                start: p.start,
-                end: p.end,
-                modifiedAt: p.end,
-                points: 1
-            };
+            current = { start: p.start, end: p.end, modifiedAt: p.end, points: 1 };
         } else {
             if (p.start.getTime() < current.start.getTime()) current.start = p.start;
             if (p.end.getTime() > current.end.getTime()) current.end = p.end;
@@ -263,11 +260,8 @@ function cleanSessions(sessions) {
         for (var k = 0; k < out.length; k++) {
             if (isDuplicate(out[k], candidate)) { duplicateIndex = k; break; }
         }
-        if (duplicateIndex < 0) {
-            out.push(candidate);
-        } else if (durationMs(candidate) > durationMs(out[duplicateIndex])) {
-            out[duplicateIndex] = candidate;
-        }
+        if (duplicateIndex < 0) out.push(candidate);
+        else if (durationMs(candidate) > durationMs(out[duplicateIndex])) out[duplicateIndex] = candidate;
     }
     out.sort(function(a, b) { return a.start.getTime() - b.start.getTime(); });
     return out;
@@ -285,7 +279,6 @@ function mergeSessionsAndEpisodes(sessions, episodes) {
             out.push(episode);
             continue;
         }
-        // Sessions remain canonical IDs, but segment bounds can repair truncated sessions.
         var target = out[matched];
         if (episode.start.getTime() < target.start.getTime()) target.start = episode.start;
         if (episode.end.getTime() > target.end.getTime()) target.end = episode.end;
@@ -304,6 +297,9 @@ function recover(accessToken, start, end, sessions) {
         aggregateSegmentPoints: fetched.aggregatePoints,
         rawSegmentPoints: fetched.rawPoints,
         rawSegmentSources: fetched.rawSources,
+        latestAggregateEndDay: fetched.latestAggregateEndDay,
+        latestRawEndDay: fetched.latestRawEndDay,
+        latestMergedEndDay: fetched.latestMergedEndDay,
         recoveredEpisodes: episodes.length
     };
 }
