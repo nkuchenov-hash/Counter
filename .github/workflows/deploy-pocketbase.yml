@@ -4,7 +4,9 @@ on:
   pull_request:
     paths:
       - '.github/workflows/deploy-pocketbase.yml'
-      - 'pb_hooks/sleep_cloud_probe.pb.js'
+      - 'pb_hooks/sleep_sync.pb.js'
+      - 'pb_hooks/sleep_cloud_probe.js'
+      - 'pb_hooks/google_fit_sleep_recovery.js'
 
 permissions:
   contents: read
@@ -21,8 +23,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Validate probe
-        run: node --check pb_hooks/sleep_cloud_probe.pb.js
+      - name: Validate probe files
+        run: |
+          node --check pb_hooks/sleep_sync.pb.js
+          node --check pb_hooks/sleep_cloud_probe.js
+          node --check pb_hooks/google_fit_sleep_recovery.js
 
       - name: Prepare SSH
         shell: bash
@@ -33,11 +38,12 @@ jobs:
           chmod 600 ~/.ssh/lifeos_pocketbase
           ssh-keyscan -p "$SSH_PORT" -H 217.114.0.201 >> ~/.ssh/known_hosts
 
-      - name: Install temporary cloud probe
+      - name: Install temporary embedded probe
         shell: bash
         run: |
           set -euo pipefail
-          scp -i ~/.ssh/lifeos_pocketbase -P "$SSH_PORT" pb_hooks/sleep_cloud_probe.pb.js root@217.114.0.201:/tmp/sleep_cloud_probe.pb.js
+          tar -czf /tmp/sleep-probe.tar.gz pb_hooks/sleep_sync.pb.js pb_hooks/sleep_cloud_probe.js pb_hooks/google_fit_sleep_recovery.js
+          scp -i ~/.ssh/lifeos_pocketbase -P "$SSH_PORT" /tmp/sleep-probe.tar.gz root@217.114.0.201:/tmp/sleep-probe.tar.gz
           ssh -i ~/.ssh/lifeos_pocketbase -p "$SSH_PORT" root@217.114.0.201 \
             "POCKETBASE_SERVICE='$POCKETBASE_SERVICE' POCKETBASE_DEPLOY_DIR='$POCKETBASE_DEPLOY_DIR' bash -s" <<'REMOTE'
           set -euo pipefail
@@ -48,8 +54,10 @@ jobs:
           if [[ -z "$app_dir" && -n "$service_name" ]]; then app_dir="$(systemctl show "$service_name" -p WorkingDirectory --value 2>/dev/null || true)"; fi
           if [[ -z "$app_dir" && -n "$pid" ]]; then app_dir="$(readlink -f "/proc/$pid/cwd" 2>/dev/null || true)"; fi
           [[ -n "$service_name" && -n "$app_dir" && -d "$app_dir/pb_hooks" ]]
-          install -m 644 /tmp/sleep_cloud_probe.pb.js "$app_dir/pb_hooks/sleep_cloud_probe.pb.js"
-          rm -f /tmp/sleep_cloud_probe.pb.js
+          cp "$app_dir/pb_hooks/sleep_sync.pb.js" /tmp/lifeos-sleep-sync.orig
+          cp "$app_dir/pb_hooks/google_fit_sleep_recovery.js" /tmp/lifeos-sleep-recovery.orig
+          tar -xzf /tmp/sleep-probe.tar.gz -C "$app_dir"
+          rm -f /tmp/sleep-probe.tar.gz "$app_dir/pb_hooks/sleep_cloud_probe.pb.js"
           systemctl restart "$service_name"
           REMOTE
 
@@ -57,7 +65,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for attempt in {1..30}; do
+          for attempt in {1..60}; do
             code="$(curl -sS -o /tmp/probe.json -w '%{http_code}' https://217-114-0-201.sslip.io/api/__lifeos_sleep_cloud_probe_5f7c9a2e || true)"
             if [[ "$code" == "200" ]]; then
               cat /tmp/probe.json
@@ -69,7 +77,7 @@ jobs:
           cat /tmp/probe.json 2>/dev/null || true
           exit 1
 
-      - name: Remove temporary cloud probe
+      - name: Restore production hooks
         if: always()
         shell: bash
         run: |
@@ -82,6 +90,8 @@ jobs:
           app_dir="${POCKETBASE_DEPLOY_DIR:-}"
           if [[ -z "$app_dir" && -n "$service_name" ]]; then app_dir="$(systemctl show "$service_name" -p WorkingDirectory --value 2>/dev/null || true)"; fi
           if [[ -z "$app_dir" && -n "$pid" ]]; then app_dir="$(readlink -f "/proc/$pid/cwd" 2>/dev/null || true)"; fi
-          rm -f "$app_dir/pb_hooks/sleep_cloud_probe.pb.js"
+          if [[ -f /tmp/lifeos-sleep-sync.orig ]]; then cp /tmp/lifeos-sleep-sync.orig "$app_dir/pb_hooks/sleep_sync.pb.js"; fi
+          if [[ -f /tmp/lifeos-sleep-recovery.orig ]]; then cp /tmp/lifeos-sleep-recovery.orig "$app_dir/pb_hooks/google_fit_sleep_recovery.js"; fi
+          rm -f /tmp/lifeos-sleep-sync.orig /tmp/lifeos-sleep-recovery.orig "$app_dir/pb_hooks/sleep_cloud_probe.js" "$app_dir/pb_hooks/sleep_cloud_probe.pb.js"
           [[ -n "$service_name" ]] && systemctl restart "$service_name" || true
           REMOTE
