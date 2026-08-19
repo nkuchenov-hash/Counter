@@ -1,10 +1,6 @@
-name: Bootstrap Notes production hotfix
+name: Apply and deploy Notes UX batch
 
 on:
-  push:
-    branches: [gh-pages]
-    paths:
-      - '.github/workflows/bootstrap-notes-hotfix.yml'
   pull_request:
     branches: [gh-pages]
     paths:
@@ -14,30 +10,759 @@ permissions:
   contents: write
 
 concurrency:
-  group: notes-production-hotfix
+  group: notes-ux-batch
   cancel-in-progress: false
 
 jobs:
-  build-and-deploy:
-    if: >-
-      (github.event_name == 'pull_request' &&
-       github.event.pull_request.head.ref == 'hotfix/run-notes-production-build') ||
-      startsWith(github.event.head_commit.message, 'Trigger Notes production hotfix')
+  fix-build-deploy:
+    if: github.event.pull_request.head.ref == 'hotfix/run-notes-production-build'
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 35
     steps:
-      - name: Checkout production hotfix source
+      - name: Checkout main
         uses: actions/checkout@v4
         with:
-          ref: e945ebdd6205b08211b03ad1085b7e849b21cf3b
+          ref: main
           fetch-depth: 0
 
-      - name: Snapshot current Pages support files
+      - name: Snapshot current Pages companion content
         uses: actions/checkout@v4
         with:
           ref: gh-pages
           path: pages
           fetch-depth: 1
+
+      - name: Apply focused Notes UX fixes
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          def load(path):
+              return Path(path).read_text()
+
+          def save(path, text):
+              Path(path).write_text(text)
+
+          def rep(path, old, new, count=1):
+              text = load(path)
+              hits = text.count(old)
+              if hits < count:
+                  raise SystemExit(f'{path}: expected >= {count} matches, found {hits}: {old[:90]!r}')
+              text = text.replace(old, new, count)
+              save(path, text)
+
+          # 1) Notes grid: mobile-like card footprint, more columns on desktop,
+          # and stable ordering while checkbox mode is active.
+          path = 'lib/features/notes/widgets/notes_library_body.dart'
+          rep(path,
+              "  List<PlanningTask> _sortedTasks() {\n    final out = List<PlanningTask>.from(widget.tasks);\n",
+              "  List<PlanningTask> _sortedTasks() {\n    final out = List<PlanningTask>.from(widget.tasks);\n    if (widget.checkboxesOn) return out;\n")
+          rep(path,
+              "    if (view == NotesLibraryView.grid) {\n      final crossAxisCount = availableWidth >= 720 ? 2 : 1;\n      return GridView.builder(\n        padding: const EdgeInsets.only(top: 4, bottom: 24),\n        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(\n          crossAxisCount: crossAxisCount,\n          mainAxisSpacing: 10,\n          crossAxisSpacing: 10,\n          childAspectRatio: crossAxisCount == 2 ? 1.22 : 1.35,\n        ),",
+              "    if (view == NotesLibraryView.grid) {\n      return GridView.builder(\n        padding: const EdgeInsets.only(top: 4, bottom: 24),\n        gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(\n          maxCrossAxisExtent: 290,\n          mainAxisSpacing: 10,\n          crossAxisSpacing: 10,\n          childAspectRatio: 1.0,\n        ),")
+
+          # 2) Grid card typography + checkbox hit target.
+          path = 'lib/features/notes/widgets/note_card.dart'
+          text = load(path)
+          grid_start = text.index('class _GridCard extends StatelessWidget')
+          grid_end = text.index('// ---- List row', grid_start)
+          grid = text[grid_start:grid_end]
+          grid = grid.replace('fontSize: 16,', 'fontSize: 17,', 1)
+          text = text[:grid_start] + grid + text[grid_end:]
+          preview_start = text.index('class _BlockPreview extends StatelessWidget')
+          preview_end = text.index('// ---- Done checkbox', preview_start)
+          preview = text[preview_start:preview_end]
+          preview = preview.replace('fontSize: 12,', 'fontSize: 13,')
+          preview = preview.replace('fontSize: 10,', 'fontSize: 11,')
+          preview = preview.replace('block.level == 1 ? 13 : 12', 'block.level == 1 ? 14 : 13')
+          text = text[:preview_start] + preview + text[preview_end:]
+          large_start = text.index('class _LargeDoneCheck extends StatelessWidget')
+          large_end = text.index('class _CategoryTile extends StatelessWidget', large_start)
+          large = '''class _LargeDoneCheck extends StatelessWidget {
+            const _LargeDoneCheck({
+              required this.isDone,
+              required this.onToggle,
+            });
+
+            final bool isDone;
+            final VoidCallback onToggle;
+
+            @override
+            Widget build(BuildContext context) {
+              final scheme = Theme.of(context).colorScheme;
+              return Semantics(
+                button: true,
+                checked: isDone,
+                child: SizedBox.square(
+                  dimension: 44,
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: onToggle,
+                      borderRadius: BorderRadius.circular(12),
+                      child: Center(
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 120),
+                          width: 26,
+                          height: 26,
+                          decoration: BoxDecoration(
+                            color: isDone ? scheme.primary : Colors.transparent,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: isDone
+                                  ? scheme.primary
+                                  : scheme.outline.withValues(alpha: 0.55),
+                              width: 1.5,
+                            ),
+                          ),
+                          child: isDone
+                              ? Icon(
+                                  Icons.check_rounded,
+                                  size: 18,
+                                  color: scheme.onPrimary,
+                                )
+                              : null,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }
+          }
+
+          '''
+          text = text[:large_start] + large + text[large_end:]
+          save(path, text)
+
+          # 3) Quick add: larger field, exactly same height, circular + only.
+          path = 'lib/features/notes/widgets/notes_library_production_shell.dart'
+          text = load(path)
+          text = text.replace("    final compactMobile = MediaQuery.sizeOf(context).shortestSide < 600;\n", '')
+          text = text.replace('            height: 40,', '            height: 48,', 1)
+          text = text.replace('              style: TextStyle(fontSize: 14, color: scheme.onSurface),',
+                              '              style: TextStyle(fontSize: 15, color: scheme.onSurface),', 1)
+          text = text.replace('                  fontSize: 14,', '                  fontSize: 15,', 1)
+          old_button = '''        SizedBox(
+          width: compactMobile ? 40 : null,
+          height: 40,
+          child: Tooltip(
+            message: t(locale, 'add'),
+            child: Material(
+              color: scheme.primary,
+              borderRadius: BorderRadius.circular(999),
+              child: InkWell(
+                onTap: onSubmit,
+                borderRadius: BorderRadius.circular(999),
+                child: compactMobile
+                    ? Center(
+                        child: Icon(
+                          Icons.add_rounded,
+                          size: 20,
+                          color: scheme.onPrimary,
+                        ),
+                      )
+                    : Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 14),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.add_rounded,
+                              size: 18,
+                              color: scheme.onPrimary,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              t(locale, 'add'),
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: scheme.onPrimary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+              ),
+            ),
+          ),
+        ),'''
+          new_button = '''        SizedBox.square(
+          dimension: 48,
+          child: Tooltip(
+            message: t(locale, 'add'),
+            child: Material(
+              color: scheme.primary,
+              shape: const CircleBorder(),
+              child: InkWell(
+                onTap: onSubmit,
+                customBorder: const CircleBorder(),
+                child: Center(
+                  child: Icon(
+                    Icons.add_rounded,
+                    size: 24,
+                    color: scheme.onPrimary,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),'''
+          if old_button not in text:
+              raise SystemExit('quick-add button block not found')
+          text = text.replace(old_button, new_button, 1)
+          save(path, text)
+
+          # 4) Keep Notes checkbox-mode cards fixed in place when done toggles.
+          path = 'lib/features/lists/lists_view.dart'
+          rep(path,
+              "  void _notesLibrarySort(List<PlanningTask> list) {\n    final db = DatabaseService.instance;\n",
+              "  void _notesLibrarySort(List<PlanningTask> list) {\n    if (_notesCheckboxesOn) return;\n    final db = DatabaseService.instance;\n")
+          rep(path,
+              "            final forGrouping = listBeh == 'archive'\n                ? () {",
+              "            final forGrouping = _notesCheckboxesOn\n                ? List<PlanningTask>.from(flat)\n                : listBeh == 'archive'\n                ? () {")
+          rep(path,
+              "            final archiveSlice = listBeh == 'archive'\n                ? _listsArchiveDoneSlice(flat)\n                : const <PlanningTask>[];",
+              "            final archiveSlice = _notesCheckboxesOn\n                ? const <PlanningTask>[]\n                : listBeh == 'archive'\n                ? _listsArchiveDoneSlice(flat)\n                : const <PlanningTask>[];")
+
+          # 5) Shared category tree gains optional checkbox selection without
+          # changing existing Edit-sheet single-select behavior.
+          path = 'lib/shared/categories/tree/category_tree_body.dart'
+          rep(path,
+              "    required this.selectedCategoryId,\n    this.expandSelectionPath = false,",
+              "    required this.selectedCategoryId,\n    this.checkedCategoryIds,\n    this.onCheckedChanged,\n    this.expandSelectionPath = false,")
+          rep(path,
+              "  final int? selectedCategoryId;\n\n  /// When false,",
+              "  final int? selectedCategoryId;\n  final Set<int>? checkedCategoryIds;\n  final void Function(int id, bool checked)? onCheckedChanged;\n\n  /// When false,")
+          rep(path,
+              "            selectedCategoryId: widget.selectedCategoryId,\n            expandedIds: _expandedIds,",
+              "            selectedCategoryId: widget.selectedCategoryId,\n            checkedCategoryIds: widget.checkedCategoryIds,\n            onCheckedChanged: widget.onCheckedChanged,\n            expandedIds: _expandedIds,")
+          rep(path,
+              "    required this.selectedCategoryId,\n    required this.expandedIds,",
+              "    required this.selectedCategoryId,\n    this.checkedCategoryIds,\n    this.onCheckedChanged,\n    required this.expandedIds,")
+          rep(path,
+              "  final int? selectedCategoryId;\n  final Set<int> expandedIds;",
+              "  final int? selectedCategoryId;\n  final Set<int>? checkedCategoryIds;\n  final void Function(int id, bool checked)? onCheckedChanged;\n  final Set<int> expandedIds;")
+          rep(path,
+              "            else\n              const SizedBox(width: 12),\n            Expanded(",
+              "            else\n              const SizedBox(width: 12),\n            if (checkedCategoryIds != null)\n              SizedBox(\n                width: 40,\n                height: 40,\n                child: Checkbox(\n                  value: checkedCategoryIds!.contains(rule.id),\n                  onChanged: onCheckedChanged == null\n                      ? null\n                      : (value) => onCheckedChanged!(rule.id, value ?? false),\n                ),\n              ),\n            Expanded(")
+          rep(path,
+              "                    selectedCategoryId: selectedCategoryId,\n                    expandedIds: expandedIds,",
+              "                    selectedCategoryId: selectedCategoryId,\n                    checkedCategoryIds: checkedCategoryIds,\n                    onCheckedChanged: onCheckedChanged,\n                    expandedIds: expandedIds,")
+
+          # 6) Add checkbox/multi-select mode to the exact shared Edit-sheet picker.
+          path = 'lib/shared/categories/picker/category_tree_picker.dart'
+          text = load(path)
+          marker = "/// Picker sheet: returns chosen category id, or null if dismissed unchanged.\n"
+          if marker not in text:
+              raise SystemExit('category picker insertion marker not found')
+          multi = r'''Future<Set<int>?> showCategoryTreeMultiPicker(
+            BuildContext context, {
+            Set<int> initialCategoryIds = const <int>{},
+          }) {
+            return showModalBottomSheet<Set<int>>(
+              context: context,
+              isScrollControlled: true,
+              showDragHandle: true,
+              useSafeArea: true,
+              builder: (ctx) {
+                final sheetHeight =
+                    (MediaQuery.sizeOf(ctx).height * 0.82).clamp(320.0, 720.0);
+                return SizedBox(
+                  height: sheetHeight,
+                  child: _CategoryTreeMultiPickerSheet(
+                    initialCategoryIds: initialCategoryIds,
+                  ),
+                );
+              },
+            );
+          }
+
+          class _CategoryTreeMultiPickerSheet extends StatefulWidget {
+            const _CategoryTreeMultiPickerSheet({required this.initialCategoryIds});
+
+            final Set<int> initialCategoryIds;
+
+            @override
+            State<_CategoryTreeMultiPickerSheet> createState() =>
+                _CategoryTreeMultiPickerSheetState();
+          }
+
+          class _CategoryTreeMultiPickerSheetState
+              extends State<_CategoryTreeMultiPickerSheet> {
+            late final TextEditingController _searchController;
+            late Set<int> _selectedIds;
+            StreamSubscription<List<CategoryRule>>? _catSub;
+            String _query = '';
+
+            @override
+            void initState() {
+              super.initState();
+              _selectedIds = Set<int>.from(widget.initialCategoryIds);
+              _searchController = TextEditingController()
+                ..addListener(() => setState(() => _query = _searchController.text));
+              _catSub = CategoryTreeSource.watchCategories().listen((_) {
+                if (mounted) setState(() {});
+              });
+            }
+
+            @override
+            void dispose() {
+              _catSub?.cancel();
+              _searchController.dispose();
+              super.dispose();
+            }
+
+            List<CategoryRule> get _visibleRoots => filterCategoryRootsForPickerSearch(
+                  CategoryTreeSource.childrenOf(null),
+                  _query,
+                  _labelForRule,
+                );
+
+            bool get _canCreate => categoryCreateFromPickerAllowed();
+
+            Future<void> _createCategory({
+              String? initialName,
+              required CategoryPickerCreateTarget target,
+            }) async {
+              final id = await showCreateCategoryFromPickerDialog(
+                context,
+                initialName: initialName,
+                target: target,
+              );
+              if (!mounted || id == null) return;
+              setState(() => _selectedIds.add(id));
+            }
+
+            void _toggle(int id, [bool? checked]) {
+              setState(() {
+                final next = checked ?? !_selectedIds.contains(id);
+                if (next) {
+                  _selectedIds.add(id);
+                } else {
+                  _selectedIds.remove(id);
+                }
+              });
+            }
+
+            @override
+            Widget build(BuildContext context) {
+              final loc = currentLocale.value;
+              final roots = _visibleRoots;
+              final trimmedQuery = _query.trim();
+              final showNamedCreate = trimmedQuery.isNotEmpty && roots.isEmpty;
+              final offlineHint = _canCreate
+                  ? null
+                  : t(loc, 'category_create_requires_connection');
+              return Padding(
+                padding: EdgeInsets.only(
+                  bottom: MediaQuery.viewInsetsOf(context).bottom,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+                      child: Text(
+                        t(loc, 'category_label'),
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+                      child: TextField(
+                        controller: _searchController,
+                        decoration: InputDecoration(
+                          isDense: true,
+                          prefixIcon: const Icon(Icons.search_rounded),
+                          hintText: t(loc, 'category_label'),
+                        ),
+                        textCapitalization: TextCapitalization.sentences,
+                      ),
+                    ),
+                    categoryPickerCreateListTile(
+                      key: categoryPickerTopAddKey,
+                      label: t(loc, 'category_picker_add_root'),
+                      subtitle: offlineHint,
+                      onTap: _canCreate
+                          ? () => unawaited(
+                                _createCategory(
+                                  target: const CategoryPickerCreateTarget.root(),
+                                ),
+                              )
+                          : null,
+                    ),
+                    const Divider(height: 1),
+                    Expanded(
+                      child: ListView(
+                        padding: const EdgeInsets.fromLTRB(8, 0, 8, 0),
+                        children: [
+                          if (showNamedCreate)
+                            categoryPickerCreateListTile(
+                              key: const ValueKey<String>(
+                                'category_multi_picker_named_create',
+                              ),
+                              label: t(loc, 'category_picker_create_named')
+                                  .replaceFirst('%s', trimmedQuery),
+                              subtitle: offlineHint,
+                              onTap: _canCreate
+                                  ? () => unawaited(
+                                        _createCategory(
+                                          initialName: trimmedQuery,
+                                          target: const CategoryPickerCreateTarget.root(),
+                                        ),
+                                      )
+                                  : null,
+                            ),
+                          if (roots.isEmpty && !showNamedCreate)
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              child: Text(
+                                t(loc, 'category_picker_empty_hint'),
+                                textAlign: TextAlign.center,
+                              ),
+                            )
+                          else
+                            CategoryTreeBody(
+                              roots: roots,
+                              selectedCategoryId: null,
+                              checkedCategoryIds: _selectedIds,
+                              onCheckedChanged: _toggle,
+                              expandSelectionPath: false,
+                              expandAll: false,
+                              onSelect: (id) => _toggle(id),
+                              showEditChrome: false,
+                              showPickerCreateChrome: true,
+                              onPickerAddChild: _canCreate
+                                  ? (parent) => unawaited(
+                                        _createCategory(
+                                          target: CategoryPickerCreateTarget.child(
+                                            parentLocalId: parent.id,
+                                            parentDisplayName: _labelForRule(parent),
+                                          ),
+                                        ),
+                                      )
+                                  : null,
+                            ),
+                        ],
+                      ),
+                    ),
+                    const Divider(height: 1),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
+                      child: Row(
+                        children: [
+                          TextButton(
+                            onPressed: () => Navigator.of(context).pop(),
+                            child: Text(
+                              MaterialLocalizations.of(context).cancelButtonLabel,
+                            ),
+                          ),
+                          const Spacer(),
+                          FilledButton(
+                            onPressed: () => Navigator.of(context).pop(
+                              Set<int>.unmodifiable(_selectedIds),
+                            ),
+                            child: Text(MaterialLocalizations.of(context).okButtonLabel),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }
+          }
+
+          '''
+          text = text.replace(marker, multi + marker, 1)
+          save(path, text)
+
+          # Notes category + button now uses the shared picker instead of its
+          # separate custom tree implementation. Keep old code temporarily
+          # private/unreachable to keep this patch surgical.
+          path = 'lib/features/lists/lists_filters.dart'
+          text = load(path)
+          import_marker = "import 'package:counter/l10n/dictionary.dart';\n"
+          if import_marker not in text:
+              raise SystemExit('lists_filters import marker missing')
+          text = text.replace(
+              import_marker,
+              import_marker + "import 'package:counter/shared/categories/picker/category_tree_picker.dart';\n",
+              1,
+          )
+          old_sig = '  Future<void> _openCategoryPicker(BuildContext context) async {'
+          if old_sig not in text:
+              raise SystemExit('old Notes category picker method missing')
+          replacement = '''  Future<void> _openCategoryPicker(BuildContext context) async {
+            final picked = await showCategoryTreeMultiPicker(
+              context,
+              initialCategoryIds: Set<int>.from(_displayChipIds),
+            );
+            if (!mounted || picked == null) return;
+            _applyQuickChipIds(picked);
+          }
+
+          // ignore: unused_element
+          Future<void> _openLegacyCategoryPicker(BuildContext context) async {'''
+          text = text.replace(old_sig, replacement, 1)
+          save(path, text)
+
+          # 7) Structural Ctrl/Cmd+C + media continuation paragraph.
+          path = 'lib/features/notes/notes_editor_document_controller.dart'
+          rep(path,
+              "  /// Paste a system clipboard string. Normal text keeps the existing editor\n",
+              '''  NoteBlock? structuralSliceForSelection(
+            String id,
+            TextSelection selection,
+          ) {
+            final block = blockById(id);
+            if (block == null || !isEditableText(block.type) ||
+                !selection.isValid || selection.isCollapsed) {
+              return null;
+            }
+            final start = selection.start.clamp(0, block.effectiveText.length).toInt();
+            final end = selection.end.clamp(0, block.effectiveText.length).toInt();
+            if (start >= end) return null;
+            return block.copyWith(
+              text: block.effectiveText.substring(start, end),
+              runs: _sliceRuns(block.effectiveRuns, start, end),
+            );
+          }
+
+          /// Paste a system clipboard string. Normal text keeps the existing editor
+''')
+
+          path = 'lib/features/notes/note_editor_page.dart'
+          rep(path,
+              "    if (event.logicalKey == LogicalKeyboardKey.keyV &&\n        (keyboard.isControlPressed || keyboard.isMetaPressed)) {",
+              '''    if (event.logicalKey == LogicalKeyboardKey.keyC &&
+              (keyboard.isControlPressed || keyboard.isMetaPressed) &&
+              selection.isValid &&
+              !selection.isCollapsed) {
+            final slice = _editor.structuralSliceForSelection(block.id, selection);
+            if (slice != null) {
+              final start = selection.start.clamp(0, controller.text.length).toInt();
+              final end = selection.end.clamp(0, controller.text.length).toInt();
+              final plain = controller.text.substring(start, end);
+              _NotesStructuredClipboard.plainText = plain;
+              _NotesStructuredClipboard.blocks = <NoteBlock>[slice];
+              unawaited(Clipboard.setData(ClipboardData(text: plain)));
+              return KeyEventResult.handled;
+            }
+          }
+            if (event.logicalKey == LogicalKeyboardKey.keyV &&
+        (keyboard.isControlPressed || keyboard.isMetaPressed)) {''')
+          old_drawing = '''        final mutation = editBlockId == null
+            ? _editor.insertAfter(
+                _editor.activeBlockId,
+                NoteBlockType.drawing,
+                drawingData: dataUrl,
+              )
+            : _editor.updateMedia(editBlockId, drawingData: dataUrl);
+        _applyMutation(mutation);'''
+          new_drawing = '''        if (editBlockId == null) {
+          final drawingMutation = _editor.insertAfter(
+            _editor.activeBlockId,
+            NoteBlockType.drawing,
+            drawingData: dataUrl,
+          );
+          final drawingId = _editor.activeBlockId;
+          final mutation = drawingId == null
+              ? drawingMutation
+              : _editor.insertAfter(drawingId, NoteBlockType.paragraph);
+          _applyMutation(mutation);
+          return;
+        }
+        _applyMutation(
+          _editor.updateMedia(editBlockId, drawingData: dataUrl),
+        );'''
+          if old_drawing not in load(path):
+              raise SystemExit('drawing insertion block missing')
+          rep(path, old_drawing, new_drawing)
+
+          # 8) Editing must not increase line/block spacing; checklist tap target
+          # becomes 32px while its visible box remains 20px.
+          path = 'lib/features/notes/widgets/notes_canonical_components.dart'
+          rep(path, 'const double kNotesLeadingSize = 20;', 'const double kNotesLeadingSize = 32;')
+
+          path = 'lib/features/notes/widgets/notes_component_text_blocks.dart'
+          text = load(path)
+          text = re.sub(r'\n\s*strutStyle: StrutStyle\.fromTextStyle\(\n\s*textStyle,\n\s*forceStrutHeight: true,\n\s*\),', '', text, count=1)
+          text = re.sub(r'\n\s*strutStyle: StrutStyle\.fromTextStyle\(\n\s*baseStyle,\n\s*forceStrutHeight: true,\n\s*\),', '', text, count=1)
+          text = text.replace('''      padding: const EdgeInsets.fromLTRB(
+        kNotesContentInset,
+        10,
+        kNotesContentInset,
+        10,
+      ),''', '''      padding: const EdgeInsets.fromLTRB(
+        kNotesContentInset,
+        6,
+        kNotesContentInset,
+        6,
+      ),''', 1)
+          text = text.replace('''            width: kNotesLeadingSize,
+            height: 24,
+            child: Center(child: leading),''', '''            width: kNotesLeadingSize,
+            height: 32,
+            child: Center(child: leading),''', 1)
+          old_checkbox = '''      child: InkWell(
+        onTap: () => onChanged(!checked),
+        borderRadius: BorderRadius.circular(6),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 120),
+          width: 20,
+          height: 20,
+          decoration: BoxDecoration(
+            color: checked ? fill : Colors.transparent,
+            borderRadius: BorderRadius.circular(6),
+            border: checked ? null : Border.all(color: border),
+          ),
+          child: checked
+              ? Icon(
+                  Icons.check_rounded,
+                  size: 14,
+                  color: NotesFigmaTokens.selectedIcon(context),
+                )
+              : null,
+        ),
+      ),'''
+          new_checkbox = '''      child: InkWell(
+        onTap: () => onChanged(!checked),
+        borderRadius: BorderRadius.circular(8),
+        child: SizedBox.square(
+          dimension: 32,
+          child: Center(
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 120),
+              width: 20,
+              height: 20,
+              decoration: BoxDecoration(
+                color: checked ? fill : Colors.transparent,
+                borderRadius: BorderRadius.circular(6),
+                border: checked ? null : Border.all(color: border),
+              ),
+              child: checked
+                  ? Icon(
+                      Icons.check_rounded,
+                      size: 14,
+                      color: NotesFigmaTokens.selectedIcon(context),
+                    )
+                  : null,
+            ),
+          ),
+        ),
+      ),'''
+          if old_checkbox not in text:
+              raise SystemExit('canonical checklist checkbox block missing')
+          text = text.replace(old_checkbox, new_checkbox, 1)
+          save(path, text)
+
+          path = 'lib/features/notes/widgets/note_editor_block_widgets.dart'
+          text = load(path)
+          # Make non-editing list/checklist rows match editing geometry exactly.
+          text = text.replace('''          padding: const EdgeInsets.fromLTRB(
+            kNotesContentInset,
+            10,
+            kNotesContentInset,
+            10,
+          ),''', '''          padding: const EdgeInsets.fromLTRB(
+            kNotesContentInset,
+            6,
+            kNotesContentInset,
+            6,
+          ),''', 2)
+          text = text.replace('''                width: kNotesLeadingSize,
+                height: 24,''', '''                width: kNotesLeadingSize,
+                height: 32,''', 2)
+          old_static = '''                  child: InkWell(
+                    onTap: onCheckedChanged == null
+                        ? null
+                        : () => onCheckedChanged!(!block.checked),
+                    borderRadius: BorderRadius.circular(6),
+                    child: Container(
+                      width: 20,
+                      height: 20,
+                      decoration: BoxDecoration(
+                        color: block.checked
+                            ? NotesFigmaTokens.selectedSurface(context)
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(6),
+                        border: block.checked
+                            ? null
+                            : Border.all(
+                                color: NotesFigmaTokens.textPrimary(
+                                  context,
+                                ).withValues(alpha: 0.15),
+                              ),
+                      ),
+                      child: block.checked
+                          ? Icon(
+                              Icons.check_rounded,
+                              size: 14,
+                              color: NotesFigmaTokens.selectedIcon(context),
+                            )
+                          : null,
+                    ),
+                  ),'''
+          new_static = '''                  child: InkWell(
+                    onTap: onCheckedChanged == null
+                        ? null
+                        : () => onCheckedChanged!(!block.checked),
+                    borderRadius: BorderRadius.circular(8),
+                    child: SizedBox.square(
+                      dimension: 32,
+                      child: Center(
+                        child: Container(
+                          width: 20,
+                          height: 20,
+                          decoration: BoxDecoration(
+                            color: block.checked
+                                ? NotesFigmaTokens.selectedSurface(context)
+                                : Colors.transparent,
+                            borderRadius: BorderRadius.circular(6),
+                            border: block.checked
+                                ? null
+                                : Border.all(
+                                    color: NotesFigmaTokens.textPrimary(
+                                      context,
+                                    ).withValues(alpha: 0.15),
+                                  ),
+                          ),
+                          child: block.checked
+                              ? Icon(
+                                  Icons.check_rounded,
+                                  size: 14,
+                                  color: NotesFigmaTokens.selectedIcon(context),
+                                )
+                              : null,
+                        ),
+                      ),
+                    ),
+                  ),'''
+          if old_static not in text:
+              raise SystemExit('selectable checklist checkbox block missing')
+          text = text.replace(old_static, new_static, 1)
+          save(path, text)
+
+          print('Changed files:')
+          import subprocess
+          subprocess.run(['git', 'diff', '--stat'], check=True)
+          PY
+          git diff --check
+
+      - name: Commit focused source changes to main
+        run: |
+          git config user.name 'nkuchenov-hash'
+          git config user.email 'nkuchenov-hash@users.noreply.github.com'
+          git add lib/features/notes lib/features/lists/lists_view.dart lib/features/lists/lists_filters.dart lib/shared/categories
+          git commit -m 'Fix Notes category picker cards clipboard and editor UX'
+          git push origin HEAD:main
+          echo "SOURCE_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
 
       - name: Set up Flutter 3.41.6
         uses: subosito/flutter-action@v2
@@ -50,20 +775,18 @@ jobs:
           mkdir -p lib/core/env
           printf '%s\n' 'abstract final class Env {' '  static const String placeholder = '\'''\'';' '}' > lib/core/env/env.dart
 
-      - name: Install Flutter dependencies
+      - name: Install dependencies
         run: flutter pub get
 
-      - name: Build LIFE OS web hotfix
+      - name: Verify focused patch
         run: |
-          SOURCE_SHA=$(git rev-parse HEAD)
-          SHORT_SHA=$(git rev-parse --short HEAD)
-          BUILD_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          flutter analyze --no-fatal-infos --no-fatal-warnings
           flutter build web --release --base-href="/Counter/" --no-tree-shake-icons --no-wasm-dry-run --pwa-strategy=none \
-            --dart-define=GIT_COMMIT="$SHORT_SHA" \
-            --dart-define=BUILD_TIME="$BUILD_TIME"
-          printf '%s\n' "$SOURCE_SHA" > build/web/.lifeos-source-sha
+            --dart-define=GIT_COMMIT="$(git rev-parse --short HEAD)" \
+            --dart-define=BUILD_TIME="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          printf '%s\n' "$(git rev-parse HEAD)" > build/web/.lifeos-source-sha
 
-      - name: Preserve published companion content and deploy trigger
+      - name: Preserve companion content and deploy trigger
         run: |
           if [ -d pages/igropoisk ]; then
             rm -rf build/web/igropoisk
@@ -72,9 +795,9 @@ jobs:
           mkdir -p build/web/.github/workflows
           cp pages/.github/workflows/deploy.yml build/web/.github/workflows/deploy.yml
 
-      - name: Deploy hotfix to gh-pages
+      - name: Deploy verified build to gh-pages
         uses: JamesIves/github-pages-deploy-action@v4
         with:
           folder: build/web
           branch: gh-pages
-          commit-message: 'Deploy larger Notes toolbar icons from e945ebdd6205b08211b03ad1085b7e849b21cf3b'
+          commit-message: 'Deploy Notes UX batch from ${{ env.SOURCE_SHA }}'
