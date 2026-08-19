@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fail when live architecture/navigation docs point at repository paths that do not exist."""
+"""Fail when live architecture/navigation docs drift from repository paths or durable contracts."""
 
 from __future__ import annotations
 
@@ -28,6 +28,17 @@ DOCS = (
     ROOT / "docs" / "website" / "PRODUCT_INVENTORY.md",
 )
 
+SEMANTIC_CONTRACT_DOCS = (
+    ROOT / "AGENTS.md",
+    ROOT / "AGENT_NAVIGATION.md",
+    ROOT / "docs" / "APP_STRUCTURE.md",
+    ROOT / "docs" / "ARCHITECTURE.md",
+)
+SEMANTIC_CONTRACT_RULES = (
+    ("STALE_PATH_ACTIVE_REVISION_FIELD", re.compile(r"\bactive_revision_id\b")),
+    ("STALE_PLAN_BACKED_PATH_CONTRACT", re.compile(r"(?i)\bplan-backed\s+Path(?:s)?\b")),
+)
+
 PATH_PREFIXES = (
     "lib/",
     "docs/",
@@ -54,7 +65,7 @@ ROOT_FILES = {
     "analysis_options.yaml",
 }
 GENERATED_PATH_EXEMPTIONS = {
-    "lib/core/env/env.dart",  # generated/gitignored from environment setup
+    "lib/core/env/env.dart",
 }
 GENERATED_OUTPUT_PREFIXES = (
     "build/",
@@ -91,7 +102,6 @@ def _normalize_reference(raw: str) -> str | None:
         return None
     if "#" in value:
         value = value.split("#", 1)[0]
-    # Backticks sometimes contain an executable plus CLI flags.
     value = value.split()[0]
     value = value.rstrip(".,;:")
     if not value or any(token in value for token in ("*", "…", "<", ">", "${")):
@@ -157,8 +167,25 @@ def check_app_structure_reverse_manifest() -> list[str]:
     return issues
 
 
+def check_semantic_contract_drift() -> list[str]:
+    issues: list[str] = []
+    for doc in SEMANTIC_CONTRACT_DOCS:
+        if not doc.exists():
+            continue
+        rel = doc.relative_to(ROOT).as_posix()
+        for line_no, line in _iter_live_lines(doc):
+            for code, pattern in SEMANTIC_CONTRACT_RULES:
+                if pattern.search(line):
+                    issues.append(f"{code} {rel}:{line_no}")
+    return issues
+
+
 def main() -> int:
-    issues = check_explicit_references() + check_app_structure_reverse_manifest()
+    issues = (
+        check_explicit_references()
+        + check_app_structure_reverse_manifest()
+        + check_semantic_contract_drift()
+    )
     if issues:
         print("documentation_parity: FAIL")
         for issue in issues:
