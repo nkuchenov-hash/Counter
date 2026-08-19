@@ -189,7 +189,7 @@ For structure/import-boundary work, also run:
 
 ```powershell
 .\scripts\audit\architecture_guard.ps1 -Strict
-python scripts/audit/structure_growth_contract.py
+python scripts/audit/repository_hygiene.py
 python scripts/audit/documentation_parity.py
 ```
 

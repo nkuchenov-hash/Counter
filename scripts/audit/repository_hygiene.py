@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 import re
 import subprocess
@@ -110,6 +111,18 @@ def resolve_growth_base() -> str | None:
         resolved = git("rev-parse", configured, check=False).strip()
         if resolved:
             return resolved
+
+    event_path = os.environ.get("GITHUB_EVENT_PATH", "").strip()
+    if event_path:
+        try:
+            event_payload = json.loads(Path(event_path).read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            event_payload = {}
+        before = str(event_payload.get("before") or "").strip()
+        if before and not re.fullmatch(r"0+", before):
+            resolved = git("rev-parse", before, check=False).strip()
+            if resolved:
+                return resolved
 
     event = os.environ.get("GITHUB_EVENT_NAME", "")
     base_ref = os.environ.get("GITHUB_BASE_REF", "").strip()
