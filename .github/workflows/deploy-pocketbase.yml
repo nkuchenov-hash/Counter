@@ -40,7 +40,7 @@ jobs:
           python3 - "$app_dir/pb_data/data.db" <<'PY'
           import sqlite3, sys
           con=sqlite3.connect(f'file:{sys.argv[1]}?mode=ro', uri=True); con.row_factory=sqlite3.Row
-          r=con.execute("SELECT enabled,status,last_error,last_sync_at,last_session_count,last_imported_count,length(coalesce(refresh_token_enc,'')) token_len FROM sleep_sync_connections WHERE provider='google_fit' ORDER BY updated DESC LIMIT 1").fetchone()
+          r=con.execute("SELECT enabled,status,last_error,last_sync_at,last_session_count,last_imported_count,length(coalesce(refresh_token_enc,'')) token_len FROM sleep_sync_connections WHERE provider='google_fit' LIMIT 1").fetchone()
           def ec(v):
               s=(v or '').lower()
               if not s:return 'none'
@@ -64,7 +64,7 @@ jobs:
           print('latest_sleep_day='+str(latest or 'none'))
           con.close()
           PY
-          line="$(journalctl -u "$service_name" --since '10 minutes ago' --no-pager 2>/dev/null | grep 'google fit sleep sync complete' | tail -n1 || true)"
+          line="$(journalctl -u "$service_name" --since '15 minutes ago' --no-pager 2>/dev/null | grep 'google fit sleep sync complete' | tail -n1 || true)"
           python3 - "$line" <<'PY'
           import re,sys
           s=sys.argv[1]
