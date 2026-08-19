@@ -1,179 +1,97 @@
-name: Deploy PocketBase hooks and migrations
+name: Diagnose Google Fit cloud production
 
 on:
   pull_request:
     paths:
-      - 'pb_hooks/**'
-      - 'pb_migrations/**'
       - '.github/workflows/deploy-pocketbase.yml'
-  push:
-    branches: [main]
-  workflow_dispatch:
+      - 'pb_hooks/sleep_sync.pb.js'
+      - 'pb_hooks/sleep_cloud_probe.js'
+      - 'pb_hooks/google_fit_sleep_recovery.js'
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  pocketbase:
+  diagnose:
     runs-on: ubuntu-latest
-    environment: ${{ github.event_name == 'pull_request' && '' || 'production' }}
-    concurrency:
-      group: pocketbase-production
-      cancel-in-progress: false
+    environment: production
     env:
       SSH_PRIVATE_KEY: ${{ secrets.POCKETBASE_SSH_PRIVATE_KEY || secrets.VPS_SSH_KEY || secrets.SSH_PRIVATE_KEY }}
-      SSH_USER: ${{ secrets.POCKETBASE_SSH_USER || secrets.VPS_SSH_USER || secrets.SSH_USER }}
-      SSH_HOST: ${{ secrets.POCKETBASE_SSH_HOST || secrets.VPS_HOST || secrets.SSH_HOST }}
       SSH_PORT: ${{ secrets.POCKETBASE_SSH_PORT || secrets.VPS_SSH_PORT || '22' }}
       POCKETBASE_SERVICE: ${{ secrets.POCKETBASE_SERVICE }}
       POCKETBASE_DEPLOY_DIR: ${{ secrets.POCKETBASE_DEPLOY_DIR }}
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
-      - name: Validate PocketBase JavaScript
-        shell: bash
+      - name: Validate probe files
         run: |
-          set -euo pipefail
-          mapfile -d '' files < <(find pb_hooks pb_migrations -type f -name '*.js' -print0 | sort -z)
-          (( ${#files[@]} > 0 ))
-          for file in "${files[@]}"; do node --check "$file"; done
+          node --check pb_hooks/sleep_sync.pb.js
+          node --check pb_hooks/sleep_cloud_probe.js
+          node --check pb_hooks/google_fit_sleep_recovery.js
 
       - name: Prepare SSH
-        if: github.event_name != 'pull_request'
         shell: bash
         run: |
           set -euo pipefail
-          [[ -n "$SSH_PRIVATE_KEY" ]]
-          echo "SSH_USER=${SSH_USER:-root}" >> "$GITHUB_ENV"
-          echo "SSH_HOST=${SSH_HOST:-217.114.0.201}" >> "$GITHUB_ENV"
           install -m 700 -d ~/.ssh
           printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/lifeos_pocketbase
           chmod 600 ~/.ssh/lifeos_pocketbase
-          ssh-keyscan -p "$SSH_PORT" -H "${SSH_HOST:-217.114.0.201}" >> ~/.ssh/known_hosts
+          ssh-keyscan -p "$SSH_PORT" -H 217.114.0.201 >> ~/.ssh/known_hosts
 
-      - name: Upload and install PocketBase bundle
-        if: github.event_name != 'pull_request'
+      - name: Install temporary embedded probe
         shell: bash
         run: |
           set -euo pipefail
-          ARCHIVE="/tmp/lifeos-pocketbase-${GITHUB_SHA}.tar.gz"
-          tar -czf "$ARCHIVE" pb_hooks pb_migrations
-          scp -i ~/.ssh/lifeos_pocketbase -P "$SSH_PORT" "$ARCHIVE" "$SSH_USER@$SSH_HOST:$ARCHIVE"
-          ssh -i ~/.ssh/lifeos_pocketbase -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" \
-            "POCKETBASE_SERVICE='$POCKETBASE_SERVICE' POCKETBASE_DEPLOY_DIR='$POCKETBASE_DEPLOY_DIR' ARCHIVE='$ARCHIVE' bash -s" <<'REMOTE'
+          tar -czf /tmp/sleep-probe.tar.gz pb_hooks/sleep_sync.pb.js pb_hooks/sleep_cloud_probe.js pb_hooks/google_fit_sleep_recovery.js
+          scp -i ~/.ssh/lifeos_pocketbase -P "$SSH_PORT" /tmp/sleep-probe.tar.gz root@217.114.0.201:/tmp/sleep-probe.tar.gz
+          ssh -i ~/.ssh/lifeos_pocketbase -p "$SSH_PORT" root@217.114.0.201 \
+            "POCKETBASE_SERVICE='$POCKETBASE_SERVICE' POCKETBASE_DEPLOY_DIR='$POCKETBASE_DEPLOY_DIR' bash -s" <<'REMOTE'
           set -euo pipefail
-          if [[ "$(id -u)" -eq 0 ]]; then SUDO=""; else SUDO="sudo -n"; fi
-
           service_name="${POCKETBASE_SERVICE:-}"
-          if [[ -z "$service_name" ]]; then
-            service_name="$(systemctl list-unit-files --type=service --no-legend 2>/dev/null | awk 'tolower($1) ~ /pocketbase/ {print $1; exit}')"
-          fi
-          pid="$(pgrep -f '[p]ocketbase.*serve' | head -n 1 || true)"
+          if [[ -z "$service_name" ]]; then service_name="$(systemctl list-unit-files --type=service --no-legend 2>/dev/null | awk 'tolower($1) ~ /pocketbase/ && !found {print $1; found=1}')"; fi
+          pid="$(pgrep -f '[p]ocketbase.*serve' | sed -n '1p' || true)"
           app_dir="${POCKETBASE_DEPLOY_DIR:-}"
           if [[ -z "$app_dir" && -n "$service_name" ]]; then app_dir="$(systemctl show "$service_name" -p WorkingDirectory --value 2>/dev/null || true)"; fi
           if [[ -z "$app_dir" && -n "$pid" ]]; then app_dir="$(readlink -f "/proc/$pid/cwd" 2>/dev/null || true)"; fi
-          [[ -n "$service_name" && -n "$app_dir" && -d "$app_dir" ]]
+          [[ -n "$service_name" && -n "$app_dir" && -d "$app_dir/pb_hooks" ]]
+          cp "$app_dir/pb_hooks/sleep_sync.pb.js" /tmp/lifeos-sleep-sync.orig
+          cp "$app_dir/pb_hooks/google_fit_sleep_recovery.js" /tmp/lifeos-sleep-recovery.orig
+          tar -xzf /tmp/sleep-probe.tar.gz -C "$app_dir"
+          rm -f /tmp/sleep-probe.tar.gz "$app_dir/pb_hooks/sleep_cloud_probe.pb.js"
+          systemctl restart "$service_name"
+          REMOTE
 
-          # Normalize any existing Google sleep OAuth environment to the single
-          # Google Fit runtime name. This preserves the user's existing OAuth.
-          fit_env="$app_dir/.lifeos-google-fit.env"
-          if [[ ! -f "$fit_env" ]] || ! grep -q '^SLEEP_SYNC_GOOGLE_FIT_CLIENT_ID=' "$fit_env" || ! grep -q '^SLEEP_SYNC_GOOGLE_FIT_CLIENT_SECRET=' "$fit_env"; then
-            source_env="$(find "$app_dir" -maxdepth 1 -type f -name '.lifeos-google-*.env' ! -name '.lifeos-google-fit.env' -print -quit)"
-            [[ -n "$source_env" ]]
-            client_id="$(sed -n 's/^SLEEP_SYNC_GOOGLE_[A-Z_]*CLIENT_ID=//p' "$source_env" | head -n1)"
-            client_secret="$(sed -n 's/^SLEEP_SYNC_GOOGLE_[A-Z_]*CLIENT_SECRET=//p' "$source_env" | head -n1)"
-            token_key="$(sed -n 's/^SLEEP_SYNC_TOKEN_KEY=//p' "$source_env" | head -n1)"
-            [[ -n "$client_id" && -n "$client_secret" ]]
-            {
-              printf 'SLEEP_SYNC_GOOGLE_FIT_CLIENT_ID=%s\n' "$client_id"
-              printf 'SLEEP_SYNC_GOOGLE_FIT_CLIENT_SECRET=%s\n' "$client_secret"
-              if [[ -n "$token_key" ]]; then printf 'SLEEP_SYNC_TOKEN_KEY=%s\n' "$token_key"; fi
-            } > /tmp/lifeos-google-fit.env
-            $SUDO install -m 600 /tmp/lifeos-google-fit.env "$fit_env"
-            rm -f /tmp/lifeos-google-fit.env
-          fi
-
-          override_dir="/etc/systemd/system/${service_name}.d"
-          $SUDO mkdir -p "$override_dir"
-          printf '[Service]\nEnvironmentFile=%s\n' "$fit_env" | $SUDO tee "$override_dir/lifeos-google-fit.conf" >/dev/null
-          for f in "$override_dir"/lifeos-google-*.conf; do
-            [[ -e "$f" ]] || continue
-            [[ "$f" == "$override_dir/lifeos-google-fit.conf" ]] || $SUDO rm -f "$f"
-          done
-          for f in "$app_dir"/.lifeos-google-*.env; do
-            [[ -e "$f" ]] || continue
-            [[ "$f" == "$fit_env" ]] || $SUDO rm -f "$f"
-          done
-
-          $SUDO mkdir -p "$app_dir/pb_hooks" "$app_dir/pb_migrations"
-          $SUDO tar -xzf "$ARCHIVE" -C "$app_dir" pb_hooks pb_migrations
-          rm -f "$ARCHIVE"
-          $SUDO systemctl daemon-reload
-          $SUDO systemctl restart "$service_name"
-
-          for attempt in {1..20}; do
-            health="$(curl -sS -o /dev/null -w '%{http_code}' https://217-114-0-201.sslip.io/api/health || true)"
-            route="$(curl -sS -o /dev/null -w '%{http_code}' https://217-114-0-201.sslip.io/api/sleep-sync/status || true)"
-            if [[ "$health" == "200" && ( "$route" == "401" || "$route" == "403" ) ]]; then exit 0; fi
+      - name: Read Google Fit cloud source freshness
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in {1..60}; do
+            code="$(curl -sS -o /tmp/probe.json -w '%{http_code}' https://217-114-0-201.sslip.io/api/__lifeos_sleep_cloud_probe_5f7c9a2e || true)"
+            if [[ "$code" == "200" ]]; then
+              cat /tmp/probe.json
+              exit 0
+            fi
             sleep 2
           done
+          echo "Probe endpoint did not return 200." >&2
+          cat /tmp/probe.json 2>/dev/null || true
           exit 1
-          REMOTE
 
-      - name: Verify recent cloud sleep in production
-        if: github.event_name != 'pull_request'
+      - name: Restore production hooks
+        if: always()
         shell: bash
         run: |
-          set -euo pipefail
-          sleep 95
-          ssh -i ~/.ssh/lifeos_pocketbase -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" \
-            "POCKETBASE_DEPLOY_DIR='$POCKETBASE_DEPLOY_DIR' POCKETBASE_SERVICE='$POCKETBASE_SERVICE' bash -s" > /tmp/sleep-cloud-result.txt <<'REMOTE'
-          set -euo pipefail
-          pid="$(pgrep -f '[p]ocketbase.*serve' | head -n 1 || true)"
+          ssh -i ~/.ssh/lifeos_pocketbase -p "$SSH_PORT" root@217.114.0.201 \
+            "POCKETBASE_SERVICE='$POCKETBASE_SERVICE' POCKETBASE_DEPLOY_DIR='$POCKETBASE_DEPLOY_DIR' bash -s" <<'REMOTE'
+          set -u
+          service_name="${POCKETBASE_SERVICE:-}"
+          if [[ -z "$service_name" ]]; then service_name="$(systemctl list-unit-files --type=service --no-legend 2>/dev/null | awk 'tolower($1) ~ /pocketbase/ && !found {print $1; found=1}')"; fi
+          pid="$(pgrep -f '[p]ocketbase.*serve' | sed -n '1p' || true)"
           app_dir="${POCKETBASE_DEPLOY_DIR:-}"
+          if [[ -z "$app_dir" && -n "$service_name" ]]; then app_dir="$(systemctl show "$service_name" -p WorkingDirectory --value 2>/dev/null || true)"; fi
           if [[ -z "$app_dir" && -n "$pid" ]]; then app_dir="$(readlink -f "/proc/$pid/cwd" 2>/dev/null || true)"; fi
-          if [[ -z "$app_dir" ]]; then
-            service_name="${POCKETBASE_SERVICE:-}"
-            [[ -n "$service_name" ]] && app_dir="$(systemctl show "$service_name" -p WorkingDirectory --value 2>/dev/null || true)"
-          fi
-          python3 - "$app_dir/pb_data/data.db" <<'PY'
-          import sqlite3, sys
-          con=sqlite3.connect(f'file:{sys.argv[1]}?mode=ro', uri=True); con.row_factory=sqlite3.Row
-          r=con.execute("SELECT enabled,status,last_error,last_sync_at,last_session_count,last_imported_count,length(coalesce(refresh_token_enc,'')) token_len FROM sleep_sync_connections WHERE provider='google_fit' ORDER BY updated DESC LIMIT 1").fetchone()
-          def error_class(v):
-              s=(v or '').lower()
-              if not s:return 'none'
-              if 'invalid_grant' in s:return 'invalid_grant'
-              if '403' in s or 'scope' in s or 'permission' in s:return 'permission'
-              if '401' in s:return 'auth'
-              return 'other'
-          if not r:
-              print('connection=false')
-          else:
-              print('connection=true')
-              print('enabled='+str(bool(r['enabled'])).lower())
-              print('token='+str(r['token_len']>0).lower())
-              print('status='+str(r['status']))
-              print('error='+error_class(r['last_error']))
-              print('synced='+str(bool(r['last_sync_at'])).lower())
-              print('sessions='+str(r['last_session_count'] or 0))
-              print('imported='+str(r['last_imported_count'] or 0))
-          n=con.execute("SELECT count(*) FROM records WHERE (title='Sleep' OR title='Сон') AND julianday(end_time) >= julianday('now','-36 hours')").fetchone()[0]
-          print('sleep_last_36h='+str(n))
-          con.close()
-          PY
+          if [[ -f /tmp/lifeos-sleep-sync.orig ]]; then cp /tmp/lifeos-sleep-sync.orig "$app_dir/pb_hooks/sleep_sync.pb.js"; fi
+          if [[ -f /tmp/lifeos-sleep-recovery.orig ]]; then cp /tmp/lifeos-sleep-recovery.orig "$app_dir/pb_hooks/google_fit_sleep_recovery.js"; fi
+          rm -f /tmp/lifeos-sleep-sync.orig /tmp/lifeos-sleep-recovery.orig "$app_dir/pb_hooks/sleep_cloud_probe.js" "$app_dir/pb_hooks/sleep_cloud_probe.pb.js"
+          [[ -n "$service_name" ]] && systemctl restart "$service_name" || true
           REMOTE
-
-      - name: Publish sanitized verification
-        if: github.event_name != 'pull_request'
-        shell: bash
-        run: |
-          cp /tmp/sleep-cloud-result.txt _tmp_sleep_cloud_result.txt
-          git config user.name github-actions[bot]
-          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add _tmp_sleep_cloud_result.txt
-          git commit -m 'Record sanitized sleep cloud verification'
-          git pull --rebase origin main
-          git push origin HEAD:main
