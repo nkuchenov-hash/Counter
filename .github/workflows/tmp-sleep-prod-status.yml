@@ -1,0 +1,71 @@
+name: Temporary sleep production status
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/tmp-sleep-prod-status.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      SSH_PRIVATE_KEY: ${{ secrets.POCKETBASE_SSH_PRIVATE_KEY || secrets.VPS_SSH_KEY || secrets.SSH_PRIVATE_KEY }}
+      SSH_USER: ${{ secrets.POCKETBASE_SSH_USER || secrets.VPS_SSH_USER || secrets.SSH_USER }}
+      SSH_HOST: ${{ secrets.POCKETBASE_SSH_HOST || secrets.VPS_HOST || secrets.SSH_HOST }}
+      SSH_PORT: ${{ secrets.POCKETBASE_SSH_PORT || secrets.VPS_SSH_PORT || '22' }}
+      POCKETBASE_SERVICE: ${{ secrets.POCKETBASE_SERVICE }}
+      POCKETBASE_DEPLOY_DIR: ${{ secrets.POCKETBASE_DEPLOY_DIR }}
+    steps:
+      - name: Snapshot sanitized sleep state
+        run: |
+          set -euo pipefail
+          SSH_USER="${SSH_USER:-root}"
+          SSH_HOST="${SSH_HOST:-217.114.0.201}"
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/lifeos_pocketbase
+          chmod 600 ~/.ssh/lifeos_pocketbase
+          ssh-keyscan -p "$SSH_PORT" -H "$SSH_HOST" >> ~/.ssh/known_hosts
+          ssh -i ~/.ssh/lifeos_pocketbase -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" \
+            "POCKETBASE_SERVICE='$POCKETBASE_SERVICE' POCKETBASE_DEPLOY_DIR='$POCKETBASE_DEPLOY_DIR' bash -s" <<'REMOTE'
+          set -euo pipefail
+          service_name="${POCKETBASE_SERVICE:-}"
+          if [[ -z "$service_name" ]]; then
+            service_name="$(systemctl list-unit-files --type=service --no-legend 2>/dev/null | awk 'tolower($1) ~ /pocketbase/ {print $1; exit}')"
+          fi
+          pid="$(pgrep -f '[p]ocketbase.*serve' | head -n 1 || true)"
+          app_dir="${POCKETBASE_DEPLOY_DIR:-}"
+          if [[ -z "$app_dir" && -n "$service_name" ]]; then app_dir="$(systemctl show "$service_name" -p WorkingDirectory --value 2>/dev/null || true)"; fi
+          if [[ -z "$app_dir" && -n "$pid" ]]; then app_dir="$(readlink -f "/proc/$pid/cwd" 2>/dev/null || true)"; fi
+          db="$app_dir/pb_data/data.db"
+          python3 - "$db" <<'PY'
+          import sqlite3, sys
+          from datetime import datetime, timedelta, timezone
+          con=sqlite3.connect(f'file:{sys.argv[1]}?mode=ro', uri=True)
+          con.row_factory=sqlite3.Row
+          rows=con.execute("""
+            SELECT enabled,status,last_error,last_sync_at,last_session_count,last_imported_count,
+                   length(coalesce(refresh_token_enc,'')) AS refresh_len,
+                   length(coalesce(access_token_enc,'')) AS access_len,
+                   oauth_state, oauth_state_expires_at, updated
+            FROM sleep_sync_connections
+            WHERE provider='google_fit'
+            ORDER BY updated DESC LIMIT 3
+          """).fetchall()
+          print('CONNECTIONS')
+          for r in rows:
+            d=dict(r); d['oauth_state']='present' if d.get('oauth_state') else ''
+            print(d)
+          cutoff=(datetime.now(timezone.utc)-timedelta(hours=48)).isoformat().replace('+00:00','Z')
+          row=con.execute("""
+            SELECT count(*) AS n, max(end_time) AS last_end
+            FROM records
+            WHERE (title='Sleep' OR title='Сон' OR external_kind='sleep') AND end_time>=?
+          """,(cutoff,)).fetchone()
+          print('SLEEP48', dict(row))
+          PY
+          REMOTE
