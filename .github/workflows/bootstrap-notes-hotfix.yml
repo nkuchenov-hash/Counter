@@ -27,26 +27,19 @@ jobs:
               1,
           )
           text = text.replace('                  fontSize: 14,', '                  fontSize: 15,', 1)
-          start_marker = '''        SizedBox(
-            width: compactMobile ? 40 : null,
-            height: 40,
-          '''
-          start = text.find(start_marker)
+
+          anchor = text.find('width: compactMobile ? 40 : null')
+          if anchor < 0:
+              raise SystemExit('quick-add button width anchor not found')
+          start = text.rfind('        SizedBox(', 0, anchor)
           if start < 0:
-              # Real source uses ten spaces for properties under this SizedBox.
-              start_marker = '''        SizedBox(
-          width: compactMobile ? 40 : null,
-          height: 40,
-'''
-              start = text.find(start_marker)
-          if start < 0:
-              raise SystemExit('quick-add button start not found')
-          end_marker = '''        ),
-      ],
-    );'''
-          end = text.find(end_marker, start)
+              raise SystemExit('quick-add parent SizedBox not found')
+          row_end = text.find('\n      ],\n    );', anchor)
+          if row_end < 0:
+              raise SystemExit('quick-add row end not found')
+          end = text.rfind('        ),', anchor, row_end)
           if end < 0:
-              raise SystemExit('quick-add button end not found')
+              raise SystemExit('quick-add button closing not found')
           end += len('        ),')
           new_button = '''        SizedBox.square(
           dimension: 48,
