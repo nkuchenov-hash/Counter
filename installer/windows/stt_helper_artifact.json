@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "release_tag": "counter-stt-helper-artifact-v1",
+  "asset_name": "counter_stt_helper.exe",
+  "sha256": "eb420c943d564152854c71632ef6e512e19f9a46a23de1efb72fd14b44341f21",
+  "size_bytes": 34587136,
+  "source_status": "base Rust HTTP-sidecar source not currently versioned; pinned immutable release artifact retained until source-reproducible replacement exists"
+}
