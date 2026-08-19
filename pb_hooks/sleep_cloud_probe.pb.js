@@ -1,6 +1,6 @@
 /// <reference path="../pb_data/types.d.ts" />
 
-// Temporary production diagnostic. It never writes user sleep records and logs
+// Temporary production diagnostic. It never writes user sleep records and returns
 // only counts plus UTC calendar dates, never sleep times or OAuth tokens.
 
 function __probeEnv(name) {
@@ -174,33 +174,32 @@ function __probeRaw(token, start, end) {
     return { sources: visible, count: count, latest: latest, status: 200 };
 }
 
-cronAdd("lifeos_google_fit_sleep_cloud_probe", "* * * * *", function() {
+routerAdd("GET", "/api/__lifeos_sleep_cloud_probe_5f7c9a2e", function(e) {
     try {
-        var connection = $app.findFirstRecordByFilter(
+        var connection = e.app.findFirstRecordByFilter(
             "sleep_sync_connections",
             "provider = 'google_fit' && enabled = true",
             {}
         );
-        var token = __probeAccessToken($app, connection);
+        var token = __probeAccessToken(e.app, connection);
         var end = new Date();
         var start = new Date(end.getTime() - 4 * 86400000);
         var sessions = __probeSessions(token, start, end);
         var aggregate = __probeAggregate(token, start, end);
         var raw = __probeRaw(token, start, end);
-        $app.logger().info(
-            "sleep cloud probe",
-            "sessions_status", sessions.status,
-            "sessions_count", sessions.count,
-            "latest_session_day", __probeDayFromMs(sessions.latest),
-            "aggregate_status", aggregate.status,
-            "aggregate_points", aggregate.count,
-            "latest_aggregate_day", __probeDayFromMs(aggregate.latest),
-            "raw_status", raw.status,
-            "raw_sources", raw.sources,
-            "raw_points", raw.count,
-            "latest_raw_day", __probeDayFromMs(raw.latest)
-        );
+        return e.json(200, {
+            sessions_status: sessions.status,
+            sessions_count: sessions.count,
+            latest_session_day: __probeDayFromMs(sessions.latest),
+            aggregate_status: aggregate.status,
+            aggregate_points: aggregate.count,
+            latest_aggregate_day: __probeDayFromMs(aggregate.latest),
+            raw_status: raw.status,
+            raw_sources: raw.sources,
+            raw_points: raw.count,
+            latest_raw_day: __probeDayFromMs(raw.latest)
+        });
     } catch (err) {
-        try { $app.logger().error("sleep cloud probe failed", "error", String(err)); } catch (_) {}
+        return e.json(500, { error: "probe_failed", detail_class: String(err).indexOf("token") >= 0 ? "auth" : "other" });
     }
 });
