@@ -36,8 +36,8 @@ function __fitTokenKey(app) {
 }
 
 function __fitGoogleConfig() {
-    var clientId = __fitEnv("SLEEP_SYNC_GOOGLE_FIT_CLIENT_ID") || __fitEnv("SLEEP_SYNC_GOOGLE_HEALTH_CLIENT_ID");
-    var clientSecret = __fitEnv("SLEEP_SYNC_GOOGLE_FIT_CLIENT_SECRET") || __fitEnv("SLEEP_SYNC_GOOGLE_HEALTH_CLIENT_SECRET");
+    var clientId = __fitEnv("SLEEP_SYNC_GOOGLE_FIT_CLIENT_ID");
+    var clientSecret = __fitEnv("SLEEP_SYNC_GOOGLE_FIT_CLIENT_SECRET");
     if (!clientId || !clientSecret) throw new Error("Google Fit OAuth is not configured");
     return {
         clientId: clientId,
@@ -88,11 +88,6 @@ function __fitConnection(app, userId, createIfMissing) {
 function __fitNeedsReconnect(errorText) {
     var raw = String(errorText || "").toLowerCase();
     if (!raw) return false;
-    // Connection state and import state are separate. Once Google issued a
-    // refresh token, a data-read failure must not make the user's setting look
-    // disconnected. Only genuinely invalid/stale credentials require OAuth.
-    // Google Health is no longer part of this adapter. Historical Google
-    // Health read errors must never invalidate an existing Google Fit token.
     return raw.indexOf("account_not_linked") >= 0 ||
         raw.indexOf("invalid_grant") >= 0;
 }
@@ -343,14 +338,6 @@ function __fitFindExisting(app, userId, session) {
             }
         }
         if (best) return best;
-    } catch (_) {}
-
-    try {
-        return app.findFirstRecordByFilter(
-            "records",
-            "user_id = {:uid} && external_source = 'google_health' && start_time = {:start} && end_time = {:end}",
-            { uid: userId, start: session.start.toISOString(), end: session.end.toISOString() }
-        );
     } catch (_) {}
 
     // Canonical fallback across ingestion adapters.
