@@ -2,7 +2,7 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `0754f7fd` on 2026-08-19.**
+**Generated from input HEAD `59d794f1` on 2026-08-19.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
@@ -31,19 +31,19 @@ python scripts/manual/generate_app_structure_detailed.py
 | `Brain/data` | 87 |
 | `platform build` | 83 |
 | `shared foundation` | 64 |
-| `developer tool` | 58 |
+| `developer tool` | 57 |
 | `platform resource` | 44 |
 | `Desktop Voice runtime` | 36 |
 | `governing documentation` | 35 |
 | `shared Voice system` | 22 |
 | `test fixture` | 22 |
 | `historical engineering record` | 16 |
-| `PocketBase backend` | 13 |
 | `localization` | 13 |
-| `installer` | 11 |
+| `PocketBase backend` | 12 |
+| `installer` | 12 |
 | `Brain Voice` | 10 |
+| `PocketBase migration` | 9 |
 | `CI/deployment` | 8 |
-| `PocketBase migration` | 8 |
 | `shared time` | 7 |
 | `package metadata` | 6 |
 | `shared diagnostics` | 6 |
@@ -263,7 +263,6 @@ Evidence is computed from Dart import/export/`part` graphs, bounded path referen
 - [`.github/workflows/`](#folder-githubworkflows)
 - [`installer/windows/`](#folder-installerwindows)
 - [`installer/windows/scripts/`](#folder-installerwindowsscripts)
-- [`installer/windows/stt_helper_build/`](#folder-installerwindowsstt_helper_build)
 - [`installer/windows/stt_helper_src/`](#folder-installerwindowsstt_helper_src)
 - [`installer/windows/wav_stt_replay/`](#folder-installerwindowswav_stt_replay)
 - [`installer/windows/wav_stt_replay/src/`](#folder-installerwindowswav_stt_replaysrc)
@@ -1668,30 +1667,6 @@ RU:
 - **Когда открывать:** Открывать при работе с файлами и процессами, связанными с `installer/windows/scripts/`.
 - **Можно удалить?** Нет — сначала нужно подтвердить отсутствие runtime, build, data и CI-зависимостей.
 - **Связанные пути:** `prepare_stt_payload.ps1`, `counter.iss`.
-
----
-
-## Folder: `installer/windows/stt_helper_build/`
-
-EN:
-
-- **What this folder is:** Built speech-to-text helper binary folder — `counter_stt_helper.exe` copied into installer.
-- **Why it exists:** Desktop voice on Windows uses a GOLOS STT helper subprocess; installer must ship the compiled exe.
-- **What lives here:** Pre-built or CI-built `counter_stt_helper.exe` (tracked artifact for packaging).
-- **What part of the app it affects:** Windows desktop voice transcription after install.
-- **When to open it:** Voice works in dev but not in installed app; rebuild STT helper for installer.
-- **Can it be deleted?** No — Windows installer STT bundle incomplete without it.
-- **Main related paths:** `installer/windows/build_stt_helper_en.ps1`, `lib/shared/voice/platforms/desktop/desktop_stt_helper_service.dart`.
-
-RU:
-
-- **Что это за папка:** Собранный `counter_stt_helper.exe` для bundling в installer.
-- **Зачем нужна:** Desktop voice на Windows использует GOLOS STT subprocess; installer должен ship exe.
-- **Что здесь лежит:** Отслеживаемые Git файлы и дочерние каталоги; каждый элемент описан ниже.
-- **На что влияет в приложении:** Расшифровка desktop voice на Windows после установки.
-- **Когда открывать:** Voice в dev OK, но не в installed app; rebuild STT helper.
-- **Можно удалить?** Нет — сначала нужно подтвердить отсутствие runtime, build, data и CI-зависимостей.
-- **Связанные пути:** `build_stt_helper_en.ps1`, `desktop_stt_helper_service.dart`.
 
 ---
 
@@ -7730,6 +7705,43 @@ RU:
 - **Связано с:** `igropoisk/`, `docs/APP_STRUCTURE.md`.
 
 
+### `installer/windows/STT_ARTIFACT_PIPELINE.md`
+
+EN:
+
+- **Human purpose:** installer build file `STT_ARTIFACT_PIPELINE.md` in `installer/windows` — required by Flutter/native toolchain. Without `STT_ARTIFACT_PIPELINE.md`, installer compile or packaging step for this folder may fail.
+- **What this is:** installer build file `STT_ARTIFACT_PIPELINE.md` in `installer/windows` — required by Flutter/native toolchain.
+- **Why needed:** Without `STT_ARTIFACT_PIPELINE.md`, installer compile or packaging step for this folder may fail.
+- **Contents:** Native/config source for `installer/windows` (open file only when build errors cite it).
+- **Repository role:** installer
+- **Evidence of use:** Windows installer / STT helper source or packaging file under `installer/`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Broken Windows installer or missing STT helper payload.
+- **Confidence:** HIGH
+- **Owner / layer:** installer
+- **Responsibilities:** Support installer embedder build for `installer/windows` — not Dart business logic.
+- **When to open:** Build log mentions `STT_ARTIFACT_PIPELINE.md` or `installer/windows`.
+- **Can it be deleted?** Broken Windows installer or missing STT helper payload.
+- **Connected to:** `installer/` platform folder, Flutter embedder.
+
+RU:
+
+- **Зачем файл человеку:** Installer documentation `stt_artifact_pipeline.md` — human steps для Windows setup/STT packaging. Owner/CI читают notes перед сборкой `CounterSetup.exe`.
+- **Что это:** Installer documentation `stt_artifact_pipeline.md` — human steps для Windows setup/STT packaging.
+- **Зачем:** Owner/CI читают notes перед сборкой `CounterSetup.exe`.
+- **Содержимое:** Markdown instructions for installer workflow.
+- **Роль в репозитории:** installer
+- **Доказательства использования:** Файл Windows installer / STT helper в `installer/`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Сломается Windows installer или пропадёт STT helper.
+- **Уверенность:** HIGH
+- **Владелец / слой:** installer
+- **Обязанности:** Document how to run installer pipeline involving `stt_artifact_pipeline.md`.
+- **Когда открывать:** Unclear installer step documented near `stt_artifact_pipeline.md`.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `docs/DEPLOY.md`, `installer/windows/`.
+
+
 ### `installer/windows/build_stt_helper_en.ps1`
 
 EN:
@@ -7739,7 +7751,7 @@ EN:
 - **Why needed:** Desktop voice needs `counter_stt_helper.exe` in the setup package after install.
 - **Contents:** Commands building/copying STT helper into `stt_helper_build/`.
 - **Repository role:** installer
-- **Evidence of use:** Referenced by: `docs/DEPLOY.md`, `docs/reports/DESKTOP_VOICE_GOLOS_PARITY_AUDIT_2026-07-07.md`, `scripts/manual/benchmark_desktop_voice_stt.ps1`, `scripts/manual/install_desktop_voice_release.ps1`, `scripts/manual/structure_file_ru_curated.py`.
+- **Evidence of use:** Referenced by: `docs/DEPLOY.md`, `docs/reports/DESKTOP_VOICE_GOLOS_PARITY_AUDIT_2026-07-07.md`, `installer/windows/STT_ARTIFACT_PIPELINE.md`, `scripts/manual/benchmark_desktop_voice_stt.ps1`, `scripts/manual/install_desktop_voice_release.ps1`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Broken Windows installer or missing STT helper payload.
 - **Confidence:** HIGH
@@ -7756,7 +7768,7 @@ RU:
 - **Зачем:** Desktop voice на Windows вызывает GOLOS STT subprocess — exe должен быть собран до Inno Setup.
 - **Содержимое:** Команды сборки/копирования `counter_stt_helper.exe` в `stt_helper_build/`.
 - **Роль в репозитории:** installer
-- **Доказательства использования:** Упоминается в: `docs/DEPLOY.md`, `docs/reports/DESKTOP_VOICE_GOLOS_PARITY_AUDIT_2026-07-07.md`, `scripts/manual/benchmark_desktop_voice_stt.ps1`, `scripts/manual/install_desktop_voice_release.ps1`, `scripts/manual/structure_file_ru_curated.py`.
+- **Доказательства использования:** Упоминается в: `docs/DEPLOY.md`, `docs/reports/DESKTOP_VOICE_GOLOS_PARITY_AUDIT_2026-07-07.md`, `installer/windows/STT_ARTIFACT_PIPELINE.md`, `scripts/manual/benchmark_desktop_voice_stt.ps1`, `scripts/manual/install_desktop_voice_release.ps1`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Сломается Windows installer или пропадёт STT helper.
 - **Уверенность:** HIGH
@@ -7850,7 +7862,7 @@ EN:
 - **Why needed:** Inno Setup expects helper exe, models, and runtime files copied into installer layout.
 - **Contents:** Steps copying/checking `counter_stt_helper.exe` and STT runtime payload.
 - **Repository role:** installer
-- **Evidence of use:** Referenced by: `docs/DEPLOY.md`, `scripts/manual/generate_app_structure_detailed.py`, `scripts/manual/install_desktop_voice_release.ps1`, `scripts/manual/structure_evidence_index.py`, `scripts/manual/structure_file_ru_curated.py`.
+- **Evidence of use:** Referenced by: `docs/DEPLOY.md`, `installer/windows/STT_ARTIFACT_PIPELINE.md`, `scripts/manual/generate_app_structure_detailed.py`, `scripts/manual/install_desktop_voice_release.ps1`, `scripts/manual/structure_evidence_index.py`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Broken Windows installer or missing STT helper payload.
 - **Confidence:** HIGH
@@ -7867,7 +7879,7 @@ RU:
 - **Зачем:** Inno Setup script ожидает готовый STT bundle — иначе installed app не найдёт speech helper.
 - **Содержимое:** Шаги копирования `counter_stt_helper.exe`, моделей и runtime файлов в layout installer.
 - **Роль в репозитории:** installer
-- **Доказательства использования:** Упоминается в: `docs/DEPLOY.md`, `scripts/manual/generate_app_structure_detailed.py`, `scripts/manual/install_desktop_voice_release.ps1`, `scripts/manual/structure_evidence_index.py`, `scripts/manual/structure_file_ru_curated.py`.
+- **Доказательства использования:** Упоминается в: `docs/DEPLOY.md`, `installer/windows/STT_ARTIFACT_PIPELINE.md`, `scripts/manual/generate_app_structure_detailed.py`, `scripts/manual/install_desktop_voice_release.ps1`, `scripts/manual/structure_evidence_index.py`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Сломается Windows installer или пропадёт STT helper.
 - **Уверенность:** HIGH
@@ -7915,41 +7927,41 @@ RU:
 - **Связано с:** `installer/windows/counter.iss`, `docs/DEPLOY.md`.
 
 
-### `installer/windows/stt_helper_build/counter_stt_helper.exe`
+### `installer/windows/stt_helper_artifact.json`
 
 EN:
 
-- **Human purpose:** Built STT helper binary bundled beside the installed Windows app. Desktop voice invokes this subprocess for transcription after setup install.
-- **What this is:** Built STT helper binary bundled beside the installed Windows app.
-- **Why needed:** Desktop voice invokes this subprocess for transcription after setup install.
-- **Contents:** Compiled GOLOS STT helper executable (English).
+- **Human purpose:** installer build file `stt_helper_artifact.json` in `installer/windows` — required by Flutter/native toolchain. Without `stt_helper_artifact.json`, installer compile or packaging step for this folder may fail.
+- **What this is:** installer build file `stt_helper_artifact.json` in `installer/windows` — required by Flutter/native toolchain.
+- **Why needed:** Without `stt_helper_artifact.json`, installer compile or packaging step for this folder may fail.
+- **Contents:** Native/config source for `installer/windows` (open file only when build errors cite it).
 - **Repository role:** installer
-- **Evidence of use:** Canonical Windows STT helper binary copied into the setup payload by `installer/windows/prepare_stt_payload.ps1` / Inno Setup; also used by desktop-voice smoke/benchmark scripts.
+- **Evidence of use:** Referenced by: `installer/windows/STT_ARTIFACT_PIPELINE.md`, `installer/windows/prepare_stt_payload.ps1`, `scripts/audit/repository_hygiene.py`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Broken Windows installer or missing STT helper payload.
 - **Confidence:** HIGH
 - **Owner / layer:** installer
-- **Responsibilities:** Speech transcription subprocess for installed desktop voice.
-- **When to open:** Building or fixing Windows `CounterSetup.exe` installer.
+- **Responsibilities:** Support installer embedder build for `installer/windows` — not Dart business logic.
+- **When to open:** Build log mentions `stt_helper_artifact.json` or `installer/windows`.
 - **Can it be deleted?** Broken Windows installer or missing STT helper payload.
-- **Connected to:** Flutter `installer` tooling.
+- **Connected to:** `installer/` platform folder, Flutter embedder.
 
 RU:
 
-- **Зачем файл человеку:** Собранный STT helper binary, который installer кладёт рядом с Windows-приложением. Desktop voice вызывает его как subprocess для transcription. Installed Counter на Windows не использует mobile STT API — нужен отдельный native helper exe.
-- **Что это:** Собранный STT helper binary, который installer кладёт рядом с Windows-приложением. Desktop voice вызывает его как subprocess для transcription.
-- **Зачем:** Installed Counter на Windows не использует mobile STT API — нужен отдельный native helper exe.
-- **Содержимое:** Скомпилированный GOLOS STT helper (English) для subprocess voice pipeline.
+- **Зачем файл человеку:** Platform file `stt_helper_artifact.json` в `installer/windows` — читает Inno Setup/packaging scripts при сборке `CounterSetup.exe` installer. Без этого файла Inno Setup/packaging scripts может не собрать или упаковать `CounterSetup.exe` installer.
+- **Что это:** Platform file `stt_helper_artifact.json` в `installer/windows` — читает Inno Setup/packaging scripts при сборке `CounterSetup.exe` installer.
+- **Зачем:** Без этого файла Inno Setup/packaging scripts может не собрать или упаковать `CounterSetup.exe` installer.
+- **Содержимое:** Содержимое native/config слоя `installer/windows` (смотреть файл при build errors).
 - **Роль в репозитории:** installer
-- **Доказательства использования:** Канонический `counter_stt_helper.exe` для Windows installer и desktop-voice smoke/benchmark скриптов.
+- **Доказательства использования:** Упоминается в: `installer/windows/STT_ARTIFACT_PIPELINE.md`, `installer/windows/prepare_stt_payload.ps1`, `scripts/audit/repository_hygiene.py`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Сломается Windows installer или пропадёт STT helper.
 - **Уверенность:** HIGH
 - **Владелец / слой:** installer
-- **Обязанности:** Transcription subprocess для desktop voice после установки через setup.
-- **Когда открывать:** Installed app: voice mic работает, но transcription пустая или helper not found.
-- **Можно удалить?** Нет — удаление ломает voice в installed app.
-- **Связано с:** `lib/shared/voice/platforms/desktop/desktop_stt_helper_service.dart`, `prepare_stt_payload.ps1`.
+- **Обязанности:** Участвует в Inno Setup/packaging scripts pipeline для `CounterSetup.exe` installer — не Dart business logic.
+- **Когда открывать:** Build log installer ссылается на `stt_helper_artifact.json` или `installer/windows`.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `installer/`, Flutter embedder, Inno Setup/packaging scripts.
 
 
 ### `installer/windows/stt_helper_src/capture.rs`
@@ -9702,7 +9714,7 @@ EN:
 - **Contents:** Shell mixin or widget (`ShellDashboardBase`, `LifeOSDashboard`, `ShellDashboardState`, `DesktopVoiceCommandIntent`).
 - **Key code names:** `ShellDashboardBase`, `LifeOSDashboard`, `ShellDashboardState`, `DesktopVoiceCommandIntent`
 - **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/app_shell.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/main.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -9719,7 +9731,7 @@ RU:
 - **Зачем:** Связывает вкладки, voice, edit sheets и offline banner.
 - **Содержимое:** Shell mixin или виджет (logic in `app_shell`).
 - **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/app_shell.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/main.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -10449,43 +10461,6 @@ RU:
 - **Когда открывать:** Навигация, voice, edit host.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Все main tabs, `app_shell.dart`
-
-
-### `lib/app_shell.dart`
-
-EN:
-
-- **Human purpose:** Thin shell entry — re-exports `shell/life_os_dashboard.dart`. Provides a stable import path for the main dashboard without duplicating shell code.
-- **What this is:** Thin shell entry — re-exports `shell/life_os_dashboard.dart`.
-- **Why needed:** Provides a stable import path for the main dashboard without duplicating shell code.
-- **Contents:** Re-export of the dashboard shell widget.
-- **Repository role:** developer tool
-- **Evidence of use:** Imported/exported by production Dart: `lib/main.dart`.
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
-- **Confidence:** HIGH
-- **Owner / layer:** app shell
-- **Responsibilities:** Re-exports `shell/life_os_dashboard.dart` (thin entry).
-- **When to open:** When behavior tied to `app_shell.dart` breaks or you need to change its documented role.
-- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: Thin compatibility re-export of `app/shell/app_shell.dart`
-
-RU:
-
-- **Зачем файл человеку:** Тонкий entry-point приложения — re-export `shell/life_os_dashboard.dart`. Стабильный import path для dashboard без дублирования shell-кода.
-- **Что это:** Тонкий entry-point приложения — re-export `shell/life_os_dashboard.dart`.
-- **Зачем:** Стабильный import path для dashboard без дублирования shell-кода.
-- **Содержимое:** Re-export виджета dashboard из `lib/app/shell/`.
-- **Роль в репозитории:** developer tool
-- **Доказательства использования:** Импортируется production Dart: `lib/main.dart`.
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
-- **Уверенность:** HIGH
-- **Владелец / слой:** оболочка приложения
-- **Обязанности:** Подключает shell dashboard как единую точку входа UI.
-- **Когда открывать:** Когда ломается поведение, связанное с `app_shell.dart`.
-- **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** `lib/`, `docs/APP_STRUCTURE.md`
 
 
 ### `lib/core/app_build_info.dart`
@@ -27357,43 +27332,6 @@ RU:
 - **Связано с:** `pb_hooks/`, Flutter embedder.
 
 
-### `pb_hooks/google_health_sleep_runtime.js`
-
-EN:
-
-- **Human purpose:** pb_hooks build file `google_health_sleep_runtime.js` in `pb_hooks` — required by Flutter/native toolchain. Without `google_health_sleep_runtime.js`, pb_hooks compile or packaging step for this folder may fail.
-- **What this is:** pb_hooks build file `google_health_sleep_runtime.js` in `pb_hooks` — required by Flutter/native toolchain.
-- **Why needed:** Without `google_health_sleep_runtime.js`, pb_hooks compile or packaging step for this folder may fail.
-- **Contents:** Native/config source for `pb_hooks` (open file only when build errors cite it).
-- **Repository role:** PocketBase backend
-- **Evidence of use:** Server-side PocketBase hook; deployed with the PB instance (see `docs/POCKETBASE_MANIFEST.md`).
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Broken server-side validation/automation for PB collections.
-- **Confidence:** HIGH
-- **Owner / layer:** PocketBase backend
-- **Responsibilities:** Support pb_hooks embedder build for `pb_hooks` — not Dart business logic.
-- **When to open:** Build log mentions `google_health_sleep_runtime.js` or `pb_hooks`.
-- **Can it be deleted?** Broken server-side validation/automation for PB collections.
-- **Connected to:** `pb_hooks/` platform folder, Flutter embedder.
-
-RU:
-
-- **Зачем файл человеку:** Platform file `google_health_sleep_runtime.js` в `pb_hooks` — читает Flutter platform tool при сборке pb_hooks build. Без этого файла Flutter platform tool может не собрать или упаковать pb_hooks build.
-- **Что это:** Platform file `google_health_sleep_runtime.js` в `pb_hooks` — читает Flutter platform tool при сборке pb_hooks build.
-- **Зачем:** Без этого файла Flutter platform tool может не собрать или упаковать pb_hooks build.
-- **Содержимое:** Содержимое native/config слоя `pb_hooks` (смотреть файл при build errors).
-- **Роль в репозитории:** PocketBase backend
-- **Доказательства использования:** Серверный hook PocketBase; деплоится вместе с PB (см. `docs/POCKETBASE_MANIFEST.md`).
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Сломается серверная логика PocketBase.
-- **Уверенность:** HIGH
-- **Владелец / слой:** PocketBase backend
-- **Обязанности:** Участвует в Flutter platform tool pipeline для pb_hooks build — не Dart business logic.
-- **Когда открывать:** Build log pb_hooks ссылается на `google_health_sleep_runtime.js` или `pb_hooks`.
-- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
-- **Связано с:** `pb_hooks/`, Flutter embedder.
-
-
 ### `pb_hooks/records.interval_sanitize.pb.js`
 
 EN:
@@ -27871,6 +27809,43 @@ RU:
 - **Владелец / слой:** миграции PocketBase
 - **Обязанности:** Реализует JavaScript-часть сценария `1787076000_durable_paths.js` в своём каталоге.
 - **Когда открывать:** When результат сборки or maintenance cites `1787076000_durable_paths.js`.
+- **Можно удалить?** Нет — конфигурация/инструмент репозитория.
+- **Связано с:** `pb_migrations/`, `docs/APP_STRUCTURE.md`.
+
+
+### `pb_migrations/1787137200_normalize_sleep_connection_state.js`
+
+EN:
+
+- **Human purpose:** JavaScript source `1787137200_normalize_sleep_connection_state.js` in `pb_migrations` — repo tooling or config. Tracked because `pb_migrations` needs `1787137200_normalize_sleep_connection_state.js` for build, CI, or maintenance.
+- **What this is:** JavaScript source `1787137200_normalize_sleep_connection_state.js` in `pb_migrations` — repo tooling or config.
+- **Why needed:** Tracked because `pb_migrations` needs `1787137200_normalize_sleep_connection_state.js` for build, CI, or maintenance.
+- **Contents:** Open `1787137200_normalize_sleep_connection_state.js` when working on `pb_migrations` (see folder section above).
+- **Repository role:** PocketBase migration
+- **Evidence of use:** Versioned PocketBase schema/data migration; applied by PocketBase before client code that depends on the schema (see `docs/DEPLOY.md`).
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Production schema history becomes incomplete or a required data migration is lost.
+- **Confidence:** HIGH
+- **Owner / layer:** PocketBase migrations
+- **Responsibilities:** Supports `pb_migrations` workflow for `1787137200_normalize_sleep_connection_state.js`.
+- **When to open:** When build output or maintenance cites `1787137200_normalize_sleep_connection_state.js`.
+- **Can it be deleted?** No — part of repository tooling or config.
+- **Connected to:** `pb_migrations/`, `docs/APP_STRUCTURE.md`.
+
+RU:
+
+- **Зачем файл человеку:** `1787137200_normalize_sleep_connection_state.js` — JavaScript-модуль для области `pb_migrations`. Обеспечивает автоматизацию или web-логику области `pb_migrations` для сценария `1787137200_normalize_sleep_connection_state.js`.
+- **Что это:** `1787137200_normalize_sleep_connection_state.js` — JavaScript-модуль для области `pb_migrations`.
+- **Зачем:** Обеспечивает автоматизацию или web-логику области `pb_migrations` для сценария `1787137200_normalize_sleep_connection_state.js`.
+- **Содержимое:** JavaScript-код и настройки, относящиеся к задаче `1787137200_normalize_sleep_connection_state.js`.
+- **Роль в репозитории:** PocketBase migration
+- **Доказательства использования:** Версионированная миграция схемы/данных PocketBase; применяется до клиента, который зависит от этой схемы (см. `docs/DEPLOY.md`).
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** История production-схемы станет неполной или пропадёт нужная миграция данных.
+- **Уверенность:** HIGH
+- **Владелец / слой:** миграции PocketBase
+- **Обязанности:** Реализует JavaScript-часть сценария `1787137200_normalize_sleep_connection_state.js` в своём каталоге.
+- **Когда открывать:** When результат сборки or maintenance cites `1787137200_normalize_sleep_connection_state.js`.
 - **Можно удалить?** Нет — конфигурация/инструмент репозитория.
 - **Связано с:** `pb_migrations/`, `docs/APP_STRUCTURE.md`.
 

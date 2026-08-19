@@ -15,20 +15,14 @@ SELF_PATH = Path(__file__).resolve().relative_to(ROOT).as_posix()
 DART_EDGE_RE = re.compile(r"^\s*(?:import|export|part)\s+['\"]([^'\"]+)['\"]", re.M)
 EXPORT_STMT_RE = re.compile(r"export\s+['\"][^'\"]+['\"][^;]*;", re.S)
 MAX_BINARY_BYTES = 5_000_000
-LARGE_BINARY_ALLOWLIST: dict[str, dict[str, str]] = {
-    "installer/windows/stt_helper_build/counter_stt_helper.exe": {
-        "git_blob_sha": "75ad10824f8f95359f1f87b71556852238fc786e",
-        "reason": (
-            "Pinned offline desktop-voice HTTP sidecar. The historical backend-rs source is not "
-            "currently versioned in Counter/GOLOS, so this exact blob is retained until a "
-            "reproducible source/artifact pipeline exists."
-        ),
-    },
-}
 BINARY_SUFFIXES = {
     ".exe", ".dll", ".so", ".dylib", ".wav", ".mp3", ".mp4", ".png", ".jpg",
     ".jpeg", ".webp", ".ico", ".jar", ".zip", ".7z", ".pdf",
 }
+STT_BINARY_PATH = "installer/windows/stt_helper_build/counter_stt_helper.exe"
+STT_MANIFEST_PATH = "installer/windows/stt_helper_artifact.json"
+STT_ASSET_NAME = "counter_stt_helper.exe"
+SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 
 BRAIN_PART_PREFIXES = (
     "lib/data/records/",
@@ -68,10 +62,6 @@ def git(*args: str, check: bool = True) -> str:
 
 def git_files() -> list[str]:
     return git("ls-files").splitlines()
-
-
-def git_blob_sha(path: str) -> str:
-    return git("hash-object", "--", path).strip()
 
 
 def text(path: Path) -> str | None:
@@ -239,6 +229,36 @@ def check_structure_growth(violations: list[str]) -> tuple[str | None, int]:
     return base, len(changes)
 
 
+def check_stt_artifact_contract(tracked: set[str], violations: list[str]) -> None:
+    if STT_BINARY_PATH in tracked:
+        violations.append(f"TRACKED_STT_BINARY_FORBIDDEN {STT_BINARY_PATH}")
+
+    manifest_path = ROOT / STT_MANIFEST_PATH
+    if STT_MANIFEST_PATH not in tracked or not manifest_path.is_file():
+        violations.append(f"MISSING_STT_ARTIFACT_MANIFEST {STT_MANIFEST_PATH}")
+        return
+
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8-sig"))
+    except (OSError, json.JSONDecodeError) as exc:
+        violations.append(f"INVALID_STT_ARTIFACT_MANIFEST {STT_MANIFEST_PATH}: {exc}")
+        return
+
+    if manifest.get("schema_version") != 1:
+        violations.append("STT_ARTIFACT_SCHEMA_VERSION must equal 1")
+    tag = manifest.get("release_tag")
+    if not isinstance(tag, str) or not tag.startswith("counter-stt-helper-artifact-"):
+        violations.append(f"INVALID_STT_ARTIFACT_RELEASE_TAG {tag!r}")
+    if manifest.get("asset_name") != STT_ASSET_NAME:
+        violations.append(f"INVALID_STT_ARTIFACT_ASSET_NAME {manifest.get('asset_name')!r}")
+    digest = manifest.get("sha256")
+    if not isinstance(digest, str) or not SHA256_RE.fullmatch(digest):
+        violations.append(f"INVALID_STT_ARTIFACT_SHA256 {digest!r}")
+    size = manifest.get("size_bytes")
+    if not isinstance(size, int) or size <= MAX_BINARY_BYTES:
+        violations.append(f"INVALID_STT_ARTIFACT_SIZE {size!r}")
+
+
 def main() -> int:
     files = git_files()
     incoming: dict[str, set[str]] = {}
@@ -277,18 +297,8 @@ def main() -> int:
         if size <= MAX_BINARY_BYTES:
             continue
         is_binary = p.suffix.lower() in BINARY_SUFFIXES or text(p) is None
-        if not is_binary:
-            continue
-        allow = LARGE_BINARY_ALLOWLIST.get(path)
-        if allow is None:
+        if is_binary:
             violations.append(f"UNAPPROVED_LARGE_BINARY {path} bytes={size}")
-            continue
-        actual_sha = git_blob_sha(path)
-        expected_sha = allow["git_blob_sha"]
-        if actual_sha != expected_sha:
-            violations.append(
-                f"PINNED_LARGE_BINARY_CHANGED {path} expected={expected_sha} actual={actual_sha}"
-            )
 
     sys.path.insert(0, str(ROOT / "scripts" / "manual"))
     from structure_evidence_index import WATCHLIST_PATHS  # noqa: PLC0415
@@ -298,6 +308,7 @@ def main() -> int:
         if path not in tracked:
             violations.append(f"STALE_WATCHLIST_PATH {path}")
 
+    check_stt_artifact_contract(tracked, violations)
     growth_base, changed_count = check_structure_growth(violations)
 
     if violations:
@@ -307,17 +318,11 @@ def main() -> int:
         print(f"VIOLATIONS={len(violations)}", file=sys.stderr)
         return 1
 
-    for path, spec in LARGE_BINARY_ALLOWLIST.items():
-        if path in tracked:
-            size = (ROOT / path).stat().st_size
-            print(
-                f"allowed_large_binary: {path} bytes={size} sha={spec['git_blob_sha']} "
-                f"reason={spec['reason']}"
-            )
     if growth_base:
         print(f"structure_growth: OK base={growth_base[:12]} changed={changed_count}")
     else:
         print("structure_growth: OK no comparison baseline available")
+    print("stt_artifact_contract: OK")
     print("repository_hygiene: OK")
     return 0
 

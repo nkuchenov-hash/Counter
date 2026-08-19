@@ -61,7 +61,7 @@ Short routing map for Cursor / AI. Symbols in backticks.
 
 | What | File | Entry symbol / notes |
 | :--- | :--- | :--- |
-| **Lists screen** | `lib/features/lists/lists_view.dart` | `ListsPage` — wired in `app_shell.dart` IndexedStack index 3 |
+| **Lists screen** | `lib/features/lists/lists_view.dart` | `ListsPage` — wired in canonical `lib/app/shell/app_shell.dart` shell index 3 |
 | **Plans screen** | `lib/features/planning/planning_view.dart` (barrel), `planning_page.dart`, `planning_page_shell.dart` | `PlanningSwipeWrapper` → `PlanningPage`; shell index 1 |
 | **Component Lab (admin-only)** | `lib/features/dev/component_lab_view.dart` | `ComponentLabPage`; More → Dev / Design Lab only when `DatabaseService.instance.settings.isAdmin` |
 | **Shared edit sheets** | `lib/features/shared/activity_detail_sheet.dart` | `ActivityDetailSheet` (router) → `PlanningTaskEditSheet` (plans/lists) or `TimelineRecordSheetContent` (timeline records); barrel: `shared_widgets.dart` |
