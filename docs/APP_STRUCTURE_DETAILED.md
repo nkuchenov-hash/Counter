@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `59d794f1` on 2026-08-19.**
+**Generated from input HEAD `2673255e` on 2026-08-19.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 830 — each appears **exactly once** below.
+**Tracked files:** 829 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -26,7 +26,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Role | Count |
 | :--- | ---: |
-| `production UI` | 166 |
+| `production UI` | 164 |
 | `test` | 106 |
 | `Brain/data` | 87 |
 | `platform build` | 83 |
@@ -42,7 +42,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | `PocketBase backend` | 12 |
 | `installer` | 12 |
 | `Brain Voice` | 10 |
-| `PocketBase migration` | 9 |
+| `PocketBase migration` | 10 |
 | `CI/deployment` | 8 |
 | `shared time` | 7 |
 | `package metadata` | 6 |
@@ -56,7 +56,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 456 |
+| `PROVEN_REQUIRED` | 455 |
 | `REQUIRED_FOR_TEST_OR_TOOLING` | 195 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
 | `GOVERNING_DOCUMENTATION` | 35 |
@@ -67,7 +67,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 770 |
+| `HIGH` | 769 |
 | `MEDIUM` | 60 |
 
 ---
@@ -11601,7 +11601,7 @@ EN:
 - **Contents:** Canonical Flutter widget (`AppCompactSegmentLabel`, `AppCompactTextTab`).
 - **Key code names:** `AppCompactSegmentLabel`, `AppCompactTextTab`
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/planning/widgets/planning_filter_controls.dart`, `lib/features/shared/edit_sheet/parallel_record_panels.dart`, `lib/features/shared/planning_task_edit_sheet.dart`, `lib/features/shared/timeline_record_edit_sheet.dart`, `lib/features/stats/day_stats_dashboard.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/planning/widgets/planning_filter_controls.dart`, `lib/features/shared/edit_sheet/parallel_record_panels.dart`, `lib/features/shared/planning_task_edit_sheet.dart`, `lib/features/shared/timeline_record_edit_sheet.dart`, `lib/features/timeline/timeline_header_controls.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -11618,7 +11618,7 @@ RU:
 - **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
 - **Содержимое:** Канонический Flutter-виджет (logic in `compact_nav_controls`).
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/features/planning/widgets/planning_filter_controls.dart`, `lib/features/shared/edit_sheet/parallel_record_panels.dart`, `lib/features/shared/planning_task_edit_sheet.dart`, `lib/features/shared/timeline_record_edit_sheet.dart`, `lib/features/stats/day_stats_dashboard.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/features/planning/widgets/planning_filter_controls.dart`, `lib/features/shared/edit_sheet/parallel_record_panels.dart`, `lib/features/shared/planning_task_edit_sheet.dart`, `lib/features/shared/timeline_record_edit_sheet.dart`, `lib/features/timeline/timeline_header_controls.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -20920,7 +20920,7 @@ EN:
 - **Contents:** Primary symbols: `SleepRecordPolicy`, `WakingDayWindow`.
 - **Key code names:** `SleepRecordPolicy`, `WakingDayWindow`
 - **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/stats/plan_vs_fact_tab.dart`, `lib/features/stats/stats_view.dart`, `lib/features/timeline/timeline_morning_start.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/stats/stats_view.dart`, `lib/features/timeline/timeline_morning_start.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -20937,7 +20937,7 @@ RU:
 - **Зачем:** Пользователь видит UI из `sleep_record_policy.dart` на edit sheets и voice UI на всех вкладках.
 - **Содержимое:** Dart-модуль `sleep_record_policy.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/features/stats/plan_vs_fact_tab.dart`, `lib/features/stats/stats_view.dart`, `lib/features/timeline/timeline_morning_start.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/features/stats/stats_view.dart`, `lib/features/timeline/timeline_morning_start.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -20986,88 +20986,12 @@ RU:
 - **Связано с:** Edit sheets и voice UI на всех вкладках
 
 
-### `lib/features/stats/day_stats_dashboard.dart`
-
-EN:
-
-- **Human purpose:** `day_stats_dashboard.dart` on stats panel inside Timeline — Productivity stats (embedded in Timeline): switchable day dashboards, preserved detailed tree, plan vs fact. Users see `day_stats_dashboard.dart` when using stats panel inside Timeline.
-- **What this is:** `day_stats_dashboard.dart` on stats panel inside Timeline — Productivity stats (embedded in Timeline): switchable day dashboards, preserved detailed tree, plan vs fact.
-- **Why needed:** Users see `day_stats_dashboard.dart` when using stats panel inside Timeline.
-- **Contents:** Primary symbols: `DayStatsDashboardMode`, `DayStatsCategorySlice`, `DayStatsSession`, `DayStatsDashboardData`, `DayStatsDashboard`, `_ModeRail`.
-- **Key code names:** `DayStatsDashboardMode`, `DayStatsCategorySlice`, `DayStatsSession`, `DayStatsDashboardData`, `DayStatsDashboard`, `_ModeRail`, `_Overview`, `_Hero`
-- **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/stats/stats_view.dart`.
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
-- **Confidence:** HIGH
-- **Owner / layer:** repository root
-- **Responsibilities:** Productivity stats (embedded in Timeline): switchable day dashboards, preserved detailed tree, plan vs fact
-- **When to open:** When behavior tied to `day_stats_dashboard.dart` breaks or you need to change its documented role.
-- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: Productivity stats (embedded in Timeline): switchable day dashboards, preserved detailed tree, plan vs fact
-
-RU:
-
-- **Зачем файл человеку:** `day_stats_dashboard.dart` на панель stats внутри Timeline — Поддерживает поведение `day_stats_dashboard` в этой feature-зоне.. Пользователь видит UI из `day_stats_dashboard.dart` на панель stats внутри Timeline.
-- **Что это:** `day_stats_dashboard.dart` на панель stats внутри Timeline — Поддерживает поведение `day_stats_dashboard` в этой feature-зоне..
-- **Зачем:** Пользователь видит UI из `day_stats_dashboard.dart` на панель stats внутри Timeline.
-- **Содержимое:** Dart-модуль `day_stats_dashboard.dart` — классы и helpers в исходнике.
-- **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/features/stats/stats_view.dart`.
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
-- **Уверенность:** HIGH
-- **Владелец / слой:** корень репозитория
-- **Обязанности:** Поддерживает поведение `day_stats_dashboard` в этой feature-зоне.
-- **Когда открывать:** Когда ломается поведение, связанное с `day_stats_dashboard.dart`.
-- **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** `lib/features/stats/`, `docs/APP_STRUCTURE.md`
-
-
-### `lib/features/stats/plan_vs_fact_tab.dart`
-
-EN:
-
-- **Human purpose:** `plan_vs_fact_tab.dart` on stats panel inside Timeline — Productivity stats (embedded in Timeline): switchable day dashboards, preserved detailed tree, plan vs fact. Users see `plan_vs_fact_tab.dart` when using stats panel inside Timeline.
-- **What this is:** `plan_vs_fact_tab.dart` on stats panel inside Timeline — Productivity stats (embedded in Timeline): switchable day dashboards, preserved detailed tree, plan vs fact.
-- **Why needed:** Users see `plan_vs_fact_tab.dart` when using stats panel inside Timeline.
-- **Contents:** Primary symbols: `_PlanFacts`, `PlanVsFactV2Tab`, `_PlanVsFactV2TabState`, `_PlanFactContent`, `_OutcomeHero`.
-- **Key code names:** `_PlanFacts`, `PlanVsFactV2Tab`, `_PlanVsFactV2TabState`, `_PlanFactContent`, `_OutcomeHero`
-- **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/stats/stats_view.dart`.
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
-- **Confidence:** HIGH
-- **Owner / layer:** repository root
-- **Responsibilities:** Productivity stats (embedded in Timeline): switchable day dashboards, preserved detailed tree, plan vs fact
-- **When to open:** When behavior tied to `plan_vs_fact_tab.dart` breaks or you need to change its documented role.
-- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: Productivity stats (embedded in Timeline): switchable day dashboards, preserved detailed tree, plan vs fact
-
-RU:
-
-- **Зачем файл человеку:** `plan_vs_fact_tab.dart` на панель stats внутри Timeline — Поддерживает поведение `plan_vs_fact_tab` в этой feature-зоне.. Пользователь видит UI из `plan_vs_fact_tab.dart` на панель stats внутри Timeline.
-- **Что это:** `plan_vs_fact_tab.dart` на панель stats внутри Timeline — Поддерживает поведение `plan_vs_fact_tab` в этой feature-зоне..
-- **Зачем:** Пользователь видит UI из `plan_vs_fact_tab.dart` на панель stats внутри Timeline.
-- **Содержимое:** Dart-модуль `plan_vs_fact_tab.dart` — классы и helpers в исходнике.
-- **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/features/stats/stats_view.dart`.
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
-- **Уверенность:** HIGH
-- **Владелец / слой:** корень репозитория
-- **Обязанности:** Поддерживает поведение `plan_vs_fact_tab` в этой feature-зоне.
-- **Когда открывать:** Когда ломается поведение, связанное с `plan_vs_fact_tab.dart`.
-- **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** `lib/features/stats/`, `docs/APP_STRUCTURE.md`
-
-
 ### `lib/features/stats/stats_detail_tree.dart`
 
 EN:
 
-- **Human purpose:** `stats_detail_tree.dart` on stats panel inside Timeline — Productivity stats (embedded in Timeline): switchable day dashboards, preserved detailed tree, plan vs fact. Users see `stats_detail_tree.dart` when using stats panel inside Timeline.
-- **What this is:** `stats_detail_tree.dart` on stats panel inside Timeline — Productivity stats (embedded in Timeline): switchable day dashboards, preserved detailed tree, plan vs fact.
+- **Human purpose:** `stats_detail_tree.dart` on stats panel inside Timeline — Productivity stats (embedded in Timeline): waking-day project/category time totals with expandable task groups and individual sessions. Users see `stats_detail_tree.dart` when using stats panel inside Timeline.
+- **What this is:** `stats_detail_tree.dart` on stats panel inside Timeline — Productivity stats (embedded in Timeline): waking-day project/category time totals with expandable task groups and individual sessions.
 - **Why needed:** Users see `stats_detail_tree.dart` when using stats panel inside Timeline.
 - **Contents:** Primary symbols: `StatsDetailTree`.
 - **Key code names:** `StatsDetailTree`
@@ -21077,10 +21001,10 @@ EN:
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
 - **Owner / layer:** repository root
-- **Responsibilities:** Productivity stats (embedded in Timeline): switchable day dashboards, preserved detailed tree, plan vs fact
+- **Responsibilities:** Productivity stats (embedded in Timeline): waking-day project/category time totals with expandable task groups and individual sessions
 - **When to open:** When behavior tied to `stats_detail_tree.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: Productivity stats (embedded in Timeline): switchable day dashboards, preserved detailed tree, plan vs fact
+- **Connected to:** APP_STRUCTURE role: Productivity stats (embedded in Timeline): waking-day project/category time totals with expandable task groups and indiv
 
 RU:
 
@@ -21104,8 +21028,8 @@ RU:
 
 EN:
 
-- **Human purpose:** `stats_view.dart` on stats panel inside Timeline — Productivity stats (embedded in Timeline): switchable day dashboards, preserved detailed tree, plan vs fact. Users see `stats_view.dart` when using stats panel inside Timeline.
-- **What this is:** `stats_view.dart` on stats panel inside Timeline — Productivity stats (embedded in Timeline): switchable day dashboards, preserved detailed tree, plan vs fact.
+- **Human purpose:** `stats_view.dart` on stats panel inside Timeline — Productivity stats (embedded in Timeline): waking-day project/category time totals with expandable task groups and individual sessions. Users see `stats_view.dart` when using stats panel inside Timeline.
+- **What this is:** `stats_view.dart` on stats panel inside Timeline — Productivity stats (embedded in Timeline): waking-day project/category time totals with expandable task groups and individual sessions.
 - **Why needed:** Users see `stats_view.dart` when using stats panel inside Timeline.
 - **Contents:** Primary symbols: `StatsView`, `_StatsViewState`.
 - **Key code names:** `StatsView`, `_StatsViewState`
@@ -21115,10 +21039,10 @@ EN:
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
 - **Owner / layer:** repository root
-- **Responsibilities:** Productivity stats (embedded in Timeline): switchable day dashboards, preserved detailed tree, plan vs fact
+- **Responsibilities:** Productivity stats (embedded in Timeline): waking-day project/category time totals with expandable task groups and individual sessions
 - **When to open:** When behavior tied to `stats_view.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: Productivity stats (embedded in Timeline): switchable day dashboards, preserved detailed tree, plan vs fact
+- **Connected to:** APP_STRUCTURE role: Productivity stats (embedded in Timeline): waking-day project/category time totals with expandable task groups and indiv
 
 RU:
 
@@ -27850,6 +27774,43 @@ RU:
 - **Связано с:** `pb_migrations/`, `docs/APP_STRUCTURE.md`.
 
 
+### `pb_migrations/1787143500_force_google_fit_recent_sleep_reconcile.js`
+
+EN:
+
+- **Human purpose:** JavaScript source `1787143500_force_google_fit_recent_sleep_reconcile.js` in `pb_migrations` — repo tooling or config. Tracked because `pb_migrations` needs `1787143500_force_google_fit_recent_sleep_reconcile.js` for build, CI, or maintenance.
+- **What this is:** JavaScript source `1787143500_force_google_fit_recent_sleep_reconcile.js` in `pb_migrations` — repo tooling or config.
+- **Why needed:** Tracked because `pb_migrations` needs `1787143500_force_google_fit_recent_sleep_reconcile.js` for build, CI, or maintenance.
+- **Contents:** Open `1787143500_force_google_fit_recent_sleep_reconcile.js` when working on `pb_migrations` (see folder section above).
+- **Repository role:** PocketBase migration
+- **Evidence of use:** Versioned PocketBase schema/data migration; applied by PocketBase before client code that depends on the schema (see `docs/DEPLOY.md`).
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Production schema history becomes incomplete or a required data migration is lost.
+- **Confidence:** HIGH
+- **Owner / layer:** PocketBase migrations
+- **Responsibilities:** Supports `pb_migrations` workflow for `1787143500_force_google_fit_recent_sleep_reconcile.js`.
+- **When to open:** When build output or maintenance cites `1787143500_force_google_fit_recent_sleep_reconcile.js`.
+- **Can it be deleted?** No — part of repository tooling or config.
+- **Connected to:** `pb_migrations/`, `docs/APP_STRUCTURE.md`.
+
+RU:
+
+- **Зачем файл человеку:** `1787143500_force_google_fit_recent_sleep_reconcile.js` — JavaScript-модуль для области `pb_migrations`. Обеспечивает автоматизацию или web-логику области `pb_migrations` для сценария `1787143500_force_google_fit_recent_sleep_reconcile.js`.
+- **Что это:** `1787143500_force_google_fit_recent_sleep_reconcile.js` — JavaScript-модуль для области `pb_migrations`.
+- **Зачем:** Обеспечивает автоматизацию или web-логику области `pb_migrations` для сценария `1787143500_force_google_fit_recent_sleep_reconcile.js`.
+- **Содержимое:** JavaScript-код и настройки, относящиеся к задаче `1787143500_force_google_fit_recent_sleep_reconcile.js`.
+- **Роль в репозитории:** PocketBase migration
+- **Доказательства использования:** Версионированная миграция схемы/данных PocketBase; применяется до клиента, который зависит от этой схемы (см. `docs/DEPLOY.md`).
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** История production-схемы станет неполной или пропадёт нужная миграция данных.
+- **Уверенность:** HIGH
+- **Владелец / слой:** миграции PocketBase
+- **Обязанности:** Реализует JavaScript-часть сценария `1787143500_force_google_fit_recent_sleep_reconcile.js` в своём каталоге.
+- **Когда открывать:** When результат сборки or maintenance cites `1787143500_force_google_fit_recent_sleep_reconcile.js`.
+- **Можно удалить?** Нет — конфигурация/инструмент репозитория.
+- **Связано с:** `pb_migrations/`, `docs/APP_STRUCTURE.md`.
+
+
 ### `pubspec.lock`
 
 EN:
@@ -27933,7 +27894,7 @@ EN:
 - **Why needed:** Prevents accidental architecture breaks during refactors.
 - **Contents:** PowerShell rules matching `docs/APP_STRUCTURE.md`.
 - **Repository role:** audit tool
-- **Evidence of use:** Invoked or documented by: `.github/workflows/architecture-guard.yml`, `.github/workflows/deploy-pocketbase.yml`, `.github/workflows/windows-desktop-build.yml`, `AGENTS.md`, `AGENT_NAVIGATION.md`.
+- **Evidence of use:** Invoked or documented by: `.github/workflows/architecture-guard.yml`, `.github/workflows/windows-desktop-build.yml`, `AGENTS.md`, `AGENT_NAVIGATION.md`, `CHANGELOG.md`.
 - **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Deletion consequence:** Broken audit/deploy/manual maintenance command.
 - **Confidence:** HIGH
@@ -27950,7 +27911,7 @@ RU:
 - **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
 - **Содержимое:** Команды PowerShell/Python/Dart в `architecture_guard.ps1`.
 - **Роль в репозитории:** audit tool
-- **Доказательства использования:** Вызывается или описан в: `.github/workflows/architecture-guard.yml`, `.github/workflows/deploy-pocketbase.yml`, `.github/workflows/windows-desktop-build.yml`, `AGENTS.md`, `AGENT_NAVIGATION.md`.
+- **Доказательства использования:** Вызывается или описан в: `.github/workflows/architecture-guard.yml`, `.github/workflows/windows-desktop-build.yml`, `AGENTS.md`, `AGENT_NAVIGATION.md`, `CHANGELOG.md`.
 - **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Что будет, если удалить:** Сломается audit/deploy или ручная команда сопровождения.
 - **Уверенность:** HIGH
@@ -27970,7 +27931,7 @@ EN:
 - **Why needed:** Automates a repeatable task documented in repo notes or `DEPLOY.md`.
 - **Contents:** PowerShell, Python, or Dart commands for `deployment_contract.py`.
 - **Repository role:** audit tool
-- **Evidence of use:** Invoked or documented by: `.github/workflows/architecture-guard.yml`, `.github/workflows/deploy-pocketbase.yml`.
+- **Evidence of use:** Invoked or documented by: `.github/workflows/architecture-guard.yml`.
 - **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Deletion consequence:** Broken audit/deploy/manual maintenance command.
 - **Confidence:** HIGH
@@ -27987,7 +27948,7 @@ RU:
 - **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
 - **Содержимое:** Команды PowerShell/Python/Dart в `deployment_contract.py`.
 - **Роль в репозитории:** audit tool
-- **Доказательства использования:** Вызывается или описан в: `.github/workflows/architecture-guard.yml`, `.github/workflows/deploy-pocketbase.yml`.
+- **Доказательства использования:** Вызывается или описан в: `.github/workflows/architecture-guard.yml`.
 - **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Что будет, если удалить:** Сломается audit/deploy или ручная команда сопровождения.
 - **Уверенность:** HIGH
@@ -28007,7 +27968,7 @@ EN:
 - **Why needed:** Automates a repeatable task documented in repo notes or `DEPLOY.md`.
 - **Contents:** PowerShell, Python, or Dart commands for `documentation_parity.py`.
 - **Repository role:** audit tool
-- **Evidence of use:** Invoked or documented by: `.github/workflows/architecture-guard.yml`, `.github/workflows/deploy-pocketbase.yml`, `AGENTS.md`, `AGENT_NAVIGATION.md`, `CHANGELOG.md`.
+- **Evidence of use:** Invoked or documented by: `.github/workflows/architecture-guard.yml`, `AGENTS.md`, `AGENT_NAVIGATION.md`, `CHANGELOG.md`, `docs/ARCHITECTURE.md`.
 - **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Deletion consequence:** Broken audit/deploy/manual maintenance command.
 - **Confidence:** HIGH
@@ -28024,7 +27985,7 @@ RU:
 - **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
 - **Содержимое:** Команды PowerShell/Python/Dart в `documentation_parity.py`.
 - **Роль в репозитории:** audit tool
-- **Доказательства использования:** Вызывается или описан в: `.github/workflows/architecture-guard.yml`, `.github/workflows/deploy-pocketbase.yml`, `AGENTS.md`, `AGENT_NAVIGATION.md`, `CHANGELOG.md`.
+- **Доказательства использования:** Вызывается или описан в: `.github/workflows/architecture-guard.yml`, `AGENTS.md`, `AGENT_NAVIGATION.md`, `CHANGELOG.md`, `docs/ARCHITECTURE.md`.
 - **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Что будет, если удалить:** Сломается audit/deploy или ручная команда сопровождения.
 - **Уверенность:** HIGH
@@ -28044,7 +28005,7 @@ EN:
 - **Why needed:** Automates a repeatable task documented in repo notes or `DEPLOY.md`.
 - **Contents:** PowerShell, Python, or Dart commands for `pocketbase_schema_contract.py`.
 - **Repository role:** audit tool
-- **Evidence of use:** Invoked or documented by: `.github/workflows/architecture-guard.yml`, `.github/workflows/deploy-pocketbase.yml`.
+- **Evidence of use:** Invoked or documented by: `.github/workflows/architecture-guard.yml`.
 - **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Deletion consequence:** Broken audit/deploy/manual maintenance command.
 - **Confidence:** HIGH
@@ -28061,7 +28022,7 @@ RU:
 - **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
 - **Содержимое:** Команды PowerShell/Python/Dart в `pocketbase_schema_contract.py`.
 - **Роль в репозитории:** audit tool
-- **Доказательства использования:** Вызывается или описан в: `.github/workflows/architecture-guard.yml`, `.github/workflows/deploy-pocketbase.yml`.
+- **Доказательства использования:** Вызывается или описан в: `.github/workflows/architecture-guard.yml`.
 - **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Что будет, если удалить:** Сломается audit/deploy или ручная команда сопровождения.
 - **Уверенность:** HIGH
@@ -28081,7 +28042,7 @@ EN:
 - **Why needed:** Automates a repeatable task documented in repo notes or `DEPLOY.md`.
 - **Contents:** PowerShell, Python, or Dart commands for `repository_hygiene.py`.
 - **Repository role:** audit tool
-- **Evidence of use:** Invoked or documented by: `.github/workflows/architecture-guard.yml`, `.github/workflows/deploy-pocketbase.yml`, `AGENTS.md`, `AGENT_NAVIGATION.md`, `CHANGELOG.md`.
+- **Evidence of use:** Invoked or documented by: `.github/workflows/architecture-guard.yml`, `AGENTS.md`, `AGENT_NAVIGATION.md`, `CHANGELOG.md`, `docs/ARCHITECTURE.md`.
 - **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Deletion consequence:** Broken audit/deploy/manual maintenance command.
 - **Confidence:** HIGH
@@ -28098,7 +28059,7 @@ RU:
 - **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
 - **Содержимое:** Команды PowerShell/Python/Dart в `repository_hygiene.py`.
 - **Роль в репозитории:** audit tool
-- **Доказательства использования:** Вызывается или описан в: `.github/workflows/architecture-guard.yml`, `.github/workflows/deploy-pocketbase.yml`, `AGENTS.md`, `AGENT_NAVIGATION.md`, `CHANGELOG.md`.
+- **Доказательства использования:** Вызывается или описан в: `.github/workflows/architecture-guard.yml`, `AGENTS.md`, `AGENT_NAVIGATION.md`, `CHANGELOG.md`, `docs/ARCHITECTURE.md`.
 - **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Что будет, если удалить:** Сломается audit/deploy или ручная команда сопровождения.
 - **Уверенность:** HIGH

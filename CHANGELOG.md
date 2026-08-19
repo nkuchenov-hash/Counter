@@ -1,3 +1,9 @@
+## 2026-08-19 — Stats baseline simplification [product cleanup]
+
+- Removed the experimental Overview, Day, Plan-Fact, and dashboard presentation layers from Timeline > Stats.
+- Stats now directly renders the preserved expandable waking-day project/category time tree with grouped tasks and individual sessions.
+- Preserved existing waking-day boundaries, day swipe navigation, timezone behavior, aggregation, and Timeline record semantics; no PocketBase/schema changes.
+
 ## 2026-08-18 — Durable Paths architecture [engineering]
 
 - Replaced plan-backed Path runtime compatibility with dedicated PocketBase `paths` + immutable `path_revisions` and a versioned server migration that imports existing V2 roots.

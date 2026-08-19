@@ -80,16 +80,16 @@
 
 ---
 
-## 6. Stats & Plan vs Fact
+## 6. Stats
 
 | Field | Detail |
 | :--- | :--- |
-| **User-facing capability** | **Stats:** hierarchical category tree with durations for selected day (inside Timeline tab). **Plan vs Fact:** compares scheduled plans vs actual records for the wall day. |
-| **Proof** | `lib/features/stats/stats_view.dart` — `StatsView`; `lib/features/stats/plan_vs_fact_tab.dart` — `PlanVsFactTab`; `lib/data/plan_service.dart` plan-vs-fact helpers |
-| **User value** | Close the loop between intention and reality |
-| **Status** | **public-ready** (basic plan vs fact; not enterprise analytics) |
-| **Risks / caveats** | Stats respect profile timezone and day clamping; not a full reporting/export suite for end users (admin scripts exist separately). |
-| **Website angle** | “See what you planned — and what you actually did.” |
+| **User-facing capability** | Hierarchical project/category time statistics for the selected waking day inside Timeline. Expand categories into grouped tasks and individual tracked sessions. |
+| **Proof** | `lib/features/stats/stats_view.dart` — `StatsView`; `lib/features/stats/stats_detail_tree.dart` — `StatsDetailTree`; `lib/data/category_service.dart` — stats aggregation/duration helpers |
+| **User value** | See where tracked time actually went across projects and categories |
+| **Status** | **public-ready** |
+| **Risks / caveats** | Stats respect profile timezone and wake-to-bed boundaries; this is intentionally a focused time breakdown, not a reporting/export dashboard. |
+| **Website angle** | “See where your time went.” |
 
 ---
 
