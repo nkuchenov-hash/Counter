@@ -1,13 +1,12 @@
 name: Deploy LIFE OS Flutter Web to GitHub Pages
 
-# LIFE OS deploy is independent from Igropoisk data collection.
-# Server schema/hook validation is the release gate: a main push first completes
-# "Deploy PocketBase hooks and migrations", then this workflow publishes that
-# exact successful head SHA.
+# Web delivery is independent from PocketBase deployment. Server hooks and
+# migrations have their own production workflow; ordinary UI fixes must not be
+# blocked by server validation or SSH deployment.
 on:
-  workflow_run:
-    workflows: ["Deploy PocketBase hooks and migrations"]
-    types: [completed]
+  push:
+    branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -18,18 +17,12 @@ concurrency:
 
 jobs:
   build-and-deploy:
-    if: >-
-      github.event.workflow_run.conclusion == 'success' &&
-      github.event.workflow_run.event == 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    env:
-      TARGET_SHA: ${{ github.event.workflow_run.head_sha }}
     steps:
-      - name: Checkout release commit
+      - name: Checkout current main
         uses: actions/checkout@v4
         with:
-          ref: ${{ env.TARGET_SHA }}
           fetch-depth: 0
 
       - name: Set up Flutter 3.41.6
