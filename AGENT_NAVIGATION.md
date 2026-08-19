@@ -4,7 +4,7 @@
 
 Flutter time tracker. Owner: Nick (UX designer, not a developer). Goal: best time tracker possible, tidy codebase where every reusable thing lives in one place.
 
-**Current velocity track (2026-06-11):** Feature work paused · active project is V3/V7 only: `docs/UX_CONTRACT.md`, `docs/DESIGN_SYSTEM.md`, canonical Flutter components, and admin-only Component Lab.
+**Current priority:** read `docs/ROADMAP.md`. This file is a navigation map, not a second roadmap; do not copy temporary priority state here.
 
 ---
 
@@ -29,7 +29,7 @@ Flutter time tracker. Owner: Nick (UX designer, not a developer). Goal: best tim
 
 ## Structure check (vs `docs/APP_STRUCTURE.md`)
 
-Verified 2026-08-18 after the Shell/Profile/Planning/Voice ownership pass and repo-wide documentation parity audit. **Current governing docs have no accepted structure drift.** Historical reports may describe earlier paths, but this navigation map points only at live canonical owners.
+Verified 2026-08-19 after the durable Paths and repo-wide structure-growth guard pass. **Current governing docs have no accepted structure drift.** Historical reports may describe earlier paths, but this navigation map points only at live canonical owners.
 
 ---
 
@@ -81,7 +81,7 @@ Short routing map for Cursor / AI. Symbols in backticks.
 | **PB config** | `lib/data/pb_config.dart` | `kPocketBaseUrl`, `PbCollections`, expand constants |
 | **PB — records** | `lib/data/records/record_crud.dart` + coordinator | `writeRecord`, `stopRecordByDocId`, `updateRecord`, `patchRecord`, `deleteRecordByDocId`, `flushPendingRecordMutations`, realtime |
 | **PB — plans & lists** | `lib/data/plan_service.dart` | `fetchPlans`, `fetchBacklogPlans`, `addPlanningTask`, `updatePlanningTask`, `deletePlanningTask`, `deletePlanningTasksBulk`, `flushPendingPlanMutations`, `planningStream`, `_syncPlanTagsPocket` |
-| **Paths domain** | `lib/data/paths/path_models.dart`, `path_repository.dart`, `path_service.dart` | Durable revisions; `paths.active_revision_id` is the active gate |
+| **Paths domain** | `lib/data/paths/path_models.dart`, `path_repository.dart`, `path_service.dart` | Durable revisions; `paths.active_revision_link` is the sole active gate |
 | **Path → Planner** | `lib/data/plans/path_planner_bridge.dart` | Sole executable projection boundary; no scheduling from Paths UI/domain |
 | **Offline sync banner** | `lib/app/shell/shared/offline_sync_status_bar.dart` | `OfflineSyncStatusBar` via `ShellTopStatusBars` |
 | **PB — categories** | `lib/data/categories/category_crud.dart` + `category_lookup.dart` + coordinator | `addNestedCategory`, `updateCategory`, `findCategoryByFuzzyMatch` |
@@ -194,7 +194,8 @@ Performance law is permanent, but the old P0U experiment filenames are retired. 
 | Mounted/eager day strip | `lib/core/widgets/day_content_strip.dart` | `EagerDayContentStrip` + mounted slot implementation |
 | Plan duplicate log | `lib/data/plans/diagnostics/plan_duplicate_log.dart` | Planning-domain duplicate/stream lifecycle markers |
 | Structure guard | `scripts/audit/architecture_guard.ps1` | `-Strict` enforces architecture boundaries + APP_STRUCTURE manifest |
-| Documentation parity | `scripts/audit/documentation_parity.py` | Live governing-doc path checks + reverse APP_STRUCTURE check |
+| Structure growth ratchet | `scripts/audit/structure_growth_contract.py` | CI blocks new oversized Dart files, further growth of already-oversized files, and new workstation-coupled paths |
+| Documentation parity | `scripts/audit/documentation_parity.py` | Live path checks, reverse APP_STRUCTURE check, and durable semantic-contract drift checks |
 | Detailed structure guide | `docs/APP_STRUCTURE_DETAILED.md` | Generated bilingual per-file guide |
 
 ---
@@ -244,7 +245,7 @@ See `docs/ROADMAP.md` Phase 1 for the full list. Two critical ones to know:
 
 ## F1 / Lists — shipped
 
-O1 offline-first, V1, and F1 Lists are **shipped** (`docs/ROADMAP.md`). F2A and F2C are accepted; F2B/F3/all feature work are paused unless explicitly requested. Active work is V3/V7.
+O1 offline-first, V1, and F1 Lists are **shipped** (`docs/ROADMAP.md`). F2A and F2C are accepted. These are historical shipped-status notes; current priority lives only in `docs/ROADMAP.md`.
 
 | Item | Status | Notes |
 | :--- | :--- | :--- |
@@ -281,7 +282,7 @@ O1 offline-first, V1, and F1 Lists are **shipped** (`docs/ROADMAP.md`). F2A and 
 
 ### Time mode
 
-- UTC storage; profile TZ projection for filter/placement/now-line; wall-time create/edit; **5-min** snap/min; micro/compact/medium/large density; now-line above cards; no out-of-range bucket.
+- UTC storage; profile TZ projection for filter/placement/now-line; wall-time create/edit; **10-minute** minimum duration and interaction snap; micro/compact/medium/large density; now-line above cards; no out-of-range bucket.
 
 ### Recurring edit
 
