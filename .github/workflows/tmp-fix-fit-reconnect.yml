@@ -1,0 +1,40 @@
+name: One-time Google Fit reconnect cleanup
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/tmp-fix-fit-reconnect.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Patch reconnect detection
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('pb_hooks/google_fit_sleep_runtime.js')
+          s=p.read_text()
+          old='''    return raw.indexOf("account_not_linked") >= 0 ||\n        raw.indexOf("google health sleep request") >= 0 ||\n        raw.indexOf("insufficient authentication scopes") >= 0 ||'''
+          new='''    return raw.indexOf("account_not_linked") >= 0 ||\n        raw.indexOf("google health authorization is required") >= 0 ||\n        raw.indexOf("google health sleep request") >= 0 ||\n        raw.indexOf("insufficient authentication scopes") >= 0 ||'''
+          if old not in s:
+              raise SystemExit('expected reconnect block not found')
+          p.write_text(s.replace(old,new,1))
+          PY
+          node --check pb_hooks/google_fit_sleep_runtime.js
+      - name: Commit patch and remove workflow
+        run: |
+          rm -f .github/workflows/tmp-fix-fit-reconnect.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add pb_hooks/google_fit_sleep_runtime.js .github/workflows/tmp-fix-fit-reconnect.yml
+          git commit -m "Require Google Fit reauthorization after Health API detour"
+          git push origin HEAD:main
