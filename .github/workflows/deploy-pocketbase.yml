@@ -53,22 +53,21 @@ jobs:
           systemctl restart "$service_name"
           REMOTE
 
-      - name: Wait for probe cron
-        run: sleep 75
-
-      - name: Read sanitized source freshness
+      - name: Read Google Fit cloud source freshness
         shell: bash
         run: |
           set -euo pipefail
-          ssh -i ~/.ssh/lifeos_pocketbase -p "$SSH_PORT" root@217.114.0.201 \
-            "POCKETBASE_SERVICE='$POCKETBASE_SERVICE' bash -s" <<'REMOTE'
-          set -euo pipefail
-          service_name="${POCKETBASE_SERVICE:-}"
-          if [[ -z "$service_name" ]]; then service_name="$(systemctl list-unit-files --type=service --no-legend 2>/dev/null | awk 'tolower($1) ~ /pocketbase/ && !found {print $1; found=1}')"; fi
-          line="$(journalctl -u "$service_name" --since '3 minutes ago' --no-pager 2>/dev/null | grep 'sleep cloud probe' | tail -n 1 || true)"
-          [[ -n "$line" ]]
-          printf '%s\n' "$line"
-          REMOTE
+          for attempt in {1..30}; do
+            code="$(curl -sS -o /tmp/probe.json -w '%{http_code}' https://217-114-0-201.sslip.io/api/__lifeos_sleep_cloud_probe_5f7c9a2e || true)"
+            if [[ "$code" == "200" ]]; then
+              cat /tmp/probe.json
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Probe endpoint did not return 200." >&2
+          cat /tmp/probe.json 2>/dev/null || true
+          exit 1
 
       - name: Remove temporary cloud probe
         if: always()
