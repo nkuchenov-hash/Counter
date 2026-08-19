@@ -1,0 +1,96 @@
+name: Notes UX batch runner
+
+on:
+  pull_request:
+    branches: [gh-pages]
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: notes-ux-batch-runner
+  cancel-in-progress: false
+
+jobs:
+  run:
+    if: github.event.pull_request.head.ref == 'hotfix/run-notes-production-build'
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout main source
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Checkout patch definition
+        uses: actions/checkout@v4
+        with:
+          ref: hotfix/run-notes-production-build
+          path: automation
+          fetch-depth: 1
+
+      - name: Snapshot Pages companion content
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: pages
+          fetch-depth: 1
+
+      - name: Extract and apply focused patch
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          src = Path('automation/.github/workflows/bootstrap-notes-hotfix.yml').read_text().splitlines()
+          start = next(i for i, line in enumerate(src) if "python3 - <<'PY'" in line) + 1
+          end = next(i for i in range(start, len(src)) if src[i].strip() == 'PY')
+          body = []
+          for line in src[start:end]:
+              body.append(line[10:] if line.startswith('          ') else line)
+          Path('/tmp/apply_notes_batch.py').write_text('\n'.join(body) + '\n')
+          PY
+          python3 /tmp/apply_notes_batch.py
+          git diff --check
+
+      - name: Commit source to main
+        run: |
+          git config user.name 'nkuchenov-hash'
+          git config user.email 'nkuchenov-hash@users.noreply.github.com'
+          git add lib/features/notes lib/features/lists/lists_view.dart lib/features/lists/lists_filters.dart lib/shared/categories
+          git commit -m 'Fix Notes category picker cards clipboard and editor UX'
+          git push origin HEAD:main
+          echo "SOURCE_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+
+      - name: Set up Flutter 3.41.6
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.6'
+          channel: stable
+
+      - name: Build verified web
+        run: |
+          mkdir -p lib/core/env
+          printf '%s\n' 'abstract final class Env {' '  static const String placeholder = '\'''\'';' '}' > lib/core/env/env.dart
+          flutter pub get
+          flutter analyze --no-fatal-infos --no-fatal-warnings
+          flutter build web --release --base-href="/Counter/" --no-tree-shake-icons --no-wasm-dry-run --pwa-strategy=none \
+            --dart-define=GIT_COMMIT="$(git rev-parse --short HEAD)" \
+            --dart-define=BUILD_TIME="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          printf '%s\n' "$(git rev-parse HEAD)" > build/web/.lifeos-source-sha
+
+      - name: Preserve companion content
+        run: |
+          if [ -d pages/igropoisk ]; then
+            rm -rf build/web/igropoisk
+            cp -R pages/igropoisk build/web/igropoisk
+          fi
+          mkdir -p build/web/.github/workflows
+          cp pages/.github/workflows/deploy.yml build/web/.github/workflows/deploy.yml
+
+      - name: Deploy verified web
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: build/web
+          branch: gh-pages
+          commit-message: 'Deploy Notes UX batch from ${{ env.SOURCE_SHA }}'
