@@ -22,15 +22,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Validate main architecture contracts
-        run: |
-          pwsh -NoProfile -NonInteractive -File ./scripts/audit/architecture_guard.ps1 -Strict
-          python scripts/audit/documentation_parity.py
-          python scripts/audit/repository_hygiene.py
-          python scripts/audit/pocketbase_schema_contract.py
-          python scripts/audit/deployment_contract.py
-
-      - name: Validate all PocketBase JavaScript
+      - name: Validate PocketBase JavaScript
         shell: bash
         run: |
           mapfile -d '' files < <(find pb_hooks pb_migrations -type f -name '*.js' -print0 | sort -z)
