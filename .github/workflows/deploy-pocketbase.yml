@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - '.github/workflows/deploy-pocketbase.yml'
+      - 'pb_hooks/sleep_cloud_probe.pb.js'
 
 permissions:
   contents: read
@@ -18,17 +19,26 @@ jobs:
       POCKETBASE_SERVICE: ${{ secrets.POCKETBASE_SERVICE }}
       POCKETBASE_DEPLOY_DIR: ${{ secrets.POCKETBASE_DEPLOY_DIR }}
     steps:
-      - name: Read sanitized production sleep state
+      - uses: actions/checkout@v4
+
+      - name: Validate probe
+        run: node --check pb_hooks/sleep_cloud_probe.pb.js
+
+      - name: Prepare SSH
         shell: bash
         run: |
           set -euo pipefail
-          SSH_USER="root"
-          SSH_HOST="217.114.0.201"
           install -m 700 -d ~/.ssh
           printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/lifeos_pocketbase
           chmod 600 ~/.ssh/lifeos_pocketbase
-          ssh-keyscan -p "$SSH_PORT" -H "$SSH_HOST" >> ~/.ssh/known_hosts
-          ssh -i ~/.ssh/lifeos_pocketbase -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" \
+          ssh-keyscan -p "$SSH_PORT" -H 217.114.0.201 >> ~/.ssh/known_hosts
+
+      - name: Install temporary cloud probe
+        shell: bash
+        run: |
+          set -euo pipefail
+          scp -i ~/.ssh/lifeos_pocketbase -P "$SSH_PORT" pb_hooks/sleep_cloud_probe.pb.js root@217.114.0.201:/tmp/sleep_cloud_probe.pb.js
+          ssh -i ~/.ssh/lifeos_pocketbase -p "$SSH_PORT" root@217.114.0.201 \
             "POCKETBASE_SERVICE='$POCKETBASE_SERVICE' POCKETBASE_DEPLOY_DIR='$POCKETBASE_DEPLOY_DIR' bash -s" <<'REMOTE'
           set -euo pipefail
           service_name="${POCKETBASE_SERVICE:-}"
@@ -37,39 +47,42 @@ jobs:
           app_dir="${POCKETBASE_DEPLOY_DIR:-}"
           if [[ -z "$app_dir" && -n "$service_name" ]]; then app_dir="$(systemctl show "$service_name" -p WorkingDirectory --value 2>/dev/null || true)"; fi
           if [[ -z "$app_dir" && -n "$pid" ]]; then app_dir="$(readlink -f "/proc/$pid/cwd" 2>/dev/null || true)"; fi
-          python3 - "$app_dir/pb_data/data.db" <<'PY'
-          import sqlite3, sys
-          con=sqlite3.connect(f'file:{sys.argv[1]}?mode=ro', uri=True); con.row_factory=sqlite3.Row
-          r=con.execute("SELECT enabled,status,last_error,last_sync_at,last_session_count,last_imported_count,length(coalesce(refresh_token_enc,'')) token_len FROM sleep_sync_connections WHERE provider='google_fit' LIMIT 1").fetchone()
-          def ec(v):
-              s=(v or '').lower()
-              if not s:return 'none'
-              if 'invalid_grant' in s:return 'invalid_grant'
-              if '403' in s or 'scope' in s or 'permission' in s:return 'permission'
-              if '401' in s:return 'auth'
-              return 'other'
-          print('connection='+str(bool(r)).lower())
-          if r:
-              print('enabled='+str(bool(r['enabled'])).lower())
-              print('token='+str(r['token_len']>0).lower())
-              print('status='+str(r['status']))
-              print('error='+ec(r['last_error']))
-              print('synced='+str(bool(r['last_sync_at'])).lower())
-              print('sessions='+str(r['last_session_count'] or 0))
-              print('imported='+str(r['last_imported_count'] or 0))
-          for hours in (36,72,168,720):
-              n=con.execute("SELECT count(*) FROM records WHERE (title='Sleep' OR title='Сон') AND julianday(end_time) >= julianday('now', ?)",(f'-{hours} hours',)).fetchone()[0]
-              print(f'sleep_last_{hours}h={n}')
-          latest=con.execute("SELECT date(max(end_time)) FROM records WHERE title='Sleep' OR title='Сон'").fetchone()[0]
-          print('latest_sleep_day='+str(latest or 'none'))
-          con.close()
-          PY
-          line="$(journalctl -u "$service_name" --since '15 minutes ago' --no-pager 2>/dev/null | grep 'google fit sleep sync complete' | tail -n1 || true)"
-          python3 - "$line" <<'PY'
-          import re,sys
-          s=sys.argv[1]
-          for key in ('sessions','segment_points','segment_episodes'):
-              m=re.search(r'"'+key+r'"\s*:\s*(\d+)',s)
-              print('log_'+key+'='+(m.group(1) if m else 'unknown'))
-          PY
+          [[ -n "$service_name" && -n "$app_dir" && -d "$app_dir/pb_hooks" ]]
+          install -m 644 /tmp/sleep_cloud_probe.pb.js "$app_dir/pb_hooks/sleep_cloud_probe.pb.js"
+          rm -f /tmp/sleep_cloud_probe.pb.js
+          systemctl restart "$service_name"
+          REMOTE
+
+      - name: Wait for probe cron
+        run: sleep 75
+
+      - name: Read sanitized source freshness
+        shell: bash
+        run: |
+          set -euo pipefail
+          ssh -i ~/.ssh/lifeos_pocketbase -p "$SSH_PORT" root@217.114.0.201 \
+            "POCKETBASE_SERVICE='$POCKETBASE_SERVICE' bash -s" <<'REMOTE'
+          set -euo pipefail
+          service_name="${POCKETBASE_SERVICE:-}"
+          if [[ -z "$service_name" ]]; then service_name="$(systemctl list-unit-files --type=service --no-legend 2>/dev/null | awk 'tolower($1) ~ /pocketbase/ && !found {print $1; found=1}')"; fi
+          line="$(journalctl -u "$service_name" --since '3 minutes ago' --no-pager 2>/dev/null | grep 'sleep cloud probe' | tail -n 1 || true)"
+          [[ -n "$line" ]]
+          printf '%s\n' "$line"
+          REMOTE
+
+      - name: Remove temporary cloud probe
+        if: always()
+        shell: bash
+        run: |
+          ssh -i ~/.ssh/lifeos_pocketbase -p "$SSH_PORT" root@217.114.0.201 \
+            "POCKETBASE_SERVICE='$POCKETBASE_SERVICE' POCKETBASE_DEPLOY_DIR='$POCKETBASE_DEPLOY_DIR' bash -s" <<'REMOTE'
+          set -u
+          service_name="${POCKETBASE_SERVICE:-}"
+          if [[ -z "$service_name" ]]; then service_name="$(systemctl list-unit-files --type=service --no-legend 2>/dev/null | awk 'tolower($1) ~ /pocketbase/ && !found {print $1; found=1}')"; fi
+          pid="$(pgrep -f '[p]ocketbase.*serve' | sed -n '1p' || true)"
+          app_dir="${POCKETBASE_DEPLOY_DIR:-}"
+          if [[ -z "$app_dir" && -n "$service_name" ]]; then app_dir="$(systemctl show "$service_name" -p WorkingDirectory --value 2>/dev/null || true)"; fi
+          if [[ -z "$app_dir" && -n "$pid" ]]; then app_dir="$(readlink -f "/proc/$pid/cwd" 2>/dev/null || true)"; fi
+          rm -f "$app_dir/pb_hooks/sleep_cloud_probe.pb.js"
+          [[ -n "$service_name" ]] && systemctl restart "$service_name" || true
           REMOTE
