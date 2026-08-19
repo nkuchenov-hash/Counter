@@ -64,6 +64,11 @@ jobs:
           fi
           git worktree remove --force /tmp/counter-gh-pages
 
+      - name: Preserve workflow_run trigger on default branch
+        run: |
+          mkdir -p build/web/.github/workflows
+          cp .github/workflows/deploy.yml build/web/.github/workflows/deploy.yml
+
       - name: Deploy to gh-pages
         uses: JamesIves/github-pages-deploy-action@v4
         with:
