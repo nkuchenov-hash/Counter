@@ -88,12 +88,12 @@ function __fitConnection(app, userId, createIfMissing) {
 function __fitNeedsReconnect(errorText) {
     var raw = String(errorText || "").toLowerCase();
     if (!raw) return false;
+    // Connection state and import state are separate. Once Google issued a
+    // refresh token, a data-read failure must not make the user's setting look
+    // disconnected. Only genuinely invalid/stale credentials require OAuth.
     return raw.indexOf("account_not_linked") >= 0 ||
         raw.indexOf("google health authorization is required") >= 0 ||
         raw.indexOf("google health sleep request") >= 0 ||
-        raw.indexOf("insufficient authentication scopes") >= 0 ||
-        raw.indexOf("insufficientpermissions") >= 0 ||
-        raw.indexOf("insufficient permission") >= 0 ||
         raw.indexOf("invalid_grant") >= 0;
 }
 
@@ -470,7 +470,22 @@ function __fitRunConnection(app, connection) {
         ? new Date(now.getTime() - __fitCorrectionLookbackDays * 86400000)
         : __fitSegmentHistoryStart;
 
-    var sessions = __fitFetchSleep(accessToken, sessionStart, now);
+    var sessions = [];
+    try {
+        sessions = __fitFetchSleep(accessToken, sessionStart, now);
+    } catch (sessionErr) {
+        var sessionErrText = String(sessionErr || "").toLowerCase();
+        var permissionLike = sessionErrText.indexOf("http 403") >= 0 ||
+            sessionErrText.indexOf("insufficient authentication scopes") >= 0 ||
+            sessionErrText.indexOf("insufficient permission") >= 0;
+        if (!permissionLike) throw sessionErr;
+        // Some Fit REST session reads can reject the dedicated sleep scope even
+        // though com.google.sleep.segment is available with fitness.sleep.read.
+        // LIFE OS only needs the canonical asleep -> awake interval, so recover
+        // it from sleep segments instead of treating OAuth as disconnected.
+        try { app.logger().warn("google fit sleep sessions unavailable; using sleep segments", "error", sessionErr); } catch (_) {}
+        sessions = [];
+    }
     var recovery = __fitRecovery.recover(accessToken, segmentStart, now, sessions);
     sessions = recovery.sessions;
 
