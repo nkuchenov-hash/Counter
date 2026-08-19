@@ -1,5 +1,3 @@
-var recovery = require(__hooks + "/google_fit_sleep_recovery.js");
-
 function env(name) {
     try { return String($os.getenv(name) || "").trim(); } catch (_) { return ""; }
 }
@@ -27,7 +25,7 @@ function accessToken(app, connection) {
     if (!refreshEnc) throw new Error("refresh token unavailable");
     var clientId = env("SLEEP_SYNC_GOOGLE_FIT_CLIENT_ID");
     var clientSecret = env("SLEEP_SYNC_GOOGLE_FIT_CLIENT_SECRET");
-    if (!clientId || !clientSecret) throw new Error("Google Fit OAuth environment unavailable");
+    if (!clientId || !clientSecret) throw new Error("Google OAuth environment unavailable");
     var res = $http.send({
         url: "https://oauth2.googleapis.com/token",
         method: "POST",
@@ -46,38 +44,39 @@ function accessToken(app, connection) {
     return String(res.json.access_token);
 }
 
-function day(ms) {
-    return ms > 0 ? new Date(ms).toISOString().slice(0, 10) : "none";
+function classifyError(res) {
+    var text = "";
+    try { text = JSON.stringify(res.json || {}).toLowerCase(); } catch (_) {}
+    if (res.statusCode === 401) return "auth";
+    if (res.statusCode === 403) {
+        if (text.indexOf("scope") >= 0 || text.indexOf("permission") >= 0 || text.indexOf("insufficient") >= 0) return "scope_or_permission";
+        if (text.indexOf("disabled") >= 0 || text.indexOf("has not been used") >= 0 || text.indexOf("enable") >= 0) return "api_disabled";
+        return "forbidden";
+    }
+    if (res.statusCode === 404) return "not_found";
+    return "other";
 }
 
-function sessions(token, start, end) {
-    var count = 0;
+function latestSleepDay(rows) {
     var latest = 0;
-    var pageToken = "";
-    var page = 0;
-    do {
-        var query = { startTime: start.toISOString(), endTime: end.toISOString(), activityType: "72" };
-        if (pageToken) query.pageToken = pageToken;
-        var res = $http.send({
-            url: "https://www.googleapis.com/fitness/v1/users/me/sessions?" + form(query),
-            method: "GET",
-            headers: { "authorization": "Bearer " + token, "accept": "application/json" },
-            timeout: 60
-        });
-        if (res.statusCode < 200 || res.statusCode >= 300 || !res.json) {
-            return { status: res.statusCode, count: 0, latestDay: "none" };
-        }
-        var rows = res.json.session || [];
-        count += rows.length;
-        for (var i = 0; i < rows.length; i++) {
-            var endMs = Number(rows[i].endTimeMillis || 0);
-            if (isFinite(endMs) && endMs > latest) latest = endMs;
-        }
-        pageToken = String(res.json.nextPageToken || "").trim();
-        page++;
-        if (page > 100) break;
-    } while (pageToken);
-    return { status: 200, count: count, latestDay: day(latest) };
+    for (var i = 0; i < rows.length; i++) {
+        var sleep = (rows[i] || {}).sleep || {};
+        var interval = sleep.interval || {};
+        var raw = String(interval.endTime || interval.end_time || "");
+        var ms = raw ? Date.parse(raw) : NaN;
+        if (isFinite(ms) && ms > latest) latest = ms;
+    }
+    return latest > 0 ? new Date(latest).toISOString().slice(0, 10) : "none";
+}
+
+function platformCounts(rows) {
+    var counts = {};
+    for (var i = 0; i < rows.length; i++) {
+        var ds = (rows[i] || {}).dataSource || (rows[i] || {}).data_source || {};
+        var platform = String(ds.platform || "UNKNOWN");
+        counts[platform] = Number(counts[platform] || 0) + 1;
+    }
+    return counts;
 }
 
 function run(e) {
@@ -88,25 +87,42 @@ function run(e) {
             {}
         );
         var token = accessToken(e.app, connection);
-        var end = new Date();
-        var start = new Date(end.getTime() - 4 * 86400000);
-        var sessionResult = sessions(token, start, end);
-        var segmentResult = recovery.recover(token, start, end, []);
+        var cutoff = new Date(Date.now() - 4 * 86400000).toISOString().slice(0, 10);
+        var query = {
+            dataSourceFamily: "users/me/dataSourceFamilies/all-sources",
+            pageSize: 25,
+            filter: 'sleep.interval.civil_end_time >= "' + cutoff + '"'
+        };
+        var res = $http.send({
+            url: "https://health.googleapis.com/v4/users/me/dataTypes/sleep/dataPoints:reconcile?" + form(query),
+            method: "GET",
+            headers: { "authorization": "Bearer " + token, "accept": "application/json" },
+            timeout: 60
+        });
+        if (res.statusCode < 200 || res.statusCode >= 300 || !res.json) {
+            return e.json(200, {
+                google_health_status: res.statusCode,
+                error_class: classifyError(res),
+                points: 0,
+                latest_sleep_day: "none"
+            });
+        }
+        var rows = res.json.dataPoints || res.json.data_points || [];
         return e.json(200, {
-            sessions_status: sessionResult.status,
-            sessions_count: sessionResult.count,
-            latest_session_day: sessionResult.latestDay,
-            aggregate_segment_points: segmentResult.aggregateSegmentPoints,
-            latest_aggregate_day: segmentResult.latestAggregateEndDay,
-            raw_segment_sources: segmentResult.rawSegmentSources,
-            raw_segment_points: segmentResult.rawSegmentPoints,
-            latest_raw_day: segmentResult.latestRawEndDay,
-            merged_segment_points: segmentResult.segmentPoints,
-            latest_merged_day: segmentResult.latestMergedEndDay,
-            recovered_episodes: segmentResult.recoveredEpisodes
+            google_health_status: res.statusCode,
+            error_class: "none",
+            points: rows.length,
+            latest_sleep_day: latestSleepDay(rows),
+            platforms: platformCounts(rows),
+            has_more: !!String(res.json.nextPageToken || res.json.next_page_token || "")
         });
     } catch (err) {
-        return e.json(500, { error: "probe_failed", detail_class: String(err).indexOf("token") >= 0 ? "auth" : "other" });
+        return e.json(200, {
+            google_health_status: 0,
+            error_class: String(err).toLowerCase().indexOf("token") >= 0 ? "auth" : "probe_failed",
+            points: 0,
+            latest_sleep_day: "none"
+        });
     }
 }
 
