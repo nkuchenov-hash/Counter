@@ -121,7 +121,25 @@ class NotesEditorDocumentController {
     );
   }
 
-  /// Paste a system clipboard string. Normal text keeps the existing editor
+  NoteBlock? structuralSliceForSelection(
+  String id,
+  TextSelection selection,
+) {
+  final block = blockById(id);
+  if (block == null || !isEditableText(block.type) ||
+      !selection.isValid || selection.isCollapsed) {
+    return null;
+  }
+  final start = selection.start.clamp(0, block.effectiveText.length).toInt();
+  final end = selection.end.clamp(0, block.effectiveText.length).toInt();
+  if (start >= end) return null;
+  return block.copyWith(
+    text: block.effectiveText.substring(start, end),
+    runs: _sliceRuns(block.effectiveRuns, start, end),
+  );
+}
+
+/// Paste a system clipboard string. Normal text keeps the existing editor
   /// semantics; recognizable Markdown/native checkbox lines become real Notes
   /// blocks instead of being flattened into one paragraph.
   NotesEditorMutation pastePlainText(

@@ -240,6 +240,7 @@ class _NotesLibraryBodyState extends State<NotesLibraryBody> {
 
   List<PlanningTask> _sortedTasks() {
     final out = List<PlanningTask>.from(widget.tasks);
+    if (widget.checkboxesOn) return out;
     final editingOrder = _editingOrder;
     if (_selectedTask != null && editingOrder != null) {
       final rank = <String, int>{
@@ -410,14 +411,13 @@ class _NotesLibraryBodyState extends State<NotesLibraryBody> {
   }) {
     final db = DatabaseService.instance;
     if (view == NotesLibraryView.grid) {
-      final crossAxisCount = availableWidth >= 720 ? 2 : 1;
       return GridView.builder(
         padding: const EdgeInsets.only(top: 4, bottom: 24),
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: crossAxisCount,
+        gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+          maxCrossAxisExtent: 290,
           mainAxisSpacing: 10,
           crossAxisSpacing: 10,
-          childAspectRatio: crossAxisCount == 2 ? 1.22 : 1.35,
+          childAspectRatio: 1.0,
         ),
         itemCount: cards.length,
         itemBuilder: (context, index) => _card(

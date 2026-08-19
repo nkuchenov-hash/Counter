@@ -145,7 +145,7 @@ class _GridCard extends StatelessWidget {
                     ? t(loc, 'notes_v3_untitled')
                     : data.task.title,
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: 17,
                   fontWeight: FontWeight.w700,
                   height: 1.2,
                   letterSpacing: -0.2,
@@ -458,7 +458,7 @@ class _BlockPreview extends StatelessWidget {
       return Text(
         t(loc, 'notes_v3_untitled'),
         style: TextStyle(
-          fontSize: 12,
+          fontSize: 13,
           color: scheme.onSurfaceVariant.withValues(alpha: 0.94),
         ),
       );
@@ -474,7 +474,7 @@ class _BlockPreview extends StatelessWidget {
               t(loc, 'notes_v3_more_count')
                   .replaceAll('{n}', '${data.doc.blocks.length - 5}'),
               style: TextStyle(
-                fontSize: 10,
+                fontSize: 11,
                 color: scheme.onSurfaceVariant.withValues(alpha: 0.84),
               ),
             ),
@@ -499,7 +499,7 @@ class _PreviewLine extends StatelessWidget {
         child: Text(
           block.text,
           style: TextStyle(
-            fontSize: block.level == 1 ? 13 : 12,
+            fontSize: block.level == 1 ? 14 : 13,
             fontWeight: FontWeight.w700,
             color: scheme.onSurface,
           ),
@@ -531,7 +531,7 @@ class _PreviewLine extends StatelessWidget {
             child: Text(
               block.text,
               style: TextStyle(
-                fontSize: 12,
+                fontSize: 13,
                 decoration: (block.checked || isDone)
                     ? TextDecoration.lineThrough
                     : null,
@@ -563,7 +563,7 @@ class _PreviewLine extends StatelessWidget {
                   ? t(currentLocale.value, 'notes_v3_draw_badge')
                   : t(currentLocale.value, 'notes_v3_image_badge'),
               style: TextStyle(
-                fontSize: 10,
+                fontSize: 11,
                 fontStyle: FontStyle.italic,
                 color: secondary,
               ),
@@ -574,7 +574,7 @@ class _PreviewLine extends StatelessWidget {
     }
     return Text(
       block.text,
-      style: TextStyle(fontSize: 12, color: secondary),
+      style: TextStyle(fontSize: 13, color: secondary),
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
     );
@@ -637,25 +637,42 @@ class _LargeDoneCheck extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return InkWell(
-      onTap: onToggle,
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        width: kNotesLargeCheckSize,
-        height: kNotesLargeCheckSize,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: isDone
-                ? scheme.primary
-                : scheme.outlineVariant.withValues(alpha: 0.7),
-            width: 2,
+    return Semantics(
+      button: true,
+      checked: isDone,
+      child: SizedBox.square(
+        dimension: 44,
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onToggle,
+            borderRadius: BorderRadius.circular(12),
+            child: Center(
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 120),
+                width: 26,
+                height: 26,
+                decoration: BoxDecoration(
+                  color: isDone ? scheme.primary : Colors.transparent,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: isDone
+                        ? scheme.primary
+                        : scheme.outline.withValues(alpha: 0.55),
+                    width: 1.5,
+                  ),
+                ),
+                child: isDone
+                    ? Icon(
+                        Icons.check_rounded,
+                        size: 18,
+                        color: scheme.onPrimary,
+                      )
+                    : null,
+              ),
+            ),
           ),
-          color: isDone ? scheme.primary : Colors.transparent,
         ),
-        child: isDone
-            ? const Icon(Icons.check_rounded, size: 20, color: Colors.white)
-            : null,
       ),
     );
   }

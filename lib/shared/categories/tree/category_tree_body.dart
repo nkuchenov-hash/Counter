@@ -24,6 +24,8 @@ class CategoryTreeBody extends StatefulWidget {
     super.key,
     required this.roots,
     required this.selectedCategoryId,
+    this.checkedCategoryIds,
+    this.onCheckedChanged,
     this.expandSelectionPath = false,
     this.expandAll = false,
     required this.onSelect,
@@ -37,6 +39,8 @@ class CategoryTreeBody extends StatefulWidget {
 
   final List<CategoryRule> roots;
   final int? selectedCategoryId;
+  final Set<int>? checkedCategoryIds;
+  final void Function(int id, bool checked)? onCheckedChanged;
 
   /// When false, tree opens fully collapsed unless [expandAll] is true.
   final bool expandSelectionPath;
@@ -127,6 +131,8 @@ class _CategoryTreeBodyState extends State<CategoryTreeBody> {
             rule: r,
             depth: 0,
             selectedCategoryId: widget.selectedCategoryId,
+            checkedCategoryIds: widget.checkedCategoryIds,
+            onCheckedChanged: widget.onCheckedChanged,
             expandedIds: _expandedIds,
             onToggleExpand: _toggle,
             onSelect: widget.onSelect,
@@ -147,6 +153,8 @@ class _CategoryTreeNode extends StatelessWidget {
     required this.rule,
     required this.depth,
     required this.selectedCategoryId,
+    this.checkedCategoryIds,
+    this.onCheckedChanged,
     required this.expandedIds,
     required this.onToggleExpand,
     required this.onSelect,
@@ -161,6 +169,8 @@ class _CategoryTreeNode extends StatelessWidget {
   final CategoryRule rule;
   final int depth;
   final int? selectedCategoryId;
+  final Set<int>? checkedCategoryIds;
+  final void Function(int id, bool checked)? onCheckedChanged;
   final Set<int> expandedIds;
   final void Function(int id) onToggleExpand;
   final ValueChanged<int> onSelect;
@@ -216,6 +226,17 @@ class _CategoryTreeNode extends StatelessWidget {
               )
             else
               const SizedBox(width: 12),
+            if (checkedCategoryIds != null)
+              SizedBox(
+                width: 40,
+                height: 40,
+                child: Checkbox(
+                  value: checkedCategoryIds!.contains(rule.id),
+                  onChanged: onCheckedChanged == null
+                      ? null
+                      : (value) => onCheckedChanged!(rule.id, value ?? false),
+                ),
+              ),
             Expanded(
               child: InkWell(
                 onTap: () => onSelect(rule.id),
@@ -308,6 +329,8 @@ class _CategoryTreeNode extends StatelessWidget {
                     rule: c,
                     depth: depth + 1,
                     selectedCategoryId: selectedCategoryId,
+                    checkedCategoryIds: checkedCategoryIds,
+                    onCheckedChanged: onCheckedChanged,
                     expandedIds: expandedIds,
                     onToggleExpand: onToggleExpand,
                     onSelect: onSelect,

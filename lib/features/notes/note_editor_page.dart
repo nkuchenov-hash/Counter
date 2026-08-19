@@ -402,7 +402,22 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
     final controller = _textControllerFor(block);
     final selection = controller.selection;
     final keyboard = HardwareKeyboard.instance;
-    if (event.logicalKey == LogicalKeyboardKey.keyV &&
+    if (event.logicalKey == LogicalKeyboardKey.keyC &&
+    (keyboard.isControlPressed || keyboard.isMetaPressed) &&
+    selection.isValid &&
+    !selection.isCollapsed) {
+  final slice = _editor.structuralSliceForSelection(block.id, selection);
+  if (slice != null) {
+    final start = selection.start.clamp(0, controller.text.length).toInt();
+    final end = selection.end.clamp(0, controller.text.length).toInt();
+    final plain = controller.text.substring(start, end);
+    _NotesStructuredClipboard.plainText = plain;
+    _NotesStructuredClipboard.blocks = <NoteBlock>[slice];
+    unawaited(Clipboard.setData(ClipboardData(text: plain)));
+    return KeyEventResult.handled;
+  }
+}
+  if (event.logicalKey == LogicalKeyboardKey.keyV &&
         (keyboard.isControlPressed || keyboard.isMetaPressed)) {
       unawaited(_pasteClipboardIntoBlock(block, selection));
       return KeyEventResult.handled;
@@ -773,14 +788,22 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
       initialData: initial,
       onSave: (dataUrl) {
         if (!mounted) return;
-        final mutation = editBlockId == null
-            ? _editor.insertAfter(
-                _editor.activeBlockId,
-                NoteBlockType.drawing,
-                drawingData: dataUrl,
-              )
-            : _editor.updateMedia(editBlockId, drawingData: dataUrl);
-        _applyMutation(mutation);
+        if (editBlockId == null) {
+_editor.insertAfter(
+  _editor.activeBlockId,
+  NoteBlockType.drawing,
+  drawingData: dataUrl,
+);
+final drawingId = _editor.activeBlockId;
+if (drawingId == null) return;
+_applyMutation(
+  _editor.insertAfter(drawingId, NoteBlockType.paragraph),
+);
+return;
+        }
+        _applyMutation(
+_editor.updateMedia(editBlockId, drawingData: dataUrl),
+        );
       },
     );
   }

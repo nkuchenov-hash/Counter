@@ -174,6 +174,7 @@ class _ListsPageState extends State<ListsPage>
 
   /// GLM v3 sort: unfinished first, pinned first, updated desc, stable fallback.
   void _notesLibrarySort(List<PlanningTask> list) {
+    if (_notesCheckboxesOn) return;
     final db = DatabaseService.instance;
     list.sort((a, b) {
       if (a.isDone != b.isDone) return a.isDone ? 1 : -1;
@@ -978,7 +979,9 @@ class _ListsPageState extends State<ListsPage>
             final flat = _applyNotesSearch(_displayFlat);
             final hasActiveTagFilter =
                 (_filterTagPbId?.trim() ?? '').isNotEmpty;
-            final forGrouping = listBeh == 'archive'
+            final forGrouping = _notesCheckboxesOn
+                ? List<PlanningTask>.from(flat)
+                : listBeh == 'archive'
                 ? () {
                     final o = flat.where((t) => !t.isDone).toList();
                     _notesLibrarySort(o);
@@ -989,7 +992,9 @@ class _ListsPageState extends State<ListsPage>
                     _notesLibrarySort(o);
                     return o;
                   }();
-            final archiveSlice = listBeh == 'archive'
+            final archiveSlice = _notesCheckboxesOn
+                ? const <PlanningTask>[]
+                : listBeh == 'archive'
                 ? _listsArchiveDoneSlice(flat)
                 : const <PlanningTask>[];
             final grouped = _groupByCategoryPath(forGrouping);

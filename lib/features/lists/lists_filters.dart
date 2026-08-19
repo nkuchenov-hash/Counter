@@ -10,6 +10,7 @@ import 'package:counter/features/lists/lists_card.dart';
 import 'package:counter/features/lists/lists_export.dart';
 import 'package:counter/features/profile/tag_manager_page.dart';
 import 'package:counter/l10n/dictionary.dart';
+import 'package:counter/shared/categories/picker/category_tree_picker.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -204,6 +205,16 @@ class _ListsCategoryChipBarState extends State<ListsCategoryChipBar> {
   }
 
   Future<void> _openCategoryPicker(BuildContext context) async {
+  final picked = await showCategoryTreeMultiPicker(
+    context,
+    initialCategoryIds: Set<int>.from(_displayChipIds),
+  );
+  if (!mounted || picked == null) return;
+  _applyQuickChipIds(picked);
+}
+
+// ignore: unused_element
+Future<void> _openLegacyCategoryPicker(BuildContext context) async {
     final db = DatabaseService.instance;
     final selected = Set<int>.from(_displayChipIds);
     final expandedIds = <int>{};

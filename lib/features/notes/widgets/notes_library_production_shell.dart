@@ -74,7 +74,6 @@ class NotesGlmInlineAddRow extends StatelessWidget {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final dark = theme.brightness == Brightness.dark;
-    final compactMobile = MediaQuery.sizeOf(context).shortestSide < 600;
     final fill = dark
         ? scheme.surfaceContainerHigh.withValues(alpha: 0.82)
         : const Color(0xFFFFFFFF).withValues(alpha: 0.75);
@@ -87,16 +86,16 @@ class NotesGlmInlineAddRow extends StatelessWidget {
       children: [
         Expanded(
           child: SizedBox(
-            height: 40,
+            height: 48,
             child: TextField(
               controller: controller,
               focusNode: focusNode,
               textInputAction: TextInputAction.done,
-              style: TextStyle(fontSize: 14, color: scheme.onSurface),
+              style: TextStyle(fontSize: 15, color: scheme.onSurface),
               decoration: InputDecoration(
                 hintText: t(locale, 'input_placeholder_list'),
                 hintStyle: TextStyle(
-                  fontSize: 14,
+                  fontSize: 15,
                   color: notesGlmMetaColor(context),
                 ),
                 filled: true,
@@ -129,51 +128,26 @@ class NotesGlmInlineAddRow extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 8),
-        SizedBox(
-          width: compactMobile ? 40 : null,
-          height: 40,
-          child: Tooltip(
-            message: t(locale, 'add'),
-            child: Material(
-              color: scheme.primary,
-              borderRadius: BorderRadius.circular(999),
-              child: InkWell(
-                onTap: onSubmit,
-                borderRadius: BorderRadius.circular(999),
-                child: compactMobile
-                    ? Center(
-                        child: Icon(
-                          Icons.add_rounded,
-                          size: 20,
-                          color: scheme.onPrimary,
-                        ),
-                      )
-                    : Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 14),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.add_rounded,
-                              size: 18,
-                              color: scheme.onPrimary,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              t(locale, 'add'),
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                                color: scheme.onPrimary,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-              ),
-            ),
-          ),
+        SizedBox.square(
+dimension: 48,
+child: Tooltip(
+  message: t(locale, 'add'),
+  child: Material(
+    color: scheme.primary,
+    shape: const CircleBorder(),
+    child: InkWell(
+      onTap: onSubmit,
+      customBorder: const CircleBorder(),
+      child: Center(
+        child: Icon(
+          Icons.add_rounded,
+          size: 24,
+          color: scheme.onPrimary,
+        ),
+      ),
+    ),
+  ),
+),
         ),
       ],
     );

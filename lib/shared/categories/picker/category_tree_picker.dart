@@ -247,6 +247,224 @@ class _CategoryTreePickerSheetState extends State<_CategoryTreePickerSheet> {
   }
 }
 
+Future<Set<int>?> showCategoryTreeMultiPicker(
+  BuildContext context, {
+  Set<int> initialCategoryIds = const <int>{},
+}) {
+  return showModalBottomSheet<Set<int>>(
+    context: context,
+    isScrollControlled: true,
+    showDragHandle: true,
+    useSafeArea: true,
+    builder: (ctx) {
+      final sheetHeight =
+          (MediaQuery.sizeOf(ctx).height * 0.82).clamp(320.0, 720.0);
+      return SizedBox(
+        height: sheetHeight,
+        child: _CategoryTreeMultiPickerSheet(
+          initialCategoryIds: initialCategoryIds,
+        ),
+      );
+    },
+  );
+}
+
+class _CategoryTreeMultiPickerSheet extends StatefulWidget {
+  const _CategoryTreeMultiPickerSheet({required this.initialCategoryIds});
+
+  final Set<int> initialCategoryIds;
+
+  @override
+  State<_CategoryTreeMultiPickerSheet> createState() =>
+      _CategoryTreeMultiPickerSheetState();
+}
+
+class _CategoryTreeMultiPickerSheetState
+    extends State<_CategoryTreeMultiPickerSheet> {
+  late final TextEditingController _searchController;
+  late Set<int> _selectedIds;
+  StreamSubscription<List<CategoryRule>>? _catSub;
+  String _query = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedIds = Set<int>.from(widget.initialCategoryIds);
+    _searchController = TextEditingController()
+      ..addListener(() => setState(() => _query = _searchController.text));
+    _catSub = CategoryTreeSource.watchCategories().listen((_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _catSub?.cancel();
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  List<CategoryRule> get _visibleRoots => filterCategoryRootsForPickerSearch(
+        CategoryTreeSource.childrenOf(null),
+        _query,
+        _labelForRule,
+      );
+
+  bool get _canCreate => categoryCreateFromPickerAllowed();
+
+  Future<void> _createCategory({
+    String? initialName,
+    required CategoryPickerCreateTarget target,
+  }) async {
+    final id = await showCreateCategoryFromPickerDialog(
+      context,
+      initialName: initialName,
+      target: target,
+    );
+    if (!mounted || id == null) return;
+    setState(() => _selectedIds.add(id));
+  }
+
+  void _toggle(int id, [bool? checked]) {
+    setState(() {
+      final next = checked ?? !_selectedIds.contains(id);
+      if (next) {
+        _selectedIds.add(id);
+      } else {
+        _selectedIds.remove(id);
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final loc = currentLocale.value;
+    final roots = _visibleRoots;
+    final trimmedQuery = _query.trim();
+    final showNamedCreate = trimmedQuery.isNotEmpty && roots.isEmpty;
+    final offlineHint = _canCreate
+        ? null
+        : t(loc, 'category_create_requires_connection');
+    return Padding(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.viewInsetsOf(context).bottom,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+            child: Text(
+              t(loc, 'category_label'),
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                isDense: true,
+                prefixIcon: const Icon(Icons.search_rounded),
+                hintText: t(loc, 'category_label'),
+              ),
+              textCapitalization: TextCapitalization.sentences,
+            ),
+          ),
+          categoryPickerCreateListTile(
+            key: categoryPickerTopAddKey,
+            label: t(loc, 'category_picker_add_root'),
+            subtitle: offlineHint,
+            onTap: _canCreate
+                ? () => unawaited(
+                      _createCategory(
+                        target: const CategoryPickerCreateTarget.root(),
+                      ),
+                    )
+                : null,
+          ),
+          const Divider(height: 1),
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(8, 0, 8, 0),
+              children: [
+                if (showNamedCreate)
+                  categoryPickerCreateListTile(
+                    key: const ValueKey<String>(
+                      'category_multi_picker_named_create',
+                    ),
+                    label: t(loc, 'category_picker_create_named')
+                        .replaceFirst('%s', trimmedQuery),
+                    subtitle: offlineHint,
+                    onTap: _canCreate
+                        ? () => unawaited(
+                              _createCategory(
+                                initialName: trimmedQuery,
+                                target: const CategoryPickerCreateTarget.root(),
+                              ),
+                            )
+                        : null,
+                  ),
+                if (roots.isEmpty && !showNamedCreate)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    child: Text(
+                      t(loc, 'category_picker_empty_hint'),
+                      textAlign: TextAlign.center,
+                    ),
+                  )
+                else
+                  CategoryTreeBody(
+                    roots: roots,
+                    selectedCategoryId: null,
+                    checkedCategoryIds: _selectedIds,
+                    onCheckedChanged: _toggle,
+                    expandSelectionPath: false,
+                    expandAll: false,
+                    onSelect: (id) => _toggle(id),
+                    showEditChrome: false,
+                    showPickerCreateChrome: true,
+                    onPickerAddChild: _canCreate
+                        ? (parent) => unawaited(
+                              _createCategory(
+                                target: CategoryPickerCreateTarget.child(
+                                  parentLocalId: parent.id,
+                                  parentDisplayName: _labelForRule(parent),
+                                ),
+                              ),
+                            )
+                        : null,
+                  ),
+              ],
+            ),
+          ),
+          const Divider(height: 1),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
+            child: Row(
+              children: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: Text(
+                    MaterialLocalizations.of(context).cancelButtonLabel,
+                  ),
+                ),
+                const Spacer(),
+                FilledButton(
+                  onPressed: () => Navigator.of(context).pop(
+                    Set<int>.unmodifiable(_selectedIds),
+                  ),
+                  child: Text(MaterialLocalizations.of(context).okButtonLabel),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 /// Picker sheet: returns chosen category id, or null if dismissed unchanged.
 Future<int?> showCategoryTreePicker(
   BuildContext context, {
