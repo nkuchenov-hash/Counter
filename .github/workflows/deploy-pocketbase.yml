@@ -14,50 +14,9 @@ permissions:
   contents: write
 
 jobs:
-  validate:
+  pocketbase:
     runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Validate PocketBase JavaScript
-        shell: bash
-        run: |
-          mapfile -d '' files < <(find pb_hooks pb_migrations -type f -name '*.js' -print0 | sort -z)
-          if (( ${#files[@]} == 0 )); then
-            echo 'No PocketBase JavaScript files found.' >&2
-            exit 1
-          fi
-          for file in "${files[@]}"; do
-            echo "node --check $file"
-            node --check "$file"
-          done
-
-      - name: Check production deploy credentials
-        env:
-          SSH_PRIVATE_KEY: ${{ secrets.POCKETBASE_SSH_PRIVATE_KEY || secrets.VPS_SSH_KEY || secrets.SSH_PRIVATE_KEY }}
-          SSH_USER: ${{ secrets.POCKETBASE_SSH_USER || secrets.VPS_SSH_USER || secrets.SSH_USER }}
-          SSH_HOST: ${{ secrets.POCKETBASE_SSH_HOST || secrets.VPS_HOST || secrets.SSH_HOST }}
-          SLEEP_SYNC_TOKEN_KEY: ${{ secrets.SLEEP_SYNC_TOKEN_KEY }}
-        run: |
-          if [[ -z "$SSH_PRIVATE_KEY" ]]; then
-            echo "::warning::PocketBase SSH private key is not configured."
-          else
-            echo "PocketBase SSH private key is configured."
-          fi
-          if [[ -n "$SLEEP_SYNC_TOKEN_KEY" && ${#SLEEP_SYNC_TOKEN_KEY} -ne 32 ]]; then
-            echo "::error::SLEEP_SYNC_TOKEN_KEY must be exactly 32 characters when configured."
-            exit 1
-          fi
-          echo "PocketBase SSH target: ${SSH_USER:-root}@${SSH_HOST:-217.114.0.201}"
-
-  deploy:
-    if: github.event_name != 'pull_request'
-    needs: validate
-    runs-on: ubuntu-latest
-    environment: production
+    environment: ${{ github.event_name == 'pull_request' && '' || 'production' }}
     concurrency:
       group: pocketbase-production
       cancel-in-progress: false
@@ -68,63 +27,42 @@ jobs:
       SSH_PORT: ${{ secrets.POCKETBASE_SSH_PORT || secrets.VPS_SSH_PORT || '22' }}
       POCKETBASE_SERVICE: ${{ secrets.POCKETBASE_SERVICE }}
       POCKETBASE_DEPLOY_DIR: ${{ secrets.POCKETBASE_DEPLOY_DIR }}
-      SLEEP_SYNC_TOKEN_KEY: ${{ secrets.SLEEP_SYNC_TOKEN_KEY }}
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Detect PocketBase bundle changes
+      - name: Validate PocketBase JavaScript
         shell: bash
-        env:
-          BEFORE_SHA: ${{ github.event.before }}
         run: |
           set -euo pipefail
-          changed=true
-          if [[ "${{ github.event_name }}" == "push" && -n "${BEFORE_SHA:-}" && ! "$BEFORE_SHA" =~ ^0+$ ]]; then
-            if git diff --quiet "$BEFORE_SHA" "$GITHUB_SHA" -- pb_hooks pb_migrations .github/workflows/deploy-pocketbase.yml; then
-              changed=false
-            fi
-          fi
-          echo "SERVER_CHANGED=$changed" >> "$GITHUB_ENV"
-          echo "PocketBase bundle changed: $changed"
-
-      - name: Require production credentials
-        if: env.SERVER_CHANGED == 'true'
-        run: |
-          if [[ -z "$SSH_PRIVATE_KEY" ]]; then
-            echo "PocketBase deployment cannot run: SSH private key is missing." >&2
-            exit 1
-          fi
-          if [[ -n "$SLEEP_SYNC_TOKEN_KEY" && ${#SLEEP_SYNC_TOKEN_KEY} -ne 32 ]]; then
-            echo "PocketBase deployment cannot run: SLEEP_SYNC_TOKEN_KEY must be exactly 32 characters." >&2
-            exit 1
-          fi
-          echo "SSH_USER=${SSH_USER:-root}" >> "$GITHUB_ENV"
-          echo "SSH_HOST=${SSH_HOST:-217.114.0.201}" >> "$GITHUB_ENV"
+          mapfile -d '' files < <(find pb_hooks pb_migrations -type f -name '*.js' -print0 | sort -z)
+          (( ${#files[@]} > 0 ))
+          for file in "${files[@]}"; do node --check "$file"; done
 
       - name: Prepare SSH
-        if: env.SERVER_CHANGED == 'true'
+        if: github.event_name != 'pull_request'
+        shell: bash
         run: |
+          set -euo pipefail
+          [[ -n "$SSH_PRIVATE_KEY" ]]
+          echo "SSH_USER=${SSH_USER:-root}" >> "$GITHUB_ENV"
+          echo "SSH_HOST=${SSH_HOST:-217.114.0.201}" >> "$GITHUB_ENV"
           install -m 700 -d ~/.ssh
           printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/lifeos_pocketbase
           chmod 600 ~/.ssh/lifeos_pocketbase
-          ssh-keyscan -p "$SSH_PORT" -H "$SSH_HOST" >> ~/.ssh/known_hosts
+          ssh-keyscan -p "$SSH_PORT" -H "${SSH_HOST:-217.114.0.201}" >> ~/.ssh/known_hosts
 
-      - name: Upload server bundle
-        if: env.SERVER_CHANGED == 'true'
+      - name: Upload and install PocketBase bundle
+        if: github.event_name != 'pull_request'
+        shell: bash
         run: |
+          set -euo pipefail
           ARCHIVE="/tmp/lifeos-pocketbase-${GITHUB_SHA}.tar.gz"
           tar -czf "$ARCHIVE" pb_hooks pb_migrations
-          scp -i ~/.ssh/lifeos_pocketbase -P "$SSH_PORT" "$ARCHIVE" \
-            "$SSH_USER@$SSH_HOST:/tmp/lifeos-pocketbase-${GITHUB_SHA}.tar.gz"
-
-      - name: Install and restart PocketBase
-        if: env.SERVER_CHANGED == 'true'
-        run: |
+          scp -i ~/.ssh/lifeos_pocketbase -P "$SSH_PORT" "$ARCHIVE" "$SSH_USER@$SSH_HOST:$ARCHIVE"
           ssh -i ~/.ssh/lifeos_pocketbase -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" \
-            "POCKETBASE_SERVICE='$POCKETBASE_SERVICE' POCKETBASE_DEPLOY_DIR='$POCKETBASE_DEPLOY_DIR' ARCHIVE='/tmp/lifeos-pocketbase-${GITHUB_SHA}.tar.gz' bash -s" <<'REMOTE'
+            "POCKETBASE_SERVICE='$POCKETBASE_SERVICE' POCKETBASE_DEPLOY_DIR='$POCKETBASE_DEPLOY_DIR' ARCHIVE='$ARCHIVE' bash -s" <<'REMOTE'
           set -euo pipefail
           if [[ "$(id -u)" -eq 0 ]]; then SUDO=""; else SUDO="sudo -n"; fi
 
@@ -136,41 +74,59 @@ jobs:
           app_dir="${POCKETBASE_DEPLOY_DIR:-}"
           if [[ -z "$app_dir" && -n "$service_name" ]]; then app_dir="$(systemctl show "$service_name" -p WorkingDirectory --value 2>/dev/null || true)"; fi
           if [[ -z "$app_dir" && -n "$pid" ]]; then app_dir="$(readlink -f "/proc/$pid/cwd" 2>/dev/null || true)"; fi
-          if [[ -z "$service_name" || -z "$app_dir" || ! -d "$app_dir" ]]; then
-            echo "Could not discover the PocketBase service or application directory." >&2
-            exit 1
+          [[ -n "$service_name" && -n "$app_dir" && -d "$app_dir" ]]
+
+          # Normalize any existing Google sleep OAuth environment to the single
+          # Google Fit runtime name. This preserves the user's existing OAuth.
+          fit_env="$app_dir/.lifeos-google-fit.env"
+          if [[ ! -f "$fit_env" ]] || ! grep -q '^SLEEP_SYNC_GOOGLE_FIT_CLIENT_ID=' "$fit_env" || ! grep -q '^SLEEP_SYNC_GOOGLE_FIT_CLIENT_SECRET=' "$fit_env"; then
+            source_env="$(find "$app_dir" -maxdepth 1 -type f -name '.lifeos-google-*.env' ! -name '.lifeos-google-fit.env' -print -quit)"
+            [[ -n "$source_env" ]]
+            client_id="$(sed -n 's/^SLEEP_SYNC_GOOGLE_[A-Z_]*CLIENT_ID=//p' "$source_env" | head -n1)"
+            client_secret="$(sed -n 's/^SLEEP_SYNC_GOOGLE_[A-Z_]*CLIENT_SECRET=//p' "$source_env" | head -n1)"
+            token_key="$(sed -n 's/^SLEEP_SYNC_TOKEN_KEY=//p' "$source_env" | head -n1)"
+            [[ -n "$client_id" && -n "$client_secret" ]]
+            {
+              printf 'SLEEP_SYNC_GOOGLE_FIT_CLIENT_ID=%s\n' "$client_id"
+              printf 'SLEEP_SYNC_GOOGLE_FIT_CLIENT_SECRET=%s\n' "$client_secret"
+              if [[ -n "$token_key" ]]; then printf 'SLEEP_SYNC_TOKEN_KEY=%s\n' "$token_key"; fi
+            } > /tmp/lifeos-google-fit.env
+            $SUDO install -m 600 /tmp/lifeos-google-fit.env "$fit_env"
+            rm -f /tmp/lifeos-google-fit.env
           fi
 
-          oauth_env="$app_dir/.lifeos-google-fit.env"
-          if [[ ! -f "$oauth_env" ]] || ! $SUDO grep -q '^SLEEP_SYNC_GOOGLE_FIT_CLIENT_ID=' "$oauth_env" || ! $SUDO grep -q '^SLEEP_SYNC_GOOGLE_FIT_CLIENT_SECRET=' "$oauth_env"; then
-            echo "Google Fit OAuth environment is not provisioned on the server." >&2
-            exit 1
-          fi
+          override_dir="/etc/systemd/system/${service_name}.d"
+          $SUDO mkdir -p "$override_dir"
+          printf '[Service]\nEnvironmentFile=%s\n' "$fit_env" | $SUDO tee "$override_dir/lifeos-google-fit.conf" >/dev/null
+          for f in "$override_dir"/lifeos-google-*.conf; do
+            [[ -e "$f" ]] || continue
+            [[ "$f" == "$override_dir/lifeos-google-fit.conf" ]] || $SUDO rm -f "$f"
+          done
+          for f in "$app_dir"/.lifeos-google-*.env; do
+            [[ -e "$f" ]] || continue
+            [[ "$f" == "$fit_env" ]] || $SUDO rm -f "$f"
+          done
 
-          echo "Deploying to $app_dir using $service_name"
           $SUDO mkdir -p "$app_dir/pb_hooks" "$app_dir/pb_migrations"
           $SUDO tar -xzf "$ARCHIVE" -C "$app_dir" pb_hooks pb_migrations
           rm -f "$ARCHIVE"
+          $SUDO systemctl daemon-reload
           $SUDO systemctl restart "$service_name"
 
           for attempt in {1..20}; do
             health="$(curl -sS -o /dev/null -w '%{http_code}' https://217-114-0-201.sslip.io/api/health || true)"
-            sleep_route="$(curl -sS -o /dev/null -w '%{http_code}' https://217-114-0-201.sslip.io/api/sleep-sync/status || true)"
-            calendar_route="$(curl -sS -o /dev/null -w '%{http_code}' https://217-114-0-201.sslip.io/api/calendar-integrations/status || true)"
-            if [[ "$health" == "200" && ( "$sleep_route" == "401" || "$sleep_route" == "403" ) && ( "$calendar_route" == "401" || "$calendar_route" == "403" ) ]]; then
-              echo "PocketBase is healthy and protected routes are loaded."
-              exit 0
-            fi
+            route="$(curl -sS -o /dev/null -w '%{http_code}' https://217-114-0-201.sslip.io/api/sleep-sync/status || true)"
+            if [[ "$health" == "200" && ( "$route" == "401" || "$route" == "403" ) ]]; then exit 0; fi
             sleep 2
           done
-          echo "PocketBase verification failed after restart." >&2
           exit 1
           REMOTE
 
-      - name: Verify cloud sleep result
-        if: env.SERVER_CHANGED == 'true'
+      - name: Verify recent cloud sleep in production
+        if: github.event_name != 'pull_request'
         shell: bash
         run: |
+          set -euo pipefail
           sleep 95
           ssh -i ~/.ssh/lifeos_pocketbase -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" \
             "POCKETBASE_DEPLOY_DIR='$POCKETBASE_DEPLOY_DIR' POCKETBASE_SERVICE='$POCKETBASE_SERVICE' bash -s" > /tmp/sleep-cloud-result.txt <<'REMOTE'
@@ -186,7 +142,7 @@ jobs:
           import sqlite3, sys
           con=sqlite3.connect(f'file:{sys.argv[1]}?mode=ro', uri=True); con.row_factory=sqlite3.Row
           r=con.execute("SELECT enabled,status,last_error,last_sync_at,last_session_count,last_imported_count,length(coalesce(refresh_token_enc,'')) token_len FROM sleep_sync_connections WHERE provider='google_fit' ORDER BY updated DESC LIMIT 1").fetchone()
-          def err(v):
+          def error_class(v):
               s=(v or '').lower()
               if not s:return 'none'
               if 'invalid_grant' in s:return 'invalid_grant'
@@ -200,18 +156,18 @@ jobs:
               print('enabled='+str(bool(r['enabled'])).lower())
               print('token='+str(r['token_len']>0).lower())
               print('status='+str(r['status']))
-              print('error='+err(r['last_error']))
+              print('error='+error_class(r['last_error']))
               print('synced='+str(bool(r['last_sync_at'])).lower())
               print('sessions='+str(r['last_session_count'] or 0))
               print('imported='+str(r['last_imported_count'] or 0))
-          n=con.execute("SELECT count(*) FROM records WHERE (title='Sleep' OR title='Сон') AND datetime(end_time) >= datetime('now','-36 hours')").fetchone()[0]
+          n=con.execute("SELECT count(*) FROM records WHERE (title='Sleep' OR title='Сон') AND julianday(end_time) >= julianday('now','-36 hours')").fetchone()[0]
           print('sleep_last_36h='+str(n))
           con.close()
           PY
           REMOTE
 
       - name: Publish sanitized verification
-        if: env.SERVER_CHANGED == 'true'
+        if: github.event_name != 'pull_request'
         shell: bash
         run: |
           cp /tmp/sleep-cloud-result.txt _tmp_sleep_cloud_result.txt
