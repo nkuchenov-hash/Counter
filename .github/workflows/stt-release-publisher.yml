@@ -1,0 +1,64 @@
+name: Publish pinned STT helper asset
+
+on:
+  push:
+    branches:
+      - cleanup/stt-release-artifact-20260819
+
+permissions:
+  contents: write
+
+concurrency:
+  group: stt-release-publisher
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: windows-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: cleanup/stt-release-artifact-20260819
+          fetch-depth: 0
+
+      - name: Publish versioned helper asset and manifest
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $asset = 'installer/windows/stt_helper_build/counter_stt_helper.exe'
+          if (-not (Test-Path $asset)) { throw "Pinned helper missing: $asset" }
+
+          $tag = 'counter-stt-helper-v1'
+          $assetName = 'counter_stt_helper.exe'
+          $hash = (Get-FileHash -Algorithm SHA256 $asset).Hash.ToLowerInvariant()
+          $size = (Get-Item $asset).Length
+
+          gh release view $tag *> $null
+          if ($LASTEXITCODE -ne 0) {
+            gh release create $tag --title 'Counter STT Helper v1' --notes 'Pinned Windows offline voice helper extracted from repository history. This release asset is immutable build input until the missing base Rust HTTP-sidecar source is recovered and a source-reproducible build replaces it.'
+            if ($LASTEXITCODE -ne 0) { throw 'gh release create failed' }
+          }
+
+          gh release upload $tag "$asset#$assetName" --clobber
+          if ($LASTEXITCODE -ne 0) { throw 'gh release upload failed' }
+
+          $manifest = [ordered]@{
+            schema_version = 1
+            release_tag = $tag
+            asset_name = $assetName
+            sha256 = $hash
+            size_bytes = $size
+            source_status = 'base Rust HTTP-sidecar source not currently versioned; pinned release artifact retained until source-reproducible replacement exists'
+          } | ConvertTo-Json
+          Set-Content -Path 'installer/windows/stt_helper_artifact.json' -Value $manifest -Encoding UTF8
+
+          git rm -f .github/workflows/stt-release-publisher.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add installer/windows/stt_helper_artifact.json
+          git commit -m 'Windows: publish pinned STT helper release manifest'
+          git push origin HEAD:cleanup/stt-release-artifact-20260819
