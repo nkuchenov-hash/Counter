@@ -1,4 +1,4 @@
-name: Purge obsolete sleep provider source
+name: Migrate production sleep OAuth environment
 
 on:
   push:
@@ -10,109 +10,93 @@ permissions:
   contents: write
 
 jobs:
-  purge:
+  migrate:
     runs-on: ubuntu-latest
+    environment: production
+    env:
+      SSH_PRIVATE_KEY: ${{ secrets.POCKETBASE_SSH_PRIVATE_KEY || secrets.VPS_SSH_KEY || secrets.SSH_PRIVATE_KEY }}
+      SSH_USER: ${{ secrets.POCKETBASE_SSH_USER || secrets.VPS_SSH_USER || secrets.SSH_USER }}
+      SSH_HOST: ${{ secrets.POCKETBASE_SSH_HOST || secrets.VPS_HOST || secrets.SSH_HOST }}
+      SSH_PORT: ${{ secrets.POCKETBASE_SSH_PORT || secrets.VPS_SSH_PORT || '22' }}
+      POCKETBASE_SERVICE: ${{ secrets.POCKETBASE_SERVICE }}
+      POCKETBASE_DEPLOY_DIR: ${{ secrets.POCKETBASE_DEPLOY_DIR }}
     steps:
       - uses: actions/checkout@v4
         with:
           ref: main
           fetch-depth: 0
 
-      - name: Remove obsolete provider from active source
+      - name: Rename production OAuth environment
         shell: bash
         run: |
           set -euo pipefail
-          python3 - <<'PY'
-          from pathlib import Path
-
-          runtime = Path('pb_hooks/google_fit_sleep_runtime.js')
-          text = runtime.read_text()
-          text = text.replace(
-              'var clientId = __fitEnv("SLEEP_SYNC_GOOGLE_FIT_CLIENT_ID") || __fitEnv("SLEEP_SYNC_GOOGLE_HEALTH_CLIENT_ID");',
-              'var clientId = __fitEnv("SLEEP_SYNC_GOOGLE_FIT_CLIENT_ID");'
-          )
-          text = text.replace(
-              'var clientSecret = __fitEnv("SLEEP_SYNC_GOOGLE_FIT_CLIENT_SECRET") || __fitEnv("SLEEP_SYNC_GOOGLE_HEALTH_CLIENT_SECRET");',
-              'var clientSecret = __fitEnv("SLEEP_SYNC_GOOGLE_FIT_CLIENT_SECRET");'
-          )
-          text = text.replace(
-              '    // Google Health is no longer part of this adapter. Historical Google\n'
-              '    // Health read errors must never invalidate an existing Google Fit token.\n',
-              ''
-          )
-          legacy_record_block = '''    try {\n        return app.findFirstRecordByFilter(\n            "records",\n            "user_id = {:uid} && external_source = 'google_health' && start_time = {:start} && end_time = {:end}",\n            { uid: userId, start: session.start.toISOString(), end: session.end.toISOString() }\n        );\n    } catch (_) {}\n\n'''
-          text = text.replace(legacy_record_block, '')
-          runtime.write_text(text)
-
-          cloud = Path('lib/data/health/cloud_sleep_sync_service.dart')
-          cloud.write_text(cloud.read_text().replace('Google Health connection failed', 'Google Fit connection failed'))
-
-          deploy = Path('.github/workflows/deploy-pocketbase.yml')
-          d = deploy.read_text()
-          d = d.replace('''          GOOGLE_HEALTH_CLIENT_ID: ${{ secrets.GOOGLE_HEALTH_CLIENT_ID }}\n          GOOGLE_HEALTH_CLIENT_SECRET: ${{ secrets.GOOGLE_HEALTH_CLIENT_SECRET }}\n''', '')
-          d = d.replace('''          if [[ -z "$GOOGLE_HEALTH_CLIENT_ID" || -z "$GOOGLE_HEALTH_CLIENT_SECRET" ]]; then\n            echo "::warning::Google Health OAuth is not configured. Add GOOGLE_HEALTH_CLIENT_ID and GOOGLE_HEALTH_CLIENT_SECRET."\n          else\n            echo "Google Health OAuth credentials are configured."\n          fi\n''', '')
-          d = d.replace('''      GOOGLE_HEALTH_CLIENT_ID: ${{ secrets.GOOGLE_HEALTH_CLIENT_ID }}\n      GOOGLE_HEALTH_CLIENT_SECRET: ${{ secrets.GOOGLE_HEALTH_CLIENT_SECRET }}\n''', '')
-          d = d.replace('''          if [[ -z "$GOOGLE_HEALTH_CLIENT_ID" || -z "$GOOGLE_HEALTH_CLIENT_SECRET" ]]; then\n            echo "PocketBase deployment cannot run: Google Health OAuth credentials are missing." >&2\n            exit 1\n          fi\n''', '')
-          start = d.find('      - name: Prepare Google Health environment\n')
-          if start >= 0:
-              end = d.find('      - name: Upload server bundle\n', start)
-              if end < 0:
-                  raise SystemExit('could not locate end of obsolete environment step')
-              d = d[:start] + d[end:]
-          d = d.replace('''          scp -i ~/.ssh/lifeos_pocketbase -P "$SSH_PORT" /tmp/lifeos-google-health.env \\\n            "$SSH_USER@$SSH_HOST:/tmp/lifeos-google-health.env"\n''', '')
-          obsolete_install = '''          $SUDO install -m 600 /tmp/lifeos-google-health.env "$app_dir/.lifeos-google-health.env"\n          rm -f /tmp/lifeos-google-health.env\n\n          override_dir="/etc/systemd/system/${service_name}.d"\n          $SUDO mkdir -p "$override_dir"\n          printf '[Service]\\nEnvironmentFile=%s\\n' "$app_dir/.lifeos-google-health.env" | \\\n            $SUDO tee "$override_dir/lifeos-google-health.conf" >/dev/null\n          $SUDO systemctl daemon-reload\n'''
-          d = d.replace(obsolete_install, '')
-          deploy.write_text(d)
-          PY
-
-          rm -f pb_hooks/google_health_sleep_runtime.js
-          rm -f pb_migrations/1787133600_clear_legacy_google_health_sleep_error.js
-
-          cat > pb_migrations/1787137200_normalize_sleep_connection_state.js <<'EOF'
-          /// <reference path="../pb_data/types.d.ts" />
-
-          // A granted Google Fit refresh token defines the connection. Import
-          // errors are transient sync state and must not silently disable the
-          // user's synchronization setting.
-          migrate(function(app) {
-              var rows = [];
-              try {
-                  rows = app.findRecordsByFilter(
-                      "sleep_sync_connections",
-                      "provider = 'google_fit' && enabled = true",
-                      "",
-                      500,
-                      0
-                  );
-              } catch (_) {
-                  return;
-              }
-              for (var i = 0; i < rows.length; i++) {
-                  var row = rows[i];
-                  if (!String(row.get("refresh_token_enc") || "")) continue;
-                  row.set("status", "connected");
-                  row.set("last_error", "");
-                  app.save(row);
-              }
-          }, function(app) {});
-          EOF
-
-          node --check pb_hooks/google_fit_sleep_runtime.js
-          node --check pb_hooks/google_fit_sleep_recovery.js
-          node --check pb_migrations/1787137200_normalize_sleep_connection_state.js
-          git diff --check
-
-      - name: Verify no obsolete provider remains and publish
-        shell: bash
-        run: |
+          SSH_USER="${SSH_USER:-root}"
+          SSH_HOST="${SSH_HOST:-217.114.0.201}"
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/lifeos_pocketbase
+          chmod 600 ~/.ssh/lifeos_pocketbase
+          ssh-keyscan -p "$SSH_PORT" -H "$SSH_HOST" >> ~/.ssh/known_hosts
+          ssh -i ~/.ssh/lifeos_pocketbase -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" \
+            "POCKETBASE_SERVICE='$POCKETBASE_SERVICE' POCKETBASE_DEPLOY_DIR='$POCKETBASE_DEPLOY_DIR' bash -s" <<'REMOTE'
           set -euo pipefail
-          git rm .github/workflows/tmp-purge-google-health-sleep.yml
-          if git grep -nEi 'google[ _-]?health|GOOGLE_HEALTH' -- 'lib/**' 'pb_hooks/**' 'pb_migrations/**' '.github/workflows/**' 'android/**' 'ios/**'; then
-            echo 'Obsolete provider reference still exists in active code.' >&2
+          if [[ "$(id -u)" -eq 0 ]]; then SUDO=""; else SUDO="sudo -n"; fi
+          service_name="${POCKETBASE_SERVICE:-}"
+          if [[ -z "$service_name" ]]; then
+            service_name="$(systemctl list-unit-files --type=service --no-legend 2>/dev/null | awk 'tolower($1) ~ /pocketbase/ {print $1; exit}')"
+          fi
+          pid="$(pgrep -f '[p]ocketbase.*serve' | head -n 1 || true)"
+          app_dir="${POCKETBASE_DEPLOY_DIR:-}"
+          if [[ -z "$app_dir" && -n "$service_name" ]]; then app_dir="$(systemctl show "$service_name" -p WorkingDirectory --value 2>/dev/null || true)"; fi
+          if [[ -z "$app_dir" && -n "$pid" ]]; then app_dir="$(readlink -f "/proc/$pid/cwd" 2>/dev/null || true)"; fi
+          if [[ -z "$service_name" || -z "$app_dir" || ! -d "$app_dir" ]]; then
+            echo 'Could not discover PocketBase service/app directory' >&2
             exit 1
           fi
+
+          old_env="$app_dir/.lifeos-google-health.env"
+          new_env="$app_dir/.lifeos-google-fit.env"
+          if [[ ! -f "$new_env" ]]; then
+            if [[ ! -f "$old_env" ]]; then
+              echo 'Existing sleep OAuth environment file was not found' >&2
+              exit 1
+            fi
+            $SUDO sed \
+              -e 's/^SLEEP_SYNC_GOOGLE_HEALTH_CLIENT_ID=/SLEEP_SYNC_GOOGLE_FIT_CLIENT_ID=/' \
+              -e 's/^SLEEP_SYNC_GOOGLE_HEALTH_CLIENT_SECRET=/SLEEP_SYNC_GOOGLE_FIT_CLIENT_SECRET=/' \
+              "$old_env" | $SUDO tee "$new_env" >/dev/null
+            $SUDO chmod 600 "$new_env"
+          fi
+          if ! $SUDO grep -q '^SLEEP_SYNC_GOOGLE_FIT_CLIENT_ID=' "$new_env" || \
+             ! $SUDO grep -q '^SLEEP_SYNC_GOOGLE_FIT_CLIENT_SECRET=' "$new_env"; then
+            echo 'New Google Fit OAuth environment is incomplete' >&2
+            exit 1
+          fi
+
+          override_dir="/etc/systemd/system/${service_name}.d"
+          $SUDO mkdir -p "$override_dir"
+          printf '[Service]\nEnvironmentFile=%s\n' "$new_env" | \
+            $SUDO tee "$override_dir/lifeos-google-fit.conf" >/dev/null
+          $SUDO rm -f "$override_dir/lifeos-google-health.conf" "$old_env"
+          $SUDO systemctl daemon-reload
+          $SUDO systemctl restart "$service_name"
+
+          for attempt in {1..20}; do
+            health="$(curl -sS -o /dev/null -w '%{http_code}' https://217-114-0-201.sslip.io/api/health || true)"
+            sleep_route="$(curl -sS -o /dev/null -w '%{http_code}' https://217-114-0-201.sslip.io/api/sleep-sync/status || true)"
+            if [[ "$health" == "200" && ( "$sleep_route" == "401" || "$sleep_route" == "403" ) ]]; then
+              echo 'Production now uses Google Fit OAuth environment names.'
+              exit 0
+            fi
+            sleep 2
+          done
+          exit 1
+          REMOTE
+
+      - name: Remove one-time workflow
+        shell: bash
+        run: |
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add -A
-          git commit -m 'Purge obsolete sleep provider implementation'
+          git rm .github/workflows/tmp-purge-google-health-sleep.yml
+          git commit -m 'Finish Google Fit OAuth environment migration'
           git push origin HEAD:main
