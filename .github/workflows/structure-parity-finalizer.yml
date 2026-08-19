@@ -1,0 +1,90 @@
+name: Structure parity finalizer
+
+on:
+  push:
+    branches:
+      - architecture/final-parity-followup-20260819
+
+permissions:
+  contents: write
+
+concurrency:
+  group: structure-parity-finalizer
+  cancel-in-progress: false
+
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: architecture/final-parity-followup-20260819
+          fetch-depth: 0
+
+      - name: Fold legacy ratchet entry point into repository hygiene
+        shell: bash
+        run: |
+          set -euo pipefail
+          git rm -f scripts/audit/structure_growth_contract.py
+
+          python - <<'PY'
+          from pathlib import Path
+          targets = [Path('AGENTS.md'), Path('AGENT_NAVIGATION.md'), Path('docs/ARCHITECTURE.md')]
+          old = 'scripts/audit/structure_growth_contract.py'
+          new = 'scripts/audit/repository_hygiene.py'
+          for path in targets:
+              text = path.read_text(encoding='utf-8')
+              if old in text:
+                  path.write_text(text.replace(old, new), encoding='utf-8')
+          PY
+
+      - name: Make push baseline resolution exact
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('scripts/audit/repository_hygiene.py')
+          text = path.read_text(encoding='utf-8')
+          text = text.replace('import os\nimport re', 'import json\nimport os\nimport re', 1)
+          needle = '''    configured = os.environ.get("STRUCTURE_GROWTH_BASE", "").strip()\n    if configured and not re.fullmatch(r"0+", configured):\n        resolved = git("rev-parse", configured, check=False).strip()\n        if resolved:\n            return resolved\n\n    event = os.environ.get("GITHUB_EVENT_NAME", "")\n'''
+          replacement = '''    configured = os.environ.get("STRUCTURE_GROWTH_BASE", "").strip()\n    if configured and not re.fullmatch(r"0+", configured):\n        resolved = git("rev-parse", configured, check=False).strip()\n        if resolved:\n            return resolved\n\n    event_path = os.environ.get("GITHUB_EVENT_PATH", "").strip()\n    if event_path:\n        try:\n            event_payload = json.loads(Path(event_path).read_text(encoding="utf-8"))\n        except (OSError, json.JSONDecodeError):\n            event_payload = {}\n        before = str(event_payload.get("before") or "").strip()\n        if before and not re.fullmatch(r"0+", before):\n            resolved = git("rev-parse", before, check=False).strip()\n            if resolved:\n                return resolved\n\n    event = os.environ.get("GITHUB_EVENT_NAME", "")\n'''
+          if needle not in text:
+              raise SystemExit('repository_hygiene baseline block changed unexpectedly')
+          path.write_text(text.replace(needle, replacement, 1), encoding='utf-8')
+          PY
+
+      - name: Remove this one-off workflow before manifest generation
+        run: git rm -f .github/workflows/structure-parity-finalizer.yml
+
+      - name: Regenerate exact tracked-file encyclopedia
+        run: python scripts/manual/generate_app_structure_detailed.py
+
+      - name: Verify final structure contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          pwsh -NoProfile -NonInteractive -File ./scripts/audit/architecture_guard.ps1 -Strict
+          STRUCTURE_GROWTH_BASE="$(git merge-base HEAD origin/main)" python scripts/audit/repository_hygiene.py
+          python scripts/audit/documentation_parity.py
+          python scripts/audit/pocketbase_schema_contract.py
+          python scripts/audit/deployment_contract.py
+          git diff --check
+          if git grep -n -F 'scripts/audit/structure_growth_contract.py' -- ':!CHANGELOG.md'; then
+            echo 'Stale live structure_growth_contract.py reference remains.' >&2
+            exit 1
+          fi
+
+      - name: Commit final generated parity
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          if git diff --cached --quiet; then
+            echo 'No finalizer changes to commit.'
+            exit 0
+          fi
+          git commit -m 'Architecture: close exact tracked-tree parity loop'
+          git push origin HEAD:architecture/final-parity-followup-20260819
