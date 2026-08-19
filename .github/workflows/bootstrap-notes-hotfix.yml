@@ -1,3 +1,4 @@
+# One-time observable PR execution marker for the Notes production hotfix.
 name: Bootstrap Notes production hotfix
 
 on:
