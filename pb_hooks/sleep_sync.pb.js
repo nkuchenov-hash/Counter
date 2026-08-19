@@ -1,5 +1,7 @@
 /// <reference path="../pb_data/types.d.ts" />
 
+// Production sleep synchronization routes. The web client completes OAuth in
+// the current tab, then returns here to persist the connection and import sleep.
 routerAdd("GET", "/api/sleep-sync/status", function(e) {
     var sync = require(__hooks + "/google_health_sleep_runtime.js");
     return sync.status(e);
