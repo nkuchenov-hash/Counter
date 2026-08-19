@@ -38,7 +38,64 @@ jobs:
           path: pages
           fetch-depth: 1
 
-      - name: Extract and apply focused patch
+      - name: Apply quick-add geometry directly
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('lib/features/notes/widgets/notes_library_production_shell.dart')
+          text = path.read_text()
+          text = text.replace(
+              '    final compactMobile = MediaQuery.sizeOf(context).shortestSide < 600;\n',
+              '',
+              1,
+          )
+          text = text.replace('            height: 40,', '            height: 48,', 1)
+          text = text.replace(
+              '              style: TextStyle(fontSize: 14, color: scheme.onSurface),',
+              '              style: TextStyle(fontSize: 15, color: scheme.onSurface),',
+              1,
+          )
+          text = text.replace('                  fontSize: 14,', '                  fontSize: 15,', 1)
+          start_marker = '''        SizedBox(
+          width: compactMobile ? 40 : null,
+          height: 40,
+'''
+          start = text.find(start_marker)
+          if start < 0:
+              raise SystemExit('quick-add start marker not found')
+          end_marker = '''        ),
+      ],
+    );'''
+          end = text.find(end_marker, start)
+          if end < 0:
+              raise SystemExit('quick-add end marker not found')
+          end += len('        ),')
+          new_button = '''        SizedBox.square(
+          dimension: 48,
+          child: Tooltip(
+            message: t(locale, 'add'),
+            child: Material(
+              color: scheme.primary,
+              shape: const CircleBorder(),
+              child: InkWell(
+                onTap: onSubmit,
+                customBorder: const CircleBorder(),
+                child: Center(
+                  child: Icon(
+                    Icons.add_rounded,
+                    size: 24,
+                    color: scheme.onPrimary,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),'''
+          text = text[:start] + new_button + text[end:]
+          path.write_text(text)
+          PY
+
+      - name: Extract and apply remaining focused patch
         run: |
           python3 - <<'PY'
           from pathlib import Path
@@ -46,11 +103,15 @@ jobs:
           start = next(i for i, line in enumerate(src) if "python3 - <<'PY'" in line) + 1
           end = next(i for i in range(start, len(src)) if src[i].strip() == 'PY')
           body = []
-          for line in src[start:end]:
-              line = line[10:] if line.startswith('          ') else line
-              # The embedded patch originally removed compactMobile before it
-              # matched the legacy button block that still referenced it.
-              if 'final compactMobile = MediaQuery.sizeOf(context).shortestSide < 600' in line and 'text.replace' in line:
+          skipping_quick_add = False
+          for raw in src[start:end]:
+              line = raw[10:] if raw.startswith('          ') else raw
+              if '# 3) Quick add:' in line:
+                  skipping_quick_add = True
+                  continue
+              if skipping_quick_add and '# 4) Keep Notes checkbox-mode' in line:
+                  skipping_quick_add = False
+              if skipping_quick_add:
                   continue
               body.append(line)
           Path('/tmp/apply_notes_batch.py').write_text('\n'.join(body) + '\n')
