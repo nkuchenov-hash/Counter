@@ -1,0 +1,92 @@
+name: Capture Google Fit state and remove temp workflows
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    if: github.event.pull_request.head.ref == 'cleanup/stt-release-artifact-20260819' && github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      SSH_PRIVATE_KEY: ${{ secrets.POCKETBASE_SSH_PRIVATE_KEY || secrets.VPS_SSH_KEY || secrets.SSH_PRIVATE_KEY }}
+      SSH_USER: ${{ secrets.POCKETBASE_SSH_USER || secrets.VPS_SSH_USER || secrets.SSH_USER }}
+      SSH_HOST: ${{ secrets.POCKETBASE_SSH_HOST || secrets.VPS_HOST || secrets.SSH_HOST }}
+      SSH_PORT: ${{ secrets.POCKETBASE_SSH_PORT || secrets.VPS_SSH_PORT || '22' }}
+      POCKETBASE_SERVICE: ${{ secrets.POCKETBASE_SERVICE }}
+      POCKETBASE_DEPLOY_DIR: ${{ secrets.POCKETBASE_DEPLOY_DIR }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: cleanup/stt-release-artifact-20260819
+          fetch-depth: 0
+
+      - name: Rebase onto current main
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git fetch origin main
+          git rebase origin/main
+
+      - name: Read sanitized production state
+        shell: bash
+        run: |
+          set -euo pipefail
+          SSH_USER="${SSH_USER:-root}"
+          SSH_HOST="${SSH_HOST:-217.114.0.201}"
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/lifeos_pocketbase
+          chmod 600 ~/.ssh/lifeos_pocketbase
+          ssh-keyscan -p "$SSH_PORT" -H "$SSH_HOST" >> ~/.ssh/known_hosts
+          ssh -i ~/.ssh/lifeos_pocketbase -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" \
+            "POCKETBASE_SERVICE='$POCKETBASE_SERVICE' POCKETBASE_DEPLOY_DIR='$POCKETBASE_DEPLOY_DIR' bash -s" <<'REMOTE'
+          set -euo pipefail
+          service_name="${POCKETBASE_SERVICE:-}"
+          if [[ -z "$service_name" ]]; then service_name="$(systemctl list-unit-files --type=service --no-legend 2>/dev/null | awk 'tolower($1) ~ /pocketbase/ {print $1; exit}')"; fi
+          pid="$(pgrep -f '[p]ocketbase.*serve' | head -n 1 || true)"
+          app_dir="${POCKETBASE_DEPLOY_DIR:-}"
+          if [[ -z "$app_dir" && -n "$service_name" ]]; then app_dir="$(systemctl show "$service_name" -p WorkingDirectory --value 2>/dev/null || true)"; fi
+          if [[ -z "$app_dir" && -n "$pid" ]]; then app_dir="$(readlink -f "/proc/$pid/cwd" 2>/dev/null || true)"; fi
+          [[ -n "$app_dir" && -f "$app_dir/pb_data/data.db" ]]
+          python3 - "$app_dir/pb_data/data.db" <<'PY'
+          import sqlite3, sys
+          con=sqlite3.connect(f'file:{sys.argv[1]}?mode=ro', uri=True); con.row_factory=sqlite3.Row
+          r=con.execute("SELECT enabled,status,last_error,last_sync_at,length(coalesce(refresh_token_enc,'')) AS refresh_len,last_session_count,last_imported_count FROM sleep_sync_connections WHERE provider='google_fit' ORDER BY last_sync_at DESC LIMIT 1").fetchone()
+          def cls(v):
+              s=(v or '').lower()
+              if not s:return 'none'
+              if 'invalid_grant' in s:return 'invalid_grant'
+              if 'account_not_linked' in s:return 'account_not_linked'
+              if '403' in s or 'permission' in s or 'scope' in s:return 'permission'
+              if '401' in s:return 'auth'
+              return 'other'
+          print('fit_env=' + str(__import__('os').path.isfile(sys.argv[1].replace('/pb_data/data.db','/.lifeos-google-fit.env'))).lower())
+          print('runtime_fit=' + str(__import__('os').path.isfile(sys.argv[1].replace('/pb_data/data.db','/pb_hooks/google_fit_sleep_runtime.js'))).lower())
+          if r:
+              print('connection=true'); print('enabled='+str(bool(r['enabled'])).lower()); print('status='+str(r['status']))
+              print('refresh_token='+str(r['refresh_len']>0).lower()); print('error='+cls(r['last_error']))
+              print('last_sync='+str(bool(r['last_sync_at'])).lower()); print('sessions='+str(r['last_session_count'] or 0)); print('imported='+str(r['last_imported_count'] or 0))
+          else: print('connection=false')
+          for d in (2,7,30):
+              n=con.execute("SELECT count(*) FROM records WHERE (title='Sleep' OR title='Сон') AND end_time >= datetime('now', ?)",(f'-{d} days',)).fetchone()[0]
+              print(f'sleep_records_{d}d={n}')
+          con.close()
+          PY
+          REMOTE
+
+      - name: Remove all one-off sleep workflows and self
+        shell: bash
+        run: |
+          set -euo pipefail
+          for f in .github/workflows/tmp-finalize-google-fit-sleep.yml .github/workflows/tmp-sleep-fit-prod-check.yml .github/workflows/tmp-clean-sleep-source.yml; do
+            if git ls-files --error-unmatch "$f" >/dev/null 2>&1; then git rm -f "$f"; fi
+          done
+          git rm -f .github/workflows/sleep-prod-state-cleanup.yml
+          git commit -m 'Cleanup completed Google Fit production workflows'
+          git push --force-with-lease origin HEAD:cleanup/stt-release-artifact-20260819
