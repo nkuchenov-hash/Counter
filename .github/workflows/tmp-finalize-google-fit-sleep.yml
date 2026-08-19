@@ -1,3 +1,4 @@
+# trigger existing workflow
 name: Finalize Google Fit sleep production state
 
 on:
@@ -61,18 +62,15 @@ jobs:
           if [[ ! -f "$fit_env" ]]; then
             source_env="$(find "$app_dir" -maxdepth 1 -type f -name '.lifeos-google-*.env' ! -name '.lifeos-google-fit.env' -print -quit)"
             [[ -n "$source_env" ]]
-            python3 - "$source_env" /tmp/lifeos-google-fit.env <<'PY'
-          import re, sys
-          src=open(sys.argv[1]).read()
-          cid=re.search(r'^SLEEP_SYNC_GOOGLE_[A-Z_]*CLIENT_ID=(.*)$', src, re.M)
-          secret=re.search(r'^SLEEP_SYNC_GOOGLE_[A-Z_]*CLIENT_SECRET=(.*)$', src, re.M)
-          key=re.search(r'^SLEEP_SYNC_TOKEN_KEY=(.*)$', src, re.M)
-          if not cid or not secret: raise SystemExit('OAuth credentials not found in existing sleep environment')
-          with open(sys.argv[2],'w') as f:
-              f.write('SLEEP_SYNC_GOOGLE_FIT_CLIENT_ID='+cid.group(1)+'\n')
-              f.write('SLEEP_SYNC_GOOGLE_FIT_CLIENT_SECRET='+secret.group(1)+'\n')
-              if key: f.write('SLEEP_SYNC_TOKEN_KEY='+key.group(1)+'\n')
-          PY
+            client_id="$(sed -n 's/^SLEEP_SYNC_GOOGLE_[A-Z_]*CLIENT_ID=//p' "$source_env" | head -n1)"
+            client_secret="$(sed -n 's/^SLEEP_SYNC_GOOGLE_[A-Z_]*CLIENT_SECRET=//p' "$source_env" | head -n1)"
+            token_key="$(sed -n 's/^SLEEP_SYNC_TOKEN_KEY=//p' "$source_env" | head -n1)"
+            [[ -n "$client_id" && -n "$client_secret" ]]
+            {
+              printf 'SLEEP_SYNC_GOOGLE_FIT_CLIENT_ID=%s\n' "$client_id"
+              printf 'SLEEP_SYNC_GOOGLE_FIT_CLIENT_SECRET=%s\n' "$client_secret"
+              if [[ -n "$token_key" ]]; then printf 'SLEEP_SYNC_TOKEN_KEY=%s\n' "$token_key"; fi
+            } > /tmp/lifeos-google-fit.env
             $SUDO install -m 600 /tmp/lifeos-google-fit.env "$fit_env"
             rm -f /tmp/lifeos-google-fit.env
           fi
