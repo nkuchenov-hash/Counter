@@ -47,19 +47,23 @@ jobs:
           end = next(i for i in range(start, len(src)) if src[i].strip() == 'PY')
           body = []
           for line in src[start:end]:
-              body.append(line[10:] if line.startswith('          ') else line)
+              line = line[10:] if line.startswith('          ') else line
+              # The embedded patch originally removed compactMobile before it
+              # matched the legacy button block that still referenced it.
+              if 'final compactMobile = MediaQuery.sizeOf(context).shortestSide < 600' in line and 'text.replace' in line:
+                  continue
+              body.append(line)
           Path('/tmp/apply_notes_batch.py').write_text('\n'.join(body) + '\n')
           PY
           python3 /tmp/apply_notes_batch.py
           git diff --check
 
-      - name: Commit source to main
+      - name: Commit source locally
         run: |
           git config user.name 'nkuchenov-hash'
           git config user.email 'nkuchenov-hash@users.noreply.github.com'
           git add lib/features/notes lib/features/lists/lists_view.dart lib/features/lists/lists_filters.dart lib/shared/categories
           git commit -m 'Fix Notes category picker cards clipboard and editor UX'
-          git push origin HEAD:main
           echo "SOURCE_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
 
       - name: Set up Flutter 3.41.6
@@ -68,7 +72,7 @@ jobs:
           flutter-version: '3.41.6'
           channel: stable
 
-      - name: Build verified web
+      - name: Verify and build web
         run: |
           mkdir -p lib/core/env
           printf '%s\n' 'abstract final class Env {' '  static const String placeholder = '\'''\'';' '}' > lib/core/env/env.dart
@@ -78,6 +82,9 @@ jobs:
             --dart-define=GIT_COMMIT="$(git rev-parse --short HEAD)" \
             --dart-define=BUILD_TIME="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
           printf '%s\n' "$(git rev-parse HEAD)" > build/web/.lifeos-source-sha
+
+      - name: Push verified source to main
+        run: git push origin HEAD:main
 
       - name: Preserve companion content
         run: |
