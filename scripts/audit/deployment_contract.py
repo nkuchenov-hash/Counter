@@ -33,7 +33,9 @@ def main() -> int:
         "types: [completed]",
         "workflow_run.conclusion == 'success'",
         "workflow_run.event == 'push'",
+        "workflow_run.head_branch == 'main'",
         "workflow_run.head_sha",
+        "ref: ${{ github.event.workflow_run.head_sha }}",
     ):
         if token not in web:
             violations.append(f"WEB_DEPLOY_ORDERING_MISSING {token}")
