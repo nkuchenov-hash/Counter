@@ -91,9 +91,9 @@ function __fitNeedsReconnect(errorText) {
     // Connection state and import state are separate. Once Google issued a
     // refresh token, a data-read failure must not make the user's setting look
     // disconnected. Only genuinely invalid/stale credentials require OAuth.
+    // Google Health is no longer part of this adapter. Historical Google
+    // Health read errors must never invalidate an existing Google Fit token.
     return raw.indexOf("account_not_linked") >= 0 ||
-        raw.indexOf("google health authorization is required") >= 0 ||
-        raw.indexOf("google health sleep request") >= 0 ||
         raw.indexOf("invalid_grant") >= 0;
 }
 
