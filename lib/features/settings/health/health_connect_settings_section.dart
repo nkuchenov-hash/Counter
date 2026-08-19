@@ -124,11 +124,17 @@ class _SleepSyncSettingsSectionState extends State<SleepSyncSettingsSection>
       ),
       CloudSleepSyncPhase.syncing =>
         _copy(locale, 'Synchronizing…', 'Синхронизация…'),
-      CloudSleepSyncPhase.error => _copy(
-        locale,
-        'Synchronization needs access. Turn it on to continue.',
-        'Для синхронизации нужен доступ. Включите её, чтобы продолжить.',
-      ),
+      CloudSleepSyncPhase.error => state.configured && state.enabled
+          ? _copy(
+              locale,
+              'Synchronization is on. Life OS will retry automatically.',
+              'Синхронизация включена. Life OS повторит попытку автоматически.',
+            )
+          : _copy(
+              locale,
+              'Synchronization needs access. Turn it on to continue.',
+              'Для синхронизации нужен доступ. Включите её, чтобы продолжить.',
+            ),
       _ => state.configured && state.enabled
           ? _copy(
               locale,
