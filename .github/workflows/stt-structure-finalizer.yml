@@ -92,32 +92,32 @@ jobs:
               raise SystemExit('Expected root app_shell import not found')
           main.write_text(text.replace(old, new, 1), encoding='utf-8')
 
-          agents = Path('AGENTS.md')
-          text = agents.read_text(encoding='utf-8')
-          text = text.replace(
-              '`lib/main.dart` and `lib/app/shell/` (via root `lib/app_shell.dart` re-export)',
-              '`lib/main.dart` and `lib/app/shell/`',
-          )
-          agents.write_text(text, encoding='utf-8')
-
-          nav = Path('AGENT_NAVIGATION.md')
-          text = nav.read_text(encoding='utf-8')
-          text = text.replace('wired in `app_shell.dart` IndexedStack index 3', 'wired in canonical `lib/app/shell/app_shell.dart` shell index 3')
-          nav.write_text(text, encoding='utf-8')
-
-          app = Path('docs/APP_STRUCTURE.md')
-          text = app.read_text(encoding='utf-8')
-          text = text.replace('`lib/main.dart`, `lib/app_shell.dart`, `lib/app/shell/`', '`lib/main.dart`, `lib/app/shell/`')
-          text = text.replace('main/app_shell → all layers', 'main/app/shell → all layers')
-          text = text.replace('`main.dart` and `app_shell.dart` wire them at runtime', '`main.dart` and canonical `app/shell/app_shell.dart` wire them at runtime')
-          text = text.replace('| `app_shell.dart` | Thin compatibility re-export of `app/shell/app_shell.dart` |\n', '')
-          text = text.replace('\nCompatibility entry surface retained intentionally: root `lib/app_shell.dart` is a thin re-export of the canonical shell root.\n', '\n')
-          app.write_text(text, encoding='utf-8')
-
-          architecture = Path('docs/ARCHITECTURE.md')
-          text = architecture.read_text(encoding='utf-8')
-          text = text.replace('`lib/app_shell.dart`', '`lib/app/shell/app_shell.dart`')
-          architecture.write_text(text, encoding='utf-8')
+          replacements = {
+              Path('AGENTS.md'): [
+                  ('`lib/main.dart` and `lib/app/shell/` (via root `lib/app_shell.dart` re-export)', '`lib/main.dart` and `lib/app/shell/`'),
+              ],
+              Path('AGENT_NAVIGATION.md'): [
+                  ('wired in `app_shell.dart` IndexedStack index 3', 'wired in canonical `lib/app/shell/app_shell.dart` shell index 3'),
+              ],
+              Path('docs/APP_STRUCTURE.md'): [
+                  ('`lib/main.dart`, `lib/app_shell.dart`, `lib/app/shell/`', '`lib/main.dart`, `lib/app/shell/`'),
+                  ('main/app_shell → all layers', 'main/app/shell → all layers'),
+                  ('`main.dart` and `app_shell.dart` wire them at runtime', '`main.dart` and canonical `app/shell/app_shell.dart` wire them at runtime'),
+                  ('| `app_shell.dart` | Thin compatibility re-export of `app/shell/app_shell.dart` |\n', ''),
+                  ('\nCompatibility entry surface retained intentionally: root `lib/app_shell.dart` is a thin re-export of the canonical shell root.\n', '\n'),
+              ],
+              Path('docs/ARCHITECTURE.md'): [
+                  ('`lib/app_shell.dart`', '`lib/app/shell/app_shell.dart`'),
+              ],
+              Path('docs/website/PRODUCT_INVENTORY.md'): [
+                  ('`lib/app_shell.dart`', '`lib/app/shell/app_shell.dart`'),
+              ],
+          }
+          for path, pairs in replacements.items():
+              text = path.read_text(encoding='utf-8')
+              for old_value, new_value in pairs:
+                  text = text.replace(old_value, new_value)
+              path.write_text(text, encoding='utf-8')
           PY
           git rm -f lib/app_shell.dart
 
@@ -125,7 +125,7 @@ jobs:
             echo 'Stale root shell import remains.' >&2
             exit 1
           fi
-          if git grep -n -F 'lib/app_shell.dart' -- AGENTS.md AGENT_NAVIGATION.md docs/APP_STRUCTURE.md docs/ARCHITECTURE.md; then
+          if git grep -n -F 'lib/app_shell.dart' -- AGENTS.md AGENT_NAVIGATION.md docs/APP_STRUCTURE.md docs/ARCHITECTURE.md docs/website/PRODUCT_INVENTORY.md; then
             echo 'Stale live root shell documentation remains.' >&2
             exit 1
           fi
