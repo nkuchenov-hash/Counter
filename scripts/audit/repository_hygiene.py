@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Repository hygiene gate: reject orphan aliases and accidental huge tracked binaries."""
+"""Repository hygiene gate: reject orphan aliases, runtime compatibility dirs, and accidental huge binaries."""
 
 from __future__ import annotations
 
@@ -12,11 +12,15 @@ ROOT = Path(__file__).resolve().parents[2]
 DART_EDGE_RE = re.compile(r"^\s*(?:import|export|part)\s+['\"]([^'\"]+)['\"]", re.M)
 EXPORT_STMT_RE = re.compile(r"export\s+['\"][^'\"]+['\"][^;]*;", re.S)
 MAX_BINARY_BYTES = 5_000_000
-LARGE_BINARY_ALLOWLIST: dict[str, str] = {
-    "installer/windows/stt_helper_build/counter_stt_helper.exe": (
-        "Required offline desktop-voice HTTP sidecar. Keep tracked until its source/artifact "
-        "pipeline is reproducible independently of a developer workstation."
-    ),
+LARGE_BINARY_ALLOWLIST: dict[str, dict[str, str]] = {
+    "installer/windows/stt_helper_build/counter_stt_helper.exe": {
+        "git_blob_sha": "75ad10824f8f95359f1f87b71556852238fc786e",
+        "reason": (
+            "Pinned offline desktop-voice HTTP sidecar. The historical backend-rs source is not "
+            "currently versioned in Counter/GOLOS, so this exact blob is retained until a "
+            "reproducible source/artifact pipeline exists."
+        ),
+    },
 }
 BINARY_SUFFIXES = {
     ".exe", ".dll", ".so", ".dylib", ".wav", ".mp3", ".mp4", ".png", ".jpg",
@@ -26,6 +30,12 @@ BINARY_SUFFIXES = {
 
 def git_files() -> list[str]:
     return subprocess.check_output(["git", "ls-files"], cwd=ROOT, text=True).splitlines()
+
+
+def git_blob_sha(path: str) -> str:
+    return subprocess.check_output(
+        ["git", "hash-object", "--", path], cwd=ROOT, text=True
+    ).strip()
 
 
 def text(path: Path) -> str | None:
@@ -78,6 +88,8 @@ def main() -> int:
     for path in files:
         if path.startswith(".github/workflows/tmp-"):
             violations.append(f"TEMP_WORKFLOW_TRACKED {path}")
+        if path.startswith("lib/") and "compatibility" in PurePosixPath(path).parts:
+            violations.append(f"RUNTIME_COMPATIBILITY_DIR {path}")
 
     for path in files:
         if not path.startswith("lib/") or not path.endswith(".dart"):
@@ -97,10 +109,17 @@ def main() -> int:
         is_binary = p.suffix.lower() in BINARY_SUFFIXES or text(p) is None
         if not is_binary:
             continue
-        if path not in LARGE_BINARY_ALLOWLIST:
+        allow = LARGE_BINARY_ALLOWLIST.get(path)
+        if allow is None:
             violations.append(f"UNAPPROVED_LARGE_BINARY {path} bytes={size}")
+            continue
+        actual_sha = git_blob_sha(path)
+        expected_sha = allow["git_blob_sha"]
+        if actual_sha != expected_sha:
+            violations.append(
+                f"PINNED_LARGE_BINARY_CHANGED {path} expected={expected_sha} actual={actual_sha}"
+            )
 
-    # Watchlist metadata itself must never point to files that no longer exist.
     sys.path.insert(0, str(ROOT / "scripts" / "manual"))
     from structure_evidence_index import WATCHLIST_PATHS  # noqa: PLC0415
 
@@ -115,10 +134,13 @@ def main() -> int:
             print(f"  - {item}", file=sys.stderr)
         return 1
 
-    for path, reason in LARGE_BINARY_ALLOWLIST.items():
+    for path, spec in LARGE_BINARY_ALLOWLIST.items():
         if path in tracked:
             size = (ROOT / path).stat().st_size
-            print(f"allowed_large_binary: {path} bytes={size} reason={reason}")
+            print(
+                f"allowed_large_binary: {path} bytes={size} sha={spec['git_blob_sha']} "
+                f"reason={spec['reason']}"
+            )
     print("repository_hygiene: OK")
     return 0
 
