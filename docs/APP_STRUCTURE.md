@@ -38,7 +38,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Layer | Path | Owns | May import | Must NOT import |
 | :--- | :--- | :--- | :--- | :--- |
-| **Entry** | `lib/main.dart`, `lib/app_shell.dart`, `lib/app/shell/` | Boot, auth gate, form-factor shell navigation, cross-tab wiring | `data/`, `core/`, `shared/`, `features/`, `l10n/`, `services/` | — |
+| **Entry** | `lib/main.dart`, `lib/app/shell/` | Boot, auth gate, form-factor shell navigation, cross-tab wiring | `data/`, `core/`, `shared/`, `features/`, `l10n/`, `services/` | — |
 | **Brain** | `lib/data/` | PocketBase I/O, in-memory cache, optimistic UI, offline outboxes, domain models; Planning-domain diagnostics under `plans/diagnostics/`; Voice parser/domain/cloud STT under `voice/`; Path interpretation under `paths/` | `core/` (utilities only), `shared/` (time + diagnostics + voice + categories contracts), `services/` (device bridge), other `data/` | `features/` |
 | **Shared time** | `lib/shared/time/` | Multi-consumer UTC/wall-clock, timezone catalog, app clock hooks, shared plan-time math used by Brain + UI | `core/` (utilities), `data/models.dart` (types only) | `features/`, `data/database_service.dart` |
 | **Shared diagnostics** | `lib/shared/diagnostics/` | General runtime logs (`runtime_log`, `platform_log`, `startup_log`); performance metrics + kill-switch registry under `performance/` | `core/` (utilities), `data/models.dart` (types only) | `features/`, `data/database_service.dart` |
@@ -62,7 +62,7 @@ core      →  features, database_service           ✗
 services  →  data/models, shared/time, plugins    ✓
 services  →  features                             ✗
 l10n      →  (self + langs)                       ✓
-main/app_shell → all layers                       ✓
+main/app/shell → all layers                       ✓
 ```
 
 **Brain rule:** `lib/data/database_service.dart` and its `part of` extensions are the only files that perform HTTP/PocketBase calls. Domain logic lives in focused repositories/services; `paths/path_repository.dart` delegates durable persistence to `paths/path_service.dart` (a DatabaseService part).
@@ -73,7 +73,7 @@ main/app_shell → all layers                       ✓
 
 ## 2. Shell injection (main → shared time / categories / core)
 
-These abstractions stay free of Brain imports in the UI layer; `main.dart` and `app_shell.dart` wire them at runtime:
+These abstractions stay free of Brain imports in the UI layer; `main.dart` and canonical `app/shell/app_shell.dart` wire them at runtime:
 
 | Symbol | File | Wired from | Purpose |
 | :--- | :--- | :--- | :--- |
@@ -92,7 +92,6 @@ These abstractions stay free of Brain imports in the UI layer; `main.dart` and `
 | File | Role |
 | :--- | :--- |
 | `main.dart` | `runApp`, PocketBase bootstrap, auth gate, Wear entry, locale init, shell injection |
-| `app_shell.dart` | Thin compatibility re-export of `app/shell/app_shell.dart` |
 
 **Shell destinations:** 0 Timeline · 1 Plans · 2 Calendar · 3 Lists · 4 Categories · 5 Profile · 6 Paths. Phone/tablet bottom navigation keeps four primary tabs + More; More → Paths selects the same shell-owned index 6 used by desktop side navigation.
 
@@ -126,7 +125,6 @@ Product sections own section-specific code later; this phase only separates shel
 
 Wear shell/layout remains under `lib/features/wear/` (entered from `main.dart`); `app/shell/wear/` is reserved for a later move when Wear chrome is extracted — no dead placeholders.
 
-Compatibility entry surface retained intentionally: root `lib/app_shell.dart` is a thin re-export of the canonical shell root.
 
 ### 3.2 `lib/data/` — Brain & models
 

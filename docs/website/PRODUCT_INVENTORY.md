@@ -2,7 +2,7 @@
 
 **Purpose:** Authoritative inventory of real product capabilities for website planning.  
 **Audit date:** 2026-06-24  
-**Sources:** `docs/APP_STRUCTURE.md`, `docs/ROADMAP.md`, `docs/UX_CONTRACT.md`, `docs/DATA_MAP.md`, `docs/POCKETBASE_MANIFEST.md`, `CHANGELOG.md`, `lib/features/*`, `lib/app_shell.dart`.
+**Sources:** `docs/APP_STRUCTURE.md`, `docs/ROADMAP.md`, `docs/UX_CONTRACT.md`, `docs/DATA_MAP.md`, `docs/POCKETBASE_MANIFEST.md`, `CHANGELOG.md`, `lib/features/*`, `lib/app/shell/app_shell.dart`.
 
 **Status legend**
 
@@ -20,7 +20,7 @@
 | Field | Detail |
 | :--- | :--- |
 | **User-facing capability** | Day-based activity timeline. Start/stop timed records with title + category. Swipe horizontally to change calendar day. Running timer shows active state. Edit/delete records via unified activity sheet. Optional checklist and notes on records. Category auto-match from title (whole-word). Stats sub-view on same tab. |
-| **Proof (files/symbols)** | `lib/features/timeline/timeline_view.dart` — `TimelineSwipeWrapper`, `TimelinePage`; `lib/data/record_service.dart` — `writeRecord`, `stopRecordByDocId`, optimistic shadow; `lib/features/shared/shared_widgets.dart` — `ActivityDetailSheet`, `_TimelineRecordSheetContent`; `lib/app_shell.dart` — `_startVoiceInput`, `_voiceSubmitTimeline` |
+| **Proof (files/symbols)** | `lib/features/timeline/timeline_view.dart` — `TimelineSwipeWrapper`, `TimelinePage`; `lib/data/record_service.dart` — `writeRecord`, `stopRecordByDocId`, optimistic shadow; `lib/features/shared/shared_widgets.dart` — `ActivityDetailSheet`, `_TimelineRecordSheetContent`; `lib/app/shell/app_shell.dart` — `_startVoiceInput`, `_voiceSubmitTimeline` |
 | **User value** | Honest log of how time was spent; instant start/stop without waiting on server; traveler-safe day bucketing via profile timezone |
 | **Status** | **public-ready** |
 | **Risks / caveats** | Server enforces non-overlapping intervals (singleton law). Stale-open record handling is complex — do not promise “unlimited parallel timers” for primary timeline rows. |

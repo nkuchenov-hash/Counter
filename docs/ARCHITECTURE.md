@@ -22,7 +22,7 @@
 | `lib/data/plans/diagnostics/` | **Brain plans diagnostics** | Planning-domain duplicate / stream lifecycle log (`plan_duplicate_log.dart`). Lives inside Brain; not shared diagnostics and not feature UI. |
 | `lib/data/paths/` | **Path domain** | Durable Path models/revisions + repository; PocketBase I/O is `path_service.dart` as a DatabaseService part. No project-specific templates, Planner scheduling, or marker parsing. |
 | `lib/features/paths/` | **Paths UI** | First-class Paths destination. Displays/edits Path domain data only; no project bootstrap, migration, or Planner generation on page open. |
-| `lib/app_shell.dart` | **The Navigator** | Thin entry re-export; canonical shell under `lib/app/shell/`. |
+| `lib/app/shell/app_shell.dart` | **The Navigator** | Thin entry re-export; canonical shell under `lib/app/shell/`. |
 | `lib/main.dart` | **The ignition** | Calls `ensurePocketBaseReady()`, then restores session and loads profile. |
 
 ---

@@ -9,7 +9,7 @@ import 'package:counter/core/services/desktop_main_window.dart';
 import 'package:counter/shared/voice/platforms/desktop/desktop_stt_cloud_service.dart';
 import 'package:counter/shared/diagnostics/performance/rebuild_metrics.dart';
 import 'package:counter/core/app_snackbar.dart';
-import 'package:counter/app_shell.dart';
+import 'package:counter/app/shell/app_shell.dart';
 import 'package:counter/features/auth/auth_screen.dart';
 import 'package:counter/features/auth/oauth_session.dart';
 import 'package:counter/data/auth_bridge.dart';
