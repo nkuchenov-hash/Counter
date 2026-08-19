@@ -1,6 +1,6 @@
 /// <reference path="../pb_data/types.d.ts" />
 
-// Keep PocketBase from collapsing Google Health connect hook failures into a generic 400.
+// Keep PocketBase from collapsing Google Fit connect hook failures into a generic 400.
 // This middleware only affects the authenticated sleep connect endpoint.
 routerUse(function(e) {
     var path = "";
@@ -16,10 +16,10 @@ routerUse(function(e) {
             .replace(/(client_secret|refresh_token|access_token|authorization)\s*[=:]\s*[^\s,;}]+/ig, "$1=[redacted]")
             .replace(/Bearer\s+[A-Za-z0-9._~+\/-]+/g, "Bearer [redacted]");
         try {
-            e.app.logger().error("google health connect failed", "error", detail);
+            e.app.logger().error("google fit connect failed", "error", detail);
         } catch (_) {}
         return e.json(400, {
-            code: "google_health_connect_failed",
+            code: "google_fit_connect_failed",
             error: detail
         });
     }
