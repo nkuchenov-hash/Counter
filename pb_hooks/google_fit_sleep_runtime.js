@@ -89,6 +89,7 @@ function __fitNeedsReconnect(errorText) {
     var raw = String(errorText || "").toLowerCase();
     if (!raw) return false;
     return raw.indexOf("account_not_linked") >= 0 ||
+        raw.indexOf("google health authorization is required") >= 0 ||
         raw.indexOf("google health sleep request") >= 0 ||
         raw.indexOf("insufficient authentication scopes") >= 0 ||
         raw.indexOf("insufficientpermissions") >= 0 ||
