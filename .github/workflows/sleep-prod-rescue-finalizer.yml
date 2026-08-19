@@ -1,0 +1,180 @@
+name: Rescue Google Fit sleep production finalization
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sleep-prod-rescue-finalizer
+  cancel-in-progress: false
+
+jobs:
+  finalize:
+    if: github.event.pull_request.head.ref == 'cleanup/stt-release-artifact-20260819' && github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      SSH_PRIVATE_KEY: ${{ secrets.POCKETBASE_SSH_PRIVATE_KEY || secrets.VPS_SSH_KEY || secrets.SSH_PRIVATE_KEY }}
+      SSH_USER: ${{ secrets.POCKETBASE_SSH_USER || secrets.VPS_SSH_USER || secrets.SSH_USER }}
+      SSH_HOST: ${{ secrets.POCKETBASE_SSH_HOST || secrets.VPS_HOST || secrets.SSH_HOST }}
+      SSH_PORT: ${{ secrets.POCKETBASE_SSH_PORT || secrets.VPS_SSH_PORT || '22' }}
+      POCKETBASE_SERVICE: ${{ secrets.POCKETBASE_SERVICE }}
+      POCKETBASE_DEPLOY_DIR: ${{ secrets.POCKETBASE_DEPLOY_DIR }}
+    steps:
+      - name: Checkout working branch
+        uses: actions/checkout@v4
+        with:
+          ref: cleanup/stt-release-artifact-20260819
+          fetch-depth: 0
+
+      - name: Rebase onto current main
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git fetch origin main
+          git rebase origin/main
+
+      - name: Validate Google Fit-only source
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check pb_hooks/google_fit_sleep_runtime.js
+          node --check pb_hooks/google_fit_sleep_recovery.js
+          if [[ -f pb_migrations/1787137200_normalize_sleep_connection_state.js ]]; then
+            node --check pb_migrations/1787137200_normalize_sleep_connection_state.js
+          fi
+          git diff --check
+
+      - name: Finalize Google Fit production state
+        shell: bash
+        run: |
+          set -euo pipefail
+          SSH_USER="${SSH_USER:-root}"
+          SSH_HOST="${SSH_HOST:-217.114.0.201}"
+          [[ -n "${SSH_PRIVATE_KEY:-}" ]] || { echo 'Missing PocketBase SSH key' >&2; exit 1; }
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/lifeos_pocketbase
+          chmod 600 ~/.ssh/lifeos_pocketbase
+          ssh-keyscan -p "$SSH_PORT" -H "$SSH_HOST" >> ~/.ssh/known_hosts
+          tar -czf /tmp/lifeos-sleep-fit.tar.gz pb_hooks pb_migrations
+          scp -i ~/.ssh/lifeos_pocketbase -P "$SSH_PORT" /tmp/lifeos-sleep-fit.tar.gz "$SSH_USER@$SSH_HOST:/tmp/lifeos-sleep-fit.tar.gz"
+          ssh -i ~/.ssh/lifeos_pocketbase -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" \
+            "POCKETBASE_SERVICE='$POCKETBASE_SERVICE' POCKETBASE_DEPLOY_DIR='$POCKETBASE_DEPLOY_DIR' bash -s" > /tmp/fit-prod-state.txt <<'REMOTE'
+          set -euo pipefail
+          if [[ "$(id -u)" -eq 0 ]]; then SUDO=""; else SUDO="sudo -n"; fi
+          service_name="${POCKETBASE_SERVICE:-}"
+          if [[ -z "$service_name" ]]; then service_name="$(systemctl list-unit-files --type=service --no-legend 2>/dev/null | awk 'tolower($1) ~ /pocketbase/ {print $1; exit}')"; fi
+          pid="$(pgrep -f '[p]ocketbase.*serve' | head -n 1 || true)"
+          app_dir="${POCKETBASE_DEPLOY_DIR:-}"
+          if [[ -z "$app_dir" && -n "$service_name" ]]; then app_dir="$(systemctl show "$service_name" -p WorkingDirectory --value 2>/dev/null || true)"; fi
+          if [[ -z "$app_dir" && -n "$pid" ]]; then app_dir="$(readlink -f "/proc/$pid/cwd" 2>/dev/null || true)"; fi
+          [[ -n "$service_name" && -n "$app_dir" && -d "$app_dir" ]]
+
+          fit_env="$app_dir/.lifeos-google-fit.env"
+          if [[ ! -f "$fit_env" ]]; then
+            source_env="$(find "$app_dir" -maxdepth 1 -type f -name '.lifeos-google-*.env' ! -name '.lifeos-google-fit.env' -print -quit)"
+            [[ -n "$source_env" ]]
+            python3 - "$source_env" /tmp/lifeos-google-fit.env <<'PY'
+          import re, sys
+          src=open(sys.argv[1]).read()
+          cid=re.search(r'^SLEEP_SYNC_GOOGLE_[A-Z_]*CLIENT_ID=(.*)$', src, re.M)
+          secret=re.search(r'^SLEEP_SYNC_GOOGLE_[A-Z_]*CLIENT_SECRET=(.*)$', src, re.M)
+          key=re.search(r'^SLEEP_SYNC_TOKEN_KEY=(.*)$', src, re.M)
+          if not cid or not secret: raise SystemExit('OAuth credentials not found in existing sleep environment')
+          with open(sys.argv[2],'w') as f:
+              f.write('SLEEP_SYNC_GOOGLE_FIT_CLIENT_ID='+cid.group(1)+'\n')
+              f.write('SLEEP_SYNC_GOOGLE_FIT_CLIENT_SECRET='+secret.group(1)+'\n')
+              if key: f.write('SLEEP_SYNC_TOKEN_KEY='+key.group(1)+'\n')
+          PY
+            $SUDO install -m 600 /tmp/lifeos-google-fit.env "$fit_env"
+            rm -f /tmp/lifeos-google-fit.env
+          fi
+          grep -q '^SLEEP_SYNC_GOOGLE_FIT_CLIENT_ID=' "$fit_env"
+          grep -q '^SLEEP_SYNC_GOOGLE_FIT_CLIENT_SECRET=' "$fit_env"
+
+          override_dir="/etc/systemd/system/${service_name}.d"
+          $SUDO mkdir -p "$override_dir"
+          printf '[Service]\nEnvironmentFile=%s\n' "$fit_env" | $SUDO tee "$override_dir/lifeos-google-fit.conf" >/dev/null
+          for f in "$override_dir"/lifeos-google-*.conf; do
+            [[ -e "$f" ]] || continue
+            [[ "$f" == "$override_dir/lifeos-google-fit.conf" ]] || $SUDO rm -f "$f"
+          done
+          for f in "$app_dir"/.lifeos-google-*.env; do
+            [[ -e "$f" ]] || continue
+            [[ "$f" == "$fit_env" ]] || $SUDO rm -f "$f"
+          done
+
+          $SUDO mkdir -p "$app_dir/pb_hooks" "$app_dir/pb_migrations"
+          $SUDO tar -xzf /tmp/lifeos-sleep-fit.tar.gz -C "$app_dir" pb_hooks pb_migrations
+          rm -f /tmp/lifeos-sleep-fit.tar.gz
+          for f in "$app_dir"/pb_hooks/google_*_sleep_runtime.js; do
+            [[ -e "$f" ]] || continue
+            [[ "$f" == "$app_dir/pb_hooks/google_fit_sleep_runtime.js" ]] || $SUDO rm -f "$f"
+          done
+
+          $SUDO systemctl stop "$service_name"
+          python3 - "$app_dir/pb_data/data.db" <<'PY'
+          import sqlite3, sys
+          con=sqlite3.connect(sys.argv[1])
+          cur=con.cursor()
+          cur.execute("""
+            UPDATE sleep_sync_connections
+               SET enabled=1, status='connected', last_error='',
+                   last_full_sync_at='', segment_backfill_complete=0, last_sync_at=''
+             WHERE provider='google_fit' AND length(coalesce(refresh_token_enc,''))>0
+          """)
+          con.commit(); con.close()
+          PY
+          $SUDO systemctl daemon-reload
+          $SUDO systemctl start "$service_name"
+
+          for attempt in {1..20}; do
+            health="$(curl -sS -o /dev/null -w '%{http_code}' https://217-114-0-201.sslip.io/api/health || true)"
+            route="$(curl -sS -o /dev/null -w '%{http_code}' https://217-114-0-201.sslip.io/api/sleep-sync/status || true)"
+            if [[ "$health" == "200" && ( "$route" == "401" || "$route" == "403" ) ]]; then break; fi
+            sleep 2
+          done
+          sleep 70
+          python3 - "$app_dir/pb_data/data.db" <<'PY'
+          import sqlite3, sys
+          con=sqlite3.connect(f'file:{sys.argv[1]}?mode=ro', uri=True); con.row_factory=sqlite3.Row
+          r=con.execute("SELECT enabled,status,last_error,last_sync_at,length(coalesce(refresh_token_enc,'')) AS refresh_len,last_session_count,last_imported_count FROM sleep_sync_connections WHERE provider='google_fit' ORDER BY updated DESC LIMIT 1").fetchone()
+          def cls(v):
+              s=(v or '').lower()
+              if not s:return 'none'
+              if 'invalid_grant' in s:return 'invalid_grant'
+              if 'account_not_linked' in s:return 'account_not_linked'
+              if '403' in s or 'permission' in s or 'scope' in s:return 'permission'
+              if '401' in s:return 'auth'
+              return 'other'
+          print('fit_env=true')
+          print('runtime_fit=true')
+          if r:
+              print('connection=true'); print('enabled='+str(bool(r['enabled'])).lower()); print('status='+str(r['status']))
+              print('refresh_token='+str(r['refresh_len']>0).lower()); print('error='+cls(r['last_error']))
+              print('last_sync='+str(bool(r['last_sync_at'])).lower()); print('sessions='+str(r['last_session_count'] or 0)); print('imported='+str(r['last_imported_count'] or 0))
+          else: print('connection=false')
+          for d in (2,7,30):
+              n=con.execute("SELECT count(*) FROM records WHERE (title='Sleep' OR title='Сон') AND end_time >= datetime('now', ?)",(f'-{d} days',)).fetchone()[0]
+              print(f'sleep_records_{d}d={n}')
+          con.close()
+          PY
+          REMOTE
+
+      - name: Preserve sanitized result and remove temporary workflows
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp /tmp/fit-prod-state.txt _tmp_sleep_fit_prod_state.txt
+          for f in .github/workflows/tmp-finalize-google-fit-sleep.yml .github/workflows/tmp-sleep-fit-prod-check.yml .github/workflows/tmp-clean-sleep-source.yml; do
+            if git ls-files --error-unmatch "$f" >/dev/null 2>&1; then git rm -f "$f"; fi
+          done
+          git rm -f .github/workflows/sleep-prod-rescue-finalizer.yml
+          git add _tmp_sleep_fit_prod_state.txt
+          git commit -m 'Verify Google Fit sleep production state and remove temporary workflows'
+          git push --force-with-lease origin HEAD:cleanup/stt-release-artifact-20260819
