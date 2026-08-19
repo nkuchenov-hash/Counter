@@ -32,6 +32,51 @@ jobs:
           git fetch origin main
           git rebase origin/main
 
+      - name: Finish and remove pending sleep cleanup workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          runtime = Path('pb_hooks/google_fit_sleep_runtime.js')
+          text = runtime.read_text(encoding='utf-8')
+          text = re.sub(
+              r'var clientId = (__fitEnv\("SLEEP_SYNC_GOOGLE_FIT_CLIENT_ID"\))(?: \|\| __fitEnv\("[^"]+"\))?;',
+              r'var clientId = \1;', text, count=1)
+          text = re.sub(
+              r'var clientSecret = (__fitEnv\("SLEEP_SYNC_GOOGLE_FIT_CLIENT_SECRET"\))(?: \|\| __fitEnv\("[^"]+"\))?;',
+              r'var clientSecret = \1;', text, count=1)
+          text = re.sub(
+              r'function __fitNeedsReconnect\(errorText\) \{.*?\n\}',
+              '''function __fitNeedsReconnect(errorText) {\n    var raw = String(errorText || "").toLowerCase();\n    if (!raw) return false;\n    return raw.indexOf("account_not_linked") >= 0 ||\n        raw.indexOf("invalid_grant") >= 0;\n}''',
+              text, count=1, flags=re.S)
+          text = re.sub(
+              r'    try \{\n        return app\.findFirstRecordByFilter\(\n            "records",\n            "user_id = \{:uid\} && external_source = \'[^\']+\' && start_time = \{:start\} && end_time = \{:end\}",\n            \{ uid: userId, start: session\.start\.toISOString\(\), end: session\.end\.toISOString\(\) \}\n        \);\n    \} catch \(_\) \{\}\n\n',
+              '', text, count=1)
+          runtime.write_text(text, encoding='utf-8')
+
+          cloud = Path('lib/data/health/cloud_sleep_sync_service.dart')
+          cloud_text = cloud.read_text(encoding='utf-8')
+          cloud.write_text(
+              re.sub(r'Google [A-Za-z]+ connection failed', 'Google Fit connection failed', cloud_text),
+              encoding='utf-8',
+          )
+          PY
+
+          node --check pb_hooks/google_fit_sleep_runtime.js
+          node --check pb_hooks/google_fit_sleep_recovery.js
+
+          if git ls-files --error-unmatch .github/workflows/tmp-clean-sleep-source.yml >/dev/null 2>&1; then
+            git rm -f .github/workflows/tmp-clean-sleep-source.yml
+          fi
+
+          if git grep -nEi 'google[ _-]?health|GOOGLE_HEALTH' -- 'lib/**' 'pb_hooks/**' 'pb_migrations/**' '.github/workflows/**' 'android/**' 'ios/**'; then
+            echo 'Obsolete sleep provider reference remains in active code.' >&2
+            exit 1
+          fi
+
       - name: Remove root shell compatibility alias
         shell: bash
         run: |
@@ -147,6 +192,6 @@ jobs:
           set -euo pipefail
           git add -A
           if ! git diff --cached --quiet; then
-            git commit -m 'Architecture: remove final shell alias and regenerate exact structure map'
+            git commit -m 'Architecture: finalize STT artifact and remove shell compatibility alias'
           fi
           git push --force-with-lease origin HEAD:cleanup/stt-release-artifact-20260819
