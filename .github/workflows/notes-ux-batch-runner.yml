@@ -1,6 +1,10 @@
 name: Notes UX batch runner
 
 on:
+  push:
+    branches: [gh-pages]
+    paths:
+      - '.github/workflows/notes-ux-batch-runner.yml'
   pull_request:
     branches: [gh-pages]
     types: [opened, synchronize, reopened]
@@ -14,7 +18,7 @@ concurrency:
 
 jobs:
   run:
-    if: github.event.pull_request.head.ref == 'hotfix/run-notes-production-build'
+    if: github.event_name == 'push' || github.event.pull_request.head.ref == 'hotfix/run-notes-production-build'
     runs-on: ubuntu-latest
     timeout-minutes: 35
     steps:
