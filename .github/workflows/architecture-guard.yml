@@ -28,13 +28,12 @@ jobs:
       - name: Run strict architecture guard
         run: pwsh -NoProfile -NonInteractive -File ./scripts/audit/architecture_guard.ps1 -Strict
 
-      - name: Enforce structure growth ratchet
-        run: python scripts/audit/structure_growth_contract.py
-
       - name: Check governing documentation parity
         run: python scripts/audit/documentation_parity.py
 
-      - name: Check repository hygiene
+      - name: Check repository hygiene and structure growth
+        env:
+          STRUCTURE_GROWTH_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
         run: python scripts/audit/repository_hygiene.py
 
       - name: Check PocketBase schema parity
