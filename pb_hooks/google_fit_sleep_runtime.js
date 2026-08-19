@@ -530,9 +530,21 @@ function connect(e) {
     var cfg = __fitGoogleConfig();
     __fitTokenKey(e.app);
     var connection = __fitConnection(e.app, e.auth.id, true);
-    var state = $security.randomStringWithAlphabet(48, "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ");
-    connection.set("oauth_state", state);
-    connection.set("oauth_state_expires_at", new Date(Date.now() + 10 * 60000).toISOString());
+    var existingState = String(connection.get("oauth_state") || "");
+    var existingExpires = __fitDate(connection.get("oauth_state_expires_at"));
+    var state = "";
+    if (existingState &&
+        existingState.indexOf(connection.id + ".") === 0 &&
+        existingExpires &&
+        existingExpires.getTime() > Date.now() + 60000) {
+        // Reuse an in-flight OAuth attempt. A second toggle/click must not
+        // invalidate the callback that is already open in the browser.
+        state = existingState;
+    } else {
+        state = connection.id + "." + $security.randomStringWithAlphabet(40, "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ");
+        connection.set("oauth_state", state);
+        connection.set("oauth_state_expires_at", new Date(Date.now() + 20 * 60000).toISOString());
+    }
     connection.set("status", "connecting");
     connection.set("last_error", "");
     e.app.save(connection);
@@ -558,7 +570,16 @@ function callback(e) {
     if (!state || !code) return e.html(400, "<h1>Google Fit connection failed</h1><p>Missing OAuth response.</p>");
 
     var connection = null;
-    try { connection = e.app.findFirstRecordByData(__fitCollection, "oauth_state", state); } catch (_) {}
+    var stateParts = state.split(".");
+    if (stateParts.length === 2 && stateParts[0]) {
+        try { connection = e.app.findRecordById(__fitCollection, stateParts[0]); } catch (_) {}
+        if (connection && String(connection.get("oauth_state") || "") !== state) connection = null;
+    }
+    // Backward compatibility for an OAuth page that was opened just before
+    // this deployment and still carries the old random-only state format.
+    if (!connection) {
+        try { connection = e.app.findFirstRecordByData(__fitCollection, "oauth_state", state); } catch (_) {}
+    }
     if (!connection) return e.html(400, "<h1>Google Fit connection failed</h1><p>Invalid or expired state.</p>");
     var expires = __fitDate(connection.get("oauth_state_expires_at"));
     if (!expires || expires.getTime() < Date.now()) return e.html(400, "<h1>Google Fit connection failed</h1><p>Authorization expired.</p>");
