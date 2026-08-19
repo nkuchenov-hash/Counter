@@ -228,7 +228,7 @@ class CloudSleepSyncService {
           .timeout(const Duration(seconds: 20));
       if (response.statusCode < 200 || response.statusCode >= 300) {
         throw StateError(
-          _failureMessage(response, 'Google Health connection failed'),
+          _failureMessage(response, 'Google Fit connection failed'),
         );
       }
       final authorizationUrl =
