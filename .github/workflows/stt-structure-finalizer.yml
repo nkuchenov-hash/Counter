@@ -1,0 +1,152 @@
+name: STT artifact and shell structure finalizer
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+concurrency:
+  group: stt-structure-finalizer
+  cancel-in-progress: false
+
+jobs:
+  finalize:
+    if: github.event.pull_request.head.ref == 'cleanup/stt-release-artifact-20260819' && github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout working branch
+        uses: actions/checkout@v4
+        with:
+          ref: cleanup/stt-release-artifact-20260819
+          fetch-depth: 0
+
+      - name: Rebase onto current main
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git fetch origin main
+          git rebase origin/main
+
+      - name: Remove root shell compatibility alias
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          main = Path('lib/main.dart')
+          text = main.read_text(encoding='utf-8')
+          old = "import 'package:counter/app_shell.dart';"
+          new = "import 'package:counter/app/shell/app_shell.dart';"
+          if old not in text:
+              raise SystemExit('Expected root app_shell import not found')
+          main.write_text(text.replace(old, new, 1), encoding='utf-8')
+
+          agents = Path('AGENTS.md')
+          text = agents.read_text(encoding='utf-8')
+          text = text.replace(
+              '`lib/main.dart` and `lib/app/shell/` (via root `lib/app_shell.dart` re-export)',
+              '`lib/main.dart` and `lib/app/shell/`',
+          )
+          agents.write_text(text, encoding='utf-8')
+
+          nav = Path('AGENT_NAVIGATION.md')
+          text = nav.read_text(encoding='utf-8')
+          text = text.replace('wired in `app_shell.dart` IndexedStack index 3', 'wired in canonical `lib/app/shell/app_shell.dart` shell index 3')
+          nav.write_text(text, encoding='utf-8')
+
+          app = Path('docs/APP_STRUCTURE.md')
+          text = app.read_text(encoding='utf-8')
+          text = text.replace('`lib/main.dart`, `lib/app_shell.dart`, `lib/app/shell/`', '`lib/main.dart`, `lib/app/shell/`')
+          text = text.replace('main/app_shell → all layers', 'main/app/shell → all layers')
+          text = text.replace('`main.dart` and `app_shell.dart` wire them at runtime', '`main.dart` and canonical `app/shell/app_shell.dart` wire them at runtime')
+          text = text.replace('| `app_shell.dart` | Thin compatibility re-export of `app/shell/app_shell.dart` |\n', '')
+          text = text.replace('\nCompatibility entry surface retained intentionally: root `lib/app_shell.dart` is a thin re-export of the canonical shell root.\n', '\n')
+          app.write_text(text, encoding='utf-8')
+
+          architecture = Path('docs/ARCHITECTURE.md')
+          text = architecture.read_text(encoding='utf-8')
+          text = text.replace('`lib/app_shell.dart`', '`lib/app/shell/app_shell.dart`')
+          architecture.write_text(text, encoding='utf-8')
+          PY
+          git rm -f lib/app_shell.dart
+
+          if git grep -n -F "package:counter/app_shell.dart" -- '*.dart'; then
+            echo 'Stale root shell import remains.' >&2
+            exit 1
+          fi
+          if git grep -n -F 'lib/app_shell.dart' -- AGENTS.md AGENT_NAVIGATION.md docs/APP_STRUCTURE.md docs/ARCHITECTURE.md; then
+            echo 'Stale live root shell documentation remains.' >&2
+            exit 1
+          fi
+
+      - name: Verify immutable STT release artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          readarray -t artifact < <(python - <<'PY'
+          import json
+          from pathlib import Path
+          m = json.loads(Path('installer/windows/stt_helper_artifact.json').read_text(encoding='utf-8-sig'))
+          print(m['release_tag'])
+          print(m['asset_name'])
+          print(m['sha256'])
+          print(m['size_bytes'])
+          PY
+          )
+          tag="${artifact[0]}"
+          asset="${artifact[1]}"
+          sha="${artifact[2]}"
+          size="${artifact[3]}"
+          url="https://github.com/nkuchenov-hash/Counter/releases/download/${tag}/${asset}"
+          curl --fail --location --retry 3 --output "/tmp/${asset}" "$url"
+          echo "${sha}  /tmp/${asset}" | sha256sum --check --strict
+          actual_size="$(stat -c '%s' "/tmp/${asset}")"
+          test "$actual_size" = "$size"
+
+      - name: Parse PowerShell installer scripts
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          foreach ($path in @('installer/windows/prepare_stt_payload.ps1', 'installer/windows/build_stt_helper_en.ps1')) {
+            $tokens = $null
+            $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile($path, [ref]$tokens, [ref]$errors) | Out-Null
+            if ($errors.Count -gt 0) {
+              $errors | ForEach-Object { Write-Error "$path: $($_.Message)" }
+              throw "PowerShell parse failed: $path"
+            }
+          }
+
+      - name: Remove one-off workflow and regenerate tracked-tree guide
+        shell: bash
+        run: |
+          set -euo pipefail
+          git rm -f .github/workflows/stt-structure-finalizer.yml
+          python scripts/manual/generate_app_structure_detailed.py
+
+      - name: Run final structure gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          pwsh -NoProfile -NonInteractive -File ./scripts/audit/architecture_guard.ps1 -Strict
+          STRUCTURE_GROWTH_BASE="$(git merge-base HEAD origin/main)" python scripts/audit/repository_hygiene.py
+          python scripts/audit/documentation_parity.py
+          python scripts/audit/pocketbase_schema_contract.py
+          python scripts/audit/deployment_contract.py
+          git diff --check
+
+      - name: Commit final state
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add -A
+          if ! git diff --cached --quiet; then
+            git commit -m 'Architecture: remove final shell alias and regenerate exact structure map'
+          fi
+          git push --force-with-lease origin HEAD:cleanup/stt-release-artifact-20260819
