@@ -1,4 +1,4 @@
-name: Notes shared input parity hotfix
+name: Notes exact input frame parity hotfix
 
 on:
   workflow_dispatch:
@@ -17,11 +17,9 @@ jobs:
 
           surface = Path('lib/features/notes/notes_glm_surface.dart')
           s = surface.read_text()
-          require('class NotesGlmLibraryInput' not in s, 'shared library input already exists')
-          marker = '/// GLM glass card surface for library note cards.\n'
-          at = s.index(marker)
-          shared = '''/// Canonical Notes library input used by both Search and quick-add.
-class NotesGlmLibraryInput extends StatelessWidget {
+          start = s.index('class NotesGlmLibraryInput extends StatelessWidget {')
+          end = s.index('/// GLM glass card surface for library note cards.', start)
+          replacement = '''class NotesGlmLibraryInput extends StatelessWidget {
   const NotesGlmLibraryInput({
     super.key,
     required this.controller,
@@ -47,125 +45,94 @@ class NotesGlmLibraryInput extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final decoration = notesGlmSearchDecoration(
-      context: context,
-      hintText: hintText,
-      suffixIcon: suffixIcon,
-    );
-    return SizedBox(
-      height: kNotesLibraryControlHeight,
-      child: TextField(
-        controller: controller,
-        focusNode: focusNode,
-        textInputAction: textInputAction,
-        textCapitalization: textCapitalization,
-        onChanged: onChanged,
-        onSubmitted: onSubmitted,
-        style: TextStyle(
-          fontSize: 14,
-          color: Theme.of(context).colorScheme.onSurface,
-        ),
-        decoration: showSearchIcon
-            ? decoration
-            : decoration.copyWith(
-                prefixIcon: const SizedBox.shrink(),
-                prefixIconConstraints: const BoxConstraints.tightFor(
-                  width: 0,
-                  height: 0,
-                ),
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final dark = theme.brightness == Brightness.dark;
+    final meta = notesGlmMetaColor(context);
+    final fill = dark
+        ? scheme.surfaceContainerHigh.withValues(alpha: 0.82)
+        : const Color(0xFFFFFFFF).withValues(alpha: 0.75);
+    final normalBorder = dark
+        ? scheme.outlineVariant.withValues(alpha: 0.78)
+        : const Color(0xFFE2E8F0).withValues(alpha: 0.95);
+    final focusedBorder = scheme.primary.withValues(alpha: dark ? 0.82 : 0.55);
+
+    return AnimatedBuilder(
+      animation: focusNode,
+      builder: (context, _) {
+        final focused = focusNode.hasFocus;
+        return SizedBox(
+          height: kNotesLibraryControlHeight,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: fill,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: focused ? focusedBorder : normalBorder,
+                width: focused && dark ? 1.2 : 1,
               ),
-      ),
+            ),
+            child: TextField(
+              controller: controller,
+              focusNode: focusNode,
+              textInputAction: textInputAction,
+              textCapitalization: textCapitalization,
+              textAlignVertical: TextAlignVertical.center,
+              onChanged: onChanged,
+              onSubmitted: onSubmitted,
+              style: TextStyle(fontSize: 14, color: scheme.onSurface),
+              decoration: InputDecoration(
+                hintText: hintText,
+                hintStyle: TextStyle(fontSize: 14, color: meta),
+                prefixIcon: showSearchIcon
+                    ? Icon(Icons.search_rounded, size: 18, color: meta)
+                    : null,
+                prefixIconConstraints: showSearchIcon
+                    ? const BoxConstraints.tightFor(
+                        width: kNotesLibraryControlHeight,
+                        height: kNotesLibraryControlHeight,
+                      )
+                    : null,
+                suffixIcon: suffixIcon,
+                suffixIconConstraints: suffixIcon == null
+                    ? null
+                    : const BoxConstraints.tightFor(
+                        width: kNotesLibraryControlHeight,
+                        height: kNotesLibraryControlHeight,
+                      ),
+                isDense: true,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 14),
+                filled: false,
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                disabledBorder: InputBorder.none,
+                errorBorder: InputBorder.none,
+                focusedErrorBorder: InputBorder.none,
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }
 
 '''
-          s = s[:at] + shared + s[at:]
+          s = s[:start] + replacement + s[end:]
           surface.write_text(s)
 
-          lists = Path('lib/features/lists/lists_view.dart')
-          l = lists.read_text()
-          header_at = l.index('class _NotesLibraryHeader extends StatelessWidget')
-          field_at = l.index('          TextField(\n', header_at)
-          end_marker = '\n          ),\n        ],\n      ),\n    );\n  }\n}\n\nclass _HeaderSegBtn'
-          field_end = l.index(end_marker, field_at)
-          new_search = '''          NotesGlmLibraryInput(
-            controller: searchController,
-            focusNode: searchFocus,
-            hintText: t(locale, 'notes_v3_search_hint'),
-            textInputAction: TextInputAction.search,
-            textCapitalization: TextCapitalization.sentences,
-            onChanged: onSearchChanged,
-            suffixIcon: searchQuery.trim().isNotEmpty
-                ? IconButton(
-                    tooltip: t(locale, 'cancel'),
-                    icon: const Icon(Icons.close_rounded, size: 18),
-                    visualDensity: VisualDensity.compact,
-                    splashRadius: 16,
-                    onPressed: onClearSearch,
-                  )
-                : null,
-          )'''
-          l = l[:field_at] + new_search + l[field_end + len('\n          )'):]
-          lists.write_text(l)
-
-          shell = Path('lib/features/notes/widgets/notes_library_production_shell.dart')
-          q = shell.read_text()
-          start = q.index('class NotesGlmInlineAddRow extends StatelessWidget')
-          build_start = q.index('  @override\n  Widget build(BuildContext context) {', start)
-          class_end = q.index('\n}', build_start) + 2
-          new_build = '''  @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Expanded(
-          child: NotesGlmLibraryInput(
-            controller: controller,
-            focusNode: focusNode,
-            hintText: t(locale, 'input_placeholder_list'),
-            textInputAction: TextInputAction.done,
-            showSearchIcon: false,
-            onSubmitted: (_) => onSubmit(),
-          ),
-        ),
-        const SizedBox(width: 8),
-        SizedBox.square(
-          dimension: kNotesLibraryControlHeight,
-          child: Tooltip(
-            message: t(locale, 'add'),
-            child: Material(
-              color: Colors.black,
-              shape: const CircleBorder(),
-              clipBehavior: Clip.antiAlias,
-              child: InkWell(
-                onTap: onSubmit,
-                customBorder: const CircleBorder(),
-                child: const Center(
-                  child: Icon(
-                    Icons.add_rounded,
-                    size: 22,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}'''
-          q = q[:build_start] + new_build + q[class_end:]
-          shell.write_text(q)
-
+          shell = Path('lib/features/notes/widgets/notes_library_production_shell.dart').read_text()
+          lists = Path('lib/features/lists/lists_view.dart').read_text()
           final_surface = surface.read_text()
-          final_lists = lists.read_text()
-          final_shell = shell.read_text()
-          require('class NotesGlmLibraryInput' in final_surface, 'canonical input missing')
-          require('NotesGlmLibraryInput(' in final_lists, 'search not on canonical input')
-          require('NotesGlmLibraryInput(' in final_shell, 'quick-add not on canonical input')
-          require('dimension: kNotesLibraryControlHeight' in final_shell, 'plus height not tied to input height')
-          require('color: Colors.black' in final_shell, 'plus is not black')
-          require('shape: const CircleBorder()' in final_shell, 'plus is not circular')
+
+          require(final_surface.count('class NotesGlmLibraryInput extends StatelessWidget') == 1, 'canonical input class count')
+          require('height: kNotesLibraryControlHeight' in final_surface, 'outer frame height missing')
+          require('child: DecoratedBox(' in final_surface, 'outer visual frame missing')
+          require('border: InputBorder.none' in final_surface, 'inner TextField still draws its own frame')
+          require('NotesGlmLibraryInput(' in lists, 'Search is not using canonical input')
+          require('NotesGlmLibraryInput(' in shell, 'Quick-add is not using canonical input')
+          require('dimension: kNotesLibraryControlHeight' in shell, 'Plus size is not tied to canonical height')
+          require('shape: const CircleBorder()' in shell, 'Plus is not circular')
+          require('color: Colors.black' in shell, 'Plus is not black')
           PY
