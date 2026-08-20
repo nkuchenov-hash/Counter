@@ -12,119 +12,261 @@ jobs:
           import subprocess
           from pathlib import Path
 
-          source_commit = '23ada4780721817b87bf72a292d80125b1cc2c85'
+          previous_wrapper = 'd111644fb07b4e660a67c494535eb5164426afd6'
           subprocess.run(
-              ['git', '-C', 'automation', 'fetch', 'origin', source_commit, '--depth=1'],
+              ['git', '-C', 'automation', 'fetch', 'origin', previous_wrapper, '--depth=1'],
               check=True,
           )
-          original = subprocess.check_output(
+          source = subprocess.check_output(
               [
                   'git', '-C', 'automation', 'show',
-                  f'{source_commit}:.github/workflows/bootstrap-notes-hotfix.yml',
+                  f'{previous_wrapper}:.github/workflows/bootstrap-notes-hotfix.yml',
               ],
               text=True,
           ).splitlines()
-          start = next(i for i, line in enumerate(original) if "python3 - <<'PY'" in line) + 1
-          end = next(i for i in range(start, len(original)) if original[i].strip() == 'PY')
-          script = '\n'.join(
+          start = next(i for i, line in enumerate(source) if "python3 - <<'PY'" in line) + 1
+          end = next(i for i in range(start, len(source)) if source[i].strip() == 'PY')
+          prior_body = '\n'.join(
               line[10:] if line.startswith('          ') else line
-              for line in original[start:end]
+              for line in source[start:end]
           ) + '\n'
+          exec(compile(prior_body, '<previous-notes-wrapper>', 'exec'))
 
-          # Harden the NotesLibraryBody call-site mutation against formatting.
-          replace_start = script.find("old_body_args = '''")
-          replace_end = script.find(
-              "text = text.replace('    required this.showExport,\\n', '', 1)",
-              replace_start,
-          )
-          if replace_start < 0 or replace_end < 0:
-              raise SystemExit('NotesLibraryBody patch-definition anchors not found')
-          robust_body_patch = '''body_anchor = text.rfind('                    : NotesLibraryBody(')
-          body_args_start = text.find(
-              '                        checkboxesOn: _notesCheckboxesOn,',
-              body_anchor,
-          )
-          body_args_end = text.find(
-              '                        onRefresh: _reload,',
-              body_args_start,
-          )
-          if body_anchor < 0 or body_args_start < 0 or body_args_end < 0:
-              raise SystemExit('NotesLibraryBody real argument range not found')
-          new_body_args = ''' + "'''" + '''                        checkboxesOn: _notesCheckboxesOn,
-                        selectionMode: _listsSelectMode,
-                        selectedKeys: _selectedListKeys,
-                        itemKey: _listKey,
-                        onToggleSelection: (task) =>
-                            _toggleListKey(_listKey(task)),
-                        onTap: _openNoteEditor,
-                        onLongPress: (_) {},
-                        onOpenMenu: (anchorCenter, task) =>
-                            _showListsRadialMenuAt(
-                              anchorCenter,
-                              task,
-                              _listKey(task),
-                            ),
-''' + "'''" + '''
-          text = text[:body_args_start] + new_body_args + text[body_args_end:]
+          # Replace the editor tail as one valid unit. This guarantees that the
+          # block action widgets are top-level classes, never nested in State.
+          path = Path('lib/features/notes/note_editor_page.dart')
+          text = path.read_text()
+          tail_start = text.find('  Widget _buildBlock(BuildContext context, int index) {')
+          helper_start = text.find('\nbool _sameRuns(', tail_start)
+          if tail_start < 0 or helper_start < 0:
+              raise SystemExit('Notes editor tail anchors not found')
 
-          '''
-          script = script[:replace_start] + robust_body_patch + script[replace_end:]
+          tail = r'''  Widget _buildBlock(BuildContext context, int index) {
+    final block = _editor.visibleBlocks[index];
+    final editable = NotesEditorDocumentController.isEditableText(block.type);
+    final focusNode = editable ? _focusNodeFor(block) : null;
+    final active = _editor.activeBlockId == block.id;
+    Widget item = NotesEditorBlockItem(
+      block: block,
+      index: index,
+      numberedOrdinal: _numberedOrdinal(index),
+      active: active,
+      editing: editable && _editingBlockId == block.id,
+      textController: editable ? _textControllerFor(block) : null,
+      focusNode: focusNode,
+      captionController:
+          block.type == NoteBlockType.image ||
+              block.type == NoteBlockType.drawing
+          ? _captionControllerFor(block)
+          : null,
+      onTap: () => _handleBlockTap(block.id),
+      onKeyEvent: (event) => _onBlockKeyEvent(block, event),
+      onTextChanged: editable
+          ? (value) => _onBlockTextChanged(block, value)
+          : null,
+      onCheckedChanged: block.type == NoteBlockType.checklist
+          ? (checked) =>
+                _applyMutation(_editor.toggleChecklist(block.id, checked))
+          : null,
+      onTableChanged: block.type == NoteBlockType.table
+          ? (table) => _applyMutation(_editor.updateTable(block.id, table))
+          : null,
+      onCaptionChanged:
+          block.type == NoteBlockType.image ||
+              block.type == NoteBlockType.drawing
+          ? (caption) =>
+                _applyMutation(_editor.updateCaption(block.id, caption))
+          : null,
+      onEmptyLongPress: editable && block.effectiveText.isEmpty
+          ? () => _showInsertMenu(block.id)
+          : null,
+      audioState: block.type == NoteBlockType.audio
+          ? _audioState(block.id)
+          : NotesAudioState.ready,
+      onAudioPlayPause: block.type == NoteBlockType.audio
+          ? () => _toggleAudio(block.id)
+          : null,
+      onOpenTranscript: block.type == NoteBlockType.audio
+          ? () => _openAudioTranscript(block.id)
+          : null,
+    );
 
-          # Harden structural clipboard replacement.
-          compare_start = script.find("old_compare = '''")
-          compare_end = script.find('infer_anchor = text.find(', compare_start)
-          if compare_start < 0 or compare_end < 0:
-              raise SystemExit('clipboard patch-definition anchors not found')
-          robust_clipboard_patch = '''compare_source_start = text.find(
-              '    final candidatePlain = _NotesStructuredClipboard.plainText;',
-              paste_start,
-          )
-          compare_source_end = text.find(
-              '    if (!mutation.changed) return;',
-              compare_source_start,
-          )
-          if compare_source_start < 0 or compare_source_end < 0:
-              raise SystemExit('clipboard real semantic range not found')
-          new_compare = ''' + "'''" + '''    final candidatePlain = _NotesStructuredClipboard.plainText;
-    final hasMatchingStructure =
-        candidatePlain != null &&
-        _normalizeClipboardStructure(candidatePlain) ==
-            _normalizeClipboardStructure(plain) &&
-        _NotesStructuredClipboard.blocks.isNotEmpty;
+    final drawingPreview = _desktopDrawingPreview(context, block);
+    if (drawingPreview != null) {
+      item = Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [item, drawingPreview],
+      );
+    }
 
-    final mutation = hasMatchingStructure
-        ? _editor.pasteBlocks(
-            block.id,
-            selection,
-            _NotesStructuredClipboard.blocks,
-          )
-        : _editor.pastePlainText(block.id, selection, plain);
-''' + "'''" + '''
-          text = text[:compare_source_start] + new_compare + text[compare_source_end:]
+    if (widget.parityPreview) return item;
 
-          '''
-          script = script[:compare_start] + robust_clipboard_patch + script[compare_end:]
+    // Fixed right action rail: activation and selection never change width,
+    // wrapping, or vertical metrics of the block.
+    final selectedForBulk = _selectedBlockIds.contains(block.id);
+    final content = Padding(
+      key: ValueKey<String>(block.id),
+      padding: const EdgeInsets.only(right: 36),
+      child: item,
+    );
+    return Stack(
+      key: ValueKey<String>(block.id),
+      clipBehavior: Clip.none,
+      children: [
+        if (selectedForBulk)
+          Positioned.fill(
+            child: IgnorePointer(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primary.withValues(
+                    alpha: 0.06,
+                  ),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            ),
+          ),
+        content,
+        if (selectedForBulk)
+          Positioned(
+            left: -24,
+            top: 6,
+            child: Container(
+              width: 18,
+              height: 18,
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primary,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.check_rounded,
+                size: 12,
+                color: Theme.of(context).colorScheme.onPrimary,
+              ),
+            ),
+          ),
+        Positioned(
+          top: 2,
+          right: 2,
+          child: _NotesBlockMoreButton(
+            onPressed: (anchorCenter) =>
+                _showBlockActionMenu(anchorCenter, block),
+          ),
+        ),
+      ],
+    );
+  }
 
-          # Harden ReorderableListView callback replacement.
-          reorder_patch_start = script.find("old_reorder = '''")
-          reorder_patch_end = script.find("file_end = text.rfind('\\nbool _sameRuns(')", reorder_patch_start)
-          if reorder_patch_start < 0 or reorder_patch_end < 0:
-              raise SystemExit('selected-block move patch-definition anchors not found')
-          robust_reorder_patch = '''reorder_list_start = text.find(
-              '        child: ReorderableListView.builder(',
-              text.find('SelectionArea('),
-          )
-          reorder_source_start = text.find(
-              '          onReorder:',
-              reorder_list_start,
-          )
-          reorder_source_end = text.find(
-              '          itemBuilder:',
-              reorder_source_start,
-          )
-          if reorder_list_start < 0 or reorder_source_start < 0 or reorder_source_end < 0:
-              raise SystemExit('selected-block move real callback range not found')
-          new_reorder = ''' + "'''" + '''          onReorder: (oldIndex, newIndex) {
+  void _togglePinned() {
+    final brain = DatabaseService.instance;
+    brain.toggleNotePin(_task.planRowIdForBackend);
+    final cached = brain.getCachedPlanningTaskForEdit(
+      _task.planRowIdForBackend,
+    );
+    if (cached != null && mounted) setState(() => _task = cached);
+  }
+
+  Future<void> _deleteCurrentNote() async {
+    final loc = currentLocale.value;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(t(loc, 'delete')),
+        actions: [
+          AppButton.ghost(
+            label: t(loc, 'cancel'),
+            size: AppButtonSize.s,
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+          ),
+          AppButton.destructive(
+            label: t(loc, 'delete'),
+            size: AppButtonSize.s,
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    _gate.flush(() {});
+    _dirty = false;
+    await DatabaseService.instance.deleteNote(_task.planRowIdForBackend);
+    if (!mounted) return;
+    final embeddedScope = NotesEmbeddedEditorScope.maybeOf(context);
+    if (embeddedScope != null) {
+      embeddedScope.onClose();
+    } else {
+      Navigator.of(context).pop();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final loc = currentLocale.value;
+    final activeType = _editor.activeBlock?.type;
+    final category = DatabaseService.instance.getCategoryRuleById(
+      _task.categoryId,
+    );
+
+    return NotesEditorScreen(
+      titleController: _titleController,
+      titleHint: t(loc, 'notes_v3_editor_title_hint'),
+      onTitleChanged: _scheduleSave,
+      onDone: _close,
+      pinned: DatabaseService.instance.isNotePinned(_task),
+      onTogglePinned: _togglePinned,
+      onDelete: _deleteCurrentNote,
+      categoryLabel: category?.name,
+      categoryColor: category?.colorOrDefault,
+      tags: [
+        for (final tag in _task.tags) NotesEditorMetadataTag(label: tag.name),
+      ],
+      toolbar: NotesEditorToolbarHost(
+        activeBlock: _editor.activeBlock,
+        selectionFormats: _selectionFormats(),
+        onHeading: _showHeadingMenu,
+        onBody: () => _convertActive(NotesBlockConversion.body),
+        onFormatting: _showFormattingMenu,
+        onQuote: () => _convertActive(NotesBlockConversion.quote),
+        onList: () => _convertActive(
+          activeType == NoteBlockType.bulletedList
+              ? NotesBlockConversion.numberedList
+              : NotesBlockConversion.bulletedList,
+        ),
+        onChecklist: () => _convertActive(NotesBlockConversion.checklist),
+        onTable: () => _showTablePicker(),
+        onDrawing: widget.parityPreview
+            ? null
+            : () {
+                final block = _editor.activeBlock;
+                _openDrawing(
+                  editBlockId: block?.type == NoteBlockType.drawing
+                      ? block!.id
+                      : null,
+                );
+              },
+        onAudio: widget.parityPreview ? null : _recordAudio,
+        onImage: widget.parityPreview
+            ? null
+            : () {
+                final block = _editor.activeBlock;
+                _pickImage(
+                  replaceBlockId: block?.type == NoteBlockType.image
+                      ? block!.id
+                      : null,
+                );
+              },
+        onMore: _showActiveBlockOptions,
+      ),
+      content: SelectionArea(
+        onSelectionChanged: _captureStructuredSelection,
+        child: ReorderableListView.builder(
+          key: const ValueKey('notes-editor-content'),
+          padding: EdgeInsets.zero,
+          buildDefaultDragHandles: false,
+          proxyDecorator: (child, _, __) => child,
+          itemCount: _editor.visibleBlocks.length,
+          onReorder: (oldIndex, newIndex) {
             final visible = _editor.visibleBlocks;
             final draggedId = oldIndex >= 0 && oldIndex < visible.length
                 ? visible[oldIndex].id
@@ -139,127 +281,185 @@ jobs:
                 : _editor.reorderVisible(oldIndex, newIndex);
             _applyMutation(mutation);
           },
-''' + "'''" + '''
-          text = text[:reorder_source_start] + new_reorder + text[reorder_source_end:]
+          itemBuilder: _buildBlock,
+        ),
+      ),
+    );
+  }
+}
 
-          '''
-          script = script[:reorder_patch_start] + robust_reorder_patch + script[reorder_patch_end:]
+class _NotesBlockMoreButton extends StatefulWidget {
+  const _NotesBlockMoreButton({required this.onPressed});
 
-          exec(compile(script, '<notes-interaction-ux>', 'exec'))
+  final ValueChanged<Offset> onPressed;
 
-          # Repair the generated editor helper and keyboard method with literal,
-          # syntax-safe Dart. This also avoids RegExp dialect differences.
-          editor_path = Path('lib/features/notes/note_editor_page.dart')
-          editor = editor_path.read_text()
-          helper_start = editor.find('  String _normalizeClipboardStructure(String value) {')
-          paste_start = editor.find('  Future<void> _pasteClipboardIntoBlock(', helper_start)
-          if helper_start < 0 or paste_start < 0:
-              raise SystemExit('generated clipboard helper range not found')
-          safe_helper = '''  String _normalizeClipboardStructure(String value) {
-    final buffer = StringBuffer();
-    var pendingSpace = false;
-    for (final rune in value.runes) {
-      final whitespace = rune == 9 || rune == 10 || rune == 13 || rune == 32;
-      if (whitespace) {
-        pendingSpace = buffer.isNotEmpty;
-        continue;
-      }
-      if (pendingSpace) {
-        buffer.write(' ');
-        pendingSpace = false;
-      }
-      buffer.writeCharCode(rune);
-    }
-    return buffer.toString().trim();
+  @override
+  State<_NotesBlockMoreButton> createState() => _NotesBlockMoreButtonState();
+}
+
+class _NotesBlockMoreButtonState extends State<_NotesBlockMoreButton> {
+  final GlobalKey _anchorKey = GlobalKey();
+
+  void _open() {
+    final box = _anchorKey.currentContext?.findRenderObject() as RenderBox?;
+    if (box == null || !box.hasSize) return;
+    final rect = box.localToGlobal(Offset.zero) & box.size;
+    widget.onPressed(rect.center);
   }
 
-'''
-          editor = editor[:helper_start] + safe_helper + editor[paste_start:]
-
-          key_start = editor.find('  KeyEventResult _onBlockKeyEvent(NoteBlock block, KeyEvent event) {')
-          key_end = editor.find('  /// SelectionArea exposes plain text only.', key_start)
-          if key_start < 0 or key_end < 0:
-              raise SystemExit('generated keyboard method range not found')
-          safe_key_method = '''  KeyEventResult _onBlockKeyEvent(NoteBlock block, KeyEvent event) {
-    if (event is! KeyDownEvent) return KeyEventResult.ignored;
-    final controller = _textControllerFor(block);
-    final selection = controller.selection;
-    final keyboard = HardwareKeyboard.instance;
-    if (event.logicalKey == LogicalKeyboardKey.keyC &&
-        (keyboard.isControlPressed || keyboard.isMetaPressed) &&
-        selection.isValid &&
-        !selection.isCollapsed) {
-      final slice = _editor.structuralSliceForSelection(block.id, selection);
-      if (slice != null) {
-        final start = selection.start.clamp(0, controller.text.length).toInt();
-        final end = selection.end.clamp(0, controller.text.length).toInt();
-        final plain = controller.text.substring(start, end);
-        _NotesStructuredClipboard.plainText = plain;
-        _NotesStructuredClipboard.blocks = <NoteBlock>[slice];
-        unawaited(Clipboard.setData(ClipboardData(text: plain)));
-        return KeyEventResult.handled;
-      }
-    }
-    if (event.logicalKey == LogicalKeyboardKey.keyV &&
-        (keyboard.isControlPressed || keyboard.isMetaPressed)) {
-      unawaited(_pasteClipboardIntoBlock(block, selection));
-      return KeyEventResult.handled;
-    }
-    if (event.logicalKey == LogicalKeyboardKey.enter) {
-      final mutation = _editor.handleEnter(block.id, selection);
-      if (!mutation.changed) return KeyEventResult.ignored;
-      _applyMutation(mutation);
-      return KeyEventResult.handled;
-    }
-    if (event.logicalKey == LogicalKeyboardKey.backspace &&
-        selection.isValid &&
-        selection.isCollapsed &&
-        selection.extentOffset == 0) {
-      final mutation = _editor.handleBackspaceAtStart(block.id);
-      if (!mutation.changed) return KeyEventResult.ignored;
-      _applyMutation(mutation);
-      return KeyEventResult.handled;
-    }
-    return KeyEventResult.ignored;
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: 'More',
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: _open,
+          borderRadius: BorderRadius.circular(15),
+          child: SizedBox.square(
+            key: _anchorKey,
+            dimension: 30,
+            child: Icon(
+              Icons.more_horiz_rounded,
+              size: 18,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ),
+      ),
+    );
   }
+}
 
+class _NotesBlockCircularMenuOverlay extends StatelessWidget {
+  const _NotesBlockCircularMenuOverlay({
+    required this.anchorCenter,
+    required this.selected,
+    required this.onDismiss,
+    required this.onSelect,
+    required this.onDelete,
+  });
+
+  final Offset anchorCenter;
+  final bool selected;
+  final VoidCallback onDismiss;
+  final VoidCallback onSelect;
+  final VoidCallback onDelete;
+
+  double _left(double centerX, double width) =>
+      (centerX - 21).clamp(8.0, width - 50).toDouble();
+
+  double _top(double centerY, double height) =>
+      (centerY - 21).clamp(8.0, height - 50).toDouble();
+
+  @override
+  Widget build(BuildContext context) {
+    final size = MediaQuery.sizeOf(context);
+    final selectCenter = anchorCenter + const Offset(-48, -42);
+    final deleteCenter = anchorCenter + const Offset(-64, 14);
+    return Material(
+      color: Colors.transparent,
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: GestureDetector(
+              behavior: HitTestBehavior.translucent,
+              onTap: onDismiss,
+              child: const SizedBox.expand(),
+            ),
+          ),
+          Positioned(
+            left: _left(selectCenter.dx, size.width),
+            top: _top(selectCenter.dy, size.height),
+            child: _NotesBlockRadialAction(
+              tooltip: selected ? 'Deselect' : 'Select',
+              icon: selected
+                  ? Icons.remove_done_rounded
+                  : Icons.check_circle_outline_rounded,
+              onPressed: onSelect,
+            ),
+          ),
+          Positioned(
+            left: _left(deleteCenter.dx, size.width),
+            top: _top(deleteCenter.dy, size.height),
+            child: _NotesBlockRadialAction(
+              tooltip: 'Delete',
+              icon: Icons.delete_outline_rounded,
+              destructive: true,
+              onPressed: onDelete,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _NotesBlockRadialAction extends StatelessWidget {
+  const _NotesBlockRadialAction({
+    required this.tooltip,
+    required this.icon,
+    required this.onPressed,
+    this.destructive = false,
+  });
+
+  final String tooltip;
+  final IconData icon;
+  final VoidCallback onPressed;
+  final bool destructive;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final foreground = destructive ? scheme.error : scheme.onSurface;
+    return Tooltip(
+      message: tooltip,
+      child: Material(
+        elevation: 5,
+        shadowColor: Colors.black.withValues(alpha: 0.18),
+        color: scheme.surface,
+        shape: const CircleBorder(),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onPressed,
+          child: SizedBox.square(
+            dimension: 42,
+            child: Icon(icon, size: 20, color: foreground),
+          ),
+        ),
+      ),
+    );
+  }
+}
 '''
-          editor = editor[:key_start] + safe_key_method + editor[key_end:]
-          editor_path.write_text(editor)
+          text = text[:tail_start] + tail + text[helper_start:]
+          path.write_text(text)
 
-          # Dart switch cases must terminate explicitly.
-          header_path = Path('lib/features/notes/widgets/notes_editor_screen.dart')
-          header = header_path.read_text()
-          header = header.replace(
-              '''          case _NotesHeaderMenuAction.pin:
-            onTogglePinned();
-          case _NotesHeaderMenuAction.delete:
-            onDelete?.call();''',
-              '''          case _NotesHeaderMenuAction.pin:
-            onTogglePinned();
-            break;
-          case _NotesHeaderMenuAction.delete:
-            onDelete?.call();
-            break;''',
-              1,
-          )
-          header_path.write_text(header)
-
-          # Production NoteCard gained the three-dot anchor callback; keep
-          # visual capture fixtures compiling without changing their behavior.
+          # Some historical fixture patches already carried the no-op callback;
+          # normalize accidental duplicates so analyzer sees one named argument.
           for fixture_name in [
               'test/notes/fixtures/notes_glm_library_parity_fixture.dart',
               'test/notes/fixtures/notes_production_library_capture.dart',
           ]:
               fixture_path = Path(fixture_name)
               fixture = fixture_path.read_text()
-              fixture = fixture.replace(
-                  '                        onLongPress: () {},\n',
-                  '                        onLongPress: () {},\n                        onOpenMenu: (_) {},\n',
+              duplicate_24 = (
+                  '                        onOpenMenu: (_) {},\n'
+                  '                        onOpenMenu: (_) {},\n'
               )
-              fixture = fixture.replace(
-                  '                  onLongPress: () {},\n',
-                  '                  onLongPress: () {},\n                  onOpenMenu: (_) {},\n',
+              duplicate_18 = (
+                  '                  onOpenMenu: (_) {},\n'
+                  '                  onOpenMenu: (_) {},\n'
               )
+              while duplicate_24 in fixture:
+                  fixture = fixture.replace(
+                      duplicate_24,
+                      '                        onOpenMenu: (_) {},\n',
+                  )
+              while duplicate_18 in fixture:
+                  fixture = fixture.replace(
+                      duplicate_18,
+                      '                  onOpenMenu: (_) {},\n',
+                  )
               fixture_path.write_text(fixture)
           PY
