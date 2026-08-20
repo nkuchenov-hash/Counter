@@ -9,7 +9,6 @@ jobs:
     steps:
       - run: |
           python3 - <<'PY'
-          from pathlib import Path
           import subprocess
 
           source_commit = '23ada4780721817b87bf72a292d80125b1cc2c85'
@@ -26,12 +25,12 @@ jobs:
           ).splitlines()
           start = next(i for i, line in enumerate(original) if "python3 - <<'PY'" in line) + 1
           end = next(i for i in range(start, len(original)) if original[i].strip() == 'PY')
-          lines = [
+          script = '\n'.join(
               line[10:] if line.startswith('          ') else line
               for line in original[start:end]
-          ]
-          script = '\n'.join(lines) + '\n'
+          ) + '\n'
 
+          # Harden the NotesLibraryBody call-site mutation against formatting.
           replace_start = script.find("old_body_args = '''")
           replace_end = script.find(
               "text = text.replace('    required this.showExport,\\n', '', 1)",
@@ -69,5 +68,50 @@ jobs:
 
           '''
           script = script[:replace_start] + robust_body_patch + script[replace_end:]
+
+          # Harden structural clipboard replacement: replace the semantic range
+          # from candidatePlain through construction of mutation, regardless of
+          # indentation/line wrapping inherited from previous Notes patches.
+          compare_start = script.find("old_compare = '''")
+          compare_end = script.find('infer_anchor = text.find(', compare_start)
+          if compare_start < 0 or compare_end < 0:
+              raise SystemExit('clipboard patch-definition anchors not found')
+          robust_clipboard_patch = '''compare_source_start = text.find(
+              '    final candidatePlain = _NotesStructuredClipboard.plainText;',
+              paste_start,
+          )
+          compare_source_end = text.find(
+              '    if (!mutation.changed) return;',
+              compare_source_start,
+          )
+          if compare_source_start < 0 or compare_source_end < 0:
+              raise SystemExit('clipboard real semantic range not found')
+          new_compare = ''' + "'''" + '''    final candidatePlain = _NotesStructuredClipboard.plainText;
+    final platformPlain = plain
+        .replaceAll('\\r\\n', '\\n')
+        .replaceAll('\\r', '\\n');
+    final hasMatchingStructure =
+        candidatePlain != null &&
+        _normalizeClipboardStructure(candidatePlain) ==
+            _normalizeClipboardStructure(platformPlain) &&
+        _NotesStructuredClipboard.blocks.isNotEmpty;
+
+    final mutation = hasMatchingStructure
+        ? _editor.pasteBlocks(
+            block.id,
+            selection,
+            _NotesStructuredClipboard.blocks,
+          )
+        : _editor.pastePlainText(block.id, selection, platformPlain);
+''' + "'''" + '''
+          text = (
+              text[:compare_source_start]
+              + new_compare
+              + text[compare_source_end:]
+          )
+
+          '''
+          script = script[:compare_start] + robust_clipboard_patch + script[compare_end:]
+
           exec(compile(script, '<notes-interaction-ux>', 'exec'))
           PY
