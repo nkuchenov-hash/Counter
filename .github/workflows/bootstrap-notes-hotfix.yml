@@ -1,4 +1,4 @@
-name: Urgent Notes editor regression fix
+name: Notes structured system clipboard fix
 
 on:
   workflow_dispatch:
@@ -24,348 +24,163 @@ jobs:
           page = Path('lib/features/notes/note_editor_page.dart')
           text = page.read_text()
 
-          # Stable render keys let background taps distinguish real block bounds
-          # from empty editor space without changing block layout.
-          if '_blockItemKeys' not in text:
-              text = replace_once(
-                  text,
-                  '  final ScrollController _blockScrollController = ScrollController();\n',
-                  '  final ScrollController _blockScrollController = ScrollController();\n'
-                  '  final Map<String, GlobalKey> _blockItemKeys = <String, GlobalKey>{};\n',
-                  'block item keys',
-              )
-              text = replace_once(
-                  text,
-                  '    final textIds = <String>{};\n'
-                  '    final captionIds = <String>{};\n'
-                  '    final focusIds = <String>{};\n'
-                  '    for (final block in _editor.visibleBlocks) {\n',
-                  '    final visibleIds = <String>{};\n'
-                  '    final textIds = <String>{};\n'
-                  '    final captionIds = <String>{};\n'
-                  '    final focusIds = <String>{};\n'
-                  '    for (final block in _editor.visibleBlocks) {\n'
-                  '      visibleIds.add(block.id);\n',
-                  'visible ids',
-              )
-              text = replace_once(
-                  text,
-                  '    _disposeRemoved(_textControllers, textIds);\n',
-                  '    _blockItemKeys.removeWhere((id, _) => !visibleIds.contains(id));\n'
-                  '    _disposeRemoved(_textControllers, textIds);\n',
-                  'block item key cleanup',
-              )
-
-          # Preserve the structured internal payload even when Flutter/browser
-          # serializes bullets/checkmarks/newlines differently on the system clipboard.
-          if '_structuredClipboardMatchesSystemText' not in text:
-              marker = '  Future<void> _pasteClipboardIntoBlock(\n'
-              at = text.index(marker)
-              helpers = r'''  String _normalizeClipboardMeaning(String value) {
-    final normalizedLines = value
-        .replaceAll('\r\n', '\n')
-        .replaceAll('\r', '\n')
-        .split('\n')
-        .map((line) {
-          var cleaned = line.trimLeft();
-          cleaned = cleaned.replaceFirst(
-            RegExp(r'^(?:[-*•]\s+|\d+[.)]\s+|\[(?: |x|X)\]\s+|[☐☑✓✔]\s*)'),
-            '',
-          );
-          return cleaned;
-        })
-        .join('\n');
-    return _normalizeClipboardStructure(normalizedLines);
-  }
-
-  bool _structuredClipboardMatchesSystemText(String plain) {
-    final candidate = _NotesStructuredClipboard.plainText;
-    final blocks = _NotesStructuredClipboard.blocks;
-    if (candidate == null || blocks.isEmpty) return false;
-
-    final normalizedPlain = _normalizeClipboardStructure(plain);
-    if (_normalizeClipboardStructure(candidate) == normalizedPlain) return true;
-
-    final blockPlain = blocks.map((block) => block.effectiveText).join('\n');
-    if (_normalizeClipboardStructure(blockPlain) == normalizedPlain) return true;
-
-    final meaning = _normalizeClipboardMeaning(plain);
-    return _normalizeClipboardMeaning(candidate) == meaning ||
-        _normalizeClipboardMeaning(blockPlain) == meaning;
-  }
-
+          clipboard_class = '''class _NotesStructuredClipboard {
+  static String? plainText;
+  static List<NoteBlock> blocks = const <NoteBlock>[];
+}
 '''
-              text = text[:at] + helpers + text[at:]
+          copy_action = '''class _NotesStructuredCopyAction extends Action<CopySelectionTextIntent> {
+  _NotesStructuredCopyAction({required this.onCopy});
 
-              start = text.index('    final candidatePlain = _NotesStructuredClipboard.plainText;')
-              end = text.index('\n\n    final mutation =', start)
-              text = (
-                  text[:start]
-                  + '    final hasMatchingStructure =\n'
-                    '        _structuredClipboardMatchesSystemText(plain);'
-                  + text[end:]
+  final bool Function() onCopy;
+
+  @override
+  Object? invoke(CopySelectionTextIntent intent) {
+    if (onCopy()) return null;
+    return callingAction?.invoke(intent);
+  }
+}
+'''
+          if '_NotesStructuredCopyAction' not in text:
+              text = replace_once(
+                  text,
+                  clipboard_class,
+                  clipboard_class + '\n' + copy_action,
+                  'copy action class',
               )
 
-          # Generic caret contract for every non-text block, including existing
-          # drawings/media at the end of old documents.
-          if '_focusOrInsertParagraphAfter' not in text:
-              marker = '  Future<void> _showTablePicker({String? anchorId}) {\n'
-              at = text.index(marker)
-              helpers = '''  void _focusOrInsertParagraphAfter(String blockId) {
-    final visible = _editor.visibleBlocks;
-    final index = visible.indexWhere((block) => block.id == blockId);
-    if (index < 0) return;
-    if (index + 1 < visible.length) {
-      final next = visible[index + 1];
-      if (NotesEditorDocumentController.isEditableText(next.type)) {
-        _requestFocus(next.id, const TextSelection.collapsed(offset: 0));
-        return;
+          paste_marker = '  Future<void> _pasteClipboardIntoBlock(\n'
+          at = text.index(paste_marker)
+          copy_helpers = r'''  String _structuredClipboardExportText(List<NoteBlock> blocks) {
+    final lines = <String>[];
+    var numberedOrdinal = 0;
+    var previousWasNumbered = false;
+    for (final block in blocks) {
+      final value = block.effectiveText;
+      if (block.type == NoteBlockType.numberedList) {
+        numberedOrdinal = previousWasNumbered ? numberedOrdinal + 1 : 1;
+        previousWasNumbered = true;
+      } else {
+        numberedOrdinal = 0;
+        previousWasNumbered = false;
+      }
+      switch (block.type) {
+        case NoteBlockType.checklist:
+          lines.add('- [${block.checked ? 'x' : ' '}] $value');
+        case NoteBlockType.bulletedList:
+          lines.add('- $value');
+        case NoteBlockType.numberedList:
+          lines.add('$numberedOrdinal. $value');
+        case NoteBlockType.heading:
+          final level = block.level.clamp(1, 3).toInt();
+          final marker = List<String>.filled(level, '#').join();
+          lines.add('$marker $value');
+        case NoteBlockType.quote:
+          lines.add('> $value');
+        default:
+          lines.add(value);
       }
     }
-    _applyMutation(_editor.insertAfter(blockId, NoteBlockType.paragraph));
+    return lines.join('\n');
   }
 
-  void _applyInsertedNonTextWithTrailingParagraph(
-    NotesEditorMutation mutation,
+  bool _copyCurrentStructuredSelection() {
+    if (_editingBlockId != null || _blockSelectionMode) return false;
+    final blocks = _NotesStructuredClipboard.blocks;
+    if (blocks.isEmpty) return false;
+    final export = _structuredClipboardExportText(blocks);
+    if (export.isEmpty) return false;
+    _NotesStructuredClipboard.plainText = export;
+    unawaited(Clipboard.setData(ClipboardData(text: export)));
+    return true;
+  }
+
+  Widget _buildSelectionContextMenu(
+    BuildContext context,
+    SelectableRegionState selectableRegionState,
   ) {
-    if (!mutation.changed) return;
-    final insertedId = _editor.activeBlockId;
-    _applyMutation(mutation);
-    if (insertedId != null) _focusOrInsertParagraphAfter(insertedId);
-  }
-
-  GlobalKey _blockItemKeyFor(String blockId) {
-    return _blockItemKeys.putIfAbsent(
-      blockId,
-      () => GlobalKey(debugLabel: 'notes-editor-block-$blockId'),
+    final items = <ContextMenuButtonItem>[
+      for (final item in selectableRegionState.contextMenuButtonItems)
+        if (item.type == ContextMenuButtonType.copy)
+          item.copyWith(
+            onPressed: () {
+              if (_copyCurrentStructuredSelection()) {
+                selectableRegionState.hideToolbar();
+              } else {
+                item.onPressed?.call();
+              }
+            },
+          )
+        else
+          item,
+    ];
+    return AdaptiveTextSelectionToolbar.buttonItems(
+      anchors: selectableRegionState.contextMenuAnchors,
+      buttonItems: items,
     );
   }
 
-  Rect? _blockGlobalRect(String blockId) {
-    final blockContext = _blockItemKeys[blockId]?.currentContext;
-    final render = blockContext?.findRenderObject();
-    if (render is! RenderBox || !render.hasSize) return null;
-    return render.localToGlobal(Offset.zero) & render.size;
-  }
+'''
+          if '_structuredClipboardExportText' not in text:
+              text = text[:at] + copy_helpers + text[at:]
 
-  void _clearActiveBlock() {
-    if (_blockSelectionMode) return;
-    FocusManager.instance.primaryFocus?.unfocus();
-    for (final node in _focusNodes.values) {
-      if (node.hasFocus) node.unfocus();
-    }
-    final changed = _editor.activeBlockId != null || _editingBlockId != null;
-    _editor.activeBlockId = null;
-    _editor.activeSelection = null;
-    if (changed && mounted) setState(() => _editingBlockId = null);
-  }
-
-  void _handleEditorBackgroundPointer(PointerDownEvent event) {
-    if (_blockSelectionMode) return;
-    NoteBlock? preceding;
-    var nearestBottom = double.negativeInfinity;
-    for (final block in _editor.visibleBlocks) {
-      final rect = _blockGlobalRect(block.id);
-      if (rect == null) continue;
-      if (rect.contains(event.position)) return;
-      if (rect.bottom <= event.position.dy && rect.bottom > nearestBottom) {
-        nearestBottom = rect.bottom;
-        preceding = block;
-      }
-    }
-    if (preceding != null &&
-        !NotesEditorDocumentController.isEditableText(preceding.type)) {
-      _focusOrInsertParagraphAfter(preceding.id);
+          capture_start = text.index('  void _captureStructuredSelection(SelectedContent? selected) {')
+          capture_end = text.index('  List<NoteBlock> _inferStructuredSelectionBlocks', capture_start)
+          capture_replacement = '''  void _captureStructuredSelection(SelectedContent? selected) {
+    final plain = selected?.plainText ?? '';
+    if (plain.isEmpty) {
+      _NotesStructuredClipboard.plainText = null;
+      _NotesStructuredClipboard.blocks = const <NoteBlock>[];
       return;
     }
-    _clearActiveBlock();
+    final blocks = _inferStructuredSelectionBlocks(plain);
+    if (blocks.isEmpty) {
+      _NotesStructuredClipboard.plainText = null;
+      _NotesStructuredClipboard.blocks = const <NoteBlock>[];
+      return;
+    }
+    final frozen = List<NoteBlock>.unmodifiable(blocks);
+    _NotesStructuredClipboard.blocks = frozen;
+    _NotesStructuredClipboard.plainText =
+        _structuredClipboardExportText(frozen);
   }
 
 '''
-              text = text[:at] + helpers + text[at:]
+          text = text[:capture_start] + capture_replacement + text[capture_end:]
 
-          # Table insertion.
-          start = text.index('  Future<void> _showTablePicker({String? anchorId}) {')
-          end = text.index('  Future<void> _showInsertMenu(String anchorId) {', start)
-          text = text[:start] + '''  Future<void> _showTablePicker({String? anchorId}) {
-    return showNotesTablePicker(
-      context: context,
-      onSelected: (table) {
-        _applyInsertedNonTextWithTrailingParagraph(
-          _editor.insertAfter(
-            anchorId ?? _editor.activeBlockId,
-            NoteBlockType.table,
-            table: table,
-          ),
-        );
-      },
-    );
-  }
-
-''' + text[end:]
-
-          text = text.replace(
-              '      onDivider: () => _insertAfter(anchorId, NoteBlockType.divider),\n',
-              '''      onDivider: () => _applyInsertedNonTextWithTrailingParagraph(
-        _editor.insertAfter(anchorId, NoteBlockType.divider),
-      ),
-''',
-              1,
-          )
-
-          # Image insertion: position-based, independent of dartfmt spacing.
-          image_start = text.index('      final mutation = replaceBlockId == null', text.index('Future<void> _pickImage'))
-          image_end = text.index('      _applyMutation(mutation);', image_start) + len('      _applyMutation(mutation);')
-          text = text[:image_start] + '''      if (replaceBlockId == null) {
-        _applyInsertedNonTextWithTrailingParagraph(
-          _editor.insertAfter(
-            _editor.activeBlockId,
-            NoteBlockType.image,
-            imageData: picked.dataUrl,
-          ),
-        );
-      } else {
-        _applyMutation(
-          _editor.updateMedia(replaceBlockId, imageData: picked.dataUrl),
-        );
-      }''' + text[image_end:]
-
-          # Drawing insertion: replace the whole method to remove the previous
-          # drawing-only special case and use the shared object/caret contract.
-          drawing_start = text.index('  Future<void> _openDrawing({String? editBlockId}) {')
-          drawing_end = text.index('  Future<void> _recordAudio() async {', drawing_start)
-          text = text[:drawing_start] + '''  Future<void> _openDrawing({String? editBlockId}) {
-    final initial = editBlockId == null
-        ? null
-        : _editor.blockById(editBlockId)?.drawingData;
-    return showDrawingCanvas(
-      context: context,
-      initialData: initial,
-      onSave: (dataUrl) {
-        if (!mounted) return;
-        if (editBlockId != null) {
-          _applyMutation(
-            _editor.updateMedia(editBlockId, drawingData: dataUrl),
-          );
-          return;
-        }
-        _applyInsertedNonTextWithTrailingParagraph(
-          _editor.insertAfter(
-            _editor.activeBlockId,
-            NoteBlockType.drawing,
-            drawingData: dataUrl,
-          ),
-        );
-      },
-    );
-  }
-
-''' + text[drawing_end:]
-
-          audio_start = text.index('  Future<void> _recordAudio() async {')
-          audio_end = text.index('  Future<void> _toggleAudio(String blockId) async {', audio_start)
-          text = text[:audio_start] + '''  Future<void> _recordAudio() async {
-    if (widget.parityPreview) return;
-    final audio = await showNotesAudioRecorder(context: context);
-    if (!mounted || audio == null) return;
-    final mutation = _editor.insertAfter(
-      _editor.activeBlockId,
-      NoteBlockType.audio,
-      audio: audio,
-    );
-    final blockId = _editor.activeBlockId;
-    _applyInsertedNonTextWithTrailingParagraph(mutation);
-    if (blockId != null) unawaited(_transcribeAudio(blockId));
-  }
-
-''' + text[audio_end:]
-
-          text = replace_once(
-              text,
-              '    return Stack(\n      key: ValueKey<String>(block.id),\n',
-              '    return Stack(\n      key: _blockItemKeyFor(block.id),\n',
-              'block global key',
-          )
-
-          content_start = text.index('      content: _blockSelectionMode')
-          screen_close = text.index('\n    );\n  }\n}\n\nclass _NotesBlockMoreButton', content_start)
-          text = text[:content_start] + '''      content: Listener(
-        behavior: HitTestBehavior.translucent,
-        onPointerDown: _handleEditorBackgroundPointer,
-        child: _blockSelectionMode
-            ? _buildReorderableBlockList()
-            : SelectionArea(
+          old_selection = '''            : SelectionArea(
                 onSelectionChanged: _captureStructuredSelection,
                 child: _buildReorderableBlockList(),
               ),
-      ),''' + text[screen_close:]
+'''
+          new_selection = '''            : Actions(
+                actions: <Type, Action<Intent>>{
+                  CopySelectionTextIntent: _NotesStructuredCopyAction(
+                    onCopy: _copyCurrentStructuredSelection,
+                  ),
+                },
+                child: SelectionArea(
+                  contextMenuBuilder: _buildSelectionContextMenu,
+                  onSelectionChanged: _captureStructuredSelection,
+                  child: _buildReorderableBlockList(),
+                ),
+              ),
+'''
+          if 'contextMenuBuilder: _buildSelectionContextMenu' not in text:
+              text = replace_once(
+                  text,
+                  old_selection,
+                  new_selection,
+                  'selection copy override',
+              )
+
           page.write_text(text)
 
-          # Active EditableText and inactive RichText must use identical
-          # letter-spacing metrics. Null inherits differently in TextField.
-          canonical = Path('lib/features/notes/widgets/notes_canonical_components.dart')
-          c = canonical.read_text()
-          if 'fontWeight: FontWeight.w400,\n        letterSpacing: 0,' not in c:
-              c = replace_once(
-                  c,
-                  '        fontWeight: FontWeight.w400,\n        color: color,\n',
-                  '        fontWeight: FontWeight.w400,\n        letterSpacing: 0,\n        color: color,\n',
-                  'canonical body spacing',
-              )
-          if 'fontWeight: FontWeight.w600,\n        letterSpacing: 0,' not in c:
-              c = replace_once(
-                  c,
-                  '        fontWeight: FontWeight.w600,\n        color: color,\n',
-                  '        fontWeight: FontWeight.w600,\n        letterSpacing: 0,\n        color: color,\n',
-                  'canonical h3 spacing',
-              )
-          canonical.write_text(c)
-
-          blocks = Path('lib/features/notes/widgets/note_editor_block_widgets.dart')
-          b = blocks.read_text()
-          selectable_at = b.index('TextStyle _selectableTextStyle')
-          prefix, selectable = b[:selectable_at], b[selectable_at:]
-          if 'fontWeight: FontWeight.w400,\n        letterSpacing: 0,' not in selectable:
-              selectable = replace_once(
-                  selectable,
-                  '        fontWeight: FontWeight.w400,\n        color: color,\n',
-                  '        fontWeight: FontWeight.w400,\n        letterSpacing: 0,\n        color: color,\n',
-                  'selectable body spacing',
-              )
-          if 'fontWeight: FontWeight.w600,\n        letterSpacing: 0,' not in selectable:
-              selectable = replace_once(
-                  selectable,
-                  '        fontWeight: FontWeight.w600,\n        color: color,\n',
-                  '        fontWeight: FontWeight.w600,\n        letterSpacing: 0,\n        color: color,\n',
-                  'selectable h3 spacing',
-              )
-          blocks.write_text(prefix + selectable)
-
-          # Quick add uses the exact same 48px decoration constraint as Search.
-          shell = Path('lib/features/notes/widgets/notes_library_production_shell.dart')
-          s = shell.read_text()
-          row_at = s.index('class NotesGlmInlineAddRow')
-          head, row = s[:row_at], s[row_at:]
-          constraint = '''                constraints: const BoxConstraints.tightFor(
-                  height: kNotesLibraryControlHeight,
-                ),
-'''
-          if constraint not in row:
-              row = replace_once(
-                  row,
-                  '              decoration: InputDecoration(\n',
-                  '              decoration: InputDecoration(\n' + constraint,
-                  'quick add exact height',
-              )
-          shell.write_text(head + row)
-
-          # Fail fast on every user-facing contract.
-          final_page = page.read_text()
-          require('_structuredClipboardMatchesSystemText(plain)' in final_page, 'clipboard contract missing')
-          require('_focusOrInsertParagraphAfter' in final_page, 'object caret contract missing')
-          require('onPointerDown: _handleEditorBackgroundPointer' in final_page, 'blank deactivation missing')
-          require('_blockItemKeyFor(block.id)' in final_page, 'block bounds key missing')
-          require('letterSpacing: 0' in canonical.read_text(), 'active spacing contract missing')
-          require('letterSpacing: 0' in blocks.read_text(), 'inactive spacing contract missing')
-          require(constraint in shell.read_text(), 'quick add height contract missing')
+          final = page.read_text()
+          require('class _NotesStructuredCopyAction extends Action<CopySelectionTextIntent>' in final, 'copy action missing')
+          require("lines.add('- [${block.checked ? 'x' : ' '}] $value');" in final, 'checklist export missing')
+          require("return lines.join('\\n');" in final, 'line separators missing')
+          require('CopySelectionTextIntent: _NotesStructuredCopyAction(' in final, 'keyboard copy override missing')
+          require('contextMenuBuilder: _buildSelectionContextMenu' in final, 'copy menu override missing')
+          require('_NotesStructuredClipboard.blocks = const <NoteBlock>[];' in final, 'stale selection cleanup missing')
           PY
