@@ -40,11 +40,6 @@ function accessToken(app, c, scope) {
   }
   return String(res.json.access_token);
 }
-function hasScope(scopeString, wanted) {
-  var parts = String(scopeString || '').split(/\s+/);
-  for (var i = 0; i < parts.length; i++) if (parts[i] === wanted) return true;
-  return false;
-}
 function errorMeta(res) {
   var status = '';
   var reason = '';
@@ -62,34 +57,59 @@ function errorMeta(res) {
   } catch (_) {}
   return { status: status || ('HTTP_' + res.statusCode), reason: reason || 'unknown' };
 }
+function countActivitySleep(res, cutoffMs) {
+  var total = 0;
+  var recent = 0;
+  if (!res || !res.json) return { total: total, recent: recent };
+  var buckets = res.json.bucket || [];
+  for (var i = 0; i < buckets.length; i++) {
+    var datasets = (buckets[i] || {}).dataset || [];
+    for (var j = 0; j < datasets.length; j++) {
+      var points = (datasets[j] || {}).point || [];
+      for (var k = 0; k < points.length; k++) {
+        var p = points[k] || {};
+        var vals = p.value || [];
+        var activity = vals.length ? Number(vals[0].intVal) : -1;
+        if (activity !== 72) continue;
+        total++;
+        var endNs = Number(p.endTimeNanos || 0);
+        var endMs = isFinite(endNs) ? Math.floor(endNs / 1000000) : 0;
+        if (endMs >= cutoffMs) recent++;
+      }
+    }
+  }
+  return { total: total, recent: recent };
+}
 function run(e) {
   try {
     var c = connection(e.app);
-    var healthScope = 'https://www.googleapis.com/auth/googlehealth.sleep.readonly';
     var fitScope = 'https://www.googleapis.com/auth/fitness.sleep.read';
-    var token = accessToken(e.app, c, healthScope);
-    var tokenInfo = $http.send({
-      url: 'https://oauth2.googleapis.com/tokeninfo?access_token=' + encodeURIComponent(token),
-      method: 'GET',
-      headers: { 'accept': 'application/json' },
-      timeout: 30
-    });
-    var scopeString = tokenInfo && tokenInfo.json ? String(tokenInfo.json.scope || '') : '';
+    var token = accessToken(e.app, c, fitScope);
+    var nowMs = Date.now();
+    var startMs = nowMs - 3 * 86400000;
+    var cutoffMs = nowMs - 36 * 3600000;
 
-    var start = new Date(Date.now() - 3 * 86400000).toISOString();
-    var end = new Date().toISOString();
-    var healthRes = $http.send({
-      url: 'https://health.googleapis.com/v4/users/me/dataTypes/sleep/dataPoints:reconcile?' + form({
-        pageSize: 25,
-        dataSourceFamily: 'users/me/dataSourceFamilies/all-sources',
-        filter: 'sleep.interval.end_time >= "' + start + '" AND sleep.interval.end_time < "' + end + '"'
-      }),
+    var sourcesRes = $http.send({
+      url: 'https://www.googleapis.com/fitness/v1/users/me/dataSources?' + form({ dataTypeName: 'com.google.activity.segment' }),
       method: 'GET',
       headers: { 'authorization': 'Bearer ' + token, 'accept': 'application/json' },
       timeout: 60
     });
 
-    var cutoff = new Date(Date.now() - 36 * 3600000).toISOString();
+    var aggregateRes = $http.send({
+      url: 'https://www.googleapis.com/fitness/v1/users/me/dataset:aggregate',
+      method: 'POST',
+      headers: { 'authorization': 'Bearer ' + token, 'accept': 'application/json', 'content-type': 'application/json' },
+      body: JSON.stringify({
+        aggregateBy: [{ dataTypeName: 'com.google.activity.segment' }],
+        startTimeMillis: startMs,
+        endTimeMillis: nowMs
+      }),
+      timeout: 60
+    });
+
+    var sleepCounts = countActivitySleep(aggregateRes, cutoffMs);
+    var cutoff = new Date(cutoffMs).toISOString();
     var recent = [];
     try {
       recent = e.app.findRecordsByFilter(
@@ -103,23 +123,24 @@ function run(e) {
       connection: true,
       enabled: !!c.get('enabled'),
       stored_error: String(c.get('last_error') || '') || 'none',
-      refresh_token_present: String(c.get('refresh_token_enc') || '').length > 0,
-      health_scope_granted: hasScope(scopeString, healthScope),
-      fit_scope_granted: hasScope(scopeString, fitScope),
-      tokeninfo_status: tokenInfo ? tokenInfo.statusCode : 0,
-      health_status: healthRes ? healthRes.statusCode : 0,
-      health_points: 0,
-      health_error_status: 'none',
-      health_error_reason: 'none',
+      fit_activity_sources_status: sourcesRes ? sourcesRes.statusCode : 0,
+      fit_activity_sources_count: 0,
+      fit_activity_aggregate_status: aggregateRes ? aggregateRes.statusCode : 0,
+      fit_activity_sleep_segments_3d: sleepCounts.total,
+      fit_activity_sleep_segments_36h: sleepCounts.recent,
+      fit_activity_sources_error: 'none',
+      fit_activity_aggregate_error: 'none',
       pocketbase_sleep_last_36h: recent.length
     };
-    if (healthRes && healthRes.statusCode >= 200 && healthRes.statusCode < 300 && healthRes.json) {
-      var rows = healthRes.json.dataPoints || healthRes.json.data_points || [];
-      payload.health_points = rows.length;
-    } else if (healthRes) {
-      var meta = errorMeta(healthRes);
-      payload.health_error_status = meta.status;
-      payload.health_error_reason = meta.reason;
+    if (sourcesRes && sourcesRes.statusCode >= 200 && sourcesRes.statusCode < 300 && sourcesRes.json) {
+      payload.fit_activity_sources_count = (sourcesRes.json.dataSource || []).length;
+    } else if (sourcesRes) {
+      var sm = errorMeta(sourcesRes);
+      payload.fit_activity_sources_error = sm.status + ':' + sm.reason;
+    }
+    if (aggregateRes && !(aggregateRes.statusCode >= 200 && aggregateRes.statusCode < 300)) {
+      var am = errorMeta(aggregateRes);
+      payload.fit_activity_aggregate_error = am.status + ':' + am.reason;
     }
     return e.json(200, payload);
   } catch (err) {
