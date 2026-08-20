@@ -1,0 +1,10 @@
+connection=true
+enabled=true
+token=true
+status=connected
+error=authorization_required
+synced=false
+sessions=149
+imported=0
+sleep_last_36h=0
+latest_sleep_day=2026-08-18
