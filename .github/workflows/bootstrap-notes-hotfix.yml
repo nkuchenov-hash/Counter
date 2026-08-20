@@ -10,6 +10,7 @@ jobs:
       - run: |
           python3 - <<'PY'
           from pathlib import Path
+          import subprocess
 
           page = Path('lib/features/notes/note_editor_page.dart')
           text = page.read_text()
@@ -173,16 +174,18 @@ child: _NotesBlockMoreButton(
 '''):]
           page.write_text(text)
 
-          for fixture_name in [
+          fixture_names = [
               'test/notes/fixtures/notes_glm_library_parity_fixture.dart',
               'test/notes/fixtures/notes_production_library_capture.dart',
-          ]:
+          ]
+          for fixture_name in fixture_names:
               fixture = Path(fixture_name)
               fixture_text = fixture.read_text()
-              needle = '                        onLongPress: () {},\n'
-              if fixture_name.endswith('notes_production_library_capture.dart'):
-                  needle = '                  onLongPress: () {},\n'
-              replacement = needle + needle.split('onLongPress:')[0] + 'onOpenMenu: (_, __) {},\n'
+              indent = '                        ' if fixture_name.endswith('notes_glm_library_parity_fixture.dart') else '                  '
+              needle = indent + 'onLongPress: () {},\n'
+              replacement = needle + indent + 'onOpenMenu: (_) {},\n'
               fixture_text = fixture_text.replace(needle, replacement)
               fixture.write_text(fixture_text)
+
+          subprocess.run(['git', 'add', *fixture_names], check=True)
           PY
