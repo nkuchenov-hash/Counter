@@ -1,4 +1,4 @@
-name: Notes block selection interaction fix
+name: Notes bulk selection exit and scroll preservation
 
 on:
   workflow_dispatch:
@@ -12,29 +12,40 @@ jobs:
           from pathlib import Path
           import subprocess
 
-          page = Path('lib/features/notes/note_editor_page.dart')
-          text = page.read_text()
-
-          def replace_once(old, new, label):
-              global text
+          def replace_once(text, old, new, label):
               count = text.count(old)
               if count != 1:
                   raise SystemExit(f'{label}: expected 1 match, got {count}')
-              text = text.replace(old, new, 1)
+              return text.replace(old, new, 1)
 
-          replace_once(
-              '''  void _toggleBlockSelection(String blockId) {
-    if (_editor.blockById(blockId) == null) return;
-    setState(() {
-      _blockSelectionMode = true;
-      if (!_selectedBlockIds.add(blockId)) {
-        _selectedBlockIds.remove(blockId);
-      }
-      if (_selectedBlockIds.isEmpty) _blockSelectionMode = false;
-    });
-  }
+          page = Path('lib/features/notes/note_editor_page.dart')
+          text = page.read_text()
+
+          text = replace_once(
+              text,
+              '''  bool _blockSelectionMode = false;
+  final Set<String> _selectedBlockIds = <String>{};
 ''',
-              '''  void _toggleBlockSelection(String blockId) {
+              '''  bool _blockSelectionMode = false;
+  final Set<String> _selectedBlockIds = <String>{};
+  final ScrollController _blockScrollController = ScrollController();
+''',
+              'scroll controller field',
+          )
+
+          text = replace_once(
+              text,
+              '''    _gate.dispose();
+    _audioPlayback
+''',
+              '''    _gate.dispose();
+    _blockScrollController.dispose();
+    _audioPlayback
+''',
+              'scroll controller dispose',
+          )
+
+          old_toggle = '''  void _toggleBlockSelection(String blockId) {
     if (_editor.blockById(blockId) == null) return;
     if (!_blockSelectionMode) {
       FocusManager.instance.primaryFocus?.unfocus();
@@ -52,127 +63,263 @@ jobs:
       if (_selectedBlockIds.isEmpty) _blockSelectionMode = false;
     });
   }
-''',
-              'toggle selection',
-          )
-
-          replace_once(
-              '''  void _requestFocus(String blockId, TextSelection selection) {
-    final block = _editor.blockById(blockId);
-''',
-              '''  void _requestFocus(String blockId, TextSelection selection) {
-    if (_blockSelectionMode) return;
-    final block = _editor.blockById(blockId);
-''',
-              'request focus guard',
-          )
-
-          replace_once(
-              '''        if (node.hasFocus) {
-''',
-              '''        if (node.hasFocus) {
-          if (_blockSelectionMode) {
-            node.unfocus();
-            return;
-          }
-''',
-              'focus listener guard',
-          )
-
-          replace_once(
-              '''    final active = _editor.activeBlockId == block.id;
-''',
-              '''    final active = !_blockSelectionMode && _editor.activeBlockId == block.id;
-''',
-              'active block state',
-          )
-
-          replace_once(
-              '''      editing: editable && _editingBlockId == block.id,
-''',
-              '''      editing: editable && !_blockSelectionMode && _editingBlockId == block.id,
-''',
-              'editing state',
-          )
-
-          replace_once(
-              '''        Positioned(
-top: 2,
-right: 2,
-child: _NotesBlockMoreButton(
-''',
-              '''        if (active)
-Positioned(
-top: 2,
-right: 2,
-child: _NotesBlockMoreButton(
-''',
-              'active-only more button',
-          )
-
-          build_marker = '''  @override
-  Widget build(BuildContext context) {
-    final loc = currentLocale.value;
-    final activeType = _editor.activeBlock?.type;
 '''
-          helper = '''  Widget _buildReorderableBlockList() {
-    return ReorderableListView.builder(
-      key: const ValueKey('notes-editor-content'),
-      padding: EdgeInsets.zero,
-      buildDefaultDragHandles: false,
-      proxyDecorator: (child, _, __) => child,
-      itemCount: _editor.visibleBlocks.length,
-      onReorder: (oldIndex, newIndex) {
-        final visible = _editor.visibleBlocks;
-        final draggedId = oldIndex >= 0 && oldIndex < visible.length
-            ? visible[oldIndex].id
-            : null;
-        final mutation = draggedId != null &&
-                _selectedBlockIds.contains(draggedId)
-            ? _editor.reorderVisibleGroup(
-                _selectedBlockIds,
-                oldIndex,
-                newIndex,
-              )
-            : _editor.reorderVisible(oldIndex, newIndex);
-        _applyMutation(mutation);
-      },
-      itemBuilder: _buildBlock,
-    );
+          new_toggle = '''  double? _captureBlockScrollOffset() {
+    if (!_blockScrollController.hasClients) return null;
+    return _blockScrollController.offset;
   }
 
-'''
-          if text.count(build_marker) != 1:
-              raise SystemExit(f'editor build marker mismatch: {text.count(build_marker)}')
-          text = text.replace(build_marker, helper + build_marker, 1)
+  void _restoreBlockScrollOffset(double? offset) {
+    if (offset == null) return;
+    void restore() {
+      if (!mounted || !_blockScrollController.hasClients) return;
+      final position = _blockScrollController.position;
+      _blockScrollController.jumpTo(
+        offset.clamp(position.minScrollExtent, position.maxScrollExtent),
+      );
+    }
 
-          start_marker = '''      content: SelectionArea(
-        onSelectionChanged: _captureStructuredSelection,
-        child: ReorderableListView.builder(
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      restore();
+      WidgetsBinding.instance.addPostFrameCallback((_) => restore());
+    });
+  }
+
+  void _toggleBlockSelection(String blockId) {
+    if (_editor.blockById(blockId) == null) return;
+    final scrollOffset = _captureBlockScrollOffset();
+    if (!_blockSelectionMode) {
+      FocusManager.instance.primaryFocus?.unfocus();
+      for (final node in _focusNodes.values) {
+        if (node.hasFocus) node.unfocus();
+      }
+      _editor.activeSelection = null;
+    }
+    setState(() {
+      _editingBlockId = null;
+      _blockSelectionMode = true;
+      if (!_selectedBlockIds.add(blockId)) {
+        _selectedBlockIds.remove(blockId);
+      }
+      if (_selectedBlockIds.isEmpty) _blockSelectionMode = false;
+    });
+    _restoreBlockScrollOffset(scrollOffset);
+  }
+
+  void _exitBlockSelectionMode() {
+    if (!_blockSelectionMode && _selectedBlockIds.isEmpty) return;
+    final scrollOffset = _captureBlockScrollOffset();
+    FocusManager.instance.primaryFocus?.unfocus();
+    for (final node in _focusNodes.values) {
+      if (node.hasFocus) node.unfocus();
+    }
+    _editor.activeSelection = null;
+    setState(() {
+      _editingBlockId = null;
+      _selectedBlockIds.clear();
+      _blockSelectionMode = false;
+    });
+    _restoreBlockScrollOffset(scrollOffset);
+  }
 '''
-          start = text.find(start_marker)
-          if start < 0:
-              raise SystemExit('selection content start not found')
-          end_marker = '''        ),
+          text = replace_once(text, old_toggle, new_toggle, 'bulk selection toggle')
+
+          text = replace_once(
+              text,
+              '''    return ReorderableListView.builder(
+      key: const ValueKey('notes-editor-content'),
+      padding: EdgeInsets.zero,
+''',
+              '''    return ReorderableListView.builder(
+      key: const ValueKey('notes-editor-content'),
+      controller: _blockScrollController,
+      padding: EdgeInsets.zero,
+''',
+              'reorderable scroll controller',
+          )
+
+          text = replace_once(
+              text,
+              '''      onDelete: _deleteCurrentNote,
+      categoryLabel: category?.name,
+''',
+              '''      onDelete: _deleteCurrentNote,
+      bulkSelectionMode: _blockSelectionMode,
+      onExitBulkSelection: _exitBlockSelectionMode,
+      categoryLabel: category?.name,
+''',
+              'editor screen bulk params',
+          )
+          page.write_text(text)
+
+          screen = Path('lib/features/notes/widgets/notes_editor_screen.dart')
+          screen_text = screen.read_text()
+
+          screen_text = replace_once(
+              screen_text,
+              '''    required this.onDelete,
+    required this.content,
+''',
+              '''    required this.onDelete,
+    this.bulkSelectionMode = false,
+    this.onExitBulkSelection,
+    required this.content,
+''',
+              'screen constructor bulk params',
+          )
+          screen_text = replace_once(
+              screen_text,
+              '''  final VoidCallback onTogglePinned;
+  final VoidCallback onDelete;
+  final Widget content;
+''',
+              '''  final VoidCallback onTogglePinned;
+  final VoidCallback onDelete;
+  final bool bulkSelectionMode;
+  final VoidCallback? onExitBulkSelection;
+  final Widget content;
+''',
+              'screen bulk fields',
+          )
+          screen_text = replace_once(
+              screen_text,
+              '''              onDelete: onDelete,
+              titleController: titleController,
+''',
+              '''              onDelete: onDelete,
+              bulkSelectionMode: bulkSelectionMode,
+              onExitBulkSelection: onExitBulkSelection,
+              titleController: titleController,
+''',
+              'screen to rail bulk params',
+          )
+          screen_text = replace_once(
+              screen_text,
+              '''    required this.onDelete,
+    required this.titleController,
+''',
+              '''    required this.onDelete,
+    required this.bulkSelectionMode,
+    required this.onExitBulkSelection,
+    required this.titleController,
+''',
+              'rail constructor bulk params',
+          )
+          screen_text = replace_once(
+              screen_text,
+              '''  final VoidCallback onTogglePinned;
+  final VoidCallback? onDelete;
+  final TextEditingController titleController;
+''',
+              '''  final VoidCallback onTogglePinned;
+  final VoidCallback? onDelete;
+  final bool bulkSelectionMode;
+  final VoidCallback? onExitBulkSelection;
+  final TextEditingController titleController;
+''',
+              'rail bulk fields',
+          )
+          screen_text = replace_once(
+              screen_text,
+              '''                  onDelete: onDelete,
+                ),
+''',
+              '''                  onDelete: onDelete,
+                  bulkSelectionMode: bulkSelectionMode,
+                  onExitBulkSelection: onExitBulkSelection,
+                ),
+''',
+              'rail to header bulk params',
+          )
+          screen_text = replace_once(
+              screen_text,
+              '''    required this.onDelete,
+  });
+
+  final bool embedded;
+  final VoidCallback onDone;
+  final bool pinned;
+  final VoidCallback onTogglePinned;
+  final VoidCallback? onDelete;
+''',
+              '''    required this.onDelete,
+    required this.bulkSelectionMode,
+    required this.onExitBulkSelection,
+  });
+
+  final bool embedded;
+  final VoidCallback onDone;
+  final bool pinned;
+  final VoidCallback onTogglePinned;
+  final VoidCallback? onDelete;
+  final bool bulkSelectionMode;
+  final VoidCallback? onExitBulkSelection;
+''',
+              'header constructor and fields',
+          )
+          screen_text = replace_once(
+              screen_text,
+              '''const Spacer(),
+_NotesHeaderMoreMenu(
+  pinned: pinned,
+  onTogglePinned: onTogglePinned,
+  onDelete: onDelete,
+),
+''',
+              '''const Spacer(),
+if (bulkSelectionMode && onExitBulkSelection != null)
+  _NotesBulkDoneAction(onPressed: onExitBulkSelection!)
+else
+  _NotesHeaderMoreMenu(
+    pinned: pinned,
+    onTogglePinned: onTogglePinned,
+    onDelete: onDelete,
+  ),
+''',
+              'header bulk done action',
+          )
+
+          marker = '''enum _NotesHeaderMenuAction { pin, delete }
+'''
+          bulk_action = '''class _NotesBulkDoneAction extends StatelessWidget {
+  const _NotesBulkDoneAction({required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: NotesFigmaTokens.glassFill(context),
+      elevation: 1,
+      shadowColor: Colors.black.withValues(alpha: 0.08),
+      borderRadius: BorderRadius.circular(20),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onPressed,
+        child: const SizedBox(
+          height: 40,
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 14),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.check_rounded, size: 18),
+                SizedBox(width: 6),
+                Text('Done'),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
 }
+
 '''
-          end = text.find(end_marker, start)
-          if end < 0:
-              raise SystemExit('selection content end not found')
-          replacement = '''      content: _blockSelectionMode
-          ? _buildReorderableBlockList()
-          : SelectionArea(
-              onSelectionChanged: _captureStructuredSelection,
-              child: _buildReorderableBlockList(),
-            ),
-'''
-          text = text[:start] + replacement + text[end + len('''        ),
-      ),
-'''):]
-          page.write_text(text)
+          if screen_text.count(marker) != 1:
+              raise SystemExit(f'bulk action insertion marker mismatch: {screen_text.count(marker)}')
+          screen_text = screen_text.replace(marker, bulk_action + marker, 1)
+          screen.write_text(screen_text)
 
           fixture_names = [
               'test/notes/fixtures/notes_glm_library_parity_fixture.dart',
@@ -181,10 +328,13 @@ child: _NotesBlockMoreButton(
           for fixture_name in fixture_names:
               fixture = Path(fixture_name)
               fixture_text = fixture.read_text()
-              indent = '                        ' if fixture_name.endswith('notes_glm_library_parity_fixture.dart') else '                  '
-              needle = indent + 'onLongPress: () {},\n'
-              replacement = needle + indent + 'onOpenMenu: (_) {},\n'
-              fixture_text = fixture_text.replace(needle, replacement)
+              if 'onOpenMenu:' not in fixture_text:
+                  fixture_text = fixture_text.replace(
+                      'onLongPress: () {},\n',
+                      'onLongPress: () {},\n                        onOpenMenu: (_) {},\n'
+                      if fixture_name.endswith('notes_glm_library_parity_fixture.dart')
+                      else 'onLongPress: () {},\n                  onOpenMenu: (_) {},\n',
+                  )
               fixture.write_text(fixture_text)
 
           subprocess.run(['git', 'add', *fixture_names], check=True)
