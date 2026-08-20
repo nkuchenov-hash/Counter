@@ -171,6 +171,18 @@ child: _NotesBlockMoreButton(
           text = text[:start] + replacement + text[end + len('''        ),
       ),
 '''):]
-
           page.write_text(text)
+
+          for fixture_name in [
+              'test/notes/fixtures/notes_glm_library_parity_fixture.dart',
+              'test/notes/fixtures/notes_production_library_capture.dart',
+          ]:
+              fixture = Path(fixture_name)
+              fixture_text = fixture.read_text()
+              needle = '                        onLongPress: () {},\n'
+              if fixture_name.endswith('notes_production_library_capture.dart'):
+                  needle = '                  onLongPress: () {},\n'
+              replacement = needle + needle.split('onLongPress:')[0] + 'onOpenMenu: (_, __) {},\n'
+              fixture_text = fixture_text.replace(needle, replacement)
+              fixture.write_text(fixture_text)
           PY
