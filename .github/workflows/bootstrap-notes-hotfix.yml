@@ -10,6 +10,7 @@ jobs:
       - run: |
           python3 - <<'PY'
           import subprocess
+          from pathlib import Path
 
           source_commit = '23ada4780721817b87bf72a292d80125b1cc2c85'
           subprocess.run(
@@ -69,9 +70,7 @@ jobs:
           '''
           script = script[:replace_start] + robust_body_patch + script[replace_end:]
 
-          # Harden structural clipboard replacement: replace the semantic range
-          # from candidatePlain through construction of mutation, regardless of
-          # indentation/line wrapping inherited from previous Notes patches.
+          # Harden structural clipboard replacement.
           compare_start = script.find("old_compare = '''")
           compare_end = script.find('infer_anchor = text.find(', compare_start)
           if compare_start < 0 or compare_end < 0:
@@ -104,14 +103,68 @@ jobs:
           )
         : _editor.pastePlainText(block.id, selection, platformPlain);
 ''' + "'''" + '''
-          text = (
-              text[:compare_source_start]
-              + new_compare
-              + text[compare_source_end:]
-          )
+          text = text[:compare_source_start] + new_compare + text[compare_source_end:]
 
           '''
           script = script[:compare_start] + robust_clipboard_patch + script[compare_end:]
 
+          # Harden ReorderableListView callback replacement.
+          reorder_patch_start = script.find("old_reorder = '''")
+          reorder_patch_end = script.find("file_end = text.rfind('\\nbool _sameRuns(')", reorder_patch_start)
+          if reorder_patch_start < 0 or reorder_patch_end < 0:
+              raise SystemExit('selected-block move patch-definition anchors not found')
+          robust_reorder_patch = '''reorder_list_start = text.find(
+              '        child: ReorderableListView.builder(',
+              text.find('SelectionArea('),
+          )
+          reorder_source_start = text.find(
+              '          onReorder:',
+              reorder_list_start,
+          )
+          reorder_source_end = text.find(
+              '          itemBuilder:',
+              reorder_source_start,
+          )
+          if reorder_list_start < 0 or reorder_source_start < 0 or reorder_source_end < 0:
+              raise SystemExit('selected-block move real callback range not found')
+          new_reorder = ''' + "'''" + '''          onReorder: (oldIndex, newIndex) {
+            final visible = _editor.visibleBlocks;
+            final draggedId = oldIndex >= 0 && oldIndex < visible.length
+                ? visible[oldIndex].id
+                : null;
+            final mutation = draggedId != null &&
+                    _selectedBlockIds.contains(draggedId)
+                ? _editor.reorderVisibleGroup(
+                    _selectedBlockIds,
+                    oldIndex,
+                    newIndex,
+                  )
+                : _editor.reorderVisible(oldIndex, newIndex);
+            _applyMutation(mutation);
+          },
+''' + "'''" + '''
+          text = text[:reorder_source_start] + new_reorder + text[reorder_source_end:]
+
+          '''
+          script = script[:reorder_patch_start] + robust_reorder_patch + script[reorder_patch_end:]
+
           exec(compile(script, '<notes-interaction-ux>', 'exec'))
+
+          # Dart switch cases must terminate explicitly.
+          header_path = Path('lib/features/notes/widgets/notes_editor_screen.dart')
+          header = header_path.read_text()
+          header = header.replace(
+              '''          case _NotesHeaderMenuAction.pin:
+            onTogglePinned();
+          case _NotesHeaderMenuAction.delete:
+            onDelete?.call();''',
+              '''          case _NotesHeaderMenuAction.pin:
+            onTogglePinned();
+            break;
+          case _NotesHeaderMenuAction.delete:
+            onDelete?.call();
+            break;''',
+              1,
+          )
+          header_path.write_text(header)
           PY
