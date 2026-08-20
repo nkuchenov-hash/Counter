@@ -13,66 +13,33 @@ jobs:
 
           path = Path('lib/features/notes/widgets/note_card.dart')
           text = path.read_text()
+          start = text.find('class _LargeDoneCheck extends StatelessWidget')
+          end = text.find('class _CategoryTile extends StatelessWidget', start)
+          if start < 0 or end < 0:
+              raise SystemExit('Notes large checkbox section not found')
 
-          old = '''            child: Center(
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 120),
-                width: 26,
-                height: 26,
-                decoration: BoxDecoration(
-                  color: isDone ? scheme.primary : Colors.transparent,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: isDone
-                        ? scheme.primary
-                        : scheme.outline.withValues(alpha: 0.55),
-                    width: 1.5,
-                  ),
-                ),
-                child: isDone
-                    ? Icon(
-                        Icons.check_rounded,
-                        size: 18,
-                        color: scheme.onPrimary,
-                      )
-                    : null,
-              ),
-            ),'''
+          section = text[start:end]
+          replacements = [
+              ('borderRadius: BorderRadius.circular(12),',
+               'borderRadius: BorderRadius.circular(8),'),
+              ('child: AnimatedContainer(', 'child: Container('),
+              ('duration: const Duration(milliseconds: 120),\n', ''),
+              ('width: 26,', 'width: kNotesLargeCheckSize,'),
+              ('height: 26,', 'height: kNotesLargeCheckSize,'),
+              ('scheme.outline.withValues(alpha: 0.55)',
+               'scheme.outlineVariant.withValues(alpha: 0.7)'),
+              ('width: 1.5,', 'width: 2,'),
+              ('? Icon(\n', '? const Icon(\n'),
+              ('size: 18,', 'size: 20,'),
+              ('color: scheme.onPrimary,', 'color: Colors.white,'),
+          ]
+          for old, new in replacements:
+              if old not in section:
+                  raise SystemExit(f'checkbox token not found: {old!r}')
+              section = section.replace(old, new, 1)
 
-          new = '''            child: Center(
-              child: Container(
-                width: kNotesLargeCheckSize,
-                height: kNotesLargeCheckSize,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: isDone
-                        ? scheme.primary
-                        : scheme.outlineVariant.withValues(alpha: 0.7),
-                    width: 2,
-                  ),
-                  color: isDone ? scheme.primary : Colors.transparent,
-                ),
-                child: isDone
-                    ? const Icon(
-                        Icons.check_rounded,
-                        size: 20,
-                        color: Colors.white,
-                      )
-                    : null,
-              ),
-            ),'''
-
-          if old not in text:
-              raise SystemExit('current Notes large checkbox visual not found')
-          text = text.replace(old, new, 1)
-
-          # Keep the larger invisible 44x44 hit target, but restore the exact
-          # original 36x36 visible checkbox and its original border/check styling.
-          text = text.replace(
-              '            borderRadius: BorderRadius.circular(12),',
-              '            borderRadius: BorderRadius.circular(8),',
-              1,
-          )
+          # Preserve the 44x44 invisible tap target. Only the visible checkbox is
+          # restored to the original 36x36 styling from before the Notes UX batch.
+          text = text[:start] + section + text[end:]
           path.write_text(text)
           PY
