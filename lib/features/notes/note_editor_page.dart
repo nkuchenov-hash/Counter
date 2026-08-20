@@ -19,6 +19,7 @@ import 'package:counter/features/notes/widgets/notes_editor_tools.dart';
 import 'package:counter/features/shared/edit_sheet/sheet_autosave_gate.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 
@@ -491,6 +492,67 @@ item,
     );
   }
 
+  bool _deleteCurrentStructuredSelection() {
+    if (_editingBlockId != null || _blockSelectionMode) return false;
+    final slices = _NotesStructuredClipboard.blocks;
+    if (slices.length < 2) return false;
+
+    final firstSource = _editor.blockById(slices.first.id);
+    final lastSource = _editor.blockById(slices.last.id);
+    if (firstSource == null || lastSource == null) return false;
+
+    final firstNeedle = slices.first.effectiveText;
+    final lastNeedle = slices.last.effectiveText;
+    var firstStart = firstSource.effectiveText.length - firstNeedle.length;
+    if (firstStart < 0 ||
+        !firstSource.effectiveText.endsWith(firstNeedle)) {
+      firstStart = firstSource.effectiveText.indexOf(firstNeedle);
+    }
+    if (firstStart < 0) return false;
+
+    var lastEnd = lastNeedle.length;
+    if (!lastSource.effectiveText.startsWith(lastNeedle)) {
+      final lastStart = lastSource.effectiveText.indexOf(lastNeedle);
+      if (lastStart < 0) return false;
+      lastEnd = lastStart + lastNeedle.length;
+    }
+
+    final prefix = firstSource.effectiveText.substring(0, firstStart);
+    final suffix = lastSource.effectiveText.substring(lastEnd);
+    _editor.applyTextInput(
+      firstSource.id,
+      '$prefix$suffix',
+      TextSelection.collapsed(offset: prefix.length),
+    );
+    for (final slice in slices.skip(1).toList().reversed) {
+      _editor.deleteBlock(slice.id);
+    }
+
+    _NotesStructuredClipboard.plainText = null;
+    _NotesStructuredClipboard.blocks = const <NoteBlock>[];
+    _scheduleSave();
+    setState(_syncEditorsWithDocument);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _editor.blockById(firstSource.id) == null) return;
+      _requestFocus(
+        firstSource.id,
+        TextSelection.collapsed(offset: prefix.length),
+      );
+    });
+    return true;
+  }
+
+  KeyEventResult _onSelectionAreaKeyEvent(FocusNode node, KeyEvent event) {
+    if (event is! KeyDownEvent) return KeyEventResult.ignored;
+    if (event.logicalKey != LogicalKeyboardKey.delete &&
+        event.logicalKey != LogicalKeyboardKey.backspace) {
+      return KeyEventResult.ignored;
+    }
+    return _deleteCurrentStructuredSelection()
+        ? KeyEventResult.handled
+        : KeyEventResult.ignored;
+  }
+
   Future<void> _pasteClipboardIntoBlock(
     NoteBlock block,
     TextSelection selection,
@@ -581,11 +643,7 @@ item,
   /// contiguous Notes text blocks and retain the matching block slices.
   void _captureStructuredSelection(SelectedContent? selected) {
     final plain = selected?.plainText ?? '';
-    if (plain.isEmpty) {
-      _NotesStructuredClipboard.plainText = null;
-      _NotesStructuredClipboard.blocks = const <NoteBlock>[];
-      return;
-    }
+    if (plain.isEmpty) return;
     final blocks = _inferStructuredSelectionBlocks(plain);
     if (blocks.isEmpty) {
       _NotesStructuredClipboard.plainText = null;
@@ -978,6 +1036,7 @@ _deleteBlockFromMenu(block.id);
 
   void _handleEditorBackgroundPointer(PointerDownEvent event) {
     if (_blockSelectionMode) return;
+    if ((event.buttons & kSecondaryMouseButton) != 0) return;
     NoteBlock? preceding;
     var nearestBottom = double.negativeInfinity;
     for (final block in _editor.visibleBlocks) {
@@ -1411,10 +1470,27 @@ block.type == NoteBlockType.image ||
     // Fixed right action rail: activation and selection never change width,
     // wrapping, or vertical metrics of the block.
     final selectedForBulk = _selectedBlockIds.contains(block.id);
+    final blockContent = !editable && !_blockSelectionMode
+        ? Column(
+  crossAxisAlignment: CrossAxisAlignment.stretch,
+  mainAxisSize: MainAxisSize.min,
+  children: [
+    item,
+    MouseRegion(
+      cursor: SystemMouseCursors.text,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => _focusOrInsertParagraphAfter(block.id),
+        child: const SizedBox(height: 24),
+      ),
+    ),
+  ],
+)
+        : item;
     final content = Padding(
       key: ValueKey<String>(block.id),
       padding: const EdgeInsets.only(right: 36),
-      child: item,
+      child: blockContent,
     );
     return Stack(
       key: _blockItemKeyFor(block.id),
@@ -1599,16 +1675,20 @@ activeType == NoteBlockType.bulletedList
         onPointerDown: _handleEditorBackgroundPointer,
         child: _blockSelectionMode
   ? _buildReorderableBlockList()
-  : Actions(
-      actions: <Type, Action<Intent>>{
-        CopySelectionTextIntent: _NotesStructuredCopyAction(
-          onCopy: _copyCurrentStructuredSelection,
+  : Focus(
+      canRequestFocus: false,
+      onKeyEvent: _onSelectionAreaKeyEvent,
+      child: Actions(
+        actions: <Type, Action<Intent>>{
+          CopySelectionTextIntent: _NotesStructuredCopyAction(
+            onCopy: _copyCurrentStructuredSelection,
+          ),
+        },
+        child: SelectionArea(
+          contextMenuBuilder: _buildSelectionContextMenu,
+          onSelectionChanged: _captureStructuredSelection,
+          child: _buildReorderableBlockList(),
         ),
-      },
-      child: SelectionArea(
-        contextMenuBuilder: _buildSelectionContextMenu,
-        onSelectionChanged: _captureStructuredSelection,
-        child: _buildReorderableBlockList(),
       ),
     ),
       ),

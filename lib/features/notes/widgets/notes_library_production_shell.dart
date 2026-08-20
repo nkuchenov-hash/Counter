@@ -71,15 +71,7 @@ class NotesGlmInlineAddRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
-    final dark = theme.brightness == Brightness.dark;
-    final fill = dark
-        ? scheme.surfaceContainerHigh.withValues(alpha: 0.82)
-        : const Color(0xFFFFFFFF).withValues(alpha: 0.75);
-    final borderColor = dark
-        ? scheme.outlineVariant.withValues(alpha: 0.78)
-        : const Color(0xFFE2E8F0).withValues(alpha: 0.95);
+    final scheme = Theme.of(context).colorScheme;
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -91,41 +83,17 @@ class NotesGlmInlineAddRow extends StatelessWidget {
               controller: controller,
               focusNode: focusNode,
               textInputAction: TextInputAction.done,
-              style: TextStyle(fontSize: 15, color: scheme.onSurface),
-              decoration: InputDecoration(
-                constraints: const BoxConstraints.tightFor(
-        height: kNotesLibraryControlHeight,
+              style: TextStyle(fontSize: 14, color: scheme.onSurface),
+              decoration: notesGlmSearchDecoration(
+      context: context,
+      hintText: t(locale, 'input_placeholder_list'),
+    ).copyWith(
+      prefixIcon: null,
+      prefixIconConstraints: const BoxConstraints(
+        minWidth: 0,
+        minHeight: 0,
       ),
-                hintText: t(locale, 'input_placeholder_list'),
-                hintStyle: TextStyle(
-                  fontSize: 15,
-                  color: notesGlmMetaColor(context),
-                ),
-                filled: true,
-                fillColor: fill,
-                hoverColor: Colors.transparent,
-                focusColor: Colors.transparent,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: borderColor),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: borderColor),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(
-                    color: scheme.primary.withValues(alpha: dark ? 0.82 : 0.55),
-                    width: dark ? 1.2 : 1,
-                  ),
-                ),
-                isDense: true,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 10,
-                ),
-              ),
+    ),
               onSubmitted: (_) => onSubmit(),
             ),
           ),
