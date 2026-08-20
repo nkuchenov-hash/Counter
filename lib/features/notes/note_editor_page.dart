@@ -79,6 +79,7 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
   bool _blockSelectionMode = false;
   final Set<String> _selectedBlockIds = <String>{};
   final ScrollController _blockScrollController = ScrollController();
+  final Map<String, GlobalKey> _blockItemKeys = <String, GlobalKey>{};
   bool _dirty = false;
   bool _notesEditorSessionRegistered = false;
 
@@ -233,10 +234,12 @@ if (_blockSelectionMode) {
   }
 
   void _syncEditorsWithDocument() {
+    final visibleIds = <String>{};
     final textIds = <String>{};
     final captionIds = <String>{};
     final focusIds = <String>{};
     for (final block in _editor.visibleBlocks) {
+      visibleIds.add(block.id);
       if (NotesEditorDocumentController.isEditableText(block.type)) {
         textIds.add(block.id);
         final controller = _textControllerFor(block);
@@ -270,6 +273,7 @@ if (_blockSelectionMode) {
         }
       }
     }
+    _blockItemKeys.removeWhere((id, _) => !visibleIds.contains(id));
     _disposeRemoved(_textControllers, textIds);
     _disposeRemoved(_captionControllers, captionIds);
     _disposeRemoved(_focusNodes, focusIds);
@@ -373,6 +377,39 @@ if (_blockSelectionMode) {
     return buffer.toString().trim();
   }
 
+  String _normalizeClipboardMeaning(String value) {
+    final normalizedLines = value
+        .replaceAll('\r\n', '\n')
+        .replaceAll('\r', '\n')
+        .split('\n')
+        .map((line) {
+var cleaned = line.trimLeft();
+cleaned = cleaned.replaceFirst(
+  RegExp(r'^(?:[-*•]\s+|\d+[.)]\s+|\[(?: |x|X)\]\s+|[☐☑✓✔]\s*)'),
+  '',
+);
+return cleaned;
+        })
+        .join('\n');
+    return _normalizeClipboardStructure(normalizedLines);
+  }
+
+  bool _structuredClipboardMatchesSystemText(String plain) {
+    final candidate = _NotesStructuredClipboard.plainText;
+    final blocks = _NotesStructuredClipboard.blocks;
+    if (candidate == null || blocks.isEmpty) return false;
+
+    final normalizedPlain = _normalizeClipboardStructure(plain);
+    if (_normalizeClipboardStructure(candidate) == normalizedPlain) return true;
+
+    final blockPlain = blocks.map((block) => block.effectiveText).join('\n');
+    if (_normalizeClipboardStructure(blockPlain) == normalizedPlain) return true;
+
+    final meaning = _normalizeClipboardMeaning(plain);
+    return _normalizeClipboardMeaning(candidate) == meaning ||
+        _normalizeClipboardMeaning(blockPlain) == meaning;
+  }
+
   Future<void> _pasteClipboardIntoBlock(
     NoteBlock block,
     TextSelection selection,
@@ -387,12 +424,8 @@ if (_blockSelectionMode) {
     final plain = data?.text ?? '';
     if (plain.isEmpty) return;
 
-    final candidatePlain = _NotesStructuredClipboard.plainText;
     final hasMatchingStructure =
-        candidatePlain != null &&
-        _normalizeClipboardStructure(candidatePlain) ==
-  _normalizeClipboardStructure(plain) &&
-        _NotesStructuredClipboard.blocks.isNotEmpty;
+        _structuredClipboardMatchesSystemText(plain);
 
     final mutation = hasMatchingStructure
         ? _editor.pasteBlocks(
@@ -803,14 +836,88 @@ _deleteBlockFromMenu(block.id);
     setState(() {});
   }
 
+  void _focusOrInsertParagraphAfter(String blockId) {
+    final visible = _editor.visibleBlocks;
+    final index = visible.indexWhere((block) => block.id == blockId);
+    if (index < 0) return;
+    if (index + 1 < visible.length) {
+      final next = visible[index + 1];
+      if (NotesEditorDocumentController.isEditableText(next.type)) {
+        _requestFocus(next.id, const TextSelection.collapsed(offset: 0));
+        return;
+      }
+    }
+    _applyMutation(_editor.insertAfter(blockId, NoteBlockType.paragraph));
+  }
+
+  void _applyInsertedNonTextWithTrailingParagraph(
+    NotesEditorMutation mutation,
+  ) {
+    if (!mutation.changed) return;
+    final insertedId = _editor.activeBlockId;
+    _applyMutation(mutation);
+    if (insertedId != null) _focusOrInsertParagraphAfter(insertedId);
+  }
+
+  GlobalKey _blockItemKeyFor(String blockId) {
+    return _blockItemKeys.putIfAbsent(
+      blockId,
+      () => GlobalKey(debugLabel: 'notes-editor-block-$blockId'),
+    );
+  }
+
+  Rect? _blockGlobalRect(String blockId) {
+    final blockContext = _blockItemKeys[blockId]?.currentContext;
+    final render = blockContext?.findRenderObject();
+    if (render is! RenderBox || !render.hasSize) return null;
+    return render.localToGlobal(Offset.zero) & render.size;
+  }
+
+  void _clearActiveBlock() {
+    if (_blockSelectionMode) return;
+    FocusManager.instance.primaryFocus?.unfocus();
+    for (final node in _focusNodes.values) {
+      if (node.hasFocus) node.unfocus();
+    }
+    final changed = _editor.activeBlockId != null || _editingBlockId != null;
+    _editor.activeBlockId = null;
+    _editor.activeSelection = null;
+    if (changed && mounted) setState(() => _editingBlockId = null);
+  }
+
+  void _handleEditorBackgroundPointer(PointerDownEvent event) {
+    if (_blockSelectionMode) return;
+    NoteBlock? preceding;
+    var nearestBottom = double.negativeInfinity;
+    for (final block in _editor.visibleBlocks) {
+      final rect = _blockGlobalRect(block.id);
+      if (rect == null) continue;
+      if (rect.contains(event.position)) return;
+      if (rect.bottom <= event.position.dy && rect.bottom > nearestBottom) {
+        nearestBottom = rect.bottom;
+        preceding = block;
+      }
+    }
+    if (preceding != null &&
+        !NotesEditorDocumentController.isEditableText(preceding.type)) {
+      _focusOrInsertParagraphAfter(preceding.id);
+      return;
+    }
+    _clearActiveBlock();
+  }
+
   Future<void> _showTablePicker({String? anchorId}) {
     return showNotesTablePicker(
       context: context,
-      onSelected: (table) => _insertAfter(
-        anchorId ?? _editor.activeBlockId,
-        NoteBlockType.table,
-        table: table,
-      ),
+      onSelected: (table) {
+        _applyInsertedNonTextWithTrailingParagraph(
+_editor.insertAfter(
+  anchorId ?? _editor.activeBlockId,
+  NoteBlockType.table,
+  table: table,
+),
+        );
+      },
     );
   }
 
@@ -824,7 +931,9 @@ _deleteBlockFromMenu(block.id);
       onNumberedList: () => _insertAfter(anchorId, NoteBlockType.numberedList),
       onChecklist: () => _insertAfter(anchorId, NoteBlockType.checklist),
       onTable: () => _showTablePicker(anchorId: anchorId),
-      onDivider: () => _insertAfter(anchorId, NoteBlockType.divider),
+      onDivider: () => _applyInsertedNonTextWithTrailingParagraph(
+        _editor.insertAfter(anchorId, NoteBlockType.divider),
+      ),
       onDrawing: widget.parityPreview ? null : () => _openDrawing(),
       onImage: widget.parityPreview ? null : () => _pickImage(),
       onAudio: widget.parityPreview ? null : _recordAudio,
@@ -836,14 +945,19 @@ _deleteBlockFromMenu(block.id);
     try {
       final picked = await pickNotesImage(context: context);
       if (!mounted || picked == null) return;
-      final mutation = replaceBlockId == null
-          ? _editor.insertAfter(
-              _editor.activeBlockId,
-              NoteBlockType.image,
-              imageData: picked.dataUrl,
-            )
-          : _editor.updateMedia(replaceBlockId, imageData: picked.dataUrl);
-      _applyMutation(mutation);
+      if (replaceBlockId == null) {
+        _applyInsertedNonTextWithTrailingParagraph(
+_editor.insertAfter(
+  _editor.activeBlockId,
+  NoteBlockType.image,
+  imageData: picked.dataUrl,
+),
+        );
+      } else {
+        _applyMutation(
+_editor.updateMedia(replaceBlockId, imageData: picked.dataUrl),
+        );
+      }
     } on NotesImageTooLargeException {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -938,28 +1052,13 @@ _applyMutation(
 );
 return;
         }
-        _editor.insertAfter(
-_editor.activeBlockId,
-NoteBlockType.drawing,
-drawingData: dataUrl,
+        _applyInsertedNonTextWithTrailingParagraph(
+_editor.insertAfter(
+  _editor.activeBlockId,
+  NoteBlockType.drawing,
+  drawingData: dataUrl,
+),
         );
-        final drawingId = _editor.activeBlockId;
-        if (drawingId == null) return;
-        final paragraphMutation = _editor.insertAfter(
-drawingId,
-NoteBlockType.paragraph,
-        );
-        final paragraphId = paragraphMutation.focusBlockId;
-        _applyMutation(paragraphMutation);
-        if (paragraphId != null) {
-WidgetsBinding.instance.addPostFrameCallback((_) {
-  if (!mounted) return;
-  _requestFocus(
-    paragraphId,
-    const TextSelection.collapsed(offset: 0),
-  );
-});
-        }
       },
     );
   }
@@ -973,8 +1072,8 @@ WidgetsBinding.instance.addPostFrameCallback((_) {
       NoteBlockType.audio,
       audio: audio,
     );
-    _applyMutation(mutation);
     final blockId = _editor.activeBlockId;
+    _applyInsertedNonTextWithTrailingParagraph(mutation);
     if (blockId != null) unawaited(_transcribeAudio(blockId));
   }
 
@@ -1227,7 +1326,7 @@ block.type == NoteBlockType.image ||
       child: item,
     );
     return Stack(
-      key: ValueKey<String>(block.id),
+      key: _blockItemKeyFor(block.id),
       clipBehavior: Clip.none,
       children: [
         if (selectedForBulk)
@@ -1404,12 +1503,16 @@ activeType == NoteBlockType.bulletedList
     },
         onMore: _showActiveBlockOptions,
       ),
-      content: _blockSelectionMode
-? _buildReorderableBlockList()
-: SelectionArea(
-    onSelectionChanged: _captureStructuredSelection,
-    child: _buildReorderableBlockList(),
-  ),
+      content: Listener(
+        behavior: HitTestBehavior.translucent,
+        onPointerDown: _handleEditorBackgroundPointer,
+        child: _blockSelectionMode
+  ? _buildReorderableBlockList()
+  : SelectionArea(
+      onSelectionChanged: _captureStructuredSelection,
+      child: _buildReorderableBlockList(),
+    ),
+      ),
     );
   }
 }

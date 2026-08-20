@@ -93,6 +93,9 @@ class NotesGlmInlineAddRow extends StatelessWidget {
               textInputAction: TextInputAction.done,
               style: TextStyle(fontSize: 15, color: scheme.onSurface),
               decoration: InputDecoration(
+                constraints: const BoxConstraints.tightFor(
+        height: kNotesLibraryControlHeight,
+      ),
                 hintText: t(locale, 'input_placeholder_list'),
                 hintStyle: TextStyle(
                   fontSize: 15,

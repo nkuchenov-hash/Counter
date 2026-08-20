@@ -672,6 +672,7 @@ TextStyle _selectableTextStyle(BuildContext context, NoteBlock block) {
         fontSize: NotesFigmaTokens.bodySize,
         height: NotesFigmaTokens.bodyLineHeight / NotesFigmaTokens.bodySize,
         fontWeight: FontWeight.w400,
+        letterSpacing: 0,
         color: color,
       ),
     NotesTextBlockStyle.h1 => TextStyle(
@@ -692,6 +693,7 @@ TextStyle _selectableTextStyle(BuildContext context, NoteBlock block) {
         fontSize: NotesFigmaTokens.h3Size,
         height: NotesFigmaTokens.h3LineHeight / NotesFigmaTokens.h3Size,
         fontWeight: FontWeight.w600,
+        letterSpacing: 0,
         color: color,
       ),
   };
