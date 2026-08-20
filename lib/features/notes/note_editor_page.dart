@@ -33,6 +33,18 @@ class _NotesStructuredClipboard {
   static List<NoteBlock> blocks = const <NoteBlock>[];
 }
 
+class _NotesStructuredCopyAction extends Action<CopySelectionTextIntent> {
+  _NotesStructuredCopyAction({required this.onCopy});
+
+  final bool Function() onCopy;
+
+  @override
+  Object? invoke(CopySelectionTextIntent intent) {
+    if (onCopy()) return null;
+    return callingAction?.invoke(intent);
+  }
+}
+
 Future<void> showNoteEditorPage({
   required BuildContext context,
   required PlanningTask task,
@@ -410,6 +422,75 @@ return cleaned;
         _normalizeClipboardMeaning(blockPlain) == meaning;
   }
 
+  String _structuredClipboardExportText(List<NoteBlock> blocks) {
+    final lines = <String>[];
+    var numberedOrdinal = 0;
+    var previousWasNumbered = false;
+    for (final block in blocks) {
+      final value = block.effectiveText;
+      if (block.type == NoteBlockType.numberedList) {
+        numberedOrdinal = previousWasNumbered ? numberedOrdinal + 1 : 1;
+        previousWasNumbered = true;
+      } else {
+        numberedOrdinal = 0;
+        previousWasNumbered = false;
+      }
+      switch (block.type) {
+        case NoteBlockType.checklist:
+lines.add('- [${block.checked ? 'x' : ' '}] $value');
+        case NoteBlockType.bulletedList:
+lines.add('- $value');
+        case NoteBlockType.numberedList:
+lines.add('$numberedOrdinal. $value');
+        case NoteBlockType.heading:
+final level = block.level.clamp(1, 3).toInt();
+final marker = List<String>.filled(level, '#').join();
+lines.add('$marker $value');
+        case NoteBlockType.quote:
+lines.add('> $value');
+        default:
+lines.add(value);
+      }
+    }
+    return lines.join('\n');
+  }
+
+  bool _copyCurrentStructuredSelection() {
+    if (_editingBlockId != null || _blockSelectionMode) return false;
+    final blocks = _NotesStructuredClipboard.blocks;
+    if (blocks.isEmpty) return false;
+    final export = _structuredClipboardExportText(blocks);
+    if (export.isEmpty) return false;
+    _NotesStructuredClipboard.plainText = export;
+    unawaited(Clipboard.setData(ClipboardData(text: export)));
+    return true;
+  }
+
+  Widget _buildSelectionContextMenu(
+    BuildContext context,
+    SelectableRegionState selectableRegionState,
+  ) {
+    final items = <ContextMenuButtonItem>[
+      for (final item in selectableRegionState.contextMenuButtonItems)
+        if (item.type == ContextMenuButtonType.copy)
+item.copyWith(
+  onPressed: () {
+    if (_copyCurrentStructuredSelection()) {
+      selectableRegionState.hideToolbar();
+    } else {
+      item.onPressed?.call();
+    }
+  },
+)
+        else
+item,
+    ];
+    return AdaptiveTextSelectionToolbar.buttonItems(
+      anchors: selectableRegionState.contextMenuAnchors,
+      buttonItems: items,
+    );
+  }
+
   Future<void> _pasteClipboardIntoBlock(
     NoteBlock block,
     TextSelection selection,
@@ -500,11 +581,21 @@ return cleaned;
   /// contiguous Notes text blocks and retain the matching block slices.
   void _captureStructuredSelection(SelectedContent? selected) {
     final plain = selected?.plainText ?? '';
-    if (plain.isEmpty) return;
+    if (plain.isEmpty) {
+      _NotesStructuredClipboard.plainText = null;
+      _NotesStructuredClipboard.blocks = const <NoteBlock>[];
+      return;
+    }
     final blocks = _inferStructuredSelectionBlocks(plain);
-    if (blocks.isEmpty) return;
-    _NotesStructuredClipboard.plainText = plain;
-    _NotesStructuredClipboard.blocks = List<NoteBlock>.unmodifiable(blocks);
+    if (blocks.isEmpty) {
+      _NotesStructuredClipboard.plainText = null;
+      _NotesStructuredClipboard.blocks = const <NoteBlock>[];
+      return;
+    }
+    final frozen = List<NoteBlock>.unmodifiable(blocks);
+    _NotesStructuredClipboard.blocks = frozen;
+    _NotesStructuredClipboard.plainText =
+        _structuredClipboardExportText(frozen);
   }
 
   List<NoteBlock> _inferStructuredSelectionBlocks(String plain) {
@@ -1508,9 +1599,17 @@ activeType == NoteBlockType.bulletedList
         onPointerDown: _handleEditorBackgroundPointer,
         child: _blockSelectionMode
   ? _buildReorderableBlockList()
-  : SelectionArea(
-      onSelectionChanged: _captureStructuredSelection,
-      child: _buildReorderableBlockList(),
+  : Actions(
+      actions: <Type, Action<Intent>>{
+        CopySelectionTextIntent: _NotesStructuredCopyAction(
+          onCopy: _copyCurrentStructuredSelection,
+        ),
+      },
+      child: SelectionArea(
+        contextMenuBuilder: _buildSelectionContextMenu,
+        onSelectionChanged: _captureStructuredSelection,
+        child: _buildReorderableBlockList(),
+      ),
     ),
       ),
     );
