@@ -59,7 +59,7 @@ jobs:
           systemctl restart "$service_name"
           REMOTE
 
-      - name: Read post-consent state
+      - name: Read upstream sleep source identifiers
         shell: bash
         run: |
           set -euo pipefail
