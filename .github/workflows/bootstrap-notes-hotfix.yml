@@ -27,16 +27,11 @@ jobs:
               end = text.index(end_marker, start)
               return text[:start] + transform(text[start:end]) + text[end:]
 
-          # Add row: exact Search-field geometry, no inherited search icon,
-          # and a 48x48 rounded-square action instead of the oversized circle.
+          # Exact Add/Search control parity: same 48px height, same field
+          # decoration, no inherited search icon, no giant circular +.
           shell = Path('lib/features/notes/widgets/notes_library_production_shell.dart')
           s = shell.read_text()
-          s, n = re.subn(
-              r'prefixIcon:\s*null,',
-              'prefixIcon: const SizedBox.shrink(),',
-              s,
-              count=1,
-          )
+          s, n = re.subn(r'prefixIcon:\s*null,', 'prefixIcon: const SizedBox.shrink(),', s, count=1)
           require(n == 1, f'inline add prefix icon: expected 1 match, got {n}')
           s, n = re.subn(
               r'prefixIconConstraints:\s*const BoxConstraints\(\s*minWidth:\s*0,\s*minHeight:\s*0,\s*\),',
@@ -77,8 +72,7 @@ jobs:
           s = s[:button_start] + new_button + s[row_end:]
           shell.write_text(s)
 
-          # Document undo stack. Every document block mutation commits through
-          # _commitDocument; undo restores the previous immutable NoteDocument.
+          # Document-level undo history.
           controller = Path('lib/features/notes/notes_editor_document_controller.dart')
           c = controller.read_text()
           c = replace_once(
@@ -137,20 +131,21 @@ jobs:
           c = c[:at] + helpers + c[at:]
           controller.write_text(c)
 
-          # Header Undo button immediately left of the three-dot menu.
+          # Header Undo button next to the three-dot menu. The callback is
+          # optional for existing test/preview harnesses; production supplies it.
           screen = Path('lib/features/notes/widgets/notes_editor_screen.dart')
           r = screen.read_text()
 
           def patch_screen_public(sec):
-              sec = replace_once(sec, '    required this.onDelete,\n    this.bulkSelectionMode', '    required this.onDelete,\n    required this.onUndo,\n    this.bulkSelectionMode', 'screen ctor undo')
-              sec = replace_once(sec, '  final VoidCallback onDelete;\n  final bool bulkSelectionMode;', '  final VoidCallback onDelete;\n  final VoidCallback onUndo;\n  final bool bulkSelectionMode;', 'screen field undo')
+              sec = replace_once(sec, '    required this.onDelete,\n    this.bulkSelectionMode', '    required this.onDelete,\n    this.onUndo,\n    this.bulkSelectionMode', 'screen ctor undo')
+              sec = replace_once(sec, '  final VoidCallback onDelete;\n  final bool bulkSelectionMode;', '  final VoidCallback onDelete;\n  final VoidCallback? onUndo;\n  final bool bulkSelectionMode;', 'screen field undo')
               sec = replace_once(sec, '              onDelete: onDelete,\n              bulkSelectionMode:', '              onDelete: onDelete,\n              onUndo: onUndo,\n              bulkSelectionMode:', 'screen pass undo')
               return sec
           r = replace_section(r, 'class NotesEditorScreen extends StatelessWidget {', 'class _NotesEditorRail extends StatelessWidget {', patch_screen_public)
 
           def patch_rail(sec):
-              sec = replace_once(sec, '    required this.onDelete,\n    required this.bulkSelectionMode,', '    required this.onDelete,\n    required this.onUndo,\n    required this.bulkSelectionMode,', 'rail ctor undo')
-              sec = replace_once(sec, '  final VoidCallback? onDelete;\n  final bool bulkSelectionMode;', '  final VoidCallback? onDelete;\n  final VoidCallback onUndo;\n  final bool bulkSelectionMode;', 'rail field undo')
+              sec = replace_once(sec, '    required this.onDelete,\n    required this.bulkSelectionMode,', '    required this.onDelete,\n    this.onUndo,\n    required this.bulkSelectionMode,', 'rail ctor undo')
+              sec = replace_once(sec, '  final VoidCallback? onDelete;\n  final bool bulkSelectionMode;', '  final VoidCallback? onDelete;\n  final VoidCallback? onUndo;\n  final bool bulkSelectionMode;', 'rail field undo')
               nav_at = sec.index('_NotesNavigationHeader(')
               tail = sec[nav_at:]
               tail = replace_once(tail, '                  onDelete: onDelete,\n', '                  onDelete: onDelete,\n                  onUndo: onUndo,\n', 'rail pass undo')
@@ -158,8 +153,8 @@ jobs:
           r = replace_section(r, 'class _NotesEditorRail extends StatelessWidget {', 'class _NotesEditorSurface extends StatelessWidget {', patch_rail)
 
           def patch_header(sec):
-              sec = replace_once(sec, '    required this.onDelete,\n    required this.bulkSelectionMode,', '    required this.onDelete,\n    required this.onUndo,\n    required this.bulkSelectionMode,', 'header ctor undo')
-              sec = replace_once(sec, '  final VoidCallback? onDelete;\n  final bool bulkSelectionMode;', '  final VoidCallback? onDelete;\n  final VoidCallback onUndo;\n  final bool bulkSelectionMode;', 'header field undo')
+              sec = replace_once(sec, '    required this.onDelete,\n    required this.bulkSelectionMode,', '    required this.onDelete,\n    this.onUndo,\n    required this.bulkSelectionMode,', 'header ctor undo')
+              sec = replace_once(sec, '  final VoidCallback? onDelete;\n  final bool bulkSelectionMode;', '  final VoidCallback? onDelete;\n  final VoidCallback? onUndo;\n  final bool bulkSelectionMode;', 'header field undo')
               old = '''if (bulkSelectionMode && onExitBulkSelection != null)
   _NotesBulkDoneAction(onPressed: onExitBulkSelection!)
 else
@@ -174,12 +169,14 @@ else
   Row(
     mainAxisSize: MainAxisSize.min,
     children: [
-      _NotesHeaderAction(
-        icon: Icons.undo_rounded,
-        tooltip: 'Undo',
-        onPressed: onUndo,
-      ),
-      const SizedBox(width: 8),
+      if (onUndo != null) ...[
+        _NotesHeaderAction(
+          icon: Icons.undo_rounded,
+          tooltip: 'Undo',
+          onPressed: onUndo!,
+        ),
+        const SizedBox(width: 8),
+      ],
       _NotesHeaderMoreMenu(
         pinned: pinned,
         onTogglePinned: onTogglePinned,
@@ -191,8 +188,8 @@ else
           r = replace_section(r, 'class _NotesNavigationHeader extends StatelessWidget {', 'class _NotesBulkDoneAction extends StatelessWidget {', patch_header)
           screen.write_text(r)
 
-          # Editor page: wire undo and guard cross-block selection from the
-          # TextField focus change caused by a secondary mouse click.
+          # Right-click guard: stop editable child blocks from taking focus and
+          # collapsing an already established cross-block SelectionArea range.
           page = Path('lib/features/notes/note_editor_page.dart')
           p = page.read_text()
           p = replace_once(
@@ -242,6 +239,7 @@ else
 
 '''
           p = p[:guard_at] + guard + p[guard_at:]
+
           undo_at = p.index('  void _togglePinned() {\n')
           undo_method = '''  void _undoLastEdit() {
     final mutation = _editor.undo();
