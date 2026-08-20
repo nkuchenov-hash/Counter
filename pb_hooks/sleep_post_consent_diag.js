@@ -21,7 +21,7 @@ function tokenKey(app) {
 function connection(app) {
   return app.findFirstRecordByFilter('sleep_sync_connections', "provider = 'google_fit'", {});
 }
-function accessToken(app, c) {
+function accessToken(app, c, scope) {
   var refreshEnc = String(c.get('refresh_token_enc') || '');
   if (!refreshEnc) throw new Error('refresh_token_missing');
   var clientId = env('SLEEP_SYNC_GOOGLE_FIT_CLIENT_ID');
@@ -32,7 +32,7 @@ function accessToken(app, c) {
     url: 'https://oauth2.googleapis.com/token',
     method: 'POST',
     headers: { 'content-type': 'application/x-www-form-urlencoded' },
-    body: form({ refresh_token: refresh, client_id: clientId, client_secret: clientSecret, grant_type: 'refresh_token' }),
+    body: form({ refresh_token: refresh, client_id: clientId, client_secret: clientSecret, grant_type: 'refresh_token', scope: scope }),
     timeout: 30
   });
   if (res.statusCode < 200 || res.statusCode >= 300 || !res.json || !res.json.access_token) {
@@ -65,7 +65,9 @@ function errorMeta(res) {
 function run(e) {
   try {
     var c = connection(e.app);
-    var token = accessToken(e.app, c);
+    var healthScope = 'https://www.googleapis.com/auth/googlehealth.sleep.readonly';
+    var fitScope = 'https://www.googleapis.com/auth/fitness.sleep.read';
+    var token = accessToken(e.app, c, healthScope);
     var tokenInfo = $http.send({
       url: 'https://oauth2.googleapis.com/tokeninfo?access_token=' + encodeURIComponent(token),
       method: 'GET',
@@ -73,8 +75,6 @@ function run(e) {
       timeout: 30
     });
     var scopeString = tokenInfo && tokenInfo.json ? String(tokenInfo.json.scope || '') : '';
-    var healthScope = 'https://www.googleapis.com/auth/googlehealth.sleep.readonly';
-    var fitScope = 'https://www.googleapis.com/auth/fitness.sleep.read';
 
     var start = new Date(Date.now() - 3 * 86400000).toISOString();
     var end = new Date().toISOString();
@@ -104,7 +104,6 @@ function run(e) {
       enabled: !!c.get('enabled'),
       stored_error: String(c.get('last_error') || '') || 'none',
       refresh_token_present: String(c.get('refresh_token_enc') || '').length > 0,
-      access_token_present: String(c.get('access_token_enc') || '').length > 0,
       health_scope_granted: hasScope(scopeString, healthScope),
       fit_scope_granted: hasScope(scopeString, fitScope),
       tokeninfo_status: tokenInfo ? tokenInfo.statusCode : 0,
