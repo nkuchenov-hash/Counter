@@ -42,6 +42,7 @@ class NoteCard extends StatelessWidget {
     required this.onTogglePin,
     required this.onToggleDone,
     required this.onLongPress,
+    required this.onOpenMenu,
     this.selected = false,
   });
 
@@ -52,6 +53,7 @@ class NoteCard extends StatelessWidget {
   final VoidCallback onTogglePin;
   final VoidCallback onToggleDone;
   final VoidCallback onLongPress;
+  final ValueChanged<Offset> onOpenMenu;
   final bool selected;
 
   @override
@@ -65,6 +67,7 @@ class NoteCard extends StatelessWidget {
             onTogglePin: onTogglePin,
             onToggleDone: onToggleDone,
             onLongPress: onLongPress,
+            onOpenMenu: onOpenMenu,
           )
         : _ListRow(
             data: data,
@@ -74,6 +77,7 @@ class NoteCard extends StatelessWidget {
             onTogglePin: onTogglePin,
             onToggleDone: onToggleDone,
             onLongPress: onLongPress,
+            onOpenMenu: onOpenMenu,
           );
   }
 }
@@ -89,6 +93,7 @@ class _GridCard extends StatelessWidget {
     required this.onTogglePin,
     required this.onToggleDone,
     required this.onLongPress,
+    required this.onOpenMenu,
   });
 
   final NoteCardData data;
@@ -98,6 +103,7 @@ class _GridCard extends StatelessWidget {
   final VoidCallback onTogglePin;
   final VoidCallback onToggleDone;
   final VoidCallback onLongPress;
+  final ValueChanged<Offset> onOpenMenu;
 
   @override
   Widget build(BuildContext context) {
@@ -123,20 +129,16 @@ class _GridCard extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  _CategoryTile(data: data),
-                  const SizedBox(width: 10),
-                  Expanded(child: _BadgesRow(data: data, loc: loc)),
-                  if (data.pinned)
-                    Icon(
-                      Icons.push_pin_rounded,
-                      size: 14,
-                      color: scheme.primary,
-                    ),
-                  _DoneCheck(
-                    isDone: isDone,
-                    checkboxesOn: checkboxesOn,
-                    onToggle: onToggleDone,
-                  ),
+                  if (checkboxesOn)
+          _LargeDoneCheck(
+            isDone: isDone,
+            onToggle: onToggleDone,
+          )
+        else
+          _CategoryTile(data: data),
+        const SizedBox(width: 10),
+        Expanded(child: _BadgesRow(data: data, loc: loc)),
+        _NoteCardMenuButton(onPressed: onOpenMenu),
                 ],
               ),
               const SizedBox(height: 10),
@@ -194,6 +196,7 @@ class _ListRow extends StatelessWidget {
     required this.onTogglePin,
     required this.onToggleDone,
     required this.onLongPress,
+    required this.onOpenMenu,
   });
 
   final NoteCardData data;
@@ -203,6 +206,7 @@ class _ListRow extends StatelessWidget {
   final VoidCallback onTogglePin;
   final VoidCallback onToggleDone;
   final VoidCallback onLongPress;
+  final ValueChanged<Offset> onOpenMenu;
 
   @override
   Widget build(BuildContext context) {
@@ -278,12 +282,6 @@ class _ListRow extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        if (data.pinned)
-                          Icon(
-                            Icons.push_pin_rounded,
-                            size: 12,
-                            color: scheme.primary,
-                          ),
                       ],
                     ),
                     const SizedBox(height: 2),
@@ -317,23 +315,7 @@ class _ListRow extends StatelessWidget {
                   ],
                 ),
               ),
-              IconButton(
-                tooltip: data.pinned
-                    ? t(loc, 'notes_v3_editor_unpin')
-                    : t(loc, 'notes_v3_editor_pin'),
-                icon: Icon(
-                  data.pinned
-                      ? Icons.push_pin_rounded
-                      : Icons.push_pin_outlined,
-                  size: 14,
-                  color: scheme.onSurfaceVariant,
-                ),
-                onPressed: onTogglePin,
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
-                splashRadius: 14,
-                visualDensity: VisualDensity.compact,
-              ),
+              _NoteCardMenuButton(onPressed: onOpenMenu),
             ],
           ),
         ),
@@ -583,43 +565,45 @@ class _PreviewLine extends StatelessWidget {
 
 // ---- Done checkbox + category tile --------------------------------------
 
-class _DoneCheck extends StatelessWidget {
-  const _DoneCheck({
-    required this.isDone,
-    required this.checkboxesOn,
-    required this.onToggle,
-  });
+class _NoteCardMenuButton extends StatefulWidget {
+  const _NoteCardMenuButton({required this.onPressed});
 
-  final bool isDone;
-  final bool checkboxesOn;
-  final VoidCallback onToggle;
+  final ValueChanged<Offset> onPressed;
+
+  @override
+  State<_NoteCardMenuButton> createState() => _NoteCardMenuButtonState();
+}
+
+class _NoteCardMenuButtonState extends State<_NoteCardMenuButton> {
+  final GlobalKey _anchorKey = GlobalKey();
+
+  void _open() {
+    final box = _anchorKey.currentContext?.findRenderObject() as RenderBox?;
+    if (box == null || !box.hasSize) return;
+    final rect = box.localToGlobal(Offset.zero) & box.size;
+    widget.onPressed(rect.center);
+  }
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    if (checkboxesOn) {
-      return _LargeDoneCheck(
-        isDone: isDone,
-        onToggle: onToggle,
-      );
-    }
-    return InkWell(
-      onTap: onToggle,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        width: 22,
-        height: 22,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          border: Border.all(
-            color: isDone ? scheme.primary : scheme.outlineVariant,
-            width: 2,
-          ),
-          color: isDone ? scheme.primary : null,
+    return Tooltip(
+      message: 'More',
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+onTap: _open,
+borderRadius: BorderRadius.circular(16),
+child: SizedBox.square(
+  key: _anchorKey,
+  dimension: 32,
+  child: Icon(
+    Icons.more_horiz_rounded,
+    size: 19,
+    color: scheme.onSurfaceVariant,
+  ),
+),
         ),
-        child: isDone
-            ? const Icon(Icons.check_rounded, size: 12, color: Colors.white)
-            : null,
       ),
     );
   }
@@ -637,25 +621,29 @@ class _LargeDoneCheck extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return InkWell(
-      onTap: onToggle,
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        width: kNotesLargeCheckSize,
-        height: kNotesLargeCheckSize,
-        decoration: BoxDecoration(
-borderRadius: BorderRadius.circular(8),
-border: Border.all(
-  color: isDone
-      ? scheme.primary
-      : scheme.outlineVariant.withValues(alpha: 0.7),
-  width: 2,
+    return Semantics(
+      button: true,
+      checked: isDone,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onToggle,
+        child: Container(
+width: kNotesLargeCheckSize,
+height: kNotesLargeCheckSize,
+decoration: BoxDecoration(
+  borderRadius: BorderRadius.circular(8),
+  border: Border.all(
+    color: isDone
+        ? scheme.primary
+        : scheme.outlineVariant.withValues(alpha: 0.7),
+    width: 2,
+  ),
+  color: isDone ? scheme.primary : Colors.transparent,
 ),
-color: isDone ? scheme.primary : Colors.transparent,
+child: isDone
+    ? const Icon(Icons.check_rounded, size: 20, color: Colors.white)
+    : null,
         ),
-        child: isDone
-  ? const Icon(Icons.check_rounded, size: 20, color: Colors.white)
-  : null,
       ),
     );
   }

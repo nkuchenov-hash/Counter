@@ -33,6 +33,11 @@ class NotesLibraryBody extends StatefulWidget {
     required this.checkboxesOn,
     required this.onTap,
     required this.onLongPress,
+    this.selectionMode = false,
+    this.selectedKeys = const <String>{},
+    this.itemKey,
+    this.onToggleSelection,
+    this.onOpenMenu,
     this.onRefresh,
   });
 
@@ -41,6 +46,11 @@ class NotesLibraryBody extends StatefulWidget {
   final bool checkboxesOn;
   final void Function(PlanningTask task) onTap;
   final void Function(PlanningTask task) onLongPress;
+  final bool selectionMode;
+  final Set<String> selectedKeys;
+  final String Function(PlanningTask task)? itemKey;
+  final ValueChanged<PlanningTask>? onToggleSelection;
+  final void Function(Offset anchorCenter, PlanningTask task)? onOpenMenu;
   final Future<void> Function()? onRefresh;
 
   @override
@@ -51,10 +61,12 @@ class _NotesLibraryBodyState extends State<NotesLibraryBody> {
   PlanningTask? _selectedTask;
   List<String>? _editingOrder;
   _NotesDateSort _dateSort = _NotesDateSort.updated;
+  List<String>? _checkboxOrder;
 
   @override
   void initState() {
     super.initState();
+    if (widget.checkboxesOn) _captureCheckboxOrder();
     unawaited(_loadDateSort());
     unawaited(_hydrateTimestamps());
   }
@@ -62,6 +74,11 @@ class _NotesLibraryBodyState extends State<NotesLibraryBody> {
   @override
   void didUpdateWidget(covariant NotesLibraryBody oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (widget.checkboxesOn) {
+      _reconcileCheckboxOrder(reset: !oldWidget.checkboxesOn);
+    } else if (oldWidget.checkboxesOn) {
+      _checkboxOrder = null;
+    }
     if (widget.tasks.any(
       (task) => task.createdAt == null || task.updatedAt == null,
     )) {
@@ -238,9 +255,50 @@ class _NotesLibraryBodyState extends State<NotesLibraryBody> {
     return a.title.compareTo(b.title);
   }
 
+  String _itemKey(PlanningTask task) {
+    final custom = widget.itemKey;
+    if (custom != null) return custom(task);
+    final backend = task.planRowIdForBackend.trim();
+    if (backend.isNotEmpty) return backend;
+    return 'note-${task.id}-${task.order}-${task.title}';
+  }
+
+  void _captureCheckboxOrder() {
+    final ordered = List<PlanningTask>.from(widget.tasks)..sort(_compareTasks);
+    _checkboxOrder = [for (final task in ordered) _itemKey(task)];
+  }
+
+  void _reconcileCheckboxOrder({bool reset = false}) {
+    if (reset || _checkboxOrder == null) {
+      _captureCheckboxOrder();
+      return;
+    }
+    final current = <String>{for (final task in widget.tasks) _itemKey(task)};
+    _checkboxOrder!.removeWhere((id) => !current.contains(id));
+    final known = _checkboxOrder!.toSet();
+    final additions = List<PlanningTask>.from(widget.tasks)
+      ..sort(_compareTasks);
+    for (final task in additions) {
+      final id = _itemKey(task);
+      if (known.add(id)) _checkboxOrder!.add(id);
+    }
+  }
+
   List<PlanningTask> _sortedTasks() {
     final out = List<PlanningTask>.from(widget.tasks);
-    if (widget.checkboxesOn) return out;
+    if (widget.checkboxesOn) {
+      _reconcileCheckboxOrder();
+      final rank = <String, int>{
+        for (var i = 0; i < (_checkboxOrder?.length ?? 0); i++)
+          _checkboxOrder![i]: i,
+      };
+      out.sort((a, b) {
+        final ar = rank[_itemKey(a)] ?? (1 << 30);
+        final br = rank[_itemKey(b)] ?? (1 << 30);
+        return ar.compareTo(br);
+      });
+      return out;
+    }
     final editingOrder = _editingOrder;
     if (_selectedTask != null && editingOrder != null) {
       final rank = <String, int>{
@@ -451,6 +509,9 @@ class _NotesLibraryBodyState extends State<NotesLibraryBody> {
     required NotesLibraryView view,
     required bool selected,
   }) {
+    final selectionKey = _itemKey(data.task);
+    final bulkSelected =
+        widget.selectionMode && widget.selectedKeys.contains(selectionKey);
     return AnimatedContainer(
       duration: const Duration(milliseconds: 140),
       decoration: BoxDecoration(
@@ -460,11 +521,19 @@ class _NotesLibraryBodyState extends State<NotesLibraryBody> {
         data: data,
         view: view,
         checkboxesOn: widget.checkboxesOn,
-        selected: selected,
-        onOpen: () => _openNote(context, data.task),
+        selected: selected || bulkSelected,
+        onOpen: () {
+          if (widget.selectionMode) {
+            widget.onToggleSelection?.call(data.task);
+            return;
+          }
+          _openNote(context, data.task);
+        },
         onTogglePin: () => db.toggleNotePin(data.task.planRowIdForBackend),
         onToggleDone: () => db.toggleNoteDone(data.task.planRowIdForBackend),
         onLongPress: () => widget.onLongPress(data.task),
+        onOpenMenu: (anchorCenter) =>
+            widget.onOpenMenu?.call(anchorCenter, data.task),
       ),
     );
   }

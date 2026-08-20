@@ -183,6 +183,10 @@ class NotesEditorBlockItem extends StatelessWidget {
           child: Text.rich(
             span,
             key: textKey,
+            strutStyle: StrutStyle.fromTextStyle(
+              effectiveStyle,
+              forceStrutHeight: true,
+            ),
             softWrap: true,
           ),
         ),

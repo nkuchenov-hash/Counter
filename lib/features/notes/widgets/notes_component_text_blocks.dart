@@ -61,6 +61,10 @@ class NotesTextBlock extends StatelessWidget {
         onChanged: onChanged,
         onTap: onTap,
         style: textStyle,
+        strutStyle: StrutStyle.fromTextStyle(
+          textStyle,
+          forceStrutHeight: true,
+        ),
         decoration: InputDecoration(
           hintText: hintText,
           hintStyle: textStyle.copyWith(
@@ -292,6 +296,10 @@ class _NotesLeadingTextRow extends StatelessWidget {
                       decoration: TextDecoration.lineThrough,
                     )
                   : baseStyle,
+              strutStyle: StrutStyle.fromTextStyle(
+      baseStyle,
+      forceStrutHeight: true,
+    ),
               decoration: InputDecoration(
                 hintText: hintText,
                 hintStyle: baseStyle.copyWith(

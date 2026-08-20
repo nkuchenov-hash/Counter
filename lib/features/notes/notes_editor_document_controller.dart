@@ -592,6 +592,70 @@ class NotesEditorDocumentController {
     return const NotesEditorMutation(changed: true);
   }
 
+  NotesEditorMutation convertBlocks(
+    Set<String> ids,
+    NotesBlockConversion conversion,
+  ) {
+    if (ids.isEmpty) return const NotesEditorMutation();
+    var changed = false;
+    String? firstChangedId;
+    for (final block in List<NoteBlock>.from(visibleBlocks)) {
+      if (!ids.contains(block.id) || !isEditableText(block.type)) continue;
+      final mutation = convertBlock(block.id, conversion);
+      if (!mutation.changed) continue;
+      changed = true;
+      firstChangedId ??= block.id;
+    }
+    if (!changed) return const NotesEditorMutation();
+    activeBlockId = firstChangedId ?? activeBlockId;
+    activeSelection = null;
+    return const NotesEditorMutation(changed: true, requiresRebuild: true);
+  }
+
+  NotesEditorMutation reorderVisibleGroup(
+    Set<String> ids,
+    int oldIndex,
+    int newIndex,
+  ) {
+    final visible = List<NoteBlock>.from(visibleBlocks);
+    if (oldIndex < 0 || oldIndex >= visible.length) {
+      return const NotesEditorMutation();
+    }
+    if (!ids.contains(visible[oldIndex].id)) {
+      return reorderVisible(oldIndex, newIndex);
+    }
+    final moving = <NoteBlock>[
+      for (final block in visible)
+        if (ids.contains(block.id)) block,
+    ];
+    if (moving.isEmpty) return const NotesEditorMutation();
+    final remaining = <NoteBlock>[
+      for (final block in visible)
+        if (!ids.contains(block.id)) block,
+    ];
+    final boundedTarget = newIndex.clamp(0, visible.length).toInt();
+    var insertAt = 0;
+    for (var index = 0; index < boundedTarget; index++) {
+      if (!ids.contains(visible[index].id)) insertAt++;
+    }
+    insertAt = insertAt.clamp(0, remaining.length).toInt();
+    remaining.insertAll(insertAt, moving);
+
+    var cursor = 0;
+    final nextBlocks = <NoteBlock>[];
+    for (final block in blocks) {
+      if (isSupportedProductionBlock(block.type)) {
+        nextBlocks.add(remaining[cursor++]);
+      } else {
+        nextBlocks.add(block);
+      }
+    }
+    _document = _document.copyWith(blocks: nextBlocks);
+    activeBlockId = moving.first.id;
+    activeSelection = null;
+    return const NotesEditorMutation(changed: true, requiresRebuild: true);
+  }
+
   NotesEditorMutation reorderVisible(int oldIndex, int newIndex) {
     final visible = List<NoteBlock>.from(visibleBlocks);
     if (oldIndex < 0 || oldIndex >= visible.length) {

@@ -103,7 +103,7 @@ class NotesEditorScreen extends StatelessWidget {
               onDone: embeddedScope?.onClose ?? onDone,
               pinned: pinned,
               onTogglePinned: onTogglePinned,
-              onDelete: embedded ? null : onDelete,
+              onDelete: onDelete,
               titleController: titleController,
               onTitleChanged: onTitleChanged,
               categoryLabel: categoryLabel,
@@ -312,31 +312,91 @@ class _NotesNavigationHeader extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       child: Row(
         children: [
-          if (embedded)
-            _NotesHeaderAction(
-              icon: Icons.close_rounded,
-              tooltip: 'Close note',
-              onPressed: onDone,
-              subtle: true,
-            )
-          else
-            _NotesBackAction(onPressed: onDone),
-          const Spacer(),
-          _NotesHeaderAction(
-            icon: pinned ? Icons.push_pin_rounded : Icons.push_pin_outlined,
-            tooltip: pinned ? 'Unpin note' : 'Pin note',
-            selected: pinned,
-            onPressed: onTogglePinned,
-          ),
-          if (onDelete != null) ...[
-            const SizedBox(width: 8),
-            _NotesHeaderAction(
-              icon: Icons.delete_outline_rounded,
-              tooltip: 'Delete note',
-              onPressed: onDelete!,
-            ),
-          ],
+_NotesHeaderAction(
+  icon: Icons.arrow_back_rounded,
+  tooltip: 'Back',
+  onPressed: onDone,
+),
+const Spacer(),
+_NotesHeaderMoreMenu(
+  pinned: pinned,
+  onTogglePinned: onTogglePinned,
+  onDelete: onDelete,
+),
         ],
+      ),
+    );
+  }
+}
+
+enum _NotesHeaderMenuAction { pin, delete }
+
+class _NotesHeaderMoreMenu extends StatelessWidget {
+  const _NotesHeaderMoreMenu({
+    required this.pinned,
+    required this.onTogglePinned,
+    required this.onDelete,
+  });
+
+  final bool pinned;
+  final VoidCallback onTogglePinned;
+  final VoidCallback? onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    return PopupMenuButton<_NotesHeaderMenuAction>(
+      tooltip: 'More',
+      position: PopupMenuPosition.under,
+      onSelected: (action) {
+        switch (action) {
+case _NotesHeaderMenuAction.pin:
+  onTogglePinned();
+case _NotesHeaderMenuAction.delete:
+  onDelete?.call();
+        }
+      },
+      itemBuilder: (context) => [
+        PopupMenuItem<_NotesHeaderMenuAction>(
+value: _NotesHeaderMenuAction.pin,
+child: Row(
+  children: [
+    Icon(pinned ? Icons.push_pin_outlined : Icons.push_pin_rounded),
+    const SizedBox(width: 10),
+    Text(pinned ? 'Unpin' : 'Pin'),
+  ],
+),
+        ),
+        if (onDelete != null)
+PopupMenuItem<_NotesHeaderMenuAction>(
+  value: _NotesHeaderMenuAction.delete,
+  child: Row(
+    children: [
+      Icon(
+        Icons.delete_outline_rounded,
+        color: Theme.of(context).colorScheme.error,
+      ),
+      const SizedBox(width: 10),
+      Text(
+        'Delete',
+        style: TextStyle(color: Theme.of(context).colorScheme.error),
+      ),
+    ],
+  ),
+),
+      ],
+      child: Material(
+        color: NotesFigmaTokens.glassFill(context),
+        elevation: 1,
+        shadowColor: Colors.black.withValues(alpha: 0.08),
+        shape: const CircleBorder(),
+        child: SizedBox.square(
+dimension: 40,
+child: Icon(
+  Icons.more_horiz_rounded,
+  size: 19,
+  color: NotesFigmaTokens.iconSecondary(context),
+),
+        ),
       ),
     );
   }

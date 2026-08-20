@@ -19,6 +19,7 @@ const double kGlmTitleSizeMobile = 28;
 const double kGlmBodySize = 16;
 const double kGlmMetaSize = 12;
 const double kGlmPillHeight = 32;
+const double kNotesLibraryControlHeight = 48;
 
 /// Muted blue-grey metadata (`text-muted` in GLM light theme).
 const Color kGlmMetaColor = Color(0xFF94A3B8);
@@ -238,6 +239,9 @@ InputDecoration notesGlmSearchDecoration({
       ? scheme!.outlineVariant.withValues(alpha: 0.78)
       : const Color(0xFFE2E8F0).withValues(alpha: 0.95);
   return InputDecoration(
+    constraints: const BoxConstraints.tightFor(
+      height: kNotesLibraryControlHeight,
+    ),
     hintText: hintText,
     hintStyle: TextStyle(fontSize: 14, color: meta),
     prefixIcon: Icon(

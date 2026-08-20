@@ -76,6 +76,8 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
   late final NotesAudioPlaybackController _audioPlayback;
   final Set<String> _transcribingAudioIds = <String>{};
   String? _editingBlockId;
+  bool _blockSelectionMode = false;
+  final Set<String> _selectedBlockIds = <String>{};
   bool _dirty = false;
   bool _notesEditorSessionRegistered = false;
 
@@ -346,6 +348,24 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
     _applyMutation(mutation);
   }
 
+  String _normalizeClipboardStructure(String value) {
+    final buffer = StringBuffer();
+    var pendingSpace = false;
+    for (final rune in value.runes) {
+      final whitespace = rune == 9 || rune == 10 || rune == 13 || rune == 32;
+      if (whitespace) {
+        pendingSpace = buffer.isNotEmpty;
+        continue;
+      }
+      if (pendingSpace) {
+        buffer.write(' ');
+        pendingSpace = false;
+      }
+      buffer.writeCharCode(rune);
+    }
+    return buffer.toString().trim();
+  }
+
   Future<void> _pasteClipboardIntoBlock(
     NoteBlock block,
     TextSelection selection,
@@ -361,24 +381,19 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
     if (plain.isEmpty) return;
 
     final candidatePlain = _NotesStructuredClipboard.plainText;
-    final normalizedPlain = plain
-        .replaceAll('\r\n', '\n')
-        .replaceAll('\r', '\n');
-    final normalizedCandidate = candidatePlain
-        ?.replaceAll('\r\n', '\n')
-        .replaceAll('\r', '\n');
     final hasMatchingStructure =
-        normalizedCandidate != null &&
-        normalizedCandidate == normalizedPlain &&
+        candidatePlain != null &&
+        _normalizeClipboardStructure(candidatePlain) ==
+  _normalizeClipboardStructure(plain) &&
         _NotesStructuredClipboard.blocks.isNotEmpty;
 
     final mutation = hasMatchingStructure
         ? _editor.pasteBlocks(
-            block.id,
-            selection,
-            _NotesStructuredClipboard.blocks,
-          )
-        : _editor.pastePlainText(block.id, selection, normalizedPlain);
+  block.id,
+  selection,
+  _NotesStructuredClipboard.blocks,
+)
+        : _editor.pastePlainText(block.id, selection, plain);
     if (!mutation.changed) return;
 
     if (!mutation.requiresRebuild) {
@@ -403,21 +418,21 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
     final selection = controller.selection;
     final keyboard = HardwareKeyboard.instance;
     if (event.logicalKey == LogicalKeyboardKey.keyC &&
-    (keyboard.isControlPressed || keyboard.isMetaPressed) &&
-    selection.isValid &&
-    !selection.isCollapsed) {
-  final slice = _editor.structuralSliceForSelection(block.id, selection);
-  if (slice != null) {
-    final start = selection.start.clamp(0, controller.text.length).toInt();
-    final end = selection.end.clamp(0, controller.text.length).toInt();
-    final plain = controller.text.substring(start, end);
-    _NotesStructuredClipboard.plainText = plain;
-    _NotesStructuredClipboard.blocks = <NoteBlock>[slice];
-    unawaited(Clipboard.setData(ClipboardData(text: plain)));
-    return KeyEventResult.handled;
-  }
-}
-  if (event.logicalKey == LogicalKeyboardKey.keyV &&
+        (keyboard.isControlPressed || keyboard.isMetaPressed) &&
+        selection.isValid &&
+        !selection.isCollapsed) {
+      final slice = _editor.structuralSliceForSelection(block.id, selection);
+      if (slice != null) {
+        final start = selection.start.clamp(0, controller.text.length).toInt();
+        final end = selection.end.clamp(0, controller.text.length).toInt();
+        final plain = controller.text.substring(start, end);
+        _NotesStructuredClipboard.plainText = plain;
+        _NotesStructuredClipboard.blocks = <NoteBlock>[slice];
+        unawaited(Clipboard.setData(ClipboardData(text: plain)));
+        return KeyEventResult.handled;
+      }
+    }
+    if (event.logicalKey == LogicalKeyboardKey.keyV &&
         (keyboard.isControlPressed || keyboard.isMetaPressed)) {
       unawaited(_pasteClipboardIntoBlock(block, selection));
       return KeyEventResult.handled;
@@ -461,6 +476,25 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
           block,
     ];
     if (textBlocks.isEmpty) return const <NoteBlock>[];
+
+    final normalizedSelection = _normalizeClipboardStructure(plain);
+    List<NoteBlock>? wholeBlockBest;
+    for (var start = 0; start < textBlocks.length; start++) {
+      for (var end = start; end < textBlocks.length; end++) {
+        final window = textBlocks.sublist(start, end + 1);
+        final candidate = _normalizeClipboardStructure(
+window.map((block) => block.effectiveText).join('\n'),
+        );
+        if (candidate != normalizedSelection) continue;
+        final preservesMeaning =
+  window.length > 1 || window.single.type != NoteBlockType.paragraph;
+        if (!preservesMeaning) continue;
+        if (wholeBlockBest == null || window.length < wholeBlockBest.length) {
+wholeBlockBest = List<NoteBlock>.from(window);
+        }
+      }
+    }
+    if (wholeBlockBest != null) return wholeBlockBest;
 
     List<NoteBlock>? best;
     var bestWindow = 1 << 30;
@@ -526,6 +560,58 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
     return best ?? const <NoteBlock>[];
   }
 
+  void _toggleBlockSelection(String blockId) {
+    if (_editor.blockById(blockId) == null) return;
+    setState(() {
+      _blockSelectionMode = true;
+      if (!_selectedBlockIds.add(blockId)) {
+        _selectedBlockIds.remove(blockId);
+      }
+      if (_selectedBlockIds.isEmpty) _blockSelectionMode = false;
+    });
+  }
+
+  void _handleBlockTap(String blockId) {
+    if (_blockSelectionMode) {
+      _toggleBlockSelection(blockId);
+      return;
+    }
+    _selectBlock(blockId);
+  }
+
+  void _deleteBlockFromMenu(String blockId) {
+    if (_selectedBlockIds.contains(blockId)) {
+      setState(() {
+        _selectedBlockIds.remove(blockId);
+        if (_selectedBlockIds.isEmpty) _blockSelectionMode = false;
+      });
+    }
+    _applyMutation(_editor.deleteBlock(blockId));
+  }
+
+  void _showBlockActionMenu(Offset anchorCenter, NoteBlock block) {
+    final overlay = Overlay.maybeOf(context);
+    if (overlay == null) return;
+    late OverlayEntry entry;
+    void dismiss() => entry.remove();
+    entry = OverlayEntry(
+      builder: (overlayContext) => _NotesBlockCircularMenuOverlay(
+        anchorCenter: anchorCenter,
+        selected: _selectedBlockIds.contains(block.id),
+        onDismiss: dismiss,
+        onSelect: () {
+dismiss();
+_toggleBlockSelection(block.id);
+        },
+        onDelete: () {
+dismiss();
+_deleteBlockFromMenu(block.id);
+        },
+      ),
+    );
+    overlay.insert(entry);
+  }
+
   void _selectBlock(String blockId) {
     final block = _editor.blockById(blockId);
     if (block == null) return;
@@ -551,6 +637,10 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
   }
 
   void _convertActive(NotesBlockConversion conversion) {
+    if (_selectedBlockIds.isNotEmpty) {
+      _applyMutation(_editor.convertBlocks(_selectedBlockIds, conversion));
+      return;
+    }
     final id = _editor.activeBlockId;
     if (id != null) _applyMutation(_editor.convertBlock(id, conversion));
   }
@@ -788,22 +878,34 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
       initialData: initial,
       onSave: (dataUrl) {
         if (!mounted) return;
-        if (editBlockId == null) {
-_editor.insertAfter(
-  _editor.activeBlockId,
-  NoteBlockType.drawing,
-  drawingData: dataUrl,
-);
-final drawingId = _editor.activeBlockId;
-if (drawingId == null) return;
+        if (editBlockId != null) {
 _applyMutation(
-  _editor.insertAfter(drawingId, NoteBlockType.paragraph),
+  _editor.updateMedia(editBlockId, drawingData: dataUrl),
 );
 return;
         }
-        _applyMutation(
-_editor.updateMedia(editBlockId, drawingData: dataUrl),
+        _editor.insertAfter(
+_editor.activeBlockId,
+NoteBlockType.drawing,
+drawingData: dataUrl,
         );
+        final drawingId = _editor.activeBlockId;
+        if (drawingId == null) return;
+        final paragraphMutation = _editor.insertAfter(
+drawingId,
+NoteBlockType.paragraph,
+        );
+        final paragraphId = paragraphMutation.focusBlockId;
+        _applyMutation(paragraphMutation);
+        if (paragraphId != null) {
+WidgetsBinding.instance.addPostFrameCallback((_) {
+  if (!mounted) return;
+  _requestFocus(
+    paragraphId,
+    const TextSelection.collapsed(offset: 0),
+  );
+});
+        }
       },
     );
   }
@@ -964,7 +1066,7 @@ _editor.updateMedia(editBlockId, drawingData: dataUrl),
         ),
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,
-          onTap: () => _selectBlock(block.id),
+          onTap: () => _handleBlockTap(block.id),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(12),
             child: DecoratedBox(
@@ -1015,40 +1117,40 @@ _editor.updateMedia(editBlockId, drawingData: dataUrl),
       textController: editable ? _textControllerFor(block) : null,
       focusNode: focusNode,
       captionController:
-          block.type == NoteBlockType.image ||
-              block.type == NoteBlockType.drawing
-          ? _captionControllerFor(block)
-          : null,
-      onTap: () => _selectBlock(block.id),
+block.type == NoteBlockType.image ||
+    block.type == NoteBlockType.drawing
+? _captionControllerFor(block)
+: null,
+      onTap: () => _handleBlockTap(block.id),
       onKeyEvent: (event) => _onBlockKeyEvent(block, event),
       onTextChanged: editable
-          ? (value) => _onBlockTextChanged(block, value)
-          : null,
+? (value) => _onBlockTextChanged(block, value)
+: null,
       onCheckedChanged: block.type == NoteBlockType.checklist
-          ? (checked) =>
-                _applyMutation(_editor.toggleChecklist(block.id, checked))
-          : null,
+? (checked) =>
+      _applyMutation(_editor.toggleChecklist(block.id, checked))
+: null,
       onTableChanged: block.type == NoteBlockType.table
-          ? (table) => _applyMutation(_editor.updateTable(block.id, table))
-          : null,
+? (table) => _applyMutation(_editor.updateTable(block.id, table))
+: null,
       onCaptionChanged:
-          block.type == NoteBlockType.image ||
-              block.type == NoteBlockType.drawing
-          ? (caption) =>
-                _applyMutation(_editor.updateCaption(block.id, caption))
-          : null,
+block.type == NoteBlockType.image ||
+    block.type == NoteBlockType.drawing
+? (caption) =>
+      _applyMutation(_editor.updateCaption(block.id, caption))
+: null,
       onEmptyLongPress: editable && block.effectiveText.isEmpty
-          ? () => _showInsertMenu(block.id)
-          : null,
+? () => _showInsertMenu(block.id)
+: null,
       audioState: block.type == NoteBlockType.audio
-          ? _audioState(block.id)
-          : NotesAudioState.ready,
+? _audioState(block.id)
+: NotesAudioState.ready,
       onAudioPlayPause: block.type == NoteBlockType.audio
-          ? () => _toggleAudio(block.id)
-          : null,
+? () => _toggleAudio(block.id)
+: null,
       onOpenTranscript: block.type == NoteBlockType.audio
-          ? () => _openAudioTranscript(block.id)
-          : null,
+? () => _openAudioTranscript(block.id)
+: null,
     );
 
     final drawingPreview = _desktopDrawingPreview(context, block);
@@ -1062,45 +1164,57 @@ _editor.updateMedia(editBlockId, drawingData: dataUrl),
 
     if (widget.parityPreview) return item;
 
-    // Reserve the action rail for every block so activating a block never
-    // changes its text width or line wrapping. The button itself appears only
-    // for the active block and sits outside the hold-to-drag listener.
+    // Fixed right action rail: activation and selection never change width,
+    // wrapping, or vertical metrics of the block.
+    final selectedForBulk = _selectedBlockIds.contains(block.id);
     final content = Padding(
       key: ValueKey<String>(block.id),
       padding: const EdgeInsets.only(right: 36),
       child: item,
     );
-    if (!active) return content;
-
-    final scheme = Theme.of(context).colorScheme;
     return Stack(
       key: ValueKey<String>(block.id),
       clipBehavior: Clip.none,
       children: [
+        if (selectedForBulk)
+Positioned.fill(
+  child: IgnorePointer(
+    child: DecoratedBox(
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.primary.withValues(
+          alpha: 0.06,
+        ),
+        borderRadius: BorderRadius.circular(10),
+      ),
+    ),
+  ),
+),
         content,
+        if (selectedForBulk)
+Positioned(
+  left: -24,
+  top: 6,
+  child: Container(
+    width: 18,
+    height: 18,
+    decoration: BoxDecoration(
+      color: Theme.of(context).colorScheme.primary,
+      shape: BoxShape.circle,
+    ),
+    child: Icon(
+      Icons.check_rounded,
+      size: 12,
+      color: Theme.of(context).colorScheme.onPrimary,
+    ),
+  ),
+),
         Positioned(
-          top: 2,
-          right: 2,
-          child: Tooltip(
-            message: t(currentLocale.value, 'delete'),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                key: ValueKey<String>('notes-block-delete-${block.id}'),
-                onTap: () => _applyMutation(_editor.deleteBlock(block.id)),
-                borderRadius: BorderRadius.circular(8),
-                child: SizedBox(
-                  width: 30,
-                  height: 30,
-                  child: Icon(
-                    Icons.delete_outline_rounded,
-                    size: 18,
-                    color: scheme.error,
-                  ),
-                ),
-              ),
-            ),
-          ),
+top: 2,
+right: 2,
+child: _NotesBlockMoreButton(
+  onPressed: (anchorCenter) =>
+      _showBlockActionMenu(anchorCenter, block),
+),
         ),
       ],
     );
@@ -1122,16 +1236,16 @@ _editor.updateMedia(editBlockId, drawingData: dataUrl),
       builder: (dialogContext) => AlertDialog(
         title: Text(t(loc, 'delete')),
         actions: [
-          AppButton.ghost(
-            label: t(loc, 'cancel'),
-            size: AppButtonSize.s,
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-          ),
-          AppButton.destructive(
-            label: t(loc, 'delete'),
-            size: AppButtonSize.s,
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-          ),
+AppButton.ghost(
+  label: t(loc, 'cancel'),
+  size: AppButtonSize.s,
+  onPressed: () => Navigator.of(dialogContext).pop(false),
+),
+AppButton.destructive(
+  label: t(loc, 'delete'),
+  size: AppButtonSize.s,
+  onPressed: () => Navigator.of(dialogContext).pop(true),
+),
         ],
       ),
     );
@@ -1139,7 +1253,13 @@ _editor.updateMedia(editBlockId, drawingData: dataUrl),
     _gate.flush(() {});
     _dirty = false;
     await DatabaseService.instance.deleteNote(_task.planRowIdForBackend);
-    if (mounted) Navigator.of(context).pop();
+    if (!mounted) return;
+    final embeddedScope = NotesEmbeddedEditorScope.maybeOf(context);
+    if (embeddedScope != null) {
+      embeddedScope.onClose();
+    } else {
+      Navigator.of(context).pop();
+    }
   }
 
   @override
@@ -1171,46 +1291,203 @@ _editor.updateMedia(editBlockId, drawingData: dataUrl),
         onFormatting: _showFormattingMenu,
         onQuote: () => _convertActive(NotesBlockConversion.quote),
         onList: () => _convertActive(
-          activeType == NoteBlockType.bulletedList
-              ? NotesBlockConversion.numberedList
-              : NotesBlockConversion.bulletedList,
+activeType == NoteBlockType.bulletedList
+    ? NotesBlockConversion.numberedList
+    : NotesBlockConversion.bulletedList,
         ),
         onChecklist: () => _convertActive(NotesBlockConversion.checklist),
         onTable: () => _showTablePicker(),
         onDrawing: widget.parityPreview
-            ? null
-            : () {
-                final block = _editor.activeBlock;
-                _openDrawing(
-                  editBlockId: block?.type == NoteBlockType.drawing
-                      ? block!.id
-                      : null,
-                );
-              },
+  ? null
+  : () {
+      final block = _editor.activeBlock;
+      _openDrawing(
+        editBlockId: block?.type == NoteBlockType.drawing
+            ? block!.id
+            : null,
+      );
+    },
         onAudio: widget.parityPreview ? null : _recordAudio,
         onImage: widget.parityPreview
-            ? null
-            : () {
-                final block = _editor.activeBlock;
-                _pickImage(
-                  replaceBlockId: block?.type == NoteBlockType.image
-                      ? block!.id
-                      : null,
-                );
-              },
+  ? null
+  : () {
+      final block = _editor.activeBlock;
+      _pickImage(
+        replaceBlockId: block?.type == NoteBlockType.image
+            ? block!.id
+            : null,
+      );
+    },
         onMore: _showActiveBlockOptions,
       ),
       content: SelectionArea(
         onSelectionChanged: _captureStructuredSelection,
         child: ReorderableListView.builder(
-          key: const ValueKey('notes-editor-content'),
-          padding: EdgeInsets.zero,
-          buildDefaultDragHandles: false,
-          proxyDecorator: (child, _, __) => child,
-          itemCount: _editor.visibleBlocks.length,
-          onReorder: (oldIndex, newIndex) =>
-              _applyMutation(_editor.reorderVisible(oldIndex, newIndex)),
-          itemBuilder: _buildBlock,
+key: const ValueKey('notes-editor-content'),
+padding: EdgeInsets.zero,
+buildDefaultDragHandles: false,
+proxyDecorator: (child, _, __) => child,
+itemCount: _editor.visibleBlocks.length,
+onReorder: (oldIndex, newIndex) {
+  final visible = _editor.visibleBlocks;
+  final draggedId = oldIndex >= 0 && oldIndex < visible.length
+      ? visible[oldIndex].id
+      : null;
+  final mutation = draggedId != null &&
+          _selectedBlockIds.contains(draggedId)
+      ? _editor.reorderVisibleGroup(
+          _selectedBlockIds,
+          oldIndex,
+          newIndex,
+        )
+      : _editor.reorderVisible(oldIndex, newIndex);
+  _applyMutation(mutation);
+},
+itemBuilder: _buildBlock,
+        ),
+      ),
+    );
+  }
+}
+
+class _NotesBlockMoreButton extends StatefulWidget {
+  const _NotesBlockMoreButton({required this.onPressed});
+
+  final ValueChanged<Offset> onPressed;
+
+  @override
+  State<_NotesBlockMoreButton> createState() => _NotesBlockMoreButtonState();
+}
+
+class _NotesBlockMoreButtonState extends State<_NotesBlockMoreButton> {
+  final GlobalKey _anchorKey = GlobalKey();
+
+  void _open() {
+    final box = _anchorKey.currentContext?.findRenderObject() as RenderBox?;
+    if (box == null || !box.hasSize) return;
+    final rect = box.localToGlobal(Offset.zero) & box.size;
+    widget.onPressed(rect.center);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: 'More',
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+onTap: _open,
+borderRadius: BorderRadius.circular(15),
+child: SizedBox.square(
+  key: _anchorKey,
+  dimension: 30,
+  child: Icon(
+    Icons.more_horiz_rounded,
+    size: 18,
+    color: Theme.of(context).colorScheme.onSurfaceVariant,
+  ),
+),
+        ),
+      ),
+    );
+  }
+}
+
+class _NotesBlockCircularMenuOverlay extends StatelessWidget {
+  const _NotesBlockCircularMenuOverlay({
+    required this.anchorCenter,
+    required this.selected,
+    required this.onDismiss,
+    required this.onSelect,
+    required this.onDelete,
+  });
+
+  final Offset anchorCenter;
+  final bool selected;
+  final VoidCallback onDismiss;
+  final VoidCallback onSelect;
+  final VoidCallback onDelete;
+
+  double _left(double centerX, double width) =>
+      (centerX - 21).clamp(8.0, width - 50).toDouble();
+
+  double _top(double centerY, double height) =>
+      (centerY - 21).clamp(8.0, height - 50).toDouble();
+
+  @override
+  Widget build(BuildContext context) {
+    final size = MediaQuery.sizeOf(context);
+    final selectCenter = anchorCenter + const Offset(-48, -42);
+    final deleteCenter = anchorCenter + const Offset(-64, 14);
+    return Material(
+      color: Colors.transparent,
+      child: Stack(
+        children: [
+Positioned.fill(
+  child: GestureDetector(
+    behavior: HitTestBehavior.translucent,
+    onTap: onDismiss,
+    child: const SizedBox.expand(),
+  ),
+),
+Positioned(
+  left: _left(selectCenter.dx, size.width),
+  top: _top(selectCenter.dy, size.height),
+  child: _NotesBlockRadialAction(
+    tooltip: selected ? 'Deselect' : 'Select',
+    icon: selected
+        ? Icons.remove_done_rounded
+        : Icons.check_circle_outline_rounded,
+    onPressed: onSelect,
+  ),
+),
+Positioned(
+  left: _left(deleteCenter.dx, size.width),
+  top: _top(deleteCenter.dy, size.height),
+  child: _NotesBlockRadialAction(
+    tooltip: 'Delete',
+    icon: Icons.delete_outline_rounded,
+    destructive: true,
+    onPressed: onDelete,
+  ),
+),
+        ],
+      ),
+    );
+  }
+}
+
+class _NotesBlockRadialAction extends StatelessWidget {
+  const _NotesBlockRadialAction({
+    required this.tooltip,
+    required this.icon,
+    required this.onPressed,
+    this.destructive = false,
+  });
+
+  final String tooltip;
+  final IconData icon;
+  final VoidCallback onPressed;
+  final bool destructive;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final foreground = destructive ? scheme.error : scheme.onSurface;
+    return Tooltip(
+      message: tooltip,
+      child: Material(
+        elevation: 5,
+        shadowColor: Colors.black.withValues(alpha: 0.18),
+        color: scheme.surface,
+        shape: const CircleBorder(),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+onTap: onPressed,
+child: SizedBox.square(
+  dimension: 42,
+  child: Icon(icon, size: 20, color: foreground),
+),
         ),
       ),
     );

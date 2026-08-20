@@ -86,7 +86,7 @@ class NotesGlmInlineAddRow extends StatelessWidget {
       children: [
         Expanded(
           child: SizedBox(
-            height: 48,
+            height: kNotesLibraryControlHeight,
             child: TextField(
               controller: controller,
               focusNode: focusNode,
@@ -129,7 +129,7 @@ class NotesGlmInlineAddRow extends StatelessWidget {
         ),
         const SizedBox(width: 8),
         SizedBox.square(
-dimension: 48,
+dimension: kNotesLibraryControlHeight,
 child: Tooltip(
   message: t(locale, 'add'),
   child: Material(

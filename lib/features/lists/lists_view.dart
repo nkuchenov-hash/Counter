@@ -381,13 +381,19 @@ class _ListsPageState extends State<ListsPage>
     PlanningTask task,
     String listKey,
   ) {
-    final overlay = Overlay.maybeOf(anchorContext);
-    if (overlay == null) return;
     final box = anchorContext.findRenderObject() as RenderBox?;
     if (box == null || !box.hasSize) return;
     final rect = box.localToGlobal(Offset.zero) & box.size;
-    final anchorCenter = rect.center;
+    _showListsRadialMenuAt(rect.center, task, listKey);
+  }
 
+  void _showListsRadialMenuAt(
+    Offset anchorCenter,
+    PlanningTask task,
+    String listKey,
+  ) {
+    final overlay = Overlay.maybeOf(context);
+    if (overlay == null) return;
     late OverlayEntry entry;
     void dismiss() {
       entry.remove();
@@ -1004,20 +1010,8 @@ class _ListsPageState extends State<ListsPage>
             return Scaffold(
               backgroundColor: Colors.transparent,
               body: NotesLibraryProductionShell(
-                topBar: _listsSelectMode
-                    ? ListsBulkSelectModeBar(
-                        locale: loc,
-                        filterCategoryId: filterId,
-                        visibleFlat: flat,
-                        allVisibleSelected: _allVisibleListsSelected(flat),
-                        onExitSelectMode: _exitListsSelectMode,
-                        onToggleSelectAllVisible: () =>
-                            _toggleSelectAllVisibleLists(flat),
-                      )
-                    : null,
-                header: _listsSelectMode
-                    ? const SizedBox.shrink()
-                    : _NotesLibraryHeader(
+                topBar: null,
+                header: _NotesLibraryHeader(
                         locale: loc,
                         searchController: _notesSearchController,
                         searchFocus: _notesSearchFocus,
@@ -1029,14 +1023,6 @@ class _ListsPageState extends State<ListsPage>
                           setState(() => _notesSearchQuery = '');
                         },
                         onOpenSettings: _openChipBarSettingsSheet,
-                        showExport: filterId != null,
-                        onExport: () => unawaited(
-                          exportVisibleListAsText(
-                            context: context,
-                            locale: loc,
-                            visible: forGrouping,
-                          ),
-                        ),
                         notesView: _notesView,
                         checkboxesOn: _notesCheckboxesOn,
                         onViewChanged: (v) {
@@ -1089,39 +1075,6 @@ class _ListsPageState extends State<ListsPage>
                             noResults: true,
                           )
                         : ListsFilteredEmptyPanel(locale: loc))
-                    : _listsSelectMode
-                    ? RefreshIndicator(
-                        onRefresh: _reload,
-                        child: CustomScrollView(
-                          physics: const AlwaysScrollableScrollPhysics(),
-                          slivers: [
-                            SliverPadding(
-                              padding: const EdgeInsets.fromLTRB(0, 8, 0, 8),
-                              sliver: SliverReorderableList(
-                                itemCount: flatRows.length,
-                                onReorder: (oldI, newI) =>
-                                    _onListsReorder(oldI, newI, listBeh),
-                                itemBuilder: (context, index) {
-                                  final row = flatRows[index];
-                                  final t = row.task;
-                                  return ReorderableDelayedDragStartListener(
-                                    key: ValueKey<String>(_listKey(t)),
-                                    index: index,
-                                    child: Padding(
-                                      padding: const EdgeInsets.only(bottom: 8),
-                                      child: _listsBacklogCard(
-                                        t,
-                                        loc,
-                                        showTagsStrip: showListTagsOnCards,
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
-                          ],
-                        ),
-                      )
                     : NotesLibraryBody(
                         tasks: [
                           ...forGrouping,
@@ -1129,12 +1082,19 @@ class _ListsPageState extends State<ListsPage>
                         ],
                         view: _notesView,
                         checkboxesOn: _notesCheckboxesOn,
-                        onTap: _openNoteEditor,
-                        onLongPress: (t) => _showListsRadialMenu(
-                          context,
-                          t,
-                          _listKey(t),
-                        ),
+              selectionMode: _listsSelectMode,
+              selectedKeys: _selectedListKeys,
+              itemKey: _listKey,
+              onToggleSelection: (task) =>
+                  _toggleListKey(_listKey(task)),
+              onTap: _openNoteEditor,
+              onLongPress: (_) {},
+              onOpenMenu: (anchorCenter, task) =>
+                  _showListsRadialMenuAt(
+                    anchorCenter,
+                    task,
+                    _listKey(task),
+                  ),
                         onRefresh: _reload,
                       ),
               ),
@@ -1165,8 +1125,6 @@ class _NotesLibraryHeader extends StatelessWidget {
     required this.onSearchChanged,
     required this.onClearSearch,
     required this.onOpenSettings,
-    required this.showExport,
-    required this.onExport,
     required this.notesView,
     required this.checkboxesOn,
     required this.onViewChanged,
@@ -1180,8 +1138,6 @@ class _NotesLibraryHeader extends StatelessWidget {
   final ValueChanged<String> onSearchChanged;
   final VoidCallback onClearSearch;
   final VoidCallback onOpenSettings;
-  final bool showExport;
-  final VoidCallback onExport;
   final NotesLibraryView notesView;
   final bool checkboxesOn;
   final ValueChanged<NotesLibraryView> onViewChanged;
@@ -1251,14 +1207,7 @@ class _NotesLibraryHeader extends StatelessWidget {
                   ],
                 ),
               ),
-              if (showExport)
-                IconButton(
-                  tooltip: t(locale, 'lists_export_text'),
-                  icon: const Icon(Icons.ios_share_rounded, size: 20),
-                  visualDensity: VisualDensity.compact,
-                  color: scheme.onSurfaceVariant,
-                  onPressed: onExport,
-                ),
+
               IconButton(
                 tooltip: t(locale, 'notes_editor_more_tooltip'),
                 icon: const Icon(Icons.tune_rounded, size: 20),
