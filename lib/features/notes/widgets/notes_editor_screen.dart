@@ -47,6 +47,8 @@ class NotesEditorScreen extends StatelessWidget {
     required this.pinned,
     required this.onTogglePinned,
     required this.onDelete,
+    this.bulkSelectionMode = false,
+    this.onExitBulkSelection,
     required this.content,
     required this.toolbar,
     this.categoryLabel,
@@ -61,6 +63,8 @@ class NotesEditorScreen extends StatelessWidget {
   final bool pinned;
   final VoidCallback onTogglePinned;
   final VoidCallback onDelete;
+  final bool bulkSelectionMode;
+  final VoidCallback? onExitBulkSelection;
   final Widget content;
   final Widget toolbar;
   final String? categoryLabel;
@@ -104,6 +108,8 @@ class NotesEditorScreen extends StatelessWidget {
               pinned: pinned,
               onTogglePinned: onTogglePinned,
               onDelete: onDelete,
+              bulkSelectionMode: bulkSelectionMode,
+              onExitBulkSelection: onExitBulkSelection,
               titleController: titleController,
               onTitleChanged: onTitleChanged,
               categoryLabel: categoryLabel,
@@ -145,6 +151,8 @@ class _NotesEditorRail extends StatelessWidget {
     required this.pinned,
     required this.onTogglePinned,
     required this.onDelete,
+    required this.bulkSelectionMode,
+    required this.onExitBulkSelection,
     required this.titleController,
     required this.onTitleChanged,
     required this.categoryLabel,
@@ -160,6 +168,8 @@ class _NotesEditorRail extends StatelessWidget {
   final bool pinned;
   final VoidCallback onTogglePinned;
   final VoidCallback? onDelete;
+  final bool bulkSelectionMode;
+  final VoidCallback? onExitBulkSelection;
   final TextEditingController titleController;
   final ValueChanged<String> onTitleChanged;
   final String? categoryLabel;
@@ -201,6 +211,8 @@ class _NotesEditorRail extends StatelessWidget {
                   pinned: pinned,
                   onTogglePinned: onTogglePinned,
                   onDelete: onDelete,
+                bulkSelectionMode: bulkSelectionMode,
+                  onExitBulkSelection: onExitBulkSelection,
                 ),
                 _NotesTitleBlock(
                   controller: titleController,
@@ -298,6 +310,8 @@ class _NotesNavigationHeader extends StatelessWidget {
     required this.pinned,
     required this.onTogglePinned,
     required this.onDelete,
+    required this.bulkSelectionMode,
+    required this.onExitBulkSelection,
   });
 
   final bool embedded;
@@ -305,6 +319,8 @@ class _NotesNavigationHeader extends StatelessWidget {
   final bool pinned;
   final VoidCallback onTogglePinned;
   final VoidCallback? onDelete;
+  final bool bulkSelectionMode;
+  final VoidCallback? onExitBulkSelection;
 
   @override
   Widget build(BuildContext context) {
@@ -318,12 +334,49 @@ _NotesHeaderAction(
   onPressed: onDone,
 ),
 const Spacer(),
-_NotesHeaderMoreMenu(
-  pinned: pinned,
-  onTogglePinned: onTogglePinned,
-  onDelete: onDelete,
-),
+if (bulkSelectionMode && onExitBulkSelection != null)
+  _NotesBulkDoneAction(onPressed: onExitBulkSelection!)
+else
+  _NotesHeaderMoreMenu(
+    pinned: pinned,
+    onTogglePinned: onTogglePinned,
+    onDelete: onDelete,
+  ),
         ],
+      ),
+    );
+  }
+}
+
+class _NotesBulkDoneAction extends StatelessWidget {
+  const _NotesBulkDoneAction({required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: NotesFigmaTokens.glassFill(context),
+      elevation: 1,
+      shadowColor: Colors.black.withValues(alpha: 0.08),
+      borderRadius: BorderRadius.circular(20),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onPressed,
+        child: const SizedBox(
+height: 40,
+child: Padding(
+  padding: EdgeInsets.symmetric(horizontal: 14),
+  child: Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Icon(Icons.check_rounded, size: 18),
+      SizedBox(width: 6),
+      Text('Done'),
+    ],
+  ),
+),
+        ),
       ),
     );
   }

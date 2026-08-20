@@ -78,6 +78,7 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
   String? _editingBlockId;
   bool _blockSelectionMode = false;
   final Set<String> _selectedBlockIds = <String>{};
+  final ScrollController _blockScrollController = ScrollController();
   bool _dirty = false;
   bool _notesEditorSessionRegistered = false;
 
@@ -119,6 +120,7 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
       _gate.flush(_syncToBrain, force: true);
     }
     _gate.dispose();
+    _blockScrollController.dispose();
     _audioPlayback
       ..removeListener(_onAudioPlaybackChanged)
       ..dispose();
@@ -565,8 +567,30 @@ wholeBlockBest = List<NoteBlock>.from(window);
     return best ?? const <NoteBlock>[];
   }
 
+  double? _captureBlockScrollOffset() {
+    if (!_blockScrollController.hasClients) return null;
+    return _blockScrollController.offset;
+  }
+
+  void _restoreBlockScrollOffset(double? offset) {
+    if (offset == null) return;
+    void restore() {
+      if (!mounted || !_blockScrollController.hasClients) return;
+      final position = _blockScrollController.position;
+      _blockScrollController.jumpTo(
+        offset.clamp(position.minScrollExtent, position.maxScrollExtent),
+      );
+    }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      restore();
+      WidgetsBinding.instance.addPostFrameCallback((_) => restore());
+    });
+  }
+
   void _toggleBlockSelection(String blockId) {
     if (_editor.blockById(blockId) == null) return;
+    final scrollOffset = _captureBlockScrollOffset();
     if (!_blockSelectionMode) {
       FocusManager.instance.primaryFocus?.unfocus();
       for (final node in _focusNodes.values) {
@@ -582,6 +606,23 @@ wholeBlockBest = List<NoteBlock>.from(window);
       }
       if (_selectedBlockIds.isEmpty) _blockSelectionMode = false;
     });
+    _restoreBlockScrollOffset(scrollOffset);
+  }
+
+  void _exitBlockSelectionMode() {
+    if (!_blockSelectionMode && _selectedBlockIds.isEmpty) return;
+    final scrollOffset = _captureBlockScrollOffset();
+    FocusManager.instance.primaryFocus?.unfocus();
+    for (final node in _focusNodes.values) {
+      if (node.hasFocus) node.unfocus();
+    }
+    _editor.activeSelection = null;
+    setState(() {
+      _editingBlockId = null;
+      _selectedBlockIds.clear();
+      _blockSelectionMode = false;
+    });
+    _restoreBlockScrollOffset(scrollOffset);
   }
 
   void _handleBlockTap(String blockId) {
@@ -1279,6 +1320,7 @@ AppButton.destructive(
   Widget _buildReorderableBlockList() {
     return ReorderableListView.builder(
       key: const ValueKey('notes-editor-content'),
+      scrollController: _blockScrollController,
       padding: EdgeInsets.zero,
       buildDefaultDragHandles: false,
       proxyDecorator: (child, _, __) => child,
@@ -1318,6 +1360,8 @@ AppButton.destructive(
       pinned: DatabaseService.instance.isNotePinned(_task),
       onTogglePinned: _togglePinned,
       onDelete: _deleteCurrentNote,
+      bulkSelectionMode: _blockSelectionMode,
+      onExitBulkSelection: _exitBlockSelectionMode,
       categoryLabel: category?.name,
       categoryColor: category?.colorOrDefault,
       tags: [
