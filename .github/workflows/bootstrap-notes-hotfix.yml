@@ -14,7 +14,15 @@ jobs:
           page = Path('lib/features/notes/note_editor_page.dart')
           text = page.read_text()
 
-          old = '''  void _toggleBlockSelection(String blockId) {
+          def replace_once(old, new, label):
+              global text
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f'{label}: expected 1 match, got {count}')
+              text = text.replace(old, new, 1)
+
+          replace_once(
+              '''  void _toggleBlockSelection(String blockId) {
     if (_editor.blockById(blockId) == null) return;
     setState(() {
       _blockSelectionMode = true;
@@ -24,8 +32,8 @@ jobs:
       if (_selectedBlockIds.isEmpty) _blockSelectionMode = false;
     });
   }
-'''
-          new = '''  void _toggleBlockSelection(String blockId) {
+''',
+              '''  void _toggleBlockSelection(String blockId) {
     if (_editor.blockById(blockId) == null) return;
     if (!_blockSelectionMode) {
       FocusManager.instance.primaryFocus?.unfocus();
@@ -43,134 +51,65 @@ jobs:
       if (_selectedBlockIds.isEmpty) _blockSelectionMode = false;
     });
   }
-'''
-          if old not in text:
-              raise SystemExit('toggle selection method not found')
-          text = text.replace(old, new, 1)
+''',
+              'toggle selection',
+          )
 
-          old = '''  void _requestFocus(String blockId, TextSelection selection) {
+          replace_once(
+              '''  void _requestFocus(String blockId, TextSelection selection) {
     final block = _editor.blockById(blockId);
-'''
-          new = '''  void _requestFocus(String blockId, TextSelection selection) {
+''',
+              '''  void _requestFocus(String blockId, TextSelection selection) {
     if (_blockSelectionMode) return;
     final block = _editor.blockById(blockId);
-'''
-          if old not in text:
-              raise SystemExit('request focus method not found')
-          text = text.replace(old, new, 1)
+''',
+              'request focus guard',
+          )
 
-          old = '''        if (node.hasFocus) {
-          final selection = _textControllers[block.id]?.selection;
-'''
-          new = '''        if (node.hasFocus) {
+          replace_once(
+              '''        if (node.hasFocus) {
+''',
+              '''        if (node.hasFocus) {
           if (_blockSelectionMode) {
             node.unfocus();
             return;
           }
-          final selection = _textControllers[block.id]?.selection;
-'''
-          if old not in text:
-              raise SystemExit('focus listener not found')
-          text = text.replace(old, new, 1)
+''',
+              'focus listener guard',
+          )
 
-          old = '''    final active = _editor.activeBlockId == block.id;
-    Widget item = NotesEditorBlockItem(
-'''
-          new = '''    final selectedForBulk = _selectedBlockIds.contains(block.id);
-    final active = !_blockSelectionMode && _editor.activeBlockId == block.id;
-    Widget item = NotesEditorBlockItem(
-'''
-          if old not in text:
-              raise SystemExit('active block declaration not found')
-          text = text.replace(old, new, 1)
+          replace_once(
+              '''    final active = _editor.activeBlockId == block.id;
+''',
+              '''    final active = !_blockSelectionMode && _editor.activeBlockId == block.id;
+''',
+              'active block state',
+          )
 
-          old = '''      active: active,
-      editing: editable && _editingBlockId == block.id,
-'''
-          new = '''      active: active,
-      editing: editable && !_blockSelectionMode && _editingBlockId == block.id,
-      blockSelectionMode: _blockSelectionMode,
-      immediateDrag: _blockSelectionMode && selectedForBulk,
-'''
-          if old not in text:
-              raise SystemExit('block item interaction args not found')
-          text = text.replace(old, new, 1)
+          replace_once(
+              '''      editing: editable && _editingBlockId == block.id,
+''',
+              '''      editing: editable && !_blockSelectionMode && _editingBlockId == block.id,
+''',
+              'editing state',
+          )
 
-          old = '''    // Fixed right action rail: activation and selection never change width,
-    // wrapping, or vertical metrics of the block.
-    final selectedForBulk = _selectedBlockIds.contains(block.id);
-    final content = Padding(
-'''
-          new = '''    // Fixed right action rail: activation and selection never change width,
-    // wrapping, or vertical metrics of the block.
-    final content = Padding(
-'''
-          if old not in text:
-              raise SystemExit('duplicate selected declaration not found')
-          text = text.replace(old, new, 1)
-
-          old = '''Positioned(
-  left: -24,
-  top: 6,
-  child: Container(
-    width: 18,
-    height: 18,
-    decoration: BoxDecoration(
-      color: Theme.of(context).colorScheme.primary,
-      shape: BoxShape.circle,
-    ),
-    child: Icon(
-      Icons.check_rounded,
-      size: 12,
-      color: Theme.of(context).colorScheme.onPrimary,
-    ),
-  ),
-),
-        Positioned(
+          replace_once(
+              '''        Positioned(
 top: 2,
 right: 2,
 child: _NotesBlockMoreButton(
-  onPressed: (anchorCenter) =>
-      _showBlockActionMenu(anchorCenter, block),
-),
-        ),
-'''
-          new = '''Positioned(
-  left: -24,
-  top: 6,
-  child: GestureDetector(
-    behavior: HitTestBehavior.opaque,
-    onTap: () => _toggleBlockSelection(block.id),
-    child: Container(
-      width: 18,
-      height: 18,
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.primary,
-        shape: BoxShape.circle,
-      ),
-      child: Icon(
-        Icons.check_rounded,
-        size: 12,
-        color: Theme.of(context).colorScheme.onPrimary,
-      ),
-    ),
-  ),
-),
-        if (active)
+''',
+              '''        if (active)
 Positioned(
 top: 2,
 right: 2,
 child: _NotesBlockMoreButton(
-  onPressed: (anchorCenter) =>
-      _showBlockActionMenu(anchorCenter, block),
-),
-        ),
-'''
-          if old not in text:
-              raise SystemExit('selected check / more button block not found')
-          text = text.replace(old, new, 1)
+''',
+              'active-only more button',
+          )
 
-          marker = '''  @override
+          build_marker = '''  @override
   Widget build(BuildContext context) {
 '''
           helper = '''  Widget _buildReorderableBlockList() {
@@ -200,9 +139,9 @@ child: _NotesBlockMoreButton(
   }
 
 '''
-          if marker not in text:
-              raise SystemExit('build marker not found')
-          text = text.replace(marker, helper + marker, 1)
+          if text.count(build_marker) != 1:
+              raise SystemExit('build marker mismatch')
+          text = text.replace(build_marker, helper + build_marker, 1)
 
           start_marker = '''      content: SelectionArea(
         onSelectionChanged: _captureStructuredSelection,
@@ -210,7 +149,7 @@ child: _NotesBlockMoreButton(
 '''
           start = text.find(start_marker)
           if start < 0:
-              raise SystemExit('content selection area start not found')
+              raise SystemExit('selection content start not found')
           end_marker = '''        ),
       ),
     );
@@ -219,7 +158,7 @@ child: _NotesBlockMoreButton(
 '''
           end = text.find(end_marker, start)
           if end < 0:
-              raise SystemExit('content selection area end not found')
+              raise SystemExit('selection content end not found')
           replacement = '''      content: _blockSelectionMode
           ? _buildReorderableBlockList()
           : SelectionArea(
@@ -230,90 +169,6 @@ child: _NotesBlockMoreButton(
           text = text[:start] + replacement + text[end + len('''        ),
       ),
 '''):]
+
           page.write_text(text)
-
-          blocks = Path('lib/features/notes/widgets/note_editor_block_widgets.dart')
-          text = blocks.read_text()
-
-          old = '''    required this.editing,
-    required this.onTap,
-'''
-          new = '''    required this.editing,
-    this.blockSelectionMode = false,
-    this.immediateDrag = false,
-    required this.onTap,
-'''
-          if old not in text:
-              raise SystemExit('block item constructor not found')
-          text = text.replace(old, new, 1)
-
-          old = '''  final bool active;
-  final bool editing;
-  final VoidCallback onTap;
-'''
-          new = '''  final bool active;
-  final bool editing;
-  final bool blockSelectionMode;
-  final bool immediateDrag;
-  final VoidCallback onTap;
-'''
-          if old not in text:
-              raise SystemExit('block item fields not found')
-          text = text.replace(old, new, 1)
-
-          old = '''    final editable = _isEditableText(block.type);
-    final selectable = editable && !editing;
-    final child = selectable
-        ? _buildSelectableTextBlock(context)
-        : _buildCanonicalBlock(context, state);
-
-    Widget interactive;
-    if (selectable) {
-      interactive = child;
-'''
-          new = '''    final editable = _isEditableText(block.type);
-    final readOnlyText = editable && (blockSelectionMode || !editing);
-    final child = readOnlyText
-        ? _buildSelectableTextBlock(context)
-        : _buildCanonicalBlock(context, state);
-
-    Widget interactive;
-    if (readOnlyText) {
-      interactive = child;
-'''
-          if old not in text:
-              raise SystemExit('block read-only rendering not found')
-          text = text.replace(old, new, 1)
-
-          old = '''    if (!selectable &&
-        editable &&
-'''
-          new = '''    if (!readOnlyText &&
-        editable &&
-'''
-          if old not in text:
-              raise SystemExit('empty long press condition not found')
-          text = text.replace(old, new, 1)
-
-          old = '''    if (_isVisibleProductionBlock(block.type)) {
-      interactive = _NotesBlockHoldDragStartListener(
-        index: index,
-        child: interactive,
-      );
-    }
-'''
-          new = '''    if (_isVisibleProductionBlock(block.type)) {
-      interactive = immediateDrag
-          ? ReorderableDragStartListener(index: index, child: interactive)
-          : _NotesBlockHoldDragStartListener(
-              index: index,
-              child: interactive,
-            );
-    }
-'''
-          if old not in text:
-              raise SystemExit('block drag listener not found')
-          text = text.replace(old, new, 1)
-
-          blocks.write_text(text)
           PY
