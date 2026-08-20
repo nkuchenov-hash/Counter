@@ -1,4 +1,4 @@
-name: Notes structured system clipboard fix
+name: Urgent Notes interaction fixes
 
 on:
   workflow_dispatch:
@@ -24,158 +24,224 @@ jobs:
           page = Path('lib/features/notes/note_editor_page.dart')
           text = page.read_text()
 
-          clipboard_class = '''class _NotesStructuredClipboard {
-  static String? plainText;
-  static List<NoteBlock> blocks = const <NoteBlock>[];
-}
-'''
-          copy_action = '''class _NotesStructuredCopyAction extends Action<CopySelectionTextIntent> {
-  _NotesStructuredCopyAction({required this.onCopy});
-
-  final bool Function() onCopy;
-
-  @override
-  Object? invoke(CopySelectionTextIntent intent) {
-    if (onCopy()) return null;
-    return callingAction?.invoke(intent);
-  }
-}
-'''
-          if '_NotesStructuredCopyAction' not in text:
+          # Right-click must never mutate focus or rebuild the editor while a
+          # SelectionArea range is active.
+          if "package:flutter/gestures.dart" not in text:
               text = replace_once(
                   text,
-                  clipboard_class,
-                  clipboard_class + '\n' + copy_action,
-                  'copy action class',
+                  "import 'package:flutter/material.dart';\n",
+                  "import 'package:flutter/material.dart';\nimport 'package:flutter/gestures.dart';\n",
+                  'gestures import',
               )
+          text = replace_once(
+              text,
+              '''  void _handleEditorBackgroundPointer(PointerDownEvent event) {
+    if (_blockSelectionMode) return;
+''',
+              '''  void _handleEditorBackgroundPointer(PointerDownEvent event) {
+    if (_blockSelectionMode) return;
+    if ((event.buttons & kSecondaryMouseButton) != 0) return;
+''',
+              'secondary click preservation',
+          )
 
-          paste_marker = '  Future<void> _pasteClipboardIntoBlock(\n'
-          at = text.index(paste_marker)
-          copy_helpers = r'''  String _structuredClipboardExportText(List<NoteBlock> blocks) {
-    final lines = <String>[];
-    var numberedOrdinal = 0;
-    var previousWasNumbered = false;
-    for (final block in blocks) {
-      final value = block.effectiveText;
-      if (block.type == NoteBlockType.numberedList) {
-        numberedOrdinal = previousWasNumbered ? numberedOrdinal + 1 : 1;
-        previousWasNumbered = true;
-      } else {
-        numberedOrdinal = 0;
-        previousWasNumbered = false;
-      }
-      switch (block.type) {
-        case NoteBlockType.checklist:
-          lines.add('- [${block.checked ? 'x' : ' '}] $value');
-        case NoteBlockType.bulletedList:
-          lines.add('- $value');
-        case NoteBlockType.numberedList:
-          lines.add('$numberedOrdinal. $value');
-        case NoteBlockType.heading:
-          final level = block.level.clamp(1, 3).toInt();
-          final marker = List<String>.filled(level, '#').join();
-          lines.add('$marker $value');
-        case NoteBlockType.quote:
-          lines.add('> $value');
-        default:
-          lines.add(value);
-      }
+          # Empty selection notifications are transient while the desktop
+          # context menu is opening. Preserve the last real structured range.
+          text = replace_once(
+              text,
+              '''    if (plain.isEmpty) {
+      _NotesStructuredClipboard.plainText = null;
+      _NotesStructuredClipboard.blocks = const <NoteBlock>[];
+      return;
     }
-    return lines.join('\n');
-  }
+''',
+              '''    if (plain.isEmpty) return;
+''',
+              'transient empty selection preservation',
+          )
 
-  bool _copyCurrentStructuredSelection() {
+          # Delete/Backspace for a SelectionArea range spanning Notes blocks.
+          if '_deleteCurrentStructuredSelection' not in text:
+              marker = '  Future<void> _pasteClipboardIntoBlock(\n'
+              at = text.index(marker)
+              helpers = '''  bool _deleteCurrentStructuredSelection() {
     if (_editingBlockId != null || _blockSelectionMode) return false;
-    final blocks = _NotesStructuredClipboard.blocks;
-    if (blocks.isEmpty) return false;
-    final export = _structuredClipboardExportText(blocks);
-    if (export.isEmpty) return false;
-    _NotesStructuredClipboard.plainText = export;
-    unawaited(Clipboard.setData(ClipboardData(text: export)));
+    final slices = _NotesStructuredClipboard.blocks;
+    if (slices.length < 2) return false;
+
+    final firstSource = _editor.blockById(slices.first.id);
+    final lastSource = _editor.blockById(slices.last.id);
+    if (firstSource == null || lastSource == null) return false;
+
+    final firstNeedle = slices.first.effectiveText;
+    final lastNeedle = slices.last.effectiveText;
+    var firstStart = firstSource.effectiveText.length - firstNeedle.length;
+    if (firstStart < 0 ||
+        !firstSource.effectiveText.endsWith(firstNeedle)) {
+      firstStart = firstSource.effectiveText.indexOf(firstNeedle);
+    }
+    if (firstStart < 0) return false;
+
+    var lastEnd = lastNeedle.length;
+    if (!lastSource.effectiveText.startsWith(lastNeedle)) {
+      final lastStart = lastSource.effectiveText.indexOf(lastNeedle);
+      if (lastStart < 0) return false;
+      lastEnd = lastStart + lastNeedle.length;
+    }
+
+    final prefix = firstSource.effectiveText.substring(0, firstStart);
+    final suffix = lastSource.effectiveText.substring(lastEnd);
+    _editor.applyTextInput(
+      firstSource.id,
+      '$prefix$suffix',
+      TextSelection.collapsed(offset: prefix.length),
+    );
+    for (final slice in slices.skip(1).toList().reversed) {
+      _editor.deleteBlock(slice.id);
+    }
+
+    _NotesStructuredClipboard.plainText = null;
+    _NotesStructuredClipboard.blocks = const <NoteBlock>[];
+    _scheduleSave();
+    setState(_syncEditorsWithDocument);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _editor.blockById(firstSource.id) == null) return;
+      _requestFocus(
+        firstSource.id,
+        TextSelection.collapsed(offset: prefix.length),
+      );
+    });
     return true;
   }
 
-  Widget _buildSelectionContextMenu(
-    BuildContext context,
-    SelectableRegionState selectableRegionState,
-  ) {
-    final items = <ContextMenuButtonItem>[
-      for (final item in selectableRegionState.contextMenuButtonItems)
-        if (item.type == ContextMenuButtonType.copy)
-          item.copyWith(
-            onPressed: () {
-              if (_copyCurrentStructuredSelection()) {
-                selectableRegionState.hideToolbar();
-              } else {
-                item.onPressed?.call();
-              }
-            },
+  KeyEventResult _onSelectionAreaKeyEvent(FocusNode node, KeyEvent event) {
+    if (event is! KeyDownEvent) return KeyEventResult.ignored;
+    if (event.logicalKey != LogicalKeyboardKey.delete &&
+        event.logicalKey != LogicalKeyboardKey.backspace) {
+      return KeyEventResult.ignored;
+    }
+    return _deleteCurrentStructuredSelection()
+        ? KeyEventResult.handled
+        : KeyEventResult.ignored;
+  }
+
+'''
+              text = text[:at] + helpers + text[at:]
+
+          old_selection_branch = '''  : Actions(
+      actions: <Type, Action<Intent>>{
+        CopySelectionTextIntent: _NotesStructuredCopyAction(
+          onCopy: _copyCurrentStructuredSelection,
+        ),
+      },
+      child: SelectionArea(
+        contextMenuBuilder: _buildSelectionContextMenu,
+        onSelectionChanged: _captureStructuredSelection,
+        child: _buildReorderableBlockList(),
+      ),
+    ),
+'''
+          new_selection_branch = '''  : Focus(
+      canRequestFocus: false,
+      onKeyEvent: _onSelectionAreaKeyEvent,
+      child: Actions(
+        actions: <Type, Action<Intent>>{
+          CopySelectionTextIntent: _NotesStructuredCopyAction(
+            onCopy: _copyCurrentStructuredSelection,
+          ),
+        },
+        child: SelectionArea(
+          contextMenuBuilder: _buildSelectionContextMenu,
+          onSelectionChanged: _captureStructuredSelection,
+          child: _buildReorderableBlockList(),
+        ),
+      ),
+    ),
+'''
+          text = replace_once(
+              text,
+              old_selection_branch,
+              new_selection_branch,
+              'selection delete key routing',
           )
-        else
-          item,
-    ];
-    return AdaptiveTextSelectionToolbar.buttonItems(
-      anchors: selectableRegionState.contextMenuAnchors,
-      buttonItems: items,
+
+          # Every non-text object gets a real hit target immediately below it.
+          # Tapping it focuses an existing next paragraph or creates one.
+          old_content = '''    final selectedForBulk = _selectedBlockIds.contains(block.id);
+    final content = Padding(
+      key: ValueKey<String>(block.id),
+      padding: const EdgeInsets.only(right: 36),
+      child: item,
     );
-  }
-
 '''
-          if '_structuredClipboardExportText' not in text:
-              text = text[:at] + copy_helpers + text[at:]
-
-          capture_start = text.index('  void _captureStructuredSelection(SelectedContent? selected) {')
-          capture_end = text.index('  List<NoteBlock> _inferStructuredSelectionBlocks', capture_start)
-          capture_replacement = '''  void _captureStructuredSelection(SelectedContent? selected) {
-    final plain = selected?.plainText ?? '';
-    if (plain.isEmpty) {
-      _NotesStructuredClipboard.plainText = null;
-      _NotesStructuredClipboard.blocks = const <NoteBlock>[];
-      return;
-    }
-    final blocks = _inferStructuredSelectionBlocks(plain);
-    if (blocks.isEmpty) {
-      _NotesStructuredClipboard.plainText = null;
-      _NotesStructuredClipboard.blocks = const <NoteBlock>[];
-      return;
-    }
-    final frozen = List<NoteBlock>.unmodifiable(blocks);
-    _NotesStructuredClipboard.blocks = frozen;
-    _NotesStructuredClipboard.plainText =
-        _structuredClipboardExportText(frozen);
-  }
-
+          new_content = '''    final selectedForBulk = _selectedBlockIds.contains(block.id);
+    final blockContent = !editable && !_blockSelectionMode
+        ? Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              item,
+              MouseRegion(
+                cursor: SystemMouseCursors.text,
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => _focusOrInsertParagraphAfter(block.id),
+                  child: const SizedBox(height: 24),
+                ),
+              ),
+            ],
+          )
+        : item;
+    final content = Padding(
+      key: ValueKey<String>(block.id),
+      padding: const EdgeInsets.only(right: 36),
+      child: blockContent,
+    );
 '''
-          text = text[:capture_start] + capture_replacement + text[capture_end:]
+          text = replace_once(
+              text,
+              old_content,
+              new_content,
+              'post-object caret target',
+          )
+          page.write_text(text)
 
-          if 'contextMenuBuilder: _buildSelectionContextMenu' not in text:
-              content_at = text.index('      content: Listener(')
-              ternary_start = text.index('        child: _blockSelectionMode', content_at)
-              listener_close = text.index('      ),\n    );\n  }\n}', ternary_start)
-              replacement = '''        child: _blockSelectionMode
-            ? _buildReorderableBlockList()
-            : Actions(
-                actions: <Type, Action<Intent>>{
-                  CopySelectionTextIntent: _NotesStructuredCopyAction(
-                    onCopy: _copyCurrentStructuredSelection,
-                  ),
-                },
-                child: SelectionArea(
-                  contextMenuBuilder: _buildSelectionContextMenu,
-                  onSelectionChanged: _captureStructuredSelection,
-                  child: _buildReorderableBlockList(),
+          # Inline "Add to list" uses the exact same 48px InputDecoration
+          # contract as Notes Search, not a separately tuned TextField surface.
+          shell = Path('lib/features/notes/widgets/notes_library_production_shell.dart')
+          s = shell.read_text()
+          start = s.index('    final theme = Theme.of(context);')
+          end = s.index('\n\n    return Row(', start)
+          s = s[:start] + '    final scheme = Theme.of(context).colorScheme;' + s[end:]
+          s = s.replace(
+              '              style: TextStyle(fontSize: 15, color: scheme.onSurface),',
+              '              style: TextStyle(fontSize: 14, color: scheme.onSurface),',
+              1,
+          )
+          decoration_start = s.index('              decoration: InputDecoration(')
+          submitted_at = s.index('              onSubmitted: (_) => onSubmit(),', decoration_start)
+          replacement = '''              decoration: notesGlmSearchDecoration(
+                context: context,
+                hintText: t(locale, 'input_placeholder_list'),
+              ).copyWith(
+                prefixIcon: null,
+                prefixIconConstraints: const BoxConstraints(
+                  minWidth: 0,
+                  minHeight: 0,
                 ),
               ),
 '''
-              text = text[:ternary_start] + replacement + text[listener_close:]
+          s = s[:decoration_start] + replacement + s[submitted_at:]
+          shell.write_text(s)
 
-          page.write_text(text)
-
-          final = page.read_text()
-          require('class _NotesStructuredCopyAction extends Action<CopySelectionTextIntent>' in final, 'copy action missing')
-          require("lines.add('- [${block.checked ? 'x' : ' '}] $value');" in final, 'checklist export missing')
-          require("return lines.join('\\n');" in final, 'line separators missing')
-          require('CopySelectionTextIntent: _NotesStructuredCopyAction(' in final, 'keyboard copy override missing')
-          require('contextMenuBuilder: _buildSelectionContextMenu' in final, 'copy menu override missing')
-          require('_NotesStructuredClipboard.blocks = const <NoteBlock>[];' in final, 'stale selection cleanup missing')
+          final_page = page.read_text()
+          final_shell = shell.read_text()
+          require('kSecondaryMouseButton' in final_page, 'right click guard missing')
+          require('_deleteCurrentStructuredSelection' in final_page, 'cross-block delete missing')
+          require('onKeyEvent: _onSelectionAreaKeyEvent' in final_page, 'delete key route missing')
+          require('onTap: () => _focusOrInsertParagraphAfter(block.id)' in final_page, 'object caret target missing')
+          require('child: const SizedBox(height: 24)' in final_page, 'object caret hit area missing')
+          require("hintText: t(locale, 'input_placeholder_list')" in final_shell, 'inline add hint missing')
+          require('decoration: notesGlmSearchDecoration(' in final_shell, 'inline add/search decoration parity missing')
+          require('dimension: kNotesLibraryControlHeight' in final_shell, 'inline add button height missing')
           PY
