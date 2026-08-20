@@ -646,27 +646,26 @@ class _LargeDoneCheck extends StatelessWidget {
           color: Colors.transparent,
           child: InkWell(
             onTap: onToggle,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(8),
             child: Center(
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 120),
-                width: 26,
-                height: 26,
+              child: Container(
+                                width: kNotesLargeCheckSize,
+                height: kNotesLargeCheckSize,
                 decoration: BoxDecoration(
                   color: isDone ? scheme.primary : Colors.transparent,
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
                     color: isDone
                         ? scheme.primary
-                        : scheme.outline.withValues(alpha: 0.55),
-                    width: 1.5,
+                        : scheme.outlineVariant.withValues(alpha: 0.7),
+                    width: 2,
                   ),
                 ),
                 child: isDone
-                    ? Icon(
+                    ? const Icon(
                         Icons.check_rounded,
-                        size: 18,
-                        color: scheme.onPrimary,
+                        size: 20,
+                        color: Colors.white,
                       )
                     : null,
               ),
