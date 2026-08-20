@@ -148,12 +148,13 @@ jobs:
 '''
           text = text[:capture_start] + capture_replacement + text[capture_end:]
 
-          old_selection = '''            : SelectionArea(
-                onSelectionChanged: _captureStructuredSelection,
-                child: _buildReorderableBlockList(),
-              ),
-'''
-          new_selection = '''            : Actions(
+          if 'contextMenuBuilder: _buildSelectionContextMenu' not in text:
+              content_at = text.index('      content: Listener(')
+              ternary_start = text.index('        child: _blockSelectionMode', content_at)
+              listener_close = text.index('      ),\n    );\n  }\n}', ternary_start)
+              replacement = '''        child: _blockSelectionMode
+            ? _buildReorderableBlockList()
+            : Actions(
                 actions: <Type, Action<Intent>>{
                   CopySelectionTextIntent: _NotesStructuredCopyAction(
                     onCopy: _copyCurrentStructuredSelection,
@@ -166,13 +167,7 @@ jobs:
                 ),
               ),
 '''
-          if 'contextMenuBuilder: _buildSelectionContextMenu' not in text:
-              text = replace_once(
-                  text,
-                  old_selection,
-                  new_selection,
-                  'selection copy override',
-              )
+              text = text[:ternary_start] + replacement + text[listener_close:]
 
           page.write_text(text)
 
