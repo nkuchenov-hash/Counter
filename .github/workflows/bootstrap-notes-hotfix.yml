@@ -86,13 +86,10 @@ jobs:
           if compare_source_start < 0 or compare_source_end < 0:
               raise SystemExit('clipboard real semantic range not found')
           new_compare = ''' + "'''" + '''    final candidatePlain = _NotesStructuredClipboard.plainText;
-    final platformPlain = plain
-        .replaceAll('\\r\\n', '\\n')
-        .replaceAll('\\r', '\\n');
     final hasMatchingStructure =
         candidatePlain != null &&
         _normalizeClipboardStructure(candidatePlain) ==
-            _normalizeClipboardStructure(platformPlain) &&
+            _normalizeClipboardStructure(plain) &&
         _NotesStructuredClipboard.blocks.isNotEmpty;
 
     final mutation = hasMatchingStructure
@@ -101,7 +98,7 @@ jobs:
             selection,
             _NotesStructuredClipboard.blocks,
           )
-        : _editor.pastePlainText(block.id, selection, platformPlain);
+        : _editor.pastePlainText(block.id, selection, plain);
 ''' + "'''" + '''
           text = text[:compare_source_start] + new_compare + text[compare_source_end:]
 
