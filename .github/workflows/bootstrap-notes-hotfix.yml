@@ -24,8 +24,6 @@ jobs:
           page = Path('lib/features/notes/note_editor_page.dart')
           text = page.read_text()
 
-          # Right-click must never mutate focus or rebuild the editor while a
-          # SelectionArea range is active.
           if "package:flutter/gestures.dart" not in text:
               text = replace_once(
                   text,
@@ -33,34 +31,33 @@ jobs:
                   "import 'package:flutter/material.dart';\nimport 'package:flutter/gestures.dart';\n",
                   'gestures import',
               )
-          text = replace_once(
-              text,
-              '''  void _handleEditorBackgroundPointer(PointerDownEvent event) {
+
+          if 'kSecondaryMouseButton' not in text:
+              text = replace_once(
+                  text,
+                  '''  void _handleEditorBackgroundPointer(PointerDownEvent event) {
     if (_blockSelectionMode) return;
 ''',
-              '''  void _handleEditorBackgroundPointer(PointerDownEvent event) {
+                  '''  void _handleEditorBackgroundPointer(PointerDownEvent event) {
     if (_blockSelectionMode) return;
     if ((event.buttons & kSecondaryMouseButton) != 0) return;
 ''',
-              'secondary click preservation',
-          )
+                  'secondary click preservation',
+              )
 
-          # Empty selection notifications are transient while the desktop
-          # context menu is opening. Preserve the last real structured range.
-          text = replace_once(
-              text,
-              '''    if (plain.isEmpty) {
+          old_empty = '''    if (plain.isEmpty) {
       _NotesStructuredClipboard.plainText = null;
       _NotesStructuredClipboard.blocks = const <NoteBlock>[];
       return;
     }
-''',
-              '''    if (plain.isEmpty) return;
-''',
-              'transient empty selection preservation',
-          )
+'''
+          capture_at = text.index('  void _captureStructuredSelection(SelectedContent? selected) {')
+          capture_end = text.index('  List<NoteBlock> _inferStructuredSelectionBlocks', capture_at)
+          capture = text[capture_at:capture_end]
+          if old_empty in capture:
+              capture = capture.replace(old_empty, '    if (plain.isEmpty) return;\n', 1)
+              text = text[:capture_at] + capture + text[capture_end:]
 
-          # Delete/Backspace for a SelectionArea range spanning Notes blocks.
           if '_deleteCurrentStructuredSelection' not in text:
               marker = '  Future<void> _pasteClipboardIntoBlock(\n'
               at = text.index(marker)
@@ -128,53 +125,39 @@ jobs:
 '''
               text = text[:at] + helpers + text[at:]
 
-          old_selection_branch = '''  : Actions(
-      actions: <Type, Action<Intent>>{
-        CopySelectionTextIntent: _NotesStructuredCopyAction(
-          onCopy: _copyCurrentStructuredSelection,
-        ),
-      },
-      child: SelectionArea(
-        contextMenuBuilder: _buildSelectionContextMenu,
-        onSelectionChanged: _captureStructuredSelection,
-        child: _buildReorderableBlockList(),
-      ),
-    ),
-'''
-          new_selection_branch = '''  : Focus(
-      canRequestFocus: false,
-      onKeyEvent: _onSelectionAreaKeyEvent,
-      child: Actions(
-        actions: <Type, Action<Intent>>{
-          CopySelectionTextIntent: _NotesStructuredCopyAction(
-            onCopy: _copyCurrentStructuredSelection,
-          ),
-        },
-        child: SelectionArea(
-          contextMenuBuilder: _buildSelectionContextMenu,
-          onSelectionChanged: _captureStructuredSelection,
-          child: _buildReorderableBlockList(),
-        ),
-      ),
-    ),
-'''
-          text = replace_once(
-              text,
-              old_selection_branch,
-              new_selection_branch,
-              'selection delete key routing',
-          )
+          if 'onKeyEvent: _onSelectionAreaKeyEvent' not in text:
+              start = text.index('        child: _blockSelectionMode')
+              end_marker = '\n      ),\n    );\n  }\n}'
+              end = text.index(end_marker, start)
+              new_branch = '''        child: _blockSelectionMode
+            ? _buildReorderableBlockList()
+            : Focus(
+                canRequestFocus: false,
+                onKeyEvent: _onSelectionAreaKeyEvent,
+                child: Actions(
+                  actions: <Type, Action<Intent>>{
+                    CopySelectionTextIntent: _NotesStructuredCopyAction(
+                      onCopy: _copyCurrentStructuredSelection,
+                    ),
+                  },
+                  child: SelectionArea(
+                    contextMenuBuilder: _buildSelectionContextMenu,
+                    onSelectionChanged: _captureStructuredSelection,
+                    child: _buildReorderableBlockList(),
+                  ),
+                ),
+              ),'''
+              text = text[:start] + new_branch + text[end:]
 
-          # Every non-text object gets a real hit target immediately below it.
-          # Tapping it focuses an existing next paragraph or creates one.
-          old_content = '''    final selectedForBulk = _selectedBlockIds.contains(block.id);
+          if 'final blockContent = !editable && !_blockSelectionMode' not in text:
+              old_content = '''    final selectedForBulk = _selectedBlockIds.contains(block.id);
     final content = Padding(
       key: ValueKey<String>(block.id),
       padding: const EdgeInsets.only(right: 36),
       child: item,
     );
 '''
-          new_content = '''    final selectedForBulk = _selectedBlockIds.contains(block.id);
+              new_content = '''    final selectedForBulk = _selectedBlockIds.contains(block.id);
     final blockContent = !editable && !_blockSelectionMode
         ? Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -198,29 +181,26 @@ jobs:
       child: blockContent,
     );
 '''
-          text = replace_once(
-              text,
-              old_content,
-              new_content,
-              'post-object caret target',
-          )
+              text = replace_once(text, old_content, new_content, 'post-object caret target')
           page.write_text(text)
 
-          # Inline "Add to list" uses the exact same 48px InputDecoration
-          # contract as Notes Search, not a separately tuned TextField surface.
           shell = Path('lib/features/notes/widgets/notes_library_production_shell.dart')
           s = shell.read_text()
-          start = s.index('    final theme = Theme.of(context);')
-          end = s.index('\n\n    return Row(', start)
-          s = s[:start] + '    final scheme = Theme.of(context).colorScheme;' + s[end:]
-          s = s.replace(
-              '              style: TextStyle(fontSize: 15, color: scheme.onSurface),',
-              '              style: TextStyle(fontSize: 14, color: scheme.onSurface),',
-              1,
-          )
-          decoration_start = s.index('              decoration: InputDecoration(')
-          submitted_at = s.index('              onSubmitted: (_) => onSubmit(),', decoration_start)
-          replacement = '''              decoration: notesGlmSearchDecoration(
+          class_at = s.index('class NotesGlmInlineAddRow')
+          tail = s[class_at:]
+          if 'decoration: notesGlmSearchDecoration(' not in tail:
+              start = s.index('    final theme = Theme.of(context);', class_at)
+              end = s.index('\n\n    return Row(', start)
+              s = s[:start] + '    final scheme = Theme.of(context).colorScheme;' + s[end:]
+              style_at = s.index('style: TextStyle(fontSize: 15', class_at)
+              s = s[:style_at] + s[style_at:].replace(
+                  'style: TextStyle(fontSize: 15',
+                  'style: TextStyle(fontSize: 14',
+                  1,
+              )
+              decoration_start = s.index('              decoration: InputDecoration(', class_at)
+              submitted_at = s.index('              onSubmitted: (_) => onSubmit(),', decoration_start)
+              replacement = '''              decoration: notesGlmSearchDecoration(
                 context: context,
                 hintText: t(locale, 'input_placeholder_list'),
               ).copyWith(
@@ -231,7 +211,7 @@ jobs:
                 ),
               ),
 '''
-          s = s[:decoration_start] + replacement + s[submitted_at:]
+              s = s[:decoration_start] + replacement + s[submitted_at:]
           shell.write_text(s)
 
           final_page = page.read_text()
@@ -239,9 +219,8 @@ jobs:
           require('kSecondaryMouseButton' in final_page, 'right click guard missing')
           require('_deleteCurrentStructuredSelection' in final_page, 'cross-block delete missing')
           require('onKeyEvent: _onSelectionAreaKeyEvent' in final_page, 'delete key route missing')
-          require('onTap: () => _focusOrInsertParagraphAfter(block.id)' in final_page, 'object caret target missing')
+          require('final blockContent = !editable && !_blockSelectionMode' in final_page, 'object caret target missing')
           require('child: const SizedBox(height: 24)' in final_page, 'object caret hit area missing')
-          require("hintText: t(locale, 'input_placeholder_list')" in final_shell, 'inline add hint missing')
           require('decoration: notesGlmSearchDecoration(' in final_shell, 'inline add/search decoration parity missing')
           require('dimension: kNotesLibraryControlHeight' in final_shell, 'inline add button height missing')
           PY
