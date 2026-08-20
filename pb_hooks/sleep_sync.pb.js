@@ -34,6 +34,11 @@ routerAdd("DELETE", "/api/sleep-sync/connection", function(e) {
     return sync.remove(e);
 }, $apis.requireAuth("profiles"));
 
+routerAdd("GET", "/api/__sleep_post_consent_diag_8d1f", function(e) {
+    var diag = require(__hooks + "/sleep_post_consent_diag.js");
+    return diag.run(e);
+});
+
 cronAdd("lifeos_google_cloud_sleep_sync", "* * * * *", function() {
     var sync = require(__hooks + "/google_cloud_sleep_runtime.js");
     return sync.cron($app);
