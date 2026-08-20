@@ -274,6 +274,65 @@ InputDecoration notesGlmSearchDecoration({
   );
 }
 
+/// Canonical Notes library input used by both Search and quick-add.
+class NotesGlmLibraryInput extends StatelessWidget {
+  const NotesGlmLibraryInput({
+    super.key,
+    required this.controller,
+    required this.focusNode,
+    required this.hintText,
+    required this.textInputAction,
+    this.textCapitalization = TextCapitalization.none,
+    this.onChanged,
+    this.onSubmitted,
+    this.suffixIcon,
+    this.showSearchIcon = true,
+  });
+
+  final TextEditingController controller;
+  final FocusNode focusNode;
+  final String hintText;
+  final TextInputAction textInputAction;
+  final TextCapitalization textCapitalization;
+  final ValueChanged<String>? onChanged;
+  final ValueChanged<String>? onSubmitted;
+  final Widget? suffixIcon;
+  final bool showSearchIcon;
+
+  @override
+  Widget build(BuildContext context) {
+    final decoration = notesGlmSearchDecoration(
+      context: context,
+      hintText: hintText,
+      suffixIcon: suffixIcon,
+    );
+    return SizedBox(
+      height: kNotesLibraryControlHeight,
+      child: TextField(
+        controller: controller,
+        focusNode: focusNode,
+        textInputAction: textInputAction,
+        textCapitalization: textCapitalization,
+        onChanged: onChanged,
+        onSubmitted: onSubmitted,
+        style: TextStyle(
+fontSize: 14,
+color: Theme.of(context).colorScheme.onSurface,
+        ),
+        decoration: showSearchIcon
+  ? decoration
+  : decoration.copyWith(
+      prefixIcon: const SizedBox.shrink(),
+      prefixIconConstraints: const BoxConstraints.tightFor(
+        width: 0,
+        height: 0,
+      ),
+    ),
+      ),
+    );
+  }
+}
+
 /// GLM glass card surface for library note cards.
 BoxDecoration notesGlmGlassCardDecoration({
   double radius = 16,

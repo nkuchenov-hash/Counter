@@ -71,51 +71,36 @@ class NotesGlmInlineAddRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Expanded(
-          child: SizedBox(
-            height: kNotesLibraryControlHeight,
-            child: TextField(
-              controller: controller,
-              focusNode: focusNode,
-              textInputAction: TextInputAction.done,
-              style: TextStyle(fontSize: 14, color: scheme.onSurface),
-              decoration: notesGlmSearchDecoration(
-      context: context,
-      hintText: t(locale, 'input_placeholder_list'),
-    ).copyWith(
-      prefixIcon: const SizedBox.shrink(),
-      prefixIconConstraints: const BoxConstraints.tightFor(
-        width: 0,
-        height: 0,
-      ),
-    ),
-              onSubmitted: (_) => onSubmit(),
-            ),
-          ),
+child: NotesGlmLibraryInput(
+  controller: controller,
+  focusNode: focusNode,
+  hintText: t(locale, 'input_placeholder_list'),
+  textInputAction: TextInputAction.done,
+  showSearchIcon: false,
+  onSubmitted: (_) => onSubmit(),
+),
         ),
         const SizedBox(width: 8),
-        SizedBox(
-width: kNotesLibraryControlHeight,
-height: kNotesLibraryControlHeight,
+        SizedBox.square(
+dimension: kNotesLibraryControlHeight,
 child: Tooltip(
   message: t(locale, 'add'),
   child: Material(
-    color: scheme.primary,
-    borderRadius: BorderRadius.circular(12),
+    color: Colors.black,
+    shape: const CircleBorder(),
     clipBehavior: Clip.antiAlias,
     child: InkWell(
       onTap: onSubmit,
-      borderRadius: BorderRadius.circular(12),
-      child: Center(
+      customBorder: const CircleBorder(),
+      child: const Center(
         child: Icon(
           Icons.add_rounded,
           size: 22,
-          color: scheme.onPrimary,
+          color: Colors.white,
         ),
       ),
     ),

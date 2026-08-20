@@ -1218,27 +1218,23 @@ class _NotesLibraryHeader extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
-          TextField(
-            controller: searchController,
-            focusNode: searchFocus,
-            textInputAction: TextInputAction.search,
-            textCapitalization: TextCapitalization.sentences,
-            onChanged: onSearchChanged,
-            style: TextStyle(fontSize: 14, color: scheme.onSurface),
-            decoration: notesGlmSearchDecoration(
-              context: context,
-              hintText: t(locale, 'notes_v3_search_hint'),
-              suffixIcon: searchQuery.trim().isNotEmpty
-                  ? IconButton(
-                      tooltip: t(locale, 'cancel'),
-                      icon: const Icon(Icons.close_rounded, size: 18),
-                      visualDensity: VisualDensity.compact,
-                      splashRadius: 16,
-                      onPressed: onClearSearch,
-                    )
-                  : null,
-            ),
-          ),
+          NotesGlmLibraryInput(
+  controller: searchController,
+  focusNode: searchFocus,
+  hintText: t(locale, 'notes_v3_search_hint'),
+  textInputAction: TextInputAction.search,
+  textCapitalization: TextCapitalization.sentences,
+  onChanged: onSearchChanged,
+  suffixIcon: searchQuery.trim().isNotEmpty
+      ? IconButton(
+          tooltip: t(locale, 'cancel'),
+          icon: const Icon(Icons.close_rounded, size: 18),
+          visualDensity: VisualDensity.compact,
+          splashRadius: 16,
+          onPressed: onClearSearch,
+        )
+      : null,
+),
         ],
       ),
     );
