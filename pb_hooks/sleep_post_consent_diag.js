@@ -1,4 +1,5 @@
 // Temporary upstream source probe: lists only Google Fit sleep source identifiers.
+// Triggered after reopening the diagnostic PR.
 function env(name) { try { return String($os.getenv(name) || '').trim(); } catch (_) { return ''; } }
 function form(values) { var parts=[]; for (var key in values) if (Object.prototype.hasOwnProperty.call(values,key)) parts.push(encodeURIComponent(key)+'='+encodeURIComponent(String(values[key]))); return parts.join('&'); }
 function tokenKey(app) { var key=env('SLEEP_SYNC_TOKEN_KEY'); if (key.length===32) return key; var envName=''; try { envName=String(app.encryptionEnv()||'').trim(); } catch (_) {} var inherited=envName?env(envName):''; if (inherited.length===32) return inherited; throw new Error('token_key_unavailable'); }
