@@ -1218,22 +1218,78 @@ class _NotesLibraryHeader extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
-          NotesGlmLibraryInput(
-  controller: searchController,
-  focusNode: searchFocus,
-  hintText: t(locale, 'notes_v3_search_hint'),
-  textInputAction: TextInputAction.search,
-  textCapitalization: TextCapitalization.sentences,
-  onChanged: onSearchChanged,
-  suffixIcon: searchQuery.trim().isNotEmpty
-      ? IconButton(
-          tooltip: t(locale, 'cancel'),
-          icon: const Icon(Icons.close_rounded, size: 18),
-          visualDensity: VisualDensity.compact,
-          splashRadius: 16,
-          onPressed: onClearSearch,
-        )
-      : null,
+          AnimatedBuilder(
+  animation: searchFocus,
+  builder: (context, _) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final dark = theme.brightness == Brightness.dark;
+    final meta = notesGlmMetaColor(context);
+    final fill = dark
+        ? scheme.surfaceContainerHigh.withValues(alpha: 0.82)
+        : const Color(0xFFFFFFFF).withValues(alpha: 0.75);
+    final normalBorder = dark
+        ? scheme.outlineVariant.withValues(alpha: 0.78)
+        : const Color(0xFFE2E8F0).withValues(alpha: 0.95);
+    final focusBorder = scheme.primary.withValues(
+      alpha: dark ? 0.82 : 0.55,
+    );
+    return SizedBox(
+      height: 48,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: fill,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: searchFocus.hasFocus ? focusBorder : normalBorder,
+            width: searchFocus.hasFocus && dark ? 1.2 : 1,
+          ),
+        ),
+        child: TextField(
+          controller: searchController,
+          focusNode: searchFocus,
+          textInputAction: TextInputAction.search,
+          textCapitalization: TextCapitalization.sentences,
+          textAlignVertical: TextAlignVertical.center,
+          onChanged: onSearchChanged,
+          style: TextStyle(fontSize: 14, color: scheme.onSurface),
+          decoration: InputDecoration(
+            hintText: t(locale, 'notes_v3_search_hint'),
+            hintStyle: TextStyle(fontSize: 14, color: meta),
+            prefixIcon: Icon(
+              Icons.search_rounded,
+              size: 18,
+              color: meta,
+            ),
+            prefixIconConstraints: const BoxConstraints.tightFor(
+              width: 48,
+              height: 48,
+            ),
+            suffixIcon: searchQuery.trim().isNotEmpty
+                ? IconButton(
+                    tooltip: t(locale, 'cancel'),
+                    icon: const Icon(Icons.close_rounded, size: 18),
+                    visualDensity: VisualDensity.compact,
+                    splashRadius: 16,
+                    onPressed: onClearSearch,
+                  )
+                : null,
+            suffixIconConstraints: searchQuery.trim().isNotEmpty
+                ? const BoxConstraints.tightFor(
+                    width: 48,
+                    height: 48,
+                  )
+                : null,
+            isDense: true,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 14),
+            border: InputBorder.none,
+            enabledBorder: InputBorder.none,
+            focusedBorder: InputBorder.none,
+          ),
+        ),
+      ),
+    );
+  },
 ),
         ],
       ),

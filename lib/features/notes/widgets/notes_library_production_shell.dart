@@ -75,18 +75,59 @@ class NotesGlmInlineAddRow extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Expanded(
-child: NotesGlmLibraryInput(
-  controller: controller,
-  focusNode: focusNode,
-  hintText: t(locale, 'input_placeholder_list'),
-  textInputAction: TextInputAction.done,
-  showSearchIcon: false,
-  onSubmitted: (_) => onSubmit(),
+child: AnimatedBuilder(
+  animation: focusNode,
+  builder: (context, _) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final dark = theme.brightness == Brightness.dark;
+    final meta = notesGlmMetaColor(context);
+    final fill = dark
+        ? scheme.surfaceContainerHigh.withValues(alpha: 0.82)
+        : const Color(0xFFFFFFFF).withValues(alpha: 0.75);
+    final normalBorder = dark
+        ? scheme.outlineVariant.withValues(alpha: 0.78)
+        : const Color(0xFFE2E8F0).withValues(alpha: 0.95);
+    final focusBorder = scheme.primary.withValues(
+      alpha: dark ? 0.82 : 0.55,
+    );
+    return SizedBox(
+      height: 48,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: fill,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: focusNode.hasFocus ? focusBorder : normalBorder,
+            width: focusNode.hasFocus && dark ? 1.2 : 1,
+          ),
+        ),
+        child: TextField(
+          controller: controller,
+          focusNode: focusNode,
+          textInputAction: TextInputAction.done,
+          textAlignVertical: TextAlignVertical.center,
+          onSubmitted: (_) => onSubmit(),
+          style: TextStyle(fontSize: 14, color: scheme.onSurface),
+          decoration: InputDecoration(
+            hintText: t(locale, 'input_placeholder_list'),
+            hintStyle: TextStyle(fontSize: 14, color: meta),
+            isDense: true,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 14),
+            border: InputBorder.none,
+            enabledBorder: InputBorder.none,
+            focusedBorder: InputBorder.none,
+          ),
+        ),
+      ),
+    );
+  },
 ),
         ),
         const SizedBox(width: 8),
-        SizedBox.square(
-dimension: kNotesLibraryControlHeight,
+        SizedBox(
+width: 48,
+height: 48,
 child: Tooltip(
   message: t(locale, 'add'),
   child: Material(
