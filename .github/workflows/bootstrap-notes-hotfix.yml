@@ -154,7 +154,8 @@ class NotesGlmLibraryInput extends StatelessWidget {
         ),
       ],
     );
-  }'''
+  }
+}'''
           q = q[:build_start] + new_build + q[class_end:]
           shell.write_text(q)
 
