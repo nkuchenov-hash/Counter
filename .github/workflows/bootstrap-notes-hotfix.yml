@@ -1,4 +1,4 @@
-name: Restore Notes checkbox layout parity
+name: Notes interaction UX fix
 
 on:
   workflow_dispatch:
@@ -10,15 +10,299 @@ jobs:
       - run: |
           python3 - <<'PY'
           from pathlib import Path
+          import re
 
-          path = Path('lib/features/notes/widgets/note_card.dart')
-          text = path.read_text()
-          start = text.find('class _LargeDoneCheck extends StatelessWidget {')
-          end = text.find('\nclass _CategoryTile extends StatelessWidget {', start)
-          if start < 0 or end < 0:
-              raise SystemExit('Large Notes checkbox class not found')
+          def read(path):
+              return Path(path).read_text()
 
-          replacement = '''class _LargeDoneCheck extends StatelessWidget {
+          def write(path, text):
+              Path(path).write_text(text)
+
+          def replace_once(text, old, new, label):
+              if old not in text:
+                  raise SystemExit(f'{label}: source pattern not found')
+              return text.replace(old, new, 1)
+
+          # ------------------------------------------------------------------
+          # 1) Notes library control geometry: Search == Quick add == + button.
+          # ------------------------------------------------------------------
+          path = 'lib/features/notes/notes_glm_surface.dart'
+          text = read(path)
+          if 'const double kNotesLibraryControlHeight = 48;' not in text:
+              text = replace_once(
+                  text,
+                  'const double kGlmPillHeight = 32;\n',
+                  'const double kGlmPillHeight = 32;\n'
+                  'const double kNotesLibraryControlHeight = 48;\n',
+                  'library control height token',
+              )
+          if 'constraints: const BoxConstraints.tightFor(' not in text[text.find('InputDecoration notesGlmSearchDecoration'):]:
+              text = replace_once(
+                  text,
+                  '  return InputDecoration(\n    hintText: hintText,',
+                  '  return InputDecoration(\n'
+                  '    constraints: const BoxConstraints.tightFor(\n'
+                  '      height: kNotesLibraryControlHeight,\n'
+                  '    ),\n'
+                  '    hintText: hintText,',
+                  'search exact height',
+              )
+          write(path, text)
+
+          path = 'lib/features/notes/widgets/notes_library_production_shell.dart'
+          text = read(path)
+          text = replace_once(
+              text,
+              '            height: 48,\n            child: TextField(',
+              '            height: kNotesLibraryControlHeight,\n            child: TextField(',
+              'quick add input height',
+          )
+          text = replace_once(
+              text,
+              '        SizedBox.square(\ndimension: 48,',
+              '        SizedBox.square(\n'
+              'dimension: kNotesLibraryControlHeight,',
+              'quick add button height',
+          )
+          write(path, text)
+
+          # ------------------------------------------------------------------
+          # 2) Notes selection mode keeps the exact same Notes library surface.
+          #    Card menus are anchored to the actual three-dot control.
+          #    Remove Notes "export as text" UI.
+          # ------------------------------------------------------------------
+          path = 'lib/features/lists/lists_view.dart'
+          text = read(path)
+
+          method_start = text.find('  void _showListsRadialMenu(\n')
+          method_end = text.find('  Future<void> _loadPersistedFilter()', method_start)
+          if method_start < 0 or method_end < 0:
+              raise SystemExit('lists radial menu method not found')
+          method = text[method_start:method_end]
+          rest_marker = '    late OverlayEntry entry;'
+          rest_at = method.find(rest_marker)
+          if rest_at < 0:
+              raise SystemExit('lists radial menu overlay body not found')
+          rest = method[rest_at:]
+          new_method = '''  void _showListsRadialMenu(
+    BuildContext anchorContext,
+    PlanningTask task,
+    String listKey,
+  ) {
+    final box = anchorContext.findRenderObject() as RenderBox?;
+    if (box == null || !box.hasSize) return;
+    final rect = box.localToGlobal(Offset.zero) & box.size;
+    _showListsRadialMenuAt(rect.center, task, listKey);
+  }
+
+  void _showListsRadialMenuAt(
+    Offset anchorCenter,
+    PlanningTask task,
+    String listKey,
+  ) {
+    final overlay = Overlay.maybeOf(context);
+    if (overlay == null) return;
+'''
+          new_method += rest
+          text = text[:method_start] + new_method + text[method_end:]
+
+          top_start = text.find('                topBar: _listsSelectMode')
+          top_end = text.find('                header:', top_start)
+          if top_start < 0 or top_end < 0:
+              raise SystemExit('Notes selection top bar composition not found')
+          text = text[:top_start] + '                topBar: null,\n' + text[top_end:]
+
+          text = replace_once(
+              text,
+              '                header: _listsSelectMode\n'
+              '                    ? const SizedBox.shrink()\n'
+              '                    : _NotesLibraryHeader(',
+              '                header: _NotesLibraryHeader(',
+              'Notes selection header parity',
+          )
+
+          export_start = text.find('                        showExport: filterId != null,')
+          export_end = text.find('                        notesView: _notesView,', export_start)
+          if export_start < 0 or export_end < 0:
+              raise SystemExit('Notes export call block not found')
+          text = text[:export_start] + text[export_end:]
+
+          select_branch_start = text.find(
+              '                    : _listsSelectMode\n'
+              '                    ? RefreshIndicator('
+          )
+          notes_body_marker = '                    : NotesLibraryBody('
+          select_branch_end = text.find(notes_body_marker, select_branch_start)
+          if select_branch_start < 0 or select_branch_end < 0:
+              raise SystemExit('Notes generic select-mode content swap not found')
+          text = (
+              text[:select_branch_start]
+              + '                    : NotesLibraryBody('
+              + text[select_branch_end + len(notes_body_marker):]
+          )
+
+          old_body_args = '''                        checkboxesOn: _notesCheckboxesOn,
+                        onTap: _openNoteEditor,
+                        onLongPress: (t) => _showListsRadialMenu(
+                          context,
+                          t,
+                          _listKey(t),
+                        ),'''
+          new_body_args = '''                        checkboxesOn: _notesCheckboxesOn,
+                        selectionMode: _listsSelectMode,
+                        selectedKeys: _selectedListKeys,
+                        itemKey: _listKey,
+                        onToggleSelection: (task) =>
+                            _toggleListKey(_listKey(task)),
+                        onTap: _openNoteEditor,
+                        onLongPress: (_) {},
+                        onOpenMenu: (anchorCenter, task) =>
+                            _showListsRadialMenuAt(
+                              anchorCenter,
+                              task,
+                              _listKey(task),
+                            ),'''
+          text = replace_once(
+              text,
+              old_body_args,
+              new_body_args,
+              'Notes library selection/card menu args',
+          )
+
+          text = text.replace('    required this.showExport,\n', '', 1)
+          text = text.replace('    required this.onExport,\n', '', 1)
+          text = text.replace('  final bool showExport;\n', '', 1)
+          text = text.replace('  final VoidCallback onExport;\n', '', 1)
+
+          export_ui_start = text.find('              if (showExport)\n                IconButton(')
+          if export_ui_start < 0:
+              raise SystemExit('Notes export icon not found')
+          export_ui_end_marker = '                  onPressed: onExport,\n                ),'
+          export_ui_end = text.find(export_ui_end_marker, export_ui_start)
+          if export_ui_end < 0:
+              raise SystemExit('Notes export icon end not found')
+          export_ui_end += len(export_ui_end_marker)
+          text = text[:export_ui_start] + text[export_ui_end:]
+          write(path, text)
+
+          # ------------------------------------------------------------------
+          # 3) Notes cards: checkbox is an exact category-icon replacement;
+          #    no pin icons; a three-dot button owns the radial menu anchor.
+          # ------------------------------------------------------------------
+          path = 'lib/features/notes/widgets/note_card.dart'
+          text = read(path)
+
+          if text.count('    required this.onLongPress,\n') < 3:
+              raise SystemExit('NoteCard constructor anchors changed')
+          text = text.replace(
+              '    required this.onLongPress,\n',
+              '    required this.onLongPress,\n'
+              '    required this.onOpenMenu,\n',
+              3,
+          )
+          if text.count('  final VoidCallback onLongPress;\n') < 3:
+              raise SystemExit('NoteCard callback fields changed')
+          text = text.replace(
+              '  final VoidCallback onLongPress;\n',
+              '  final VoidCallback onLongPress;\n'
+              '  final ValueChanged<Offset> onOpenMenu;\n',
+              3,
+          )
+          if text.count('            onLongPress: onLongPress,\n') < 2:
+              raise SystemExit('NoteCard child forwarding changed')
+          text = text.replace(
+              '            onLongPress: onLongPress,\n',
+              '            onLongPress: onLongPress,\n'
+              '            onOpenMenu: onOpenMenu,\n',
+              2,
+          )
+
+          grid_class = text.find('class _GridCard extends StatelessWidget {')
+          grid_items_start = text.find('                  _CategoryTile(data: data),', grid_class)
+          grid_items_end = text.find('                ],\n              ),', grid_items_start)
+          if grid_items_start < 0 or grid_items_end < 0:
+              raise SystemExit('Note grid leading/actions row not found')
+          grid_items = '''                  if (checkboxesOn)
+                    _LargeDoneCheck(
+                      isDone: isDone,
+                      onToggle: onToggleDone,
+                    )
+                  else
+                    _CategoryTile(data: data),
+                  const SizedBox(width: 10),
+                  Expanded(child: _BadgesRow(data: data, loc: loc)),
+                  _NoteCardMenuButton(onPressed: onOpenMenu),
+'''
+          text = text[:grid_items_start] + grid_items + text[grid_items_end:]
+
+          list_class = text.find('class _ListRow extends StatelessWidget {')
+          pin_start = text.find('                        if (data.pinned)', list_class)
+          pin_end = text.find('                      ],', pin_start)
+          if pin_start < 0 or pin_end < 0:
+              raise SystemExit('Note list pin indicator not found')
+          text = text[:pin_start] + text[pin_end:]
+
+          pin_button_start = text.find('              IconButton(\n                tooltip: data.pinned', list_class)
+          pin_button_end = text.find('            ],\n          ),', pin_button_start)
+          if pin_button_start < 0 or pin_button_end < 0:
+              raise SystemExit('Note list pin button not found')
+          text = (
+              text[:pin_button_start]
+              + '              _NoteCardMenuButton(onPressed: onOpenMenu),\n'
+              + text[pin_button_end:]
+          )
+
+          done_start = text.find('class _DoneCheck extends StatelessWidget {')
+          large_start = text.find('class _LargeDoneCheck extends StatelessWidget {', done_start)
+          category_start = text.find('class _CategoryTile extends StatelessWidget {', large_start)
+          if done_start < 0 or large_start < 0 or category_start < 0:
+              raise SystemExit('Note checkbox classes not found')
+
+          replacement = '''class _NoteCardMenuButton extends StatefulWidget {
+  const _NoteCardMenuButton({required this.onPressed});
+
+  final ValueChanged<Offset> onPressed;
+
+  @override
+  State<_NoteCardMenuButton> createState() => _NoteCardMenuButtonState();
+}
+
+class _NoteCardMenuButtonState extends State<_NoteCardMenuButton> {
+  final GlobalKey _anchorKey = GlobalKey();
+
+  void _open() {
+    final box = _anchorKey.currentContext?.findRenderObject() as RenderBox?;
+    if (box == null || !box.hasSize) return;
+    final rect = box.localToGlobal(Offset.zero) & box.size;
+    widget.onPressed(rect.center);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Tooltip(
+      message: 'More',
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: _open,
+          borderRadius: BorderRadius.circular(16),
+          child: SizedBox.square(
+            key: _anchorKey,
+            dimension: 32,
+            child: Icon(
+              Icons.more_horiz_rounded,
+              size: 19,
+              color: scheme.onSurfaceVariant,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _LargeDoneCheck extends StatelessWidget {
   const _LargeDoneCheck({
     required this.isDone,
     required this.onToggle,
@@ -30,31 +314,943 @@ jobs:
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return InkWell(
-      onTap: onToggle,
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        width: kNotesLargeCheckSize,
-        height: kNotesLargeCheckSize,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: isDone
-                ? scheme.primary
-                : scheme.outlineVariant.withValues(alpha: 0.7),
-            width: 2,
+    return Semantics(
+      button: true,
+      checked: isDone,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onToggle,
+        child: Container(
+          width: kNotesLargeCheckSize,
+          height: kNotesLargeCheckSize,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: isDone
+                  ? scheme.primary
+                  : scheme.outlineVariant.withValues(alpha: 0.7),
+              width: 2,
+            ),
+            color: isDone ? scheme.primary : Colors.transparent,
           ),
-          color: isDone ? scheme.primary : Colors.transparent,
+          child: isDone
+              ? const Icon(Icons.check_rounded, size: 20, color: Colors.white)
+              : null,
         ),
-        child: isDone
-            ? const Icon(Icons.check_rounded, size: 20, color: Colors.white)
-            : null,
       ),
     );
   }
 }
-'''
 
-          text = text[:start] + replacement + text[end:]
-          path.write_text(text)
+'''
+          text = text[:done_start] + replacement + text[category_start:]
+          write(path, text)
+
+          # ------------------------------------------------------------------
+          # 4) Notes library body: stable checkbox-mode order + selection uses
+          #    the same cards; menu gets the exact global center of the dots.
+          # ------------------------------------------------------------------
+          path = 'lib/features/notes/widgets/notes_library_body.dart'
+          text = read(path)
+          text = replace_once(
+              text,
+              '    required this.onLongPress,\n    this.onRefresh,',
+              '    required this.onLongPress,\n'
+              '    this.selectionMode = false,\n'
+              '    this.selectedKeys = const <String>{},\n'
+              '    this.itemKey,\n'
+              '    this.onToggleSelection,\n'
+              '    this.onOpenMenu,\n'
+              '    this.onRefresh,',
+              'NotesLibraryBody selection constructor',
+          )
+          text = replace_once(
+              text,
+              '  final void Function(PlanningTask task) onLongPress;\n'
+              '  final Future<void> Function()? onRefresh;',
+              '  final void Function(PlanningTask task) onLongPress;\n'
+              '  final bool selectionMode;\n'
+              '  final Set<String> selectedKeys;\n'
+              '  final String Function(PlanningTask task)? itemKey;\n'
+              '  final ValueChanged<PlanningTask>? onToggleSelection;\n'
+              '  final void Function(Offset anchorCenter, PlanningTask task)? onOpenMenu;\n'
+              '  final Future<void> Function()? onRefresh;',
+              'NotesLibraryBody selection fields',
+          )
+          text = replace_once(
+              text,
+              '  _NotesDateSort _dateSort = _NotesDateSort.updated;\n',
+              '  _NotesDateSort _dateSort = _NotesDateSort.updated;\n'
+              '  List<String>? _checkboxOrder;\n',
+              'checkbox stable order state',
+          )
+          text = replace_once(
+              text,
+              '    super.initState();\n    unawaited(_loadDateSort());',
+              '    super.initState();\n'
+              '    if (widget.checkboxesOn) _captureCheckboxOrder();\n'
+              '    unawaited(_loadDateSort());',
+              'checkbox initial order capture',
+          )
+          text = replace_once(
+              text,
+              '    super.didUpdateWidget(oldWidget);\n    if (widget.tasks.any(',
+              '    super.didUpdateWidget(oldWidget);\n'
+              '    if (widget.checkboxesOn) {\n'
+              '      _reconcileCheckboxOrder(reset: !oldWidget.checkboxesOn);\n'
+              '    } else if (oldWidget.checkboxesOn) {\n'
+              '      _checkboxOrder = null;\n'
+              '    }\n'
+              '    if (widget.tasks.any(',
+              'checkbox updated order reconciliation',
+          )
+
+          sort_anchor = text.find('  List<PlanningTask> _sortedTasks() {')
+          if sort_anchor < 0:
+              raise SystemExit('Notes sorted tasks method not found')
+          helpers = '''  String _itemKey(PlanningTask task) {
+    final custom = widget.itemKey;
+    if (custom != null) return custom(task);
+    final backend = task.planRowIdForBackend.trim();
+    if (backend.isNotEmpty) return backend;
+    return 'note-${task.id}-${task.order}-${task.title}';
+  }
+
+  void _captureCheckboxOrder() {
+    final ordered = List<PlanningTask>.from(widget.tasks)..sort(_compareTasks);
+    _checkboxOrder = [for (final task in ordered) _itemKey(task)];
+  }
+
+  void _reconcileCheckboxOrder({bool reset = false}) {
+    if (reset || _checkboxOrder == null) {
+      _captureCheckboxOrder();
+      return;
+    }
+    final current = <String>{for (final task in widget.tasks) _itemKey(task)};
+    _checkboxOrder!.removeWhere((id) => !current.contains(id));
+    final known = _checkboxOrder!.toSet();
+    final additions = List<PlanningTask>.from(widget.tasks)
+      ..sort(_compareTasks);
+    for (final task in additions) {
+      final id = _itemKey(task);
+      if (known.add(id)) _checkboxOrder!.add(id);
+    }
+  }
+
+'''
+          text = text[:sort_anchor] + helpers + text[sort_anchor:]
+          text = replace_once(
+              text,
+              '    final out = List<PlanningTask>.from(widget.tasks);\n'
+              '    if (widget.checkboxesOn) return out;',
+              '    final out = List<PlanningTask>.from(widget.tasks);\n'
+              '    if (widget.checkboxesOn) {\n'
+              '      _reconcileCheckboxOrder();\n'
+              '      final rank = <String, int>{\n'
+              '        for (var i = 0; i < (_checkboxOrder?.length ?? 0); i++)\n'
+              '          _checkboxOrder![i]: i,\n'
+              '      };\n'
+              '      out.sort((a, b) {\n'
+              '        final ar = rank[_itemKey(a)] ?? (1 << 30);\n'
+              '        final br = rank[_itemKey(b)] ?? (1 << 30);\n'
+              '        return ar.compareTo(br);\n'
+              '      });\n'
+              '      return out;\n'
+              '    }',
+              'stable checkbox task sorting',
+          )
+
+          card_method = text.find('  Widget _card(\n')
+          card_return = text.find('    return AnimatedContainer(', card_method)
+          if card_method < 0 or card_return < 0:
+              raise SystemExit('NotesLibraryBody card method not found')
+          prelude = '''    final selectionKey = _itemKey(data.task);
+    final bulkSelected =
+        widget.selectionMode && widget.selectedKeys.contains(selectionKey);
+'''
+          text = text[:card_return] + prelude + text[card_return:]
+          card_end = text.find('\n  Widget _withRefresh(', card_return)
+          card_block = text[card_method:card_end]
+          card_block = replace_once(
+              card_block,
+              '        selected: selected,',
+              '        selected: selected || bulkSelected,',
+              'card selected parity',
+          )
+          card_block = replace_once(
+              card_block,
+              '        onOpen: () => _openNote(context, data.task),',
+              '        onOpen: () {\n'
+              '          if (widget.selectionMode) {\n'
+              '            widget.onToggleSelection?.call(data.task);\n'
+              '            return;\n'
+              '          }\n'
+              '          _openNote(context, data.task);\n'
+              '        },',
+              'card selection tap',
+          )
+          card_block = replace_once(
+              card_block,
+              '        onLongPress: () => widget.onLongPress(data.task),',
+              '        onLongPress: () => widget.onLongPress(data.task),\n'
+              '        onOpenMenu: (anchorCenter) =>\n'
+              '            widget.onOpenMenu?.call(anchorCenter, data.task),',
+              'card menu anchor forwarding',
+          )
+          text = text[:card_method] + card_block + text[card_end:]
+          write(path, text)
+
+          # ------------------------------------------------------------------
+          # 5) Identical line metrics for selectable and active/editing blocks.
+          # ------------------------------------------------------------------
+          path = 'lib/features/notes/widgets/notes_component_text_blocks.dart'
+          text = read(path)
+          text = replace_once(
+              text,
+              '        style: textStyle,\n        decoration: InputDecoration(',
+              '        style: textStyle,\n'
+              '        strutStyle: StrutStyle.fromTextStyle(\n'
+              '          textStyle,\n'
+              '          forceStrutHeight: true,\n'
+              '        ),\n'
+              '        decoration: InputDecoration(',
+              'paragraph active strut',
+          )
+          leading_anchor = text.find('class _NotesLeadingTextRow extends StatelessWidget')
+          style_anchor = text.find('              style: checked', leading_anchor)
+          decoration_anchor = text.find('              decoration: InputDecoration(', style_anchor)
+          if leading_anchor < 0 or style_anchor < 0 or decoration_anchor < 0:
+              raise SystemExit('Notes leading text style block not found')
+          style_block = text[style_anchor:decoration_anchor]
+          if 'strutStyle:' not in style_block:
+              style_block += '''              strutStyle: StrutStyle.fromTextStyle(
+                baseStyle,
+                forceStrutHeight: true,
+              ),
+'''
+              text = text[:style_anchor] + style_block + text[decoration_anchor:]
+          write(path, text)
+
+          path = 'lib/features/notes/widgets/note_editor_block_widgets.dart'
+          text = read(path)
+          text = replace_once(
+              text,
+              '          child: Text.rich(\n'
+              '            span,\n'
+              '            key: textKey,\n'
+              '            softWrap: true,',
+              '          child: Text.rich(\n'
+              '            span,\n'
+              '            key: textKey,\n'
+              '            strutStyle: StrutStyle.fromTextStyle(\n'
+              '              effectiveStyle,\n'
+              '              forceStrutHeight: true,\n'
+              '            ),\n'
+              '            softWrap: true,',
+              'selectable text strut',
+          )
+          write(path, text)
+
+          # ------------------------------------------------------------------
+          # 6) Note header: round Back button; right side is only three dots.
+          # ------------------------------------------------------------------
+          path = 'lib/features/notes/widgets/notes_editor_screen.dart'
+          text = read(path)
+          text = replace_once(
+              text,
+              '              onDelete: embedded ? null : onDelete,',
+              '              onDelete: onDelete,',
+              'embedded note menu delete availability',
+          )
+          header_start = text.find('class _NotesNavigationHeader extends StatelessWidget {')
+          back_start = text.find('class _NotesBackAction extends StatelessWidget {', header_start)
+          if header_start < 0 or back_start < 0:
+              raise SystemExit('Notes navigation header class not found')
+          header_replacement = '''class _NotesNavigationHeader extends StatelessWidget {
+  const _NotesNavigationHeader({
+    required this.embedded,
+    required this.onDone,
+    required this.pinned,
+    required this.onTogglePinned,
+    required this.onDelete,
+  });
+
+  final bool embedded;
+  final VoidCallback onDone;
+  final bool pinned;
+  final VoidCallback onTogglePinned;
+  final VoidCallback? onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      child: Row(
+        children: [
+          _NotesHeaderAction(
+            icon: Icons.arrow_back_rounded,
+            tooltip: 'Back',
+            onPressed: onDone,
+          ),
+          const Spacer(),
+          _NotesHeaderMoreMenu(
+            pinned: pinned,
+            onTogglePinned: onTogglePinned,
+            onDelete: onDelete,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+enum _NotesHeaderMenuAction { pin, delete }
+
+class _NotesHeaderMoreMenu extends StatelessWidget {
+  const _NotesHeaderMoreMenu({
+    required this.pinned,
+    required this.onTogglePinned,
+    required this.onDelete,
+  });
+
+  final bool pinned;
+  final VoidCallback onTogglePinned;
+  final VoidCallback? onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    return PopupMenuButton<_NotesHeaderMenuAction>(
+      tooltip: 'More',
+      position: PopupMenuPosition.under,
+      onSelected: (action) {
+        switch (action) {
+          case _NotesHeaderMenuAction.pin:
+            onTogglePinned();
+          case _NotesHeaderMenuAction.delete:
+            onDelete?.call();
+        }
+      },
+      itemBuilder: (context) => [
+        PopupMenuItem<_NotesHeaderMenuAction>(
+          value: _NotesHeaderMenuAction.pin,
+          child: Row(
+            children: [
+              Icon(pinned ? Icons.push_pin_outlined : Icons.push_pin_rounded),
+              const SizedBox(width: 10),
+              Text(pinned ? 'Unpin' : 'Pin'),
+            ],
+          ),
+        ),
+        if (onDelete != null)
+          PopupMenuItem<_NotesHeaderMenuAction>(
+            value: _NotesHeaderMenuAction.delete,
+            child: Row(
+              children: [
+                Icon(
+                  Icons.delete_outline_rounded,
+                  color: Theme.of(context).colorScheme.error,
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  'Delete',
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
+              ],
+            ),
+          ),
+      ],
+      child: Material(
+        color: NotesFigmaTokens.glassFill(context),
+        elevation: 1,
+        shadowColor: Colors.black.withValues(alpha: 0.08),
+        shape: const CircleBorder(),
+        child: SizedBox.square(
+          dimension: 40,
+          child: Icon(
+            Icons.more_horiz_rounded,
+            size: 19,
+            color: NotesFigmaTokens.iconSecondary(context),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+'''
+          text = text[:header_start] + header_replacement + text[back_start:]
+          write(path, text)
+
+          # ------------------------------------------------------------------
+          # 7) Controller support for selected-block batch conversion and move.
+          # ------------------------------------------------------------------
+          path = 'lib/features/notes/notes_editor_document_controller.dart'
+          text = read(path)
+          reorder_start = text.find('  NotesEditorMutation reorderVisible(int oldIndex, int newIndex) {')
+          if reorder_start < 0:
+              raise SystemExit('Notes reorderVisible not found')
+          batch_methods = '''  NotesEditorMutation convertBlocks(
+    Set<String> ids,
+    NotesBlockConversion conversion,
+  ) {
+    if (ids.isEmpty) return const NotesEditorMutation();
+    var changed = false;
+    String? firstChangedId;
+    for (final block in List<NoteBlock>.from(visibleBlocks)) {
+      if (!ids.contains(block.id) || !isEditableText(block.type)) continue;
+      final mutation = convertBlock(block.id, conversion);
+      if (!mutation.changed) continue;
+      changed = true;
+      firstChangedId ??= block.id;
+    }
+    if (!changed) return const NotesEditorMutation();
+    activeBlockId = firstChangedId ?? activeBlockId;
+    activeSelection = null;
+    return const NotesEditorMutation(changed: true, requiresRebuild: true);
+  }
+
+  NotesEditorMutation reorderVisibleGroup(
+    Set<String> ids,
+    int oldIndex,
+    int newIndex,
+  ) {
+    final visible = List<NoteBlock>.from(visibleBlocks);
+    if (oldIndex < 0 || oldIndex >= visible.length) {
+      return const NotesEditorMutation();
+    }
+    if (!ids.contains(visible[oldIndex].id)) {
+      return reorderVisible(oldIndex, newIndex);
+    }
+    final moving = <NoteBlock>[
+      for (final block in visible)
+        if (ids.contains(block.id)) block,
+    ];
+    if (moving.isEmpty) return const NotesEditorMutation();
+    final remaining = <NoteBlock>[
+      for (final block in visible)
+        if (!ids.contains(block.id)) block,
+    ];
+    final boundedTarget = newIndex.clamp(0, visible.length).toInt();
+    var insertAt = 0;
+    for (var index = 0; index < boundedTarget; index++) {
+      if (!ids.contains(visible[index].id)) insertAt++;
+    }
+    insertAt = insertAt.clamp(0, remaining.length).toInt();
+    remaining.insertAll(insertAt, moving);
+
+    var cursor = 0;
+    final nextBlocks = <NoteBlock>[];
+    for (final block in blocks) {
+      if (isSupportedProductionBlock(block.type)) {
+        nextBlocks.add(remaining[cursor++]);
+      } else {
+        nextBlocks.add(block);
+      }
+    }
+    _document = _document.copyWith(blocks: nextBlocks);
+    activeBlockId = moving.first.id;
+    activeSelection = null;
+    return const NotesEditorMutation(changed: true, requiresRebuild: true);
+  }
+
+'''
+          text = text[:reorder_start] + batch_methods + text[reorder_start:]
+          write(path, text)
+
+          # ------------------------------------------------------------------
+          # 8) Editor clipboard structure, drawing continuation, block selection,
+          #    block three-dot radial menu, safe embedded delete.
+          # ------------------------------------------------------------------
+          path = 'lib/features/notes/note_editor_page.dart'
+          text = read(path)
+          text = replace_once(
+              text,
+              '  String? _editingBlockId;\n  bool _dirty = false;',
+              '  String? _editingBlockId;\n'
+              '  bool _blockSelectionMode = false;\n'
+              '  final Set<String> _selectedBlockIds = <String>{};\n'
+              '  bool _dirty = false;',
+              'block selection state',
+          )
+
+          paste_start = text.find('  Future<void> _pasteClipboardIntoBlock(')
+          if paste_start < 0:
+              raise SystemExit('Notes paste method not found')
+          normalize_helper = '''  String _normalizeClipboardStructure(String value) {
+    var normalized = value
+        .replaceAll('\\r\\n', '\\n')
+        .replaceAll('\\r', '\\n');
+    normalized = normalized.replaceAll(
+      RegExp(r'(?m)^\\s*(?:[-*•]\\s+|\\d+[.)]\\s+|\\[[ xX]\\]\\s+)'),
+      '',
+    );
+    return normalized.replaceAll(RegExp(r'\\s+'), ' ').trim();
+  }
+
+'''
+          text = text[:paste_start] + normalize_helper + text[paste_start:]
+
+          old_compare = '''    final candidatePlain = _NotesStructuredClipboard.plainText;
+    final normalizedPlain = plain
+        .replaceAll('\\r\\n', '\\n')
+        .replaceAll('\\r', '\\n');
+    final normalizedCandidate = candidatePlain
+        ?.replaceAll('\\r\\n', '\\n')
+        .replaceAll('\\r', '\\n');
+    final hasMatchingStructure =
+        normalizedCandidate != null &&
+        normalizedCandidate == normalizedPlain &&
+        _NotesStructuredClipboard.blocks.isNotEmpty;
+
+    final mutation = hasMatchingStructure
+        ? _editor.pasteBlocks(
+            block.id,
+            selection,
+            _NotesStructuredClipboard.blocks,
+          )
+        : _editor.pastePlainText(block.id, selection, normalizedPlain);'''
+          new_compare = '''    final candidatePlain = _NotesStructuredClipboard.plainText;
+    final platformPlain = plain
+        .replaceAll('\\r\\n', '\\n')
+        .replaceAll('\\r', '\\n');
+    final hasMatchingStructure =
+        candidatePlain != null &&
+        _normalizeClipboardStructure(candidatePlain) ==
+            _normalizeClipboardStructure(platformPlain) &&
+        _NotesStructuredClipboard.blocks.isNotEmpty;
+
+    final mutation = hasMatchingStructure
+        ? _editor.pasteBlocks(
+            block.id,
+            selection,
+            _NotesStructuredClipboard.blocks,
+          )
+        : _editor.pastePlainText(block.id, selection, platformPlain);'''
+          text = replace_once(
+              text,
+              old_compare,
+              new_compare,
+              'structural clipboard comparison',
+          )
+
+          infer_anchor = text.find('    List<NoteBlock>? best;', text.find('List<NoteBlock> _inferStructuredSelectionBlocks'))
+          if infer_anchor < 0:
+              raise SystemExit('structured selection inference anchor not found')
+          whole_block_match = '''    final normalizedSelection = _normalizeClipboardStructure(plain);
+    List<NoteBlock>? wholeBlockBest;
+    for (var start = 0; start < textBlocks.length; start++) {
+      for (var end = start; end < textBlocks.length; end++) {
+        final window = textBlocks.sublist(start, end + 1);
+        final candidate = _normalizeClipboardStructure(
+          window.map((block) => block.effectiveText).join('\\n'),
+        );
+        if (candidate != normalizedSelection) continue;
+        final preservesMeaning =
+            window.length > 1 || window.single.type != NoteBlockType.paragraph;
+        if (!preservesMeaning) continue;
+        if (wholeBlockBest == null || window.length < wholeBlockBest.length) {
+          wholeBlockBest = List<NoteBlock>.from(window);
+        }
+      }
+    }
+    if (wholeBlockBest != null) return wholeBlockBest;
+
+'''
+          text = text[:infer_anchor] + whole_block_match + text[infer_anchor:]
+
+          select_method = text.find('  void _selectBlock(String blockId) {')
+          if select_method < 0:
+              raise SystemExit('select block method not found')
+          selection_methods = '''  void _toggleBlockSelection(String blockId) {
+    if (_editor.blockById(blockId) == null) return;
+    setState(() {
+      _blockSelectionMode = true;
+      if (!_selectedBlockIds.add(blockId)) {
+        _selectedBlockIds.remove(blockId);
+      }
+      if (_selectedBlockIds.isEmpty) _blockSelectionMode = false;
+    });
+  }
+
+  void _handleBlockTap(String blockId) {
+    if (_blockSelectionMode) {
+      _toggleBlockSelection(blockId);
+      return;
+    }
+    _selectBlock(blockId);
+  }
+
+  void _deleteBlockFromMenu(String blockId) {
+    if (_selectedBlockIds.contains(blockId)) {
+      setState(() {
+        _selectedBlockIds.remove(blockId);
+        if (_selectedBlockIds.isEmpty) _blockSelectionMode = false;
+      });
+    }
+    _applyMutation(_editor.deleteBlock(blockId));
+  }
+
+  void _showBlockActionMenu(Offset anchorCenter, NoteBlock block) {
+    final overlay = Overlay.maybeOf(context);
+    if (overlay == null) return;
+    late OverlayEntry entry;
+    void dismiss() => entry.remove();
+    entry = OverlayEntry(
+      builder: (overlayContext) => _NotesBlockCircularMenuOverlay(
+        anchorCenter: anchorCenter,
+        selected: _selectedBlockIds.contains(block.id),
+        onDismiss: dismiss,
+        onSelect: () {
+          dismiss();
+          _toggleBlockSelection(block.id);
+        },
+        onDelete: () {
+          dismiss();
+          _deleteBlockFromMenu(block.id);
+        },
+      ),
+    );
+    overlay.insert(entry);
+  }
+
+'''
+          text = text[:select_method] + selection_methods + text[select_method:]
+
+          old_convert = '''  void _convertActive(NotesBlockConversion conversion) {
+    final id = _editor.activeBlockId;
+    if (id != null) _applyMutation(_editor.convertBlock(id, conversion));
+  }'''
+          new_convert = '''  void _convertActive(NotesBlockConversion conversion) {
+    if (_selectedBlockIds.isNotEmpty) {
+      _applyMutation(_editor.convertBlocks(_selectedBlockIds, conversion));
+      return;
+    }
+    final id = _editor.activeBlockId;
+    if (id != null) _applyMutation(_editor.convertBlock(id, conversion));
+  }'''
+          text = replace_once(text, old_convert, new_convert, 'selected block batch edit')
+
+          drawing_start = text.find('  Future<void> _openDrawing({String? editBlockId}) {')
+          drawing_end = text.find('  Future<void> _recordAudio() async {', drawing_start)
+          if drawing_start < 0 or drawing_end < 0:
+              raise SystemExit('drawing flow not found')
+          drawing_method = '''  Future<void> _openDrawing({String? editBlockId}) {
+    final initial = editBlockId == null
+        ? null
+        : _editor.blockById(editBlockId)?.drawingData;
+    return showDrawingCanvas(
+      context: context,
+      initialData: initial,
+      onSave: (dataUrl) {
+        if (!mounted) return;
+        if (editBlockId != null) {
+          _applyMutation(
+            _editor.updateMedia(editBlockId, drawingData: dataUrl),
+          );
+          return;
+        }
+        _editor.insertAfter(
+          _editor.activeBlockId,
+          NoteBlockType.drawing,
+          drawingData: dataUrl,
+        );
+        final drawingId = _editor.activeBlockId;
+        if (drawingId == null) return;
+        final paragraphMutation = _editor.insertAfter(
+          drawingId,
+          NoteBlockType.paragraph,
+        );
+        final paragraphId = paragraphMutation.focusBlockId;
+        _applyMutation(paragraphMutation);
+        if (paragraphId != null) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted) return;
+            _requestFocus(
+              paragraphId,
+              const TextSelection.collapsed(offset: 0),
+            );
+          });
+        }
+      },
+    );
+  }
+
+'''
+          text = text[:drawing_start] + drawing_method + text[drawing_end:]
+
+          text = text.replace(
+              '          onTap: () => _selectBlock(block.id),',
+              '          onTap: () => _handleBlockTap(block.id),',
+              1,
+          )
+          build_block_start = text.find('  Widget _buildBlock(BuildContext context, int index) {')
+          if build_block_start < 0:
+              raise SystemExit('build block method not found')
+          next_on_tap = text.find('      onTap: () => _selectBlock(block.id),', build_block_start)
+          if next_on_tap < 0:
+              raise SystemExit('block item tap callback not found')
+          text = (
+              text[:next_on_tap]
+              + '      onTap: () => _handleBlockTap(block.id),'
+              + text[next_on_tap + len('      onTap: () => _selectBlock(block.id),'):]
+          )
+
+          action_start = text.find('    // Reserve the action rail for every block', build_block_start)
+          action_end = text.find('\n  void _togglePinned()', action_start)
+          if action_start < 0 or action_end < 0:
+              raise SystemExit('block action rail not found')
+          action_rail = '''    // Keep a fixed action rail for every block. Selection and the menu are
+    // overlays only, so editing/selection never changes text width or wrapping.
+    final selectedForBulk = _selectedBlockIds.contains(block.id);
+    final content = Padding(
+      key: ValueKey<String>(block.id),
+      padding: const EdgeInsets.only(right: 36),
+      child: item,
+    );
+    return Stack(
+      key: ValueKey<String>(block.id),
+      clipBehavior: Clip.none,
+      children: [
+        if (selectedForBulk)
+          Positioned.fill(
+            child: IgnorePointer(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primary.withValues(
+                    alpha: 0.06,
+                  ),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            ),
+          ),
+        content,
+        if (selectedForBulk)
+          Positioned(
+            left: 2,
+            top: 6,
+            child: Container(
+              width: 18,
+              height: 18,
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primary,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.check_rounded,
+                size: 12,
+                color: Theme.of(context).colorScheme.onPrimary,
+              ),
+            ),
+          ),
+        Positioned(
+          top: 2,
+          right: 2,
+          child: _NotesBlockMoreButton(
+            onPressed: (anchorCenter) =>
+                _showBlockActionMenu(anchorCenter, block),
+          ),
+        ),
+      ],
+    );
+'''
+          text = text[:action_start] + action_rail + text[action_end:]
+
+          text = replace_once(
+              text,
+              '    await DatabaseService.instance.deleteNote(_task.planRowIdForBackend);\n'
+              '    if (mounted) Navigator.of(context).pop();',
+              '    await DatabaseService.instance.deleteNote(_task.planRowIdForBackend);\n'
+              '    if (!mounted) return;\n'
+              '    final embeddedScope = NotesEmbeddedEditorScope.maybeOf(context);\n'
+              '    if (embeddedScope != null) {\n'
+              '      embeddedScope.onClose();\n'
+              '    } else {\n'
+              '      Navigator.of(context).pop();\n'
+              '    }',
+              'safe embedded note delete',
+          )
+
+          old_reorder = '''          onReorder: (oldIndex, newIndex) =>
+              _applyMutation(_editor.reorderVisible(oldIndex, newIndex)),'''
+          new_reorder = '''          onReorder: (oldIndex, newIndex) {
+            final visible = _editor.visibleBlocks;
+            final draggedId = oldIndex >= 0 && oldIndex < visible.length
+                ? visible[oldIndex].id
+                : null;
+            final mutation = draggedId != null &&
+                    _selectedBlockIds.contains(draggedId)
+                ? _editor.reorderVisibleGroup(
+                    _selectedBlockIds,
+                    oldIndex,
+                    newIndex,
+                  )
+                : _editor.reorderVisible(oldIndex, newIndex);
+            _applyMutation(mutation);
+          },'''
+          text = replace_once(text, old_reorder, new_reorder, 'selected block group move')
+
+          file_end = text.rfind('\nbool _sameRuns(')
+          if file_end < 0:
+              raise SystemExit('note editor helper footer not found')
+          overlay_classes = '''
+class _NotesBlockMoreButton extends StatefulWidget {
+  const _NotesBlockMoreButton({required this.onPressed});
+
+  final ValueChanged<Offset> onPressed;
+
+  @override
+  State<_NotesBlockMoreButton> createState() => _NotesBlockMoreButtonState();
+}
+
+class _NotesBlockMoreButtonState extends State<_NotesBlockMoreButton> {
+  final GlobalKey _anchorKey = GlobalKey();
+
+  void _open() {
+    final box = _anchorKey.currentContext?.findRenderObject() as RenderBox?;
+    if (box == null || !box.hasSize) return;
+    final rect = box.localToGlobal(Offset.zero) & box.size;
+    widget.onPressed(rect.center);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: 'More',
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: _open,
+          borderRadius: BorderRadius.circular(15),
+          child: SizedBox.square(
+            key: _anchorKey,
+            dimension: 30,
+            child: Icon(
+              Icons.more_horiz_rounded,
+              size: 18,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _NotesBlockCircularMenuOverlay extends StatelessWidget {
+  const _NotesBlockCircularMenuOverlay({
+    required this.anchorCenter,
+    required this.selected,
+    required this.onDismiss,
+    required this.onSelect,
+    required this.onDelete,
+  });
+
+  final Offset anchorCenter;
+  final bool selected;
+  final VoidCallback onDismiss;
+  final VoidCallback onSelect;
+  final VoidCallback onDelete;
+
+  double _left(double centerX, double width) =>
+      (centerX - 21).clamp(8.0, width - 50).toDouble();
+
+  double _top(double centerY, double height) =>
+      (centerY - 21).clamp(8.0, height - 50).toDouble();
+
+  @override
+  Widget build(BuildContext context) {
+    final size = MediaQuery.sizeOf(context);
+    final selectCenter = anchorCenter + const Offset(-48, -42);
+    final deleteCenter = anchorCenter + const Offset(-64, 14);
+    return Material(
+      color: Colors.transparent,
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: GestureDetector(
+              behavior: HitTestBehavior.translucent,
+              onTap: onDismiss,
+              child: const SizedBox.expand(),
+            ),
+          ),
+          Positioned(
+            left: _left(selectCenter.dx, size.width),
+            top: _top(selectCenter.dy, size.height),
+            child: _NotesBlockRadialAction(
+              tooltip: selected ? 'Deselect' : 'Select',
+              icon: selected
+                  ? Icons.remove_done_rounded
+                  : Icons.check_circle_outline_rounded,
+              onPressed: onSelect,
+            ),
+          ),
+          Positioned(
+            left: _left(deleteCenter.dx, size.width),
+            top: _top(deleteCenter.dy, size.height),
+            child: _NotesBlockRadialAction(
+              tooltip: 'Delete',
+              icon: Icons.delete_outline_rounded,
+              destructive: true,
+              onPressed: onDelete,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _NotesBlockRadialAction extends StatelessWidget {
+  const _NotesBlockRadialAction({
+    required this.tooltip,
+    required this.icon,
+    required this.onPressed,
+    this.destructive = false,
+  });
+
+  final String tooltip;
+  final IconData icon;
+  final VoidCallback onPressed;
+  final bool destructive;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final foreground = destructive ? scheme.error : scheme.onSurface;
+    return Tooltip(
+      message: tooltip,
+      child: Material(
+        elevation: 5,
+        shadowColor: Colors.black.withValues(alpha: 0.18),
+        color: scheme.surface,
+        shape: const CircleBorder(),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onPressed,
+          child: SizedBox.square(
+            dimension: 42,
+            child: Icon(icon, size: 20, color: foreground),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+'''
+          text = text[:file_end] + overlay_classes + text[file_end:]
+          write(path, text)
+
+          # Sanity: the requested UI regressions must be gone in source.
+          source = read('lib/features/notes/widgets/note_card.dart')
+          if 'tooltip: data.pinned' in source:
+              raise SystemExit('pin button still rendered on NoteCard')
+          if 'dimension: 44' in source[source.find('class _LargeDoneCheck'):source.find('class _CategoryTile')]:
+              raise SystemExit('large checkbox still changes card geometry')
+          header = read('lib/features/notes/widgets/notes_editor_screen.dart')
+          nav = header[header.find('class _NotesNavigationHeader'):header.find('class _NotesBackAction')]
+          if 'Icons.close_rounded' in nav or 'Icons.push_pin' in nav and 'PopupMenuItem' not in nav:
+              raise SystemExit('old direct note header actions still present')
+
           PY
