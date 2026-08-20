@@ -41,9 +41,7 @@ function accessToken(app, c) {
     }),
     timeout: 30
   });
-  if (res.statusCode < 200 || res.statusCode >= 300 || !res.json || !res.json.access_token) {
-    throw new Error('token_refresh_' + res.statusCode);
-  }
+  if (res.statusCode < 200 || res.statusCode >= 300 || !res.json || !res.json.access_token) throw new Error('token_refresh_' + res.statusCode);
   return String(res.json.access_token);
 }
 function clean(value) {
@@ -51,8 +49,7 @@ function clean(value) {
 }
 function run(e) {
   try {
-    var c = connection(e.app);
-    var token = accessToken(e.app, c);
+    var token = accessToken(e.app, connection(e.app));
     var res = $http.send({
       url: 'https://www.googleapis.com/fitness/v1/users/me/dataSources?' + form({ dataTypeName: 'com.google.sleep.segment' }),
       method: 'GET',
@@ -63,25 +60,15 @@ function run(e) {
     if (res.statusCode >= 200 && res.statusCode < 300 && res.json) {
       var rows = res.json.dataSource || [];
       for (var i = 0; i < rows.length; i++) {
-        var row = rows[i] || {};
-        var app = row.application || {};
-        var device = row.device || {};
+        var row = rows[i] || {}, app = row.application || {}, device = row.device || {};
         out.push({
-          stream: clean(row.dataStreamId),
-          stream_name: clean(row.dataStreamName),
-          app_package: clean(app.packageName || app.package_name),
-          app_name: clean(app.name),
-          device_manufacturer: clean(device.manufacturer),
-          device_model: clean(device.model),
-          type: clean(row.type)
+          stream: clean(row.dataStreamId), stream_name: clean(row.dataStreamName),
+          app_package: clean(app.packageName || app.package_name), app_name: clean(app.name),
+          device_manufacturer: clean(device.manufacturer), device_model: clean(device.model), type: clean(row.type)
         });
       }
     }
-    return e.json(200, {
-      status: res.statusCode,
-      source_count: out.length,
-      sources: out
-    });
+    return e.json(200, { status: res.statusCode, source_count: out.length, sources: out });
   } catch (err) {
     return e.json(200, { status: 0, diagnostic_error: String(err) });
   }
