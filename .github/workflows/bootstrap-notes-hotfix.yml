@@ -1,4 +1,4 @@
-name: Notes undo selection and add-row hotfix
+name: Notes shared input parity hotfix
 
 on:
   workflow_dispatch:
@@ -9,7 +9,6 @@ jobs:
     steps:
       - run: |
           python3 - <<'PY'
-          import re
           from pathlib import Path
 
           def require(condition, label):
@@ -22,252 +21,183 @@ jobs:
                   raise SystemExit(f'{label}: expected 1 match, got {count}')
               return text.replace(old, new, 1)
 
-          def replace_section(text, start_marker, end_marker, transform):
-              start = text.index(start_marker)
-              end = text.index(end_marker, start)
-              return text[:start] + transform(text[start:end]) + text[end:]
+          # One canonical library input widget. Search and quick-add must render
+          # through this exact component so their outer and visual heights cannot drift.
+          surface = Path('lib/features/notes/notes_glm_surface.dart')
+          s = surface.read_text()
+          require('class NotesGlmLibraryInput' not in s, 'shared library input already exists')
+          marker = '/// GLM glass card surface for library note cards.\n'
+          at = s.index(marker)
+          shared = '''/// Canonical Notes library input used by both Search and quick-add.
+/// The widget owns the exact outer height and decoration so the two controls
+/// cannot diverge visually.
+class NotesGlmLibraryInput extends StatelessWidget {
+  const NotesGlmLibraryInput({
+    super.key,
+    required this.controller,
+    required this.focusNode,
+    required this.hintText,
+    required this.textInputAction,
+    this.textCapitalization = TextCapitalization.none,
+    this.onChanged,
+    this.onSubmitted,
+    this.suffixIcon,
+    this.showSearchIcon = true,
+  });
 
-          # Exact Add/Search control parity: same 48px height, same field
-          # decoration, no inherited search icon, no giant circular +.
+  final TextEditingController controller;
+  final FocusNode focusNode;
+  final String hintText;
+  final TextInputAction textInputAction;
+  final TextCapitalization textCapitalization;
+  final ValueChanged<String>? onChanged;
+  final ValueChanged<String>? onSubmitted;
+  final Widget? suffixIcon;
+  final bool showSearchIcon;
+
+  @override
+  Widget build(BuildContext context) {
+    final decoration = notesGlmSearchDecoration(
+      context: context,
+      hintText: hintText,
+      suffixIcon: suffixIcon,
+    );
+    return SizedBox(
+      height: kNotesLibraryControlHeight,
+      child: TextField(
+        controller: controller,
+        focusNode: focusNode,
+        textInputAction: textInputAction,
+        textCapitalization: textCapitalization,
+        onChanged: onChanged,
+        onSubmitted: onSubmitted,
+        style: TextStyle(
+          fontSize: 14,
+          color: Theme.of(context).colorScheme.onSurface,
+        ),
+        decoration: showSearchIcon
+            ? decoration
+            : decoration.copyWith(
+                prefixIcon: const SizedBox.shrink(),
+                prefixIconConstraints: const BoxConstraints.tightFor(
+                  width: 0,
+                  height: 0,
+                ),
+              ),
+      ),
+    );
+  }
+}
+
+'''
+          s = s[:at] + shared + s[at:]
+          surface.write_text(s)
+
+          # Search now uses the canonical widget instead of its own TextField.
+          lists = Path('lib/features/lists/lists_view.dart')
+          l = lists.read_text()
+          old_search = '''          TextField(
+            controller: searchController,
+            focusNode: searchFocus,
+            textInputAction: TextInputAction.search,
+            textCapitalization: TextCapitalization.sentences,
+            onChanged: onSearchChanged,
+            style: TextStyle(fontSize: 14, color: scheme.onSurface),
+            decoration: notesGlmSearchDecoration(
+              context: context,
+              hintText: t(locale, 'notes_v3_search_hint'),
+              suffixIcon: searchQuery.trim().isNotEmpty
+                  ? IconButton(
+                      tooltip: t(locale, 'cancel'),
+                      icon: const Icon(Icons.close_rounded, size: 18),
+                      visualDensity: VisualDensity.compact,
+                      splashRadius: 16,
+                      onPressed: onClearSearch,
+                    )
+                  : null,
+            ),
+          ),
+'''
+          new_search = '''          NotesGlmLibraryInput(
+            controller: searchController,
+            focusNode: searchFocus,
+            hintText: t(locale, 'notes_v3_search_hint'),
+            textInputAction: TextInputAction.search,
+            textCapitalization: TextCapitalization.sentences,
+            onChanged: onSearchChanged,
+            suffixIcon: searchQuery.trim().isNotEmpty
+                ? IconButton(
+                    tooltip: t(locale, 'cancel'),
+                    icon: const Icon(Icons.close_rounded, size: 18),
+                    visualDensity: VisualDensity.compact,
+                    splashRadius: 16,
+                    onPressed: onClearSearch,
+                  )
+                : null,
+          ),
+'''
+          l = replace_once(l, old_search, new_search, 'replace search with shared input')
+          lists.write_text(l)
+
+          # Quick-add uses the same canonical widget. The action is a 48x48
+          # black circle: exactly the input's outer height, no separate sizing path.
           shell = Path('lib/features/notes/widgets/notes_library_production_shell.dart')
-          s = shell.read_text()
-          s, n = re.subn(r'prefixIcon:\s*null,', 'prefixIcon: const SizedBox.shrink(),', s, count=1)
-          require(n == 1, f'inline add prefix icon: expected 1 match, got {n}')
-          s, n = re.subn(
-              r'prefixIconConstraints:\s*const BoxConstraints\(\s*minWidth:\s*0,\s*minHeight:\s*0,\s*\),',
-              '''prefixIconConstraints: const BoxConstraints.tightFor(
-        width: 0,
-        height: 0,
-      ),''',
-              s,
-              count=1,
-          )
-          require(n == 1, f'inline add prefix constraints: expected 1 match, got {n}')
-          class_at = s.index('class NotesGlmInlineAddRow')
-          button_start = s.index('        SizedBox.square(', class_at)
-          row_end = s.index('\n      ],\n    );', button_start)
-          new_button = '''        SizedBox(
-          width: kNotesLibraryControlHeight,
-          height: kNotesLibraryControlHeight,
+          q = shell.read_text()
+          start = q.index('class NotesGlmInlineAddRow extends StatelessWidget')
+          build_start = q.index('  @override\n  Widget build(BuildContext context) {', start)
+          class_end = q.index('\n}', build_start) + 2
+          new_build = '''  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Expanded(
+          child: NotesGlmLibraryInput(
+            controller: controller,
+            focusNode: focusNode,
+            hintText: t(locale, 'input_placeholder_list'),
+            textInputAction: TextInputAction.done,
+            showSearchIcon: false,
+            onSubmitted: (_) => onSubmit(),
+          ),
+        ),
+        const SizedBox(width: 8),
+        SizedBox.square(
+          dimension: kNotesLibraryControlHeight,
           child: Tooltip(
             message: t(locale, 'add'),
             child: Material(
-              color: scheme.primary,
-              borderRadius: BorderRadius.circular(12),
+              color: Colors.black,
+              shape: const CircleBorder(),
               clipBehavior: Clip.antiAlias,
               child: InkWell(
                 onTap: onSubmit,
-                borderRadius: BorderRadius.circular(12),
-                child: Center(
+                customBorder: const CircleBorder(),
+                child: const Center(
                   child: Icon(
                     Icons.add_rounded,
                     size: 22,
-                    color: scheme.onPrimary,
+                    color: Colors.white,
                   ),
                 ),
               ),
             ),
           ),
-        ),'''
-          s = s[:button_start] + new_button + s[row_end:]
-          shell.write_text(s)
-
-          # Document-level undo history.
-          controller = Path('lib/features/notes/notes_editor_document_controller.dart')
-          c = controller.read_text()
-          c = replace_once(
-              c,
-              '  NoteDocument _document;\n  String? activeBlockId;\n',
-              '  NoteDocument _document;\n  final List<NoteDocument> _undoStack = <NoteDocument>[];\n  String? activeBlockId;\n',
-              'undo stack field',
-          )
-          assignment = '_document = _document.copyWith(blocks: nextBlocks);'
-          count = c.count(assignment)
-          require(count >= 5, f'document mutations: expected >=5, got {count}')
-          c = c.replace(assignment, '_commitDocument(_document.copyWith(blocks: nextBlocks));')
-          marker = '  void _replaceBlock(NoteBlock replacement) {\n'
-          at = c.index(marker)
-          require('NotesEditorMutation undo()' not in c, 'undo unexpectedly already present')
-          helpers = '''  bool get canUndo => _undoStack.isNotEmpty;
-
-  NotesEditorMutation undo() {
-    if (_undoStack.isEmpty) return const NotesEditorMutation();
-    _document = _undoStack.removeLast();
-    final visible = visibleBlocks;
-    if (visible.isEmpty) {
-      activeBlockId = null;
-      activeSelection = null;
-      return const NotesEditorMutation(changed: true, requiresRebuild: true);
-    }
-    final previousActiveId = activeBlockId;
-    final restoredId = previousActiveId != null && blockById(previousActiveId) != null
-        ? previousActiveId
-        : visible.last.id;
-    activeBlockId = restoredId;
-    final restored = blockById(restoredId);
-    if (restored != null && isEditableText(restored.type)) {
-      final offset = (activeSelection?.extentOffset ?? restored.effectiveText.length)
-          .clamp(0, restored.effectiveText.length)
-          .toInt();
-      activeSelection = TextSelection.collapsed(offset: offset);
-      return NotesEditorMutation(
-        changed: true,
-        requiresRebuild: true,
-        focusBlockId: restoredId,
-        selection: activeSelection,
-      );
-    }
-    activeSelection = null;
-    return const NotesEditorMutation(changed: true, requiresRebuild: true);
-  }
-
-  void _commitDocument(NoteDocument next) {
-    _undoStack.add(_document);
-    if (_undoStack.length > 100) _undoStack.removeAt(0);
-    _document = next;
-  }
-
-'''
-          c = c[:at] + helpers + c[at:]
-          controller.write_text(c)
-
-          # Header Undo button next to the three-dot menu. The callback is
-          # optional for existing test/preview harnesses; production supplies it.
-          screen = Path('lib/features/notes/widgets/notes_editor_screen.dart')
-          r = screen.read_text()
-
-          def patch_screen_public(sec):
-              sec = replace_once(sec, '    required this.onDelete,\n    this.bulkSelectionMode', '    required this.onDelete,\n    this.onUndo,\n    this.bulkSelectionMode', 'screen ctor undo')
-              sec = replace_once(sec, '  final VoidCallback onDelete;\n  final bool bulkSelectionMode;', '  final VoidCallback onDelete;\n  final VoidCallback? onUndo;\n  final bool bulkSelectionMode;', 'screen field undo')
-              sec = replace_once(sec, '              onDelete: onDelete,\n              bulkSelectionMode:', '              onDelete: onDelete,\n              onUndo: onUndo,\n              bulkSelectionMode:', 'screen pass undo')
-              return sec
-          r = replace_section(r, 'class NotesEditorScreen extends StatelessWidget {', 'class _NotesEditorRail extends StatelessWidget {', patch_screen_public)
-
-          def patch_rail(sec):
-              sec = replace_once(sec, '    required this.onDelete,\n    required this.bulkSelectionMode,', '    required this.onDelete,\n    this.onUndo,\n    required this.bulkSelectionMode,', 'rail ctor undo')
-              sec = replace_once(sec, '  final VoidCallback? onDelete;\n  final bool bulkSelectionMode;', '  final VoidCallback? onDelete;\n  final VoidCallback? onUndo;\n  final bool bulkSelectionMode;', 'rail field undo')
-              nav_at = sec.index('_NotesNavigationHeader(')
-              tail = sec[nav_at:]
-              tail = replace_once(tail, '                  onDelete: onDelete,\n', '                  onDelete: onDelete,\n                  onUndo: onUndo,\n', 'rail pass undo')
-              return sec[:nav_at] + tail
-          r = replace_section(r, 'class _NotesEditorRail extends StatelessWidget {', 'class _NotesEditorSurface extends StatelessWidget {', patch_rail)
-
-          def patch_header(sec):
-              sec = replace_once(sec, '    required this.onDelete,\n    required this.bulkSelectionMode,', '    required this.onDelete,\n    this.onUndo,\n    required this.bulkSelectionMode,', 'header ctor undo')
-              sec = replace_once(sec, '  final VoidCallback? onDelete;\n  final bool bulkSelectionMode;', '  final VoidCallback? onDelete;\n  final VoidCallback? onUndo;\n  final bool bulkSelectionMode;', 'header field undo')
-              old = '''if (bulkSelectionMode && onExitBulkSelection != null)
-  _NotesBulkDoneAction(onPressed: onExitBulkSelection!)
-else
-  _NotesHeaderMoreMenu(
-    pinned: pinned,
-    onTogglePinned: onTogglePinned,
-    onDelete: onDelete,
-  ),'''
-              new = '''if (bulkSelectionMode && onExitBulkSelection != null)
-  _NotesBulkDoneAction(onPressed: onExitBulkSelection!)
-else
-  Row(
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      if (onUndo != null) ...[
-        _NotesHeaderAction(
-          icon: Icons.undo_rounded,
-          tooltip: 'Undo',
-          onPressed: onUndo!,
         ),
-        const SizedBox(width: 8),
       ],
-      _NotesHeaderMoreMenu(
-        pinned: pinned,
-        onTogglePinned: onTogglePinned,
-        onDelete: onDelete,
-      ),
-    ],
-  ),'''
-              return replace_once(sec, old, new, 'undo next to more')
-          r = replace_section(r, 'class _NotesNavigationHeader extends StatelessWidget {', 'class _NotesBulkDoneAction extends StatelessWidget {', patch_header)
-          screen.write_text(r)
+    );
+  }'''
+          q = q[:build_start] + new_build + q[class_end:]
+          shell.write_text(q)
 
-          # Right-click guard: stop editable child blocks from taking focus and
-          # collapsing an already established cross-block SelectionArea range.
-          page = Path('lib/features/notes/note_editor_page.dart')
-          p = page.read_text()
-          p = replace_once(
-              p,
-              '  final Map<String, GlobalKey> _blockItemKeys = <String, GlobalKey>{};\n  bool _dirty = false;\n',
-              '  final Map<String, GlobalKey> _blockItemKeys = <String, GlobalKey>{};\n  Timer? _secondarySelectionGuardTimer;\n  bool _secondarySelectionGuardActive = false;\n  bool _dirty = false;\n',
-              'secondary guard fields',
-          )
-          p = replace_once(p, '  void dispose() {\n    if (_dirty && !widget.parityPreview) {', '  void dispose() {\n    _secondarySelectionGuardTimer?.cancel();\n    if (_dirty && !widget.parityPreview) {', 'secondary guard dispose')
-          p = replace_once(p, "      final node = FocusNode(debugLabel: 'notes-block-${block.id}');\n", "      final node = FocusNode(debugLabel: 'notes-block-${block.id}');\n      node.canRequestFocus = !_secondarySelectionGuardActive;\n", 'focus node guard')
-          p = replace_once(
-              p,
-              "  void _captureStructuredSelection(SelectedContent? selected) {\n    final plain = selected?.plainText ?? '';\n",
-              "  void _captureStructuredSelection(SelectedContent? selected) {\n    if (_secondarySelectionGuardActive &&\n        _NotesStructuredClipboard.blocks.length >= 2) {\n      return;\n    }\n    final plain = selected?.plainText ?? '';\n",
-              'preserve selection callback',
-          )
-          guard_at = p.index('  void _handleEditorBackgroundPointer(PointerDownEvent event) {\n')
-          require('_beginSecondarySelectionGuard' not in p, 'secondary guard unexpectedly already present')
-          guard = '''  void _beginSecondarySelectionGuard(PointerDownEvent event) {
-    if ((event.buttons & kSecondaryMouseButton) == 0 ||
-        _NotesStructuredClipboard.blocks.length < 2) {
-      return;
-    }
-    _secondarySelectionGuardTimer?.cancel();
-    _secondarySelectionGuardActive = true;
-    for (final node in _focusNodes.values) {
-      node.canRequestFocus = false;
-    }
-  }
-
-  void _scheduleSecondarySelectionGuardRelease(PointerEvent event) {
-    if (!_secondarySelectionGuardActive) return;
-    _secondarySelectionGuardTimer?.cancel();
-    _secondarySelectionGuardTimer = Timer(const Duration(milliseconds: 350), () {
-      if (!mounted) return;
-      _secondarySelectionGuardActive = false;
-      for (final node in _focusNodes.values) {
-        node.canRequestFocus = true;
-      }
-    });
-  }
-
-  void _handleEditorPointerDown(PointerDownEvent event) {
-    _beginSecondarySelectionGuard(event);
-    _handleEditorBackgroundPointer(event);
-  }
-
-'''
-          p = p[:guard_at] + guard + p[guard_at:]
-
-          undo_at = p.index('  void _togglePinned() {\n')
-          undo_method = '''  void _undoLastEdit() {
-    final mutation = _editor.undo();
-    if (!mutation.changed) return;
-    _NotesStructuredClipboard.plainText = null;
-    _NotesStructuredClipboard.blocks = const <NoteBlock>[];
-    _selectedBlockIds.clear();
-    _blockSelectionMode = false;
-    _editingBlockId = null;
-    _applyMutation(mutation);
-  }
-
-'''
-          p = p[:undo_at] + undo_method + p[undo_at:]
-          p = replace_once(p, '      onDelete: _deleteCurrentNote,\n      bulkSelectionMode:', '      onDelete: _deleteCurrentNote,\n      onUndo: _undoLastEdit,\n      bulkSelectionMode:', 'wire undo')
-          p = replace_once(p, '        onPointerDown: _handleEditorBackgroundPointer,\n', '        onPointerDown: _handleEditorPointerDown,\n        onPointerUp: _scheduleSecondarySelectionGuardRelease,\n        onPointerCancel: _scheduleSecondarySelectionGuardRelease,\n', 'listener secondary guard')
-          page.write_text(p)
-
+          final_surface = surface.read_text()
+          final_lists = lists.read_text()
           final_shell = shell.read_text()
-          final_controller = controller.read_text()
-          final_screen = screen.read_text()
-          final_page = page.read_text()
-          require('prefixIcon: const SizedBox.shrink()' in final_shell, 'add still has search icon')
-          require('width: kNotesLibraryControlHeight' in final_shell and 'height: kNotesLibraryControlHeight' in final_shell, 'add button not exact height')
-          require('shape: const CircleBorder()' not in final_shell.split('class NotesGlmInlineAddRow', 1)[1], 'add button still circular')
-          require('NotesEditorMutation undo()' in final_controller, 'undo history missing')
-          require('icon: Icons.undo_rounded' in final_screen, 'undo button missing')
-          require('onUndo: _undoLastEdit' in final_page, 'undo wiring missing')
-          require('_beginSecondarySelectionGuard' in final_page, 'right-click guard missing')
-          require('onPointerUp: _scheduleSecondarySelectionGuardRelease' in final_page, 'right-click release missing')
+          require('class NotesGlmLibraryInput' in final_surface, 'canonical input missing')
+          require(final_lists.count('NotesGlmLibraryInput(') >= 1, 'search not on canonical input')
+          require(final_shell.count('NotesGlmLibraryInput(') >= 1, 'quick-add not on canonical input')
+          require('dimension: kNotesLibraryControlHeight' in final_shell, 'plus height not tied to input height')
+          require('color: Colors.black' in final_shell, 'plus is not black')
+          require('shape: const CircleBorder()' in final_shell, 'plus is not circular')
+          require('borderRadius: BorderRadius.circular(12)' not in final_shell.split('class NotesGlmInlineAddRow', 1)[1], 'legacy rounded-square plus remains')
           PY
