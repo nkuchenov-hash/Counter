@@ -1,4 +1,4 @@
-name: Notes UX patch definition wrapper
+name: Restore Notes checkbox visual
 
 on:
   workflow_dispatch:
@@ -10,145 +10,69 @@ jobs:
       - run: |
           python3 - <<'PY'
           from pathlib import Path
-          import re
 
-          # Apply the quick-add change directly against the real Dart source.
-          path = Path('lib/features/notes/widgets/notes_library_production_shell.dart')
+          path = Path('lib/features/notes/widgets/note_card.dart')
           text = path.read_text()
-          declaration = '    final compactMobile = MediaQuery.sizeOf(context).shortestSide < 600;\n'
-          if declaration not in text:
-              raise SystemExit('quick-add compactMobile declaration not found')
-          text = text.replace(declaration, '', 1)
-          if '            height: 40,' not in text:
-              raise SystemExit('quick-add input height not found')
-          text = text.replace('            height: 40,', '            height: 48,', 1)
-          text = text.replace(
-              '              style: TextStyle(fontSize: 14, color: scheme.onSurface),',
-              '              style: TextStyle(fontSize: 15, color: scheme.onSurface),',
-              1,
-          )
-          text = text.replace('                  fontSize: 14,', '                  fontSize: 15,', 1)
 
-          anchor = text.find('width: compactMobile ? 40 : null')
-          if anchor < 0:
-              raise SystemExit('quick-add button width anchor not found')
-          start = text.rfind('        SizedBox(', 0, anchor)
-          if start < 0:
-              raise SystemExit('quick-add parent SizedBox not found')
-          row_end = text.find('\n      ],\n    );', anchor)
-          if row_end < 0:
-              raise SystemExit('quick-add row end not found')
-          end = text.rfind('        ),', anchor, row_end)
-          if end < 0:
-              raise SystemExit('quick-add button closing not found')
-          end += len('        ),')
-          new_button = '''        SizedBox.square(
-          dimension: 48,
-          child: Tooltip(
-            message: t(locale, 'add'),
-            child: Material(
-              color: scheme.primary,
-              shape: const CircleBorder(),
-              child: InkWell(
-                onTap: onSubmit,
-                customBorder: const CircleBorder(),
-                child: Center(
-                  child: Icon(
-                    Icons.add_rounded,
-                    size: 24,
-                    color: scheme.onPrimary,
+          old = '''            child: Center(
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 120),
+                width: 26,
+                height: 26,
+                decoration: BoxDecoration(
+                  color: isDone ? scheme.primary : Colors.transparent,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: isDone
+                        ? scheme.primary
+                        : scheme.outline.withValues(alpha: 0.55),
+                    width: 1.5,
                   ),
                 ),
+                child: isDone
+                    ? Icon(
+                        Icons.check_rounded,
+                        size: 18,
+                        color: scheme.onPrimary,
+                      )
+                    : null,
               ),
-            ),
-          ),
-        ),'''
-          text = text[:start] + new_button + text[end:]
-          path.write_text(text)
+            ),'''
 
-          # New drawings always receive an editable paragraph immediately after
-          # the media block. Editing an existing drawing remains media-only.
-          path = Path('lib/features/notes/note_editor_page.dart')
-          text = path.read_text()
-          drawing_start = text.find('        final mutation = editBlockId == null')
-          if drawing_start < 0:
-              raise SystemExit('drawing mutation start not found')
-          drawing_end_marker = '        _applyMutation(mutation);'
-          drawing_end = text.find(drawing_end_marker, drawing_start)
-          if drawing_end < 0:
-              raise SystemExit('drawing mutation end not found')
-          drawing_end += len(drawing_end_marker)
-          new_drawing = '''        if (editBlockId == null) {
-          _editor.insertAfter(
-            _editor.activeBlockId,
-            NoteBlockType.drawing,
-            drawingData: dataUrl,
-          );
-          final drawingId = _editor.activeBlockId;
-          if (drawingId == null) return;
-          _applyMutation(
-            _editor.insertAfter(drawingId, NoteBlockType.paragraph),
-          );
-          return;
-        }
-        _applyMutation(
-          _editor.updateMedia(editBlockId, drawingData: dataUrl),
-        );'''
-          text = text[:drawing_start] + new_drawing + text[drawing_end:]
-          path.write_text(text)
+          new = '''            child: Center(
+              child: Container(
+                width: kNotesLargeCheckSize,
+                height: kNotesLargeCheckSize,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: isDone
+                        ? scheme.primary
+                        : scheme.outlineVariant.withValues(alpha: 0.7),
+                    width: 2,
+                  ),
+                  color: isDone ? scheme.primary : Colors.transparent,
+                ),
+                child: isDone
+                    ? const Icon(
+                        Icons.check_rounded,
+                        size: 20,
+                        color: Colors.white,
+                      )
+                    : null,
+              ),
+            ),'''
 
-          # Editing must not change line metrics relative to selectable rendering.
-          path = Path('lib/features/notes/widgets/notes_component_text_blocks.dart')
-          text = path.read_text()
-          text, first = re.subn(
-              r'\n\s*strutStyle:\s*StrutStyle\.fromTextStyle\(\s*textStyle,\s*forceStrutHeight:\s*true,\s*\),',
-              '',
-              text,
-              count=1,
-          )
-          text, second = re.subn(
-              r'\n\s*strutStyle:\s*StrutStyle\.fromTextStyle\(\s*baseStyle,\s*forceStrutHeight:\s*true,\s*\),',
-              '',
-              text,
-              count=1,
-          )
-          if first != 1 or second != 1:
-              raise SystemExit(f'Notes strut removal mismatch: {first}/{second}')
-          path.write_text(text)
+          if old not in text:
+              raise SystemExit('current Notes large checkbox visual not found')
+          text = text.replace(old, new, 1)
 
-          # Reuse the preserved original patch for all other Notes changes,
-          # excluding quick-add, drawing, and the old geometry-heavy section 8.
-          original = Path(
-              'automation/.github/notes-ux/bootstrap-notes-hotfix-original.txt'
-          ).read_text().splitlines()
-          script_start = next(
-              i for i, line in enumerate(original) if "python3 - <<'PY'" in line
-          ) + 1
-          script_end = next(
-              i for i in range(script_start, len(original))
-              if original[i].strip() == 'PY'
+          # Keep the larger invisible 44x44 hit target, but restore the exact
+          # original 36x36 visible checkbox and its original border/check styling.
+          text = text.replace(
+              '            borderRadius: BorderRadius.circular(12),',
+              '            borderRadius: BorderRadius.circular(8),',
+              1,
           )
-          body = []
-          skipping_quick_add = False
-          skipping_drawing = False
-          for raw in original[script_start:script_end]:
-              line = raw[10:] if raw.startswith('          ') else raw
-              if '# 3) Quick add:' in line:
-                  skipping_quick_add = True
-                  continue
-              if skipping_quick_add and '# 4) Keep Notes checkbox-mode' in line:
-                  skipping_quick_add = False
-              if skipping_quick_add:
-                  continue
-              if "old_drawing = '''" in line:
-                  skipping_drawing = True
-                  continue
-              if skipping_drawing:
-                  if 'rep(path, old_drawing, new_drawing)' in line:
-                      skipping_drawing = False
-                  continue
-              if '# 8) Editing must not increase line/block spacing' in line:
-                  break
-              body.append(line)
-          exec(compile('\n'.join(body) + '\n', '<notes-ux-batch>', 'exec'))
+          path.write_text(text)
           PY
