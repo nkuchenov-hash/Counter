@@ -9,6 +9,7 @@ jobs:
     steps:
       - run: |
           python3 - <<'PY'
+          import re
           from pathlib import Path
 
           def require(condition, label):
@@ -21,52 +22,35 @@ jobs:
                   raise SystemExit(f'{label}: expected 1 match, got {count}')
               return text.replace(old, new, 1)
 
-          # 1) Inline Add must be the exact same 48px control height as Search,
-          #    with no inherited search icon and no oversized circular action.
+          def replace_section(text, start_marker, end_marker, transform):
+              start = text.index(start_marker)
+              end = text.index(end_marker, start)
+              return text[:start] + transform(text[start:end]) + text[end:]
+
+          # Add row: exact Search-field geometry, no inherited search icon,
+          # and a 48x48 rounded-square action instead of the oversized circle.
           shell = Path('lib/features/notes/widgets/notes_library_production_shell.dart')
           s = shell.read_text()
-          s = replace_once(
+          s, n = re.subn(
+              r'prefixIcon:\s*null,',
+              'prefixIcon: const SizedBox.shrink(),',
               s,
-              '''              ).copyWith(
-                prefixIcon: null,
-                prefixIconConstraints: const BoxConstraints(
-                  minWidth: 0,
-                  minHeight: 0,
-                ),
-              ),
-''',
-              '''              ).copyWith(
-                prefixIcon: const SizedBox.shrink(),
-                prefixIconConstraints: const BoxConstraints.tightFor(
-                  width: 0,
-                  height: 0,
-                ),
-              ),
-''',
-              'remove inherited search icon from inline add',
+              count=1,
           )
-          old_button = '''        SizedBox.square(
-dimension: kNotesLibraryControlHeight,
-child: Tooltip(
-  message: t(locale, 'add'),
-  child: Material(
-    color: scheme.primary,
-    shape: const CircleBorder(),
-    child: InkWell(
-      onTap: onSubmit,
-      customBorder: const CircleBorder(),
-      child: Center(
-        child: Icon(
-          Icons.add_rounded,
-          size: 24,
-          color: scheme.onPrimary,
-        ),
-      ),
-    ),
-  ),
-),
-        ),
-'''
+          require(n == 1, f'inline add prefix icon: expected 1 match, got {n}')
+          s, n = re.subn(
+              r'prefixIconConstraints:\s*const BoxConstraints\(\s*minWidth:\s*0,\s*minHeight:\s*0,\s*\),',
+              '''prefixIconConstraints: const BoxConstraints.tightFor(
+        width: 0,
+        height: 0,
+      ),''',
+              s,
+              count=1,
+          )
+          require(n == 1, f'inline add prefix constraints: expected 1 match, got {n}')
+          class_at = s.index('class NotesGlmInlineAddRow')
+          button_start = s.index('        SizedBox.square(', class_at)
+          row_end = s.index('\n      ],\n    );', button_start)
           new_button = '''        SizedBox(
           width: kNotesLibraryControlHeight,
           height: kNotesLibraryControlHeight,
@@ -89,38 +73,28 @@ child: Tooltip(
               ),
             ),
           ),
-        ),
-'''
-          s = replace_once(s, old_button, new_button, 'inline add exact-size button')
+        ),'''
+          s = s[:button_start] + new_button + s[row_end:]
           shell.write_text(s)
 
-          # 2) Document-level undo history.
+          # Document undo stack. Every document block mutation commits through
+          # _commitDocument; undo restores the previous immutable NoteDocument.
           controller = Path('lib/features/notes/notes_editor_document_controller.dart')
           c = controller.read_text()
           c = replace_once(
               c,
-              '''  NoteDocument _document;
-  String? activeBlockId;
-''',
-              '''  NoteDocument _document;
-  final List<NoteDocument> _undoStack = <NoteDocument>[];
-  String? activeBlockId;
-''',
+              '  NoteDocument _document;\n  String? activeBlockId;\n',
+              '  NoteDocument _document;\n  final List<NoteDocument> _undoStack = <NoteDocument>[];\n  String? activeBlockId;\n',
               'undo stack field',
           )
-          # All real document mutations flow through these assignments. The
-          # constructor uses a different source.copyWith assignment and is left alone.
-          mutation_assignment = '_document = _document.copyWith(blocks: nextBlocks);'
-          mutation_count = c.count(mutation_assignment)
-          require(mutation_count >= 5, f'expected document mutation assignments, got {mutation_count}')
-          c = c.replace(
-              mutation_assignment,
-              '_commitDocument(_document.copyWith(blocks: nextBlocks));',
-          )
-          marker = '''  void _replaceBlock(NoteBlock replacement) {
-'''
+          assignment = '_document = _document.copyWith(blocks: nextBlocks);'
+          count = c.count(assignment)
+          require(count >= 5, f'document mutations: expected >=5, got {count}')
+          c = c.replace(assignment, '_commitDocument(_document.copyWith(blocks: nextBlocks));')
+          marker = '  void _replaceBlock(NoteBlock replacement) {\n'
           at = c.index(marker)
-          undo_helpers = '''  bool get canUndo => _undoStack.isNotEmpty;
+          require('NotesEditorMutation undo()' not in c, 'undo unexpectedly already present')
+          helpers = '''  bool get canUndo => _undoStack.isNotEmpty;
 
   NotesEditorMutation undo() {
     if (_undoStack.isEmpty) return const NotesEditorMutation();
@@ -131,7 +105,6 @@ child: Tooltip(
       activeSelection = null;
       return const NotesEditorMutation(changed: true, requiresRebuild: true);
     }
-
     final previousActiveId = activeBlockId;
     final restoredId = previousActiveId != null && blockById(previousActiveId) != null
         ? previousActiveId
@@ -161,116 +134,43 @@ child: Tooltip(
   }
 
 '''
-          require('NotesEditorMutation undo()' not in c, 'undo already unexpectedly exists')
-          c = c[:at] + undo_helpers + c[at:]
+          c = c[:at] + helpers + c[at:]
           controller.write_text(c)
 
-          # 3) Header Undo button immediately next to the three-dot menu.
+          # Header Undo button immediately left of the three-dot menu.
           screen = Path('lib/features/notes/widgets/notes_editor_screen.dart')
           r = screen.read_text()
-          r = replace_once(
-              r,
-              '''    required this.onDelete,
-    this.bulkSelectionMode = false,
-''',
-              '''    required this.onDelete,
-    required this.onUndo,
-    this.bulkSelectionMode = false,
-''',
-              'screen constructor undo',
-          )
-          r = replace_once(
-              r,
-              '''  final VoidCallback onDelete;
-  final bool bulkSelectionMode;
-''',
-              '''  final VoidCallback onDelete;
-  final VoidCallback onUndo;
-  final bool bulkSelectionMode;
-''',
-              'screen undo field',
-          )
-          r = replace_once(
-              r,
-              '''              onDelete: onDelete,
-              bulkSelectionMode: bulkSelectionMode,
-''',
-              '''              onDelete: onDelete,
-              onUndo: onUndo,
-              bulkSelectionMode: bulkSelectionMode,
-''',
-              'pass undo to rail',
-          )
-          r = replace_once(
-              r,
-              '''    required this.onDelete,
-    required this.bulkSelectionMode,
-''',
-              '''    required this.onDelete,
-    required this.onUndo,
-    required this.bulkSelectionMode,
-''',
-              'rail constructor undo',
-          )
-          # This exact field sequence occurs in the rail once after the first screen field was changed.
-          rail_field_old = '''  final VoidCallback? onDelete;
-  final bool bulkSelectionMode;
-'''
-          r = replace_once(
-              r,
-              rail_field_old,
-              '''  final VoidCallback? onDelete;
-  final VoidCallback onUndo;
-  final bool bulkSelectionMode;
-''',
-              'rail undo field',
-          )
-          r = replace_once(
-              r,
-              '''                  onDelete: onDelete,
-                bulkSelectionMode: bulkSelectionMode,
-''',
-              '''                  onDelete: onDelete,
-                  onUndo: onUndo,
-                bulkSelectionMode: bulkSelectionMode,
-''',
-              'pass undo to header',
-          )
-          r = replace_once(
-              r,
-              '''    required this.onDelete,
-    required this.bulkSelectionMode,
-    required this.onExitBulkSelection,
-''',
-              '''    required this.onDelete,
-    required this.onUndo,
-    required this.bulkSelectionMode,
-    required this.onExitBulkSelection,
-''',
-              'header constructor undo',
-          )
-          # Header has the remaining nullable onDelete field.
-          r = replace_once(
-              r,
-              '''  final VoidCallback? onDelete;
-  final bool bulkSelectionMode;
-  final VoidCallback? onExitBulkSelection;
-''',
-              '''  final VoidCallback? onDelete;
-  final VoidCallback onUndo;
-  final bool bulkSelectionMode;
-  final VoidCallback? onExitBulkSelection;
-''',
-              'header undo field',
-          )
-          old_header_actions = '''else
+
+          def patch_screen_public(sec):
+              sec = replace_once(sec, '    required this.onDelete,\n    this.bulkSelectionMode', '    required this.onDelete,\n    required this.onUndo,\n    this.bulkSelectionMode', 'screen ctor undo')
+              sec = replace_once(sec, '  final VoidCallback onDelete;\n  final bool bulkSelectionMode;', '  final VoidCallback onDelete;\n  final VoidCallback onUndo;\n  final bool bulkSelectionMode;', 'screen field undo')
+              sec = replace_once(sec, '              onDelete: onDelete,\n              bulkSelectionMode:', '              onDelete: onDelete,\n              onUndo: onUndo,\n              bulkSelectionMode:', 'screen pass undo')
+              return sec
+          r = replace_section(r, 'class NotesEditorScreen extends StatelessWidget {', 'class _NotesEditorRail extends StatelessWidget {', patch_screen_public)
+
+          def patch_rail(sec):
+              sec = replace_once(sec, '    required this.onDelete,\n    required this.bulkSelectionMode,', '    required this.onDelete,\n    required this.onUndo,\n    required this.bulkSelectionMode,', 'rail ctor undo')
+              sec = replace_once(sec, '  final VoidCallback? onDelete;\n  final bool bulkSelectionMode;', '  final VoidCallback? onDelete;\n  final VoidCallback onUndo;\n  final bool bulkSelectionMode;', 'rail field undo')
+              nav_at = sec.index('_NotesNavigationHeader(')
+              tail = sec[nav_at:]
+              tail = replace_once(tail, '                  onDelete: onDelete,\n', '                  onDelete: onDelete,\n                  onUndo: onUndo,\n', 'rail pass undo')
+              return sec[:nav_at] + tail
+          r = replace_section(r, 'class _NotesEditorRail extends StatelessWidget {', 'class _NotesEditorSurface extends StatelessWidget {', patch_rail)
+
+          def patch_header(sec):
+              sec = replace_once(sec, '    required this.onDelete,\n    required this.bulkSelectionMode,', '    required this.onDelete,\n    required this.onUndo,\n    required this.bulkSelectionMode,', 'header ctor undo')
+              sec = replace_once(sec, '  final VoidCallback? onDelete;\n  final bool bulkSelectionMode;', '  final VoidCallback? onDelete;\n  final VoidCallback onUndo;\n  final bool bulkSelectionMode;', 'header field undo')
+              old = '''if (bulkSelectionMode && onExitBulkSelection != null)
+  _NotesBulkDoneAction(onPressed: onExitBulkSelection!)
+else
   _NotesHeaderMoreMenu(
     pinned: pinned,
     onTogglePinned: onTogglePinned,
     onDelete: onDelete,
-  ),
-'''
-          new_header_actions = '''else
+  ),'''
+              new = '''if (bulkSelectionMode && onExitBulkSelection != null)
+  _NotesBulkDoneAction(onPressed: onExitBulkSelection!)
+else
   Row(
     mainAxisSize: MainAxisSize.min,
     children: [
@@ -286,65 +186,32 @@ child: Tooltip(
         onDelete: onDelete,
       ),
     ],
-  ),
-'''
-          r = replace_once(r, old_header_actions, new_header_actions, 'undo next to more menu')
+  ),'''
+              return replace_once(sec, old, new, 'undo next to more')
+          r = replace_section(r, 'class _NotesNavigationHeader extends StatelessWidget {', 'class _NotesBulkDoneAction extends StatelessWidget {', patch_header)
           screen.write_text(r)
 
-          # 4) Page wiring + robust secondary-click guard for cross-block text selection.
+          # Editor page: wire undo and guard cross-block selection from the
+          # TextField focus change caused by a secondary mouse click.
           page = Path('lib/features/notes/note_editor_page.dart')
           p = page.read_text()
           p = replace_once(
               p,
-              '''  final Map<String, GlobalKey> _blockItemKeys = <String, GlobalKey>{};
-  bool _dirty = false;
-''',
-              '''  final Map<String, GlobalKey> _blockItemKeys = <String, GlobalKey>{};
-  Timer? _secondarySelectionGuardTimer;
-  bool _secondarySelectionGuardActive = false;
-  bool _dirty = false;
-''',
-              'secondary selection guard fields',
+              '  final Map<String, GlobalKey> _blockItemKeys = <String, GlobalKey>{};\n  bool _dirty = false;\n',
+              '  final Map<String, GlobalKey> _blockItemKeys = <String, GlobalKey>{};\n  Timer? _secondarySelectionGuardTimer;\n  bool _secondarySelectionGuardActive = false;\n  bool _dirty = false;\n',
+              'secondary guard fields',
           )
+          p = replace_once(p, '  void dispose() {\n    if (_dirty && !widget.parityPreview) {', '  void dispose() {\n    _secondarySelectionGuardTimer?.cancel();\n    if (_dirty && !widget.parityPreview) {', 'secondary guard dispose')
+          p = replace_once(p, "      final node = FocusNode(debugLabel: 'notes-block-${block.id}');\n", "      final node = FocusNode(debugLabel: 'notes-block-${block.id}');\n      node.canRequestFocus = !_secondarySelectionGuardActive;\n", 'focus node guard')
           p = replace_once(
               p,
-              '''  void dispose() {
-    if (_dirty && !widget.parityPreview) {
-''',
-              '''  void dispose() {
-    _secondarySelectionGuardTimer?.cancel();
-    if (_dirty && !widget.parityPreview) {
-''',
-              'secondary guard dispose',
+              "  void _captureStructuredSelection(SelectedContent? selected) {\n    final plain = selected?.plainText ?? '';\n",
+              "  void _captureStructuredSelection(SelectedContent? selected) {\n    if (_secondarySelectionGuardActive &&\n        _NotesStructuredClipboard.blocks.length >= 2) {\n      return;\n    }\n    final plain = selected?.plainText ?? '';\n",
+              'preserve selection callback',
           )
-          p = replace_once(
-              p,
-              '''      final node = FocusNode(debugLabel: 'notes-block-${block.id}');
-''',
-              '''      final node = FocusNode(debugLabel: 'notes-block-${block.id}');
-      node.canRequestFocus = !_secondarySelectionGuardActive;
-''',
-              'new focus node respects right click guard',
-          )
-          capture_marker = '''  void _captureStructuredSelection(SelectedContent? selected) {
-    final plain = selected?.plainText ?? '';
-'''
-          p = replace_once(
-              p,
-              capture_marker,
-              '''  void _captureStructuredSelection(SelectedContent? selected) {
-    if (_secondarySelectionGuardActive &&
-        _NotesStructuredClipboard.blocks.length >= 2) {
-      return;
-    }
-    final plain = selected?.plainText ?? '';
-''',
-              'preserve structured selection during secondary click',
-          )
-          guard_marker = '''  void _handleEditorBackgroundPointer(PointerDownEvent event) {
-'''
-          guard_at = p.index(guard_marker)
-          guard_helpers = '''  void _beginSecondarySelectionGuard(PointerDownEvent event) {
+          guard_at = p.index('  void _handleEditorBackgroundPointer(PointerDownEvent event) {\n')
+          require('_beginSecondarySelectionGuard' not in p, 'secondary guard unexpectedly already present')
+          guard = '''  void _beginSecondarySelectionGuard(PointerDownEvent event) {
     if ((event.buttons & kSecondaryMouseButton) == 0 ||
         _NotesStructuredClipboard.blocks.length < 2) {
       return;
@@ -374,12 +241,8 @@ child: Tooltip(
   }
 
 '''
-          require('_beginSecondarySelectionGuard' not in p, 'secondary guard already unexpectedly exists')
-          p = p[:guard_at] + guard_helpers + p[guard_at:]
-
-          undo_method_marker = '''  void _togglePinned() {
-'''
-          undo_at = p.index(undo_method_marker)
+          p = p[:guard_at] + guard + p[guard_at:]
+          undo_at = p.index('  void _togglePinned() {\n')
           undo_method = '''  void _undoLastEdit() {
     final mutation = _editor.undo();
     if (!mutation.changed) return;
@@ -393,41 +256,20 @@ child: Tooltip(
 
 '''
           p = p[:undo_at] + undo_method + p[undo_at:]
-          p = replace_once(
-              p,
-              '''      onDelete: _deleteCurrentNote,
-      bulkSelectionMode: _blockSelectionMode,
-''',
-              '''      onDelete: _deleteCurrentNote,
-      onUndo: _undoLastEdit,
-      bulkSelectionMode: _blockSelectionMode,
-''',
-              'wire undo to screen',
-          )
-          p = replace_once(
-              p,
-              '''        onPointerDown: _handleEditorBackgroundPointer,
-''',
-              '''        onPointerDown: _handleEditorPointerDown,
-        onPointerUp: _scheduleSecondarySelectionGuardRelease,
-        onPointerCancel: _scheduleSecondarySelectionGuardRelease,
-''',
-              'secondary click listener routing',
-          )
+          p = replace_once(p, '      onDelete: _deleteCurrentNote,\n      bulkSelectionMode:', '      onDelete: _deleteCurrentNote,\n      onUndo: _undoLastEdit,\n      bulkSelectionMode:', 'wire undo')
+          p = replace_once(p, '        onPointerDown: _handleEditorBackgroundPointer,\n', '        onPointerDown: _handleEditorPointerDown,\n        onPointerUp: _scheduleSecondarySelectionGuardRelease,\n        onPointerCancel: _scheduleSecondarySelectionGuardRelease,\n', 'listener secondary guard')
           page.write_text(p)
 
-          # Assertions: fail before touching git if any requested behavior is absent.
           final_shell = shell.read_text()
           final_controller = controller.read_text()
           final_screen = screen.read_text()
           final_page = page.read_text()
-          require('prefixIcon: const SizedBox.shrink()' in final_shell, 'add field still inherits search icon')
-          require('width: kNotesLibraryControlHeight' in final_shell and 'height: kNotesLibraryControlHeight' in final_shell, 'add action not exact field height')
-          require('shape: const CircleBorder()' not in final_shell.split('class NotesGlmInlineAddRow', 1)[1], 'inline add still circular')
-          require('NotesEditorMutation undo()' in final_controller, 'document undo missing')
-          require("icon: Icons.undo_rounded" in final_screen, 'header undo button missing')
-          require('onUndo: _undoLastEdit' in final_page, 'page undo wiring missing')
-          require('_beginSecondarySelectionGuard' in final_page, 'secondary selection guard missing')
-          require('onPointerUp: _scheduleSecondarySelectionGuardRelease' in final_page, 'secondary guard release missing')
-          require('_secondarySelectionGuardActive &&' in final_page, 'selection preservation hook missing')
+          require('prefixIcon: const SizedBox.shrink()' in final_shell, 'add still has search icon')
+          require('width: kNotesLibraryControlHeight' in final_shell and 'height: kNotesLibraryControlHeight' in final_shell, 'add button not exact height')
+          require('shape: const CircleBorder()' not in final_shell.split('class NotesGlmInlineAddRow', 1)[1], 'add button still circular')
+          require('NotesEditorMutation undo()' in final_controller, 'undo history missing')
+          require('icon: Icons.undo_rounded' in final_screen, 'undo button missing')
+          require('onUndo: _undoLastEdit' in final_page, 'undo wiring missing')
+          require('_beginSecondarySelectionGuard' in final_page, 'right-click guard missing')
+          require('onPointerUp: _scheduleSecondarySelectionGuardRelease' in final_page, 'right-click release missing')
           PY
