@@ -10,6 +10,7 @@ jobs:
       - run: |
           python3 - <<'PY'
           from pathlib import Path
+          import re
           import subprocess
 
           def replace_once(text, old, new, label):
@@ -18,53 +19,31 @@ jobs:
                   raise SystemExit(f'{label}: expected 1 match, got {count}')
               return text.replace(old, new, 1)
 
+          def sub_once(text, pattern, replacement, label, flags=0):
+              updated, count = re.subn(pattern, replacement, text, count=1, flags=flags)
+              if count != 1:
+                  raise SystemExit(f'{label}: expected 1 match, got {count}')
+              return updated
+
           page = Path('lib/features/notes/note_editor_page.dart')
           text = page.read_text()
 
           text = replace_once(
               text,
-              '''  bool _blockSelectionMode = false;
-  final Set<String> _selectedBlockIds = <String>{};
-''',
-              '''  bool _blockSelectionMode = false;
-  final Set<String> _selectedBlockIds = <String>{};
-  final ScrollController _blockScrollController = ScrollController();
-''',
+              '  final Set<String> _selectedBlockIds = <String>{};\n',
+              '  final Set<String> _selectedBlockIds = <String>{};\n  final ScrollController _blockScrollController = ScrollController();\n',
               'scroll controller field',
           )
-
           text = replace_once(
               text,
-              '''    _gate.dispose();
-    _audioPlayback
-''',
-              '''    _gate.dispose();
-    _blockScrollController.dispose();
-    _audioPlayback
-''',
+              '    _gate.dispose();\n    _audioPlayback\n',
+              '    _gate.dispose();\n    _blockScrollController.dispose();\n    _audioPlayback\n',
               'scroll controller dispose',
           )
 
-          old_toggle = '''  void _toggleBlockSelection(String blockId) {
-    if (_editor.blockById(blockId) == null) return;
-    if (!_blockSelectionMode) {
-      FocusManager.instance.primaryFocus?.unfocus();
-      for (final node in _focusNodes.values) {
-        if (node.hasFocus) node.unfocus();
-      }
-      _editor.activeSelection = null;
-    }
-    setState(() {
-      _editingBlockId = null;
-      _blockSelectionMode = true;
-      if (!_selectedBlockIds.add(blockId)) {
-        _selectedBlockIds.remove(blockId);
-      }
-      if (_selectedBlockIds.isEmpty) _blockSelectionMode = false;
-    });
-  }
-'''
-          new_toggle = '''  double? _captureBlockScrollOffset() {
+          toggle_start = text.index('  void _toggleBlockSelection(String blockId) {')
+          toggle_end = text.index('  void _handleBlockTap(String blockId) {', toggle_start)
+          replacement = '''  double? _captureBlockScrollOffset() {
     if (!_blockScrollController.hasClients) return null;
     return _blockScrollController.offset;
   }
@@ -121,151 +100,83 @@ jobs:
     });
     _restoreBlockScrollOffset(scrollOffset);
   }
-'''
-          text = replace_once(text, old_toggle, new_toggle, 'bulk selection toggle')
 
-          text = replace_once(
+'''
+          text = text[:toggle_start] + replacement + text[toggle_end:]
+
+          text = sub_once(
               text,
-              '''    return ReorderableListView.builder(
-      key: const ValueKey('notes-editor-content'),
-      padding: EdgeInsets.zero,
-''',
-              '''    return ReorderableListView.builder(
-      key: const ValueKey('notes-editor-content'),
-      controller: _blockScrollController,
-      padding: EdgeInsets.zero,
-''',
+              r'(return ReorderableListView\.builder\(\s*key: const ValueKey\(\'notes-editor-content\'\),\s*)',
+              r"\1controller: _blockScrollController,\n      ",
               'reorderable scroll controller',
           )
-
-          text = replace_once(
+          text = sub_once(
               text,
-              '''      onDelete: _deleteCurrentNote,
-      categoryLabel: category?.name,
-''',
-              '''      onDelete: _deleteCurrentNote,
-      bulkSelectionMode: _blockSelectionMode,
-      onExitBulkSelection: _exitBlockSelectionMode,
-      categoryLabel: category?.name,
-''',
+              r'(onDelete: _deleteCurrentNote,\s*)',
+              r'\1bulkSelectionMode: _blockSelectionMode,\n      onExitBulkSelection: _exitBlockSelectionMode,\n      ',
               'editor screen bulk params',
           )
           page.write_text(text)
 
           screen = Path('lib/features/notes/widgets/notes_editor_screen.dart')
-          screen_text = screen.read_text()
-
-          screen_text = replace_once(
-              screen_text,
-              '''    required this.onDelete,
-    required this.content,
-''',
-              '''    required this.onDelete,
-    this.bulkSelectionMode = false,
-    this.onExitBulkSelection,
-    required this.content,
-''',
+          s = screen.read_text()
+          s = sub_once(
+              s,
+              r'(required this\.onDelete,\s*)(required this\.content,)',
+              r'\1this.bulkSelectionMode = false,\n    this.onExitBulkSelection,\n    \2',
               'screen constructor bulk params',
           )
-          screen_text = replace_once(
-              screen_text,
-              '''  final VoidCallback onTogglePinned;
-  final VoidCallback onDelete;
-  final Widget content;
-''',
-              '''  final VoidCallback onTogglePinned;
-  final VoidCallback onDelete;
-  final bool bulkSelectionMode;
-  final VoidCallback? onExitBulkSelection;
-  final Widget content;
-''',
+          s = sub_once(
+              s,
+              r'(final VoidCallback onDelete;\s*)(final Widget content;)',
+              r'\1final bool bulkSelectionMode;\n  final VoidCallback? onExitBulkSelection;\n  \2',
               'screen bulk fields',
           )
-          screen_text = replace_once(
-              screen_text,
-              '''              onDelete: onDelete,
-              titleController: titleController,
-''',
-              '''              onDelete: onDelete,
-              bulkSelectionMode: bulkSelectionMode,
-              onExitBulkSelection: onExitBulkSelection,
-              titleController: titleController,
-''',
+          s = sub_once(
+              s,
+              r'(onDelete: onDelete,\s*)(titleController: titleController,)',
+              r'\1bulkSelectionMode: bulkSelectionMode,\n              onExitBulkSelection: onExitBulkSelection,\n              \2',
               'screen to rail bulk params',
           )
-          screen_text = replace_once(
-              screen_text,
-              '''    required this.onDelete,
-    required this.titleController,
-''',
-              '''    required this.onDelete,
-    required this.bulkSelectionMode,
-    required this.onExitBulkSelection,
-    required this.titleController,
-''',
+          s = sub_once(
+              s,
+              r'(class _NotesEditorRail extends StatelessWidget \{.*?required this\.onDelete,\s*)(required this\.titleController,)',
+              r'\1required this.bulkSelectionMode,\n    required this.onExitBulkSelection,\n    \2',
               'rail constructor bulk params',
+              re.S,
           )
-          screen_text = replace_once(
-              screen_text,
-              '''  final VoidCallback onTogglePinned;
-  final VoidCallback? onDelete;
-  final TextEditingController titleController;
-''',
-              '''  final VoidCallback onTogglePinned;
-  final VoidCallback? onDelete;
-  final bool bulkSelectionMode;
-  final VoidCallback? onExitBulkSelection;
-  final TextEditingController titleController;
-''',
+          s = sub_once(
+              s,
+              r'(class _NotesEditorRail extends StatelessWidget \{.*?final VoidCallback\? onDelete;\s*)(final TextEditingController titleController;)',
+              r'\1final bool bulkSelectionMode;\n  final VoidCallback? onExitBulkSelection;\n  \2',
               'rail bulk fields',
+              re.S,
           )
-          screen_text = replace_once(
-              screen_text,
-              '''                  onDelete: onDelete,
-                ),
-''',
-              '''                  onDelete: onDelete,
-                  bulkSelectionMode: bulkSelectionMode,
-                  onExitBulkSelection: onExitBulkSelection,
-                ),
-''',
+          s = sub_once(
+              s,
+              r'(onTogglePinned: onTogglePinned,\s*onDelete: onDelete,\s*)(\),)',
+              r'\1bulkSelectionMode: bulkSelectionMode,\n                  onExitBulkSelection: onExitBulkSelection,\n                \2',
               'rail to header bulk params',
           )
-          screen_text = replace_once(
-              screen_text,
-              '''    required this.onDelete,
-  });
 
-  final bool embedded;
-  final VoidCallback onDone;
-  final bool pinned;
-  final VoidCallback onTogglePinned;
-  final VoidCallback? onDelete;
-''',
-              '''    required this.onDelete,
-    required this.bulkSelectionMode,
-    required this.onExitBulkSelection,
-  });
-
-  final bool embedded;
-  final VoidCallback onDone;
-  final bool pinned;
-  final VoidCallback onTogglePinned;
-  final VoidCallback? onDelete;
-  final bool bulkSelectionMode;
-  final VoidCallback? onExitBulkSelection;
-''',
-              'header constructor and fields',
+          header_start = s.index('class _NotesNavigationHeader extends StatelessWidget {')
+          header_end = s.index('enum _NotesHeaderMenuAction', header_start)
+          header = s[header_start:header_end]
+          header = replace_once(
+              header,
+              'required this.onDelete,\n  });',
+              'required this.onDelete,\n    required this.bulkSelectionMode,\n    required this.onExitBulkSelection,\n  });',
+              'header constructor bulk params',
           )
-          screen_text = replace_once(
-              screen_text,
-              '''const Spacer(),
-_NotesHeaderMoreMenu(
-  pinned: pinned,
-  onTogglePinned: onTogglePinned,
-  onDelete: onDelete,
-),
-''',
+          header = replace_once(
+              header,
+              'final VoidCallback? onDelete;\n',
+              'final VoidCallback? onDelete;\n  final bool bulkSelectionMode;\n  final VoidCallback? onExitBulkSelection;\n',
+              'header bulk fields',
+          )
+          header = sub_once(
+              header,
+              r'const Spacer\(\),\s*_NotesHeaderMoreMenu\(\s*pinned: pinned,\s*onTogglePinned: onTogglePinned,\s*onDelete: onDelete,\s*\),',
               '''const Spacer(),
 if (bulkSelectionMode && onExitBulkSelection != null)
   _NotesBulkDoneAction(onPressed: onExitBulkSelection!)
@@ -274,13 +185,13 @@ else
     pinned: pinned,
     onTogglePinned: onTogglePinned,
     onDelete: onDelete,
-  ),
-''',
-              'header bulk done action',
+  ),''',
+              'header bulk done switch',
+              re.S,
           )
+          s = s[:header_start] + header + s[header_end:]
 
-          marker = '''enum _NotesHeaderMenuAction { pin, delete }
-'''
+          marker = 'enum _NotesHeaderMenuAction { pin, delete }\n'
           bulk_action = '''class _NotesBulkDoneAction extends StatelessWidget {
   const _NotesBulkDoneAction({required this.onPressed});
 
@@ -316,10 +227,8 @@ else
 }
 
 '''
-          if screen_text.count(marker) != 1:
-              raise SystemExit(f'bulk action insertion marker mismatch: {screen_text.count(marker)}')
-          screen_text = screen_text.replace(marker, bulk_action + marker, 1)
-          screen.write_text(screen_text)
+          s = replace_once(s, marker, bulk_action + marker, 'bulk done class')
+          screen.write_text(s)
 
           fixture_names = [
               'test/notes/fixtures/notes_glm_library_parity_fixture.dart',
@@ -327,15 +236,13 @@ else
           ]
           for fixture_name in fixture_names:
               fixture = Path(fixture_name)
-              fixture_text = fixture.read_text()
-              if 'onOpenMenu:' not in fixture_text:
-                  fixture_text = fixture_text.replace(
-                      'onLongPress: () {},\n',
-                      'onLongPress: () {},\n                        onOpenMenu: (_) {},\n'
-                      if fixture_name.endswith('notes_glm_library_parity_fixture.dart')
-                      else 'onLongPress: () {},\n                  onOpenMenu: (_) {},\n',
-                  )
-              fixture.write_text(fixture_text)
+              f = fixture.read_text()
+              f = re.sub(
+                  r'(?m)^(\s*)onLongPress: \(\) \{\},\n(?!\1onOpenMenu:)',
+                  r'\1onLongPress: () {},\n\1onOpenMenu: (_) {},\n',
+                  f,
+              )
+              fixture.write_text(f)
 
           subprocess.run(['git', 'add', *fixture_names], check=True)
           PY
