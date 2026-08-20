@@ -147,6 +147,86 @@ jobs:
 
           exec(compile(script, '<notes-interaction-ux>', 'exec'))
 
+          # Repair the generated editor helper and keyboard method with literal,
+          # syntax-safe Dart. This also avoids RegExp dialect differences.
+          editor_path = Path('lib/features/notes/note_editor_page.dart')
+          editor = editor_path.read_text()
+          helper_start = editor.find('  String _normalizeClipboardStructure(String value) {')
+          paste_start = editor.find('  Future<void> _pasteClipboardIntoBlock(', helper_start)
+          if helper_start < 0 or paste_start < 0:
+              raise SystemExit('generated clipboard helper range not found')
+          safe_helper = '''  String _normalizeClipboardStructure(String value) {
+    final buffer = StringBuffer();
+    var pendingSpace = false;
+    for (final rune in value.runes) {
+      final whitespace = rune == 9 || rune == 10 || rune == 13 || rune == 32;
+      if (whitespace) {
+        pendingSpace = buffer.isNotEmpty;
+        continue;
+      }
+      if (pendingSpace) {
+        buffer.write(' ');
+        pendingSpace = false;
+      }
+      buffer.writeCharCode(rune);
+    }
+    return buffer.toString().trim();
+  }
+
+'''
+          editor = editor[:helper_start] + safe_helper + editor[paste_start:]
+
+          key_start = editor.find('  KeyEventResult _onBlockKeyEvent(NoteBlock block, KeyEvent event) {')
+          key_end = editor.find('  /// SelectionArea exposes plain text only.', key_start)
+          if key_start < 0 or key_end < 0:
+              raise SystemExit('generated keyboard method range not found')
+          safe_key_method = '''  KeyEventResult _onBlockKeyEvent(NoteBlock block, KeyEvent event) {
+    if (event is! KeyDownEvent) return KeyEventResult.ignored;
+    final controller = _textControllerFor(block);
+    final selection = controller.selection;
+    final keyboard = HardwareKeyboard.instance;
+    if (event.logicalKey == LogicalKeyboardKey.keyC &&
+        (keyboard.isControlPressed || keyboard.isMetaPressed) &&
+        selection.isValid &&
+        !selection.isCollapsed) {
+      final slice = _editor.structuralSliceForSelection(block.id, selection);
+      if (slice != null) {
+        final start = selection.start.clamp(0, controller.text.length).toInt();
+        final end = selection.end.clamp(0, controller.text.length).toInt();
+        final plain = controller.text.substring(start, end);
+        _NotesStructuredClipboard.plainText = plain;
+        _NotesStructuredClipboard.blocks = <NoteBlock>[slice];
+        unawaited(Clipboard.setData(ClipboardData(text: plain)));
+        return KeyEventResult.handled;
+      }
+    }
+    if (event.logicalKey == LogicalKeyboardKey.keyV &&
+        (keyboard.isControlPressed || keyboard.isMetaPressed)) {
+      unawaited(_pasteClipboardIntoBlock(block, selection));
+      return KeyEventResult.handled;
+    }
+    if (event.logicalKey == LogicalKeyboardKey.enter) {
+      final mutation = _editor.handleEnter(block.id, selection);
+      if (!mutation.changed) return KeyEventResult.ignored;
+      _applyMutation(mutation);
+      return KeyEventResult.handled;
+    }
+    if (event.logicalKey == LogicalKeyboardKey.backspace &&
+        selection.isValid &&
+        selection.isCollapsed &&
+        selection.extentOffset == 0) {
+      final mutation = _editor.handleBackspaceAtStart(block.id);
+      if (!mutation.changed) return KeyEventResult.ignored;
+      _applyMutation(mutation);
+      return KeyEventResult.handled;
+    }
+    return KeyEventResult.ignored;
+  }
+
+'''
+          editor = editor[:key_start] + safe_key_method + editor[key_end:]
+          editor_path.write_text(editor)
+
           # Dart switch cases must terminate explicitly.
           header_path = Path('lib/features/notes/widgets/notes_editor_screen.dart')
           header = header_path.read_text()
@@ -164,4 +244,22 @@ jobs:
               1,
           )
           header_path.write_text(header)
+
+          # Production NoteCard gained the three-dot anchor callback; keep
+          # visual capture fixtures compiling without changing their behavior.
+          for fixture_name in [
+              'test/notes/fixtures/notes_glm_library_parity_fixture.dart',
+              'test/notes/fixtures/notes_production_library_capture.dart',
+          ]:
+              fixture_path = Path(fixture_name)
+              fixture = fixture_path.read_text()
+              fixture = fixture.replace(
+                  '                        onLongPress: () {},\n',
+                  '                        onLongPress: () {},\n                        onOpenMenu: (_) {},\n',
+              )
+              fixture = fixture.replace(
+                  '                  onLongPress: () {},\n',
+                  '                  onLongPress: () {},\n                  onOpenMenu: (_) {},\n',
+              )
+              fixture_path.write_text(fixture)
           PY
