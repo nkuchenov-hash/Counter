@@ -1,4 +1,4 @@
-name: Notes bulk selection exit and scroll preservation
+name: Urgent Notes editor regression fix
 
 on:
   workflow_dispatch:
@@ -11,7 +11,6 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           import re
-          import subprocess
 
           def replace_once(text, old, new, label):
               count = text.count(old)
@@ -19,230 +18,375 @@ jobs:
                   raise SystemExit(f'{label}: expected 1 match, got {count}')
               return text.replace(old, new, 1)
 
-          def sub_once(text, pattern, replacement, label, flags=0):
-              updated, count = re.subn(pattern, replacement, text, count=1, flags=flags)
-              if count != 1:
-                  raise SystemExit(f'{label}: expected 1 match, got {count}')
-              return updated
-
+          # -----------------------------------------------------------------
+          # 1. Structural clipboard + media trailing caret + blank deactivation
+          # -----------------------------------------------------------------
           page = Path('lib/features/notes/note_editor_page.dart')
           text = page.read_text()
 
           text = replace_once(
               text,
-              '  final Set<String> _selectedBlockIds = <String>{};\n',
-              '  final Set<String> _selectedBlockIds = <String>{};\n  final ScrollController _blockScrollController = ScrollController();\n',
-              'scroll controller field',
+              '  final ScrollController _blockScrollController = ScrollController();\n',
+              "  final ScrollController _blockScrollController = ScrollController();\n  final Map<String, GlobalKey> _blockItemKeys = <String, GlobalKey>{};\n",
+              'block item keys field',
+          )
+
+          text = replace_once(
+              text,
+              "    final textIds = <String>{};\n    final captionIds = <String>{};\n    final focusIds = <String>{};\n    for (final block in _editor.visibleBlocks) {\n",
+              "    final visibleIds = <String>{};\n    final textIds = <String>{};\n    final captionIds = <String>{};\n    final focusIds = <String>{};\n    for (final block in _editor.visibleBlocks) {\n      visibleIds.add(block.id);\n",
+              'visible block ids',
           )
           text = replace_once(
               text,
-              '    _gate.dispose();\n    _audioPlayback\n',
-              '    _gate.dispose();\n    _blockScrollController.dispose();\n    _audioPlayback\n',
-              'scroll controller dispose',
+              "    _disposeRemoved(_textControllers, textIds);\n",
+              "    _blockItemKeys.removeWhere((id, _) => !visibleIds.contains(id));\n    _disposeRemoved(_textControllers, textIds);\n",
+              'cleanup block keys',
           )
 
-          toggle_start = text.index('  void _toggleBlockSelection(String blockId) {')
-          toggle_end = text.index('  void _handleBlockTap(String blockId) {', toggle_start)
-          replacement = '''  double? _captureBlockScrollOffset() {
-    if (!_blockScrollController.hasClients) return null;
-    return _blockScrollController.offset;
+          normalize_marker = "  Future<void> _pasteClipboardIntoBlock(\n"
+          normalize_at = text.index(normalize_marker)
+          clipboard_helpers = r'''  String _normalizeClipboardMeaning(String value) {
+    final normalizedLines = value
+        .replaceAll('\r\n', '\n')
+        .replaceAll('\r', '\n')
+        .split('\n')
+        .map((line) {
+          var cleaned = line.trimLeft();
+          cleaned = cleaned.replaceFirst(
+            RegExp(r'^(?:[-*•]\s+|\d+[.)]\s+|\[(?: |x|X)\]\s+|[☐☑✓✔]\s*)'),
+            '',
+          );
+          return cleaned;
+        })
+        .join('\n');
+    return _normalizeClipboardStructure(normalizedLines);
   }
 
-  void _restoreBlockScrollOffset(double? offset) {
-    if (offset == null) return;
-    void restore() {
-      if (!mounted || !_blockScrollController.hasClients) return;
-      final position = _blockScrollController.position;
-      _blockScrollController.jumpTo(
-        offset.clamp(position.minScrollExtent, position.maxScrollExtent),
-      );
+  bool _structuredClipboardMatchesSystemText(String plain) {
+    final candidate = _NotesStructuredClipboard.plainText;
+    final blocks = _NotesStructuredClipboard.blocks;
+    if (candidate == null || blocks.isEmpty) return false;
+
+    final normalizedPlain = _normalizeClipboardStructure(plain);
+    if (_normalizeClipboardStructure(candidate) == normalizedPlain) {
+      return true;
     }
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      restore();
-      WidgetsBinding.instance.addPostFrameCallback((_) => restore());
-    });
-  }
-
-  void _toggleBlockSelection(String blockId) {
-    if (_editor.blockById(blockId) == null) return;
-    final scrollOffset = _captureBlockScrollOffset();
-    if (!_blockSelectionMode) {
-      FocusManager.instance.primaryFocus?.unfocus();
-      for (final node in _focusNodes.values) {
-        if (node.hasFocus) node.unfocus();
-      }
-      _editor.activeSelection = null;
+    final blockPlain = blocks.map((block) => block.effectiveText).join('\n');
+    if (_normalizeClipboardStructure(blockPlain) == normalizedPlain) {
+      return true;
     }
-    setState(() {
-      _editingBlockId = null;
-      _blockSelectionMode = true;
-      if (!_selectedBlockIds.add(blockId)) {
-        _selectedBlockIds.remove(blockId);
-      }
-      if (_selectedBlockIds.isEmpty) _blockSelectionMode = false;
-    });
-    _restoreBlockScrollOffset(scrollOffset);
+
+    final meaning = _normalizeClipboardMeaning(plain);
+    return _normalizeClipboardMeaning(candidate) == meaning ||
+        _normalizeClipboardMeaning(blockPlain) == meaning;
   }
 
-  void _exitBlockSelectionMode() {
-    if (!_blockSelectionMode && _selectedBlockIds.isEmpty) return;
-    final scrollOffset = _captureBlockScrollOffset();
+'''
+          text = text[:normalize_at] + clipboard_helpers + text[normalize_at:]
+
+          old_match = '''    final candidatePlain = _NotesStructuredClipboard.plainText;
+    final hasMatchingStructure =
+        candidatePlain != null &&
+        _normalizeClipboardStructure(candidatePlain) ==
+  _normalizeClipboardStructure(plain) &&
+        _NotesStructuredClipboard.blocks.isNotEmpty;
+'''
+          text = replace_once(
+              text,
+              old_match,
+              '''    final hasMatchingStructure =
+        _structuredClipboardMatchesSystemText(plain);
+''',
+              'structural clipboard match',
+          )
+
+          insert_anchor = "  Future<void> _showTablePicker({String? anchorId}) {\n"
+          anchor_at = text.index(insert_anchor)
+          non_text_helpers = '''  void _focusOrInsertParagraphAfter(String blockId) {
+    final visible = _editor.visibleBlocks;
+    final index = visible.indexWhere((block) => block.id == blockId);
+    if (index < 0) return;
+    if (index + 1 < visible.length) {
+      final next = visible[index + 1];
+      if (NotesEditorDocumentController.isEditableText(next.type)) {
+        _requestFocus(next.id, const TextSelection.collapsed(offset: 0));
+        return;
+      }
+    }
+    _applyMutation(_editor.insertAfter(blockId, NoteBlockType.paragraph));
+  }
+
+  void _applyInsertedNonTextWithTrailingParagraph(
+    NotesEditorMutation mutation,
+  ) {
+    if (!mutation.changed) return;
+    final insertedId = _editor.activeBlockId;
+    _applyMutation(mutation);
+    if (insertedId != null) _focusOrInsertParagraphAfter(insertedId);
+  }
+
+  GlobalKey _blockItemKeyFor(String blockId) {
+    return _blockItemKeys.putIfAbsent(
+      blockId,
+      () => GlobalKey(debugLabel: 'notes-editor-block-$blockId'),
+    );
+  }
+
+  Rect? _blockGlobalRect(String blockId) {
+    final blockContext = _blockItemKeys[blockId]?.currentContext;
+    final render = blockContext?.findRenderObject();
+    if (render is! RenderBox || !render.hasSize) return null;
+    return render.localToGlobal(Offset.zero) & render.size;
+  }
+
+  void _clearActiveBlock() {
+    if (_blockSelectionMode) return;
     FocusManager.instance.primaryFocus?.unfocus();
     for (final node in _focusNodes.values) {
       if (node.hasFocus) node.unfocus();
     }
+    final changed = _editor.activeBlockId != null || _editingBlockId != null;
+    _editor.activeBlockId = null;
     _editor.activeSelection = null;
-    setState(() {
-      _editingBlockId = null;
-      _selectedBlockIds.clear();
-      _blockSelectionMode = false;
-    });
-    _restoreBlockScrollOffset(scrollOffset);
+    if (changed && mounted) setState(() => _editingBlockId = null);
+  }
+
+  void _handleEditorBackgroundPointer(PointerDownEvent event) {
+    if (_blockSelectionMode) return;
+    final visible = _editor.visibleBlocks;
+    NoteBlock? preceding;
+    var nearestBottom = double.negativeInfinity;
+    for (final block in visible) {
+      final rect = _blockGlobalRect(block.id);
+      if (rect == null) continue;
+      if (rect.contains(event.position)) return;
+      if (rect.bottom <= event.position.dy && rect.bottom > nearestBottom) {
+        nearestBottom = rect.bottom;
+        preceding = block;
+      }
+    }
+
+    if (preceding != null &&
+        !NotesEditorDocumentController.isEditableText(preceding.type)) {
+      _focusOrInsertParagraphAfter(preceding.id);
+      return;
+    }
+    _clearActiveBlock();
   }
 
 '''
-          text = text[:toggle_start] + replacement + text[toggle_end:]
+          text = text[:anchor_at] + non_text_helpers + text[anchor_at:]
 
-          text = sub_once(
-              text,
-              r'(return ReorderableListView\.builder\(\s*key: const ValueKey\(\'notes-editor-content\'\),\s*)',
-              r"\1scrollController: _blockScrollController,\n      ",
-              'reorderable scroll controller',
-          )
-          text = sub_once(
-              text,
-              r'(onDelete: _deleteCurrentNote,\s*)',
-              r'\1bulkSelectionMode: _blockSelectionMode,\n      onExitBulkSelection: _exitBlockSelectionMode,\n      ',
-              'editor screen bulk params',
-          )
-          page.write_text(text)
-
-          screen = Path('lib/features/notes/widgets/notes_editor_screen.dart')
-          s = screen.read_text()
-          s = sub_once(
-              s,
-              r'(required this\.onDelete,\s*)(required this\.content,)',
-              r'\1this.bulkSelectionMode = false,\n    this.onExitBulkSelection,\n    \2',
-              'screen constructor bulk params',
-          )
-          s = sub_once(
-              s,
-              r'(final VoidCallback onDelete;\s*)(final Widget content;)',
-              r'\1final bool bulkSelectionMode;\n  final VoidCallback? onExitBulkSelection;\n  \2',
-              'screen bulk fields',
-          )
-          s = sub_once(
-              s,
-              r'(onDelete: onDelete,\s*)(titleController: titleController,)',
-              r'\1bulkSelectionMode: bulkSelectionMode,\n              onExitBulkSelection: onExitBulkSelection,\n              \2',
-              'screen to rail bulk params',
-          )
-          s = sub_once(
-              s,
-              r'(class _NotesEditorRail extends StatelessWidget \{.*?required this\.onDelete,\s*)(required this\.titleController,)',
-              r'\1required this.bulkSelectionMode,\n    required this.onExitBulkSelection,\n    \2',
-              'rail constructor bulk params',
-              re.S,
-          )
-          s = sub_once(
-              s,
-              r'(class _NotesEditorRail extends StatelessWidget \{.*?final VoidCallback\? onDelete;\s*)(final TextEditingController titleController;)',
-              r'\1final bool bulkSelectionMode;\n  final VoidCallback? onExitBulkSelection;\n  \2',
-              'rail bulk fields',
-              re.S,
-          )
-          s = sub_once(
-              s,
-              r'(onTogglePinned: onTogglePinned,\s*onDelete: onDelete,\s*)(\),)',
-              r'\1bulkSelectionMode: bulkSelectionMode,\n                  onExitBulkSelection: onExitBulkSelection,\n                \2',
-              'rail to header bulk params',
-          )
-
-          header_start = s.index('class _NotesNavigationHeader extends StatelessWidget {')
-          header_end = s.index('enum _NotesHeaderMenuAction', header_start)
-          header = s[header_start:header_end]
-          header = replace_once(
-              header,
-              'required this.onDelete,\n  });',
-              'required this.onDelete,\n    required this.bulkSelectionMode,\n    required this.onExitBulkSelection,\n  });',
-              'header constructor bulk params',
-          )
-          header = replace_once(
-              header,
-              'final VoidCallback? onDelete;\n',
-              'final VoidCallback? onDelete;\n  final bool bulkSelectionMode;\n  final VoidCallback? onExitBulkSelection;\n',
-              'header bulk fields',
-          )
-          header = sub_once(
-              header,
-              r'const Spacer\(\),\s*_NotesHeaderMoreMenu\(\s*pinned: pinned,\s*onTogglePinned: onTogglePinned,\s*onDelete: onDelete,\s*\),',
-              '''const Spacer(),
-if (bulkSelectionMode && onExitBulkSelection != null)
-  _NotesBulkDoneAction(onPressed: onExitBulkSelection!)
-else
-  _NotesHeaderMoreMenu(
-    pinned: pinned,
-    onTogglePinned: onTogglePinned,
-    onDelete: onDelete,
-  ),''',
-              'header bulk done switch',
-              re.S,
-          )
-          s = s[:header_start] + header + s[header_end:]
-
-          marker = 'enum _NotesHeaderMenuAction { pin, delete }\n'
-          bulk_action = '''class _NotesBulkDoneAction extends StatelessWidget {
-  const _NotesBulkDoneAction({required this.onPressed});
-
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: NotesFigmaTokens.glassFill(context),
-      elevation: 1,
-      shadowColor: Colors.black.withValues(alpha: 0.08),
-      borderRadius: BorderRadius.circular(20),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onPressed,
-        child: const SizedBox(
-          height: 40,
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 14),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.check_rounded, size: 18),
-                SizedBox(width: 6),
-                Text('Done'),
-              ],
-            ),
-          ),
-        ),
+          old_table = '''  Future<void> _showTablePicker({String? anchorId}) {
+    return showNotesTablePicker(
+      context: context,
+      onSelected: (table) => _insertAfter(
+        anchorId ?? _editor.activeBlockId,
+        NoteBlockType.table,
+        table: table,
       ),
     );
   }
-}
-
 '''
-          s = replace_once(s, marker, bulk_action + marker, 'bulk done class')
-          screen.write_text(s)
+          new_table = '''  Future<void> _showTablePicker({String? anchorId}) {
+    return showNotesTablePicker(
+      context: context,
+      onSelected: (table) {
+        _applyInsertedNonTextWithTrailingParagraph(
+          _editor.insertAfter(
+            anchorId ?? _editor.activeBlockId,
+            NoteBlockType.table,
+            table: table,
+          ),
+        );
+      },
+    );
+  }
+'''
+          text = replace_once(text, old_table, new_table, 'table trailing paragraph')
 
-          fixture_names = [
-              'test/notes/fixtures/notes_glm_library_parity_fixture.dart',
-              'test/notes/fixtures/notes_production_library_capture.dart',
-          ]
-          for fixture_name in fixture_names:
-              fixture = Path(fixture_name)
-              f = fixture.read_text()
-              f = re.sub(
-                  r'(?m)^(\s*)onLongPress: \(\) \{\},\n(?!\1onOpenMenu:)',
-                  r'\1onLongPress: () {},\n\1onOpenMenu: (_) {},\n',
-                  f,
-              )
-              fixture.write_text(f)
+          text = replace_once(
+              text,
+              '      onDivider: () => _insertAfter(anchorId, NoteBlockType.divider),\n',
+              '''      onDivider: () => _applyInsertedNonTextWithTrailingParagraph(
+        _editor.insertAfter(anchorId, NoteBlockType.divider),
+      ),
+''',
+              'divider trailing paragraph',
+          )
 
-          subprocess.run(['git', 'add', *fixture_names], check=True)
+          old_image = '''      final mutation = replaceBlockId == null
+          ? _editor.insertAfter(
+              _editor.activeBlockId,
+              NoteBlockType.image,
+              imageData: picked.dataUrl,
+            )
+          : _editor.updateMedia(replaceBlockId, imageData: picked.dataUrl);
+      _applyMutation(mutation);
+'''
+          new_image = '''      if (replaceBlockId == null) {
+        _applyInsertedNonTextWithTrailingParagraph(
+          _editor.insertAfter(
+            _editor.activeBlockId,
+            NoteBlockType.image,
+            imageData: picked.dataUrl,
+          ),
+        );
+      } else {
+        _applyMutation(
+          _editor.updateMedia(replaceBlockId, imageData: picked.dataUrl),
+        );
+      }
+'''
+          text = replace_once(text, old_image, new_image, 'image trailing paragraph')
+
+          drawing_start = text.index("        _editor.insertAfter(\n_editor.activeBlockId,\nNoteBlockType.drawing,")
+          drawing_end = text.index("      },\n    );\n  }\n\n  Future<void> _recordAudio()", drawing_start)
+          drawing_replacement = '''        _applyInsertedNonTextWithTrailingParagraph(
+          _editor.insertAfter(
+            _editor.activeBlockId,
+            NoteBlockType.drawing,
+            drawingData: dataUrl,
+          ),
+        );
+'''
+          text = text[:drawing_start] + drawing_replacement + text[drawing_end:]
+
+          old_audio = '''    final mutation = _editor.insertAfter(
+      _editor.activeBlockId,
+      NoteBlockType.audio,
+      audio: audio,
+    );
+    _applyMutation(mutation);
+    final blockId = _editor.activeBlockId;
+    if (blockId != null) unawaited(_transcribeAudio(blockId));
+'''
+          new_audio = '''    final mutation = _editor.insertAfter(
+      _editor.activeBlockId,
+      NoteBlockType.audio,
+      audio: audio,
+    );
+    final blockId = _editor.activeBlockId;
+    _applyInsertedNonTextWithTrailingParagraph(mutation);
+    if (blockId != null) unawaited(_transcribeAudio(blockId));
+'''
+          text = replace_once(text, old_audio, new_audio, 'audio trailing paragraph')
+
+          text = replace_once(
+              text,
+              "    return Stack(\n      key: ValueKey<String>(block.id),\n",
+              "    return Stack(\n      key: _blockItemKeyFor(block.id),\n",
+              'global block key',
+          )
+
+          old_content = '''      content: _blockSelectionMode
+? _buildReorderableBlockList()
+: SelectionArea(
+    onSelectionChanged: _captureStructuredSelection,
+    child: _buildReorderableBlockList(),
+  ),
+'''
+          new_content = '''      content: Listener(
+        behavior: HitTestBehavior.translucent,
+        onPointerDown: _handleEditorBackgroundPointer,
+        child: _blockSelectionMode
+            ? _buildReorderableBlockList()
+            : SelectionArea(
+                onSelectionChanged: _captureStructuredSelection,
+                child: _buildReorderableBlockList(),
+              ),
+      ),
+'''
+          text = replace_once(text, old_content, new_content, 'editor background pointer')
+          page.write_text(text)
+
+          # ---------------------------------------------------------------
+          # 2. Active/inactive text metrics must be exactly the same.
+          #    Explicit 0 letter spacing prevents TextField theme inheritance.
+          # ---------------------------------------------------------------
+          canonical = Path('lib/features/notes/widgets/notes_canonical_components.dart')
+          c = canonical.read_text()
+          c = replace_once(
+              c,
+              '''        fontWeight: FontWeight.w400,
+        color: color,
+''',
+              '''        fontWeight: FontWeight.w400,
+        letterSpacing: 0,
+        color: color,
+''',
+              'canonical body letter spacing',
+          )
+          c = replace_once(
+              c,
+              '''        fontWeight: FontWeight.w600,
+        color: color,
+''',
+              '''        fontWeight: FontWeight.w600,
+        letterSpacing: 0,
+        color: color,
+''',
+              'canonical h3 letter spacing',
+          )
+          canonical.write_text(c)
+
+          blocks = Path('lib/features/notes/widgets/note_editor_block_widgets.dart')
+          b = blocks.read_text()
+          b = replace_once(
+              b,
+              '''        fontWeight: FontWeight.w400,
+        color: color,
+''',
+              '''        fontWeight: FontWeight.w400,
+        letterSpacing: 0,
+        color: color,
+''',
+              'selectable body letter spacing',
+          )
+          b = replace_once(
+              b,
+              '''        fontWeight: FontWeight.w600,
+        color: color,
+''',
+              '''        fontWeight: FontWeight.w600,
+        letterSpacing: 0,
+        color: color,
+''',
+              'selectable h3 letter spacing',
+          )
+          blocks.write_text(b)
+
+          # ---------------------------------------------------------------
+          # 3. Quick add field and + button use the exact Search control height.
+          # ---------------------------------------------------------------
+          shell = Path('lib/features/notes/widgets/notes_library_production_shell.dart')
+          s = shell.read_text()
+          s = replace_once(
+              s,
+              '''              decoration: InputDecoration(
+                hintText: t(locale, 'input_placeholder_list'),
+''',
+              '''              decoration: InputDecoration(
+                constraints: const BoxConstraints.tightFor(
+                  height: kNotesLibraryControlHeight,
+                ),
+                hintText: t(locale, 'input_placeholder_list'),
+''',
+              'quick add exact height',
+          )
+          shell.write_text(s)
+
+          # Guard the required contracts before allowing CI to continue.
+          assertions = {
+              'semantic clipboard matching': '_structuredClipboardMatchesSystemText(plain)',
+              'body letter spacing': 'letterSpacing: 0',
+              'background deactivation': 'onPointerDown: _handleEditorBackgroundPointer',
+              'quick add exact height': 'constraints: const BoxConstraints.tightFor(',
+          }
+          combined = page.read_text() + canonical.read_text() + blocks.read_text() + shell.read_text()
+          for label, needle in assertions.items():
+              if needle not in combined:
+                  raise SystemExit(f'missing contract: {label}')
           PY
