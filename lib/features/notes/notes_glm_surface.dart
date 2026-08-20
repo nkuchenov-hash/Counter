@@ -301,34 +301,75 @@ class NotesGlmLibraryInput extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final decoration = notesGlmSearchDecoration(
-      context: context,
-      hintText: hintText,
-      suffixIcon: suffixIcon,
-    );
-    return SizedBox(
-      height: kNotesLibraryControlHeight,
-      child: TextField(
-        controller: controller,
-        focusNode: focusNode,
-        textInputAction: textInputAction,
-        textCapitalization: textCapitalization,
-        onChanged: onChanged,
-        onSubmitted: onSubmitted,
-        style: TextStyle(
-fontSize: 14,
-color: Theme.of(context).colorScheme.onSurface,
-        ),
-        decoration: showSearchIcon
-  ? decoration
-  : decoration.copyWith(
-      prefixIcon: const SizedBox.shrink(),
-      prefixIconConstraints: const BoxConstraints.tightFor(
-        width: 0,
-        height: 0,
-      ),
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final dark = theme.brightness == Brightness.dark;
+    final meta = notesGlmMetaColor(context);
+    final fill = dark
+        ? scheme.surfaceContainerHigh.withValues(alpha: 0.82)
+        : const Color(0xFFFFFFFF).withValues(alpha: 0.75);
+    final normalBorder = dark
+        ? scheme.outlineVariant.withValues(alpha: 0.78)
+        : const Color(0xFFE2E8F0).withValues(alpha: 0.95);
+    final focusedBorder = scheme.primary.withValues(alpha: dark ? 0.82 : 0.55);
+
+    return AnimatedBuilder(
+      animation: focusNode,
+      builder: (context, _) {
+        final focused = focusNode.hasFocus;
+        return SizedBox(
+height: kNotesLibraryControlHeight,
+child: DecoratedBox(
+  decoration: BoxDecoration(
+    color: fill,
+    borderRadius: BorderRadius.circular(12),
+    border: Border.all(
+      color: focused ? focusedBorder : normalBorder,
+      width: focused && dark ? 1.2 : 1,
     ),
-      ),
+  ),
+  child: TextField(
+    controller: controller,
+    focusNode: focusNode,
+    textInputAction: textInputAction,
+    textCapitalization: textCapitalization,
+    textAlignVertical: TextAlignVertical.center,
+    onChanged: onChanged,
+    onSubmitted: onSubmitted,
+    style: TextStyle(fontSize: 14, color: scheme.onSurface),
+    decoration: InputDecoration(
+      hintText: hintText,
+      hintStyle: TextStyle(fontSize: 14, color: meta),
+      prefixIcon: showSearchIcon
+          ? Icon(Icons.search_rounded, size: 18, color: meta)
+          : null,
+      prefixIconConstraints: showSearchIcon
+          ? const BoxConstraints.tightFor(
+              width: kNotesLibraryControlHeight,
+              height: kNotesLibraryControlHeight,
+            )
+          : null,
+      suffixIcon: suffixIcon,
+      suffixIconConstraints: suffixIcon == null
+          ? null
+          : const BoxConstraints.tightFor(
+              width: kNotesLibraryControlHeight,
+              height: kNotesLibraryControlHeight,
+            ),
+      isDense: true,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14),
+      filled: false,
+      border: InputBorder.none,
+      enabledBorder: InputBorder.none,
+      focusedBorder: InputBorder.none,
+      disabledBorder: InputBorder.none,
+      errorBorder: InputBorder.none,
+      focusedErrorBorder: InputBorder.none,
+    ),
+  ),
+),
+        );
+      },
     );
   }
 }
