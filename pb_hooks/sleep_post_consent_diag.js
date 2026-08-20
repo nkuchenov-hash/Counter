@@ -1,76 +1,9 @@
-function env(name) {
-  try { return String($os.getenv(name) || '').trim(); } catch (_) { return ''; }
-}
-function form(values) {
-  var parts = [];
-  for (var key in values) if (Object.prototype.hasOwnProperty.call(values, key)) {
-    parts.push(encodeURIComponent(key) + '=' + encodeURIComponent(String(values[key])));
-  }
-  return parts.join('&');
-}
-function tokenKey(app) {
-  var key = env('SLEEP_SYNC_TOKEN_KEY');
-  if (key.length === 32) return key;
-  try {
-    var envName = String(app.encryptionEnv() || '').trim();
-    var inherited = envName ? env(envName) : '';
-    if (inherited.length === 32) return inherited;
-  } catch (_) {}
-  throw new Error('token_key_unavailable');
-}
-function connection(app) {
-  return app.findFirstRecordByFilter('sleep_sync_connections', "provider = 'google_fit'", {});
-}
-function accessToken(app, c) {
-  var refreshEnc = String(c.get('refresh_token_enc') || '');
-  if (!refreshEnc) throw new Error('refresh_token_missing');
-  var clientId = env('SLEEP_SYNC_GOOGLE_FIT_CLIENT_ID');
-  var clientSecret = env('SLEEP_SYNC_GOOGLE_FIT_CLIENT_SECRET');
-  if (!clientId || !clientSecret) throw new Error('oauth_client_missing');
-  var refresh = String($security.decrypt(refreshEnc, tokenKey(app)));
-  var res = $http.send({
-    url: 'https://oauth2.googleapis.com/token',
-    method: 'POST',
-    headers: { 'content-type': 'application/x-www-form-urlencoded' },
-    body: form({
-      refresh_token: refresh,
-      client_id: clientId,
-      client_secret: clientSecret,
-      grant_type: 'refresh_token',
-      scope: 'https://www.googleapis.com/auth/fitness.sleep.read'
-    }),
-    timeout: 30
-  });
-  if (res.statusCode < 200 || res.statusCode >= 300 || !res.json || !res.json.access_token) throw new Error('token_refresh_' + res.statusCode);
-  return String(res.json.access_token);
-}
-function clean(value) {
-  return String(value || '').replace(/[^a-zA-Z0-9._:-]/g, '').slice(0, 160);
-}
-function run(e) {
-  try {
-    var token = accessToken(e.app, connection(e.app));
-    var res = $http.send({
-      url: 'https://www.googleapis.com/fitness/v1/users/me/dataSources?' + form({ dataTypeName: 'com.google.sleep.segment' }),
-      method: 'GET',
-      headers: { 'authorization': 'Bearer ' + token, 'accept': 'application/json' },
-      timeout: 60
-    });
-    var out = [];
-    if (res.statusCode >= 200 && res.statusCode < 300 && res.json) {
-      var rows = res.json.dataSource || [];
-      for (var i = 0; i < rows.length; i++) {
-        var row = rows[i] || {}, app = row.application || {}, device = row.device || {};
-        out.push({
-          stream: clean(row.dataStreamId), stream_name: clean(row.dataStreamName),
-          app_package: clean(app.packageName || app.package_name), app_name: clean(app.name),
-          device_manufacturer: clean(device.manufacturer), device_model: clean(device.model), type: clean(row.type)
-        });
-      }
-    }
-    return e.json(200, { status: res.statusCode, source_count: out.length, sources: out });
-  } catch (err) {
-    return e.json(200, { status: 0, diagnostic_error: String(err) });
-  }
-}
-module.exports = { run: run };
+// Temporary upstream source probe: lists only Google Fit sleep source identifiers.
+function env(name) { try { return String($os.getenv(name) || '').trim(); } catch (_) { return ''; } }
+function form(values) { var parts=[]; for (var key in values) if (Object.prototype.hasOwnProperty.call(values,key)) parts.push(encodeURIComponent(key)+'='+encodeURIComponent(String(values[key]))); return parts.join('&'); }
+function tokenKey(app) { var key=env('SLEEP_SYNC_TOKEN_KEY'); if (key.length===32) return key; var envName=''; try { envName=String(app.encryptionEnv()||'').trim(); } catch (_) {} var inherited=envName?env(envName):''; if (inherited.length===32) return inherited; throw new Error('token_key_unavailable'); }
+function connection(app) { return app.findFirstRecordByFilter('sleep_sync_connections', "provider = 'google_fit'", {}); }
+function accessToken(app,c) { var refreshEnc=String(c.get('refresh_token_enc')||''); if(!refreshEnc) throw new Error('refresh_token_missing'); var clientId=env('SLEEP_SYNC_GOOGLE_FIT_CLIENT_ID'), clientSecret=env('SLEEP_SYNC_GOOGLE_FIT_CLIENT_SECRET'); if(!clientId||!clientSecret) throw new Error('oauth_client_missing'); var refresh=String($security.decrypt(refreshEnc,tokenKey(app))); var res=$http.send({url:'https://oauth2.googleapis.com/token',method:'POST',headers:{'content-type':'application/x-www-form-urlencoded'},body:form({refresh_token:refresh,client_id:clientId,client_secret:clientSecret,grant_type:'refresh_token',scope:'https://www.googleapis.com/auth/fitness.sleep.read'}),timeout:30}); if(res.statusCode<200||res.statusCode>=300||!res.json||!res.json.access_token) throw new Error('token_refresh_'+res.statusCode); return String(res.json.access_token); }
+function clean(value) { return String(value||'').replace(/[^a-zA-Z0-9._:-]/g,'').slice(0,160); }
+function run(e) { try { var token=accessToken(e.app,connection(e.app)); var res=$http.send({url:'https://www.googleapis.com/fitness/v1/users/me/dataSources?'+form({dataTypeName:'com.google.sleep.segment'}),method:'GET',headers:{'authorization':'Bearer '+token,'accept':'application/json'},timeout:60}); var out=[]; if(res.statusCode>=200&&res.statusCode<300&&res.json){var rows=res.json.dataSource||[]; for(var i=0;i<rows.length;i++){var row=rows[i]||{},app=row.application||{},device=row.device||{}; out.push({stream:clean(row.dataStreamId),stream_name:clean(row.dataStreamName),app_package:clean(app.packageName||app.package_name),app_name:clean(app.name),device_manufacturer:clean(device.manufacturer),device_model:clean(device.model),type:clean(row.type)});}} return e.json(200,{status:res.statusCode,source_count:out.length,sources:out}); } catch(err){return e.json(200,{status:0,diagnostic_error:String(err)});} }
+module.exports={run:run};
