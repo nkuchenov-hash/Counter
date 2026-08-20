@@ -111,6 +111,8 @@ child: _NotesBlockMoreButton(
 
           build_marker = '''  @override
   Widget build(BuildContext context) {
+    final loc = currentLocale.value;
+    final activeType = _editor.activeBlock?.type;
 '''
           helper = '''  Widget _buildReorderableBlockList() {
     return ReorderableListView.builder(
@@ -140,7 +142,7 @@ child: _NotesBlockMoreButton(
 
 '''
           if text.count(build_marker) != 1:
-              raise SystemExit('build marker mismatch')
+              raise SystemExit(f'editor build marker mismatch: {text.count(build_marker)}')
           text = text.replace(build_marker, helper + build_marker, 1)
 
           start_marker = '''      content: SelectionArea(
