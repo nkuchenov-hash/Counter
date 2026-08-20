@@ -107,7 +107,7 @@ jobs:
           text = sub_once(
               text,
               r'(return ReorderableListView\.builder\(\s*key: const ValueKey\(\'notes-editor-content\'\),\s*)',
-              r"\1controller: _blockScrollController,\n      ",
+              r"\1scrollController: _blockScrollController,\n      ",
               'reorderable scroll controller',
           )
           text = sub_once(
