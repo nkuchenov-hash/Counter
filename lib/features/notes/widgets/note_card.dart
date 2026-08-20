@@ -637,41 +637,25 @@ class _LargeDoneCheck extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return Semantics(
-      button: true,
-      checked: isDone,
-      child: SizedBox.square(
-        dimension: 44,
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: onToggle,
-            borderRadius: BorderRadius.circular(8),
-            child: Center(
-              child: Container(
-                                width: kNotesLargeCheckSize,
-                height: kNotesLargeCheckSize,
-                decoration: BoxDecoration(
-                  color: isDone ? scheme.primary : Colors.transparent,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: isDone
-                        ? scheme.primary
-                        : scheme.outlineVariant.withValues(alpha: 0.7),
-                    width: 2,
-                  ),
-                ),
-                child: isDone
-                    ? const Icon(
-                        Icons.check_rounded,
-                        size: 20,
-                        color: Colors.white,
-                      )
-                    : null,
-              ),
-            ),
-          ),
+    return InkWell(
+      onTap: onToggle,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        width: kNotesLargeCheckSize,
+        height: kNotesLargeCheckSize,
+        decoration: BoxDecoration(
+borderRadius: BorderRadius.circular(8),
+border: Border.all(
+  color: isDone
+      ? scheme.primary
+      : scheme.outlineVariant.withValues(alpha: 0.7),
+  width: 2,
+),
+color: isDone ? scheme.primary : Colors.transparent,
         ),
+        child: isDone
+  ? const Icon(Icons.check_rounded, size: 20, color: Colors.white)
+  : null,
       ),
     );
   }
