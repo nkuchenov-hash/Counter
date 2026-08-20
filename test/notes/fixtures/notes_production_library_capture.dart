@@ -163,6 +163,7 @@ class NotesProductionLibraryCapture extends StatelessWidget {
                   onTogglePin: () {},
                   onToggleDone: () {},
                   onLongPress: () {},
+                  onOpenMenu: (_) {},
                 ),
                 NoteCard(
                   data: weekly,
@@ -172,6 +173,7 @@ class NotesProductionLibraryCapture extends StatelessWidget {
                   onTogglePin: () {},
                   onToggleDone: () {},
                   onLongPress: () {},
+                  onOpenMenu: (_) {},
                 ),
                 NoteCard(
                   data: q3,
@@ -181,6 +183,7 @@ class NotesProductionLibraryCapture extends StatelessWidget {
                   onTogglePin: () {},
                   onToggleDone: () {},
                   onLongPress: () {},
+                  onOpenMenu: (_) {},
                 ),
               ],
             ),

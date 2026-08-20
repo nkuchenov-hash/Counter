@@ -211,6 +211,10 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
       node.addListener(() {
         if (!mounted) return;
         if (node.hasFocus) {
+if (_blockSelectionMode) {
+  node.unfocus();
+  return;
+}
           final selection = _textControllers[block.id]?.selection;
           final activeChanged = _editor.selectBlock(block.id, selection);
           if (_editingBlockId != block.id || activeChanged) {
@@ -301,6 +305,7 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
   }
 
   void _requestFocus(String blockId, TextSelection selection) {
+    if (_blockSelectionMode) return;
     final block = _editor.blockById(blockId);
     if (block == null ||
         !NotesEditorDocumentController.isEditableText(block.type)) {
@@ -562,7 +567,15 @@ wholeBlockBest = List<NoteBlock>.from(window);
 
   void _toggleBlockSelection(String blockId) {
     if (_editor.blockById(blockId) == null) return;
+    if (!_blockSelectionMode) {
+      FocusManager.instance.primaryFocus?.unfocus();
+      for (final node in _focusNodes.values) {
+        if (node.hasFocus) node.unfocus();
+      }
+      _editor.activeSelection = null;
+    }
     setState(() {
+      _editingBlockId = null;
       _blockSelectionMode = true;
       if (!_selectedBlockIds.add(blockId)) {
         _selectedBlockIds.remove(blockId);
@@ -1107,13 +1120,13 @@ WidgetsBinding.instance.addPostFrameCallback((_) {
     final block = _editor.visibleBlocks[index];
     final editable = NotesEditorDocumentController.isEditableText(block.type);
     final focusNode = editable ? _focusNodeFor(block) : null;
-    final active = _editor.activeBlockId == block.id;
+    final active = !_blockSelectionMode && _editor.activeBlockId == block.id;
     Widget item = NotesEditorBlockItem(
       block: block,
       index: index,
       numberedOrdinal: _numberedOrdinal(index),
       active: active,
-      editing: editable && _editingBlockId == block.id,
+      editing: editable && !_blockSelectionMode && _editingBlockId == block.id,
       textController: editable ? _textControllerFor(block) : null,
       focusNode: focusNode,
       captionController:
@@ -1208,7 +1221,8 @@ Positioned(
     ),
   ),
 ),
-        Positioned(
+        if (active)
+Positioned(
 top: 2,
 right: 2,
 child: _NotesBlockMoreButton(
@@ -1260,6 +1274,32 @@ AppButton.destructive(
     } else {
       Navigator.of(context).pop();
     }
+  }
+
+  Widget _buildReorderableBlockList() {
+    return ReorderableListView.builder(
+      key: const ValueKey('notes-editor-content'),
+      padding: EdgeInsets.zero,
+      buildDefaultDragHandles: false,
+      proxyDecorator: (child, _, __) => child,
+      itemCount: _editor.visibleBlocks.length,
+      onReorder: (oldIndex, newIndex) {
+        final visible = _editor.visibleBlocks;
+        final draggedId = oldIndex >= 0 && oldIndex < visible.length
+  ? visible[oldIndex].id
+  : null;
+        final mutation = draggedId != null &&
+      _selectedBlockIds.contains(draggedId)
+  ? _editor.reorderVisibleGroup(
+      _selectedBlockIds,
+      oldIndex,
+      newIndex,
+    )
+  : _editor.reorderVisible(oldIndex, newIndex);
+        _applyMutation(mutation);
+      },
+      itemBuilder: _buildBlock,
+    );
   }
 
   @override
@@ -1320,32 +1360,12 @@ activeType == NoteBlockType.bulletedList
     },
         onMore: _showActiveBlockOptions,
       ),
-      content: SelectionArea(
-        onSelectionChanged: _captureStructuredSelection,
-        child: ReorderableListView.builder(
-key: const ValueKey('notes-editor-content'),
-padding: EdgeInsets.zero,
-buildDefaultDragHandles: false,
-proxyDecorator: (child, _, __) => child,
-itemCount: _editor.visibleBlocks.length,
-onReorder: (oldIndex, newIndex) {
-  final visible = _editor.visibleBlocks;
-  final draggedId = oldIndex >= 0 && oldIndex < visible.length
-      ? visible[oldIndex].id
-      : null;
-  final mutation = draggedId != null &&
-          _selectedBlockIds.contains(draggedId)
-      ? _editor.reorderVisibleGroup(
-          _selectedBlockIds,
-          oldIndex,
-          newIndex,
-        )
-      : _editor.reorderVisible(oldIndex, newIndex);
-  _applyMutation(mutation);
-},
-itemBuilder: _buildBlock,
-        ),
-      ),
+      content: _blockSelectionMode
+? _buildReorderableBlockList()
+: SelectionArea(
+    onSelectionChanged: _captureStructuredSelection,
+    child: _buildReorderableBlockList(),
+  ),
     );
   }
 }

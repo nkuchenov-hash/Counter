@@ -150,6 +150,7 @@ class NotesGlmLibraryParityFixture extends StatelessWidget {
                         onTogglePin: () {},
                         onToggleDone: () {},
                         onLongPress: () {},
+                        onOpenMenu: (_) {},
                       ),
                       const SizedBox(height: 8),
                       NoteCard(
@@ -160,6 +161,7 @@ class NotesGlmLibraryParityFixture extends StatelessWidget {
                         onTogglePin: () {},
                         onToggleDone: () {},
                         onLongPress: () {},
+                        onOpenMenu: (_) {},
                       ),
                     ],
                   ),
