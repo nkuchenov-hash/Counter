@@ -88,10 +88,10 @@ class NotesGlmInlineAddRow extends StatelessWidget {
       context: context,
       hintText: t(locale, 'input_placeholder_list'),
     ).copyWith(
-      prefixIcon: null,
-      prefixIconConstraints: const BoxConstraints(
-        minWidth: 0,
-        minHeight: 0,
+      prefixIcon: const SizedBox.shrink(),
+      prefixIconConstraints: const BoxConstraints.tightFor(
+        width: 0,
+        height: 0,
       ),
     ),
               onSubmitted: (_) => onSubmit(),
@@ -99,20 +99,22 @@ class NotesGlmInlineAddRow extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 8),
-        SizedBox.square(
-dimension: kNotesLibraryControlHeight,
+        SizedBox(
+width: kNotesLibraryControlHeight,
+height: kNotesLibraryControlHeight,
 child: Tooltip(
   message: t(locale, 'add'),
   child: Material(
     color: scheme.primary,
-    shape: const CircleBorder(),
+    borderRadius: BorderRadius.circular(12),
+    clipBehavior: Clip.antiAlias,
     child: InkWell(
       onTap: onSubmit,
-      customBorder: const CircleBorder(),
+      borderRadius: BorderRadius.circular(12),
       child: Center(
         child: Icon(
           Icons.add_rounded,
-          size: 24,
+          size: 22,
           color: scheme.onPrimary,
         ),
       ),

@@ -93,6 +93,8 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
   final Set<String> _selectedBlockIds = <String>{};
   final ScrollController _blockScrollController = ScrollController();
   final Map<String, GlobalKey> _blockItemKeys = <String, GlobalKey>{};
+  Timer? _secondarySelectionGuardTimer;
+  bool _secondarySelectionGuardActive = false;
   bool _dirty = false;
   bool _notesEditorSessionRegistered = false;
 
@@ -130,6 +132,7 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
 
   @override
   void dispose() {
+    _secondarySelectionGuardTimer?.cancel();
     if (_dirty && !widget.parityPreview) {
       _gate.flush(_syncToBrain, force: true);
     }
@@ -224,6 +227,7 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
     if (block.type == NoteBlockType.quote) return null;
     return _focusNodes.putIfAbsent(block.id, () {
       final node = FocusNode(debugLabel: 'notes-block-${block.id}');
+      node.canRequestFocus = !_secondarySelectionGuardActive;
       node.addListener(() {
         if (!mounted) return;
         if (node.hasFocus) {
@@ -642,6 +646,10 @@ item,
   /// contents without inventing a delimiter, so locate that exact substring in
   /// contiguous Notes text blocks and retain the matching block slices.
   void _captureStructuredSelection(SelectedContent? selected) {
+    if (_secondarySelectionGuardActive &&
+        _NotesStructuredClipboard.blocks.length >= 2) {
+      return;
+    }
     final plain = selected?.plainText ?? '';
     if (plain.isEmpty) return;
     final blocks = _inferStructuredSelectionBlocks(plain);
@@ -1032,6 +1040,35 @@ _deleteBlockFromMenu(block.id);
     _editor.activeBlockId = null;
     _editor.activeSelection = null;
     if (changed && mounted) setState(() => _editingBlockId = null);
+  }
+
+  void _beginSecondarySelectionGuard(PointerDownEvent event) {
+    if ((event.buttons & kSecondaryMouseButton) == 0 ||
+        _NotesStructuredClipboard.blocks.length < 2) {
+      return;
+    }
+    _secondarySelectionGuardTimer?.cancel();
+    _secondarySelectionGuardActive = true;
+    for (final node in _focusNodes.values) {
+      node.canRequestFocus = false;
+    }
+  }
+
+  void _scheduleSecondarySelectionGuardRelease(PointerEvent event) {
+    if (!_secondarySelectionGuardActive) return;
+    _secondarySelectionGuardTimer?.cancel();
+    _secondarySelectionGuardTimer = Timer(const Duration(milliseconds: 350), () {
+      if (!mounted) return;
+      _secondarySelectionGuardActive = false;
+      for (final node in _focusNodes.values) {
+        node.canRequestFocus = true;
+      }
+    });
+  }
+
+  void _handleEditorPointerDown(PointerDownEvent event) {
+    _beginSecondarySelectionGuard(event);
+    _handleEditorBackgroundPointer(event);
   }
 
   void _handleEditorBackgroundPointer(PointerDownEvent event) {
@@ -1541,6 +1578,17 @@ child: _NotesBlockMoreButton(
     );
   }
 
+  void _undoLastEdit() {
+    final mutation = _editor.undo();
+    if (!mutation.changed) return;
+    _NotesStructuredClipboard.plainText = null;
+    _NotesStructuredClipboard.blocks = const <NoteBlock>[];
+    _selectedBlockIds.clear();
+    _blockSelectionMode = false;
+    _editingBlockId = null;
+    _applyMutation(mutation);
+  }
+
   void _togglePinned() {
     final brain = DatabaseService.instance;
     brain.toggleNotePin(_task.planRowIdForBackend);
@@ -1626,6 +1674,7 @@ AppButton.destructive(
       pinned: DatabaseService.instance.isNotePinned(_task),
       onTogglePinned: _togglePinned,
       onDelete: _deleteCurrentNote,
+      onUndo: _undoLastEdit,
       bulkSelectionMode: _blockSelectionMode,
       onExitBulkSelection: _exitBlockSelectionMode,
       categoryLabel: category?.name,
@@ -1672,7 +1721,9 @@ activeType == NoteBlockType.bulletedList
       ),
       content: Listener(
         behavior: HitTestBehavior.translucent,
-        onPointerDown: _handleEditorBackgroundPointer,
+        onPointerDown: _handleEditorPointerDown,
+        onPointerUp: _scheduleSecondarySelectionGuardRelease,
+        onPointerCancel: _scheduleSecondarySelectionGuardRelease,
         child: _blockSelectionMode
   ? _buildReorderableBlockList()
   : Focus(

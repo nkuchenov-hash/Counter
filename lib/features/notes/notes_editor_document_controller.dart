@@ -47,6 +47,7 @@ class NotesEditorDocumentController {
   }
 
   NoteDocument _document;
+  final List<NoteDocument> _undoStack = <NoteDocument>[];
   String? activeBlockId;
   TextSelection? activeSelection;
 
@@ -230,7 +231,7 @@ class NotesEditorDocumentController {
     final nextBlocks = List<NoteBlock>.from(blocks)
       ..removeAt(index)
       ..insertAll(index, replacement);
-    _document = _document.copyWith(blocks: nextBlocks);
+    _commitDocument(_document.copyWith(blocks: nextBlocks));
 
     if (suffixBlock != null) {
       activeBlockId = suffixBlock.id;
@@ -300,7 +301,7 @@ class NotesEditorDocumentController {
     final nextBlocks = List<NoteBlock>.from(blocks)
       ..removeAt(index)
       ..insertAll(index, replacement);
-    _document = _document.copyWith(blocks: nextBlocks);
+    _commitDocument(_document.copyWith(blocks: nextBlocks));
 
     final focus = _focusForSplit(parts, selection.extentOffset);
     final focusBlock = replacement[focus.$1];
@@ -341,7 +342,7 @@ class NotesEditorDocumentController {
         runs: _mergeRuns([...previous.effectiveRuns, ...block.effectiveRuns]),
       )
       ..removeAt(index);
-    _document = _document.copyWith(blocks: nextBlocks);
+    _commitDocument(_document.copyWith(blocks: nextBlocks));
     activeBlockId = previous.id;
     activeSelection = TextSelection.collapsed(offset: previousLength);
     return _focusMutation(previous.id, activeSelection!);
@@ -406,7 +407,7 @@ class NotesEditorDocumentController {
         ? anchorIndex + 1
         : _indexAfterLastVisibleBlock();
     final nextBlocks = List<NoteBlock>.from(blocks)..insert(insertAt, block);
-    _document = _document.copyWith(blocks: nextBlocks);
+    _commitDocument(_document.copyWith(blocks: nextBlocks));
     activeBlockId = block.id;
     activeSelection = isEditableText(type)
         ? const TextSelection.collapsed(offset: 0)
@@ -475,7 +476,7 @@ class NotesEditorDocumentController {
           ? null
           : TextSelection.collapsed(offset: candidate.effectiveText.length);
     }
-    _document = _document.copyWith(blocks: nextBlocks);
+    _commitDocument(_document.copyWith(blocks: nextBlocks));
     activeBlockId = focusId ?? visible.first.id;
     activeSelection = selection;
     return NotesEditorMutation(
@@ -650,7 +651,7 @@ class NotesEditorDocumentController {
         nextBlocks.add(block);
       }
     }
-    _document = _document.copyWith(blocks: nextBlocks);
+    _commitDocument(_document.copyWith(blocks: nextBlocks));
     activeBlockId = moving.first.id;
     activeSelection = null;
     return const NotesEditorMutation(changed: true, requiresRebuild: true);
@@ -676,7 +677,7 @@ class NotesEditorDocumentController {
         nextBlocks.add(block);
       }
     }
-    _document = _document.copyWith(blocks: nextBlocks);
+    _commitDocument(_document.copyWith(blocks: nextBlocks));
     activeBlockId = moving.id;
     return const NotesEditorMutation(changed: true, requiresRebuild: true);
   }
@@ -766,11 +767,50 @@ class NotesEditorDocumentController {
     );
   }
 
+  bool get canUndo => _undoStack.isNotEmpty;
+
+  NotesEditorMutation undo() {
+    if (_undoStack.isEmpty) return const NotesEditorMutation();
+    _document = _undoStack.removeLast();
+    final visible = visibleBlocks;
+    if (visible.isEmpty) {
+      activeBlockId = null;
+      activeSelection = null;
+      return const NotesEditorMutation(changed: true, requiresRebuild: true);
+    }
+    final previousActiveId = activeBlockId;
+    final restoredId = previousActiveId != null && blockById(previousActiveId) != null
+        ? previousActiveId
+        : visible.last.id;
+    activeBlockId = restoredId;
+    final restored = blockById(restoredId);
+    if (restored != null && isEditableText(restored.type)) {
+      final offset = (activeSelection?.extentOffset ?? restored.effectiveText.length)
+.clamp(0, restored.effectiveText.length)
+.toInt();
+      activeSelection = TextSelection.collapsed(offset: offset);
+      return NotesEditorMutation(
+        changed: true,
+        requiresRebuild: true,
+        focusBlockId: restoredId,
+        selection: activeSelection,
+      );
+    }
+    activeSelection = null;
+    return const NotesEditorMutation(changed: true, requiresRebuild: true);
+  }
+
+  void _commitDocument(NoteDocument next) {
+    _undoStack.add(_document);
+    if (_undoStack.length > 100) _undoStack.removeAt(0);
+    _document = next;
+  }
+
   void _replaceBlock(NoteBlock replacement) {
     final index = _indexOf(replacement.id);
     if (index < 0) return;
     final nextBlocks = List<NoteBlock>.from(blocks)..[index] = replacement;
-    _document = _document.copyWith(blocks: nextBlocks);
+    _commitDocument(_document.copyWith(blocks: nextBlocks));
   }
 
   int _indexOf(String id) => blocks.indexWhere((block) => block.id == id);

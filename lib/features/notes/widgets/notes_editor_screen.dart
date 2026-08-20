@@ -47,6 +47,7 @@ class NotesEditorScreen extends StatelessWidget {
     required this.pinned,
     required this.onTogglePinned,
     required this.onDelete,
+    this.onUndo,
     this.bulkSelectionMode = false,
     this.onExitBulkSelection,
     required this.content,
@@ -63,6 +64,7 @@ class NotesEditorScreen extends StatelessWidget {
   final bool pinned;
   final VoidCallback onTogglePinned;
   final VoidCallback onDelete;
+  final VoidCallback? onUndo;
   final bool bulkSelectionMode;
   final VoidCallback? onExitBulkSelection;
   final Widget content;
@@ -108,6 +110,7 @@ class NotesEditorScreen extends StatelessWidget {
               pinned: pinned,
               onTogglePinned: onTogglePinned,
               onDelete: onDelete,
+              onUndo: onUndo,
               bulkSelectionMode: bulkSelectionMode,
               onExitBulkSelection: onExitBulkSelection,
               titleController: titleController,
@@ -151,6 +154,7 @@ class _NotesEditorRail extends StatelessWidget {
     required this.pinned,
     required this.onTogglePinned,
     required this.onDelete,
+    this.onUndo,
     required this.bulkSelectionMode,
     required this.onExitBulkSelection,
     required this.titleController,
@@ -168,6 +172,7 @@ class _NotesEditorRail extends StatelessWidget {
   final bool pinned;
   final VoidCallback onTogglePinned;
   final VoidCallback? onDelete;
+  final VoidCallback? onUndo;
   final bool bulkSelectionMode;
   final VoidCallback? onExitBulkSelection;
   final TextEditingController titleController;
@@ -211,6 +216,7 @@ class _NotesEditorRail extends StatelessWidget {
                   pinned: pinned,
                   onTogglePinned: onTogglePinned,
                   onDelete: onDelete,
+                  onUndo: onUndo,
                 bulkSelectionMode: bulkSelectionMode,
                   onExitBulkSelection: onExitBulkSelection,
                 ),
@@ -310,6 +316,7 @@ class _NotesNavigationHeader extends StatelessWidget {
     required this.pinned,
     required this.onTogglePinned,
     required this.onDelete,
+    this.onUndo,
     required this.bulkSelectionMode,
     required this.onExitBulkSelection,
   });
@@ -319,6 +326,7 @@ class _NotesNavigationHeader extends StatelessWidget {
   final bool pinned;
   final VoidCallback onTogglePinned;
   final VoidCallback? onDelete;
+  final VoidCallback? onUndo;
   final bool bulkSelectionMode;
   final VoidCallback? onExitBulkSelection;
 
@@ -337,10 +345,23 @@ const Spacer(),
 if (bulkSelectionMode && onExitBulkSelection != null)
   _NotesBulkDoneAction(onPressed: onExitBulkSelection!)
 else
-  _NotesHeaderMoreMenu(
-    pinned: pinned,
-    onTogglePinned: onTogglePinned,
-    onDelete: onDelete,
+  Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      if (onUndo != null) ...[
+        _NotesHeaderAction(
+icon: Icons.undo_rounded,
+tooltip: 'Undo',
+onPressed: onUndo!,
+        ),
+        const SizedBox(width: 8),
+      ],
+      _NotesHeaderMoreMenu(
+        pinned: pinned,
+        onTogglePinned: onTogglePinned,
+        onDelete: onDelete,
+      ),
+    ],
   ),
         ],
       ),
