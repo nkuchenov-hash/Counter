@@ -1,4 +1,4 @@
-name: Remove Notes checkbox hover
+name: Restore Notes checkbox layout parity
 
 on:
   workflow_dispatch:
@@ -13,44 +13,48 @@ jobs:
 
           path = Path('lib/features/notes/widgets/note_card.dart')
           text = path.read_text()
-
           start = text.find('class _LargeDoneCheck extends StatelessWidget {')
           end = text.find('\nclass _CategoryTile extends StatelessWidget {', start)
           if start < 0 or end < 0:
               raise SystemExit('Large Notes checkbox class not found')
 
-          block = text[start:end]
-          old = '''        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: onToggle,
-            borderRadius: BorderRadius.circular(8),
-            child: Center(
-'''
-          new = '''        child: GestureDetector(
-          behavior: HitTestBehavior.translucent,
-          onTap: onToggle,
-          child: Center(
-'''
-          if old not in block:
-              raise SystemExit('Notes checkbox hover wrapper not found')
-          block = block.replace(old, new, 1)
+          replacement = '''class _LargeDoneCheck extends StatelessWidget {
+  const _LargeDoneCheck({
+    required this.isDone,
+    required this.onToggle,
+  });
 
-          # Material + InkWell had two closing wrappers after Center. GestureDetector
-          # needs only one. Remove exactly one wrapper immediately before SizedBox.
-          old_tail = '''            ),
+  final bool isDone;
+  final VoidCallback onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return InkWell(
+      onTap: onToggle,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        width: kNotesLargeCheckSize,
+        height: kNotesLargeCheckSize,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isDone
+                ? scheme.primary
+                : scheme.outlineVariant.withValues(alpha: 0.7),
+            width: 2,
           ),
+          color: isDone ? scheme.primary : Colors.transparent,
         ),
+        child: isDone
+            ? const Icon(Icons.check_rounded, size: 20, color: Colors.white)
+            : null,
       ),
-    );'''
-          new_tail = '''            ),
-          ),
-      ),
-    );'''
-          if old_tail not in block:
-              raise SystemExit('Notes checkbox wrapper tail not found')
-          block = block.replace(old_tail, new_tail, 1)
+    );
+  }
+}
+'''
 
-          text = text[:start] + block + text[end:]
+          text = text[:start] + replacement + text[end:]
           path.write_text(text)
           PY
