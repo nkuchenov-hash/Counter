@@ -36,6 +36,8 @@ jobs:
           print('xiaomi_bridge=valid')
           PY
 
+  # Pull requests validate only. The pinned SDK is installed on the VPS only
+  # after this workflow reaches main, keeping production unchanged during review.
   provision:
     if: github.event_name != 'pull_request'
     needs: validate
