@@ -64,7 +64,11 @@ jobs:
           ssh -i ~/.ssh/lifeos_pocketbase -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
           set -euo pipefail
           python3 --version
-          rm -rf /tmp/lifeos-mi-fitness-probe
+          if ! python3 -m venv /tmp/lifeos-mi-fitness-venv-check >/dev/null 2>&1; then
+            apt-get update -qq
+            DEBIAN_FRONTEND=noninteractive apt-get install -y -qq python3.12-venv
+          fi
+          rm -rf /tmp/lifeos-mi-fitness-venv-check /tmp/lifeos-mi-fitness-probe
           python3 -m venv /tmp/lifeos-mi-fitness-probe
           /tmp/lifeos-mi-fitness-probe/bin/pip install -q 'mi-fitness==0.2.0'
           /tmp/lifeos-mi-fitness-probe/bin/python - <<'PY'
