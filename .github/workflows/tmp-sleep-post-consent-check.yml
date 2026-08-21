@@ -1,4 +1,4 @@
-# retrigger
+# Health-only probe trigger
 name: TEMP post-consent sleep check
 
 on:
