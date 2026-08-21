@@ -374,17 +374,18 @@ onChanged: widget.onChanged,
 onSubmitted: widget.onSubmitted,
 style: TextStyle(fontSize: 14, color: scheme.onSurface),
 decoration: InputDecoration(
+  constraints: const BoxConstraints.tightFor(
+    height: kNotesLibraryControlHeight,
+  ),
   hintText: widget.hintText,
   hintStyle: TextStyle(fontSize: 14, color: meta),
   prefixIcon: widget.showSearchIcon
       ? Icon(Icons.search_rounded, size: 18, color: meta)
-      : null,
-  prefixIconConstraints: widget.showSearchIcon
-      ? const BoxConstraints.tightFor(
-          width: kNotesLibraryControlHeight,
-          height: kNotesLibraryControlHeight,
-        )
-      : null,
+      : const SizedBox.shrink(),
+  prefixIconConstraints: BoxConstraints.tightFor(
+    width: widget.showSearchIcon ? kNotesLibraryControlHeight : 0,
+    height: kNotesLibraryControlHeight,
+  ),
   suffixIcon: widget.suffixIcon,
   suffixIconConstraints: widget.suffixIcon != null
       ? const BoxConstraints.tightFor(
