@@ -1,4 +1,4 @@
-name: Sleep Production Probe
+name: Sleep Structure Manifest Refresh
 
 on:
   pull_request:
@@ -6,48 +6,56 @@ on:
       - '.github/workflows/sleep-production-probe.yml'
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  probe:
+  refresh:
     runs-on: ubuntu-latest
-    environment: production
-    env:
-      SSH_PRIVATE_KEY: ${{ secrets.POCKETBASE_SSH_PRIVATE_KEY || secrets.VPS_SSH_KEY || secrets.SSH_PRIVATE_KEY }}
-      SSH_USER: ${{ secrets.POCKETBASE_SSH_USER || secrets.VPS_SSH_USER || secrets.SSH_USER }}
-      SSH_HOST: ${{ secrets.POCKETBASE_SSH_HOST || secrets.VPS_HOST || secrets.SSH_HOST }}
-      SSH_PORT: ${{ secrets.POCKETBASE_SSH_PORT || secrets.VPS_SSH_PORT || '22' }}
     steps:
-      - name: Prepare SSH
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/server-xiaomi-sleep-cloud
+          fetch-depth: 0
+      - name: Refresh generated detailed manifest entries
         shell: bash
         run: |
           set -euo pipefail
-          [[ -n "$SSH_PRIVATE_KEY" ]]
-          echo "SSH_USER=${SSH_USER:-root}" >> "$GITHUB_ENV"
-          echo "SSH_HOST=${SSH_HOST:-217.114.0.201}" >> "$GITHUB_ENV"
-          install -m 700 -d ~/.ssh
-          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/lifeos_pocketbase
-          chmod 600 ~/.ssh/lifeos_pocketbase
-          ssh-keyscan -p "$SSH_PORT" -H "${SSH_HOST:-217.114.0.201}" >> ~/.ssh/known_hosts
+          python3 - <<'PY'
+          import re, subprocess
+          from pathlib import Path
 
-      - name: Inspect sleep segment model
-        shell: bash
-        run: |
-          set -euo pipefail
-          ssh -i ~/.ssh/lifeos_pocketbase -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
-          set -euo pipefail
-          rm -rf /tmp/lifeos-mi-fitness-probe
-          python3 -m venv /tmp/lifeos-mi-fitness-probe
-          /tmp/lifeos-mi-fitness-probe/bin/pip install -q 'mi-fitness==0.2.0'
-          /tmp/lifeos-mi-fitness-probe/bin/python - <<'PY'
-          import inspect, pkgutil, mi_fitness
-          from mi_fitness import SleepSegment, SleepData, XiaomiAuth, MiHealthClient
-          print('SleepSegment_signature='+str(inspect.signature(SleepSegment)))
-          print('SleepSegment_annotations='+repr(getattr(SleepSegment,'__annotations__',{})))
-          print('SleepSegment_source_begin'); print(inspect.getsource(SleepSegment)); print('SleepSegment_source_end')
-          print('package_modules='+','.join(sorted(m.name for m in pkgutil.iter_modules(mi_fitness.__path__))))
-          print('client_init_source_begin'); print(inspect.getsource(MiHealthClient.__init__)); print('client_init_source_end')
-          print('auth_from_token_source_begin'); print(inspect.getsource(XiaomiAuth.from_token)); print('auth_from_token_source_end')
+          doc = Path('docs/APP_STRUCTURE_DETAILED.md')
+          text = doc.read_text(encoding='utf-8')
+          tracked = [x for x in subprocess.check_output(['git','ls-files'], text=True).splitlines() if x]
+          text = re.sub(r'(\*\*Tracked files:\*\*\s+)\d+', lambda m: m.group(1) + str(len(tracked)), text, count=1)
+
+          entries = {
+            '.github/workflows/install-xiaomi-sleep-runtime.yml': 'Validates the Xiaomi sleep bridge and provisions the pinned Xiaomi Health SDK on the production PocketBase host.',
+            '_tmp_sleep_cloud_result.txt': 'Sanitized production sleep-sync verification snapshot written by the PocketBase deployment workflow.',
+            'pb_hooks/xiaomi_sleep_bridge.py': 'Server-only Python bridge for one-time Xiaomi QR authorization and normalized Mi Fitness sleep retrieval.',
+            'pb_hooks/xiaomi_sleep_runtime.js': 'PocketBase Xiaomi sleep routes, authorization page, scheduled cloud sync, dedupe, and canonical records upsert.',
+            'pb_migrations/1787143500_force_google_fit_recent_sleep_reconcile.js': 'One-time production reconcile marker for the earlier Google Fit recent-sleep recovery path.',
+            'pb_migrations/1787217300_restore_google_fit_sleep_connection.js': 'One-time migration restoring the existing Google Fit sleep connection state after cloud diagnostics.',
+            'pb_migrations/1787325000_force_google_fit_merged_sleep_reconcile.js': 'One-time reconcile marker that forced the canonical merged Google Fit sleep stream reread.',
+            'pb_migrations/1787354100_xiaomi_sleep_provider.js': 'Extends server sleep connection providers so Xiaomi Cloud can own fresh sleep synchronization.',
+          }
+          missing = []
+          for path, description in entries.items():
+              if f'### `{path}`' not in text:
+                  missing.append((path, description))
+          if missing:
+              text = text.rstrip() + '\n\n## Recent sleep synchronization infrastructure\n\n'
+              for path, description in missing:
+                  text += f'### `{path}`\n\n- **What:** {description}\n- **Why:** Keeps current sleep ingestion and its deployment/verification path explicit in the repository manifest.\n- **Contains:** Runtime or deployment logic for server-owned sleep synchronization.\n- **Responsibilities:** Preserve reliable, auditable sleep ingestion without requiring LIFE OS to be opened on the phone.\n- **When to inspect:** Missing recent sleep, provider authorization, server deployment, or sleep-sync diagnostics.\n- **Delete:** Only together with the corresponding replacement sleep-sync path.\n- **Connected to:** `pb_hooks/sleep_sync.pb.js`, PocketBase `records`, and production sleep deployment.\n- **Layer:** Server infrastructure / generated repository manifest.\n\n'
+          doc.write_text(text.rstrip() + '\n', encoding='utf-8')
           PY
-          rm -rf /tmp/lifeos-mi-fitness-probe
-          REMOTE
+          python scripts/audit/documentation_parity.py || true
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add docs/APP_STRUCTURE_DETAILED.md
+          if git diff --cached --quiet; then
+            echo 'manifest already current'
+            exit 0
+          fi
+          git commit -m 'Refresh detailed structure manifest for sleep sync'
+          git push origin HEAD:fix/server-xiaomi-sleep-cloud
