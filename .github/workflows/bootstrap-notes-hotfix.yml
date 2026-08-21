@@ -1,4 +1,4 @@
-name: Notes independent exact 48px controls hotfix
+name: Notes 40px shared controls hotfix
 
 on:
   workflow_dispatch:
@@ -15,99 +15,188 @@ jobs:
               if not condition:
                   raise SystemExit(label)
 
-          # Remove the shared input widget entirely. Search and quick-add are
-          # intentionally independent controls with explicit 48px visual frames.
+          # One canonical 40px input for both Notes search and quick-add.
           surface = Path('lib/features/notes/notes_glm_surface.dart')
           s = surface.read_text()
-          shared_start = s.index('class NotesGlmLibraryInput extends StatelessWidget {')
-          shared_end = s.index('/// GLM glass card surface for library note cards.', shared_start)
-          s = s[:shared_start] + s[shared_end:]
+          s = s.replace(
+              'const double kNotesLibraryControlHeight = 48;',
+              'const double kNotesLibraryControlHeight = 40;',
+              1,
+          )
+          require('const double kNotesLibraryControlHeight = 40;' in s, '40px control constant missing')
+          require('class NotesGlmLibraryInput' not in s, 'shared input unexpectedly already exists')
+          marker = '''/// Canonical Notes library input used by both Search and quick-add.
+/// GLM glass card surface for library note cards.
+'''
+          require(marker in s, 'canonical input insertion marker missing')
+          shared = '''/// Canonical Notes library input used by both Search and quick-add.
+/// Owns height, border, radius and hover/focus surface so the two controls
+/// cannot visually drift apart again.
+class NotesGlmLibraryInput extends StatefulWidget {
+  const NotesGlmLibraryInput({
+    super.key,
+    required this.controller,
+    required this.focusNode,
+    required this.hintText,
+    required this.textInputAction,
+    this.textCapitalization = TextCapitalization.none,
+    this.onChanged,
+    this.onSubmitted,
+    this.suffixIcon,
+    this.showSearchIcon = true,
+  });
+
+  final TextEditingController controller;
+  final FocusNode focusNode;
+  final String hintText;
+  final TextInputAction textInputAction;
+  final TextCapitalization textCapitalization;
+  final ValueChanged<String>? onChanged;
+  final ValueChanged<String>? onSubmitted;
+  final Widget? suffixIcon;
+  final bool showSearchIcon;
+
+  @override
+  State<NotesGlmLibraryInput> createState() => _NotesGlmLibraryInputState();
+}
+
+class _NotesGlmLibraryInputState extends State<NotesGlmLibraryInput> {
+  bool _hovered = false;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.focusNode.addListener(_handleFocusChanged);
+  }
+
+  @override
+  void didUpdateWidget(covariant NotesGlmLibraryInput oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.focusNode == widget.focusNode) return;
+    oldWidget.focusNode.removeListener(_handleFocusChanged);
+    widget.focusNode.addListener(_handleFocusChanged);
+  }
+
+  @override
+  void dispose() {
+    widget.focusNode.removeListener(_handleFocusChanged);
+    super.dispose();
+  }
+
+  void _handleFocusChanged() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final dark = theme.brightness == Brightness.dark;
+    final meta = notesGlmMetaColor(context);
+    final normalFill = dark
+        ? scheme.surfaceContainerHigh.withValues(alpha: 0.82)
+        : const Color(0xFFFFFFFF).withValues(alpha: 0.82);
+    final hoverFill = dark
+        ? scheme.surfaceContainerHighest.withValues(alpha: 0.92)
+        : const Color(0xFFFFFFFF).withValues(alpha: 0.96);
+    final normalBorder = dark
+        ? scheme.outlineVariant.withValues(alpha: 0.82)
+        : const Color(0xFFD9E0EA);
+    final focusBorder = scheme.primary.withValues(alpha: dark ? 0.86 : 0.62);
+
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 90),
+        curve: Curves.easeOut,
+        height: kNotesLibraryControlHeight,
+        decoration: BoxDecoration(
+          color: _hovered ? hoverFill : normalFill,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: widget.focusNode.hasFocus ? focusBorder : normalBorder,
+            width: widget.focusNode.hasFocus && dark ? 1.2 : 1,
+          ),
+        ),
+        child: TextField(
+          controller: widget.controller,
+          focusNode: widget.focusNode,
+          textInputAction: widget.textInputAction,
+          textCapitalization: widget.textCapitalization,
+          textAlignVertical: TextAlignVertical.center,
+          onChanged: widget.onChanged,
+          onSubmitted: widget.onSubmitted,
+          style: TextStyle(fontSize: 14, color: scheme.onSurface),
+          decoration: InputDecoration(
+            hintText: widget.hintText,
+            hintStyle: TextStyle(fontSize: 14, color: meta),
+            prefixIcon: widget.showSearchIcon
+                ? Icon(Icons.search_rounded, size: 18, color: meta)
+                : null,
+            prefixIconConstraints: widget.showSearchIcon
+                ? const BoxConstraints.tightFor(
+                    width: kNotesLibraryControlHeight,
+                    height: kNotesLibraryControlHeight,
+                  )
+                : null,
+            suffixIcon: widget.suffixIcon,
+            suffixIconConstraints: widget.suffixIcon != null
+                ? const BoxConstraints.tightFor(
+                    width: kNotesLibraryControlHeight,
+                    height: kNotesLibraryControlHeight,
+                  )
+                : null,
+            isDense: true,
+            filled: false,
+            hoverColor: Colors.transparent,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 14),
+            border: InputBorder.none,
+            enabledBorder: InputBorder.none,
+            focusedBorder: InputBorder.none,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// GLM glass card surface for library note cards.
+'''
+          s = s.replace(marker, shared, 1)
           surface.write_text(s)
 
-          # Search field: explicit 48px outer VISUAL frame.
+          # Search uses the canonical control instead of its independent frame.
           lists = Path('lib/features/lists/lists_view.dart')
           l = lists.read_text()
           header_start = l.index('class _NotesLibraryHeader extends StatelessWidget')
-          search_start = l.index('          NotesGlmLibraryInput(', header_start)
-          search_end = l.index('\n        ],\n      ),\n    );\n  }\n}\n\nclass _HeaderSegBtn', search_start)
-          search_widget = '''          AnimatedBuilder(
-            animation: searchFocus,
-            builder: (context, _) {
-              final theme = Theme.of(context);
-              final scheme = theme.colorScheme;
-              final dark = theme.brightness == Brightness.dark;
-              final meta = notesGlmMetaColor(context);
-              final fill = dark
-                  ? scheme.surfaceContainerHigh.withValues(alpha: 0.82)
-                  : const Color(0xFFFFFFFF).withValues(alpha: 0.75);
-              final normalBorder = dark
-                  ? scheme.outlineVariant.withValues(alpha: 0.78)
-                  : const Color(0xFFE2E8F0).withValues(alpha: 0.95);
-              final focusBorder = scheme.primary.withValues(
-                alpha: dark ? 0.82 : 0.55,
-              );
-              return SizedBox(
-                height: 48,
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: fill,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: searchFocus.hasFocus ? focusBorder : normalBorder,
-                      width: searchFocus.hasFocus && dark ? 1.2 : 1,
-                    ),
-                  ),
-                  child: TextField(
-                    controller: searchController,
-                    focusNode: searchFocus,
-                    textInputAction: TextInputAction.search,
-                    textCapitalization: TextCapitalization.sentences,
-                    textAlignVertical: TextAlignVertical.center,
-                    onChanged: onSearchChanged,
-                    style: TextStyle(fontSize: 14, color: scheme.onSurface),
-                    decoration: InputDecoration(
-                      hintText: t(locale, 'notes_v3_search_hint'),
-                      hintStyle: TextStyle(fontSize: 14, color: meta),
-                      prefixIcon: Icon(
-                        Icons.search_rounded,
-                        size: 18,
-                        color: meta,
-                      ),
-                      prefixIconConstraints: const BoxConstraints.tightFor(
-                        width: 48,
-                        height: 48,
-                      ),
-                      suffixIcon: searchQuery.trim().isNotEmpty
-                          ? IconButton(
-                              tooltip: t(locale, 'cancel'),
-                              icon: const Icon(Icons.close_rounded, size: 18),
-                              visualDensity: VisualDensity.compact,
-                              splashRadius: 16,
-                              onPressed: onClearSearch,
-                            )
-                          : null,
-                      suffixIconConstraints: searchQuery.trim().isNotEmpty
-                          ? const BoxConstraints.tightFor(
-                              width: 48,
-                              height: 48,
-                            )
-                          : null,
-                      isDense: true,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 14),
-                      border: InputBorder.none,
-                      enabledBorder: InputBorder.none,
-                      focusedBorder: InputBorder.none,
-                    ),
-                  ),
-                ),
-              );
-            },
+          search_start = l.index('          AnimatedBuilder(\n', header_start)
+          search_end = l.index(
+              '\n        ],\n      ),\n    );\n  }\n}\n\nclass _HeaderSegBtn',
+              search_start,
+          )
+          search_widget = '''          NotesGlmLibraryInput(
+            controller: searchController,
+            focusNode: searchFocus,
+            hintText: t(locale, 'notes_v3_search_hint'),
+            textInputAction: TextInputAction.search,
+            textCapitalization: TextCapitalization.sentences,
+            onChanged: onSearchChanged,
+            suffixIcon: searchQuery.trim().isNotEmpty
+                ? IconButton(
+                    tooltip: t(locale, 'cancel'),
+                    icon: const Icon(Icons.close_rounded, size: 18),
+                    visualDensity: VisualDensity.compact,
+                    splashRadius: 16,
+                    onPressed: onClearSearch,
+                  )
+                : null,
           ),'''
           l = l[:search_start] + search_widget + l[search_end:]
           lists.write_text(l)
 
-          # Quick-add field: its own explicit 48px visual frame. The black + is
-          # independently constrained to exactly 48x48 and remains circular.
+          # Quick-add uses the same input. The + is a black 40x40 circle and its
+          # InkWell fills that exact box, so hover cannot cover only part of it.
           shell = Path('lib/features/notes/widgets/notes_library_production_shell.dart')
           q = shell.read_text()
           class_start = q.index('class NotesGlmInlineAddRow extends StatelessWidget')
@@ -118,59 +207,18 @@ jobs:
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Expanded(
-          child: AnimatedBuilder(
-            animation: focusNode,
-            builder: (context, _) {
-              final theme = Theme.of(context);
-              final scheme = theme.colorScheme;
-              final dark = theme.brightness == Brightness.dark;
-              final meta = notesGlmMetaColor(context);
-              final fill = dark
-                  ? scheme.surfaceContainerHigh.withValues(alpha: 0.82)
-                  : const Color(0xFFFFFFFF).withValues(alpha: 0.75);
-              final normalBorder = dark
-                  ? scheme.outlineVariant.withValues(alpha: 0.78)
-                  : const Color(0xFFE2E8F0).withValues(alpha: 0.95);
-              final focusBorder = scheme.primary.withValues(
-                alpha: dark ? 0.82 : 0.55,
-              );
-              return SizedBox(
-                height: 48,
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: fill,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: focusNode.hasFocus ? focusBorder : normalBorder,
-                      width: focusNode.hasFocus && dark ? 1.2 : 1,
-                    ),
-                  ),
-                  child: TextField(
-                    controller: controller,
-                    focusNode: focusNode,
-                    textInputAction: TextInputAction.done,
-                    textAlignVertical: TextAlignVertical.center,
-                    onSubmitted: (_) => onSubmit(),
-                    style: TextStyle(fontSize: 14, color: scheme.onSurface),
-                    decoration: InputDecoration(
-                      hintText: t(locale, 'input_placeholder_list'),
-                      hintStyle: TextStyle(fontSize: 14, color: meta),
-                      isDense: true,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 14),
-                      border: InputBorder.none,
-                      enabledBorder: InputBorder.none,
-                      focusedBorder: InputBorder.none,
-                    ),
-                  ),
-                ),
-              );
-            },
+          child: NotesGlmLibraryInput(
+            controller: controller,
+            focusNode: focusNode,
+            hintText: t(locale, 'input_placeholder_list'),
+            textInputAction: TextInputAction.done,
+            showSearchIcon: false,
+            onSubmitted: (_) => onSubmit(),
           ),
         ),
         const SizedBox(width: 8),
-        SizedBox(
-          width: 48,
-          height: 48,
+        SizedBox.square(
+          dimension: kNotesLibraryControlHeight,
           child: Tooltip(
             message: t(locale, 'add'),
             child: Material(
@@ -180,10 +228,11 @@ jobs:
               child: InkWell(
                 onTap: onSubmit,
                 customBorder: const CircleBorder(),
+                hoverColor: Colors.white24,
                 child: const Center(
                   child: Icon(
                     Icons.add_rounded,
-                    size: 22,
+                    size: 20,
                     color: Colors.white,
                   ),
                 ),
@@ -201,11 +250,14 @@ jobs:
           final_surface = surface.read_text()
           final_lists = lists.read_text()
           final_shell = shell.read_text()
-          require('class NotesGlmLibraryInput' not in final_surface, 'shared input component still exists')
-          require('NotesGlmLibraryInput(' not in final_lists, 'Search still uses shared component')
-          require('NotesGlmLibraryInput(' not in final_shell, 'Quick-add still uses shared component')
-          require(final_lists.count('height: 48') >= 3, 'Search does not have explicit 48px frame/icon constraints')
-          require(final_shell.count('height: 48') >= 2, 'Quick-add field/button not both explicit 48px')
-          require('width: 48' in final_shell, 'Quick-add button width is not explicit 48px')
-          require('shape: const CircleBorder()' in final_shell, 'Quick-add button is not circular')
+          require('const double kNotesLibraryControlHeight = 40;' in final_surface, 'control height is not 40')
+          require('class NotesGlmLibraryInput extends StatefulWidget' in final_surface, 'canonical input missing')
+          require('MouseRegion(' in final_surface, 'whole-control hover region missing')
+          require('borderRadius: BorderRadius.circular(12)' in final_surface, 'input radius missing')
+          require('Border.all(' in final_surface, 'input border missing')
+          require('NotesGlmLibraryInput(' in final_lists, 'Search is not canonical input')
+          require('NotesGlmLibraryInput(' in final_shell, 'Quick-add is not canonical input')
+          require('dimension: kNotesLibraryControlHeight' in final_shell, '+ is not tied to canonical height')
+          require('shape: const CircleBorder()' in final_shell, '+ is not circular')
+          require('hoverColor: Colors.white24' in final_shell, '+ hover does not fill the circle')
           PY
