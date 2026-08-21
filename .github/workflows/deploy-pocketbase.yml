@@ -23,6 +23,14 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Validate main architecture contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/audit/documentation_parity.py
+          python scripts/audit/pocketbase_schema_contract.py
+          python scripts/audit/deployment_contract.py
+
       - name: Validate PocketBase JavaScript
         shell: bash
         run: |
@@ -44,6 +52,7 @@ jobs:
           elif [[ "${{ github.event_name }}" == "push" && -n "${BEFORE_SHA:-}" && ! "$BEFORE_SHA" =~ ^0+$ ]]; then
             if git diff --quiet "$BEFORE_SHA" "$GITHUB_SHA" -- pb_hooks pb_migrations; then changed=false; fi
           fi
+          echo "SERVER_CHANGED=$changed" >> "$GITHUB_ENV"
           echo "server_changed=$changed" >> "$GITHUB_OUTPUT"
           echo "PocketBase bundle changed: $changed"
 
@@ -100,8 +109,8 @@ jobs:
           if [[ -z "$app_dir" && -n "$pid" ]]; then app_dir="$(readlink -f "/proc/$pid/cwd" 2>/dev/null || true)"; fi
           [[ -n "$service_name" && -n "$app_dir" && -d "$app_dir" ]]
 
-          # Keep the existing Google OAuth client credentials. They now authorize
-          # both Google Health sleep and legacy Google Fit sleep read-only scopes.
+          # Preserve the existing Google OAuth client credentials for historical
+          # backfill while Xiaomi Cloud owns current-night ingestion.
           fit_env="$app_dir/.lifeos-google-fit.env"
           [[ -f "$fit_env" ]]
           grep -q '^SLEEP_SYNC_GOOGLE_FIT_CLIENT_ID=' "$fit_env"

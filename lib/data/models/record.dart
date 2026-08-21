@@ -275,11 +275,13 @@ class TimelineRecord {
   /// Profile wall-clock offset (profiles.timezone_offset). Drives [dateKey] day bucket — no device TZ.
   final int timezoneOffsetHours;
 
-  /// ISO `YYYY-MM-DD` from [startTime] in profile wall-clock calendar ([timezoneOffsetHours], not device TZ).
+  /// ISO `YYYY-MM-DD` from wake time for sleep, otherwise [startTime],
+  /// in profile wall-clock calendar ([timezoneOffsetHours], not device TZ).
   String get dateKey {
-    final st = startTime;
-    if (st == null) return '';
-    final wall = st.toUtc().add(Duration(hours: timezoneOffsetHours));
+    final isSleep = title == 'Sleep' || title == 'Сон';
+    final anchor = isSleep ? (endTime ?? startTime) : startTime;
+    if (anchor == null) return '';
+    final wall = anchor.toUtc().add(Duration(hours: timezoneOffsetHours));
     return '${wall.year}-${wall.month.toString().padLeft(2, '0')}-${wall.day.toString().padLeft(2, '0')}';
   }
 

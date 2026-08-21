@@ -6,7 +6,7 @@ Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 830 — each appears **exactly once** below.
+**Tracked files:** 838 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -35430,3 +35430,93 @@ RU:
 - **Когда открывать:** Ошибка native compile ссылается на `win32_window.h`.
 - **Можно удалить?** Нет — без него не соберётся Windows `.exe`/runner.
 - **Связано с:** `windows/runner/`, `windows/flutter/`.
+
+## Recent sleep synchronization infrastructure
+
+### `.github/workflows/install-xiaomi-sleep-runtime.yml`
+
+- **What:** Validates the Xiaomi sleep bridge and provisions the pinned Xiaomi Health SDK on the production PocketBase host.
+- **Why:** Keeps current sleep ingestion and its deployment/verification path explicit in the repository manifest.
+- **Contains:** Runtime or deployment logic for server-owned sleep synchronization.
+- **Responsibilities:** Preserve reliable, auditable sleep ingestion without requiring LIFE OS to be opened on the phone.
+- **When to inspect:** Missing recent sleep, provider authorization, server deployment, or sleep-sync diagnostics.
+- **Delete:** Only together with the corresponding replacement sleep-sync path.
+- **Connected to:** `pb_hooks/sleep_sync.pb.js`, PocketBase `records`, and production sleep deployment.
+- **Layer:** Server infrastructure / generated repository manifest.
+
+### `_tmp_sleep_cloud_result.txt`
+
+- **What:** Sanitized production sleep-sync verification snapshot written by the PocketBase deployment workflow.
+- **Why:** Keeps current sleep ingestion and its deployment/verification path explicit in the repository manifest.
+- **Contains:** Runtime or deployment logic for server-owned sleep synchronization.
+- **Responsibilities:** Preserve reliable, auditable sleep ingestion without requiring LIFE OS to be opened on the phone.
+- **When to inspect:** Missing recent sleep, provider authorization, server deployment, or sleep-sync diagnostics.
+- **Delete:** Only together with the corresponding replacement sleep-sync path.
+- **Connected to:** `pb_hooks/sleep_sync.pb.js`, PocketBase `records`, and production sleep deployment.
+- **Layer:** Server infrastructure / generated repository manifest.
+
+### `pb_hooks/xiaomi_sleep_bridge.py`
+
+- **What:** Server-only Python bridge for one-time Xiaomi QR authorization and normalized Mi Fitness sleep retrieval.
+- **Why:** Keeps current sleep ingestion and its deployment/verification path explicit in the repository manifest.
+- **Contains:** Runtime or deployment logic for server-owned sleep synchronization.
+- **Responsibilities:** Preserve reliable, auditable sleep ingestion without requiring LIFE OS to be opened on the phone.
+- **When to inspect:** Missing recent sleep, provider authorization, server deployment, or sleep-sync diagnostics.
+- **Delete:** Only together with the corresponding replacement sleep-sync path.
+- **Connected to:** `pb_hooks/sleep_sync.pb.js`, PocketBase `records`, and production sleep deployment.
+- **Layer:** Server infrastructure / generated repository manifest.
+
+### `pb_hooks/xiaomi_sleep_runtime.js`
+
+- **What:** PocketBase Xiaomi sleep routes, authorization page, scheduled cloud sync, dedupe, and canonical records upsert.
+- **Why:** Keeps current sleep ingestion and its deployment/verification path explicit in the repository manifest.
+- **Contains:** Runtime or deployment logic for server-owned sleep synchronization.
+- **Responsibilities:** Preserve reliable, auditable sleep ingestion without requiring LIFE OS to be opened on the phone.
+- **When to inspect:** Missing recent sleep, provider authorization, server deployment, or sleep-sync diagnostics.
+- **Delete:** Only together with the corresponding replacement sleep-sync path.
+- **Connected to:** `pb_hooks/sleep_sync.pb.js`, PocketBase `records`, and production sleep deployment.
+- **Layer:** Server infrastructure / generated repository manifest.
+
+### `pb_migrations/1787143500_force_google_fit_recent_sleep_reconcile.js`
+
+- **What:** One-time production reconcile marker for the earlier Google Fit recent-sleep recovery path.
+- **Why:** Keeps current sleep ingestion and its deployment/verification path explicit in the repository manifest.
+- **Contains:** Runtime or deployment logic for server-owned sleep synchronization.
+- **Responsibilities:** Preserve reliable, auditable sleep ingestion without requiring LIFE OS to be opened on the phone.
+- **When to inspect:** Missing recent sleep, provider authorization, server deployment, or sleep-sync diagnostics.
+- **Delete:** Only together with the corresponding replacement sleep-sync path.
+- **Connected to:** `pb_hooks/sleep_sync.pb.js`, PocketBase `records`, and production sleep deployment.
+- **Layer:** Server infrastructure / generated repository manifest.
+
+### `pb_migrations/1787217300_restore_google_fit_sleep_connection.js`
+
+- **What:** One-time migration restoring the existing Google Fit sleep connection state after cloud diagnostics.
+- **Why:** Keeps current sleep ingestion and its deployment/verification path explicit in the repository manifest.
+- **Contains:** Runtime or deployment logic for server-owned sleep synchronization.
+- **Responsibilities:** Preserve reliable, auditable sleep ingestion without requiring LIFE OS to be opened on the phone.
+- **When to inspect:** Missing recent sleep, provider authorization, server deployment, or sleep-sync diagnostics.
+- **Delete:** Only together with the corresponding replacement sleep-sync path.
+- **Connected to:** `pb_hooks/sleep_sync.pb.js`, PocketBase `records`, and production sleep deployment.
+- **Layer:** Server infrastructure / generated repository manifest.
+
+### `pb_migrations/1787325000_force_google_fit_merged_sleep_reconcile.js`
+
+- **What:** One-time reconcile marker that forced the canonical merged Google Fit sleep stream reread.
+- **Why:** Keeps current sleep ingestion and its deployment/verification path explicit in the repository manifest.
+- **Contains:** Runtime or deployment logic for server-owned sleep synchronization.
+- **Responsibilities:** Preserve reliable, auditable sleep ingestion without requiring LIFE OS to be opened on the phone.
+- **When to inspect:** Missing recent sleep, provider authorization, server deployment, or sleep-sync diagnostics.
+- **Delete:** Only together with the corresponding replacement sleep-sync path.
+- **Connected to:** `pb_hooks/sleep_sync.pb.js`, PocketBase `records`, and production sleep deployment.
+- **Layer:** Server infrastructure / generated repository manifest.
+
+### `pb_migrations/1787354100_xiaomi_sleep_provider.js`
+
+- **What:** Extends server sleep connection providers so Xiaomi Cloud can own fresh sleep synchronization.
+- **Why:** Keeps current sleep ingestion and its deployment/verification path explicit in the repository manifest.
+- **Contains:** Runtime or deployment logic for server-owned sleep synchronization.
+- **Responsibilities:** Preserve reliable, auditable sleep ingestion without requiring LIFE OS to be opened on the phone.
+- **When to inspect:** Missing recent sleep, provider authorization, server deployment, or sleep-sync diagnostics.
+- **Delete:** Only together with the corresponding replacement sleep-sync path.
+- **Connected to:** `pb_hooks/sleep_sync.pb.js`, PocketBase `records`, and production sleep deployment.
+- **Layer:** Server infrastructure / generated repository manifest.

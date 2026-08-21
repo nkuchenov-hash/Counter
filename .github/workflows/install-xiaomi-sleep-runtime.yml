@@ -1,0 +1,89 @@
+name: Provision Xiaomi sleep runtime
+
+on:
+  pull_request:
+    paths:
+      - 'pb_hooks/xiaomi_sleep_bridge.py'
+      - '.github/workflows/install-xiaomi-sleep-runtime.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'pb_hooks/xiaomi_sleep_bridge.py'
+      - '.github/workflows/install-xiaomi-sleep-runtime.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate Xiaomi bridge
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m py_compile pb_hooks/xiaomi_sleep_bridge.py
+          python -m pip install -q 'mi-fitness==0.2.0'
+          python - <<'PY'
+          import pb_hooks.xiaomi_sleep_bridge as bridge
+          from mi_fitness import XiaomiAuth, MiHealthClient
+          assert bridge and XiaomiAuth and MiHealthClient
+          print('xiaomi_bridge=valid')
+          PY
+
+  # Pull requests validate only. The pinned SDK is installed on the VPS only
+  # after this workflow reaches main, keeping production unchanged during review.
+  provision:
+    if: github.event_name != 'pull_request'
+    needs: validate
+    runs-on: ubuntu-latest
+    environment: production
+    concurrency:
+      group: pocketbase-production
+      cancel-in-progress: false
+    env:
+      SSH_PRIVATE_KEY: ${{ secrets.POCKETBASE_SSH_PRIVATE_KEY || secrets.VPS_SSH_KEY || secrets.SSH_PRIVATE_KEY }}
+      SSH_USER: ${{ secrets.POCKETBASE_SSH_USER || secrets.VPS_SSH_USER || secrets.SSH_USER }}
+      SSH_HOST: ${{ secrets.POCKETBASE_SSH_HOST || secrets.VPS_HOST || secrets.SSH_HOST }}
+      SSH_PORT: ${{ secrets.POCKETBASE_SSH_PORT || secrets.VPS_SSH_PORT || '22' }}
+    steps:
+      - name: Prepare SSH
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ -n "$SSH_PRIVATE_KEY" ]]
+          echo "SSH_USER=${SSH_USER:-root}" >> "$GITHUB_ENV"
+          echo "SSH_HOST=${SSH_HOST:-217.114.0.201}" >> "$GITHUB_ENV"
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/lifeos_pocketbase
+          chmod 600 ~/.ssh/lifeos_pocketbase
+          ssh-keyscan -p "$SSH_PORT" -H "$SSH_HOST" >> ~/.ssh/known_hosts
+
+      - name: Install pinned Xiaomi Health SDK
+        shell: bash
+        run: |
+          set -euo pipefail
+          ssh -i ~/.ssh/lifeos_pocketbase -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -euo pipefail
+          if [[ "$(id -u)" -eq 0 ]]; then SUDO=""; else SUDO="sudo -n"; fi
+          if ! python3 -m venv /tmp/lifeos-xiaomi-venv-check >/dev/null 2>&1; then
+            $SUDO apt-get update -qq
+            DEBIAN_FRONTEND=noninteractive $SUDO apt-get install -y -qq python3.12-venv
+          fi
+          rm -rf /tmp/lifeos-xiaomi-venv-check
+          if [[ ! -x /opt/lifeos-xiaomi-sleep/bin/python ]]; then
+            $SUDO rm -rf /opt/lifeos-xiaomi-sleep
+            $SUDO python3 -m venv /opt/lifeos-xiaomi-sleep
+          fi
+          $SUDO /opt/lifeos-xiaomi-sleep/bin/pip install -q --upgrade 'mi-fitness==0.2.0'
+          /opt/lifeos-xiaomi-sleep/bin/python - <<'PY'
+          from mi_fitness import XiaomiAuth, MiHealthClient
+          assert XiaomiAuth and MiHealthClient
+          print('xiaomi_sleep_runtime=ready')
+          PY
+          REMOTE
