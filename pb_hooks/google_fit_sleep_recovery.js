@@ -1,13 +1,14 @@
 // Google Fit cloud sleep recovery helper.
-// The merged com.google.sleep.segment stream is canonical. For freshness, recent
-// visible raw/derived sleep streams are also read from the same Google Fit account
-// and merged before reconstructing the simple asleep -> awake interval.
+// Google Fit's aggregate response is not reliable for every provider. Read the
+// canonical merged sleep data source directly for recent nights, then merge any
+// additional visible raw/derived streams before reconstructing sleep episodes.
 
 var SLEEP_DATA_TYPE = "com.google.sleep.segment";
+var MERGED_SLEEP_DATA_SOURCE = "derived:com.google.sleep.segment:com.google.android.gms:merged";
 var MIN_EPISODE_MS = 20 * 60 * 1000;
 var MAX_SEGMENT_GAP_MS = 90 * 60 * 1000;
 var FULL_SCAN_CHUNK_MS = 90 * 86400000;
-var RAW_FALLBACK_LOOKBACK_MS = 3 * 86400000;
+var RAW_FALLBACK_LOOKBACK_MS = 7 * 86400000;
 
 function formEncode(values) {
     var parts = [];
@@ -91,14 +92,31 @@ function listVisibleSleepSources(accessToken) {
     return out;
 }
 
+function recentSleepSources(accessToken) {
+    // dataSources.list is explicitly not exhaustive. The Google Play Services
+    // merged stream is stable and is where Xiaomi-origin sleep can be available
+    // even when dataset:aggregate returns no recent points, so always query it.
+    var out = [MERGED_SLEEP_DATA_SOURCE];
+    var seen = {};
+    seen[MERGED_SLEEP_DATA_SOURCE] = true;
+    var visible = [];
+    try { visible = listVisibleSleepSources(accessToken); } catch (_) { visible = []; }
+    for (var i = 0; i < visible.length; i++) {
+        var id = String(visible[i] || "").trim();
+        if (!id || seen[id]) continue;
+        seen[id] = true;
+        out.push(id);
+    }
+    return out;
+}
+
 function datasetId(start, end) {
     // Preserve nanosecond identifiers as decimal strings instead of JS Numbers.
     return String(start.getTime()) + "000000-" + String(end.getTime()) + "000000";
 }
 
 function fetchVisibleSourcePoints(accessToken, start, end) {
-    var sources = [];
-    try { sources = listVisibleSleepSources(accessToken); } catch (_) { return { points: [], sources: 0 }; }
+    var sources = recentSleepSources(accessToken);
     var points = [];
     for (var i = 0; i < sources.length; i++) {
         var sourceId = sources[i];
@@ -152,10 +170,10 @@ function fetchPoints(accessToken, start, end) {
         cursor = chunkEnd;
     }
 
-    // The aggregate-by-data-type stream remains canonical because Google merges
-    // data from different apps/devices there. Recent visible source streams are a
-    // supplementary freshness path for a night that has reached the fitness store
-    // but has not yet appeared in the merged aggregate response.
+    // Keep aggregate results for historical compatibility, but directly read the
+    // canonical merged stream for freshness. Some Xiaomi-origin sleep reaches the
+    // merged dataset while dataset:aggregate stays empty. Additional visible source
+    // streams are merged as a correction path when Google exposes them.
     var rawStart = new Date(Math.max(start.getTime(), end.getTime() - RAW_FALLBACK_LOOKBACK_MS));
     var raw = fetchVisibleSourcePoints(accessToken, rawStart, end);
     var byKey = {};
