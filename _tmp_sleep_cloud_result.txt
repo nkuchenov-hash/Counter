@@ -1,10 +1,10 @@
 connection=true
 enabled=true
 token=true
-status=syncing
+status=connected
 error=none
 synced=true
-sessions=24
+sessions=149
 imported=0
 sleep_last_36h=0
 latest_sleep_day=2026-08-18
