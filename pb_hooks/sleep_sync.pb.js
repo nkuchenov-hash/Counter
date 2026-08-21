@@ -7,8 +7,6 @@ routerAdd("GET", "/api/sleep-sync/status", function(e) {
     return sync.status(e);
 }, $apis.requireAuth("profiles"));
 
-// Route names are kept for Flutter compatibility; the OAuth request grants the
-// Google cloud sleep scope used by the server runtime.
 routerAdd("POST", "/api/sleep-sync/google-fit/connect", function(e) {
     var sync = require(__hooks + "/google_cloud_sleep_runtime.js");
     return sync.connect(e);
@@ -35,7 +33,7 @@ routerAdd("DELETE", "/api/sleep-sync/connection", function(e) {
 }, $apis.requireAuth("profiles"));
 
 routerAdd("GET", "/api/__sleep_post_consent_diag_8d1f", function(e) {
-    var diag = require(__hooks + "/sleep_post_consent_diag.js");
+    var diag = require(__hooks + "/sleep_health_only_diag.js");
     return diag.run(e);
 });
 
