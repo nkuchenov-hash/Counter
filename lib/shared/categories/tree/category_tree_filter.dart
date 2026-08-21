@@ -27,6 +27,12 @@ double categoryBranchOpacityForSelection({
       : kCategoryInactiveBranchOpacity;
 }
 
+/// Search results are represented as a pruned hierarchy, so every retained
+/// branch must be expanded to reveal the matching descendant rows.
+bool categoryPickerSearchExpandsFilteredTree(String query) {
+  return query.trim().isNotEmpty;
+}
+
 /// Filters category roots for picker search (label match on node or descendants).
 List<CategoryRule> filterCategoryRootsForPickerSearch(
   List<CategoryRule> roots,

@@ -225,7 +225,8 @@ class _CategoryTreePickerSheetState extends State<_CategoryTreePickerSheet> {
                     roots: roots,
                     selectedCategoryId: widget.initialCategoryId,
                     expandSelectionPath: false,
-                    expandAll: false,
+                    expandAll:
+                        categoryPickerSearchExpandsFilteredTree(trimmedQuery),
                     onSelect: _selectCategory,
                     showEditChrome: false,
                     showPickerCreateChrome: true,
@@ -420,7 +421,8 @@ class _CategoryTreeMultiPickerSheetState
                     checkedCategoryIds: _selectedIds,
                     onCheckedChanged: _toggle,
                     expandSelectionPath: false,
-                    expandAll: false,
+                    expandAll:
+                        categoryPickerSearchExpandsFilteredTree(trimmedQuery),
                     onSelect: (id) => _toggle(id),
                     showEditChrome: false,
                     showPickerCreateChrome: true,
