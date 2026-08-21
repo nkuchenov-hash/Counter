@@ -30,6 +30,33 @@ jobs:
           chmod 600 ~/.ssh/lifeos_pocketbase
           ssh-keyscan -p "$SSH_PORT" -H "${SSH_HOST:-217.114.0.201}" >> ~/.ssh/known_hosts
 
+      - name: Current production sleep state
+        shell: bash
+        run: |
+          set -euo pipefail
+          ssh -i ~/.ssh/lifeos_pocketbase -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -euo pipefail
+          pid="$(pgrep -f '[p]ocketbase.*serve' | sed -n '1p' || true)"
+          [[ -n "$pid" ]]
+          app_dir="$(readlink -f "/proc/$pid/cwd")"
+          python3 - "$app_dir/pb_data/data.db" <<'PY'
+          import sqlite3, sys
+          con=sqlite3.connect(f'file:{sys.argv[1]}?mode=ro', uri=True); con.row_factory=sqlite3.Row
+          r=con.execute("SELECT status,last_error,last_sync_at,last_session_count,last_imported_count FROM sleep_sync_connections WHERE provider='google_fit' LIMIT 1").fetchone()
+          if r:
+              print('fit_status='+str(r['status']))
+              print('fit_last_sync='+str(r['last_sync_at']))
+              print('fit_sessions='+str(r['last_session_count'] or 0))
+              print('fit_imported='+str(r['last_imported_count'] or 0))
+              print('fit_error='+('none' if not r['last_error'] else 'present'))
+          latest=con.execute("SELECT date(max(end_time)) FROM records WHERE (title='Sleep' OR title='Сон')").fetchone()[0]
+          recent=con.execute("SELECT count(*) FROM records WHERE (title='Sleep' OR title='Сон') AND julianday(end_time) >= julianday('now','-72 hours')").fetchone()[0]
+          print('latest_sleep_day='+str(latest or 'none'))
+          print('sleep_last_72h='+str(recent))
+          con.close()
+          PY
+          REMOTE
+
       - name: Inspect mi-fitness package API
         shell: bash
         run: |
@@ -42,26 +69,18 @@ jobs:
           /tmp/lifeos-mi-fitness-probe/bin/pip install -q 'mi-fitness==0.2.0'
           /tmp/lifeos-mi-fitness-probe/bin/python - <<'PY'
           import inspect
-          import mi_fitness
           from mi_fitness import XiaomiAuth, MiHealthClient
-          print('mi_fitness_file='+mi_fitness.__file__)
           print('login_qr_signature='+str(inspect.signature(XiaomiAuth.login_qr)))
           print('save_token_signature='+str(inspect.signature(XiaomiAuth.save_token)))
           print('from_token_signature='+str(inspect.signature(MiHealthClient.from_token)))
           print('get_sleep_signature='+str(inspect.signature(MiHealthClient.get_sleep)))
-          print('auth_init_signature='+str(inspect.signature(XiaomiAuth)))
-          try:
-              print('login_qr_source_begin')
-              print(inspect.getsource(XiaomiAuth.login_qr))
-              print('login_qr_source_end')
-          except Exception as e:
-              print('login_qr_source_error='+type(e).__name__)
-          try:
-              print('get_sleep_source_begin')
-              print(inspect.getsource(MiHealthClient.get_sleep))
-              print('get_sleep_source_end')
-          except Exception as e:
-              print('get_sleep_source_error='+type(e).__name__)
+          print('latest_summary_signature='+str(inspect.signature(MiHealthClient.get_latest_daily_summary)))
+          print('login_qr_source_begin')
+          print(inspect.getsource(XiaomiAuth.login_qr))
+          print('login_qr_source_end')
+          print('get_sleep_source_begin')
+          print(inspect.getsource(MiHealthClient.get_sleep))
+          print('get_sleep_source_end')
           PY
           rm -rf /tmp/lifeos-mi-fitness-probe
           REMOTE
