@@ -11,29 +11,84 @@ permissions:
 jobs:
   probe:
     runs-on: ubuntu-latest
+    environment: production
+    env:
+      SSH_PRIVATE_KEY: ${{ secrets.POCKETBASE_SSH_PRIVATE_KEY || secrets.VPS_SSH_KEY || secrets.SSH_PRIVATE_KEY }}
+      SSH_USER: ${{ secrets.POCKETBASE_SSH_USER || secrets.VPS_SSH_USER || secrets.SSH_USER }}
+      SSH_HOST: ${{ secrets.POCKETBASE_SSH_HOST || secrets.VPS_HOST || secrets.SSH_HOST }}
+      SSH_PORT: ${{ secrets.POCKETBASE_SSH_PORT || secrets.VPS_SSH_PORT || '22' }}
+      POCKETBASE_SERVICE: ${{ secrets.POCKETBASE_SERVICE }}
+      POCKETBASE_DEPLOY_DIR: ${{ secrets.POCKETBASE_DEPLOY_DIR }}
     steps:
-      - name: Probe existing production sleep cloud route
+      - name: Prepare SSH
         shell: bash
         run: |
           set -euo pipefail
-          curl -sS --max-time 60 -w '\nHTTP_STATUS=%{http_code}\n' \
-            https://217-114-0-201.sslip.io/api/__lifeos_sleep_cloud_probe_5f7c9a2e \
-            > /tmp/sleep-probe.txt || true
-          python3 - <<'PY'
-          import json
-          from pathlib import Path
-          raw = Path('/tmp/sleep-probe.txt').read_text(errors='replace')
-          lines = raw.splitlines()
-          status = next((line.split('=',1)[1] for line in reversed(lines) if line.startswith('HTTP_STATUS=')), '000')
-          body = '\n'.join(line for line in lines if not line.startswith('HTTP_STATUS='))
-          print('route_status=' + status)
-          try:
-              data = json.loads(body)
-          except Exception:
-              print('probe_json=false')
-              raise SystemExit(0)
-          print('probe_json=true')
-          for key in ('sessions_status','sessions_count','aggregate_status','aggregate_points','raw_status','raw_sources','raw_points'):
-              if key in data:
-                  print(f'{key}={data[key]}')
+          [[ -n "$SSH_PRIVATE_KEY" ]]
+          echo "SSH_USER=${SSH_USER:-root}" >> "$GITHUB_ENV"
+          echo "SSH_HOST=${SSH_HOST:-217.114.0.201}" >> "$GITHUB_ENV"
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/lifeos_pocketbase
+          chmod 600 ~/.ssh/lifeos_pocketbase
+          ssh-keyscan -p "$SSH_PORT" -H "${SSH_HOST:-217.114.0.201}" >> ~/.ssh/known_hosts
+
+      - name: Inspect deployed sleep sync
+        shell: bash
+        run: |
+          set -euo pipefail
+          ssh -i ~/.ssh/lifeos_pocketbase -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" \
+            "POCKETBASE_DEPLOY_DIR='$POCKETBASE_DEPLOY_DIR' POCKETBASE_SERVICE='$POCKETBASE_SERVICE' bash -s" <<'REMOTE'
+          set -euo pipefail
+          service_name="${POCKETBASE_SERVICE:-}"
+          if [[ -z "$service_name" ]]; then
+            service_name="$(systemctl list-unit-files --type=service --no-legend 2>/dev/null | awk 'tolower($1) ~ /pocketbase/ && !found {print $1; found=1}')"
+          fi
+          pid="$(pgrep -f '[p]ocketbase.*serve' | sed -n '1p' || true)"
+          app_dir="${POCKETBASE_DEPLOY_DIR:-}"
+          if [[ -z "$app_dir" && -n "$service_name" ]]; then app_dir="$(systemctl show "$service_name" -p WorkingDirectory --value 2>/dev/null || true)"; fi
+          if [[ -z "$app_dir" && -n "$pid" ]]; then app_dir="$(readlink -f "/proc/$pid/cwd" 2>/dev/null || true)"; fi
+          [[ -n "$app_dir" && -d "$app_dir" ]]
+
+          if grep -q 'derived:com.google.sleep.segment:com.google.android.gms:merged' "$app_dir/pb_hooks/google_fit_sleep_recovery.js"; then
+            echo 'merged_source_deployed=true'
+          else
+            echo 'merged_source_deployed=false'
+          fi
+          if [[ -f "$app_dir/pb_migrations/1787325000_force_google_fit_merged_sleep_reconcile.js" ]]; then
+            echo 'reconcile_migration_deployed=true'
+          else
+            echo 'reconcile_migration_deployed=false'
+          fi
+
+          python3 - "$app_dir/pb_data/data.db" <<'PY'
+          import sqlite3, sys
+          con=sqlite3.connect(f'file:{sys.argv[1]}?mode=ro', uri=True); con.row_factory=sqlite3.Row
+          r=con.execute("SELECT enabled,status,last_error,last_sync_at,last_session_count,last_imported_count,length(coalesce(refresh_token_enc,'')) token_len FROM sleep_sync_connections WHERE provider='google_fit' LIMIT 1").fetchone()
+          def error_class(v):
+              s=(v or '').lower()
+              if not s:return 'none'
+              if 'invalid_grant' in s:return 'invalid_grant'
+              if '403' in s or 'scope' in s or 'permission' in s:return 'permission'
+              if '401' in s:return 'auth'
+              return 'other'
+          print('connection='+str(bool(r)).lower())
+          if r:
+              print('enabled='+str(bool(r['enabled'])).lower())
+              print('token='+str(r['token_len']>0).lower())
+              print('status='+str(r['status']))
+              print('error='+error_class(r['last_error']))
+              print('synced='+str(bool(r['last_sync_at'])).lower())
+              print('sessions='+str(r['last_session_count'] or 0))
+              print('imported='+str(r['last_imported_count'] or 0))
+          n=con.execute("SELECT count(*) FROM records WHERE external_source='google_fit' AND external_kind='sleep' AND julianday(end_time) >= julianday('now','-36 hours')").fetchone()[0]
+          print('sleep_last_36h='+str(n))
+          con.close()
           PY
+
+          echo 'recent_sync_logs_begin'
+          journalctl -u "$service_name" --since '15 minutes ago' --no-pager 2>/dev/null \
+            | grep -E 'google fit sleep sync (complete|failed)|sleep segments' \
+            | tail -n 8 \
+            | sed -E 's/connection=[^ ]+/connection=[redacted]/g' || true
+          echo 'recent_sync_logs_end'
+          REMOTE
