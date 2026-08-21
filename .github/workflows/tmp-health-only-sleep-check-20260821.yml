@@ -1,0 +1,82 @@
+name: TEMP Health-only sleep check
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/tmp-health-only-sleep-check-20260821.yml'
+      - 'pb_hooks/sleep_sync.pb.js'
+      - 'pb_hooks/sleep_health_only_diag.js'
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      SSH_PRIVATE_KEY: ${{ secrets.POCKETBASE_SSH_PRIVATE_KEY || secrets.VPS_SSH_KEY || secrets.SSH_PRIVATE_KEY }}
+      SSH_PORT: ${{ secrets.POCKETBASE_SSH_PORT || secrets.VPS_SSH_PORT || '22' }}
+      POCKETBASE_SERVICE: ${{ secrets.POCKETBASE_SERVICE }}
+      POCKETBASE_DEPLOY_DIR: ${{ secrets.POCKETBASE_DEPLOY_DIR }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate diagnostic JS
+        run: |
+          node --check pb_hooks/sleep_sync.pb.js
+          node --check pb_hooks/sleep_health_only_diag.js
+      - name: Prepare SSH
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ -n "$SSH_PRIVATE_KEY" ]]
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/lifeos_pocketbase
+          chmod 600 ~/.ssh/lifeos_pocketbase
+          ssh-keyscan -p "$SSH_PORT" -H 217.114.0.201 >> ~/.ssh/known_hosts
+      - name: Install temporary diagnostic route
+        shell: bash
+        run: |
+          set -euo pipefail
+          tar -czf /tmp/sleep-health-diag.tar.gz pb_hooks/sleep_sync.pb.js pb_hooks/sleep_health_only_diag.js
+          scp -i ~/.ssh/lifeos_pocketbase -P "$SSH_PORT" /tmp/sleep-health-diag.tar.gz root@217.114.0.201:/tmp/sleep-health-diag.tar.gz
+          ssh -i ~/.ssh/lifeos_pocketbase -p "$SSH_PORT" root@217.114.0.201 "POCKETBASE_SERVICE='$POCKETBASE_SERVICE' POCKETBASE_DEPLOY_DIR='$POCKETBASE_DEPLOY_DIR' bash -s" <<'REMOTE'
+          set -euo pipefail
+          service_name="${POCKETBASE_SERVICE:-}"
+          if [[ -z "$service_name" ]]; then service_name="$(systemctl list-unit-files --type=service --no-legend 2>/dev/null | awk 'tolower($1) ~ /pocketbase/ && !found {print $1; found=1}')"; fi
+          pid="$(pgrep -f '[p]ocketbase.*serve' | sed -n '1p' || true)"
+          app_dir="${POCKETBASE_DEPLOY_DIR:-}"
+          if [[ -z "$app_dir" && -n "$service_name" ]]; then app_dir="$(systemctl show "$service_name" -p WorkingDirectory --value 2>/dev/null || true)"; fi
+          if [[ -z "$app_dir" && -n "$pid" ]]; then app_dir="$(readlink -f "/proc/$pid/cwd" 2>/dev/null || true)"; fi
+          cp "$app_dir/pb_hooks/sleep_sync.pb.js" /tmp/lifeos-sleep-sync-health.orig
+          tar -xzf /tmp/sleep-health-diag.tar.gz -C "$app_dir"
+          rm -f /tmp/sleep-health-diag.tar.gz
+          systemctl restart "$service_name"
+          REMOTE
+      - name: Read Health-only sleep source
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in {1..30}; do
+            code="$(curl -sS -o /tmp/health.json -w '%{http_code}' https://217-114-0-201.sslip.io/api/__sleep_health_only_diag_20260821 || true)"
+            if [[ "$code" == "200" ]]; then cat /tmp/health.json; exit 0; fi
+            sleep 2
+          done
+          cat /tmp/health.json 2>/dev/null || true
+          exit 1
+      - name: Restore production hook
+        if: always()
+        shell: bash
+        run: |
+          ssh -i ~/.ssh/lifeos_pocketbase -p "$SSH_PORT" root@217.114.0.201 "POCKETBASE_SERVICE='$POCKETBASE_SERVICE' POCKETBASE_DEPLOY_DIR='$POCKETBASE_DEPLOY_DIR' bash -s" <<'REMOTE'
+          set -u
+          service_name="${POCKETBASE_SERVICE:-}"
+          if [[ -z "$service_name" ]]; then service_name="$(systemctl list-unit-files --type=service --no-legend 2>/dev/null | awk 'tolower($1) ~ /pocketbase/ && !found {print $1; found=1}')"; fi
+          pid="$(pgrep -f '[p]ocketbase.*serve' | sed -n '1p' || true)"
+          app_dir="${POCKETBASE_DEPLOY_DIR:-}"
+          if [[ -z "$app_dir" && -n "$service_name" ]]; then app_dir="$(systemctl show "$service_name" -p WorkingDirectory --value 2>/dev/null || true)"; fi
+          if [[ -z "$app_dir" && -n "$pid" ]]; then app_dir="$(readlink -f "/proc/$pid/cwd" 2>/dev/null || true)"; fi
+          if [[ -f /tmp/lifeos-sleep-sync-health.orig ]]; then cp /tmp/lifeos-sleep-sync-health.orig "$app_dir/pb_hooks/sleep_sync.pb.js"; fi
+          rm -f /tmp/lifeos-sleep-sync-health.orig "$app_dir/pb_hooks/sleep_health_only_diag.js"
+          [[ -n "$service_name" ]] && systemctl restart "$service_name" || true
+          REMOTE
