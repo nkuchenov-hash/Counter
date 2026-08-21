@@ -1,0 +1,39 @@
+name: Sleep Production Probe
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/sleep-production-probe.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Probe existing production sleep cloud route
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -sS --max-time 60 -w '\nHTTP_STATUS=%{http_code}\n' \
+            https://217-114-0-201.sslip.io/api/__lifeos_sleep_cloud_probe_5f7c9a2e \
+            > /tmp/sleep-probe.txt || true
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          raw = Path('/tmp/sleep-probe.txt').read_text(errors='replace')
+          lines = raw.splitlines()
+          status = next((line.split('=',1)[1] for line in reversed(lines) if line.startswith('HTTP_STATUS=')), '000')
+          body = '\n'.join(line for line in lines if not line.startswith('HTTP_STATUS='))
+          print('route_status=' + status)
+          try:
+              data = json.loads(body)
+          except Exception:
+              print('probe_json=false')
+              raise SystemExit(0)
+          print('probe_json=true')
+          for key in ('sessions_status','sessions_count','aggregate_status','aggregate_points','raw_status','raw_sources','raw_points'):
+              if key in data:
+                  print(f'{key}={data[key]}')
+          PY
