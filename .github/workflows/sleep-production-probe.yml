@@ -61,7 +61,7 @@ jobs:
           fi
 
           python3 - "$app_dir/pb_data/data.db" <<'PY'
-          import sqlite3, sys
+          import json, sqlite3, sys
           con=sqlite3.connect(f'file:{sys.argv[1]}?mode=ro', uri=True); con.row_factory=sqlite3.Row
           r=con.execute("SELECT enabled,status,last_error,last_sync_at,last_session_count,last_imported_count,length(coalesce(refresh_token_enc,'')) token_len FROM sleep_sync_connections WHERE provider='google_fit' LIMIT 1").fetchone()
           def error_class(v):
@@ -82,13 +82,32 @@ jobs:
               print('imported='+str(r['last_imported_count'] or 0))
           n=con.execute("SELECT count(*) FROM records WHERE external_source='google_fit' AND external_kind='sleep' AND julianday(end_time) >= julianday('now','-36 hours')").fetchone()[0]
           print('sleep_last_36h='+str(n))
+
+          tables={row[0] for row in con.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+          print('log_table='+str('_logs' in tables).lower())
+          if '_logs' in tables:
+              cols=[row[1] for row in con.execute("PRAGMA table_info('_logs')")]
+              if 'message' in cols:
+                  rows=con.execute("SELECT * FROM _logs WHERE message='google fit sleep sync complete' ORDER BY created DESC LIMIT 5").fetchall()
+                  print('sync_log_rows='+str(len(rows)))
+                  for idx,row in enumerate(rows):
+                      d=dict(row)
+                      payload={}
+                      for candidate in ('data','details','meta'):
+                          raw=d.get(candidate)
+                          if not raw: continue
+                          try:
+                              parsed=json.loads(raw) if isinstance(raw,str) else raw
+                              if isinstance(parsed,dict): payload.update(parsed)
+                          except Exception: pass
+                      def pick(*names):
+                          for name in names:
+                              if name in payload: return payload[name]
+                          return None
+                      print(f'log{idx}_sessions={pick("sessions")}')
+                      print(f'log{idx}_imported={pick("imported")}')
+                      print(f'log{idx}_segment_points={pick("segment_points","segmentPoints")}')
+                      print(f'log{idx}_segment_episodes={pick("segment_episodes","segmentEpisodes")}')
           con.close()
           PY
-
-          echo 'recent_sync_logs_begin'
-          journalctl -u "$service_name" --since '15 minutes ago' --no-pager 2>/dev/null \
-            | grep -E 'google fit sleep sync (complete|failed)|sleep segments' \
-            | tail -n 8 \
-            | sed -E 's/connection=[^ ]+/connection=[redacted]/g' || true
-          echo 'recent_sync_logs_end'
           REMOTE
