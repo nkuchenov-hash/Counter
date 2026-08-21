@@ -1,4 +1,4 @@
-name: Sleep Wake-Day Patch
+name: Xiaomi Sleep Production Verify
 
 on:
   pull_request:
@@ -6,38 +6,79 @@ on:
       - '.github/workflows/sleep-production-probe.yml'
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  patch:
+  verify:
     runs-on: ubuntu-latest
+    environment: production
+    env:
+      SSH_PRIVATE_KEY: ${{ secrets.POCKETBASE_SSH_PRIVATE_KEY || secrets.VPS_SSH_KEY || secrets.SSH_PRIVATE_KEY }}
+      SSH_USER: ${{ secrets.POCKETBASE_SSH_USER || secrets.VPS_SSH_USER || secrets.SSH_USER }}
+      SSH_HOST: ${{ secrets.POCKETBASE_SSH_HOST || secrets.VPS_HOST || secrets.SSH_HOST }}
+      SSH_PORT: ${{ secrets.POCKETBASE_SSH_PORT || secrets.VPS_SSH_PORT || '22' }}
     steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: fix/server-xiaomi-sleep-cloud
-          fetch-depth: 0
-      - name: Bucket sleep by wake day
+      - name: Prepare SSH
         shell: bash
         run: |
           set -euo pipefail
-          python3 - <<'PY'
-          from pathlib import Path
-          path = Path('lib/data/models/record.dart')
-          text = path.read_text(encoding='utf-8')
-          old = '''  /// ISO `YYYY-MM-DD` from [startTime] in profile wall-clock calendar ([timezoneOffsetHours], not device TZ).\n  String get dateKey {\n    final st = startTime;\n    if (st == null) return '';\n    final wall = st.toUtc().add(Duration(hours: timezoneOffsetHours));\n    return '${wall.year}-${wall.month.toString().padLeft(2, '0')}-${wall.day.toString().padLeft(2, '0')}';\n  }'''
-          new = '''  /// ISO `YYYY-MM-DD` from wake time for sleep, otherwise [startTime],\n  /// in profile wall-clock calendar ([timezoneOffsetHours], not device TZ).\n  String get dateKey {\n    final isSleep = title == 'Sleep' || title == 'Сон';\n    final anchor = isSleep ? (endTime ?? startTime) : startTime;\n    if (anchor == null) return '';\n    final wall = anchor.toUtc().add(Duration(hours: timezoneOffsetHours));\n    return '${wall.year}-${wall.month.toString().padLeft(2, '0')}-${wall.day.toString().padLeft(2, '0')}';\n  }'''
-          if old not in text:
-              if new in text:
-                  print('wake-day patch already present')
-              else:
-                  raise SystemExit('expected TimelineRecord.dateKey block not found')
-          else:
-              path.write_text(text.replace(old, new, 1), encoding='utf-8')
+          [[ -n "$SSH_PRIVATE_KEY" ]]
+          echo "SSH_USER=${SSH_USER:-root}" >> "$GITHUB_ENV"
+          echo "SSH_HOST=${SSH_HOST:-217.114.0.201}" >> "$GITHUB_ENV"
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/lifeos_pocketbase
+          chmod 600 ~/.ssh/lifeos_pocketbase
+          ssh-keyscan -p "$SSH_PORT" -H "$SSH_HOST" >> ~/.ssh/known_hosts
+
+      - name: Verify production Xiaomi sleep stack
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in $(seq 1 40); do
+            if ssh -i ~/.ssh/lifeos_pocketbase -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -euo pipefail
+          pid="$(pgrep -f '[p]ocketbase.*serve' | sed -n '1p' || true)"
+          [[ -n "$pid" ]]
+          app_dir="$(readlink -f "/proc/$pid/cwd")"
+          [[ -f "$app_dir/pb_hooks/xiaomi_sleep_runtime.js" ]]
+          [[ -f "$app_dir/pb_hooks/xiaomi_sleep_bridge.py" ]]
+          [[ -f "$app_dir/pb_migrations/1787354100_xiaomi_sleep_provider.js" ]]
+          [[ -x /opt/lifeos-xiaomi-sleep/bin/python ]]
+          /opt/lifeos-xiaomi-sleep/bin/python - <<'PY'
+          from mi_fitness import XiaomiAuth, MiHealthClient
+          assert XiaomiAuth and MiHealthClient
+          print('xiaomi_sdk=true')
           PY
-          git diff --check
-          git config user.name github-actions[bot]
-          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add lib/data/models/record.dart
-          if git diff --cached --quiet; then exit 0; fi
-          git commit -m 'Bucket sleep records by wake day'
-          git push origin HEAD:fix/server-xiaomi-sleep-cloud
+          python3 - "$app_dir/pb_data/data.db" <<'PY'
+          import sqlite3, sys
+          con=sqlite3.connect(f'file:{sys.argv[1]}?mode=ro', uri=True)
+          cols={r[1] for r in con.execute("PRAGMA table_info('_collections')")}
+          schema_ok=False
+          if 'fields' in cols:
+              row=con.execute("SELECT fields FROM _collections WHERE name='sleep_sync_connections' LIMIT 1").fetchone()
+              schema_ok=bool(row and 'xiaomi' in str(row[0]))
+          elif 'schema' in cols:
+              row=con.execute("SELECT schema FROM _collections WHERE name='sleep_sync_connections' LIMIT 1").fetchone()
+              schema_ok=bool(row and 'xiaomi' in str(row[0]))
+          print('xiaomi_schema='+str(schema_ok).lower())
+          con.close()
+          if not schema_ok: raise SystemExit(3)
+          PY
+          health="$(curl -sS -o /dev/null -w '%{http_code}' https://217-114-0-201.sslip.io/api/health || true)"
+          auth_route="$(curl -sS -o /dev/null -w '%{http_code}' 'https://217-114-0-201.sslip.io/api/sleep-sync/xiaomi/authorize' || true)"
+          status_route="$(curl -sS -o /dev/null -w '%{http_code}' 'https://217-114-0-201.sslip.io/api/sleep-sync/status' || true)"
+          [[ "$health" == "200" ]]
+          [[ "$auth_route" == "400" ]]
+          [[ "$status_route" == "401" || "$status_route" == "403" ]]
+          echo 'xiaomi_files=true'
+          echo 'pocketbase_health=true'
+          echo 'xiaomi_authorize_route=true'
+          echo 'sleep_status_auth_guard=true'
+          REMOTE
+            then
+              exit 0
+            fi
+            sleep 5
+          done
+          echo 'production Xiaomi sleep stack did not become ready' >&2
+          exit 1
