@@ -57,12 +57,14 @@ jobs:
         run: |
           set -euo pipefail
           [[ -n "$SSH_PRIVATE_KEY" ]]
-          echo "SSH_USER=${SSH_USER:-root}" >> "$GITHUB_ENV"
-          echo "SSH_HOST=${SSH_HOST:-217.114.0.201}" >> "$GITHUB_ENV"
+          resolved_user="${SSH_USER:-root}"
+          resolved_host="${SSH_HOST:-217.114.0.201}"
+          echo "SSH_USER=$resolved_user" >> "$GITHUB_ENV"
+          echo "SSH_HOST=$resolved_host" >> "$GITHUB_ENV"
           install -m 700 -d ~/.ssh
           printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/lifeos_pocketbase
           chmod 600 ~/.ssh/lifeos_pocketbase
-          ssh-keyscan -p "$SSH_PORT" -H "$SSH_HOST" >> ~/.ssh/known_hosts
+          ssh-keyscan -p "$SSH_PORT" -H "$resolved_host" >> ~/.ssh/known_hosts
 
       - name: Install pinned Xiaomi Health SDK
         shell: bash
