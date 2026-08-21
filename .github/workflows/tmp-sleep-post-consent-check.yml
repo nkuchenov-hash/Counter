@@ -5,7 +5,7 @@ on:
     paths:
       - '.github/workflows/tmp-sleep-post-consent-check.yml'
       - 'pb_hooks/sleep_sync.pb.js'
-      - 'pb_hooks/sleep_post_consent_diag.js'
+      - 'pb_hooks/sleep_health_only_diag.js'
 
 permissions:
   contents: read
@@ -25,7 +25,7 @@ jobs:
       - name: Validate diagnostic JS
         run: |
           node --check pb_hooks/sleep_sync.pb.js
-          node --check pb_hooks/sleep_post_consent_diag.js
+          node --check pb_hooks/sleep_health_only_diag.js
 
       - name: Prepare SSH
         shell: bash
@@ -41,7 +41,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          tar -czf /tmp/sleep-post-consent-diag.tar.gz pb_hooks/sleep_sync.pb.js pb_hooks/sleep_post_consent_diag.js
+          tar -czf /tmp/sleep-post-consent-diag.tar.gz pb_hooks/sleep_sync.pb.js pb_hooks/sleep_health_only_diag.js
           scp -i ~/.ssh/lifeos_pocketbase -P "$SSH_PORT" /tmp/sleep-post-consent-diag.tar.gz root@217.114.0.201:/tmp/sleep-post-consent-diag.tar.gz
           ssh -i ~/.ssh/lifeos_pocketbase -p "$SSH_PORT" root@217.114.0.201 \
             "POCKETBASE_SERVICE='$POCKETBASE_SERVICE' POCKETBASE_DEPLOY_DIR='$POCKETBASE_DEPLOY_DIR' bash -s" <<'REMOTE'
@@ -59,7 +59,7 @@ jobs:
           systemctl restart "$service_name"
           REMOTE
 
-      - name: Read upstream sleep source identifiers
+      - name: Read Health-only sleep source
         shell: bash
         run: |
           set -euo pipefail
@@ -89,6 +89,6 @@ jobs:
           if [[ -z "$app_dir" && -n "$service_name" ]]; then app_dir="$(systemctl show "$service_name" -p WorkingDirectory --value 2>/dev/null || true)"; fi
           if [[ -z "$app_dir" && -n "$pid" ]]; then app_dir="$(readlink -f "/proc/$pid/cwd" 2>/dev/null || true)"; fi
           if [[ -f /tmp/lifeos-sleep-sync-post-consent.orig ]]; then cp /tmp/lifeos-sleep-sync-post-consent.orig "$app_dir/pb_hooks/sleep_sync.pb.js"; fi
-          rm -f /tmp/lifeos-sleep-sync-post-consent.orig "$app_dir/pb_hooks/sleep_post_consent_diag.js"
+          rm -f /tmp/lifeos-sleep-sync-post-consent.orig "$app_dir/pb_hooks/sleep_health_only_diag.js"
           [[ -n "$service_name" ]] && systemctl restart "$service_name" || true
           REMOTE
