@@ -30,7 +30,7 @@ jobs:
           chmod 600 ~/.ssh/lifeos_pocketbase
           ssh-keyscan -p "$SSH_PORT" -H "${SSH_HOST:-217.114.0.201}" >> ~/.ssh/known_hosts
 
-      - name: Inspect mi-fitness internals
+      - name: Inspect sleep segment model
         shell: bash
         run: |
           set -euo pipefail
@@ -40,26 +40,14 @@ jobs:
           python3 -m venv /tmp/lifeos-mi-fitness-probe
           /tmp/lifeos-mi-fitness-probe/bin/pip install -q 'mi-fitness==0.2.0'
           /tmp/lifeos-mi-fitness-probe/bin/python - <<'PY'
-          import inspect
-          import mi_fitness
-          from mi_fitness import XiaomiAuth, MiHealthClient
-          print('exports='+','.join(sorted(x for x in dir(mi_fitness) if 'Sleep' in x or 'Token' in x)))
-          for name,obj in [('save_token',XiaomiAuth.save_token),('from_token',MiHealthClient.from_token)]:
-              print(name+'_source_begin'); print(inspect.getsource(obj)); print(name+'_source_end')
-          try:
-              from mi_fitness.models import SleepData, AuthToken
-          except Exception:
-              SleepData=getattr(mi_fitness,'SleepData',None); AuthToken=getattr(mi_fitness,'AuthToken',None)
-          if SleepData:
-              print('SleepData_signature='+str(inspect.signature(SleepData)))
-              print('SleepData_annotations='+repr(getattr(SleepData,'__annotations__',{})))
-              print('SleepData_source_begin'); print(inspect.getsource(SleepData)); print('SleepData_source_end')
-          if AuthToken:
-              print('AuthToken_signature='+str(inspect.signature(AuthToken)))
-              print('AuthToken_annotations='+repr(getattr(AuthToken,'__annotations__',{})))
-              print('AuthToken_source_begin'); print(inspect.getsource(AuthToken)); print('AuthToken_source_end')
-          import mi_fitness.data as data_mod
-          print('data_sleep_source_begin'); print(inspect.getsource(data_mod.get_sleep)); print('data_sleep_source_end')
+          import inspect, pkgutil, mi_fitness
+          from mi_fitness import SleepSegment, SleepData, XiaomiAuth, MiHealthClient
+          print('SleepSegment_signature='+str(inspect.signature(SleepSegment)))
+          print('SleepSegment_annotations='+repr(getattr(SleepSegment,'__annotations__',{})))
+          print('SleepSegment_source_begin'); print(inspect.getsource(SleepSegment)); print('SleepSegment_source_end')
+          print('package_modules='+','.join(sorted(m.name for m in pkgutil.iter_modules(mi_fitness.__path__))))
+          print('client_init_source_begin'); print(inspect.getsource(MiHealthClient.__init__)); print('client_init_source_end')
+          print('auth_from_token_source_begin'); print(inspect.getsource(XiaomiAuth.from_token)); print('auth_from_token_source_end')
           PY
           rm -rf /tmp/lifeos-mi-fitness-probe
           REMOTE
