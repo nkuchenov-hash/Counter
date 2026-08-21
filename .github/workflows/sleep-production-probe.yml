@@ -17,8 +17,6 @@ jobs:
       SSH_USER: ${{ secrets.POCKETBASE_SSH_USER || secrets.VPS_SSH_USER || secrets.SSH_USER }}
       SSH_HOST: ${{ secrets.POCKETBASE_SSH_HOST || secrets.VPS_HOST || secrets.SSH_HOST }}
       SSH_PORT: ${{ secrets.POCKETBASE_SSH_PORT || secrets.VPS_SSH_PORT || '22' }}
-      POCKETBASE_SERVICE: ${{ secrets.POCKETBASE_SERVICE }}
-      POCKETBASE_DEPLOY_DIR: ${{ secrets.POCKETBASE_DEPLOY_DIR }}
     steps:
       - name: Prepare SSH
         shell: bash
@@ -32,168 +30,38 @@ jobs:
           chmod 600 ~/.ssh/lifeos_pocketbase
           ssh-keyscan -p "$SSH_PORT" -H "${SSH_HOST:-217.114.0.201}" >> ~/.ssh/known_hosts
 
-      - name: Confirm deployed server state
+      - name: Inspect mi-fitness package API
         shell: bash
         run: |
           set -euo pipefail
-          ssh -i ~/.ssh/lifeos_pocketbase -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" \
-            "POCKETBASE_DEPLOY_DIR='$POCKETBASE_DEPLOY_DIR' POCKETBASE_SERVICE='$POCKETBASE_SERVICE' bash -s" <<'REMOTE'
+          ssh -i ~/.ssh/lifeos_pocketbase -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
           set -euo pipefail
-          service_name="${POCKETBASE_SERVICE:-}"
-          if [[ -z "$service_name" ]]; then
-            service_name="$(systemctl list-unit-files --type=service --no-legend 2>/dev/null | awk 'tolower($1) ~ /pocketbase/ && !found {print $1; found=1}')"
-          fi
-          pid="$(pgrep -f '[p]ocketbase.*serve' | sed -n '1p' || true)"
-          app_dir="${POCKETBASE_DEPLOY_DIR:-}"
-          if [[ -z "$app_dir" && -n "$service_name" ]]; then app_dir="$(systemctl show "$service_name" -p WorkingDirectory --value 2>/dev/null || true)"; fi
-          if [[ -z "$app_dir" && -n "$pid" ]]; then app_dir="$(readlink -f "/proc/$pid/cwd" 2>/dev/null || true)"; fi
-          [[ -n "$app_dir" && -d "$app_dir" ]]
-          grep -q 'derived:com.google.sleep.segment:com.google.android.gms:merged' "$app_dir/pb_hooks/google_fit_sleep_recovery.js" && echo 'merged_source_deployed=true' || echo 'merged_source_deployed=false'
-          python3 - "$app_dir/pb_data/data.db" <<'PY'
-          import sqlite3, sys
-          con=sqlite3.connect(f'file:{sys.argv[1]}?mode=ro', uri=True); con.row_factory=sqlite3.Row
-          r=con.execute("SELECT enabled,status,last_error,last_sync_at,last_session_count,last_imported_count,length(coalesce(refresh_token_enc,'')) token_len FROM sleep_sync_connections WHERE provider='google_fit' LIMIT 1").fetchone()
-          print('connection='+str(bool(r)).lower())
-          if r:
-              print('enabled='+str(bool(r['enabled'])).lower())
-              print('token='+str(r['token_len']>0).lower())
-              print('status='+str(r['status']))
-              print('sessions='+str(r['last_session_count'] or 0))
-              print('imported='+str(r['last_imported_count'] or 0))
-          n=con.execute("SELECT count(*) FROM records WHERE external_source='google_fit' AND external_kind='sleep' AND julianday(end_time) >= julianday('now','-36 hours')").fetchone()[0]
-          print('sleep_last_36h='+str(n))
-          con.close()
+          python3 --version
+          rm -rf /tmp/lifeos-mi-fitness-probe
+          python3 -m venv /tmp/lifeos-mi-fitness-probe
+          /tmp/lifeos-mi-fitness-probe/bin/pip install -q 'mi-fitness==0.2.0'
+          /tmp/lifeos-mi-fitness-probe/bin/python - <<'PY'
+          import inspect
+          import mi_fitness
+          from mi_fitness import XiaomiAuth, MiHealthClient
+          print('mi_fitness_file='+mi_fitness.__file__)
+          print('login_qr_signature='+str(inspect.signature(XiaomiAuth.login_qr)))
+          print('save_token_signature='+str(inspect.signature(XiaomiAuth.save_token)))
+          print('from_token_signature='+str(inspect.signature(MiHealthClient.from_token)))
+          print('get_sleep_signature='+str(inspect.signature(MiHealthClient.get_sleep)))
+          print('auth_init_signature='+str(inspect.signature(XiaomiAuth)))
+          try:
+              print('login_qr_source_begin')
+              print(inspect.getsource(XiaomiAuth.login_qr))
+              print('login_qr_source_end')
+          except Exception as e:
+              print('login_qr_source_error='+type(e).__name__)
+          try:
+              print('get_sleep_source_begin')
+              print(inspect.getsource(MiHealthClient.get_sleep))
+              print('get_sleep_source_end')
+          except Exception as e:
+              print('get_sleep_source_error='+type(e).__name__)
           PY
+          rm -rf /tmp/lifeos-mi-fitness-probe
           REMOTE
-
-      - name: Probe Google Fit cloud streams
-        shell: bash
-        run: |
-          set -euo pipefail
-          secret_json="$(ssh -i ~/.ssh/lifeos_pocketbase -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" \
-            "POCKETBASE_DEPLOY_DIR='$POCKETBASE_DEPLOY_DIR' POCKETBASE_SERVICE='$POCKETBASE_SERVICE' bash -s" <<'REMOTE'
-          set -euo pipefail
-          service_name="${POCKETBASE_SERVICE:-}"
-          if [[ -z "$service_name" ]]; then
-            service_name="$(systemctl list-unit-files --type=service --no-legend 2>/dev/null | awk 'tolower($1) ~ /pocketbase/ && !found {print $1; found=1}')"
-          fi
-          pid="$(pgrep -f '[p]ocketbase.*serve' | sed -n '1p' || true)"
-          app_dir="${POCKETBASE_DEPLOY_DIR:-}"
-          if [[ -z "$app_dir" && -n "$service_name" ]]; then app_dir="$(systemctl show "$service_name" -p WorkingDirectory --value 2>/dev/null || true)"; fi
-          if [[ -z "$app_dir" && -n "$pid" ]]; then app_dir="$(readlink -f "/proc/$pid/cwd" 2>/dev/null || true)"; fi
-          python3 - "$app_dir/pb_data/data.db" "$pid" "$app_dir/.lifeos-google-fit.env" <<'PY'
-          import json, pathlib, sqlite3, sys
-          db, pid, envfile = sys.argv[1:]
-          proc={}
-          for item in pathlib.Path(f'/proc/{pid}/environ').read_bytes().split(b'\0'):
-              if b'=' not in item: continue
-              k,v=item.split(b'=',1); proc[k.decode(errors='ignore')]=v.decode(errors='ignore')
-          key=proc.get('SLEEP_SYNC_TOKEN_KEY','')
-          if not key:
-              args=[x.decode(errors='ignore') for x in pathlib.Path(f'/proc/{pid}/cmdline').read_bytes().split(b'\0') if x]
-              enc_name=''
-              for i,arg in enumerate(args):
-                  if arg.startswith('--encryptionEnv='): enc_name=arg.split('=',1)[1]
-                  elif arg=='--encryptionEnv' and i+1<len(args): enc_name=args[i+1]
-              if enc_name: key=proc.get(enc_name,'')
-          cfg={}
-          for raw in pathlib.Path(envfile).read_text().splitlines():
-              raw=raw.strip()
-              if not raw or raw.startswith('#') or '=' not in raw: continue
-              k,v=raw.split('=',1); cfg[k.strip()]=v.strip().strip('"').strip("'")
-          con=sqlite3.connect(f'file:{db}?mode=ro', uri=True)
-          row=con.execute("SELECT refresh_token_enc FROM sleep_sync_connections WHERE provider='google_fit' AND enabled=1 LIMIT 1").fetchone()
-          con.close()
-          if not row or not row[0] or len(key)!=32: raise SystemExit(2)
-          print(json.dumps({
-              'key':key,
-              'refresh_enc':row[0],
-              'client_id':cfg.get('SLEEP_SYNC_GOOGLE_FIT_CLIENT_ID',''),
-              'client_secret':cfg.get('SLEEP_SYNC_GOOGLE_FIT_CLIENT_SECRET','')
-          }, separators=(',',':')))
-          PY
-          REMOTE
-          )"
-          printf '%s' "$secret_json" > /tmp/sleep-probe-secrets.json
-          unset secret_json
-          python3 -m pip install --quiet cryptography
-          python3 - <<'PY'
-          import base64, json, time, urllib.error, urllib.parse, urllib.request
-          from cryptography.hazmat.primitives.ciphers.aead import AESGCM
-          from pathlib import Path
-
-          secret=json.loads(Path('/tmp/sleep-probe-secrets.json').read_text())
-          raw=base64.b64decode(secret['refresh_enc'])
-          refresh=AESGCM(secret['key'].encode()).decrypt(raw[:12], raw[12:], None).decode()
-
-          def request(url, method='GET', data=None, headers=None):
-              body=None
-              if data is not None:
-                  body=data if isinstance(data,(bytes,bytearray)) else json.dumps(data).encode()
-              req=urllib.request.Request(url, data=body, method=method, headers=headers or {})
-              try:
-                  with urllib.request.urlopen(req, timeout=60) as r:
-                      payload=r.read()
-                      return r.status, json.loads(payload) if payload else {}
-              except urllib.error.HTTPError as e:
-                  try: payload=json.loads(e.read())
-                  except Exception: payload={}
-                  return e.code, payload
-
-          token_body=urllib.parse.urlencode({
-              'refresh_token':refresh,
-              'client_id':secret['client_id'],
-              'client_secret':secret['client_secret'],
-              'grant_type':'refresh_token'
-          }).encode()
-          status,tok=request('https://oauth2.googleapis.com/token','POST',token_body,{'content-type':'application/x-www-form-urlencoded'})
-          print('token_refresh_status='+str(status))
-          if status!=200 or not tok.get('access_token'): raise SystemExit(0)
-          token=tok['access_token']
-          headers={'authorization':'Bearer '+token,'accept':'application/json'}
-          now_ms=int(time.time()*1000); start_ms=now_ms-7*86400000; recent_ms=now_ms-36*3600000
-          start_iso=time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime(start_ms/1000)); end_iso=time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime(now_ms/1000))
-
-          qs=urllib.parse.urlencode({'startTime':start_iso,'endTime':end_iso,'activityType':'72'})
-          sstat,sbody=request('https://www.googleapis.com/fitness/v1/users/me/sessions?'+qs,headers=headers)
-          sessions=sbody.get('session',[]) if isinstance(sbody,dict) else []
-          recent_sessions=sum(1 for x in sessions if int(x.get('endTimeMillis') or 0)>=recent_ms)
-          print('sessions_http='+str(sstat)); print('sessions_7d='+str(len(sessions))); print('sessions_recent_36h='+str(recent_sessions))
-
-          astat,abody=request('https://www.googleapis.com/fitness/v1/users/me/dataset:aggregate','POST',{
-              'aggregateBy':[{'dataTypeName':'com.google.sleep.segment'}],
-              'startTimeMillis':start_ms,'endTimeMillis':now_ms
-          },{**headers,'content-type':'application/json'})
-          apoints=[]
-          for bucket in (abody.get('bucket',[]) if isinstance(abody,dict) else []):
-              for ds in bucket.get('dataset',[]): apoints.extend(ds.get('point',[]))
-          arecent=sum(1 for p in apoints if int(int(p.get('endTimeNanos') or 0)/1000000)>=recent_ms)
-          print('aggregate_http='+str(astat)); print('aggregate_points_7d='+str(len(apoints))); print('aggregate_recent_36h='+str(arecent))
-
-          merged='derived:com.google.sleep.segment:com.google.android.gms:merged'
-          dataset=f'{start_ms}000000-{now_ms}000000'
-          murl='https://www.googleapis.com/fitness/v1/users/me/dataSources/'+urllib.parse.quote(merged,safe='')+'/datasets/'+dataset+'?limit=1000'
-          mstat,mbody=request(murl,headers=headers)
-          mpoints=mbody.get('point',[]) if isinstance(mbody,dict) else []
-          mrecent=sum(1 for p in mpoints if int(int(p.get('endTimeNanos') or 0)/1000000)>=recent_ms)
-          print('merged_http='+str(mstat)); print('merged_points_7d='+str(len(mpoints))); print('merged_recent_36h='+str(mrecent))
-
-          lurl='https://www.googleapis.com/fitness/v1/users/me/dataSources?'+urllib.parse.urlencode({'dataTypeName':'com.google.sleep.segment'})
-          lstat,lbody=request(lurl,headers=headers)
-          sources=[]
-          for x in (lbody.get('dataSource',[]) if isinstance(lbody,dict) else []):
-              if (x.get('dataType') or {}).get('name')=='com.google.sleep.segment' and x.get('dataStreamId'): sources.append(x['dataStreamId'])
-          print('source_list_http='+str(lstat)); print('visible_sleep_sources='+str(len(sources)))
-          raw_points=raw_recent=0
-          for source in sources:
-              url='https://www.googleapis.com/fitness/v1/users/me/dataSources/'+urllib.parse.quote(source,safe='')+'/datasets/'+dataset+'?limit=1000'
-              rstat,rbody=request(url,headers=headers)
-              if rstat!=200: continue
-              pts=rbody.get('point',[]) if isinstance(rbody,dict) else []
-              raw_points+=len(pts)
-              raw_recent+=sum(1 for p in pts if int(int(p.get('endTimeNanos') or 0)/1000000)>=recent_ms)
-          print('visible_raw_points_7d='+str(raw_points)); print('visible_raw_recent_36h='+str(raw_recent))
-
-          refresh=''; token=''; tok={}; secret={}
-          Path('/tmp/sleep-probe-secrets.json').unlink(missing_ok=True)
-          PY
