@@ -1,3 +1,9 @@
+## 2026-08-22 — Focused Stats visual overview [product]
+
+- Removed the experimental Overview, Day, and Plan-Fact Stats dashboard surfaces; kept the original expandable waking-day project/category time tree as the default view.
+- Added one focused visual Stats view: a donut of tracked time by top-level category plus an hourly waking-day chart using only top-level category colors/labels.
+- Preserved existing waking-day boundaries, timezone behavior, aggregation, day swipe navigation, and Timeline record semantics; no PocketBase/schema changes.
+
 ## 2026-08-18 — Durable Paths architecture [engineering]
 
 - Replaced plan-backed Path runtime compatibility with dedicated PocketBase `paths` + immutable `path_revisions` and a versioned server migration that imports existing V2 roots.
