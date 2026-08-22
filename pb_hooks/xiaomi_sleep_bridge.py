@@ -93,41 +93,69 @@ async def _login(args: argparse.Namespace) -> int:
     token_path = Path(args.token_path)
     state_path = Path(args.state_path)
     _atomic_json(state_path, {"status": "starting", "updated_at": _utc_now()})
-    try:
-        async with XiaomiAuth() as auth:
-            async def on_qr(qr_image_url: str, login_url: str) -> None:
-                _atomic_json(
-                    state_path,
-                    {
-                        "status": "awaiting_scan",
-                        "qr_image_url": str(qr_image_url or ""),
-                        "login_url": str(login_url or ""),
-                        "updated_at": _utc_now(),
-                    },
-                )
 
-            await auth.login_qr(
-                qr_callback=on_qr,
-                poll_interval=2.0,
-                max_wait=float(args.max_wait),
+    # Xiaomi QR codes can expire much sooner than the overall authorization
+    # window. Rotate the QR proactively instead of leaving the browser showing a
+    # dead code until the whole login attempt times out.
+    total_wait = max(540.0, float(args.max_wait))
+    loop = asyncio.get_running_loop()
+    deadline = loop.time() + total_wait
+    generation = 0
+    last_error_class = "TimeoutError"
+
+    while loop.time() < deadline:
+        generation += 1
+        remaining = max(1.0, deadline - loop.time())
+        attempt_wait = min(45.0, remaining)
+        try:
+            async with XiaomiAuth() as auth:
+                async def on_qr(qr_image_url: str, login_url: str) -> None:
+                    _atomic_json(
+                        state_path,
+                        {
+                            "status": "awaiting_scan",
+                            "qr_image_url": str(qr_image_url or ""),
+                            "login_url": str(login_url or ""),
+                            "generation": generation,
+                            "updated_at": _utc_now(),
+                        },
+                    )
+
+                await auth.login_qr(
+                    qr_callback=on_qr,
+                    poll_interval=2.0,
+                    max_wait=attempt_wait,
+                )
+                tmp_token = token_path.with_name(token_path.name + ".tmp")
+                auth.save_token(tmp_token)
+                os.chmod(tmp_token, 0o600)
+                os.replace(tmp_token, token_path)
+                os.chmod(token_path, 0o600)
+            _atomic_json(state_path, {"status": "connected", "updated_at": _utc_now()})
+            return 0
+        except Exception as exc:  # sanitized: class only, credentials never serialized
+            last_error_class = type(exc).__name__
+            if loop.time() >= deadline:
+                break
+            _atomic_json(
+                state_path,
+                {
+                    "status": "refreshing",
+                    "generation": generation,
+                    "updated_at": _utc_now(),
+                },
             )
-            tmp_token = token_path.with_name(token_path.name + ".tmp")
-            auth.save_token(tmp_token)
-            os.chmod(tmp_token, 0o600)
-            os.replace(tmp_token, token_path)
-            os.chmod(token_path, 0o600)
-        _atomic_json(state_path, {"status": "connected", "updated_at": _utc_now()})
-        return 0
-    except Exception as exc:  # sanitized: class only, credentials never serialized
-        _atomic_json(
-            state_path,
-            {
-                "status": "error",
-                "error_class": type(exc).__name__,
-                "updated_at": _utc_now(),
-            },
-        )
-        return 2
+            await asyncio.sleep(0.25)
+
+    _atomic_json(
+        state_path,
+        {
+            "status": "error",
+            "error_class": last_error_class,
+            "updated_at": _utc_now(),
+        },
+    )
+    return 2
 
 
 async def _sync(args: argparse.Namespace) -> int:
