@@ -214,11 +214,10 @@ class CloudSleepSyncService {
   Future<bool> connectGoogleFit() async {
     final headers = _headers(json: true);
     if (headers == null) return false;
-    state.value = state.value.copyWith(
-      phase: CloudSleepSyncPhase.connecting,
-      clearError: true,
-    );
     try {
+      // Do not put the UI into a local `connecting` state until the server has
+      // actually created a live authorization session. A stalled/failed POST
+      // must leave the switch immediately retryable instead of looking stuck.
       final response = await http
           .post(
             _uri(PbAppApiRoutes.sleepSyncGoogleFitConnect),
@@ -228,15 +227,19 @@ class CloudSleepSyncService {
           .timeout(const Duration(seconds: 20));
       if (response.statusCode < 200 || response.statusCode >= 300) {
         throw StateError(
-          _failureMessage(response, 'Google Fit connection failed'),
+          _failureMessage(response, 'Sleep source connection failed'),
         );
       }
       final authorizationUrl =
           _decode(response)['authorization_url']?.toString().trim() ?? '';
       final uri = Uri.tryParse(authorizationUrl);
       if (uri == null || !uri.hasScheme) {
-        throw const FormatException('Missing Google authorization URL');
+        throw const FormatException('Missing sleep authorization URL');
       }
+      state.value = state.value.copyWith(
+        phase: CloudSleepSyncPhase.connecting,
+        clearError: true,
+      );
       final launched = await launchUrl(
         uri,
         mode: kIsWeb
@@ -247,7 +250,7 @@ class CloudSleepSyncService {
         // remains allowed and returns to LIFE OS through the OAuth callback.
         webOnlyWindowName: kIsWeb ? '_self' : null,
       );
-      if (!launched) throw StateError('Could not open Google authorization');
+      if (!launched) throw StateError('Could not open sleep authorization');
       return true;
     } catch (error) {
       state.value = state.value.copyWith(
