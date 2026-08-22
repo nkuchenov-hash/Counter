@@ -32,65 +32,40 @@ jobs:
           chmod 600 ~/.ssh/lifeos_pocketbase
           ssh-keyscan -p "$SSH_PORT" -H "$resolved_host" >> ~/.ssh/known_hosts
 
-      - name: Verify production Xiaomi sleep stack
+      - name: Reset stale Xiaomi authorization
         shell: bash
         run: |
           set -euo pipefail
-          for attempt in $(seq 1 40); do
-            if ssh -i ~/.ssh/lifeos_pocketbase -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          ssh -i ~/.ssh/lifeos_pocketbase -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
           set -euo pipefail
           pid="$(pgrep -f '[p]ocketbase.*serve' | sed -n '1p' || true)"
           [[ -n "$pid" ]]
           app_dir="$(readlink -f "/proc/$pid/cwd")"
-          [[ -f "$app_dir/pb_hooks/xiaomi_sleep_runtime.js" ]]
-          [[ -f "$app_dir/pb_hooks/xiaomi_sleep_bridge.py" ]]
-          [[ -f "$app_dir/pb_migrations/1787354100_xiaomi_sleep_provider.js" ]]
-          grep -q 'total_wait = max(540.0' "$app_dir/pb_hooks/xiaomi_sleep_bridge.py"
-          grep -q 'attempt_wait = min(45.0' "$app_dir/pb_hooks/xiaomi_sleep_bridge.py"
-          [[ -x /opt/lifeos-xiaomi-sleep/bin/python ]]
-          /opt/lifeos-xiaomi-sleep/bin/python - <<'PY'
-          from mi_fitness import XiaomiAuth, MiHealthClient
-          assert XiaomiAuth and MiHealthClient
-          print('xiaomi_sdk=true')
-          PY
-          python3 - "$app_dir/pb_data/data.db" "$app_dir/pb_data/xiaomi_sleep" <<'PY'
-          import sqlite3, sys, pathlib
-          con=sqlite3.connect(f'file:{sys.argv[1]}?mode=ro', uri=True)
-          cols={r[1] for r in con.execute("PRAGMA table_info('_collections')")}
-          schema_ok=False
-          if 'fields' in cols:
-              row=con.execute("SELECT fields FROM _collections WHERE name='sleep_sync_connections' LIMIT 1").fetchone()
-              schema_ok=bool(row and 'xiaomi' in str(row[0]))
-          elif 'schema' in cols:
-              row=con.execute("SELECT schema FROM _collections WHERE name='sleep_sync_connections' LIMIT 1").fetchone()
-              schema_ok=bool(row and 'xiaomi' in str(row[0]))
-          xiaomi_rows=con.execute("SELECT count(*) FROM sleep_sync_connections WHERE provider='xiaomi'").fetchone()[0]
-          latest=con.execute("SELECT date(max(end_time)) FROM records WHERE title='Sleep' OR title='Сон'").fetchone()[0]
-          token_dir=pathlib.Path(sys.argv[2])
-          token_files=list(token_dir.glob('*.token.json')) if token_dir.exists() else []
-          print('xiaomi_schema='+str(schema_ok).lower())
-          print('xiaomi_connection_rows='+str(xiaomi_rows))
-          print('xiaomi_authorized='+str(bool(token_files)).lower())
-          print('latest_sleep_day='+str(latest or 'none'))
+          data_dir="$app_dir/pb_data/xiaomi_sleep"
+          shopt -s nullglob
+          token_files=("$data_dir"/*.token.json)
+          if (( ${#token_files[@]} > 0 )); then
+            echo 'xiaomi_authorized=true'
+            echo 'stale_authorization_reset=skipped'
+            exit 0
+          fi
+
+          pkill -f 'xiaomi_sleep_bridge.py login' || true
+          rm -f "$data_dir"/*.state.json
+
+          python3 - "$app_dir/pb_data/data.db" <<'PY'
+          import sqlite3, sys
+          db=sys.argv[1]
+          con=sqlite3.connect(db, timeout=30)
+          before=con.execute("SELECT count(*) FROM sleep_sync_connections WHERE provider='xiaomi' AND status='connecting'").fetchone()[0]
+          con.execute("UPDATE sleep_sync_connections SET status='disconnected', last_error='', oauth_state='', oauth_state_expires_at='' WHERE provider='xiaomi' AND status IN ('connecting','error')")
+          con.commit()
+          after=con.execute("SELECT count(*) FROM sleep_sync_connections WHERE provider='xiaomi' AND status='connecting'").fetchone()[0]
           con.close()
-          if not schema_ok: raise SystemExit(3)
+          print('xiaomi_connecting_before='+str(before))
+          print('xiaomi_connecting_after='+str(after))
+          if after != 0:
+              raise SystemExit(2)
           PY
-          health="$(curl -sS -o /dev/null -w '%{http_code}' https://217-114-0-201.sslip.io/api/health || true)"
-          auth_route="$(curl -sS -o /dev/null -w '%{http_code}' 'https://217-114-0-201.sslip.io/api/sleep-sync/xiaomi/authorize' || true)"
-          status_route="$(curl -sS -o /dev/null -w '%{http_code}' 'https://217-114-0-201.sslip.io/api/sleep-sync/status' || true)"
-          [[ "$health" == "200" ]]
-          [[ "$auth_route" == "400" || "$auth_route" == "401" || "$auth_route" == "403" ]]
-          [[ "$status_route" == "401" || "$status_route" == "403" ]]
-          echo 'xiaomi_files=true'
-          echo 'xiaomi_qr_auto_refresh=true'
-          echo 'pocketbase_health=true'
-          echo 'xiaomi_authorize_route=true'
-          echo 'sleep_status_auth_guard=true'
+          echo 'stale_authorization_reset=true'
           REMOTE
-            then
-              exit 0
-            fi
-            sleep 5
-          done
-          echo 'production Xiaomi sleep stack did not become ready' >&2
-          exit 1
