@@ -65739,7 +65739,7 @@ s=a.b
 r=s==null?null:B.b.l(s)
 return(r==null?"":r).length===0},
 ce5(a){var s=B.b.l(a)
-return"APP_BUILD commit=fd15aac6 builtAt=2026-08-22T11:16:32Z"+(s.length!==0?" route="+s:"")},
+return"APP_BUILD commit=3dd4b577 builtAt=2026-08-22T11:19:22Z"+(s.length!==0?" route="+s:"")},
 bP(a,b){var s,r=null,q=$.aKi().gah()
 if(q==null)return
 q.qf()
@@ -90392,7 +90392,7 @@ ZD(a){var s,r=a.e,q=a.w
 if(B.b.l(A.a84(A.a7O(r)).jn(0,q)).length===0)return A.A(t.N,t.z)
 s=B.L.hi(0,A.a84(A.a7O(r)).jn(0,q),null)
 if(t.P.b(s))return s
-throw A.q(B.apQ)},
+throw A.q(B.apR)},
 I9(a){if(a instanceof A.iY)return a.a
 if(t.bE.b(a))return a.gvW(a)
 return A.r(a)},
@@ -92852,7 +92852,7 @@ Pr(a){var s,r=a.e,q=a.w
 if(B.b.l(A.a84(A.a7O(r)).jn(0,q)).length===0)return A.A(t.N,t.z)
 s=B.L.hi(0,A.a84(A.a7O(r)).jn(0,q),null)
 if(t.P.b(s))return s
-throw A.q(B.apP)},
+throw A.q(B.apQ)},
 PQ(a,b){var s,r,q,p,o,n,m,l,k,j,i,h,g=""
 try{s=this.Pr(a)
 k=J.a4(s,"error")
@@ -92940,36 +92940,37 @@ break
 case 6:case 1:return A.k(q,r)
 case 2:return A.j(o.at(-1),r)}})
 return A.l($async$nV,r)},
-KK(){var s=0,r=A.m(t.y),q,p=2,o=[],n=this,m,l,k,j,i,h,g,f,e,d,c
+KK(){var s=0,r=A.m(t.y),q,p=2,o=[],n=this,m,l,k,j,i,h,g,f,e,d
 var $async$KK=A.i(function(a,b){if(a===1){o.push(b)
-s=p}for(;;)switch(s){case 0:d=n.Qq(!0)
-if(d==null){q=!1
+s=p}for(;;)switch(s){case 0:e=n.Qq(!0)
+if(e==null){q=!1
 s=1
-break}h=n.a
-h.sq(0,h.a.au_(!0,B.AE))
-p=4
+break}p=4
 s=7
-return A.d(A.xt(A.f5(A.pQ()+"/api/sleep-sync/google-fit/connect",0,null),"{}",d).mX(0,B.hW),$async$KK)
+return A.d(A.xt(A.f5(A.pQ()+"/api/sleep-sync/google-fit/connect",0,null),"{}",e).mX(0,B.hW),$async$KK)
 case 7:m=b
-if(m.b<200||m.b>=300){g=A.ar(n.PQ(m,"Google Fit connection failed"))
-throw A.q(g)}g=J.a4(n.Pr(m),"authorization_url")
-f=g==null?null:B.b.l(J.B(g))
-l=f==null?"":f
+if(m.b<200||m.b>=300){h=A.ar(n.PQ(m,"Sleep source connection failed"))
+throw A.q(h)}h=J.a4(n.Pr(m),"authorization_url")
+g=h==null?null:B.b.l(J.B(h))
+l=g==null?"":g
 k=A.asD(l)
-if(k==null||!k.gye())throw A.q(B.apR)
+if(k==null||!k.gye())throw A.q(B.apO)
+h=n.a
+h.sq(0,h.a.au_(!0,B.AE))
 s=8
 return A.d(A.GP(k,B.rN,"_self"),$async$KK)
 case 8:j=b
-if(!j){g=A.ar("Could not open Google authorization")
-throw A.q(g)}q=!0
+if(!j){h=A.ar("Could not open sleep authorization")
+throw A.q(h)}q=!0
 s=1
 break
 p=2
 s=6
 break
 case 4:p=3
-c=o.pop()
-i=A.a5(c)
+d=o.pop()
+i=A.a5(d)
+h=n.a
 h.sq(0,h.a.KR(A.r(i),B.iH))
 q=!1
 s=1
@@ -105713,7 +105714,7 @@ e=A.o(a2).ok.z
 if(e==null)e=a
 else{d=A.o(a2).ax
 c=d.rx
-e=e.aR(c==null?d.k3:c)}return A.jU(a0,a,new A.Qp(A.b([new A.ne(q,a,o,a),new A.ne(n,a,new A.KL(!0,a),a),new A.So(l,m,a),new A.ne(k,a,j,a),new A.ne(i,a,h,a),new A.ne(g,a,A.x(f+" fd15aac6 \xb7 2026-08-22T11:16:32Z",a,a,a,a,a,e,a,a,a,a),a)],p),a),a,a,a,!0)},
+e=e.aR(c==null?d.k3:c)}return A.jU(a0,a,new A.Qp(A.b([new A.ne(q,a,o,a),new A.ne(n,a,new A.KL(!0,a),a),new A.So(l,m,a),new A.ne(k,a,j,a),new A.ne(i,a,h,a),new A.ne(g,a,A.x(f+" 3dd4b577 \xb7 2026-08-22T11:19:22Z",a,a,a,a,a,e,a,a,a,a),a)],p),a),a,a,a,!0)},
 aNf(a,b,c){var s,r,q,p,o,n,m=this,l=null,k=A.L([B.Il,A.p(b,"settings_tab_account"),B.Im,A.p(b,"settings_tab_preferences"),B.Ac,A.p(b,"settings_tab_desktop_voice"),B.In,A.p(b,"settings_tab_notifications"),B.Io,A.p(b,"settings_tab_appearance"),B.Ip,A.p(b,"settings_tab_about")],t.OS,t.N),j=A.p(b,"profile_page_title"),i=A.o(a).ok.f
 j=A.x(j,l,l,l,l,l,i==null?l:i.U0(32,B.af,1.15),l,l,l,l)
 i=m.ax
@@ -105736,7 +105737,7 @@ p=A.o(a).ok.z
 if(p==null)p=l
 else{o=A.o(a).ax
 n=o.rx
-p=p.aR(n==null?o.k3:n)}p=new A.ne(r,l,A.x(q+" fd15aac6 \xb7 2026-08-22T11:16:32Z",l,l,l,l,l,p,l,l,l,l),l)
+p=p.aR(n==null?o.k3:n)}p=new A.ne(r,l,A.x(q+" 3dd4b577 \xb7 2026-08-22T11:19:22Z",l,l,l,l,l,p,l,l,l,l),l)
 r=p
 break
 default:r=l}return new A.Qp(A.b([j,B.bU,new A.a92(i,new A.bQx(m),k,l),s,B.fO,r],t.p),l)},
@@ -155584,7 +155585,7 @@ o=s.b<a.byteLength?A.b1(B.dm.qQ(0,s)):null
 if(typeof r=="string")n=(q==null||typeof q=="string")&&s.b>=a.byteLength
 else n=!1
 if(n)throw A.q(A.KA(r,p,A.b1(q),o))
-else throw A.q(B.apO)}}
+else throw A.q(B.apP)}}
 A.b4_.prototype={
 bpP(a,b,c){var s,r,q,p,o
 if(t.PB.b(b)){this.b.G(0,a)
@@ -215133,11 +215134,11 @@ B.af=new A.mC(700)
 B.cv=new A.mC(800)
 B.dt=new A.mC(900)
 B.apN=new A.fK("Unknown calendar provider",null,null)
+B.apO=new A.fK("Missing sleep authorization URL",null,null)
 B.LZ=new A.fK("Invalid method call",null,null)
-B.apO=new A.fK("Invalid envelope",null,null)
-B.apP=new A.fK("Unexpected sleep-sync response",null,null)
-B.apQ=new A.fK("Unexpected calendar integration response",null,null)
-B.apR=new A.fK("Missing Google authorization URL",null,null)
+B.apP=new A.fK("Invalid envelope",null,null)
+B.apQ=new A.fK("Unexpected sleep-sync response",null,null)
+B.apR=new A.fK("Unexpected calendar integration response",null,null)
 B.apS=new A.fK("Expected envelope, got nothing",null,null)
 B.M_=new A.fK("Too many percent/permill",null,null)
 B.f3=new A.fK("Message corrupted",null,null)
