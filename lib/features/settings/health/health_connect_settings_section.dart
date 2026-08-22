@@ -210,8 +210,9 @@ class _SleepSyncSettingsSectionState extends State<SleepSyncSettingsSection>
           ValueListenableBuilder<CloudSleepSyncState>(
             valueListenable: CloudSleepSyncService.instance.state,
             builder: (context, state, _) {
-              final busy = state.phase == CloudSleepSyncPhase.connecting ||
-                  state.phase == CloudSleepSyncPhase.syncing;
+              // Keep the switch usable while authorization is in progress so
+              // an expired/cancelled Xiaomi QR can be retried immediately.
+              final busy = state.phase == CloudSleepSyncPhase.syncing;
               return _switch(
                 locale: locale,
                 value: state.configured && state.enabled,
