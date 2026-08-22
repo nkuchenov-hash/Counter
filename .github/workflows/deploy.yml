@@ -2,7 +2,8 @@ name: Deploy LIFE OS Flutter Web to GitHub Pages
 
 # Server-schema-before-client law: every main push first completes the PocketBase
 # workflow. UI-only pushes make that workflow a validated no-op at deploy phase,
-# then this workflow publishes the exact validated SHA.
+# then this workflow publishes the exact validated SHA. Keep this path runnable
+# for UI hotfixes such as sleep authorization retry behavior.
 on:
   workflow_run:
     workflows:
@@ -52,6 +53,51 @@ jobs:
           flutter build web --release --base-href="/Counter/" --no-tree-shake-icons --no-wasm-dry-run --pwa-strategy=none \
             --dart-define=GIT_COMMIT="$SHORT_SHA" \
             --dart-define=BUILD_TIME="$BUILD_TIME"
+
+      - name: Version Flutter web entrypoint
+        shell: bash
+        run: |
+          set -euo pipefail
+          FULL_SHA=$(git rev-parse HEAD)
+          python3 - "$FULL_SHA" <<'PY'
+          from pathlib import Path
+          import sys
+
+          sha = sys.argv[1]
+          bootstrap = Path('build/web/flutter_bootstrap.js')
+          index = Path('build/web/index.html')
+
+          bootstrap_text = bootstrap.read_text(encoding='utf-8')
+          needle = '"mainJsPath":"main.dart.js"'
+          if needle not in bootstrap_text:
+              raise SystemExit('Flutter bootstrap mainJsPath marker not found')
+          bootstrap.write_text(
+              bootstrap_text.replace(
+                  needle,
+                  f'"mainJsPath":"main.dart.js?v={sha}"',
+                  1,
+              ),
+              encoding='utf-8',
+          )
+
+          index_text = index.read_text(encoding='utf-8')
+          bootstrap_tag = 'src="flutter_bootstrap.js"'
+          if bootstrap_tag not in index_text:
+              raise SystemExit('Flutter bootstrap script marker not found')
+          index.write_text(
+              index_text.replace(
+                  bootstrap_tag,
+                  f'src="flutter_bootstrap.js?v={sha}"',
+                  1,
+              ),
+              encoding='utf-8',
+          )
+
+          Path('build/web/lifeos-build.txt').write_text(sha + '\n', encoding='utf-8')
+          PY
+          grep -Fq "main.dart.js?v=$FULL_SHA" build/web/flutter_bootstrap.js
+          grep -Fq "flutter_bootstrap.js?v=$FULL_SHA" build/web/index.html
+          test "$(tr -d '\r\n' < build/web/lifeos-build.txt)" = "$FULL_SHA"
 
       - name: Preserve published Igropoisk
         run: |
