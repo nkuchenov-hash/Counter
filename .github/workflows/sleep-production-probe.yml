@@ -32,7 +32,7 @@ jobs:
           chmod 600 ~/.ssh/lifeos_pocketbase
           ssh-keyscan -p "$SSH_PORT" -H "$resolved_host" >> ~/.ssh/known_hosts
 
-      - name: Reset stale Xiaomi authorization
+      - name: Read current Xiaomi sleep state
         shell: bash
         run: |
           set -euo pipefail
@@ -41,31 +41,22 @@ jobs:
           pid="$(pgrep -f '[p]ocketbase.*serve' | sed -n '1p' || true)"
           [[ -n "$pid" ]]
           app_dir="$(readlink -f "/proc/$pid/cwd")"
-          data_dir="$app_dir/pb_data/xiaomi_sleep"
-          shopt -s nullglob
-          token_files=("$data_dir"/*.token.json)
-          if (( ${#token_files[@]} > 0 )); then
-            echo 'xiaomi_authorized=true'
-            echo 'stale_authorization_reset=skipped'
-            exit 0
-          fi
-
-          pkill -f 'xiaomi_sleep_bridge.py login' || true
-          rm -f "$data_dir"/*.state.json
-
-          python3 - "$app_dir/pb_data/data.db" <<'PY'
-          import sqlite3, sys
-          db=sys.argv[1]
-          con=sqlite3.connect(db, timeout=30)
-          before=con.execute("SELECT count(*) FROM sleep_sync_connections WHERE provider='xiaomi' AND status='connecting'").fetchone()[0]
-          con.execute("UPDATE sleep_sync_connections SET status='disconnected', last_error='', oauth_state='', oauth_state_expires_at='' WHERE provider='xiaomi' AND status IN ('connecting','error')")
-          con.commit()
-          after=con.execute("SELECT count(*) FROM sleep_sync_connections WHERE provider='xiaomi' AND status='connecting'").fetchone()[0]
+          python3 - "$app_dir/pb_data/data.db" "$app_dir/pb_data/xiaomi_sleep" <<'PY'
+          import sqlite3, pathlib, sys
+          con=sqlite3.connect(f'file:{sys.argv[1]}?mode=ro', uri=True); con.row_factory=sqlite3.Row
+          r=con.execute("SELECT enabled,status,last_error,last_sync_at,last_session_count,last_imported_count FROM sleep_sync_connections WHERE provider='xiaomi' LIMIT 1").fetchone()
+          tokens=list(pathlib.Path(sys.argv[2]).glob('*.token.json')) if pathlib.Path(sys.argv[2]).exists() else []
+          print('connection='+str(bool(r)).lower())
+          print('authorized='+str(bool(tokens)).lower())
+          if r:
+              print('enabled='+str(bool(r['enabled'])).lower())
+              print('status='+str(r['status'] or ''))
+              print('error_present='+str(bool(r['last_error'])).lower())
+              print('synced='+str(bool(r['last_sync_at'])).lower())
+              print('sessions='+str(r['last_session_count'] or 0))
+              print('imported='+str(r['last_imported_count'] or 0))
+          latest=con.execute("SELECT date(max(end_time)) FROM records WHERE title='Sleep' OR title='Сон'").fetchone()[0]
+          print('latest_sleep_day='+str(latest or 'none'))
           con.close()
-          print('xiaomi_connecting_before='+str(before))
-          print('xiaomi_connecting_after='+str(after))
-          if after != 0:
-              raise SystemExit(2)
           PY
-          echo 'stale_authorization_reset=true'
           REMOTE
