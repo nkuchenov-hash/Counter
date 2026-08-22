@@ -45,6 +45,8 @@ jobs:
           [[ -f "$app_dir/pb_hooks/xiaomi_sleep_runtime.js" ]]
           [[ -f "$app_dir/pb_hooks/xiaomi_sleep_bridge.py" ]]
           [[ -f "$app_dir/pb_migrations/1787354100_xiaomi_sleep_provider.js" ]]
+          grep -q 'total_wait = max(540.0' "$app_dir/pb_hooks/xiaomi_sleep_bridge.py"
+          grep -q 'attempt_wait = min(45.0' "$app_dir/pb_hooks/xiaomi_sleep_bridge.py"
           [[ -x /opt/lifeos-xiaomi-sleep/bin/python ]]
           /opt/lifeos-xiaomi-sleep/bin/python - <<'PY'
           from mi_fitness import XiaomiAuth, MiHealthClient
@@ -80,6 +82,7 @@ jobs:
           [[ "$auth_route" == "400" || "$auth_route" == "401" || "$auth_route" == "403" ]]
           [[ "$status_route" == "401" || "$status_route" == "403" ]]
           echo 'xiaomi_files=true'
+          echo 'xiaomi_qr_auto_refresh=true'
           echo 'pocketbase_health=true'
           echo 'xiaomi_authorize_route=true'
           echo 'sleep_status_auth_guard=true'
