@@ -37,6 +37,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          echo diagnostic-version=20260823-1
           ssh -i ~/.ssh/lifeos_pocketbase -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" \
             "SERVICE='${POCKETBASE_SERVICE:-pocketbase.service}' bash -s" <<'REMOTE'
           set -euo pipefail
@@ -76,11 +77,11 @@ jobs:
           extra = [c for c in ['external_source','sleep_source','created','updated'] if c in rec_cols]
           cols = ['user_id','title','start_time','end_time'] + extra
           qcols = ','.join('"%s"'%c for c in cols)
-          cutoff = (datetime.now(timezone.utc)-timedelta(days=14)).isoformat().replace('+00:00','Z')
+          cutoff = (datetime.now(timezone.utc)-timedelta(days=30)).isoformat().replace('+00:00','Z')
           sleep = con.execute(f'''SELECT {qcols} FROM records
               WHERE lower(trim(title)) IN ('sleep','сон') AND end_time>=?
               ORDER BY end_time ASC''',(cutoff,)).fetchall()
-          print('SLEEP_RECENT14=%d' % len(sleep))
+          print('SLEEP_RECENT30=%d' % len(sleep))
           if not sleep:
               raise SystemExit(0)
 
@@ -89,9 +90,10 @@ jobs:
               by_user.setdefault(str(r['user_id']), []).append(r)
           uid, rows=max(by_user.items(), key=lambda kv: len(kv[1]))
           print('TARGET_USER='+uid[:4]+'...')
-          print('TARGET_SLEEP_RECENT14=%d' % len(rows))
+          print('TARGET_SLEEP_RECENT30=%d' % len(rows))
           print('LATEST_SLEEP_DAY='+str(rows[-1]['end_time'])[:10])
           days={}
+          totals={}
           for r in rows:
               day=str(r['end_time'])[:10]
               src='device_or_manual'
@@ -99,8 +101,11 @@ jobs:
                   if c in rec_cols and r[c]:
                       src=str(r[c])
                       break
+              totals[src]=totals.get(src,0)+1
               days.setdefault(day,{}).setdefault(src,0)
               days[day][src]+=1
+          for src,count in sorted(totals.items()):
+              print('SOURCE_TOTAL %s=%d'%(src,count))
           for day in sorted(days):
               print('DAY %s %s' % (day, ' '.join('%s=%d'%(k,v) for k,v in sorted(days[day].items()))))
           PY
