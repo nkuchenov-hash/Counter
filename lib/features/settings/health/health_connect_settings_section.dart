@@ -8,9 +8,10 @@ import 'package:flutter/material.dart';
 
 /// One user-facing sleep synchronization setting.
 ///
-/// Android/iOS own health permissions and ingestion. Web is a consumer of the
-/// canonical PocketBase records produced by those device health bridges; it
-/// must never pretend that a watch-vendor OAuth connection is required.
+/// Android/iOS own health permissions and ingestion. Web consumes canonical
+/// PocketBase records and may optionally connect the server directly to the
+/// user's Mi Fitness/Xiaomi cloud as a fallback source. The cloud fallback is
+/// not required for the normal Health Connect / HealthKit path.
 class SleepSyncSettingsSection extends StatefulWidget {
   const SleepSyncSettingsSection({super.key});
 
@@ -45,7 +46,10 @@ class _SleepSyncSettingsSectionState extends State<SleepSyncSettingsSection>
   }
 
   Future<void> _load() async {
-    if (kIsWeb) return;
+    if (kIsWeb) {
+      await CloudSleepSyncService.instance.loadStatus();
+      return;
+    }
     if (_useDeviceSource) {
       await HealthSleepSyncService.instance.start();
       return;
@@ -78,6 +82,20 @@ class _SleepSyncSettingsSectionState extends State<SleepSyncSettingsSection>
       return;
     }
     await service.setEnabled(true);
+  }
+
+  Future<void> _connectOrSyncWebCloud() async {
+    final service = CloudSleepSyncService.instance;
+    final current = service.state.value;
+    if (!current.configured) {
+      await service.connectGoogleFit();
+      return;
+    }
+    if (!current.enabled) {
+      final enabled = await service.setEnabled(true);
+      if (!enabled) return;
+    }
+    await service.syncNow();
   }
 
   String _deviceStatus(String locale, HealthSleepSyncState state) {
@@ -161,20 +179,63 @@ class _SleepSyncSettingsSectionState extends State<SleepSyncSettingsSection>
   }
 
   Widget _webStatus(String locale, ThemeData theme) {
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      leading: const Icon(Icons.health_and_safety_outlined),
-      title: Text(_copy(locale, 'Sleep synchronization', 'Синхронизация сна')),
-      subtitle: Text(
-        _copy(
-          locale,
-          'Sleep is received automatically from the health source connected on your phone and appears here on every client. Health permission is managed on the phone.',
-          'Сон автоматически поступает из источника здоровья, подключённого на телефоне, и появляется здесь на всех устройствах. Доступ к данным здоровья управляется на телефоне.',
-        ),
-        style: theme.textTheme.bodySmall?.copyWith(
-          color: theme.colorScheme.onSurfaceVariant,
-        ),
-      ),
+    return ValueListenableBuilder<CloudSleepSyncState>(
+      valueListenable: CloudSleepSyncService.instance.state,
+      builder: (context, state, _) {
+        final configured = state.configured;
+        final syncing = state.phase == CloudSleepSyncPhase.syncing;
+        final connecting = state.phase == CloudSleepSyncPhase.connecting;
+        final status = configured
+            ? (syncing
+                  ? _copy(locale, 'Synchronizing sleep from Mi Fitness cloud…', 'Синхронизация сна из Mi Fitness Cloud…')
+                  : _copy(
+                      locale,
+                      'Mi Fitness cloud is connected. The LIFE OS server synchronizes sleep automatically and stores it in PocketBase for every client.',
+                      'Mi Fitness Cloud подключён. Сервер LIFE OS автоматически синхронизирует сон и сохраняет его в PocketBase для всех клиентов.',
+                    ))
+            : (connecting
+                  ? _copy(
+                      locale,
+                      'Complete Xiaomi Account authorization in the opened page. LIFE OS will import sleep immediately after authorization.',
+                      'Завершите вход в Xiaomi Account на открывшейся странице. LIFE OS сразу импортирует сон после авторизации.',
+                    )
+                  : _copy(
+                      locale,
+                      'Sleep normally arrives from the health source on your phone. You can also connect Mi Fitness cloud once so the LIFE OS server can pull sleep directly without opening the mobile app.',
+                      'Обычно сон поступает из источника здоровья на телефоне. Также можно один раз подключить Mi Fitness Cloud, чтобы сервер LIFE OS забирал сон напрямую без открытия мобильного приложения.',
+                    ));
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.health_and_safety_outlined),
+              title: Text(_copy(locale, 'Sleep synchronization', 'Синхронизация сна')),
+              subtitle: Text(
+                status,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+            const SizedBox(height: 4),
+            OutlinedButton.icon(
+              onPressed: syncing
+                  ? null
+                  : () => unawaited(_connectOrSyncWebCloud()),
+              icon: Icon(configured ? Icons.sync : Icons.cloud_outlined),
+              label: Text(
+                configured
+                    ? _copy(locale, 'Synchronize now', 'Синхронизировать сейчас')
+                    : (connecting
+                          ? _copy(locale, 'Continue Mi Fitness connection', 'Продолжить подключение Mi Fitness')
+                          : _copy(locale, 'Connect Mi Fitness cloud', 'Подключить Mi Fitness Cloud')),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
