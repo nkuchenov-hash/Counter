@@ -33,39 +33,37 @@ jobs:
           chmod 600 ~/.ssh/lifeos_pocketbase
           ssh-keyscan -p "$SSH_PORT" -H "$resolved_host" >> ~/.ssh/known_hosts
 
-      - name: Recover PocketBase
+      - name: Verify production state
         shell: bash
         run: |
           set -euo pipefail
-          echo diagnostic-version=20260823-recover-pocketbase
+          echo diagnostic-version=20260823-ready-for-retry
           ssh -i ~/.ssh/lifeos_pocketbase -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" \
             "SERVICE='${POCKETBASE_SERVICE:-pocketbase.service}' bash -s" <<'REMOTE'
           set -euo pipefail
           service="${SERVICE:-pocketbase.service}"
           app_dir="$(systemctl show "$service" -p WorkingDirectory --value)"
           db="$app_dir/pb_data/data.db"
-          echo BEFORE_ACTIVE=$(systemctl is-active "$service" || true)
-          systemctl status "$service" --no-pager -l || true
-          journalctl -u "$service" -n 40 --no-pager || true
-          DB_PATH="$db" python3 - <<'PY'
-          import os, sqlite3
-          con=sqlite3.connect(os.environ['DB_PATH'])
-          con.execute("UPDATE sleep_sync_connections SET status='disconnected', oauth_state='', oauth_state_expires_at=NULL, last_error='' WHERE provider='xiaomi'")
-          con.commit(); con.close()
-          print('XIAOMI_STATE_NORMALIZED=1')
+          echo SERVICE_ACTIVE=$(systemctl is-active "$service" || true)
+          curl -fsS --max-time 5 https://217-114-0-201.sslip.io/api/health >/dev/null && echo PUBLIC_HEALTH=1
+          grep -Fq 'attempt_wait = min(240.0, remaining)' "$app_dir/pb_hooks/xiaomi_sleep_bridge.py" && echo BRIDGE_SESSION_WINDOW_FIX=1
+          DB_PATH="$db" APP_DIR="$app_dir" python3 - <<'PY'
+          import json, os, sqlite3
+          from pathlib import Path
+          con=sqlite3.connect(f'file:{os.environ["DB_PATH"]}?mode=ro',uri=True); con.row_factory=sqlite3.Row
+          rows=con.execute("SELECT user_id,status,enabled,last_sync_at,last_session_count,last_imported_count,last_error,oauth_state,oauth_state_expires_at FROM sleep_sync_connections WHERE provider='xiaomi' ORDER BY rowid DESC").fetchall()
+          print('XIAOMI_CONNECTIONS=%d'%len(rows))
+          for i,r in enumerate(rows):
+              uid=str(r['user_id']); xdir=Path(os.environ['APP_DIR'])/'pb_data'/'xiaomi_sleep'
+              token=(xdir/(uid+'.token.json')).is_file()
+              state=xdir/(uid+'.state.json')
+              state_status='none'
+              if state.is_file():
+                  try: state_status=str(json.loads(state.read_text()).get('status','unknown'))
+                  except Exception: state_status='unreadable'
+              sleep=con.execute("SELECT end_time FROM records WHERE user_id=? AND lower(trim(title)) IN ('sleep','сон') ORDER BY end_time DESC LIMIT 1",(uid,)).fetchone()
+              print('X[%d] TOKEN=%d STATUS=%s ENABLED=%s STATE=%s OAUTH=%s EXPIRES=%s LATEST=%s'%(
+                  i,1 if token else 0,r['status'],r['enabled'],state_status,'set' if r['oauth_state'] else 'empty',r['oauth_state_expires_at'],str(sleep['end_time'])[:10] if sleep else 'none'))
+          con.close()
           PY
-          systemctl reset-failed "$service" || true
-          systemctl start "$service"
-          ok=0
-          for i in $(seq 1 60); do
-            if curl -fsS --max-time 3 http://127.0.0.1:8090/api/health >/dev/null; then ok=1; break; fi
-            sleep 1
-          done
-          echo AFTER_ACTIVE=$(systemctl is-active "$service" || true)
-          if [ "$ok" != 1 ]; then
-            systemctl status "$service" --no-pager -l || true
-            journalctl -u "$service" -n 80 --no-pager || true
-            exit 2
-          fi
-          echo POCKETBASE_HEALTHY=1
           REMOTE
