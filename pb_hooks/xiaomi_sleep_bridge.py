@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import fcntl
 import json
 import os
 import sys
@@ -89,9 +90,7 @@ def _safe_session(start_raw: Any, end_raw: Any, duration_hint: Any = 0) -> dict[
     }
 
 
-async def _login(args: argparse.Namespace) -> int:
-    token_path = Path(args.token_path)
-    state_path = Path(args.state_path)
+async def _login_locked(args: argparse.Namespace, token_path: Path, state_path: Path) -> int:
     _atomic_json(state_path, {"status": "starting", "updated_at": _utc_now()})
 
     # Xiaomi QR codes can expire much sooner than the overall authorization
@@ -156,6 +155,29 @@ async def _login(args: argparse.Namespace) -> int:
         },
     )
     return 2
+
+
+async def _login(args: argparse.Namespace) -> int:
+    token_path = Path(args.token_path)
+    state_path = Path(args.state_path)
+    lock_path = token_path.with_name(token_path.name + ".login.lock")
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    lock_handle = lock_path.open("a+", encoding="utf-8")
+    os.chmod(lock_path, 0o600)
+    try:
+        try:
+            fcntl.flock(lock_handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            # A live worker already owns this user's Xiaomi authorization. Do not
+            # touch its shared state file or invalidate the QR currently shown.
+            return 4
+        return await _login_locked(args, token_path, state_path)
+    finally:
+        try:
+            fcntl.flock(lock_handle.fileno(), fcntl.LOCK_UN)
+        except OSError:
+            pass
+        lock_handle.close()
 
 
 async def _sync(args: argparse.Namespace) -> int:
