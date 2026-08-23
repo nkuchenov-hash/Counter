@@ -33,42 +33,46 @@ jobs:
           chmod 600 ~/.ssh/lifeos_pocketbase
           ssh-keyscan -p "$SSH_PORT" -H "$resolved_host" >> ~/.ssh/known_hosts
 
-      - name: Verify login and live sleep import
+      - name: Reset stale Xiaomi login
         shell: bash
         run: |
           set -euo pipefail
-          echo diagnostic-version=20260823-post-login
+          echo diagnostic-version=20260823-reset-stale-login
           ssh -i ~/.ssh/lifeos_pocketbase -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" \
             "SERVICE='${POCKETBASE_SERVICE:-pocketbase.service}' bash -s" <<'REMOTE'
           set -euo pipefail
           service="${SERVICE:-pocketbase.service}"
           app_dir="$(systemctl show "$service" -p WorkingDirectory --value)"
           db="$app_dir/pb_data/data.db"
+          bridge="$app_dir/pb_hooks/xiaomi_sleep_bridge.py"
+          if grep -Fq 'attempt_wait = min(240.0, remaining)' "$bridge"; then
+            echo BRIDGE_SESSION_WINDOW_FIX=1
+          else
+            echo BRIDGE_SESSION_WINDOW_FIX=0
+            exit 2
+          fi
+          pkill -f 'xiaomi_sleep_bridge.py login' || true
+          systemctl stop "$service"
           DB_PATH="$db" APP_DIR="$app_dir" python3 - <<'PY'
-          import json, os, sqlite3
+          import os, sqlite3
           from pathlib import Path
-          con=sqlite3.connect(f'file:{os.environ["DB_PATH"]}?mode=ro',uri=True); con.row_factory=sqlite3.Row
-          conns=con.execute("SELECT user_id,provider,status,enabled,last_sync_at,last_session_count,last_imported_count,last_error,oauth_state_expires_at FROM sleep_sync_connections ORDER BY rowid DESC").fetchall()
-          print('CONNECTION_COUNT=%d'%len(conns))
-          x=[r for r in conns if r['provider']=='xiaomi']
-          print('XIAOMI_CONNECTIONS=%d'%len(x))
-          for i,r in enumerate(x[:5]):
-              uid=str(r['user_id'])
-              xdir=Path(os.environ['APP_DIR'])/'pb_data'/'xiaomi_sleep'
-              token=xdir/(uid+'.token.json')
-              state=xdir/(uid+'.state.json')
-              token_ok=token.is_file() and token.stat().st_size>0
-              state_status='none'
-              if state.is_file():
-                  try: state_status=str(json.loads(state.read_text()).get('status','unknown'))
-                  except Exception: state_status='unreadable'
-              rows=con.execute("SELECT end_time,created,external_source,sleep_source FROM records WHERE user_id=? AND lower(trim(title)) IN ('sleep','сон') ORDER BY end_time ASC",(uid,)).fetchall()
-              recent=[q for q in rows if str(q['end_time'])[:10]>='2026-08-19']
-              print('X[%d]_TOKEN=%d STATUS=%s ENABLED=%s STATE=%s SESSIONS=%s IMPORTED=%s ERROR=%s LATEST=%s RECENT=%d'%(
-                  i,1 if token_ok else 0,r['status'],r['enabled'],state_status,r['last_session_count'],r['last_imported_count'],
-                  'present' if r['last_error'] else 'none',str(rows[-1]['end_time'])[:10] if rows else 'none',len(recent)))
-              for q in recent[-7:]:
-                  print('RECENT[%d] END=%s SOURCE=%s CREATED=%s'%(i,q['end_time'],q['sleep_source'] or q['external_source'] or 'unmarked',q['created']))
-          con.close()
+          db=os.environ['DB_PATH']
+          con=sqlite3.connect(db)
+          cur=con.execute("UPDATE sleep_sync_connections SET status='disconnected', oauth_state='', oauth_state_expires_at='', last_error='' WHERE provider='xiaomi'")
+          con.commit(); con.close()
+          xdir=Path(os.environ['APP_DIR'])/'pb_data'/'xiaomi_sleep'
+          removed=0
+          if xdir.is_dir():
+              for p in xdir.glob('*.state.json'):
+                  p.unlink(missing_ok=True); removed += 1
+          print('RESET_CONNECTION_ROWS=%d'%cur.rowcount)
+          print('REMOVED_STATE_FILES=%d'%removed)
           PY
+          systemctl start "$service"
+          for i in $(seq 1 30); do
+            if curl -fsS --max-time 3 http://127.0.0.1:8090/api/health >/dev/null; then break; fi
+            sleep 1
+          done
+          curl -fsS --max-time 3 http://127.0.0.1:8090/api/health >/dev/null
+          echo POCKETBASE_HEALTHY=1
           REMOTE
