@@ -32,46 +32,17 @@ jobs:
           chmod 600 ~/.ssh/lifeos_pocketbase
           ssh-keyscan -p "$SSH_PORT" -H "$resolved_host" >> ~/.ssh/known_hosts
 
-      - name: Diagnose current Xiaomi authorization worker
+      - name: Inspect Xiaomi QR implementation
         shell: bash
         run: |
           set -euo pipefail
-          echo diagnostic-version=6
           ssh -i ~/.ssh/lifeos_pocketbase -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
           set -euo pipefail
-          pid="$(pgrep -f '[p]ocketbase.*serve' | sed -n '1p' || true)"
-          [[ -n "$pid" ]]
-          app_dir="$(readlink -f "/proc/$pid/cwd")"
-          python3 - "$app_dir/pb_data/data.db" "$app_dir/pb_data/xiaomi_sleep" <<'PY'
-          import json, pathlib, sqlite3, subprocess, sys, time, urllib.parse
-          con=sqlite3.connect(f'file:{sys.argv[1]}?mode=ro', uri=True); con.row_factory=sqlite3.Row
-          r=con.execute("SELECT user_id,enabled,status,last_error,oauth_state_expires_at FROM sleep_sync_connections WHERE provider='xiaomi' LIMIT 1").fetchone()
-          data_dir=pathlib.Path(sys.argv[2])
-          print('connection='+str(bool(r)).lower())
-          if not r:
-              raise SystemExit(0)
-          uid=str(r['user_id'])
-          token=data_dir/f'{uid}.token.json'
-          state=data_dir/f'{uid}.state.json'
-          print('authorized='+str(token.exists()).lower())
-          print('enabled='+str(bool(r['enabled'])).lower())
-          print('status='+str(r['status'] or ''))
-          print('error_present='+str(bool(r['last_error'])).lower())
-          workers=subprocess.run(['pgrep','-fc','xiaomi_sleep_bridge.py login'],capture_output=True,text=True).stdout.strip()
-          print('login_workers='+str(workers or '0'))
-          print('state_exists='+str(state.exists()).lower())
-          if state.exists():
-              doc=json.loads(state.read_text())
-              print('state_status='+str(doc.get('status') or ''))
-              print('generation='+str(doc.get('generation') or 0))
-              print('state_age_seconds='+str(max(0,int(time.time()-state.stat().st_mtime))))
-              print('error_class='+str(doc.get('error_class') or 'none'))
-              for key in ('qr_image_url','login_url'):
-                  raw=str(doc.get(key) or '')
-                  print(key+'_present='+str(bool(raw)).lower())
-                  print(key+'_host='+urllib.parse.urlparse(raw).netloc)
-          latest=con.execute("SELECT date(max(end_time)) FROM records WHERE title='Sleep' OR title='Сон'").fetchone()[0]
-          print('latest_sleep_day='+str(latest or 'none'))
-          con.close()
+          /opt/lifeos-xiaomi-sleep/bin/python - <<'PY'
+          import inspect
+          from mi_fitness import XiaomiAuth
+          print('signature='+str(inspect.signature(XiaomiAuth.login_qr)))
+          print('---source---')
+          print(inspect.getsource(XiaomiAuth.login_qr))
           PY
           REMOTE
