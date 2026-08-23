@@ -32,27 +32,31 @@ jobs:
           chmod 600 ~/.ssh/lifeos_pocketbase
           ssh-keyscan -p "$SSH_PORT" -H "$resolved_host" >> ~/.ssh/known_hosts
 
-      - name: Inspect Xiaomi QR helper globals
+      - name: Smoke test Xiaomi QR handshake
         shell: bash
         run: |
           set -euo pipefail
-          echo diagnostic-version=20260823-xiaomi-qr-helper-globals
+          echo diagnostic-version=20260823-xiaomi-qr-smoke
           ssh -i ~/.ssh/lifeos_pocketbase -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" bash -s <<'REMOTE'
           set -euo pipefail
           /opt/lifeos-xiaomi-sleep/bin/python - <<'PY'
-          import inspect
+          import asyncio
           from mi_fitness import XiaomiAuth
-          fn=XiaomiAuth.login_qr
-          qr=fn.__globals__.get('_qr')
-          print('QR_MODULE='+str(qr))
-          if qr is not None:
-              print('QR_FILE='+str(inspect.getsourcefile(qr)))
-              for name in dir(qr):
-                  if 'qr' in name.lower() or 'login' in name.lower() or 'poll' in name.lower():
-                      obj=getattr(qr,name,None)
-                      if inspect.isfunction(obj):
-                          print('SOURCE_'+name+'_BEGIN')
-                          print(inspect.getsource(obj))
-                          print('SOURCE_'+name+'_END')
+
+          async def main():
+              seen={'qr':False,'login':False}
+              async def on_qr(qr_image_url, login_url):
+                  seen['qr']=bool(qr_image_url)
+                  seen['login']=bool(login_url)
+              error='none'
+              try:
+                  async with XiaomiAuth() as auth:
+                      await auth.login_qr(qr_callback=on_qr, poll_interval=0.5, max_wait=3.0)
+              except Exception as exc:
+                  error=type(exc).__name__
+              print('QR_CALLBACK='+('1' if seen['qr'] else '0'))
+              print('LOGIN_URL_PRESENT='+('1' if seen['login'] else '0'))
+              print('EXPECTED_FINAL_ERROR='+error)
+          asyncio.run(main())
           PY
           REMOTE
