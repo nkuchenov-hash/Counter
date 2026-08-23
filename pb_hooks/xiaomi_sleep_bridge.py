@@ -40,7 +40,6 @@ def _epoch_seconds(raw: Any) -> float | None:
         return None
     if value <= 0:
         return None
-    # Xiaomi SDK currently exposes epoch seconds, but tolerate milliseconds.
     if value >= 1_000_000_000_000:
         value /= 1000.0
     if value >= 10_000_000_000:
@@ -63,8 +62,6 @@ def _safe_session(start_raw: Any, end_raw: Any, duration_hint: Any = 0) -> dict[
     end_s = _epoch_seconds(end_raw)
     if start_s is None or end_s is None or end_s <= start_s:
         return None
-    # Reject implausible/future data and tiny fragments. Naps of 20+ minutes are
-    # still valid sleep records; overnight sleep naturally passes this threshold.
     now_s = datetime.now(timezone.utc).timestamp()
     if end_s > now_s + 300:
         return None
@@ -94,9 +91,9 @@ async def _login(args: argparse.Namespace) -> int:
     state_path = Path(args.state_path)
     _atomic_json(state_path, {"status": "starting", "updated_at": _utc_now()})
 
-    # Xiaomi QR codes can expire much sooner than the overall authorization
-    # window. Rotate the QR proactively instead of leaving the browser showing a
-    # dead code until the whole login attempt times out.
+    # Keep each Xiaomi QR/browser-login session alive long enough for a human to
+    # complete account login. Regenerate only after the SDK reports that attempt
+    # expired; rotating every ~45 seconds invalidated browser logins in flight.
     total_wait = max(540.0, float(args.max_wait))
     loop = asyncio.get_running_loop()
     deadline = loop.time() + total_wait
@@ -106,7 +103,7 @@ async def _login(args: argparse.Namespace) -> int:
     while loop.time() < deadline:
         generation += 1
         remaining = max(1.0, deadline - loop.time())
-        attempt_wait = min(45.0, remaining)
+        attempt_wait = min(240.0, remaining)
         try:
             async with XiaomiAuth() as auth:
                 async def on_qr(qr_image_url: str, login_url: str) -> None:
@@ -133,7 +130,7 @@ async def _login(args: argparse.Namespace) -> int:
                 os.chmod(token_path, 0o600)
             _atomic_json(state_path, {"status": "connected", "updated_at": _utc_now()})
             return 0
-        except Exception as exc:  # sanitized: class only, credentials never serialized
+        except Exception as exc:
             last_error_class = type(exc).__name__
             if loop.time() >= deadline:
                 break
