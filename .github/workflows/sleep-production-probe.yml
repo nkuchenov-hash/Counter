@@ -32,25 +32,27 @@ jobs:
           chmod 600 ~/.ssh/lifeos_pocketbase
           ssh-keyscan -p "$SSH_PORT" -H "$resolved_host" >> ~/.ssh/known_hosts
 
-      - name: Inspect Xiaomi QR helper
+      - name: Inspect Xiaomi QR helper globals
         shell: bash
         run: |
           set -euo pipefail
-          echo diagnostic-version=20260823-xiaomi-qr-helper
+          echo diagnostic-version=20260823-xiaomi-qr-helper-globals
           ssh -i ~/.ssh/lifeos_pocketbase -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" bash -s <<'REMOTE'
           set -euo pipefail
           /opt/lifeos-xiaomi-sleep/bin/python - <<'PY'
           import inspect
-          import mi_fitness.auth as auth
-          qr = getattr(auth, '_qr', None)
+          from mi_fitness import XiaomiAuth
+          fn=XiaomiAuth.login_qr
+          qr=fn.__globals__.get('_qr')
           print('QR_MODULE='+str(qr))
           if qr is not None:
-              for name in ('login_qr','_request_qr','request_qr','_poll_result','poll_result'):
-                  obj=getattr(qr,name,None)
-                  if obj:
-                      print('SOURCE_'+name+'_BEGIN')
-                      print(inspect.getsource(obj))
-                      print('SOURCE_'+name+'_END')
               print('QR_FILE='+str(inspect.getsourcefile(qr)))
+              for name in dir(qr):
+                  if 'qr' in name.lower() or 'login' in name.lower() or 'poll' in name.lower():
+                      obj=getattr(qr,name,None)
+                      if inspect.isfunction(obj):
+                          print('SOURCE_'+name+'_BEGIN')
+                          print(inspect.getsource(obj))
+                          print('SOURCE_'+name+'_END')
           PY
           REMOTE
