@@ -37,7 +37,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          echo diagnostic-version=20260823-device-history
+          echo diagnostic-version=20260823-live-recheck
           ssh -i ~/.ssh/lifeos_pocketbase -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" \
             "SERVICE='${POCKETBASE_SERVICE:-pocketbase.service}' bash -s" <<'REMOTE'
           set -euo pipefail
@@ -48,22 +48,17 @@ jobs:
           import os, sqlite3
           con=sqlite3.connect(f'file:{os.environ["DB_PATH"]}?mode=ro',uri=True); con.row_factory=sqlite3.Row
           uid=con.execute("SELECT user_id FROM sleep_sync_connections WHERE provider='google_fit' LIMIT 1").fetchone()[0]
-          cols={r['name'] for r in con.execute('PRAGMA table_info(records)')}
-          extra=',created,updated' if {'created','updated'}.issubset(cols) else ''
-          rows=con.execute(f'''SELECT title,start_time,end_time,external_source,sleep_source{extra} FROM records
+          rows=con.execute('''SELECT title,start_time,end_time,external_source,sleep_source,created,updated FROM records
              WHERE user_id=? AND lower(trim(title)) IN ('sleep','сон')
              ORDER BY end_time ASC''',(uid,)).fetchall()
-          unmarked=[]
-          for r in rows:
-              if not (r['external_source'] or r['sleep_source']): unmarked.append(r)
-          print('UNMARKED_SLEEP_COUNT=%d'%len(unmarked))
-          for r in unmarked[-10:]:
-              line='UNMARKED end_day=%s'%str(r['end_time'])[:10]
-              if 'created' in cols: line+=' created_day=%s'%str(r['created'])[:10]
-              if 'updated' in cols: line+=' updated_day=%s'%str(r['updated'])[:10]
-              print(line)
-          latest=rows[-1] if rows else None
-          print('LATEST_SLEEP_DAY='+((str(latest['end_time'])[:10]) if latest else 'none'))
+          print('SLEEP_COUNT=%d'%len(rows))
+          if rows:
+              latest=rows[-1]
+              print('LATEST_SLEEP_DAY='+str(latest['end_time'])[:10])
+              print('LATEST_CREATED_DAY='+str(latest['created'])[:10])
+              print('LATEST_SOURCE='+str(latest['sleep_source'] or latest['external_source'] or 'unmarked'))
+          recent=[r for r in rows if str(r['end_time'])[:10]>='2026-08-19']
+          print('SLEEP_SINCE_2026_08_19=%d'%len(recent))
           con.close()
           PY
           REMOTE
