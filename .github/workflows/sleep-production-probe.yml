@@ -36,7 +36,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          echo diagnostic-version=4
+          echo diagnostic-version=5
           ssh -i ~/.ssh/lifeos_pocketbase -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
           set -euo pipefail
           pid="$(pgrep -f '[p]ocketbase.*serve' | sed -n '1p' || true)"
@@ -65,6 +65,7 @@ jobs:
               print('state_status='+str(doc.get('status') or ''))
               print('generation='+str(doc.get('generation') or 0))
               print('state_age_seconds='+str(max(0,int(time.time()-state.stat().st_mtime))))
+              print('error_class='+str(doc.get('error_class') or 'none'))
               for key in ('qr_image_url','login_url'):
                   raw=str(doc.get(key) or '')
                   print(key+'_present='+str(bool(raw)).lower())
