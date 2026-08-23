@@ -1,6 +1,6 @@
 name: Android release APK
 
-# Manual artifact trigger: 2026-08-18 Health Connect sleep-stage fallback.
+# Manual artifact trigger: 2026-08-23 universal Health Connect automatic sleep ingestion validation.
 on:
   workflow_dispatch:
   push:
