@@ -36,7 +36,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          echo diagnostic-version=5
+          echo diagnostic-version=6
           ssh -i ~/.ssh/lifeos_pocketbase -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
           set -euo pipefail
           pid="$(pgrep -f '[p]ocketbase.*serve' | sed -n '1p' || true)"
