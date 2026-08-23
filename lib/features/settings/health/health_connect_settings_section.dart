@@ -8,13 +8,9 @@ import 'package:flutter/material.dart';
 
 /// One user-facing sleep synchronization setting.
 ///
-/// The actual ingestion adapter is chosen by the platform:
-/// - Android/iOS use the device health source when available.
-/// - Web/desktop use the server OAuth source.
-///
-/// Adapter names, counters, timestamps, schedules and raw provider errors are
-/// intentionally not exposed here. All imported sleep ends up in the same
-/// canonical PocketBase records used by every client.
+/// Android/iOS own health permissions and ingestion. Web is a consumer of the
+/// canonical PocketBase records produced by those device health bridges; it
+/// must never pretend that a watch-vendor OAuth connection is required.
 class SleepSyncSettingsSection extends StatefulWidget {
   const SleepSyncSettingsSection({super.key});
 
@@ -49,6 +45,7 @@ class _SleepSyncSettingsSectionState extends State<SleepSyncSettingsSection>
   }
 
   Future<void> _load() async {
+    if (kIsWeb) return;
     if (_useDeviceSource) {
       await HealthSleepSyncService.instance.start();
       return;
@@ -76,14 +73,10 @@ class _SleepSyncSettingsSectionState extends State<SleepSyncSettingsSection>
       if (current.configured) await service.setEnabled(false);
       return;
     }
-
     if (!current.configured) {
-      // Authorization is part of turning synchronization on. There is no
-      // separate connect/reconnect action in the user interface.
       await service.connectGoogleFit();
       return;
     }
-
     await service.setEnabled(true);
   }
 
@@ -167,6 +160,24 @@ class _SleepSyncSettingsSectionState extends State<SleepSyncSettingsSection>
     );
   }
 
+  Widget _webStatus(String locale, ThemeData theme) {
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: const Icon(Icons.health_and_safety_outlined),
+      title: Text(_copy(locale, 'Sleep synchronization', 'Синхронизация сна')),
+      subtitle: Text(
+        _copy(
+          locale,
+          'Sleep is received automatically from the health source connected on your phone and appears here on every client. Health permission is managed on the phone.',
+          'Сон автоматически поступает из источника здоровья, подключённого на телефоне, и появляется здесь на всех устройствах. Доступ к данным здоровья управляется на телефоне.',
+        ),
+        style: theme.textTheme.bodySmall?.copyWith(
+          color: theme.colorScheme.onSurfaceVariant,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final locale = currentLocale.value;
@@ -191,7 +202,9 @@ class _SleepSyncSettingsSectionState extends State<SleepSyncSettingsSection>
           ),
         ),
         const SizedBox(height: 8),
-        if (_useDeviceSource)
+        if (kIsWeb)
+          _webStatus(locale, theme)
+        else if (_useDeviceSource)
           ValueListenableBuilder<HealthSleepSyncState>(
             valueListenable: HealthSleepSyncService.instance.state,
             builder: (context, state, _) {
@@ -210,8 +223,6 @@ class _SleepSyncSettingsSectionState extends State<SleepSyncSettingsSection>
           ValueListenableBuilder<CloudSleepSyncState>(
             valueListenable: CloudSleepSyncService.instance.state,
             builder: (context, state, _) {
-              // Keep the switch usable while authorization is in progress so
-              // an expired/cancelled Xiaomi QR can be retried immediately.
               final busy = state.phase == CloudSleepSyncPhase.syncing;
               return _switch(
                 locale: locale,
