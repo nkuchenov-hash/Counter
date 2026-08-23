@@ -33,45 +33,29 @@ jobs:
           chmod 600 ~/.ssh/lifeos_pocketbase
           ssh-keyscan -p "$SSH_PORT" -H "$resolved_host" >> ~/.ssh/known_hosts
 
-      - name: Inspect Xiaomi worker failure
+      - name: Inspect installed Xiaomi auth implementation
         shell: bash
         run: |
           set -euo pipefail
-          echo diagnostic-version=20260823-xiaomi-error
+          echo diagnostic-version=20260823-xiaomi-sdk-source
           ssh -i ~/.ssh/lifeos_pocketbase -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" \
             "SERVICE='${POCKETBASE_SERVICE:-pocketbase.service}' bash -s" <<'REMOTE'
           set -euo pipefail
-          service="${SERVICE:-pocketbase.service}"
-          app_dir="$(systemctl show "$service" -p WorkingDirectory --value)"
-          db="$app_dir/pb_data/data.db"
-          DB_PATH="$db" APP_DIR="$app_dir" python3 - <<'PY'
-          import json, os, sqlite3
-          from pathlib import Path
-          con=sqlite3.connect(f'file:{os.environ["DB_PATH"]}?mode=ro',uri=True); con.row_factory=sqlite3.Row
-          row=con.execute("SELECT user_id FROM sleep_sync_connections WHERE provider='google_fit' ORDER BY rowid DESC LIMIT 1").fetchone()
-          uid=str(row[0]) if row else ''
-          rows=con.execute("SELECT end_time,created,external_source,sleep_source FROM records WHERE user_id=? AND lower(trim(title)) IN ('sleep','сон') ORDER BY end_time ASC",(uid,)).fetchall() if uid else []
-          print('LATEST_SLEEP_DAY='+(str(rows[-1]['end_time'])[:10] if rows else 'none'))
-          print('SLEEP_SINCE_2026_08_19=%d'%len([r for r in rows if str(r['end_time'])[:10]>='2026-08-19']))
-          xdir=Path(os.environ['APP_DIR'])/'pb_data'/'xiaomi_sleep'
-          state=xdir/(uid+'.state.json') if uid else None
-          if state and state.is_file():
-              try:
-                  doc=json.loads(state.read_text())
-                  print('XIAOMI_STATE_STATUS='+str(doc.get('status','unknown')))
-                  for key in ('error_class','error','message','detail'):
-                      val=doc.get(key)
-                      if val:
-                          text=str(val).replace('\n',' ')[:500]
-                          print('XIAOMI_'+key.upper()+'='+text)
-              except Exception as e:
-                  print('XIAOMI_STATE_UNREADABLE='+type(e).__name__)
-          print('BRIDGE_EXISTS='+('1' if (Path(os.environ['APP_DIR'])/'pb_hooks'/'xiaomi_sleep_bridge.py').is_file() else '0'))
-          con.close()
-          PY
           /opt/lifeos-xiaomi-sleep/bin/python - <<'PY'
-          import inspect
-          from mifitness.auth import XiaomiAuth
-          print('SDK_XIAOMIAUTH_LOGIN_QR='+str(inspect.signature(XiaomiAuth.login_qr)))
+          import inspect, importlib.metadata
+          from mi_fitness import XiaomiAuth
+          import mi_fitness.auth as auth_mod
+          print('MI_FITNESS_VERSION='+importlib.metadata.version('mi-fitness'))
+          print('LOGIN_QR_SIGNATURE='+str(inspect.signature(XiaomiAuth.login_qr)))
+          print('LOGIN_QR_SOURCE_BEGIN')
+          print(inspect.getsource(XiaomiAuth.login_qr))
+          print('LOGIN_QR_SOURCE_END')
+          for name in ('_get_qr_login','_poll_qr_login','_login_qr','get_qr_login','poll_qr_login'):
+              obj=getattr(XiaomiAuth,name,None)
+              if obj:
+                  print('SOURCE_'+name+'_BEGIN')
+                  print(inspect.getsource(obj))
+                  print('SOURCE_'+name+'_END')
+          print('AUTH_MODULE_FILE='+str(inspect.getsourcefile(auth_mod)))
           PY
           REMOTE
