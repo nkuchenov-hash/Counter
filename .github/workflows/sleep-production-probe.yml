@@ -17,7 +17,6 @@ jobs:
       SSH_USER: ${{ secrets.POCKETBASE_SSH_USER || secrets.VPS_SSH_USER || secrets.SSH_USER }}
       SSH_HOST: ${{ secrets.POCKETBASE_SSH_HOST || secrets.VPS_HOST || secrets.SSH_HOST }}
       SSH_PORT: ${{ secrets.POCKETBASE_SSH_PORT || secrets.VPS_SSH_PORT || '22' }}
-      POCKETBASE_SERVICE: ${{ secrets.POCKETBASE_SERVICE }}
     steps:
       - name: Prepare SSH
         shell: bash
@@ -33,29 +32,25 @@ jobs:
           chmod 600 ~/.ssh/lifeos_pocketbase
           ssh-keyscan -p "$SSH_PORT" -H "$resolved_host" >> ~/.ssh/known_hosts
 
-      - name: Inspect installed Xiaomi auth implementation
+      - name: Inspect Xiaomi QR helper
         shell: bash
         run: |
           set -euo pipefail
-          echo diagnostic-version=20260823-xiaomi-sdk-source
-          ssh -i ~/.ssh/lifeos_pocketbase -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" \
-            "SERVICE='${POCKETBASE_SERVICE:-pocketbase.service}' bash -s" <<'REMOTE'
+          echo diagnostic-version=20260823-xiaomi-qr-helper
+          ssh -i ~/.ssh/lifeos_pocketbase -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" bash -s <<'REMOTE'
           set -euo pipefail
           /opt/lifeos-xiaomi-sleep/bin/python - <<'PY'
-          import inspect, importlib.metadata
-          from mi_fitness import XiaomiAuth
-          import mi_fitness.auth as auth_mod
-          print('MI_FITNESS_VERSION='+importlib.metadata.version('mi-fitness'))
-          print('LOGIN_QR_SIGNATURE='+str(inspect.signature(XiaomiAuth.login_qr)))
-          print('LOGIN_QR_SOURCE_BEGIN')
-          print(inspect.getsource(XiaomiAuth.login_qr))
-          print('LOGIN_QR_SOURCE_END')
-          for name in ('_get_qr_login','_poll_qr_login','_login_qr','get_qr_login','poll_qr_login'):
-              obj=getattr(XiaomiAuth,name,None)
-              if obj:
-                  print('SOURCE_'+name+'_BEGIN')
-                  print(inspect.getsource(obj))
-                  print('SOURCE_'+name+'_END')
-          print('AUTH_MODULE_FILE='+str(inspect.getsourcefile(auth_mod)))
+          import inspect
+          import mi_fitness.auth as auth
+          qr = getattr(auth, '_qr', None)
+          print('QR_MODULE='+str(qr))
+          if qr is not None:
+              for name in ('login_qr','_request_qr','request_qr','_poll_result','poll_result'):
+                  obj=getattr(qr,name,None)
+                  if obj:
+                      print('SOURCE_'+name+'_BEGIN')
+                      print(inspect.getsource(obj))
+                      print('SOURCE_'+name+'_END')
+              print('QR_FILE='+str(inspect.getsourcefile(qr)))
           PY
           REMOTE
