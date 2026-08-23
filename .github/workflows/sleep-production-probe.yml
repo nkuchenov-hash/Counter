@@ -33,32 +33,52 @@ jobs:
           chmod 600 ~/.ssh/lifeos_pocketbase
           ssh-keyscan -p "$SSH_PORT" -H "$resolved_host" >> ~/.ssh/known_hosts
 
-      - name: Trace device sleep imports
+      - name: Trace live sleep ingestion
         shell: bash
         run: |
           set -euo pipefail
-          echo diagnostic-version=20260823-live-recheck
+          echo diagnostic-version=20260823-1136
           ssh -i ~/.ssh/lifeos_pocketbase -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" \
             "SERVICE='${POCKETBASE_SERVICE:-pocketbase.service}' bash -s" <<'REMOTE'
           set -euo pipefail
           service="${SERVICE:-pocketbase.service}"
           app_dir="$(systemctl show "$service" -p WorkingDirectory --value)"
           db="$app_dir/pb_data/data.db"
-          DB_PATH="$db" python3 - <<'PY'
-          import os, sqlite3
+          DB_PATH="$db" APP_DIR="$app_dir" python3 - <<'PY'
+          import json, os, sqlite3
+          from pathlib import Path
           con=sqlite3.connect(f'file:{os.environ["DB_PATH"]}?mode=ro',uri=True); con.row_factory=sqlite3.Row
-          uid=con.execute("SELECT user_id FROM sleep_sync_connections WHERE provider='google_fit' LIMIT 1").fetchone()[0]
+          row=con.execute("SELECT user_id FROM sleep_sync_connections WHERE provider='google_fit' ORDER BY rowid DESC LIMIT 1").fetchone()
+          uid=str(row[0]) if row else ''
           rows=con.execute('''SELECT title,start_time,end_time,external_source,sleep_source,created,updated FROM records
              WHERE user_id=? AND lower(trim(title)) IN ('sleep','сон')
-             ORDER BY end_time ASC''',(uid,)).fetchall()
+             ORDER BY end_time ASC''',(uid,)).fetchall() if uid else []
           print('SLEEP_COUNT=%d'%len(rows))
           if rows:
               latest=rows[-1]
               print('LATEST_SLEEP_DAY='+str(latest['end_time'])[:10])
-              print('LATEST_CREATED_DAY='+str(latest['created'])[:10])
+              print('LATEST_CREATED='+str(latest['created']))
               print('LATEST_SOURCE='+str(latest['sleep_source'] or latest['external_source'] or 'unmarked'))
           recent=[r for r in rows if str(r['end_time'])[:10]>='2026-08-19']
           print('SLEEP_SINCE_2026_08_19=%d'%len(recent))
+          for r in recent[-7:]:
+              print('RECENT_SLEEP end=%s source=%s created=%s'%(r['end_time'],r['sleep_source'] or r['external_source'] or 'unmarked',r['created']))
+          if uid:
+              xdir=Path(os.environ['APP_DIR'])/'pb_data'/'xiaomi_sleep'
+              token=xdir/(uid+'.token.json')
+              state=xdir/(uid+'.state.json')
+              print('XIAOMI_TOKEN_EXISTS='+('1' if token.is_file() and token.stat().st_size>0 else '0'))
+              print('XIAOMI_STATE_EXISTS='+('1' if state.is_file() and state.stat().st_size>0 else '0'))
+              if state.is_file():
+                  try:
+                      doc=json.loads(state.read_text())
+                      print('XIAOMI_STATE_STATUS='+str(doc.get('status','unknown')))
+                  except Exception as e:
+                      print('XIAOMI_STATE_STATUS=unreadable')
+              x=con.execute("SELECT status,enabled,last_sync_at,last_session_count,last_imported_count,last_error,oauth_state_expires_at FROM sleep_sync_connections WHERE provider='xiaomi' AND user_id=? ORDER BY rowid DESC LIMIT 1",(uid,)).fetchone()
+              if x:
+                  print('XIAOMI_CONNECTION status=%s enabled=%s last_sync_at=%s sessions=%s imported=%s error=%s oauth_expires=%s'%(x['status'],x['enabled'],x['last_sync_at'],x['last_session_count'],x['last_imported_count'],'present' if x['last_error'] else 'none',x['oauth_state_expires_at']))
           con.close()
           PY
+          test -x /opt/lifeos-xiaomi-sleep/bin/python && echo XIAOMI_PYTHON_READY=1 || echo XIAOMI_PYTHON_READY=0
           REMOTE
