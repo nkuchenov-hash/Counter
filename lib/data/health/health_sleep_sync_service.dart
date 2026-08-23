@@ -182,6 +182,8 @@ class HealthSleepSyncService {
   static const String _lastSyncKey = 'health_sleep_last_sync_utc_v1';
   static const String _dailySyncMinutesKey =
       'health_sleep_daily_sync_minutes_v1';
+  static const String _backgroundPermissionMigrationKey =
+      'health_sleep_background_permission_migration_v1';
   static const int defaultDailySyncMinutes = 21 * 60;
   static const String iosBackgroundTaskIdentifier =
       'com.example.counter.sleep-sync';
@@ -239,6 +241,61 @@ class HealthSleepSyncService {
       await _ensureWorkmanagerInitialized();
       await _refreshBackgroundAccessAndSchedule();
     }
+  }
+
+  /// Restores automatic sleep ingestion after app updates and on every signed-in
+  /// app bootstrap. Existing Health Connect permission counts as prior user
+  /// consent; an explicit OFF preference is still respected.
+  Future<void> bootstrapAutomaticSyncAfterAuth({
+    bool requestMissingBackgroundPermission = true,
+  }) async {
+    if (!isSupported) return;
+    final prefs = await SharedPreferences.getInstance();
+    final hadExplicitPreference = prefs.containsKey(enabledPrefsKey);
+
+    await start();
+
+    final healthAuthorized = await DeviceHealthSleepService.instance
+        .hasAuthorization();
+    if (!healthAuthorized) {
+      if (state.value.enabled) {
+        state.value = state.value.copyWith(
+          phase: HealthSleepSyncPhase.needsPermission,
+          clearError: true,
+        );
+      }
+      return;
+    }
+
+    // Migration path for users who granted Health Connect access before the
+    // unified sleep-sync preference existed. Never override an explicit OFF.
+    if (!hadExplicitPreference) {
+      await prefs.setBool(enabledPrefsKey, true);
+      state.value = state.value.copyWith(
+        enabled: true,
+        phase: HealthSleepSyncPhase.idle,
+        clearError: true,
+      );
+    }
+    if (!state.value.enabled) return;
+
+    await _ensureWorkmanagerInitialized();
+    await _refreshBackgroundAccessAndSchedule();
+
+    if (requestMissingBackgroundPermission &&
+        Platform.isAndroid &&
+        state.value.backgroundReadAvailable &&
+        !state.value.backgroundReadAuthorized &&
+        !(prefs.getBool(_backgroundPermissionMigrationKey) ?? false)) {
+      // One migration prompt only. If the user declines, Settings remains the
+      // explicit place to request it again; foreground/resume sync still works.
+      await prefs.setBool(_backgroundPermissionMigrationKey, true);
+      await requestBackgroundAuthorizationAndSchedule();
+    }
+
+    // Do not wait for the periodic worker: reconcile the latest completed sleep
+    // immediately whenever the authenticated app starts or resumes.
+    await sync(force: true);
   }
 
   Future<bool> requestAuthorizationAndEnable() async {
