@@ -105,6 +105,15 @@ function __xiaomiHasToken(userId) {
     return __xiaomiExists(__xiaomiTokenPath(userId));
 }
 
+function __xiaomiPendingLoginPhase(phase) {
+    return phase === "starting" || phase === "refreshing" || phase === "awaiting_scan";
+}
+
+function __xiaomiStopLoginWorkers(userId) {
+    var pattern = "xiaomi_sleep_bridge.py login --token-path " + __xiaomiTokenPath(userId);
+    try { $os.cmd("pkill", "-f", pattern).run(); } catch (_) {}
+}
+
 function __xiaomiStatus(app, connection) {
     if (!connection) {
         return {
@@ -131,6 +140,20 @@ function __xiaomiStatus(app, connection) {
         connection.set("last_error", "");
         try { app.save(connection); } catch (_) {}
         __xiaomiDisableGoogleFit(app, userId);
+    }
+    if (!configured && phase === "connecting") {
+        var expires = __xiaomiDate(connection.get("oauth_state_expires_at"));
+        var loginDoc = __xiaomiReadJson(__xiaomiStatePath(userId));
+        var loginPhase = loginDoc ? String(loginDoc.status || "") : "";
+        var stale = !expires || expires.getTime() <= Date.now() || loginPhase === "error";
+        if (stale) {
+            phase = "disconnected";
+            connection.set("status", "disconnected");
+            connection.set("oauth_state", "");
+            connection.set("oauth_state_expires_at", "");
+            connection.set("last_error", "");
+            try { app.save(connection); } catch (_) {}
+        }
     }
     var lastError = String(connection.get("last_error") || "");
     return {
@@ -380,12 +403,15 @@ function connect(e) {
 
     var previous = __xiaomiReadJson(__xiaomiStatePath(userId));
     var previousStatus = previous ? String(previous.status || "") : "";
-    var previousUrl = previous ? String(previous.login_url || "") : "";
     var oauthState = String(connection.get("oauth_state") || "");
     var expires = __xiaomiDate(connection.get("oauth_state_expires_at"));
-    var reusable = previousStatus === "awaiting_scan" && previousUrl && oauthState && expires && expires.getTime() > Date.now() + 60000;
+    var reusable = __xiaomiPendingLoginPhase(previousStatus) && oauthState && expires && expires.getTime() > Date.now() + 60000;
 
     if (!reusable) {
+        // A prior failed/restarted flow must not leave several workers racing to
+        // overwrite the same QR state. Stop old workers before creating exactly
+        // one fresh authorization session; the Python bridge also holds a lock.
+        __xiaomiStopLoginWorkers(userId);
         __xiaomiRemove(__xiaomiStatePath(userId));
         oauthState = connection.id + "." + $security.randomStringWithAlphabet(40, "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ");
         connection.set("oauth_state", oauthState);
@@ -410,13 +436,17 @@ function connect(e) {
     }
 
     var stateDoc = __xiaomiReadJson(__xiaomiStatePath(userId));
-    if (!stateDoc || String(stateDoc.status || "") !== "awaiting_scan") {
+    var statePhase = stateDoc ? String(stateDoc.status || "") : "";
+    if (!stateDoc || !__xiaomiPendingLoginPhase(statePhase)) {
         connection.set("status", "error");
         connection.set("last_error", "Xiaomi authorization could not be started");
         e.app.save(connection);
         return e.json(502, { error: "xiaomi_authorization_start_failed" });
     }
 
+    connection.set("status", "connecting");
+    connection.set("last_error", "");
+    e.app.save(connection);
     return e.json(200, {
         authorization_url: __xiaomiPublicBaseUrl() + "/api/sleep-sync/xiaomi/authorize?state=" + encodeURIComponent(oauthState)
     });
@@ -456,6 +486,11 @@ function authorize(e) {
     var doc = __xiaomiReadJson(__xiaomiStatePath(userId)) || {};
     var phase = String(doc.status || "starting");
     if (phase === "error") {
+        connection.set("status", "disconnected");
+        connection.set("oauth_state", "");
+        connection.set("oauth_state_expires_at", "");
+        connection.set("last_error", "");
+        try { e.app.save(connection); } catch (_) {}
         return e.html(500,
             "<!doctype html><meta charset='utf-8'><title>Life OS</title><h1>Xiaomi authorization failed</h1>" +
             "<p>Return to Life OS and turn sleep synchronization on again.</p>"
@@ -463,13 +498,15 @@ function authorize(e) {
     }
     var qr = __xiaomiHtmlEscape(doc.qr_image_url || "");
     var login = __xiaomiHtmlEscape(doc.login_url || "");
-    var content = "<!doctype html><meta charset='utf-8'><meta http-equiv='refresh' content='3'>" +
+    var content = "<!doctype html><meta charset='utf-8'><meta http-equiv='refresh' content='2'>" +
+        "<meta http-equiv='cache-control' content='no-store'><meta http-equiv='pragma' content='no-cache'>" +
         "<meta name='viewport' content='width=device-width,initial-scale=1'><title>Connect Xiaomi to Life OS</title>" +
         "<style>body{font:16px system-ui;max-width:560px;margin:40px auto;padding:0 20px;color:#171717}img{display:block;max-width:280px;width:100%;margin:24px auto;border-radius:16px}a{display:inline-block;padding:12px 18px;border-radius:12px;background:#111;color:#fff;text-decoration:none}p{line-height:1.5;color:#555}</style>" +
-        "<h1>Connect Xiaomi to Life OS</h1><p>Scan the QR code with the Xiaomi Account app. This is required only once.</p>";
-    if (qr) content += "<img src='" + qr + "' alt='Xiaomi login QR'>";
+        "<h1>Connect Xiaomi to Life OS</h1>";
     if (login) content += "<p><a target='_blank' rel='noopener' href='" + login + "'>Open Xiaomi login</a></p>";
-    content += "<p>This page will return to Life OS automatically after authorization.</p>";
+    if (qr) content += "<p>Or scan the current QR with the Xiaomi Account app:</p><img src='" + qr + "' alt='Xiaomi login QR'>";
+    if (!login && !qr) content += "<p>Generating a fresh Xiaomi login…</p>";
+    content += "<p>This page refreshes automatically and will return to Life OS after authorization.</p>";
     return e.html(200, content);
 }
 
@@ -506,6 +543,7 @@ function run(e) {
 
 function remove(e) {
     var connection = __xiaomiConnection(e.app, e.auth.id, false);
+    __xiaomiStopLoginWorkers(e.auth.id);
     __xiaomiRemove(__xiaomiTokenPath(e.auth.id));
     __xiaomiRemove(__xiaomiStatePath(e.auth.id));
     if (connection) e.app.delete(connection);
