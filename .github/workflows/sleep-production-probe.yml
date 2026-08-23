@@ -32,7 +32,7 @@ jobs:
           chmod 600 ~/.ssh/lifeos_pocketbase
           ssh-keyscan -p "$SSH_PORT" -H "$resolved_host" >> ~/.ssh/known_hosts
 
-      - name: Read current Xiaomi sleep state
+      - name: Diagnose current Xiaomi authorization worker
         shell: bash
         run: |
           set -euo pipefail
@@ -42,23 +42,35 @@ jobs:
           [[ -n "$pid" ]]
           app_dir="$(readlink -f "/proc/$pid/cwd")"
           python3 - "$app_dir/pb_data/data.db" "$app_dir/pb_data/xiaomi_sleep" <<'PY'
-          import sqlite3, pathlib, sys
+          import json, pathlib, sqlite3, subprocess, sys, time, urllib.parse
           con=sqlite3.connect(f'file:{sys.argv[1]}?mode=ro', uri=True); con.row_factory=sqlite3.Row
-          r=con.execute("SELECT enabled,status,last_error,last_sync_at,last_session_count,last_imported_count FROM sleep_sync_connections WHERE provider='xiaomi' LIMIT 1").fetchone()
-          tokens=list(pathlib.Path(sys.argv[2]).glob('*.token.json')) if pathlib.Path(sys.argv[2]).exists() else []
+          r=con.execute("SELECT user_id,enabled,status,last_error,oauth_state_expires_at FROM sleep_sync_connections WHERE provider='xiaomi' LIMIT 1").fetchone()
+          data_dir=pathlib.Path(sys.argv[2])
           print('connection='+str(bool(r)).lower())
-          print('authorized='+str(bool(tokens)).lower())
-          if r:
-              print('enabled='+str(bool(r['enabled'])).lower())
-              print('status='+str(r['status'] or ''))
-              print('error_present='+str(bool(r['last_error'])).lower())
-              print('synced='+str(bool(r['last_sync_at'])).lower())
-              print('sessions='+str(r['last_session_count'] or 0))
-              print('imported='+str(r['last_imported_count'] or 0))
+          if not r:
+              raise SystemExit(0)
+          uid=str(r['user_id'])
+          token=data_dir/f'{uid}.token.json'
+          state=data_dir/f'{uid}.state.json'
+          print('authorized='+str(token.exists()).lower())
+          print('enabled='+str(bool(r['enabled'])).lower())
+          print('status='+str(r['status'] or ''))
+          print('error_present='+str(bool(r['last_error'])).lower())
+          workers=subprocess.run(['pgrep','-fc','xiaomi_sleep_bridge.py login'],capture_output=True,text=True).stdout.strip()
+          print('login_workers='+str(workers or '0'))
+          print('state_exists='+str(state.exists()).lower())
+          if state.exists():
+              doc=json.loads(state.read_text())
+              print('state_status='+str(doc.get('status') or ''))
+              print('generation='+str(doc.get('generation') or 0))
+              print('state_age_seconds='+str(max(0,int(time.time()-state.stat().st_mtime))))
+              for key in ('qr_image_url','login_url'):
+                  raw=str(doc.get(key) or '')
+                  host=urllib.parse.urlparse(raw).netloc
+                  print(key+'_present='+str(bool(raw)).lower())
+                  print(key+'_host='+host)
           latest=con.execute("SELECT date(max(end_time)) FROM records WHERE title='Sleep' OR title='Сон'").fetchone()[0]
           print('latest_sleep_day='+str(latest or 'none'))
           con.close()
           PY
           REMOTE
-
-# recheck 2026-08-23T10:29Z
