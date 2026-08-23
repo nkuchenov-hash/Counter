@@ -33,73 +33,37 @@ jobs:
           chmod 600 ~/.ssh/lifeos_pocketbase
           ssh-keyscan -p "$SSH_PORT" -H "$resolved_host" >> ~/.ssh/known_hosts
 
-      - name: Inspect canonical sleep rows
+      - name: Trace device sleep imports
         shell: bash
         run: |
           set -euo pipefail
-          echo diagnostic-version=20260823-2
+          echo diagnostic-version=20260823-device-history
           ssh -i ~/.ssh/lifeos_pocketbase -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" \
             "SERVICE='${POCKETBASE_SERVICE:-pocketbase.service}' bash -s" <<'REMOTE'
           set -euo pipefail
           service="${SERVICE:-pocketbase.service}"
           app_dir="$(systemctl show "$service" -p WorkingDirectory --value)"
           db="$app_dir/pb_data/data.db"
-          test -f "$db"
           DB_PATH="$db" python3 - <<'PY'
           import os, sqlite3
-          from datetime import datetime, timezone, timedelta
-
-          con = sqlite3.connect(f'file:{os.environ["DB_PATH"]}?mode=ro', uri=True)
-          con.row_factory = sqlite3.Row
-          conn_cols = {r['name'] for r in con.execute('PRAGMA table_info(sleep_sync_connections)')}
-          ccols = [c for c in ['provider','user_id','status','enabled','last_sync_at','last_session_count','last_imported_count','last_error'] if c in conn_cols]
-          connections = con.execute('SELECT %s FROM sleep_sync_connections ORDER BY rowid DESC' % ','.join('"%s"'%c for c in ccols)).fetchall() if ccols else []
-          print('CONNECTIONS=%d' % len(connections))
-          target_uid = None
-          for r in connections:
-              if target_uid is None and r['user_id']:
-                  target_uid=str(r['user_id'])
-              parts=[]
-              for c in ccols:
-                  v=r[c]
-                  if c=='user_id' and v: v=str(v)[:4]+'...'
-                  if c=='last_error' and v: v='present'
-                  parts.append('%s=%s'%(c,v))
-              print('CONNECTION '+' '.join(parts))
-
-          rec_cols = {r['name'] for r in con.execute('PRAGMA table_info(records)')}
-          wanted = [c for c in ['user_id','title','start_time','end_time','external_source','sleep_source','external_kind','created','updated'] if c in rec_cols]
-          qcols=','.join('"%s"'%c for c in wanted)
-          cutoff=(datetime.now(timezone.utc)-timedelta(days=30)).isoformat().replace('+00:00','Z')
-          clauses=["lower(trim(title)) IN ('sleep','сон')"]
-          if 'external_kind' in rec_cols: clauses.append("external_kind='sleep'")
-          if 'external_source' in rec_cols: clauses.append("external_source IN ('google_fit','xiaomi','health_connect','apple_health')")
-          if 'sleep_source' in rec_cols: clauses.append("sleep_source IN ('google_fit','xiaomi','health_connect','apple_health')")
-          where=' OR '.join('('+c+')' for c in clauses)
-          params=[]
-          uid_filter=''
-          if target_uid:
-              uid_filter=' AND user_id=?'
-              params.append(target_uid)
-          params.append(cutoff)
-          rows=con.execute(f'''SELECT {qcols} FROM records WHERE ({where}){uid_filter} AND end_time>=? ORDER BY end_time ASC''',params).fetchall()
-          print('ANY_SLEEP_MARKER_RECENT30=%d'%len(rows))
-          if rows: print('LATEST_ANY_SLEEP_DAY='+str(rows[-1]['end_time'])[:10])
-          day_map={}; title_map={}; source_totals={}
+          con=sqlite3.connect(f'file:{os.environ["DB_PATH"]}?mode=ro',uri=True); con.row_factory=sqlite3.Row
+          uid=con.execute("SELECT user_id FROM sleep_sync_connections WHERE provider='google_fit' LIMIT 1").fetchone()[0]
+          cols={r['name'] for r in con.execute('PRAGMA table_info(records)')}
+          extra=',created,updated' if {'created','updated'}.issubset(cols) else ''
+          rows=con.execute(f'''SELECT title,start_time,end_time,external_source,sleep_source{extra} FROM records
+             WHERE user_id=? AND lower(trim(title)) IN ('sleep','сон')
+             ORDER BY end_time ASC''',(uid,)).fetchall()
+          unmarked=[]
           for r in rows:
-              day=str(r['end_time'])[:10]
-              src='unmarked'
-              for c in ('sleep_source','external_source'):
-                  if c in rec_cols and r[c]: src=str(r[c]); break
-              source_totals[src]=source_totals.get(src,0)+1
-              day_map.setdefault(day,{}).setdefault(src,0); day_map[day][src]+=1
-              title=str(r['title'] or '').strip(); title_map[title]=title_map.get(title,0)+1
-          for src,count in sorted(source_totals.items()): print('SOURCE_TOTAL %s=%d'%(src,count))
-          for day in sorted(day_map): print('DAY %s %s'%(day,' '.join('%s=%d'%(k,v) for k,v in sorted(day_map[day].items()))))
-          print('TITLES='+' | '.join('%s:%d'%(k,v) for k,v in sorted(title_map.items())))
-
-          if target_uid:
-              latest=con.execute('SELECT end_time,title FROM records WHERE user_id=? AND end_time IS NOT NULL ORDER BY end_time DESC LIMIT 5',(target_uid,)).fetchall()
-              for r in latest: print('LATEST_RECORD day=%s title=%s'%(str(r['end_time'])[:10],str(r['title'])[:40]))
+              if not (r['external_source'] or r['sleep_source']): unmarked.append(r)
+          print('UNMARKED_SLEEP_COUNT=%d'%len(unmarked))
+          for r in unmarked[-10:]:
+              line='UNMARKED end_day=%s'%str(r['end_time'])[:10]
+              if 'created' in cols: line+=' created_day=%s'%str(r['created'])[:10]
+              if 'updated' in cols: line+=' updated_day=%s'%str(r['updated'])[:10]
+              print(line)
+          latest=rows[-1] if rows else None
+          print('LATEST_SLEEP_DAY='+((str(latest['end_time'])[:10]) if latest else 'none'))
+          con.close()
           PY
           REMOTE
