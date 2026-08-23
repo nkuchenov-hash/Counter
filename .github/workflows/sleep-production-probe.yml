@@ -17,7 +17,6 @@ jobs:
       SSH_USER: ${{ secrets.POCKETBASE_SSH_USER || secrets.VPS_SSH_USER || secrets.SSH_USER }}
       SSH_HOST: ${{ secrets.POCKETBASE_SSH_HOST || secrets.VPS_HOST || secrets.SSH_HOST }}
       SSH_PORT: ${{ secrets.POCKETBASE_SSH_PORT || secrets.VPS_SSH_PORT || '22' }}
-      POCKETBASE_SERVICE: ${{ secrets.POCKETBASE_SERVICE }}
     steps:
       - name: Prepare SSH
         shell: bash
@@ -33,35 +32,26 @@ jobs:
           chmod 600 ~/.ssh/lifeos_pocketbase
           ssh-keyscan -p "$SSH_PORT" -H "$resolved_host" >> ~/.ssh/known_hosts
 
-      - name: Recheck live sleep
+      - name: Inspect Xiaomi sleep SDK contract
         shell: bash
         run: |
           set -euo pipefail
-          echo diagnostic-version=20260823-post-web-fallback
-          ssh -i ~/.ssh/lifeos_pocketbase -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" \
-            "SERVICE='${POCKETBASE_SERVICE:-pocketbase.service}' bash -s" <<'REMOTE'
+          echo diagnostic-version=20260823-xiaomi-sleep-contract
+          ssh -i ~/.ssh/lifeos_pocketbase -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" bash -s <<'REMOTE'
           set -euo pipefail
-          service="${SERVICE:-pocketbase.service}"
-          app_dir="$(systemctl show "$service" -p WorkingDirectory --value)"
-          db="$app_dir/pb_data/data.db"
-          DB_PATH="$db" APP_DIR="$app_dir" python3 - <<'PY'
-          import os, sqlite3
-          from pathlib import Path
-          con=sqlite3.connect(f'file:{os.environ["DB_PATH"]}?mode=ro',uri=True); con.row_factory=sqlite3.Row
-          row=con.execute("SELECT user_id FROM sleep_sync_connections WHERE provider='google_fit' ORDER BY rowid DESC LIMIT 1").fetchone()
-          uid=str(row[0]) if row else ''
-          rows=con.execute("SELECT end_time,created,external_source,sleep_source FROM records WHERE user_id=? AND lower(trim(title)) IN ('sleep','сон') ORDER BY end_time ASC",(uid,)).fetchall() if uid else []
-          print('SLEEP_COUNT=%d'%len(rows))
-          print('LATEST_SLEEP_DAY='+(str(rows[-1]['end_time'])[:10] if rows else 'none'))
-          recent=[r for r in rows if str(r['end_time'])[:10]>='2026-08-19']
-          print('SLEEP_SINCE_2026_08_19=%d'%len(recent))
-          for r in recent[-7:]: print('RECENT end=%s source=%s created=%s'%(r['end_time'],r['sleep_source'] or r['external_source'] or 'unmarked',r['created']))
-          if uid:
-              xdir=Path(os.environ['APP_DIR'])/'pb_data'/'xiaomi_sleep'
-              token=xdir/(uid+'.token.json')
-              print('XIAOMI_TOKEN_EXISTS='+('1' if token.is_file() and token.stat().st_size else '0'))
-              x=con.execute("SELECT status,enabled,last_sync_at,last_session_count,last_imported_count,last_error,oauth_state_expires_at FROM sleep_sync_connections WHERE provider='xiaomi' AND user_id=? ORDER BY rowid DESC LIMIT 1",(uid,)).fetchone()
-              if x: print('XIAOMI status=%s enabled=%s last_sync=%s sessions=%s imported=%s error=%s expires=%s'%(x['status'],x['enabled'],x['last_sync_at'],x['last_session_count'],x['last_imported_count'],'present' if x['last_error'] else 'none',x['oauth_state_expires_at']))
-          con.close()
+          /opt/lifeos-xiaomi-sleep/bin/python - <<'PY'
+          import inspect
+          from mi_fitness import MiHealthClient
+          print('GET_SLEEP_SIGNATURE='+str(inspect.signature(MiHealthClient.get_sleep)))
+          print('GET_SLEEP_SOURCE_BEGIN')
+          print(inspect.getsource(MiHealthClient.get_sleep))
+          print('GET_SLEEP_SOURCE_END')
+          fn=MiHealthClient.get_sleep
+          for name,obj in sorted(fn.__globals__.items()):
+              if name.lower().startswith('sleep') and inspect.isclass(obj):
+                  print('MODEL_'+name+'_BEGIN')
+                  try: print(inspect.getsource(obj))
+                  except Exception: print(str(getattr(obj,'__annotations__',{})))
+                  print('MODEL_'+name+'_END')
           PY
           REMOTE
