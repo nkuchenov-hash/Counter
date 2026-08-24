@@ -1,0 +1,44 @@
+name: One-shot regenerate structure detail
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'pb_migrations/**'
+
+permissions:
+  contents: write
+  pull-requests: read
+
+jobs:
+  regenerate:
+    if: github.event.pull_request.number == 180
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout PR head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+
+      - name: Regenerate detailed structure from tracked tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$(git log -1 --pretty=%s)" == "Regenerate detailed structure for deployment" ]]; then
+            echo "Already regenerated on this PR head."
+            exit 0
+          fi
+          python scripts/manual/generate_app_structure_detailed.py
+          python scripts/audit/documentation_parity.py
+          git diff --check
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add docs/APP_STRUCTURE_DETAILED.md
+          if git diff --cached --quiet; then
+            echo "Detailed structure already current."
+            exit 0
+          fi
+          git commit -m 'Regenerate detailed structure for deployment'
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
