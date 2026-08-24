@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:counter/core/app_snackbar.dart';
 import 'package:counter/core/picker_entry_modes.dart';
 import 'package:counter/core/widgets/app_button.dart';
 import 'package:counter/data/database_service.dart';
@@ -37,8 +36,10 @@ extension PlanningTimeViewTimeViewSearchDelegate on PlanningTimeViewCoordinator 
     var useProfileTz = db.usesProfileDefaultPlanTimezone(rule?.defaultPlanTimezone);
     var fixedIana = db.sanitizeDefaultPlanTimezone(rule?.defaultPlanTimezone) ??
         tz_settings.kCategoryDefaultTimezoneOptions.first.ianaId;
+    var saveInFlight = false;
+    String? saveError;
 
-    final saved = await showModalBottomSheet<bool>(
+    await showModalBottomSheet<void>(
       context: host.context,
       showDragHandle: true,
       isScrollControlled: true,
@@ -72,15 +73,18 @@ extension PlanningTimeViewTimeViewSearchDelegate on PlanningTimeViewCoordinator 
                       title: Text(t(loc, 'plan_default_time_field_time')),
                       subtitle: Text(timeLabel),
                       trailing: const Icon(Icons.schedule_rounded),
-                      onTap: () async {
-                        final picked = await showTimePicker(
-                          context: host.context,
-                          initialTime: pickedTime,
-                          initialEntryMode: appTimePickerEntryModeFromContext(host.context),
-                        );
-                        if (picked == null) return;
-                        setSheetState(() => pickedTime = picked);
-                      },
+                      onTap: saveInFlight
+                          ? null
+                          : () async {
+                              final picked = await showTimePicker(
+                                context: host.context,
+                                initialTime: pickedTime,
+                                initialEntryMode:
+                                    appTimePickerEntryModeFromContext(host.context),
+                              );
+                              if (picked == null || !context.mounted) return;
+                              setSheetState(() => pickedTime = picked);
+                            },
                     ),
                     Text(
                       t(loc, 'plan_default_time_field_timezone'),
@@ -102,24 +106,29 @@ extension PlanningTimeViewTimeViewSearchDelegate on PlanningTimeViewCoordinator 
                         ),
                       ],
                       selected: {useProfileTz},
-                      onSelectionChanged: (s) {
-                        setSheetState(() => useProfileTz = s.first);
-                      },
+                      onSelectionChanged: saveInFlight
+                          ? null
+                          : (s) {
+                              setSheetState(() => useProfileTz = s.first);
+                            },
                     ),
                     if (!useProfileTz) ...[
                       const SizedBox(height: 8),
                       OutlinedButton.icon(
-                        onPressed: () async {
-                          final picked = await showSearch<String?>(
-                            context: host.context,
-                            delegate: DefaultPlanTimezoneSearchDelegate(
-                              loc: loc,
-                              options: tz_settings.kCategoryDefaultTimezoneOptions,
-                            ),
-                          );
-                          if (picked == null) return;
-                          setSheetState(() => fixedIana = picked);
-                        },
+                        onPressed: saveInFlight
+                            ? null
+                            : () async {
+                                final picked = await showSearch<String?>(
+                                  context: host.context,
+                                  delegate: DefaultPlanTimezoneSearchDelegate(
+                                    loc: loc,
+                                    options:
+                                        tz_settings.kCategoryDefaultTimezoneOptions,
+                                  ),
+                                );
+                                if (picked == null || !context.mounted) return;
+                                setSheetState(() => fixedIana = picked);
+                              },
                         icon: const Icon(Icons.public_rounded),
                         label: Align(
                           alignment: AlignmentDirectional.centerStart,
@@ -129,10 +138,51 @@ extension PlanningTimeViewTimeViewSearchDelegate on PlanningTimeViewCoordinator 
                         ),
                       ),
                     ],
+                    if (saveError != null) ...[
+                      const SizedBox(height: 12),
+                      Text(
+                        saveError!,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: Theme.of(context).colorScheme.error,
+                              fontWeight: FontWeight.w600,
+                            ),
+                      ),
+                    ],
                     const SizedBox(height: 16),
                     AppButton.primary(
                       label: t(loc, 'save'),
-                      onPressed: () => Navigator.pop(context, true),
+                      onPressed: saveInFlight
+                          ? null
+                          : () {
+                              unawaited(() async {
+                                setSheetState(() {
+                                  saveInFlight = true;
+                                  saveError = null;
+                                });
+                                final result =
+                                    await db.updateCategoryDefaultPlanSchedule(
+                                  categoryId,
+                                  hhmmFromTimeOfDay(pickedTime),
+                                  useProfileTz ? null : fixedIana,
+                                );
+                                if (!context.mounted) return;
+                                if (!result.ok) {
+                                  final message = result.timezoneFieldMissing
+                                      ? t(loc, 'plan_default_timezone_field_missing')
+                                      : t(loc, 'toast_error');
+                                  setSheetState(() {
+                                    saveInFlight = false;
+                                    saveError = message;
+                                  });
+                                  return;
+                                }
+                                if (host.mounted) {
+                                  host.notifySetState(() {});
+                                  modalSetState?.call(() {});
+                                }
+                                Navigator.of(context).pop();
+                              }());
+                            },
                     ),
                   ],
                 ),
@@ -142,28 +192,6 @@ extension PlanningTimeViewTimeViewSearchDelegate on PlanningTimeViewCoordinator 
         );
       },
     );
-    if (saved != true || !host.mounted) return;
-
-    final result = await db.updateCategoryDefaultPlanSchedule(
-      categoryId,
-      hhmmFromTimeOfDay(pickedTime),
-      useProfileTz ? null : fixedIana,
-    );
-    if (!host.mounted) return;
-    if (!result.ok) {
-      if (result.timezoneFieldMissing) {
-        ScaffoldMessenger.of(host.context).showSnackBar(
-          SnackBar(
-            content: Text(t(loc, 'plan_default_timezone_field_missing')),
-          ),
-        );
-      } else {
-        AppSnack.failed();
-      }
-      return;
-    }
-    host.notifySetState(() {});
-    modalSetState?.call(() {});
   }
 
   Future<void> setCategoryDefaultPlanTime(
@@ -184,15 +212,24 @@ extension PlanningTimeViewTimeViewSearchDelegate on PlanningTimeViewCoordinator 
     );
     if (!host.mounted) return;
     if (!result.ok) {
-      if (result.timezoneFieldMissing) {
-        ScaffoldMessenger.of(host.context).showSnackBar(
-          SnackBar(
-            content: Text(t(currentLocale.value, 'plan_default_timezone_field_missing')),
-          ),
-        );
-      } else {
-        AppSnack.failed();
-      }
+      final loc = currentLocale.value;
+      final message = result.timezoneFieldMissing
+          ? t(loc, 'plan_default_timezone_field_missing')
+          : t(loc, 'toast_error');
+      await showDialog<void>(
+        context: host.context,
+        useRootNavigator: true,
+        builder: (dialogContext) => AlertDialog(
+          title: Text(t(loc, 'toast_error')),
+          content: Text(message),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: Text(MaterialLocalizations.of(dialogContext).okButtonLabel),
+            ),
+          ],
+        ),
+      );
       return;
     }
     host.notifySetState(() {});
