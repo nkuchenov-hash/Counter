@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `59d794f1` on 2026-08-19.**
+**Generated from input HEAD `f2936c55` on 2026-08-24.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 838 — each appears **exactly once** below.
+**Tracked files:** 841 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -31,19 +31,19 @@ python scripts/manual/generate_app_structure_detailed.py
 | `Brain/data` | 87 |
 | `platform build` | 83 |
 | `shared foundation` | 64 |
-| `developer tool` | 57 |
+| `developer tool` | 58 |
 | `platform resource` | 44 |
 | `Desktop Voice runtime` | 36 |
 | `governing documentation` | 35 |
 | `shared Voice system` | 22 |
 | `test fixture` | 22 |
 | `historical engineering record` | 16 |
+| `PocketBase backend` | 15 |
+| `PocketBase migration` | 14 |
 | `localization` | 13 |
-| `PocketBase backend` | 12 |
 | `installer` | 12 |
 | `Brain Voice` | 10 |
-| `PocketBase migration` | 9 |
-| `CI/deployment` | 8 |
+| `CI/deployment` | 10 |
 | `shared time` | 7 |
 | `package metadata` | 6 |
 | `shared diagnostics` | 6 |
@@ -56,8 +56,8 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 456 |
-| `REQUIRED_FOR_TEST_OR_TOOLING` | 195 |
+| `PROVEN_REQUIRED` | 465 |
+| `REQUIRED_FOR_TEST_OR_TOOLING` | 197 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
 | `GOVERNING_DOCUMENTATION` | 35 |
 | `HISTORICAL_RECORD` | 16 |
@@ -67,8 +67,8 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 770 |
-| `MEDIUM` | 60 |
+| `HIGH` | 779 |
+| `MEDIUM` | 62 |
 
 ---
 
@@ -4597,6 +4597,80 @@ RU:
 - **Связано с:** `.github/`, Flutter tooling.
 
 
+### `.github/workflows/install-xiaomi-sleep-runtime.yml`
+
+EN:
+
+- **Human purpose:** GitHub Actions workflow `.github/workflows/install-xiaomi-sleep-runtime.yml` defines the repository automation named by this workflow file. The CI system loads `.github/workflows/install-xiaomi-sleep-runtime.yml` to run its declared triggers, permissions, jobs, and checks.
+- **What this is:** GitHub Actions workflow `.github/workflows/install-xiaomi-sleep-runtime.yml` defines the repository automation named by this workflow file.
+- **Why needed:** The CI system loads `.github/workflows/install-xiaomi-sleep-runtime.yml` to run its declared triggers, permissions, jobs, and checks.
+- **Contents:** YAML workflow definition specific to `install-xiaomi-sleep-runtime.yml`.
+- **Repository role:** CI/deployment
+- **Evidence of use:** GitHub Actions discovers workflows under `.github/workflows/`; see `docs/DEPLOY.md` for publish/build intent.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Broken CI deploy or Windows installer pipeline.
+- **Confidence:** HIGH
+- **Owner / layer:** CI
+- **Responsibilities:** Own the GitHub Actions behavior declared by `install-xiaomi-sleep-runtime.yml`.
+- **When to open:** When behavior tied to `install-xiaomi-sleep-runtime.yml` breaks or you need to change its documented role.
+- **Can it be deleted?** Broken CI deploy or Windows installer pipeline.
+- **Connected to:** Flutter `.github` tooling.
+
+RU:
+
+- **Зачем файл человеку:** Автоматизация GitHub Actions `install-xiaomi-sleep-runtime.yml` для CI и операций репозитория. GitHub Actions читает `install-xiaomi-sleep-runtime.yml` и запускает описанные в нём события, проверки и служебные шаги.
+- **Что это:** Автоматизация GitHub Actions `install-xiaomi-sleep-runtime.yml` для CI и операций репозитория.
+- **Зачем:** GitHub Actions читает `install-xiaomi-sleep-runtime.yml` и запускает описанные в нём события, проверки и служебные шаги.
+- **Содержимое:** YAML-триггеры, permissions и шаги CI, относящиеся к workflow `install-xiaomi-sleep-runtime.yml`.
+- **Роль в репозитории:** CI/deployment
+- **Доказательства использования:** GitHub Actions подхватывает workflow из `.github/workflows/`; см. `docs/DEPLOY.md`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Сломается CI deploy или сборка Windows installer.
+- **Уверенность:** HIGH
+- **Владелец / слой:** CI
+- **Обязанности:** Управляет CI-сценарием `install-xiaomi-sleep-runtime.yml` и его границами выполнения.
+- **Когда открывать:** Когда ломается поведение, связанное с `install-xiaomi-sleep-runtime.yml`.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `.github/`, Flutter tooling.
+
+
+### `.github/workflows/tmp-regenerate-google-health-structure.yml`
+
+EN:
+
+- **Human purpose:** GitHub Actions workflow `.github/workflows/tmp-regenerate-google-health-structure.yml` defines the repository automation named by this workflow file. The CI system loads `.github/workflows/tmp-regenerate-google-health-structure.yml` to run its declared triggers, permissions, jobs, and checks.
+- **What this is:** GitHub Actions workflow `.github/workflows/tmp-regenerate-google-health-structure.yml` defines the repository automation named by this workflow file.
+- **Why needed:** The CI system loads `.github/workflows/tmp-regenerate-google-health-structure.yml` to run its declared triggers, permissions, jobs, and checks.
+- **Contents:** YAML workflow definition specific to `tmp-regenerate-google-health-structure.yml`.
+- **Repository role:** CI/deployment
+- **Evidence of use:** GitHub Actions discovers workflows under `.github/workflows/`; see `docs/DEPLOY.md` for publish/build intent.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Broken CI deploy or Windows installer pipeline.
+- **Confidence:** HIGH
+- **Owner / layer:** CI
+- **Responsibilities:** Own the GitHub Actions behavior declared by `tmp-regenerate-google-health-structure.yml`.
+- **When to open:** When behavior tied to `tmp-regenerate-google-health-structure.yml` breaks or you need to change its documented role.
+- **Can it be deleted?** Broken CI deploy or Windows installer pipeline.
+- **Connected to:** Flutter `.github` tooling.
+
+RU:
+
+- **Зачем файл человеку:** Автоматизация GitHub Actions `tmp-regenerate-google-health-structure.yml` для CI и операций репозитория. GitHub Actions читает `tmp-regenerate-google-health-structure.yml` и запускает описанные в нём события, проверки и служебные шаги.
+- **Что это:** Автоматизация GitHub Actions `tmp-regenerate-google-health-structure.yml` для CI и операций репозитория.
+- **Зачем:** GitHub Actions читает `tmp-regenerate-google-health-structure.yml` и запускает описанные в нём события, проверки и служебные шаги.
+- **Содержимое:** YAML-триггеры, permissions и шаги CI, относящиеся к workflow `tmp-regenerate-google-health-structure.yml`.
+- **Роль в репозитории:** CI/deployment
+- **Доказательства использования:** GitHub Actions подхватывает workflow из `.github/workflows/`; см. `docs/DEPLOY.md`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Сломается CI deploy или сборка Windows installer.
+- **Уверенность:** HIGH
+- **Владелец / слой:** CI
+- **Обязанности:** Управляет CI-сценарием `tmp-regenerate-google-health-structure.yml` и его границами выполнения.
+- **Когда открывать:** Когда ломается поведение, связанное с `tmp-regenerate-google-health-structure.yml`.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `.github/`, Flutter tooling.
+
+
 ### `.github/workflows/windows-desktop-build.yml`
 
 EN:
@@ -4854,6 +4928,43 @@ RU:
 - **Когда открывать:** Обновление публичного описания на GitHub.
 - **Можно удалить?** Нет — конфигурация/инструмент репозитория.
 - **Связано с:** GitHub; законы проекта — в `docs/`.
+
+
+### `_tmp_sleep_cloud_result.txt`
+
+EN:
+
+- **Human purpose:** txt file `_tmp_sleep_cloud_result.txt` in `.` — repo tooling or config. Tracked because `.` needs `_tmp_sleep_cloud_result.txt` for build, CI, or maintenance.
+- **What this is:** txt file `_tmp_sleep_cloud_result.txt` in `.` — repo tooling or config.
+- **Why needed:** Tracked because `.` needs `_tmp_sleep_cloud_result.txt` for build, CI, or maintenance.
+- **Contents:** Open `_tmp_sleep_cloud_result.txt` when working on `.` (see folder section above).
+- **Repository role:** developer tool
+- **Evidence of use:** Referenced by: `.github/workflows/deploy-pocketbase.yml`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** May break tooling or configuration; verify before delete.
+- **Confidence:** MEDIUM
+- **Owner / layer:** repository root
+- **Responsibilities:** Supports `.` workflow for `_tmp_sleep_cloud_result.txt`.
+- **When to open:** When build output or maintenance cites `_tmp_sleep_cloud_result.txt`.
+- **Can it be deleted?** No — part of repository tooling or config.
+- **Connected to:** `./`, `docs/APP_STRUCTURE.md`.
+
+RU:
+
+- **Зачем файл человеку:** `_tmp_sleep_cloud_result.txt` — отслеживаемый ресурс области `.` с отдельной ролью. Поддерживает процесс, сборку, данные или runtime-задачу области `.` для `_tmp_sleep_cloud_result.txt`.
+- **Что это:** `_tmp_sleep_cloud_result.txt` — отслеживаемый ресурс области `.` с отдельной ролью.
+- **Зачем:** Поддерживает процесс, сборку, данные или runtime-задачу области `.` для `_tmp_sleep_cloud_result.txt`.
+- **Содержимое:** Данные или код `_tmp_sleep_cloud_result.txt`, необходимые его подтверждённой роли и указанным ниже связям.
+- **Роль в репозитории:** developer tool
+- **Доказательства использования:** Упоминается в: `.github/workflows/deploy-pocketbase.yml`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Может сломать tooling; проверять перед удалением.
+- **Уверенность:** MEDIUM
+- **Владелец / слой:** корень репозитория
+- **Обязанности:** Реализует назначение `_tmp_sleep_cloud_result.txt` для области `.`.
+- **Когда открывать:** When результат сборки or maintenance cites `_tmp_sleep_cloud_result.txt`.
+- **Можно удалить?** Нет — конфигурация/инструмент репозитория.
+- **Связано с:** `./`, `docs/APP_STRUCTURE.md`.
 
 
 ### `analysis_options.yaml`
@@ -9904,14 +10015,14 @@ EN:
 - **Contents:** Shell mixin or widget (`OfflineSyncStatusBar`, `_OfflineSyncStatusBarState`).
 - **Key code names:** `OfflineSyncStatusBar`, `_OfflineSyncStatusBarState`
 - **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/shared/shell_top_status_bars.dart`.
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
-- **Confidence:** HIGH
+- **Evidence of use:** Mentioned by tracked docs/scripts: `AGENTS.md`, `AGENT_NAVIGATION.md`, `docs/APP_STRUCTURE.md`, `docs/ARCHITECTURE.md`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Removing it breaks a required repository capability.
+- **Confidence:** MEDIUM
 - **Owner / layer:** app shell
 - **Responsibilities:** O1 offline/sync tap-to-retry status bar
 - **When to open:** Bottom tabs, voice routing, edit modal host, offline banner slot.
-- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Can it be deleted?** Removing it breaks a required repository capability.
 - **Connected to:** All main tabs, `app_shell.dart`; APP_STRUCTURE role: O1 offline/sync tap-to-retry status bar
 
 RU:
@@ -9921,10 +10032,10 @@ RU:
 - **Зачем:** Связывает вкладки, voice, edit sheets и offline banner.
 - **Содержимое:** Shell mixin или виджет (logic in `offline_sync_status_bar`).
 - **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/shared/shell_top_status_bars.dart`.
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
-- **Уверенность:** HIGH
+- **Доказательства использования:** Упоминается в docs/scripts: `AGENTS.md`, `AGENT_NAVIGATION.md`, `docs/APP_STRUCTURE.md`, `docs/ARCHITECTURE.md`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Удаление ломает нужную возможность репозитория.
+- **Уверенность:** MEDIUM
 - **Владелец / слой:** оболочка приложения
 - **Обязанности:** Реализует в shell: O1 offline/sync tap-to-retry status bar.
 - **Когда открывать:** Навигация, voice, edit host.
@@ -13193,7 +13304,7 @@ EN:
 - **Contents:** Coordinator extensions plus links to `part` files under `health_sleep_syncs/` or `health_sleep_sync/`.
 - **Key code names:** `SleepSyncSourceTransport`, `HealthSleepSyncPhase`, `HealthSleepSyncState`, `HealthSleepSyncService`
 - **Repository role:** Brain/data
-- **Evidence of use:** Imported/exported by production Dart: `lib/data/health/sleep_foreground_reconcile_service.dart`, `lib/features/settings/health/health_connect_settings_section.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/data/health/sleep_foreground_reconcile_service.dart`, `lib/features/settings/health/health_connect_settings_section.dart`, `lib/main.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -13210,7 +13321,7 @@ RU:
 - **Зачем:** UI вызывает один вход; детали — в модулях subfolder.
 - **Содержимое:** Extensions + `part` файлы для health_sleep_sync.
 - **Роль в репозитории:** Brain/data
-- **Доказательства использования:** Импортируется production Dart: `lib/data/health/sleep_foreground_reconcile_service.dart`, `lib/features/settings/health/health_connect_settings_section.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/data/health/sleep_foreground_reconcile_service.dart`, `lib/features/settings/health/health_connect_settings_section.dart`, `lib/main.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -17019,8 +17130,8 @@ EN:
 - **Human purpose:** `note_editor_page.dart` on notes area — Full-screen block editor (primary Notes editing experience). Users see `note_editor_page.dart` when using notes area.
 - **What this is:** `note_editor_page.dart` on notes area — Full-screen block editor (primary Notes editing experience).
 - **Why needed:** Users see `note_editor_page.dart` when using notes area.
-- **Contents:** Primary symbols: `_NotesStructuredClipboard`, `NoteEditorPage`, `_NoteEditorPageState`.
-- **Key code names:** `_NotesStructuredClipboard`, `NoteEditorPage`, `_NoteEditorPageState`
+- **Contents:** Primary symbols: `_NotesStructuredClipboard`, `_NotesStructuredCopyAction`, `NoteEditorPage`, `_NoteEditorPageState`.
+- **Key code names:** `_NotesStructuredClipboard`, `_NotesStructuredCopyAction`, `NoteEditorPage`, `_NoteEditorPageState`
 - **Repository role:** production UI
 - **Evidence of use:** Imported/exported by production Dart: `lib/features/lists/lists_view.dart`, `lib/features/notes/widgets/notes_library_body.dart`.
 - **Necessity status:** PROVEN_REQUIRED
@@ -17171,8 +17282,8 @@ EN:
 - **Human purpose:** `notes_glm_surface.dart` on notes area — GLM background + centered library/editor column frames. Users see `notes_glm_surface.dart` when using notes area.
 - **What this is:** `notes_glm_surface.dart` on notes area — GLM background + centered library/editor column frames.
 - **Why needed:** Users see `notes_glm_surface.dart` when using notes area.
-- **Contents:** Primary symbols: `NotesGlmBackground`, `NotesGlmLibraryFrame`, `NotesGlmEditorFrame`.
-- **Key code names:** `NotesGlmBackground`, `NotesGlmLibraryFrame`, `NotesGlmEditorFrame`
+- **Contents:** Primary symbols: `NotesGlmBackground`, `NotesGlmLibraryFrame`, `NotesGlmEditorFrame`, `NotesGlmLibraryInput`, `_NotesGlmLibraryInputState`.
+- **Key code names:** `NotesGlmBackground`, `NotesGlmLibraryFrame`, `NotesGlmEditorFrame`, `NotesGlmLibraryInput`, `_NotesGlmLibraryInputState`
 - **Repository role:** production UI
 - **Evidence of use:** Imported/exported by production Dart: `lib/features/lists/lists_card.dart`, `lib/features/lists/lists_filters.dart`, `lib/features/lists/lists_view.dart`, `lib/features/notes/widgets/note_card.dart`, `lib/features/notes/widgets/notes_library_production_shell.dart`.
 - **Necessity status:** PROVEN_REQUIRED
@@ -17512,8 +17623,8 @@ EN:
 - **Human purpose:** `notes_component_tools.dart` on notes area — Canonical toolbar button/toolbar plus heading, formatting, and insert menu surfaces. Users see `notes_component_tools.dart` when using notes area.
 - **What this is:** `notes_component_tools.dart` on notes area — Canonical toolbar button/toolbar plus heading, formatting, and insert menu surfaces.
 - **Why needed:** Users see `notes_component_tools.dart` when using notes area.
-- **Contents:** Primary symbols: `NotesToolbarAction`, `NotesToolbarButton`, `NotesEditorToolbar`, `NotesFloatingMenuSurface`, `NotesHeadingStylesMenu`, `NotesTextFormattingMenu`.
-- **Key code names:** `NotesToolbarAction`, `NotesToolbarButton`, `NotesEditorToolbar`, `NotesFloatingMenuSurface`, `NotesHeadingStylesMenu`, `NotesTextFormattingMenu`, `NotesInsertMenuAction`, `NotesInsertMenu`, `_NotesMenuRow`
+- **Contents:** Primary symbols: `NotesToolbarMenuItem`, `NotesToolbarAction`, `NotesToolbarButton`, `_NotesToolbarMenuButton`, `_NotesToolbarMenuButtonState`, `_NotesCompactToolbarMenu`.
+- **Key code names:** `NotesToolbarMenuItem`, `NotesToolbarAction`, `NotesToolbarButton`, `_NotesToolbarMenuButton`, `_NotesToolbarMenuButtonState`, `_NotesCompactToolbarMenu`, `NotesEditorToolbar`
 - **Repository role:** production UI
 - **Evidence of use:** Included by `lib/features/notes/widgets/notes_canonical_components.dart` through a `part` directive (not imported directly).
 - **Necessity status:** PROVEN_REQUIRED
@@ -17551,7 +17662,7 @@ EN:
 - **What this is:** `notes_editor_screen.dart` on notes area — Shared responsive Figma production screen shell for mobile/web/desktop: header, title/meta, visible document viewport, desktop glass surface, pinned finite toolbar.
 - **Why needed:** Users see `notes_editor_screen.dart` when using notes area.
 - **Contents:** Primary symbols: `NotesEditorMetadataTag`, `NotesEmbeddedEditorScope`, `NotesEditorScreen`, `_NotesEditorRail`, `_NotesEditorSurface`, `_NotesNavigationHeader`.
-- **Key code names:** `NotesEditorMetadataTag`, `NotesEmbeddedEditorScope`, `NotesEditorScreen`, `_NotesEditorRail`, `_NotesEditorSurface`, `_NotesNavigationHeader`, `_NotesBackAction`, `_NotesHeaderAction`
+- **Key code names:** `NotesEditorMetadataTag`, `NotesEmbeddedEditorScope`, `NotesEditorScreen`, `_NotesEditorRail`, `_NotesEditorSurface`, `_NotesNavigationHeader`, `_NotesBulkDoneAction`, `_NotesHeaderMenuAction`, `_NotesHeaderMo`
 - **Repository role:** production UI
 - **Evidence of use:** Imported/exported by production Dart: `lib/features/notes/note_editor_page.dart`, `lib/features/notes/widgets/notes_library_body.dart`.
 - **Necessity status:** PROVEN_REQUIRED
@@ -17588,8 +17699,8 @@ EN:
 - **Human purpose:** `notes_editor_tools.dart` on notes area — Contextual primary toolbar, Aa formatting panel, Insert panel, table/link dialogs. Users see `notes_editor_tools.dart` when using notes area.
 - **What this is:** `notes_editor_tools.dart` on notes area — Contextual primary toolbar, Aa formatting panel, Insert panel, table/link dialogs.
 - **Why needed:** Users see `notes_editor_tools.dart` when using notes area.
-- **Contents:** Primary symbols: `NotesTableEditCommand`, `NotesLinkDialogResult`, `NotesEditorToolbarHost`.
-- **Key code names:** `NotesTableEditCommand`, `NotesLinkDialogResult`, `NotesEditorToolbarHost`
+- **Contents:** Primary symbols: `NotesTableEditCommand`, `NotesLinkDialogResult`, `NotesEditorToolbarHost`, `_NotesEditorToolbarHostState`.
+- **Key code names:** `NotesTableEditCommand`, `NotesLinkDialogResult`, `NotesEditorToolbarHost`, `_NotesEditorToolbarHostState`
 - **Repository role:** production UI
 - **Evidence of use:** Imported/exported by production Dart: `lib/features/notes/note_editor_page.dart`, `lib/features/notes/notes_editor_document_controller.dart`.
 - **Necessity status:** PROVEN_REQUIRED
@@ -22611,9 +22722,9 @@ EN:
 - **What this is:** Tracked repository item `lib/shared/categories/picker/category_tree_picker.dart` with role `developer tool`.
 - **Why needed:** `lib/shared/categories/picker/category_tree_picker.dart` supports its recorded owner `Shared Categories` according to the evidence index.
 - **Contents:** Path-specific code, data, configuration, or documentation for `lib/shared/categories/picker/category_tree_picker.dart`.
-- **Key code names:** `_CategoryTreePickerSheet`, `_CategoryTreePickerSheetState`, `CategoryTreeFormField`
+- **Key code names:** `_CategoryTreePickerSheet`, `_CategoryTreePickerSheetState`, `_CategoryTreeMultiPickerSheet`, `_CategoryTreeMultiPickerSheetState`
 - **Repository role:** developer tool
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/lists/category_filter_tree_field.dart`, `lib/features/shared/planning_task_edit_sheet.dart`, `lib/features/shared/timeline_record_edit_sheet.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/lists/category_filter_tree_field.dart`, `lib/features/lists/lists_filters.dart`, `lib/features/shared/planning_task_edit_sheet.dart`, `lib/features/shared/timeline_record_edit_sheet.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -22630,7 +22741,7 @@ RU:
 - **Зачем:** Поддерживает процесс, сборку, данные или runtime-задачу области `lib/shared/categories/picker` для `category_tree_picker.dart`.
 - **Содержимое:** Данные или код `category_tree_picker.dart`, необходимые его подтверждённой роли и указанным ниже связям.
 - **Роль в репозитории:** developer tool
-- **Доказательства использования:** Импортируется production Dart: `lib/features/lists/category_filter_tree_field.dart`, `lib/features/shared/planning_task_edit_sheet.dart`, `lib/features/shared/timeline_record_edit_sheet.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/features/lists/category_filter_tree_field.dart`, `lib/features/lists/lists_filters.dart`, `lib/features/shared/planning_task_edit_sheet.dart`, `lib/features/shared/timeline_record_edit_sheet.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -27332,6 +27443,43 @@ RU:
 - **Связано с:** `pb_hooks/`, Flutter embedder.
 
 
+### `pb_hooks/google_health_sleep_runtime.js`
+
+EN:
+
+- **Human purpose:** pb_hooks build file `google_health_sleep_runtime.js` in `pb_hooks` — required by Flutter/native toolchain. Without `google_health_sleep_runtime.js`, pb_hooks compile or packaging step for this folder may fail.
+- **What this is:** pb_hooks build file `google_health_sleep_runtime.js` in `pb_hooks` — required by Flutter/native toolchain.
+- **Why needed:** Without `google_health_sleep_runtime.js`, pb_hooks compile or packaging step for this folder may fail.
+- **Contents:** Native/config source for `pb_hooks` (open file only when build errors cite it).
+- **Repository role:** PocketBase backend
+- **Evidence of use:** Server-side PocketBase hook; deployed with the PB instance (see `docs/POCKETBASE_MANIFEST.md`).
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Broken server-side validation/automation for PB collections.
+- **Confidence:** HIGH
+- **Owner / layer:** PocketBase backend
+- **Responsibilities:** Support pb_hooks embedder build for `pb_hooks` — not Dart business logic.
+- **When to open:** Build log mentions `google_health_sleep_runtime.js` or `pb_hooks`.
+- **Can it be deleted?** Broken server-side validation/automation for PB collections.
+- **Connected to:** `pb_hooks/` platform folder, Flutter embedder.
+
+RU:
+
+- **Зачем файл человеку:** Platform file `google_health_sleep_runtime.js` в `pb_hooks` — читает Flutter platform tool при сборке pb_hooks build. Без этого файла Flutter platform tool может не собрать или упаковать pb_hooks build.
+- **Что это:** Platform file `google_health_sleep_runtime.js` в `pb_hooks` — читает Flutter platform tool при сборке pb_hooks build.
+- **Зачем:** Без этого файла Flutter platform tool может не собрать или упаковать pb_hooks build.
+- **Содержимое:** Содержимое native/config слоя `pb_hooks` (смотреть файл при build errors).
+- **Роль в репозитории:** PocketBase backend
+- **Доказательства использования:** Серверный hook PocketBase; деплоится вместе с PB (см. `docs/POCKETBASE_MANIFEST.md`).
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Сломается серверная логика PocketBase.
+- **Уверенность:** HIGH
+- **Владелец / слой:** PocketBase backend
+- **Обязанности:** Участвует в Flutter platform tool pipeline для pb_hooks build — не Dart business logic.
+- **Когда открывать:** Build log pb_hooks ссылается на `google_health_sleep_runtime.js` или `pb_hooks`.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `pb_hooks/`, Flutter embedder.
+
+
 ### `pb_hooks/records.interval_sanitize.pb.js`
 
 EN:
@@ -27441,6 +27589,80 @@ RU:
 - **Когда открывать:** Поведение auth/records на сервере не совпадает с ожиданиями приложения.
 - **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
 - **Связано с:** PocketBase Admin, Flutter auth/records client.
+
+
+### `pb_hooks/xiaomi_sleep_bridge.py`
+
+EN:
+
+- **Human purpose:** pb_hooks build file `xiaomi_sleep_bridge.py` in `pb_hooks` — required by Flutter/native toolchain. Without `xiaomi_sleep_bridge.py`, pb_hooks compile or packaging step for this folder may fail.
+- **What this is:** pb_hooks build file `xiaomi_sleep_bridge.py` in `pb_hooks` — required by Flutter/native toolchain.
+- **Why needed:** Without `xiaomi_sleep_bridge.py`, pb_hooks compile or packaging step for this folder may fail.
+- **Contents:** Native/config source for `pb_hooks` (open file only when build errors cite it).
+- **Repository role:** PocketBase backend
+- **Evidence of use:** Server-side PocketBase hook; deployed with the PB instance (see `docs/POCKETBASE_MANIFEST.md`).
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Broken server-side validation/automation for PB collections.
+- **Confidence:** HIGH
+- **Owner / layer:** PocketBase backend
+- **Responsibilities:** Support pb_hooks embedder build for `pb_hooks` — not Dart business logic.
+- **When to open:** Build log mentions `xiaomi_sleep_bridge.py` or `pb_hooks`.
+- **Can it be deleted?** Broken server-side validation/automation for PB collections.
+- **Connected to:** `pb_hooks/` platform folder, Flutter embedder.
+
+RU:
+
+- **Зачем файл человеку:** Platform file `xiaomi_sleep_bridge.py` в `pb_hooks` — читает Flutter platform tool при сборке pb_hooks build. Без этого файла Flutter platform tool может не собрать или упаковать pb_hooks build.
+- **Что это:** Platform file `xiaomi_sleep_bridge.py` в `pb_hooks` — читает Flutter platform tool при сборке pb_hooks build.
+- **Зачем:** Без этого файла Flutter platform tool может не собрать или упаковать pb_hooks build.
+- **Содержимое:** Содержимое native/config слоя `pb_hooks` (смотреть файл при build errors).
+- **Роль в репозитории:** PocketBase backend
+- **Доказательства использования:** Серверный hook PocketBase; деплоится вместе с PB (см. `docs/POCKETBASE_MANIFEST.md`).
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Сломается серверная логика PocketBase.
+- **Уверенность:** HIGH
+- **Владелец / слой:** PocketBase backend
+- **Обязанности:** Участвует в Flutter platform tool pipeline для pb_hooks build — не Dart business logic.
+- **Когда открывать:** Build log pb_hooks ссылается на `xiaomi_sleep_bridge.py` или `pb_hooks`.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `pb_hooks/`, Flutter embedder.
+
+
+### `pb_hooks/xiaomi_sleep_runtime.js`
+
+EN:
+
+- **Human purpose:** pb_hooks build file `xiaomi_sleep_runtime.js` in `pb_hooks` — required by Flutter/native toolchain. Without `xiaomi_sleep_runtime.js`, pb_hooks compile or packaging step for this folder may fail.
+- **What this is:** pb_hooks build file `xiaomi_sleep_runtime.js` in `pb_hooks` — required by Flutter/native toolchain.
+- **Why needed:** Without `xiaomi_sleep_runtime.js`, pb_hooks compile or packaging step for this folder may fail.
+- **Contents:** Native/config source for `pb_hooks` (open file only when build errors cite it).
+- **Repository role:** PocketBase backend
+- **Evidence of use:** Server-side PocketBase hook; deployed with the PB instance (see `docs/POCKETBASE_MANIFEST.md`).
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Broken server-side validation/automation for PB collections.
+- **Confidence:** HIGH
+- **Owner / layer:** PocketBase backend
+- **Responsibilities:** Support pb_hooks embedder build for `pb_hooks` — not Dart business logic.
+- **When to open:** Build log mentions `xiaomi_sleep_runtime.js` or `pb_hooks`.
+- **Can it be deleted?** Broken server-side validation/automation for PB collections.
+- **Connected to:** `pb_hooks/` platform folder, Flutter embedder.
+
+RU:
+
+- **Зачем файл человеку:** Platform file `xiaomi_sleep_runtime.js` в `pb_hooks` — читает Flutter platform tool при сборке pb_hooks build. Без этого файла Flutter platform tool может не собрать или упаковать pb_hooks build.
+- **Что это:** Platform file `xiaomi_sleep_runtime.js` в `pb_hooks` — читает Flutter platform tool при сборке pb_hooks build.
+- **Зачем:** Без этого файла Flutter platform tool может не собрать или упаковать pb_hooks build.
+- **Содержимое:** Содержимое native/config слоя `pb_hooks` (смотреть файл при build errors).
+- **Роль в репозитории:** PocketBase backend
+- **Доказательства использования:** Серверный hook PocketBase; деплоится вместе с PB (см. `docs/POCKETBASE_MANIFEST.md`).
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Сломается серверная логика PocketBase.
+- **Уверенность:** HIGH
+- **Владелец / слой:** PocketBase backend
+- **Обязанности:** Участвует в Flutter platform tool pipeline для pb_hooks build — не Dart business logic.
+- **Когда открывать:** Build log pb_hooks ссылается на `xiaomi_sleep_runtime.js` или `pb_hooks`.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `pb_hooks/`, Flutter embedder.
 
 
 ### `pb_hooks/zz_google_fit_final_normalize_once.pb.js`
@@ -27850,6 +28072,191 @@ RU:
 - **Связано с:** `pb_migrations/`, `docs/APP_STRUCTURE.md`.
 
 
+### `pb_migrations/1787143500_force_google_fit_recent_sleep_reconcile.js`
+
+EN:
+
+- **Human purpose:** JavaScript source `1787143500_force_google_fit_recent_sleep_reconcile.js` in `pb_migrations` — repo tooling or config. Tracked because `pb_migrations` needs `1787143500_force_google_fit_recent_sleep_reconcile.js` for build, CI, or maintenance.
+- **What this is:** JavaScript source `1787143500_force_google_fit_recent_sleep_reconcile.js` in `pb_migrations` — repo tooling or config.
+- **Why needed:** Tracked because `pb_migrations` needs `1787143500_force_google_fit_recent_sleep_reconcile.js` for build, CI, or maintenance.
+- **Contents:** Open `1787143500_force_google_fit_recent_sleep_reconcile.js` when working on `pb_migrations` (see folder section above).
+- **Repository role:** PocketBase migration
+- **Evidence of use:** Versioned PocketBase schema/data migration; applied by PocketBase before client code that depends on the schema (see `docs/DEPLOY.md`).
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Production schema history becomes incomplete or a required data migration is lost.
+- **Confidence:** HIGH
+- **Owner / layer:** PocketBase migrations
+- **Responsibilities:** Supports `pb_migrations` workflow for `1787143500_force_google_fit_recent_sleep_reconcile.js`.
+- **When to open:** When build output or maintenance cites `1787143500_force_google_fit_recent_sleep_reconcile.js`.
+- **Can it be deleted?** No — part of repository tooling or config.
+- **Connected to:** `pb_migrations/`, `docs/APP_STRUCTURE.md`.
+
+RU:
+
+- **Зачем файл человеку:** `1787143500_force_google_fit_recent_sleep_reconcile.js` — JavaScript-модуль для области `pb_migrations`. Обеспечивает автоматизацию или web-логику области `pb_migrations` для сценария `1787143500_force_google_fit_recent_sleep_reconcile.js`.
+- **Что это:** `1787143500_force_google_fit_recent_sleep_reconcile.js` — JavaScript-модуль для области `pb_migrations`.
+- **Зачем:** Обеспечивает автоматизацию или web-логику области `pb_migrations` для сценария `1787143500_force_google_fit_recent_sleep_reconcile.js`.
+- **Содержимое:** JavaScript-код и настройки, относящиеся к задаче `1787143500_force_google_fit_recent_sleep_reconcile.js`.
+- **Роль в репозитории:** PocketBase migration
+- **Доказательства использования:** Версионированная миграция схемы/данных PocketBase; применяется до клиента, который зависит от этой схемы (см. `docs/DEPLOY.md`).
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** История production-схемы станет неполной или пропадёт нужная миграция данных.
+- **Уверенность:** HIGH
+- **Владелец / слой:** миграции PocketBase
+- **Обязанности:** Реализует JavaScript-часть сценария `1787143500_force_google_fit_recent_sleep_reconcile.js` в своём каталоге.
+- **Когда открывать:** When результат сборки or maintenance cites `1787143500_force_google_fit_recent_sleep_reconcile.js`.
+- **Можно удалить?** Нет — конфигурация/инструмент репозитория.
+- **Связано с:** `pb_migrations/`, `docs/APP_STRUCTURE.md`.
+
+
+### `pb_migrations/1787217300_restore_google_fit_sleep_connection.js`
+
+EN:
+
+- **Human purpose:** JavaScript source `1787217300_restore_google_fit_sleep_connection.js` in `pb_migrations` — repo tooling or config. Tracked because `pb_migrations` needs `1787217300_restore_google_fit_sleep_connection.js` for build, CI, or maintenance.
+- **What this is:** JavaScript source `1787217300_restore_google_fit_sleep_connection.js` in `pb_migrations` — repo tooling or config.
+- **Why needed:** Tracked because `pb_migrations` needs `1787217300_restore_google_fit_sleep_connection.js` for build, CI, or maintenance.
+- **Contents:** Open `1787217300_restore_google_fit_sleep_connection.js` when working on `pb_migrations` (see folder section above).
+- **Repository role:** PocketBase migration
+- **Evidence of use:** Versioned PocketBase schema/data migration; applied by PocketBase before client code that depends on the schema (see `docs/DEPLOY.md`).
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Production schema history becomes incomplete or a required data migration is lost.
+- **Confidence:** HIGH
+- **Owner / layer:** PocketBase migrations
+- **Responsibilities:** Supports `pb_migrations` workflow for `1787217300_restore_google_fit_sleep_connection.js`.
+- **When to open:** When build output or maintenance cites `1787217300_restore_google_fit_sleep_connection.js`.
+- **Can it be deleted?** No — part of repository tooling or config.
+- **Connected to:** `pb_migrations/`, `docs/APP_STRUCTURE.md`.
+
+RU:
+
+- **Зачем файл человеку:** `1787217300_restore_google_fit_sleep_connection.js` — JavaScript-модуль для области `pb_migrations`. Обеспечивает автоматизацию или web-логику области `pb_migrations` для сценария `1787217300_restore_google_fit_sleep_connection.js`.
+- **Что это:** `1787217300_restore_google_fit_sleep_connection.js` — JavaScript-модуль для области `pb_migrations`.
+- **Зачем:** Обеспечивает автоматизацию или web-логику области `pb_migrations` для сценария `1787217300_restore_google_fit_sleep_connection.js`.
+- **Содержимое:** JavaScript-код и настройки, относящиеся к задаче `1787217300_restore_google_fit_sleep_connection.js`.
+- **Роль в репозитории:** PocketBase migration
+- **Доказательства использования:** Версионированная миграция схемы/данных PocketBase; применяется до клиента, который зависит от этой схемы (см. `docs/DEPLOY.md`).
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** История production-схемы станет неполной или пропадёт нужная миграция данных.
+- **Уверенность:** HIGH
+- **Владелец / слой:** миграции PocketBase
+- **Обязанности:** Реализует JavaScript-часть сценария `1787217300_restore_google_fit_sleep_connection.js` в своём каталоге.
+- **Когда открывать:** When результат сборки or maintenance cites `1787217300_restore_google_fit_sleep_connection.js`.
+- **Можно удалить?** Нет — конфигурация/инструмент репозитория.
+- **Связано с:** `pb_migrations/`, `docs/APP_STRUCTURE.md`.
+
+
+### `pb_migrations/1787325000_force_google_fit_merged_sleep_reconcile.js`
+
+EN:
+
+- **Human purpose:** JavaScript source `1787325000_force_google_fit_merged_sleep_reconcile.js` in `pb_migrations` — repo tooling or config. Tracked because `pb_migrations` needs `1787325000_force_google_fit_merged_sleep_reconcile.js` for build, CI, or maintenance.
+- **What this is:** JavaScript source `1787325000_force_google_fit_merged_sleep_reconcile.js` in `pb_migrations` — repo tooling or config.
+- **Why needed:** Tracked because `pb_migrations` needs `1787325000_force_google_fit_merged_sleep_reconcile.js` for build, CI, or maintenance.
+- **Contents:** Open `1787325000_force_google_fit_merged_sleep_reconcile.js` when working on `pb_migrations` (see folder section above).
+- **Repository role:** PocketBase migration
+- **Evidence of use:** Versioned PocketBase schema/data migration; applied by PocketBase before client code that depends on the schema (see `docs/DEPLOY.md`).
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Production schema history becomes incomplete or a required data migration is lost.
+- **Confidence:** HIGH
+- **Owner / layer:** PocketBase migrations
+- **Responsibilities:** Supports `pb_migrations` workflow for `1787325000_force_google_fit_merged_sleep_reconcile.js`.
+- **When to open:** When build output or maintenance cites `1787325000_force_google_fit_merged_sleep_reconcile.js`.
+- **Can it be deleted?** No — part of repository tooling or config.
+- **Connected to:** `pb_migrations/`, `docs/APP_STRUCTURE.md`.
+
+RU:
+
+- **Зачем файл человеку:** `1787325000_force_google_fit_merged_sleep_reconcile.js` — JavaScript-модуль для области `pb_migrations`. Обеспечивает автоматизацию или web-логику области `pb_migrations` для сценария `1787325000_force_google_fit_merged_sleep_reconcile.js`.
+- **Что это:** `1787325000_force_google_fit_merged_sleep_reconcile.js` — JavaScript-модуль для области `pb_migrations`.
+- **Зачем:** Обеспечивает автоматизацию или web-логику области `pb_migrations` для сценария `1787325000_force_google_fit_merged_sleep_reconcile.js`.
+- **Содержимое:** JavaScript-код и настройки, относящиеся к задаче `1787325000_force_google_fit_merged_sleep_reconcile.js`.
+- **Роль в репозитории:** PocketBase migration
+- **Доказательства использования:** Версионированная миграция схемы/данных PocketBase; применяется до клиента, который зависит от этой схемы (см. `docs/DEPLOY.md`).
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** История production-схемы станет неполной или пропадёт нужная миграция данных.
+- **Уверенность:** HIGH
+- **Владелец / слой:** миграции PocketBase
+- **Обязанности:** Реализует JavaScript-часть сценария `1787325000_force_google_fit_merged_sleep_reconcile.js` в своём каталоге.
+- **Когда открывать:** When результат сборки or maintenance cites `1787325000_force_google_fit_merged_sleep_reconcile.js`.
+- **Можно удалить?** Нет — конфигурация/инструмент репозитория.
+- **Связано с:** `pb_migrations/`, `docs/APP_STRUCTURE.md`.
+
+
+### `pb_migrations/1787354100_xiaomi_sleep_provider.js`
+
+EN:
+
+- **Human purpose:** JavaScript source `1787354100_xiaomi_sleep_provider.js` in `pb_migrations` — repo tooling or config. Tracked because `pb_migrations` needs `1787354100_xiaomi_sleep_provider.js` for build, CI, or maintenance.
+- **What this is:** JavaScript source `1787354100_xiaomi_sleep_provider.js` in `pb_migrations` — repo tooling or config.
+- **Why needed:** Tracked because `pb_migrations` needs `1787354100_xiaomi_sleep_provider.js` for build, CI, or maintenance.
+- **Contents:** Open `1787354100_xiaomi_sleep_provider.js` when working on `pb_migrations` (see folder section above).
+- **Repository role:** PocketBase migration
+- **Evidence of use:** Versioned PocketBase schema/data migration; applied by PocketBase before client code that depends on the schema (see `docs/DEPLOY.md`).
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Production schema history becomes incomplete or a required data migration is lost.
+- **Confidence:** HIGH
+- **Owner / layer:** PocketBase migrations
+- **Responsibilities:** Supports `pb_migrations` workflow for `1787354100_xiaomi_sleep_provider.js`.
+- **When to open:** When build output or maintenance cites `1787354100_xiaomi_sleep_provider.js`.
+- **Can it be deleted?** No — part of repository tooling or config.
+- **Connected to:** `pb_migrations/`, `docs/APP_STRUCTURE.md`.
+
+RU:
+
+- **Зачем файл человеку:** `1787354100_xiaomi_sleep_provider.js` — JavaScript-модуль для области `pb_migrations`. Обеспечивает автоматизацию или web-логику области `pb_migrations` для сценария `1787354100_xiaomi_sleep_provider.js`.
+- **Что это:** `1787354100_xiaomi_sleep_provider.js` — JavaScript-модуль для области `pb_migrations`.
+- **Зачем:** Обеспечивает автоматизацию или web-логику области `pb_migrations` для сценария `1787354100_xiaomi_sleep_provider.js`.
+- **Содержимое:** JavaScript-код и настройки, относящиеся к задаче `1787354100_xiaomi_sleep_provider.js`.
+- **Роль в репозитории:** PocketBase migration
+- **Доказательства использования:** Версионированная миграция схемы/данных PocketBase; применяется до клиента, который зависит от этой схемы (см. `docs/DEPLOY.md`).
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** История production-схемы станет неполной или пропадёт нужная миграция данных.
+- **Уверенность:** HIGH
+- **Владелец / слой:** миграции PocketBase
+- **Обязанности:** Реализует JavaScript-часть сценария `1787354100_xiaomi_sleep_provider.js` в своём каталоге.
+- **Когда открывать:** When результат сборки or maintenance cites `1787354100_xiaomi_sleep_provider.js`.
+- **Можно удалить?** Нет — конфигурация/инструмент репозитория.
+- **Связано с:** `pb_migrations/`, `docs/APP_STRUCTURE.md`.
+
+
+### `pb_migrations/1787724000_google_health_sleep_provider.js`
+
+EN:
+
+- **Human purpose:** JavaScript source `1787724000_google_health_sleep_provider.js` in `pb_migrations` — repo tooling or config. Tracked because `pb_migrations` needs `1787724000_google_health_sleep_provider.js` for build, CI, or maintenance.
+- **What this is:** JavaScript source `1787724000_google_health_sleep_provider.js` in `pb_migrations` — repo tooling or config.
+- **Why needed:** Tracked because `pb_migrations` needs `1787724000_google_health_sleep_provider.js` for build, CI, or maintenance.
+- **Contents:** Open `1787724000_google_health_sleep_provider.js` when working on `pb_migrations` (see folder section above).
+- **Repository role:** PocketBase migration
+- **Evidence of use:** Versioned PocketBase schema/data migration; applied by PocketBase before client code that depends on the schema (see `docs/DEPLOY.md`).
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Production schema history becomes incomplete or a required data migration is lost.
+- **Confidence:** HIGH
+- **Owner / layer:** PocketBase migrations
+- **Responsibilities:** Supports `pb_migrations` workflow for `1787724000_google_health_sleep_provider.js`.
+- **When to open:** When build output or maintenance cites `1787724000_google_health_sleep_provider.js`.
+- **Can it be deleted?** No — part of repository tooling or config.
+- **Connected to:** `pb_migrations/`, `docs/APP_STRUCTURE.md`.
+
+RU:
+
+- **Зачем файл человеку:** `1787724000_google_health_sleep_provider.js` — JavaScript-модуль для области `pb_migrations`. Обеспечивает автоматизацию или web-логику области `pb_migrations` для сценария `1787724000_google_health_sleep_provider.js`.
+- **Что это:** `1787724000_google_health_sleep_provider.js` — JavaScript-модуль для области `pb_migrations`.
+- **Зачем:** Обеспечивает автоматизацию или web-логику области `pb_migrations` для сценария `1787724000_google_health_sleep_provider.js`.
+- **Содержимое:** JavaScript-код и настройки, относящиеся к задаче `1787724000_google_health_sleep_provider.js`.
+- **Роль в репозитории:** PocketBase migration
+- **Доказательства использования:** Версионированная миграция схемы/данных PocketBase; применяется до клиента, который зависит от этой схемы (см. `docs/DEPLOY.md`).
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** История production-схемы станет неполной или пропадёт нужная миграция данных.
+- **Уверенность:** HIGH
+- **Владелец / слой:** миграции PocketBase
+- **Обязанности:** Реализует JavaScript-часть сценария `1787724000_google_health_sleep_provider.js` в своём каталоге.
+- **Когда открывать:** When результат сборки or maintenance cites `1787724000_google_health_sleep_provider.js`.
+- **Можно удалить?** Нет — конфигурация/инструмент репозитория.
+- **Связано с:** `pb_migrations/`, `docs/APP_STRUCTURE.md`.
+
+
 ### `pubspec.lock`
 
 EN:
@@ -27933,7 +28340,7 @@ EN:
 - **Why needed:** Prevents accidental architecture breaks during refactors.
 - **Contents:** PowerShell rules matching `docs/APP_STRUCTURE.md`.
 - **Repository role:** audit tool
-- **Evidence of use:** Invoked or documented by: `.github/workflows/architecture-guard.yml`, `.github/workflows/deploy-pocketbase.yml`, `.github/workflows/windows-desktop-build.yml`, `AGENTS.md`, `AGENT_NAVIGATION.md`.
+- **Evidence of use:** Invoked or documented by: `.github/workflows/architecture-guard.yml`, `.github/workflows/windows-desktop-build.yml`, `AGENTS.md`, `AGENT_NAVIGATION.md`, `CHANGELOG.md`.
 - **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Deletion consequence:** Broken audit/deploy/manual maintenance command.
 - **Confidence:** HIGH
@@ -27950,7 +28357,7 @@ RU:
 - **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
 - **Содержимое:** Команды PowerShell/Python/Dart в `architecture_guard.ps1`.
 - **Роль в репозитории:** audit tool
-- **Доказательства использования:** Вызывается или описан в: `.github/workflows/architecture-guard.yml`, `.github/workflows/deploy-pocketbase.yml`, `.github/workflows/windows-desktop-build.yml`, `AGENTS.md`, `AGENT_NAVIGATION.md`.
+- **Доказательства использования:** Вызывается или описан в: `.github/workflows/architecture-guard.yml`, `.github/workflows/windows-desktop-build.yml`, `AGENTS.md`, `AGENT_NAVIGATION.md`, `CHANGELOG.md`.
 - **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Что будет, если удалить:** Сломается audit/deploy или ручная команда сопровождения.
 - **Уверенность:** HIGH
@@ -28081,7 +28488,7 @@ EN:
 - **Why needed:** Automates a repeatable task documented in repo notes or `DEPLOY.md`.
 - **Contents:** PowerShell, Python, or Dart commands for `repository_hygiene.py`.
 - **Repository role:** audit tool
-- **Evidence of use:** Invoked or documented by: `.github/workflows/architecture-guard.yml`, `.github/workflows/deploy-pocketbase.yml`, `AGENTS.md`, `AGENT_NAVIGATION.md`, `CHANGELOG.md`.
+- **Evidence of use:** Invoked or documented by: `.github/workflows/architecture-guard.yml`, `AGENTS.md`, `AGENT_NAVIGATION.md`, `CHANGELOG.md`, `docs/ARCHITECTURE.md`.
 - **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Deletion consequence:** Broken audit/deploy/manual maintenance command.
 - **Confidence:** HIGH
@@ -28098,7 +28505,7 @@ RU:
 - **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
 - **Содержимое:** Команды PowerShell/Python/Dart в `repository_hygiene.py`.
 - **Роль в репозитории:** audit tool
-- **Доказательства использования:** Вызывается или описан в: `.github/workflows/architecture-guard.yml`, `.github/workflows/deploy-pocketbase.yml`, `AGENTS.md`, `AGENT_NAVIGATION.md`, `CHANGELOG.md`.
+- **Доказательства использования:** Вызывается или описан в: `.github/workflows/architecture-guard.yml`, `AGENTS.md`, `AGENT_NAVIGATION.md`, `CHANGELOG.md`, `docs/ARCHITECTURE.md`.
 - **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Что будет, если удалить:** Сломается audit/deploy или ручная команда сопровождения.
 - **Уверенность:** HIGH
@@ -35430,93 +35837,3 @@ RU:
 - **Когда открывать:** Ошибка native compile ссылается на `win32_window.h`.
 - **Можно удалить?** Нет — без него не соберётся Windows `.exe`/runner.
 - **Связано с:** `windows/runner/`, `windows/flutter/`.
-
-## Recent sleep synchronization infrastructure
-
-### `.github/workflows/install-xiaomi-sleep-runtime.yml`
-
-- **What:** Validates the Xiaomi sleep bridge and provisions the pinned Xiaomi Health SDK on the production PocketBase host.
-- **Why:** Keeps current sleep ingestion and its deployment/verification path explicit in the repository manifest.
-- **Contains:** Runtime or deployment logic for server-owned sleep synchronization.
-- **Responsibilities:** Preserve reliable, auditable sleep ingestion without requiring LIFE OS to be opened on the phone.
-- **When to inspect:** Missing recent sleep, provider authorization, server deployment, or sleep-sync diagnostics.
-- **Delete:** Only together with the corresponding replacement sleep-sync path.
-- **Connected to:** `pb_hooks/sleep_sync.pb.js`, PocketBase `records`, and production sleep deployment.
-- **Layer:** Server infrastructure / generated repository manifest.
-
-### `_tmp_sleep_cloud_result.txt`
-
-- **What:** Sanitized production sleep-sync verification snapshot written by the PocketBase deployment workflow.
-- **Why:** Keeps current sleep ingestion and its deployment/verification path explicit in the repository manifest.
-- **Contains:** Runtime or deployment logic for server-owned sleep synchronization.
-- **Responsibilities:** Preserve reliable, auditable sleep ingestion without requiring LIFE OS to be opened on the phone.
-- **When to inspect:** Missing recent sleep, provider authorization, server deployment, or sleep-sync diagnostics.
-- **Delete:** Only together with the corresponding replacement sleep-sync path.
-- **Connected to:** `pb_hooks/sleep_sync.pb.js`, PocketBase `records`, and production sleep deployment.
-- **Layer:** Server infrastructure / generated repository manifest.
-
-### `pb_hooks/xiaomi_sleep_bridge.py`
-
-- **What:** Server-only Python bridge for one-time Xiaomi QR authorization and normalized Mi Fitness sleep retrieval.
-- **Why:** Keeps current sleep ingestion and its deployment/verification path explicit in the repository manifest.
-- **Contains:** Runtime or deployment logic for server-owned sleep synchronization.
-- **Responsibilities:** Preserve reliable, auditable sleep ingestion without requiring LIFE OS to be opened on the phone.
-- **When to inspect:** Missing recent sleep, provider authorization, server deployment, or sleep-sync diagnostics.
-- **Delete:** Only together with the corresponding replacement sleep-sync path.
-- **Connected to:** `pb_hooks/sleep_sync.pb.js`, PocketBase `records`, and production sleep deployment.
-- **Layer:** Server infrastructure / generated repository manifest.
-
-### `pb_hooks/xiaomi_sleep_runtime.js`
-
-- **What:** PocketBase Xiaomi sleep routes, authorization page, scheduled cloud sync, dedupe, and canonical records upsert.
-- **Why:** Keeps current sleep ingestion and its deployment/verification path explicit in the repository manifest.
-- **Contains:** Runtime or deployment logic for server-owned sleep synchronization.
-- **Responsibilities:** Preserve reliable, auditable sleep ingestion without requiring LIFE OS to be opened on the phone.
-- **When to inspect:** Missing recent sleep, provider authorization, server deployment, or sleep-sync diagnostics.
-- **Delete:** Only together with the corresponding replacement sleep-sync path.
-- **Connected to:** `pb_hooks/sleep_sync.pb.js`, PocketBase `records`, and production sleep deployment.
-- **Layer:** Server infrastructure / generated repository manifest.
-
-### `pb_migrations/1787143500_force_google_fit_recent_sleep_reconcile.js`
-
-- **What:** One-time production reconcile marker for the earlier Google Fit recent-sleep recovery path.
-- **Why:** Keeps current sleep ingestion and its deployment/verification path explicit in the repository manifest.
-- **Contains:** Runtime or deployment logic for server-owned sleep synchronization.
-- **Responsibilities:** Preserve reliable, auditable sleep ingestion without requiring LIFE OS to be opened on the phone.
-- **When to inspect:** Missing recent sleep, provider authorization, server deployment, or sleep-sync diagnostics.
-- **Delete:** Only together with the corresponding replacement sleep-sync path.
-- **Connected to:** `pb_hooks/sleep_sync.pb.js`, PocketBase `records`, and production sleep deployment.
-- **Layer:** Server infrastructure / generated repository manifest.
-
-### `pb_migrations/1787217300_restore_google_fit_sleep_connection.js`
-
-- **What:** One-time migration restoring the existing Google Fit sleep connection state after cloud diagnostics.
-- **Why:** Keeps current sleep ingestion and its deployment/verification path explicit in the repository manifest.
-- **Contains:** Runtime or deployment logic for server-owned sleep synchronization.
-- **Responsibilities:** Preserve reliable, auditable sleep ingestion without requiring LIFE OS to be opened on the phone.
-- **When to inspect:** Missing recent sleep, provider authorization, server deployment, or sleep-sync diagnostics.
-- **Delete:** Only together with the corresponding replacement sleep-sync path.
-- **Connected to:** `pb_hooks/sleep_sync.pb.js`, PocketBase `records`, and production sleep deployment.
-- **Layer:** Server infrastructure / generated repository manifest.
-
-### `pb_migrations/1787325000_force_google_fit_merged_sleep_reconcile.js`
-
-- **What:** One-time reconcile marker that forced the canonical merged Google Fit sleep stream reread.
-- **Why:** Keeps current sleep ingestion and its deployment/verification path explicit in the repository manifest.
-- **Contains:** Runtime or deployment logic for server-owned sleep synchronization.
-- **Responsibilities:** Preserve reliable, auditable sleep ingestion without requiring LIFE OS to be opened on the phone.
-- **When to inspect:** Missing recent sleep, provider authorization, server deployment, or sleep-sync diagnostics.
-- **Delete:** Only together with the corresponding replacement sleep-sync path.
-- **Connected to:** `pb_hooks/sleep_sync.pb.js`, PocketBase `records`, and production sleep deployment.
-- **Layer:** Server infrastructure / generated repository manifest.
-
-### `pb_migrations/1787354100_xiaomi_sleep_provider.js`
-
-- **What:** Extends server sleep connection providers so Xiaomi Cloud can own fresh sleep synchronization.
-- **Why:** Keeps current sleep ingestion and its deployment/verification path explicit in the repository manifest.
-- **Contains:** Runtime or deployment logic for server-owned sleep synchronization.
-- **Responsibilities:** Preserve reliable, auditable sleep ingestion without requiring LIFE OS to be opened on the phone.
-- **When to inspect:** Missing recent sleep, provider authorization, server deployment, or sleep-sync diagnostics.
-- **Delete:** Only together with the corresponding replacement sleep-sync path.
-- **Connected to:** `pb_hooks/sleep_sync.pb.js`, PocketBase `records`, and production sleep deployment.
-- **Layer:** Server infrastructure / generated repository manifest.
