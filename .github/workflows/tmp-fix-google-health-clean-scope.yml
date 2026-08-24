@@ -1,0 +1,45 @@
+name: TEMP fix Google Health clean scope
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/tmp-fix-google-health-clean-scope.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+      - name: Patch Google Health OAuth and self-clean
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('pb_hooks/google_health_sleep_runtime.js')
+          s=p.read_text(encoding='utf-8')
+          old='''    return raw.indexOf("invalid_grant") >= 0 ||\n        raw.indexOf("insufficient authentication scopes") >= 0 ||\n        raw.indexOf("insufficient permission") >= 0 ||\n        raw.indexOf("authorization_required") >= 0;'''
+          new='''    return raw.indexOf("invalid_grant") >= 0 ||\n        raw.indexOf("insufficient authentication scopes") >= 0 ||\n        raw.indexOf("insufficient permission") >= 0 ||\n        raw.indexOf("disallowed oauth scope") >= 0 ||\n        raw.indexOf("disallowed_oauth_scopes") >= 0 ||\n        raw.indexOf("authorization_required") >= 0;'''
+          if old not in s: raise SystemExit('reconnect block not found')
+          s=s.replace(old,new,1)
+          line='        include_granted_scopes: "true",\n'
+          if line not in s: raise SystemExit('incremental scope line not found')
+          s=s.replace(line,'',1)
+          old_run='''        try { __healthRunSafe(e.app, connection); } catch (_) {}\n        var returnUrl = __healthReturnUrl();'''
+          new_run='''        __healthRunSafe(e.app, connection);\n        var returnUrl = __healthReturnUrl();'''
+          if old_run not in s: raise SystemExit('callback sync block not found')
+          s=s.replace(old_run,new_run,1)
+          p.write_text(s,encoding='utf-8')
+          PY
+          git rm .github/workflows/tmp-fix-google-health-clean-scope.yml
+          git add pb_hooks/google_health_sleep_runtime.js
+          git commit -m 'Use isolated Google Health sleep OAuth scope'
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
