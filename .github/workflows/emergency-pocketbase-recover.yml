@@ -42,7 +42,7 @@ jobs:
           chmod 600 ~/.ssh/lifeos_pocketbase
           ssh-keyscan -T 10 -p "$SSH_PORT" -H "${SSH_HOST:-217.114.0.201}" >> ~/.ssh/known_hosts
 
-      - name: Restore safe bootcheck and restart PocketBase
+      - name: Restore safe bootcheck and capture PocketBase status
         id: restart
         if: steps.ssh.outcome == 'success'
         continue-on-error: true
@@ -55,8 +55,9 @@ jobs:
             "$SSH_USER@$SSH_HOST:$remote_file"
 
           ssh -i ~/.ssh/lifeos_pocketbase -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" \
-            "POCKETBASE_SERVICE='$POCKETBASE_SERVICE' POCKETBASE_DEPLOY_DIR='$POCKETBASE_DEPLOY_DIR' REMOTE_FILE='$remote_file' bash -s" <<'REMOTE'
-          set -euo pipefail
+            "POCKETBASE_SERVICE='$POCKETBASE_SERVICE' POCKETBASE_DEPLOY_DIR='$POCKETBASE_DEPLOY_DIR' REMOTE_FILE='$remote_file' bash -s" \
+            > "$RUNNER_TEMP/pb_remote_diag.txt" 2>&1 <<'REMOTE'
+          set +e
           if [[ "$(id -u)" -eq 0 ]]; then SUDO=""; else SUDO="sudo -n"; fi
           service_name="${POCKETBASE_SERVICE:-}"
           if [[ -z "$service_name" ]]; then
@@ -66,16 +67,30 @@ jobs:
           if [[ -z "$app_dir" && -n "$service_name" ]]; then
             app_dir="$(systemctl show "$service_name" -p WorkingDirectory --value 2>/dev/null || true)"
           fi
-          [[ -n "$service_name" && -n "$app_dir" && -d "$app_dir" ]]
+          echo "service=${service_name:-missing}"
+          echo "app_dir_present=$([[ -n "$app_dir" && -d "$app_dir" ]] && echo true || echo false)"
+          if [[ -z "$service_name" || -z "$app_dir" || ! -d "$app_dir" ]]; then
+            echo "recovery_error=service_or_app_dir_not_found"
+            exit 0
+          fi
           $SUDO mkdir -p "$app_dir/pb_hooks"
           $SUDO install -m 0644 "$REMOTE_FILE" "$app_dir/pb_hooks/01_sleep_sync_runtime_bootcheck.pb.js"
+          install_rc=$?
           rm -f "$REMOTE_FILE"
           $SUDO systemctl daemon-reload
           $SUDO systemctl restart "$service_name"
+          restart_rc=$?
           sleep 3
-          $SUDO systemctl is-active --quiet "$service_name"
-          echo "PocketBase service active"
+          active="$($SUDO systemctl is-active "$service_name" 2>/dev/null || true)"
+          echo "install_rc=$install_rc"
+          echo "restart_rc=$restart_rc"
+          echo "active=${active:-unknown}"
+          echo "status_begin"
+          $SUDO systemctl status "$service_name" --no-pager -l 2>&1 | tail -n 35
+          echo "status_end"
+          exit 0
           REMOTE
+          cat "$RUNNER_TEMP/pb_remote_diag.txt"
 
       - name: Verify production health
         id: health
@@ -84,7 +99,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for attempt in {1..20}; do
+          for attempt in {1..12}; do
             code="$(curl -ksS -o /dev/null -w '%{http_code}' https://217-114-0-201.sslip.io/api/health || true)"
             echo "health attempt $attempt: $code"
             if [[ "$code" == "200" ]]; then
@@ -104,12 +119,17 @@ jobs:
           HEALTH_OUTCOME: ${{ steps.health.outcome }}
         run: |
           set -euo pipefail
-          cat > _tmp_pocketbase_recovery_result.txt <<EOF
-          sha=$GITHUB_SHA
-          ssh=${SSH_OUTCOME:-skipped}
-          restart=${RESTART_OUTCOME:-skipped}
-          health=${HEALTH_OUTCOME:-skipped}
-          EOF
+          {
+            echo "sha=$GITHUB_SHA"
+            echo "ssh=${SSH_OUTCOME:-skipped}"
+            echo "restart_step=${RESTART_OUTCOME:-skipped}"
+            echo "health=${HEALTH_OUTCOME:-skipped}"
+            if [[ -f "$RUNNER_TEMP/pb_remote_diag.txt" ]]; then
+              echo "remote_diag_begin"
+              sed -E 's/[A-Za-z0-9_=-]{48,}/[redacted]/g' "$RUNNER_TEMP/pb_remote_diag.txt" | tail -n 45
+              echo "remote_diag_end"
+            fi
+          } > _tmp_pocketbase_recovery_result.txt
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git add _tmp_pocketbase_recovery_result.txt
@@ -117,14 +137,10 @@ jobs:
           git pull --rebase origin main
           git push origin HEAD:main
 
-      - name: Fail if recovery did not complete
+      - name: Fail if health is not restored
         if: always()
         shell: bash
         env:
-          SSH_OUTCOME: ${{ steps.ssh.outcome }}
-          RESTART_OUTCOME: ${{ steps.restart.outcome }}
           HEALTH_OUTCOME: ${{ steps.health.outcome }}
         run: |
-          [[ "$SSH_OUTCOME" == "success" ]]
-          [[ "$RESTART_OUTCOME" == "success" ]]
           [[ "$HEALTH_OUTCOME" == "success" ]]
