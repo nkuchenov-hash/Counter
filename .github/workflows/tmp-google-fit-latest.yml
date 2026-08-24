@@ -1,0 +1,53 @@
+name: TEMP inspect Google Fit latest
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/tmp-google-fit-latest.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      SSH_PRIVATE_KEY: ${{ secrets.POCKETBASE_SSH_PRIVATE_KEY || secrets.VPS_SSH_KEY || secrets.SSH_PRIVATE_KEY }}
+      SSH_USER: ${{ secrets.POCKETBASE_SSH_USER || secrets.VPS_SSH_USER || secrets.SSH_USER }}
+      SSH_HOST: ${{ secrets.POCKETBASE_SSH_HOST || secrets.VPS_HOST || secrets.SSH_HOST }}
+      SSH_PORT: ${{ secrets.POCKETBASE_SSH_PORT || secrets.VPS_SSH_PORT || '22' }}
+      POCKETBASE_SERVICE: ${{ secrets.POCKETBASE_SERVICE }}
+      POCKETBASE_DEPLOY_DIR: ${{ secrets.POCKETBASE_DEPLOY_DIR }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect production provider state
+        shell: bash
+        run: |
+          set -euo pipefail
+          user="${SSH_USER:-root}"; host="${SSH_HOST:-217.114.0.201}"
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/key; chmod 600 ~/.ssh/key
+          ssh-keyscan -p "$SSH_PORT" -H "$host" >> ~/.ssh/known_hosts
+          ssh -i ~/.ssh/key -p "$SSH_PORT" "$user@$host" "POCKETBASE_DEPLOY_DIR='$POCKETBASE_DEPLOY_DIR' POCKETBASE_SERVICE='$POCKETBASE_SERVICE' bash -s" <<'REMOTE'
+          set -euo pipefail
+          service_name="${POCKETBASE_SERVICE:-}"
+          if [[ -z "$service_name" ]]; then service_name="$(systemctl list-unit-files --type=service --no-legend 2>/dev/null | awk 'tolower($1) ~ /pocketbase/ && !found {print $1; found=1}')"; fi
+          pid="$(pgrep -f '[p]ocketbase.*serve' | sed -n '1p' || true)"
+          app_dir="${POCKETBASE_DEPLOY_DIR:-}"
+          if [[ -z "$app_dir" && -n "$service_name" ]]; then app_dir="$(systemctl show "$service_name" -p WorkingDirectory --value 2>/dev/null || true)"; fi
+          if [[ -z "$app_dir" && -n "$pid" ]]; then app_dir="$(readlink -f "/proc/$pid/cwd" 2>/dev/null || true)"; fi
+          python3 - "$app_dir/pb_data/data.db" <<'PY'
+          import sqlite3,sys
+          c=sqlite3.connect(f'file:{sys.argv[1]}?mode=ro',uri=True); c.row_factory=sqlite3.Row
+          for p in ('google_fit','google_health'):
+              r=c.execute("SELECT enabled,status,last_sync_at,last_session_count,last_imported_count,last_sleep_count,last_error FROM sleep_sync_connections WHERE provider=? LIMIT 1",(p,)).fetchone()
+              if r:
+                  print(p+'|enabled='+str(bool(r['enabled'])).lower()+'|status='+str(r['status'] or '')+'|last_sync='+str(r['last_sync_at'] or '')+'|sessions='+str(r['last_session_count'] or 0)+'|imported='+str(r['last_imported_count'] or 0)+'|sleep_count='+str(r['last_sleep_count'] or 0)+'|error='+str(r['last_error'] or '')[:300].replace('\n',' '))
+              else: print(p+'|missing')
+          for p in ('google_fit','google_health'):
+              rows=c.execute("SELECT start_time,end_time,created,updated FROM records WHERE sleep_source=? OR external_source=? ORDER BY end_time DESC LIMIT 8",(p,p)).fetchall()
+              for x in rows: print(p+'_row|'+str(x['start_time'])+'|'+str(x['end_time'])+'|'+str(x['created'])+'|'+str(x['updated']))
+          c.close()
+          PY
+          REMOTE
