@@ -21,7 +21,7 @@ jobs:
       POCKETBASE_DEPLOY_DIR: ${{ secrets.POCKETBASE_DEPLOY_DIR }}
     steps:
       - uses: actions/checkout@v4
-      - name: Verify Google Health connection and records
+      - name: Inspect exact Google Health error
         shell: bash
         run: |
           set -euo pipefail
@@ -36,39 +36,29 @@ jobs:
             "POCKETBASE_DEPLOY_DIR='$POCKETBASE_DEPLOY_DIR' POCKETBASE_SERVICE='$POCKETBASE_SERVICE' bash -s" <<'REMOTE'
           set -euo pipefail
           service_name="${POCKETBASE_SERVICE:-}"
-          if [[ -z "$service_name" ]]; then
-            service_name="$(systemctl list-unit-files --type=service --no-legend 2>/dev/null | awk 'tolower($1) ~ /pocketbase/ && !found {print $1; found=1}')"
-          fi
+          if [[ -z "$service_name" ]]; then service_name="$(systemctl list-unit-files --type=service --no-legend 2>/dev/null | awk 'tolower($1) ~ /pocketbase/ && !found {print $1; found=1}')"; fi
           pid="$(pgrep -f '[p]ocketbase.*serve' | sed -n '1p' || true)"
           app_dir="${POCKETBASE_DEPLOY_DIR:-}"
           if [[ -z "$app_dir" && -n "$service_name" ]]; then app_dir="$(systemctl show "$service_name" -p WorkingDirectory --value 2>/dev/null || true)"; fi
           if [[ -z "$app_dir" && -n "$pid" ]]; then app_dir="$(readlink -f "/proc/$pid/cwd" 2>/dev/null || true)"; fi
           [[ -n "$app_dir" && -d "$app_dir" ]]
           python3 - "$app_dir/pb_data/data.db" <<'PY'
-          import sqlite3, sys
+          import sqlite3, sys, re
           con=sqlite3.connect(f'file:{sys.argv[1]}?mode=ro', uri=True); con.row_factory=sqlite3.Row
-          r=con.execute("SELECT provider,enabled,status,last_error,last_sync_at,last_session_count,last_imported_count,length(coalesce(refresh_token_enc,'')) token_len FROM sleep_sync_connections WHERE provider='google_health' LIMIT 1").fetchone()
-          print('google_health_row='+str(bool(r)).lower())
+          r=con.execute("SELECT status,last_error,last_sync_at,last_session_count,last_imported_count,length(coalesce(refresh_token_enc,'')) token_len FROM sleep_sync_connections WHERE provider='google_health' LIMIT 1").fetchone()
+          print('row='+str(bool(r)).lower())
           if r:
-              print('google_health_enabled='+str(bool(r['enabled'])).lower())
-              print('google_health_status='+str(r['status'] or 'none'))
-              print('google_health_token='+str((r['token_len'] or 0)>0).lower())
-              print('google_health_synced='+str(bool(r['last_sync_at'])).lower())
-              print('google_health_sessions='+str(r['last_session_count'] or 0))
-              print('google_health_imported='+str(r['last_imported_count'] or 0))
-              err=(r['last_error'] or '').lower()
-              if not err: cls='none'
-              elif 'scope' in err or 'permission' in err: cls='permission'
-              elif '401' in err or 'invalid_grant' in err: cls='auth'
-              else: cls='other'
-              print('google_health_error='+cls)
+              err=(r['last_error'] or '')
+              err=re.sub(r'ya29\.[A-Za-z0-9._-]+','[redacted-token]',err)
+              err=re.sub(r'1//[A-Za-z0-9._-]+','[redacted-token]',err)
+              print('status='+str(r['status'] or 'none'))
+              print('token='+str((r['token_len'] or 0)>0).lower())
+              print('synced='+str(bool(r['last_sync_at'])).lower())
+              print('sessions='+str(r['last_session_count'] or 0))
+              print('imported='+str(r['last_imported_count'] or 0))
+              print('last_error='+err[:2000].replace('\n',' '))
           latest=con.execute("SELECT date(max(end_time)) FROM records WHERE title='Sleep' OR title='Сон'").fetchone()[0]
-          rows=con.execute("SELECT date(end_time) d, start_time, end_time, sleep_source, external_source FROM records WHERE (title='Sleep' OR title='Сон') ORDER BY end_time DESC LIMIT 10").fetchall()
           print('latest_sleep_day='+str(latest or 'none'))
-          print('recent_rows='+str(len(rows)))
-          for i,row in enumerate(rows):
-              print(f"recent_{i}_day={row['d']}")
-              print(f"recent_{i}_source={row['sleep_source'] or row['external_source'] or 'none'}")
           con.close()
           PY
           REMOTE
