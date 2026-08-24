@@ -5,6 +5,10 @@ name: Deploy LIFE OS Flutter Web to GitHub Pages
 # then this workflow publishes the exact validated SHA. Keep this path runnable
 # for UI hotfixes such as sleep authorization retry behavior.
 on:
+  push:
+    branches: [gh-pages]
+    paths:
+      - '.github/workflows/deploy.yml'
   workflow_run:
     workflows:
       - Deploy PocketBase hooks and migrations
@@ -14,12 +18,60 @@ permissions:
   contents: write
 
 concurrency:
-  group: life-os-web-deploy-${{ github.event.workflow_run.head_sha }}
+  group: life-os-web-deploy-${{ github.event.workflow_run.head_sha || github.sha }}
   cancel-in-progress: true
 
 jobs:
+  one-shot-plan-time-repair:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Set up Flutter 3.41.6
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.6'
+          channel: stable
+
+      - name: Create env.dart
+        run: |
+          mkdir -p lib/core/env
+          printf '%s\n' 'abstract final class Env {' '  static const String placeholder = '\'''\'';' '}' > lib/core/env/env.dart
+
+      - name: Apply guarded Plans Time repair
+        run: python scripts/manual/fix_plan_time_regressions_20260824.py
+
+      - name: Validate contracts and source
+        run: |
+          set -euo pipefail
+          python scripts/audit/documentation_parity.py
+          python scripts/audit/pocketbase_schema_contract.py
+          python scripts/audit/deployment_contract.py
+          node --check pb_migrations/1787580300_add_category_default_plan_timezone.js
+          git diff --check
+          flutter pub get
+          flutter analyze --no-fatal-infos --no-fatal-warnings
+          flutter test
+
+      - name: Commit verified repair to main
+        run: |
+          set -euo pipefail
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add CHANGELOG.md lib/features/planning/time_view/time_view_search_delegate.dart lib/data/plans/plan_projection_types.dart lib/features/planning/planning_page.dart lib/features/planning/time_view/time_view_card_layer.dart lib/l10n/langs/en.dart lib/l10n/langs/ru.dart pb_migrations/1787580300_add_category_default_plan_timezone.js
+          git diff --cached --quiet && exit 0
+          git commit -m 'Fix Plans Time timezone, bulk drag and reprojection load'
+          git pull --rebase origin main
+          git push origin HEAD:main
+
   build-and-deploy:
     if: >-
+      github.event_name == 'workflow_run' &&
       github.event.workflow_run.conclusion == 'success' &&
       github.event.workflow_run.event == 'push' &&
       github.event.workflow_run.head_branch == 'main'
