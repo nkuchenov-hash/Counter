@@ -74,8 +74,8 @@ jobs:
           s = s.replace(old, new, 1)
           ui.write_text(s, encoding='utf-8')
           PY
-          dart format lib/data/health/cloud_sleep_sync_service.dart lib/features/settings/health/health_connect_settings_section.dart
           node --check pb_hooks/google_health_sleep_runtime.js
+          git diff --check
           git rm .github/workflows/tmp-google-health-account-link-fix.yml
           git add pb_hooks/google_health_sleep_runtime.js lib/data/health/cloud_sleep_sync_service.dart lib/features/settings/health/health_connect_settings_section.dart
           git commit -m 'Handle Google Health account setup before sleep sync'
