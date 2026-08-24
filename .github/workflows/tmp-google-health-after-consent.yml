@@ -21,7 +21,7 @@ jobs:
       POCKETBASE_DEPLOY_DIR: ${{ secrets.POCKETBASE_DEPLOY_DIR }}
     steps:
       - uses: actions/checkout@v4
-      - name: Inspect exact Google Health error
+      - name: Inspect deployed Google Health fix and state
         shell: bash
         run: |
           set -euo pipefail
@@ -42,6 +42,10 @@ jobs:
           if [[ -z "$app_dir" && -n "$service_name" ]]; then app_dir="$(systemctl show "$service_name" -p WorkingDirectory --value 2>/dev/null || true)"; fi
           if [[ -z "$app_dir" && -n "$pid" ]]; then app_dir="$(readlink -f "/proc/$pid/cwd" 2>/dev/null || true)"; fi
           [[ -n "$app_dir" && -d "$app_dir" ]]
+          runtime="$app_dir/pb_hooks/google_health_sleep_runtime.js"
+          test -f "$runtime"
+          if grep -q 'include_granted_scopes' "$runtime"; then echo 'clean_scope_fix=false'; else echo 'clean_scope_fix=true'; fi
+          if grep -q 'disallowed_oauth_scopes' "$runtime"; then echo 'reconnect_detection=true'; else echo 'reconnect_detection=false'; fi
           python3 - "$app_dir/pb_data/data.db" <<'PY'
           import sqlite3, sys, re
           con=sqlite3.connect(f'file:{sys.argv[1]}?mode=ro', uri=True); con.row_factory=sqlite3.Row
@@ -56,7 +60,7 @@ jobs:
               print('synced='+str(bool(r['last_sync_at'])).lower())
               print('sessions='+str(r['last_session_count'] or 0))
               print('imported='+str(r['last_imported_count'] or 0))
-              print('last_error='+err[:2000].replace('\n',' '))
+              print('last_error='+err[:1000].replace('\n',' '))
           latest=con.execute("SELECT date(max(end_time)) FROM records WHERE title='Sleep' OR title='Сон'").fetchone()[0]
           print('latest_sleep_day='+str(latest or 'none'))
           con.close()
