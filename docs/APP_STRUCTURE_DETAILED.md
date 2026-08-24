@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `f2936c55` on 2026-08-24.**
+**Generated from input HEAD `2410b1d1` on 2026-08-24.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 841 — each appears **exactly once** below.
+**Tracked files:** 840 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -43,7 +43,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | `localization` | 13 |
 | `installer` | 12 |
 | `Brain Voice` | 10 |
-| `CI/deployment` | 10 |
+| `CI/deployment` | 9 |
 | `shared time` | 7 |
 | `package metadata` | 6 |
 | `shared diagnostics` | 6 |
@@ -56,7 +56,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 465 |
+| `PROVEN_REQUIRED` | 464 |
 | `REQUIRED_FOR_TEST_OR_TOOLING` | 197 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
 | `GOVERNING_DOCUMENTATION` | 35 |
@@ -67,7 +67,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 779 |
+| `HIGH` | 778 |
 | `MEDIUM` | 62 |
 
 ---
@@ -4630,43 +4630,6 @@ RU:
 - **Владелец / слой:** CI
 - **Обязанности:** Управляет CI-сценарием `install-xiaomi-sleep-runtime.yml` и его границами выполнения.
 - **Когда открывать:** Когда ломается поведение, связанное с `install-xiaomi-sleep-runtime.yml`.
-- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
-- **Связано с:** `.github/`, Flutter tooling.
-
-
-### `.github/workflows/tmp-regenerate-google-health-structure.yml`
-
-EN:
-
-- **Human purpose:** GitHub Actions workflow `.github/workflows/tmp-regenerate-google-health-structure.yml` defines the repository automation named by this workflow file. The CI system loads `.github/workflows/tmp-regenerate-google-health-structure.yml` to run its declared triggers, permissions, jobs, and checks.
-- **What this is:** GitHub Actions workflow `.github/workflows/tmp-regenerate-google-health-structure.yml` defines the repository automation named by this workflow file.
-- **Why needed:** The CI system loads `.github/workflows/tmp-regenerate-google-health-structure.yml` to run its declared triggers, permissions, jobs, and checks.
-- **Contents:** YAML workflow definition specific to `tmp-regenerate-google-health-structure.yml`.
-- **Repository role:** CI/deployment
-- **Evidence of use:** GitHub Actions discovers workflows under `.github/workflows/`; see `docs/DEPLOY.md` for publish/build intent.
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Broken CI deploy or Windows installer pipeline.
-- **Confidence:** HIGH
-- **Owner / layer:** CI
-- **Responsibilities:** Own the GitHub Actions behavior declared by `tmp-regenerate-google-health-structure.yml`.
-- **When to open:** When behavior tied to `tmp-regenerate-google-health-structure.yml` breaks or you need to change its documented role.
-- **Can it be deleted?** Broken CI deploy or Windows installer pipeline.
-- **Connected to:** Flutter `.github` tooling.
-
-RU:
-
-- **Зачем файл человеку:** Автоматизация GitHub Actions `tmp-regenerate-google-health-structure.yml` для CI и операций репозитория. GitHub Actions читает `tmp-regenerate-google-health-structure.yml` и запускает описанные в нём события, проверки и служебные шаги.
-- **Что это:** Автоматизация GitHub Actions `tmp-regenerate-google-health-structure.yml` для CI и операций репозитория.
-- **Зачем:** GitHub Actions читает `tmp-regenerate-google-health-structure.yml` и запускает описанные в нём события, проверки и служебные шаги.
-- **Содержимое:** YAML-триггеры, permissions и шаги CI, относящиеся к workflow `tmp-regenerate-google-health-structure.yml`.
-- **Роль в репозитории:** CI/deployment
-- **Доказательства использования:** GitHub Actions подхватывает workflow из `.github/workflows/`; см. `docs/DEPLOY.md`.
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Сломается CI deploy или сборка Windows installer.
-- **Уверенность:** HIGH
-- **Владелец / слой:** CI
-- **Обязанности:** Управляет CI-сценарием `tmp-regenerate-google-health-structure.yml` и его границами выполнения.
-- **Когда открывать:** Когда ломается поведение, связанное с `tmp-regenerate-google-health-structure.yml`.
 - **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
 - **Связано с:** `.github/`, Flutter tooling.
 
