@@ -1,0 +1,123 @@
+name: Emergency quarantine root pb.js
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/emergency-pocketbase-quarantine-root-pbjs.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pocketbase-production
+  cancel-in-progress: false
+
+jobs:
+  recover:
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      SSH_PRIVATE_KEY: ${{ secrets.POCKETBASE_SSH_PRIVATE_KEY || secrets.VPS_SSH_KEY || secrets.SSH_PRIVATE_KEY }}
+      SSH_USER: ${{ secrets.POCKETBASE_SSH_USER || secrets.VPS_SSH_USER || secrets.SSH_USER }}
+      SSH_HOST: ${{ secrets.POCKETBASE_SSH_HOST || secrets.VPS_HOST || secrets.SSH_HOST }}
+      SSH_PORT: ${{ secrets.POCKETBASE_SSH_PORT || secrets.VPS_SSH_PORT || '22' }}
+      POCKETBASE_SERVICE: ${{ secrets.POCKETBASE_SERVICE }}
+      POCKETBASE_DEPLOY_DIR: ${{ secrets.POCKETBASE_DEPLOY_DIR }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Prepare SSH
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ -n "$SSH_PRIVATE_KEY" ]]
+          echo "SSH_USER=${SSH_USER:-root}" >> "$GITHUB_ENV"
+          echo "SSH_HOST=${SSH_HOST:-217.114.0.201}" >> "$GITHUB_ENV"
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/lifeos_pocketbase
+          chmod 600 ~/.ssh/lifeos_pocketbase
+          ssh-keyscan -T 10 -p "$SSH_PORT" -H "${SSH_HOST:-217.114.0.201}" >> ~/.ssh/known_hosts
+
+      - name: Quarantine root pb.js and restart service
+        id: recover
+        shell: bash
+        run: |
+          set -euo pipefail
+          ssh -i ~/.ssh/lifeos_pocketbase -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" \
+            "POCKETBASE_SERVICE='$POCKETBASE_SERVICE' POCKETBASE_DEPLOY_DIR='$POCKETBASE_DEPLOY_DIR' bash -s" \
+            > "$RUNNER_TEMP/pb_quarantine_result.txt" 2>&1 <<'REMOTE'
+          set -euo pipefail
+          if [[ "$(id -u)" -eq 0 ]]; then SUDO=""; else SUDO="sudo -n"; fi
+          service_name="${POCKETBASE_SERVICE:-}"
+          if [[ -z "$service_name" ]]; then
+            service_name="$(systemctl list-unit-files --type=service --no-legend 2>/dev/null | awk 'tolower($1) ~ /pocketbase/ && !found {print $1; found=1}')"
+          fi
+          app_dir="${POCKETBASE_DEPLOY_DIR:-}"
+          if [[ -z "$app_dir" && -n "$service_name" ]]; then
+            app_dir="$(systemctl show "$service_name" -p WorkingDirectory --value 2>/dev/null || true)"
+          fi
+          [[ -n "$service_name" && -n "$app_dir" && -d "$app_dir" ]]
+          echo "service=$service_name"
+          echo "app_dir_present=true"
+          if [[ -f "$app_dir/pb.js" ]]; then
+            echo "pb_js_present=true"
+            echo "pb_js_head_begin"
+            $SUDO sed -n '1,12p' "$app_dir/pb.js" | sed -E 's/[A-Za-z0-9_=-]{48,}/[redacted]/g'
+            echo "pb_js_head_end"
+            quarantine="$app_dir/pb.js.disabled.$(date -u +%Y%m%dT%H%M%SZ)"
+            $SUDO mv "$app_dir/pb.js" "$quarantine"
+            echo "pb_js_quarantined=true"
+          else
+            echo "pb_js_present=false"
+            echo "pb_js_quarantined=false"
+          fi
+          $SUDO systemctl daemon-reload
+          $SUDO systemctl restart "$service_name"
+          sleep 4
+          active="$($SUDO systemctl is-active "$service_name" 2>/dev/null || true)"
+          echo "active=$active"
+          $SUDO systemctl is-active --quiet "$service_name"
+          REMOTE
+          cat "$RUNNER_TEMP/pb_quarantine_result.txt"
+
+      - name: Verify production health
+        id: health
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in {1..20}; do
+            code="$(curl -ksS -o /dev/null -w '%{http_code}' https://217-114-0-201.sslip.io/api/health || true)"
+            echo "health attempt $attempt: $code"
+            if [[ "$code" == "200" ]]; then
+              echo "PocketBase production health OK"
+              exit 0
+            fi
+            sleep 2
+          done
+          exit 1
+
+      - name: Publish recovery result
+        if: always()
+        shell: bash
+        env:
+          RECOVER_OUTCOME: ${{ steps.recover.outcome }}
+          HEALTH_OUTCOME: ${{ steps.health.outcome }}
+        run: |
+          set -euo pipefail
+          {
+            echo "sha=$GITHUB_SHA"
+            echo "recover=${RECOVER_OUTCOME:-skipped}"
+            echo "health=${HEALTH_OUTCOME:-skipped}"
+            if [[ -f "$RUNNER_TEMP/pb_quarantine_result.txt" ]]; then
+              echo "remote_diag_begin"
+              sed -E 's/[A-Za-z0-9_=-]{48,}/[redacted]/g' "$RUNNER_TEMP/pb_quarantine_result.txt" | tail -n 60
+              echo "remote_diag_end"
+            fi
+          } > _tmp_pocketbase_quarantine_result.txt
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add _tmp_pocketbase_quarantine_result.txt
+          git commit -m 'Record PocketBase quarantine recovery result'
+          git pull --rebase origin main
+          git push origin HEAD:main
