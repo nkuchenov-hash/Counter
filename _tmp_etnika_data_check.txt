@@ -1,0 +1,6 @@
+migration_file_present=false
+server_ready=false
+etnika_active_categories=1
+root_path_rows=1
+child_matches=0
+verified=false
