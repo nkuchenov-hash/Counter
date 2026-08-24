@@ -3,6 +3,7 @@ name: Deploy LIFE OS Flutter Web to GitHub Pages
 # Server-schema-before-client law: every main push first completes the PocketBase
 # workflow. UI-only pushes make that workflow a validated no-op at deploy phase,
 # then this workflow publishes the exact validated SHA.
+# One-shot Time View verification trigger: 2026-08-24.
 on:
   push:
     branches: [gh-pages]
