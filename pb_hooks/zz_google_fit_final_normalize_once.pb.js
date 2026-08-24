@@ -1,5 +1,6 @@
 /// <reference path="../pb_data/types.d.ts" />
 
+// Explicit main-branch deployment trigger for the reviewed-candidate ETNIKA Path.
 // One-time data correction for the ETNIKA homepage redesign Path.
 // It deliberately creates/updates the Path only. Planning rows are not created
 // until the user reviews and explicitly approves the Path structure.
