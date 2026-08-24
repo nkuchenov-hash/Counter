@@ -7,7 +7,7 @@ on:
       - '.github/workflows/emergency-pocketbase-recover.yml'
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: pocketbase-production
@@ -29,6 +29,8 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Prepare SSH
+        id: ssh
+        continue-on-error: true
         shell: bash
         run: |
           set -euo pipefail
@@ -38,9 +40,12 @@ jobs:
           install -m 700 -d ~/.ssh
           printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/lifeos_pocketbase
           chmod 600 ~/.ssh/lifeos_pocketbase
-          ssh-keyscan -p "$SSH_PORT" -H "${SSH_HOST:-217.114.0.201}" >> ~/.ssh/known_hosts
+          ssh-keyscan -T 10 -p "$SSH_PORT" -H "${SSH_HOST:-217.114.0.201}" >> ~/.ssh/known_hosts
 
       - name: Restore safe bootcheck and restart PocketBase
+        id: restart
+        if: steps.ssh.outcome == 'success'
+        continue-on-error: true
         shell: bash
         run: |
           set -euo pipefail
@@ -73,6 +78,9 @@ jobs:
           REMOTE
 
       - name: Verify production health
+        id: health
+        if: steps.restart.outcome == 'success'
+        continue-on-error: true
         shell: bash
         run: |
           set -euo pipefail
@@ -86,3 +94,37 @@ jobs:
             sleep 2
           done
           exit 1
+
+      - name: Publish sanitized recovery result
+        if: always()
+        shell: bash
+        env:
+          SSH_OUTCOME: ${{ steps.ssh.outcome }}
+          RESTART_OUTCOME: ${{ steps.restart.outcome }}
+          HEALTH_OUTCOME: ${{ steps.health.outcome }}
+        run: |
+          set -euo pipefail
+          cat > _tmp_pocketbase_recovery_result.txt <<EOF
+          sha=$GITHUB_SHA
+          ssh=${SSH_OUTCOME:-skipped}
+          restart=${RESTART_OUTCOME:-skipped}
+          health=${HEALTH_OUTCOME:-skipped}
+          EOF
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add _tmp_pocketbase_recovery_result.txt
+          git commit -m 'Record emergency PocketBase recovery result'
+          git pull --rebase origin main
+          git push origin HEAD:main
+
+      - name: Fail if recovery did not complete
+        if: always()
+        shell: bash
+        env:
+          SSH_OUTCOME: ${{ steps.ssh.outcome }}
+          RESTART_OUTCOME: ${{ steps.restart.outcome }}
+          HEALTH_OUTCOME: ${{ steps.health.outcome }}
+        run: |
+          [[ "$SSH_OUTCOME" == "success" ]]
+          [[ "$RESTART_OUTCOME" == "success" ]]
+          [[ "$HEALTH_OUTCOME" == "success" ]]
