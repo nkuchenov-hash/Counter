@@ -21,7 +21,7 @@ jobs:
       POCKETBASE_DEPLOY_DIR: ${{ secrets.POCKETBASE_DEPLOY_DIR }}
     steps:
       - uses: actions/checkout@v4
-      - name: Check deployed scope fix
+      - name: Inspect post-consent failure
         shell: bash
         run: |
           set -euo pipefail
@@ -39,6 +39,25 @@ jobs:
           if [[ -z "$app_dir" && -n "$pid" ]]; then app_dir="$(readlink -f "/proc/$pid/cwd" 2>/dev/null || true)"; fi
           runtime="$app_dir/pb_hooks/google_health_sleep_runtime.js"
           if grep -q 'include_granted_scopes' "$runtime"; then echo clean_scope_fix=false; else echo clean_scope_fix=true; fi
-          if grep -q 'disallowed_oauth_scopes' "$runtime"; then echo reconnect_detection=true; else echo reconnect_detection=false; fi
+          python3 - "$app_dir/pb_data/data.db" <<'PY'
+          import sqlite3, sys, re
+          con=sqlite3.connect(f'file:{sys.argv[1]}?mode=ro', uri=True); con.row_factory=sqlite3.Row
+          r=con.execute("SELECT status,last_error,last_sync_at,last_session_count,last_imported_count,length(coalesce(refresh_token_enc,'')) token_len FROM sleep_sync_connections WHERE provider='google_health' LIMIT 1").fetchone()
+          print('row='+str(bool(r)).lower())
+          if r:
+              err=(r['last_error'] or '')
+              err=re.sub(r'ya29\.[A-Za-z0-9._-]+','[redacted-token]',err)
+              err=re.sub(r'1//[A-Za-z0-9._-]+','[redacted-token]',err)
+              print('status='+str(r['status'] or 'none'))
+              print('token='+str((r['token_len'] or 0)>0).lower())
+              print('synced='+str(bool(r['last_sync_at'])).lower())
+              print('sessions='+str(r['last_session_count'] or 0))
+              print('imported='+str(r['last_imported_count'] or 0))
+              print('last_error='+err[:2500].replace('\n',' '))
+          latest=con.execute("SELECT date(max(end_time)) FROM records WHERE title='Sleep' OR title='Сон'").fetchone()[0]
+          print('latest_sleep_day='+str(latest or 'none'))
+          print('google_health_records='+str(con.execute("SELECT count(*) FROM records WHERE sleep_source='google_health'").fetchone()[0]))
+          con.close()
+          PY
           curl -sS -o /dev/null -w 'health=%{http_code}\n' https://217-114-0-201.sslip.io/api/health
           REMOTE
