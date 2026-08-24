@@ -89,6 +89,8 @@ function __healthNeedsReconnect(errorText) {
     return raw.indexOf("invalid_grant") >= 0 ||
         raw.indexOf("insufficient authentication scopes") >= 0 ||
         raw.indexOf("insufficient permission") >= 0 ||
+        raw.indexOf("disallowed oauth scope") >= 0 ||
+        raw.indexOf("disallowed_oauth_scopes") >= 0 ||
         raw.indexOf("authorization_required") >= 0;
 }
 
@@ -423,7 +425,6 @@ function connect(e) {
         scope: __healthScope,
         access_type: "offline",
         prompt: "consent",
-        include_granted_scopes: "true",
         state: state
     });
     return e.json(200, { authorization_url: url });
@@ -463,7 +464,7 @@ function callback(e) {
         connection.set("oauth_state_expires_at", "");
         connection.set("last_error", "");
         e.app.save(connection);
-        try { __healthRunSafe(e.app, connection); } catch (_) {}
+        __healthRunSafe(e.app, connection);
         var returnUrl = __healthReturnUrl();
         return e.html(200,
             "<!doctype html><meta charset='utf-8'><meta http-equiv='refresh' content='1;url=" + returnUrl + "'>" +
