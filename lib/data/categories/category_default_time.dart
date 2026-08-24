@@ -103,6 +103,63 @@ extension CategoryDefaultTimeExtension on DatabaseService {
     return d.contains('default_plan_timezone');
   }
 
+  /// Hot path for Time View settings: patch only the two schedule-default fields
+  /// and update the already-loaded category in memory. A default-time edit must
+  /// not refetch/rebuild the entire category tree via [patchCategoryDelta].
+  Future<({bool ok, String? errorDetail})>
+  _patchCategoryDefaultPlanScheduleFields(
+    int categoryId,
+    Map<String, dynamic> fields,
+  ) async {
+    if (!_isInitialized || !(currentProfileId?.isNotEmpty ?? false)) {
+      return (ok: false, errorDetail: 'not_initialized');
+    }
+    if (fields.isEmpty) return (ok: true, errorDetail: null);
+
+    final existing = getCategoryRuleById(categoryId);
+    if (existing == null) {
+      return (ok: false, errorDetail: 'category_not_found');
+    }
+    final pbId = _categoryBackendRowIdStrict(existing);
+    if (pbId == null) {
+      return (ok: false, errorDetail: 'missing_backend_row_id');
+    }
+    final biz = _categoryStringPkForApi(existing);
+
+    try {
+      final prepared = _categoryPatchFieldsWithJsonLongText(<String, dynamic>{
+        'user_id': _pidForPbFilter,
+        if (biz != null && biz.isNotEmpty) 'category_id': biz,
+        'order': existing.order,
+        ...fields,
+      });
+      final body = _nocoFieldsForPatch(prepared);
+      await ensurePocketBaseReady();
+      await _pb.collection(PbCollections.categories).update(pbId, body: body);
+
+      if (fields.containsKey('default_plan_time')) {
+        existing.defaultPlanTime = sanitizeDefaultPlanTime(
+          fields['default_plan_time'],
+        );
+      }
+      if (fields.containsKey('default_plan_timezone')) {
+        existing.defaultPlanTimezone = sanitizeDefaultPlanTimezone(
+          fields['default_plan_timezone'],
+        );
+      }
+      _categoryController.add(List<CategoryRule>.from(_rules));
+      return (ok: true, errorDetail: null);
+    } on ClientException catch (e) {
+      if (e.statusCode == 404) {
+        _emitCategorySyncNotice('category_sync_not_found');
+      }
+      return (ok: false, errorDetail: e.toString());
+    } catch (e) {
+      DatabaseService._log('PATCH_CATEGORY_DEFAULT_PLAN_SCHEDULE: $e');
+      return (ok: false, errorDetail: e.toString());
+    }
+  }
+
   Future<({bool ok, String? errorDetail, bool timezoneFieldMissing})>
   updateCategoryDefaultPlanSchedule(
     int categoryId,
@@ -116,7 +173,10 @@ extension CategoryDefaultTimeExtension on DatabaseService {
       if (sanitizeDefaultPlanTimezone(existing?.defaultPlanTimezone) != null) {
         clearFields['default_plan_timezone'] = null;
       }
-      final clear = await patchCategoryDelta(categoryId, clearFields);
+      final clear = await _patchCategoryDefaultPlanScheduleFields(
+        categoryId,
+        clearFields,
+      );
       return (
         ok: clear.ok,
         errorDetail: clear.errorDetail,
@@ -135,7 +195,10 @@ extension CategoryDefaultTimeExtension on DatabaseService {
         fields['default_plan_timezone'] = null;
       }
     }
-    final result = await patchCategoryDelta(categoryId, fields);
+    final result = await _patchCategoryDefaultPlanScheduleFields(
+      categoryId,
+      fields,
+    );
     return (
       ok: result.ok,
       errorDetail: result.errorDetail,
