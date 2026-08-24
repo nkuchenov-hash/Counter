@@ -73,6 +73,9 @@ class CloudSleepSyncService {
   final ValueNotifier<CloudSleepSyncState> state =
       ValueNotifier<CloudSleepSyncState>(const CloudSleepSyncState.initial());
 
+  static const String _googleHealthAccountSetupError =
+      'google_health_account_not_linked';
+
   bool _loading = false;
   DateTime? _lastRecordsRefreshSyncUtc;
 
@@ -258,6 +261,42 @@ class CloudSleepSyncService {
         error: '$error',
       );
       return false;
+    }
+  }
+
+  bool get requiresGoogleHealthAccountSetup {
+    final raw = state.value.error?.toLowerCase() ?? '';
+    return raw.contains(_googleHealthAccountSetupError) ||
+        raw.contains('account_not_linked') ||
+        raw.contains('account is not linked to google health');
+  }
+
+  Future<bool> openGoogleHealthAccountSetup() async {
+    final uri = Uri.parse('https://fitbit.google.com/auth/signup');
+    try {
+      final launched = await launchUrl(
+        uri,
+        mode: kIsWeb ? LaunchMode.platformDefault : LaunchMode.externalApplication,
+        webOnlyWindowName: kIsWeb ? '_blank' : null,
+      );
+      if (!launched) return false;
+      unawaited(_pollGoogleHealthAccountSetup());
+      return true;
+    } catch (error) {
+      state.value = state.value.copyWith(
+        phase: CloudSleepSyncPhase.error,
+        error: '$error',
+      );
+      return false;
+    }
+  }
+
+  Future<void> _pollGoogleHealthAccountSetup() async {
+    for (var attempt = 0; attempt < 30; attempt++) {
+      await Future<void>.delayed(const Duration(seconds: 10));
+      if (!state.value.configured) return;
+      final ok = await syncNow();
+      if (ok) return;
     }
   }
 
