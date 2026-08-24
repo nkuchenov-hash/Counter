@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('profile timezone full-plan reprojection is deduplicated', () {
+  test('profile timezone full-plan reprojection is burst-deduplicated', () {
     final source = File(
       'lib/data/plans/plan_projection_types.dart',
     ).readAsStringSync();
@@ -14,13 +14,32 @@ void main() {
     );
     expect(
       source,
+      contains('DateTime? _lastAppliedProfileTimezoneProjectionAt;'),
+    );
+    expect(
+      source,
+      contains('_profileTimezoneProjectionDedupeWindow'),
+    );
+    expect(source, contains("\${currentProfileId ?? '-'}|"));
+    expect(
+      source,
       contains(
-        'if (_lastAppliedProfileTimezoneProjectionSignature == signature) return;',
+        '_lastAppliedProfileTimezoneProjectionSignature == signature &&',
+      ),
+    );
+    expect(
+      source,
+      contains(
+        'now.difference(_lastAppliedProfileTimezoneProjectionAt!) <',
       ),
     );
     expect(
       source,
       contains('_lastAppliedProfileTimezoneProjectionSignature = signature;'),
+    );
+    expect(
+      source,
+      contains('_lastAppliedProfileTimezoneProjectionAt = DateTime.now();'),
     );
   });
 
