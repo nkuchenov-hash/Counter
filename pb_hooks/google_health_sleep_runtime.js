@@ -218,7 +218,7 @@ function __healthFetchSleep(accessToken, start, end) {
         };
         if (pageToken) query.pageToken = pageToken;
         var res = $http.send({
-            url: "https://health.googleapis.com/v4/users/me/dataTypes/sleep/dataPoints:reconcile?" + __healthForm(query),
+            url: "https://health.googleapis.com/v4/" + "users/me/dataTypes/sleep/dataPoints:reconcile?" + __healthForm(query),
             method: "GET",
             headers: {
                 "authorization": "Bearer " + accessToken,
