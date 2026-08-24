@@ -14,7 +14,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: life-os-web-deploy-${{ github.event.workflow_run.head_sha }}
+  group: life-os-web-deploy
   cancel-in-progress: true
 
 jobs:
