@@ -56,7 +56,9 @@ routerAdd("DELETE", "/api/sleep-sync/connection", function(e) {
     return sync.remove(e);
 }, $apis.requireAuth("profiles"));
 
-cronAdd("lifeos_google_health_sleep_sync", "*/15 * * * *", function() {
+// Poll eligibility every minute; google_health_sleep_runtime.js keeps the
+// actual provider calls throttled to the configured 15-minute catch-up window.
+cronAdd("lifeos_google_health_sleep_sync", "* * * * *", function() {
     var sync = require(__hooks + "/google_health_sleep_runtime.js");
     return sync.cron($app);
 });
