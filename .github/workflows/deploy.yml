@@ -99,21 +99,38 @@ jobs:
           grep -Fq "flutter_bootstrap.js?v=$FULL_SHA" build/web/index.html
           test "$(tr -d '\r\n' < build/web/lifeos-build.txt)" = "$FULL_SHA"
 
-      - name: Preserve published Igropoisk
+      - name: Preserve published content and default-branch workflows
+        shell: bash
         run: |
+          set -euo pipefail
           git fetch origin gh-pages:refs/remotes/origin/gh-pages
           rm -rf /tmp/counter-gh-pages
           git worktree add --detach /tmp/counter-gh-pages refs/remotes/origin/gh-pages
+
           if [ -d /tmp/counter-gh-pages/igropoisk ]; then
             rm -rf build/web/igropoisk
             cp -R /tmp/counter-gh-pages/igropoisk build/web/igropoisk
           fi
-          git worktree remove --force /tmp/counter-gh-pages
 
-      - name: Preserve workflow_run trigger on default branch
-        run: |
+          if [ -d /tmp/counter-gh-pages/.github/workflows ]; then
+            mkdir -p build/web/.github
+            cp -R /tmp/counter-gh-pages/.github/workflows build/web/.github/workflows
+          fi
+
+          # Never resurrect temporary Plans Time recovery workflows during publish.
+          rm -f \
+            build/web/.github/workflows/one-shot-plan-time-fix-bootstrap.yml \
+            build/web/.github/workflows/one-shot-plan-time-fix-fast.yml \
+            build/web/.github/workflows/one-shot-plan-time-fix.yml \
+            build/web/.github/workflows/trigger-plans-time-finalizer.yml
+
+          # These two files are the canonical production deployment chain and must
+          # survive every gh-pages replacement because gh-pages is the repo default branch.
           mkdir -p build/web/.github/workflows
           cp .github/workflows/deploy.yml build/web/.github/workflows/deploy.yml
+          cp .github/workflows/deploy-pocketbase.yml build/web/.github/workflows/deploy-pocketbase.yml
+
+          git worktree remove --force /tmp/counter-gh-pages
 
       - name: Deploy to gh-pages
         uses: JamesIves/github-pages-deploy-action@v4
