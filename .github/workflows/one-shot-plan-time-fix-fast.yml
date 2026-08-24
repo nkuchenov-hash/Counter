@@ -5,6 +5,10 @@ on:
     branches: [gh-pages]
     paths:
       - '.github/workflows/one-shot-plan-time-fix-fast.yml'
+  pull_request:
+    branches: [gh-pages]
+    paths:
+      - 'lifeos-finalize-trigger.txt'
 
 permissions:
   contents: write
@@ -26,16 +30,18 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
-      - name: Checkout current source
+      - name: Checkout candidate source
         uses: actions/checkout@v4
         with:
-          ref: main
+          ref: plans-time-final-source-20260824
           fetch-depth: 0
 
-      - name: Finalize clean source state
+      - name: Finalize clean candidate source state
         shell: bash
         run: |
           set -euo pipefail
+          git fetch origin main
+          git rebase origin/main
 
           git rm -f --ignore-unmatch \
             .github/workflows/one-shot-plan-time-fix.yml \
@@ -85,12 +91,11 @@ jobs:
           git add -A
           if ! git diff --cached --quiet; then
             git commit -m 'Finalize Plans Time timezone and bulk drag repair'
-            git pull --rebase origin main
-            git push origin HEAD:main
           fi
+          git push --force-with-lease origin HEAD:plans-time-final-source-20260824
           SOURCE_SHA="$(git rev-parse HEAD)"
           echo "SOURCE_SHA=$SOURCE_SHA" >> "$GITHUB_ENV"
-          echo "Final source: $SOURCE_SHA"
+          echo "Final candidate source: $SOURCE_SHA"
 
       - name: Set up Flutter 3.41.6
         uses: subosito/flutter-action@v2
@@ -207,10 +212,19 @@ jobs:
           PY
           REMOTE
 
+      - name: Promote validated candidate to main
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          git merge-base --is-ancestor origin/main "$SOURCE_SHA"
+          git push origin "$SOURCE_SHA":main
+
       - name: Build LIFE OS web from validated source
         shell: bash
         run: |
           set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
           SHORT_SHA="${SOURCE_SHA:0:7}"
           BUILD_TIME="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
           flutter build web --release --base-href="/Counter/" --no-tree-shake-icons --no-wasm-dry-run --pwa-strategy=none \
