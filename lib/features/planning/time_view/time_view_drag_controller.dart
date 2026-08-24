@@ -60,7 +60,7 @@ extension PlanningTimeViewTimeViewDragController on PlanningTimeViewCoordinator 
     if (host.planSelectMode) {
       final selected = scheduledInRange
           .where((t) => host.selectedPlanKeys.contains(host.planKey(t)))
-          .where((t) => t.startTime != null)
+          .where(planIsTimelineScheduledDraggable)
           .toList();
       if (selected.length > 1) {
         dragIds = selected.map((t) => t.planRowIdForBackend).toSet();
