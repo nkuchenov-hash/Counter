@@ -21,7 +21,7 @@ routerAdd("POST", "/api/sleep-sync/google-fit/connect", function(e) {
 }, $apis.requireAuth("profiles"));
 
 // Compatibility endpoint used by the short-lived Mi Fitness web fallback.
-// Cached web clients now receive the Google Health consent flow instead of a
+// Cached web clients now receive standard Google Health consent instead of a
 // Xiaomi-specific login page.
 routerAdd("POST", "/api/sleep-sync/xiaomi/connect", function(e) {
     var sync = require(__hooks + "/google_health_sleep_runtime.js");
