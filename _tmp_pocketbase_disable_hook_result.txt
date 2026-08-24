@@ -1,0 +1,7 @@
+sha=163c4bd2d28ac432dc53cdecfaf1385908517812
+recover=success
+health=success
+remote_diag_begin
+hook_overwritten=true
+active=active
+remote_diag_end
