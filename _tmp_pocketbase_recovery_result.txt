@@ -1,4 +1,4 @@
-sha=8a1f687bc225506b4583cc3600735bc1c8f13a1a
+sha=0b0a61a61cb9b2e223aa6d9c68716550da31ab77
 ssh=success
 restart_step=success
 health=failure
@@ -13,9 +13,94 @@ status_begin
      Loaded: loaded (/etc/systemd/system/pocketbase.service; enabled; preset: enabled)
     Drop-In: /etc/systemd/system/pocketbase.service.d
              └─lifeos-calendar.conf, lifeos-google-fit.conf
-     Active: activating (auto-restart) (Result: exit-code) since Mon 2026-08-24 13:51:52 UTC; 2s ago
-    Process: 1274040 ExecStart=/root/pb/pocketbase serve --http=217-114-0-201.sslip.io:80 --https=217-114-0-201.sslip.io:443 (code=exited, status=1/FAILURE)
-   Main PID: 1274040 (code=exited, status=1/FAILURE)
-        CPU: 173ms
+     Active: activating (auto-restart) (Result: exit-code) since Mon 2026-08-24 13:53:46 UTC; 2s ago
+    Process: 1274365 ExecStart=/root/pb/pocketbase serve --http=217-114-0-201.sslip.io:80 --https=217-114-0-201.sslip.io:443 (code=exited, status=1/FAILURE)
+   Main PID: 1274365 (code=exited, status=1/FAILURE)
+        CPU: 234ms
+
+Aug 24 13:53:46 srcumdhnwm systemd[1]: pocketbase.service: Main process exited, code=exited, status=1/FAILURE
+Aug 24 13:53:46 srcumdhnwm systemd[1]: pocketbase.service: Failed with result 'exit-code'.
 status_end
+journal_begin
+pocketbase.service: Scheduled restart job, restart counter is at 20.
+Started pocketbase.service - PocketBase Production Service.
+2026/08/24 13:52:57 ReferenceError: run is not defined at /root/pb/pb.js:3:8(8)
+pocketbase.service: Main process exited, code=exited, status=1/FAILURE
+pocketbase.service: Failed with result 'exit-code'.
+pocketbase.service: Scheduled restart job, restart counter is at 21.
+Started pocketbase.service - PocketBase Production Service.
+2026/08/24 13:53:00 ReferenceError: run is not defined at /root/pb/pb.js:3:8(8)
+pocketbase.service: Main process exited, code=exited, status=1/FAILURE
+pocketbase.service: Failed with result 'exit-code'.
+pocketbase.service: Scheduled restart job, restart counter is at 22.
+Started pocketbase.service - PocketBase Production Service.
+2026/08/24 13:53:03 ReferenceError: run is not defined at /root/pb/pb.js:3:8(8)
+pocketbase.service: Main process exited, code=exited, status=1/FAILURE
+pocketbase.service: Failed with result 'exit-code'.
+pocketbase.service: Scheduled restart job, restart counter is at 23.
+Started pocketbase.service - PocketBase Production Service.
+2026/08/24 13:53:07 ReferenceError: run is not defined at /root/pb/pb.js:3:8(8)
+pocketbase.service: Main process exited, code=exited, status=1/FAILURE
+pocketbase.service: Failed with result 'exit-code'.
+pocketbase.service: Scheduled restart job, restart counter is at 24.
+Started pocketbase.service - PocketBase Production Service.
+2026/08/24 13:53:10 ReferenceError: run is not defined at /root/pb/pb.js:3:8(8)
+pocketbase.service: Main process exited, code=exited, status=1/FAILURE
+pocketbase.service: Failed with result 'exit-code'.
+pocketbase.service: Scheduled restart job, restart counter is at 25.
+Started pocketbase.service - PocketBase Production Service.
+2026/08/24 13:53:13 ReferenceError: run is not defined at /root/pb/pb.js:3:8(8)
+pocketbase.service: Main process exited, code=exited, status=1/FAILURE
+pocketbase.service: Failed with result 'exit-code'.
+pocketbase.service: Scheduled restart job, restart counter is at 26.
+Started pocketbase.service - PocketBase Production Service.
+2026/08/24 13:53:17 ReferenceError: run is not defined at /root/pb/pb.js:3:8(8)
+pocketbase.service: Main process exited, code=exited, status=1/FAILURE
+pocketbase.service: Failed with result 'exit-code'.
+pocketbase.service: Scheduled restart job, restart counter is at 27.
+Started pocketbase.service - PocketBase Production Service.
+2026/08/24 13:53:20 ReferenceError: run is not defined at /root/pb/pb.js:3:8(8)
+pocketbase.service: Main process exited, code=exited, status=1/FAILURE
+pocketbase.service: Failed with result 'exit-code'.
+pocketbase.service: Scheduled restart job, restart counter is at 28.
+Started pocketbase.service - PocketBase Production Service.
+2026/08/24 13:53:23 ReferenceError: run is not defined at /root/pb/pb.js:3:8(8)
+pocketbase.service: Main process exited, code=exited, status=1/FAILURE
+pocketbase.service: Failed with result 'exit-code'.
+pocketbase.service: Scheduled restart job, restart counter is at 29.
+Started pocketbase.service - PocketBase Production Service.
+2026/08/24 13:53:26 ReferenceError: run is not defined at /root/pb/pb.js:3:8(8)
+pocketbase.service: Main process exited, code=exited, status=1/FAILURE
+pocketbase.service: Failed with result 'exit-code'.
+pocketbase.service: Scheduled restart job, restart counter is at 30.
+Started pocketbase.service - PocketBase Production Service.
+2026/08/24 13:53:30 ReferenceError: run is not defined at /root/pb/pb.js:3:8(8)
+pocketbase.service: Main process exited, code=exited, status=1/FAILURE
+pocketbase.service: Failed with result 'exit-code'.
+pocketbase.service: Scheduled restart job, restart counter is at 31.
+Started pocketbase.service - PocketBase Production Service.
+2026/08/24 13:53:33 ReferenceError: run is not defined at /root/pb/pb.js:3:8(8)
+pocketbase.service: Main process exited, code=exited, status=1/FAILURE
+pocketbase.service: Failed with result 'exit-code'.
+pocketbase.service: Scheduled restart job, restart counter is at 32.
+Started pocketbase.service - PocketBase Production Service.
+2026/08/24 13:53:36 ReferenceError: run is not defined at /root/pb/pb.js:3:8(8)
+pocketbase.service: Main process exited, code=exited, status=1/FAILURE
+pocketbase.service: Failed with result 'exit-code'.
+pocketbase.service: Scheduled restart job, restart counter is at 33.
+Started pocketbase.service - PocketBase Production Service.
+2026/08/24 13:53:39 ReferenceError: run is not defined at /root/pb/pb.js:3:8(8)
+pocketbase.service: Main process exited, code=exited, status=1/FAILURE
+pocketbase.service: Failed with result 'exit-code'.
+pocketbase.service: Scheduled restart job, restart counter is at 34.
+Started pocketbase.service - PocketBase Production Service.
+2026/08/24 13:53:43 ReferenceError: run is not defined at /root/pb/pb.js:3:8(8)
+pocketbase.service: Main process exited, code=exited, status=1/FAILURE
+pocketbase.service: Failed with result 'exit-code'.
+Stopped pocketbase.service - PocketBase Production Service.
+Started pocketbase.service - PocketBase Production Service.
+2026/08/24 13:53:46 ReferenceError: run is not defined at /root/pb/pb.js:3:8(8)
+pocketbase.service: Main process exited, code=exited, status=1/FAILURE
+pocketbase.service: Failed with result 'exit-code'.
+journal_end
 remote_diag_end
