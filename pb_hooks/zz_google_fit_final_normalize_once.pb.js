@@ -1,22 +1,27 @@
 /// <reference path="../pb_data/types.d.ts" />
 
-function applyEtnikaHomepageRedesignOnce(app) {
+// One-time data correction for the ETNIKA homepage redesign Path.
+// It deliberately creates/updates the Path only. Planning rows are not created
+// until the user reviews and explicitly approves the Path structure.
+function applyEtnikaHomepageHourlyPathOnce(app) {
   const categories = app.findCollectionByNameOrId("categories")
   const profiles = app.findCollectionByNameOrId("profiles")
   const plans = app.findCollectionByNameOrId("plans")
   const paths = app.findCollectionByNameOrId("paths")
   const revisions = app.findCollectionByNameOrId("path_revisions")
+
   const norm = (v) => String(v || "").trim().toLocaleLowerCase()
-  const num = (r, f, d = 0) => {
-    const n = Number(r.getRaw(f))
-    return Number.isFinite(n) ? n : d
-  }
   const allCategories = app.findRecordsByFilter(categories, "", "id", 0, 0)
   const etnikaCandidates = allCategories.filter((r) =>
     norm(r.getString("name")) === "этника" && !r.getBool("is_archived")
   )
   const pathsFor = (categoryId) => app.findRecordsByFilter(
-    paths, "category_link = {:category}", "id", 0, 0, { category: categoryId },
+    paths,
+    "category_link = {:category}",
+    "id",
+    0,
+    0,
+    { category: categoryId },
   )
   const withPaths = etnikaCandidates.filter((r) => pathsFor(r.id).length > 0)
   let etnika = null
@@ -30,10 +35,34 @@ function applyEtnikaHomepageRedesignOnce(app) {
 
   const childName = "Обновление основной страницы сайта"
   const pathId = "etnika-homepage-redesign-20260824"
-  const revisionId = `${pathId}-v1`
-  const weekIds = Array.from({ length: 7 }, (_, i) =>
-    `etnika-homepage-redesign-2026-08-${String(i + 25).padStart(2, "0")}`
+  const desiredRevisionId = `${pathId}-hour-blocks-v1`
+
+  // Idempotency marker. Once this exact reviewed-candidate revision exists, the
+  // hook never overwrites later manual revisions and never touches future Plans.
+  const existingDesired = app.findRecordsByFilter(
+    revisions,
+    "user_id = {:owner} && path_id = {:path} && revision_id = {:revision}",
+    "id",
+    1,
+    0,
+    { owner: ownerId, path: pathId, revision: desiredRevisionId },
   )
+  if (existingDesired.length > 0) return
+
+  // Remove only the premature week Plans created by the previous draft. These
+  // identifiers are unique to that draft and must not exist before approval.
+  for (let d = 25; d <= 31; d++) {
+    const planId = `etnika-homepage-redesign-2026-08-${String(d).padStart(2, "0")}`
+    for (const row of app.findRecordsByFilter(
+      plans,
+      "user_id = {:owner} && plan_id = {:plan}",
+      "id",
+      0,
+      0,
+      { owner: ownerId, plan: planId },
+    )) app.delete(row)
+  }
+
   const childMatches = allCategories.filter((r) =>
     r.getString("user_id") === ownerId &&
     r.getString("parent_id") === etnika.id &&
@@ -51,7 +80,10 @@ function applyEtnikaHomepageRedesignOnce(app) {
       r.getString("user_id") === ownerId && r.getString("parent_id") === etnika.id
     )
     let nextOrder = 0
-    for (const sibling of siblings) nextOrder = Math.max(nextOrder, Math.trunc(num(sibling, "order")) + 1)
+    for (const sibling of siblings) {
+      const n = Number(sibling.getRaw("order"))
+      if (Number.isFinite(n)) nextOrder = Math.max(nextOrder, Math.trunc(n) + 1)
+    }
     child = new Record(categories)
     child.set("user_id", ownerId)
     child.set("category_id", businessId)
@@ -60,267 +92,191 @@ function applyEtnikaHomepageRedesignOnce(app) {
     child.set("parent_id", etnika.id)
     child.set("order", nextOrder)
     child.set("is_archived", false)
-    const color = Math.trunc(num(etnika, "color_value"))
-    const icon = Math.trunc(num(etnika, "icon_code_point"))
-    if (color) child.set("color_value", color)
-    if (icon) child.set("icon_code_point", icon)
+    const color = Number(etnika.getRaw("color_value"))
+    const icon = Number(etnika.getRaw("icon_code_point"))
+    if (Number.isFinite(color) && color) child.set("color_value", Math.trunc(color))
+    if (Number.isFinite(icon) && icon) child.set("icon_code_point", Math.trunc(icon))
     app.save(child)
   } else if (child.getBool("is_archived")) {
     child.set("is_archived", false)
     app.save(child)
   }
 
-  const completePath = pathsFor(child.id).filter((r) =>
-    r.getString("user_id") === ownerId && r.getString("path_id") === pathId && !r.getBool("archived")
-  )
-  let completePlans = 0
-  for (const planId of weekIds) {
-    completePlans += app.findRecordsByFilter(
-      plans, "user_id = {:owner} && plan_id = {:plan}", "id", 1, 0,
-      { owner: ownerId, plan: planId },
-    ).length
-  }
-  const rootPathsBefore = pathsFor(etnika.id).filter((r) => r.getString("user_id") === ownerId)
-  if (completePath.length === 1 && completePlans === 7 && rootPathsBefore.length === 0) return
-
-  for (const oldPath of pathsFor(child.id).filter((r) => r.getString("user_id") === ownerId)) {
-    const oldId = oldPath.getString("path_id")
-    app.delete(oldPath)
-    if (!oldId) continue
-    for (const rev of app.findRecordsByFilter(
-      revisions, "user_id = {:owner} && path_id = {:path}", "id", 0, 0,
-      { owner: ownerId, path: oldId },
-    )) app.delete(rev)
-  }
-
-  const goal = "Переработать существующую главную страницу ЭТНИКА в Tilda, сохранив текущую основу и рабочие интеграции: обновить типографику, композицию и каждый существующий white-блок, слегка перестроить последовательность блоков, адаптировать desktop/mobile, провести QA и опубликовать обновлённую production-страницу без полного пересоздания сайта."
-  const makeActions = (stageId, rows) => rows.map((r, i) => ({
-    id: `${stageId}-a${i + 1}`,
-    text: r[0],
-    result: r[1],
-    minutes: r[2],
-    track: r[3],
-    isDone: false,
-  }))
-  const makeStage = (id, text, done, rows) => ({
-    type: "stage", id, text, definitionOfDone: done, isDone: false,
-    actions: makeActions(id, rows),
-  })
-  const stages = [
-    makeStage("s1", "Текущая главная страница разобрана и зафиксирована без потери рабочей основы", "Есть полная карта desktop/mobile всех white-блоков, решения keep/rework/move/merge/remove и список технических зависимостей, которые нужно сохранить.", [
-      ["Зафиксировать desktop и перечислить все white-блоки сверху вниз", "Полный нумерованный список desktop-блоков", 20, "analysis"],
-      ["Зафиксировать mobile тех же блоков", "Для каждого блока отмечено mobile-поведение", 20, "analysis"],
-      ["Для каждого блока записать функцию, сообщение и CTA", "У каждого блока есть роль в пользовательском пути", 30, "analysis"],
-      ["Отметить каждый блок keep / rework / move / merge / remove", "Нет блока без решения", 25, "analysis"],
-      ["Собрать формы, кнопки, ссылки, якоря и направления отправки", "Есть checklist интерактивных элементов", 25, "analysis"],
-      ["Зафиксировать analytics, SEO/meta, custom code и Tilda-зависимости", "Критичные зависимости перечислены", 30, "analysis"],
-      ["Зафиксировать scope: переделываем текущую Tilda-страницу, не строим сайт заново", "Миграция платформы и полный rebuild исключены", 15, "governance"],
-    ]),
-    makeStage("s2", "Новая типографика и визуальные правила готовы для всех текущих блоков", "Выбраны Tilda-совместимые шрифты, desktop/mobile type scale, line-height, text width, spacing rhythm и правила CTA; система проверена на реальных блоках.", [
-      ["Провести аудит текущих шрифтов, размеров, весов и line-height", "Список типографических проблем", 25, "design"],
-      ["Выбрать финальный font stack для текущей Tilda", "Утверждены рабочие шрифты", 30, "design"],
-      ["Задать desktop type scale H1/H2/H3/body/caption/button", "Единая desktop-иерархия", 25, "design"],
-      ["Задать отдельный mobile type scale", "Единая mobile-иерархия", 25, "design"],
-      ["Определить line-height, ширины текста и вертикальный rhythm", "Есть правила читаемости и интервалов", 20, "design"],
-      ["Определить типографику CTA, кнопок, ссылок и подписей", "Интерактивная типографика согласована", 20, "design"],
-      ["Проверить систему на hero и одном контентном блоке", "Типографика откалибрована на реальной странице", 30, "design"],
-    ]),
-    makeStage("s3", "Сообщение страницы и минимальная перестройка структуры согласованы", "Зафиксированы first-screen message, CTA, окончательный порядок существующих/переработанных блоков и список copy, который остаётся или меняется.", [
-      ["Сформулировать, что посетитель должен понять за первые 5–10 секунд", "Есть ясная задача hero", 20, "content"],
-      ["Зафиксировать основной CTA и роль вторичных CTA", "Главное действие пользователя определено", 20, "content"],
-      ["Найти дубли, провалы и слабые переходы текущей структуры", "Есть список структурных проблем", 25, "analysis"],
-      ["Предложить минимальные move / merge / split текущих блоков", "Получен эволюционный новый порядок", 30, "design"],
-      ["Зафиксировать финальную последовательность и функцию каждого блока", "Есть карта будущей страницы", 25, "governance"],
-      ["Отметить copy, который остаётся, сокращается или переписывается", "Нет текста без решения", 20, "content"],
-    ]),
-    makeStage("s4", "Для каждого блока существует конкретное redesign-решение", "Header, hero, смысловые блоки, proof/trust, CTA/forms, footer и остаточные блоки имеют отдельный redesign spec с desktop/mobile намерением.", [
-      ["Сделать redesign spec header и навигации", "Header описан до реализации", 25, "design"],
-      ["Сделать redesign spec hero на базе текущего первого экрана", "Hero описан до реализации", 30, "design"],
-      ["Сделать redesign spec основных value/service блоков", "Основные блоки имеют решения", 30, "design"],
-      ["Сделать redesign spec proof/cases/benefits/trust блоков", "Доказательные блоки имеют решения", 30, "design"],
-      ["Сделать redesign spec CTA/forms/contact с сохранением отправок", "Формы и CTA не теряют интеграции", 30, "design"],
-      ["Сделать redesign spec footer", "Footer приведён к новой системе", 20, "design"],
-      ["Пройти audit map и закрыть все оставшиеся блоки", "Нет пропущенного блока", 30, "quality"],
-    ]),
-    makeStage("s5", "Desktop-версия текущей Tilda-страницы полностью переделана на white-блоках", "Все согласованные desktop-блоки используют новую типографику, сетку и композицию; формы, ссылки и интеграции сохранены; старых случайных стилей не осталось.", [
-      ["Создать/подтвердить безопасную рабочую копию и rollback baseline", "Исходная live-версия защищена", 15, "implementation"],
-      ["Переработать header и hero в Tilda", "Первый экран desktop реализован", 30, "implementation"],
-      ["Переработать первую половину white-блоков", "Первая половина обновлена", 30, "implementation"],
-      ["Переработать вторую половину white-блоков", "Вторая половина обновлена", 30, "implementation"],
-      ["Нормализовать контейнеры, сетку и вертикальный rhythm", "Страница стала цельной композицией", 30, "implementation"],
-      ["Восстановить и проверить buttons/links/forms/anchors/integrations", "Рабочие действия сохранены", 30, "implementation"],
-      ["Сделать desktop consistency sweep", "Нет остатков старых шрифтов и стилей", 30, "quality"],
-    ]),
-    makeStage("s6", "Каждый изменённый блок имеет намеренную mobile-версию", "Hero/header, обе половины страницы, формы и CTA адаптированы для телефона, проверены несколько ширин и устранены overflow/spacing/tap-target проблемы.", [
-      ["Определить mobile-композицию каждого изменённого блока", "Mobile не является простым уменьшением desktop", 25, "design"],
-      ["Адаптировать header и hero", "Первый экран удобен на телефоне", 30, "implementation"],
-      ["Адаптировать первую половину white-блоков", "Первая половина корректна на mobile", 30, "implementation"],
-      ["Адаптировать вторую половину white-блоков", "Вторая половина корректна на mobile", 30, "implementation"],
-      ["Проверить type scale, интервалы и tap targets", "Текст и управление удобны", 25, "quality"],
-      ["Проверить forms, CTA, overflow и клавиатурные сценарии", "Мобильные формы работают без layout-проблем", 25, "quality"],
-      ["Проверить несколько ширин и breakpoint-переходы", "Layout устойчив на типовых телефонах", 30, "quality"],
-    ]),
-    makeStage("s7", "Контент и медиа доведены до финального состояния", "Во всех блоках финальный copy, изображения оптимизированы и кадрированы, графика единообразна, placeholders/дубли удалены, базовая accessibility добавлена где возможно.", [
-      ["Сделать финальный copy pass по всем блокам", "Нет временных текстов", 30, "content"],
-      ["Проверить crop, качество и вес изображений", "Медиа выглядит правильно и не перегружает страницу", 30, "content"],
-      ["Унифицировать иконки, графику и акценты", "Графика принадлежит одной системе", 20, "design"],
-      ["Удалить placeholders, дубли и устаревшие элементы", "Лишний контент удалён", 20, "quality"],
-      ["Проверить alt text и базовую accessibility в рамках Tilda", "Ключевые элементы имеют базовую доступность", 20, "quality"],
-    ]),
-    makeStage("s8", "Страница прошла технический и визуальный QA", "Links/buttons/anchors, forms, analytics, SEO/meta, загрузка и desktop/tablet/mobile проверены; все P0/P1 устранены до публикации.", [
-      ["Проверить все links, buttons, navigation и anchors", "Нет broken actions", 20, "qa"],
-      ["Отправить тесты через все forms и проверить интеграции", "Формы доставляют данные правильно", 30, "qa"],
-      ["Проверить analytics, targets и tracking", "Ключевой tracking сохранён", 20, "qa"],
-      ["Проверить title, description и SEO/meta", "SEO-настройки не потеряны", 20, "qa"],
-      ["Проверить загрузку fonts/images и общий page weight", "Нет очевидной performance-регрессии", 25, "qa"],
-      ["Сделать desktop/tablet/mobile regression sweep", "Основные размеры стабильны", 30, "qa"],
-      ["Собрать issue list и закрыть P0/P1", "Нет блокирующих дефектов", 30, "qa"],
-    ]),
-    makeStage("s9", "Обновлённая главная ЭТНИКА опубликована и проверена в production", "Сохранён rollback, новая Tilda-страница опубликована, live desktop/mobile/forms/analytics проверены, production-only дефекты исправлены, цель Path подтверждена.", [
-      ["Сохранить финальный rollback baseline старой live-страницы", "Есть путь отката", 15, "release"],
-      ["Опубликовать обновлённую главную в Tilda", "Новая версия live", 15, "release"],
-      ["Провести live desktop smoke test", "Production desktop подтверждён", 20, "release"],
-      ["Провести live mobile smoke test", "Production mobile подтверждён", 20, "release"],
-      ["Отправить live тестовую форму и проверить contact flow", "Production form работает end-to-end", 20, "release"],
-      ["Проверить live analytics и основные CTA", "Tracking и CTA работают", 15, "release"],
-      ["Исправить production-only дефекты", "Нет известных live P0/P1", 30, "release"],
-      ["Сверить результат с целью Path и закрыть остаток", "Path завершён без слепых зон", 15, "governance"],
-    ]),
-  ]
-
-  const revision = new Record(revisions)
-  revision.set("user_id", ownerId)
-  revision.set("path_id", pathId)
-  revision.set("revision_id", revisionId)
-  revision.set("version", 1)
-  revision.set("lifecycle", "published")
-  revision.set("goal", goal)
-  revision.set("content", { stages })
-  revision.set("source", "manual")
-  revision.set("parent_revision_id", "")
-  app.save(revision)
-
-  const path = new Record(paths)
-  path.set("user_id", ownerId)
-  path.set("path_id", pathId)
-  path.set("category_link", child.id)
-  path.set("active_revision_link", revision.id)
-  path.set("archived", false)
-  app.save(path)
-
-  const week = [
-    ["2026-08-25", weekIds[0], "ЭТНИКА — главная: аудит текущей страницы", 90, "Path stages 1 + start of 2", ["Зафиксировать desktop/mobile и список всех white-блоков", "Для каждого блока отметить цель, проблему и CTA", "Отметить keep/rework/move/merge/remove", "Зафиксировать forms/links/analytics/SEO/Tilda-зависимости"]],
-    ["2026-08-26", weekIds[1], "ЭТНИКА — главная: новая типографика и визуальные правила", 90, "Path stage 2", ["Провести аудит текущих шрифтов и текстовой иерархии", "Выбрать финальный font stack для Tilda", "Зафиксировать type scale desktop/mobile и spacing rhythm", "Проверить систему на hero и контентном блоке"]],
-    ["2026-08-27", weekIds[2], "ЭТНИКА — главная: структура, сообщение и hero", 90, "Path stages 3–4", ["Зафиксировать сообщение hero и основной CTA", "Минимально перестроить порядок текущих блоков", "Зафиксировать финальную последовательность блоков", "Сделать redesign spec header + hero"]],
-    ["2026-08-28", weekIds[3], "ЭТНИКА — главная: редизайн desktop-блоков · часть 1", 120, "Path stages 4–5", ["Подтвердить рабочую копию/rollback baseline", "Применить новую типографику к header/hero", "Переработать первую половину white-блоков", "Нормализовать сетку и вертикальный rhythm"]],
-    ["2026-08-29", weekIds[4], "ЭТНИКА — главная: редизайн desktop-блоков · часть 2", 120, "Path stage 5 + content prep", ["Переработать оставшиеся white-блоки", "Довести CTA/forms/contact/footer", "Проверить links/forms/anchors/integrations", "Убрать остатки старых desktop-стилей"]],
-    ["2026-08-30", weekIds[5], "ЭТНИКА — главная: мобильная адаптация", 120, "Path stage 6", ["Адаптировать header/hero и mobile type scale", "Адаптировать все изменённые white-блоки", "Проверить CTA/forms/tap targets/overflow", "Проверить несколько mobile widths"]],
-    ["2026-08-31", weekIds[6], "ЭТНИКА — главная: финал, QA и публикация", 120, "Path stages 7–9", ["Финальный copy/media pass", "Проверить links/forms/analytics/SEO/loading", "Сделать desktop/tablet/mobile QA и закрыть P0/P1", "Опубликовать в Tilda и сделать live smoke tests"]],
-  ]
-
-  const profile = app.findRecordById(profiles, ownerId)
-  const offset = num(profile, "timezone_offset", 0)
-  const profileTz = norm(profile.getString("preferred_timezone"))
-  const childTime = child.getString("default_plan_time")
-  const rootTime = etnika.getString("default_plan_time")
-  const categoryTime = childTime || rootTime
-  const categoryTz = norm(childTime ? child.getString("default_plan_timezone") : etnika.getString("default_plan_timezone"))
-  const parseClock = (value) => {
-    const m = String(value || "").trim().match(/^(\d{1,2}):(\d{2})$/)
-    if (!m) return null
-    const h = Number(m[1]), min = Number(m[2])
-    return h >= 0 && h <= 23 && min >= 0 && min <= 59 ? { h, min } : null
-  }
-  const categoryClock = parseClock(categoryTime)
-  const useCategoryClock = categoryClock && (!categoryTz || categoryTz === "profile" || categoryTz === profileTz)
-  const preferred = useCategoryClock ? categoryClock : { h: 10, min: 0 }
-  const wallUtc = (dateKey, h, min) => {
-    const p = dateKey.split("-").map(Number)
-    return new Date(Date.UTC(p[0], p[1] - 1, p[2], h, min) - offset * 3600000)
-  }
-  const dayBounds = (dateKey) => {
-    const start = wallUtc(dateKey, 0, 0)
-    return { start, end: new Date(start.getTime() + 86400000) }
-  }
-  const dayPlans = (dateKey) => {
-    const b = dayBounds(dateKey)
-    return app.findRecordsByFilter(
-      plans,
-      "user_id = {:owner} && start_time >= {:start} && start_time < {:end}",
-      "start_time", 0, 0,
-      { owner: ownerId, start: b.start.toISOString(), end: b.end.toISOString() },
-    )
-  }
-  const freeStart = (dateKey, minutes, existing) => {
-    const b = dayBounds(dateKey), duration = minutes * 60000
-    const intervals = []
-    for (const r of existing) {
-      const a = new Date(r.getString("start_time"))
-      if (!Number.isFinite(a.getTime())) continue
-      let z = r.getString("end_time") ? new Date(r.getString("end_time")) : new Date(a.getTime() + 1800000)
-      if (!Number.isFinite(z.getTime()) || z <= a) z = new Date(a.getTime() + 1800000)
-      intervals.push({ a, z })
-    }
-    const fits = (candidate) => {
-      const end = new Date(candidate.getTime() + duration)
-      return end <= b.end && !intervals.some((x) => candidate < x.z && x.a < end)
-    }
-    let candidate = wallUtc(dateKey, preferred.h, preferred.min)
-    while (candidate.getTime() + duration <= b.end.getTime()) {
-      if (fits(candidate)) return candidate
-      candidate = new Date(candidate.getTime() + 300000)
-    }
-    candidate = new Date(b.start)
-    const preferredStart = wallUtc(dateKey, preferred.h, preferred.min)
-    while (candidate < preferredStart) {
-      if (fits(candidate)) return candidate
-      candidate = new Date(candidate.getTime() + 300000)
-    }
-    return preferredStart
-  }
-
-  for (const item of week) {
-    const dateKey = item[0], planId = item[1], title = item[2], minutes = item[3], refs = item[4], checklist = item[5]
-    for (const old of app.findRecordsByFilter(
-      plans, "user_id = {:owner} && plan_id = {:plan}", "id", 0, 0,
-      { owner: ownerId, plan: planId },
-    )) app.delete(old)
-    const existing = dayPlans(dateKey)
-    let maxOrder = -1
-    for (const r of existing) maxOrder = Math.max(maxOrder, Math.trunc(num(r, "order")))
-    const start = freeStart(dateKey, minutes, existing)
-    const end = new Date(start.getTime() + minutes * 60000)
-    const plan = new Record(plans)
-    plan.set("user_id", ownerId)
-    plan.set("plan_id", planId)
-    plan.set("category_id", child.id)
-    plan.set("title", title)
-    plan.set("is_done", false)
-    plan.set("start_time", start.toISOString())
-    plan.set("end_time", end.toISOString())
-    plan.set("initial_date_key", dateKey)
-    plan.set("is_postponed", false)
-    plan.set("order", maxOrder + 1)
-    plan.set("checklist", checklist.map((text, i) => ({ id: `${planId}-check-${i + 1}`, text, isDone: false })))
-    plan.set("notes_plain", `Подпроект: ЭТНИКА → ${childName}. ${refs}. Рабочий блок: ${minutes} минут.`)
-    app.save(plan)
-  }
-
+  // The old root ETNIKA Path is not the project Path anymore. Keep the project
+  // represented by the dedicated child category only.
   for (const oldPath of pathsFor(etnika.id).filter((r) => r.getString("user_id") === ownerId)) {
     const oldId = oldPath.getString("path_id")
     app.delete(oldPath)
     if (!oldId) continue
     for (const rev of app.findRecordsByFilter(
-      revisions, "user_id = {:owner} && path_id = {:path}", "id", 0, 0,
+      revisions,
+      "user_id = {:owner} && path_id = {:path}",
+      "id",
+      0,
+      0,
       { owner: ownerId, path: oldId },
     )) app.delete(rev)
   }
+
+  let pathRows = pathsFor(child.id).filter((r) => r.getString("user_id") === ownerId)
+  let path = pathRows.find((r) => r.getString("path_id") === pathId) || null
+  for (const other of pathRows) {
+    if (path != null && other.id === path.id) continue
+    const oldId = other.getString("path_id")
+    app.delete(other)
+    if (!oldId) continue
+    for (const rev of app.findRecordsByFilter(
+      revisions,
+      "user_id = {:owner} && path_id = {:path}",
+      "id",
+      0,
+      0,
+      { owner: ownerId, path: oldId },
+    )) app.delete(rev)
+  }
+
+  const goal = "Переработать существующую главную страницу ЭТНИКА в Tilda без полного пересоздания сайта: сохранить текущую основу и рабочие интеграции, обновить типографику и композицию, последовательно переделать каждый white-блок, адаптировать desktop/mobile, провести QA и опубликовать обновлённую production-страницу."
+
+  const makeStage = (id, text, definitionOfDone, actions) => ({
+    type: "stage",
+    id,
+    text,
+    definitionOfDone,
+    isDone: false,
+    actions: actions.map((a, index) => ({
+      id: `${id}-a${index + 1}`,
+      text: a[0],
+      result: a[1],
+      minutes: a[2],
+      track: a[3],
+      isDone: false,
+    })),
+  })
+
+  // Every stage is exactly one focused 60-minute work block. Individual
+  // actions stay within the Path execution contract (1..30 minutes).
+  const stages = [
+    makeStage("h01", "Аудит текущей страницы: карта desktop и mobile", "Есть полный нумерованный список всех текущих white-блоков и их mobile-поведения.", [
+      ["Перечислить все desktop-блоки сверху вниз", "Полная desktop-карта", 20, "analysis"],
+      ["Сопоставить mobile-версию каждого блока", "Полная mobile-карта", 20, "analysis"],
+      ["Для каждого блока записать функцию, сообщение и CTA", "У каждого блока понятна роль", 20, "analysis"],
+    ]),
+    makeStage("h02", "Scope, зависимости и безопасный rollback", "Зафиксировано, что сохраняем, какие интеграции нельзя сломать и как откатить изменения.", [
+      ["Разметить блоки keep / rework / move / merge / remove", "Нет блока без решения", 20, "governance"],
+      ["Зафиксировать forms, links, anchors, analytics, SEO и custom code", "Есть список технических зависимостей", 20, "analysis"],
+      ["Подтвердить scope и rollback baseline текущей Tilda-страницы", "Полный rebuild исключён, откат определён", 20, "governance"],
+    ]),
+    makeStage("h03", "Типографика: аудит и выбор шрифтов", "Выбран Tilda-совместимый font stack на основе проблем текущей страницы.", [
+      ["Провести аудит текущих шрифтов, размеров, весов и line-height", "Список типографических проблем", 30, "design"],
+      ["Выбрать и проверить финальный font stack", "Рабочая пара/семейство шрифтов утверждены", 30, "design"],
+    ]),
+    makeStage("h04", "Типографика: шкалы, интервалы и интерактивные элементы", "Готовы desktop/mobile type scale, line-height, text width, spacing rhythm и правила CTA.", [
+      ["Задать desktop и mobile type scale", "H1/H2/H3/body/caption определены", 20, "design"],
+      ["Задать line-height, max text width и вертикальный rhythm", "Правила читаемости определены", 20, "design"],
+      ["Задать типографику кнопок, ссылок и подписей и проверить на реальном блоке", "Система откалибрована", 20, "design"],
+    ]),
+    makeStage("h05", "Сообщение страницы и минимальная перестройка структуры", "Есть first-screen message, основной CTA и окончательный порядок существующих блоков.", [
+      ["Сформулировать, что посетитель должен понять за первые 5–10 секунд", "Hero-message определён", 20, "content"],
+      ["Определить основной CTA и найти дубли/провалы текущего сценария", "Главное действие и проблемы ясны", 20, "analysis"],
+      ["Зафиксировать минимальные move/merge/split и финальный порядок блоков", "Есть новая карта страницы", 20, "design"],
+    ]),
+    makeStage("h06", "Redesign-spec: header и hero", "Header и первый экран полностью описаны до реализации на desktop и mobile.", [
+      ["Спроектировать header/navigation на базе текущего блока", "Header-spec готов", 30, "design"],
+      ["Спроектировать hero: композиция, текст, CTA, visual hierarchy", "Hero-spec готов", 30, "design"],
+    ]),
+    makeStage("h07", "Redesign-spec: первая половина основных white-блоков", "Первая половина смысловых блоков имеет отдельное решение по композиции и типографике.", [
+      ["Разобрать и переработать первую группу блоков по audit map", "Первая группа имеет redesign-spec", 30, "design"],
+      ["Проверить переходы, CTA и визуальный rhythm первой группы", "Первая группа собрана в связный сценарий", 30, "design"],
+    ]),
+    makeStage("h08", "Redesign-spec: вторая половина и trust/proof блоки", "Оставшиеся смысловые и доказательные блоки имеют отдельные redesign-решения.", [
+      ["Разобрать и переработать вторую группу блоков по audit map", "Вторая группа имеет redesign-spec", 30, "design"],
+      ["Довести benefits/cases/trust/proof до единой системы", "Доказательная часть страницы согласована", 30, "design"],
+    ]),
+    makeStage("h09", "Redesign-spec: CTA, формы, контакты и footer", "Все конверсионные и завершающие блоки спроектированы без потери текущих отправок и ссылок.", [
+      ["Спроектировать CTA/contact/footer в новой системе", "Конец страницы согласован", 20, "design"],
+      ["Переработать формы визуально без изменения рабочих направлений отправки", "Form-spec готов", 20, "design"],
+      ["Сверить spec со всей audit map и закрыть пропущенные блоки", "Слепых зон нет", 20, "quality"],
+    ]),
+    makeStage("h10", "Tilda desktop: header, hero и новая типографика", "Первый экран desktop реализован в существующей Tilda-странице и использует новую систему.", [
+      ["Переработать header/navigation в рабочей копии Tilda", "Header реализован", 30, "implementation"],
+      ["Переработать hero и применить новую типографику", "Hero реализован", 30, "implementation"],
+    ]),
+    makeStage("h11", "Tilda desktop: первая половина white-блоков", "Первая половина страницы реализована по согласованным specs.", [
+      ["Переделать первую часть white-блоков", "Первая часть реализована", 30, "implementation"],
+      ["Довести контейнеры, сетку и вертикальный rhythm первой части", "Композиция первой части цельная", 30, "implementation"],
+    ]),
+    makeStage("h12", "Tilda desktop: вторая половина white-блоков", "Вторая половина страницы реализована по согласованным specs.", [
+      ["Переделать вторую часть white-блоков", "Вторая часть реализована", 30, "implementation"],
+      ["Довести trust/proof/CTA/footer блоки", "Конец страницы реализован", 30, "implementation"],
+    ]),
+    makeStage("h13", "Desktop consistency и сохранение интеграций", "Desktop выглядит как одна система, а все интерактивные элементы продолжают работать.", [
+      ["Убрать остатки старых шрифтов, случайных размеров и интервалов", "Desktop consistency закрыт", 20, "quality"],
+      ["Проверить buttons, links, anchors и формы", "Интерактивные элементы работают", 20, "quality"],
+      ["Проверить analytics/custom code/SEO-зависимости после перестройки", "Технические зависимости сохранены", 20, "quality"],
+    ]),
+    makeStage("h14", "Mobile: header, hero и первая половина страницы", "Первый экран и первая половина имеют намеренную mobile-композицию, а не уменьшенный desktop.", [
+      ["Адаптировать header и hero", "Mobile first screen готов", 20, "implementation"],
+      ["Адаптировать первую половину изменённых блоков", "Первая половина mobile готова", 20, "implementation"],
+      ["Проверить mobile type scale, spacing и tap targets первой части", "Первая часть удобна на телефоне", 20, "quality"],
+    ]),
+    makeStage("h15", "Mobile: вторая половина, формы и breakpoints", "Вся mobile-страница устойчива на разных ширинах и без overflow/keyboard проблем.", [
+      ["Адаптировать вторую половину и footer", "Вторая половина mobile готова", 20, "implementation"],
+      ["Проверить forms/CTA/keyboard/overflow", "Мобильные формы и CTA работают", 20, "quality"],
+      ["Проверить несколько ширин и breakpoint-переходы", "Layout устойчив", 20, "quality"],
+    ]),
+    makeStage("h16", "Контент, media, performance и accessibility polish", "Тексты и изображения финализированы, тяжёлые assets устранены, базовая доступность проверена.", [
+      ["Сделать финальный copy pass и убрать дубли/лишний текст", "Copy финализирован", 20, "content"],
+      ["Оптимизировать изображения/media и проверить loading", "Нет неоправданно тяжёлых assets", 20, "performance"],
+      ["Проверить contrast, alt/labels, keyboard/focus и читаемость", "Базовая accessibility закрыта", 20, "quality"],
+    ]),
+    makeStage("h17", "Финальный QA, публикация и live-проверка", "Production-страница опубликована, P0/P1 дефекты закрыты, формы/ссылки/analytics/SEO проверены после публикации.", [
+      ["Провести desktop/tablet/mobile QA и закрыть P0/P1", "Release candidate готов", 20, "quality"],
+      ["Опубликовать обновлённую страницу в Tilda", "Новая версия live", 20, "release"],
+      ["Сделать live smoke test: forms/links/analytics/SEO/основные ширины", "Production проверен", 20, "release"],
+    ]),
+  ]
+
+  const existingRevisions = app.findRecordsByFilter(
+    revisions,
+    "user_id = {:owner} && path_id = {:path}",
+    "version",
+    0,
+    0,
+    { owner: ownerId, path: pathId },
+  )
+  let maxVersion = 0
+  for (const r of existingRevisions) {
+    const v = Number(r.getRaw("version"))
+    if (Number.isFinite(v)) maxVersion = Math.max(maxVersion, Math.trunc(v))
+  }
+
+  const revision = new Record(revisions)
+  revision.set("user_id", ownerId)
+  revision.set("path_id", pathId)
+  revision.set("revision_id", desiredRevisionId)
+  revision.set("version", maxVersion + 1)
+  revision.set("lifecycle", "published")
+  revision.set("goal", goal)
+  revision.set("content", { stages })
+  revision.set("source", "system")
+  revision.set("parent_revision_id", "")
+  app.save(revision)
+
+  if (path == null) {
+    path = new Record(paths)
+    path.set("user_id", ownerId)
+    path.set("path_id", pathId)
+    path.set("category_link", child.id)
+    path.set("archived", false)
+  }
+  path.set("active_revision_link", revision.id)
+  app.save(path)
 }
 
-cronAdd("lifeos_etnika_homepage_redesign_once", "* * * * *", function() {
+cronAdd("lifeos_etnika_homepage_hour_blocks_once", "* * * * *", function() {
   try {
-    applyEtnikaHomepageRedesignOnce($app)
+    applyEtnikaHomepageHourlyPathOnce($app)
   } catch (error) {
-    console.log("[ETNIKA_HOMEPAGE_PATH_ONCE] " + String(error))
+    console.log("[ETNIKA_HOMEPAGE_HOUR_BLOCKS_ONCE] " + String(error))
   }
 })

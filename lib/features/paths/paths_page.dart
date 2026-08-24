@@ -510,20 +510,30 @@ class _PathsPageState extends State<PathsPage> {
   Widget _currentStageCard(PathStageSnapshot stage) {
     final scheme = Theme.of(context).colorScheme;
     final next = _firstPendingAction(stage);
+    final accent = Colors.amber.shade700;
+    final fillAlpha = Theme.of(context).brightness == Brightness.dark ? 0.18 : 0.13;
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: scheme.primaryContainer.withValues(alpha: 0.36),
+        color: Colors.amber.withValues(alpha: fillAlpha),
+        border: Border.all(color: accent.withValues(alpha: 0.58)),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            _ru ? 'Сейчас' : 'Now',
-            style: Theme.of(
-              context,
-            ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w800),
+          Row(
+            children: [
+              Icon(Icons.bolt_rounded, size: 18, color: accent),
+              const SizedBox(width: 6),
+              Text(
+                _ru ? 'Сейчас' : 'Now',
+                style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                  color: accent,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 4),
           Text(
@@ -537,6 +547,9 @@ class _PathsPageState extends State<PathsPage> {
             Text(
               '${_ru ? 'Следующее действие' : 'Next action'}: '
               '${next.text} · ${next.minutes} ${_ru ? 'мин' : 'min'}',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: scheme.onSurface,
+              ),
             ),
           ],
         ],
@@ -548,28 +561,43 @@ class _PathsPageState extends State<PathsPage> {
     final scheme = Theme.of(context).colorScheme;
     final stage = path.stages[stageIndex];
     final doneActions = stage.actions.where((action) => action.isDone).length;
+    final completedAccent = Colors.green.shade600;
+    final currentAccent = Colors.amber.shade700;
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final Color borderColor;
+    final Color backgroundColor;
+    if (stage.isDone) {
+      borderColor = completedAccent.withValues(alpha: 0.62);
+      backgroundColor = Colors.green.withValues(alpha: dark ? 0.16 : 0.10);
+    } else if (current) {
+      borderColor = currentAccent.withValues(alpha: 0.62);
+      backgroundColor = Colors.amber.withValues(alpha: dark ? 0.16 : 0.10);
+    } else {
+      borderColor = scheme.outlineVariant;
+      backgroundColor = Colors.transparent;
+    }
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
+        color: backgroundColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: current
-              ? scheme.primary.withValues(alpha: 0.5)
-              : scheme.outlineVariant,
-        ),
+        border: Border.all(color: borderColor),
       ),
       child: ExpansionTile(
         initiallyExpanded: current,
         leading: Checkbox(
           value: stage.isDone,
+          activeColor: completedAccent,
           onChanged: (value) => _toggleStage(path, stageIndex, value ?? false),
         ),
         title: Text(
           '${stageIndex + 1}. ${stage.title}',
           style: TextStyle(
+            color: stage.isDone ? completedAccent : null,
             fontWeight: FontWeight.w800,
             decoration: stage.isDone ? TextDecoration.lineThrough : null,
+            decorationColor: stage.isDone ? completedAccent : null,
           ),
         ),
         subtitle: Padding(
@@ -581,7 +609,51 @@ class _PathsPageState extends State<PathsPage> {
             overflow: TextOverflow.ellipsis,
           ),
         ),
-        trailing: Text('$doneActions/${stage.actions.length}'),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (stage.isDone)
+              Container(
+                margin: const EdgeInsets.only(right: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: completedAccent.withValues(alpha: dark ? 0.22 : 0.12),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.check_rounded, size: 14, color: completedAccent),
+                    const SizedBox(width: 4),
+                    Text(
+                      _ru ? 'Готово' : 'Done',
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: completedAccent,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            else if (current)
+              Container(
+                margin: const EdgeInsets.only(right: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: currentAccent.withValues(alpha: dark ? 0.22 : 0.12),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  _ru ? 'Сейчас' : 'Now',
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: currentAccent,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            Text('$doneActions/${stage.actions.length}'),
+          ],
+        ),
         children: [
           for (
             var actionIndex = 0;
@@ -605,6 +677,7 @@ class _PathsPageState extends State<PathsPage> {
         children: [
           Checkbox(
             value: action.isDone,
+            activeColor: Colors.green.shade600,
             onChanged: (value) =>
                 _toggleAction(path, stageIndex, actionIndex, value ?? false),
           ),
@@ -618,10 +691,13 @@ class _PathsPageState extends State<PathsPage> {
                   Text(
                     action.text,
                     style: TextStyle(
+                      color: action.isDone ? Colors.green.shade600 : null,
                       fontWeight: FontWeight.w600,
                       decoration: action.isDone
                           ? TextDecoration.lineThrough
                           : null,
+                      decorationColor:
+                          action.isDone ? Colors.green.shade600 : null,
                     ),
                   ),
                   if (action.expectedResult.isNotEmpty) ...[
