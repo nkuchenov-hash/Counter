@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Protect server-schema-before-client deployment ordering."""
+"""Protect server-schema-before-client deployment ordering and default-branch continuity."""
 
 from __future__ import annotations
 
@@ -36,6 +36,10 @@ def main() -> int:
         "workflow_run.head_branch == 'main'",
         "workflow_run.head_sha",
         "ref: ${{ github.event.workflow_run.head_sha }}",
+        "group: life-os-web-deploy",
+        "cp -R /tmp/counter-gh-pages/.github/workflows build/web/.github/workflows",
+        "cp .github/workflows/deploy.yml build/web/.github/workflows/deploy.yml",
+        "cp .github/workflows/deploy-pocketbase.yml build/web/.github/workflows/deploy-pocketbase.yml",
     ):
         if token not in web:
             violations.append(f"WEB_DEPLOY_ORDERING_MISSING {token}")
@@ -46,13 +50,19 @@ def main() -> int:
     if "workflow_dispatch:" in web:
         violations.append("WEB_DEPLOY_MANUAL_BYPASS_FORBIDDEN")
 
+    # The deployment branch is also the repository default branch. Publishing
+    # must not delete the upstream PocketBase workflow or allow older SHA builds
+    # to race newer ones back onto gh-pages.
+    if "group: life-os-web-deploy-${{" in web:
+        violations.append("WEB_DEPLOY_SHA_SCOPED_CONCURRENCY_FORBIDDEN")
+
     if violations:
         print("deployment_contract: FAIL", file=sys.stderr)
         for violation in violations:
             print(f"  - {violation}", file=sys.stderr)
         return 1
 
-    print("deployment_contract: OK server-before-web ordering enforced")
+    print("deployment_contract: OK server-before-web ordering and workflow continuity enforced")
     return 0
 
 
