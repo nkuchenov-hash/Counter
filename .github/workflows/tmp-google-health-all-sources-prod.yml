@@ -1,0 +1,58 @@
+name: TEMP Google Health all-sources production
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/tmp-google-health-all-sources-prod.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      SSH_PRIVATE_KEY: ${{ secrets.POCKETBASE_SSH_PRIVATE_KEY || secrets.VPS_SSH_KEY || secrets.SSH_PRIVATE_KEY }}
+      SSH_USER: ${{ secrets.POCKETBASE_SSH_USER || secrets.VPS_SSH_USER || secrets.SSH_USER }}
+      SSH_HOST: ${{ secrets.POCKETBASE_SSH_HOST || secrets.VPS_HOST || secrets.SSH_HOST }}
+      SSH_PORT: ${{ secrets.POCKETBASE_SSH_PORT || secrets.VPS_SSH_PORT || '22' }}
+      POCKETBASE_SERVICE: ${{ secrets.POCKETBASE_SERVICE }}
+      POCKETBASE_DEPLOY_DIR: ${{ secrets.POCKETBASE_DEPLOY_DIR }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify production
+        shell: bash
+        run: |
+          set -euo pipefail
+          user="${SSH_USER:-root}"; host="${SSH_HOST:-217.114.0.201}"
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/key; chmod 600 ~/.ssh/key
+          ssh-keyscan -p "$SSH_PORT" -H "$host" >> ~/.ssh/known_hosts
+          ssh -i ~/.ssh/key -p "$SSH_PORT" "$user@$host" "POCKETBASE_DEPLOY_DIR='$POCKETBASE_DEPLOY_DIR' POCKETBASE_SERVICE='$POCKETBASE_SERVICE' bash -s" <<'REMOTE'
+          set -euo pipefail
+          service_name="${POCKETBASE_SERVICE:-}"
+          if [[ -z "$service_name" ]]; then service_name="$(systemctl list-unit-files --type=service --no-legend 2>/dev/null | awk 'tolower($1) ~ /pocketbase/ && !found {print $1; found=1}')"; fi
+          pid="$(pgrep -f '[p]ocketbase.*serve' | sed -n '1p' || true)"
+          app_dir="${POCKETBASE_DEPLOY_DIR:-}"
+          if [[ -z "$app_dir" && -n "$service_name" ]]; then app_dir="$(systemctl show "$service_name" -p WorkingDirectory --value 2>/dev/null || true)"; fi
+          if [[ -z "$app_dir" && -n "$pid" ]]; then app_dir="$(readlink -f "/proc/$pid/cwd" 2>/dev/null || true)"; fi
+          runtime="$app_dir/pb_hooks/google_health_sleep_runtime.js"
+          grep -q 'dataSourceFamilies/all-sources' "$runtime" && echo all_sources_deployed=true || echo all_sources_deployed=false
+          grep -q 'pageSize: 25' "$runtime" && echo sleep_page_size_25=true || echo sleep_page_size_25=false
+          python3 - "$app_dir/pb_data/data.db" <<'PY'
+          import sqlite3, sys
+          con=sqlite3.connect(f'file:{sys.argv[1]}?mode=ro', uri=True); con.row_factory=sqlite3.Row
+          r=con.execute("SELECT status,last_sync_at,last_session_count,last_imported_count,last_error FROM sleep_sync_connections WHERE provider='google_health' LIMIT 1").fetchone()
+          if r:
+              print('status='+str(r['status'] or ''))
+              print('last_sync='+str(r['last_sync_at'] or ''))
+              print('sessions='+str(r['last_session_count'] or 0))
+              print('imported='+str(r['last_imported_count'] or 0))
+              print('error='+str(r['last_error'] or '')[:500].replace('\n',' '))
+          rows=con.execute("SELECT date(end_time) d,sleep_source,external_source FROM records WHERE title='Sleep' OR title='Сон' ORDER BY end_time DESC LIMIT 10").fetchall()
+          for x in rows: print('sleep='+str(x['d'])+'|'+str(x['sleep_source'] or '')+'|'+str(x['external_source'] or ''))
+          print('google_health_records='+str(con.execute("SELECT count(*) FROM records WHERE sleep_source='google_health'").fetchone()[0]))
+          con.close()
+          PY
+          REMOTE
