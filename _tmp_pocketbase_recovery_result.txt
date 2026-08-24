@@ -1,4 +1,21 @@
-sha=92e5f8b9d480f24cad44f2797616c5cad8a22cf5
+sha=8a1f687bc225506b4583cc3600735bc1c8f13a1a
 ssh=success
-restart=failure
-health=skipped
+restart_step=success
+health=failure
+remote_diag_begin
+service=pocketbase.service
+app_dir_present=true
+install_rc=0
+restart_rc=0
+active=activating
+status_begin
+● pocketbase.service - PocketBase Production Service
+     Loaded: loaded (/etc/systemd/system/pocketbase.service; enabled; preset: enabled)
+    Drop-In: /etc/systemd/system/pocketbase.service.d
+             └─lifeos-calendar.conf, lifeos-google-fit.conf
+     Active: activating (auto-restart) (Result: exit-code) since Mon 2026-08-24 13:51:52 UTC; 2s ago
+    Process: 1274040 ExecStart=/root/pb/pocketbase serve --http=217-114-0-201.sslip.io:80 --https=217-114-0-201.sslip.io:443 (code=exited, status=1/FAILURE)
+   Main PID: 1274040 (code=exited, status=1/FAILURE)
+        CPU: 173ms
+status_end
+remote_diag_end
