@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `61277df5` on 2026-08-24.**
+**Generated from input HEAD `56410569` on 2026-08-24.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 840 — each appears **exactly once** below.
+**Tracked files:** 844 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -27,7 +27,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | Role | Count |
 | :--- | ---: |
 | `production UI` | 166 |
-| `test` | 106 |
+| `test` | 108 |
 | `Brain/data` | 87 |
 | `platform build` | 83 |
 | `shared foundation` | 64 |
@@ -37,9 +37,9 @@ python scripts/manual/generate_app_structure_detailed.py
 | `governing documentation` | 35 |
 | `shared Voice system` | 22 |
 | `test fixture` | 22 |
-| `historical engineering record` | 16 |
+| `historical engineering record` | 17 |
 | `PocketBase backend` | 15 |
-| `PocketBase migration` | 14 |
+| `PocketBase migration` | 15 |
 | `localization` | 13 |
 | `installer` | 12 |
 | `Brain Voice` | 10 |
@@ -56,19 +56,19 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 464 |
-| `REQUIRED_FOR_TEST_OR_TOOLING` | 197 |
+| `PROVEN_REQUIRED` | 465 |
+| `REQUIRED_FOR_TEST_OR_TOOLING` | 199 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
 | `GOVERNING_DOCUMENTATION` | 35 |
-| `HISTORICAL_RECORD` | 16 |
+| `HISTORICAL_RECORD` | 17 |
 | `GENERATED_CANONICAL_OUTPUT` | 1 |
 
 ### By confidence
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 778 |
-| `MEDIUM` | 62 |
+| `HIGH` | 781 |
+| `MEDIUM` | 63 |
 
 ---
 
@@ -4495,7 +4495,7 @@ EN:
 - **Why needed:** The CI system loads `.github/workflows/deploy-pocketbase.yml` to run its declared triggers, permissions, jobs, and checks.
 - **Contents:** YAML workflow definition specific to `deploy-pocketbase.yml`.
 - **Repository role:** CI/deployment
-- **Evidence of use:** (1) GitHub Actions discovers workflows under `.github/workflows/`; see `docs/DEPLOY.md` for publish/build intent. (2) Also referenced by: `docs/DEPLOY.md`, `docs/reports/GOOGLE_HEALTH_SLEEP_SYNC_2026-08-11.md`, `scripts/audit/deployment_contract.py`.
+- **Evidence of use:** (1) GitHub Actions discovers workflows under `.github/workflows/`; see `docs/DEPLOY.md` for publish/build intent. (2) Also referenced by: `.github/workflows/deploy.yml`, `docs/DEPLOY.md`, `docs/reports/DEPLOYMENT_PIPELINE_REPAIR_2026-08-24.md`, `docs/reports/GOOGLE_HEALTH_SLEEP_SYNC_2026-08-11.md`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Broken CI deploy or Windows installer pipeline.
 - **Confidence:** HIGH
@@ -4532,7 +4532,7 @@ EN:
 - **Why needed:** The CI system loads `.github/workflows/deploy.yml` to run its declared triggers, permissions, jobs, and checks.
 - **Contents:** YAML workflow definition specific to `deploy.yml`.
 - **Repository role:** CI/deployment
-- **Evidence of use:** (1) GitHub Actions discovers workflows under `.github/workflows/`; see `docs/DEPLOY.md` for publish/build intent. (2) Also referenced by: `docs/APP_STRUCTURE.md`, `docs/DEPLOY.md`, `docs/website/WEBSITE_IMPLEMENTATION_OPTIONS.md`, `scripts/audit/deployment_contract.py`.
+- **Evidence of use:** (1) GitHub Actions discovers workflows under `.github/workflows/`; see `docs/DEPLOY.md` for publish/build intent. (2) Also referenced by: `docs/APP_STRUCTURE.md`, `docs/DEPLOY.md`, `docs/reports/DEPLOYMENT_PIPELINE_REPAIR_2026-08-24.md`, `docs/website/WEBSITE_IMPLEMENTATION_OPTIONS.md`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Broken CI deploy or Windows installer pipeline.
 - **Confidence:** HIGH
@@ -6332,6 +6332,43 @@ RU:
 - **Владелец / слой:** документация
 - **Обязанности:** Фиксирует evidence и итоги по теме этого расследования.
 - **Когда открывать:** Смотрите историю по `ARCHITECTURE GUARD BASELINE 2026-07-17` перед повторением той же работы.
+- **Можно удалить?** Пропадёт история решения по тому расследованию.
+- **Связано с:** `docs/ROADMAP.md`, `CHANGELOG.md`, связанные governing docs.
+
+
+### `docs/reports/DEPLOYMENT_PIPELINE_REPAIR_2026-08-24.md`
+
+EN:
+
+- **Human purpose:** Engineering report `DEPLOYMENT_PIPELINE_REPAIR_2026-08-24.md` — dated findings under `docs/reports/`. Preserves audit/parity decisions so later work does not re-litigate the same findings.
+- **What this is:** Engineering report `DEPLOYMENT_PIPELINE_REPAIR_2026-08-24.md` — dated findings under `docs/reports/`.
+- **Why needed:** Preserves audit/parity decisions so later work does not re-litigate the same findings.
+- **Contents:** Markdown report body for `DEPLOYMENT PIPELINE REPAIR 2026-08-24`.
+- **Repository role:** historical engineering record
+- **Evidence of use:** Dated engineering report retained as decision history; linked from structure/changelog audits — not runtime code.
+- **Necessity status:** HISTORICAL_RECORD
+- **Deletion consequence:** Lost historical decision evidence for that investigation.
+- **Confidence:** MEDIUM
+- **Owner / layer:** documentation
+- **Responsibilities:** Document evidence and outcomes for this investigation topic.
+- **When to open:** Reviewing history related to `DEPLOYMENT PIPELINE REPAIR 2026-08-24` before repeating the work.
+- **Can it be deleted?** Lost historical decision evidence for that investigation.
+- **Connected to:** `docs/ROADMAP.md`, `CHANGELOG.md`, related governing docs.
+
+RU:
+
+- **Зачем файл человеку:** Инженерный отчёт `DEPLOYMENT_PIPELINE_REPAIR_2026-08-24.md` — dated findings в `docs/reports/`. Сохраняет решения audit/parity, чтобы позже не переобсуждать те же findings.
+- **Что это:** Инженерный отчёт `DEPLOYMENT_PIPELINE_REPAIR_2026-08-24.md` — dated findings в `docs/reports/`.
+- **Зачем:** Сохраняет решения audit/parity, чтобы позже не переобсуждать те же findings.
+- **Содержимое:** Markdown-тело отчёта `DEPLOYMENT PIPELINE REPAIR 2026-08-24`.
+- **Роль в репозитории:** historical engineering record
+- **Доказательства использования:** Отчёт с датой — история решений; не runtime-код.
+- **Статус необходимости:** HISTORICAL_RECORD
+- **Что будет, если удалить:** Пропадёт история решения по тому расследованию.
+- **Уверенность:** MEDIUM
+- **Владелец / слой:** документация
+- **Обязанности:** Фиксирует evidence и итоги по теме этого расследования.
+- **Когда открывать:** Смотрите историю по `DEPLOYMENT PIPELINE REPAIR 2026-08-24` перед повторением той же работы.
 - **Можно удалить?** Пропадёт история решения по тому расследованию.
 - **Связано с:** `docs/ROADMAP.md`, `CHANGELOG.md`, связанные governing docs.
 
@@ -20163,8 +20200,8 @@ EN:
 - **Human purpose:** `health_connect_settings_section.dart` on settings area — Settings-owned timezone helpers + Voice settings + Categories manager + unfilled-time notification settings + health/sleep integration settings. Users see `health_connect_settings_section.dart` when using settings area.
 - **What this is:** `health_connect_settings_section.dart` on settings area — Settings-owned timezone helpers + Voice settings + Categories manager + unfilled-time notification settings + health/sleep integration settings.
 - **Why needed:** Users see `health_connect_settings_section.dart` when using settings area.
-- **Contents:** Primary symbols: `SleepSyncSettingsSection`, `_SleepSyncSettingsSectionState`, `HealthConnectSettingsSection`.
-- **Key code names:** `SleepSyncSettingsSection`, `_SleepSyncSettingsSectionState`, `HealthConnectSettingsSection`
+- **Contents:** Primary symbols: `SleepSyncSettingsSection`, `_SleepSyncSettingsSectionState`.
+- **Key code names:** `SleepSyncSettingsSection`, `_SleepSyncSettingsSectionState`
 - **Repository role:** production UI
 - **Evidence of use:** Imported/exported by production Dart: `lib/features/profile/settings/notification_settings_section.dart`.
 - **Necessity status:** PROVEN_REQUIRED
@@ -28183,6 +28220,43 @@ RU:
 - **Связано с:** `pb_migrations/`, `docs/APP_STRUCTURE.md`.
 
 
+### `pb_migrations/1787580300_add_category_default_plan_timezone.js`
+
+EN:
+
+- **Human purpose:** JavaScript source `1787580300_add_category_default_plan_timezone.js` in `pb_migrations` — repo tooling or config. Tracked because `pb_migrations` needs `1787580300_add_category_default_plan_timezone.js` for build, CI, or maintenance.
+- **What this is:** JavaScript source `1787580300_add_category_default_plan_timezone.js` in `pb_migrations` — repo tooling or config.
+- **Why needed:** Tracked because `pb_migrations` needs `1787580300_add_category_default_plan_timezone.js` for build, CI, or maintenance.
+- **Contents:** Open `1787580300_add_category_default_plan_timezone.js` when working on `pb_migrations` (see folder section above).
+- **Repository role:** PocketBase migration
+- **Evidence of use:** Versioned PocketBase schema/data migration; applied by PocketBase before client code that depends on the schema (see `docs/DEPLOY.md`).
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Production schema history becomes incomplete or a required data migration is lost.
+- **Confidence:** HIGH
+- **Owner / layer:** PocketBase migrations
+- **Responsibilities:** Supports `pb_migrations` workflow for `1787580300_add_category_default_plan_timezone.js`.
+- **When to open:** When build output or maintenance cites `1787580300_add_category_default_plan_timezone.js`.
+- **Can it be deleted?** No — part of repository tooling or config.
+- **Connected to:** `pb_migrations/`, `docs/APP_STRUCTURE.md`.
+
+RU:
+
+- **Зачем файл человеку:** `1787580300_add_category_default_plan_timezone.js` — JavaScript-модуль для области `pb_migrations`. Обеспечивает автоматизацию или web-логику области `pb_migrations` для сценария `1787580300_add_category_default_plan_timezone.js`.
+- **Что это:** `1787580300_add_category_default_plan_timezone.js` — JavaScript-модуль для области `pb_migrations`.
+- **Зачем:** Обеспечивает автоматизацию или web-логику области `pb_migrations` для сценария `1787580300_add_category_default_plan_timezone.js`.
+- **Содержимое:** JavaScript-код и настройки, относящиеся к задаче `1787580300_add_category_default_plan_timezone.js`.
+- **Роль в репозитории:** PocketBase migration
+- **Доказательства использования:** Версионированная миграция схемы/данных PocketBase; применяется до клиента, который зависит от этой схемы (см. `docs/DEPLOY.md`).
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** История production-схемы станет неполной или пропадёт нужная миграция данных.
+- **Уверенность:** HIGH
+- **Владелец / слой:** миграции PocketBase
+- **Обязанности:** Реализует JavaScript-часть сценария `1787580300_add_category_default_plan_timezone.js` в своём каталоге.
+- **Когда открывать:** When результат сборки or maintenance cites `1787580300_add_category_default_plan_timezone.js`.
+- **Можно удалить?** Нет — конфигурация/инструмент репозитория.
+- **Связано с:** `pb_migrations/`, `docs/APP_STRUCTURE.md`.
+
+
 ### `pb_migrations/1787724000_google_health_sleep_provider.js`
 
 EN:
@@ -28340,7 +28414,7 @@ EN:
 - **Why needed:** Automates a repeatable task documented in repo notes or `DEPLOY.md`.
 - **Contents:** PowerShell, Python, or Dart commands for `deployment_contract.py`.
 - **Repository role:** audit tool
-- **Evidence of use:** Invoked or documented by: `.github/workflows/architecture-guard.yml`, `.github/workflows/deploy-pocketbase.yml`.
+- **Evidence of use:** Invoked or documented by: `.github/workflows/architecture-guard.yml`, `.github/workflows/deploy-pocketbase.yml`, `docs/reports/DEPLOYMENT_PIPELINE_REPAIR_2026-08-24.md`.
 - **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Deletion consequence:** Broken audit/deploy/manual maintenance command.
 - **Confidence:** HIGH
@@ -28357,7 +28431,7 @@ RU:
 - **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
 - **Содержимое:** Команды PowerShell/Python/Dart в `deployment_contract.py`.
 - **Роль в репозитории:** audit tool
-- **Доказательства использования:** Вызывается или описан в: `.github/workflows/architecture-guard.yml`, `.github/workflows/deploy-pocketbase.yml`.
+- **Доказательства использования:** Вызывается или описан в: `.github/workflows/architecture-guard.yml`, `.github/workflows/deploy-pocketbase.yml`, `docs/reports/DEPLOYMENT_PIPELINE_REPAIR_2026-08-24.md`.
 - **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Что будет, если удалить:** Сломается audit/deploy или ручная команда сопровождения.
 - **Уверенность:** HIGH
@@ -34121,6 +34195,44 @@ RU:
 - **Связано с:** Production files под `lib/` с похожим именем.
 
 
+### `test/plans_time_performance_contract_test.dart`
+
+EN:
+
+- **Human purpose:** Automated test `plans_time_performance_contract_test` — verifies behavior without manual tapping. Prevents regressions when related production code changes.
+- **What this is:** Automated test `plans_time_performance_contract_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **Contents:** Test cases (symbols: main).
+- **Key code names:** `main`
+- **Repository role:** test
+- **Evidence of use:** Flutter test file; exercised via `flutter test test/plans_time_performance_contract_test.dart` / CI when enabled.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Lost automated coverage for its contract.
+- **Confidence:** HIGH
+- **Owner / layer:** tests
+- **Responsibilities:** Assert expected behavior for `plans_time_performance_contract_test` scenario.
+- **When to open:** CI failure or changing code near `plans_time_performance_contract`.
+- **Can it be deleted?** Lost automated coverage for its contract.
+- **Connected to:** `test/` suite; production subject near `plans_time_performance_contract`.
+
+RU:
+
+- **Зачем файл человеку:** Автотест `plans_time_performance_contract` — проверяет поведение без ручного UI. Ловит регрессии при изменении связанного production-кода.
+- **Что это:** Автотест `plans_time_performance_contract` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `plans_time_performance_contract`.
+- **Роль в репозитории:** test
+- **Доказательства использования:** Файл теста Flutter; запускается через `flutter test test/plans_time_performance_contract_test.dart`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Пропадёт автоматическая проверка своего контракта.
+- **Уверенность:** HIGH
+- **Владелец / слой:** тесты
+- **Обязанности:** Assert ожидаемого поведения `plans_time_performance_contract`.
+- **Когда открывать:** Падение CI или правка кода рядом с `plans_time_performance_contract`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
+
+
 ### `test/profile_timezone_catalog_test.dart`
 
 EN:
@@ -34345,6 +34457,44 @@ RU:
 - **Владелец / слой:** тесты
 - **Обязанности:** Assert ожидаемого поведения `smart_input_parser`.
 - **Когда открывать:** Падение CI или правка кода рядом с `smart_input_parser`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
+
+
+### `test/time_view_bulk_drag_regression_test.dart`
+
+EN:
+
+- **Human purpose:** Automated test `time_view_bulk_drag_regression_test` — verifies behavior without manual tapping. Prevents regressions when related production code changes.
+- **What this is:** Automated test `time_view_bulk_drag_regression_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **Contents:** Test cases (symbols: main).
+- **Key code names:** `main`
+- **Repository role:** test
+- **Evidence of use:** Flutter test file; exercised via `flutter test test/time_view_bulk_drag_regression_test.dart` / CI when enabled.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Lost automated coverage for its contract.
+- **Confidence:** HIGH
+- **Owner / layer:** tests
+- **Responsibilities:** Assert expected behavior for `time_view_bulk_drag_regression_test` scenario.
+- **When to open:** CI failure or changing code near `time_view_bulk_drag_regression`.
+- **Can it be deleted?** Lost automated coverage for its contract.
+- **Connected to:** `test/` suite; production subject near `time_view_bulk_drag_regression`.
+
+RU:
+
+- **Зачем файл человеку:** Автотест `time_view_bulk_drag_regression` — проверяет поведение без ручного UI. Ловит регрессии при изменении связанного production-кода.
+- **Что это:** Автотест `time_view_bulk_drag_regression` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `time_view_bulk_drag_regression`.
+- **Роль в репозитории:** test
+- **Доказательства использования:** Файл теста Flutter; запускается через `flutter test test/time_view_bulk_drag_regression_test.dart`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Пропадёт автоматическая проверка своего контракта.
+- **Уверенность:** HIGH
+- **Владелец / слой:** тесты
+- **Обязанности:** Assert ожидаемого поведения `time_view_bulk_drag_regression`.
+- **Когда открывать:** Падение CI или правка кода рядом с `time_view_bulk_drag_regression`.
 - **Можно удалить?** Нет — нужен для тестов.
 - **Связано с:** Production files под `lib/` с похожим именем.
 
