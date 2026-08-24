@@ -1,0 +1,88 @@
+name: Emergency PocketBase recovery
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/emergency-pocketbase-recover.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pocketbase-production
+  cancel-in-progress: false
+
+jobs:
+  recover:
+    if: contains(github.event.head_commit.message, 'Emergency PocketBase recovery')
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      SSH_PRIVATE_KEY: ${{ secrets.POCKETBASE_SSH_PRIVATE_KEY || secrets.VPS_SSH_KEY || secrets.SSH_PRIVATE_KEY }}
+      SSH_USER: ${{ secrets.POCKETBASE_SSH_USER || secrets.VPS_SSH_USER || secrets.SSH_USER }}
+      SSH_HOST: ${{ secrets.POCKETBASE_SSH_HOST || secrets.VPS_HOST || secrets.SSH_HOST }}
+      SSH_PORT: ${{ secrets.POCKETBASE_SSH_PORT || secrets.VPS_SSH_PORT || '22' }}
+      POCKETBASE_SERVICE: ${{ secrets.POCKETBASE_SERVICE }}
+      POCKETBASE_DEPLOY_DIR: ${{ secrets.POCKETBASE_DEPLOY_DIR }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Prepare SSH
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ -n "$SSH_PRIVATE_KEY" ]]
+          echo "SSH_USER=${SSH_USER:-root}" >> "$GITHUB_ENV"
+          echo "SSH_HOST=${SSH_HOST:-217.114.0.201}" >> "$GITHUB_ENV"
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/lifeos_pocketbase
+          chmod 600 ~/.ssh/lifeos_pocketbase
+          ssh-keyscan -p "$SSH_PORT" -H "${SSH_HOST:-217.114.0.201}" >> ~/.ssh/known_hosts
+
+      - name: Restore safe bootcheck and restart PocketBase
+        shell: bash
+        run: |
+          set -euo pipefail
+          remote_file="/tmp/lifeos-pb-bootcheck-${GITHUB_SHA}.pb.js"
+          scp -i ~/.ssh/lifeos_pocketbase -P "$SSH_PORT" \
+            pb_hooks/01_sleep_sync_runtime_bootcheck.pb.js \
+            "$SSH_USER@$SSH_HOST:$remote_file"
+
+          ssh -i ~/.ssh/lifeos_pocketbase -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" \
+            "POCKETBASE_SERVICE='$POCKETBASE_SERVICE' POCKETBASE_DEPLOY_DIR='$POCKETBASE_DEPLOY_DIR' REMOTE_FILE='$remote_file' bash -s" <<'REMOTE'
+          set -euo pipefail
+          if [[ "$(id -u)" -eq 0 ]]; then SUDO=""; else SUDO="sudo -n"; fi
+          service_name="${POCKETBASE_SERVICE:-}"
+          if [[ -z "$service_name" ]]; then
+            service_name="$(systemctl list-unit-files --type=service --no-legend 2>/dev/null | awk 'tolower($1) ~ /pocketbase/ && !found {print $1; found=1}')"
+          fi
+          app_dir="${POCKETBASE_DEPLOY_DIR:-}"
+          if [[ -z "$app_dir" && -n "$service_name" ]]; then
+            app_dir="$(systemctl show "$service_name" -p WorkingDirectory --value 2>/dev/null || true)"
+          fi
+          [[ -n "$service_name" && -n "$app_dir" && -d "$app_dir" ]]
+          $SUDO mkdir -p "$app_dir/pb_hooks"
+          $SUDO install -m 0644 "$REMOTE_FILE" "$app_dir/pb_hooks/01_sleep_sync_runtime_bootcheck.pb.js"
+          rm -f "$REMOTE_FILE"
+          $SUDO systemctl daemon-reload
+          $SUDO systemctl restart "$service_name"
+          sleep 3
+          $SUDO systemctl is-active --quiet "$service_name"
+          echo "PocketBase service active"
+          REMOTE
+
+      - name: Verify production health
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in {1..20}; do
+            code="$(curl -ksS -o /dev/null -w '%{http_code}' https://217-114-0-201.sslip.io/api/health || true)"
+            echo "health attempt $attempt: $code"
+            if [[ "$code" == "200" ]]; then
+              echo "PocketBase production health OK"
+              exit 0
+            fi
+            sleep 2
+          done
+          exit 1
