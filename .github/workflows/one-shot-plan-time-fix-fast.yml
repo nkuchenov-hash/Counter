@@ -25,7 +25,6 @@ jobs:
   finalize:
     runs-on: ubuntu-latest
     timeout-minutes: 60
-    environment: production
     steps:
       - name: Checkout current source
         uses: actions/checkout@v4
@@ -44,8 +43,6 @@ jobs:
             scripts/manual/fix_plan_time_regressions_20260824.py \
             scripts/manual/fix_time_view_bulk_rigid_group_20260824.py
 
-          # Restore the normal Android artifact workflow that existed before the
-          # temporary Plans Time validation instrumentation.
           git show 98e8655f0de442426a5873675f3067525b08c127:.github/workflows/android-apk-build.yml \
             > .github/workflows/android-apk-build.yml
 
