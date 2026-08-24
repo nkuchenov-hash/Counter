@@ -177,6 +177,13 @@ class _SleepSyncSettingsSectionState extends State<SleepSyncSettingsSection>
     );
   }
 
+  bool _requiresGoogleHealthSetup(CloudSleepSyncState state) {
+    final raw = state.error?.toLowerCase() ?? '';
+    return raw.contains('google_health_account_not_linked') ||
+        raw.contains('account_not_linked') ||
+        raw.contains('account is not linked to google health');
+  }
+
   Widget _webStatus(String locale, ThemeData theme) {
     return ValueListenableBuilder<CloudSleepSyncState>(
       valueListenable: CloudSleepSyncService.instance.state,
@@ -184,7 +191,14 @@ class _SleepSyncSettingsSectionState extends State<SleepSyncSettingsSection>
         final configured = state.configured;
         final syncing = state.phase == CloudSleepSyncPhase.syncing;
         final connecting = state.phase == CloudSleepSyncPhase.connecting;
-        final status = configured
+        final setupRequired = _requiresGoogleHealthSetup(state);
+        final status = setupRequired
+            ? _copy(
+                locale,
+                'Google requires a one-time Google Health profile setup before LIFE OS can read Health Connect sleep. Open setup once; LIFE OS will retry automatically.',
+                'Google требует один раз настроить профиль Google Health, прежде чем LIFE OS сможет читать сон из Health Connect. Откройте настройку один раз — LIFE OS будет повторять синхронизацию автоматически.',
+              )
+            : configured
             ? (syncing
                   ? _copy(
                       locale,
@@ -228,10 +242,24 @@ class _SleepSyncSettingsSectionState extends State<SleepSyncSettingsSection>
             OutlinedButton.icon(
               onPressed: syncing
                   ? null
-                  : () => unawaited(_connectOrSyncWebCloud()),
-              icon: Icon(configured ? Icons.sync : Icons.cloud_outlined),
+                  : () => unawaited(
+                      setupRequired
+                          ? CloudSleepSyncService.instance.openGoogleHealthAccountSetup()
+                          : _connectOrSyncWebCloud(),
+                    ),
+              icon: Icon(
+                setupRequired
+                    ? Icons.open_in_new
+                    : (configured ? Icons.sync : Icons.cloud_outlined),
+              ),
               label: Text(
-                configured
+                setupRequired
+                    ? _copy(
+                        locale,
+                        'Set up Google Health',
+                        'Настроить Google Health',
+                      )
+                    : configured
                     ? _copy(locale, 'Synchronize now', 'Синхронизировать сейчас')
                     : (connecting
                           ? _copy(

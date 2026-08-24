@@ -94,6 +94,12 @@ function __healthNeedsReconnect(errorText) {
         raw.indexOf("authorization_required") >= 0;
 }
 
+function __healthNeedsAccountSetup(errorText) {
+    var raw = String(errorText || "").toLowerCase();
+    return raw.indexOf("account_not_linked") >= 0 ||
+        raw.indexOf("account is not linked to google health") >= 0;
+}
+
 function __healthStatus(connection) {
     if (!connection) {
         return {
@@ -114,6 +120,7 @@ function __healthStatus(connection) {
     var error = String(connection.get("last_error") || "");
     var hasRefresh = String(connection.get("refresh_token_enc") || "").length > 0;
     var reconnect = __healthNeedsReconnect(error);
+    var accountSetup = __healthNeedsAccountSetup(error);
     var configured = hasRefresh && !reconnect;
     return {
         configured: configured,
@@ -127,7 +134,7 @@ function __healthStatus(connection) {
         last_sleep_count: Number(connection.get("last_sleep_count") || 0),
         last_activity_count: 0,
         history_complete: String(connection.get("last_sync_at") || "").length > 0,
-        last_error: reconnect ? "Google Health authorization is required" : (error || null)
+        last_error: accountSetup ? "google_health_account_not_linked" : (reconnect ? "Google Health authorization is required" : (error || null))
     };
 }
 
@@ -215,7 +222,7 @@ function __healthFetchSleep(accessToken, start, end) {
     do {
         var query = {
             pageSize: 100,
-            dataSourceFamily: "users/me/dataSourceFamilies/all-sources",
+            dataSourceFamily: "users/me/dataSourceFamilies/google-sources",
             filter: 'sleep.interval.end_time >= "' + start.toISOString() + '" AND sleep.interval.end_time < "' + end.toISOString() + '"'
         };
         if (pageToken) query.pageToken = pageToken;
@@ -474,6 +481,19 @@ function callback(e) {
         connection.set("status", "error");
         connection.set("last_error", String(err));
         e.app.save(connection);
+        if (__healthNeedsAccountSetup(String(err))) {
+            var setupUrl = "https://fitbit.google.com/auth/signup";
+            var returnUrl = __healthReturnUrl();
+            return e.html(200,
+                "<!doctype html><meta charset='utf-8'><title>LIFE OS — Google Health setup</title>" +
+                "<main style='font-family:system-ui,sans-serif;max-width:680px;margin:64px auto;padding:24px'>" +
+                "<h1>Google Health setup required</h1>" +
+                "<p>Your Google authorization succeeded. Google requires a one-time Google Health profile setup before LIFE OS can read Health Connect sleep.</p>" +
+                "<p><a href='" + setupUrl + "' target='_blank' rel='noopener'>Open Google Health setup</a></p>" +
+                "<p>Complete setup in the new tab, then return to LIFE OS. The server will retry synchronization automatically.</p>" +
+                "<p><a href='" + returnUrl + "'>Back to LIFE OS</a></p></main>"
+            );
+        }
         return e.html(500, "<h1>Google Health connection failed</h1><p>Return to LIFE OS and try again.</p>");
     }
 }
