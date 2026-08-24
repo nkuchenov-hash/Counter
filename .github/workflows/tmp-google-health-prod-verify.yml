@@ -1,0 +1,79 @@
+name: TEMP Google Health production verify
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/tmp-google-health-prod-verify.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      SSH_PRIVATE_KEY: ${{ secrets.POCKETBASE_SSH_PRIVATE_KEY || secrets.VPS_SSH_KEY || secrets.SSH_PRIVATE_KEY }}
+      SSH_USER: ${{ secrets.POCKETBASE_SSH_USER || secrets.VPS_SSH_USER || secrets.SSH_USER }}
+      SSH_HOST: ${{ secrets.POCKETBASE_SSH_HOST || secrets.VPS_HOST || secrets.SSH_HOST }}
+      SSH_PORT: ${{ secrets.POCKETBASE_SSH_PORT || secrets.VPS_SSH_PORT || '22' }}
+      POCKETBASE_SERVICE: ${{ secrets.POCKETBASE_SERVICE }}
+      POCKETBASE_DEPLOY_DIR: ${{ secrets.POCKETBASE_DEPLOY_DIR }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify production Google Health sleep backend
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ -n "$SSH_PRIVATE_KEY" ]]
+          user="${SSH_USER:-root}"
+          host="${SSH_HOST:-217.114.0.201}"
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/lifeos_prod
+          chmod 600 ~/.ssh/lifeos_prod
+          ssh-keyscan -p "$SSH_PORT" -H "$host" >> ~/.ssh/known_hosts
+          ssh -i ~/.ssh/lifeos_prod -p "$SSH_PORT" "$user@$host" \
+            "POCKETBASE_DEPLOY_DIR='$POCKETBASE_DEPLOY_DIR' POCKETBASE_SERVICE='$POCKETBASE_SERVICE' bash -s" <<'REMOTE'
+          set -euo pipefail
+          service_name="${POCKETBASE_SERVICE:-}"
+          if [[ -z "$service_name" ]]; then
+            service_name="$(systemctl list-unit-files --type=service --no-legend 2>/dev/null | awk 'tolower($1) ~ /pocketbase/ && !found {print $1; found=1}')"
+          fi
+          pid="$(pgrep -f '[p]ocketbase.*serve' | sed -n '1p' || true)"
+          app_dir="${POCKETBASE_DEPLOY_DIR:-}"
+          if [[ -z "$app_dir" && -n "$service_name" ]]; then app_dir="$(systemctl show "$service_name" -p WorkingDirectory --value 2>/dev/null || true)"; fi
+          if [[ -z "$app_dir" && -n "$pid" ]]; then app_dir="$(readlink -f "/proc/$pid/cwd" 2>/dev/null || true)"; fi
+          [[ -n "$app_dir" && -d "$app_dir" ]]
+
+          test -f "$app_dir/pb_hooks/google_health_sleep_runtime.js"
+          test -f "$app_dir/pb_migrations/1787724000_google_health_sleep_provider.js"
+          grep -q 'googlehealth.sleep.readonly' "$app_dir/pb_hooks/google_health_sleep_runtime.js"
+          grep -q 'dataPoints:reconcile' "$app_dir/pb_hooks/google_health_sleep_runtime.js"
+          grep -q '/api/sleep-sync/google-health/connect' "$app_dir/pb_hooks/sleep_sync.pb.js"
+          echo 'google_health_runtime=true'
+          echo 'google_health_route=true'
+          health="$(curl -sS -o /dev/null -w '%{http_code}' https://217-114-0-201.sslip.io/api/health || true)"
+          echo "pocketbase_health=$health"
+
+          python3 - "$app_dir/pb_data/data.db" <<'PY'
+          import sqlite3, sys
+          con=sqlite3.connect(f'file:{sys.argv[1]}?mode=ro', uri=True); con.row_factory=sqlite3.Row
+          rows=con.execute("SELECT provider,enabled,status,last_sync_at,last_session_count,last_imported_count,length(coalesce(refresh_token_enc,'')) token_len FROM sleep_sync_connections WHERE provider IN ('google_health','google_fit','xiaomi') ORDER BY provider").fetchall()
+          for r in rows:
+              p=r['provider']
+              print(f"{p}_row=true")
+              print(f"{p}_enabled={str(bool(r['enabled'])).lower()}")
+              print(f"{p}_status={r['status'] or 'none'}")
+              print(f"{p}_token={str((r['token_len'] or 0)>0).lower()}")
+              print(f"{p}_synced={str(bool(r['last_sync_at'])).lower()}")
+              print(f"{p}_sessions={r['last_session_count'] or 0}")
+              print(f"{p}_imported={r['last_imported_count'] or 0}")
+          latest=con.execute("SELECT date(max(end_time)) FROM records WHERE title='Sleep' OR title='Сон'").fetchone()[0]
+          recent=con.execute("SELECT count(*) FROM records WHERE (title='Sleep' OR title='Сон') AND julianday(end_time)>=julianday('now','-7 days')").fetchone()[0]
+          gh=con.execute("SELECT count(*) FROM records WHERE sleep_source='google_health'").fetchone()[0]
+          print('latest_sleep_day='+str(latest or 'none'))
+          print('sleep_last_7d='+str(recent))
+          print('google_health_records='+str(gh))
+          con.close()
+          PY
+          REMOTE
