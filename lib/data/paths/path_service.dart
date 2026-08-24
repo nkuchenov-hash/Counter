@@ -158,4 +158,29 @@ extension PathServiceExtension on DatabaseService {
           body: <String, dynamic>{'active_revision_link': revisionId},
         );
   }
+
+  /// Deletes the Path row itself with no replacement requirement.
+  ///
+  /// Immutable `path_revisions` are intentionally retained as non-executable
+  /// audit history. Without a `paths` row, no revision can be active or
+  /// projected into Planner. Repeating a delete after a successful deletion is
+  /// treated as success.
+  Future<void> deleteOwnedPath({required String pathRecordId}) async {
+    await ensurePocketBaseReady();
+    _pathOwnerIdOrThrow();
+    final recordId = pathRecordId.trim();
+    if (!DatabaseService._isLikelyPocketBaseRowId(recordId)) {
+      throw ArgumentError.value(
+        pathRecordId,
+        'pathRecordId',
+        'Expected a PocketBase paths row id.',
+      );
+    }
+    try {
+      await _pb.collection(PbCollections.paths).delete(recordId);
+    } on ClientException catch (error) {
+      if (error.statusCode == 404) return;
+      rethrow;
+    }
+  }
 }
