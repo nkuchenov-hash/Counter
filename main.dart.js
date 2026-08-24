@@ -65741,7 +65741,7 @@ s=a.b
 r=s==null?null:B.b.l(s)
 return(r==null?"":r).length===0},
 ce5(a){var s=B.b.l(a)
-return"APP_BUILD commit=a4d0bd28 builtAt=2026-08-23T12:15:43Z"+(s.length!==0?" route="+s:"")},
+return"APP_BUILD commit=e696a79d builtAt=2026-08-24T09:00:54Z"+(s.length!==0?" route="+s:"")},
 bP(a,b){var s,r=null,q=$.aKj().gah()
 if(q==null)return
 q.qg()
@@ -105716,7 +105716,7 @@ e=A.o(a2).ok.z
 if(e==null)e=a
 else{d=A.o(a2).ax
 c=d.rx
-e=e.aR(c==null?d.k3:c)}return A.jV(a0,a,new A.Qp(A.b([new A.ne(q,a,o,a),new A.ne(n,a,new A.KL(!0,a),a),new A.So(l,m,a),new A.ne(k,a,j,a),new A.ne(i,a,h,a),new A.ne(g,a,A.x(f+" a4d0bd28 \xb7 2026-08-23T12:15:43Z",a,a,a,a,a,e,a,a,a,a),a)],p),a),a,a,a,!0)},
+e=e.aR(c==null?d.k3:c)}return A.jV(a0,a,new A.Qp(A.b([new A.ne(q,a,o,a),new A.ne(n,a,new A.KL(!0,a),a),new A.So(l,m,a),new A.ne(k,a,j,a),new A.ne(i,a,h,a),new A.ne(g,a,A.x(f+" e696a79d \xb7 2026-08-24T09:00:54Z",a,a,a,a,a,e,a,a,a,a),a)],p),a),a,a,a,!0)},
 aNf(a,b,c){var s,r,q,p,o,n,m=this,l=null,k=A.L([B.Il,A.p(b,"settings_tab_account"),B.Im,A.p(b,"settings_tab_preferences"),B.Ab,A.p(b,"settings_tab_desktop_voice"),B.In,A.p(b,"settings_tab_notifications"),B.Io,A.p(b,"settings_tab_appearance"),B.Ip,A.p(b,"settings_tab_about")],t.OS,t.N),j=A.p(b,"profile_page_title"),i=A.o(a).ok.f
 j=A.x(j,l,l,l,l,l,i==null?l:i.U_(32,B.af,1.15),l,l,l,l)
 i=m.ax
@@ -105739,7 +105739,7 @@ p=A.o(a).ok.z
 if(p==null)p=l
 else{o=A.o(a).ax
 n=o.rx
-p=p.aR(n==null?o.k3:n)}p=new A.ne(r,l,A.x(q+" a4d0bd28 \xb7 2026-08-23T12:15:43Z",l,l,l,l,l,p,l,l,l,l),l)
+p=p.aR(n==null?o.k3:n)}p=new A.ne(r,l,A.x(q+" e696a79d \xb7 2026-08-24T09:00:54Z",l,l,l,l,l,p,l,l,l,l),l)
 r=p
 break
 default:r=l}return new A.Qp(A.b([j,B.bU,new A.a92(i,new A.bQy(m),k,l),s,B.fO,r],t.p),l)},
@@ -107536,11 +107536,11 @@ return A.al(n,B.Q,B.h,B.i,0,B.k)}}
 A.bUq.prototype={
 $3(a,b,c){var s,r,q,p,o,n=this,m=null,l=b.a,k=b.c,j=k===B.AE,i=k===B.AD
 if(l){k=n.b
-if(j){s=k==="ru"?"\u0421\u0438\u043d\u0445\u0440\u043e\u043d\u0438\u0437\u0430\u0446\u0438\u044f \u0441\u043d\u0430 \u0438\u0437 Mi Fitness Cloud\u2026":"Synchronizing sleep from Mi Fitness cloud\u2026"
-r=s}else{s=k==="ru"?"Mi Fitness Cloud \u043f\u043e\u0434\u043a\u043b\u044e\u0447\u0451\u043d. \u0421\u0435\u0440\u0432\u0435\u0440 LIFE OS \u0430\u0432\u0442\u043e\u043c\u0430\u0442\u0438\u0447\u0435\u0441\u043a\u0438 \u0441\u0438\u043d\u0445\u0440\u043e\u043d\u0438\u0437\u0438\u0440\u0443\u0435\u0442 \u0441\u043e\u043d \u0438 \u0441\u043e\u0445\u0440\u0430\u043d\u044f\u0435\u0442 \u0435\u0433\u043e \u0432 PocketBase \u0434\u043b\u044f \u0432\u0441\u0435\u0445 \u043a\u043b\u0438\u0435\u043d\u0442\u043e\u0432.":"Mi Fitness cloud is connected. The LIFE OS server synchronizes sleep automatically and stores it in PocketBase for every client."
+if(j){s=k==="ru"?"\u0421\u0438\u043d\u0445\u0440\u043e\u043d\u0438\u0437\u0430\u0446\u0438\u044f \u0441\u043d\u0430 \u0438\u0437 Google Health\u2026":"Synchronizing sleep from Google Health\u2026"
+r=s}else{s=k==="ru"?"Google Health \u043f\u043e\u0434\u043a\u043b\u044e\u0447\u0451\u043d. \u0421\u0435\u0440\u0432\u0435\u0440 LIFE OS \u0430\u0432\u0442\u043e\u043c\u0430\u0442\u0438\u0447\u0435\u0441\u043a\u0438 \u0441\u0438\u043d\u0445\u0440\u043e\u043d\u0438\u0437\u0438\u0440\u0443\u0435\u0442 \u0441\u043e\u043d \u0438 \u0441\u043e\u0445\u0440\u0430\u043d\u044f\u0435\u0442 \u0435\u0433\u043e \u0432 PocketBase \u0434\u043b\u044f \u0432\u0441\u0435\u0445 \u043a\u043b\u0438\u0435\u043d\u0442\u043e\u0432.":"Google Health is connected. The LIFE OS server synchronizes sleep automatically and stores it in PocketBase for every client."
 r=s}}else{k=n.b
-if(i){s=k==="ru"?"\u0417\u0430\u0432\u0435\u0440\u0448\u0438\u0442\u0435 \u0432\u0445\u043e\u0434 \u0432 Xiaomi Account \u043d\u0430 \u043e\u0442\u043a\u0440\u044b\u0432\u0448\u0435\u0439\u0441\u044f \u0441\u0442\u0440\u0430\u043d\u0438\u0446\u0435. LIFE OS \u0441\u0440\u0430\u0437\u0443 \u0438\u043c\u043f\u043e\u0440\u0442\u0438\u0440\u0443\u0435\u0442 \u0441\u043e\u043d \u043f\u043e\u0441\u043b\u0435 \u0430\u0432\u0442\u043e\u0440\u0438\u0437\u0430\u0446\u0438\u0438.":"Complete Xiaomi Account authorization in the opened page. LIFE OS will import sleep immediately after authorization."
-r=s}else{s=k==="ru"?"\u041e\u0431\u044b\u0447\u043d\u043e \u0441\u043e\u043d \u043f\u043e\u0441\u0442\u0443\u043f\u0430\u0435\u0442 \u0438\u0437 \u0438\u0441\u0442\u043e\u0447\u043d\u0438\u043a\u0430 \u0437\u0434\u043e\u0440\u043e\u0432\u044c\u044f \u043d\u0430 \u0442\u0435\u043b\u0435\u0444\u043e\u043d\u0435. \u0422\u0430\u043a\u0436\u0435 \u043c\u043e\u0436\u043d\u043e \u043e\u0434\u0438\u043d \u0440\u0430\u0437 \u043f\u043e\u0434\u043a\u043b\u044e\u0447\u0438\u0442\u044c Mi Fitness Cloud, \u0447\u0442\u043e\u0431\u044b \u0441\u0435\u0440\u0432\u0435\u0440 LIFE OS \u0437\u0430\u0431\u0438\u0440\u0430\u043b \u0441\u043e\u043d \u043d\u0430\u043f\u0440\u044f\u043c\u0443\u044e \u0431\u0435\u0437 \u043e\u0442\u043a\u0440\u044b\u0442\u0438\u044f \u043c\u043e\u0431\u0438\u043b\u044c\u043d\u043e\u0433\u043e \u043f\u0440\u0438\u043b\u043e\u0436\u0435\u043d\u0438\u044f.":"Sleep normally arrives from the health source on your phone. You can also connect Mi Fitness cloud once so the LIFE OS server can pull sleep directly without opening the mobile app."
+if(i){s=k==="ru"?"\u0417\u0430\u0432\u0435\u0440\u0448\u0438\u0442\u0435 \u0430\u0432\u0442\u043e\u0440\u0438\u0437\u0430\u0446\u0438\u044e Google Health \u043d\u0430 \u043e\u0442\u043a\u0440\u044b\u0432\u0448\u0435\u0439\u0441\u044f \u0441\u0442\u0440\u0430\u043d\u0438\u0446\u0435 Google. LIFE OS \u0441\u0440\u0430\u0437\u0443 \u0438\u043c\u043f\u043e\u0440\u0442\u0438\u0440\u0443\u0435\u0442 \u0441\u043e\u043d \u043f\u043e\u0441\u043b\u0435 \u0430\u0432\u0442\u043e\u0440\u0438\u0437\u0430\u0446\u0438\u0438.":"Complete Google Health authorization in the opened Google page. LIFE OS will import sleep immediately after authorization."
+r=s}else{s=k==="ru"?"\u041e\u0434\u0438\u043d \u0440\u0430\u0437 \u043f\u043e\u0434\u043a\u043b\u044e\u0447\u0438\u0442\u0435 Google Health. \u0415\u0433\u043e \u043e\u0431\u044a\u0435\u0434\u0438\u043d\u0451\u043d\u043d\u044b\u0439 \u043f\u043e\u0442\u043e\u043a \u0441\u043d\u0430 \u043c\u043e\u0436\u0435\u0442 \u0432\u043a\u043b\u044e\u0447\u0430\u0442\u044c \u0434\u0430\u043d\u043d\u044b\u0435 \u0438\u0437 Health Connect \u0431\u0435\u0437 \u043f\u0440\u0438\u0432\u044f\u0437\u043a\u0438 LIFE OS \u043a \u043c\u0430\u0440\u043a\u0435 \u0447\u0430\u0441\u043e\u0432.":"Connect Google Health once. Its reconciled sleep stream can include data uploaded from Health Connect, without tying LIFE OS to a watch brand."
 r=s}}k=k==="ru"
 s=A.x(k?"\u0421\u0438\u043d\u0445\u0440\u043e\u043d\u0438\u0437\u0430\u0446\u0438\u044f \u0441\u043d\u0430":"Sleep synchronization",m,m,m,m,m,m,m,m,m,m)
 q=n.c
@@ -107552,8 +107552,8 @@ q=p.aR(o==null?q.k3:o)}s=A.dH(!1,B.E,m,m,!0,m,m,m,!0,m,m,B.ats,m,m,m,m,m,!1,m,m,
 q=j?m:new A.bUp(n.a)
 p=A.bp(l?B.aqV:B.ar_,m,m,m)
 if(l)k=k?"\u0421\u0438\u043d\u0445\u0440\u043e\u043d\u0438\u0437\u0438\u0440\u043e\u0432\u0430\u0442\u044c \u0441\u0435\u0439\u0447\u0430\u0441":"Synchronize now"
-else if(i)k=k?"\u041f\u0440\u043e\u0434\u043e\u043b\u0436\u0438\u0442\u044c \u043f\u043e\u0434\u043a\u043b\u044e\u0447\u0435\u043d\u0438\u0435 Mi Fitness":"Continue Mi Fitness connection"
-else k=k?"\u041f\u043e\u0434\u043a\u043b\u044e\u0447\u0438\u0442\u044c Mi Fitness Cloud":"Connect Mi Fitness cloud"
+else if(i)k=k?"\u041f\u0440\u043e\u0434\u043e\u043b\u0436\u0438\u0442\u044c \u043f\u043e\u0434\u043a\u043b\u044e\u0447\u0435\u043d\u0438\u0435 Google Health":"Continue Google Health connection"
+else k=k?"\u041f\u043e\u0434\u043a\u043b\u044e\u0447\u0438\u0442\u044c Google Health":"Connect Google Health"
 return A.al(A.b([s,B.cA,A.DI(p,A.x(k,m,m,m,m,m,m,m,m,m,m),q,m)],t.p),B.Q,B.h,B.i,0,B.k)},
 $S:498}
 A.bUp.prototype={
