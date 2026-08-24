@@ -221,8 +221,10 @@ function __healthFetchSleep(accessToken, start, end) {
     var page = 0;
     do {
         var query = {
-            pageSize: 100,
-            dataSourceFamily: "users/me/dataSourceFamilies/google-sources",
+            // Sleep reconcile is capped at 25 points/page. Use all-sources so
+            // Health Connect and any third-party cloud source are eligible.
+            pageSize: 25,
+            dataSourceFamily: "users/me/dataSourceFamilies/all-sources",
             filter: 'sleep.interval.end_time >= "' + start.toISOString() + '" AND sleep.interval.end_time < "' + end.toISOString() + '"'
         };
         if (pageToken) query.pageToken = pageToken;
