@@ -1,5 +1,7 @@
 /// <reference path="../pb_data/types.d.ts" />
 
+// Required by Plans > Time View category default schedules. Kept idempotent so
+// redeploying the PocketBase bundle safely repairs schema drift in production.
 migrate(function(app) {
     var categories = app.findCollectionByNameOrId("categories");
     if (!categories.fields.getByName("default_plan_timezone")) {
