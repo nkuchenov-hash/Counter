@@ -109,8 +109,6 @@ jobs:
           if [[ -z "$app_dir" && -n "$pid" ]]; then app_dir="$(readlink -f "/proc/$pid/cwd" 2>/dev/null || true)"; fi
           [[ -n "$service_name" && -n "$app_dir" && -d "$app_dir" ]]
 
-          # Preserve the existing Google OAuth client credentials for historical
-          # backfill while Xiaomi Cloud owns current-night ingestion.
           fit_env="$app_dir/.lifeos-google-fit.env"
           [[ -f "$fit_env" ]]
           grep -q '^SLEEP_SYNC_GOOGLE_FIT_CLIENT_ID=' "$fit_env"
@@ -135,7 +133,7 @@ jobs:
           exit 1
           REMOTE
 
-      - name: Verify recent cloud sleep in production
+      - name: Verify recent cloud sleep and ETNIKA Path in production
         shell: bash
         run: |
           set -euo pipefail
@@ -152,7 +150,8 @@ jobs:
           if [[ -z "$app_dir" && -n "$service_name" ]]; then app_dir="$(systemctl show "$service_name" -p WorkingDirectory --value 2>/dev/null || true)"; fi
           if [[ -z "$app_dir" && -n "$pid" ]]; then app_dir="$(readlink -f "/proc/$pid/cwd" 2>/dev/null || true)"; fi
           python3 - "$app_dir/pb_data/data.db" <<'PY'
-          import sqlite3, sys
+          import json, sqlite3, sys
+          from datetime import datetime
           con=sqlite3.connect(f'file:{sys.argv[1]}?mode=ro', uri=True); con.row_factory=sqlite3.Row
           r=con.execute("SELECT enabled,status,last_error,last_sync_at,last_session_count,last_imported_count,length(coalesce(refresh_token_enc,'')) token_len FROM sleep_sync_connections WHERE provider='google_fit' LIMIT 1").fetchone()
           def error_class(v):
@@ -176,6 +175,49 @@ jobs:
           latest=con.execute("SELECT date(max(end_time)) FROM records WHERE title='Sleep' OR title='Сон'").fetchone()[0]
           print('sleep_last_36h='+str(n))
           print('latest_sleep_day='+str(latest or 'none'))
+
+          cats=con.execute("SELECT id,user_id,name,parent_id,is_archived FROM categories").fetchall()
+          roots={r['id']:r for r in cats if (r['name'] or '').strip().casefold()=='этника' and not bool(r['is_archived'])}
+          children=[r for r in cats if r['parent_id'] in roots and (r['name'] or '').strip().casefold()=='обновление основной страницы сайта' and not bool(r['is_archived'])]
+          print('etnika_homepage_child_matches='+str(len(children)))
+          verified=False
+          if len(children)==1:
+              child=children[0]; root=roots[child['parent_id']]
+              root_paths=con.execute("SELECT id,path_id FROM paths WHERE user_id=? AND category_link=?",(root['user_id'],root['id'])).fetchall()
+              child_paths=con.execute("SELECT id,path_id,active_revision_link FROM paths WHERE user_id=? AND category_link=? AND archived=0",(root['user_id'],child['id'])).fetchall()
+              print('etnika_root_path_rows='+str(len(root_paths)))
+              print('etnika_child_path_rows='+str(len(child_paths)))
+              stages_count=0; actions_count=0
+              if len(child_paths)==1:
+                  rev=con.execute("SELECT content FROM path_revisions WHERE id=? AND user_id=? AND path_id=?",(child_paths[0]['active_revision_link'],root['user_id'],child_paths[0]['path_id'])).fetchone()
+                  if rev:
+                      try: data=json.loads(rev['content']) if isinstance(rev['content'],str) else (rev['content'] or {})
+                      except Exception: data={}
+                      stages=data.get('stages') or []
+                      stages_count=len(stages)
+                      actions_count=sum(len((s or {}).get('actions') or []) for s in stages if isinstance(s,dict))
+              exact=[f'etnika-homepage-redesign-2026-08-{d:02d}' for d in range(25,32)]
+              q=','.join('?' for _ in exact)
+              rows=con.execute(f"SELECT plan_id,start_time,end_time FROM plans WHERE user_id=? AND plan_id IN ({q}) ORDER BY plan_id",(root['user_id'],*exact)).fetchall()
+              durations_ok=len(rows)==7
+              for row in rows:
+                  try:
+                      a=datetime.fromisoformat((row['start_time'] or '').replace('Z','+00:00')); b=datetime.fromisoformat((row['end_time'] or '').replace('Z','+00:00'))
+                      if (b-a).total_seconds()<3600: durations_ok=False
+                  except Exception: durations_ok=False
+              print('etnika_path_stages='+str(stages_count))
+              print('etnika_path_actions='+str(actions_count))
+              print('etnika_week_plans='+str(len(rows)))
+              print('etnika_week_plans_min_60m='+str(durations_ok).lower())
+              verified=len(root_paths)==0 and len(child_paths)==1 and stages_count==9 and actions_count==61 and len(rows)==7 and durations_ok
+          else:
+              print('etnika_root_path_rows=unknown')
+              print('etnika_child_path_rows=0')
+              print('etnika_path_stages=0')
+              print('etnika_path_actions=0')
+              print('etnika_week_plans=0')
+              print('etnika_week_plans_min_60m=false')
+          print('etnika_homepage_verified='+str(verified).lower())
           con.close()
           PY
           REMOTE
