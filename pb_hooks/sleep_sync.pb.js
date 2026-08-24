@@ -1,9 +1,9 @@
 /// <reference path="../pb_data/types.d.ts" />
 
 // Server-owned sleep synchronization.
-// Google Health is the current cloud source because its reconciled sleep stream
-// can include data uploaded from Health Connect. Legacy Google Fit stays enabled
-// only as a historical fallback until Google Health connects successfully.
+// Google Health is the current brand-neutral cloud source because its reconciled
+// sleep stream can include data uploaded from Health Connect. Legacy Google Fit
+// stays enabled only as a historical fallback until Google Health connects.
 routerAdd("GET", "/api/sleep-sync/status", function(e) {
     var sync = require(__hooks + "/google_health_sleep_runtime.js");
     return sync.status(e);
