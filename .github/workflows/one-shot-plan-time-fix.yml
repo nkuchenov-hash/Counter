@@ -1,0 +1,66 @@
+name: One-shot Plans Time P0 repair
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/manual/fix_plan_time_regressions_20260824.py'
+      - '.github/workflows/one-shot-plan-time-fix.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: one-shot-plans-time-p0
+  cancel-in-progress: false
+
+jobs:
+  patch-verify-commit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Set up Flutter 3.41.6
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.6'
+          channel: stable
+
+      - name: Create env.dart
+        run: |
+          mkdir -p lib/core/env
+          printf '%s\n' 'abstract final class Env {' '  static const String placeholder = '\'''\'';' '}' > lib/core/env/env.dart
+
+      - name: Apply guarded repair
+        run: python scripts/manual/fix_plan_time_regressions_20260824.py
+
+      - name: Validate repository contracts
+        run: |
+          python scripts/audit/documentation_parity.py
+          python scripts/audit/pocketbase_schema_contract.py
+          python scripts/audit/deployment_contract.py
+          node --check pb_migrations/1787580300_add_category_default_plan_timezone.js
+          git diff --check
+
+      - name: Flutter dependencies
+        run: flutter pub get
+
+      - name: Flutter analyze
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+
+      - name: Flutter tests
+        run: flutter test
+
+      - name: Commit verified repair
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add CHANGELOG.md lib/features/planning/time_view/time_view_search_delegate.dart lib/data/plans/plan_projection_types.dart lib/features/planning/planning_page.dart lib/features/planning/time_view/time_view_card_layer.dart lib/l10n/langs/en.dart lib/l10n/langs/ru.dart pb_migrations/1787580300_add_category_default_plan_timezone.js
+          git diff --cached --quiet && exit 0
+          git commit -m 'Fix Plans Time timezone, bulk drag and reprojection load'
+          git pull --rebase origin main
+          git push origin HEAD:main
