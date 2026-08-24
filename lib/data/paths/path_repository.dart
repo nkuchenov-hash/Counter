@@ -138,6 +138,32 @@ class PathRepository {
     }
   }
 
+  /// Deletes a Path independently of Path creation or replacement.
+  ///
+  /// The executable `paths` row is removed immediately. Immutable revisions are
+  /// deliberately retained as audit history and cannot become active without a
+  /// Path row pointing at them.
+  Future<bool> deletePath(ProjectPathSnapshot path) async {
+    final pathId = path.pathId.trim();
+    final pathRecordId = path.pathRecordId.trim();
+    if (pathId.isEmpty || pathRecordId.isEmpty) return false;
+
+    final pendingSave = _saveChains[pathId];
+    if (pendingSave != null) {
+      try {
+        await pendingSave;
+      } catch (_) {}
+    }
+
+    try {
+      await _database.deleteOwnedPath(pathRecordId: pathRecordId);
+      _saveChains.remove(pathId);
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
   /// Serializes writes per Path so rapid optimistic edits cannot race for the
   /// same version number or fork revision ancestry.
   Future<ProjectPathSnapshot?> saveActivePath(ProjectPathSnapshot path) {
