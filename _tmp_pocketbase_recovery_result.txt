@@ -1,0 +1,4 @@
+sha=92e5f8b9d480f24cad44f2797616c5cad8a22cf5
+ssh=success
+restart=failure
+health=skipped
