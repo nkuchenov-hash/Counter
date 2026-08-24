@@ -1,5 +1,6 @@
 /// <reference path="../pb_data/types.d.ts" />
 
+// PR merge deployment trigger; data behavior below is unchanged.
 // Explicit main-branch deployment trigger for the reviewed-candidate ETNIKA Path.
 // One-time data correction for the ETNIKA homepage redesign Path.
 // It deliberately creates/updates the Path only. Planning rows are not created
