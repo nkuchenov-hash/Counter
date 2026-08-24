@@ -1,6 +1,6 @@
 name: Android release APK
 
-# Manual artifact trigger: 2026-08-18 Health Connect sleep-stage fallback.
+# Temporary P0 validation trigger; restored after the validated marker is recorded.
 on:
   workflow_dispatch:
   push:
@@ -8,7 +8,7 @@ on:
       - '.github/workflows/android-apk-build.yml'
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build-apk:
@@ -17,6 +17,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Flutter 3.41.6
         uses: subosito/flutter-action@v2
@@ -32,8 +34,23 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Validate repository contracts
+        run: |
+          set -euo pipefail
+          python scripts/audit/documentation_parity.py
+          python scripts/audit/pocketbase_schema_contract.py
+          python scripts/audit/deployment_contract.py
+          node --check pb_migrations/1787580300_add_category_default_plan_timezone.js
+          git diff --check
+
       - name: Analyze
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
+
+      - name: Focused Time View regression tests
+        run: flutter test test/time_view_bulk_drag_regression_test.dart
+
+      - name: Full Flutter test suite
+        run: flutter test
 
       - name: Build arm64 release APK
         run: flutter build apk --release --target-platform android-arm64 --split-per-abi --no-tree-shake-icons
@@ -45,3 +62,15 @@ jobs:
           path: build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
           if-no-files-found: error
           retention-days: 14
+
+      - name: Record validated source SHA
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf 'validated_sha=%s\nstatus=passed\n' "$GITHUB_SHA" > _tmp_plan_time_validation.txt
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add _tmp_plan_time_validation.txt
+          git commit -m 'Record Plans Time P0 validation'
+          git pull --rebase origin main
+          git push origin HEAD:main
