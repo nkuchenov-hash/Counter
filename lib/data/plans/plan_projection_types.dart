@@ -4,6 +4,8 @@ part of '../database_service.dart';
 
 int _profileTimezoneProjectionRevision = 0;
 String? _lastAppliedProfileTimezoneProjectionSignature;
+DateTime? _lastAppliedProfileTimezoneProjectionAt;
+const Duration _profileTimezoneProjectionDedupeWindow = Duration(seconds: 1);
 
 String? _lastPlanTimeTzLogKey;
 DateTime? _lastPlanTimeTzLogAt;
@@ -361,8 +363,14 @@ extension PlanProfileTimezoneProjectionExtension on DatabaseService {
   /// Recompute profile wall-clock fields after timezone change (UTC instants unchanged).
   void reprojectAllPlansForProfileTimezone() {
     final signature =
-        '${_settings.timezoneOffsetHours}|${_settings.preferredTimeZone.trim()}';
-    if (_lastAppliedProfileTimezoneProjectionSignature == signature) return;
+        '${currentProfileId ?? '-'}|${_settings.timezoneOffsetHours}|${_settings.preferredTimeZone.trim()}';
+    final now = DateTime.now();
+    if (_lastAppliedProfileTimezoneProjectionSignature == signature &&
+        _lastAppliedProfileTimezoneProjectionAt != null &&
+        now.difference(_lastAppliedProfileTimezoneProjectionAt!) <
+            _profileTimezoneProjectionDedupeWindow) {
+      return;
+    }
 
     _allPlansUserCache = [
       for (final t in _allPlansUserCache) _reprojectPlanningTaskWallTimes(t),
@@ -374,6 +382,7 @@ extension PlanProfileTimezoneProjectionExtension on DatabaseService {
     _refreshPlansWarmSnapshotsAfterCacheMutation(force: true);
     _pokeAllPlanningStreamHubsFromCache();
     _lastAppliedProfileTimezoneProjectionSignature = signature;
+    _lastAppliedProfileTimezoneProjectionAt = DateTime.now();
   }
 
   int get profileTimezoneProjectionRevision =>
