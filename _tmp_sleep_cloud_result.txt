@@ -1,5 +1,5 @@
 connection=true
-enabled=true
+enabled=false
 token=true
 status=connected
 error=none
