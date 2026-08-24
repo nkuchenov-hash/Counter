@@ -2,8 +2,7 @@ name: Deploy LIFE OS Flutter Web to GitHub Pages
 
 # Server-schema-before-client law: every main push first completes the PocketBase
 # workflow. UI-only pushes make that workflow a validated no-op at deploy phase,
-# then this workflow publishes the exact validated SHA. Keep this path runnable
-# for UI hotfixes such as sleep authorization retry behavior.
+# then this workflow publishes the exact validated SHA.
 on:
   push:
     branches: [gh-pages]
@@ -43,10 +42,8 @@ jobs:
           mkdir -p lib/core/env
           printf '%s\n' 'abstract final class Env {' '  static const String placeholder = '\'''\'';' '}' > lib/core/env/env.dart
 
-      - name: Apply guarded Plans Time repair
-        run: |
-          python scripts/manual/fix_plan_time_regressions_20260824.py
-          python scripts/manual/fix_plan_default_timezone_fastpath_20260824.py
+      - name: Apply guarded bulk repair
+        run: python scripts/manual/fix_time_view_bulk_rigid_group_20260824.py
 
       - name: Validate contracts and source
         run: |
@@ -58,16 +55,17 @@ jobs:
           git diff --check
           flutter pub get
           flutter analyze --no-fatal-infos --no-fatal-warnings
+          flutter test test/time_view_bulk_drag_regression_test.dart
           flutter test
 
-      - name: Commit verified repair to main
+      - name: Commit verified bulk repair to main
         run: |
           set -euo pipefail
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add CHANGELOG.md lib/features/planning/time_view/time_view_search_delegate.dart lib/data/plans/plan_projection_types.dart lib/data/categories/category_default_time.dart lib/features/planning/planning_page.dart lib/features/planning/time_view/time_view_card_layer.dart lib/l10n/langs/en.dart lib/l10n/langs/ru.dart pb_migrations/1787580300_add_category_default_plan_timezone.js
+          git add lib/data/plan_time_sequential_cascade.dart
           git diff --cached --quiet && exit 0
-          git commit -m 'Fix Plans Time timezone, bulk drag and reprojection load'
+          git commit -m 'Fix Time View rigid multi-card drag'
           git pull --rebase origin main
           git push origin HEAD:main
 
