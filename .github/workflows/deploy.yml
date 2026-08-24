@@ -44,7 +44,9 @@ jobs:
           printf '%s\n' 'abstract final class Env {' '  static const String placeholder = '\'''\'';' '}' > lib/core/env/env.dart
 
       - name: Apply guarded Plans Time repair
-        run: python scripts/manual/fix_plan_time_regressions_20260824.py
+        run: |
+          python scripts/manual/fix_plan_time_regressions_20260824.py
+          python scripts/manual/fix_plan_default_timezone_fastpath_20260824.py
 
       - name: Validate contracts and source
         run: |
@@ -63,7 +65,7 @@ jobs:
           set -euo pipefail
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add CHANGELOG.md lib/features/planning/time_view/time_view_search_delegate.dart lib/data/plans/plan_projection_types.dart lib/features/planning/planning_page.dart lib/features/planning/time_view/time_view_card_layer.dart lib/l10n/langs/en.dart lib/l10n/langs/ru.dart pb_migrations/1787580300_add_category_default_plan_timezone.js
+          git add CHANGELOG.md lib/features/planning/time_view/time_view_search_delegate.dart lib/data/plans/plan_projection_types.dart lib/data/categories/category_default_time.dart lib/features/planning/planning_page.dart lib/features/planning/time_view/time_view_card_layer.dart lib/l10n/langs/en.dart lib/l10n/langs/ru.dart pb_migrations/1787580300_add_category_default_plan_timezone.js
           git diff --cached --quiet && exit 0
           git commit -m 'Fix Plans Time timezone, bulk drag and reprojection load'
           git pull --rebase origin main
