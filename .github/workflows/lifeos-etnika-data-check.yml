@@ -1,0 +1,90 @@
+name: LIFE OS ETNIKA data check
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/lifeos-etnika-data-check.yml'
+      - 'pb_migrations/1787571000_etnika_homepage_redesign_path_week.js'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      SSH_PRIVATE_KEY: ${{ secrets.POCKETBASE_SSH_PRIVATE_KEY || secrets.VPS_SSH_KEY || secrets.SSH_PRIVATE_KEY }}
+      SSH_USER: ${{ secrets.POCKETBASE_SSH_USER || secrets.VPS_SSH_USER || secrets.SSH_USER }}
+      SSH_HOST: ${{ secrets.POCKETBASE_SSH_HOST || secrets.VPS_HOST || secrets.SSH_HOST }}
+      SSH_PORT: ${{ secrets.POCKETBASE_SSH_PORT || secrets.VPS_SSH_PORT || '22' }}
+      POCKETBASE_SERVICE: ${{ secrets.POCKETBASE_SERVICE }}
+      POCKETBASE_DEPLOY_DIR: ${{ secrets.POCKETBASE_DEPLOY_DIR }}
+    steps:
+      - name: Prepare SSH
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ -n "$SSH_PRIVATE_KEY" ]]
+          echo "SSH_USER=${SSH_USER:-root}" >> "$GITHUB_ENV"
+          echo "SSH_HOST=${SSH_HOST:-217.114.0.201}" >> "$GITHUB_ENV"
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/lifeos_pocketbase
+          chmod 600 ~/.ssh/lifeos_pocketbase
+          ssh-keyscan -p "$SSH_PORT" -H "${SSH_HOST:-217.114.0.201}" >> ~/.ssh/known_hosts
+
+      - name: Read sanitized ETNIKA state
+        shell: bash
+        run: |
+          set -euo pipefail
+          ssh -i ~/.ssh/lifeos_pocketbase -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" \
+            "POCKETBASE_DEPLOY_DIR='$POCKETBASE_DEPLOY_DIR' POCKETBASE_SERVICE='$POCKETBASE_SERVICE' bash -s" <<'REMOTE'
+          set -euo pipefail
+          service_name="${POCKETBASE_SERVICE:-}"
+          if [[ -z "$service_name" ]]; then
+            service_name="$(systemctl list-unit-files --type=service --no-legend 2>/dev/null | awk 'tolower($1) ~ /pocketbase/ && !found {print $1; found=1}')"
+          fi
+          pid="$(pgrep -f '[p]ocketbase.*serve' | sed -n '1p' || true)"
+          app_dir="${POCKETBASE_DEPLOY_DIR:-}"
+          if [[ -z "$app_dir" && -n "$service_name" ]]; then app_dir="$(systemctl show "$service_name" -p WorkingDirectory --value 2>/dev/null || true)"; fi
+          if [[ -z "$app_dir" && -n "$pid" ]]; then app_dir="$(readlink -f "/proc/$pid/cwd" 2>/dev/null || true)"; fi
+          [[ -n "$app_dir" && -f "$app_dir/pb_data/data.db" ]]
+          python3 - "$app_dir/pb_data/data.db" <<'PY'
+          import sqlite3, sys
+          con = sqlite3.connect(f'file:{sys.argv[1]}?mode=ro', uri=True)
+          con.row_factory = sqlite3.Row
+          cats = con.execute("SELECT id,user_id,name,parent_id,is_archived,default_plan_time,default_plan_timezone FROM categories").fetchall()
+          roots = [r for r in cats if (r['name'] or '').strip().casefold() == 'этника' and not bool(r['is_archived'])]
+          def path_rows(cat_id):
+              return con.execute("SELECT id,user_id,path_id,active_revision_link,archived FROM paths WHERE category_link=?", (cat_id,)).fetchall()
+          with_paths = [r for r in roots if path_rows(r['id'])]
+          print('etnika_active_categories=' + str(len(roots)))
+          print('etnika_categories_with_paths=' + str(len(with_paths)))
+          target = with_paths[0] if len(with_paths) == 1 else (roots[0] if len(roots) == 1 else None)
+          if target is None:
+              print('target_unique=false')
+              con.close(); raise SystemExit(0)
+          print('target_unique=true')
+          root_paths = path_rows(target['id'])
+          print('root_path_rows=' + str(len(root_paths)))
+          rev_count = 0
+          for p in root_paths:
+              rev_count += con.execute("SELECT count(*) FROM path_revisions WHERE user_id=? AND path_id=?", (target['user_id'], p['path_id'])).fetchone()[0]
+          print('root_path_revisions=' + str(rev_count))
+          children = [r for r in cats if r['user_id'] == target['user_id'] and r['parent_id'] == target['id'] and (r['name'] or '').strip().casefold() == 'обновление основной страницы сайта']
+          print('child_matches=' + str(len(children)))
+          if len(children) == 1:
+              cp = path_rows(children[0]['id'])
+              print('child_path_rows=' + str(len(cp)))
+          else:
+              print('child_path_rows=0')
+          exact_ids = [f'etnika-homepage-redesign-2026-08-{d:02d}' for d in range(25, 32)]
+          placeholders = ','.join('?' for _ in exact_ids)
+          count = con.execute(f"SELECT count(*) FROM plans WHERE user_id=? AND plan_id IN ({placeholders})", (target['user_id'], *exact_ids)).fetchone()[0]
+          print('week_plan_ids_present=' + str(count))
+          print('root_default_plan_time_set=' + str(bool((target['default_plan_time'] or '').strip())).lower())
+          con.close()
+          PY
+          REMOTE
