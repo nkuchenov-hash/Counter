@@ -3,6 +3,7 @@ part of '../database_service.dart';
 /// Profile-timezone projection: UTC/profile-wall conversion, wall-day filter, Time Mode DTO.
 
 int _profileTimezoneProjectionRevision = 0;
+String? _lastAppliedProfileTimezoneProjectionSignature;
 
 String? _lastPlanTimeTzLogKey;
 DateTime? _lastPlanTimeTzLogAt;
@@ -359,6 +360,10 @@ extension PlanProfileTimezoneProjectionExtension on DatabaseService {
 
   /// Recompute profile wall-clock fields after timezone change (UTC instants unchanged).
   void reprojectAllPlansForProfileTimezone() {
+    final signature =
+        '${_settings.timezoneOffsetHours}|${_settings.preferredTimeZone.trim()}';
+    if (_lastAppliedProfileTimezoneProjectionSignature == signature) return;
+
     _allPlansUserCache = [
       for (final t in _allPlansUserCache) _reprojectPlanningTaskWallTimes(t),
     ];
@@ -368,6 +373,7 @@ extension PlanProfileTimezoneProjectionExtension on DatabaseService {
     P0tRenderSnapshotCache.instance.clearPlans();
     _refreshPlansWarmSnapshotsAfterCacheMutation(force: true);
     _pokeAllPlanningStreamHubsFromCache();
+    _lastAppliedProfileTimezoneProjectionSignature = signature;
   }
 
   int get profileTimezoneProjectionRevision =>
