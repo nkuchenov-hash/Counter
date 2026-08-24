@@ -1,0 +1,55 @@
+name: TEMP Google Health cron production
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/tmp-google-health-cron-prod.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      SSH_PRIVATE_KEY: ${{ secrets.POCKETBASE_SSH_PRIVATE_KEY || secrets.VPS_SSH_KEY || secrets.SSH_PRIVATE_KEY }}
+      SSH_USER: ${{ secrets.POCKETBASE_SSH_USER || secrets.VPS_SSH_USER || secrets.SSH_USER }}
+      SSH_HOST: ${{ secrets.POCKETBASE_SSH_HOST || secrets.VPS_HOST || secrets.SSH_HOST }}
+      SSH_PORT: ${{ secrets.POCKETBASE_SSH_PORT || secrets.VPS_SSH_PORT || '22' }}
+      POCKETBASE_SERVICE: ${{ secrets.POCKETBASE_SERVICE }}
+      POCKETBASE_DEPLOY_DIR: ${{ secrets.POCKETBASE_DEPLOY_DIR }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify cron and state
+        shell: bash
+        run: |
+          set -euo pipefail
+          user="${SSH_USER:-root}"; host="${SSH_HOST:-217.114.0.201}"
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/key; chmod 600 ~/.ssh/key
+          ssh-keyscan -p "$SSH_PORT" -H "$host" >> ~/.ssh/known_hosts
+          ssh -i ~/.ssh/key -p "$SSH_PORT" "$user@$host" "POCKETBASE_DEPLOY_DIR='$POCKETBASE_DEPLOY_DIR' POCKETBASE_SERVICE='$POCKETBASE_SERVICE' bash -s" <<'REMOTE'
+          set -euo pipefail
+          service_name="${POCKETBASE_SERVICE:-}"
+          if [[ -z "$service_name" ]]; then service_name="$(systemctl list-unit-files --type=service --no-legend 2>/dev/null | awk 'tolower($1) ~ /pocketbase/ && !found {print $1; found=1}')"; fi
+          pid="$(pgrep -f '[p]ocketbase.*serve' | sed -n '1p' || true)"
+          app_dir="${POCKETBASE_DEPLOY_DIR:-}"
+          if [[ -z "$app_dir" && -n "$service_name" ]]; then app_dir="$(systemctl show "$service_name" -p WorkingDirectory --value 2>/dev/null || true)"; fi
+          if [[ -z "$app_dir" && -n "$pid" ]]; then app_dir="$(readlink -f "/proc/$pid/cwd" 2>/dev/null || true)"; fi
+          hook="$app_dir/pb_hooks/sleep_sync.pb.js"
+          grep -Fq 'cronAdd("lifeos_google_health_sleep_sync", "* * * * *"' "$hook" && echo cron_minutely_deployed=true || echo cron_minutely_deployed=false
+          python3 - "$app_dir/pb_data/data.db" <<'PY'
+          import sqlite3,sys
+          c=sqlite3.connect(f'file:{sys.argv[1]}?mode=ro',uri=True); c.row_factory=sqlite3.Row
+          r=c.execute("SELECT last_sync_at,last_session_count,last_imported_count,last_error FROM sleep_sync_connections WHERE provider='google_health' LIMIT 1").fetchone()
+          print('last_sync='+str(r['last_sync_at'] or ''))
+          print('sessions='+str(r['last_session_count'] or 0))
+          print('imported='+str(r['last_imported_count'] or 0))
+          print('error='+str(r['last_error'] or '')[:500].replace('\n',' '))
+          rows=c.execute("SELECT date(end_time) d,sleep_source FROM records WHERE title='Sleep' OR title='Сон' ORDER BY end_time DESC LIMIT 5").fetchall()
+          for x in rows: print('sleep='+str(x['d'])+'|'+str(x['sleep_source'] or ''))
+          print('gh_records='+str(c.execute("SELECT count(*) FROM records WHERE sleep_source='google_health'").fetchone()[0]))
+          c.close()
+          PY
+          REMOTE
