@@ -3,6 +3,10 @@
 // Required by Plans > Time View category default schedules. Kept idempotent so
 // redeploying the PocketBase bundle safely repairs schema drift in production.
 // Deployment reconciliation trigger: 2026-08-24.
+// GitHub-native production deployment trigger: 2026-08-24.
+// Structure-regeneration trigger: 2026-08-24.
+// Structure-regeneration retrigger: 2026-08-24.
+// Clean validation trigger: 2026-08-24.
 migrate(function(app) {
     var categories = app.findCollectionByNameOrId("categories");
     if (!categories.fields.getByName("default_plan_timezone")) {
