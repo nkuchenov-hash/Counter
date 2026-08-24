@@ -109,8 +109,6 @@ jobs:
           if [[ -z "$app_dir" && -n "$pid" ]]; then app_dir="$(readlink -f "/proc/$pid/cwd" 2>/dev/null || true)"; fi
           [[ -n "$service_name" && -n "$app_dir" && -d "$app_dir" ]]
 
-          # Preserve the existing Google OAuth client credentials for historical
-          # backfill while Xiaomi Cloud owns current-night ingestion.
           fit_env="$app_dir/.lifeos-google-fit.env"
           [[ -f "$fit_env" ]]
           grep -q '^SLEEP_SYNC_GOOGLE_FIT_CLIENT_ID=' "$fit_env"
@@ -135,7 +133,7 @@ jobs:
           exit 1
           REMOTE
 
-      - name: Verify recent cloud sleep in production
+      - name: Verify recent cloud sleep and ETNIKA Path in production
         shell: bash
         run: |
           set -euo pipefail
@@ -151,8 +149,23 @@ jobs:
           app_dir="${POCKETBASE_DEPLOY_DIR:-}"
           if [[ -z "$app_dir" && -n "$service_name" ]]; then app_dir="$(systemctl show "$service_name" -p WorkingDirectory --value 2>/dev/null || true)"; fi
           if [[ -z "$app_dir" && -n "$pid" ]]; then app_dir="$(readlink -f "/proc/$pid/cwd" 2>/dev/null || true)"; fi
+
+          hook_line="$(journalctl -u "$service_name" --since '15 minutes ago' --no-pager 2>/dev/null | grep '\[ETNIKA_HOMEPAGE_PATH_ONCE\]' | tail -1 || true)"
+          hook_status="no_log"
+          case "$hook_line" in
+            *"] ok"*) hook_status="ok" ;;
+            *"expected exactly one active ETNIKA category"*) hook_status="root_count_error" ;;
+            *"multiple ETNIKA homepage child categories"*) hook_status="duplicate_child" ;;
+            *"ETNIKA owner is empty"*) hook_status="owner_error" ;;
+            *"unique"*|*"UNIQUE"*) hook_status="unique_error" ;;
+            *"validation"*|*"Validation"*) hook_status="validation_error" ;;
+            *"relation"*|*"Relation"*) hook_status="relation_error" ;;
+            *"] error:"*) hook_status="other_error" ;;
+          esac
+          printf 'etnika_hook_status=%s\n' "$hook_status"
+
           python3 - "$app_dir/pb_data/data.db" <<'PY'
-          import sqlite3, sys
+          import json, sqlite3, sys
           con=sqlite3.connect(f'file:{sys.argv[1]}?mode=ro', uri=True); con.row_factory=sqlite3.Row
           r=con.execute("SELECT enabled,status,last_error,last_sync_at,last_session_count,last_imported_count,length(coalesce(refresh_token_enc,'')) token_len FROM sleep_sync_connections WHERE provider='google_fit' LIMIT 1").fetchone()
           def error_class(v):
@@ -176,6 +189,47 @@ jobs:
           latest=con.execute("SELECT date(max(end_time)) FROM records WHERE title='Sleep' OR title='Сон'").fetchone()[0]
           print('sleep_last_36h='+str(n))
           print('latest_sleep_day='+str(latest or 'none'))
+
+          cats=con.execute("SELECT id,user_id,name,parent_id,is_archived FROM categories").fetchall()
+          roots={row['id']:row for row in cats if (row['name'] or '').strip().casefold()=='этника' and not bool(row['is_archived'])}
+          print('etnika_active_roots='+str(len(roots)))
+          root_paths=[]
+          for root in roots.values():
+              root_paths.extend(con.execute("SELECT id,path_id FROM paths WHERE user_id=? AND category_link=?",(root['user_id'],root['id'])).fetchall())
+          print('etnika_root_path_rows='+str(len(root_paths)))
+
+          all_children=[row for row in cats if row['parent_id'] in roots and (row['name'] or '').strip().casefold()=='обновление основной страницы сайта']
+          children=[row for row in all_children if not bool(row['is_archived'])]
+          print('etnika_homepage_child_total='+str(len(all_children)))
+          print('etnika_homepage_child_matches='+str(len(children)))
+
+          child_paths=[]; stages_count=0; actions_count=0; owner_id=None
+          if len(children)==1:
+              child=children[0]; owner_id=child['user_id']
+              child_paths=con.execute("SELECT id,path_id,active_revision_link FROM paths WHERE user_id=? AND category_link=? AND archived=0",(owner_id,child['id'])).fetchall()
+              if len(child_paths)==1:
+                  rev=con.execute("SELECT content FROM path_revisions WHERE id=? AND user_id=? AND path_id=?",(child_paths[0]['active_revision_link'],owner_id,child_paths[0]['path_id'])).fetchone()
+                  if rev:
+                      try: data=json.loads(rev['content']) if isinstance(rev['content'],str) else (rev['content'] or {})
+                      except Exception: data={}
+                      stages=data.get('stages') or []
+                      stages_count=len(stages)
+                      actions_count=sum(len((s or {}).get('actions') or []) for s in stages if isinstance(s,dict))
+          print('etnika_child_path_rows='+str(len(child_paths)))
+          print('etnika_path_stages='+str(stages_count))
+          print('etnika_path_actions='+str(actions_count))
+
+          plan_count=0
+          if len(roots)==1:
+              root=next(iter(roots.values()))
+              exact=[f'etnika-homepage-redesign-2026-08-{d:02d}' for d in range(25,32)]
+              q=','.join('?' for _ in exact)
+              plan_count=con.execute(f"SELECT count(*) FROM plans WHERE user_id=? AND plan_id IN ({q})",(root['user_id'],*exact)).fetchone()[0]
+          print('etnika_week_plans='+str(plan_count))
+          print('etnika_plans_gate_clean='+str(plan_count==0).lower())
+
+          verified=(len(roots)==1 and len(root_paths)==0 and len(children)==1 and len(child_paths)==1 and stages_count==17 and actions_count==44 and plan_count==0)
+          print('etnika_homepage_verified='+str(verified).lower())
           con.close()
           PY
           REMOTE
