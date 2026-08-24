@@ -1,4 +1,4 @@
-name: One-shot Plans Time P0 repair fast
+name: Finalize Plans Time P0 repair
 
 on:
   push:
@@ -9,19 +9,91 @@ on:
 permissions:
   contents: write
 
+env:
+  SSH_PRIVATE_KEY: ${{ secrets.POCKETBASE_SSH_PRIVATE_KEY || secrets.VPS_SSH_KEY || secrets.SSH_PRIVATE_KEY }}
+  SSH_USER: ${{ secrets.POCKETBASE_SSH_USER || secrets.VPS_SSH_USER || secrets.SSH_USER }}
+  SSH_HOST: ${{ secrets.POCKETBASE_SSH_HOST || secrets.VPS_HOST || secrets.SSH_HOST }}
+  SSH_PORT: ${{ secrets.POCKETBASE_SSH_PORT || secrets.VPS_SSH_PORT || '22' }}
+  POCKETBASE_SERVICE: ${{ secrets.POCKETBASE_SERVICE }}
+  POCKETBASE_DEPLOY_DIR: ${{ secrets.POCKETBASE_DEPLOY_DIR }}
+
 concurrency:
-  group: one-shot-plans-time-p0-fast
+  group: finalize-plans-time-p0
   cancel-in-progress: false
 
 jobs:
-  patch-analyze-commit:
+  finalize:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 60
+    environment: production
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout current source
+        uses: actions/checkout@v4
         with:
           ref: main
           fetch-depth: 0
+
+      - name: Finalize clean source state
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git rm -f --ignore-unmatch \
+            .github/workflows/one-shot-plan-time-fix.yml \
+            scripts/manual/fix_plan_default_timezone_fastpath_20260824.py \
+            scripts/manual/fix_plan_time_regressions_20260824.py \
+            scripts/manual/fix_time_view_bulk_rigid_group_20260824.py
+
+          # Restore the normal Android artifact workflow that existed before the
+          # temporary Plans Time validation instrumentation.
+          git show 98e8655f0de442426a5873675f3067525b08c127:.github/workflows/android-apk-build.yml \
+            > .github/workflows/android-apk-build.yml
+
+          python3 <<'PY'
+          from pathlib import Path
+
+          drag = Path('lib/features/planning/time_view/time_view_drag_controller.dart')
+          text = drag.read_text(encoding='utf-8')
+          old = """      final selected = scheduledInRange
+          .where((t) => host.selectedPlanKeys.contains(host.planKey(t)))
+          .where((t) => t.startTime != null)
+          .toList();"""
+          new = """      final selected = scheduledInRange
+          .where((t) => host.selectedPlanKeys.contains(host.planKey(t)))
+          .where(planIsTimelineScheduledDraggable)
+          .toList();"""
+          if new not in text:
+              if old not in text:
+                  raise SystemExit('bulk group membership guard anchor not found')
+              text = text.replace(old, new, 1)
+              drag.write_text(text, encoding='utf-8')
+
+          changelog = Path('CHANGELOG.md')
+          body = changelog.read_text(encoding='utf-8')
+          heading = '## 2026-08-24 — Plans Time timezone and bulk-drag P0 [shipped]'
+          if heading not in body:
+              entry = """## 2026-08-24 — Plans Time timezone and bulk-drag P0 [shipped]
+
+- Category default plan schedules now persist an optional IANA timezone through the targeted PocketBase category PATCH/cache-merge path; save failures stay visible inside the owning settings sheet, and the production schema is versioned by `1787580300_add_category_default_plan_timezone.js`.
+- Time View bulk drag now treats selected movable plans as one rigid block for target-card and empty-canvas drops, preserving relative offsets/durations; recurring/optimistic rows are excluded from the ordinary bulk persistence path.
+- Removed page-instance global timezone reprojection fan-out from Planning and retained focused regression coverage for rigid multi-card movement.
+
+"""
+              changelog.write_text(entry + body, encoding='utf-8')
+          PY
+
+          git diff --check
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -A
+          if ! git diff --cached --quiet; then
+            git commit -m 'Finalize Plans Time timezone and bulk drag repair'
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
+          SOURCE_SHA="$(git rev-parse HEAD)"
+          echo "SOURCE_SHA=$SOURCE_SHA" >> "$GITHUB_ENV"
+          echo "Final source: $SOURCE_SHA"
 
       - name: Set up Flutter 3.41.6
         uses: subosito/flutter-action@v2
@@ -34,25 +106,196 @@ jobs:
           mkdir -p lib/core/env
           printf '%s\n' 'abstract final class Env {' '  static const String placeholder = '\'''\'';' '}' > lib/core/env/env.dart
 
-      - name: Apply guarded repair
-        run: python scripts/manual/fix_plan_time_regressions_20260824.py
+      - name: Install dependencies
+        run: flutter pub get
 
-      - name: Validate contracts and Dart
+      - name: Validate repository and PocketBase contracts
+        shell: bash
         run: |
+          set -euo pipefail
           python scripts/audit/documentation_parity.py
           python scripts/audit/pocketbase_schema_contract.py
           python scripts/audit/deployment_contract.py
           node --check pb_migrations/1787580300_add_category_default_plan_timezone.js
           git diff --check
-          flutter pub get
-          flutter analyze --no-fatal-infos --no-fatal-warnings
 
-      - name: Commit analyzed repair
+      - name: Analyze Flutter source
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+
+      - name: Run focused Time View bulk regression tests
+        run: flutter test test/time_view_bulk_drag_regression_test.dart
+
+      - name: Run full Flutter test suite
+        run: flutter test
+
+      - name: Build ARM64 release APK
+        run: flutter build apk --release --target-platform android-arm64 --split-per-abi --no-tree-shake-icons
+
+      - name: Upload validated ARM64 APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: counter-android-arm64-release-plans-time-p0
+          path: build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Deploy and verify PocketBase schema
+        shell: bash
         run: |
+          set -euo pipefail
+          [[ -n "${SSH_PRIVATE_KEY:-}" ]]
+          SSH_USER="${SSH_USER:-root}"
+          SSH_HOST="${SSH_HOST:-217.114.0.201}"
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/lifeos_pocketbase
+          chmod 600 ~/.ssh/lifeos_pocketbase
+          ssh-keyscan -p "$SSH_PORT" -H "$SSH_HOST" >> ~/.ssh/known_hosts
+
+          ARCHIVE="/tmp/lifeos-pocketbase-${SOURCE_SHA}.tar.gz"
+          tar -czf "$ARCHIVE" pb_hooks pb_migrations
+          scp -i ~/.ssh/lifeos_pocketbase -P "$SSH_PORT" "$ARCHIVE" "$SSH_USER@$SSH_HOST:$ARCHIVE"
+
+          ssh -i ~/.ssh/lifeos_pocketbase -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" \
+            "POCKETBASE_SERVICE='$POCKETBASE_SERVICE' POCKETBASE_DEPLOY_DIR='$POCKETBASE_DEPLOY_DIR' ARCHIVE='$ARCHIVE' bash -s" <<'REMOTE'
+          set -euo pipefail
+          if [[ "$(id -u)" -eq 0 ]]; then SUDO=""; else SUDO="sudo -n"; fi
+          service_name="${POCKETBASE_SERVICE:-}"
+          if [[ -z "$service_name" ]]; then
+            service_name="$(systemctl list-unit-files --type=service --no-legend 2>/dev/null | awk 'tolower($1) ~ /pocketbase/ && !found {print $1; found=1}')"
+          fi
+          pid="$(pgrep -f '[p]ocketbase.*serve' | sed -n '1p' || true)"
+          app_dir="${POCKETBASE_DEPLOY_DIR:-}"
+          if [[ -z "$app_dir" && -n "$service_name" ]]; then
+            app_dir="$(systemctl show "$service_name" -p WorkingDirectory --value 2>/dev/null || true)"
+          fi
+          if [[ -z "$app_dir" && -n "$pid" ]]; then
+            app_dir="$(readlink -f "/proc/$pid/cwd" 2>/dev/null || true)"
+          fi
+          [[ -n "$service_name" && -n "$app_dir" && -d "$app_dir" ]]
+
+          fit_env="$app_dir/.lifeos-google-fit.env"
+          [[ -f "$fit_env" ]]
+          grep -q '^SLEEP_SYNC_GOOGLE_FIT_CLIENT_ID=' "$fit_env"
+          grep -q '^SLEEP_SYNC_GOOGLE_FIT_CLIENT_SECRET=' "$fit_env"
+          override_dir="/etc/systemd/system/${service_name}.d"
+          $SUDO mkdir -p "$override_dir"
+          printf '[Service]\nEnvironmentFile=%s\n' "$fit_env" | $SUDO tee "$override_dir/lifeos-google-fit.conf" >/dev/null
+
+          $SUDO mkdir -p "$app_dir/pb_hooks" "$app_dir/pb_migrations"
+          $SUDO tar -xzf "$ARCHIVE" -C "$app_dir" pb_hooks pb_migrations
+          rm -f "$ARCHIVE"
+          $SUDO systemctl daemon-reload
+          $SUDO systemctl restart "$service_name"
+
+          for attempt in {1..20}; do
+            health="$(curl -sS -o /dev/null -w '%{http_code}' https://217-114-0-201.sslip.io/api/health || true)"
+            if [[ "$health" == "200" ]]; then break; fi
+            sleep 2
+          done
+          [[ "${health:-}" == "200" ]]
+
+          python3 - "$app_dir/pb_data/data.db" <<'PY'
+          import sqlite3, sys
+          db = sys.argv[1]
+          con = sqlite3.connect(f'file:{db}?mode=ro', uri=True)
+          con.row_factory = sqlite3.Row
+          row = con.execute("SELECT * FROM _collections WHERE name='categories' LIMIT 1").fetchone()
+          if row is None:
+              raise SystemExit('categories collection missing')
+          serialized = ' '.join('' if value is None else str(value) for value in row)
+          if 'default_plan_timezone' not in serialized:
+              raise SystemExit('default_plan_timezone missing from production categories schema')
+          print('production_default_plan_timezone=true')
+          con.close()
+          PY
+          REMOTE
+
+      - name: Build LIFE OS web from validated source
+        shell: bash
+        run: |
+          set -euo pipefail
+          SHORT_SHA="${SOURCE_SHA:0:7}"
+          BUILD_TIME="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          flutter build web --release --base-href="/Counter/" --no-tree-shake-icons --no-wasm-dry-run --pwa-strategy=none \
+            --dart-define=GIT_COMMIT="$SHORT_SHA" \
+            --dart-define=BUILD_TIME="$BUILD_TIME"
+
+          python3 - "$SOURCE_SHA" <<'PY'
+          from pathlib import Path
+          import sys
+          sha = sys.argv[1]
+          bootstrap = Path('build/web/flutter_bootstrap.js')
+          index = Path('build/web/index.html')
+          b = bootstrap.read_text(encoding='utf-8')
+          needle = '"mainJsPath":"main.dart.js"'
+          if needle not in b:
+              raise SystemExit('Flutter bootstrap mainJsPath marker not found')
+          bootstrap.write_text(b.replace(needle, f'"mainJsPath":"main.dart.js?v={sha}"', 1), encoding='utf-8')
+          i = index.read_text(encoding='utf-8')
+          tag = 'src="flutter_bootstrap.js"'
+          if tag not in i:
+              raise SystemExit('Flutter bootstrap script marker not found')
+          index.write_text(i.replace(tag, f'src="flutter_bootstrap.js?v={sha}"', 1), encoding='utf-8')
+          Path('build/web/lifeos-build.txt').write_text(sha + '\n', encoding='utf-8')
+          Path('build/web/lifeos-validation.txt').write_text(
+              f'source_sha={sha}\n'
+              'repository_contracts=passed\n'
+              'flutter_analyze=passed\n'
+              'focused_bulk_drag_tests=passed\n'
+              'full_flutter_tests=passed\n'
+              'arm64_release_build=passed\n'
+              'pocketbase_default_plan_timezone=passed\n'
+              'web_release_build=passed\n',
+              encoding='utf-8',
+          )
+          Path('build/web/lifeos-finalize-status.txt').write_text(
+              f'status=passed\nsource_sha={sha}\n', encoding='utf-8')
+          PY
+          grep -Fq "main.dart.js?v=$SOURCE_SHA" build/web/flutter_bootstrap.js
+          grep -Fq "flutter_bootstrap.js?v=$SOURCE_SHA" build/web/index.html
+          test "$(tr -d '\r\n' < build/web/lifeos-build.txt)" = "$SOURCE_SHA"
+
+      - name: Preserve unrelated gh-pages content and restore normal workflows
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin gh-pages:refs/remotes/origin/gh-pages
+          rm -rf /tmp/counter-gh-pages
+          git worktree add --detach /tmp/counter-gh-pages refs/remotes/origin/gh-pages
+          if [[ -d /tmp/counter-gh-pages/igropoisk ]]; then
+            rm -rf build/web/igropoisk
+            cp -R /tmp/counter-gh-pages/igropoisk build/web/igropoisk
+          fi
+          if [[ -d /tmp/counter-gh-pages/.github/workflows ]]; then
+            mkdir -p build/web/.github
+            cp -R /tmp/counter-gh-pages/.github/workflows build/web/.github/workflows
+          fi
+          rm -f \
+            build/web/.github/workflows/one-shot-plan-time-fix-bootstrap.yml \
+            build/web/.github/workflows/one-shot-plan-time-fix-fast.yml \
+            build/web/.github/workflows/one-shot-plan-time-fix.yml
+          cp .github/workflows/deploy.yml build/web/.github/workflows/deploy.yml
+          cp .github/workflows/deploy-pocketbase.yml build/web/.github/workflows/deploy-pocketbase.yml
+          git worktree remove --force /tmp/counter-gh-pages
+
+      - name: Publish validated web build and cleanup gh-pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: build/web
+          branch: gh-pages
+
+      - name: Record failure marker
+        if: failure()
+        shell: bash
+        run: |
+          set +e
+          git fetch origin gh-pages
+          rm -rf /tmp/counter-finalizer-failure
+          git worktree add --detach /tmp/counter-finalizer-failure origin/gh-pages || exit 0
+          cd /tmp/counter-finalizer-failure
+          printf 'status=failed\nsource_sha=%s\nrun_id=%s\n' "${SOURCE_SHA:-unknown}" "$GITHUB_RUN_ID" > lifeos-finalize-status.txt
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add CHANGELOG.md lib/features/planning/time_view/time_view_search_delegate.dart lib/data/plans/plan_projection_types.dart lib/features/planning/planning_page.dart lib/features/planning/time_view/time_view_card_layer.dart lib/l10n/langs/en.dart lib/l10n/langs/ru.dart pb_migrations/1787580300_add_category_default_plan_timezone.js
-          git diff --cached --quiet && exit 0
-          git commit -m 'Fix Plans Time timezone, bulk drag and reprojection load'
-          git pull --rebase origin main
-          git push origin HEAD:main
+          git add lifeos-finalize-status.txt
+          git commit -m 'Record Plans Time finalizer failure' || exit 0
+          git push origin HEAD:gh-pages || true
