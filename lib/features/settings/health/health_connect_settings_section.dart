@@ -8,10 +8,9 @@ import 'package:flutter/material.dart';
 
 /// One user-facing sleep synchronization setting.
 ///
-/// Android/iOS own health permissions and ingestion. Web consumes canonical
-/// PocketBase records and may optionally connect the server directly to the
-/// user's Mi Fitness/Xiaomi cloud as a fallback source. The cloud fallback is
-/// not required for the normal Health Connect / HealthKit path.
+/// Android/iOS can read the device health store directly. Web uses the
+/// server-owned Google Health connection, whose reconciled sleep stream can
+/// include data uploaded from Health Connect and other supported sources.
 class SleepSyncSettingsSection extends StatefulWidget {
   const SleepSyncSettingsSection({super.key});
 
@@ -130,8 +129,8 @@ class _SleepSyncSettingsSectionState extends State<SleepSyncSettingsSection>
     return switch (state.phase) {
       CloudSleepSyncPhase.connecting => _copy(
         locale,
-        'Confirm access in the opened window.',
-        'Подтвердите доступ в открывшемся окне.',
+        'Confirm access in the opened Google window.',
+        'Подтвердите доступ в открывшемся окне Google.',
       ),
       CloudSleepSyncPhase.syncing =>
         _copy(locale, 'Synchronizing…', 'Синхронизация…'),
@@ -143,19 +142,19 @@ class _SleepSyncSettingsSectionState extends State<SleepSyncSettingsSection>
             )
           : _copy(
               locale,
-              'Synchronization needs access. Turn it on to continue.',
-              'Для синхронизации нужен доступ. Включите её, чтобы продолжить.',
+              'Google Health access is required to continue.',
+              'Для продолжения нужен доступ Google Health.',
             ),
       _ => state.configured && state.enabled
           ? _copy(
               locale,
-              'Sleep is synchronized automatically.',
-              'Сон синхронизируется автоматически.',
+              'Sleep is synchronized automatically through Google Health.',
+              'Сон автоматически синхронизируется через Google Health.',
             )
           : _copy(
               locale,
-              'Turn on once and Life OS will keep sleep synchronized.',
-              'Включите один раз — дальше Life OS будет синхронизировать сон автоматически.',
+              'Connect Google Health once and Life OS will keep sleep synchronized on the server.',
+              'Один раз подключите Google Health — дальше сервер Life OS будет синхронизировать сон автоматически.',
             ),
     };
   }
@@ -187,22 +186,26 @@ class _SleepSyncSettingsSectionState extends State<SleepSyncSettingsSection>
         final connecting = state.phase == CloudSleepSyncPhase.connecting;
         final status = configured
             ? (syncing
-                  ? _copy(locale, 'Synchronizing sleep from Mi Fitness cloud…', 'Синхронизация сна из Mi Fitness Cloud…')
+                  ? _copy(
+                      locale,
+                      'Synchronizing sleep from Google Health…',
+                      'Синхронизация сна из Google Health…',
+                    )
                   : _copy(
                       locale,
-                      'Mi Fitness cloud is connected. The LIFE OS server synchronizes sleep automatically and stores it in PocketBase for every client.',
-                      'Mi Fitness Cloud подключён. Сервер LIFE OS автоматически синхронизирует сон и сохраняет его в PocketBase для всех клиентов.',
+                      'Google Health is connected. The LIFE OS server synchronizes sleep automatically and stores it in PocketBase for every client.',
+                      'Google Health подключён. Сервер LIFE OS автоматически синхронизирует сон и сохраняет его в PocketBase для всех клиентов.',
                     ))
             : (connecting
                   ? _copy(
                       locale,
-                      'Complete Xiaomi Account authorization in the opened page. LIFE OS will import sleep immediately after authorization.',
-                      'Завершите вход в Xiaomi Account на открывшейся странице. LIFE OS сразу импортирует сон после авторизации.',
+                      'Complete Google Health authorization in the opened Google page. LIFE OS will import sleep immediately after authorization.',
+                      'Завершите авторизацию Google Health на открывшейся странице Google. LIFE OS сразу импортирует сон после авторизации.',
                     )
                   : _copy(
                       locale,
-                      'Sleep normally arrives from the health source on your phone. You can also connect Mi Fitness cloud once so the LIFE OS server can pull sleep directly without opening the mobile app.',
-                      'Обычно сон поступает из источника здоровья на телефоне. Также можно один раз подключить Mi Fitness Cloud, чтобы сервер LIFE OS забирал сон напрямую без открытия мобильного приложения.',
+                      'Connect Google Health once. Its reconciled sleep stream can include data uploaded from Health Connect, without tying LIFE OS to a watch brand.',
+                      'Один раз подключите Google Health. Его объединённый поток сна может включать данные из Health Connect без привязки LIFE OS к марке часов.',
                     ));
 
         return Column(
@@ -211,7 +214,9 @@ class _SleepSyncSettingsSectionState extends State<SleepSyncSettingsSection>
             ListTile(
               contentPadding: EdgeInsets.zero,
               leading: const Icon(Icons.health_and_safety_outlined),
-              title: Text(_copy(locale, 'Sleep synchronization', 'Синхронизация сна')),
+              title: Text(
+                _copy(locale, 'Sleep synchronization', 'Синхронизация сна'),
+              ),
               subtitle: Text(
                 status,
                 style: theme.textTheme.bodySmall?.copyWith(
@@ -229,8 +234,16 @@ class _SleepSyncSettingsSectionState extends State<SleepSyncSettingsSection>
                 configured
                     ? _copy(locale, 'Synchronize now', 'Синхронизировать сейчас')
                     : (connecting
-                          ? _copy(locale, 'Continue Mi Fitness connection', 'Продолжить подключение Mi Fitness')
-                          : _copy(locale, 'Connect Mi Fitness cloud', 'Подключить Mi Fitness Cloud')),
+                          ? _copy(
+                              locale,
+                              'Continue Google Health connection',
+                              'Продолжить подключение Google Health',
+                            )
+                          : _copy(
+                              locale,
+                              'Connect Google Health',
+                              'Подключить Google Health',
+                            )),
               ),
             ),
           ],
