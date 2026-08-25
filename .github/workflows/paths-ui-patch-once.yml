@@ -1,0 +1,428 @@
+name: One-shot Paths category hierarchy UI patch
+
+on:
+  push:
+    branches: [gh-pages]
+    paths:
+      - '.github/workflows/paths-ui-patch-once.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch-and-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Paths UI branch
+        uses: actions/checkout@v4
+        with:
+          ref: ui-paths-category-tree-20260825
+          fetch-depth: 0
+
+      - name: Patch category hierarchy and independent delete UI
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 <<'PY'
+          from pathlib import Path
+
+          def replace_once(text: str, old: str, new: str, label: str) -> str:
+              if text.count(old) != 1:
+                  raise SystemExit(f'{label}: expected exactly one match, got {text.count(old)}')
+              return text.replace(old, new, 1)
+
+          def replace_section(text: str, start: str, end: str, replacement: str, label: str) -> str:
+              s = text.find(start)
+              if s < 0:
+                  raise SystemExit(f'{label}: start marker not found')
+              e = text.find(end, s)
+              if e < 0:
+                  raise SystemExit(f'{label}: end marker not found')
+              return text[:s] + replacement + text[e:]
+
+          repo = Path('lib/data/paths/path_repository.dart')
+          text = repo.read_text(encoding='utf-8')
+          anchor = """  final Map<String, Future<ProjectPathSnapshot?>> _saveChains =
+      <String, Future<ProjectPathSnapshot?>>{};
+
+  Future<PathCatalogSnapshot> loadActivePaths() async {
+"""
+          replacement = """  final Map<String, Future<ProjectPathSnapshot?>> _saveChains =
+      <String, Future<ProjectPathSnapshot?>>{};
+
+  /// User-visible category trail for a Path, from root folder to leaf project.
+  String categoryBreadcrumb(CategoryRule category) {
+    final ids = _database.categoryPathFromRootToLocalId(category.id);
+    if (ids.isEmpty) return category.name.trim();
+
+    final names = <String>[];
+    for (final id in ids) {
+      final rule = _database.getCategoryRuleById(id);
+      if (rule == null || rule.isArchived) continue;
+      final name = rule.name.trim();
+      if (name.isNotEmpty) names.add(name);
+    }
+    return names.isEmpty ? category.name.trim() : names.join(' › ');
+  }
+
+  Future<PathCatalogSnapshot> loadActivePaths() async {
+"""
+          text = replace_once(text, anchor, replacement, 'repository breadcrumb insertion')
+          old_sort = """    paths.sort(
+      (a, b) => a.category.name.toLowerCase().compareTo(
+        b.category.name.toLowerCase(),
+      ),
+    );
+"""
+          new_sort = """    paths.sort(
+      (a, b) => categoryBreadcrumb(a.category).toLowerCase().compareTo(
+        categoryBreadcrumb(b.category).toLowerCase(),
+      ),
+    );
+"""
+          text = replace_once(text, old_sort, new_sort, 'repository breadcrumb sort')
+          repo.write_text(text, encoding='utf-8')
+
+          page = Path('lib/features/paths/paths_page.dart')
+          text = page.read_text(encoding='utf-8')
+          helper_anchor = """  PathActionSnapshot? _firstPendingAction(PathStageSnapshot stage) {
+    for (final action in stage.actions) {
+      if (!action.isDone) return action;
+    }
+    return null;
+  }
+
+  void _replaceLocal(ProjectPathSnapshot updated) {
+"""
+          helper_replacement = """  PathActionSnapshot? _firstPendingAction(PathStageSnapshot stage) {
+    for (final action in stage.actions) {
+      if (!action.isDone) return action;
+    }
+    return null;
+  }
+
+  String _categoryBreadcrumb(ProjectPathSnapshot path) =>
+      _repository.categoryBreadcrumb(path.category);
+
+  List<String> _categorySegments(ProjectPathSnapshot path) =>
+      _categoryBreadcrumb(path)
+          .split(' › ')
+          .map((segment) => segment.trim())
+          .where((segment) => segment.isNotEmpty)
+          .toList(growable: false);
+
+  Future<void> _deletePath(ProjectPathSnapshot path) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(_ru ? 'Удалить путь?' : 'Delete Path?'),
+        content: Text(
+          _ru
+              ? 'Путь будет удалён независимо от других путей. История его ревизий останется только как неисполняемый аудит.'
+              : 'This Path will be deleted independently of other Paths. Its revision history will remain only as non-executable audit history.',
+        ),
+        actions: [
+          AppButton.ghost(
+            label: _ru ? 'Отмена' : 'Cancel',
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+          ),
+          AppButton.destructive(
+            label: _ru ? 'Удалить' : 'Delete',
+            icon: Icons.delete_outline_rounded,
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    final deleted = await _repository.deletePath(path);
+    if (!mounted) return;
+    if (!deleted) {
+      ScaffoldMessenger.of(context)
+        ..clearSnackBars()
+        ..showSnackBar(
+          SnackBar(
+            content: Text(
+              _ru ? 'Не удалось удалить путь.' : 'Could not delete the Path.',
+            ),
+          ),
+        );
+      return;
+    }
+
+    _confirmedPaths.remove(path.pathId);
+    _saveGenerationByPath.remove(path.pathId);
+    await _load();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..clearSnackBars()
+      ..showSnackBar(
+        SnackBar(content: Text(_ru ? 'Путь удалён.' : 'Path deleted.')),
+      );
+  }
+
+  void _replaceLocal(ProjectPathSnapshot updated) {
+"""
+          text = replace_once(text, helper_anchor, helper_replacement, 'page helper insertion')
+
+          path_list = """  Widget _pathList() {
+    final scheme = Theme.of(context).colorScheme;
+    final grouped = <String, List<ProjectPathSnapshot>>{};
+    for (final path in _catalog.paths) {
+      final segments = _categorySegments(path);
+      final rootName = segments.isEmpty ? path.category.name : segments.first;
+      grouped.putIfAbsent(rootName, () => <ProjectPathSnapshot>[]).add(path);
+    }
+
+    final children = <Widget>[];
+    for (final entry in grouped.entries) {
+      final paths = entry.value;
+      final showFolder = paths.length > 1 ||
+          paths.any((path) => _categorySegments(path).length > 1);
+      if (showFolder) {
+        children.add(
+          Padding(
+            padding: const EdgeInsets.fromLTRB(10, 10, 10, 6),
+            child: Row(
+              children: [
+                Icon(Icons.folder_rounded, size: 19, color: scheme.primary),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    entry.key,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      color: scheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      }
+
+      for (final path in paths) {
+        final depth = _categorySegments(path).length - 1;
+        children.add(
+          Padding(
+            padding: EdgeInsets.only(
+              left: showFolder ? 8.0 + depth.clamp(0, 4) * 12.0 : 0,
+              bottom: 4,
+            ),
+            child: _pathListTile(path),
+          ),
+        );
+      }
+    }
+
+    return ListView(
+      padding: const EdgeInsets.all(12),
+      children: children,
+    );
+  }
+
+  Widget _pathListTile(ProjectPathSnapshot path) {
+    final scheme = Theme.of(context).colorScheme;
+    final selected = path.category.id == _selectedCategoryId;
+    final nextStage = _firstPendingStage(path);
+
+    return Material(
+      color: selected
+          ? scheme.primaryContainer.withValues(alpha: 0.55)
+          : Colors.transparent,
+      borderRadius: BorderRadius.circular(12),
+      child: ListTile(
+        selected: selected,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        leading: CircleAvatar(
+          backgroundColor: path.category.colorOrDefault.withValues(alpha: 0.14),
+          foregroundColor: path.category.colorOrDefault,
+          child: Icon(path.category.iconOrDefault, size: 20),
+        ),
+        title: Text(
+          path.category.name,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(fontWeight: FontWeight.w700),
+        ),
+        subtitle: Text(
+          nextStage == null
+              ? (_ru ? 'Все этапы отмечены' : 'All stages marked')
+              : nextStage.title,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+        ),
+        onTap: () => setState(() => _selectedCategoryId = path.category.id),
+      ),
+    );
+  }
+
+"""
+          text = replace_section(
+              text,
+              '  Widget _pathList() {',
+              '  Widget _mobileSelector(ProjectPathSnapshot selected) {',
+              path_list,
+              'desktop hierarchy list',
+          )
+
+          mobile = """  Widget _mobileSelector(ProjectPathSnapshot selected) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      child: DropdownButtonFormField<int>(
+        initialValue: selected.category.id,
+        decoration: InputDecoration(
+          labelText: _ru ? 'Категория / проект' : 'Category / project',
+          border: const OutlineInputBorder(),
+          isDense: true,
+        ),
+        items: [
+          for (final path in _catalog.paths)
+            DropdownMenuItem<int>(
+              value: path.category.id,
+              child: Text(
+                _categoryBreadcrumb(path),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+        ],
+        onChanged: (value) {
+          if (value != null) {
+            setState(() => _selectedCategoryId = value);
+          }
+        },
+      ),
+    );
+  }
+
+"""
+          text = replace_section(
+              text,
+              '  Widget _mobileSelector(ProjectPathSnapshot selected) {',
+              '  Widget _pathDetail(ProjectPathSnapshot path) {',
+              mobile,
+              'mobile breadcrumb selector',
+          )
+
+          detail = """  Widget _pathDetail(ProjectPathSnapshot path) {
+    final audit = _repository.audit(path);
+    final currentStageIndex = path.stages.indexWhere((stage) => !stage.isDone);
+    final breadcrumb = _categoryBreadcrumb(path);
+    final nested = _categorySegments(path).length > 1;
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(20, 18, 20, 40),
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (nested) ...[
+                    Text(
+                      breadcrumb,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                  ],
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 6,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      Text(
+                        path.category.name,
+                        style: Theme.of(context).textTheme.headlineSmall
+                            ?.copyWith(fontWeight: FontWeight.w800),
+                      ),
+                      _statusChip(path),
+                    ],
+                  ),
+                  const SizedBox(height: 7),
+                  Text(path.goal, style: Theme.of(context).textTheme.bodyLarge),
+                ],
+              ),
+            ),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                AppIconButton(
+                  icon: Icons.edit_outlined,
+                  tooltip: _ru ? 'Изменить цель' : 'Edit goal',
+                  onPressed: () => unawaited(_editGoal(path)),
+                ),
+                AppIconButton(
+                  icon: Icons.delete_outline_rounded,
+                  tooltip: _ru ? 'Удалить путь' : 'Delete Path',
+                  onPressed: () => unawaited(_deletePath(path)),
+                ),
+              ],
+            ),
+          ],
+        ),
+        const SizedBox(height: 14),
+        _auditCard(audit),
+        if (currentStageIndex >= 0) ...[
+          const SizedBox(height: 14),
+          _currentStageCard(path.stages[currentStageIndex]),
+        ],
+        const SizedBox(height: 16),
+        for (var stageIndex = 0; stageIndex < path.stages.length; stageIndex++)
+          _stageCard(path, stageIndex, stageIndex == currentStageIndex),
+      ],
+    );
+  }
+
+"""
+          text = replace_section(
+              text,
+              '  Widget _pathDetail(ProjectPathSnapshot path) {',
+              '  Widget _statusChip(ProjectPathSnapshot path) {',
+              detail,
+              'detail breadcrumb and delete action',
+          )
+          page.write_text(text, encoding='utf-8')
+          PY
+
+      - name: Set up Flutter 3.41.6
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.6'
+          channel: stable
+
+      - name: Prepare Flutter project
+        shell: bash
+        run: |
+          mkdir -p lib/core/env
+          printf '%s\n' 'abstract final class Env {' '  static const String placeholder = '\'''\'';' '}' > lib/core/env/env.dart
+          flutter pub get
+
+      - name: Format and analyze changed Paths files
+        shell: bash
+        run: |
+          set -euo pipefail
+          dart format lib/data/paths/path_repository.dart lib/features/paths/paths_page.dart
+          flutter analyze lib/data/paths/path_repository.dart lib/features/paths/paths_page.dart
+
+      - name: Commit checked UI patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add lib/data/paths/path_repository.dart lib/features/paths/paths_page.dart
+          git diff --cached --check
+          git diff --cached --quiet && exit 0
+          git commit -m 'Show Path category hierarchy and independent delete action'
+          git push origin HEAD:ui-paths-category-tree-20260825
