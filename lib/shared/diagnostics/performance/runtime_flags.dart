@@ -27,7 +27,7 @@ const bool kTimelineAdjacentRowVmWarmup = false;
 const bool kPlansWarmWindowEnabled = false;
 
 /// Planning stream / realtime lifecycle diagnostics (works in release when true).
-const bool kPlanStreamLifecycleDiag = true;
+const bool kPlanStreamLifecycleDiag = false;
 
 /// Plan alarm / local notification diagnostics (`[PLAN_ALARM] …`).
 /// Default false — enable with `--dart-define=PLAN_ALARM_DIAG=true`.

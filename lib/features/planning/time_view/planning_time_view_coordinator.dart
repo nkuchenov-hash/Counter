@@ -13,7 +13,7 @@ import 'package:counter/features/planning/time_view/planning_time_view_host.dart
 
 class PlanningTimeViewCoordinator {
   PlanningTimeViewCoordinator(this.host) {
-    Timer.periodic(const Duration(seconds: 15), (timer) {
+    nowLineTimer = Timer.periodic(const Duration(minutes: 1), (timer) {
       if (!host.mounted) {
         timer.cancel();
         return;
@@ -33,6 +33,7 @@ class PlanningTimeViewCoordinator {
   }
 
   final PlanningTimeViewHost host;
+  Timer? nowLineTimer;
 
   // --- timeline state (public) ---
   String? timeViewCascadeNormalizedDayKey;

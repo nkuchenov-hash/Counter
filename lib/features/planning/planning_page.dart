@@ -46,7 +46,6 @@ import 'package:counter/features/planning/widgets/planning_tag_grouped_list.dart
 import 'package:counter/features/planning/widgets/planning_select_mode_header.dart';
 import 'package:counter/features/planning/widgets/planning_quick_add_strip.dart';
 
-
 class PlanningPage extends StatefulWidget {
   const PlanningPage({
     super.key,
@@ -113,29 +112,28 @@ class _PlanningPageState extends State<PlanningPage>
   /// Last server list for this day from [planningStream] (avoids `nextPlanningOrderForDate` network on quick-add).
   List<PlanningTask> _latestPlanningDayTasks = const [];
   final Map<String, bool> _planDoneOverride = {};
+
   /// Keeps completed cards at their list index until the completion moment finishes.
   final Set<String> _planCompletionHoldKeys = {};
   final Map<String, Timer> _planCompletionHoldTimers = {};
   final Set<String> _planReorderSettleKeys = {};
-  static const Duration _kPlanCompletionHoldDuration =
-      Duration(milliseconds: 250);
-  static const Duration _kPlanReorderSettleDuration =
-      Duration(milliseconds: 280);
+  static const Duration _kPlanCompletionHoldDuration = Duration(
+    milliseconds: 250,
+  );
+  static const Duration _kPlanReorderSettleDuration = Duration(
+    milliseconds: 280,
+  );
   Stream<List<PlanningTask>>? _planningStream;
   String? _planningStreamKey;
   List<PlanningTask>? _dragOrder;
   bool _planSelectMode = false;
   PlanSortMode _sortMode = PlanSortMode.custom;
   late final PlanningTimeViewCoordinator timeView;
+  bool _activePlanningResourcesLoaded = false;
 
   /// Hour-grid day timeline scroll (edge auto-scroll while dragging a plan).
 
-
-
-
-
   /// Duration-true timeline scale for the active Time-mode canvas build.
-
 
   /// Local preview height while dragging (intrinsic card height).
 
@@ -150,8 +148,6 @@ class _PlanningPageState extends State<PlanningPage>
   /// Monotonic id per vertical drag gesture (stamped on target-card intents).
 
   /// Top/bottom edge resize (Time mode); local preview until release.
-
-
 
   static const double _kShellBulkBarReservePx = 56;
 
@@ -201,7 +197,7 @@ class _PlanningPageState extends State<PlanningPage>
     required List<PlanningTask> withOrders,
     required List<PlanningTask> baselineBefore,
   }) {
-DatabaseService.instance.persistPlanningTaskOrder(
+    DatabaseService.instance.persistPlanningTaskOrder(
       withOrders,
       baselineBeforeReorder: baselineBefore,
     );
@@ -223,7 +219,6 @@ DatabaseService.instance.persistPlanningTaskOrder(
     );
     return _planningStream!;
   }
-
 
   @override
   BuildContext get context => super.context;
@@ -306,24 +301,23 @@ DatabaseService.instance.persistPlanningTaskOrder(
     double? timelineBlockHeightPx,
     ValueChanged<double>? onHourGridDragGlobalDy,
     VoidCallback? onHourGridDragEnded,
-  }) =>
-      _planCardRow(
-        context: context,
-        task: task,
-        key: key,
-        displayDone: displayDone,
-        isSelected: isSelected,
-        planActualByPbId: planActualByPbId,
-        enableLongPressDrag: enableLongPressDrag,
-        omitLongPressForReorder: omitLongPressForReorder,
-        timelineEmbedded: timelineEmbedded,
-        timelineInteracting: timelineInteracting,
-        timelineScheduleConflict: timelineScheduleConflict,
-        timelineTimeLabel: timelineTimeLabel,
-        timelineBlockHeightPx: timelineBlockHeightPx,
-        onHourGridDragGlobalDy: onHourGridDragGlobalDy,
-        onHourGridDragEnded: onHourGridDragEnded,
-      );
+  }) => _planCardRow(
+    context: context,
+    task: task,
+    key: key,
+    displayDone: displayDone,
+    isSelected: isSelected,
+    planActualByPbId: planActualByPbId,
+    enableLongPressDrag: enableLongPressDrag,
+    omitLongPressForReorder: omitLongPressForReorder,
+    timelineEmbedded: timelineEmbedded,
+    timelineInteracting: timelineInteracting,
+    timelineScheduleConflict: timelineScheduleConflict,
+    timelineTimeLabel: timelineTimeLabel,
+    timelineBlockHeightPx: timelineBlockHeightPx,
+    onHourGridDragGlobalDy: onHourGridDragGlobalDy,
+    onHourGridDragEnded: onHourGridDragEnded,
+  );
 
   @override
   void openQuickAddForHour(int hour) => _openQuickAddForHour(hour);
@@ -335,7 +329,8 @@ DatabaseService.instance.persistPlanningTaskOrder(
   void toggleKeySelection(String key) => _toggleKeySelection(key);
 
   @override
-  List<PlanningTask> latestPlanningDayTasksSnapshot() => _latestPlanningDayTasks;
+  List<PlanningTask> latestPlanningDayTasksSnapshot() =>
+      _latestPlanningDayTasks;
 
   @override
   void initState() {
@@ -364,7 +359,9 @@ DatabaseService.instance.persistPlanningTaskOrder(
       _planningStream = _planningStreamForCurrentDay();
     }
     _planningTimeSub = DatabaseService.instance.timeUpdates.listen((_) {
-      if (!mounted) return;
+      if (!mounted || !widget.isActivePlanningDay || !widget.shellTabActive) {
+        return;
+      }
       final t = DatabaseService.instance.cachedPrimaryRunningTitle
           ?.trim()
           .toLowerCase();
@@ -373,27 +370,44 @@ DatabaseService.instance.persistPlanningTaskOrder(
       }
     });
     _tagsCatalogSub = DatabaseService.instance.tagsCatalogUpdated.listen((_) {
-      if (!mounted) return;
+      if (!mounted || !widget.isActivePlanningDay || !widget.shellTabActive) {
+        return;
+      }
       setState(() {});
     });
     var lastTzOffset = DatabaseService.instance.settings.timezoneOffsetHours;
     var lastTzLabel = DatabaseService.instance.settings.preferredTimeZone;
     _settingsSub = DatabaseService.instance.userSettingsStream.listen((s) {
       if (!mounted) return;
-      if (s.timezoneOffsetHours != lastTzOffset ||
-          s.preferredTimeZone != lastTzLabel) {
-        lastTzOffset = s.timezoneOffsetHours;
-        lastTzLabel = s.preferredTimeZone;
-        DatabaseService.instance.reprojectAllPlansForProfileTimezone();
-        _refreshPlanningTasksAfterTimezoneChange();
-        DatabaseService.instance.notifyPlanningRefresh(
-          scheduleNetworkRefresh: false,
-        );
-        setState(() {});
+      final timezoneChanged =
+          s.timezoneOffsetHours != lastTzOffset ||
+          s.preferredTimeZone != lastTzLabel;
+      lastTzOffset = s.timezoneOffsetHours;
+      lastTzLabel = s.preferredTimeZone;
+      if (!timezoneChanged ||
+          !widget.isActivePlanningDay ||
+          !widget.shellTabActive) {
+        return;
       }
+      DatabaseService.instance.reprojectAllPlansForProfileTimezone();
+      _refreshPlanningTasksAfterTimezoneChange();
+      DatabaseService.instance.notifyPlanningRefresh(
+        scheduleNetworkRefresh: false,
+      );
+      setState(() {});
     });
     timeView = PlanningTimeViewCoordinator(this);
     timeView.initHourGridTicker(createTicker);
+    _ensureActivePlanningResources();
+  }
+
+  void _ensureActivePlanningResources() {
+    if (_activePlanningResourcesLoaded ||
+        !widget.isActivePlanningDay ||
+        !widget.shellTabActive) {
+      return;
+    }
+    _activePlanningResourcesLoaded = true;
     unawaited(timeView.loadPlanningTimelineBounds());
     unawaited(timeView.loadTimeViewFixedTagIds());
     unawaited(_quickAddTags.reload());
@@ -406,14 +420,6 @@ DatabaseService.instance.persistPlanningTaskOrder(
           DatabaseService.instance.planningDayTasksSnapshot(day),
         );
   }
-
-
-
-
-
-
-
-
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
@@ -455,6 +461,7 @@ DatabaseService.instance.persistPlanningTaskOrder(
         }
       });
       _syncPlanningShellFabBulkReserve();
+      _ensureActivePlanningResources();
     }
   }
 
@@ -471,9 +478,6 @@ DatabaseService.instance.persistPlanningTaskOrder(
     _quickAddFocus.dispose();
     super.dispose();
   }
-
-
-
 
   /// While dragging in the hour grid, set scroll velocity from global Y bands
   /// (top/bottom 10% of viewport); motion is applied in [_onHourGridEdgeScrollTick].
@@ -975,10 +979,8 @@ DatabaseService.instance.persistPlanningTaskOrder(
           setState(() {
             _quickAddTags.clearCreationSelectedTags();
           });
-          final displayWalls =
-              DatabaseService.instance.profileDisplayWallsFromAutoSchedule(
-            schedule,
-          );
+          final displayWalls = DatabaseService.instance
+              .profileDisplayWallsFromAutoSchedule(schedule);
           _maybeShowPlanScheduleOverloadWarning(
             dayPlans: [
               ...existingDay,
@@ -1032,9 +1034,7 @@ DatabaseService.instance.persistPlanningTaskOrder(
       if (durRaw != null) {
         explicitDuration = durRaw is int
             ? durRaw
-            : (durRaw is num
-                ? durRaw.round()
-                : int.tryParse('$durRaw'));
+            : (durRaw is num ? durRaw.round() : int.tryParse('$durRaw'));
         if (explicitDuration != null && explicitDuration < 1) {
           explicitDuration = null;
         }
@@ -1162,10 +1162,10 @@ DatabaseService.instance.persistPlanningTaskOrder(
   }
 
   List<Tag> _tagSortMasterBarOrder() => planningTagSortMasterBarOrder(
-        quickAddAvailableTags: _quickAddTags.availableTags,
-        cachedUserTagsCatalog: DatabaseService.instance.cachedUserTagsCatalog,
-        syntheticNoTagsTag: _quickAddTags.syntheticNoTagsTag(),
-      );
+    quickAddAvailableTags: _quickAddTags.availableTags,
+    cachedUserTagsCatalog: DatabaseService.instance.cachedUserTagsCatalog,
+    syntheticNoTagsTag: _quickAddTags.syntheticNoTagsTag(),
+  );
 
   PlanCard _planningTaskCardForRow(
     PlanningTask task,
@@ -1233,68 +1233,9 @@ DatabaseService.instance.persistPlanningTaskOrder(
     );
   }
 
-
   /// Profile-wall minutes from the visible day window start on [planWallDay].
 
-
   /// ~1.5× normal CardPlan height; base hour band before per-hour stretch.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
   Widget _planCardRow({
     required BuildContext context,
@@ -1348,56 +1289,58 @@ DatabaseService.instance.persistPlanningTaskOrder(
         !_planSelectMode &&
         !task.planRowIdForBackend.startsWith('optimistic-');
     if (!allowLongPressDrag) {
-      return _wrapPlanCardForDisplay(key, card, timelineEmbedded: timelineEmbedded);
+      return _wrapPlanCardForDisplay(
+        key,
+        card,
+        timelineEmbedded: timelineEmbedded,
+      );
     }
 
     final maxFeedbackW = MediaQuery.sizeOf(context).width * 0.9;
     final onDragEnded = onHourGridDragEnded;
     final draggable = LongPressDraggable<PlanningTask>(
-        delay: const Duration(milliseconds: 300),
-        data: task,
-        onDragUpdate: onHourGridDragGlobalDy == null
-            ? null
-            : (details) => onHourGridDragGlobalDy(details.globalPosition.dy),
-        onDragEnd: onDragEnded == null ? null : (_) => onDragEnded(),
-        onDraggableCanceled: onDragEnded == null
-            ? null
-            : (_, _) => onDragEnded(),
-        feedback: Material(
-          elevation: 8,
-          borderRadius: BorderRadius.circular(12),
-          clipBehavior: Clip.antiAlias,
-          child: AbsorbPointer(
-            child: Opacity(
-              opacity: 0.88,
-              child: ConstrainedBox(
-                constraints: BoxConstraints(maxWidth: maxFeedbackW),
-                child: _planningTaskCardForRow(
-                  task,
-                  key,
-                  displayDone,
-                  isSelected,
-                  highlightAsRunning: highlightAsRunning,
-                  omitLongPress: true,
-                  planActualByPbId: planActualByPbId,
-                ),
+      delay: const Duration(milliseconds: 300),
+      data: task,
+      onDragUpdate: onHourGridDragGlobalDy == null
+          ? null
+          : (details) => onHourGridDragGlobalDy(details.globalPosition.dy),
+      onDragEnd: onDragEnded == null ? null : (_) => onDragEnded(),
+      onDraggableCanceled: onDragEnded == null ? null : (_, _) => onDragEnded(),
+      feedback: Material(
+        elevation: 8,
+        borderRadius: BorderRadius.circular(12),
+        clipBehavior: Clip.antiAlias,
+        child: AbsorbPointer(
+          child: Opacity(
+            opacity: 0.88,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: maxFeedbackW),
+              child: _planningTaskCardForRow(
+                task,
+                key,
+                displayDone,
+                isSelected,
+                highlightAsRunning: highlightAsRunning,
+                omitLongPress: true,
+                planActualByPbId: planActualByPbId,
               ),
             ),
           ),
         ),
-        childWhenDragging: Opacity(
-          opacity: 0.35,
-          child: _planningTaskCardForRow(
-            task,
-            key,
-            displayDone,
-            isSelected,
-            highlightAsRunning: highlightAsRunning,
-            omitLongPress: true,
-            planActualByPbId: planActualByPbId,
-          ),
+      ),
+      childWhenDragging: Opacity(
+        opacity: 0.35,
+        child: _planningTaskCardForRow(
+          task,
+          key,
+          displayDone,
+          isSelected,
+          highlightAsRunning: highlightAsRunning,
+          omitLongPress: true,
+          planActualByPbId: planActualByPbId,
         ),
-        child: card,
+      ),
+      child: card,
     );
     if (timelineEmbedded) {
       return _wrapPlanCardForDisplay(key, draggable, timelineEmbedded: true);
@@ -1417,10 +1360,6 @@ DatabaseService.instance.persistPlanningTaskOrder(
     if (timelineEmbedded) return wrapped;
     return Padding(padding: const EdgeInsets.only(bottom: 6), child: wrapped);
   }
-
-
-
-
 
   Widget _groupedListPlanCardRow({
     required BuildContext context,
@@ -1596,8 +1535,7 @@ DatabaseService.instance.persistPlanningTaskOrder(
   }
 
   DateTime _dateForPageIndex(int index) =>
-      widget.mountedWindow?.dateAt(index) ??
-      (widget.selectedDate ?? _today);
+      widget.mountedWindow?.dateAt(index) ?? (widget.selectedDate ?? _today);
 
   /// Stable PageView path — live planning stream for this page's day.
   Widget _buildActiveDayBody(
@@ -1616,7 +1554,8 @@ DatabaseService.instance.persistPlanningTaskOrder(
         .aggregateSourcePlanActualSecondsForWallCalendarDay(wallDay);
     if (tasks.isEmpty) {
       return PlanningDayEmptyState(
-        onFocusQuickAdd: () => FocusScope.of(context).requestFocus(_quickAddFocus),
+        onFocusQuickAdd: () =>
+            FocusScope.of(context).requestFocus(_quickAddFocus),
       );
     }
     if (_sortMode == PlanSortMode.time) {
@@ -1664,7 +1603,8 @@ DatabaseService.instance.persistPlanningTaskOrder(
     List<PlanningTask> visibleDayTasks,
   ) {
     final wallDay = _dateForPageIndex(index);
-    final isActive = widget.shellTabActive &&
+    final isActive =
+        widget.shellTabActive &&
         widget.selectedDate != null &&
         (widget.mountedWindow == null ||
             DayWindow.dateOnly(wallDay) ==
@@ -1698,7 +1638,8 @@ DatabaseService.instance.persistPlanningTaskOrder(
         .aggregateSourcePlanActualSecondsForWallCalendarDay(wallDay);
     if (tasks.isEmpty) {
       return PlanningDayEmptyState(
-        onFocusQuickAdd: () => FocusScope.of(context).requestFocus(_quickAddFocus),
+        onFocusQuickAdd: () =>
+            FocusScope.of(context).requestFocus(_quickAddFocus),
       );
     }
     if (_sortMode == PlanSortMode.time) {
@@ -1826,7 +1767,8 @@ DatabaseService.instance.persistPlanningTaskOrder(
                     scheme: scheme,
                     onExit: _exitSelectMode,
                     visiblePlans: visiblePlans,
-                    allVisibleSelected: visiblePlans != null &&
+                    allVisibleSelected:
+                        visiblePlans != null &&
                         _allVisiblePlanTasksSelected(visiblePlans),
                     onToggleSelectAll: visiblePlans != null
                         ? () => _toggleSelectAllVisiblePlans(visiblePlans)
@@ -1838,11 +1780,13 @@ DatabaseService.instance.persistPlanningTaskOrder(
           ),
           bottomNavigationBar: displayedForChrome != null
               ? PlanningBulkBottomBar(
-                selectedCount: _selectedPlanKeys.length,
-                onClear: _clearSelection,
-                onBulkEdit: () => unawaited(_openBulkPlanningEdit(displayedForChrome!)),
-                onBulkDelete: () => unawaited(_bulkDelete(displayedForChrome!)),
-              )
+                  selectedCount: _selectedPlanKeys.length,
+                  onClear: _clearSelection,
+                  onBulkEdit: () =>
+                      unawaited(_openBulkPlanningEdit(displayedForChrome!)),
+                  onBulkDelete: () =>
+                      unawaited(_bulkDelete(displayedForChrome!)),
+                )
               : null,
         );
       },
@@ -1948,7 +1892,8 @@ DatabaseService.instance.persistPlanningTaskOrder(
           ),
         ),
         Expanded(
-          child: kUseMountedDayStrip &&
+          child:
+              kUseMountedDayStrip &&
                   widget.mountedWindow != null &&
                   widget.stripController != null &&
                   widget.onVisibleDateChanged != null

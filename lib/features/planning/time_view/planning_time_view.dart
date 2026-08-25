@@ -24,8 +24,9 @@ extension PlanningTimeViewPlanningTimeView on PlanningTimeViewCoordinator {
     final out = <PlanningTask>[];
 
     void mergeDay(DateTime day) {
-      for (final task
-          in DatabaseService.instance.planningDayTasksSnapshot(day)) {
+      for (final task in DatabaseService.instance.planningDayTasksSnapshot(
+        day,
+      )) {
         final id = task.planRowIdForBackend;
         if (seen.add(id)) out.add(task);
       }
@@ -69,16 +70,24 @@ extension PlanningTimeViewPlanningTimeView on PlanningTimeViewCoordinator {
     ).round();
   }
 
-  List<PlanningTask> tasksForTimeMode(
+  List<({PlanningTask task, TimeModeProjectedPlan? projection})>
+  projectedTasksForTimeMode(
     List<PlanningTask> tasks,
     DateTime planWallDay,
     int dayStartExtended,
   ) {
-    final copy = List<PlanningTask>.from(tasks);
-    copy.sort((a, b) {
-      final ap = DatabaseService.instance.projectPlanForTimeMode(a);
-      final bp = DatabaseService.instance.projectPlanForTimeMode(b);
-      if (ap == null && bp == null) return host.taskSortCmp(a, b);
+    final decorated =
+        <({PlanningTask task, TimeModeProjectedPlan? projection})>[
+          for (final task in tasks)
+            (
+              task: task,
+              projection: DatabaseService.instance.projectPlanForTimeMode(task),
+            ),
+        ];
+    decorated.sort((a, b) {
+      final ap = a.projection;
+      final bp = b.projection;
+      if (ap == null && bp == null) return host.taskSortCmp(a.task, b.task);
       if (ap == null) return 1;
       if (bp == null) return -1;
       final ca = planningClockOrderMinutes(
@@ -92,18 +101,32 @@ extension PlanningTimeViewPlanningTimeView on PlanningTimeViewCoordinator {
         dayStartExtended,
       );
       if (ca != cb) return ca.compareTo(cb);
-      return host.taskSortCmp(a, b);
+      return host.taskSortCmp(a.task, b.task);
     });
-    return copy;
+    return decorated;
   }
 
+  List<PlanningTask> tasksForTimeMode(
+    List<PlanningTask> tasks,
+    DateTime planWallDay,
+    int dayStartExtended,
+  ) => [
+    for (final item in projectedTasksForTimeMode(
+      tasks,
+      planWallDay,
+      dayStartExtended,
+    ))
+      item.task,
+  ];
+
   bool timelineCompactLayout(BuildContext context) =>
-      MediaQuery.sizeOf(host.context).width < PlanningTimeViewCoordinator.kTimelineCompactBreakpoint;
+      MediaQuery.sizeOf(host.context).width <
+      PlanningTimeViewCoordinator.kTimelineCompactBreakpoint;
 
   double timelineRailWidthPx(BuildContext context) =>
       timelineCompactLayout(host.context)
-          ? PlanningTimeViewCoordinator.kTimelineRailWidthMobilePx
-          : PlanningTimeViewCoordinator.kTimelineRailWidthDesktopPx;
+      ? PlanningTimeViewCoordinator.kTimelineRailWidthMobilePx
+      : PlanningTimeViewCoordinator.kTimelineRailWidthDesktopPx;
 
   void onHourGridEdgeScrollTick(Duration elapsed) {
     if (!host.mounted) {
@@ -157,10 +180,12 @@ extension PlanningTimeViewPlanningTimeView on PlanningTimeViewCoordinator {
     final topBand = viewH * 0.1;
     final bottomBand = viewH * 0.9;
     if (globalDy < topBand) {
-      hourGridScrollVelocityPxPerSec = -PlanningTimeViewCoordinator.kHourGridEdgeScrollSpeedPxPerSec;
+      hourGridScrollVelocityPxPerSec =
+          -PlanningTimeViewCoordinator.kHourGridEdgeScrollSpeedPxPerSec;
       ensureHourGridEdgeTickerRunning();
     } else if (globalDy > bottomBand) {
-      hourGridScrollVelocityPxPerSec = PlanningTimeViewCoordinator.kHourGridEdgeScrollSpeedPxPerSec;
+      hourGridScrollVelocityPxPerSec =
+          PlanningTimeViewCoordinator.kHourGridEdgeScrollSpeedPxPerSec;
       ensureHourGridEdgeTickerRunning();
     } else {
       stopHourGridEdgeScroll();
@@ -195,7 +220,8 @@ extension PlanningTimeViewPlanningTimeView on PlanningTimeViewCoordinator {
     return PlanningTimeViewCoordinator.kTimelineDefaultBlockMinutes;
   }
 
-  double timelineHourHeightPx() => PlanTimeViewLayoutCalculator.baseHourHeightPx();
+  double timelineHourHeightPx() =>
+      PlanTimeViewLayoutCalculator.baseHourHeightPx();
 
   double computeTimelinePxPerMinute(List<TimeModeProjectedPlan> projections) {
     return timelineHourHeightPx() / 60.0;
@@ -204,10 +230,7 @@ extension PlanningTimeViewPlanningTimeView on PlanningTimeViewCoordinator {
   double timelineCanvasHeightPx(PlanTimeViewDurationGrid grid) =>
       grid.totalHeightPx;
 
-  ({
-    double startMin,
-    double endMin,
-  }) timelineSpanMinutesFromProjection(
+  ({double startMin, double endMin}) timelineSpanMinutesFromProjection(
     TimeModeProjectedPlan proj,
     DateTime planWallDay,
     int startExtended,
@@ -227,10 +250,8 @@ extension PlanningTimeViewPlanningTimeView on PlanningTimeViewCoordinator {
     return (startMin: startMin, endMin: endMin);
   }
 
-  ({
-    PlanTimeViewDurationGrid grid,
-    List<PlanTimeViewBlockLayout> layouts,
-  }) computeTimelineDurationLayout(
+  ({PlanTimeViewDurationGrid grid, List<PlanTimeViewBlockLayout> layouts})
+  computeTimelineDurationLayout(
     List<TimeModeProjectedPlan> projections,
     DateTime planWallDay,
     int startExtended,
@@ -240,10 +261,11 @@ extension PlanningTimeViewPlanningTimeView on PlanningTimeViewCoordinator {
     return RebuildMetrics.instance.perfBlock(
       'Planning.computeTimelineDurationLayout',
       () {
-        final visibleHours = PlanningSheetTimelinePrefs.visibleExtendedHoursOrdered(
-          startExtended,
-          endExtended,
-        );
+        final visibleHours =
+            PlanningSheetTimelinePrefs.visibleExtendedHoursOrdered(
+              startExtended,
+              endExtended,
+            );
         if (kVerbosePlanTimeTzProjectionLogs && !kReleaseMode) {
           for (final proj in projections) {
             DatabaseService.instance.logTimeTzProjectForTimeMode(
@@ -322,7 +344,8 @@ extension PlanningTimeViewPlanningTimeView on PlanningTimeViewCoordinator {
     List<PlanningTask> schedulable,
   ) {
     if (host.sortMode != PlanSortMode.time) return;
-    final dayKey = '${planWallDay.year}-'
+    final dayKey =
+        '${planWallDay.year}-'
         '${planWallDay.month.toString().padLeft(2, '0')}-'
         '${planWallDay.day.toString().padLeft(2, '0')}';
     if (timeViewCascadeNormalizedDayKey == dayKey) return;
@@ -352,12 +375,13 @@ extension PlanningTimeViewPlanningTimeView on PlanningTimeViewCoordinator {
     final now = DateTime.now();
     if (lastTimeDurationLayoutLogKey == lineKey &&
         lastTimeDurationLayoutLogAt != null &&
-        now.difference(lastTimeDurationLayoutLogAt!) < PlanningTimeViewCoordinator.timeModeLogDebounce) {
+        now.difference(lastTimeDurationLayoutLogAt!) <
+            PlanningTimeViewCoordinator.timeModeLogDebounce) {
       return;
     }
     lastTimeDurationLayoutLogKey = lineKey;
     lastTimeDurationLayoutLogAt = now;
-}
+  }
 
   void logTimeResizePreview({
     required String planId,
@@ -373,12 +397,13 @@ extension PlanningTimeViewPlanningTimeView on PlanningTimeViewCoordinator {
     final now = DateTime.now();
     if (lastTimeResizePreviewLogKey == lineKey &&
         lastTimeResizePreviewLogAt != null &&
-        now.difference(lastTimeResizePreviewLogAt!) < PlanningTimeViewCoordinator.timeModeLogDebounce) {
+        now.difference(lastTimeResizePreviewLogAt!) <
+            PlanningTimeViewCoordinator.timeModeLogDebounce) {
       return;
     }
     lastTimeResizePreviewLogKey = lineKey;
     lastTimeResizePreviewLogAt = now;
-}
+  }
 
   void logTimeModeRail({
     required DateTime selectedDay,
@@ -390,16 +415,16 @@ extension PlanningTimeViewPlanningTimeView on PlanningTimeViewCoordinator {
     final now = DateTime.now();
     if (lastTimeModeRailLogKey == lineKey &&
         lastTimeModeRailLogAt != null &&
-        now.difference(lastTimeModeRailLogAt!) < PlanningTimeViewCoordinator.timeModeLogDebounce) {
+        now.difference(lastTimeModeRailLogAt!) <
+            PlanningTimeViewCoordinator.timeModeLogDebounce) {
       return;
     }
     lastTimeModeRailLogKey = lineKey;
     lastTimeModeRailLogAt = now;
-}
+  }
 
   bool isProfileTodaySelectedForPlanning() {
-    final profileTodayKey =
-        DatabaseService.instance.getProjectedTodayDateKey();
+    final profileTodayKey = DatabaseService.instance.getProjectedTodayDateKey();
     final raw = host.pageWidget.selectedDateString.trim();
     if (raw.length >= 10) {
       return raw.substring(0, 10) == profileTodayKey;
@@ -430,10 +455,11 @@ extension PlanningTimeViewPlanningTimeView on PlanningTimeViewCoordinator {
     }
     lastPlanTimeNowLineLogKey = lineKey;
     lastPlanTimeNowLineLogAt = now;
-}
+  }
 
-  DateTime profileWallNow() =>
-      DatabaseService.instance.applyUserOffset(DatabaseService.getPlanetaryNow());
+  DateTime profileWallNow() => DatabaseService.instance.applyUserOffset(
+    DatabaseService.getPlanetaryNow(),
+  );
 
   double? timelineNowLineTopPx(
     DateTime planWallDay,
@@ -465,7 +491,11 @@ extension PlanningTimeViewPlanningTimeView on PlanningTimeViewCoordinator {
       return null;
     }
     final nowUtc = DatabaseService.getPlanetaryNow();
-    final min = timelineMinutesFromRangeStart(wallNow, planWallDay, startExtended);
+    final min = timelineMinutesFromRangeStart(
+      wallNow,
+      planWallDay,
+      startExtended,
+    );
     if (!PlanningSheetTimelinePrefs.wallInstantInsideVisibleWindow(
       wallNow,
       planWallDay,
@@ -500,10 +530,12 @@ extension PlanningTimeViewPlanningTimeView on PlanningTimeViewCoordinator {
     if (!hourGridScrollController.hasClients) return;
     timeModeDidAutoScrollToNow = true;
     final viewport = MediaQuery.sizeOf(host.context).height * 0.45;
-    final target = (nowTopPx - viewport * 0.35).clamp(
-      0.0,
-      math.max(0.0, hourGridScrollController.position.maxScrollExtent),
-    ).toDouble();
+    final target = (nowTopPx - viewport * 0.35)
+        .clamp(
+          0.0,
+          math.max(0.0, hourGridScrollController.position.maxScrollExtent),
+        )
+        .toDouble();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!hourGridScrollController.hasClients) return;
       hourGridScrollController.animateTo(
@@ -573,10 +605,10 @@ extension PlanningTimeViewPlanningTimeView on PlanningTimeViewCoordinator {
   }
 
   String formatTimelineResizeLabel(DateTime start, DateTime end) {
-    final mins = end.difference(start).inMinutes.clamp(
-      PlanningSheetTimelinePrefs.timelineMinDurationMinutes,
-      24 * 60,
-    );
+    final mins = end
+        .difference(start)
+        .inMinutes
+        .clamp(PlanningSheetTimelinePrefs.timelineMinDurationMinutes, 24 * 60);
     return '${formatTimelineWallRangeLabel(start, end)} · ${shortTimelineDuration(mins)}';
   }
 
@@ -603,7 +635,10 @@ extension PlanningTimeViewPlanningTimeView on PlanningTimeViewCoordinator {
   ) {
     final proj = DatabaseService.instance.projectPlanForTimeMode(task);
     if (proj == null) {
-      return (startMin: 0, endMin: PlanningTimeViewCoordinator.kTimelineDefaultBlockMinutes);
+      return (
+        startMin: 0,
+        endMin: PlanningTimeViewCoordinator.kTimelineDefaultBlockMinutes,
+      );
     }
     final span = timelineSpanMinutesFromProjection(
       proj,
@@ -688,7 +723,9 @@ extension PlanningTimeViewPlanningTimeView on PlanningTimeViewCoordinator {
         continue;
       }
       if (kDebugMode) {
-        debugPrint('[TIME_VIEW_OPTIMISTIC_APPLIED] id=${task.planRowIdForBackend}');
+        debugPrint(
+          '[TIME_VIEW_OPTIMISTIC_APPLIED] id=${task.planRowIdForBackend}',
+        );
       }
       DatabaseService.instance.applyOptimisticPlanningTask(task);
       unawaited(
@@ -745,9 +782,7 @@ extension PlanningTimeViewPlanningTimeView on PlanningTimeViewCoordinator {
         clearEnd: newEndWall == null,
       );
       final merged = scheduledInRange
-          .map(
-            (t) => host.planKey(t) == movedKey ? movedUpdated : t,
-          )
+          .map((t) => host.planKey(t) == movedKey ? movedUpdated : t)
           .toList(growable: false);
       resolved = DatabaseService.instance.normalizeSequentialPlanTimesForDay(
         merged,
@@ -789,7 +824,7 @@ extension PlanningTimeViewPlanningTimeView on PlanningTimeViewCoordinator {
       );
     }
 
-DatabaseService.instance.notifyPlanningRefresh();
+    DatabaseService.instance.notifyPlanningRefresh();
     if (host.mounted) host.notifySetState(() {});
   }
 
@@ -803,11 +838,15 @@ DatabaseService.instance.notifyPlanningRefresh();
     return null;
   }
 
-  void initHourGridTicker(Ticker Function(void Function(Duration)) createTicker) {
+  void initHourGridTicker(
+    Ticker Function(void Function(Duration)) createTicker,
+  ) {
     hourGridEdgeScrollTicker = createTicker(onHourGridEdgeScrollTick);
   }
 
   void disposeTimeView() {
+    nowLineTimer?.cancel();
+    nowLineTimer = null;
     stopHourGridEdgeScroll();
     hourGridEdgeScrollTicker.dispose();
     hourGridScrollController.dispose();
