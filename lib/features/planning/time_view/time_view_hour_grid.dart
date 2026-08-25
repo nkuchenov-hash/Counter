@@ -127,41 +127,21 @@ extension PlanningTimeViewTimeViewHourGrid on PlanningTimeViewCoordinator {
     final selectedDayKey = host.pageWidget.selectedDateString.length >= 10
         ? host.pageWidget.selectedDateString.substring(0, 10)
         : DatabaseService.instance.getProjectedTodayDateKey();
-    var ordered = tasksForTimeMode(
+    final orderedProjected = projectedTasksForTimeMode(
       planningTasksForTimeViewWindow(planWallDay),
       planWallDay,
       rangeStart,
     );
     final schedulablePre = <PlanningTask>[];
-    for (final t in ordered) {
-      final proj = DatabaseService.instance.projectPlanForTimeMode(t);
-      if (proj == null) continue;
-      if (!projectedPlanInTimeViewWindow(
-        proj,
-        planWallDay,
-        rangeStart,
-        rangeEnd,
-      )) {
-        continue;
-      }
-      schedulablePre.add(t);
-    }
-    if (schedulablePre.isNotEmpty) {
-      maybeNormalizeTimeViewOverlapsOnce(planWallDay, schedulablePre);
-      ordered = tasksForTimeMode(
-        planningTasksForTimeViewWindow(planWallDay),
-        planWallDay,
-        rangeStart,
-      );
-    }
     final unscheduled = <PlanningTask>[];
     final projections = <TimeModeProjectedPlan>[];
-    for (final t in ordered) {
-      final proj = DatabaseService.instance.projectPlanForTimeMode(t);
+    for (final item in orderedProjected) {
+      final task = item.task;
+      final proj = item.projection;
       if (proj == null) {
-        if (t.dateKey.length >= 10 &&
-            t.dateKey.substring(0, 10) == selectedDayKey) {
-          unscheduled.add(t);
+        if (task.dateKey.length >= 10 &&
+            task.dateKey.substring(0, 10) == selectedDayKey) {
+          unscheduled.add(task);
         }
         continue;
       }
@@ -173,7 +153,11 @@ extension PlanningTimeViewTimeViewHourGrid on PlanningTimeViewCoordinator {
       )) {
         continue;
       }
+      schedulablePre.add(task);
       projections.add(proj);
+    }
+    if (schedulablePre.isNotEmpty) {
+      maybeNormalizeTimeViewOverlapsOnce(planWallDay, schedulablePre);
     }
     cachedTimeModeProjections = projections;
     final visibleHours = PlanningSheetTimelinePrefs.visibleExtendedHoursOrdered(
