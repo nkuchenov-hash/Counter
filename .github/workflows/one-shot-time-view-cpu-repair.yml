@@ -1,0 +1,76 @@
+name: One-shot Time View CPU repair
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/manual/fix_time_view_cpu_hotpath_20260825.py'
+
+permissions:
+  contents: write
+  pull-requests: read
+
+jobs:
+  repair-and-validate:
+    if: github.event.pull_request.number == 181
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout PR head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+
+      - name: Apply CPU hot-path repair
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/manual/fix_time_view_cpu_hotpath_20260825.py
+          git rm scripts/manual/fix_time_view_cpu_hotpath_20260825.py
+
+      - name: Set up Flutter 3.41.6
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.6'
+          channel: stable
+
+      - name: Format and audit patched tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          dart format \
+            lib/features/planning/time_view/planning_time_view.dart \
+            lib/features/planning/time_view/time_view_hour_grid.dart \
+            lib/features/planning/time_view/planning_time_view_coordinator.dart \
+            lib/features/planning/planning_page.dart \
+            lib/shared/diagnostics/performance/runtime_flags.dart \
+            test/plans_time_performance_contract_test.dart
+          python scripts/audit/documentation_parity.py
+          python scripts/audit/pocketbase_schema_contract.py
+          python scripts/audit/deployment_contract.py
+          git diff --check
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Analyze patched source
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+
+      - name: Run focused Time View tests
+        run: >-
+          flutter test
+          test/plans_time_performance_contract_test.dart
+          test/plan_time_timezone_projection_test.dart
+          test/plan_time_view_layout_test.dart
+          test/time_view_bulk_drag_regression_test.dart
+
+      - name: Commit validated repair to PR
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -A
+          git commit -m 'Fix Time View CPU hot path'
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
