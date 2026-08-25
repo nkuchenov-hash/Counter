@@ -20,6 +20,21 @@ class PathRepository {
   final Map<String, Future<ProjectPathSnapshot?>> _saveChains =
       <String, Future<ProjectPathSnapshot?>>{};
 
+  /// User-visible category trail for a Path, from root folder to leaf project.
+  String categoryBreadcrumb(CategoryRule category) {
+    final ids = _database.categoryPathFromRootToLocalId(category.id);
+    if (ids.isEmpty) return category.name.trim();
+
+    final names = <String>[];
+    for (final id in ids) {
+      final rule = _database.getCategoryRuleById(id);
+      if (rule == null || rule.isArchived) continue;
+      final name = rule.name.trim();
+      if (name.isNotEmpty) names.add(name);
+    }
+    return names.isEmpty ? category.name.trim() : names.join(' › ');
+  }
+
   Future<PathCatalogSnapshot> loadActivePaths() async {
     await _database.refreshCategoryRulesFromServer();
     final pathRows = await _database.fetchOwnedPathRows();
@@ -59,9 +74,9 @@ class PathRepository {
     }
 
     paths.sort(
-      (a, b) => a.category.name.toLowerCase().compareTo(
-        b.category.name.toLowerCase(),
-      ),
+      (a, b) => categoryBreadcrumb(
+        a.category,
+      ).toLowerCase().compareTo(categoryBreadcrumb(b.category).toLowerCase()),
     );
     return PathCatalogSnapshot(paths: paths);
   }

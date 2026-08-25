@@ -96,6 +96,67 @@ class _PathsPageState extends State<PathsPage> {
     return null;
   }
 
+  String _categoryBreadcrumb(ProjectPathSnapshot path) =>
+      _repository.categoryBreadcrumb(path.category);
+
+  List<String> _categorySegments(ProjectPathSnapshot path) =>
+      _categoryBreadcrumb(path)
+          .split(' › ')
+          .map((segment) => segment.trim())
+          .where((segment) => segment.isNotEmpty)
+          .toList(growable: false);
+
+  Future<void> _deletePath(ProjectPathSnapshot path) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(_ru ? 'Удалить путь?' : 'Delete Path?'),
+        content: Text(
+          _ru
+              ? 'Путь будет удалён независимо от других путей. История его ревизий останется только как неисполняемый аудит.'
+              : 'This Path will be deleted independently of other Paths. Its revision history will remain only as non-executable audit history.',
+        ),
+        actions: [
+          AppButton.ghost(
+            label: _ru ? 'Отмена' : 'Cancel',
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+          ),
+          AppButton.destructive(
+            label: _ru ? 'Удалить' : 'Delete',
+            icon: Icons.delete_outline_rounded,
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    final deleted = await _repository.deletePath(path);
+    if (!mounted) return;
+    if (!deleted) {
+      ScaffoldMessenger.of(context)
+        ..clearSnackBars()
+        ..showSnackBar(
+          SnackBar(
+            content: Text(
+              _ru ? 'Не удалось удалить путь.' : 'Could not delete the Path.',
+            ),
+          ),
+        );
+      return;
+    }
+
+    _confirmedPaths.remove(path.pathId);
+    _saveGenerationByPath.remove(path.pathId);
+    await _load();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..clearSnackBars()
+      ..showSnackBar(
+        SnackBar(content: Text(_ru ? 'Путь удалён.' : 'Path deleted.')),
+      );
+  }
+
   void _replaceLocal(ProjectPathSnapshot updated) {
     final next = <ProjectPathSnapshot>[
       for (final path in _catalog.paths)
@@ -320,49 +381,94 @@ class _PathsPageState extends State<PathsPage> {
 
   Widget _pathList() {
     final scheme = Theme.of(context).colorScheme;
-    return ListView.separated(
-      padding: const EdgeInsets.all(12),
-      itemCount: _catalog.paths.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 4),
-      itemBuilder: (context, index) {
-        final path = _catalog.paths[index];
-        final selected = path.category.id == _selectedCategoryId;
-        final nextStage = _firstPendingStage(path);
+    final grouped = <String, List<ProjectPathSnapshot>>{};
+    for (final path in _catalog.paths) {
+      final segments = _categorySegments(path);
+      final rootName = segments.isEmpty ? path.category.name : segments.first;
+      grouped.putIfAbsent(rootName, () => <ProjectPathSnapshot>[]).add(path);
+    }
 
-        return Material(
-          color: selected
-              ? scheme.primaryContainer.withValues(alpha: 0.55)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(12),
-          child: ListTile(
-            selected: selected,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+    final children = <Widget>[];
+    for (final entry in grouped.entries) {
+      final paths = entry.value;
+      final showFolder =
+          paths.length > 1 ||
+          paths.any((path) => _categorySegments(path).length > 1);
+      if (showFolder) {
+        children.add(
+          Padding(
+            padding: const EdgeInsets.fromLTRB(10, 10, 10, 6),
+            child: Row(
+              children: [
+                Icon(Icons.folder_rounded, size: 19, color: scheme.primary),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    entry.key,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      color: scheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              ],
             ),
-            leading: CircleAvatar(
-              backgroundColor: path.category.colorOrDefault.withValues(
-                alpha: 0.14,
-              ),
-              foregroundColor: path.category.colorOrDefault,
-              child: Icon(path.category.iconOrDefault, size: 20),
-            ),
-            title: Text(
-              path.category.name,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontWeight: FontWeight.w700),
-            ),
-            subtitle: Text(
-              nextStage == null
-                  ? (_ru ? 'Все этапы отмечены' : 'All stages marked')
-                  : nextStage.title,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-            onTap: () => setState(() => _selectedCategoryId = path.category.id),
           ),
         );
-      },
+      }
+
+      for (final path in paths) {
+        final depth = _categorySegments(path).length - 1;
+        children.add(
+          Padding(
+            padding: EdgeInsets.only(
+              left: showFolder ? 8.0 + depth.clamp(0, 4).toDouble() * 12.0 : 0,
+              bottom: 4,
+            ),
+            child: _pathListTile(path),
+          ),
+        );
+      }
+    }
+
+    return ListView(padding: const EdgeInsets.all(12), children: children);
+  }
+
+  Widget _pathListTile(ProjectPathSnapshot path) {
+    final scheme = Theme.of(context).colorScheme;
+    final selected = path.category.id == _selectedCategoryId;
+    final nextStage = _firstPendingStage(path);
+
+    return Material(
+      color: selected
+          ? scheme.primaryContainer.withValues(alpha: 0.55)
+          : Colors.transparent,
+      borderRadius: BorderRadius.circular(12),
+      child: ListTile(
+        selected: selected,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        leading: CircleAvatar(
+          backgroundColor: path.category.colorOrDefault.withValues(alpha: 0.14),
+          foregroundColor: path.category.colorOrDefault,
+          child: Icon(path.category.iconOrDefault, size: 20),
+        ),
+        title: Text(
+          path.category.name,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(fontWeight: FontWeight.w700),
+        ),
+        subtitle: Text(
+          nextStage == null
+              ? (_ru ? 'Все этапы отмечены' : 'All stages marked')
+              : nextStage.title,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+        ),
+        onTap: () => setState(() => _selectedCategoryId = path.category.id),
+      ),
     );
   }
 
@@ -372,7 +478,7 @@ class _PathsPageState extends State<PathsPage> {
       child: DropdownButtonFormField<int>(
         initialValue: selected.category.id,
         decoration: InputDecoration(
-          labelText: _ru ? 'Проект' : 'Project',
+          labelText: _ru ? 'Категория / проект' : 'Category / project',
           border: const OutlineInputBorder(),
           isDense: true,
         ),
@@ -380,7 +486,10 @@ class _PathsPageState extends State<PathsPage> {
           for (final path in _catalog.paths)
             DropdownMenuItem<int>(
               value: path.category.id,
-              child: Text(path.category.name, overflow: TextOverflow.ellipsis),
+              child: Text(
+                _categoryBreadcrumb(path),
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
         ],
         onChanged: (value) {
@@ -395,6 +504,8 @@ class _PathsPageState extends State<PathsPage> {
   Widget _pathDetail(ProjectPathSnapshot path) {
     final audit = _repository.audit(path);
     final currentStageIndex = path.stages.indexWhere((stage) => !stage.isDone);
+    final breadcrumb = _categoryBreadcrumb(path);
+    final nested = _categorySegments(path).length > 1;
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 18, 20, 40),
@@ -406,6 +517,18 @@ class _PathsPageState extends State<PathsPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  if (nested) ...[
+                    Text(
+                      breadcrumb,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                  ],
                   Wrap(
                     spacing: 8,
                     runSpacing: 6,
@@ -424,10 +547,20 @@ class _PathsPageState extends State<PathsPage> {
                 ],
               ),
             ),
-            AppIconButton(
-              icon: Icons.edit_outlined,
-              tooltip: _ru ? 'Изменить цель' : 'Edit goal',
-              onPressed: () => unawaited(_editGoal(path)),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                AppIconButton(
+                  icon: Icons.edit_outlined,
+                  tooltip: _ru ? 'Изменить цель' : 'Edit goal',
+                  onPressed: () => unawaited(_editGoal(path)),
+                ),
+                AppIconButton(
+                  icon: Icons.delete_outline_rounded,
+                  tooltip: _ru ? 'Удалить путь' : 'Delete Path',
+                  onPressed: () => unawaited(_deletePath(path)),
+                ),
+              ],
             ),
           ],
         ),
@@ -511,7 +644,9 @@ class _PathsPageState extends State<PathsPage> {
     final scheme = Theme.of(context).colorScheme;
     final next = _firstPendingAction(stage);
     final accent = Colors.amber.shade700;
-    final fillAlpha = Theme.of(context).brightness == Brightness.dark ? 0.18 : 0.13;
+    final fillAlpha = Theme.of(context).brightness == Brightness.dark
+        ? 0.18
+        : 0.13;
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -547,9 +682,9 @@ class _PathsPageState extends State<PathsPage> {
             Text(
               '${_ru ? 'Следующее действие' : 'Next action'}: '
               '${next.text} · ${next.minutes} ${_ru ? 'мин' : 'min'}',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: scheme.onSurface,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: scheme.onSurface),
             ),
           ],
         ],
@@ -696,8 +831,9 @@ class _PathsPageState extends State<PathsPage> {
                       decoration: action.isDone
                           ? TextDecoration.lineThrough
                           : null,
-                      decorationColor:
-                          action.isDone ? Colors.green.shade600 : null,
+                      decorationColor: action.isDone
+                          ? Colors.green.shade600
+                          : null,
                     ),
                   ),
                   if (action.expectedResult.isNotEmpty) ...[
