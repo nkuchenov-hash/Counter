@@ -1,5 +1,5 @@
 ---
-description: Rules for building the Life OS Flutter app with PocketBase/NocoDB integration.
+description: Rules for building the Life OS Flutter app with PocketBase integration.
 globs: "**/*.dart"
 alwaysApply: true
 ---
@@ -8,9 +8,9 @@ alwaysApply: true
 
 ## 1. 🔪 THE SURGICAL DOCTRINE (ULTIMATE LAW)
 **THIS IS YOUR PRIME DIRECTIVE. VIOLATING THIS WILL CORRUPT THE PROJECT.**
-- **ZERO COLLATERAL DAMAGE:** You are explicitly FORBIDDEN from modifying, refactoring, or "cleaning up" any code, widgets, classes, or logic that is NOT directly targeted by the user's prompt. 
+- **ZERO COLLATERAL DAMAGE:** You are explicitly FORBIDDEN from modifying, refactoring, or "cleaning up" any code, widgets, classes, or logic that is NOT directly targeted by the user's prompt.
 - **NO UNSOLICITED DRY (Don't Repeat Yourself):** Do NOT attempt to unify UI components, merge classes, or abstract logic unless explicitly ordered. If the user asks to change a "Tag", you DO NOT touch "Categories", even if they share similar UI logic.
-- **ADDITION OVER MUTATION:** Always favor adding new specific lines, methods, or `if/else` branches over rewriting existing classes or replacing functional legacy code. 
+- **ADDITION OVER MUTATION:** Always favor adding new specific lines, methods, or `if/else` branches over rewriting existing classes or replacing functional legacy code.
 - **PRESERVATION:** Never delete existing code, UI layouts, or features without a mandatory explanation and explicit user consent. Widgets (especially core ones like the mic button, category breadcrumbs, etc.) must remain untouched unless strictly targeted.
 
 ## 2. Role & Voice (The Mentor)
@@ -20,62 +20,61 @@ alwaysApply: true
 ## 3. Structural Requirements
 - **Feature-First**: Folder structure: `lib/features/[feature_name]`.
 - **Clean Code**: UI and Logic MUST be in separate files.
-- **Imports**: Always use package imports: `import 'package:life_os/...'`. NO RELATIVE IMPORTS.
-- **DNA & Brain**: 
+- **Imports**: Always use package imports: `import 'package:counter/...'`. NO RELATIVE IMPORTS.
+- **DNA & Brain**:
     - `lib/data/models.dart`: Data classes only. No DB/UI imports.
-    - `lib/data/database_service.dart`: The ONLY file allowed to handle HTTP/Database logic.
+    - `lib/data/database_service.dart`: The Brain root and database boundary; focused domain logic lives in its `part of` modules.
 
 ## 4. 🛑 POCKETBASE IRON RULES (CRITICAL CONSTRAINTS)
 **VIOLATING THESE RULES WILL BREAK THE APP. READ CAREFULLY.**
 1. **THE TYPE LAW (String Only):** PocketBase system IDs (for records, users, categories) are strictly 15-character Strings. You MUST NEVER parse, hash, cast, or convert a PocketBase ID into an `int` (e.g., do not use `int.tryParse` or `hashCode` on an ID). Any legacy local database code expecting an `int` ID MUST be refactored to use `String`.
-2. **THE AUTH LAW:** The SINGLE source of truth for the current user's active session is `pb.authStore.model?.id`. Do NOT invent local caching mechanisms that alter this ID or fall back to integer `0`. If `authStore` is invalid or empty, the API must strictly block network requests.
-3. **THE REST URL LAW:** When constructing URL paths for `PATCH` or `DELETE` requests (e.g., `/api/collections/records/records/{id}`), you MUST exclusively use the 15-character PocketBase system `id`. You MUST NEVER use a legacy UUID (like `record_id` or `plan_id`) as a URL path segment. UUIDs are passive metadata only.
+2. **THE AUTH LAW:** The SINGLE source of truth for the current user's active session is the PocketBase auth store (`pb.authStore.record.id` / SDK model id as applicable). Do NOT invent local caching mechanisms that alter this ID or fall back to integer `0`. If auth is invalid or empty, the API must strictly block network requests.
+3. **THE REST URL LAW:** When constructing URL paths for `PATCH` or `DELETE` requests, you MUST exclusively use the 15-character PocketBase system `id`. You MUST NEVER use a business identifier such as `record_id` or `plan_id` as a URL path segment. Business IDs are metadata only unless a governing document explicitly states otherwise.
 
 ## 5. DATABASE PROTOCOL (THE LAW)
-**Refer to @DATA_MAP.md as the Single Source of Truth for all Field Names. Refer to @pocketbase_MANIFEST for URL construction, ID formats, and response parsing.**
+**Refer to `docs/DATA_MAP.md` as the Single Source of Truth for field names. Refer to `docs/POCKETBASE_MANIFEST.md` for collection names, relation semantics, ID formats, and response parsing.**
 
 ### 5.1 Identification & Endpoints
-- **NO INTEGER IDs**: Strictly forbidden to use row indices.
-- **URL Pattern**: Use base table URLs from @DATA_MAP.md. 
-- **The Master Key**: Every request MUST include the `user_id` string from the auth store. Every `GET` must filter: `?filter=(user_id='{{current_user_id}}')`.
+- **NO INTEGER IDs**: Strictly forbidden to use row indices as database identity.
+- **The Master Key**: Every owned request MUST respect the current PocketBase user/profile relation and the ownership rules in `docs/POCKETBASE_MANIFEST.md`.
 - **PATCH over PUT**: Use PATCH for updates to avoid sending sensitive/unmodified data.
 
 ### 5.2 Payload Structure
-- **Null Safety**: NEVER use `!`. Always use `?.` or `??` for database-derived values.
-- **Optimistic UI**: Update local state/UI BEFORE the HTTP call. Do not await network responses to refresh the interface.
-- **Law of Optimistic UI (Shadow State)**: User actions (Start/Stop/Update on **records**) must not wait on the server to refresh the UI. Apply a **shadow** local state in **&lt;100 ms**, then run the PocketBase call in the background; on failure **rollback** stable state and show **one** debounced error. Implemented in `DatabaseService` only.
+- **Null Safety**: Avoid unnecessary `!` for database-derived values; validate or use safe nullable handling.
+- **Optimistic UI**: Update local state/UI BEFORE the network call. Do not await network responses to refresh the interface.
+- **Law of Optimistic UI (Shadow State)**: User actions (Start/Stop/Update on **records**) must not wait on the server to refresh the UI. Apply a **shadow** local state in **<100 ms**, then run the PocketBase call in the background; on failure **rollback** stable state and show **one** debounced error. Implemented in `DatabaseService` only.
 
 ### 5.3 Field Name Strictness (STRICT)
-- **Records**: Use `record_id` (UUID metadata), `id` (15-char PB system ID), `category_id`, `status` (`running`/`stopped`), `checklist` (JSON string).
-- **Categories**: Use `category_id`, `color_value` (Integer), `icon_code_point` (Integer).
-- **Plans**: Use `plan_id`, `is_done` (Boolean), `order` (Integer).
+- **Records**: Follow `docs/DATA_MAP.md` and `docs/POCKETBASE_MANIFEST.md`; distinguish business `record_id` from system `id` and use relation IDs exactly as documented.
+- **Categories**: Follow the live PocketBase schema and the category relation rules in the governing docs.
+- **Plans**: Follow the live PocketBase schema; `plan_id` is business metadata and PocketBase row `id` is the system identity.
 
 ## 6. Core Logic Guards
-- **Singleton Stop**: Any 'Start' action must first trigger a 'Stop' for any existing 'running' records in the DatabaseService.
-- **Initialization**: `main.dart` must show a loading state until `DatabaseService.loadInitialData()` returns true.
-- **Word-Match Law**: Category matching must split titles by space and match exact whole words.
+- **Singleton Stop**: Any 'Start' action must first trigger the documented singleton-stop behavior for existing running records.
+- **Initialization**: Do not show active product UI before required auth/profile bootstrap is ready; optional background services must not block first useful render.
+- **Word-Match Law**: Category matching must use the canonical whole-word policy, not ad-hoc substring matching.
 
 ## 7. Testing & Verification
-- After every change, provide a "Manual Test" step.
-- If a test fails, DO NOT GUESS. Ask for the Debug Console log.
+- After every change, provide the relevant verification performed and a concise manual test when runtime behavior changed.
+- If a test fails, diagnose the concrete failure before changing unrelated code.
 
 ## 8. ANTI-SPAM & PERFORMANCE PROTOCOL (THE IRON LAW)
 **Strict prohibition on aggressive polling and redundant logging to protect VPS resources and developer sanity.**
 
 ### 8.1 The Silence Rule (Console & Network)
 - **NO SILENT SUCCESS**: Forbidden to `print` successful background tasks (e.g., `200 OK`, `Health OK`). The console must be **SILENT** unless there is a State Change or Explicit User Action.
-- **DEBOUNCED ERRORS**: Background process failures must log the error **ONCE**. Do not spam the same error in a loop. 
-- **NO LOG-POLLING**: Every log entry must be unique. If the same line repeats multiple times per second, the code is considered broken.
+- **DEBOUNCED ERRORS**: Background process failures must log the error **ONCE**. Do not spam the same error in a loop.
+- **NO LOG-POLLING**: Every repeated diagnostic path must be bounded/debounced. If the same line repeats multiple times per second in release, the code is considered broken.
 
 ### 8.2 Polling & Loop Guards
-- **MANDATORY COOLDOWN**: Any background fetch (health check, list refresh) MUST have a **15-second minimum cooldown** between calls.
-- **CIRCUIT BREAKER**: If a request fails 3 times, the service MUST stop all attempts for **60 seconds**.
-- **EVENT-DRIVEN ONLY**: Data fetching must be triggered ONLY by `initState`, manual pull-to-refresh, or server-side push.
-- **BUILD METHOD PURITY**: Under no circumstances should a network call or `print` be triggered from within a Flutter `build()` method.
+- **NO AGGRESSIVE POLLING**: Prefer event-driven updates, realtime subscriptions, explicit refresh, or appropriately slow scheduled refresh over tight polling loops.
+- **CIRCUIT BREAKER**: Repeated failing background requests must back off rather than spin continuously.
+- **EVENT-DRIVEN FIRST**: Data fetching should be driven by lifecycle/user intent/realtime events whenever practical.
+- **BUILD METHOD PURITY**: Under no circumstances should a network call or logging side effect be triggered from within a Flutter `build()` method.
 
 ### 8.3 ID Translation Integrity
-- **NO UUID PATCHING**: It is strictly forbidden to send a legacy hyphenated UUID to a REST endpoint expecting a 15-character System ID.
-- **MANDATORY RESOLUTION**: Any operation on a record (Stop/Delete) MUST first verify the ID. If a legacy UUID is somehow passed from the UI, it **must** be translated to the 15-character System ID via the local cache before the request is fired.
+- **NO BUSINESS-ID PATCHING**: It is strictly forbidden to send a business ID to a REST endpoint expecting a 15-character PocketBase system ID.
+- **MANDATORY RESOLUTION**: Operations that require a PocketBase row ID must resolve/verify that ID through the canonical Brain/cache path before the request is fired.
 
 ## 9. LAW OF THE MAIN THREAD (IRON RULES)
 **Non-negotiable. Any violation is a critical bug.**
@@ -84,13 +83,34 @@ alwaysApply: true
 
 2. **Zero-await UI policy:** **Never** `await` network I/O, PocketBase writes, Wear OS sync, or heavy disk before updating UI for that user intent. Apply local/shadow state first; run synchronization with **`unawaited(...)`** (or equivalent fire-and-forget) and rollback on failure.
 
-3. **Main-thread isolation:** Large JSON parsing, full-list transforms, deep category-tree walks, and heavy record-history filtering **must not** block the UI isolate’s event loop for long stretches. Prefer chunking, `Future`/`scheduleMicrotask` yields, or **`Isolate.run` / `compute`** when work is CPU-heavy or data is large.
+3. **Main-thread isolation:** Large JSON parsing, full-list transforms, deep category-tree walks, and heavy record-history filtering **must not** block the UI isolate’s event loop for long stretches. Prefer chunking/yields or **`Isolate.run` / `compute`** when work is CPU-heavy or data is large.
 
-4. **No blocking initializers on record path:** Speech-to-Text prewarm, one-shot ghost cleanup, plan flush, and Wear **must not** sit on the critical **start/stop record** code path. Schedule them **after** the user-visible update (delayed/zero-duration yield + `unawaited`).
+4. **No blocking initializers on record path:** Speech-to-Text prewarm, one-shot ghost cleanup, plan flush, and Wear **must not** sit on the critical **start/stop record** code path. Schedule them **after** the user-visible update.
 
-5. **Wear / platform bridge:** `DatabaseService` does **not** own `MethodChannel` Wear I/O (that lives under `lib/features/wear/`). The Brain’s **Wear-lite** load path must **not** await realtime subscription or other optional background hooks that are not required for the watch UI to render.
+5. **Wear / platform bridge:** `DatabaseService` does **not** own `MethodChannel` Wear I/O. The Brain’s Wear-lite load path must **not** await optional background hooks that are not required for the watch UI to render.
+
+### 9.1 REACTIVE UI HOT-PATH LAW (P0)
+
+The August 25, 2026 Plans > Time View CPU incident is a permanent regression class. The following are mandatory:
+
+1. **No expensive work inside repeated render callbacks.** Flutter `build()`, sort comparators, painters, layout callbacks, gesture-update callbacks, stream/listener callbacks, and periodic timers must not hide expensive projection, full-list scans, cache/database traversal, parsing, logging, or network work.
+
+2. **Compute once, reuse many times.** If a rebuild needs an expensive derived value (timezone projection, normalized layout input, category lookup, etc.), compute it **once per item per rebuild/input revision** and pass/cache the result. Never call an expensive projection from a sort comparator: sorting is `O(N log N)` comparisons and silently multiplies the cost.
+
+3. **No duplicate passes without proof.** Do not sort/project/normalize the same list, then repeat the same full pass later in the same rebuild. If a second pass is unavoidable, document why and add a regression test/budget for it.
+
+4. **Offscreen pages are operationally idle.** `PageView`, `IndexedStack`, keep-alive pages, and prefetched day pages may preserve UI state, but invisible pages must not run domain refreshes, expensive projections, global-stream reactions, periodic timers, or resource loading unless that background behavior is explicitly required. Gate heavy listeners/work on active/visible state.
+
+5. **Periodic visual updates invalidate the smallest scope.** A clock/now-line/progress animation must repaint/rebuild only the smallest relevant widget or use a dedicated listenable/painter. Do not use a timer to trigger a full-page rebuild for a local visual change. Every timer/ticker/subscription must be cancelled in `dispose()`.
+
+6. **Release diagnostics must be cheap.** Per-plan/per-row lifecycle diagnostics and hot-path logging default OFF in release. Diagnostic code must never become part of the normal render cost.
+
+7. **Performance regressions require executable contracts.** When a hot-path bug is found, add a regression test or measurable budget that prevents the same shape from returning. For Plans > Time View, `test/plans_time_performance_contract_test.dart` is a permanent contract: projection must not occur inside the sort comparator or be repeated across the main hour-grid rebuild path; background work must remain active-page-only.
+
+8. **Verification before merge:** Any change touching Time View projection/sorting, Planning page lifecycle/listeners, PageView day mounting, periodic timers, or performance flags must run the focused performance contract plus the relevant Time View tests and normal architecture guard. Compilation alone is insufficient evidence of performance safety.
 
 Before editing any code, read and follow:
+- AGENTS.md
 - AGENT_NAVIGATION.md
 - docs/APP_STRUCTURE.md
 - docs/ARCHITECTURE.md
@@ -98,14 +118,13 @@ Before editing any code, read and follow:
 - docs/DATA_MAP.md
 - docs/ROADMAP.md
 
-If docs/ is not visible in the current Cursor context, stop and ask the user to attach/open the required docs.
-
 Architecture rules:
 - lib/data/ is the Brain. It must not import lib/features/.
 - lib/features/ is UI only. Durable state and PocketBase I/O belong in lib/data/.
 - database_service.dart is the Brain root; domain logic lives in part files.
-- PocketBase system ids are 15-char strings. Do not use business UUIDs in REST paths or relation payloads.
+- PocketBase system ids are 15-char strings. Do not use business IDs in REST paths or relation payloads that require system IDs.
 - UI mutations must be optimistic: update local Brain cache first, notify UI, then sync PocketBase in background.
 - Do not introduce full refetch fan-out after small mutations unless unavoidable.
 - Date + time picking must use the Omni-Picker.
 - Do not rewrite architecture when fixing local bugs.
+- Treat `build()` cost, offscreen-page work, periodic rebuilds, and repeated projections as correctness concerns, not optional optimization.

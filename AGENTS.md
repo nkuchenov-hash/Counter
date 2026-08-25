@@ -120,6 +120,18 @@ Emergency response:
 4. Gate verbose diagnostics behind debug/profile flags.
 5. Continue only with a smaller scoped fix and verification.
 
+### Reactive UI Hot-Path Guardrails
+
+These rules are mandatory after the 2026-08-25 Plans > Time View CPU regression:
+
+- **No expensive derived work inside repeated callbacks.** Do not perform projection, full-list scans, cache/database traversal, parsing, network work, or release logging inside Flutter `build()`, sort comparators, painters, layout callbacks, gesture-update callbacks, high-frequency listeners, or periodic timers unless the cost is explicitly bounded and justified.
+- **Compute once and reuse.** Expensive values such as timezone projections must be computed once per item per rebuild/input revision. Calling an expensive projection from a sort comparator is forbidden because sorting multiplies the work across `O(N log N)` comparisons.
+- **No duplicate full passes.** Do not sort/project/normalize the same collection twice in one rebuild path without a documented reason and a regression test/budget.
+- **Offscreen pages are operationally idle.** `PageView`, `IndexedStack`, keep-alive, and prefetched pages may preserve visual state but must not run heavy global-stream reactions, projections, timers, domain refreshes, or resource loading when invisible unless explicitly required. Gate heavy work on active/visible state.
+- **Periodic visuals invalidate the smallest scope.** A clock/now-line/progress update must not trigger a full-page rebuild when a local repaint/listenable can own the change. Timers, tickers, and subscriptions must be cancelled in `dispose()`.
+- **Performance regressions become executable contracts.** Add a permanent regression test or measurable budget when a hot-path bug is found. For Plans > Time View, `test/plans_time_performance_contract_test.dart` must continue to prohibit projection inside the sort comparator, duplicate projection/sort in the hour-grid rebuild, background work from inactive pages, aggressive full-page timer cadence, and release lifecycle diagnostics.
+- **Compilation is insufficient.** Any change touching Time View projection/sorting, Planning lifecycle/listeners, PageView day mounting, periodic timers, or performance flags must run the focused performance contract and relevant Time View tests before merge.
+
 ## Design System and Canonical Components
 
 - Feature screens should compose canonical components from `lib/core/widgets/` and approved shared widgets instead of recreating local copies.
@@ -192,6 +204,8 @@ For structure/import-boundary work, also run:
 python scripts/audit/repository_hygiene.py
 python scripts/audit/documentation_parity.py
 ```
+
+For Plans > Time View / Planning hot-path changes, also run the focused performance contract and relevant Time View regression suites; do not treat `flutter analyze` or a successful build as performance verification.
 
 Before merge, architecture-changing branches must pass the GitHub Actions `Architecture Guard / strict-structure` check.
 
