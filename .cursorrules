@@ -1,7 +1,7 @@
 # Cursor rules (pointer)
 
-Authoritative Flutter + NocoDB rules live in **`.cursor/rules/flutter_expert.mdc`** (always applied), including **§9 LAW OF THE MAIN THREAD** (100ms UI feedback, zero-await before shadow state, no blocking STT/Wear/cleanup on record path).
+Authoritative always-applied Flutter rules live in **`.cursor/rules/flutter_expert.mdc`**, including **LAW OF THE MAIN THREAD** and the **REACTIVE UI HOT-PATH LAW**. Governing runtime contracts are in **`docs/ARCHITECTURE.md`**.
 
-**Mandatory for ALL database (NocoDB) work and ALL related layout tasks:** follow **`NOCODB_MANIFEST.md`** at the repo root together with **`lib/DATA_MAP.md`**. Do not invent alternate URL shapes, link payloads, or parsing behavior; update the manifest first if the stack changes.
+**Mandatory for ALL PocketBase/database work:** read **`docs/POCKETBASE_MANIFEST.md`** together with **`docs/DATA_MAP.md`**. Do not invent alternate URL shapes, relation payloads, ID semantics, or parsing behavior; update the governing docs first if the stack changes.
 
-Architecture high-level contracts (including main-thread law) are in **`ARCHITECTURE.md`**.
+**Performance is correctness:** no expensive projection, sorting, cache/database traversal, full-list transformation, network work, logging, or other domain work may be hidden inside Flutter `build()`, sort comparators, painters, layout callbacks, or frequently firing listeners without explicit bounded cost and regression coverage. Offscreen `PageView` / `IndexedStack` pages must remain operationally idle unless the background work is explicitly required. Periodic visual updates must invalidate the smallest possible UI scope and must be cancelled on dispose.
