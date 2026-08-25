@@ -1,5 +1,4 @@
 name: One-shot ETNIKA PocketBase correction
-# retrigger: 2026-08-25
 
 on:
   push:
@@ -26,17 +25,14 @@ jobs:
       POCKETBASE_SERVICE: ${{ secrets.POCKETBASE_SERVICE }}
       POCKETBASE_DEPLOY_DIR: ${{ secrets.POCKETBASE_DEPLOY_DIR }}
     steps:
-      - name: Checkout canonical source
+      - name: Checkout canonical main
         uses: actions/checkout@v4
         with:
           ref: main
           fetch-depth: 0
 
-      - name: Validate ETNIKA hook syntax
-        shell: bash
-        run: |
-          set -euo pipefail
-          node --check pb_hooks/zz_google_fit_final_normalize_once.pb.js
+      - name: Validate ETNIKA hook
+        run: node --check pb_hooks/zz_google_fit_final_normalize_once.pb.js
 
       - name: Prepare SSH
         shell: bash
@@ -50,15 +46,15 @@ jobs:
           chmod 600 ~/.ssh/lifeos_pocketbase
           ssh-keyscan -p "$SSH_PORT" -H "${SSH_HOST:-217.114.0.201}" >> ~/.ssh/known_hosts
 
-      - name: Deploy canonical PocketBase bundle
+      - name: Install ETNIKA hook and restart PocketBase
         shell: bash
         run: |
           set -euo pipefail
-          ARCHIVE="/tmp/lifeos-pocketbase-etnika-${GITHUB_RUN_ID}.tar.gz"
-          tar -czf "$ARCHIVE" pb_hooks pb_migrations
-          scp -i ~/.ssh/lifeos_pocketbase -P "$SSH_PORT" "$ARCHIVE" "$SSH_USER@$SSH_HOST:$ARCHIVE"
+          scp -i ~/.ssh/lifeos_pocketbase -P "$SSH_PORT" \
+            pb_hooks/zz_google_fit_final_normalize_once.pb.js \
+            "$SSH_USER@$SSH_HOST:/tmp/zz_google_fit_final_normalize_once.pb.js"
           ssh -i ~/.ssh/lifeos_pocketbase -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" \
-            "POCKETBASE_SERVICE='$POCKETBASE_SERVICE' POCKETBASE_DEPLOY_DIR='$POCKETBASE_DEPLOY_DIR' ARCHIVE='$ARCHIVE' bash -s" <<'REMOTE'
+            "POCKETBASE_SERVICE='$POCKETBASE_SERVICE' POCKETBASE_DEPLOY_DIR='$POCKETBASE_DEPLOY_DIR' bash -s" <<'REMOTE'
           set -euo pipefail
           if [[ "$(id -u)" -eq 0 ]]; then SUDO=""; else SUDO="sudo -n"; fi
           service_name="${POCKETBASE_SERVICE:-}"
@@ -70,29 +66,25 @@ jobs:
           if [[ -z "$app_dir" && -n "$service_name" ]]; then app_dir="$(systemctl show "$service_name" -p WorkingDirectory --value 2>/dev/null || true)"; fi
           if [[ -z "$app_dir" && -n "$pid" ]]; then app_dir="$(readlink -f "/proc/$pid/cwd" 2>/dev/null || true)"; fi
           [[ -n "$service_name" && -n "$app_dir" && -d "$app_dir" ]]
-
-          $SUDO mkdir -p "$app_dir/pb_hooks" "$app_dir/pb_migrations"
-          $SUDO tar -xzf "$ARCHIVE" -C "$app_dir" pb_hooks pb_migrations
-          rm -f "$ARCHIVE"
-          $SUDO systemctl daemon-reload
+          $SUDO install -m 0644 /tmp/zz_google_fit_final_normalize_once.pb.js "$app_dir/pb_hooks/zz_google_fit_final_normalize_once.pb.js"
+          rm -f /tmp/zz_google_fit_final_normalize_once.pb.js
           $SUDO systemctl restart "$service_name"
-
           for attempt in {1..30}; do
             code="$(curl -sS -o /dev/null -w '%{http_code}' https://217-114-0-201.sslip.io/api/health || true)"
             if [[ "$code" == "200" ]]; then exit 0; fi
             sleep 2
           done
-          journalctl -u "$service_name" -n 80 --no-pager || true
+          journalctl -u "$service_name" -n 100 --no-pager || true
           exit 1
           REMOTE
 
-      - name: Verify ETNIKA directly in production
+      - name: Read ETNIKA production state
         shell: bash
         run: |
           set -euo pipefail
-          sleep 10
+          sleep 8
           ssh -i ~/.ssh/lifeos_pocketbase -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" \
-            "POCKETBASE_DEPLOY_DIR='$POCKETBASE_DEPLOY_DIR' POCKETBASE_SERVICE='$POCKETBASE_SERVICE' bash -s" > /tmp/etnika-production-result.txt <<'REMOTE'
+            "POCKETBASE_SERVICE='$POCKETBASE_SERVICE' POCKETBASE_DEPLOY_DIR='$POCKETBASE_DEPLOY_DIR' bash -s" > /tmp/etnika-result.txt <<'REMOTE'
           set -euo pipefail
           service_name="${POCKETBASE_SERVICE:-}"
           if [[ -z "$service_name" ]]; then
@@ -102,62 +94,54 @@ jobs:
           app_dir="${POCKETBASE_DEPLOY_DIR:-}"
           if [[ -z "$app_dir" && -n "$service_name" ]]; then app_dir="$(systemctl show "$service_name" -p WorkingDirectory --value 2>/dev/null || true)"; fi
           if [[ -z "$app_dir" && -n "$pid" ]]; then app_dir="$(readlink -f "/proc/$pid/cwd" 2>/dev/null || true)"; fi
-
           hook_line="$(journalctl -u "$service_name" --since '10 minutes ago' --no-pager 2>/dev/null | grep '\[ETNIKA_HOMEPAGE_PATH_ONCE\]' | tail -1 || true)"
           status="no_log"
           case "$hook_line" in
             *"] ok"*) status="ok" ;;
-            *"delete_error"*) status="delete_error" ;;
             *"create_error"*) status="create_error" ;;
+            *"delete_error"*) status="delete_error" ;;
           esac
           printf 'etnika_hook_status=%s\n' "$status"
-          printf 'etnika_hook_log=%s\n' "$(printf '%s' "$hook_line" | sed 's/[^[:alnum:] _:\[\].=-]/?/g' | tail -c 500)"
-
+          printf 'etnika_hook_log=%s\n' "$(printf '%s' "$hook_line" | tr -cd '[:alnum:] _:\[\].=-' | tail -c 500)"
           python3 - "$app_dir/pb_data/data.db" <<'PY'
           import json, sqlite3, sys
           con=sqlite3.connect(f'file:{sys.argv[1]}?mode=ro', uri=True); con.row_factory=sqlite3.Row
           cats=con.execute("SELECT id,user_id,name,parent_id,is_archived FROM categories").fetchall()
           roots={r['id']:r for r in cats if (r['name'] or '').strip().casefold()=='этника' and not bool(r['is_archived'])}
-          print('etnika_active_roots='+str(len(roots)))
           root_paths=[]
-          for root in roots.values():
-              root_paths.extend(con.execute("SELECT id,path_id FROM paths WHERE user_id=? AND category_link=?",(root['user_id'],root['id'])).fetchall())
-          print('etnika_root_path_rows='+str(len(root_paths)))
-          all_children=[r for r in cats if r['parent_id'] in roots and (r['name'] or '').strip().casefold()=='обновление основной страницы сайта']
-          children=[r for r in all_children if not bool(r['is_archived'])]
-          print('etnika_homepage_child_total='+str(len(all_children)))
-          print('etnika_homepage_child_matches='+str(len(children)))
+          for r in roots.values(): root_paths += con.execute("SELECT id,path_id FROM paths WHERE user_id=? AND category_link=?",(r['user_id'],r['id'])).fetchall()
+          children=[r for r in cats if r['parent_id'] in roots and (r['name'] or '').strip().casefold()=='обновление основной страницы сайта' and not bool(r['is_archived'])]
           child_paths=[]; stages_count=0; actions_count=0
           if len(children)==1:
-              child=children[0]
-              child_paths=con.execute("SELECT id,path_id,active_revision_link FROM paths WHERE user_id=? AND category_link=? AND archived=0",(child['user_id'],child['id'])).fetchall()
+              c=children[0]
+              child_paths=con.execute("SELECT id,path_id,active_revision_link FROM paths WHERE user_id=? AND category_link=? AND archived=0",(c['user_id'],c['id'])).fetchall()
               if len(child_paths)==1:
-                  rev=con.execute("SELECT content FROM path_revisions WHERE id=? AND user_id=? AND path_id=?",(child_paths[0]['active_revision_link'],child['user_id'],child_paths[0]['path_id'])).fetchone()
+                  rev=con.execute("SELECT content FROM path_revisions WHERE id=?",(child_paths[0]['active_revision_link'],)).fetchone()
                   if rev:
                       try: data=json.loads(rev['content']) if isinstance(rev['content'],str) else (rev['content'] or {})
                       except Exception: data={}
                       stages=data.get('stages') or []
                       stages_count=len(stages)
                       actions_count=sum(len((s or {}).get('actions') or []) for s in stages if isinstance(s,dict))
+          plan_count=0
+          if len(roots)==1:
+              r=next(iter(roots.values())); ids=[f'etnika-homepage-redesign-2026-08-{d:02d}' for d in range(25,32)]; q=','.join('?' for _ in ids)
+              plan_count=con.execute(f"SELECT count(*) FROM plans WHERE user_id=? AND plan_id IN ({q})",(r['user_id'],*ids)).fetchone()[0]
+          print('etnika_active_roots='+str(len(roots)))
+          print('etnika_root_path_rows='+str(len(root_paths)))
+          print('etnika_homepage_child_matches='+str(len(children)))
           print('etnika_child_path_rows='+str(len(child_paths)))
           print('etnika_path_stages='+str(stages_count))
           print('etnika_path_actions='+str(actions_count))
-          plan_count=0
-          if len(roots)==1:
-              root=next(iter(roots.values()))
-              ids=[f'etnika-homepage-redesign-2026-08-{d:02d}' for d in range(25,32)]
-              q=','.join('?' for _ in ids)
-              plan_count=con.execute(f"SELECT count(*) FROM plans WHERE user_id=? AND plan_id IN ({q})",(root['user_id'],*ids)).fetchone()[0]
           print('etnika_week_plans='+str(plan_count))
           print('etnika_plans_gate_clean='+str(plan_count==0).lower())
-          verified=(len(roots)==1 and len(root_paths)==0 and len(children)==1 and len(child_paths)==1 and stages_count==17 and actions_count==44 and plan_count==0)
-          print('etnika_homepage_verified='+str(verified).lower())
+          print('etnika_homepage_verified='+str(len(roots)==1 and len(root_paths)==0 and len(children)==1 and len(child_paths)==1 and stages_count==17 and actions_count==44 and plan_count==0).lower())
           con.close()
           PY
           REMOTE
-          cat /tmp/etnika-production-result.txt
+          cat /tmp/etnika-result.txt
 
-      - name: Publish ETNIKA production result on main
+      - name: Publish verification on main
         shell: bash
         run: |
           set -euo pipefail
@@ -165,11 +149,11 @@ jobs:
           git reset --hard origin/main
           python3 - <<'PY'
           from pathlib import Path
-          target=Path('_tmp_sleep_cloud_result.txt')
-          old=target.read_text(encoding='utf-8').splitlines() if target.exists() else []
-          keep=[line for line in old if not line.startswith('etnika_')]
-          fresh=Path('/tmp/etnika-production-result.txt').read_text(encoding='utf-8').splitlines()
-          target.write_text('\n'.join(keep+fresh)+'\n',encoding='utf-8')
+          p=Path('_tmp_sleep_cloud_result.txt')
+          old=p.read_text(encoding='utf-8').splitlines() if p.exists() else []
+          keep=[x for x in old if not x.startswith('etnika_')]
+          fresh=Path('/tmp/etnika-result.txt').read_text(encoding='utf-8').splitlines()
+          p.write_text('\n'.join(keep+fresh)+'\n',encoding='utf-8')
           PY
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
