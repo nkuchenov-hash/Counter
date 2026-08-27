@@ -37,21 +37,17 @@ void main() {
     expect(startup, isNot(contains('addPlanningTask(')));
   });
 
-  test('backend removes and permanently blocks legacy seeded routines', () {
+  test('backend purges and permanently blocks legacy seeded routines', () {
     final hook = File(
-      'pb_hooks/plans.forbid_legacy_daily_routine.pb.js',
-    ).readAsStringSync();
-    final migration = File(
-      'pb_migrations/1787829600_remove_legacy_daily_routines.js',
+      'pb_hooks/zz_google_fit_final_normalize_once.pb.js',
     ).readAsStringSync();
 
-    for (final source in [hook, migration]) {
-      expect(source, contains('LIFEOS_DAILY_ROUTINE_V1|'));
-      expect(source, contains('lifeos-routine-v1-'));
-    }
+    expect(hook, contains('LIFEOS_DAILY_ROUTINE_V1|'));
+    expect(hook, contains('lifeos-routine-v1-'));
     expect(hook, contains('onRecordCreate('));
     expect(hook, contains('onRecordUpdate('));
     expect(hook, contains('BadRequestError'));
-    expect(migration, contains('app.delete(row)'));
+    expect(hook, contains('onBootstrap('));
+    expect(hook, contains('e.app.delete(row)'));
   });
 }
