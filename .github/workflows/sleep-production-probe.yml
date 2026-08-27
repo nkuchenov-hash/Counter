@@ -1,4 +1,4 @@
-name: Generic Sleep Production Probe
+name: Xiaomi Sleep Production Verify
 
 on:
   pull_request:
@@ -17,7 +17,6 @@ jobs:
       SSH_USER: ${{ secrets.POCKETBASE_SSH_USER || secrets.VPS_SSH_USER || secrets.SSH_USER }}
       SSH_HOST: ${{ secrets.POCKETBASE_SSH_HOST || secrets.VPS_HOST || secrets.SSH_HOST }}
       SSH_PORT: ${{ secrets.POCKETBASE_SSH_PORT || secrets.VPS_SSH_PORT || '22' }}
-      POCKETBASE_SERVICE: ${{ secrets.POCKETBASE_SERVICE }}
     steps:
       - name: Prepare SSH
         shell: bash
@@ -33,39 +32,67 @@ jobs:
           chmod 600 ~/.ssh/lifeos_pocketbase
           ssh-keyscan -p "$SSH_PORT" -H "$resolved_host" >> ~/.ssh/known_hosts
 
-      - name: Inspect Google Fit import behavior
+      - name: Reset only expired Xiaomi authorization
         shell: bash
         run: |
           set -euo pipefail
-          echo diagnostic-version=20260823-fit-import-cleanup
-          ssh -i ~/.ssh/lifeos_pocketbase -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" \
-            "SERVICE='${POCKETBASE_SERVICE:-pocketbase.service}' bash -s" <<'REMOTE'
+          ssh -i ~/.ssh/lifeos_pocketbase -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
           set -euo pipefail
-          service="${SERVICE:-pocketbase.service}"
-          app_dir="$(systemctl show "$service" -p WorkingDirectory --value)"
-          db="$app_dir/pb_data/data.db"
-          echo LOG_BEGIN
-          journalctl -u "$service" --since '2026-08-23 10:30:00' --no-pager | grep -E 'google fit sleep sync (complete|failed)' | tail -n 30 || true
-          echo LOG_END
-          DB_PATH="$db" python3 - <<'PY'
-          import os, sqlite3
-          con=sqlite3.connect(f'file:{os.environ["DB_PATH"]}?mode=ro',uri=True); con.row_factory=sqlite3.Row
-          queries={
-            'ALL_RECORDS':"SELECT count(*) n FROM records",
-            'GOOGLE_EXT_SOURCE':"SELECT count(*) n FROM records WHERE external_source='google_fit'",
-            'GOOGLE_SLEEP_SOURCE':"SELECT count(*) n FROM records WHERE sleep_source='google_fit'",
-            'SLEEP_EXTERNAL_KIND':"SELECT count(*) n FROM records WHERE external_kind='sleep'",
-            'TITLED_SLEEP':"SELECT count(*) n FROM records WHERE lower(trim(title)) IN ('sleep','сон')",
-          }
-          for k,q in queries.items(): print(k+'='+str(con.execute(q).fetchone()['n']))
-          rows=con.execute("""SELECT user_id,title,start_time,end_time,created,updated,external_source,sleep_source,external_kind,external_id,sleep_external_id
-             FROM records WHERE external_source='google_fit' OR sleep_source='google_fit' OR external_kind='sleep'
-             ORDER BY end_time DESC LIMIT 30""").fetchall()
-          print('PROVIDER_ROWS_SHOWN=%d'%len(rows))
+          pid="$(pgrep -f '[p]ocketbase.*serve' | sed -n '1p' || true)"
+          [[ -n "$pid" ]]
+          app_dir="$(readlink -f "/proc/$pid/cwd")"
+          DB_PATH="$app_dir/pb_data/data.db" XIAOMI_DIR="$app_dir/pb_data/xiaomi_sleep" python3 - <<'PY'
+          import datetime as dt, json, os, pathlib, sqlite3
+
+          db=os.environ['DB_PATH']
+          root=pathlib.Path(os.environ['XIAOMI_DIR'])
+          con=sqlite3.connect(db, timeout=10); con.row_factory=sqlite3.Row
+          rows=con.execute("SELECT id,user_id,enabled,status,oauth_state_expires_at,last_sync_at,last_session_count,last_imported_count FROM sleep_sync_connections WHERE provider='xiaomi'").fetchall()
+          print('xiaomi_rows='+str(len(rows)))
+          reset=0
+          now=dt.datetime.now(dt.timezone.utc)
           for r in rows:
-              print('PROVIDER_ROW title=%s end=%s created=%s ext_src=%s sleep_src=%s kind=%s ext_id=%s sleep_id=%s'%(
-                r['title'],str(r['end_time'])[:19],str(r['created'])[:19],r['external_source'] or '',r['sleep_source'] or '',r['external_kind'] or '',
-                'yes' if r['external_id'] else 'no','yes' if r['sleep_external_id'] else 'no'))
+              uid=str(r['user_id'] or '')
+              token=root/f'{uid}.token.json'
+              state=root/f'{uid}.state.json'
+              token_exists=token.exists()
+              state_doc={}
+              try:
+                  if state.exists(): state_doc=json.loads(state.read_text())
+              except Exception:
+                  state_doc={}
+              phase=str(state_doc.get('status') or '')
+              generation=state_doc.get('generation')
+              updated=str(state_doc.get('updated_at') or '')
+              expires_raw=str(r['oauth_state_expires_at'] or '')
+              def parse(v):
+                  if not v: return None
+                  try: return dt.datetime.fromisoformat(v.replace('Z','+00:00')).astimezone(dt.timezone.utc)
+                  except Exception: return None
+              expires=parse(expires_raw)
+              state_updated=parse(updated)
+              expired=(expires is None or expires <= now)
+              stale_state=(state_updated is not None and (now-state_updated).total_seconds() > 15*60)
+              print('authorized='+str(token_exists).lower())
+              print('db_status='+str(r['status'] or ''))
+              print('oauth_expired='+str(expired).lower())
+              print('state_present='+str(state.exists()).lower())
+              print('state_status='+(phase or 'none'))
+              print('state_generation='+(str(generation) if generation is not None else 'none'))
+              print('state_stale='+str(stale_state).lower())
+              if token_exists:
+                  continue
+              if str(r['status'] or '') == 'connecting' and (expired or stale_state or phase == 'error'):
+                  con.execute("UPDATE sleep_sync_connections SET enabled=0,status='disconnected',last_error='',oauth_state='',oauth_state_expires_at='' WHERE id=?", (r['id'],))
+                  try: state.unlink()
+                  except FileNotFoundError: pass
+                  reset += 1
+          con.commit()
+          left=con.execute("SELECT count(*) FROM sleep_sync_connections WHERE provider='xiaomi' AND status='connecting'").fetchone()[0]
+          latest=con.execute("SELECT date(max(end_time)) FROM records WHERE title='Sleep' OR title='Сон'").fetchone()[0]
+          print('expired_authorizations_reset='+str(reset))
+          print('xiaomi_connecting_after='+str(left))
+          print('latest_sleep_day='+str(latest or 'none'))
           con.close()
           PY
           REMOTE
