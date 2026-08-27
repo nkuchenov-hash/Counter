@@ -44,12 +44,18 @@ void main() {
 
     expect(hook, contains('LIFEOS_DAILY_ROUTINE_V1|'));
     expect(hook, contains('lifeos-routine-v1-'));
-    expect(hook, contains('onRecordCreateRequest('));
-    expect(hook, contains('onRecordUpdateRequest('));
+    expect(hook, contains('onRecordCreateRequest(function(e)'));
+    expect(hook, contains('onRecordUpdateRequest(function(e)'));
     expect(hook, contains('BadRequestError'));
     expect(hook, contains('cronAdd('));
     expect(hook, contains('lifeos_remove_legacy_daily_routines'));
     expect(hook, contains('app.delete(rows[i])'));
     expect(hook, isNot(contains('onBootstrap(')));
+
+    // PocketBase may execute registered callbacks without the hook file's outer
+    // JS scope. Keep request guards self-contained so ordinary plan PATCHes can
+    // never fail with a missing helper ReferenceError.
+    expect(hook, isNot(contains('__lifeosIsSeededRoutine')));
+    expect(hook, isNot(contains('__lifeosRejectSeededRoutineRequest')));
   });
 }
