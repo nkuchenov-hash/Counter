@@ -87,6 +87,24 @@ def main() -> int:
             if 'name: "title"' in path_schema:
                 violations.append("PATH_REDUNDANT_TITLE_FIELD_FORBIDDEN")
 
+    plan_audit_migrations = sorted(MIGRATIONS.glob("*_plans_postponement_audit.js"))
+    if len(plan_audit_migrations) != 1:
+        violations.append(
+            "PLANS_POSTPONEMENT_AUDIT_MIGRATION_COUNT "
+            f"expected=1 actual={len(plan_audit_migrations)}"
+        )
+    else:
+        plan_audit_migration = plan_audit_migrations[0].read_text(encoding="utf-8")
+        for token in (
+            'name: "initial_date_key"',
+            'name: "is_postponed"',
+            "new TextField",
+            "new BoolField",
+            "app.save(plans)",
+        ):
+            if token not in plan_audit_migration:
+                violations.append(f"PLANS_POSTPONEMENT_AUDIT_MIGRATION_MISSING {token}")
+
     required_manifest_tokens = (
         "`paths`",
         "`path_revisions`",
@@ -96,6 +114,8 @@ def main() -> int:
         "same owner",
         "published",
         "pb_migrations/",
+        "initial_date_key",
+        "is_postponed",
     )
     for token in required_manifest_tokens:
         if token not in manifest:
@@ -109,7 +129,9 @@ def main() -> int:
 
     print(
         "pocketbase_schema_contract: OK "
-        f"literal_collections={len(literal_collections)} path_migration={path_migrations[0].name}"
+        f"literal_collections={len(literal_collections)} "
+        f"path_migration={path_migrations[0].name} "
+        f"plan_audit_migration={plan_audit_migrations[0].name}"
     )
     return 0
 
