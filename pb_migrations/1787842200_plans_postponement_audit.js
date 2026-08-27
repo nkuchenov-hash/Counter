@@ -1,5 +1,6 @@
 /// <reference path="../pb_data/types.d.ts" />
 
+// Keep the production plans schema aligned with the Planning bulk-write contract.
 migrate(function(app) {
     var plans = app.findCollectionByNameOrId("plans");
 
