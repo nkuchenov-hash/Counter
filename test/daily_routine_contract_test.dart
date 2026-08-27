@@ -44,10 +44,10 @@ void main() {
 
     expect(hook, contains('LIFEOS_DAILY_ROUTINE_V1|'));
     expect(hook, contains('lifeos-routine-v1-'));
-    expect(hook, contains('onRecordCreate('));
-    expect(hook, contains('onRecordUpdate('));
+    expect(hook, contains('onRecordCreateRequest('));
+    expect(hook, contains('onRecordUpdateRequest('));
     expect(hook, contains('BadRequestError'));
     expect(hook, contains('onBootstrap('));
-    expect(hook, contains('e.app.delete(row)'));
+    expect(hook, contains('e.app.delete(rows[i])'));
   });
 }
