@@ -61,15 +61,7 @@ jobs:
           nohup "$py" "$bridge" login --token-path "$token" --state-path "$state" --max-wait 900 >/tmp/lifeos-xiaomi-chat-probe.log 2>&1 </dev/null &
           for attempt in {1..40}; do
             if [[ -f "$state" ]]; then
-              url="$($py - "$state" <<'PY'
-import json,sys
-try:
-    d=json.load(open(sys.argv[1],encoding='utf-8'))
-    print(d.get('login_url',''))
-except Exception:
-    print('')
-PY
-)"
+              url="$("$py" -c 'import json,sys; print(json.load(open(sys.argv[1],encoding="utf-8")).get("login_url",""))' "$state" 2>/dev/null || true)"
               if [[ -n "$url" ]]; then
                 printf 'XIAOMI_LOGIN_URL=%s\n' "$url"
                 exit 0
