@@ -47,7 +47,9 @@ void main() {
     expect(hook, contains('onRecordCreateRequest('));
     expect(hook, contains('onRecordUpdateRequest('));
     expect(hook, contains('BadRequestError'));
-    expect(hook, contains('onBootstrap('));
-    expect(hook, contains('e.app.delete(rows[i])'));
+    expect(hook, contains('cronAdd('));
+    expect(hook, contains('lifeos_remove_legacy_daily_routines'));
+    expect(hook, contains('app.delete(rows[i])'));
+    expect(hook, isNot(contains('onBootstrap(')));
   });
 }
