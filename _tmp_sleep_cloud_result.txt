@@ -1,3 +1,4 @@
+etnika_hook_status=no_log
 connection=true
 enabled=false
 token=true
@@ -8,9 +9,9 @@ sessions=149
 imported=0
 sleep_last_36h=0
 latest_sleep_day=2026-08-22
-etnika_hook_status=retired_inert
 etnika_active_roots=1
 etnika_root_path_rows=0
+etnika_homepage_child_total=1
 etnika_homepage_child_matches=1
 etnika_child_path_rows=1
 etnika_path_stages=17
