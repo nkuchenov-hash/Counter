@@ -23,17 +23,12 @@ function __lifeosRejectSeededRoutineRequest(e) {
     e.next();
 }
 
-// Request hooks are intentionally used because they are part of the production
-// PocketBase runtime already exercised by records.interval_sanitize.pb.js.
+// Stale app builds are not allowed to recreate the removed seed.
 onRecordCreateRequest(__lifeosRejectSeededRoutineRequest, "plans");
 onRecordUpdateRequest(__lifeosRejectSeededRoutineRequest, "plans");
 
-// PocketBase restarts after each production hook deployment. Purge every
-// historical seeded series for every owner during bootstrap.
-onBootstrap(function(e) {
-    e.next();
-
-    var rows = e.app.findRecordsByFilter(
+function __lifeosPurgeSeededRoutines(app) {
+    var rows = app.findRecordsByFilter(
         "plans",
         "notes_plain ~ {:marker} || plan_id ~ {:planIdPrefix}",
         "id",
@@ -47,7 +42,14 @@ onBootstrap(function(e) {
 
     for (var i = 0; i < rows.length; i++) {
         if (__lifeosIsSeededRoutine(rows[i])) {
-            e.app.delete(rows[i]);
+            app.delete(rows[i]);
         }
     }
+}
+
+// Keep cleanup out of the PocketBase bootstrap path. This cron primitive is
+// already used by the production sleep runtime and cannot prevent server boot.
+// It also acts as a durable cleanup net for any legacy rows already present.
+cronAdd("lifeos_remove_legacy_daily_routines", "* * * * *", function() {
+    __lifeosPurgeSeededRoutines($app);
 });
