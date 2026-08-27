@@ -80,16 +80,16 @@
 
 ---
 
-## 6. Stats & Plan vs Fact
+## 6. Stats
 
 | Field | Detail |
 | :--- | :--- |
-| **User-facing capability** | **Stats:** hierarchical category tree with durations for selected day (inside Timeline tab). **Plan vs Fact:** compares scheduled plans vs actual records for the wall day. |
-| **Proof** | `lib/features/stats/stats_view.dart` — `StatsView`; `lib/features/stats/plan_vs_fact_tab.dart` — `PlanVsFactTab`; `lib/data/plan_service.dart` plan-vs-fact helpers |
-| **User value** | Close the loop between intention and reality |
-| **Status** | **public-ready** (basic plan vs fact; not enterprise analytics) |
-| **Risks / caveats** | Stats respect profile timezone and day clamping; not a full reporting/export suite for end users (admin scripts exist separately). |
-| **Website angle** | “See what you planned — and what you actually did.” |
+| **User-facing capability** | Waking-day time statistics inside Timeline with two focused modes: an expandable project/category tree down to individual sessions, and a visual overview with a donut split by top-level category plus an hourly day timeline using only top-level category blocks. |
+| **Proof** | `lib/features/stats/stats_view.dart` — `StatsView`; `lib/features/stats/stats_detail_tree.dart` — detailed hierarchy; `lib/features/stats/stats_visual_overview.dart` — donut + hourly category timeline |
+| **User value** | See both where tracked time went and how the day was distributed across the biggest areas of life/work |
+| **Status** | **public-ready** |
+| **Risks / caveats** | Stats use the existing waking-day/profile-timezone boundaries and intentionally avoid plan/fact or secondary KPI dashboards for now. |
+| **Website angle** | “See where your time went — by category and across the day.” |
 
 ---
 
