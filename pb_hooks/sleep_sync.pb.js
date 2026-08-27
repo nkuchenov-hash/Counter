@@ -1,9 +1,11 @@
 /// <reference path="../pb_data/types.d.ts" />
 
 // Server-owned sleep synchronization.
-// Google Health is the current brand-neutral cloud source because its reconciled
-// sleep stream can include data uploaded from Health Connect. Legacy Google Fit
-// stays enabled only as a historical fallback until Google Health connects.
+// Google Health remains the current status/run provider while Xiaomi Cloud is
+// re-validated against fresh Mi Fitness data. The deployed client still calls
+// the historical google-fit connect route, so that route intentionally starts
+// the Xiaomi one-time authorization probe without changing the rest of the
+// active sleep pipeline yet.
 routerAdd("GET", "/api/sleep-sync/status", function(e) {
     var sync = require(__hooks + "/google_health_sleep_runtime.js");
     return sync.status(e);
@@ -14,22 +16,19 @@ routerAdd("POST", "/api/sleep-sync/google-health/connect", function(e) {
     return sync.connect(e);
 }, $apis.requireAuth("profiles"));
 
-// Compatibility endpoint used by already deployed Flutter clients.
+// Compatibility endpoint used by already deployed Flutter clients. For the
+// current Xiaomi validation this starts the server-owned Xiaomi QR/browser
+// login. The Xiaomi callback performs an immediate sleep sync after token save.
 routerAdd("POST", "/api/sleep-sync/google-fit/connect", function(e) {
-    var sync = require(__hooks + "/google_health_sleep_runtime.js");
+    var sync = require(__hooks + "/xiaomi_sleep_runtime.js");
     return sync.connect(e);
 }, $apis.requireAuth("profiles"));
 
-// Compatibility endpoint used by the short-lived Mi Fitness web fallback.
-// Cached web clients now receive standard Google Health consent instead of a
-// Xiaomi-specific login page.
 routerAdd("POST", "/api/sleep-sync/xiaomi/connect", function(e) {
-    var sync = require(__hooks + "/google_health_sleep_runtime.js");
+    var sync = require(__hooks + "/xiaomi_sleep_runtime.js");
     return sync.connect(e);
 }, $apis.requireAuth("profiles"));
 
-// Leave this route only so an already-open stale Xiaomi page fails gracefully;
-// no current LIFE OS client starts this flow anymore.
 routerAdd("GET", "/api/sleep-sync/xiaomi/authorize", function(e) {
     var sync = require(__hooks + "/xiaomi_sleep_runtime.js");
     return sync.authorize(e);
