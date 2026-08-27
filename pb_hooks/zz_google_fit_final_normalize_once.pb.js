@@ -1,20 +1,20 @@
 /// <reference path="../pb_data/types.d.ts" />
 
 // Permanent server tombstone for the removed LIFE OS daily-routine bootstrap.
-// This file keeps its historical filename to avoid adding another tracked hook
-// solely for the cleanup contract. The previous ETNIKA one-shot is retired.
+// The historical filename is retained to avoid adding a new tracked hook solely
+// for this compatibility cleanup. The previous ETNIKA one-shot stays retired.
 
-const __lifeosRoutineMarker = "LIFEOS_DAILY_ROUTINE_V1|";
-const __lifeosRoutinePlanIdPrefix = "lifeos-routine-v1-";
+var __lifeosRoutineMarker = "LIFEOS_DAILY_ROUTINE_V1|";
+var __lifeosRoutinePlanIdPrefix = "lifeos-routine-v1-";
 
 function __lifeosIsSeededRoutine(record) {
-    const notes = String(record.getString("notes_plain") || "");
-    const planId = String(record.getString("plan_id") || "").trim();
-    return notes.includes(__lifeosRoutineMarker) ||
-        planId.startsWith(__lifeosRoutinePlanIdPrefix);
+    var notes = String(record.getString("notes_plain") || "");
+    var planId = String(record.getString("plan_id") || "").trim();
+    return notes.indexOf(__lifeosRoutineMarker) >= 0 ||
+        planId.indexOf(__lifeosRoutinePlanIdPrefix) === 0;
 }
 
-function __lifeosRejectSeededRoutine(e) {
+function __lifeosRejectSeededRoutineRequest(e) {
     if (__lifeosIsSeededRoutine(e.record)) {
         throw new BadRequestError(
             "Legacy automatic daily-routine plans are permanently disabled.",
@@ -23,16 +23,17 @@ function __lifeosRejectSeededRoutine(e) {
     e.next();
 }
 
-// Blocks stale app builds and any server code from recreating the removed seed.
-onRecordCreate(__lifeosRejectSeededRoutine, "plans");
-onRecordUpdate(__lifeosRejectSeededRoutine, "plans");
+// Request hooks are intentionally used because they are part of the production
+// PocketBase runtime already exercised by records.interval_sanitize.pb.js.
+onRecordCreateRequest(__lifeosRejectSeededRoutineRequest, "plans");
+onRecordUpdateRequest(__lifeosRejectSeededRoutineRequest, "plans");
 
 // PocketBase restarts after each production hook deployment. Purge every
-// historical seeded series for every owner before normal operation continues.
-onBootstrap((e) => {
+// historical seeded series for every owner during bootstrap.
+onBootstrap(function(e) {
     e.next();
 
-    const rows = e.app.findRecordsByFilter(
+    var rows = e.app.findRecordsByFilter(
         "plans",
         "notes_plain ~ {:marker} || plan_id ~ {:planIdPrefix}",
         "id",
@@ -44,9 +45,9 @@ onBootstrap((e) => {
         },
     );
 
-    for (const row of rows) {
-        if (__lifeosIsSeededRoutine(row)) {
-            e.app.delete(row);
+    for (var i = 0; i < rows.length; i++) {
+        if (__lifeosIsSeededRoutine(rows[i])) {
+            e.app.delete(rows[i]);
         }
     }
 });
