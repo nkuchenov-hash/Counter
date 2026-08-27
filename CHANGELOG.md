@@ -1,3 +1,9 @@
+## 2026-08-27 — Stats visual overview [product]
+
+- Replaced the experimental Overview / Day / Plan-Fact Stats surfaces with two focused modes: the original expandable time tree and a visual Charts view.
+- Added a donut distribution by top-level category and an hourly waking-day timeline using only top-level category colors, icons, and labels.
+- Removed the obsolete `day_stats_dashboard.dart` and `plan_vs_fact_tab.dart` modules; waking-day boundaries, timezone behavior, aggregation, and record semantics remain unchanged.
+
 ## 2026-08-18 — Durable Paths architecture [engineering]
 
 - Replaced plan-backed Path runtime compatibility with dedicated PocketBase `paths` + immutable `path_revisions` and a versioned server migration that imports existing V2 roots.
