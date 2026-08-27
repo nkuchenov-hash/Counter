@@ -1,11 +1,10 @@
 import 'package:counter/data/database_service.dart';
-import 'package:counter/data/plans/daily_routine_service.dart';
 
 /// Planning-owned startup baseline.
 ///
-/// Startup prepares Planning data only. Paths migrations are server-side
-/// PocketBase migrations and Path → Planner projection is explicit through
-/// `PathPlannerBridge`; neither concern is allowed on app/shell startup.
+/// Startup may refresh Planning data, but it must never create plans, routines,
+/// habits, templates, or other user commitments. Plan creation requires an
+/// explicit user action in the application.
 final class PlannerStartupService {
   PlannerStartupService._();
 
@@ -26,6 +25,5 @@ final class PlannerStartupService {
   Future<void> _ensureBaseline() async {
     final db = DatabaseService.instance;
     await db.refreshCategoryRulesFromServer();
-    await ensureDailyRoutineV6();
   }
 }
