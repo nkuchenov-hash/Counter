@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `5ac6290a` on 2026-08-27.**
+**Generated from input HEAD `4f5650e2` on 2026-08-27.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 845 — each appears **exactly once** below.
+**Tracked files:** 844 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -31,7 +31,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | `Brain/data` | 87 |
 | `platform build` | 83 |
 | `shared foundation` | 64 |
-| `developer tool` | 59 |
+| `developer tool` | 58 |
 | `platform resource` | 44 |
 | `Desktop Voice runtime` | 36 |
 | `governing documentation` | 35 |
@@ -57,7 +57,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | Necessity | Count |
 | :--- | ---: |
 | `PROVEN_REQUIRED` | 464 |
-| `REQUIRED_FOR_TEST_OR_TOOLING` | 201 |
+| `REQUIRED_FOR_TEST_OR_TOOLING` | 200 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
 | `GOVERNING_DOCUMENTATION` | 35 |
 | `HISTORICAL_RECORD` | 17 |
@@ -68,7 +68,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | Confidence | Count |
 | :--- | ---: |
 | `HIGH` | 780 |
-| `MEDIUM` | 65 |
+| `MEDIUM` | 64 |
 
 ---
 
@@ -28920,43 +28920,6 @@ RU:
 - **Когда открывать:** Owner или CI запускает `export_price_reporter_timesheet.dart` по инструкции в repo docs.
 - **Можно удалить?** Возможно — ручной экспорт для биллинга; удалять только если не используете.
 - **Связано с:** `docs/website/INTERNAL_NOTES_NOT_FOR_SITE.md`, `exports/` folder.
-
-
-### `scripts/manual/finalize_stats_visual_docs.py`
-
-EN:
-
-- **Human purpose:** Developer script `finalize_stats_visual_docs.py` — run manually for maintenance, smoke test, or deploy helper. Automates a repeatable task documented in repo notes or `DEPLOY.md`.
-- **What this is:** Developer script `finalize_stats_visual_docs.py` — run manually for maintenance, smoke test, or deploy helper.
-- **Why needed:** Automates a repeatable task documented in repo notes or `DEPLOY.md`.
-- **Contents:** PowerShell, Python, or Dart commands for `finalize_stats_visual_docs.py`.
-- **Repository role:** developer tool
-- **Evidence of use:** Documented manual developer/audit script under `scripts/`; run from repo docs or AGENTS.md workflows.
-- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
-- **Deletion consequence:** Broken audit/deploy/manual maintenance command.
-- **Confidence:** MEDIUM
-- **Owner / layer:** developer tooling
-- **Responsibilities:** See script header comments for exact behavior.
-- **When to open:** When workflow documented for `finalize_stats_visual_docs.py` is needed.
-- **Can it be deleted?** No — part of documented dev workflow unless cleanup report removed it.
-- **Connected to:** `scripts/manual/`, `docs/DEPLOY.md`.
-
-RU:
-
-- **Зачем файл человеку:** Dev/CI скрипт `finalize_stats_visual_docs.py` — повторяемая команда из repo docs. Автоматизирует deploy, audit или maintenance без ad-hoc notes.
-- **Что это:** Dev/CI скрипт `finalize_stats_visual_docs.py` — повторяемая команда из repo docs.
-- **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
-- **Содержимое:** Команды PowerShell/Python/Dart в `finalize_stats_visual_docs.py`.
-- **Роль в репозитории:** developer tool
-- **Доказательства использования:** Ручной dev/audit скрипт в `scripts/`; запускается по инструкции в docs/AGENTS.
-- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
-- **Что будет, если удалить:** Сломается audit/deploy или ручная команда сопровождения.
-- **Уверенность:** MEDIUM
-- **Владелец / слой:** инструменты разработчика
-- **Обязанности:** Workflow, описанный в header или `docs/DEPLOY.md`.
-- **Когда открывать:** Owner или CI запускает `finalize_stats_visual_docs.py` по инструкции в repo docs.
-- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
-- **Связано с:** `scripts/manual/`, `docs/DEPLOY.md`.
 
 
 ### `scripts/manual/generate_app_structure_detailed.py`
