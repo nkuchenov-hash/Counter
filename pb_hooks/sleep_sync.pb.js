@@ -46,9 +46,9 @@ routerAdd("DELETE", "/api/sleep-sync/connection", function(e) {
     return require(__hooks + "/xiaomi_sleep_runtime.js").remove(e);
 }, $apis.requireAuth("profiles"));
 
-// Eligibility is checked every minute; xiaomi_sleep_runtime.js throttles actual
-// Xiaomi Cloud calls to the 30-minute catch-up interval plus the configured
-// daily sync point, with a weekly 30-day reconciliation window.
-cronAdd("lifeos_xiaomi_sleep_sync", "* * * * *", function() {
+// One scheduler tick per hour is sufficient. The runtime retries hourly in the
+// wake-up window only while today's sleep is still missing, uses a six-hour
+// repair cadence outside it, and retains the weekly 30-day reconciliation.
+cronAdd("lifeos_xiaomi_sleep_sync", "0 * * * *", function() {
     return require(__hooks + "/xiaomi_sleep_runtime.js").cron($app);
 });
