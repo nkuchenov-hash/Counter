@@ -50,9 +50,35 @@ routerAdd("DELETE", "/api/sleep-sync/connection", function(e) {
     return __sleepSyncXiaomi().remove(e);
 }, $apis.requireAuth("profiles"));
 
+// Temporary migration guard for the already-authorized production account:
+// older provider transitions could leave the Xiaomi row disabled even though a
+// valid server-side token is present. Re-enable only rows with a real token;
+// this guard is removed after the production sync is verified.
+function __sleepSyncBootstrapBoundXiaomi() {
+    var rows = [];
+    try {
+        rows = $app.findRecordsByFilter("sleep_sync_connections", "provider = 'xiaomi'", "", 500, 0);
+    } catch (_) { return; }
+    for (var i = 0; i < rows.length; i++) {
+        try {
+            var row = rows[i];
+            var userId = String(row.get("user_id") || "");
+            if (!/^[A-Za-z0-9_-]{1,80}$/.test(userId)) continue;
+            $os.stat(__hooks + "/../pb_data/xiaomi_sleep/" + userId + ".token.json");
+            if (!row.get("enabled")) {
+                row.set("enabled", true);
+                row.set("status", "connected");
+                row.set("last_error", "");
+                $app.save(row);
+            }
+        } catch (_) {}
+    }
+}
+
 // Eligibility is checked every minute; xiaomi_sleep_runtime.js throttles actual
 // Xiaomi Cloud calls to the 30-minute catch-up interval plus the configured
 // daily sync point, with a weekly 30-day reconciliation window.
 cronAdd("lifeos_xiaomi_sleep_sync", "* * * * *", function() {
+    __sleepSyncBootstrapBoundXiaomi();
     return __sleepSyncXiaomi().cron($app);
 });
