@@ -31,15 +31,17 @@ jobs:
           chmod 600 ~/.ssh/lifeos_pocketbase
           ssh-keyscan -p "$SSH_PORT" -H "${SSH_HOST:-217.114.0.201}" >> ~/.ssh/known_hosts
 
-      - name: Probe Xiaomi aggregated daily sleep API
+      - name: Bind probe token when profile is unambiguous
         shell: bash
         run: |
           set -euo pipefail
           ssh -i ~/.ssh/lifeos_pocketbase -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
           set -euo pipefail
           py=/opt/lifeos-xiaomi-sleep/bin/python
-          token=/root/pb/pb_data/xiaomi_sleep/chat-probe.token.json
-          [[ -f "$token" ]]
-          code=$'import asyncio,sys,time,json\nfrom datetime import datetime,timezone\nfrom mi_fitness import MiHealthClient\ndef sec(v):\n    try: x=float(v or 0)\n    except Exception: return 0\n    while x>1e12: x/=1000\n    return x\ndef offset(v):\n    try: x=float(v.get("timezone",0) or 0)\n    except Exception: x=0\n    if abs(x)<=96: x*=900\n    return x if abs(x)<=86400 else 0\ndef day(ts,off=0):\n    return datetime.fromtimestamp(ts+off,tz=timezone.utc).date().isoformat() if ts>0 else ""\nasync def main():\n    td=json.load(open(sys.argv[1],encoding="utf-8")); uid=int(str(td.get("user_id") or 0))\n    now=datetime.now(timezone.utc); end=int(datetime(now.year,now.month,now.day,23,59,59,tzinfo=timezone.utc).timestamp()); start=end-12*86400+1\n    async with MiHealthClient.from_token(sys.argv[1], base_url="https://ru.hlth.io.mi.com") as c:\n        r=await c._request("GET","/app/v1/data/get_aggregated_fitness_data_by_time",params={"relative_uid":uid,"key":"sleep","tag":"daily_report","start_time":start,"end_time":end,"limit":30})\n    rows=(r.get("result") or {}).get("data_list") or []\n    local_days=set(); segment_days=set(); has27=False\n    for row in rows:\n        try: v=json.loads(row.get("value") or "{}")\n        except Exception: v={}\n        rt=sec(row.get("time")); off=offset(v)\n        if rt: local_days.add(day(rt,off))\n        segs=v.get("segment_details") or []\n        if isinstance(segs,list):\n            for s in segs:\n                if not isinstance(s,dict): continue\n                wake=sec(s.get("wake_up_time")); soff=offset(s)\n                if wake: segment_days.add(day(wake,soff))\n    all_days=local_days|segment_days\n    has27="2026-08-27" in all_days\n    print("AGG_API_OK=true")\n    print("AGG_SLEEP_RECORDS="+str(len(rows)))\n    print("AGG_HAS_AUG27="+str(has27).lower())\n    print("AGG_LATEST_DAY="+(max(all_days) if all_days else "none"))\n    if rows:\n        try: sample=json.loads(rows[-1].get("value") or "{}")\n        except Exception: sample={}\n        print("AGG_VALUE_KEYS="+",".join(sorted(sample.keys())))\nasyncio.run(main())'
-          "$py" -c "$code" "$token"
+          db=/root/pb/pb_data/data.db
+          probe=/root/pb/pb_data/xiaomi_sleep/chat-probe.token.json
+          [[ -f "$db" ]]
+          [[ -f "$probe" ]]
+          code=$'import os,sqlite3,shutil,sys\ndb,probe=sys.argv[1],sys.argv[2]\nc=sqlite3.connect(db)\ncur=c.cursor()\ndef rows(q,p=()):\n    try: return cur.execute(q,p).fetchall()\n    except Exception: return []\nprofiles=[str(r[0]) for r in rows("select id from profiles")]\nconnections=rows("select user_id,provider,enabled from sleep_sync_connections")\nx=[str(r[0]) for r in connections if str(r[1])=="xiaomi"]\ng=[str(r[0]) for r in connections if str(r[1]) in ("google_health","google_fit")]\nprint("PROFILE_COUNT="+str(len(profiles)))\nprint("XIAOMI_CONNECTION_COUNT="+str(len(x)))\nprint("GOOGLE_CONNECTION_COUNT="+str(len(g)))\ncandidate=None\nif len(set(x))==1: candidate=list(set(x))[0]\nelif len(set(g))==1: candidate=list(set(g))[0]\nelif len(profiles)==1: candidate=profiles[0]\nif not candidate:\n    print("BIND_CANDIDATE=ambiguous")\n    raise SystemExit(2)\nprint("BIND_CANDIDATE=unique")\nout=os.path.join(os.path.dirname(probe),candidate+".token.json")\nshutil.copyfile(probe,out)\nos.chmod(out,0o600)\nprint("TOKEN_BOUND=true")\nprint("XIAOMI_CONNECTION_EXISTS="+str(candidate in x).lower())\n'
+          "$py" -c "$code" "$db" "$probe"
           REMOTE
