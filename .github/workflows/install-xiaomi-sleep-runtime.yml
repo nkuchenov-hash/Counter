@@ -89,3 +89,54 @@ jobs:
           print('xiaomi_sleep_runtime=ready')
           PY
           REMOTE
+
+      - name: Verify production Xiaomi bridge and connection
+        shell: bash
+        run: |
+          set -euo pipefail
+          ssh -i ~/.ssh/lifeos_pocketbase -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -euo pipefail
+          app_dir=/root/pb
+          db="$app_dir/pb_data/data.db"
+          bridge="$app_dir/pb_hooks/xiaomi_sleep_bridge.py"
+          py=/opt/lifeos-xiaomi-sleep/bin/python
+          [[ -f "$db" && -f "$bridge" && -x "$py" ]]
+          meta="$(python3 - "$db" <<'PY'
+          import sqlite3,sys
+          con=sqlite3.connect(sys.argv[1]); con.row_factory=sqlite3.Row
+          rows=con.execute("SELECT user_id,enabled,status,last_error,last_sync_at,last_session_count,last_imported_count FROM sleep_sync_connections WHERE provider='xiaomi'").fetchall()
+          print('XIAOMI_CONNECTION_COUNT='+str(len(rows)))
+          if len(rows)==1:
+              r=rows[0]
+              err=(r['last_error'] or '').lower()
+              eclass='none' if not err else ('auth' if ('token' in err or 'authorization' in err or '401' in err) else 'other')
+              print('XIAOMI_ENABLED='+str(bool(r['enabled'])).lower())
+              print('XIAOMI_STATUS='+str(r['status'] or ''))
+              print('XIAOMI_ERROR_CLASS='+eclass)
+              print('XIAOMI_SYNCED='+str(bool(r['last_sync_at'])).lower())
+              print('XIAOMI_LAST_SESSIONS='+str(r['last_session_count'] or 0))
+              print('XIAOMI_LAST_IMPORTED='+str(r['last_imported_count'] or 0))
+              print('XIAOMI_USER='+str(r['user_id']))
+          con.close()
+          PY
+          )"
+          printf '%s\n' "$meta" | grep -v '^XIAOMI_USER='
+          uid="$(printf '%s\n' "$meta" | sed -n 's/^XIAOMI_USER=//p')"
+          [[ -n "$uid" ]]
+          token="$app_dir/pb_data/xiaomi_sleep/$uid.token.json"
+          [[ -f "$token" ]]
+          echo 'XIAOMI_TOKEN_EXISTS=true'
+          result="$($py "$bridge" sync --token-path "$token" --days 14)"
+          "$py" -c 'import json,sys; d=json.loads(sys.argv[1]); s=d.get("sessions") or []; print("XIAOMI_BRIDGE_OK="+str(bool(d.get("ok"))).lower()); print("XIAOMI_BRIDGE_SESSIONS="+str(len(s))); print("XIAOMI_BRIDGE_HAS_AUG27="+str(any(str(x.get("end","")).startswith("2026-08-27") for x in s)).lower()); print("XIAOMI_BRIDGE_LATEST_END="+(str(s[-1].get("end","")) if s else "none")); print("XIAOMI_BRIDGE_ERROR_CLASS="+str(d.get("error_class", "none")))' "$result"
+          python3 - "$db" <<'PY'
+          import sqlite3,sys
+          con=sqlite3.connect(sys.argv[1])
+          latest=con.execute("SELECT date(max(end_time)) FROM records WHERE sleep_source='xiaomi' OR external_source='xiaomi'").fetchone()[0]
+          count=con.execute("SELECT count(*) FROM records WHERE sleep_source='xiaomi' OR external_source='xiaomi'").fetchone()[0]
+          aug27=con.execute("SELECT count(*) FROM records WHERE (sleep_source='xiaomi' OR external_source='xiaomi') AND date(end_time)='2026-08-27'").fetchone()[0]
+          print('XIAOMI_RECORD_COUNT='+str(count))
+          print('XIAOMI_RECORD_HAS_AUG27='+str(aug27>0).lower())
+          print('XIAOMI_RECORD_LATEST_DAY='+str(latest or 'none'))
+          con.close()
+          PY
+          REMOTE
