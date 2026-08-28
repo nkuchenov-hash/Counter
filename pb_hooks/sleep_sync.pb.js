@@ -50,10 +50,10 @@ routerAdd("DELETE", "/api/sleep-sync/connection", function(e) {
     return __sleepSyncXiaomi().remove(e);
 }, $apis.requireAuth("profiles"));
 
-// Temporary migration guard for the already-authorized production account:
-// older provider transitions could leave the Xiaomi row disabled even though a
-// valid server-side token is present. Re-enable only rows with a real token;
-// this guard is removed after the production sync is verified.
+// Temporary production reconciliation for accounts that were authorized while
+// Google was still the active provider. A valid server token is authoritative;
+// run the same exported Xiaomi sync path used by the authenticated endpoint so
+// the first import cannot be skipped by stale scheduler state.
 function __sleepSyncBootstrapBoundXiaomi(app) {
     var rows = [];
     try {
@@ -65,25 +65,27 @@ function __sleepSyncBootstrapBoundXiaomi(app) {
             var userId = String(row.get("user_id") || "");
             if (!/^[A-Za-z0-9_-]{1,80}$/.test(userId)) continue;
             $os.stat(__hooks + "/../pb_data/xiaomi_sleep/" + userId + ".token.json");
-            if (!row.get("enabled")) {
-                row.set("enabled", true);
-                row.set("status", "connected");
-                row.set("last_error", "");
-                app.save(row);
-            }
-        } catch (_) {}
+            row.set("enabled", true);
+            row.set("status", "connected");
+            row.set("last_error", "");
+            app.save(row);
+
+            __sleepSyncXiaomi().run({
+                app: app,
+                auth: { id: userId },
+                json: function() { return null; }
+            });
+        } catch (err) {
+            try { app.logger().error("xiaomi bootstrap reconciliation failed", "error", err); } catch (_) {}
+        }
     }
 }
 
-// Database access is valid only after e.next(). Run one immediate reconciliation
-// after startup so the already-authorized production account does not depend on
-// an old disabled-provider state before the regular scheduler takes over.
+// Database access is valid only after e.next(). Perform one immediate Xiaomi
+// reconciliation after restart; the regular scheduler owns subsequent syncs.
 onBootstrap(function(e) {
     e.next();
-    try {
-        __sleepSyncBootstrapBoundXiaomi(e.app);
-        __sleepSyncXiaomi().cron(e.app);
-    } catch (_) {}
+    __sleepSyncBootstrapBoundXiaomi(e.app);
 });
 
 // Eligibility is checked every minute; xiaomi_sleep_runtime.js throttles actual
