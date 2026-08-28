@@ -33,6 +33,14 @@ jobs:
           chmod 600 ~/.ssh/lifeos_pocketbase
           ssh-keyscan -p "$SSH_PORT" -H "${SSH_HOST:-217.114.0.201}" >> ~/.ssh/known_hosts
 
+      - name: Download self-account SDK on runner
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsSL https://codeload.github.com/ilyanehay/mi-health-mcp/tar.gz/refs/heads/main -o /tmp/mi-health-mcp.tar.gz
+          tar -tzf /tmp/mi-health-mcp.tar.gz | grep -q '/vendor/mi-fitness-python/'
+          scp -i ~/.ssh/lifeos_pocketbase -P "$SSH_PORT" /tmp/mi-health-mcp.tar.gz "$SSH_USER@$SSH_HOST:/tmp/mi-health-mcp.tar.gz"
+
       - name: Verify Xiaomi token and self-account sleep
         shell: bash
         run: |
@@ -56,11 +64,12 @@ jobs:
 
           fork=/tmp/lifeos-mi-health-mcp
           rm -rf "$fork"
-          git clone -q --depth 1 https://github.com/ilyanehay/mi-health-mcp.git "$fork"
+          mkdir -p "$fork"
+          tar -xzf /tmp/mi-health-mcp.tar.gz -C "$fork" --strip-components=1
           pkg="$(find "$fork/vendor/mi-fitness-python" -type d -name mi_fitness -print -quit)"
           [[ -n "$pkg" ]]
           src="$(dirname "$pkg")"
-          code=$'import asyncio,json,sys\nfrom datetime import date\nfrom mi_fitness import MiHealthClient\nasync def main():\n    token=sys.argv[1]\n    td=json.load(open(token,encoding="utf-8"))\n    uid=int(str(td.get("user_id") or "0"))\n    async with MiHealthClient.from_token(token) as c:\n        rows=await c.get_sleep(uid,date.today(),days=7)\n    out=[]\n    for r in rows or []:\n        for s in getattr(r,"segment_details",None) or []:\n            out.append((getattr(s,"bedtime",0),getattr(s,"wake_up_time",0)))\n    print("FORK_SYNC_OK=true")\n    print("FORK_SLEEP_DAYS="+str(len(rows or [])))\n    print("FORK_SLEEP_SEGMENTS="+str(len(out)))\n    if out:\n        from datetime import datetime,timezone\n        latest=max(float(x[1] or 0) for x in out)\n        if latest>1000000000000: latest/=1000\n        print("FORK_LATEST_SLEEP_DAY="+datetime.fromtimestamp(latest,tz=timezone.utc).date().isoformat())\nasyncio.run(main())'
+          code=$'import asyncio,json,sys\nfrom datetime import date,datetime,timezone\nfrom mi_fitness import MiHealthClient\nasync def main():\n    token=sys.argv[1]\n    td=json.load(open(token,encoding="utf-8"))\n    uid=int(str(td.get("user_id") or "0"))\n    async with MiHealthClient.from_token(token) as c:\n        rows=await c.get_sleep(uid,date.today(),days=7)\n    segments=[]\n    for r in rows or []:\n        for s in getattr(r,"segment_details",None) or []:\n            end=float(getattr(s,"wake_up_time",0) or 0)\n            if end>1000000000000: end/=1000\n            if end>0: segments.append(end)\n    print("FORK_SYNC_OK=true")\n    print("FORK_SLEEP_DAYS="+str(len(rows or [])))\n    print("FORK_SLEEP_SEGMENTS="+str(len(segments)))\n    if segments:\n        days={datetime.fromtimestamp(x,tz=timezone.utc).date().isoformat() for x in segments}\n        print("FORK_HAS_AUG27="+str("2026-08-27" in days).lower())\n        print("FORK_LATEST_SLEEP_DAY="+max(days))\nasyncio.run(main())'
           set +e
           output="$(PYTHONPATH="$src" "$py" -c "$code" "$token" 2>/tmp/lifeos-xiaomi-fork.err)"
           rc=$?
@@ -74,4 +83,5 @@ jobs:
             err_class="$(tail -n 1 /tmp/lifeos-xiaomi-fork.err | sed -E 's/^([A-Za-z_][A-Za-z0-9_]*):.*/\1/' | tr -cd 'A-Za-z0-9_')"
             echo "FORK_ERROR_CLASS=${err_class:-unknown}"
           fi
+          rm -f /tmp/mi-health-mcp.tar.gz
           REMOTE
