@@ -457,6 +457,7 @@ class CategoryRowWidget extends StatelessWidget {
                   final highlighted = candidate.isNotEmpty;
                   return LongPressDraggable<CategoryDragData>(
                     data: payload,
+                    dragAnchorStrategy: pointerDragAnchorStrategy,
                     feedback: Material(
                       color: Colors.transparent,
                       child: SizedBox(
