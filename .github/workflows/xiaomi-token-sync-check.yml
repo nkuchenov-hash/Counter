@@ -31,17 +31,16 @@ jobs:
           chmod 600 ~/.ssh/lifeos_pocketbase
           ssh-keyscan -p "$SSH_PORT" -H "${SSH_HOST:-217.114.0.201}" >> ~/.ssh/known_hosts
 
-      - name: Inspect installed Xiaomi data endpoints
+      - name: Probe Xiaomi self-account sleep API
         shell: bash
         run: |
           set -euo pipefail
           ssh -i ~/.ssh/lifeos_pocketbase -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
           set -euo pipefail
-          root=/opt/lifeos-xiaomi-sleep/lib/python3.12/site-packages/mi_fitness/client
-          echo '---DATA---'
-          sed -n '110,310p' "$root/data.py"
-          echo '---BASE---'
-          sed -n '1,230p' "$root/base.py"
-          echo '---ENDPOINT-CONSTANTS---'
-          grep -R -n -E 'HEALTH|DATA|SLEEP|aggregat|data/|latest' /opt/lifeos-xiaomi-sleep/lib/python3.12/site-packages/mi_fitness | head -180 || true
+          py=/opt/lifeos-xiaomi-sleep/bin/python
+          token=/root/pb/pb_data/xiaomi_sleep/chat-probe.token.json
+          [[ -f "$token" ]]
+          echo 'XIAOMI_TOKEN_EXISTS=true'
+          code=$'import asyncio,sys,time,json\nfrom mi_fitness import MiHealthClient\nasync def main():\n    token=sys.argv[1]\n    end=int(time.time())\n    start=end-8*86400\n    try:\n        async with MiHealthClient.from_token(token) as c:\n            r=await c._request("POST","/app/v1/data/get_fitness_data_by_time",params={"start_time":start,"end_time":end,"key":"sleep"})\n        print("SELF_API_OK=true")\n        print("SELF_TOP_KEYS="+",".join(sorted(r.keys())))\n        for k,v in r.items():\n            if isinstance(v,list): print("SELF_LIST_"+k.upper()+"="+str(len(v)))\n            elif isinstance(v,dict): print("SELF_DICT_"+k.upper()+"_KEYS="+",".join(sorted(v.keys())))\n    except Exception as e:\n        print("SELF_API_OK=false")\n        print("SELF_ERROR_CLASS="+type(e).__name__)\n        print("SELF_ERROR="+str(e).split("\\n",1)[0][:240])\nasyncio.run(main())'
+          "$py" -c "$code" "$token"
           REMOTE
