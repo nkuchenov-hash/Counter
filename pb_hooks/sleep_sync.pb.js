@@ -1,6 +1,6 @@
 /// <reference path="../pb_data/types.d.ts" />
 
-// Server-owned sleep synchronization.
+// Server-owned sleep synchronization. Production source: Xiaomi Cloud.
 // Xiaomi Cloud is the active provider for fresh sleep data. Historical Google
 // records remain in PocketBase, but Google Health / Google Fit are no longer
 // active background sync providers.
