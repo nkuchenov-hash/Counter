@@ -54,10 +54,10 @@ routerAdd("DELETE", "/api/sleep-sync/connection", function(e) {
 // older provider transitions could leave the Xiaomi row disabled even though a
 // valid server-side token is present. Re-enable only rows with a real token;
 // this guard is removed after the production sync is verified.
-function __sleepSyncBootstrapBoundXiaomi() {
+function __sleepSyncBootstrapBoundXiaomi(app) {
     var rows = [];
     try {
-        rows = $app.findRecordsByFilter("sleep_sync_connections", "provider = 'xiaomi'", "", 500, 0);
+        rows = app.findRecordsByFilter("sleep_sync_connections", "provider = 'xiaomi'", "", 500, 0);
     } catch (_) { return; }
     for (var i = 0; i < rows.length; i++) {
         try {
@@ -69,16 +69,26 @@ function __sleepSyncBootstrapBoundXiaomi() {
                 row.set("enabled", true);
                 row.set("status", "connected");
                 row.set("last_error", "");
-                $app.save(row);
+                app.save(row);
             }
         } catch (_) {}
     }
 }
 
+// Database access is valid only after e.next(). Run one immediate reconciliation
+// after startup so the already-authorized production account does not depend on
+// an old disabled-provider state before the regular scheduler takes over.
+onBootstrap(function(e) {
+    e.next();
+    try {
+        __sleepSyncBootstrapBoundXiaomi(e.app);
+        __sleepSyncXiaomi().cron(e.app);
+    } catch (_) {}
+});
+
 // Eligibility is checked every minute; xiaomi_sleep_runtime.js throttles actual
 // Xiaomi Cloud calls to the 30-minute catch-up interval plus the configured
 // daily sync point, with a weekly 30-day reconciliation window.
 cronAdd("lifeos_xiaomi_sleep_sync", "* * * * *", function() {
-    __sleepSyncBootstrapBoundXiaomi();
     return __sleepSyncXiaomi().cron($app);
 });
