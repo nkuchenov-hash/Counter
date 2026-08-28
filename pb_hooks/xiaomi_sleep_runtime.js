@@ -5,6 +5,7 @@ var __xiaomiCollection = "sleep_sync_connections";
 var __xiaomiProvider = "xiaomi";
 var __xiaomiDefaultMinutes = 8 * 60;
 var __xiaomiCatchupMs = 30 * 60 * 1000;
+var __xiaomiFullSyncMs = 7 * 24 * 60 * 60 * 1000;
 var __xiaomiPython = "/opt/lifeos-xiaomi-sleep/bin/python";
 
 function __xiaomiEnv(name) {
@@ -87,18 +88,21 @@ function __xiaomiConnection(app, userId, createIfMissing) {
     return record;
 }
 
-function __xiaomiDisableGoogleFit(app, userId) {
-    try {
-        var fit = app.findFirstRecordByFilter(
-            __xiaomiCollection,
-            "user_id = {:uid} && provider = 'google_fit'",
-            { uid: userId }
-        );
-        if (fit.get("enabled")) {
-            fit.set("enabled", false);
-            app.save(fit);
-        }
-    } catch (_) {}
+function __xiaomiDisableGoogleProviders(app, userId) {
+    var providers = ["google_fit", "google_health"];
+    for (var i = 0; i < providers.length; i++) {
+        try {
+            var row = app.findFirstRecordByFilter(
+                __xiaomiCollection,
+                "user_id = {:uid} && provider = {:provider}",
+                { uid: userId, provider: providers[i] }
+            );
+            if (row.get("enabled")) {
+                row.set("enabled", false);
+                app.save(row);
+            }
+        } catch (_) {}
+    }
 }
 
 function __xiaomiHasToken(userId) {
@@ -125,13 +129,25 @@ function __xiaomiStatus(app, connection) {
     var userId = String(connection.get("user_id") || "");
     var configured = !!userId && __xiaomiHasToken(userId);
     var phase = String(connection.get("status") || "disconnected");
+
+    if (!configured && phase === "connecting") {
+        var oauthExpires = __xiaomiDate(connection.get("oauth_state_expires_at"));
+        if (!oauthExpires || oauthExpires.getTime() <= Date.now()) {
+            phase = "disconnected";
+            connection.set("status", phase);
+            connection.set("last_error", "");
+            try { app.save(connection); } catch (_) {}
+        }
+    }
+
     if (configured && (phase === "connecting" || phase === "disconnected")) {
         phase = "connected";
         connection.set("status", "connected");
         connection.set("last_error", "");
         try { app.save(connection); } catch (_) {}
-        __xiaomiDisableGoogleFit(app, userId);
     }
+    if (configured) __xiaomiDisableGoogleProviders(app, userId);
+
     var lastError = String(connection.get("last_error") || "");
     return {
         configured: configured,
@@ -239,7 +255,7 @@ function __xiaomiUpsert(app, userId, profile, category, session) {
     record.set("category_id", category.id);
     record.set("category_link", category.id);
     record.set("type", "record");
-    record.set("checklist", "[]");
+    if (!existing) record.set("checklist", "[]");
     record.set("external_source", "xiaomi");
     record.set("external_id", session.externalId);
     record.set("external_kind", "sleep");
@@ -281,7 +297,7 @@ function __xiaomiRunBridge(userId, days) {
         "--token-path",
         __xiaomiTokenPath(userId),
         "--days",
-        String(days || 7)
+        String(days || 14)
     );
     var raw = toString(cmd.output()).trim();
     if (!raw) throw new Error("Xiaomi sleep bridge returned no data");
@@ -306,14 +322,16 @@ function __xiaomiRunConnection(app, connection) {
     var userId = String(connection.get("user_id") || "");
     if (!userId || !__xiaomiHasToken(userId)) throw new Error("Xiaomi authorization is required");
     var profile = __xiaomiProfile(app, userId);
-    var payload = __xiaomiRunBridge(userId, 7);
+    var now = new Date();
+    var lastFull = __xiaomiDate(connection.get("last_full_sync_at"));
+    var fullDue = !lastFull || now.getTime() - lastFull.getTime() >= __xiaomiFullSyncMs;
+    var payload = __xiaomiRunBridge(userId, fullDue ? 30 : 14);
     var sessions = __xiaomiNormalizeSessions(payload);
     var category = __xiaomiSleepCategory(app, userId, profile.get("primary_language"));
     var imported = 0;
     for (var i = 0; i < sessions.length; i++) {
         imported += __xiaomiUpsert(app, userId, profile, category, sessions[i]);
     }
-    var now = new Date();
     var local = __xiaomiLocalClock(profile, now);
     connection.set("status", "connected");
     connection.set("enabled", true);
@@ -323,11 +341,10 @@ function __xiaomiRunConnection(app, connection) {
     connection.set("last_imported_count", imported);
     connection.set("last_sleep_count", sessions.length);
     connection.set("last_activity_count", 0);
-    if (!String(connection.get("last_full_sync_at") || "")) connection.set("last_full_sync_at", now.toISOString());
+    if (fullDue) connection.set("last_full_sync_at", now.toISOString());
     connection.set("last_error", "");
     app.save(connection);
-    __xiaomiDisableGoogleFit(app, userId);
-    try { app.logger().info("xiaomi sleep sync complete", "sessions", sessions.length, "imported", imported); } catch (_) {}
+    __xiaomiDisableGoogleProviders(app, userId);
     return { sessions: sessions.length, imported: imported, sleep: sessions.length };
 }
 
@@ -374,7 +391,8 @@ function connect(e) {
         connection.set("status", "connected");
         connection.set("last_error", "");
         e.app.save(connection);
-        __xiaomiDisableGoogleFit(e.app, userId);
+        __xiaomiDisableGoogleProviders(e.app, userId);
+        try { __xiaomiRunSafe(e.app, connection); } catch (_) {}
         return e.json(200, __xiaomiStatus(e.app, connection));
     }
 
@@ -444,7 +462,7 @@ function authorize(e) {
         connection.set("status", "connected");
         connection.set("last_error", "");
         e.app.save(connection);
-        __xiaomiDisableGoogleFit(e.app, userId);
+        __xiaomiDisableGoogleProviders(e.app, userId);
         try { __xiaomiRunSafe(e.app, connection); } catch (_) {}
         var returnUrl = __xiaomiHtmlEscape(__xiaomiReturnUrl());
         return e.html(200,
@@ -466,9 +484,9 @@ function authorize(e) {
     var content = "<!doctype html><meta charset='utf-8'><meta http-equiv='refresh' content='3'>" +
         "<meta name='viewport' content='width=device-width,initial-scale=1'><title>Connect Xiaomi to Life OS</title>" +
         "<style>body{font:16px system-ui;max-width:560px;margin:40px auto;padding:0 20px;color:#171717}img{display:block;max-width:280px;width:100%;margin:24px auto;border-radius:16px}a{display:inline-block;padding:12px 18px;border-radius:12px;background:#111;color:#fff;text-decoration:none}p{line-height:1.5;color:#555}</style>" +
-        "<h1>Connect Xiaomi to Life OS</h1><p>Scan the QR code with the Xiaomi Account app. This is required only once.</p>";
-    if (qr) content += "<img src='" + qr + "' alt='Xiaomi login QR'>";
+        "<h1>Connect Xiaomi to Life OS</h1><p>Complete Xiaomi Account login. This is required only once.</p>";
     if (login) content += "<p><a target='_blank' rel='noopener' href='" + login + "'>Open Xiaomi login</a></p>";
+    if (qr) content += "<img src='" + qr + "' alt='Xiaomi login QR'>";
     content += "<p>This page will return to Life OS automatically after authorization.</p>";
     return e.html(200, content);
 }
@@ -483,12 +501,8 @@ function settings(e) {
         connection.set("daily_sync_minutes", Math.floor(minutes));
     }
     e.app.save(connection);
-    if (body.enabled !== undefined && !body.enabled) {
-        try {
-            var fit = e.app.findFirstRecordByFilter(__xiaomiCollection, "user_id = {:uid} && provider = 'google_fit'", { uid: e.auth.id });
-            fit.set("enabled", false);
-            e.app.save(fit);
-        } catch (_) {}
+    if (!!connection.get("enabled") && __xiaomiHasToken(e.auth.id)) {
+        __xiaomiDisableGoogleProviders(e.app, e.auth.id);
     }
     return e.json(200, __xiaomiStatus(e.app, connection));
 }
@@ -496,6 +510,8 @@ function settings(e) {
 function run(e) {
     var connection = __xiaomiConnection(e.app, e.auth.id, false);
     if (!connection || !__xiaomiHasToken(e.auth.id)) return e.json(409, { error: "not_connected" });
+    connection.set("enabled", true);
+    e.app.save(connection);
     try {
         var result = __xiaomiRunSafe(e.app, connection);
         return e.json(200, { ok: true, sessions: result.sessions, imported: result.imported, sleep: result.sleep });
@@ -509,11 +525,7 @@ function remove(e) {
     __xiaomiRemove(__xiaomiTokenPath(e.auth.id));
     __xiaomiRemove(__xiaomiStatePath(e.auth.id));
     if (connection) e.app.delete(connection);
-    try {
-        var fit = e.app.findFirstRecordByFilter(__xiaomiCollection, "user_id = {:uid} && provider = 'google_fit'", { uid: e.auth.id });
-        fit.set("enabled", false);
-        e.app.save(fit);
-    } catch (_) {}
+    __xiaomiDisableGoogleProviders(e.app, e.auth.id);
     return e.json(200, { ok: true });
 }
 
