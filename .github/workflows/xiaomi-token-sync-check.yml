@@ -31,7 +31,7 @@ jobs:
           chmod 600 ~/.ssh/lifeos_pocketbase
           ssh-keyscan -p "$SSH_PORT" -H "${SSH_HOST:-217.114.0.201}" >> ~/.ssh/known_hosts
 
-      - name: Probe Xiaomi RU self sleep API
+      - name: Verify target sleep date through Xiaomi RU cloud
         shell: bash
         run: |
           set -euo pipefail
@@ -40,6 +40,6 @@ jobs:
           py=/opt/lifeos-xiaomi-sleep/bin/python
           token=/root/pb/pb_data/xiaomi_sleep/chat-probe.token.json
           [[ -f "$token" ]]
-          code=$'import asyncio,sys,time,json\nfrom mi_fitness import MiHealthClient\nasync def main():\n    end=int(time.time()); start=end-8*86400\n    try:\n        async with MiHealthClient.from_token(sys.argv[1], base_url="https://ru.hlth.io.mi.com") as c:\n            r=await c._request("POST","/app/v1/data/get_fitness_data_by_time",params={"start_time":start,"end_time":end,"key":"sleep"})\n        result=r.get("result") or {}; rows=result.get("data_list") or []\n        print("RU_SELF_API_OK=true")\n        print("RU_SELF_DATA_LIST_COUNT="+str(len(rows)))\n        print("RU_SELF_HAS_MORE="+str(bool(result.get("has_more"))).lower())\n        if rows:\n            first=rows[0]\n            print("RU_SELF_ITEM_KEYS="+",".join(sorted(first.keys())))\n            for k,v in first.items():\n                if isinstance(v,dict): print("RU_SELF_DICT_"+str(k).upper()+"_KEYS="+",".join(sorted(v.keys())))\n                elif isinstance(v,str):\n                    try:\n                        x=json.loads(v)\n                        if isinstance(x,dict): print("RU_SELF_JSON_"+str(k).upper()+"_KEYS="+",".join(sorted(x.keys())))\n                        elif isinstance(x,list): print("RU_SELF_JSON_"+str(k).upper()+"_LIST_LEN="+str(len(x)))\n                    except Exception: pass\n    except Exception as e:\n        print("RU_SELF_API_OK=false")\n        print("RU_SELF_ERROR_CLASS="+type(e).__name__)\n        print("RU_SELF_ERROR="+str(e).split("\\n",1)[0][:220])\nasyncio.run(main())'
+          code=$'import asyncio,sys,time,json\nfrom datetime import datetime,timezone\nfrom mi_fitness import MiHealthClient\ndef sec(v):\n    try:\n        x=float(v or 0)\n    except Exception:\n        return 0\n    if x>1e12: x/=1000\n    return x\nasync def main():\n    end=int(time.time()); start=end-8*86400\n    async with MiHealthClient.from_token(sys.argv[1], base_url="https://ru.hlth.io.mi.com") as c:\n        r=await c._request("POST","/app/v1/data/get_fitness_data_by_time",params={"start_time":start,"end_time":end,"key":"sleep"})\n    rows=(r.get("result") or {}).get("data_list") or []\n    target="2026-08-27"\n    target_found=False\n    parseable=0\n    for row in rows:\n        try: v=json.loads(row.get("value") or "{}")\n        except Exception: v={}\n        wake=sec(v.get("wake_up_time") or v.get("device_wake_up_time") or row.get("time"))\n        if wake>0:\n            parseable+=1\n            d=datetime.fromtimestamp(wake,tz=timezone.utc).date().isoformat()\n            if d==target: target_found=True\n    print("RU_SELF_API_OK=true")\n    print("RU_SLEEP_RECORDS="+str(len(rows)))\n    print("RU_SLEEP_PARSEABLE="+str(parseable))\n    print("RU_HAS_AUG27="+str(target_found).lower())\nasyncio.run(main())'
           "$py" -c "$code" "$token"
           REMOTE
