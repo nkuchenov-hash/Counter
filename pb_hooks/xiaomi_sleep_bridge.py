@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Small server-only bridge between PocketBase JSVM and Xiaomi Health cloud.
+"""Server-only bridge between PocketBase JSVM and Xiaomi Health cloud.
 
 The script never prints or logs Xiaomi credentials. Login state contains only the
 QR/browser URLs needed to complete the one-time authorization. Sync writes only
@@ -13,11 +13,17 @@ import asyncio
 import json
 import os
 import sys
-from datetime import date, datetime, timezone
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 from mi_fitness import MiHealthClient, XiaomiAuth
+
+
+XIAOMI_HEALTH_BASE_URL = os.environ.get(
+    "XIAOMI_HEALTH_BASE_URL",
+    "https://ru.hlth.io.mi.com",
+).rstrip("/")
 
 
 def _utc_now() -> str:
@@ -40,9 +46,7 @@ def _epoch_seconds(raw: Any) -> float | None:
         return None
     if value <= 0:
         return None
-    if value >= 1_000_000_000_000:
-        value /= 1000.0
-    if value >= 10_000_000_000:
+    while value >= 1_000_000_000_000:
         value /= 1000.0
     return value
 
@@ -57,7 +61,7 @@ def _iso_from_epoch(raw: Any) -> str | None:
         return None
 
 
-def _safe_session(start_raw: Any, end_raw: Any, duration_hint: Any = 0) -> dict[str, Any] | None:
+def _safe_session(start_raw: Any, end_raw: Any) -> dict[str, Any] | None:
     start_s = _epoch_seconds(start_raw)
     end_s = _epoch_seconds(end_raw)
     if start_s is None or end_s is None or end_s <= start_s:
@@ -72,18 +76,49 @@ def _safe_session(start_raw: Any, end_raw: Any, duration_hint: Any = 0) -> dict[
     end = _iso_from_epoch(end_raw)
     if not start or not end:
         return None
-    duration_min = 0
-    try:
-        duration_min = int(duration_hint or round(elapsed / 60))
-    except (TypeError, ValueError):
-        duration_min = round(elapsed / 60)
     external_id = f"xiaomi:{int(start_s)}:{int(end_s)}"
     return {
         "external_id": external_id,
         "start": start,
         "end": end,
-        "duration_minutes": duration_min,
+        "duration_minutes": round(elapsed / 60),
     }
+
+
+def _value_object(row: Any) -> dict[str, Any]:
+    if not isinstance(row, dict):
+        return {}
+    value = row.get("value")
+    if isinstance(value, dict):
+        return value
+    if not isinstance(value, str) or not value:
+        return {}
+    try:
+        parsed = json.loads(value)
+    except (TypeError, ValueError, json.JSONDecodeError):
+        return {}
+    return parsed if isinstance(parsed, dict) else {}
+
+
+def _sessions_from_rows(rows: Any) -> dict[str, dict[str, Any]]:
+    sessions: dict[str, dict[str, Any]] = {}
+    if not isinstance(rows, list):
+        return sessions
+    for row in rows:
+        value = _value_object(row)
+        segments = value.get("segment_details") or value.get("items") or []
+        if not isinstance(segments, list):
+            continue
+        for segment in segments:
+            if not isinstance(segment, dict):
+                continue
+            normalized = _safe_session(
+                segment.get("bedtime"),
+                segment.get("wake_up_time"),
+            )
+            if normalized:
+                sessions[normalized["external_id"]] = normalized
+    return sessions
 
 
 async def _login(args: argparse.Namespace) -> int:
@@ -167,19 +202,48 @@ async def _sync(args: argparse.Namespace) -> int:
         if uid <= 0:
             raise ValueError("missing Xiaomi user id")
 
-        sessions: dict[str, dict[str, Any]] = {}
-        async with MiHealthClient.from_token(token_path) as client:
-            rows = await client.get_sleep(uid, date.today(), days=max(1, min(int(args.days), 30)))
+        days = max(1, min(int(args.days), 30))
+        now = datetime.now(timezone.utc)
+        end = int(datetime(now.year, now.month, now.day, 23, 59, 59, tzinfo=timezone.utc).timestamp())
+        start = end - (days + 1) * 86400 + 1
+        limit = max(30, days + 2)
 
-        for row in rows or []:
-            for segment in getattr(row, "segment_details", None) or []:
-                normalized = _safe_session(
-                    getattr(segment, "bedtime", 0),
-                    getattr(segment, "wake_up_time", 0),
-                    getattr(segment, "duration", 0),
+        sessions: dict[str, dict[str, Any]] = {}
+        async with MiHealthClient.from_token(token_path, base_url=XIAOMI_HEALTH_BASE_URL) as client:
+            response = await client._request(
+                "GET",
+                "/app/v1/data/get_aggregated_fitness_data_by_time",
+                params={
+                    "relative_uid": uid,
+                    "key": "sleep",
+                    "tag": "daily_report",
+                    "start_time": start,
+                    "end_time": end,
+                    "limit": limit,
+                },
+            )
+            result = response.get("result") if isinstance(response, dict) else None
+            rows = result.get("data_list") if isinstance(result, dict) else []
+            sessions.update(_sessions_from_rows(rows))
+
+            # Some Xiaomi accounts can temporarily lag on the daily aggregate.
+            # Raw self-account data is only a fallback; aggregate daily_report is
+            # the canonical source because it is what exposes the newest sleep.
+            if not sessions:
+                raw_response = await client._request(
+                    "GET",
+                    "/app/v1/data/get_fitness_data_by_time",
+                    params={
+                        "relative_uid": uid,
+                        "key": "sleep",
+                        "start_time": start,
+                        "end_time": end,
+                        "limit": limit,
+                    },
                 )
-                if normalized:
-                    sessions[normalized["external_id"]] = normalized
+                raw_result = raw_response.get("result") if isinstance(raw_response, dict) else None
+                raw_rows = raw_result.get("data_list") if isinstance(raw_result, dict) else []
+                sessions.update(_sessions_from_rows(raw_rows))
 
         ordered = sorted(sessions.values(), key=lambda item: item["start"])
         print(json.dumps({"ok": True, "sessions": ordered}, separators=(",", ":")))
@@ -205,7 +269,7 @@ def main() -> int:
 
     sync = sub.add_parser("sync")
     sync.add_argument("--token-path", required=True)
-    sync.add_argument("--days", type=int, default=7)
+    sync.add_argument("--days", type=int, default=14)
 
     args = parser.parse_args()
     if args.command == "login":
