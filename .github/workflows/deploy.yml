@@ -2,8 +2,8 @@ name: Deploy LIFE OS Flutter Web to GitHub Pages
 
 # Server-schema-before-client law: every main push first completes the PocketBase
 # workflow. UI-only pushes make that workflow a validated no-op at deploy phase,
-# then this workflow publishes the exact validated SHA. Keep this path runnable
-# for UI hotfixes such as sleep authorization retry behavior.
+# then this workflow publishes the exact validated SHA. Stale workflow_run events
+# must never cancel or replace a newer main build.
 on:
   workflow_run:
     workflows:
@@ -15,7 +15,7 @@ permissions:
 
 concurrency:
   group: life-os-web-deploy
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   build-and-deploy:
@@ -26,27 +26,49 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
+      - name: Reject stale validated revision
+        id: freshness
+        shell: bash
+        env:
+          TRIGGER_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          set -euo pipefail
+          MAIN_SHA="$(git ls-remote https://github.com/${GITHUB_REPOSITORY}.git refs/heads/main | awk '{print $1}')"
+          [[ -n "$MAIN_SHA" ]]
+          if [[ "$TRIGGER_SHA" == "$MAIN_SHA" ]]; then
+            echo 'fresh=true' >> "$GITHUB_OUTPUT"
+            echo "Publishing current main $TRIGGER_SHA"
+          else
+            echo 'fresh=false' >> "$GITHUB_OUTPUT"
+            echo "Skipping stale trigger $TRIGGER_SHA; current main is $MAIN_SHA"
+          fi
+
       - name: Checkout validated main revision
+        if: steps.freshness.outputs.fresh == 'true'
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.workflow_run.head_sha }}
           fetch-depth: 0
 
       - name: Set up Flutter 3.41.6
+        if: steps.freshness.outputs.fresh == 'true'
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.41.6'
           channel: stable
 
       - name: Create env.dart
+        if: steps.freshness.outputs.fresh == 'true'
         run: |
           mkdir -p lib/core/env
           printf '%s\n' 'abstract final class Env {' '  static const String placeholder = '\'''\'';' '}' > lib/core/env/env.dart
 
       - name: Install Flutter dependencies
+        if: steps.freshness.outputs.fresh == 'true'
         run: flutter pub get
 
       - name: Build LIFE OS web
+        if: steps.freshness.outputs.fresh == 'true'
         run: |
           SHORT_SHA=$(git rev-parse --short HEAD)
           BUILD_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)
@@ -55,6 +77,7 @@ jobs:
             --dart-define=BUILD_TIME="$BUILD_TIME"
 
       - name: Version Flutter web entrypoint
+        if: steps.freshness.outputs.fresh == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -100,6 +123,7 @@ jobs:
           test "$(tr -d '\r\n' < build/web/lifeos-build.txt)" = "$FULL_SHA"
 
       - name: Preserve published content and default-branch workflows
+        if: steps.freshness.outputs.fresh == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -133,6 +157,7 @@ jobs:
           git worktree remove --force /tmp/counter-gh-pages
 
       - name: Deploy to gh-pages
+        if: steps.freshness.outputs.fresh == 'true'
         uses: JamesIves/github-pages-deploy-action@v4
         with:
           folder: build/web
