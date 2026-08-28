@@ -91,6 +91,30 @@ jobs:
           PY
           REMOTE
 
+      - name: Normalize authorized Xiaomi production connection
+        shell: bash
+        run: |
+          set -euo pipefail
+          ssh -i ~/.ssh/lifeos_pocketbase -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -euo pipefail
+          db=/root/pb/pb_data/data.db
+          python3 - "$db" <<'PY'
+          import sqlite3,sys
+          con=sqlite3.connect(sys.argv[1], timeout=30)
+          con.execute('PRAGMA busy_timeout=30000')
+          rows=con.execute("SELECT user_id FROM sleep_sync_connections WHERE provider='xiaomi'").fetchall()
+          if len(rows) != 1:
+              raise SystemExit('expected exactly one Xiaomi production connection')
+          uid=rows[0][0]
+          con.execute("UPDATE sleep_sync_connections SET enabled=1,status='connected',last_error='',last_sync_at='',last_sync_local_day='' WHERE user_id=? AND provider='xiaomi'", (uid,))
+          con.execute("UPDATE sleep_sync_connections SET enabled=0 WHERE user_id=? AND provider IN ('google_fit','google_health')", (uid,))
+          con.commit()
+          con.close()
+          print('XIAOMI_CONNECTION_NORMALIZED=true')
+          PY
+          REMOTE
+          sleep 75
+
       - name: Verify production Xiaomi bridge and connection
         shell: bash
         run: |
