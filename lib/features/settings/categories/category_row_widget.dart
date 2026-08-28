@@ -1,4 +1,3 @@
-import 'package:counter/core/app_colors.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/l10n/category_db_display.dart';
@@ -142,17 +141,26 @@ class CategoryDepthLayout {
 const double kCategoryStaggerIndentPerDepth = 16;
 const double kCategoryBandScreenMarginH = 16;
 const double kCategoryStripeInnerPadAfterBorder = 10;
-
-/// Semi-transparent category tint over surface (“glass”).
 const double kCategoryGlassAlpha = 0.175;
 const double kCategoryGlassAlphaSelected = 0.22;
 const double kCategoryGroupStripeWidth = 6;
 
-enum CategoryBandLayout {
-  /// Horizontal list: tile side from `N` full + 17% peek.
-  horizontalPeek,
+/// Payload used by category drag/drop. Identity is stable across bands; [sourceIndex]
+/// remains available for the existing sibling reorder operation.
+class CategoryDragData {
+  const CategoryDragData({
+    required this.categoryId,
+    required this.sourceParentId,
+    required this.sourceIndex,
+  });
 
-  /// Multi-row wrap: `N` tiles per row from grid math (strict 8pt gap).
+  final int categoryId;
+  final int? sourceParentId;
+  final int sourceIndex;
+}
+
+enum CategoryBandLayout {
+  horizontalPeek,
   wrapGrid,
 }
 
@@ -169,6 +177,8 @@ class CategoryRowWidget extends StatelessWidget {
     required this.onAppearanceTap,
     required this.onLongPressOpenEditor,
     this.onReorder,
+    this.canMoveToParent,
+    this.onMoveToParent,
     this.onAddTap,
     this.showAdd = false,
     this.editMode = false,
@@ -177,8 +187,6 @@ class CategoryRowWidget extends StatelessWidget {
 
   final List<CategoryRule> items;
   final int depth;
-
-  /// Local id of the parent category for this band (null for roots) — stripe inherits [color_value].
   final int? immediateParentId;
   final int? selectedId;
   final void Function(int? id) onSelect;
@@ -186,16 +194,16 @@ class CategoryRowWidget extends StatelessWidget {
   final void Function(CategoryRule r) onAppearanceTap;
   final void Function(CategoryRule r) onLongPressOpenEditor;
   final void Function(int oldIndex, int newIndex)? onReorder;
+  final bool Function(CategoryDragData data, int? newParentId)? canMoveToParent;
+  final void Function(CategoryDragData data, int? newParentId)? onMoveToParent;
   final VoidCallback? onAddTap;
   final bool showAdd;
   final bool editMode;
   final CategoryBandLayout layout;
 
-  /// Single category cell: glass fill; fixed [layout.side]×[layout.side] square (no stretch).
   static Widget _buildCategoryTile({
     required BuildContext context,
     required CategoryRule r,
-    required int depth,
     required bool isSelected,
     required bool editMode,
     required CategoryDepthLayout layout,
@@ -217,25 +225,18 @@ class CategoryRowWidget extends StatelessWidget {
       color.withValues(alpha: glassAlpha),
       scheme.surface,
     );
-
-    final minTap = (layout.side * 0.42).clamp(
-      32.0,
-      44.0,
-    ); // scales down on 70px tiles
-
+    final minTap = (layout.side * 0.42).clamp(32.0, 44.0);
     final labelStyle = textTheme.titleSmall?.copyWith(
       fontSize: layout.fontSize,
       fontWeight: layout.fontWeight,
       height: 1.15,
       color: textTheme.bodyLarge?.color,
     );
-
     final iconWidget = Icon(
       r.iconOrDefault,
       size: editMode ? layout.iconEdit : layout.iconBrowse,
       color: color,
     );
-
     final iconHitTarget = editMode
         ? InkWell(
             onTap: () => onAppearanceTap(r),
@@ -250,7 +251,6 @@ class CategoryRowWidget extends StatelessWidget {
             padding: const EdgeInsets.symmetric(vertical: 2),
             child: iconWidget,
           );
-
     final gear = editMode
         ? IconButton(
             icon: const Icon(Icons.settings_rounded),
@@ -264,7 +264,6 @@ class CategoryRowWidget extends StatelessWidget {
             tooltip: t(loc, 'edit_keywords'),
           )
         : null;
-
     final radius = layout.borderRadius;
 
     return SizedBox(
@@ -298,10 +297,7 @@ class CategoryRowWidget extends StatelessWidget {
                       fit: BoxFit.scaleDown,
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
-                        children: [
-                          iconHitTarget,
-                          gear,
-                        ],
+                        children: [iconHitTarget, gear],
                       ),
                     )
                   else
@@ -340,13 +336,7 @@ class CategoryRowWidget extends StatelessWidget {
       neutral.withValues(alpha: 0.12),
       scheme.surface,
     );
-    final tileLabelStyle = textTheme.titleSmall?.copyWith(
-      fontSize: layout.fontSize,
-      fontWeight: layout.fontWeight,
-      color: scheme.onSurfaceVariant,
-    );
     final r = layout.borderRadius;
-
     return SizedBox(
       width: layout.side,
       height: layout.side,
@@ -375,7 +365,11 @@ class CategoryRowWidget extends StatelessWidget {
                   ),
                   Text(
                     t(currentLocale.value, 'add'),
-                    style: tileLabelStyle,
+                    style: textTheme.titleSmall?.copyWith(
+                      fontSize: layout.fontSize,
+                      fontWeight: layout.fontWeight,
+                      color: scheme.onSurfaceVariant,
+                    ),
                     textAlign: TextAlign.center,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -391,9 +385,6 @@ class CategoryRowWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bandGap = kCategoryGridGap;
-
-    /// LayoutBuilder [maxWidth] is the band’s content width **after** stripe + standard L/R margin.
     final bandMath = Padding(
       padding: const EdgeInsets.fromLTRB(
         kCategoryBandScreenMarginH,
@@ -410,66 +401,102 @@ class CategoryRowWidget extends StatelessWidget {
               : categoryCalculateTileWidthGrid(depth, avail, maxSide);
           final dLayout = CategoryDepthLayout.forDepthAndSide(depth, side);
 
-          Widget cell(CategoryRule r) {
-            final isSelected = selectedId == r.id;
-            return _buildCategoryTile(
-              context: context,
-              r: r,
-              depth: depth,
-              isSelected: isSelected,
-              editMode: editMode,
-              layout: dLayout,
-              onSelect: onSelect,
-              onLongPressOpenEditor: onLongPressOpenEditor,
-              onFullSettingsTap: onFullSettingsTap,
-              onAppearanceTap: onAppearanceTap,
-            );
+          Widget cell(CategoryRule r) => _buildCategoryTile(
+                context: context,
+                r: r,
+                isSelected: selectedId == r.id,
+                editMode: editMode,
+                layout: dLayout,
+                onSelect: onSelect,
+                onLongPressOpenEditor: onLongPressOpenEditor,
+                onFullSettingsTap: onFullSettingsTap,
+                onAppearanceTap: onAppearanceTap,
+              );
+
+          bool isCenterDrop(GlobalKey key, Offset globalOffset) {
+            final box = key.currentContext?.findRenderObject();
+            if (box is! RenderBox || !box.hasSize) return true;
+            final local = box.globalToLocal(globalOffset);
+            final x = local.dx / box.size.width;
+            final y = local.dy / box.size.height;
+            return x >= 0.22 && x <= 0.78 && y >= 0.22 && y <= 0.78;
           }
 
-          /// Edit mode: same wrap grid as browse; long-press drag to reorder (ReorderableListView API).
-          Widget reorderMovable(int index, Widget child) {
-            if (!editMode || onReorder == null) return child;
-            return DragTarget<int>(
-              onAcceptWithDetails: (details) {
-                final from = details.data;
-                final to = index;
-                if (from == to) return;
-                // Match ReorderableListView: moving down uses insertion index after target row.
-                if (from < to) {
-                  onReorder!(from, to + 1);
-                } else {
-                  onReorder!(from, to);
-                }
-              },
-              builder: (context, candidate, rejected) {
-                final highlighted = candidate.isNotEmpty;
-                return LongPressDraggable<int>(
-                  data: index,
-                  feedback: Material(
-                    color: Colors.transparent,
-                    child: SizedBox(
-                      width: dLayout.side,
-                      height: dLayout.side,
-                      child: Opacity(opacity: 0.92, child: child),
-                    ),
-                  ),
-                  childWhenDragging: Opacity(opacity: 0.35, child: child),
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      border: highlighted
-                          ? Border.all(
-                              color: Theme.of(context).colorScheme.primary,
-                              width: 2,
-                            )
-                          : Border.all(color: Colors.transparent, width: 2),
-                      borderRadius: BorderRadius.circular(
-                        dLayout.borderRadius + 2,
+          Widget dragMovable(int index, Widget child) {
+            if (!editMode || onReorder == null || onMoveToParent == null) {
+              return child;
+            }
+            final item = items[index];
+            final dropKey = GlobalObjectKey<String>(
+              'category-drop-$depth-${item.id}',
+            );
+            final payload = CategoryDragData(
+              categoryId: item.id,
+              sourceParentId: immediateParentId,
+              sourceIndex: index,
+            );
+
+            bool canAccept(CategoryDragData data, Offset offset) {
+              if (data.categoryId == item.id) return false;
+              if (isCenterDrop(dropKey, offset)) {
+                return canMoveToParent?.call(data, item.id) ?? true;
+              }
+              return data.sourceParentId == immediateParentId;
+            }
+
+            return KeyedSubtree(
+              key: dropKey,
+              child: DragTarget<CategoryDragData>(
+                onWillAcceptWithDetails: (details) =>
+                    canAccept(details.data, details.offset),
+                onAcceptWithDetails: (details) {
+                  final data = details.data;
+                  if (isCenterDrop(dropKey, details.offset)) {
+                    if (canMoveToParent?.call(data, item.id) ?? true) {
+                      onMoveToParent!(data, item.id);
+                    }
+                    return;
+                  }
+                  if (data.sourceParentId != immediateParentId) return;
+                  final from = data.sourceIndex;
+                  final to = index;
+                  if (from == to) return;
+                  if (from < to) {
+                    onReorder!(from, to + 1);
+                  } else {
+                    onReorder!(from, to);
+                  }
+                },
+                builder: (context, candidate, rejected) {
+                  final highlighted = candidate.isNotEmpty;
+                  return LongPressDraggable<CategoryDragData>(
+                    data: payload,
+                    feedback: Material(
+                      color: Colors.transparent,
+                      child: SizedBox(
+                        width: dLayout.side,
+                        height: dLayout.side,
+                        child: Opacity(opacity: 0.92, child: child),
                       ),
                     ),
-                    child: child,
-                  ),
-                );
-              },
+                    childWhenDragging: Opacity(opacity: 0.35, child: child),
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: highlighted
+                              ? Theme.of(context).colorScheme.primary
+                              : Colors.transparent,
+                          width: 2,
+                        ),
+                        borderRadius: BorderRadius.circular(
+                          dLayout.borderRadius + 2,
+                        ),
+                      ),
+                      child: child,
+                    ),
+                  );
+                },
+              ),
             );
           }
 
@@ -491,7 +518,7 @@ class CategoryRowWidget extends StatelessWidget {
                       return SizedBox(
                         width: dLayout.side,
                         height: dLayout.side,
-                        child: reorderMovable(i, cell(items[i])),
+                        child: dragMovable(i, cell(items[i])),
                       );
                     }
                     return SizedBox(
@@ -505,47 +532,70 @@ class CategoryRowWidget extends StatelessWidget {
             );
           }
 
-          final squareChips = <Widget>[
-            for (var i = 0; i < items.length; i++)
-              reorderMovable(i, cell(items[i])),
-            if (showAdd && onAddTap != null) _addTile(context, dLayout),
-          ];
-
           return Wrap(
-            spacing: bandGap,
-            runSpacing: bandGap,
+            spacing: kCategoryGridGap,
+            runSpacing: kCategoryGridGap,
             alignment: WrapAlignment.start,
             crossAxisAlignment: WrapCrossAlignment.start,
-            children: squareChips,
+            children: [
+              for (var i = 0; i < items.length; i++)
+                dragMovable(i, cell(items[i])),
+              if (showAdd && onAddTap != null) _addTile(context, dLayout),
+            ],
           );
         },
       ),
     );
 
     Widget inner = bandMath;
-    if (depth >= 1) {
-      final pid = immediateParentId;
-      if (pid != null) {
-        final parent = DatabaseService.instance.getCategoryRuleById(pid);
-        final stripeColor =
-            parent?.colorOrDefault ?? Theme.of(context).colorScheme.primary;
-        inner = DecoratedBox(
+    if (depth >= 1 && immediateParentId != null) {
+      final parent = DatabaseService.instance.getCategoryRuleById(
+        immediateParentId!,
+      );
+      final stripeColor =
+          parent?.colorOrDefault ?? Theme.of(context).colorScheme.primary;
+      inner = DecoratedBox(
+        decoration: BoxDecoration(
+          border: Border(
+            left: BorderSide(
+              color: stripeColor,
+              width: kCategoryGroupStripeWidth,
+            ),
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.only(
+            left: kCategoryStripeInnerPadAfterBorder,
+          ),
+          child: bandMath,
+        ),
+      );
+    }
+
+    if (editMode && onMoveToParent != null) {
+      final bandParentId = immediateParentId;
+      inner = DragTarget<CategoryDragData>(
+        onWillAcceptWithDetails: (details) {
+          final data = details.data;
+          if (data.sourceParentId == bandParentId) return false;
+          return canMoveToParent?.call(data, bandParentId) ?? true;
+        },
+        onAcceptWithDetails: (details) {
+          final data = details.data;
+          if (data.sourceParentId == bandParentId) return;
+          if (canMoveToParent?.call(data, bandParentId) ?? true) {
+            onMoveToParent!(data, bandParentId);
+          }
+        },
+        builder: (context, candidate, rejected) => DecoratedBox(
           decoration: BoxDecoration(
-            border: Border(
-              left: BorderSide(
-                color: stripeColor,
-                width: kCategoryGroupStripeWidth,
-              ),
-            ),
+            color: candidate.isNotEmpty
+                ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.05)
+                : Colors.transparent,
           ),
-          child: Padding(
-            padding: const EdgeInsets.only(
-              left: kCategoryStripeInnerPadAfterBorder,
-            ),
-            child: bandMath,
-          ),
-        );
-      }
+          child: inner,
+        ),
+      );
     }
 
     return Padding(
