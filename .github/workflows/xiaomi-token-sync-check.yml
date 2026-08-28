@@ -59,6 +59,10 @@ jobs:
             exit 2
           fi
           echo 'XIAOMI_TOKEN_EXISTS=true'
+          set +e
           result="$($py "$bridge" sync --token-path "$token" --days 7)"
-          "$py" -c 'import json,sys; d=json.loads(sys.argv[1]); rows=d.get("sessions") or []; print("XIAOMI_SYNC_OK="+str(bool(d.get("ok"))).lower()); print("XIAOMI_SESSION_COUNT="+str(len(rows))); print("XIAOMI_HAS_RECENT="+str(bool(rows)).lower()); print("XIAOMI_ERROR="+str(d.get("error") or "none"))' "$result"
+          rc=$?
+          set -e
+          "$py" -c 'import json,sys; d=json.loads(sys.argv[1]); rows=d.get("sessions") or []; print("XIAOMI_SYNC_OK="+str(bool(d.get("ok"))).lower()); print("XIAOMI_SESSION_COUNT="+str(len(rows))); print("XIAOMI_HAS_RECENT="+str(bool(rows)).lower()); print("XIAOMI_ERROR="+str(d.get("error") or "none")); print("XIAOMI_ERROR_CLASS="+str(d.get("error_class") or "none"))' "$result"
+          echo "XIAOMI_SYNC_RC=$rc"
           REMOTE
