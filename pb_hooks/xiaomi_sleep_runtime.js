@@ -571,7 +571,10 @@ function cron(app) {
             if (!userId || !__xiaomiHasToken(userId)) continue;
             var profile = __xiaomiProfile(app, userId);
             var local = __xiaomiLocalClock(profile, now);
-            var morningStart = Math.max(4 * 60, Math.min(__xiaomiMorningEndMinutes - 1, Number(connection.get("daily_sync_minutes") || __xiaomiDefaultMinutes)));
+            var requestedStart = Number(connection.get("daily_sync_minutes") || __xiaomiDefaultMinutes);
+            var morningStart = requestedStart >= 4 * 60 && requestedStart < __xiaomiMorningEndMinutes
+                ? requestedStart
+                : __xiaomiDefaultMinutes;
             var lastSync = __xiaomiDate(connection.get("last_sync_at"));
             var ageMs = lastSync ? now.getTime() - lastSync.getTime() : Number.MAX_SAFE_INTEGER;
             var inMorningWindow = local.minutes >= morningStart && local.minutes < __xiaomiMorningEndMinutes;
