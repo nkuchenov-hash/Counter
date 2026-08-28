@@ -48,16 +48,15 @@ class PathRepository {
       final categoryPocketBaseId = (row['category_link'] ?? '')
           .toString()
           .trim();
-      if (pathId.isEmpty ||
-          revisionRecordId.isEmpty ||
-          categoryPocketBaseId.isEmpty) {
-        continue;
-      }
+      if (pathId.isEmpty || revisionRecordId.isEmpty) continue;
 
-      final category = _database.getCategoryRuleByBackendRowId(
-        categoryPocketBaseId,
-      );
-      if (category == null || category.isArchived) continue;
+      final resolvedCategory = categoryPocketBaseId.isEmpty
+          ? null
+          : _database.getCategoryRuleByBackendRowId(categoryPocketBaseId);
+      final category =
+          resolvedCategory == null || resolvedCategory.isArchived
+          ? CategoryRule.uncategorized()
+          : resolvedCategory;
 
       final revision = await _database.fetchOwnedPathRevisionRow(
         pathId: pathId,
@@ -73,11 +72,14 @@ class PathRepository {
       if (snapshot != null) paths.add(snapshot);
     }
 
-    paths.sort(
-      (a, b) => categoryBreadcrumb(
+    paths.sort((a, b) {
+      final aUncategorized = a.category.backendRowId == 'uncategorized';
+      final bUncategorized = b.category.backendRowId == 'uncategorized';
+      if (aUncategorized != bUncategorized) return aUncategorized ? 1 : -1;
+      return categoryBreadcrumb(
         a.category,
-      ).toLowerCase().compareTo(categoryBreadcrumb(b.category).toLowerCase()),
-    );
+      ).toLowerCase().compareTo(categoryBreadcrumb(b.category).toLowerCase());
+    });
     return PathCatalogSnapshot(paths: paths);
   }
 
@@ -92,11 +94,13 @@ class PathRepository {
     final revisionRecordId = (pathRow['active_revision_link'] ?? '')
         .toString()
         .trim();
-    if (categoryPocketBaseId.isEmpty || revisionRecordId.isEmpty) return null;
-    final category = _database.getCategoryRuleByBackendRowId(
-      categoryPocketBaseId,
-    );
-    if (category == null || category.isArchived) return null;
+    if (revisionRecordId.isEmpty) return null;
+    final resolvedCategory = categoryPocketBaseId.isEmpty
+        ? null
+        : _database.getCategoryRuleByBackendRowId(categoryPocketBaseId);
+    final category = resolvedCategory == null || resolvedCategory.isArchived
+        ? CategoryRule.uncategorized()
+        : resolvedCategory;
 
     final revision = await _database.fetchOwnedPathRevisionRow(
       pathId: pathId,
