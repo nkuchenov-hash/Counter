@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:counter/data/database_service.dart';
 import 'package:counter/data/health/cloud_sleep_sync_service.dart';
 import 'package:counter/data/health/health_sleep_sync_service.dart';
 import 'package:flutter/widgets.dart';
@@ -11,6 +12,10 @@ class SleepForegroundReconcileService with WidgetsBindingObserver {
 
   static final SleepForegroundReconcileService instance =
       SleepForegroundReconcileService._();
+
+  static const Duration _cloudForegroundThrottle = Duration(minutes: 15);
+  static const int _morningStartMinutes = 4 * 60;
+  static const int _morningEndMinutes = 12 * 60;
 
   bool _started = false;
   bool _reconcileRunning = false;
@@ -44,14 +49,38 @@ class SleepForegroundReconcileService with WidgetsBindingObserver {
     await service.start();
     final current = service.state.value;
     if (!current.enabled || !service.isSupported) return;
-    await service.sync(force: true);
+    // Device sleep already has its own ten-minute automatic throttle.
+    await service.sync();
   }
 
   Future<void> _syncCloudSleep() async {
+    final db = DatabaseService.instance;
+    if (!db.isInitialized || (db.currentProfileId?.isNotEmpty != true)) return;
+
     final service = CloudSleepSyncService.instance;
     await service.loadStatus();
     final current = service.state.value;
     if (!current.configured || !current.enabled) return;
+
+    // A foreground cloud pull is primarily a wake-up accelerator. Outside the
+    // morning window the server-side scheduler owns reconciliation.
+    final localNow = db.applyUserOffset(DatabaseService.getPlanetaryNow());
+    final localMinutes = localNow.hour * 60 + localNow.minute;
+    if (localMinutes < _morningStartMinutes ||
+        localMinutes >= _morningEndMinutes) {
+      return;
+    }
+
+    // Opening/resuming LIFE OS several times must not repeatedly hit Xiaomi.
+    // The server timestamp is shared by all clients, so this also suppresses
+    // duplicate phone/web/desktop foreground pulls.
+    final lastSync = current.lastSyncUtc;
+    final nowUtc = DateTime.now().toUtc();
+    if (lastSync != null) {
+      final age = nowUtc.difference(lastSync);
+      if (!age.isNegative && age < _cloudForegroundThrottle) return;
+    }
+
     await service.syncNow();
   }
 
