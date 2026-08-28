@@ -13,7 +13,6 @@ String categoryTileLabel(CategoryRule r) {
   return localizeCategoryDbSegment(s.trim(), loc);
 }
 
-/// Target columns per depth: roots 3, children 4, deeper 5 (drives responsive tile size).
 int categoryGridTargetColumns(int depth) {
   if (depth <= 0) return 3;
   if (depth == 1) return 4;
@@ -24,7 +23,6 @@ const double kCategoryGridGap = 8;
 const double kCategoryScrollPeekFraction = 0.17;
 const double kCategoryTileWidthClampMin = 48;
 
-/// Cap tile side on large viewports so grids stay compact (@DATA_MAP grid tiers).
 double categoryMaxTileSideForViewport(BuildContext context) {
   final w = MediaQuery.sizeOf(context).width;
   if (w >= 1100) return 104;
@@ -34,7 +32,6 @@ double categoryMaxTileSideForViewport(BuildContext context) {
   return 560;
 }
 
-/// Grid: exactly [N] full squares per row — `N*w + (N-1)*g == availableWidth`.
 double categoryCalculateTileWidthGrid(
   int depth,
   double availableWidth,
@@ -46,7 +43,6 @@ double categoryCalculateTileWidthGrid(
   return raw.clamp(kCategoryTileWidthClampMin, maxSide);
 }
 
-/// Scroll: viewport shows [N] full tiles + [k] of the next — `V = w*(N+k) + (N-1)*g`.
 double categoryCalculateTileWidthScroll(
   int depth,
   double availableWidth,
@@ -59,14 +55,12 @@ double categoryCalculateTileWidthScroll(
   return raw.clamp(kCategoryTileWidthClampMin, maxSide);
 }
 
-/// Nominal reference [side] per depth tier (for scaling type/icons when [side] comes from math).
 double categoryReferenceTileSideForDepth(int depth) {
   if (depth <= 0) return 120;
   if (depth == 1) return 96;
   return 82;
 }
 
-/// Per-depth icon / type / padding; [side] comes from grid math (square tile).
 class CategoryDepthLayout {
   const CategoryDepthLayout({
     required this.side,
@@ -145,8 +139,6 @@ const double kCategoryGlassAlpha = 0.175;
 const double kCategoryGlassAlphaSelected = 0.22;
 const double kCategoryGroupStripeWidth = 6;
 
-/// Payload used by category drag/drop. Identity is stable across bands; [sourceIndex]
-/// remains available for the existing sibling reorder operation.
 class CategoryDragData {
   const CategoryDragData({
     required this.categoryId,
@@ -159,12 +151,8 @@ class CategoryDragData {
   final int sourceIndex;
 }
 
-enum CategoryBandLayout {
-  horizontalPeek,
-  wrapGrid,
-}
+enum CategoryBandLayout { horizontalPeek, wrapGrid }
 
-/// One band of category tiles at a given tree [depth].
 class CategoryRowWidget extends StatelessWidget {
   const CategoryRowWidget({
     super.key,
@@ -427,9 +415,7 @@ class CategoryRowWidget extends StatelessWidget {
               return child;
             }
             final item = items[index];
-            final dropKey = GlobalObjectKey<String>(
-              'category-drop-$depth-${item.id}',
-            );
+            final dropKey = GlobalKey();
             final payload = CategoryDragData(
               categoryId: item.id,
               sourceParentId: immediateParentId,
@@ -574,6 +560,7 @@ class CategoryRowWidget extends StatelessWidget {
 
     if (editMode && onMoveToParent != null) {
       final bandParentId = immediateParentId;
+      final bandChild = inner;
       inner = DragTarget<CategoryDragData>(
         onWillAcceptWithDetails: (details) {
           final data = details.data;
@@ -593,7 +580,7 @@ class CategoryRowWidget extends StatelessWidget {
                 ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.05)
                 : Colors.transparent,
           ),
-          child: inner,
+          child: bandChild,
         ),
       );
     }
