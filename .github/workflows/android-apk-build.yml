@@ -1,7 +1,6 @@
 name: Android release APK
 
 # Manual artifact trigger: 2026-08-18 Health Connect sleep-stage fallback.
-# Temporary branch validation: category drag regression suite.
 on:
   workflow_dispatch:
   push:
@@ -32,9 +31,6 @@ jobs:
 
       - name: Install dependencies
         run: flutter pub get
-
-      - name: Test category drag/order
-        run: flutter test test/category_order_sync_test.dart
 
       - name: Analyze
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
