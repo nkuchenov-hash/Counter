@@ -1,6 +1,7 @@
 name: Android release APK
 
 # Manual artifact trigger: 2026-08-18 Health Connect sleep-stage fallback.
+# Temporary branch validation trigger for category hierarchy drag/drop.
 on:
   workflow_dispatch:
   push:
