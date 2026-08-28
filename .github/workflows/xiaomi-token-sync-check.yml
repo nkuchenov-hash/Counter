@@ -31,15 +31,17 @@ jobs:
           chmod 600 ~/.ssh/lifeos_pocketbase
           ssh-keyscan -p "$SSH_PORT" -H "${SSH_HOST:-217.114.0.201}" >> ~/.ssh/known_hosts
 
-      - name: Inspect installed mi-fitness sleep implementation
+      - name: Inspect installed Xiaomi data endpoints
         shell: bash
         run: |
           set -euo pipefail
           ssh -i ~/.ssh/lifeos_pocketbase -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
           set -euo pipefail
-          py=/opt/lifeos-xiaomi-sleep/bin/python
-          "$py" -c 'import inspect; from mi_fitness import MiHealthClient; print("CLIENT_FILE="+str(inspect.getsourcefile(MiHealthClient))); print("GET_SLEEP_SIGNATURE="+str(inspect.signature(MiHealthClient.get_sleep))); print("---GET_SLEEP_SOURCE---"); print(inspect.getsource(MiHealthClient.get_sleep)); print("---METHODS---"); [print(n, inspect.signature(getattr(MiHealthClient,n))) for n in dir(MiHealthClient) if callable(getattr(MiHealthClient,n)) and any(x in n.lower() for x in ("sleep","famil","relative","member"))]'
-          file="$($py -c 'import inspect; from mi_fitness import MiHealthClient; print(inspect.getsourcefile(MiHealthClient))')"
-          echo '---PACKAGE_MATCHES---'
-          grep -R -n -E 'FamilyMemberNotFound|get_sleep|sleep.*member|relative' "$(dirname "$file")" | head -120 || true
+          root=/opt/lifeos-xiaomi-sleep/lib/python3.12/site-packages/mi_fitness/client
+          echo '---DATA---'
+          sed -n '110,310p' "$root/data.py"
+          echo '---BASE---'
+          sed -n '1,230p' "$root/base.py"
+          echo '---ENDPOINT-CONSTANTS---'
+          grep -R -n -E 'HEALTH|DATA|SLEEP|aggregat|data/|latest' /opt/lifeos-xiaomi-sleep/lib/python3.12/site-packages/mi_fitness | head -180 || true
           REMOTE
