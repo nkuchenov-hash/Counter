@@ -4,7 +4,9 @@
 var __xiaomiCollection = "sleep_sync_connections";
 var __xiaomiProvider = "xiaomi";
 var __xiaomiDefaultMinutes = 8 * 60;
-var __xiaomiCatchupMs = 30 * 60 * 1000;
+var __xiaomiMorningEndMinutes = 12 * 60;
+var __xiaomiMorningRetryMs = 60 * 60 * 1000;
+var __xiaomiMaintenanceMs = 6 * 60 * 60 * 1000;
 var __xiaomiFullSyncMs = 7 * 24 * 60 * 60 * 1000;
 var __xiaomiPython = "/opt/lifeos-xiaomi-sleep/bin/python";
 
@@ -318,6 +320,33 @@ function __xiaomiLocalClock(profile, now) {
     };
 }
 
+function __xiaomiLocalDayUtcBounds(profile, localDay) {
+    var parts = String(localDay || "").split("-");
+    if (parts.length !== 3) return null;
+    var year = Number(parts[0]);
+    var month = Number(parts[1]);
+    var day = Number(parts[2]);
+    if (!year || !month || !day) return null;
+    var offsetHours = Number(profile.get("timezone_offset") || 0);
+    var startMs = Date.UTC(year, month - 1, day) - offsetHours * 3600000;
+    return { start: new Date(startMs), end: new Date(startMs + 24 * 60 * 60 * 1000) };
+}
+
+function __xiaomiHasSleepForLocalDay(app, userId, profile, localDay) {
+    var bounds = __xiaomiLocalDayUtcBounds(profile, localDay);
+    if (!bounds) return false;
+    try {
+        app.findFirstRecordByFilter(
+            "records",
+            "user_id = {:uid} && (sleep_source = 'xiaomi' || external_source = 'xiaomi') && end_time >= {:start} && end_time < {:end}",
+            { uid: userId, start: bounds.start.toISOString(), end: bounds.end.toISOString() }
+        );
+        return true;
+    } catch (_) {
+        return false;
+    }
+}
+
 function __xiaomiRunConnection(app, connection) {
     var userId = String(connection.get("user_id") || "");
     if (!userId || !__xiaomiHasToken(userId)) throw new Error("Xiaomi authorization is required");
@@ -542,12 +571,21 @@ function cron(app) {
             if (!userId || !__xiaomiHasToken(userId)) continue;
             var profile = __xiaomiProfile(app, userId);
             var local = __xiaomiLocalClock(profile, now);
-            var dueMinutes = Number(connection.get("daily_sync_minutes") || __xiaomiDefaultMinutes);
-            var lastDay = String(connection.get("last_sync_local_day") || "");
+            var morningStart = Math.max(4 * 60, Math.min(__xiaomiMorningEndMinutes - 1, Number(connection.get("daily_sync_minutes") || __xiaomiDefaultMinutes)));
             var lastSync = __xiaomiDate(connection.get("last_sync_at"));
-            var stale = !lastSync || now.getTime() - lastSync.getTime() >= __xiaomiCatchupMs;
-            var dailyDue = local.minutes >= dueMinutes && lastDay !== local.day;
-            if (!stale && !dailyDue) continue;
+            var ageMs = lastSync ? now.getTime() - lastSync.getTime() : Number.MAX_SAFE_INTEGER;
+            var inMorningWindow = local.minutes >= morningStart && local.minutes < __xiaomiMorningEndMinutes;
+
+            if (inMorningWindow) {
+                // The hourly wake-up retries exist only until today's completed
+                // Xiaomi sleep is actually present in PocketBase.
+                if (__xiaomiHasSleepForLocalDay(app, userId, profile, local.day)) continue;
+                if (ageMs < __xiaomiMorningRetryMs) continue;
+            } else {
+                // Outside the wake-up window keep only a low-frequency repair
+                // pass. Weekly 30-day reconciliation still happens inside it.
+                if (ageMs < __xiaomiMaintenanceMs) continue;
+            }
             __xiaomiRunSafe(app, connection);
         } catch (_) {}
     }
