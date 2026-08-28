@@ -4,14 +4,19 @@ import 'package:counter/core/widgets/app_button.dart';
 import 'package:counter/core/widgets/app_icon_button.dart';
 import 'package:counter/core/widgets/app_loading.dart';
 import 'package:counter/core/widgets/app_state_views.dart';
+import 'package:counter/data/models.dart';
 import 'package:counter/data/paths/path_repository.dart';
 import 'package:counter/l10n/dictionary.dart';
+import 'package:counter/shared/categories/picker/category_picker_contracts.dart';
+import 'package:counter/shared/categories/tree/category_tree_body.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-/// First-class Paths destination.
-///
-/// Opening this page only reads Path data. It does not run migrations,
-/// bootstrap project-specific content, create Planner tasks, or mutate rows.
+class _PathFolderChoice {
+  const _PathFolderChoice(this.rootKeys);
+  final Set<String>? rootKeys;
+}
+
 class PathsPage extends StatefulWidget {
   const PathsPage({super.key});
 
@@ -20,19 +25,26 @@ class PathsPage extends StatefulWidget {
 }
 
 class _PathsPageState extends State<PathsPage> {
+  static const _visibilityPrefsKey = 'category_visibility_paths_roots_v1';
   final PathRepository _repository = PathRepository();
-
   bool _loading = true;
   String? _error;
-  PathCatalogSnapshot _catalog = const PathCatalogSnapshot(
-    paths: <ProjectPathSnapshot>[],
-  );
-  int? _selectedCategoryId;
-  final Map<String, ProjectPathSnapshot> _confirmedPaths =
-      <String, ProjectPathSnapshot>{};
-  final Map<String, int> _saveGenerationByPath = <String, int>{};
+  PathCatalogSnapshot _catalog =
+      const PathCatalogSnapshot(paths: <ProjectPathSnapshot>[]);
+  String? _selectedPathId;
+  Set<String>? _visibleCategoryRootKeys;
+  final Map<String, ProjectPathSnapshot> _confirmedPaths = {};
+  final Map<String, int> _saveGenerationByPath = {};
 
   bool get _ru => currentLocale.value.toLowerCase().startsWith('ru');
+  List<CategoryRule> get _categoryRoots => CategoryTreeSource.childrenOf(null)
+      .where((category) => !category.isArchived)
+      .toList(growable: false);
+  PathCategoryProjection get _projection => buildPathCategoryProjection(
+        categoryRoots: _categoryRoots,
+        paths: _catalog.paths,
+        selectedRootKeys: _visibleCategoryRootKeys,
+      );
 
   @override
   void initState() {
@@ -40,28 +52,50 @@ class _PathsPageState extends State<PathsPage> {
     unawaited(_load());
   }
 
-  Future<void> _load() async {
-    if (mounted) {
-      setState(() {
-        _loading = true;
-        _error = null;
-      });
-    }
+  Future<Set<String>?> _loadVisibilityPrefs() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!prefs.containsKey(_visibilityPrefsKey)) return null;
+    return (prefs.getStringList(_visibilityPrefsKey) ?? const <String>[])
+        .map((value) => value.trim())
+        .where((value) => value.isNotEmpty)
+        .toSet();
+  }
 
+  Future<void> _saveVisibilityPrefs(Set<String>? keys) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (keys == null) {
+      await prefs.remove(_visibilityPrefsKey);
+      return;
+    }
+    final values = keys.where((value) => value.trim().isNotEmpty).toList()
+      ..sort();
+    await prefs.setStringList(_visibilityPrefsKey, values);
+  }
+
+  Future<void> _load() async {
+    if (mounted) setState(() {
+      _loading = true;
+      _error = null;
+    });
     try {
+      final prefsFuture = _loadVisibilityPrefs();
       final catalog = await _repository.loadActivePaths();
+      final prefs = await prefsFuture;
       if (!mounted) return;
-      final selectedStillExists = catalog.paths.any(
-        (path) => path.category.id == _selectedCategoryId,
-      );
+      final visible = buildPathCategoryProjection(
+        categoryRoots: _categoryRoots,
+        paths: catalog.paths,
+        selectedRootKeys: prefs,
+      ).visiblePaths;
+      final keep = visible.any((path) => path.pathId == _selectedPathId);
       _confirmedPaths
         ..clear()
         ..addEntries(catalog.paths.map((path) => MapEntry(path.pathId, path)));
       setState(() {
         _catalog = catalog;
-        _selectedCategoryId = selectedStillExists
-            ? _selectedCategoryId
-            : (catalog.paths.isEmpty ? null : catalog.paths.first.category.id);
+        _visibleCategoryRootKeys = prefs;
+        _selectedPathId =
+            keep ? _selectedPathId : (visible.isEmpty ? null : visible.first.pathId);
         _loading = false;
       });
     } catch (error) {
@@ -74,10 +108,10 @@ class _PathsPageState extends State<PathsPage> {
   }
 
   ProjectPathSnapshot? get _selectedPath {
-    final id = _selectedCategoryId;
+    final id = _selectedPathId;
     if (id == null) return null;
-    for (final path in _catalog.paths) {
-      if (path.category.id == id) return path;
+    for (final path in _projection.visiblePaths) {
+      if (path.pathId == id) return path;
     }
     return null;
   }
@@ -89,22 +123,182 @@ class _PathsPageState extends State<PathsPage> {
     return null;
   }
 
-  PathActionSnapshot? _firstPendingAction(PathStageSnapshot stage) {
-    for (final action in stage.actions) {
-      if (!action.isDone) return action;
+  String _categoryName(CategoryRule category) {
+    if (category.id == CategoryRule.uncategorizedSyntheticId) {
+      return _ru ? 'Без категории' : 'Uncategorized';
     }
-    return null;
+    final localized =
+        category.localizedNames?[_ru ? 'ru' : 'en']?.trim() ?? '';
+    return localized.isNotEmpty ? localized : category.name.trim();
   }
 
-  String _categoryBreadcrumb(ProjectPathSnapshot path) =>
-      _repository.categoryBreadcrumb(path.category);
+  String _breadcrumb(ProjectPathSnapshot path) =>
+      path.category.id == CategoryRule.uncategorizedSyntheticId
+          ? _categoryName(path.category)
+          : _repository.categoryBreadcrumb(path.category);
 
-  List<String> _categorySegments(ProjectPathSnapshot path) =>
-      _categoryBreadcrumb(path)
-          .split(' › ')
-          .map((segment) => segment.trim())
-          .where((segment) => segment.isNotEmpty)
-          .toList(growable: false);
+  List<CategoryRule> _pruneSelectorRoots(
+    List<CategoryRule> roots,
+    Set<int> relevantIds,
+  ) {
+    CategoryRule? prune(CategoryRule node) {
+      final children = <CategoryRule>[];
+      for (final child in node.children ?? const <CategoryRule>[]) {
+        final kept = prune(child);
+        if (kept != null) children.add(kept);
+      }
+      if (!relevantIds.contains(node.id) && children.isEmpty) return null;
+      return node.copyWith(children: children);
+    }
+
+    return [for (final root in roots) if (prune(root) case final kept?) kept];
+  }
+
+  Future<void> _openFolderSelector() async {
+    if (_loading || _catalog.paths.isEmpty) return;
+    final roots = _categoryRoots;
+    final relevantIds = relevantPathCategoryIds(
+      categoryRoots: roots,
+      paths: _catalog.paths,
+    );
+    final visibleRoots = _pruneSelectorRoots(roots, relevantIds);
+    var allMode = _visibleCategoryRootKeys == null;
+    var selectedIds = allMode
+        ? visibleRoots.map((root) => root.id).toSet()
+        : pathCategoryRootIdsForKeys(
+            categoryRoots: roots,
+            rootKeys: _visibleCategoryRootKeys!,
+          ).where(relevantIds.contains).toSet();
+
+    final choice = await showDialog<_PathFolderChoice>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          final checkedIds = effectivePathCategoryIdsForRoots(
+            categoryRoots: visibleRoots,
+            selectedRootIds: selectedIds,
+          );
+          void toggle(int id, bool checked) {
+            if (pathCategoryIsCoveredBySelectedAncestor(
+              categoryRoots: visibleRoots,
+              selectedRootIds: selectedIds,
+              categoryId: id,
+            )) return;
+            final next = Set<int>.from(selectedIds);
+            checked ? next.add(id) : next.remove(id);
+            final keys = pathCategoryKeysForRootIds(
+              categoryRoots: roots,
+              rootIds: next,
+            );
+            setDialogState(() {
+              allMode = false;
+              selectedIds = pathCategoryRootIdsForKeys(
+                categoryRoots: roots,
+                rootKeys: keys,
+              ).where(relevantIds.contains).toSet();
+            });
+          }
+
+          return Dialog(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 620, maxHeight: 760),
+              child: SizedBox(
+                height: (MediaQuery.sizeOf(context).height * 0.78)
+                    .clamp(420.0, 760.0)
+                    .toDouble(),
+                child: Column(children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 18, 12, 12),
+                    child: Row(children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _ru ? 'Папки в Путях' : 'Folders in Paths',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleLarge
+                                  ?.copyWith(fontWeight: FontWeight.w800),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              _ru
+                                  ? 'Родитель включает всё его поддерево.'
+                                  : 'A parent includes its whole subtree.',
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                          ],
+                        ),
+                      ),
+                      AppIconButton(
+                        icon: Icons.close_rounded,
+                        tooltip: _ru ? 'Закрыть' : 'Close',
+                        onPressed: () => Navigator.of(dialogContext).pop(),
+                      ),
+                    ]),
+                  ),
+                  const Divider(height: 1),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.all(10),
+                      child: CategoryTreeBody(
+                        roots: visibleRoots,
+                        selectedCategoryId: null,
+                        checkedCategoryIds: checkedIds,
+                        onCheckedChanged: toggle,
+                        expandAll: true,
+                        onSelect: (id) => toggle(id, !checkedIds.contains(id)),
+                        showEditChrome: false,
+                      ),
+                    ),
+                  ),
+                  const Divider(height: 1),
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Row(children: [
+                      AppButton.ghost(
+                        label: _ru ? 'Показать всё' : 'Show all',
+                        onPressed: () => Navigator.of(dialogContext)
+                            .pop(const _PathFolderChoice(null)),
+                      ),
+                      const Spacer(),
+                      AppButton.primary(
+                        label: _ru ? 'Готово' : 'Done',
+                        onPressed: () => Navigator.of(dialogContext).pop(
+                          _PathFolderChoice(
+                            allMode
+                                ? null
+                                : pathCategoryKeysForRootIds(
+                                    categoryRoots: roots,
+                                    rootIds: selectedIds,
+                                  ),
+                          ),
+                        ),
+                      ),
+                    ]),
+                  ),
+                ]),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+    if (!mounted || choice == null) return;
+    final visible = buildPathCategoryProjection(
+      categoryRoots: roots,
+      paths: _catalog.paths,
+      selectedRootKeys: choice.rootKeys,
+    ).visiblePaths;
+    final keep = visible.any((path) => path.pathId == _selectedPathId);
+    setState(() {
+      _visibleCategoryRootKeys = choice.rootKeys;
+      _selectedPathId =
+          keep ? _selectedPathId : (visible.isEmpty ? null : visible.first.pathId);
+    });
+    unawaited(_saveVisibilityPrefs(choice.rootKeys));
+  }
 
   Future<void> _deletePath(ProjectPathSnapshot path) async {
     final confirmed = await showDialog<bool>(
@@ -113,8 +307,8 @@ class _PathsPageState extends State<PathsPage> {
         title: Text(_ru ? 'Удалить путь?' : 'Delete Path?'),
         content: Text(
           _ru
-              ? 'Путь будет удалён независимо от других путей. История его ревизий останется только как неисполняемый аудит.'
-              : 'This Path will be deleted independently of other Paths. Its revision history will remain only as non-executable audit history.',
+              ? 'Путь будет удалён. История ревизий останется как аудит.'
+              : 'The Path will be deleted. Revision history remains as audit.',
         ),
         actions: [
           AppButton.ghost(
@@ -130,39 +324,29 @@ class _PathsPageState extends State<PathsPage> {
       ),
     );
     if (confirmed != true) return;
-
-    final deleted = await _repository.deletePath(path);
-    if (!mounted) return;
-    if (!deleted) {
-      ScaffoldMessenger.of(context)
-        ..clearSnackBars()
-        ..showSnackBar(
-          SnackBar(
-            content: Text(
-              _ru ? 'Не удалось удалить путь.' : 'Could not delete the Path.',
-            ),
-          ),
-        );
+    if (!await _repository.deletePath(path)) {
+      if (mounted) _snack(_ru ? 'Не удалось удалить путь.' : 'Could not delete Path.');
       return;
     }
-
     _confirmedPaths.remove(path.pathId);
     _saveGenerationByPath.remove(path.pathId);
     await _load();
-    if (!mounted) return;
+    if (mounted) _snack(_ru ? 'Путь удалён.' : 'Path deleted.');
+  }
+
+  void _snack(String text) {
     ScaffoldMessenger.of(context)
       ..clearSnackBars()
-      ..showSnackBar(
-        SnackBar(content: Text(_ru ? 'Путь удалён.' : 'Path deleted.')),
-      );
+      ..showSnackBar(SnackBar(content: Text(text)));
   }
 
   void _replaceLocal(ProjectPathSnapshot updated) {
-    final next = <ProjectPathSnapshot>[
-      for (final path in _catalog.paths)
-        if (path.category.id == updated.category.id) updated else path,
-    ];
-    setState(() => _catalog = PathCatalogSnapshot(paths: next));
+    setState(() {
+      _catalog = PathCatalogSnapshot(paths: [
+        for (final path in _catalog.paths)
+          if (path.pathId == updated.pathId) updated else path,
+      ]);
+    });
   }
 
   Future<void> _saveOptimistic(
@@ -173,37 +357,21 @@ class _PathsPageState extends State<PathsPage> {
     _saveGenerationByPath[after.pathId] = generation;
     _confirmedPaths.putIfAbsent(after.pathId, () => before);
     _replaceLocal(after);
-
     final saved = await _repository.saveActivePath(after);
     if (!mounted) return;
     if (saved != null) {
       _confirmedPaths[after.pathId] = saved;
-      if (_saveGenerationByPath[after.pathId] == generation) {
-        _replaceLocal(saved);
-      }
+      if (_saveGenerationByPath[after.pathId] == generation) _replaceLocal(saved);
       return;
     }
-
-    // A newer optimistic edit owns the visible state and its queued save. Only
-    // the latest failed save rolls UI back to the last server-confirmed revision.
     if (_saveGenerationByPath[after.pathId] != generation) return;
     _replaceLocal(_confirmedPaths[after.pathId] ?? before);
-    ScaffoldMessenger.of(context)
-      ..clearSnackBars()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(
-            _ru
-                ? 'Не удалось сохранить изменение пути.'
-                : 'Could not save the Path change.',
-          ),
-        ),
-      );
+    _snack(_ru ? 'Не удалось сохранить изменение.' : 'Could not save change.');
   }
 
   Future<void> _editGoal(ProjectPathSnapshot path) async {
     final controller = TextEditingController(text: path.goal);
-    final result = await showDialog<String>(
+    final value = await showDialog<String>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: Text(_ru ? 'Цель пути' : 'Path goal'),
@@ -214,11 +382,6 @@ class _PathsPageState extends State<PathsPage> {
             autofocus: true,
             minLines: 2,
             maxLines: 6,
-            decoration: InputDecoration(
-              labelText: _ru
-                  ? 'Конечное состояние проекта'
-                  : 'Project end state',
-            ),
           ),
         ),
         actions: [
@@ -229,25 +392,23 @@ class _PathsPageState extends State<PathsPage> {
           AppButton.primary(
             label: _ru ? 'Сохранить' : 'Save',
             onPressed: () {
-              final value = controller.text.trim();
-              if (value.isNotEmpty) {
-                Navigator.of(dialogContext).pop(value);
-              }
+              final text = controller.text.trim();
+              if (text.isNotEmpty) Navigator.of(dialogContext).pop(text);
             },
           ),
         ],
       ),
     );
     controller.dispose();
-
-    if (result == null || result == path.goal) return;
-    unawaited(_saveOptimistic(path, path.copyWith(goal: result)));
+    if (value != null && value != path.goal) {
+      unawaited(_saveOptimistic(path, path.copyWith(goal: value)));
+    }
   }
 
-  void _toggleStage(ProjectPathSnapshot path, int stageIndex, bool done) {
-    if (stageIndex < 0 || stageIndex >= path.stages.length) return;
+  void _toggleStage(ProjectPathSnapshot path, int index, bool done) {
     final stages = List<PathStageSnapshot>.from(path.stages);
-    stages[stageIndex] = stages[stageIndex].copyWith(isDone: done);
+    if (index < 0 || index >= stages.length) return;
+    stages[index] = stages[index].copyWith(isDone: done);
     unawaited(_saveOptimistic(path, path.copyWith(stages: stages)));
   }
 
@@ -257,11 +418,10 @@ class _PathsPageState extends State<PathsPage> {
     int actionIndex,
     bool done,
   ) {
-    if (stageIndex < 0 || stageIndex >= path.stages.length) return;
     final stages = List<PathStageSnapshot>.from(path.stages);
+    if (stageIndex < 0 || stageIndex >= stages.length) return;
     final stage = stages[stageIndex];
     if (actionIndex < 0 || actionIndex >= stage.actions.length) return;
-
     final actions = List<PathActionSnapshot>.from(stage.actions);
     actions[actionIndex] = actions[actionIndex].copyWith(isDone: done);
     stages[stageIndex] = stage.copyWith(actions: actions);
@@ -275,13 +435,11 @@ class _PathsPageState extends State<PathsPage> {
       color: scheme.surface,
       child: SafeArea(
         bottom: false,
-        child: Column(
-          children: [
-            _header(),
-            const Divider(height: 1),
-            Expanded(child: _body()),
-          ],
-        ),
+        child: Column(children: [
+          _header(),
+          const Divider(height: 1),
+          Expanded(child: _body()),
+        ]),
       ),
     );
   }
@@ -290,48 +448,49 @@ class _PathsPageState extends State<PathsPage> {
     final scheme = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 14, 12, 12),
-      child: Row(
-        children: [
-          Icon(Icons.alt_route_rounded, color: scheme.primary),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  _ru ? 'Пути' : 'Paths',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
-                ),
-                Text(
-                  _ru
-                      ? 'Цель → этапы → конкретные действия. Planner использует только активный путь.'
-                      : 'Goal → stages → concrete actions. Planner consumes only the active Path.',
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: scheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
-            ),
+      child: Row(children: [
+        Icon(Icons.alt_route_rounded, color: scheme.primary),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                _ru ? 'Пути' : 'Paths',
+                style: Theme.of(context)
+                    .textTheme
+                    .titleLarge
+                    ?.copyWith(fontWeight: FontWeight.w800),
+              ),
+              Text(
+                _ru
+                    ? 'Цель → этапы → действия.'
+                    : 'Goal → stages → actions.',
+                style: Theme.of(context)
+                    .textTheme
+                    .bodySmall
+                    ?.copyWith(color: scheme.onSurfaceVariant),
+              ),
+            ],
           ),
-          AppIconButton(
-            icon: Icons.refresh_rounded,
-            tooltip: _ru ? 'Обновить' : 'Refresh',
-            onPressed: _loading ? null : () => unawaited(_load()),
-            loading: _loading,
-          ),
-        ],
-      ),
+        ),
+        AppIconButton(
+          icon: Icons.account_tree_outlined,
+          tooltip: _ru ? 'Папки в Путях' : 'Folders in Paths',
+          onPressed: _loading ? null : () => unawaited(_openFolderSelector()),
+        ),
+        AppIconButton(
+          icon: Icons.refresh_rounded,
+          tooltip: _ru ? 'Обновить' : 'Refresh',
+          onPressed: _loading ? null : () => unawaited(_load()),
+          loading: _loading,
+        ),
+      ]),
     );
   }
 
   Widget _body() {
-    if (_loading) {
-      return const AppLoading(size: AppLoadingSize.large);
-    }
+    if (_loading) return const AppLoading(size: AppLoadingSize.large);
     if (_error != null) {
       return AppErrorState(
         message: _ru ? 'Не удалось загрузить пути.' : 'Could not load Paths.',
@@ -342,160 +501,152 @@ class _PathsPageState extends State<PathsPage> {
     if (_catalog.paths.isEmpty) {
       return AppEmptyState(
         icon: Icons.alt_route_rounded,
-        message: _ru
-            ? 'Активных путей пока нет. Открытие этого экрана не создаёт и не мигрирует данные автоматически.'
-            : 'There are no active Paths yet. Opening this screen does not auto-create or migrate Path data.',
+        message: _ru ? 'Активных путей пока нет.' : 'There are no active Paths.',
       );
     }
-
+    final projection = _projection;
+    final visible = projection.visiblePaths;
+    if (visible.isEmpty) {
+      return Center(
+        child: AppButton.secondary(
+          label: _ru ? 'Выбрать папки' : 'Choose folders',
+          icon: Icons.account_tree_outlined,
+          onPressed: () => unawaited(_openFolderSelector()),
+        ),
+      );
+    }
+    final selected = _selectedPath ?? visible.first;
     return LayoutBuilder(
-      builder: (context, constraints) {
-        final selected = _selectedPath;
-        if (selected == null) {
-          return AppEmptyState(
-            message: _ru ? 'Путь не выбран.' : 'No Path selected.',
-            icon: Icons.alt_route_rounded,
-          );
-        }
-
-        if (constraints.maxWidth >= 900) {
-          return Row(
-            children: [
-              SizedBox(width: 320, child: _pathList()),
+      builder: (context, constraints) => constraints.maxWidth >= 900
+          ? Row(children: [
+              SizedBox(width: 320, child: _pathList(projection)),
               const VerticalDivider(width: 1),
               Expanded(child: _pathDetail(selected)),
-            ],
-          );
-        }
-
-        return Column(
-          children: [
-            _mobileSelector(selected),
-            const Divider(height: 1),
-            Expanded(child: _pathDetail(selected)),
-          ],
-        );
-      },
+            ])
+          : Column(children: [
+              _mobileSelector(selected, visible),
+              const Divider(height: 1),
+              Expanded(child: _pathDetail(selected)),
+            ]),
     );
   }
 
-  Widget _pathList() {
-    final scheme = Theme.of(context).colorScheme;
-    final grouped = <String, List<ProjectPathSnapshot>>{};
-    for (final path in _catalog.paths) {
-      final segments = _categorySegments(path);
-      final rootName = segments.isEmpty ? path.category.name : segments.first;
-      grouped.putIfAbsent(rootName, () => <ProjectPathSnapshot>[]).add(path);
+  Widget _pathList(PathCategoryProjection projection) {
+    final widgets = <Widget>[];
+    for (final root in projection.roots) {
+      _appendCategoryNode(widgets, root, 0);
     }
-
-    final children = <Widget>[];
-    for (final entry in grouped.entries) {
-      final paths = entry.value;
-      final showFolder =
-          paths.length > 1 ||
-          paths.any((path) => _categorySegments(path).length > 1);
-      if (showFolder) {
-        children.add(
-          Padding(
-            padding: const EdgeInsets.fromLTRB(10, 10, 10, 6),
-            child: Row(
-              children: [
-                Icon(Icons.folder_rounded, size: 19, color: scheme.primary),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    entry.key,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                      fontWeight: FontWeight.w800,
-                      color: scheme.onSurfaceVariant,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      }
-
-      for (final path in paths) {
-        final depth = _categorySegments(path).length - 1;
-        children.add(
-          Padding(
-            padding: EdgeInsets.only(
-              left: showFolder ? 8.0 + depth.clamp(0, 4).toDouble() * 12.0 : 0,
-              bottom: 4,
-            ),
-            child: _pathListTile(path),
-          ),
-        );
+    if (projection.uncategorizedPaths.isNotEmpty) {
+      widgets.add(_folderRow(_ru ? 'Без категории' : 'Uncategorized', null, 0));
+      for (final path in projection.uncategorizedPaths) {
+        widgets.add(Padding(
+          padding: const EdgeInsets.only(left: 16, bottom: 4),
+          child: _pathTile(path, path.goal),
+        ));
       }
     }
-
-    return ListView(padding: const EdgeInsets.all(12), children: children);
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 24),
+      children: widgets,
+    );
   }
 
-  Widget _pathListTile(ProjectPathSnapshot path) {
-    final scheme = Theme.of(context).colorScheme;
-    final selected = path.category.id == _selectedCategoryId;
-    final nextStage = _firstPendingStage(path);
+  void _appendCategoryNode(List<Widget> out, PathCategoryNode node, int depth) {
+    final name = _categoryName(node.category);
+    if (node.paths.length == 1) {
+      out.add(Padding(
+        padding: EdgeInsets.only(left: depth * 16.0, bottom: 4),
+        child: _pathTile(node.paths.single, name),
+      ));
+    } else {
+      out.add(_folderRow(name, node.category, depth));
+      for (final path in node.paths) {
+        out.add(Padding(
+          padding: EdgeInsets.only(left: (depth + 1) * 16.0, bottom: 4),
+          child: _pathTile(path, path.goal),
+        ));
+      }
+    }
+    for (final child in node.children) {
+      _appendCategoryNode(out, child, depth + 1);
+    }
+  }
 
+  Widget _folderRow(String title, CategoryRule? category, int depth) {
+    final scheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: EdgeInsets.fromLTRB(8 + depth * 16.0, 8, 8, 4),
+      child: Row(children: [
+        Icon(
+          category?.iconOrDefault ?? Icons.folder_off_outlined,
+          size: 19,
+          color: category?.colorOrDefault ?? scheme.onSurfaceVariant,
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            title,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context)
+                .textTheme
+                .labelLarge
+                ?.copyWith(fontWeight: FontWeight.w800),
+          ),
+        ),
+      ]),
+    );
+  }
+
+  Widget _pathTile(ProjectPathSnapshot path, String title) {
+    final scheme = Theme.of(context).colorScheme;
+    final selected = path.pathId == _selectedPathId;
+    final nextStage = _firstPendingStage(path);
     return Material(
       color: selected
           ? scheme.primaryContainer.withValues(alpha: 0.55)
           : Colors.transparent,
       borderRadius: BorderRadius.circular(12),
       child: ListTile(
+        dense: true,
         selected: selected,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        leading: CircleAvatar(
-          backgroundColor: path.category.colorOrDefault.withValues(alpha: 0.14),
-          foregroundColor: path.category.colorOrDefault,
-          child: Icon(path.category.iconOrDefault, size: 20),
-        ),
+        leading: Icon(path.category.iconOrDefault, color: path.category.colorOrDefault),
         title: Text(
-          path.category.name,
-          maxLines: 1,
+          title,
+          maxLines: 2,
           overflow: TextOverflow.ellipsis,
           style: const TextStyle(fontWeight: FontWeight.w700),
         ),
         subtitle: Text(
-          nextStage == null
-              ? (_ru ? 'Все этапы отмечены' : 'All stages marked')
-              : nextStage.title,
+          nextStage?.title ?? (_ru ? 'Все этапы отмечены' : 'All stages marked'),
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
         ),
-        onTap: () => setState(() => _selectedCategoryId = path.category.id),
+        onTap: () => setState(() => _selectedPathId = path.pathId),
       ),
     );
   }
 
-  Widget _mobileSelector(ProjectPathSnapshot selected) {
+  Widget _mobileSelector(
+    ProjectPathSnapshot selected,
+    List<ProjectPathSnapshot> paths,
+  ) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-      child: DropdownButtonFormField<int>(
-        initialValue: selected.category.id,
+      padding: const EdgeInsets.all(12),
+      child: DropdownButtonFormField<String>(
+        initialValue: selected.pathId,
         decoration: InputDecoration(
-          labelText: _ru ? 'Категория / проект' : 'Category / project',
+          labelText: _ru ? 'Путь' : 'Path',
           border: const OutlineInputBorder(),
-          isDense: true,
         ),
         items: [
-          for (final path in _catalog.paths)
-            DropdownMenuItem<int>(
-              value: path.category.id,
-              child: Text(
-                _categoryBreadcrumb(path),
-                overflow: TextOverflow.ellipsis,
-              ),
+          for (final path in paths)
+            DropdownMenuItem<String>(
+              value: path.pathId,
+              child: Text(_breadcrumb(path), overflow: TextOverflow.ellipsis),
             ),
         ],
-        onChanged: (value) {
-          if (value != null) {
-            setState(() => _selectedCategoryId = value);
-          }
+        onChanged: (id) {
+          if (id != null) setState(() => _selectedPathId = id);
         },
       ),
     );
@@ -503,94 +654,45 @@ class _PathsPageState extends State<PathsPage> {
 
   Widget _pathDetail(ProjectPathSnapshot path) {
     final audit = _repository.audit(path);
-    final currentStageIndex = path.stages.indexWhere((stage) => !stage.isDone);
-    final breadcrumb = _categoryBreadcrumb(path);
-    final nested = _categorySegments(path).length > 1;
-
+    final currentIndex = path.stages.indexWhere((stage) => !stage.isDone);
+    final breadcrumb = _breadcrumb(path);
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 18, 20, 40),
       children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (nested) ...[
-                    Text(
-                      breadcrumb,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 5),
-                  ],
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 6,
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    children: [
-                      Text(
-                        path.category.name,
-                        style: Theme.of(context).textTheme.headlineSmall
-                            ?.copyWith(fontWeight: FontWeight.w800),
-                      ),
-                      _statusChip(path),
-                    ],
-                  ),
-                  const SizedBox(height: 7),
-                  Text(path.goal, style: Theme.of(context).textTheme.bodyLarge),
-                ],
-              ),
+        if (breadcrumb.contains(' › '))
+          Text(
+            breadcrumb,
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+        Row(children: [
+          Expanded(
+            child: Text(
+              _categoryName(path.category),
+              style: Theme.of(context)
+                  .textTheme
+                  .headlineSmall
+                  ?.copyWith(fontWeight: FontWeight.w800),
             ),
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                AppIconButton(
-                  icon: Icons.edit_outlined,
-                  tooltip: _ru ? 'Изменить цель' : 'Edit goal',
-                  onPressed: () => unawaited(_editGoal(path)),
-                ),
-                AppIconButton(
-                  icon: Icons.delete_outline_rounded,
-                  tooltip: _ru ? 'Удалить путь' : 'Delete Path',
-                  onPressed: () => unawaited(_deletePath(path)),
-                ),
-              ],
-            ),
-          ],
-        ),
-        const SizedBox(height: 14),
+          ),
+          AppIconButton(
+            icon: Icons.edit_outlined,
+            tooltip: _ru ? 'Изменить цель' : 'Edit goal',
+            onPressed: () => unawaited(_editGoal(path)),
+          ),
+          AppIconButton(
+            icon: Icons.delete_outline_rounded,
+            tooltip: _ru ? 'Удалить путь' : 'Delete Path',
+            onPressed: () => unawaited(_deletePath(path)),
+          ),
+        ]),
+        const SizedBox(height: 6),
+        Text(path.goal, style: Theme.of(context).textTheme.bodyLarge),
+        const SizedBox(height: 12),
         _auditCard(audit),
-        if (currentStageIndex >= 0) ...[
-          const SizedBox(height: 14),
-          _currentStageCard(path.stages[currentStageIndex]),
-        ],
-        const SizedBox(height: 16),
-        for (var stageIndex = 0; stageIndex < path.stages.length; stageIndex++)
-          _stageCard(path, stageIndex, stageIndex == currentStageIndex),
+        const SizedBox(height: 14),
+        for (var i = 0; i < path.stages.length; i++)
+          _stageCard(path, i, i == currentIndex),
       ],
-    );
-  }
-
-  Widget _statusChip(ProjectPathSnapshot path) {
-    final scheme = Theme.of(context).colorScheme;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-      decoration: BoxDecoration(
-        color: scheme.secondaryContainer.withValues(alpha: 0.6),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Text(
-        '${_ru ? 'Активный' : 'Active'} · v${path.version}',
-        style: Theme.of(
-          context,
-        ).textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w700),
-      ),
     );
   }
 
@@ -598,271 +700,99 @@ class _PathsPageState extends State<PathsPage> {
     final scheme = Theme.of(context).colorScheme;
     final ok = audit.isValid;
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: ok
-            ? scheme.secondaryContainer.withValues(alpha: 0.35)
-            : scheme.errorContainer.withValues(alpha: 0.35),
+        color: (ok ? scheme.secondaryContainer : scheme.errorContainer)
+            .withValues(alpha: 0.35),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Icon(
-                ok ? Icons.verified_outlined : Icons.rule_folder_outlined,
-                size: 20,
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  ok
-                      ? (_ru
-                            ? 'Структура пути исполнима'
-                            : 'Path structure is executable')
-                      : (_ru
-                            ? 'Нужно исправить структуру'
-                            : 'Structure needs attention'),
-                  style: const TextStyle(fontWeight: FontWeight.w800),
-                ),
-              ),
-            ],
+          Text(
+            ok
+                ? (_ru ? 'Структура пути исполнима' : 'Path structure is executable')
+                : (_ru ? 'Нужно исправить структуру' : 'Structure needs attention'),
+            style: const TextStyle(fontWeight: FontWeight.w800),
           ),
           if (!ok)
-            for (final problem in audit.problems.take(8))
-              Padding(
-                padding: const EdgeInsets.only(top: 5),
-                child: Text('• $problem'),
-              ),
+            for (final problem in audit.problems.take(8)) Text('• $problem'),
         ],
       ),
     );
   }
 
-  Widget _currentStageCard(PathStageSnapshot stage) {
-    final scheme = Theme.of(context).colorScheme;
-    final next = _firstPendingAction(stage);
-    final accent = Colors.amber.shade700;
-    final fillAlpha = Theme.of(context).brightness == Brightness.dark
-        ? 0.18
-        : 0.13;
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.amber.withValues(alpha: fillAlpha),
-        border: Border.all(color: accent.withValues(alpha: 0.58)),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.bolt_rounded, size: 18, color: accent),
-              const SizedBox(width: 6),
-              Text(
-                _ru ? 'Сейчас' : 'Now',
-                style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: accent,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Text(
-            stage.title,
-            style: Theme.of(
-              context,
-            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
-          ),
-          if (next != null) ...[
-            const SizedBox(height: 7),
-            Text(
-              '${_ru ? 'Следующее действие' : 'Next action'}: '
-              '${next.text} · ${next.minutes} ${_ru ? 'мин' : 'min'}',
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(color: scheme.onSurface),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _stageCard(ProjectPathSnapshot path, int stageIndex, bool current) {
-    final scheme = Theme.of(context).colorScheme;
-    final stage = path.stages[stageIndex];
-    final doneActions = stage.actions.where((action) => action.isDone).length;
-    final completedAccent = Colors.green.shade600;
-    final currentAccent = Colors.amber.shade700;
+  Widget _stageCard(ProjectPathSnapshot path, int index, bool current) {
+    final stage = path.stages[index];
     final dark = Theme.of(context).brightness == Brightness.dark;
-    final Color borderColor;
-    final Color backgroundColor;
-    if (stage.isDone) {
-      borderColor = completedAccent.withValues(alpha: 0.62);
-      backgroundColor = Colors.green.withValues(alpha: dark ? 0.16 : 0.10);
-    } else if (current) {
-      borderColor = currentAccent.withValues(alpha: 0.62);
-      backgroundColor = Colors.amber.withValues(alpha: dark ? 0.16 : 0.10);
-    } else {
-      borderColor = scheme.outlineVariant;
-      backgroundColor = Colors.transparent;
-    }
-
+    final completed = Colors.green.shade600;
+    final active = Colors.amber.shade700;
+    final accent = stage.isDone ? completed : (current ? active : null);
+    final doneCount = stage.actions.where((action) => action.isDone).length;
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
-        color: backgroundColor,
+        color: accent?.withValues(alpha: dark ? 0.16 : 0.10),
+        border: Border.all(
+          color: accent?.withValues(alpha: 0.62) ??
+              Theme.of(context).colorScheme.outlineVariant,
+        ),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: borderColor),
       ),
       child: ExpansionTile(
         initiallyExpanded: current,
         leading: Checkbox(
           value: stage.isDone,
-          activeColor: completedAccent,
-          onChanged: (value) => _toggleStage(path, stageIndex, value ?? false),
+          activeColor: completed,
+          onChanged: (value) => _toggleStage(path, index, value ?? false),
         ),
         title: Text(
-          '${stageIndex + 1}. ${stage.title}',
+          '${index + 1}. ${stage.title}',
           style: TextStyle(
-            color: stage.isDone ? completedAccent : null,
+            color: stage.isDone ? completed : null,
             fontWeight: FontWeight.w800,
             decoration: stage.isDone ? TextDecoration.lineThrough : null,
-            decorationColor: stage.isDone ? completedAccent : null,
           ),
         ),
-        subtitle: Padding(
-          padding: const EdgeInsets.only(top: 5),
-          child: Text(
-            '${_ru ? 'Готово, когда' : 'Done when'}: '
-            '${stage.completionCriteria.isEmpty ? '—' : stage.completionCriteria}',
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
+        subtitle: Text(
+          '${_ru ? 'Готово, когда' : 'Done when'}: ${stage.completionCriteria}',
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
         ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (stage.isDone)
-              Container(
-                margin: const EdgeInsets.only(right: 8),
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: completedAccent.withValues(alpha: dark ? 0.22 : 0.12),
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.check_rounded, size: 14, color: completedAccent),
-                    const SizedBox(width: 4),
-                    Text(
-                      _ru ? 'Готово' : 'Done',
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: completedAccent,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  ],
-                ),
-              )
-            else if (current)
-              Container(
-                margin: const EdgeInsets.only(right: 8),
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: currentAccent.withValues(alpha: dark ? 0.22 : 0.12),
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: Text(
-                  _ru ? 'Сейчас' : 'Now',
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: currentAccent,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ),
-            Text('$doneActions/${stage.actions.length}'),
-          ],
+        trailing: Text(
+          '${stage.isDone ? (_ru ? 'Готово · ' : 'Done · ') : current ? (_ru ? 'Сейчас · ' : 'Now · ') : ''}'
+          '$doneCount/${stage.actions.length}',
+          style: TextStyle(color: accent, fontWeight: FontWeight.w700),
         ),
         children: [
-          for (
-            var actionIndex = 0;
-            actionIndex < stage.actions.length;
-            actionIndex++
-          )
-            _actionRow(path, stageIndex, actionIndex),
+          for (var i = 0; i < stage.actions.length; i++) _actionRow(path, index, i),
         ],
       ),
     );
   }
 
   Widget _actionRow(ProjectPathSnapshot path, int stageIndex, int actionIndex) {
-    final scheme = Theme.of(context).colorScheme;
     final action = path.stages[stageIndex].actions[actionIndex];
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Checkbox(
-            value: action.isDone,
-            activeColor: Colors.green.shade600,
-            onChanged: (value) =>
-                _toggleAction(path, stageIndex, actionIndex, value ?? false),
-          ),
-          const SizedBox(width: 4),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    action.text,
-                    style: TextStyle(
-                      color: action.isDone ? Colors.green.shade600 : null,
-                      fontWeight: FontWeight.w600,
-                      decoration: action.isDone
-                          ? TextDecoration.lineThrough
-                          : null,
-                      decorationColor: action.isDone
-                          ? Colors.green.shade600
-                          : null,
-                    ),
-                  ),
-                  if (action.expectedResult.isNotEmpty) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      '${_ru ? 'Результат' : 'Output'}: '
-                      '${action.expectedResult}',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: scheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(width: 10),
-          Padding(
-            padding: const EdgeInsets.only(top: 10),
-            child: Text(
-              '${action.minutes} ${_ru ? 'мин' : 'min'}',
-              style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                color: scheme.onSurfaceVariant,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-        ],
+    final completed = Colors.green.shade600;
+    return ListTile(
+      leading: Checkbox(
+        value: action.isDone,
+        activeColor: completed,
+        onChanged: (value) =>
+            _toggleAction(path, stageIndex, actionIndex, value ?? false),
       ),
+      title: Text(
+        action.text,
+        style: TextStyle(
+          color: action.isDone ? completed : null,
+          decoration: action.isDone ? TextDecoration.lineThrough : null,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      subtitle: action.expectedResult.isEmpty
+          ? null
+          : Text('${_ru ? 'Результат' : 'Output'}: ${action.expectedResult}'),
+      trailing: Text('${action.minutes} ${_ru ? 'мин' : 'min'}'),
     );
   }
 }
