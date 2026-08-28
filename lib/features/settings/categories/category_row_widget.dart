@@ -271,7 +271,7 @@ class CategoryRowWidget extends StatelessWidget {
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: () => onSelect(isSelected ? null : r.id),
-          onLongPress: () => onLongPressOpenEditor(r),
+          onLongPress: editMode ? null : () => onLongPressOpenEditor(r),
           borderRadius: BorderRadius.circular(radius),
           child: Padding(
             padding: EdgeInsets.all(layout.contentPadding),
