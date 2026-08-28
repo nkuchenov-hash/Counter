@@ -53,6 +53,30 @@ class SleepForegroundReconcileService with WidgetsBindingObserver {
     await service.sync();
   }
 
+  Future<bool> _hasTodayXiaomiSleep(
+    DatabaseService db,
+    DateTime localNow,
+  ) async {
+    final rows = await db.getRecords();
+    for (final row in rows) {
+      final source = (row['sleep_source'] ?? row['external_source'] ?? '')
+          .toString()
+          .trim()
+          .toLowerCase();
+      if (source != 'xiaomi') continue;
+      final rawEnd = row['end_time']?.toString().trim() ?? '';
+      final end = DateTime.tryParse(rawEnd);
+      if (end == null) continue;
+      final localEnd = db.applyUserOffset(end.toUtc());
+      if (localEnd.year == localNow.year &&
+          localEnd.month == localNow.month &&
+          localEnd.day == localNow.day) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   Future<void> _syncCloudSleep() async {
     final db = DatabaseService.instance;
     if (!db.isInitialized || (db.currentProfileId?.isNotEmpty != true)) return;
@@ -70,6 +94,10 @@ class SleepForegroundReconcileService with WidgetsBindingObserver {
         localMinutes >= _morningEndMinutes) {
       return;
     }
+
+    // Once today's completed Xiaomi sleep is present, foreground resumes stop
+    // hitting Xiaomi for the rest of the morning.
+    if (await _hasTodayXiaomiSleep(db, localNow)) return;
 
     // Opening/resuming LIFE OS several times must not repeatedly hit Xiaomi.
     // The server timestamp is shared by all clients, so this also suppresses
