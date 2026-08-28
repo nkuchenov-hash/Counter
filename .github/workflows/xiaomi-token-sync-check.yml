@@ -33,7 +33,7 @@ jobs:
           chmod 600 ~/.ssh/lifeos_pocketbase
           ssh-keyscan -p "$SSH_PORT" -H "${SSH_HOST:-217.114.0.201}" >> ~/.ssh/known_hosts
 
-      - name: Verify Xiaomi token and API sync
+      - name: Verify Xiaomi token and self-account sleep
         shell: bash
         run: |
           set -euo pipefail
@@ -50,19 +50,28 @@ jobs:
           if [[ -z "$app_dir" && -n "$pid" ]]; then app_dir="$(readlink -f "/proc/$pid/cwd" 2>/dev/null || true)"; fi
           [[ -n "$app_dir" && -d "$app_dir" ]]
           py=/opt/lifeos-xiaomi-sleep/bin/python
-          bridge="$app_dir/pb_hooks/xiaomi_sleep_bridge.py"
           token="$app_dir/pb_data/xiaomi_sleep/chat-probe.token.json"
-          state="$app_dir/pb_data/xiaomi_sleep/chat-probe.state.json"
-          if [[ ! -f "$token" ]]; then
-            echo 'XIAOMI_TOKEN_EXISTS=false'
-            if [[ -f "$state" ]]; then "$py" -c 'import json,sys; d=json.load(open(sys.argv[1],encoding="utf-8")); print("LOGIN_STATE="+str(d.get("status","unknown")))' "$state"; fi
-            exit 2
-          fi
+          [[ -f "$token" ]]
           echo 'XIAOMI_TOKEN_EXISTS=true'
+
+          fork=/tmp/lifeos-mi-health-mcp
+          rm -rf "$fork"
+          git clone -q --depth 1 https://github.com/ilyanehay/mi-health-mcp.git "$fork"
+          pkg="$(find "$fork/vendor/mi-fitness-python" -type d -name mi_fitness -print -quit)"
+          [[ -n "$pkg" ]]
+          src="$(dirname "$pkg")"
+          code=$'import asyncio,json,sys\nfrom datetime import date\nfrom mi_fitness import MiHealthClient\nasync def main():\n    token=sys.argv[1]\n    td=json.load(open(token,encoding="utf-8"))\n    uid=int(str(td.get("user_id") or "0"))\n    async with MiHealthClient.from_token(token) as c:\n        rows=await c.get_sleep(uid,date.today(),days=7)\n    out=[]\n    for r in rows or []:\n        for s in getattr(r,"segment_details",None) or []:\n            out.append((getattr(s,"bedtime",0),getattr(s,"wake_up_time",0)))\n    print("FORK_SYNC_OK=true")\n    print("FORK_SLEEP_DAYS="+str(len(rows or [])))\n    print("FORK_SLEEP_SEGMENTS="+str(len(out)))\n    if out:\n        from datetime import datetime,timezone\n        latest=max(float(x[1] or 0) for x in out)\n        if latest>1000000000000: latest/=1000\n        print("FORK_LATEST_SLEEP_DAY="+datetime.fromtimestamp(latest,tz=timezone.utc).date().isoformat())\nasyncio.run(main())'
           set +e
-          result="$($py "$bridge" sync --token-path "$token" --days 7)"
+          output="$(PYTHONPATH="$src" "$py" -c "$code" "$token" 2>/tmp/lifeos-xiaomi-fork.err)"
           rc=$?
           set -e
-          "$py" -c 'import json,sys; d=json.loads(sys.argv[1]); rows=d.get("sessions") or []; print("XIAOMI_SYNC_OK="+str(bool(d.get("ok"))).lower()); print("XIAOMI_SESSION_COUNT="+str(len(rows))); print("XIAOMI_HAS_RECENT="+str(bool(rows)).lower()); print("XIAOMI_ERROR="+str(d.get("error") or "none")); print("XIAOMI_ERROR_CLASS="+str(d.get("error_class") or "none"))' "$result"
-          echo "XIAOMI_SYNC_RC=$rc"
+          if [[ $rc -eq 0 ]]; then
+            printf '%s\n' "$output"
+            echo 'FORK_ERROR=none'
+          else
+            echo 'FORK_SYNC_OK=false'
+            echo "FORK_RC=$rc"
+            err_class="$(tail -n 1 /tmp/lifeos-xiaomi-fork.err | sed -E 's/^([A-Za-z_][A-Za-z0-9_]*):.*/\1/' | tr -cd 'A-Za-z0-9_')"
+            echo "FORK_ERROR_CLASS=${err_class:-unknown}"
+          fi
           REMOTE
