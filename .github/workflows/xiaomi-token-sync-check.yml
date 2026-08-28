@@ -33,15 +33,15 @@ jobs:
           chmod 600 ~/.ssh/lifeos_pocketbase
           ssh-keyscan -p "$SSH_PORT" -H "${SSH_HOST:-217.114.0.201}" >> ~/.ssh/known_hosts
 
-      - name: Download self-account SDK on runner
+      - name: Download current self-account bridge
         shell: bash
         run: |
           set -euo pipefail
-          curl -fsSL https://codeload.github.com/ilyanehay/mi-health-mcp/tar.gz/refs/heads/main -o /tmp/mi-health-mcp.tar.gz
-          tar -tzf /tmp/mi-health-mcp.tar.gz | grep -q '/vendor/mi-fitness-python/'
-          scp -i ~/.ssh/lifeos_pocketbase -P "$SSH_PORT" /tmp/mi-health-mcp.tar.gz "$SSH_USER@$SSH_HOST:/tmp/mi-health-mcp.tar.gz"
+          curl -fsSL https://codeload.github.com/shkyyy18/mi-bridge/tar.gz/refs/heads/main -o /tmp/mi-bridge.tar.gz
+          tar -tzf /tmp/mi-bridge.tar.gz | grep -q '/src/mi_fitness_mcp/'
+          scp -i ~/.ssh/lifeos_pocketbase -P "$SSH_PORT" /tmp/mi-bridge.tar.gz "$SSH_USER@$SSH_HOST:/tmp/mi-bridge.tar.gz"
 
-      - name: Verify Xiaomi token and self-account sleep
+      - name: Inspect compatibility without exposing credentials
         shell: bash
         run: |
           set -euo pipefail
@@ -49,39 +49,30 @@ jobs:
             "POCKETBASE_DEPLOY_DIR='$POCKETBASE_DEPLOY_DIR' POCKETBASE_SERVICE='$POCKETBASE_SERVICE' bash -s" <<'REMOTE'
           set -euo pipefail
           service_name="${POCKETBASE_SERVICE:-}"
-          if [[ -z "$service_name" ]]; then
-            service_name="$(systemctl list-unit-files --type=service --no-legend 2>/dev/null | awk 'tolower($1) ~ /pocketbase/ && !found {print $1; found=1}')"
-          fi
+          if [[ -z "$service_name" ]]; then service_name="$(systemctl list-unit-files --type=service --no-legend 2>/dev/null | awk 'tolower($1) ~ /pocketbase/ && !found {print $1; found=1}')"; fi
           pid="$(pgrep -f '[p]ocketbase.*serve' | sed -n '1p' || true)"
           app_dir="${POCKETBASE_DEPLOY_DIR:-}"
           if [[ -z "$app_dir" && -n "$service_name" ]]; then app_dir="$(systemctl show "$service_name" -p WorkingDirectory --value 2>/dev/null || true)"; fi
           if [[ -z "$app_dir" && -n "$pid" ]]; then app_dir="$(readlink -f "/proc/$pid/cwd" 2>/dev/null || true)"; fi
           [[ -n "$app_dir" && -d "$app_dir" ]]
-          py=/opt/lifeos-xiaomi-sleep/bin/python
           token="$app_dir/pb_data/xiaomi_sleep/chat-probe.token.json"
           [[ -f "$token" ]]
           echo 'XIAOMI_TOKEN_EXISTS=true'
+          /opt/lifeos-xiaomi-sleep/bin/python -c 'import json,sys; d=json.load(open(sys.argv[1],encoding="utf-8")); print("TOKEN_KEYS="+",".join(sorted(d.keys()))); print("HAS_PASS_TOKEN="+str(any(k.lower().replace("_","")=="passtoken" for k in d)).lower())' "$token"
 
-          fork=/tmp/lifeos-mi-health-mcp
-          rm -rf "$fork"
+          fork=/tmp/lifeos-mi-bridge
+          rm -rf "$fork" /tmp/lifeos-mi-bridge-venv
           mkdir -p "$fork"
-          tar -xzf /tmp/mi-health-mcp.tar.gz -C "$fork" --strip-components=1
-          pkg="$(find "$fork/vendor/mi-fitness-python" -type d -name mi_fitness -print -quit)"
-          [[ -n "$pkg" ]]
-          src="$(dirname "$pkg")"
-          code=$'import asyncio,json,sys\nfrom datetime import date,datetime,timezone\nfrom mi_fitness import MiHealthClient\nasync def main():\n    token=sys.argv[1]\n    td=json.load(open(token,encoding="utf-8"))\n    uid=int(str(td.get("user_id") or "0"))\n    async with MiHealthClient.from_token(token) as c:\n        rows=await c.get_sleep(uid,date.today(),days=7)\n    segments=[]\n    for r in rows or []:\n        for s in getattr(r,"segment_details",None) or []:\n            end=float(getattr(s,"wake_up_time",0) or 0)\n            if end>1000000000000: end/=1000\n            if end>0: segments.append(end)\n    print("FORK_SYNC_OK=true")\n    print("FORK_SLEEP_DAYS="+str(len(rows or [])))\n    print("FORK_SLEEP_SEGMENTS="+str(len(segments)))\n    if segments:\n        days={datetime.fromtimestamp(x,tz=timezone.utc).date().isoformat() for x in segments}\n        print("FORK_HAS_AUG27="+str("2026-08-27" in days).lower())\n        print("FORK_LATEST_SLEEP_DAY="+max(days))\nasyncio.run(main())'
-          set +e
-          output="$(PYTHONPATH="$src" "$py" -c "$code" "$token" 2>/tmp/lifeos-xiaomi-fork.err)"
-          rc=$?
-          set -e
-          if [[ $rc -eq 0 ]]; then
-            printf '%s\n' "$output"
-            echo 'FORK_ERROR=none'
-          else
-            echo 'FORK_SYNC_OK=false'
-            echo "FORK_RC=$rc"
-            err_class="$(tail -n 1 /tmp/lifeos-xiaomi-fork.err | sed -E 's/^([A-Za-z_][A-Za-z0-9_]*):.*/\1/' | tr -cd 'A-Za-z0-9_')"
-            echo "FORK_ERROR_CLASS=${err_class:-unknown}"
-          fi
-          rm -f /tmp/mi-health-mcp.tar.gz
+          tar -xzf /tmp/mi-bridge.tar.gz -C "$fork" --strip-components=1
+          python3 -m venv /tmp/lifeos-mi-bridge-venv
+          /tmp/lifeos-mi-bridge-venv/bin/pip install -q "$fork"
+          /tmp/lifeos-mi-bridge-venv/bin/python - <<'PY'
+import inspect
+from mi_fitness_mcp.adapters.mi_fitness_cloud import MiFitnessCloudAdapter
+print('ADAPTER_SIGNATURE='+str(inspect.signature(MiFitnessCloudAdapter)))
+for name in ('sync','sync_sleep','fetch_sleep','get_sleep'):
+    if hasattr(MiFitnessCloudAdapter,name):
+        print(name.upper()+'_SIGNATURE='+str(inspect.signature(getattr(MiFitnessCloudAdapter,name))))
+PY
+          rm -f /tmp/mi-bridge.tar.gz
           REMOTE
