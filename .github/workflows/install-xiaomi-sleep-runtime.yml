@@ -1,4 +1,5 @@
 name: Provision Xiaomi sleep runtime
+# Production verification is intentionally rerunnable after sleep-pipeline changes.
 
 on:
   pull_request:
