@@ -169,7 +169,25 @@ For any production Notes editor change, `docs/NOTES_EDITOR_CONTRACT.md` is manda
 - Do not give AI arbitrary PocketBase/SQL/filesystem/shell writes; future Path AI must use whitelisted app-owned tools with validation, approval for sensitive actions, audit, and undo.
 - Do not duplicate local UI components where canonical components already exist.
 - Do not modify archived, quarantine, generated, or cleanup-report-listed legacy files unless explicitly requested.
-- Do not commit or push unless explicitly asked.
+- Do not leave explicitly requested implementation work on an unmerged branch or PR after required verification passes. Commit, push, merge, deploy the affected production target, and verify the live result unless the user explicitly says not to ship/deploy.
+
+## Delivery and Deployment Completion Rule
+
+For an explicitly requested LIFE OS implementation or bug fix, **"done" means shipped**, not merely coded:
+
+1. Implement the requested change in the correct current code path.
+2. Run the required focused tests, analyzer, architecture/performance guards, and relevant release build(s).
+3. Commit and push the implementation branch as needed.
+4. Open or update the PR and resolve merge blockers.
+5. Merge after required verification passes.
+6. Deploy every affected production target using the repository's documented deployment path.
+7. Verify the deployed/live result where the available tooling permits it.
+
+Do not stop at "branch created", "PR ready", "waiting for CI", "not merged", or "not deployed" when the current tools can continue the lifecycle. A completed implementation left only in a branch/PR is an incomplete task.
+
+Exceptions are limited to: a required check failing; a merge/deployment permission or secret being unavailable; a destructive/irreversible migration requiring separate safety approval; or the user explicitly saying not to merge/deploy. When blocked, complete every remaining safe step and report the exact blocker; never describe the work as shipped.
+
+Documentation-only tasks do not require an app deployment unless they change deployment/runtime configuration. For platform-specific work, ship the relevant target(s): web/runtime UI through the documented web deployment, PocketBase hooks/migrations through the PocketBase deployment path, and Android-impacting changes through the release ARM64 build/distribution path available in the repository.
 
 ## Verification
 
@@ -185,13 +203,13 @@ For web/UI/runtime changes:
 flutter build web --release --base-href="/Counter/" --no-tree-shake-icons --no-wasm-dry-run
 ```
 
-For deploy when requested:
+For verified implementation changes that affect the live app, deploy by default:
 
 ```powershell
 .\update.ps1
 ```
 
-For Android-impacting shared runtime/UI changes when requested or relevant:
+For Android-impacting shared runtime/UI changes when relevant:
 
 ```powershell
 flutter build apk --release --target-platform android-arm64 --split-per-abi --no-tree-shake-icons
@@ -232,5 +250,6 @@ End work with a concise report covering:
 - important rules or behavior changed;
 - verification commands run and results;
 - git status summary;
+- merge commit / PR state and production deployment result;
 - whether production code, tests, hooks, build scripts, schema, generated files, or UI were touched;
 - any known limitations or follow-up risks.
