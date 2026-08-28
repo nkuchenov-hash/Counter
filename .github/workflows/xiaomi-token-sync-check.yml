@@ -33,46 +33,29 @@ jobs:
           chmod 600 ~/.ssh/lifeos_pocketbase
           ssh-keyscan -p "$SSH_PORT" -H "${SSH_HOST:-217.114.0.201}" >> ~/.ssh/known_hosts
 
-      - name: Download current self-account bridge
+      - name: Inspect installed mi-fitness sleep implementation
         shell: bash
         run: |
           set -euo pipefail
-          curl -fsSL https://codeload.github.com/shkyyy18/mi-bridge/tar.gz/refs/heads/main -o /tmp/mi-bridge.tar.gz
-          tar -tzf /tmp/mi-bridge.tar.gz | grep -q '/src/mi_fitness_mcp/'
-          scp -i ~/.ssh/lifeos_pocketbase -P "$SSH_PORT" /tmp/mi-bridge.tar.gz "$SSH_USER@$SSH_HOST:/tmp/mi-bridge.tar.gz"
-
-      - name: Inspect compatibility without exposing credentials
-        shell: bash
-        run: |
+          ssh -i ~/.ssh/lifeos_pocketbase -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
           set -euo pipefail
-          ssh -i ~/.ssh/lifeos_pocketbase -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" \
-            "POCKETBASE_DEPLOY_DIR='$POCKETBASE_DEPLOY_DIR' POCKETBASE_SERVICE='$POCKETBASE_SERVICE' bash -s" <<'REMOTE'
-          set -euo pipefail
-          service_name="${POCKETBASE_SERVICE:-}"
-          if [[ -z "$service_name" ]]; then service_name="$(systemctl list-unit-files --type=service --no-legend 2>/dev/null | awk 'tolower($1) ~ /pocketbase/ && !found {print $1; found=1}')"; fi
-          pid="$(pgrep -f '[p]ocketbase.*serve' | sed -n '1p' || true)"
-          app_dir="${POCKETBASE_DEPLOY_DIR:-}"
-          if [[ -z "$app_dir" && -n "$service_name" ]]; then app_dir="$(systemctl show "$service_name" -p WorkingDirectory --value 2>/dev/null || true)"; fi
-          if [[ -z "$app_dir" && -n "$pid" ]]; then app_dir="$(readlink -f "/proc/$pid/cwd" 2>/dev/null || true)"; fi
-          [[ -n "$app_dir" && -d "$app_dir" ]]
-          token="$app_dir/pb_data/xiaomi_sleep/chat-probe.token.json"
-          [[ -f "$token" ]]
-          echo 'XIAOMI_TOKEN_EXISTS=true'
-          /opt/lifeos-xiaomi-sleep/bin/python -c 'import json,sys; d=json.load(open(sys.argv[1],encoding="utf-8")); print("TOKEN_KEYS="+",".join(sorted(d.keys()))); print("HAS_PASS_TOKEN="+str(any(k.lower().replace("_","")=="passtoken" for k in d)).lower())' "$token"
-
-          fork=/tmp/lifeos-mi-bridge
-          rm -rf "$fork" /tmp/lifeos-mi-bridge-venv
-          mkdir -p "$fork"
-          tar -xzf /tmp/mi-bridge.tar.gz -C "$fork" --strip-components=1
-          python3 -m venv /tmp/lifeos-mi-bridge-venv
-          /tmp/lifeos-mi-bridge-venv/bin/pip install -q "$fork"
-          /tmp/lifeos-mi-bridge-venv/bin/python - <<'PY'
+          py=/opt/lifeos-xiaomi-sleep/bin/python
+          "$py" - <<'PY'
 import inspect
-from mi_fitness_mcp.adapters.mi_fitness_cloud import MiFitnessCloudAdapter
-print('ADAPTER_SIGNATURE='+str(inspect.signature(MiFitnessCloudAdapter)))
-for name in ('sync','sync_sleep','fetch_sleep','get_sleep'):
-    if hasattr(MiFitnessCloudAdapter,name):
-        print(name.upper()+'_SIGNATURE='+str(inspect.signature(getattr(MiFitnessCloudAdapter,name))))
+from mi_fitness import MiHealthClient
+print('CLIENT_FILE='+inspect.getsourcefile(MiHealthClient))
+print('GET_SLEEP_SIGNATURE='+str(inspect.signature(MiHealthClient.get_sleep)))
+print('---GET_SLEEP_SOURCE---')
+print(inspect.getsource(MiHealthClient.get_sleep))
+print('---SLEEP_RELATED---')
+for name in dir(MiHealthClient):
+    if 'sleep' in name.lower() or 'famil' in name.lower() or 'relative' in name.lower() or 'member' in name.lower():
+        obj=getattr(MiHealthClient,name)
+        if callable(obj):
+            try:
+                print(name, inspect.signature(obj))
+                print(inspect.getsource(obj))
+            except Exception:
+                print(name)
 PY
-          rm -f /tmp/mi-bridge.tar.gz
           REMOTE
