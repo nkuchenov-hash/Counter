@@ -15,7 +15,7 @@ import 'package:flutter/material.dart';
 export 'package:counter/features/settings/categories/category_editor_sheet.dart'
     show CategoryEditorSheet;
 export 'package:counter/features/settings/categories/category_row_widget.dart'
-    show CategoryBandLayout, CategoryRowWidget;
+    show CategoryBandLayout, CategoryDragData, CategoryRowWidget;
 export 'package:counter/features/settings/categories/category_tag_input_field.dart'
     show TagInputField;
 
@@ -80,6 +80,94 @@ class _CategoriesPageState extends State<CategoriesPage> {
         baselineBeforeReorder: baselineBefore,
       ),
     );
+  }
+
+  bool _containsCategoryId(CategoryRule root, int categoryId) {
+    if (root.id == categoryId) return true;
+    final children = root.children;
+    if (children == null) return false;
+    for (final child in children) {
+      if (_containsCategoryId(child, categoryId)) return true;
+    }
+    return false;
+  }
+
+  int _subtreeHeight(CategoryRule root) {
+    final children = root.children;
+    if (children == null || children.isEmpty) return 0;
+    var childHeight = 0;
+    for (final child in children) {
+      final h = _subtreeHeight(child);
+      if (h > childHeight) childHeight = h;
+    }
+    return childHeight + 1;
+  }
+
+  bool _canMoveCategoryToParent(
+    CategoryDragData data,
+    int? newParentId,
+  ) {
+    if (!_categoryEditMode) return false;
+    if (newParentId == data.categoryId) return false;
+    if (newParentId == data.sourceParentId) return false;
+
+    final db = DatabaseService.instance;
+    final moving = db.getCategoryRuleById(data.categoryId);
+    if (moving == null) return false;
+
+    var newDepth = 0;
+    if (newParentId != null) {
+      final target = db.getCategoryRuleById(newParentId);
+      if (target == null) return false;
+      if (_containsCategoryId(moving, newParentId)) return false;
+      final targetPath = db.categoryPathFromRootToLocalId(newParentId);
+      if (targetPath.isEmpty) return false;
+      // A child of a root (path length 1) is depth 1, etc.
+      newDepth = targetPath.length;
+    }
+
+    return newDepth + _subtreeHeight(moving) < _maxDepth;
+  }
+
+  void _onCategoryMove(CategoryDragData data, int? newParentId) {
+    if (!_canMoveCategoryToParent(data, newParentId)) return;
+    unawaited(_moveCategoryToParent(data, newParentId));
+  }
+
+  Future<void> _moveCategoryToParent(
+    CategoryDragData data,
+    int? newParentId,
+  ) async {
+    final db = DatabaseService.instance;
+
+    // updateCategoryParent is intentionally local-first: it mutates the in-memory
+    // tree and emits it before its first network await, so the drop is visible now.
+    final save = db.updateCategoryParent(data.categoryId, newParentId);
+    final optimisticPath = db.categoryPathFromRootToLocalId(data.categoryId);
+    if (mounted) {
+      setState(() {
+        for (var d = 0; d < _maxDepth; d++) {
+          _selectedPath[d] = d < optimisticPath.length
+              ? optimisticPath[d]
+              : null;
+        }
+      });
+    }
+
+    final ok = await save;
+    if (!mounted) return;
+
+    // updateCategoryParent reloads PocketBase on both success and failure. Repair
+    // the visible drill-down path from that authoritative tree after the request.
+    final settledPath = db.categoryPathFromRootToLocalId(data.categoryId);
+    setState(() {
+      for (var d = 0; d < _maxDepth; d++) {
+        _selectedPath[d] = d < settledPath.length ? settledPath[d] : null;
+      }
+    });
+    if (ok) {
+      await widget.onChanged();
+    }
   }
 
   Future<void> _notifyChanged() async {
@@ -197,6 +285,8 @@ class _CategoriesPageState extends State<CategoriesPage> {
       onReorder: _categoryEditMode
           ? (oldI, newI) => _onCategoryBandReorder(depth, oldI, newI)
           : null,
+      canMoveToParent: _categoryEditMode ? _canMoveCategoryToParent : null,
+      onMoveToParent: _categoryEditMode ? _onCategoryMove : null,
       layout: _useHorizontalScrollLayout
           ? CategoryBandLayout.horizontalPeek
           : CategoryBandLayout.wrapGrid,
