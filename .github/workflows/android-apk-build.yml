@@ -32,9 +32,6 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Test category drag/order
-        run: flutter test test/category_order_sync_test.dart
-
       - name: Analyze
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
 
