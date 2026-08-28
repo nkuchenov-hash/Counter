@@ -19,7 +19,7 @@ import 'package:counter/data/voice/desktop_voice_recognition_postprocess.dart';
 import 'package:counter/shared/voice/platforms/desktop/desktop_stt_orchestrator.dart';
 import 'package:counter/data/local_sync/offline_sync_state.dart';
 import 'package:counter/data/database_service.dart';
-import 'package:counter/data/health/health_sleep_sync_service.dart';
+import 'package:counter/data/health/sleep_foreground_reconcile_service.dart';
 import 'package:counter/services/notification_service.dart';
 import 'package:counter/l10n/app_locales.dart';
 import 'package:counter/l10n/dictionary.dart';
@@ -280,14 +280,10 @@ class _DateTimeTrackerAppState extends State<DateTimeTrackerApp>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state != AppLifecycleState.resumed || kIsWeb || appWearHost) return;
+    if (state != AppLifecycleState.resumed || appWearHost) return;
     final db = DatabaseService.instance;
     if (!db.isInitialized || (db.currentProfileId?.isNotEmpty != true)) return;
-    unawaited(
-      HealthSleepSyncService.instance.bootstrapAutomaticSyncAfterAuth(
-        requestMissingBackgroundPermission: false,
-      ),
-    );
+    unawaited(SleepForegroundReconcileService.instance.reconcile());
   }
 
   @override
@@ -445,11 +441,9 @@ class _RootAuthWrapperState extends State<RootAuthWrapper> {
         _authMessageKey = null;
         _profileHydrationFailed = false;
       });
-      if (!kIsWeb && !appWearHost) {
+      if (!appWearHost) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          unawaited(
-            HealthSleepSyncService.instance.bootstrapAutomaticSyncAfterAuth(),
-          );
+          unawaited(SleepForegroundReconcileService.instance.reconcile());
         });
       }
       StartupLog.markFirstShellBuild();
