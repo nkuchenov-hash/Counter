@@ -133,7 +133,7 @@ jobs:
           exit 1
           REMOTE
 
-      - name: Verify recent cloud sleep and ETNIKA Path in production
+      - name: Verify Xiaomi sleep and ETNIKA Path in production
         shell: bash
         run: |
           set -euo pipefail
@@ -167,28 +167,31 @@ jobs:
           python3 - "$app_dir/pb_data/data.db" <<'PY'
           import json, sqlite3, sys
           con=sqlite3.connect(f'file:{sys.argv[1]}?mode=ro', uri=True); con.row_factory=sqlite3.Row
-          r=con.execute("SELECT enabled,status,last_error,last_sync_at,last_session_count,last_imported_count,length(coalesce(refresh_token_enc,'')) token_len FROM sleep_sync_connections WHERE provider='google_fit' LIMIT 1").fetchone()
+          r=con.execute("SELECT user_id,enabled,status,last_error,last_sync_at,last_session_count,last_imported_count FROM sleep_sync_connections WHERE provider='xiaomi' LIMIT 1").fetchone()
           def error_class(v):
               s=(v or '').lower()
               if not s:return 'none'
-              if 'google_health_scope_required' in s:return 'authorization_required'
-              if 'invalid_grant' in s:return 'invalid_grant'
-              if '403' in s or 'scope' in s or 'permission' in s:return 'permission'
-              if '401' in s:return 'auth'
+              if 'token' in s or 'authorization' in s or '401' in s:return 'auth'
+              if '403' in s or 'permission' in s:return 'permission'
               return 'other'
-          print('connection='+str(bool(r)).lower())
+          print('xiaomi_connection='+str(bool(r)).lower())
           if r:
-              print('enabled='+str(bool(r['enabled'])).lower())
-              print('token='+str(r['token_len']>0).lower())
-              print('status='+str(r['status']))
-              print('error='+error_class(r['last_error']))
-              print('synced='+str(bool(r['last_sync_at'])).lower())
-              print('sessions='+str(r['last_session_count'] or 0))
-              print('imported='+str(r['last_imported_count'] or 0))
-          n=con.execute("SELECT count(*) FROM records WHERE (title='Sleep' OR title='Сон') AND julianday(end_time) >= julianday('now','-36 hours')").fetchone()[0]
-          latest=con.execute("SELECT date(max(end_time)) FROM records WHERE title='Sleep' OR title='Сон'").fetchone()[0]
-          print('sleep_last_36h='+str(n))
-          print('latest_sleep_day='+str(latest or 'none'))
+              print('xiaomi_enabled='+str(bool(r['enabled'])).lower())
+              print('xiaomi_status='+str(r['status']))
+              print('xiaomi_error='+error_class(r['last_error']))
+              print('xiaomi_synced='+str(bool(r['last_sync_at'])).lower())
+              print('xiaomi_sessions='+str(r['last_session_count'] or 0))
+              print('xiaomi_imported='+str(r['last_imported_count'] or 0))
+              legacy=con.execute("SELECT count(*) FROM sleep_sync_connections WHERE user_id=? AND provider IN ('google_fit','google_health') AND enabled=1",(r['user_id'],)).fetchone()[0]
+              print('legacy_sleep_providers_enabled='+str(legacy))
+          n=con.execute("SELECT count(*) FROM records WHERE sleep_source='xiaomi' OR external_source='xiaomi'").fetchone()[0]
+          recent=con.execute("SELECT count(*) FROM records WHERE (sleep_source='xiaomi' OR external_source='xiaomi') AND julianday(end_time) >= julianday('now','-36 hours')").fetchone()[0]
+          latest=con.execute("SELECT date(max(end_time)) FROM records WHERE sleep_source='xiaomi' OR external_source='xiaomi'").fetchone()[0]
+          aug27=con.execute("SELECT count(*) FROM records WHERE (sleep_source='xiaomi' OR external_source='xiaomi') AND date(end_time)='2026-08-27'").fetchone()[0]
+          print('xiaomi_record_count='+str(n))
+          print('xiaomi_sleep_last_36h='+str(recent))
+          print('xiaomi_latest_sleep_day='+str(latest or 'none'))
+          print('xiaomi_has_2026_08_27='+str(aug27>0).lower())
 
           cats=con.execute("SELECT id,user_id,name,parent_id,is_archived FROM categories").fetchall()
           roots={row['id']:row for row in cats if (row['name'] or '').strip().casefold()=='этника' and not bool(row['is_archived'])}
