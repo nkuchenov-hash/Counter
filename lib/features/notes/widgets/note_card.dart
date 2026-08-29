@@ -4,7 +4,6 @@
 // Pure UI: receives a [PlanningTask] + parsed [NoteDocument] + [NoteDocumentStats]
 // and emits tap / pin / done / radial callbacks. No Brain imports.
 
-import 'package:counter/core/widgets/life_text_selection.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/notes/notes_glm_surface.dart';
 import 'package:counter/features/notes/notes_visual_tokens.dart';
@@ -141,7 +140,7 @@ class _GridCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 10),
-              LifeSelectableText(
+              _LifeSelectableText(
                 title,
                 onTap: onOpen,
                 style: TextStyle(
@@ -261,7 +260,7 @@ class _ListRow extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    LifeSelectableText(
+                    _LifeSelectableText(
                       title,
                       onTap: onOpen,
                       style: TextStyle(
@@ -277,7 +276,7 @@ class _ListRow extends StatelessWidget {
                       maxLines: 1,
                     ),
                     const SizedBox(height: 2),
-                    LifeSelectableText(
+                    _LifeSelectableText(
                       _listPreview(data, loc),
                       onTap: onOpen,
                       style: TextStyle(fontSize: 12, color: secondary),
@@ -429,7 +428,7 @@ class _BlockPreview extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final preview = data.doc.blocks.take(5).toList();
     if (preview.isEmpty) {
-      return LifeSelectableText(
+      return _LifeSelectableText(
         t(loc, 'notes_v3_untitled'),
         onTap: onTap,
         style: TextStyle(
@@ -478,7 +477,7 @@ class _PreviewLine extends StatelessWidget {
     if (block.type == NoteBlockType.heading) {
       return Padding(
         padding: const EdgeInsets.only(bottom: 1),
-        child: LifeSelectableText(
+        child: _LifeSelectableText(
           block.text,
           onTap: onTap,
           style: TextStyle(
@@ -510,7 +509,7 @@ class _PreviewLine extends StatelessWidget {
                 : null,
           ),
           Expanded(
-            child: LifeSelectableText(
+            child: _LifeSelectableText(
               block.text,
               onTap: onTap,
               style: TextStyle(
@@ -554,7 +553,7 @@ class _PreviewLine extends StatelessWidget {
         ),
       );
     }
-    return LifeSelectableText(
+    return _LifeSelectableText(
       block.text,
       onTap: onTap,
       style: TextStyle(fontSize: 13, color: secondary),
@@ -712,4 +711,118 @@ String _relative(DateTime? dt) {
   final day = diff.inDays;
   if (day < 7) return t(loc, 'notes_v3_day_ago').replaceAll('{n}', '$day');
   return '${dt.month}/${dt.day}';
+}
+
+/// Lists-specific selectable text with a deliberately oversized Life OS
+/// droplet handle. Keeping this implementation beside NoteCard avoids adding
+/// another shared primitive for behavior that currently only exists in Lists.
+class _LifeSelectableText extends StatelessWidget {
+  const _LifeSelectableText(
+    this.data, {
+    this.style,
+    this.maxLines,
+    this.onTap,
+  });
+
+  final String data;
+  final TextStyle? style;
+  final int? maxLines;
+  final VoidCallback? onTap;
+
+  static final TextSelectionControls _controls = _LifeTextSelectionControls();
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return TextSelectionTheme(
+      data: TextSelectionTheme.of(context).copyWith(
+        cursorColor: scheme.primary,
+        selectionColor: scheme.primary.withValues(alpha: 0.28),
+        selectionHandleColor: scheme.primary,
+      ),
+      child: SelectableText(
+        data,
+        style: style,
+        maxLines: maxLines,
+        onTap: onTap,
+        selectionControls: _controls,
+        contextMenuBuilder: (context, editableTextState) =>
+            AdaptiveTextSelectionToolbar.editableText(
+          editableTextState: editableTextState,
+        ),
+      ),
+    );
+  }
+}
+
+class _LifeTextSelectionControls extends MaterialTextSelectionControls {
+  static const double _handleWidth = 44;
+  static const double _handleHeight = 52;
+
+  @override
+  Size getHandleSize(double textLineHeight) =>
+      const Size(_handleWidth, _handleHeight);
+
+  @override
+  Offset getHandleAnchor(
+    TextSelectionHandleType type,
+    double textLineHeight,
+  ) {
+    return const Offset(_handleWidth / 2, 2);
+  }
+
+  @override
+  Widget buildHandle(
+    BuildContext context,
+    TextSelectionHandleType type,
+    double textLineHeight, [
+    VoidCallback? onTap,
+  ]) {
+    final color = Theme.of(context).colorScheme.primary;
+    return GestureDetector(
+      behavior: HitTestBehavior.translucent,
+      onTap: onTap,
+      child: const SizedBox(
+        width: _handleWidth,
+        height: _handleHeight,
+      ),
+    ).buildWithChild(
+      CustomPaint(painter: _LifeSelectionDropPainter(color: color)),
+    );
+  }
+}
+
+extension on Widget {
+  Widget buildWithChild(Widget child) {
+    return Stack(
+      fit: StackFit.passthrough,
+      children: [this, Positioned.fill(child: IgnorePointer(child: child))],
+    );
+  }
+}
+
+class _LifeSelectionDropPainter extends CustomPainter {
+  const _LifeSelectionDropPainter({required this.color});
+
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()..color = color;
+    final cx = size.width / 2;
+    final path = Path()
+      ..moveTo(cx, 2)
+      ..cubicTo(cx - 2.5, 7, cx - 9, 12, cx - 10.5, 20)
+      ..cubicTo(cx - 13, 32, cx - 7, 42, cx, 46)
+      ..cubicTo(cx + 7, 42, cx + 13, 32, cx + 10.5, 20)
+      ..cubicTo(cx + 9, 12, cx + 2.5, 7, cx, 2)
+      ..close();
+    canvas.drawPath(path, paint);
+    canvas.drawCircle(Offset(cx, 29), 11.5, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _LifeSelectionDropPainter oldDelegate) {
+    return oldDelegate.color != color;
+  }
 }
