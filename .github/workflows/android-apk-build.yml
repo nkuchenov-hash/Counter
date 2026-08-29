@@ -1,6 +1,6 @@
 name: Android release APK
 
-# Manual artifact trigger: 2026-08-29 mobile list text-selection verification.
+# Manual artifact trigger: 2026-08-18 Health Connect sleep-stage fallback.
 on:
   workflow_dispatch:
   push:
