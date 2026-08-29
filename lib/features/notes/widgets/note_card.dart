@@ -4,6 +4,7 @@
 // Pure UI: receives a [PlanningTask] + parsed [NoteDocument] + [NoteDocumentStats]
 // and emits tap / pin / done / radial callbacks. No Brain imports.
 
+import 'package:counter/core/widgets/life_text_selection.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/notes/notes_glm_surface.dart';
 import 'package:counter/features/notes/notes_visual_tokens.dart';
@@ -82,8 +83,6 @@ class NoteCard extends StatelessWidget {
   }
 }
 
-// ---- Grid card -----------------------------------------------------------
-
 class _GridCard extends StatelessWidget {
   const _GridCard({
     required this.data,
@@ -110,6 +109,9 @@ class _GridCard extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final loc = currentLocale.value;
     final isDone = data.task.isDone;
+    final title = data.task.title.isEmpty
+        ? t(loc, 'notes_v3_untitled')
+        : data.task.title;
 
     return GestureDetector(
       onTap: onOpen,
@@ -130,22 +132,18 @@ class _GridCard extends StatelessWidget {
               Row(
                 children: [
                   if (checkboxesOn)
-          _LargeDoneCheck(
-            isDone: isDone,
-            onToggle: onToggleDone,
-          )
-        else
-          _CategoryTile(data: data),
-        const SizedBox(width: 10),
-        Expanded(child: _BadgesRow(data: data, loc: loc)),
-        _NoteCardMenuButton(onPressed: onOpenMenu),
+                    _LargeDoneCheck(isDone: isDone, onToggle: onToggleDone)
+                  else
+                    _CategoryTile(data: data),
+                  const SizedBox(width: 10),
+                  Expanded(child: _BadgesRow(data: data, loc: loc)),
+                  _NoteCardMenuButton(onPressed: onOpenMenu),
                 ],
               ),
               const SizedBox(height: 10),
-              Text(
-                data.task.title.isEmpty
-                    ? t(loc, 'notes_v3_untitled')
-                    : data.task.title,
+              LifeSelectableText(
+                title,
+                onTap: onOpen,
                 style: TextStyle(
                   fontSize: 17,
                   fontWeight: FontWeight.w700,
@@ -157,11 +155,15 @@ class _GridCard extends StatelessWidget {
                       : scheme.onSurface,
                 ),
                 maxLines: 2,
-                overflow: TextOverflow.ellipsis,
               ),
               const SizedBox(height: 6),
               Expanded(
-                child: _BlockPreview(data: data, loc: loc, isDone: isDone),
+                child: _BlockPreview(
+                  data: data,
+                  loc: loc,
+                  isDone: isDone,
+                  onTap: onOpen,
+                ),
               ),
               const SizedBox(height: 8),
               Row(
@@ -184,8 +186,6 @@ class _GridCard extends StatelessWidget {
     );
   }
 }
-
-// ---- List row ------------------------------------------------------------
 
 class _ListRow extends StatelessWidget {
   const _ListRow({
@@ -216,6 +216,9 @@ class _ListRow extends StatelessWidget {
     final color = data.categoryColor;
     final secondary = scheme.onSurfaceVariant.withValues(alpha: 0.94);
     final meta = scheme.onSurfaceVariant.withValues(alpha: 0.82);
+    final title = data.task.title.isEmpty
+        ? t(loc, 'notes_v3_untitled')
+        : data.task.title;
 
     return GestureDetector(
       onTap: onOpen,
@@ -233,7 +236,6 @@ class _ListRow extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(12, 14, 8, 14),
           child: Row(
             children: [
-              // Accent rail
               Container(
                 width: 3,
                 margin: const EdgeInsets.only(right: 8),
@@ -259,53 +261,41 @@ class _ListRow extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            data.task.title.isEmpty
-                                ? t(loc, 'notes_v3_untitled')
-                                : data.task.title,
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              decoration: isDone
-                                  ? TextDecoration.lineThrough
-                                  : null,
-                              color: isDone
-                                  ? scheme.onSurfaceVariant.withValues(
-                                      alpha: 0.78,
-                                    )
-                                  : scheme.onSurface,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
+                    LifeSelectableText(
+                      title,
+                      onTap: onOpen,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        decoration: isDone
+                            ? TextDecoration.lineThrough
+                            : null,
+                        color: isDone
+                            ? scheme.onSurfaceVariant.withValues(alpha: 0.78)
+                            : scheme.onSurface,
+                      ),
+                      maxLines: 1,
                     ),
                     const SizedBox(height: 2),
-                    Text(
+                    LifeSelectableText(
                       _listPreview(data, loc),
+                      onTap: onOpen,
                       style: TextStyle(fontSize: 12, color: secondary),
                       maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 3),
                     Row(
                       children: [
-                        if (data.categoryName != null) ...[
+                        if (data.categoryName != null)
                           Text(
                             data.categoryName!,
                             style: TextStyle(fontSize: 10, color: meta),
                           ),
-                        ],
-                        if (data.stats.hasChecklist) ...[
+                        if (data.stats.hasChecklist)
                           Text(
                             ' · ${t(loc, 'notes_v3_checklist_progress').replaceAll('{done}', '${data.stats.checklistChecked}').replaceAll('{total}', '${data.stats.checklistTotal}')}',
                             style: TextStyle(fontSize: 10, color: meta),
                           ),
-                        ],
                         Text(
                           ' · ${_relative(data.task.updatedAt ?? data.task.createdAt)}',
                           style: TextStyle(fontSize: 10, color: meta),
@@ -331,8 +321,6 @@ class _ListRow extends StatelessWidget {
     return first != null ? first.text : t(loc, 'notes_v3_untitled');
   }
 }
-
-// ---- Badges + previews ---------------------------------------------------
 
 class _BadgesRow extends StatelessWidget {
   const _BadgesRow({required this.data, required this.loc});
@@ -391,6 +379,7 @@ class _Badge extends StatelessWidget {
     required this.label,
     required this.color,
   });
+
   final IconData icon;
   final String label;
   final Color color;
@@ -427,18 +416,22 @@ class _BlockPreview extends StatelessWidget {
     required this.data,
     required this.loc,
     required this.isDone,
+    required this.onTap,
   });
+
   final NoteCardData data;
   final String loc;
   final bool isDone;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final preview = data.doc.blocks.take(5).toList();
     if (preview.isEmpty) {
-      return Text(
+      return LifeSelectableText(
         t(loc, 'notes_v3_untitled'),
+        onTap: onTap,
         style: TextStyle(
           fontSize: 13,
           color: scheme.onSurfaceVariant.withValues(alpha: 0.94),
@@ -448,7 +441,8 @@ class _BlockPreview extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        for (final b in preview) _PreviewLine(block: b, isDone: isDone),
+        for (final b in preview)
+          _PreviewLine(block: b, isDone: isDone, onTap: onTap),
         if (data.doc.blocks.length > 5)
           Padding(
             padding: const EdgeInsets.only(top: 2),
@@ -467,9 +461,15 @@ class _BlockPreview extends StatelessWidget {
 }
 
 class _PreviewLine extends StatelessWidget {
-  const _PreviewLine({required this.block, required this.isDone});
+  const _PreviewLine({
+    required this.block,
+    required this.isDone,
+    required this.onTap,
+  });
+
   final NoteBlock block;
   final bool isDone;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -478,15 +478,15 @@ class _PreviewLine extends StatelessWidget {
     if (block.type == NoteBlockType.heading) {
       return Padding(
         padding: const EdgeInsets.only(bottom: 1),
-        child: Text(
+        child: LifeSelectableText(
           block.text,
+          onTap: onTap,
           style: TextStyle(
             fontSize: block.level == 1 ? 14 : 13,
             fontWeight: FontWeight.w700,
             color: scheme.onSurface,
           ),
           maxLines: 1,
-          overflow: TextOverflow.ellipsis,
         ),
       );
     }
@@ -510,8 +510,9 @@ class _PreviewLine extends StatelessWidget {
                 : null,
           ),
           Expanded(
-            child: Text(
+            child: LifeSelectableText(
               block.text,
+              onTap: onTap,
               style: TextStyle(
                 fontSize: 13,
                 decoration: (block.checked || isDone)
@@ -520,7 +521,6 @@ class _PreviewLine extends StatelessWidget {
                 color: secondary,
               ),
               maxLines: 1,
-              overflow: TextOverflow.ellipsis,
             ),
           ),
         ],
@@ -554,16 +554,14 @@ class _PreviewLine extends StatelessWidget {
         ),
       );
     }
-    return Text(
+    return LifeSelectableText(
       block.text,
+      onTap: onTap,
       style: TextStyle(fontSize: 13, color: secondary),
       maxLines: 1,
-      overflow: TextOverflow.ellipsis,
     );
   }
 }
-
-// ---- Done checkbox + category tile --------------------------------------
 
 class _NoteCardMenuButton extends StatefulWidget {
   const _NoteCardMenuButton({required this.onPressed});
@@ -592,17 +590,17 @@ class _NoteCardMenuButtonState extends State<_NoteCardMenuButton> {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-onTap: _open,
-borderRadius: BorderRadius.circular(16),
-child: SizedBox.square(
-  key: _anchorKey,
-  dimension: 32,
-  child: Icon(
-    Icons.more_horiz_rounded,
-    size: 19,
-    color: scheme.onSurfaceVariant,
-  ),
-),
+          onTap: _open,
+          borderRadius: BorderRadius.circular(16),
+          child: SizedBox.square(
+            key: _anchorKey,
+            dimension: 32,
+            child: Icon(
+              Icons.more_horiz_rounded,
+              size: 19,
+              color: scheme.onSurfaceVariant,
+            ),
+          ),
         ),
       ),
     );
@@ -610,10 +608,7 @@ child: SizedBox.square(
 }
 
 class _LargeDoneCheck extends StatelessWidget {
-  const _LargeDoneCheck({
-    required this.isDone,
-    required this.onToggle,
-  });
+  const _LargeDoneCheck({required this.isDone, required this.onToggle});
 
   final bool isDone;
   final VoidCallback onToggle;
@@ -628,21 +623,21 @@ class _LargeDoneCheck extends StatelessWidget {
         behavior: HitTestBehavior.opaque,
         onTap: onToggle,
         child: Container(
-width: kNotesLargeCheckSize,
-height: kNotesLargeCheckSize,
-decoration: BoxDecoration(
-  borderRadius: BorderRadius.circular(8),
-  border: Border.all(
-    color: isDone
-        ? scheme.primary
-        : scheme.outlineVariant.withValues(alpha: 0.7),
-    width: 2,
-  ),
-  color: isDone ? scheme.primary : Colors.transparent,
-),
-child: isDone
-    ? const Icon(Icons.check_rounded, size: 20, color: Colors.white)
-    : null,
+          width: kNotesLargeCheckSize,
+          height: kNotesLargeCheckSize,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: isDone
+                  ? scheme.primary
+                  : scheme.outlineVariant.withValues(alpha: 0.7),
+              width: 2,
+            ),
+            color: isDone ? scheme.primary : Colors.transparent,
+          ),
+          child: isDone
+              ? const Icon(Icons.check_rounded, size: 20, color: Colors.white)
+              : null,
         ),
       ),
     );
@@ -651,6 +646,7 @@ child: isDone
 
 class _CategoryTile extends StatelessWidget {
   const _CategoryTile({required this.data});
+
   final NoteCardData data;
 
   @override
@@ -678,6 +674,7 @@ class _CategoryTile extends StatelessWidget {
 
 class _CategoryBadge extends StatelessWidget {
   const _CategoryBadge({required this.data});
+
   final NoteCardData data;
 
   @override
