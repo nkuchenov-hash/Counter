@@ -6,7 +6,7 @@ var __xiaomiProvider = "xiaomi";
 var __xiaomiDefaultMinutes = 8 * 60;
 var __xiaomiMorningEndMinutes = 12 * 60;
 var __xiaomiMorningRetryMs = 60 * 60 * 1000;
-var __xiaomiMaintenanceMs = 6 * 60 * 60 * 1000;
+var __xiaomiMaintenanceMs = 60 * 60 * 1000;
 var __xiaomiFullSyncMs = 7 * 24 * 60 * 60 * 1000;
 var __xiaomiPython = "/opt/lifeos-xiaomi-sleep/bin/python";
 
@@ -483,7 +483,7 @@ function authorize(e) {
     } catch (_) {}
     if (!connection) return e.html(400, "<h1>Invalid or expired Xiaomi authorization</h1>");
     var expires = __xiaomiDate(connection.get("oauth_state_expires_at"));
-    if (!expires || expires.getTime() < Date.now()) return e.html(400, "<h1>Xiaomi authorization expired</h1>");
+    if (!expires || expires.getTime() < Date.now()) return e.html(400, "<h1>Invalid or expired Xiaomi authorization</h1>");
 
     var userId = String(connection.get("user_id") || "");
     if (__xiaomiHasToken(userId)) {
