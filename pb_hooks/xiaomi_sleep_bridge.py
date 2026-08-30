@@ -226,24 +226,24 @@ async def _sync(args: argparse.Namespace) -> int:
             rows = result.get("data_list") if isinstance(result, dict) else []
             sessions.update(_sessions_from_rows(rows))
 
-            # Some Xiaomi accounts can temporarily lag on the daily aggregate.
-            # Raw self-account data is only a fallback; aggregate daily_report is
-            # the canonical source because it is what exposes the newest sleep.
-            if not sessions:
-                raw_response = await client._request(
-                    "GET",
-                    "/app/v1/data/get_fitness_data_by_time",
-                    params={
-                        "relative_uid": uid,
-                        "key": "sleep",
-                        "start_time": start,
-                        "end_time": end,
-                        "limit": limit,
-                    },
-                )
-                raw_result = raw_response.get("result") if isinstance(raw_response, dict) else None
-                raw_rows = raw_result.get("data_list") if isinstance(raw_result, dict) else []
-                sessions.update(_sessions_from_rows(raw_rows))
+            # Xiaomi's daily aggregate can lag for several days while still
+            # returning older rows. Therefore "aggregate returned something" is
+            # not proof that it contains the newest sleep. Always reconcile raw
+            # self-account sleep as a second source and deduplicate by interval.
+            raw_response = await client._request(
+                "GET",
+                "/app/v1/data/get_fitness_data_by_time",
+                params={
+                    "relative_uid": uid,
+                    "key": "sleep",
+                    "start_time": start,
+                    "end_time": end,
+                    "limit": limit,
+                },
+            )
+            raw_result = raw_response.get("result") if isinstance(raw_response, dict) else None
+            raw_rows = raw_result.get("data_list") if isinstance(raw_result, dict) else []
+            sessions.update(_sessions_from_rows(raw_rows))
 
         ordered = sorted(sessions.values(), key=lambda item: item["start"])
         print(json.dumps({"ok": True, "sessions": ordered}, separators=(",", ":")))
