@@ -1,6 +1,7 @@
 /// <reference path="../pb_data/types.d.ts" />
 
-// Server-owned sleep synchronization. Production source: Xiaomi Cloud.
+// Server-owned sleep synchronization. Xiaomi Cloud is primary; an already
+// authorized Google Health connection is used only as stale-data recovery.
 // PocketBase JSVM serializes each route/cron handler into an isolated context,
 // so reusable modules must be required inside each handler rather than through
 // outer-scope helper functions.
@@ -51,4 +52,74 @@ routerAdd("DELETE", "/api/sleep-sync/connection", function(e) {
 // repair cadence outside it, and retains the weekly 30-day reconciliation.
 cronAdd("lifeos_xiaomi_sleep_sync", "0 * * * *", function() {
     return require(__hooks + "/xiaomi_sleep_runtime.js").cron($app);
+});
+
+// Immediately after each PocketBase restart, recover from a stale Xiaomi cloud
+// feed through an existing Google Health authorization. This never asks for a
+// second login and never runs when any recent sleep record is already present.
+onBootstrap(function(e) {
+    e.next();
+    var app = e.app;
+    var cutoff = new Date(Date.now() - 36 * 60 * 60 * 1000).toISOString();
+    var rows = [];
+    try { rows = app.findRecordsByFilter("sleep_sync_connections", "enabled = true && provider = 'xiaomi'", "", 500, 0); } catch (_) { return; }
+    for (var i = 0; i < rows.length; i++) {
+        var userId = String(rows[i].get("user_id") || "");
+        if (!userId) continue;
+        try {
+            app.findFirstRecordByFilter("records", "user_id = {:uid} && (title = 'Sleep' || title = 'Сон') && end_time >= {:cutoff}", { uid: userId, cutoff: cutoff });
+            continue;
+        } catch (_) {}
+        var health = null;
+        try { health = app.findFirstRecordByFilter("sleep_sync_connections", "user_id = {:uid} && provider = 'google_health'", { uid: userId }); } catch (_) { continue; }
+        if (!String(health.get("refresh_token_enc") || "")) continue;
+        var originalEnabled = !!health.get("enabled");
+        health.set("enabled", true);
+        health.set("last_sync_at", "");
+        try { app.save(health); } catch (_) { continue; }
+        try {
+            require(__hooks + "/google_health_sleep_runtime.js").cron(app);
+        } catch (_) {
+        } finally {
+            try {
+                health = app.findRecordById("sleep_sync_connections", health.id);
+                health.set("enabled", originalEnabled);
+                app.save(health);
+            } catch (_) {}
+        }
+    }
+});
+
+// Keep the same recovery available between deployments. Xiaomi remains primary;
+// Google Health is touched only while the database has no sleep in the last 36h.
+cronAdd("lifeos_sleep_cloud_fallback", "17 * * * *", function() {
+    var app = $app;
+    var cutoff = new Date(Date.now() - 36 * 60 * 60 * 1000).toISOString();
+    var rows = [];
+    try { rows = app.findRecordsByFilter("sleep_sync_connections", "enabled = true && provider = 'xiaomi'", "", 500, 0); } catch (_) { return; }
+    for (var i = 0; i < rows.length; i++) {
+        var userId = String(rows[i].get("user_id") || "");
+        if (!userId) continue;
+        try {
+            app.findFirstRecordByFilter("records", "user_id = {:uid} && (title = 'Sleep' || title = 'Сон') && end_time >= {:cutoff}", { uid: userId, cutoff: cutoff });
+            continue;
+        } catch (_) {}
+        var health = null;
+        try { health = app.findFirstRecordByFilter("sleep_sync_connections", "user_id = {:uid} && provider = 'google_health'", { uid: userId }); } catch (_) { continue; }
+        if (!String(health.get("refresh_token_enc") || "")) continue;
+        var originalEnabled = !!health.get("enabled");
+        health.set("enabled", true);
+        health.set("last_sync_at", "");
+        try { app.save(health); } catch (_) { continue; }
+        try {
+            require(__hooks + "/google_health_sleep_runtime.js").cron(app);
+        } catch (_) {
+        } finally {
+            try {
+                health = app.findRecordById("sleep_sync_connections", health.id);
+                health.set("enabled", originalEnabled);
+                app.save(health);
+            } catch (_) {}
+        }
+    }
 });
