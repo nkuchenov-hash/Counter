@@ -88,7 +88,7 @@ jobs:
           PY
           REMOTE
 
-      - name: Verify production Xiaomi sync read-only
+      - name: Verify production sleep pipeline read-only
         shell: bash
         run: |
           set -euo pipefail
@@ -115,8 +115,18 @@ jobs:
               print('XIAOMI_LAST_SESSIONS='+str(r['last_session_count'] or 0))
               print('XIAOMI_LAST_IMPORTED='+str(r['last_imported_count'] or 0))
               print('XIAOMI_USER='+str(r['user_id']))
-              legacy=con.execute("SELECT provider,enabled FROM sleep_sync_connections WHERE user_id=? AND provider IN ('google_fit','google_health')",(r['user_id'],)).fetchall()
-              print('LEGACY_ENABLED_COUNT='+str(sum(1 for x in legacy if x['enabled'])))
+              gh=con.execute("SELECT enabled,status,last_error,last_sync_at,last_session_count,last_imported_count,refresh_token_enc FROM sleep_sync_connections WHERE user_id=? AND provider='google_health' LIMIT 1",(r['user_id'],)).fetchone()
+              print('GOOGLE_HEALTH_CONNECTION='+str(bool(gh)).lower())
+              if gh:
+                  ge=(gh['last_error'] or '').lower()
+                  gclass='none' if not ge else ('auth' if ('token' in ge or 'authorization' in ge or '401' in ge or 'invalid_grant' in ge) else ('account' if 'account_not_linked' in ge else 'other'))
+                  print('GOOGLE_HEALTH_HAS_REFRESH='+str(bool(gh['refresh_token_enc'])).lower())
+                  print('GOOGLE_HEALTH_ENABLED='+str(bool(gh['enabled'])).lower())
+                  print('GOOGLE_HEALTH_STATUS='+str(gh['status'] or ''))
+                  print('GOOGLE_HEALTH_ERROR_CLASS='+gclass)
+                  print('GOOGLE_HEALTH_SYNCED='+str(bool(gh['last_sync_at'])).lower())
+                  print('GOOGLE_HEALTH_LAST_SESSIONS='+str(gh['last_session_count'] or 0))
+                  print('GOOGLE_HEALTH_LAST_IMPORTED='+str(gh['last_imported_count'] or 0))
           con.close()
           PY
           )"
@@ -127,16 +137,30 @@ jobs:
           [[ -f "$token" ]]
           echo 'XIAOMI_TOKEN_EXISTS=true'
           result="$($py "$bridge" sync --token-path "$token" --days 14)"
-          "$py" -c 'import json,sys; d=json.loads(sys.argv[1]); s=d.get("sessions") or []; print("XIAOMI_BRIDGE_OK="+str(bool(d.get("ok"))).lower()); print("XIAOMI_BRIDGE_SESSIONS="+str(len(s))); print("XIAOMI_BRIDGE_HAS_AUG27="+str(any(str(x.get("end","")).startswith("2026-08-27") for x in s)).lower()); print("XIAOMI_BRIDGE_LATEST_END="+(str(s[-1].get("end","")) if s else "none")); print("XIAOMI_BRIDGE_ERROR_CLASS="+str(d.get("error_class", "none")))' "$result"
-          python3 - "$db" <<'PY'
+          "$py" -c 'import json,sys,datetime; d=json.loads(sys.argv[1]); s=d.get("sessions") or []; latest=str(s[-1].get("end","")) if s else "none"; recent=False
+          if s:
+              try:
+                  end=datetime.datetime.fromisoformat(latest.replace("Z","+00:00")); recent=(datetime.datetime.now(datetime.timezone.utc)-end).total_seconds() <= 36*3600
+              except Exception: pass
+          print("XIAOMI_BRIDGE_OK="+str(bool(d.get("ok"))).lower()); print("XIAOMI_BRIDGE_SESSIONS="+str(len(s))); print("XIAOMI_BRIDGE_LATEST_END="+latest); print("XIAOMI_BRIDGE_RECENT_36H="+str(recent).lower()); print("XIAOMI_BRIDGE_REGION="+str(d.get("region","unknown"))); print("XIAOMI_BRIDGE_ERROR_CLASS="+str(d.get("error_class", "none")))' "$result"
+          python3 - "$db" "$uid" <<'PY'
           import sqlite3,sys
-          con=sqlite3.connect(sys.argv[1])
-          latest=con.execute("SELECT date(max(end_time)) FROM records WHERE sleep_source='xiaomi' OR external_source='xiaomi'").fetchone()[0]
-          count=con.execute("SELECT count(*) FROM records WHERE sleep_source='xiaomi' OR external_source='xiaomi'").fetchone()[0]
-          aug27=con.execute("SELECT count(*) FROM records WHERE (sleep_source='xiaomi' OR external_source='xiaomi') AND date(end_time)='2026-08-27'").fetchone()[0]
-          print('XIAOMI_RECORD_COUNT='+str(count))
-          print('XIAOMI_RECORD_HAS_AUG27='+str(aug27>0).lower())
-          print('XIAOMI_RECORD_LATEST_DAY='+str(latest or 'none'))
+          con=sqlite3.connect(sys.argv[1]); uid=sys.argv[2]
+          def one(sql,args=()): return con.execute(sql,args).fetchone()[0]
+          x_count=one("SELECT count(*) FROM records WHERE user_id=? AND (sleep_source='xiaomi' OR external_source='xiaomi')",(uid,))
+          x_recent=one("SELECT count(*) FROM records WHERE user_id=? AND (sleep_source='xiaomi' OR external_source='xiaomi') AND julianday(end_time) >= julianday('now','-36 hours')",(uid,))
+          x_latest=one("SELECT max(end_time) FROM records WHERE user_id=? AND (sleep_source='xiaomi' OR external_source='xiaomi')",(uid,))
+          gh_recent=one("SELECT count(*) FROM records WHERE user_id=? AND (sleep_source='google_health' OR external_source='google_health') AND julianday(end_time) >= julianday('now','-36 hours')",(uid,))
+          gh_latest=one("SELECT max(end_time) FROM records WHERE user_id=? AND (sleep_source='google_health' OR external_source='google_health')",(uid,))
+          all_recent=one("SELECT count(*) FROM records WHERE user_id=? AND (title='Sleep' OR title='Сон') AND julianday(end_time) >= julianday('now','-36 hours')",(uid,))
+          all_latest=one("SELECT max(end_time) FROM records WHERE user_id=? AND (title='Sleep' OR title='Сон')",(uid,))
+          print('XIAOMI_RECORD_COUNT='+str(x_count))
+          print('XIAOMI_RECORD_RECENT_36H='+str(x_recent>0).lower())
+          print('XIAOMI_RECORD_LATEST_END='+str(x_latest or 'none'))
+          print('GOOGLE_HEALTH_RECORD_RECENT_36H='+str(gh_recent>0).lower())
+          print('GOOGLE_HEALTH_RECORD_LATEST_END='+str(gh_latest or 'none'))
+          print('SLEEP_RECORD_RECENT_36H='+str(all_recent>0).lower())
+          print('SLEEP_RECORD_LATEST_END='+str(all_latest or 'none'))
           con.close()
           PY
           REMOTE
