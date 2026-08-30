@@ -24,6 +24,14 @@ XIAOMI_HEALTH_BASE_URL = os.environ.get(
     "XIAOMI_HEALTH_BASE_URL",
     "https://ru.hlth.io.mi.com",
 ).rstrip("/")
+XIAOMI_HEALTH_REGION_URLS = (
+    "https://hlth.io.mi.com",
+    "https://ru.hlth.io.mi.com",
+    "https://de.hlth.io.mi.com",
+    "https://i2.hlth.io.mi.com",
+    "https://sg.hlth.io.mi.com",
+    "https://us.hlth.io.mi.com",
+)
 
 
 def _utc_now() -> str:
@@ -121,14 +129,69 @@ def _sessions_from_rows(rows: Any) -> dict[str, dict[str, Any]]:
     return sessions
 
 
+def _latest_end_epoch(sessions: dict[str, dict[str, Any]]) -> float:
+    latest = 0.0
+    for session in sessions.values():
+        value = str(session.get("end") or "")
+        if not value:
+            continue
+        try:
+            latest = max(latest, datetime.fromisoformat(value.replace("Z", "+00:00")).timestamp())
+        except ValueError:
+            continue
+    return latest
+
+
+async def _fetch_sleep_for_base(
+    token_path: Path,
+    uid: int,
+    base_url: str,
+    start: int,
+    end: int,
+    limit: int,
+) -> dict[str, dict[str, Any]]:
+    sessions: dict[str, dict[str, Any]] = {}
+    async with MiHealthClient.from_token(token_path, base_url=base_url) as client:
+        response = await client._request(
+            "GET",
+            "/app/v1/data/get_aggregated_fitness_data_by_time",
+            params={
+                "relative_uid": uid,
+                "key": "sleep",
+                "tag": "daily_report",
+                "start_time": start,
+                "end_time": end,
+                "limit": limit,
+            },
+        )
+        result = response.get("result") if isinstance(response, dict) else None
+        rows = result.get("data_list") if isinstance(result, dict) else []
+        sessions.update(_sessions_from_rows(rows))
+
+        # Aggregate can lag while still returning old sessions, so raw data is
+        # always reconciled as a second source for the same regional backend.
+        raw_response = await client._request(
+            "GET",
+            "/app/v1/data/get_fitness_data_by_time",
+            params={
+                "relative_uid": uid,
+                "key": "sleep",
+                "start_time": start,
+                "end_time": end,
+                "limit": limit,
+            },
+        )
+        raw_result = raw_response.get("result") if isinstance(raw_response, dict) else None
+        raw_rows = raw_result.get("data_list") if isinstance(raw_result, dict) else []
+        sessions.update(_sessions_from_rows(raw_rows))
+    return sessions
+
+
 async def _login(args: argparse.Namespace) -> int:
     token_path = Path(args.token_path)
     state_path = Path(args.state_path)
     _atomic_json(state_path, {"status": "starting", "updated_at": _utc_now()})
 
-    # Keep each Xiaomi QR/browser-login session alive long enough for a human to
-    # complete account login. Regenerate only after the SDK reports that attempt
-    # expired; rotating every ~45 seconds invalidated browser logins in flight.
     total_wait = max(540.0, float(args.max_wait))
     loop = asyncio.get_running_loop()
     deadline = loop.time() + total_wait
@@ -208,45 +271,35 @@ async def _sync(args: argparse.Namespace) -> int:
         start = end - (days + 1) * 86400 + 1
         limit = max(30, days + 2)
 
-        sessions: dict[str, dict[str, Any]] = {}
-        async with MiHealthClient.from_token(token_path, base_url=XIAOMI_HEALTH_BASE_URL) as client:
-            response = await client._request(
-                "GET",
-                "/app/v1/data/get_aggregated_fitness_data_by_time",
-                params={
-                    "relative_uid": uid,
-                    "key": "sleep",
-                    "tag": "daily_report",
-                    "start_time": start,
-                    "end_time": end,
-                    "limit": limit,
-                },
-            )
-            result = response.get("result") if isinstance(response, dict) else None
-            rows = result.get("data_list") if isinstance(result, dict) else []
-            sessions.update(_sessions_from_rows(rows))
+        sessions = await _fetch_sleep_for_base(
+            token_path, uid, XIAOMI_HEALTH_BASE_URL, start, end, limit
+        )
+        selected_base = XIAOMI_HEALTH_BASE_URL
 
-            # Xiaomi's daily aggregate can lag for several days while still
-            # returning older rows. Therefore "aggregate returned something" is
-            # not proof that it contains the newest sleep. Always reconcile raw
-            # self-account sleep as a second source and deduplicate by interval.
-            raw_response = await client._request(
-                "GET",
-                "/app/v1/data/get_fitness_data_by_time",
-                params={
-                    "relative_uid": uid,
-                    "key": "sleep",
-                    "start_time": start,
-                    "end_time": end,
-                    "limit": limit,
-                },
-            )
-            raw_result = raw_response.get("result") if isinstance(raw_response, dict) else None
-            raw_rows = raw_result.get("data_list") if isinstance(raw_result, dict) else []
-            sessions.update(_sessions_from_rows(raw_rows))
+        # Region placement is account-dependent. A valid RU response containing
+        # old rows does not prove RU is the backend receiving the newest device
+        # uploads. Probe the known Xiaomi health regions only when the primary
+        # result is stale, then keep the freshest successful result.
+        stale_cutoff = now.timestamp() - 36 * 3600
+        if _latest_end_epoch(sessions) < stale_cutoff:
+            for base_url in XIAOMI_HEALTH_REGION_URLS:
+                if base_url == XIAOMI_HEALTH_BASE_URL:
+                    continue
+                try:
+                    candidate = await _fetch_sleep_for_base(
+                        token_path, uid, base_url, start, end, limit
+                    )
+                except Exception:
+                    continue
+                if _latest_end_epoch(candidate) > _latest_end_epoch(sessions):
+                    sessions = candidate
+                    selected_base = base_url
+                if _latest_end_epoch(sessions) >= stale_cutoff:
+                    break
 
         ordered = sorted(sessions.values(), key=lambda item: item["start"])
-        print(json.dumps({"ok": True, "sessions": ordered}, separators=(",", ":")))
+        region = selected_base.split("//", 1)[-1].split(".", 1)[0]
+        print(json.dumps({"ok": True, "sessions": ordered, "region": region}, separators=(",", ":")))
         return 0
     except Exception as exc:
         print(
