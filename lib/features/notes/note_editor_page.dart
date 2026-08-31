@@ -461,7 +461,7 @@ lines.add(value);
   }
 
   bool _copyCurrentStructuredSelection() {
-    if (_editingBlockId != null || _blockSelectionMode) return false;
+    if (_blockSelectionMode) return false;
     final blocks = _NotesStructuredClipboard.blocks;
     if (blocks.isEmpty) return false;
     final export = _structuredClipboardExportText(blocks);
