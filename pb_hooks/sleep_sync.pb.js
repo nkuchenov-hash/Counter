@@ -81,7 +81,54 @@ cronAdd("lifeos_xiaomi_sleep_sync", "*/15 * * * *", function() {
         connection.set("last_sync_at", "");
         try { app.save(connection); } catch (_) {}
     }
-    return require(__hooks + "/xiaomi_sleep_runtime.js").cron(app);
+
+    try { require(__hooks + "/xiaomi_sleep_runtime.js").cron(app); } catch (_) {}
+
+    // Keep the primary timeline continuous around sleep. Once a completed Xiaomi
+    // sleep exists, the nearest preceding non-sleep record may not continue
+    // through sleep; close it exactly at sleep.start_time. The entire reconcile
+    // stays inside this cron handler because PocketBase JSVM isolates handlers.
+    for (var r = 0; r < rows.length; r++) {
+        var reconcileUserId = String(rows[r].get("user_id") || "");
+        if (!reconcileUserId) continue;
+        var sleep = null;
+        try {
+            sleep = app.findFirstRecordByFilter(
+                "records",
+                "user_id = {:uid} && (sleep_source = 'xiaomi' || external_source = 'xiaomi')",
+                { uid: reconcileUserId }
+            );
+        } catch (_) { continue; }
+        var sleepStart = new Date(String(sleep.get("start_time") || ""));
+        if (isNaN(sleepStart.getTime())) continue;
+        var prior = [];
+        try {
+            prior = app.findRecordsByFilter(
+                "records",
+                "user_id = {:uid} && start_time < {:sleepStart}",
+                "-start_time",
+                30,
+                0,
+                { uid: reconcileUserId, sleepStart: sleepStart.toISOString() }
+            );
+        } catch (_) { continue; }
+        for (var p = 0; p < prior.length; p++) {
+            var previous = prior[p];
+            var previousTitle = String(previous.get("title") || "").trim().toLowerCase();
+            var previousKind = String(previous.get("external_kind") || "").trim().toLowerCase();
+            var previousSleepSource = String(previous.get("sleep_source") || "").trim().toLowerCase();
+            if (previousTitle === "sleep" || previousTitle === "сон" || previousKind === "sleep" || previousSleepSource) continue;
+            var previousStart = new Date(String(previous.get("start_time") || ""));
+            if (isNaN(previousStart.getTime()) || previousStart.getTime() >= sleepStart.getTime()) continue;
+            var previousEndRaw = String(previous.get("end_time") || "").trim();
+            var previousEnd = previousEndRaw ? new Date(previousEndRaw) : null;
+            if (previousEnd && !isNaN(previousEnd.getTime()) && previousEnd.getTime() <= sleepStart.getTime()) break;
+            previous.set("end_time", sleepStart.toISOString());
+            previous.set("status", "completed");
+            try { app.save(previous); } catch (_) {}
+            break;
+        }
+    }
 });
 
 // Immediately after each PocketBase restart, force one Xiaomi pass when the
@@ -120,6 +167,48 @@ onBootstrap(function(e) {
         try { app.save(xiaomi); } catch (_) {}
     }
     try { require(__hooks + "/xiaomi_sleep_runtime.js").cron(app); } catch (_) {}
+
+    // Run the same boundary repair once at startup so an already-imported sleep
+    // immediately repairs a stale running record without waiting for :00/:15/:30/:45.
+    for (var xr = 0; xr < xiaomiRows.length; xr++) {
+        var startupUserId = String(xiaomiRows[xr].get("user_id") || "");
+        if (!startupUserId) continue;
+        var startupSleep = null;
+        try {
+            startupSleep = app.findFirstRecordByFilter(
+                "records",
+                "user_id = {:uid} && (sleep_source = 'xiaomi' || external_source = 'xiaomi')",
+                { uid: startupUserId }
+            );
+        } catch (_) { continue; }
+        var startupSleepStart = new Date(String(startupSleep.get("start_time") || ""));
+        if (isNaN(startupSleepStart.getTime())) continue;
+        var startupPrior = [];
+        try {
+            startupPrior = app.findRecordsByFilter(
+                "records",
+                "user_id = {:uid} && start_time < {:sleepStart}",
+                "-start_time",
+                30,
+                0,
+                { uid: startupUserId, sleepStart: startupSleepStart.toISOString() }
+            );
+        } catch (_) { continue; }
+        for (var sp = 0; sp < startupPrior.length; sp++) {
+            var startupPrevious = startupPrior[sp];
+            var startupTitle = String(startupPrevious.get("title") || "").trim().toLowerCase();
+            var startupKind = String(startupPrevious.get("external_kind") || "").trim().toLowerCase();
+            var startupSleepSource = String(startupPrevious.get("sleep_source") || "").trim().toLowerCase();
+            if (startupTitle === "sleep" || startupTitle === "сон" || startupKind === "sleep" || startupSleepSource) continue;
+            var startupEndRaw = String(startupPrevious.get("end_time") || "").trim();
+            var startupEnd = startupEndRaw ? new Date(startupEndRaw) : null;
+            if (startupEnd && !isNaN(startupEnd.getTime()) && startupEnd.getTime() <= startupSleepStart.getTime()) break;
+            startupPrevious.set("end_time", startupSleepStart.toISOString());
+            startupPrevious.set("status", "completed");
+            try { app.save(startupPrevious); } catch (_) {}
+            break;
+        }
+    }
 
     // Recover from a stale Xiaomi cloud feed through an existing Google Health
     // authorization. This never asks for a second login and never runs when any
