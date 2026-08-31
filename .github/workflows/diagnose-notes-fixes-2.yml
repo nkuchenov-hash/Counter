@@ -1,0 +1,26 @@
+name: Diagnose Notes fixes 2
+
+on:
+  push:
+    branches:
+      - fix/notes-uncheck-structured-copy
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect exact internals
+        shell: bash
+        run: |
+          set -euxo pipefail
+          echo '=== structured selection capture ==='
+          grep -n -C 80 "_captureStructuredSelection" lib/features/notes/note_editor_page.dart || true
+          echo '=== cached edit lookup ==='
+          grep -R -n -C 30 "_findCachedPlanningTaskForEdit" lib/data || true
+          echo '=== updatePlanningTask ==='
+          grep -n -A 240 "Future<bool> updatePlanningTask" lib/data/plan_service.dart | head -260 || true
