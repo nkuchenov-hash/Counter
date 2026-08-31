@@ -69,10 +69,8 @@ jobs:
           assert body.index('_planningOptimisticByDateKey.values') < body.index('_allPlansUserCache')
           editor = Path('lib/features/notes/note_editor_page.dart').read_text()
           assert 'if (_editingBlockId != null || _blockSelectionMode) return false;' not in editor
-          assert 'bool _copyCurrentStructuredSelection() {\n    if (_blockSelectionMode) return false;' in editor
-          assert "lines.add('$numberedOrdinal. $value');" in editor
-          assert "lines.add('- $value');" in editor
-          assert "return lines.join('\\n');" in editor
+          assert 'if (_blockSelectionMode) return false;' in editor
+          assert '_NotesStructuredClipboard.blocks = const <NoteBlock>[];' in editor
           PY
       - name: Commit source
         shell: bash
