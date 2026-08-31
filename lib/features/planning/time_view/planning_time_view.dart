@@ -714,6 +714,7 @@ extension PlanningTimeViewPlanningTimeView on PlanningTimeViewCoordinator {
       debugPrint('[TIME_VIEW_BRAIN_PATCH_STARTED]');
     }
     final beforeByKey = {for (final t in scheduledBefore) host.planKey(t): t};
+    final patches = <PlanningBulkPatch>[];
     for (final task in resolved) {
       final key = host.planKey(task);
       final before = beforeByKey[key];
@@ -728,23 +729,34 @@ extension PlanningTimeViewPlanningTimeView on PlanningTimeViewCoordinator {
         );
       }
       DatabaseService.instance.applyOptimisticPlanningTask(task);
-      unawaited(
-        DatabaseService.instance.updatePlanningTask(
-          task.planRowIdForBackend,
+      patches.add(
+        PlanningBulkPatch(
+          planRowId: task.planRowIdForBackend,
           planBusinessId: task.planRowId,
           startTimeDisplay: task.startTime,
           endDateTimeDisplay: task.endDateTime,
           clearEnd: task.endDateTime == null,
-          suppressAppSnack: true,
-          recurrenceInstanceDateKey: task.recurrenceInstanceDateKey,
+          initialDateKey: task.initialDateKey,
+          isPostponed: task.isPostponed,
         ),
       );
-      if (kDebugMode) {
-        debugPrint('[TIME_VIEW_NETWORK_PATCH_ENQUEUED_OR_SENT]');
-      }
     }
-    DatabaseService.instance.notifyPlanningRefresh();
+    if (patches.isEmpty) {
+      if (host.mounted) host.notifySetState(() {});
+      return;
+    }
+    DatabaseService.instance.notifyPlanningRefresh(
+      scheduleNetworkRefresh: false,
+    );
     if (host.mounted) host.notifySetState(() {});
+    unawaited(
+      DatabaseService.instance.bulkUpdatePlans(patches, suppressAppSnack: true),
+    );
+    if (kDebugMode) {
+      debugPrint(
+        '[TIME_VIEW_NETWORK_BATCH_ENQUEUED_OR_SENT] patches=${patches.length}',
+      );
+    }
   }
 
   void persistTimelineDragWithCascade({

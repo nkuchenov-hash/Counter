@@ -31,10 +31,8 @@ class TimeViewYScale {
   List<double> get hourHeightsPx =>
       List<double>.filled(visibleHours.length, rubberPxPerMinute * 60);
 
-  List<double> get hourTopsPx => List<double>.generate(
-        visibleHours.length,
-        (i) => yForMinute(i * 60.0),
-      );
+  List<double> get hourTopsPx =>
+      List<double>.generate(visibleHours.length, (i) => yForMinute(i * 60.0));
 
   List<double> get hourHeights => hourHeightsPx;
   List<double> get hourTops => hourTopsPx;
@@ -42,9 +40,9 @@ class TimeViewYScale {
   double get hourBandHeightPx => rubberPxPerMinute * 60;
 
   double get totalHeightPx => math.max(
-        totalMinutes * rubberPxPerMinute + kPlanTimeHourVerticalPaddingPx,
-        packedBottomPx + kPlanTimeHourVerticalPaddingPx,
-      );
+    totalMinutes * rubberPxPerMinute + kPlanTimeHourVerticalPaddingPx,
+    packedBottomPx + kPlanTimeHourVerticalPaddingPx,
+  );
 
   double pxPerMinuteAtHourIndex(int hourIndex) => rubberPxPerMinute;
 
@@ -74,8 +72,7 @@ class TimeViewYScale {
     if (hourIndex < 0 || hourIndex >= visibleHours.length) return;
     final minute = hourIndex * 60;
     final hour = visibleHours[hourIndex];
-    final label =
-        '${hour.toString().padLeft(2, '0')}:00';
+    final label = '${hour.toString().padLeft(2, '0')}:00';
     _logTimeYScale(
       'minute=$minute label=$label y=${hourLineY(hourIndex).toStringAsFixed(1)}',
     );
@@ -217,7 +214,7 @@ abstract final class PlanTimeViewLayoutCalculator {
     if (prevEndMin != null &&
         prevBottom != null &&
         _wallAdjacent(prevEndMin, slot.startMin)) {
-      return prevBottom + kPlanTimeCardGapPx;
+      return prevBottom;
     }
     return idealTop;
   }
@@ -225,27 +222,7 @@ abstract final class PlanTimeViewLayoutCalculator {
   /// Minimum rubber so a wall-positioned card clears packed 4px gaps before it.
   static double _minPpmForPackedToWallClearance({
     required List<_PlanTimeViewCardSlot> sorted,
-  }) {
-    var minPpm = 0.0;
-    var adjacentGaps = 0;
-    double? prevEndMin;
-    for (final c in sorted) {
-      if (prevEndMin != null) {
-        if (_wallAdjacent(prevEndMin, c.startMin)) {
-          adjacentGaps++;
-        } else {
-          final wallGapMin = c.startMin - prevEndMin;
-          if (wallGapMin > 0.01 && adjacentGaps > 0) {
-            final needed = (adjacentGaps * kPlanTimeCardGapPx) / wallGapMin;
-            minPpm = math.max(minPpm, needed);
-          }
-          adjacentGaps = 0;
-        }
-      }
-      prevEndMin = c.endMin;
-    }
-    return minPpm;
-  }
+  }) => 0.0;
 
   static double _resolveGlobalRubberPxPerMinute({
     required List<_PlanTimeViewCardSlot> slots,
@@ -256,10 +233,7 @@ abstract final class PlanTimeViewLayoutCalculator {
     for (final c in slots) {
       ppm = math.max(ppm, _requiredRubberPxPerMinute(c.durationMin));
     }
-    ppm = math.max(
-      ppm,
-      _minPpmForPackedToWallClearance(sorted: slots),
-    );
+    ppm = math.max(ppm, _minPpmForPackedToWallClearance(sorted: slots));
     if (totalMinutes <= 0) return ppm;
 
     for (var iter = 0; iter < 24; iter++) {
@@ -278,10 +252,8 @@ abstract final class PlanTimeViewLayoutCalculator {
     return ppm.clamp(_basePxPerMinute(baseHourHeightPx), maxPpm);
   }
 
-  static ({
-    TimeViewYScale grid,
-    List<PlanTimeViewBlockLayout> layouts,
-  }) compute({
+  static ({TimeViewYScale grid, List<PlanTimeViewBlockLayout> layouts})
+  compute({
     required List<TimeModeProjectedPlan> projections,
     required List<int> visibleHours,
     required int rangeStart,
@@ -289,7 +261,8 @@ abstract final class PlanTimeViewLayoutCalculator {
     required double Function(TimeModeProjectedPlan proj) endMinOf,
     double? baseHourHeightPx,
   }) {
-    final baseH = baseHourHeightPx ?? PlanTimeViewLayoutCalculator.baseHourHeightPx();
+    final baseH =
+        baseHourHeightPx ?? PlanTimeViewLayoutCalculator.baseHourHeightPx();
     final totalMinutes = visibleHours.length * 60.0;
 
     final slots = <_PlanTimeViewCardSlot>[];
@@ -321,10 +294,7 @@ abstract final class PlanTimeViewLayoutCalculator {
       baseHourHeightPx: baseH,
       totalMinutes: totalMinutes,
     );
-    final packedBottom = _packedBottomPx(
-      sorted: slots,
-      rubberPxPerMinute: ppm,
-    );
+    final packedBottom = _packedBottomPx(sorted: slots, rubberPxPerMinute: ppm);
 
     final yScale = TimeViewYScale(
       visibleHours: visibleHours,
@@ -341,11 +311,15 @@ abstract final class PlanTimeViewLayoutCalculator {
     _logTimeLayout(
       'TIME_LAYOUT_SCALE',
       'rubberPxPerMinute=${ppm.toStringAsFixed(3)} '
-      'totalMinutes=$totalMinutes canvasHeight=${yScale.totalHeightPx.toStringAsFixed(1)}',
+          'totalMinutes=$totalMinutes canvasHeight=${yScale.totalHeightPx.toStringAsFixed(1)}',
     );
 
     final layouts = _placeCards(slots, yScale);
-    assertPlanTimeViewLayoutDebug(yScale: yScale, layouts: layouts, slots: slots);
+    assertPlanTimeViewLayoutDebug(
+      yScale: yScale,
+      layouts: layouts,
+      slots: slots,
+    );
     return (grid: yScale, layouts: layouts);
   }
 
@@ -373,7 +347,7 @@ abstract final class PlanTimeViewLayoutCalculator {
         _logTimeLayout(
           'TIME_LAYOUT_PACK',
           'adjacent previous=${layouts.last.task.planRowIdForBackend} '
-          'current=${slot.task.planRowIdForBackend} visualGap=${kPlanTimeCardGapPx.toStringAsFixed(0)}',
+              'current=${slot.task.planRowIdForBackend} visualGap=0',
         );
       }
 
@@ -403,7 +377,7 @@ abstract final class PlanTimeViewLayoutCalculator {
         _logTimeLayout(
           'TIME_LAYOUT_CARD',
           'id=${slot.task.planRowIdForBackend} start=$sh:$sm end=$eh:$em '
-          'top=${topPx.toStringAsFixed(1)} bottom=${(topPx + heightPx).toStringAsFixed(1)}',
+              'top=${topPx.toStringAsFixed(1)} bottom=${(topPx + heightPx).toStringAsFixed(1)}',
         );
       }
     }
@@ -419,10 +393,13 @@ abstract final class PlanTimeViewLayoutCalculator {
     for (var h = 0; h < visibleHours.length; h++) {
       final hourStartMin = h * 60.0;
       final hourEndMin = hourStartMin + 60.0;
-      final hourSlots = slots
-          .where((s) => s.startMin >= hourStartMin && s.startMin < hourEndMin)
-          .toList()
-        ..sort((a, b) => a.startMin.compareTo(b.startMin));
+      final hourSlots =
+          slots
+              .where(
+                (s) => s.startMin >= hourStartMin && s.startMin < hourEndMin,
+              )
+              .toList()
+            ..sort((a, b) => a.startMin.compareTo(b.startMin));
 
       if (hourSlots.isEmpty) continue;
 
@@ -436,7 +413,7 @@ abstract final class PlanTimeViewLayoutCalculator {
       _logTimeLayout(
         'TIME_LAYOUT_EMPTY_SLOT',
         'hour=${visibleHours[h]} fromMin=${(lastEnd % 60).round()} toMin=60 '
-        'top=${emptyTop.toStringAsFixed(1)} bottom=${emptyBottom.toStringAsFixed(1)}',
+            'top=${emptyTop.toStringAsFixed(1)} bottom=${emptyBottom.toStringAsFixed(1)}',
       );
     }
   }
@@ -463,21 +440,20 @@ abstract final class PlanTimeViewLayoutCalculator {
 
         final cardTop = layout.topPx;
         final cardBottom = layout.topPx + layout.heightPx;
-        final inside =
-            cardTop < hourY - 0.5 && hourY < cardBottom - 0.5;
+        final inside = cardTop < hourY - 0.5 && hourY < cardBottom - 0.5;
 
         if (inside) {
           _logTimeLayout(
             'TIME_LAYOUT_ASSERT',
             'hourLineInsideCrossingCard hour=$hourClock card=${slot.task.planRowIdForBackend} '
-            'start=${slot.startMin} end=${slot.endMin}',
+                'start=${slot.startMin} end=${slot.endMin}',
           );
         } else if (hourY >= cardBottom - 0.5) {
           _logTimeLayout(
             'TIME_LAYOUT_NOTE',
             'hourLineAfterPiecewiseCard hour=$hourClock '
-            'card=${slot.startMin}-${slot.endMin} hourY=${hourY.toStringAsFixed(1)} '
-            'cardBottom=${cardBottom.toStringAsFixed(1)}',
+                'card=${slot.startMin}-${slot.endMin} hourY=${hourY.toStringAsFixed(1)} '
+                'cardBottom=${cardBottom.toStringAsFixed(1)}',
           );
         }
       }
@@ -510,7 +486,10 @@ abstract final class PlanTimeViewLayoutCalculator {
       final durationMin = slot.durationMin;
       final expected = _cardHeightPx(durationMin, ppm);
 
-      assert(l.heightPx >= kPlanTimeCardMinHeightPx - 0.01, 'card height < min');
+      assert(
+        l.heightPx >= kPlanTimeCardMinHeightPx - 0.01,
+        'card height < min',
+      );
       assert(l.topPx >= 0, 'negative top');
       assert(l.heightPx > 0, 'non-positive height');
       assert(
@@ -539,7 +518,7 @@ abstract final class PlanTimeViewLayoutCalculator {
             _logTimeLayout(
               'TIME_LAYOUT_EMPTY_SLOT',
               'hour=$hourIdx remaining=${remaining.toStringAsFixed(1)} '
-              'cardEnd=${cardEndY.toStringAsFixed(1)} nextHour=${nextHourY.toStringAsFixed(1)}',
+                  'cardEnd=${cardEndY.toStringAsFixed(1)} nextHour=${nextHourY.toStringAsFixed(1)}',
             );
           }
         }
