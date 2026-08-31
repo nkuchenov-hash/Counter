@@ -1,5 +1,6 @@
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
+import 'package:counter/data/plan_time_sequential_cascade.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -71,5 +72,75 @@ void main() {
     );
     expect(schedule.startWall, DateTime(2026, 7, 24, 15));
     expect(schedule.endWall, DateTime(2026, 7, 24, 15, 30));
+  });
+
+  test('explicit plan stays in a gap when its full duration fits', () {
+    final first = _plan(
+      'a',
+      DateTime(2026, 7, 24, 9),
+      DateTime(2026, 7, 24, 10),
+    );
+    final second = _plan(
+      'b',
+      DateTime(2026, 7, 24, 10, 20),
+      DateTime(2026, 7, 24, 11),
+    );
+
+    final schedule = DatabaseService.instance.resolveAutoPlanSchedule(
+      wallDay: DateTime(2026, 7, 24),
+      categoryId: 1,
+      tags: const [],
+      existingDayPlans: [first, second],
+      explicitStartWall: DateTime(2026, 7, 24, 10),
+      explicitEndWall: DateTime(2026, 7, 24, 10, 20),
+      hasExplicitTimeRange: true,
+    );
+
+    expect(schedule.startWall, DateTime(2026, 7, 24, 10));
+    expect(schedule.endWall, DateTime(2026, 7, 24, 10, 20));
+  });
+
+  test('explicit plan skips a too-small gap without squeezing plans', () {
+    final first = _plan(
+      'a',
+      DateTime(2026, 7, 24, 9),
+      DateTime(2026, 7, 24, 10),
+    );
+    final second = _plan(
+      'b',
+      DateTime(2026, 7, 24, 10, 20),
+      DateTime(2026, 7, 24, 11),
+    );
+    final secondStartBefore = second.startTime;
+    final secondEndBefore = second.endDateTime;
+
+    final schedule = DatabaseService.instance.resolveAutoPlanSchedule(
+      wallDay: DateTime(2026, 7, 24),
+      categoryId: 1,
+      tags: const [],
+      existingDayPlans: [first, second],
+      explicitStartWall: DateTime(2026, 7, 24, 10),
+      explicitEndWall: DateTime(2026, 7, 24, 10, 30),
+      hasExplicitTimeRange: true,
+    );
+
+    expect(schedule.startWall, DateTime(2026, 7, 24, 11));
+    expect(schedule.endWall, DateTime(2026, 7, 24, 11, 30));
+    expect(second.startTime, secondStartBefore);
+    expect(second.endDateTime, secondEndBefore);
+  });
+
+  test('target-card drop after is exactly adjacent in scheduled time', () {
+    final targetEnd = DateTime(2026, 7, 24, 10, 30);
+    final result = computeTimeViewTargetDropSchedule(
+      targetStartWall: DateTime(2026, 7, 24, 10),
+      targetEndWall: targetEnd,
+      draggedDurationMinutes: 45,
+      insertBefore: false,
+      draggedHadEnd: true,
+    );
+
+    expect(result.startWall, targetEnd);
+    expect(result.endWall, DateTime(2026, 7, 24, 11, 15));
   });
 }
