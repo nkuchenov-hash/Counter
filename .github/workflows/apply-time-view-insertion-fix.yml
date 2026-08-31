@@ -1,0 +1,326 @@
+name: Apply Time View insertion fix
+
+on:
+  push:
+    branches:
+      - agent/fix-time-view-insertion-bulk-drag
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/fix-time-view-insertion-bulk-drag
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Apply surgical Time View fixes
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          cascade_path = Path('lib/data/plans/plan_time_cascade_helpers.dart')
+          cascade = cascade_path.read_text()
+          pattern = re.compile(
+              r"    if \(hasExplicitTimeRange &&\n"
+              r"        explicitStartWall != null &&\n"
+              r"        explicitEndWall != null\) \{.*?\n"
+              r"    \}\n\n"
+              r"    final durationMin =",
+              re.S,
+          )
+          replacement = '''    if (hasExplicitTimeRange &&
+              explicitStartWall != null &&
+              explicitEndWall != null) {
+            final requestedDurationMin = math.max(
+              1,
+              explicitEndWall.difference(explicitStartWall).inMinutes,
+            );
+            var overlapsExisting = false;
+            for (final plan in existingDayPlans) {
+              final existingStart = plan.startTime;
+              final existingEnd = _resolvedPlanWallEnd(plan);
+              if (existingStart == null ||
+                  existingEnd == null ||
+                  !existingEnd.isAfter(existingStart)) {
+                continue;
+              }
+              if (explicitStartWall.isBefore(existingEnd) &&
+                  existingStart.isBefore(explicitEndWall)) {
+                overlapsExisting = true;
+                break;
+              }
+            }
+
+            final resolvedStart = overlapsExisting
+                ? _firstAvailablePlanWallStart(
+                    earliestStartWall: explicitStartWall,
+                    durationMin: requestedDurationMin,
+                    existingDayPlans: existingDayPlans,
+                  )
+                : explicitStartWall;
+            return (
+              startWall: resolvedStart,
+              endWall: overlapsExisting
+                  ? resolvedStart.add(Duration(minutes: requestedDurationMin))
+                  : explicitEndWall,
+              startUtcInstant: null,
+              endUtcInstant: null,
+            );
+          }
+
+          final durationMin ='''
+          cascade, count = pattern.subn(replacement, cascade, count=1)
+          if count != 1:
+              raise SystemExit(f'explicit-range patch count={count}, expected 1')
+          cascade_path.write_text(cascade)
+
+          planning_path = Path('lib/features/planning/time_view/planning_time_view.dart')
+          planning = planning_path.read_text()
+          pattern = re.compile(
+              r"  void persistTimeViewCascadePatches\(\{.*?\n"
+              r"  \}\n\n"
+              r"  void persistTimelineDragWithCascade\(\{",
+              re.S,
+          )
+          replacement = '''  void persistTimeViewCascadePatches({
+            required List<PlanningTask> resolved,
+            required List<PlanningTask> scheduledBefore,
+            String? commitSource,
+          }) {
+            if (kDebugMode) {
+              debugPrint('[TIME_VIEW_INSERTION_COMMIT_PATCHES] source=$commitSource');
+              debugPrint('[TIME_VIEW_BRAIN_PATCH_STARTED]');
+            }
+            final beforeByKey = {
+              for (final t in scheduledBefore) host.planKey(t): t,
+            };
+            final patches = <PlanningBulkPatch>[];
+            for (final task in resolved) {
+              final key = host.planKey(task);
+              final before = beforeByKey[key];
+              if (before == null) continue;
+              if (before.startTime == task.startTime &&
+                  before.endDateTime == task.endDateTime) {
+                continue;
+              }
+              if (kDebugMode) {
+                debugPrint(
+                  '[TIME_VIEW_OPTIMISTIC_APPLIED] id=${task.planRowIdForBackend}',
+                );
+              }
+              DatabaseService.instance.applyOptimisticPlanningTask(task);
+              patches.add(
+                PlanningBulkPatch(
+                  planRowId: task.planRowIdForBackend,
+                  planBusinessId: task.planRowId,
+                  startTimeDisplay: task.startTime,
+                  endDateTimeDisplay: task.endDateTime,
+                  clearEnd: task.endDateTime == null,
+                  initialDateKey: task.initialDateKey,
+                  isPostponed: task.isPostponed,
+                ),
+              );
+            }
+            if (patches.isEmpty) {
+              if (host.mounted) host.notifySetState(() {});
+              return;
+            }
+            DatabaseService.instance.notifyPlanningRefresh(
+              scheduleNetworkRefresh: false,
+            );
+            if (host.mounted) host.notifySetState(() {});
+            unawaited(
+              DatabaseService.instance.bulkUpdatePlans(
+                patches,
+                suppressAppSnack: true,
+              ),
+            );
+            if (kDebugMode) {
+              debugPrint(
+                '[TIME_VIEW_NETWORK_BATCH_ENQUEUED_OR_SENT] patches=${patches.length}',
+              );
+            }
+          }
+
+          void persistTimelineDragWithCascade({'''
+          planning, count = pattern.subn(replacement, planning, count=1)
+          if count != 1:
+              raise SystemExit(f'bulk-persistence patch count={count}, expected 1')
+          planning_path.write_text(planning)
+
+          layout_path = Path('lib/features/planning/plan_time_view_layout.dart')
+          layout = layout_path.read_text()
+          old = '      return prevBottom + kPlanTimeCardGapPx;'
+          if layout.count(old) != 1:
+              raise SystemExit(f'adjacent visual-gap match count={layout.count(old)}, expected 1')
+          layout = layout.replace(old, '      return prevBottom;', 1)
+          gap_pattern = re.compile(
+              r"  static double _minPpmForPackedToWallClearance\(\{\n"
+              r"    required List<_PlanTimeViewCardSlot> sorted,\n"
+              r"  \}\) \{.*?\n"
+              r"  \}\n\n"
+              r"  static double _resolveGlobalRubberPxPerMinute",
+              re.S,
+          )
+          layout, count = gap_pattern.subn(
+              '''  static double _minPpmForPackedToWallClearance({
+            required List<_PlanTimeViewCardSlot> sorted,
+          }) => 0.0;
+
+          static double _resolveGlobalRubberPxPerMinute''',
+              layout,
+              count=1,
+          )
+          if count != 1:
+              raise SystemExit(f'packed-gap patch count={count}, expected 1')
+          layout = layout.replace(
+              "visualGap=${kPlanTimeCardGapPx.toStringAsFixed(0)}",
+              'visualGap=0',
+          )
+          layout_path.write_text(layout)
+
+          Path('test/auto_plan_no_squeeze_test.dart').write_text(r'''import 'package:counter/data/database_service.dart';
+          import 'package:counter/data/models.dart';
+          import 'package:flutter_test/flutter_test.dart';
+          import 'package:shared_preferences/shared_preferences.dart';
+
+          void main() {
+            TestWidgetsFlutterBinding.ensureInitialized();
+
+            PlanningTask planAt(
+              DateTime day,
+              int hour,
+              int minute, {
+              required int duration,
+              required int order,
+            }) {
+              final start = DateTime(day.year, day.month, day.day, hour, minute);
+              final dayKey =
+                  '${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}';
+              return PlanningTask(
+                id: order + 1,
+                title: 'existing-$order',
+                categoryId: 0,
+                isDone: false,
+                dateKey: dayKey,
+                order: order,
+                startTime: start,
+                endDateTime: start.add(Duration(minutes: duration)),
+              );
+            }
+
+            test('explicit plan stays in a gap when its full duration fits', () async {
+              SharedPreferences.setMockInitialValues({});
+              final db = DatabaseService.instance;
+              await db.setPlanAutoPlacementMode(PlanAutoPlacementMode.nearestFreeSlot);
+              final day = DateTime(2026, 7, 6);
+              final existing = [
+                planAt(day, 9, 0, duration: 60, order: 0),
+                planAt(day, 10, 20, duration: 40, order: 1),
+              ];
+
+              final schedule = db.resolveAutoPlanSchedule(
+                wallDay: day,
+                categoryId: 0,
+                tags: const [],
+                existingDayPlans: existing,
+                explicitStartWall: DateTime(2026, 7, 6, 10, 0),
+                explicitEndWall: DateTime(2026, 7, 6, 10, 20),
+                hasExplicitTimeRange: true,
+              );
+
+              expect(schedule.startWall, DateTime(2026, 7, 6, 10, 0));
+              expect(schedule.endWall, DateTime(2026, 7, 6, 10, 20));
+            });
+
+            test('explicit plan skips a too-small gap without squeezing existing plans', () async {
+              SharedPreferences.setMockInitialValues({});
+              final db = DatabaseService.instance;
+              await db.setPlanAutoPlacementMode(PlanAutoPlacementMode.nearestFreeSlot);
+              final day = DateTime(2026, 7, 6);
+              final existing = [
+                planAt(day, 9, 0, duration: 60, order: 0),
+                planAt(day, 10, 20, duration: 40, order: 1),
+              ];
+              final secondStartBefore = existing[1].startTime;
+              final secondEndBefore = existing[1].endDateTime;
+
+              final schedule = db.resolveAutoPlanSchedule(
+                wallDay: day,
+                categoryId: 0,
+                tags: const [],
+                existingDayPlans: existing,
+                explicitStartWall: DateTime(2026, 7, 6, 10, 0),
+                explicitEndWall: DateTime(2026, 7, 6, 10, 30),
+                hasExplicitTimeRange: true,
+              );
+
+              expect(schedule.startWall, DateTime(2026, 7, 6, 11, 0));
+              expect(schedule.endWall, DateTime(2026, 7, 6, 11, 30));
+              expect(existing[1].startTime, secondStartBefore);
+              expect(existing[1].endDateTime, secondEndBefore);
+            });
+          }
+          ''')
+
+          Path('test/time_view_target_drop_zero_gap_test.dart').write_text(r'''import 'package:counter/data/plan_time_sequential_cascade.dart';
+          import 'package:flutter_test/flutter_test.dart';
+
+          void main() {
+            test('target-card drop after is exactly adjacent in scheduled time', () {
+              final targetStart = DateTime(2026, 7, 6, 10, 0);
+              final targetEnd = DateTime(2026, 7, 6, 10, 30);
+              final result = computeTimeViewTargetDropSchedule(
+                targetStartWall: targetStart,
+                targetEndWall: targetEnd,
+                draggedDurationMinutes: 45,
+                insertBefore: false,
+                draggedHadEnd: true,
+              );
+
+              expect(result.startWall, targetEnd);
+              expect(result.endWall, DateTime(2026, 7, 6, 11, 15));
+            });
+          }
+          ''')
+          PY
+
+      - name: Format and verify
+        shell: bash
+        run: |
+          flutter pub get
+          dart format \
+            lib/data/plans/plan_time_cascade_helpers.dart \
+            lib/features/planning/time_view/planning_time_view.dart \
+            lib/features/planning/plan_time_view_layout.dart \
+            test/auto_plan_no_squeeze_test.dart \
+            test/time_view_target_drop_zero_gap_test.dart
+          flutter test test/auto_plan_nearest_free_slot_test.dart
+          flutter test test/auto_plan_no_squeeze_test.dart
+          flutter test test/time_view_target_drop_zero_gap_test.dart
+          flutter analyze --no-fatal-infos --no-fatal-warnings
+
+      - name: Commit verified fix
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            lib/data/plans/plan_time_cascade_helpers.dart \
+            lib/features/planning/time_view/planning_time_view.dart \
+            lib/features/planning/plan_time_view_layout.dart \
+            test/auto_plan_no_squeeze_test.dart \
+            test/time_view_target_drop_zero_gap_test.dart
+          git commit -m "Fix Time View insertion and bulk drag"
+          git push origin HEAD:agent/fix-time-view-insertion-bulk-drag
