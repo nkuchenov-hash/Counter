@@ -1,0 +1,75 @@
+name: Apply Time View insertion fix v2
+
+on:
+  push:
+    branches:
+      - agent/fix-time-view-insertion-bulk-drag
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/fix-time-view-insertion-bulk-drag
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Apply corrected surgical patch
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          workflow = Path('.github/workflows/apply-time-view-insertion-fix.yml').read_text()
+          marker = "          python3 - <<'PY'\n"
+          start = workflow.index(marker) + len(marker)
+          end = workflow.index("\n          PY\n", start)
+          script_lines = workflow[start:end].splitlines()
+          script = '\n'.join(
+              line[10:] if line.startswith('          ') else line
+              for line in script_lines
+          )
+          old = 'final requestedDurationMin = math.max('
+          new = 'final requestedDurationMin = max('
+          if script.count(old) != 1:
+              raise SystemExit(f'math fix match count={script.count(old)}, expected 1')
+          script = script.replace(old, new, 1)
+          exec(compile(script, '<time-view-fix>', 'exec'), {})
+          PY
+
+      - name: Format and verify
+        shell: bash
+        run: |
+          flutter pub get
+          dart format \
+            lib/data/plans/plan_time_cascade_helpers.dart \
+            lib/features/planning/time_view/planning_time_view.dart \
+            lib/features/planning/plan_time_view_layout.dart \
+            test/auto_plan_no_squeeze_test.dart \
+            test/time_view_target_drop_zero_gap_test.dart
+          flutter test test/auto_plan_nearest_free_slot_test.dart
+          flutter test test/auto_plan_no_squeeze_test.dart
+          flutter test test/time_view_target_drop_zero_gap_test.dart
+          flutter analyze --no-fatal-infos --no-fatal-warnings
+
+      - name: Commit verified fix
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            lib/data/plans/plan_time_cascade_helpers.dart \
+            lib/features/planning/time_view/planning_time_view.dart \
+            lib/features/planning/plan_time_view_layout.dart \
+            test/auto_plan_no_squeeze_test.dart \
+            test/time_view_target_drop_zero_gap_test.dart
+          git commit -m "Fix Time View insertion and bulk drag"
+          git push origin HEAD:agent/fix-time-view-insertion-bulk-drag
