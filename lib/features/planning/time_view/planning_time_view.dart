@@ -743,7 +743,9 @@ extension PlanningTimeViewPlanningTimeView on PlanningTimeViewCoordinator {
         debugPrint('[TIME_VIEW_NETWORK_PATCH_ENQUEUED_OR_SENT]');
       }
     }
-    DatabaseService.instance.notifyPlanningRefresh();
+    DatabaseService.instance.notifyPlanningRefresh(
+      scheduleNetworkRefresh: false,
+    );
     if (host.mounted) host.notifySetState(() {});
   }
 

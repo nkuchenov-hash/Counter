@@ -298,28 +298,38 @@ extension PlanTimeCascadeExtension on DatabaseService {
     if (hasExplicitTimeRange &&
         explicitStartWall != null &&
         explicitEndWall != null) {
-      const probePlanId = '__auto_schedule_probe__';
-      final dayKey =
-          '${wallDay.year}-${_two(wallDay.month)}-${_two(wallDay.day)}';
-      final probe = PlanningTask(
-        id: 0,
-        title: '',
-        categoryId: categoryId,
-        isDone: false,
-        dateKey: dayKey,
-        order: 999999,
-        startTime: explicitStartWall,
-        endDateTime: explicitEndWall,
-        tags: tags,
-        planRowId: probePlanId,
+      final requestedDurationMin = max(
+        1,
+        explicitEndWall.difference(explicitStartWall).inMinutes,
       );
-      final cascadedProbe = normalizeSequentialPlanTimesForDay([
-        ...existingDayPlans,
-        probe,
-      ]).firstWhere((t) => t.planRowId == probePlanId);
+      var overlapsExisting = false;
+      for (final plan in existingDayPlans) {
+        final existingStart = plan.startTime;
+        final existingEnd = _resolvedPlanWallEnd(plan);
+        if (existingStart == null ||
+            existingEnd == null ||
+            !existingEnd.isAfter(existingStart)) {
+          continue;
+        }
+        if (explicitStartWall.isBefore(existingEnd) &&
+            existingStart.isBefore(explicitEndWall)) {
+          overlapsExisting = true;
+          break;
+        }
+      }
+
+      final resolvedStart = overlapsExisting
+          ? _firstAvailablePlanWallStart(
+              earliestStartWall: explicitStartWall,
+              durationMin: requestedDurationMin,
+              existingDayPlans: existingDayPlans,
+            )
+          : explicitStartWall;
       return (
-        startWall: cascadedProbe.startTime ?? explicitStartWall,
-        endWall: cascadedProbe.endDateTime ?? explicitEndWall,
+        startWall: resolvedStart,
+        endWall: overlapsExisting
+            ? resolvedStart.add(Duration(minutes: requestedDurationMin))
+            : explicitEndWall,
         startUtcInstant: null,
         endUtcInstant: null,
       );
