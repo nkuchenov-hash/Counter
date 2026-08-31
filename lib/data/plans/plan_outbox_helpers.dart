@@ -129,13 +129,9 @@ extension PlanOutboxSyncExtension on DatabaseService {
       p,
       if ((planBusinessId ?? '').trim().isNotEmpty) planBusinessId!.trim(),
     };
-    for (final t in _allPlansUserCache) {
-      if (keys.contains(t.planRowIdForBackend) ||
-          keys.contains((t.planRowId ?? '').trim()) ||
-          keys.contains((t.pocketRecordId ?? '').trim())) {
-        return t;
-      }
-    }
+    // Optimistic overlays are the latest local truth. They must win over
+    // the base cache so repeated local-first edits (for example Notes done ->
+    // undone) toggle from the state currently visible to the user.
     for (final m in _planningOptimisticByDateKey.values) {
       for (final t in m.values) {
         if (keys.contains(t.planRowIdForBackend) ||
@@ -143,6 +139,13 @@ extension PlanOutboxSyncExtension on DatabaseService {
             keys.contains((t.pocketRecordId ?? '').trim())) {
           return t;
         }
+      }
+    }
+    for (final t in _allPlansUserCache) {
+      if (keys.contains(t.planRowIdForBackend) ||
+          keys.contains((t.planRowId ?? '').trim()) ||
+          keys.contains((t.pocketRecordId ?? '').trim())) {
+        return t;
       }
     }
     return null;

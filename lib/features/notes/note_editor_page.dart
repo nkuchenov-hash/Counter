@@ -461,7 +461,7 @@ lines.add(value);
   }
 
   bool _copyCurrentStructuredSelection() {
-    if (_editingBlockId != null || _blockSelectionMode) return false;
+    if (_blockSelectionMode) return false;
     final blocks = _NotesStructuredClipboard.blocks;
     if (blocks.isEmpty) return false;
     final export = _structuredClipboardExportText(blocks);
@@ -651,7 +651,11 @@ item,
       return;
     }
     final plain = selected?.plainText ?? '';
-    if (plain.isEmpty) return;
+    if (plain.isEmpty) {
+      _NotesStructuredClipboard.plainText = null;
+      _NotesStructuredClipboard.blocks = const <NoteBlock>[];
+      return;
+    }
     final blocks = _inferStructuredSelectionBlocks(plain);
     if (blocks.isEmpty) {
       _NotesStructuredClipboard.plainText = null;
