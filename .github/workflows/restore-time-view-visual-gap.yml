@@ -1,0 +1,109 @@
+name: Restore Time View visual gap
+
+on:
+  push:
+    branches:
+      - fix/restore-time-view-visual-gap
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/restore-time-view-visual-gap
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.6'
+          channel: stable
+          cache: true
+
+      - name: Restore 4px visual separation only
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path('lib/features/planning/plan_time_view_layout.dart')
+          text = path.read_text()
+
+          old = '''    if (prevEndMin != null &&
+              prevBottom != null &&
+              _wallAdjacent(prevEndMin, slot.startMin)) {
+            return prevBottom;
+          }
+          return idealTop;'''
+          new = '''    if (prevEndMin != null &&
+              prevBottom != null &&
+              _wallAdjacent(prevEndMin, slot.startMin)) {
+            return prevBottom + kPlanTimeCardGapPx;
+          }
+          return idealTop;'''
+          if old not in text:
+              raise SystemExit('adjacent card placement snippet not found')
+          text = text.replace(old, new, 1)
+
+          old = '''  static double _minPpmForPackedToWallClearance({
+            required List<_PlanTimeViewCardSlot> sorted,
+          }) => 0.0;'''
+          new = '''  static double _minPpmForPackedToWallClearance({
+            required List<_PlanTimeViewCardSlot> sorted,
+          }) {
+            var minPpm = 0.0;
+            var adjacentGaps = 0;
+            double? prevEndMin;
+            for (final c in sorted) {
+              if (prevEndMin != null) {
+                if (_wallAdjacent(prevEndMin, c.startMin)) {
+                  adjacentGaps++;
+                } else {
+                  final wallGapMin = c.startMin - prevEndMin;
+                  if (wallGapMin > 0.01 && adjacentGaps > 0) {
+                    final needed = (adjacentGaps * kPlanTimeCardGapPx) / wallGapMin;
+                    minPpm = math.max(minPpm, needed);
+                  }
+                  adjacentGaps = 0;
+                }
+              }
+              prevEndMin = c.endMin;
+            }
+            return minPpm;
+          }'''
+          if old not in text:
+              raise SystemExit('packed gap scale snippet not found')
+          text = text.replace(old, new, 1)
+
+          old = "          'current=${slot.task.planRowIdForBackend} visualGap=0',"
+          new = "          'current=${slot.task.planRowIdForBackend} visualGap=${kPlanTimeCardGapPx.toStringAsFixed(0)}',"
+          if old not in text:
+              raise SystemExit('visual gap log snippet not found')
+          text = text.replace(old, new, 1)
+
+          path.write_text(text)
+          PY
+
+      - name: Verify
+        shell: bash
+        run: |
+          flutter pub get
+          dart format lib/features/planning/plan_time_view_layout.dart
+          flutter test test/auto_plan_nearest_free_slot_test.dart
+          flutter analyze --no-fatal-infos --no-fatal-warnings
+          git diff --check
+          grep -F 'return prevBottom + kPlanTimeCardGapPx;' lib/features/planning/plan_time_view_layout.dart
+          CHANGED="$(git diff --name-only)"
+          test "$CHANGED" = "lib/features/planning/plan_time_view_layout.dart"
+
+      - name: Commit verified visual-only fix
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add lib/features/planning/plan_time_view_layout.dart
+          git commit -m "Restore 4px Time View card spacing"
+          git push origin HEAD:fix/restore-time-view-visual-gap
