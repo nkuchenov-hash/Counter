@@ -1,4 +1,4 @@
-name: Diagnose Notes fixes 2
+name: Apply verified Notes source patch
 
 on:
   push:
@@ -6,21 +6,80 @@ on:
       - fix/notes-uncheck-structured-copy
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  diagnose:
+  patch:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Inspect exact internals
+        with:
+          ref: fix/notes-uncheck-structured-copy
+          fetch-depth: 0
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.6'
+          channel: stable
+      - name: Patch source
         shell: bash
         run: |
-          set -euxo pipefail
-          echo '=== structured selection capture ==='
-          grep -n -C 80 "_captureStructuredSelection" lib/features/notes/note_editor_page.dart || true
-          echo '=== cached edit lookup ==='
-          grep -R -n -C 30 "_findCachedPlanningTaskForEdit" lib/data || true
-          echo '=== updatePlanningTask ==='
-          grep -n -A 240 "Future<bool> updatePlanningTask" lib/data/plan_service.dart | head -260 || true
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          p = Path('lib/data/plans/plan_outbox_helpers.dart')
+          s = p.read_text()
+          fn = s.index('  PlanningTask? _findCachedPlanningTaskForEdit(')
+          base_start = s.index('    for (final t in _allPlansUserCache) {', fn)
+          optimistic_start = s.index('    for (final m in _planningOptimisticByDateKey.values) {', base_start)
+          return_null = s.index('    return null;', optimistic_start)
+          base_block = s[base_start:optimistic_start]
+          optimistic_block = s[optimistic_start:return_null]
+          comment = "    // Optimistic overlays are the latest local truth. They must win over\n    // the base cache so repeated local-first edits (for example Notes done ->\n    // undone) toggle from the state currently visible to the user.\n"
+          p.write_text(s[:base_start] + comment + optimistic_block + base_block + s[return_null:])
+
+          p = Path('lib/features/notes/note_editor_page.dart')
+          s = p.read_text()
+          old = '  bool _copyCurrentStructuredSelection() {\n    if (_editingBlockId != null || _blockSelectionMode) return false;\n    final blocks = _NotesStructuredClipboard.blocks;\n'
+          new = '  bool _copyCurrentStructuredSelection() {\n    if (_blockSelectionMode) return false;\n    final blocks = _NotesStructuredClipboard.blocks;\n'
+          if old not in s:
+              raise SystemExit('structured-copy guard not found')
+          s = s.replace(old, new, 1)
+          old = "    final plain = selected?.plainText ?? '';\n    if (plain.isEmpty) return;\n    final blocks = _inferStructuredSelectionBlocks(plain);\n"
+          new = "    final plain = selected?.plainText ?? '';\n    if (plain.isEmpty) {\n      _NotesStructuredClipboard.plainText = null;\n      _NotesStructuredClipboard.blocks = const <NoteBlock>[];\n      return;\n    }\n    final blocks = _inferStructuredSelectionBlocks(plain);\n"
+          if old not in s:
+              raise SystemExit('selection-clear target not found')
+          p.write_text(s.replace(old, new, 1))
+          PY
+      - name: Verify
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter pub get
+          flutter test test/note_document_v2_test.dart test/notes_glm_editor_parity_test.dart
+          flutter analyze --no-fatal-infos --no-fatal-warnings
+          git diff --check
+          python3 - <<'PY'
+          from pathlib import Path
+          outbox = Path('lib/data/plans/plan_outbox_helpers.dart').read_text()
+          a = outbox.index('PlanningTask? _findCachedPlanningTaskForEdit(')
+          b = outbox.index('\n  void _applyOptimisticPlanningTaskPatch', a)
+          body = outbox[a:b]
+          assert body.index('_planningOptimisticByDateKey.values') < body.index('_allPlansUserCache')
+          editor = Path('lib/features/notes/note_editor_page.dart').read_text()
+          assert 'if (_editingBlockId != null || _blockSelectionMode) return false;' not in editor
+          assert 'bool _copyCurrentStructuredSelection() {\n    if (_blockSelectionMode) return false;' in editor
+          assert "lines.add('$numberedOrdinal. $value');" in editor
+          assert "lines.add('- $value');" in editor
+          assert "return lines.join('\\n');" in editor
+          PY
+      - name: Commit source
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add lib/data/plans/plan_outbox_helpers.dart lib/features/notes/note_editor_page.dart
+          git commit -m 'fix(notes): allow uncheck and preserve copied structure'
+          git push origin HEAD:fix/notes-uncheck-structured-copy
