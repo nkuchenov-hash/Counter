@@ -91,14 +91,19 @@ cronAdd("lifeos_xiaomi_sleep_sync", "*/15 * * * *", function() {
     for (var r = 0; r < rows.length; r++) {
         var reconcileUserId = String(rows[r].get("user_id") || "");
         if (!reconcileUserId) continue;
-        var sleep = null;
+        var sleepRows = [];
         try {
-            sleep = app.findFirstRecordByFilter(
+            sleepRows = app.findRecordsByFilter(
                 "records",
                 "user_id = {:uid} && (sleep_source = 'xiaomi' || external_source = 'xiaomi')",
+                "-start_time",
+                1,
+                0,
                 { uid: reconcileUserId }
             );
         } catch (_) { continue; }
+        if (!sleepRows.length) continue;
+        var sleep = sleepRows[0];
         var sleepStart = new Date(String(sleep.get("start_time") || ""));
         if (isNaN(sleepStart.getTime())) continue;
         var prior = [];
@@ -173,14 +178,19 @@ onBootstrap(function(e) {
     for (var xr = 0; xr < xiaomiRows.length; xr++) {
         var startupUserId = String(xiaomiRows[xr].get("user_id") || "");
         if (!startupUserId) continue;
-        var startupSleep = null;
+        var startupSleepRows = [];
         try {
-            startupSleep = app.findFirstRecordByFilter(
+            startupSleepRows = app.findRecordsByFilter(
                 "records",
                 "user_id = {:uid} && (sleep_source = 'xiaomi' || external_source = 'xiaomi')",
+                "-start_time",
+                1,
+                0,
                 { uid: startupUserId }
             );
         } catch (_) { continue; }
+        if (!startupSleepRows.length) continue;
+        var startupSleep = startupSleepRows[0];
         var startupSleepStart = new Date(String(startupSleep.get("start_time") || ""));
         if (isNaN(startupSleepStart.getTime())) continue;
         var startupPrior = [];
