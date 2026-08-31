@@ -29,81 +29,31 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
 
-          # 1. Latest local truth must win: optimistic overlays before base cache.
           p = Path('lib/data/plans/plan_outbox_helpers.dart')
           s = p.read_text()
-          old = '''    for (final t in _allPlansUserCache) {
-      if (keys.contains(t.planRowIdForBackend) ||
-          keys.contains((t.planRowId ?? '').trim()) ||
-          keys.contains((t.pocketRecordId ?? '').trim())) {
-        return t;
-      }
-    }
-    for (final m in _planningOptimisticByDateKey.values) {
-      for (final t in m.values) {
-        if (keys.contains(t.planRowIdForBackend) ||
-            keys.contains((t.planRowId ?? '').trim()) ||
-            keys.contains((t.pocketRecordId ?? '').trim())) {
-          return t;
-        }
-      }
-    }
-'''
-          new = '''    // Optimistic overlays are the latest local truth. They must win over
-    // the base cache so repeated local-first edits (for example Notes done →
-    // undone) toggle from the state currently visible to the user.
-    for (final m in _planningOptimisticByDateKey.values) {
-      for (final t in m.values) {
-        if (keys.contains(t.planRowIdForBackend) ||
-            keys.contains((t.planRowId ?? '').trim()) ||
-            keys.contains((t.pocketRecordId ?? '').trim())) {
-          return t;
-        }
-      }
-    }
-    for (final t in _allPlansUserCache) {
-      if (keys.contains(t.planRowIdForBackend) ||
-          keys.contains((t.planRowId ?? '').trim()) ||
-          keys.contains((t.pocketRecordId ?? '').trim())) {
-        return t;
-      }
-    }
-'''
-          if old not in s:
-              raise SystemExit('plan cache lookup target not found')
-          p.write_text(s.replace(old, new, 1))
+          fn = s.index('  PlanningTask? _findCachedPlanningTaskForEdit(')
+          base_start = s.index('    for (final t in _allPlansUserCache) {', fn)
+          optimistic_start = s.index('    for (final m in _planningOptimisticByDateKey.values) {', base_start)
+          return_null = s.index('    return null;', optimistic_start)
+          base_block = s[base_start:optimistic_start]
+          optimistic_block = s[optimistic_start:return_null]
+          comment = "    // Optimistic overlays are the latest local truth. They must win over\n    // the base cache so repeated local-first edits (for example Notes done ->\n    // undone) toggle from the state currently visible to the user.\n"
+          s = s[:base_start] + comment + optimistic_block + base_block + s[return_null:]
+          p.write_text(s)
 
-          # 2. Multi-block SelectionArea copy must use the captured structured
-          # selection even if one editable block still retains focus.
           p = Path('lib/features/notes/note_editor_page.dart')
           s = p.read_text()
-          old = '''  bool _copyCurrentStructuredSelection() {
-    if (_editingBlockId != null || _blockSelectionMode) return false;
-    final blocks = _NotesStructuredClipboard.blocks;
-'''
-          new = '''  bool _copyCurrentStructuredSelection() {
-    if (_blockSelectionMode) return false;
-    final blocks = _NotesStructuredClipboard.blocks;
-'''
-          if old not in s:
+          old_guard = '  bool _copyCurrentStructuredSelection() {\n    if (_editingBlockId != null || _blockSelectionMode) return false;\n    final blocks = _NotesStructuredClipboard.blocks;\n'
+          new_guard = '  bool _copyCurrentStructuredSelection() {\n    if (_blockSelectionMode) return false;\n    final blocks = _NotesStructuredClipboard.blocks;\n'
+          if old_guard not in s:
               raise SystemExit('structured copy guard target not found')
-          s = s.replace(old, new, 1)
-
-          old = '''    final plain = selected?.plainText ?? '';
-    if (plain.isEmpty) return;
-    final blocks = _inferStructuredSelectionBlocks(plain);
-'''
-          new = '''    final plain = selected?.plainText ?? '';
-    if (plain.isEmpty) {
-      _NotesStructuredClipboard.plainText = null;
-      _NotesStructuredClipboard.blocks = const <NoteBlock>[];
-      return;
-    }
-    final blocks = _inferStructuredSelectionBlocks(plain);
-'''
-          if old not in s:
+          s = s.replace(old_guard, new_guard, 1)
+          old_clear = "    final plain = selected?.plainText ?? '';\n    if (plain.isEmpty) return;\n    final blocks = _inferStructuredSelectionBlocks(plain);\n"
+          new_clear = "    final plain = selected?.plainText ?? '';\n    if (plain.isEmpty) {\n      _NotesStructuredClipboard.plainText = null;\n      _NotesStructuredClipboard.blocks = const <NoteBlock>[];\n      return;\n    }\n    final blocks = _inferStructuredSelectionBlocks(plain);\n"
+          if old_clear not in s:
               raise SystemExit('structured selection clear target not found')
-          p.write_text(s.replace(old, new, 1))
+          s = s.replace(old_clear, new_clear, 1)
+          p.write_text(s)
           PY
 
       - name: Verify Notes regressions
