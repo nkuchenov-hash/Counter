@@ -651,11 +651,7 @@ item,
       return;
     }
     final plain = selected?.plainText ?? '';
-    if (plain.isEmpty) {
-      _NotesStructuredClipboard.plainText = null;
-      _NotesStructuredClipboard.blocks = const <NoteBlock>[];
-      return;
-    }
+    if (plain.isEmpty) return;
     final blocks = _inferStructuredSelectionBlocks(plain);
     if (blocks.isEmpty) {
       _NotesStructuredClipboard.plainText = null;
