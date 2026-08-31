@@ -217,7 +217,7 @@ abstract final class PlanTimeViewLayoutCalculator {
     if (prevEndMin != null &&
         prevBottom != null &&
         _wallAdjacent(prevEndMin, slot.startMin)) {
-      return prevBottom;
+      return prevBottom + kPlanTimeCardGapPx;
     }
     return idealTop;
   }
@@ -225,7 +225,27 @@ abstract final class PlanTimeViewLayoutCalculator {
   /// Minimum rubber so a wall-positioned card clears packed 4px gaps before it.
   static double _minPpmForPackedToWallClearance({
     required List<_PlanTimeViewCardSlot> sorted,
-  }) => 0.0;
+  }) {
+    var minPpm = 0.0;
+    var adjacentGaps = 0;
+    double? prevEndMin;
+    for (final c in sorted) {
+      if (prevEndMin != null) {
+        if (_wallAdjacent(prevEndMin, c.startMin)) {
+          adjacentGaps++;
+        } else {
+          final wallGapMin = c.startMin - prevEndMin;
+          if (wallGapMin > 0.01 && adjacentGaps > 0) {
+            final needed = (adjacentGaps * kPlanTimeCardGapPx) / wallGapMin;
+            minPpm = math.max(minPpm, needed);
+          }
+          adjacentGaps = 0;
+        }
+      }
+      prevEndMin = c.endMin;
+    }
+    return minPpm;
+  }
 
   static double _resolveGlobalRubberPxPerMinute({
     required List<_PlanTimeViewCardSlot> slots,
@@ -353,7 +373,7 @@ abstract final class PlanTimeViewLayoutCalculator {
         _logTimeLayout(
           'TIME_LAYOUT_PACK',
           'adjacent previous=${layouts.last.task.planRowIdForBackend} '
-          'current=${slot.task.planRowIdForBackend} visualGap=0',
+          'current=${slot.task.planRowIdForBackend} visualGap=${kPlanTimeCardGapPx.toStringAsFixed(0)}',
         );
       }
 
