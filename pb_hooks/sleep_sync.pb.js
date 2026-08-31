@@ -47,6 +47,60 @@ routerAdd("DELETE", "/api/sleep-sync/connection", function(e) {
     return require(__hooks + "/xiaomi_sleep_runtime.js").remove(e);
 }, $apis.requireAuth("profiles"));
 
+// A completed sleep interval is authoritative for the primary timeline boundary.
+// If the immediately preceding root record still crosses into sleep, close it
+// exactly at sleep.start_time. Child/subrecords are intentionally left alone.
+function reconcilePreviousRecordToSleep(app, userId) {
+    var sleeps = [];
+    try {
+        sleeps = app.findRecordsByFilter(
+            "records",
+            "user_id = {:uid} && (sleep_source = 'xiaomi' || external_source = 'xiaomi')",
+            "-start_time",
+            30,
+            0,
+            { uid: userId }
+        );
+    } catch (_) { return; }
+
+    for (var s = 0; s < sleeps.length; s++) {
+        var sleep = sleeps[s];
+        var sleepStart = new Date(String(sleep.get("start_time") || ""));
+        if (isNaN(sleepStart.getTime())) continue;
+
+        var prior = [];
+        try {
+            prior = app.findRecordsByFilter(
+                "records",
+                "user_id = {:uid} && start_time < {:sleepStart}",
+                "-start_time",
+                50,
+                0,
+                { uid: userId, sleepStart: sleepStart.toISOString() }
+            );
+        } catch (_) { continue; }
+
+        for (var p = 0; p < prior.length; p++) {
+            var row = prior[p];
+            if (row.id === sleep.id) continue;
+            var source = String(row.get("sleep_source") || row.get("external_source") || "").toLowerCase();
+            var kind = String(row.get("external_kind") || "").toLowerCase();
+            var title = String(row.get("title") || "").trim().toLowerCase();
+            if (source === "xiaomi" || source === "google_health" || source === "google_fit" || kind === "sleep" || title === "sleep" || title === "сон") continue;
+            if (String(row.get("parent_id") || "").trim()) continue;
+
+            var rowEndRaw = String(row.get("end_time") || "").trim();
+            var rowEnd = rowEndRaw ? new Date(rowEndRaw) : null;
+            if (rowEnd && !isNaN(rowEnd.getTime()) && rowEnd.getTime() <= sleepStart.getTime()) break;
+
+            row.set("end_time", sleepStart.toISOString());
+            row.set("status", "completed");
+            try { app.save(row); } catch (_) {}
+            break;
+        }
+    }
+}
+
 // From the configured morning start onward, retry every 15 minutes until the
 // current local day's Xiaomi sleep exists in PocketBase. Clearing last_sync_at
 // only for a missing day bypasses the runtime's maintenance throttle without
@@ -81,7 +135,11 @@ cronAdd("lifeos_xiaomi_sleep_sync", "*/15 * * * *", function() {
         connection.set("last_sync_at", "");
         try { app.save(connection); } catch (_) {}
     }
-    return require(__hooks + "/xiaomi_sleep_runtime.js").cron(app);
+    try { require(__hooks + "/xiaomi_sleep_runtime.js").cron(app); } catch (_) {}
+    for (var r = 0; r < rows.length; r++) {
+        var reconcileUserId = String(rows[r].get("user_id") || "");
+        if (reconcileUserId) reconcilePreviousRecordToSleep(app, reconcileUserId);
+    }
 });
 
 // Immediately after each PocketBase restart, force one Xiaomi pass when the
@@ -120,6 +178,10 @@ onBootstrap(function(e) {
         try { app.save(xiaomi); } catch (_) {}
     }
     try { require(__hooks + "/xiaomi_sleep_runtime.js").cron(app); } catch (_) {}
+    for (var xr = 0; xr < xiaomiRows.length; xr++) {
+        var bootstrapUserId = String(xiaomiRows[xr].get("user_id") || "");
+        if (bootstrapUserId) reconcilePreviousRecordToSleep(app, bootstrapUserId);
+    }
 
     // Recover from a stale Xiaomi cloud feed through an existing Google Health
     // authorization. This never asks for a second login and never runs when any
