@@ -47,19 +47,83 @@ routerAdd("DELETE", "/api/sleep-sync/connection", function(e) {
     return require(__hooks + "/xiaomi_sleep_runtime.js").remove(e);
 }, $apis.requireAuth("profiles"));
 
-// One scheduler tick per hour is sufficient. The runtime retries hourly in the
-// wake-up window only while today's sleep is still missing, uses a six-hour
-// repair cadence outside it, and retains the weekly 30-day reconciliation.
-cronAdd("lifeos_xiaomi_sleep_sync", "0 * * * *", function() {
-    return require(__hooks + "/xiaomi_sleep_runtime.js").cron($app);
+// From the configured morning start onward, retry every 15 minutes until the
+// current local day's Xiaomi sleep exists in PocketBase. Clearing last_sync_at
+// only for a missing day bypasses the runtime's maintenance throttle without
+// generating any extra Xiaomi calls after today's record has arrived.
+cronAdd("lifeos_xiaomi_sleep_sync", "*/15 * * * *", function() {
+    var app = $app;
+    var rows = [];
+    try { rows = app.findRecordsByFilter("sleep_sync_connections", "enabled = true && provider = 'xiaomi'", "", 500, 0); } catch (_) { return; }
+    var now = new Date();
+    for (var i = 0; i < rows.length; i++) {
+        var connection = rows[i];
+        var userId = String(connection.get("user_id") || "");
+        if (!userId) continue;
+        var profile = null;
+        try { profile = app.findRecordById("profiles", userId); } catch (_) { continue; }
+        var offsetHours = Number(profile.get("timezone_offset") || 0);
+        var local = new Date(now.getTime() + offsetHours * 60 * 60 * 1000);
+        var localMinutes = local.getUTCHours() * 60 + local.getUTCMinutes();
+        var requestedStart = Number(connection.get("daily_sync_minutes") || 8 * 60);
+        var morningStart = requestedStart >= 4 * 60 && requestedStart < 12 * 60 ? requestedStart : 8 * 60;
+        if (localMinutes < morningStart) continue;
+        var localDayStartMs = Date.UTC(local.getUTCFullYear(), local.getUTCMonth(), local.getUTCDate()) - offsetHours * 60 * 60 * 1000;
+        var localDayEndMs = localDayStartMs + 24 * 60 * 60 * 1000;
+        try {
+            app.findFirstRecordByFilter(
+                "records",
+                "user_id = {:uid} && (sleep_source = 'xiaomi' || external_source = 'xiaomi') && end_time >= {:start} && end_time < {:end}",
+                { uid: userId, start: new Date(localDayStartMs).toISOString(), end: new Date(localDayEndMs).toISOString() }
+            );
+            continue;
+        } catch (_) {}
+        connection.set("last_sync_at", "");
+        try { app.save(connection); } catch (_) {}
+    }
+    return require(__hooks + "/xiaomi_sleep_runtime.js").cron(app);
 });
 
-// Immediately after each PocketBase restart, recover from a stale Xiaomi cloud
-// feed through an existing Google Health authorization. This never asks for a
-// second login and never runs when any recent sleep record is already present.
+// Immediately after each PocketBase restart, force one Xiaomi pass when the
+// configured morning start has passed and today's Xiaomi sleep is still absent.
+// This also makes a deployment self-healing instead of waiting for the next
+// quarter-hour scheduler tick.
 onBootstrap(function(e) {
     e.next();
     var app = e.app;
+    var now = new Date();
+    var xiaomiRows = [];
+    try { xiaomiRows = app.findRecordsByFilter("sleep_sync_connections", "enabled = true && provider = 'xiaomi'", "", 500, 0); } catch (_) {}
+    for (var x = 0; x < xiaomiRows.length; x++) {
+        var xiaomi = xiaomiRows[x];
+        var xiaomiUserId = String(xiaomi.get("user_id") || "");
+        if (!xiaomiUserId) continue;
+        var xiaomiProfile = null;
+        try { xiaomiProfile = app.findRecordById("profiles", xiaomiUserId); } catch (_) { continue; }
+        var xiaomiOffset = Number(xiaomiProfile.get("timezone_offset") || 0);
+        var xiaomiLocal = new Date(now.getTime() + xiaomiOffset * 60 * 60 * 1000);
+        var xiaomiMinutes = xiaomiLocal.getUTCHours() * 60 + xiaomiLocal.getUTCMinutes();
+        var xiaomiRequestedStart = Number(xiaomi.get("daily_sync_minutes") || 8 * 60);
+        var xiaomiMorningStart = xiaomiRequestedStart >= 4 * 60 && xiaomiRequestedStart < 12 * 60 ? xiaomiRequestedStart : 8 * 60;
+        if (xiaomiMinutes < xiaomiMorningStart) continue;
+        var xiaomiDayStartMs = Date.UTC(xiaomiLocal.getUTCFullYear(), xiaomiLocal.getUTCMonth(), xiaomiLocal.getUTCDate()) - xiaomiOffset * 60 * 60 * 1000;
+        var xiaomiDayEndMs = xiaomiDayStartMs + 24 * 60 * 60 * 1000;
+        try {
+            app.findFirstRecordByFilter(
+                "records",
+                "user_id = {:uid} && (sleep_source = 'xiaomi' || external_source = 'xiaomi') && end_time >= {:start} && end_time < {:end}",
+                { uid: xiaomiUserId, start: new Date(xiaomiDayStartMs).toISOString(), end: new Date(xiaomiDayEndMs).toISOString() }
+            );
+            continue;
+        } catch (_) {}
+        xiaomi.set("last_sync_at", "");
+        try { app.save(xiaomi); } catch (_) {}
+    }
+    try { require(__hooks + "/xiaomi_sleep_runtime.js").cron(app); } catch (_) {}
+
+    // Recover from a stale Xiaomi cloud feed through an existing Google Health
+    // authorization. This never asks for a second login and never runs when any
+    // recent sleep record is already present.
     var cutoff = new Date(Date.now() - 36 * 60 * 60 * 1000).toISOString();
     var rows = [];
     try { rows = app.findRecordsByFilter("sleep_sync_connections", "enabled = true && provider = 'xiaomi'", "", 500, 0); } catch (_) { return; }
