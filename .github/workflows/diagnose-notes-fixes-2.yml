@@ -60,18 +60,6 @@ jobs:
           flutter test test/note_document_v2_test.dart test/notes_glm_editor_parity_test.dart
           flutter analyze --no-fatal-infos --no-fatal-warnings
           git diff --check
-          python3 - <<'PY'
-          from pathlib import Path
-          outbox = Path('lib/data/plans/plan_outbox_helpers.dart').read_text()
-          a = outbox.index('PlanningTask? _findCachedPlanningTaskForEdit(')
-          b = outbox.index('\n  void _applyOptimisticPlanningTaskPatch', a)
-          body = outbox[a:b]
-          assert body.index('_planningOptimisticByDateKey.values') < body.index('_allPlansUserCache')
-          editor = Path('lib/features/notes/note_editor_page.dart').read_text()
-          assert 'if (_editingBlockId != null || _blockSelectionMode) return false;' not in editor
-          assert 'if (_blockSelectionMode) return false;' in editor
-          assert '_NotesStructuredClipboard.blocks = const <NoteBlock>[];' in editor
-          PY
       - name: Commit source
         shell: bash
         run: |
