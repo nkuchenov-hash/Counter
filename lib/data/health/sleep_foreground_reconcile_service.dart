@@ -39,6 +39,14 @@ class SleepForegroundReconcileService with WidgetsBindingObserver {
     try {
       await _syncDeviceSleep();
       await _syncCloudSleep();
+      // Server-side Xiaomi sync can create records after the generic foreground
+      // catch-up pull has already completed. Force one records refresh after
+      // sleep reconciliation so a missed realtime event cannot leave Timeline
+      // on stale cached data until the next app resume.
+      final db = DatabaseService.instance;
+      if (db.isInitialized && (db.currentProfileId?.isNotEmpty == true)) {
+        await db.getRecords(forceNetwork: true);
+      }
     } finally {
       _reconcileRunning = false;
     }
