@@ -1,6 +1,6 @@
 name: Android release APK
 
-# Manual artifact trigger: 2026-09-01 Notes mobile grid clipping build.
+# Manual artifact trigger: 2026-09-01 Notes mobile grid clipping public release.
 on:
   workflow_dispatch:
   push:
@@ -49,14 +49,13 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-      - name: Publish APK to rolling LIFE OS release
+      - name: Publish immutable LIFE OS Android release
         uses: ncipollo/release-action@v1
         with:
-          tag: life-os-latest
-          name: LIFE OS — Latest Apps
-          body: Rolling public downloads for LIFE OS native applications. Release history is shown on the LIFE OS website from CHANGELOG.md.
+          tag: life-os-1.0.0-build1-20260901-notes
+          name: LIFE OS 1.0.0+1 — Notes mobile polish
+          body: Android ARM64 release for 2026-09-01. Includes compact Notes editor title/back navigation and fixed Notes grid-card preview clipping on mobile.
           artifacts: LIFE-OS-Android-arm64.apk
-          allowUpdates: true
-          replacesArtifacts: true
+          immutableCreate: true
           makeLatest: true
           prerelease: false
