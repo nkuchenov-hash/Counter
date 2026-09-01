@@ -13,7 +13,7 @@ The marketing site is copied into `build/web/lifeos/` by `.github/workflows/depl
 
 ## Dynamic content
 
-- Release history is read client-side from `main/CHANGELOG.md`.
+- Release history is read client-side from public LIFE OS GitHub Releases.
 - Native download buttons read public assets from GitHub Releases.
 - The rolling public release tag is `life-os-latest`.
 - Android workflow publishes `LIFE-OS-Android-arm64.apk`.
