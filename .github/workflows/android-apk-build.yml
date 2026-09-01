@@ -1,6 +1,5 @@
 name: Android release APK
 
-# Manual artifact trigger: 2026-08-18 Health Connect sleep-stage fallback.
 on:
   workflow_dispatch:
   push:
@@ -8,7 +7,7 @@ on:
       - '.github/workflows/android-apk-build.yml'
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build-apk:
@@ -38,10 +37,25 @@ jobs:
       - name: Build arm64 release APK
         run: flutter build apk --release --target-platform android-arm64 --split-per-abi --no-tree-shake-icons
 
-      - name: Upload APK
+      - name: Prepare public APK name
+        run: cp build/app/outputs/flutter-apk/app-arm64-v8a-release.apk LIFE-OS-Android-arm64.apk
+
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: counter-android-arm64-release
-          path: build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
+          path: LIFE-OS-Android-arm64.apk
           if-no-files-found: error
           retention-days: 14
+
+      - name: Publish APK to rolling LIFE OS release
+        uses: ncipollo/release-action@v1
+        with:
+          tag: life-os-latest
+          name: LIFE OS — Latest Apps
+          body: Rolling public downloads for LIFE OS native applications. Release history is shown on the LIFE OS website from CHANGELOG.md.
+          artifacts: LIFE-OS-Android-arm64.apk
+          allowUpdates: true
+          replacesArtifacts: true
+          makeLatest: true
+          prerelease: false
