@@ -122,6 +122,17 @@ jobs:
           grep -Fq "flutter_bootstrap.js?v=$FULL_SHA" build/web/index.html
           test "$(tr -d '\r\n' < build/web/lifeos-build.txt)" = "$FULL_SHA"
 
+      - name: Publish LIFE OS marketing site inside Pages artifact
+        if: steps.freshness.outputs.fresh == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f marketing/index.html
+          rm -rf build/web/lifeos
+          mkdir -p build/web/lifeos
+          cp -R marketing/. build/web/lifeos/
+          test -f build/web/lifeos/index.html
+
       - name: Preserve published content and default-branch workflows
         if: steps.freshness.outputs.fresh == 'true'
         shell: bash
