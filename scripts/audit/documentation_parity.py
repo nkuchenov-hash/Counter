@@ -182,7 +182,9 @@ def check_detailed_structure_exact_manifest() -> list[str]:
         return ["MISSING_DETAILED_STRUCTURE docs/APP_STRUCTURE_DETAILED.md"]
 
     body = detailed.read_text(encoding="utf-8")
-    tracked = _tracked_files()
+    # The public marketing site is deployed alongside LIFE OS but is not part of
+    # the application architecture manifest.
+    tracked = [path for path in _tracked_files() if not path.startswith("marketing/")]
     tracked_set = set(tracked)
     rendered = DETAIL_FILE_HEADING_RE.findall(body)
     rendered_set = set(rendered)
