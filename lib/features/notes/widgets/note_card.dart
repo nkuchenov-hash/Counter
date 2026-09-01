@@ -124,6 +124,7 @@ class _GridCard extends StatelessWidget {
             context: context,
             selected: selected,
           ),
+          clipBehavior: Clip.antiAlias,
           padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -157,11 +158,13 @@ class _GridCard extends StatelessWidget {
               ),
               const SizedBox(height: 6),
               Expanded(
-                child: _BlockPreview(
-                  data: data,
-                  loc: loc,
-                  isDone: isDone,
-                  onTap: onOpen,
+                child: ClipRect(
+                  child: _BlockPreview(
+                    data: data,
+                    loc: loc,
+                    isDone: isDone,
+                    onTap: onOpen,
+                  ),
                 ),
               ),
               const SizedBox(height: 8),
