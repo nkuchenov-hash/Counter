@@ -1,5 +1,6 @@
 name: Android release APK
 
+# Manual artifact trigger: 2026-09-01 Notes compact-title/back-arrow build.
 on:
   workflow_dispatch:
   push:
