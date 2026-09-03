@@ -2,7 +2,7 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `6e07072c` on 2026-09-03.**
+**Generated from input HEAD `89e5f17d` on 2026-09-03.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
@@ -5865,7 +5865,7 @@ EN:
 - **Why needed:** Quick answer to ‘where does X live?’ without reading the full encyclopedia.
 - **Contents:** Tables of `lib/data`, features, scripts; architecture guard entry points.
 - **Repository role:** governing documentation
-- **Evidence of use:** (1) Governing/ops/product documentation read by humans and agents (see `docs/PROJECT_KNOWLEDGE_PACK.md` / AGENTS routing). (2) Referenced by: `.cursor/rules/flutter_expert.mdc`, `.github/copilot-instructions.md`, `AGENTS.md`, `AGENT_NAVIGATION.md`.
+- **Evidence of use:** (1) Governing/ops/product documentation read by humans and agents (see `docs/PROJECT_KNOWLEDGE_PACK.md` / AGENTS routing). (2) Referenced by: `.cursor/rules/flutter_expert.mdc`, `.github/copilot-instructions.md`, `.github/workflows/architecture-guard.yml`, `AGENTS.md`.
 - **Necessity status:** GOVERNING_DOCUMENTATION
 - **Deletion consequence:** Lost architecture/ops rule or agent routing instruction.
 - **Confidence:** HIGH
@@ -14170,8 +14170,8 @@ RU:
 
 EN:
 
-- **Human purpose:** Brain helper for data/sync — people models. Shared PocketBase/auth/parse logic used by multiple tabs.
-- **What this is:** Brain helper for data/sync — people models.
+- **Human purpose:** Brain helper for data/sync — Pure People/Circle/source-index domain types and relationship/import-state enums. Shared PocketBase/auth/parse logic used by multiple tabs.
+- **What this is:** Brain helper for data/sync — Pure People/Circle/source-index domain types and relationship/import-state enums.
 - **Why needed:** Shared PocketBase/auth/parse logic used by multiple tabs.
 - **Contents:** Dart helpers and types (`PersonRelationshipStatus`, `PeopleSourceProvider`, `PeopleSourceImportState`, `PeopleCircle`, `LifePerson`, `PeopleSourceStats`).
 - **Key code names:** `PersonRelationshipStatus`, `PeopleSourceProvider`, `PeopleSourceImportState`, `PeopleCircle`, `LifePerson`, `PeopleSourceStats`
@@ -14181,10 +14181,10 @@ EN:
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
 - **Owner / layer:** Brain/data
-- **Responsibilities:** people models
+- **Responsibilities:** Pure People/Circle/source-index domain types and relationship/import-state enums
 - **When to open:** When behavior tied to `people_models.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** UI calls via `DatabaseService.instance`; APP_STRUCTURE role: people models
+- **Connected to:** UI calls via `DatabaseService.instance`; APP_STRUCTURE role: Pure People/Circle/source-index domain types and relationship/import-state enums
 
 RU:
 
@@ -14219,10 +14219,10 @@ EN:
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
 - **Owner / layer:** Brain/data
-- **Responsibilities:** people service
+- **Responsibilities:** On-demand PocketBase CRUD, source-index counts, and bounded birthday-reminder reconciliation
 - **When to open:** When behavior tied to `people_service.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** UI calls via `DatabaseService.instance`; APP_STRUCTURE role: people service
+- **Connected to:** UI calls via `DatabaseService.instance`; APP_STRUCTURE role: On-demand PocketBase CRUD, source-index counts, and bounded birthday-reminder reconciliation
 
 RU:
 
@@ -14236,7 +14236,7 @@ RU:
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
 - **Владелец / слой:** Brain/data
-- **Обязанности:** Координатор домена: people service.
+- **Обязанности:** Координатор домена: On-demand PocketBase CRUD, source-index counts, and bounded birthday-reminder reconciliation.
 - **Когда открывать:** Когда ломается поведение, связанное с `people_service.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** UI вызывает `DatabaseService.instance`
@@ -20423,8 +20423,8 @@ RU:
 
 EN:
 
-- **Human purpose:** `people_settings_page.dart` on settings area — people settings page. Users see `people_settings_page.dart` when using settings area.
-- **What this is:** `people_settings_page.dart` on settings area — people settings page.
+- **Human purpose:** `people_settings_page.dart` on settings area — Settings → Account → People UI with People, Circles, and Sources sections. Users see `people_settings_page.dart` when using settings area.
+- **What this is:** `people_settings_page.dart` on settings area — Settings → Account → People UI with People, Circles, and Sources sections.
 - **Why needed:** Users see `people_settings_page.dart` when using settings area.
 - **Contents:** Primary symbols: `_PeopleSection`, `PeopleSettingsPage`, `_PeopleSettingsPageState`.
 - **Key code names:** `_PeopleSection`, `PeopleSettingsPage`, `_PeopleSettingsPageState`
@@ -20434,10 +20434,10 @@ EN:
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
 - **Owner / layer:** repository root
-- **Responsibilities:** Implements `_PeopleSection` and related API in `people_settings_page.dart`.
+- **Responsibilities:** Settings → Account → People UI with People, Circles, and Sources sections
 - **When to open:** When behavior tied to `people_settings_page.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: people settings page
+- **Connected to:** APP_STRUCTURE role: Settings → Account → People UI with People, Circles, and Sources sections
 
 RU:
 
@@ -20461,8 +20461,8 @@ RU:
 
 EN:
 
-- **Human purpose:** `people_strings.dart` on settings area — people strings. Users see `people_strings.dart` when using settings area.
-- **What this is:** `people_strings.dart` on settings area — people strings.
+- **Human purpose:** `people_strings.dart` on settings area — Feature-local EN/RU copy for the People settings surface. Users see `people_strings.dart` when using settings area.
+- **What this is:** `people_strings.dart` on settings area — Feature-local EN/RU copy for the People settings surface.
 - **Why needed:** Users see `people_strings.dart` when using settings area.
 - **Contents:** Dart module `people_strings.dart` — open file for classes and helpers.
 - **Repository role:** production UI
@@ -20471,10 +20471,10 @@ EN:
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
 - **Owner / layer:** repository root
-- **Responsibilities:** Supports `people_strings` behavior in this feature area.
+- **Responsibilities:** Feature-local EN/RU copy for the People settings surface
 - **When to open:** When behavior tied to `people_strings.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: people strings
+- **Connected to:** APP_STRUCTURE role: Feature-local EN/RU copy for the People settings surface
 
 RU:
 
