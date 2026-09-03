@@ -14,17 +14,48 @@ DateTime? _notesTimestampHydrationFetchedAt;
 Future<void>? _notesTimestampHydrationInFlight;
 const Duration _notesTimestampHydrationFreshTtl = Duration(minutes: 5);
 
+// PocketBase requires `plans.title`, while Notes intentionally support a
+// visually blank title. Keep this persistence-only sentinel out of the Notes UI
+// and all plain-text/checklist projections.
+const String _notesBlankTitlePersistenceSentinel = '\u2060';
+
+String _notesVisibleTitle(String? raw) {
+  final value = raw ?? '';
+  if (!value.contains(_notesBlankTitlePersistenceSentinel)) return value;
+  return value.replaceAll(_notesBlankTitlePersistenceSentinel, '');
+}
+
+String _notesPersistenceTitle(String? raw) {
+  final visible = _notesVisibleTitle(raw).trim();
+  return visible.isEmpty ? _notesBlankTitlePersistenceSentinel : visible;
+}
+
 /// Brain-side extension for the Life OS Notes block editor.
 ///
 /// All methods are local-first: they mutate the Brain cache immediately, notify
 /// the UI stream, and schedule a background PATCH. Failures keep optimistic
 /// state and are retried via the existing plan mutation outbox.
 extension NotesBrainExtension on DatabaseService {
+  PlanningTask? _findCachedNoteTaskForEdit(String planRowIdForBackend) {
+    final key = planRowIdForBackend.trim();
+    if (key.isEmpty) return null;
+    final businessId = key.startsWith('optimistic-')
+        ? key.substring('optimistic-'.length)
+        : '';
+    return _findCachedPlanningTaskForEdit(
+      key,
+      planBusinessId: businessId.isEmpty ? null : businessId,
+    );
+  }
+
   /// Returns the latest cached [PlanningTask] for a given row id, or null.
   /// Public read accessor for editor/library so they can refresh after a
   /// background sync without triggering a full refetch.
   PlanningTask? getCachedPlanningTaskForEdit(String planRowIdForBackend) {
-    return _findCachedPlanningTaskForEdit(planRowIdForBackend);
+    final task = _findCachedNoteTaskForEdit(planRowIdForBackend);
+    if (task == null) return null;
+    final visibleTitle = _notesVisibleTitle(task.title);
+    return visibleTitle == task.title ? task : task.copyWith(title: visibleTitle);
   }
 
   /// Hydrates PocketBase's immutable `created` and auto-managed `updated`
@@ -133,7 +164,7 @@ extension NotesBrainExtension on DatabaseService {
   /// Toggle a note's pin. Local-first: applies optimistically, then schedules
   /// a background PATCH with the full document envelope.
   void toggleNotePin(String planRowIdForBackend) {
-    final task = _findCachedPlanningTaskForEdit(planRowIdForBackend);
+    final task = _findCachedNoteTaskForEdit(planRowIdForBackend);
     if (task == null) return;
     final doc = parseNoteDocument(task);
     final next = doc.copyWith(
@@ -149,7 +180,7 @@ extension NotesBrainExtension on DatabaseService {
 
   /// Toggle a note's whole-note done state. Local-first.
   void toggleNoteDone(String planRowIdForBackend) {
-    final task = _findCachedPlanningTaskForEdit(planRowIdForBackend);
+    final task = _findCachedNoteTaskForEdit(planRowIdForBackend);
     if (task == null) return;
     final updated = task.copyWith(
       isDone: !task.isDone,
@@ -184,7 +215,7 @@ extension NotesBrainExtension on DatabaseService {
     List<Tag>? tags,
     bool? isDone,
   }) {
-    final task = _findCachedPlanningTaskForEdit(planRowIdForBackend);
+    final task = _findCachedNoteTaskForEdit(planRowIdForBackend);
     if (task == null) return;
     _applyNoteDocument(
       task,
@@ -206,12 +237,13 @@ extension NotesBrainExtension on DatabaseService {
     List<Tag>? tags,
     bool? isDone,
   }) {
+    final visibleTitle = _notesVisibleTitle(title ?? task.title).trim();
     final encoded = doc.encode();
-    final plain = doc.toPlainText(title: title ?? task.title);
+    final plain = doc.toPlainText(title: visibleTitle);
     final checklistProjection = doc.toChecklistProjection();
 
     final updated = task.copyWith(
-      title: title ?? task.title,
+      title: visibleTitle,
       categoryId: categoryId ?? task.categoryId,
       isDone: isDone ?? task.isDone,
       notesDeltaJson: doc.blocks.isEmpty && plain.isEmpty ? null : encoded,
@@ -228,7 +260,7 @@ extension NotesBrainExtension on DatabaseService {
       updatePlanningTask(
         updated.planRowIdForBackend,
         planBusinessId: updated.planRowId,
-        title: updated.title,
+        title: _notesPersistenceTitle(updated.title),
         categoryId: updated.categoryId,
         notesPlain: updated.notesPlain,
         notesDeltaJson: updated.notesDeltaJson,
@@ -310,7 +342,7 @@ extension NotesBrainExtension on DatabaseService {
         ),
       ],
     );
-    final trimmedTitle = title.trim();
+    final trimmedTitle = _notesVisibleTitle(title).trim();
     final task = PlanningTask(
       id: 0,
       planRowId: optimisticId,
@@ -328,11 +360,12 @@ extension NotesBrainExtension on DatabaseService {
     applyOptimisticPlanningTask(task);
     notifyPlanningRefresh(scheduleNetworkRefresh: false);
 
-    // Persist in the background; reconcile the system id when it lands.
+    // `plans.title` is required by PocketBase. Notes may still be visually
+    // untitled: only the persistence copy receives the reserved sentinel.
     final created = PlanningTask(
       id: 0,
       planRowId: clientPlanId,
-      title: trimmedTitle,
+      title: _notesPersistenceTitle(trimmedTitle),
       categoryId: categoryId,
       isDone: false,
       dateKey: '',
@@ -344,13 +377,20 @@ extension NotesBrainExtension on DatabaseService {
     );
     final ok = await addPlanningTask(created, clientPlanId: clientPlanId);
     if (!ok) return optimisticId;
-    return optimisticId;
+
+    // Online creates already have a real PocketBase row; offline/outbox creates
+    // keep the optimistic id and are later resolved by the business plan_id.
+    final materialized = _findCachedPlanningTaskForEdit(
+      clientPlanId,
+      planBusinessId: clientPlanId,
+    );
+    return materialized?.planRowIdForBackend ?? optimisticId;
   }
 
   /// Deletes a note (plan) optimistically: removes from local cache first,
   /// then schedules a background DELETE. The editor calls this and pops.
   Future<void> deleteNote(String planRowIdForBackend) async {
-    final task = _findCachedPlanningTaskForEdit(planRowIdForBackend);
+    final task = _findCachedNoteTaskForEdit(planRowIdForBackend);
     if (task == null) return;
     final pid = task.planRowIdForBackend;
     _removePlanFromUserCache(pid);
