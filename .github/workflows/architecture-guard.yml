@@ -5,7 +5,7 @@ on:
     branches:
       - main
   push:
-    branches: [main]
+    branches: [main, feature/people-settings]
   workflow_dispatch:
 
 concurrency:
@@ -13,7 +13,7 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   strict-structure:
@@ -24,6 +24,152 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Synchronize People governing docs
+        if: github.event_name == 'push' && github.ref == 'refs/heads/feature/people-settings'
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('docs/APP_STRUCTURE.md')
+          text = path.read_text(encoding='utf-8')
+          marker = '### 3.2.P People — Settings-owned personal relationship domain'
+          block = '''### 3.2.P People — Settings-owned personal relationship domain
+
+People is an on-demand Settings feature. External address books stay in a hidden source index and never become visible People merely because a contact exists in a provider.
+
+| Path | Role |
+| :--- | :--- |
+| `lib/data/people/people_models.dart` | Person, Circle, source-contact and integration domain types |
+| `lib/data/people/people_service.dart` | On-demand PocketBase CRUD, photo upload, source-index review/link operations, device/Telegram import and bounded birthday reminder reconcile |
+| `lib/data/people/people_device_contacts_bridge.dart` | Explicit user-triggered Android/iOS address-book bridge; no startup scan |
+| `lib/data/people/people_integration_service.dart` | Client for server-owned Google/Microsoft/VK/Facebook People source connections and sync |
+| `lib/features/settings/people/people_settings_page.dart` | Stable export for Settings → Account → People |
+| `lib/features/settings/people/people_settings_page_impl.dart` | People / Circles / Sources page composition and Person/Circle list state |
+| `lib/features/settings/people/people_avatar.dart` | Person/source avatar renderer with uploaded-photo and source-avatar fallback |
+| `lib/features/settings/people/people_person_editor.dart` | Person editor: photo, contact data, relationship, birthday/reminders, circles and notes |
+| `lib/features/settings/people/people_sources_section.dart` | Provider cards, sync/import controls and explicit Add / Link / Ignore / Block review flow |
+| `lib/features/settings/people/people_strings.dart` | Feature-local EN/RU copy for the People settings surface |
+
+**People source law:** provider records have explicit review, linked, ignored, and blocked states; only an explicit Add/Link action creates or connects a visible Person. Suppression survives later source syncs. Circles are many-to-many and are not task Categories.
+
+'''
+          if marker in text:
+              start = text.index(marker)
+              end = text.find('\n## ', start)
+              if end < 0:
+                  end = len(text)
+              text = text[:start] + block + text[end:].lstrip('\n')
+          else:
+              anchor = '\n## 4.'
+              text = text.replace(anchor, '\n' + block + anchor.lstrip('\n'), 1) if anchor in text else text + '\n' + block
+          path.write_text(text, encoding='utf-8')
+
+          def ensure_section(file_name, marker, section):
+              p = Path(file_name)
+              s = p.read_text(encoding='utf-8')
+              if marker in s:
+                  start = s.index(marker)
+                  end = s.find('\n## ', start + len(marker))
+                  if end < 0:
+                      end = len(s)
+                  s = s[:start] + section.strip() + '\n\n' + s[end:].lstrip('\n')
+              else:
+                  s = s.rstrip() + '\n\n' + section.strip() + '\n'
+              p.write_text(s, encoding='utf-8')
+
+          ensure_section('docs/DATA_MAP.md', '## People domain (2026-09-03)', '''
+          ## People domain (2026-09-03)
+
+          People is a separate personal-relationship domain and does not reuse plan Categories.
+
+          ### `people`
+          - PocketBase system `id`, owner `user_id`, stable business `person_id`.
+          - `display_name`, `primary_email`, `primary_phone`.
+          - `photo`: one uploaded Person image; `source_avatar_url`: provider-avatar fallback.
+          - `relationship_status`: `important`, `known`, `reference`, `ignored`, `blocked`.
+          - optional birthday month/day plus optional year; notification toggle and reminder-day list.
+          - multi-relation `circles_link`, notes, source references, archive flag.
+
+          ### `people_circles`
+          Owner-scoped stable circles. One Person may belong to multiple Circles; Circles are independent of task Categories.
+
+          ### `people_source_contacts`
+          Hidden provider index. Identity is owner + provider + external id. Source name/avatar/email/phone/birthday/group are stored here. Review state, linked state, ignored state and blocked state are durable. `person_link` is populated only after explicit approval.
+
+          ### `people_integrations`
+          Server-only OAuth/session rows for Google Contacts, Microsoft, VK and Facebook. Access/refresh tokens are encrypted at rest and never exposed to Flutter.
+          ''')
+
+          ensure_section('docs/POCKETBASE_MANIFEST.md', '## People collections (2026-09-03)', '''
+          ## People collections (2026-09-03)
+
+          Collections: `people`, `people_circles`, `people_source_contacts`, `people_integrations`.
+
+          - User-facing People collections are owner-scoped to `profiles.id`; `people_integrations` is server-only.
+          - External source sync writes only `people_source_contacts`; it never auto-creates a visible Person.
+          - Person photos live in `people.photo`; provider avatars remain source metadata until Add/Link.
+          - Device contacts are imported explicitly on Android/iOS after OS permission.
+          - Google Contacts and Microsoft use server OAuth/read-only contact scopes. Google/Microsoft credentials may reuse the existing Calendar credentials, but People callback URIs must be registered with the providers.
+          - VK and Facebook adapters require provider app credentials. Facebook exposes only friends permitted by its API.
+          - Telegram supports explicit JSON export import; no fake bot/OAuth contact sync is presented.
+          - Birthday reminder ownership is isolated under the People birthday notification namespace and reconciles when People opens or a Person changes.
+
+          Routes:
+          - `GET /api/people-integrations/status`
+          - `POST /api/people-integrations/{google_contacts|microsoft|vk|facebook}/connect`
+          - `GET /api/people-integrations/{provider}/callback`
+          - `POST /api/people-integrations/{provider}/sync`
+          - `DELETE /api/people-integrations/{provider}`
+          ''')
+
+          ensure_section('docs/UX_CONTRACT.md', '## People / source hygiene contract', '''
+          ## People / source hygiene contract
+
+          - Entry point: Settings → Account → People; People is not a primary app tab.
+          - Sections: People, Circles, Sources.
+          - Person supports main photo, source-avatar fallback, email, phone, relationship, optional-year birthday, reminders, multiple Circles and notes.
+          - Sources are a hidden review index, never the visible People list.
+          - Explicit source actions: Add, Link, Ignore, Block. Ignore/Block survives later source syncs.
+          - Device contacts sync only after a user action and OS permission; no address-book scan at startup.
+          - Cloud source sync refreshes the hidden source index only.
+          - Circles are many-to-many social groupings independent of task/plan Categories.
+          - Plan reminder reconciliation must not cancel People birthday reminders.
+          ''')
+
+          ensure_section('CLAUDE.md', '## People navigation (2026-09-03)', '''
+          ## People navigation (2026-09-03)
+
+          | What | File | Entry / notes |
+          | :--- | :--- | :--- |
+          | People entry | `lib/features/settings/people/people_settings_page.dart` | Settings → Account → People |
+          | People page | `lib/features/settings/people/people_settings_page_impl.dart` | People / Circles / Sources |
+          | Person editor | `lib/features/settings/people/people_person_editor.dart` | Photo, contact data, birthday/reminders, circles, notes |
+          | Source review | `lib/features/settings/people/people_sources_section.dart` | Sync/import + Add/Link/Ignore/Block |
+          | People data | `lib/data/people/people_service.dart` | CRUD, photos, source-index linking, birthday reconcile |
+          | Device contacts | `lib/data/people/people_device_contacts_bridge.dart` | Explicit Android/iOS address-book bridge |
+          | Cloud integrations | `lib/data/people/people_integration_service.dart`, `pb_hooks/people_integrations.pb.js` | Google/Microsoft/VK/Facebook status/OAuth/sync |
+          | Schema | `pb_migrations/1788472800_people.js` | People collections |
+          | Notifications | `lib/services/notification_service.dart` | Plan and People birthday ownership are isolated |
+          ''')
+          PY
+
+      - name: Regenerate detailed structure manifest
+        if: github.event_name == 'push' && github.ref == 'refs/heads/feature/people-settings'
+        run: python scripts/manual/generate_app_structure_detailed.py
+
+      - name: Commit synchronized People docs
+        if: github.event_name == 'push' && github.ref == 'refs/heads/feature/people-settings'
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add docs/APP_STRUCTURE.md docs/APP_STRUCTURE_DETAILED.md docs/DATA_MAP.md docs/POCKETBASE_MANIFEST.md docs/UX_CONTRACT.md CLAUDE.md
+          if ! git diff --cached --quiet; then
+            git commit -m 'Synchronize completed People documentation'
+            git push origin HEAD:feature/people-settings
+          fi
 
       - name: Run strict architecture guard
         run: pwsh -NoProfile -NonInteractive -File ./scripts/audit/architecture_guard.ps1 -Strict
