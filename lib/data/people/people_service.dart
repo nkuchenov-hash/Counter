@@ -2,6 +2,9 @@ import 'dart:async';
 
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/people/people_models.dart';
+import 'package:counter/l10n/dictionary.dart';
+import 'package:counter/services/notification_service.dart';
+import 'package:counter/shared/time/wall_clock.dart' as wall_clock;
 import 'package:pocketbase/pocketbase.dart';
 
 /// On-demand People data access. Nothing here runs during app startup.
@@ -16,6 +19,7 @@ class PeopleService {
   static const String _peopleCollection = 'people';
   static const String _circlesCollection = 'people_circles';
   static const String _sourceContactsCollection = 'people_source_contacts';
+  static const int _birthdayReminderWallHour = 9;
 
   Future<PocketBase> _readyPocketBase() async {
     final brain = DatabaseService.instance;
@@ -114,7 +118,9 @@ class PeopleService {
         'archived': false,
       },
     );
-    return LifePerson.fromMap(_mapRecord(record));
+    final saved = LifePerson.fromMap(_mapRecord(record));
+    unawaited(reconcilePersonBirthdayNotifications(saved));
+    return saved;
   }
 
   Future<LifePerson> updatePerson({
@@ -153,10 +159,15 @@ class PeopleService {
         'notes': notes.trim(),
       },
     );
-    return LifePerson.fromMap(_mapRecord(record));
+    final saved = LifePerson.fromMap(_mapRecord(record));
+    unawaited(reconcilePersonBirthdayNotifications(saved));
+    return saved;
   }
 
-  Future<void> archivePerson(String recordId) async {
+  Future<void> archivePerson(
+    String recordId, {
+    String? personStableId,
+  }) async {
     final id = recordId.trim();
     if (id.isEmpty) return;
     final pb = await _readyPocketBase();
@@ -165,6 +176,12 @@ class PeopleService {
       id,
       body: const <String, dynamic>{'archived': true},
     );
+    final stable = personStableId?.trim() ?? '';
+    if (stable.isNotEmpty) {
+      unawaited(
+        NotificationService.instance.cancelPeopleBirthdayReminders(stable),
+      );
+    }
   }
 
   Future<PeopleCircle> createCircle(String name) async {
@@ -259,6 +276,120 @@ class PeopleService {
           );
         }(),
     ]);
+  }
+
+  /// Bounded, on-demand reconcile. Called when People is opened and after a
+  /// person is changed; it never adds startup work or a global address-book scan.
+  Future<void> reconcileBirthdayNotifications(List<LifePerson> people) async {
+    for (final person in people) {
+      await reconcilePersonBirthdayNotifications(person);
+    }
+  }
+
+  Future<void> reconcilePersonBirthdayNotifications(LifePerson person) async {
+    final stableId = person.personId.trim();
+    if (stableId.isEmpty) return;
+    final notifications = NotificationService.instance;
+    await notifications.cancelPeopleBirthdayReminders(stableId);
+
+    if (person.archived ||
+        !person.birthdayNotificationsEnabled ||
+        !person.hasBirthday ||
+        person.relationshipStatus == PersonRelationshipStatus.ignored ||
+        person.relationshipStatus == PersonRelationshipStatus.blocked) {
+      return;
+    }
+
+    final brain = DatabaseService.instance;
+    final today = brain.getTimelineDeviceLocalToday();
+    final settings = brain.settings;
+    final nowUtc = DateTime.now().toUtc();
+    var targetYear = today.year;
+    var birthdayWall = _birthdayWallDate(
+      targetYear,
+      person.birthdayMonth!,
+      person.birthdayDay!,
+    );
+    var birthdayUtc = wall_clock.wallClockToUtcForLabel(
+      birthdayWall,
+      settings.timezoneOffsetHours,
+      settings.preferredTimeZone,
+    );
+    if (!birthdayUtc.isAfter(nowUtc)) {
+      targetYear++;
+      birthdayWall = _birthdayWallDate(
+        targetYear,
+        person.birthdayMonth!,
+        person.birthdayDay!,
+      );
+    }
+
+    final locale = currentLocale.value.toLowerCase();
+    final reminders = _normalizeReminderDays(person.birthdayReminderDays);
+    for (final daysBefore in reminders) {
+      final reminderDay = birthdayWall.subtract(Duration(days: daysBefore));
+      final reminderWall = DateTime(
+        reminderDay.year,
+        reminderDay.month,
+        reminderDay.day,
+        _birthdayReminderWallHour,
+      );
+      final fireUtc = wall_clock.wallClockToUtcForLabel(
+        reminderWall,
+        settings.timezoneOffsetHours,
+        settings.preferredTimeZone,
+      );
+      if (!fireUtc.isAfter(nowUtc)) continue;
+
+      final key = 'people:birthday:$stableId:${birthdayWall.year}:$daysBefore';
+      final title = '🎂 ${person.displayName}';
+      final body = _birthdayNotificationBody(
+        person.displayName,
+        daysBefore,
+        locale,
+      );
+      await notifications.schedulePeopleBirthdayReminder(
+        notificationId: planAlarmNotificationIdFromStableKey(key),
+        personStableId: stableId,
+        fireUtc: fireUtc,
+        title: title,
+        body: body,
+        occurrenceKey: '${birthdayWall.year}:$daysBefore',
+      );
+    }
+  }
+
+  DateTime _birthdayWallDate(int year, int month, int day) {
+    // Feb 29 is observed on Feb 28 in non-leap years so an annual reminder is
+    // never silently lost.
+    if (month == DateTime.february && day == 29 && !_isLeapYear(year)) {
+      return DateTime(year, DateTime.february, 28, _birthdayReminderWallHour);
+    }
+    return DateTime(year, month, day, _birthdayReminderWallHour);
+  }
+
+  bool _isLeapYear(int year) =>
+      year % 400 == 0 || (year % 4 == 0 && year % 100 != 0);
+
+  String _birthdayNotificationBody(
+    String displayName,
+    int daysBefore,
+    String locale,
+  ) {
+    final ru = locale.startsWith('ru');
+    if (daysBefore == 0) {
+      return ru
+          ? 'Сегодня день рождения у $displayName.'
+          : "It's $displayName's birthday today.";
+    }
+    if (daysBefore == 1) {
+      return ru
+          ? 'Завтра день рождения у $displayName.'
+          : "$displayName's birthday is tomorrow.";
+    }
+    return ru
+        ? 'День рождения у $displayName через $daysBefore дн.'
+        : "$displayName's birthday is in $daysBefore days.";
   }
 
   void _validateBirthday(int? month, int? day, int? year) {
