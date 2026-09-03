@@ -83,6 +83,9 @@ abstract class PbCollections {
   static const String pathRevisions = 'path_revisions';
   static const String sleepSyncConnections = 'sleep_sync_connections';
   static const String calendarIntegrations = 'calendar_integrations';
+  static const String people = 'people';
+  static const String peopleCircles = 'people_circles';
+  static const String peopleSourceContacts = 'people_source_contacts';
 }
 
 /// PocketBase Admin → OAuth2 provider **names** must match these strings exactly.
