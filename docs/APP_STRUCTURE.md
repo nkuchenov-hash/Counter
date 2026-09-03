@@ -558,7 +558,7 @@ People is an on-demand Settings feature. External address books stay in a hidden
 | `lib/features/settings/people/people_settings_page.dart` | Settings → Account → People UI with People, Circles, and Sources sections |
 | `lib/features/settings/people/people_strings.dart` | Feature-local EN/RU copy for the People settings surface |
 
-**People source law:** provider records use `unknown / candidate / linked / ignored / blocked`; only an explicit link or approved import rule creates a visible Person. Circles are many-to-many and are not task Categories.
+**People source law:** provider records have explicit review, linked, ignored, and blocked states; only an explicit link or approved import rule creates a visible Person. Circles are many-to-many and are not task Categories.
 
 ## 4. Repository root (non-`lib/`)
 
