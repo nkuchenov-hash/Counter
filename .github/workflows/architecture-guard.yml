@@ -25,21 +25,40 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Register People files in concise structure map
+        if: github.event_name == 'push' && github.ref == 'refs/heads/feature/people-settings'
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('docs/APP_STRUCTURE.md')
+          text = path.read_text(encoding='utf-8')
+          marker = '### 3.2.P People — Settings-owned personal relationship domain'
+          if marker not in text:
+              block = '''\n\n### 3.2.P People — Settings-owned personal relationship domain\n\nPeople is an on-demand Settings feature. External address books stay in a hidden source index and never become visible People merely because a contact exists in a provider.\n\n| Path | Role |\n| :--- | :--- |\n| `lib/data/people/people_models.dart` | Pure People/Circle/source-index domain types and relationship/import-state enums |\n| `lib/data/people/people_service.dart` | On-demand PocketBase CRUD, source-index counts, and bounded birthday-reminder reconciliation; no startup contact scan |\n| `lib/features/settings/people/people_settings_page.dart` | Settings → Account → People UI with People, Circles, and Sources sections |\n| `lib/features/settings/people/people_strings.dart` | Feature-local EN/RU copy for the People settings surface |\n\n**People source law:** provider records use `unknown / candidate / linked / ignored / blocked`; only an explicit link or approved import rule creates a visible Person. Circles are many-to-many and are not task Categories.\n'''
+              anchor = '\n## 4.'
+              if anchor in text:
+                  text = text.replace(anchor, block + anchor, 1)
+              else:
+                  text += block
+              path.write_text(text, encoding='utf-8')
+          PY
+
       - name: Regenerate detailed structure manifest on People branch
         if: github.event_name == 'push' && github.ref == 'refs/heads/feature/people-settings'
         run: python scripts/manual/generate_app_structure_detailed.py
 
-      - name: Commit generated detailed structure manifest
+      - name: Commit generated People structure docs
         if: github.event_name == 'push' && github.ref == 'refs/heads/feature/people-settings'
         shell: bash
         run: |
-          if git diff --quiet -- docs/APP_STRUCTURE_DETAILED.md; then
-            echo 'Detailed structure already current.'
+          if git diff --quiet -- docs/APP_STRUCTURE.md docs/APP_STRUCTURE_DETAILED.md; then
+            echo 'Structure docs already current.'
           else
             git config user.name 'github-actions[bot]'
             git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-            git add docs/APP_STRUCTURE_DETAILED.md
-            git commit -m 'Regenerate detailed app structure for People'
+            git add docs/APP_STRUCTURE.md docs/APP_STRUCTURE_DETAILED.md
+            git commit -m 'Document People module structure'
             git push origin HEAD:feature/people-settings
           fi
 
