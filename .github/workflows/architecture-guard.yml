@@ -5,7 +5,7 @@ on:
     branches:
       - main
   push:
-    branches: [main]
+    branches: [main, feature/people-settings]
   workflow_dispatch:
 
 concurrency:
@@ -13,7 +13,7 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   strict-structure:
@@ -24,6 +24,24 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Regenerate detailed structure manifest on People branch
+        if: github.event_name == 'push' && github.ref == 'refs/heads/feature/people-settings'
+        run: python scripts/manual/generate_app_structure_detailed.py
+
+      - name: Commit generated detailed structure manifest
+        if: github.event_name == 'push' && github.ref == 'refs/heads/feature/people-settings'
+        shell: bash
+        run: |
+          if git diff --quiet -- docs/APP_STRUCTURE_DETAILED.md; then
+            echo 'Detailed structure already current.'
+          else
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git add docs/APP_STRUCTURE_DETAILED.md
+            git commit -m 'Regenerate detailed app structure for People'
+            git push origin HEAD:feature/people-settings
+          fi
 
       - name: Run strict architecture guard
         run: pwsh -NoProfile -NonInteractive -File ./scripts/audit/architecture_guard.ps1 -Strict
