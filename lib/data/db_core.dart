@@ -39,11 +39,15 @@ extension DbCoreExtension on DatabaseService {
   void _attachPocketBaseRealtimeGuards() {
     if (_pocketBaseRealtimeGuardsAttached || _pocketBase == null) return;
     _pocketBaseRealtimeGuardsAttached = true;
-    _pocketBase!.realtime.onDisconnect = (_) {
-      if (isPbRealtimeUnavailable) return;
-      _scheduleRecordsRealtimeReconnectAfterFailure();
-      _schedulePlansRealtimeReconnectAfterFailure();
-      _scheduleCatalogRealtimeReconnectAfterFailure();
+    _pocketBase!.realtime.onDisconnect = (subscriptions) {
+      if (subscriptions.isEmpty || isPbRealtimeUnavailable) return;
+      // PocketBase's realtime client preserves the registered topics and
+      // reconnects/resubmits them itself. Starting our own delayed teardown here
+      // races that built-in reconnect and creates avoidable cross-device gaps.
+      planStreamLifecycleLog(
+        'realtime transport disconnected; sdk autoreconnect active '
+        'subscriptions=${subscriptions.length}',
+      );
     };
   }
 
@@ -695,15 +699,24 @@ extension DbCoreExtension on DatabaseService {
       return;
     }
 
-    // Push-first: subscribe before any outbox work or catch-up request so a
-    // concurrent remote write cannot fall into a startup gap.
-    try {
-      await Future.wait<void>([
-        _startRecordsRealtimeSubscription(),
-        _startPlansRealtimeSubscription(),
-        _startCatalogRealtimeSubscriptions(),
-      ]);
-    } catch (_) {}
+    // Push-first: register realtime topics before any outbox work or catch-up
+    // request. Once registered, keep them alive; the PocketBase SDK owns
+    // transport reconnect and resubmits the same topics after PB_CONNECT.
+    final realtimeBridgesRegistered =
+        _recordsRealtimeUnsubscribe != null &&
+        _plansRealtimeUnsubscribe != null &&
+        _categoriesRealtimeUnsubscribe != null &&
+        _tagsRealtimeUnsubscribe != null &&
+        _profileRealtimeUnsubscribe != null;
+    if (!realtimeBridgesRegistered) {
+      try {
+        await Future.wait<void>([
+          _startRecordsRealtimeSubscription(),
+          _startPlansRealtimeSubscription(),
+          _startCatalogRealtimeSubscriptions(),
+        ]);
+      } catch (_) {}
+    }
 
     // Local pending work must not prevent incoming remote data from appearing.
     try {
