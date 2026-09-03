@@ -69,6 +69,59 @@ void main() {
     expect(outbox, isNot(contains('await _pbTagRecordIdsFromTags(tags);')));
   });
 
+  test('Notes blank create remains durable without weakening Plans validation', () {
+    final notesSource = File(
+      'lib/data/plans/notes_brain_helpers.dart',
+    ).readAsStringSync();
+    final planSource = File('lib/data/plan_service.dart').readAsStringSync();
+
+    expect(
+      notesSource,
+      contains(
+        "const String _notesBlankTitlePersistenceSentinel = '\\u2060';",
+      ),
+    );
+    expect(
+      notesSource,
+      contains('title: _notesPersistenceTitle(trimmedTitle),'),
+    );
+    expect(
+      notesSource,
+      contains('await addPlanningTask(created, clientPlanId: clientPlanId)'),
+    );
+
+    // Ordinary Plans/Lists still reject empty titles. Only Notes adapt their
+    // visually blank title at the persistence boundary.
+    expect(planSource, contains('if (titleTrimmed.isEmpty)'));
+    expect(planSource, contains('ADD_PLAN: blocked — empty title'));
+  });
+
+  test('Notes reconcile optimistic ids and never project title sentinel', () {
+    final source = File(
+      'lib/data/plans/notes_brain_helpers.dart',
+    ).readAsStringSync();
+
+    expect(source, contains('_findCachedNoteTaskForEdit'));
+    expect(source, contains("key.startsWith('optimistic-')"));
+    expect(
+      source,
+      contains('planBusinessId: businessId.isEmpty ? null : businessId,'),
+    );
+    expect(source, contains('final visibleTitle = _notesVisibleTitle('));
+    expect(
+      source,
+      contains('final plain = doc.toPlainText(title: visibleTitle);'),
+    );
+    expect(
+      source,
+      contains('title: _notesPersistenceTitle(updated.title),'),
+    );
+    expect(
+      source,
+      contains('materialized?.planRowIdForBackend ?? optimisticId'),
+    );
+  });
+
   test(
     'realtime is push-first and plan events do not perform tag HTTP fetch',
     () {
