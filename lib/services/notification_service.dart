@@ -12,6 +12,8 @@ import 'package:timezone/timezone.dart' as tz;
 export 'package:counter/services/plan_alarm_schedule.dart';
 
 const String _kPrefsNotifPermRequested = 'notif_perm_requested_v1';
+const String _kPlanPayloadPrefix = 'plan:';
+const String _kPeopleBirthdayPayloadPrefix = 'people:birthday:';
 
 /// Stable Windows toast identity (CompanyName.ProductName from Runner.rc).
 const String _kWindowsAppUserModelId = 'com.example.counter';
@@ -26,9 +28,11 @@ enum PlanAlarmPermissionStatus {
   unknown,
 }
 
-/// Canonical OS plan-alarm scheduler ([flutter_local_notifications]).
+/// Canonical OS scheduler for Life OS notifications.
 ///
-/// Brain builds [PlanAlarmSpec]s; this layer only talks to the OS plugin.
+/// Plan reminders and People birthday reminders share one plugin but keep
+/// separate payload namespaces. Reconciliation for one owner must never cancel
+/// notifications owned by another feature.
 class NotificationService {
   NotificationService._();
   static final NotificationService instance = NotificationService._();
@@ -247,6 +251,20 @@ class NotificationService {
     }
   }
 
+  String _planOccurrenceKeyFromPayload(String payload) {
+    if (payload.startsWith(_kPlanPayloadPrefix)) {
+      return payload.substring(_kPlanPayloadPrefix.length);
+    }
+    return payload;
+  }
+
+  bool _isPlanOwnedPayload(String payload) {
+    if (payload.startsWith(_kPlanPayloadPrefix)) return true;
+    if (payload.startsWith('people:')) return false;
+    // Backward compatibility: releases before People stored raw occurrence keys.
+    return payload.isNotEmpty;
+  }
+
   /// Cancel reminders whose occurrence key belongs to [planStableKey]
   /// (exact match or `planStableKey|…` / `virt-planStableKey-…` prefixes).
   Future<void> cancelRemindersForPlan(String planStableKey) async {
@@ -256,7 +274,9 @@ class NotificationService {
       await ensureInitialized();
       final pending = await _plugin.pendingNotificationRequests();
       for (final p in pending) {
-        final payload = p.payload ?? '';
+        final rawPayload = p.payload ?? '';
+        if (!_isPlanOwnedPayload(rawPayload)) continue;
+        final payload = _planOccurrenceKeyFromPayload(rawPayload);
         if (payload == key ||
             payload.startsWith('$key|') ||
             payload.startsWith('virt-$key-')) {
@@ -273,19 +293,28 @@ class NotificationService {
     }
   }
 
-  /// Cancel every pending notification owned by this app's plan-alarm channel.
+  /// Cancel every pending notification owned by plan alarms, preserving People
+  /// birthday reminders and any future namespaced notification owners.
   Future<void> cancelAllPlanReminders() async {
     if (kIsWeb) return;
     try {
       await ensureInitialized();
-      await _plugin.cancelAll();
-      _diag('cancel_all', 'ok');
+      final pending = await _plugin.pendingNotificationRequests();
+      var cancelled = 0;
+      for (final request in pending) {
+        final payload = request.payload ?? '';
+        if (!_isPlanOwnedPayload(payload)) continue;
+        await _plugin.cancel(id: request.id);
+        cancelled++;
+      }
+      _diag('cancel_all_plans', 'cancelled=$cancelled');
     } catch (e) {
-      _diag('cancel_all_failed', '$e');
+      _diag('cancel_all_plans_failed', '$e');
     }
   }
 
-  /// Idempotent reconcile: replace pending queue with [specs] (already filtered).
+  /// Idempotent reconcile: replace pending plan queue with [specs] while leaving
+  /// People and other notification namespaces untouched.
   ///
   /// Does not touch network. Safe after startup / resume / plan hydrate.
   Future<void> reconcilePlanAlarms(List<PlanAlarmSpec> specs) async {
@@ -305,7 +334,12 @@ class NotificationService {
     var failed = 0;
 
     try {
-      await _plugin.cancelAll();
+      final pending = await _plugin.pendingNotificationRequests();
+      for (final request in pending) {
+        if (_isPlanOwnedPayload(request.payload ?? '')) {
+          await _plugin.cancel(id: request.id);
+        }
+      }
     } catch (e) {
       _diag('reconcile_cancel_failed', '$e');
     }
@@ -371,7 +405,7 @@ class NotificationService {
         androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
         title: spec.title,
         body: body,
-        payload: spec.occurrenceKey,
+        payload: '$_kPlanPayloadPrefix${spec.occurrenceKey}',
       );
       if (!quietSuccess) {
         _diag(
@@ -387,6 +421,91 @@ class NotificationService {
         'id=${spec.notificationId} key=${spec.occurrenceKey} err=$e',
       );
       return false;
+    }
+  }
+
+  /// Schedule one People birthday notification. The payload namespace keeps it
+  /// safe from plan reminder reconciliation.
+  Future<bool> schedulePeopleBirthdayReminder({
+    required int notificationId,
+    required String personStableId,
+    required DateTime fireUtc,
+    required String title,
+    required String body,
+    required String occurrenceKey,
+  }) async {
+    final personId = personStableId.trim();
+    if (personId.isEmpty || !_canSchedule) return false;
+    try {
+      await ensureInitialized();
+    } catch (_) {
+      return false;
+    }
+    if (!_schedulingSupported) return false;
+
+    final when = tz.TZDateTime.from(fireUtc.toUtc(), tz.UTC);
+    final now = tz.TZDateTime.now(tz.UTC);
+    if (!when.isAfter(now)) return false;
+
+    const androidDetails = AndroidNotificationDetails(
+      'people_birthdays',
+      'People birthdays',
+      channelDescription: 'Birthday reminders for People tracked in Life OS',
+      importance: Importance.high,
+      priority: Priority.high,
+    );
+    const details = NotificationDetails(
+      android: androidDetails,
+      iOS: DarwinNotificationDetails(),
+      macOS: DarwinNotificationDetails(),
+      windows: WindowsNotificationDetails(),
+    );
+    final payload =
+        '$_kPeopleBirthdayPayloadPrefix$personId:${occurrenceKey.trim()}';
+    try {
+      await _plugin.zonedSchedule(
+        id: notificationId,
+        scheduledDate: when,
+        notificationDetails: details,
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        title: title,
+        body: body,
+        payload: payload,
+      );
+      _diag(
+        'people_birthday_schedule',
+        'id=$notificationId person=$personId at=${fireUtc.toIso8601String()}',
+      );
+      return true;
+    } catch (e) {
+      _diag(
+        'people_birthday_schedule_failed',
+        'id=$notificationId person=$personId err=$e',
+      );
+      return false;
+    }
+  }
+
+  /// Cancel only birthday reminders for one Person.
+  Future<void> cancelPeopleBirthdayReminders(String personStableId) async {
+    final personId = personStableId.trim();
+    if (personId.isEmpty || kIsWeb) return;
+    final prefix = '$_kPeopleBirthdayPayloadPrefix$personId:';
+    try {
+      await ensureInitialized();
+      final pending = await _plugin.pendingNotificationRequests();
+      var cancelled = 0;
+      for (final request in pending) {
+        if (!(request.payload ?? '').startsWith(prefix)) continue;
+        await _plugin.cancel(id: request.id);
+        cancelled++;
+      }
+      _diag(
+        'people_birthday_cancel',
+        'person=$personId cancelled=$cancelled',
+      );
+    } catch (e) {
+      _diag('people_birthday_cancel_failed', 'person=$personId err=$e');
     }
   }
 
