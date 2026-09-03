@@ -1,6 +1,6 @@
 name: Android release APK
 
-# Manual artifact trigger: 2026-09-03 Notes cross-device sync release.
+# Manual artifact trigger: 2026-09-03 realtime cross-device sync release.
 on:
   workflow_dispatch:
   push:
@@ -52,9 +52,9 @@ jobs:
       - name: Publish immutable LIFE OS Android release
         uses: ncipollo/release-action@v1
         with:
-          tag: life-os-1.0.0-build1-20260903-notes-sync
-          name: LIFE OS 1.0.0+1 — Notes cross-device sync
-          body: Android ARM64 release for 2026-09-03. Fixes Notes created on mobile remaining only in local optimistic state instead of persisting through PocketBase and appearing on web. Also reconciles optimistic note IDs after server materialization.
+          tag: life-os-1.0.0-build1-20260903-realtime-sync
+          name: LIFE OS 1.0.0+1 — Realtime cross-device sync
+          body: Android ARM64 release for 2026-09-03. Stabilizes immediate phone-to-web and web-to-phone updates by upgrading the PocketBase realtime client and preserving registered SSE subscriptions across transport reconnects and app foreground refreshes.
           artifacts: LIFE-OS-Android-arm64.apk
           immutableCreate: true
           makeLatest: true
