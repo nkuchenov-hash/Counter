@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `4f5650e2` on 2026-08-27.**
+**Generated from input HEAD `4deb8ae0` on 2026-09-03.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 844 — each appears **exactly once** below.
+**Tracked files:** 851 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -26,19 +26,19 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Role | Count |
 | :--- | ---: |
-| `production UI` | 165 |
+| `production UI` | 167 |
 | `test` | 108 |
-| `Brain/data` | 87 |
+| `Brain/data` | 89 |
 | `platform build` | 83 |
 | `shared foundation` | 64 |
-| `developer tool` | 58 |
+| `developer tool` | 59 |
 | `platform resource` | 44 |
 | `Desktop Voice runtime` | 36 |
-| `governing documentation` | 35 |
+| `governing documentation` | 36 |
 | `shared Voice system` | 22 |
 | `test fixture` | 22 |
+| `PocketBase migration` | 17 |
 | `historical engineering record` | 17 |
-| `PocketBase migration` | 16 |
 | `PocketBase backend` | 15 |
 | `localization` | 13 |
 | `installer` | 12 |
@@ -56,10 +56,10 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 464 |
-| `REQUIRED_FOR_TEST_OR_TOOLING` | 200 |
+| `PROVEN_REQUIRED` | 469 |
+| `REQUIRED_FOR_TEST_OR_TOOLING` | 201 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
-| `GOVERNING_DOCUMENTATION` | 35 |
+| `GOVERNING_DOCUMENTATION` | 36 |
 | `HISTORICAL_RECORD` | 17 |
 | `GENERATED_CANONICAL_OUTPUT` | 1 |
 
@@ -67,8 +67,8 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 780 |
-| `MEDIUM` | 64 |
+| `HIGH` | 786 |
+| `MEDIUM` | 65 |
 
 ---
 
@@ -89,6 +89,7 @@ Evidence is computed from Dart import/export/`part` graphs, bounded path referen
 ### Root / config
 
 - [`igropoisk/`](#folder-igropoisk)
+- [`marketing/`](#folder-marketing)
 - [`pb_migrations/`](#folder-pb_migrations)
 - [`igropoisk/scripts/`](#folder-igropoiskscripts)
 
@@ -114,6 +115,7 @@ Evidence is computed from Dart import/export/`part` graphs, bounded path referen
 - [`lib/data/local_sync/`](#folder-libdatalocal_sync)
 - [`lib/data/models/`](#folder-libdatamodels)
 - [`lib/data/paths/`](#folder-libdatapaths)
+- [`lib/data/people/`](#folder-libdatapeople)
 - [`lib/data/plans/`](#folder-libdataplans)
 - [`lib/data/profile/`](#folder-libdataprofile)
 - [`lib/data/realtime/`](#folder-libdatarealtime)
@@ -154,6 +156,7 @@ Evidence is computed from Dart import/export/`part` graphs, bounded path referen
 - [`lib/features/settings/categories/`](#folder-libfeaturessettingscategories)
 - [`lib/features/settings/health/`](#folder-libfeaturessettingshealth)
 - [`lib/features/settings/notifications/`](#folder-libfeaturessettingsnotifications)
+- [`lib/features/settings/people/`](#folder-libfeaturessettingspeople)
 - [`lib/features/settings/voice/`](#folder-libfeaturessettingsvoice)
 - [`lib/features/shared/edit_sheet/`](#folder-libfeaturessharededit_sheet)
 - [`lib/shared/categories/picker/`](#folder-libsharedcategoriespicker)
@@ -539,6 +542,30 @@ RU:
 - **Когда открывать:** macOS signing, sandbox entitlements, menu bar, ошибки desktop build.
 - **Можно удалить?** Нет — если нужна поддержка macOS desktop.
 - **Связанные пути:** `ios/` (mobile Apple) vs этот desktop target.
+
+---
+
+## Folder: `marketing/`
+
+EN:
+
+- **What this folder is:** Repository path `marketing/` — tracked config, assets, or tooling for Life OS.
+- **Why it exists:** Git tracks `marketing` because release, CI, or maintenance workflow depends on these files.
+- **What lives here:** Tracked files listed below with individual explanations.
+- **What part of the app it affects:** Repo workflow or platform build tied to this path — see child file entries.
+- **When to open it:** Maintenance or build work involving `marketing`.
+- **Can it be deleted?** No — part of repository tooling or config unless cleanup report says otherwise.
+- **Main related paths:** `docs/APP_STRUCTURE.md`, `CHANGELOG.md`.
+
+RU:
+
+- **Что это за папка:** Служебный каталог репозитория `marketing/`.
+- **Зачем нужна:** Хранит файлы, необходимые отдельной части сборки, данных проекта или сопровождения репозитория.
+- **Что здесь лежит:** Отслеживаемые Git файлы и дочерние каталоги; каждый элемент описан ниже.
+- **На что влияет в приложении:** Влияет на ту часть продукта или процесса сборки, которой принадлежит этот путь.
+- **Когда открывать:** Открывать при работе с файлами и процессами, связанными с `marketing/`.
+- **Можно удалить?** Нет — part of repository tooling or config если отчёт cleanup не сказал иное.
+- **Связанные пути:** `docs/APP_STRUCTURE.md`, `CHANGELOG.md`.
 
 ---
 
@@ -2126,6 +2153,30 @@ RU:
 
 ---
 
+## Folder: `lib/data/people/`
+
+EN:
+
+- **What this folder is:** Dart source subtree `lib/data/people/` — part of app code for data/people.
+- **Why it exists:** Code under `lib/` ships in every platform build; this folder groups related Dart modules.
+- **What lives here:** Dart modules listed in file entries below.
+- **What part of the app it affects:** App behavior for the feature or layer named in the path.
+- **When to open it:** Bug or feature work in `data/people`.
+- **Can it be deleted?** No — required for app runtime unless explicitly deprecated in ROADMAP.
+- **Main related paths:** `docs/APP_STRUCTURE.md`, parent `lib/` folders.
+
+RU:
+
+- **Что это за папка:** Каталог исходного Dart-кода `lib/data/people/`, отвечающий за область `data/people`.
+- **Зачем нужна:** Собирает рядом файлы одного владельца, чтобы UI, данные и общая инфраструктура не смешивали обязанности.
+- **Что здесь лежит:** Dart-файлы и дочерние каталоги этого владельца; каждый файл описан ниже.
+- **На что влияет в приложении:** Поведение приложения в области `data/people` и связанные с ней потоки данных или интерфейс.
+- **Когда открывать:** Открывать при изменениях или ошибках в области `data/people`.
+- **Можно удалить?** Нет — нужен для работы приложения unless explicitly deprecated in ROADMAP.
+- **Связанные пути:** `docs/APP_STRUCTURE.md`, parent `lib/` folders.
+
+---
+
 ## Folder: `lib/data/plans/`
 
 EN:
@@ -3494,6 +3545,30 @@ RU:
 
 ---
 
+## Folder: `lib/features/settings/people/`
+
+EN:
+
+- **What this folder is:** Dart source subtree `lib/features/settings/people/` — part of app code for features/settings/people.
+- **Why it exists:** Code under `lib/` ships in every platform build; this folder groups related Dart modules.
+- **What lives here:** Dart modules listed in file entries below.
+- **What part of the app it affects:** App behavior for the feature or layer named in the path.
+- **When to open it:** Bug or feature work in `features/settings/people`.
+- **Can it be deleted?** No — required for app runtime unless explicitly deprecated in ROADMAP.
+- **Main related paths:** `docs/APP_STRUCTURE.md`, parent `lib/` folders.
+
+RU:
+
+- **Что это за папка:** Каталог исходного Dart-кода `lib/features/settings/people/`, отвечающий за область `features/settings/people`.
+- **Зачем нужна:** Собирает рядом файлы одного владельца, чтобы UI, данные и общая инфраструктура не смешивали обязанности.
+- **Что здесь лежит:** Dart-файлы и дочерние каталоги этого владельца; каждый файл описан ниже.
+- **На что влияет в приложении:** Поведение приложения в области `features/settings/people` и связанные с ней потоки данных или интерфейс.
+- **Когда открывать:** Открывать при изменениях или ошибках в области `features/settings/people`.
+- **Можно удалить?** Нет — нужен для работы приложения unless explicitly deprecated in ROADMAP.
+- **Связанные пути:** `docs/APP_STRUCTURE.md`, parent `lib/` folders.
+
+---
+
 ## Folder: `lib/features/settings/voice/`
 
 EN:
@@ -4828,7 +4903,7 @@ EN:
 - **Why needed:** Prevents rebuilding features; shows what already landed and when.
 - **Contents:** Technical bullets with file names, tagged [shipped]/[wip]/[rollback].
 - **Repository role:** governing documentation
-- **Evidence of use:** (1) Governing/ops/product documentation read by humans and agents (see `docs/PROJECT_KNOWLEDGE_PACK.md` / AGENTS routing). (2) Referenced by: `AGENTS.md`, `AGENT_NAVIGATION.md`, `docs/PROJECT_KNOWLEDGE_PACK.md`, `docs/ROADMAP.md`.
+- **Evidence of use:** (1) Governing/ops/product documentation read by humans and agents (see `docs/PROJECT_KNOWLEDGE_PACK.md` / AGENTS routing). (2) Referenced by: `.github/workflows/windows-desktop-build.yml`, `AGENTS.md`, `AGENT_NAVIGATION.md`, `docs/PROJECT_KNOWLEDGE_PACK.md`.
 - **Necessity status:** GOVERNING_DOCUMENTATION
 - **Deletion consequence:** Lost architecture/ops rule or agent routing instruction.
 - **Confidence:** HIGH
@@ -10622,7 +10697,7 @@ EN:
 - **Contents:** `AppColors` constants; `lightColorScheme()` / `darkColorScheme()` factories.
 - **Key code names:** `AppColors`
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/core/app_snackbar.dart`, `lib/core/theme.dart`, `lib/core/widgets/life_card.dart`, `lib/features/calendar/calendar_month_grid.dart`, `lib/features/settings/categories/category_row_widget.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/core/app_snackbar.dart`, `lib/core/theme.dart`, `lib/core/widgets/life_card.dart`, `lib/features/calendar/calendar_month_grid.dart`, `lib/features/timeline/timeline_view.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -10639,7 +10714,7 @@ RU:
 - **Зачем:** Смена `actionPrimary` перекрашивает кнопки, tabs и nav chrome во всём приложении.
 - **Содержимое:** Константы `AppColors`; фабрики `lightColorScheme()` / `darkColorScheme()`.
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/core/app_snackbar.dart`, `lib/core/theme.dart`, `lib/core/widgets/life_card.dart`, `lib/features/calendar/calendar_month_grid.dart`, `lib/features/settings/categories/category_row_widget.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/core/app_snackbar.dart`, `lib/core/theme.dart`, `lib/core/widgets/life_card.dart`, `lib/features/calendar/calendar_month_grid.dart`, `lib/features/timeline/timeline_view.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -11560,7 +11635,7 @@ EN:
 - **Contents:** Canonical Flutter widget (`AppSettingsTab`, `AppSettingsCategoryTabs`, `AppHotkeyKeycaps`, `_Keycap`, `AppSettingsPageBody`, `AppSettingsSectionCard`).
 - **Key code names:** `AppSettingsTab`, `AppSettingsCategoryTabs`, `AppHotkeyKeycaps`, `_Keycap`, `AppSettingsPageBody`, `AppSettingsSectionCard`, `AppSettingsSwitchRow`, `AppSettingsInfoRow`, `AppSettingsActionRow`, `AppSettingsCardGrid`
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/profile/profile_view.dart`, `lib/features/settings/voice/desktop_voice_settings_desktop.dart`, `lib/features/settings/voice/desktop_voice_settings_section.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/profile/profile_view.dart`, `lib/features/settings/people/people_settings_page.dart`, `lib/features/settings/voice/desktop_voice_settings_desktop.dart`, `lib/features/settings/voice/desktop_voice_settings_section.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -11577,7 +11652,7 @@ RU:
 - **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
 - **Содержимое:** Канонический Flutter-виджет (logic in `app_settings_layout`).
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/features/profile/profile_view.dart`, `lib/features/settings/voice/desktop_voice_settings_desktop.dart`, `lib/features/settings/voice/desktop_voice_settings_section.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/features/profile/profile_view.dart`, `lib/features/settings/people/people_settings_page.dart`, `lib/features/settings/voice/desktop_voice_settings_desktop.dart`, `lib/features/settings/voice/desktop_voice_settings_section.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -13304,7 +13379,7 @@ EN:
 - **Contents:** Coordinator extensions plus links to `part` files under `health_sleep_syncs/` or `health_sleep_sync/`.
 - **Key code names:** `SleepSyncSourceTransport`, `HealthSleepSyncPhase`, `HealthSleepSyncState`, `HealthSleepSyncService`
 - **Repository role:** Brain/data
-- **Evidence of use:** Imported/exported by production Dart: `lib/data/health/sleep_foreground_reconcile_service.dart`, `lib/features/settings/health/health_connect_settings_section.dart`, `lib/main.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/data/health/sleep_foreground_reconcile_service.dart`, `lib/features/settings/health/health_connect_settings_section.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -13321,7 +13396,7 @@ RU:
 - **Зачем:** UI вызывает один вход; детали — в модулях subfolder.
 - **Содержимое:** Extensions + `part` файлы для health_sleep_sync.
 - **Роль в репозитории:** Brain/data
-- **Доказательства использования:** Импортируется production Dart: `lib/data/health/sleep_foreground_reconcile_service.dart`, `lib/features/settings/health/health_connect_settings_section.dart`, `lib/main.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/data/health/sleep_foreground_reconcile_service.dart`, `lib/features/settings/health/health_connect_settings_section.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -13342,7 +13417,7 @@ EN:
 - **Contents:** Coordinator extensions plus links to `part` files under `sleep_foreground_reconciles/` or `sleep_foreground_reconcile/`.
 - **Key code names:** `SleepForegroundReconcileService`
 - **Repository role:** Brain/data
-- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/main.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -13359,7 +13434,7 @@ RU:
 - **Зачем:** UI вызывает один вход; детали — в модулях subfolder.
 - **Содержимое:** Extensions + `part` файлы для sleep_foreground_reconcile.
 - **Роль в репозитории:** Brain/data
-- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/main.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -13946,8 +14021,8 @@ EN:
 - **Human purpose:** Brain helper for data/sync — Path lifecycle, immutable revision snapshot types, stages/actions, project-independent structure audit. Shared PocketBase/auth/parse logic used by multiple tabs.
 - **What this is:** Brain helper for data/sync — Path lifecycle, immutable revision snapshot types, stages/actions, project-independent structure audit.
 - **Why needed:** Shared PocketBase/auth/parse logic used by multiple tabs.
-- **Contents:** Dart helpers and types (`PathStatus`, `PathActionSnapshot`, `PathStageSnapshot`, `ProjectPathSnapshot`, `PathCatalogSnapshot`, `PathStructureAudit`).
-- **Key code names:** `PathStatus`, `PathActionSnapshot`, `PathStageSnapshot`, `ProjectPathSnapshot`, `PathCatalogSnapshot`, `PathStructureAudit`
+- **Contents:** Dart helpers and types (`PathStatus`, `PathActionSnapshot`, `PathStageSnapshot`, `ProjectPathSnapshot`, `PathCatalogSnapshot`, `PathCategoryNode`).
+- **Key code names:** `PathStatus`, `PathActionSnapshot`, `PathStageSnapshot`, `ProjectPathSnapshot`, `PathCatalogSnapshot`, `PathCategoryNode`, `PathCategoryProjection`, `_PathCategoryIndex`
 - **Repository role:** Brain/data
 - **Evidence of use:** Imported/exported by production Dart: `lib/data/paths/path_repository.dart`.
 - **Necessity status:** PROVEN_REQUIRED
@@ -14087,6 +14162,82 @@ RU:
 - **Владелец / слой:** Brain/data
 - **Обязанности:** Поддерживает операции данных в `pb_config`.
 - **Когда открывать:** Когда ломается поведение, связанное с `pb_config.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** UI вызывает `DatabaseService.instance`
+
+
+### `lib/data/people/people_models.dart`
+
+EN:
+
+- **Human purpose:** Brain helper for data/sync — people models. Shared PocketBase/auth/parse logic used by multiple tabs.
+- **What this is:** Brain helper for data/sync — people models.
+- **Why needed:** Shared PocketBase/auth/parse logic used by multiple tabs.
+- **Contents:** Dart helpers and types (`PersonRelationshipStatus`, `PeopleSourceProvider`, `PeopleSourceImportState`, `PeopleCircle`, `LifePerson`, `PeopleSourceStats`).
+- **Key code names:** `PersonRelationshipStatus`, `PeopleSourceProvider`, `PeopleSourceImportState`, `PeopleCircle`, `LifePerson`, `PeopleSourceStats`
+- **Repository role:** Brain/data
+- **Evidence of use:** Imported/exported by production Dart: `lib/data/people/people_service.dart`, `lib/features/settings/people/people_settings_page.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** Brain/data
+- **Responsibilities:** people models
+- **When to open:** When behavior tied to `people_models.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** UI calls via `DatabaseService.instance`; APP_STRUCTURE role: people models
+
+RU:
+
+- **Зачем файл человеку:** Вспомогательный модуль данных — people_models. Общая логика PocketBase и auth для нескольких вкладок.
+- **Что это:** Вспомогательный модуль данных — people_models.
+- **Зачем:** Общая логика PocketBase и auth для нескольких вкладок.
+- **Содержимое:** Dart-хелперы и типы (logic in `people_models`).
+- **Роль в репозитории:** Brain/data
+- **Доказательства использования:** Импортируется production Dart: `lib/data/people/people_service.dart`, `lib/features/settings/people/people_settings_page.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** Brain/data
+- **Обязанности:** Поддерживает операции данных в `people_models`.
+- **Когда открывать:** Когда ломается поведение, связанное с `people_models.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** UI вызывает `DatabaseService.instance`
+
+
+### `lib/data/people/people_service.dart`
+
+EN:
+
+- **Human purpose:** Main coordinator for people inside the brain. UI calls one people entry point; this file delegates to focused modules in the subfolder.
+- **What this is:** Main coordinator for people inside the brain.
+- **Why needed:** UI calls one people entry point; this file delegates to focused modules in the subfolder.
+- **Contents:** Coordinator extensions plus links to `part` files under `peoples/` or `people/`.
+- **Key code names:** `PeopleService`
+- **Repository role:** Brain/data
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/settings/people/people_settings_page.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** Brain/data
+- **Responsibilities:** people service
+- **When to open:** When behavior tied to `people_service.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** UI calls via `DatabaseService.instance`; APP_STRUCTURE role: people service
+
+RU:
+
+- **Зачем файл человеку:** Главный координатор для people. UI вызывает один вход; детали — в модулях subfolder.
+- **Что это:** Главный координатор для people.
+- **Зачем:** UI вызывает один вход; детали — в модулях subfolder.
+- **Содержимое:** Extensions + `part` файлы для people.
+- **Роль в репозитории:** Brain/data
+- **Доказательства использования:** Импортируется production Dart: `lib/features/settings/people/people_settings_page.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** Brain/data
+- **Обязанности:** Координатор домена: people service.
+- **Когда открывать:** Когда ломается поведение, связанное с `people_service.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** UI вызывает `DatabaseService.instance`
 
@@ -17395,7 +17546,7 @@ EN:
 - **What this is:** `note_card.dart` on notes area — Grid/list note card with block preview, pin/done badges.
 - **Why needed:** Users see `note_card.dart` when using notes area.
 - **Contents:** Primary symbols: `NotesLibraryView`, `NoteCardData`, `NoteCard`, `_GridCard`, `_ListRow`, `_BadgesRow`.
-- **Key code names:** `NotesLibraryView`, `NoteCardData`, `NoteCard`, `_GridCard`, `_ListRow`, `_BadgesRow`
+- **Key code names:** `NotesLibraryView`, `NoteCardData`, `NoteCard`, `_GridCard`, `_ListRow`, `_BadgesRow`, `_Badge`
 - **Repository role:** production UI
 - **Evidence of use:** Imported/exported by production Dart: `lib/features/lists/lists_view.dart`, `lib/features/notes/widgets/notes_library_body.dart`.
 - **Necessity status:** PROVEN_REQUIRED
@@ -17661,7 +17812,7 @@ EN:
 - **What this is:** `notes_editor_screen.dart` on notes area — Shared responsive Figma production screen shell for mobile/web/desktop: header, title/meta, visible document viewport, desktop glass surface, pinned finite toolbar.
 - **Why needed:** Users see `notes_editor_screen.dart` when using notes area.
 - **Contents:** Primary symbols: `NotesEditorMetadataTag`, `NotesEmbeddedEditorScope`, `NotesEditorScreen`, `_NotesEditorRail`, `_NotesEditorSurface`, `_NotesNavigationHeader`.
-- **Key code names:** `NotesEditorMetadataTag`, `NotesEmbeddedEditorScope`, `NotesEditorScreen`, `_NotesEditorRail`, `_NotesEditorSurface`, `_NotesNavigationHeader`, `_NotesBulkDoneAction`, `_NotesHeaderMenuAction`, `_NotesHeaderMo`
+- **Key code names:** `NotesEditorMetadataTag`, `NotesEmbeddedEditorScope`, `NotesEditorScreen`, `_NotesEditorRail`, `_NotesEditorSurface`, `_NotesNavigationHeader`
 - **Repository role:** production UI
 - **Evidence of use:** Imported/exported by production Dart: `lib/features/notes/note_editor_page.dart`, `lib/features/notes/widgets/notes_library_body.dart`.
 - **Necessity status:** PROVEN_REQUIRED
@@ -17812,8 +17963,8 @@ EN:
 - **Human purpose:** `paths_page.dart` on paths area — First-class Paths destination: project list/detail, goal/stage/action progress, generic structure audit. Users see `paths_page.dart` when using paths area.
 - **What this is:** `paths_page.dart` on paths area — First-class Paths destination: project list/detail, goal/stage/action progress, generic structure audit.
 - **Why needed:** Users see `paths_page.dart` when using paths area.
-- **Contents:** Primary symbols: `PathsPage`, `_PathsPageState`.
-- **Key code names:** `PathsPage`, `_PathsPageState`
+- **Contents:** Primary symbols: `_PathFolderChoice`, `PathsPage`, `_PathsPageState`.
+- **Key code names:** `_PathFolderChoice`, `PathsPage`, `_PathsPageState`
 - **Repository role:** production UI
 - **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`.
 - **Necessity status:** PROVEN_REQUIRED
@@ -20085,8 +20236,8 @@ EN:
 - **Human purpose:** `category_row_widget.dart` on settings area — Settings-owned timezone helpers + Voice settings + Categories manager + unfilled-time notification settings + health/sleep integration settings. Users see `category_row_widget.dart` when using settings area.
 - **What this is:** `category_row_widget.dart` on settings area — Settings-owned timezone helpers + Voice settings + Categories manager + unfilled-time notification settings + health/sleep integration settings.
 - **Why needed:** Users see `category_row_widget.dart` when using settings area.
-- **Contents:** Primary symbols: `CategoryDepthLayout`, `CategoryBandLayout`, `CategoryRowWidget`.
-- **Key code names:** `CategoryDepthLayout`, `CategoryBandLayout`, `CategoryRowWidget`
+- **Contents:** Primary symbols: `CategoryDepthLayout`, `CategoryDragData`, `CategoryBandLayout`, `CategoryRowWidget`.
+- **Key code names:** `CategoryDepthLayout`, `CategoryDragData`, `CategoryBandLayout`, `CategoryRowWidget`
 - **Repository role:** production UI
 - **Evidence of use:** Imported/exported by production Dart: `lib/features/settings/categories/category_list_view.dart`.
 - **Necessity status:** PROVEN_REQUIRED
@@ -20266,6 +20417,81 @@ RU:
 - **Когда открывать:** Когда ломается поведение, связанное с `unfilled_time_notifications_section.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/features/settings/notifications/`, `docs/APP_STRUCTURE.md`
+
+
+### `lib/features/settings/people/people_settings_page.dart`
+
+EN:
+
+- **Human purpose:** `people_settings_page.dart` on settings area — people settings page. Users see `people_settings_page.dart` when using settings area.
+- **What this is:** `people_settings_page.dart` on settings area — people settings page.
+- **Why needed:** Users see `people_settings_page.dart` when using settings area.
+- **Contents:** Primary symbols: `_PeopleSection`, `PeopleSettingsPage`, `_PeopleSettingsPageState`.
+- **Key code names:** `_PeopleSection`, `PeopleSettingsPage`, `_PeopleSettingsPageState`
+- **Repository role:** production UI
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/profile/settings/account_settings_section.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** repository root
+- **Responsibilities:** Implements `_PeopleSection` and related API in `people_settings_page.dart`.
+- **When to open:** When behavior tied to `people_settings_page.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** APP_STRUCTURE role: people settings page
+
+RU:
+
+- **Зачем файл человеку:** `people_settings_page.dart` на settings — Отвечает за видимый UI, собранный в `people_settings_page.dart`.. Пользователь видит UI из `people_settings_page.dart` на settings.
+- **Что это:** `people_settings_page.dart` на settings — Отвечает за видимый UI, собранный в `people_settings_page.dart`..
+- **Зачем:** Пользователь видит UI из `people_settings_page.dart` на settings.
+- **Содержимое:** Компоновка экрана и state в `people_settings_page.dart`.
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Импортируется production Dart: `lib/features/profile/settings/account_settings_section.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** корень репозитория
+- **Обязанности:** Отвечает за видимый UI, собранный в `people_settings_page.dart`.
+- **Когда открывать:** Когда ломается поведение, связанное с `people_settings_page.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/features/settings/people/`, `docs/APP_STRUCTURE.md`
+
+
+### `lib/features/settings/people/people_strings.dart`
+
+EN:
+
+- **Human purpose:** `people_strings.dart` on settings area — people strings. Users see `people_strings.dart` when using settings area.
+- **What this is:** `people_strings.dart` on settings area — people strings.
+- **Why needed:** Users see `people_strings.dart` when using settings area.
+- **Contents:** Dart module `people_strings.dart` — open file for classes and helpers.
+- **Repository role:** production UI
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/profile/settings/account_settings_section.dart`, `lib/features/settings/people/people_settings_page.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** repository root
+- **Responsibilities:** Supports `people_strings` behavior in this feature area.
+- **When to open:** When behavior tied to `people_strings.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** APP_STRUCTURE role: people strings
+
+RU:
+
+- **Зачем файл человеку:** `people_strings.dart` на settings — Поддерживает поведение `people_strings` в этой feature-зоне.. Пользователь видит UI из `people_strings.dart` на settings.
+- **Что это:** `people_strings.dart` на settings — Поддерживает поведение `people_strings` в этой feature-зоне..
+- **Зачем:** Пользователь видит UI из `people_strings.dart` на settings.
+- **Содержимое:** Dart-модуль `people_strings.dart` — классы и helpers в исходнике.
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Импортируется production Dart: `lib/features/profile/settings/account_settings_section.dart`, `lib/features/settings/people/people_settings_page.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** корень репозитория
+- **Обязанности:** Поддерживает поведение `people_strings` в этой feature-зоне.
+- **Когда открывать:** Когда ломается поведение, связанное с `people_strings.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/features/settings/people/`, `docs/APP_STRUCTURE.md`
 
 
 ### `lib/features/settings/timezone_settings.dart`
@@ -22495,7 +22721,7 @@ EN:
 - **Contents:** Platform service code in `notification_service.dart` (`PlanAlarmPermissionStatus`, `NotificationService`).
 - **Key code names:** `PlanAlarmPermissionStatus`, `NotificationService`
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/data/database_service.dart`, `lib/data/records/unfilled_time_gap_service.dart`, `lib/features/profile/settings/notification_settings_section.dart`, `lib/main.dart`, `lib/services/unfilled_time_notification_service.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/data/database_service.dart`, `lib/data/people/people_service.dart`, `lib/data/records/unfilled_time_gap_service.dart`, `lib/features/profile/settings/notification_settings_section.dart`, `lib/main.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -22512,7 +22738,7 @@ RU:
 - **Зачем:** OS API (уведомления, voice, tray) не могут жить в PocketBase brain.
 - **Содержимое:** Platform-код сервиса в `notification_service.dart` (logic in `notification_service`).
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/data/database_service.dart`, `lib/data/records/unfilled_time_gap_service.dart`, `lib/features/profile/settings/notification_settings_section.dart`, `lib/main.dart`, `lib/services/unfilled_time_notification_service.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/data/database_service.dart`, `lib/data/people/people_service.dart`, `lib/data/records/unfilled_time_gap_service.dart`, `lib/features/profile/settings/notification_settings_section.dart`, `lib/main.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -22609,7 +22835,7 @@ EN:
 - **Contents:** Path-specific code, data, configuration, or documentation for `lib/shared/categories/picker/category_picker_contracts.dart`.
 - **Key code names:** `CategoryTreeSource`, `CategoryPickerActions`
 - **Repository role:** developer tool
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/lists/category_filter_tree_field.dart`, `lib/features/settings/categories/category_recursive_browse_panel.dart`, `lib/main.dart`, `lib/shared/categories/picker/category_tree_picker.dart`, `lib/shared/categories/picker/create_category_from_picker.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/lists/category_filter_tree_field.dart`, `lib/features/paths/paths_page.dart`, `lib/features/settings/categories/category_recursive_browse_panel.dart`, `lib/main.dart`, `lib/shared/categories/picker/category_tree_picker.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -22626,7 +22852,7 @@ RU:
 - **Зачем:** Поддерживает процесс, сборку, данные или runtime-задачу области `lib/shared/categories/picker` для `category_picker_contracts.dart`.
 - **Содержимое:** Данные или код `category_picker_contracts.dart`, необходимые его подтверждённой роли и указанным ниже связям.
 - **Роль в репозитории:** developer tool
-- **Доказательства использования:** Импортируется production Dart: `lib/features/lists/category_filter_tree_field.dart`, `lib/features/settings/categories/category_recursive_browse_panel.dart`, `lib/main.dart`, `lib/shared/categories/picker/category_tree_picker.dart`, `lib/shared/categories/picker/create_category_from_picker.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/features/lists/category_filter_tree_field.dart`, `lib/features/paths/paths_page.dart`, `lib/features/settings/categories/category_recursive_browse_panel.dart`, `lib/main.dart`, `lib/shared/categories/picker/category_tree_picker.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -22799,7 +23025,7 @@ EN:
 - **Contents:** Path-specific code, data, configuration, or documentation for `lib/shared/categories/tree/category_tree_body.dart`.
 - **Key code names:** `CategoryTreeBody`, `_CategoryTreeBodyState`, `_CategoryTreeNode`
 - **Repository role:** developer tool
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/settings/categories/category_recursive_browse_panel.dart`, `lib/shared/categories/picker/category_tree_picker.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/paths/paths_page.dart`, `lib/features/settings/categories/category_recursive_browse_panel.dart`, `lib/shared/categories/picker/category_tree_picker.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -22816,7 +23042,7 @@ RU:
 - **Зачем:** Поддерживает процесс, сборку, данные или runtime-задачу области `lib/shared/categories/tree` для `category_tree_body.dart`.
 - **Содержимое:** Данные или код `category_tree_body.dart`, необходимые его подтверждённой роли и указанным ниже связям.
 - **Роль в репозитории:** developer tool
-- **Доказательства использования:** Импортируется production Dart: `lib/features/settings/categories/category_recursive_browse_panel.dart`, `lib/shared/categories/picker/category_tree_picker.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/features/paths/paths_page.dart`, `lib/features/settings/categories/category_recursive_browse_panel.dart`, `lib/shared/categories/picker/category_tree_picker.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -23326,7 +23552,7 @@ EN:
 - **Why needed:** UTC and profile wall-clock rules must stay identical for Brain, header, Plans, and settings.
 - **Contents:** Time helper or injectable clock hook (logic in `wall_clock`).
 - **Repository role:** shared time
-- **Evidence of use:** Imported/exported by production Dart: `lib/data/database_service.dart`, `lib/services/plan_alarm_schedule.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/data/database_service.dart`, `lib/data/people/people_service.dart`, `lib/services/plan_alarm_schedule.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -23343,7 +23569,7 @@ RU:
 - **Зачем:** UTC и profile wall-clock должны совпадать для Brain, header, Plans и settings.
 - **Содержимое:** Time helper или injectable clock hook (logic in `wall_clock`).
 - **Роль в репозитории:** shared time
-- **Доказательства использования:** Импортируется production Dart: `lib/data/database_service.dart`, `lib/services/plan_alarm_schedule.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/data/database_service.dart`, `lib/data/people/people_service.dart`, `lib/services/plan_alarm_schedule.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -27145,6 +27371,80 @@ RU:
 - **Связано с:** `macos/Runner/Info.plist`, Flutter embedder.
 
 
+### `marketing/README.md`
+
+EN:
+
+- **Human purpose:** Markdown document `README.md` in `marketing` — repo tooling or config. Tracked because `marketing` needs `README.md` for build, CI, or maintenance.
+- **What this is:** Markdown document `README.md` in `marketing` — repo tooling or config.
+- **Why needed:** Tracked because `marketing` needs `README.md` for build, CI, or maintenance.
+- **Contents:** Open `README.md` when working on `marketing` (see folder section above).
+- **Repository role:** governing documentation
+- **Evidence of use:** Governing/ops/product documentation read by humans and agents (see `docs/PROJECT_KNOWLEDGE_PACK.md` / AGENTS routing).
+- **Necessity status:** GOVERNING_DOCUMENTATION
+- **Deletion consequence:** Lost architecture/ops rule or agent routing instruction.
+- **Confidence:** HIGH
+- **Owner / layer:** repository root
+- **Responsibilities:** Supports `marketing` workflow for `README.md`.
+- **When to open:** When build output or maintenance cites `README.md`.
+- **Can it be deleted?** No — part of repository tooling or config.
+- **Connected to:** `marketing/`, `docs/APP_STRUCTURE.md`.
+
+RU:
+
+- **Зачем файл человеку:** Текстовая спецификация `README.md` в разделе `marketing`. Фиксирует правила, состояние или справочную информацию, относящуюся к `marketing`.
+- **Что это:** Текстовая спецификация `README.md` в разделе `marketing`.
+- **Зачем:** Фиксирует правила, состояние или справочную информацию, относящуюся к `marketing`.
+- **Содержимое:** Структурированный Markdown-текст по теме `README.md` без runtime-логики приложения.
+- **Роль в репозитории:** governing documentation
+- **Доказательства использования:** Управляющая/операционная документация для людей и агентов (см. Project Knowledge / AGENTS).
+- **Статус необходимости:** GOVERNING_DOCUMENTATION
+- **Что будет, если удалить:** Пропадёт архитектурное/операционное правило.
+- **Уверенность:** HIGH
+- **Владелец / слой:** корень репозитория
+- **Обязанности:** Хранит актуальную документацию по назначению `README.md`.
+- **Когда открывать:** When результат сборки or maintenance cites `README.md`.
+- **Можно удалить?** Нет — конфигурация/инструмент репозитория.
+- **Связано с:** `marketing/`, `docs/APP_STRUCTURE.md`.
+
+
+### `marketing/index.html`
+
+EN:
+
+- **Human purpose:** html file `index.html` in `marketing` — repo tooling or config. Tracked because `marketing` needs `index.html` for build, CI, or maintenance.
+- **What this is:** html file `index.html` in `marketing` — repo tooling or config.
+- **Why needed:** Tracked because `marketing` needs `index.html` for build, CI, or maintenance.
+- **Contents:** Open `index.html` when working on `marketing` (see folder section above).
+- **Repository role:** developer tool
+- **Evidence of use:** Tracked repository file `marketing/index.html` retained for tooling/config.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** May break tooling or configuration; verify before delete.
+- **Confidence:** MEDIUM
+- **Owner / layer:** repository root
+- **Responsibilities:** Supports `marketing` workflow for `index.html`.
+- **When to open:** When build output or maintenance cites `index.html`.
+- **Can it be deleted?** No — part of repository tooling or config.
+- **Connected to:** `marketing/`, `docs/APP_STRUCTURE.md`.
+
+RU:
+
+- **Зачем файл человеку:** `index.html` — отслеживаемый ресурс области `marketing` с отдельной ролью. Поддерживает процесс, сборку, данные или runtime-задачу области `marketing` для `index.html`.
+- **Что это:** `index.html` — отслеживаемый ресурс области `marketing` с отдельной ролью.
+- **Зачем:** Поддерживает процесс, сборку, данные или runtime-задачу области `marketing` для `index.html`.
+- **Содержимое:** Данные или код `index.html`, необходимые его подтверждённой роли и указанным ниже связям.
+- **Роль в репозитории:** developer tool
+- **Доказательства использования:** Отслеживаемый файл `marketing/index.html` для tooling/config.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Может сломать tooling; проверять перед удалением.
+- **Уверенность:** MEDIUM
+- **Владелец / слой:** корень репозитория
+- **Обязанности:** Реализует назначение `index.html` для области `marketing`.
+- **Когда открывать:** When результат сборки or maintenance cites `index.html`.
+- **Можно удалить?** Нет — конфигурация/инструмент репозитория.
+- **Связано с:** `marketing/`, `docs/APP_STRUCTURE.md`.
+
+
 ### `pb_hooks/01_sleep_sync_runtime_bootcheck.pb.js`
 
 EN:
@@ -28292,6 +28592,43 @@ RU:
 - **Связано с:** `pb_migrations/`, `docs/APP_STRUCTURE.md`.
 
 
+### `pb_migrations/1788472800_people.js`
+
+EN:
+
+- **Human purpose:** JavaScript source `1788472800_people.js` in `pb_migrations` — repo tooling or config. Tracked because `pb_migrations` needs `1788472800_people.js` for build, CI, or maintenance.
+- **What this is:** JavaScript source `1788472800_people.js` in `pb_migrations` — repo tooling or config.
+- **Why needed:** Tracked because `pb_migrations` needs `1788472800_people.js` for build, CI, or maintenance.
+- **Contents:** Open `1788472800_people.js` when working on `pb_migrations` (see folder section above).
+- **Repository role:** PocketBase migration
+- **Evidence of use:** Versioned PocketBase schema/data migration; applied by PocketBase before client code that depends on the schema (see `docs/DEPLOY.md`).
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Production schema history becomes incomplete or a required data migration is lost.
+- **Confidence:** HIGH
+- **Owner / layer:** PocketBase migrations
+- **Responsibilities:** Supports `pb_migrations` workflow for `1788472800_people.js`.
+- **When to open:** When build output or maintenance cites `1788472800_people.js`.
+- **Can it be deleted?** No — part of repository tooling or config.
+- **Connected to:** `pb_migrations/`, `docs/APP_STRUCTURE.md`.
+
+RU:
+
+- **Зачем файл человеку:** `1788472800_people.js` — JavaScript-модуль для области `pb_migrations`. Обеспечивает автоматизацию или web-логику области `pb_migrations` для сценария `1788472800_people.js`.
+- **Что это:** `1788472800_people.js` — JavaScript-модуль для области `pb_migrations`.
+- **Зачем:** Обеспечивает автоматизацию или web-логику области `pb_migrations` для сценария `1788472800_people.js`.
+- **Содержимое:** JavaScript-код и настройки, относящиеся к задаче `1788472800_people.js`.
+- **Роль в репозитории:** PocketBase migration
+- **Доказательства использования:** Версионированная миграция схемы/данных PocketBase; применяется до клиента, который зависит от этой схемы (см. `docs/DEPLOY.md`).
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** История production-схемы станет неполной или пропадёт нужная миграция данных.
+- **Уверенность:** HIGH
+- **Владелец / слой:** миграции PocketBase
+- **Обязанности:** Реализует JavaScript-часть сценария `1788472800_people.js` в своём каталоге.
+- **Когда открывать:** When результат сборки or maintenance cites `1788472800_people.js`.
+- **Можно удалить?** Нет — конфигурация/инструмент репозитория.
+- **Связано с:** `pb_migrations/`, `docs/APP_STRUCTURE.md`.
+
+
 ### `pubspec.lock`
 
 EN:
@@ -28931,7 +29268,7 @@ EN:
 - **Why needed:** Maintains owner-readable structure guide in sync with repo after changes.
 - **Contents:** Python generator + curated folder/file descriptions.
 - **Repository role:** developer tool
-- **Evidence of use:** (1) Invoked or documented by: `AGENT_NAVIGATION.md`, `docs/APP_STRUCTURE.md`, `docs/reports/ARCHITECTURE_GUARD_BASELINE_2026-07-17.md`, `docs/reports/FINAL_STRUCTURE_AUDIT_2026-07-06.md`, `docs/reports/FINAL_STRUCTURE_PARITY_AND_DOC_CLEANUP_2026-07-03.md`. (2) Generator for `docs/APP_STRUCTURE_DETAILED.md`; input is `git ls-files` + guide modules.
+- **Evidence of use:** (1) Invoked or documented by: `.github/workflows/architecture-guard.yml`, `AGENT_NAVIGATION.md`, `docs/APP_STRUCTURE.md`, `docs/reports/ARCHITECTURE_GUARD_BASELINE_2026-07-17.md`, `docs/reports/FINAL_STRUCTURE_AUDIT_2026-07-06.md`. (2) Generator for `docs/APP_STRUCTURE_DETAILED.md`; input is `git ls-files` + guide modules.
 - **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Deletion consequence:** Broken audit/deploy/manual maintenance command.
 - **Confidence:** HIGH
@@ -28948,7 +29285,7 @@ RU:
 - **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
 - **Содержимое:** Команды PowerShell/Python/Dart в `generate_app_structure_detailed.py`.
 - **Роль в репозитории:** developer tool
-- **Доказательства использования:** (1) Вызывается или описан в: `AGENT_NAVIGATION.md`, `docs/APP_STRUCTURE.md`, `docs/reports/ARCHITECTURE_GUARD_BASELINE_2026-07-17.md`, `docs/reports/FINAL_STRUCTURE_AUDIT_2026-07-06.md`, `docs/reports/FINAL_STRUCTURE_PARITY_AND_DOC_CLEANUP_2026-07-03.md`. (2) Генератор `docs/APP_STRUCTURE_DETAILED.md`; вход — `git ls-files` и guide-модули.
+- **Доказательства использования:** (1) Вызывается или описан в: `.github/workflows/architecture-guard.yml`, `AGENT_NAVIGATION.md`, `docs/APP_STRUCTURE.md`, `docs/reports/ARCHITECTURE_GUARD_BASELINE_2026-07-17.md`, `docs/reports/FINAL_STRUCTURE_AUDIT_2026-07-06.md`. (2) Генератор `docs/APP_STRUCTURE_DETAILED.md`; вход — `git ls-files` и guide-модули.
 - **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Что будет, если удалить:** Сломается audit/deploy или ручная команда сопровождения.
 - **Уверенность:** HIGH
