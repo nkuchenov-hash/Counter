@@ -161,4 +161,35 @@ void main() {
       expect(catalogs, isNot(contains('Timer.periodic')));
     },
   );
+
+  test('realtime keeps registered bridges across SDK reconnects', () {
+    final core = File('lib/data/db_core.dart').readAsStringSync();
+    final guardStart = core.indexOf('void _attachPocketBaseRealtimeGuards()');
+    final guardEnd = core.indexOf(
+      'bool _isRealtimeEndpointUnavailableError',
+      guardStart,
+    );
+    final guard = core.substring(guardStart, guardEnd);
+    expect(guard, contains('sdk autoreconnect active'));
+    expect(guard, isNot(contains('_scheduleRecordsRealtimeReconnectAfterFailure')));
+    expect(guard, isNot(contains('_schedulePlansRealtimeReconnectAfterFailure')));
+    expect(guard, isNot(contains('_scheduleCatalogRealtimeReconnectAfterFailure')));
+
+    final foregroundStart = core.indexOf('Future<void> _refreshForegroundDataBody()');
+    final foregroundEnd = core.indexOf(
+      'Future<void> flushPendingLocalMutations()',
+      foregroundStart,
+    );
+    final foreground = core.substring(foregroundStart, foregroundEnd);
+    expect(foreground, contains('final realtimeBridgesRegistered ='));
+    expect(foreground, contains('_recordsRealtimeUnsubscribe != null'));
+    expect(foreground, contains('_plansRealtimeUnsubscribe != null'));
+    expect(foreground, contains('_categoriesRealtimeUnsubscribe != null'));
+    expect(foreground, contains('_tagsRealtimeUnsubscribe != null'));
+    expect(foreground, contains('_profileRealtimeUnsubscribe != null'));
+    expect(foreground, contains('if (!realtimeBridgesRegistered)'));
+
+    final pubspec = File('pubspec.yaml').readAsStringSync();
+    expect(pubspec, contains('pocketbase: ^0.23.3'));
+  });
 }
