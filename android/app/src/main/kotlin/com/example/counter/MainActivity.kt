@@ -10,6 +10,12 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterFragmentActivity() {
+    companion object {
+        private const val PEOPLE_CONTACTS_REQUEST_CODE = 4812
+    }
+
+    private var pendingPeopleContactsResult: MethodChannel.Result? = null
+
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         MethodChannel(
@@ -33,30 +39,60 @@ class MainActivity : FlutterFragmentActivity() {
             "counter/people_contacts",
         ).setMethodCallHandler { call, result ->
             when (call.method) {
-                "readContacts" -> {
-                    if (
-                        ContextCompat.checkSelfPermission(
-                            this,
-                            Manifest.permission.READ_CONTACTS,
-                        ) != PackageManager.PERMISSION_GRANTED
-                    ) {
-                        result.error("permission_denied", "Contacts permission is required", null)
-                        return@setMethodCallHandler
-                    }
-                    Thread {
-                        try {
-                            val rows = readPeopleContacts()
-                            runOnUiThread { result.success(rows) }
-                        } catch (error: Throwable) {
-                            runOnUiThread {
-                                result.error("contacts_read_failed", error.message, null)
-                            }
-                        }
-                    }.start()
-                }
+                "requestAndReadContacts" -> requestAndReadPeopleContacts(result)
                 else -> result.notImplemented()
             }
         }
+    }
+
+    private fun requestAndReadPeopleContacts(result: MethodChannel.Result) {
+        if (
+            ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CONTACTS) ==
+                PackageManager.PERMISSION_GRANTED
+        ) {
+            readPeopleContactsAsync(result)
+            return
+        }
+        if (pendingPeopleContactsResult != null) {
+            result.error("contacts_request_in_progress", "Contacts request is already active", null)
+            return
+        }
+        pendingPeopleContactsResult = result
+        requestPermissions(
+            arrayOf(Manifest.permission.READ_CONTACTS),
+            PEOPLE_CONTACTS_REQUEST_CODE,
+        )
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray,
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode != PEOPLE_CONTACTS_REQUEST_CODE) return
+        val result = pendingPeopleContactsResult ?: return
+        pendingPeopleContactsResult = null
+        val granted = grantResults.isNotEmpty() &&
+            grantResults[0] == PackageManager.PERMISSION_GRANTED
+        if (!granted) {
+            result.error("permission_denied", "Contacts permission is required", null)
+            return
+        }
+        readPeopleContactsAsync(result)
+    }
+
+    private fun readPeopleContactsAsync(result: MethodChannel.Result) {
+        Thread {
+            try {
+                val rows = readPeopleContacts()
+                runOnUiThread { result.success(rows) }
+            } catch (error: Throwable) {
+                runOnUiThread {
+                    result.error("contacts_read_failed", error.message, null)
+                }
+            }
+        }.start()
     }
 
     private fun readPeopleContacts(): List<Map<String, Any?>> {
@@ -85,13 +121,13 @@ class MainActivity : FlutterFragmentActivity() {
                 val displayName = cursor.getString(nameIndex)?.trim().orEmpty()
                 val photoUri = cursor.getString(photoIndex)?.trim().orEmpty()
                 val phone = firstContactValue(
-                    ContactsContract.CommonDataKinds.Phone.CONTENT_URI.toString(),
+                    ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
                     ContactsContract.CommonDataKinds.Phone.CONTACT_ID,
                     contactId,
                     ContactsContract.CommonDataKinds.Phone.NUMBER,
                 )
                 val email = firstContactValue(
-                    ContactsContract.CommonDataKinds.Email.CONTENT_URI.toString(),
+                    ContactsContract.CommonDataKinds.Email.CONTENT_URI,
                     ContactsContract.CommonDataKinds.Email.CONTACT_ID,
                     contactId,
                     ContactsContract.CommonDataKinds.Email.ADDRESS,
@@ -117,12 +153,11 @@ class MainActivity : FlutterFragmentActivity() {
     }
 
     private fun firstContactValue(
-        uriText: String,
+        uri: android.net.Uri,
         idColumn: String,
         contactId: String,
         valueColumn: String,
     ): String {
-        val uri = android.net.Uri.parse(uriText)
         contentResolver.query(
             uri,
             arrayOf(valueColumn),
@@ -169,8 +204,11 @@ class MainActivity : FlutterFragmentActivity() {
         return try {
             contentResolver.openInputStream(android.net.Uri.parse(uriText))?.use { stream ->
                 val bytes = stream.readBytes()
-                if (bytes.isEmpty()) "" else
+                if (bytes.isEmpty()) {
+                    ""
+                } else {
                     "data:image/jpeg;base64," + Base64.encodeToString(bytes, Base64.NO_WRAP)
+                }
             } ?: ""
         } catch (_: Throwable) {
             ""
