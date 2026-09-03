@@ -1,0 +1,46 @@
+name: People Verify Temporary
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  analyze-android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.6'
+          channel: stable
+      - name: Create env.dart
+        run: |
+          mkdir -p lib/core/env
+          printf '%s\n' 'abstract final class Env {' '  static const String placeholder = '\'''\'';' '}' > lib/core/env/env.dart
+      - run: flutter pub get
+      - name: Analyze
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+      - name: Build Android ARM64
+        run: flutter build apk --release --target-platform android-arm64 --split-per-abi --no-tree-shake-icons
+
+  ios-build:
+    runs-on: macos-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.6'
+          channel: stable
+      - name: Create env.dart
+        run: |
+          mkdir -p lib/core/env
+          printf '%s\n' 'abstract final class Env {' '  static const String placeholder = '\'''\'';' '}' > lib/core/env/env.dart
+      - run: flutter pub get
+      - name: Build iOS without signing
+        run: flutter build ios --release --no-codesign
