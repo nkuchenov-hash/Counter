@@ -25,6 +25,45 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Finalize People implementation details
+        if: github.event_name == 'push' && github.ref == 'refs/heads/feature/people-settings'
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          service = Path('lib/data/people/people_service.dart')
+          s = service.read_text(encoding='utf-8')
+          if "package:counter/data/pb_config.dart" not in s:
+              s = s.replace(
+                  "import 'package:counter/data/people/people_models.dart';\n",
+                  "import 'package:counter/data/people/people_models.dart';\nimport 'package:counter/data/pb_config.dart';\n",
+                  1,
+              )
+          s = s.replace("static const String _peopleCollection = 'people';", "static const String _peopleCollection = PbCollections.people;")
+          s = s.replace("static const String _circlesCollection = 'people_circles';", "static const String _circlesCollection = PbCollections.peopleCircles;")
+          s = s.replace("static const String _sourceContactsCollection = 'people_source_contacts';", "static const String _sourceContactsCollection = PbCollections.peopleSourceContacts;")
+
+          old_home = '''  Future<(List<LifePerson>, List<PeopleCircle>)> fetchPeopleHome() async {\n    final result = await Future.wait<Object>(<Future<Object>>[\n      fetchPeople(),\n      fetchCircles(),\n    ]);\n    return (\n      result[0] as List<LifePerson>,\n      result[1] as List<PeopleCircle>,\n    );\n  }'''
+          new_home = '''  Future<(List<LifePerson>, List<PeopleCircle>)> fetchPeopleHome() async {\n    final result = await Future.wait<Object>(<Future<Object>>[\n      fetchPeople(),\n      fetchCircles(),\n    ]);\n    final people = result[0] as List<LifePerson>;\n    final circles = result[1] as List<PeopleCircle>;\n    // Bounded and on-demand: refresh birthday alarms only when People is opened.\n    unawaited(reconcileBirthdayNotifications(people));\n    return (people, circles);\n  }'''
+          if old_home in s:
+              s = s.replace(old_home, new_home, 1)
+
+          old_archive = '''    await pb.collection(_peopleCollection).update(\n      id,\n      body: const <String, dynamic>{'archived': true},\n    );\n    final stable = personStableId?.trim() ?? '';\n    if (stable.isNotEmpty) {'''
+          new_archive = '''    final archivedRecord = await pb.collection(_peopleCollection).update(\n      id,\n      body: const <String, dynamic>{'archived': true},\n    );\n    final explicitStable = personStableId?.trim() ?? '';\n    final storedStable = archivedRecord.data['person_id']?.toString().trim() ?? '';\n    final stable = explicitStable.isNotEmpty ? explicitStable : storedStable;\n    if (stable.isNotEmpty) {'''
+          if old_archive in s:
+              s = s.replace(old_archive, new_archive, 1)
+          service.write_text(s, encoding='utf-8')
+
+          page = Path('lib/features/settings/people/people_settings_page.dart')
+          p = page.read_text(encoding='utf-8')
+          p = p.replace(
+              'await _service.archivePerson(person.recordId);',
+              'await _service.archivePerson(\n                person.recordId,\n                personStableId: person.personId,\n              );',
+          )
+          page.write_text(p, encoding='utf-8')
+          PY
+
       - name: Finalize People governing docs
         if: github.event_name == 'push' && github.ref == 'refs/heads/feature/people-settings'
         shell: bash
@@ -158,17 +197,17 @@ jobs:
         if: github.event_name == 'push' && github.ref == 'refs/heads/feature/people-settings'
         run: python scripts/manual/generate_app_structure_detailed.py
 
-      - name: Commit final People governing docs
+      - name: Commit final People implementation and docs
         if: github.event_name == 'push' && github.ref == 'refs/heads/feature/people-settings'
         shell: bash
         run: |
-          if git diff --quiet -- docs/APP_STRUCTURE.md docs/APP_STRUCTURE_DETAILED.md docs/DATA_MAP.md docs/POCKETBASE_MANIFEST.md docs/UX_CONTRACT.md CLAUDE.md CHANGELOG.md; then
-            echo 'People governing docs already current.'
+          if git diff --quiet; then
+            echo 'People implementation and docs already current.'
           else
             git config user.name 'github-actions[bot]'
             git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-            git add docs/APP_STRUCTURE.md docs/APP_STRUCTURE_DETAILED.md docs/DATA_MAP.md docs/POCKETBASE_MANIFEST.md docs/UX_CONTRACT.md CLAUDE.md CHANGELOG.md
-            git commit -m 'Document People data and UX contracts'
+            git add lib/data/people/people_service.dart lib/features/settings/people/people_settings_page.dart docs/APP_STRUCTURE.md docs/APP_STRUCTURE_DETAILED.md docs/DATA_MAP.md docs/POCKETBASE_MANIFEST.md docs/UX_CONTRACT.md CLAUDE.md CHANGELOG.md
+            git commit -m 'Finalize People reminder and documentation contracts'
             git push origin HEAD:feature/people-settings
           fi
 
