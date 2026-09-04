@@ -1,0 +1,75 @@
+name: Temporary calendar desktop refinement
+
+on:
+  push:
+    branches:
+      - fix/calendar-desktop-month-day-layout-20260904
+
+permissions:
+  contents: write
+
+jobs:
+  apply-and-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/calendar-desktop-month-day-layout-20260904
+          fetch-depth: 0
+      - name: Apply calendar patch
+        run: python scripts/tmp_calendar_desktop_refine.py
+      - name: Remove temporary files
+        run: |
+          git rm scripts/tmp_calendar_desktop_refine.py
+          git rm .github/workflows/tmp-calendar-desktop-refine.yml
+      - name: Set up Flutter 3.41.6
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.6'
+          channel: stable
+          cache: true
+      - name: Create env.dart
+        run: |
+          mkdir -p lib/config
+          cat > lib/config/env.dart <<'EOF'
+          const String kPocketBaseUrl = '';
+          const String kPocketBaseAdminEmail = '';
+          const String kPocketBaseAdminPassword = '';
+          EOF
+      - name: Install dependencies
+        run: flutter pub get
+      - name: Restore lockfile
+        run: git checkout -- pubspec.lock
+      - name: Format changed Dart
+        run: dart format lib/features/calendar/calendar_chrome_header.dart lib/features/calendar/calendar_view.dart lib/features/calendar/calendar_month_grid.dart lib/features/calendar/calendar_week_grid.dart lib/features/calendar/calendar_day_panel.dart
+      - name: Analyze calendar
+        run: flutter analyze --no-fatal-infos lib/features/calendar lib/core/widgets/compact_nav_controls.dart
+      - name: Remove env stub
+        run: rm -f lib/config/env.dart
+      - name: Fetch main base
+        run: git fetch origin main:refs/remotes/origin/main
+      - name: Check repository hygiene
+        env:
+          STRUCTURE_GROWTH_BASE: origin/main
+        run: python scripts/audit/repository_hygiene.py
+      - name: Check documentation parity
+        run: python scripts/audit/documentation_parity.py
+      - name: Check whitespace
+        run: git diff --check
+      - name: Build release web
+        run: |
+          mkdir -p lib/config
+          cat > lib/config/env.dart <<'EOF'
+          const String kPocketBaseUrl = '';
+          const String kPocketBaseAdminEmail = '';
+          const String kPocketBaseAdminPassword = '';
+          EOF
+          flutter build web --release --base-href="/Counter/" --no-tree-shake-icons --no-wasm-dry-run --pwa-strategy=none
+          rm -f lib/config/env.dart
+      - name: Commit final fix
+        run: |
+          git config user.name "nkuchenov-hash"
+          git config user.email "nkuchenov-hash@users.noreply.github.com"
+          git add -A
+          git commit -m "Refine desktop calendar month and day views"
+          git push origin HEAD:fix/calendar-desktop-month-day-layout-20260904
