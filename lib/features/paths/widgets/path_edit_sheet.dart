@@ -87,6 +87,89 @@ class PathOptionsButton extends StatelessWidget {
   }
 }
 
+String? _pathRequiredField(bool ru, String? value) =>
+    value == null || value.trim().isEmpty
+    ? (ru ? 'Обязательное поле' : 'Required field')
+    : null;
+
+String? _pathMinutesField(bool ru, String? value) {
+  final minutes = int.tryParse(value?.trim() ?? '');
+  if (minutes == null || minutes < 1 || minutes > 30) {
+    return ru ? 'От 1 до 30 минут' : 'Enter 1–30 minutes';
+  }
+  return null;
+}
+
+Future<Map<String, String>?> showPathNewActionDraft({
+  required BuildContext context,
+  required bool ru,
+}) => showAppFormDialog(
+  context: context,
+  title: ru ? 'Добавить пункт этапа' : 'Add stage item',
+  cancelLabel: ru ? 'Отмена' : 'Cancel',
+  submitLabel: ru ? 'Добавить' : 'Add',
+  fields: [
+    AppFormDialogField(
+      keyName: 'action',
+      label: ru ? 'Пункт этапа' : 'Stage item',
+      autofocus: true,
+      validator: (value) => _pathRequiredField(ru, value),
+    ),
+    AppFormDialogField(
+      keyName: 'result',
+      label: ru ? 'Ожидаемый результат' : 'Expected result',
+      validator: (value) => _pathRequiredField(ru, value),
+    ),
+    AppFormDialogField(
+      keyName: 'minutes',
+      label: ru ? 'Минуты' : 'Minutes',
+      initialValue: '15',
+      keyboardType: TextInputType.number,
+      validator: (value) => _pathMinutesField(ru, value),
+    ),
+  ],
+);
+
+Future<Map<String, String>?> showPathNewStageDraft({
+  required BuildContext context,
+  required bool ru,
+}) => showAppFormDialog(
+  context: context,
+  title: ru ? 'Добавить этап' : 'Add stage',
+  cancelLabel: ru ? 'Отмена' : 'Cancel',
+  submitLabel: ru ? 'Добавить этап' : 'Add stage',
+  fields: [
+    AppFormDialogField(
+      keyName: 'title',
+      label: ru ? 'Название этапа' : 'Stage title',
+      autofocus: true,
+      validator: (value) => _pathRequiredField(ru, value),
+    ),
+    AppFormDialogField(
+      keyName: 'criteria',
+      label: ru ? 'Готово, когда' : 'Done when',
+      validator: (value) => _pathRequiredField(ru, value),
+    ),
+    AppFormDialogField(
+      keyName: 'action',
+      label: ru ? 'Первый пункт' : 'First item',
+      validator: (value) => _pathRequiredField(ru, value),
+    ),
+    AppFormDialogField(
+      keyName: 'result',
+      label: ru ? 'Ожидаемый результат' : 'Expected result',
+      validator: (value) => _pathRequiredField(ru, value),
+    ),
+    AppFormDialogField(
+      keyName: 'minutes',
+      label: ru ? 'Минуты' : 'Minutes',
+      initialValue: '15',
+      keyboardType: TextInputType.number,
+      validator: (value) => _pathMinutesField(ru, value),
+    ),
+  ],
+);
+
 Future<PathEditDraft?> showPathEditSheet({
   required BuildContext context,
   required bool ru,

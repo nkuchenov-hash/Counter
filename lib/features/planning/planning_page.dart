@@ -15,7 +15,6 @@ import 'package:counter/shared/diagnostics/performance/rebuild_metrics.dart';
 import 'package:counter/core/app_snackbar.dart';
 import 'package:counter/core/shell_adaptive.dart';
 import 'package:counter/core/shell_layout_state.dart';
-import 'package:counter/core/widgets/compact_nav_controls.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/planning/bulk_planning_edit_sheet.dart';
@@ -1800,90 +1799,18 @@ class _PlanningPageState extends State<PlanningPage>
     ColorScheme scheme,
     List<PlanningTask> tasks,
   ) {
-    final desktopShell = shellUsesSideNavigation(
-      MediaQuery.sizeOf(context).width,
+    final desktop = shellUsesSideNavigation(MediaQuery.sizeOf(context).width);
+    final tagStrip = PlanningQuickAddTagStrip(
+      scheme: scheme,
+      tagsLoading: _quickAddTags.tagsLoading,
+      availableTags: _quickAddTags.availableTags,
+      selectedTags: _quickAddTags.creationSelectedTags,
+      onToggleTag: _quickAddTags.toggleCreationTag,
+      onOpenTagManager: () => unawaited(_quickAddTags.openTagManager(context)),
+      onReorder: _quickAddTags.availableTags.length >= 2
+          ? _quickAddTags.onQuickBarReorder
+          : null,
     );
-    final settingsButton = IconButton(
-      constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
-      style: IconButton.styleFrom(
-        foregroundColor: scheme.primary,
-        splashFactory: NoSplash.splashFactory,
-        hoverColor: Colors.transparent,
-      ),
-      icon: const Icon(Icons.settings_rounded),
-      tooltip: t(currentLocale.value, 'plan_settings_tooltip'),
-      onPressed: timeView.showPlanningSettingsSheet,
-    );
-    final smartButton = IconButton(
-      constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
-      style: IconButton.styleFrom(
-        foregroundColor: scheme.primary,
-        splashFactory: NoSplash.splashFactory,
-        hoverColor: Colors.transparent,
-      ),
-      icon: const Icon(Icons.auto_awesome_rounded),
-      tooltip: t(currentLocale.value, 'smart_plan_tooltip'),
-      onPressed: _openSmartPlanSheet,
-    );
-    final tagsRow = Row(
-      children: [
-        Expanded(
-          child: SizedBox(
-            height: 40,
-            child: PlanningQuickAddTagStrip(
-              scheme: scheme,
-              tagsLoading: _quickAddTags.tagsLoading,
-              availableTags: _quickAddTags.availableTags,
-              selectedTags: _quickAddTags.creationSelectedTags,
-              onToggleTag: _quickAddTags.toggleCreationTag,
-              onOpenTagManager: () =>
-                  unawaited(_quickAddTags.openTagManager(context)),
-              onReorder: _quickAddTags.availableTags.length >= 2
-                  ? _quickAddTags.onQuickBarReorder
-                  : null,
-            ),
-          ),
-        ),
-        const SizedBox(width: 8),
-        settingsButton,
-        if (desktopShell) smartButton,
-      ],
-    );
-    final inputRow = desktopShell
-        ? AppQuickEntryRow(
-            controller: _textController,
-            focusNode: _quickAddFocus,
-            hintText: t(currentLocale.value, 'input_placeholder_plan'),
-            actionLabel: t(currentLocale.value, 'add'),
-            actionIcon: Icons.add_rounded,
-            onAction: _addTask,
-            onSubmitted: (_) => _addTask(),
-            loading: _planQuickAddInFlight,
-          )
-        : Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _textController,
-                  focusNode: _quickAddFocus,
-                  decoration: InputDecoration(
-                    hintText: t(currentLocale.value, 'input_placeholder_plan'),
-                  ),
-                  textInputAction: TextInputAction.done,
-                  onSubmitted: (_) => _addTask(),
-                ),
-              ),
-              const SizedBox(width: 8),
-              FilledButton.icon(
-                onPressed: _addTask,
-                icon: const Icon(Icons.add_rounded),
-                label: Text(t(currentLocale.value, 'add')),
-              ),
-              const SizedBox(width: 8),
-              smartButton,
-            ],
-          );
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -1891,29 +1818,24 @@ class _PlanningPageState extends State<PlanningPage>
           PlanningSortModeBar(
             sortMode: _sortMode,
             onSortModeChanged: (mode) => setState(() => _sortMode = mode),
-            desktopTitle: desktopShell
+            desktopTitle: desktop
                 ? t(currentLocale.value, 'tab_planning')
                 : null,
           ),
-        Padding(
-          padding: desktopShell
-              ? const EdgeInsets.fromLTRB(24, 0, 16, 10)
-              : const EdgeInsets.fromLTRB(16, 4, 16, 10),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (desktopShell) ...[
-                inputRow,
-                const SizedBox(height: 8),
-                tagsRow,
-              ] else ...[
-                tagsRow,
-                const SizedBox(height: 10),
-                inputRow,
-              ],
-            ],
-          ),
+        PlanningQuickAddChrome(
+          desktop: desktop,
+          scheme: scheme,
+          tagStrip: tagStrip,
+          controller: _textController,
+          focusNode: _quickAddFocus,
+          hintText: t(currentLocale.value, 'input_placeholder_plan'),
+          addLabel: t(currentLocale.value, 'add'),
+          settingsTooltip: t(currentLocale.value, 'plan_settings_tooltip'),
+          smartTooltip: t(currentLocale.value, 'smart_plan_tooltip'),
+          onAdd: _addTask,
+          onSettings: timeView.showPlanningSettingsSheet,
+          onSmart: _openSmartPlanSheet,
+          loading: _planQuickAddInFlight,
         ),
         Expanded(
           child:

@@ -476,87 +476,11 @@ class _PathsPageState extends State<PathsPage> {
     unawaited(_saveOptimistic(latest, latest.copyWith(stages: stages)));
   }
 
-  String? _requiredField(String? value) => value == null || value.trim().isEmpty
-      ? (_ru ? 'Обязательное поле' : 'Required field')
-      : null;
-
-  String? _minutesField(String? value) {
-    final minutes = int.tryParse(value?.trim() ?? '');
-    if (minutes == null || minutes < 1 || minutes > 30) {
-      return _ru ? 'От 1 до 30 минут' : 'Enter 1–30 minutes';
-    }
-    return null;
-  }
-
   String _manualElementId(String prefix) =>
       '$prefix-${DateTime.now().microsecondsSinceEpoch}';
 
-  Future<Map<String, String>?> _actionDraft() => showAppFormDialog(
-    context: context,
-    title: _ru ? 'Добавить пункт этапа' : 'Add stage item',
-    cancelLabel: _ru ? 'Отмена' : 'Cancel',
-    submitLabel: _ru ? 'Добавить' : 'Add',
-    fields: [
-      AppFormDialogField(
-        keyName: 'action',
-        label: _ru ? 'Пункт этапа' : 'Stage item',
-        autofocus: true,
-        validator: _requiredField,
-      ),
-      AppFormDialogField(
-        keyName: 'result',
-        label: _ru ? 'Ожидаемый результат' : 'Expected result',
-        validator: _requiredField,
-      ),
-      AppFormDialogField(
-        keyName: 'minutes',
-        label: _ru ? 'Минуты' : 'Minutes',
-        initialValue: '15',
-        keyboardType: TextInputType.number,
-        validator: _minutesField,
-      ),
-    ],
-  );
-
-  Future<Map<String, String>?> _stageDraft() => showAppFormDialog(
-    context: context,
-    title: _ru ? 'Добавить этап' : 'Add stage',
-    cancelLabel: _ru ? 'Отмена' : 'Cancel',
-    submitLabel: _ru ? 'Добавить этап' : 'Add stage',
-    fields: [
-      AppFormDialogField(
-        keyName: 'title',
-        label: _ru ? 'Название этапа' : 'Stage title',
-        autofocus: true,
-        validator: _requiredField,
-      ),
-      AppFormDialogField(
-        keyName: 'criteria',
-        label: _ru ? 'Готово, когда' : 'Done when',
-        validator: _requiredField,
-      ),
-      AppFormDialogField(
-        keyName: 'action',
-        label: _ru ? 'Первый пункт' : 'First item',
-        validator: _requiredField,
-      ),
-      AppFormDialogField(
-        keyName: 'result',
-        label: _ru ? 'Ожидаемый результат' : 'Expected result',
-        validator: _requiredField,
-      ),
-      AppFormDialogField(
-        keyName: 'minutes',
-        label: _ru ? 'Минуты' : 'Minutes',
-        initialValue: '15',
-        keyboardType: TextInputType.number,
-        validator: _minutesField,
-      ),
-    ],
-  );
-
   Future<void> _addAction(ProjectPathSnapshot path, int stageIndex) async {
-    final draft = await _actionDraft();
+    final draft = await showPathNewActionDraft(context: context, ru: _ru);
     if (!mounted || draft == null) return;
     final current = _localPathById(path.pathId) ?? path;
     if (stageIndex < 0 || stageIndex >= current.stages.length) return;
@@ -578,7 +502,7 @@ class _PathsPageState extends State<PathsPage> {
   }
 
   Future<void> _addStage(ProjectPathSnapshot path) async {
-    final draft = await _stageDraft();
+    final draft = await showPathNewStageDraft(context: context, ru: _ru);
     if (!mounted || draft == null) return;
     final current = _localPathById(path.pathId) ?? path;
     final stages = List<PathStageSnapshot>.from(current.stages)

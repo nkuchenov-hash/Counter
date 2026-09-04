@@ -78,3 +78,116 @@ class PlanningSortModeBar extends StatelessWidget {
     );
   }
 }
+
+/// Planning quick-entry chrome. Desktop uses the same canonical entry row as
+/// Timeline; phone/tablet preserve the established tag-first arrangement.
+class PlanningQuickAddChrome extends StatelessWidget {
+  const PlanningQuickAddChrome({
+    super.key,
+    required this.desktop,
+    required this.scheme,
+    required this.tagStrip,
+    required this.controller,
+    required this.focusNode,
+    required this.hintText,
+    required this.addLabel,
+    required this.settingsTooltip,
+    required this.smartTooltip,
+    required this.onAdd,
+    required this.onSettings,
+    required this.onSmart,
+    required this.loading,
+  });
+
+  final bool desktop;
+  final ColorScheme scheme;
+  final Widget tagStrip;
+  final TextEditingController controller;
+  final FocusNode focusNode;
+  final String hintText;
+  final String addLabel;
+  final String settingsTooltip;
+  final String smartTooltip;
+  final VoidCallback onAdd;
+  final VoidCallback onSettings;
+  final VoidCallback onSmart;
+  final bool loading;
+
+  @override
+  Widget build(BuildContext context) {
+    final settingsButton = IconButton(
+      constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+      style: IconButton.styleFrom(
+        foregroundColor: scheme.primary,
+        splashFactory: NoSplash.splashFactory,
+        hoverColor: Colors.transparent,
+      ),
+      icon: const Icon(Icons.settings_rounded),
+      tooltip: settingsTooltip,
+      onPressed: onSettings,
+    );
+    final smartButton = IconButton(
+      constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+      style: IconButton.styleFrom(
+        foregroundColor: scheme.primary,
+        splashFactory: NoSplash.splashFactory,
+        hoverColor: Colors.transparent,
+      ),
+      icon: const Icon(Icons.auto_awesome_rounded),
+      tooltip: smartTooltip,
+      onPressed: onSmart,
+    );
+    final tagsRow = Row(
+      children: [
+        Expanded(child: SizedBox(height: 40, child: tagStrip)),
+        const SizedBox(width: 8),
+        settingsButton,
+        if (desktop) smartButton,
+      ],
+    );
+    final inputRow = desktop
+        ? AppQuickEntryRow(
+            controller: controller,
+            focusNode: focusNode,
+            hintText: hintText,
+            actionLabel: addLabel,
+            actionIcon: Icons.add_rounded,
+            onAction: onAdd,
+            onSubmitted: (_) => onAdd(),
+            loading: loading,
+          )
+        : Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: controller,
+                  focusNode: focusNode,
+                  decoration: InputDecoration(hintText: hintText),
+                  textInputAction: TextInputAction.done,
+                  onSubmitted: (_) => onAdd(),
+                ),
+              ),
+              const SizedBox(width: 8),
+              FilledButton.icon(
+                onPressed: onAdd,
+                icon: const Icon(Icons.add_rounded),
+                label: Text(addLabel),
+              ),
+              const SizedBox(width: 8),
+              smartButton,
+            ],
+          );
+    return Padding(
+      padding: desktop
+          ? const EdgeInsets.fromLTRB(24, 0, 16, 10)
+          : const EdgeInsets.fromLTRB(16, 4, 16, 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: desktop
+            ? [inputRow, const SizedBox(height: 8), tagsRow]
+            : [tagsRow, const SizedBox(height: 10), inputRow],
+      ),
+    );
+  }
+}
