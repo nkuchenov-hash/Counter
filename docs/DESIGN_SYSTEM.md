@@ -18,6 +18,7 @@ Figma component names should stay clean and designer-facing. Flutter component n
 | :--- | :--- |
 | `Button` | `AppButton` |
 | `Icon Button` | `AppIconButton` |
+| `Completion Checkbox` | `PlanCardCheckbox` |
 | `Card` | `AppTaskCard` or `AppCard` |
 | `Chip` | `AppTagChip` / `AppCategoryChip` |
 | `Tabs` | `AppSegmentedTabs` |
@@ -128,6 +129,15 @@ Each mapping must answer:
 - New feature-screen icon actions should not introduce fresh raw `IconButton` unless documented as temporary legacy.
 - Icon-only actions require a tooltip or semantic label where practical.
 
+### Completion Checkbox
+
+- Current canonical: `PlanCardCheckbox` in `lib/core/widgets/plan_time_task_card/plan_card_controls.dart`.
+- Figma `Completion Checkbox` maps to this same executable widget on Plan cards, Path stages, and Path action rows.
+- Default control size is **32px** through `PlanCardGeom.controlSize`; completion surfaces must not shrink it to a feature-local compact checkbox.
+- Hover, checked-state animation, border/radius, shadow, semantics, and hit target belong to `PlanCardCheckbox`; feature screens must not recreate them with raw Flutter `Checkbox`.
+- Row/layout owners align the checkbox with the first line of primary text. Secondary text below the title must not vertically re-center the checkbox.
+- Selection-mode behavior and completion-mode behavior are parameters of the same component. Any future size/state variants must be added to the canonical component rather than copied locally.
+
 ### Drag / Reorder
 
 - Current canonical: `AppReorderableList` + `AppReorderHandle` in `lib/core/widgets/mouse_drag_scroll_behavior.dart`.
@@ -218,7 +228,7 @@ Canonical widget: `PlanTimeTaskCard` in `lib/core/widgets/plan_time_task_card.da
 
 ## Forbidden Local UI Rule
 
-Feature screens must not directly create raw duplicates of buttons, cards, chips, tabs, headers, loading states, empty states, error states, or the primary edit-sheet host when a canonical component exists.
+Feature screens must not directly create raw duplicates of buttons, cards, chips, tabs, headers, completion checkboxes, loading states, empty states, error states, or the primary edit-sheet host when a canonical component exists.
 
 Allowed exceptions:
 
