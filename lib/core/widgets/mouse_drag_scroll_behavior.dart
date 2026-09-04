@@ -25,7 +25,8 @@ typedef AppReorderLabelBuilder = String Function(int index);
 /// The feature owns the item surface. This helper owns the discoverable drag
 /// handle and Flutter reorder plumbing so drag behavior stays consistent.
 /// Callers must apply local order immediately in [onReorder] and persist it
-/// asynchronously.
+/// asynchronously. Nested lists reuse this same primitive with [shrinkWrap]
+/// and non-scrolling physics instead of introducing feature-local drag code.
 class AppReorderableList extends StatelessWidget {
   const AppReorderableList({
     super.key,
