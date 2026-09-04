@@ -132,7 +132,8 @@ Each mapping must answer:
 ### Completion Checkbox
 
 - Current canonical: `PlanCardCheckbox` in `lib/core/widgets/plan_time_task_card/plan_card_controls.dart`.
-- Figma `Completion Checkbox` maps to this same executable widget on Plan cards, Path stages, and Path action rows.
+- Figma `Completion Checkbox` maps to this same executable widget on Plan cards and Path action rows.
+- Path stages themselves do **not** have a completion checkbox. Their completed state is derived from their child actions; when all actions are done, the stage becomes completed, and reopening any action makes the stage pending again.
 - Default control size is **32px** through `PlanCardGeom.controlSize`; completion surfaces must not shrink it to a feature-local compact checkbox.
 - Hover, checked-state animation, border/radius, shadow, semantics, and hit target belong to `PlanCardCheckbox`; feature screens must not recreate them with raw Flutter `Checkbox`.
 - Row/layout owners align the checkbox with the first line of primary text. Secondary text below the title must not vertically re-center the checkbox.
