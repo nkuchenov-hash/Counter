@@ -1,0 +1,44 @@
+name: Temporary Paths hold-to-reorder fix
+
+on:
+  push:
+    branches:
+      - fix/paths-hold-to-reorder-20260904
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/paths-hold-to-reorder-20260904
+      - name: Apply hold-to-reorder patch
+        run: python scripts/tmp_fix_paths_hold_reorder.py
+      - name: Remove temporary files
+        run: |
+          rm scripts/tmp_fix_paths_hold_reorder.py
+          rm .github/workflows/tmp-fix-paths-hold-reorder.yml
+      - name: Set up Flutter 3.41.6
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.6'
+          channel: stable
+          cache: true
+      - name: Install dependencies
+        run: flutter pub get
+      - name: Format changed Dart
+        run: dart format lib/core/widgets/mouse_drag_scroll_behavior.dart lib/features/paths/paths_page.dart lib/features/paths/widgets/path_stage_card.dart lib/features/paths/widgets/path_edit_sheet.dart
+      - name: Analyze changed Dart
+        run: flutter analyze lib/core/widgets/mouse_drag_scroll_behavior.dart lib/features/paths/paths_page.dart lib/features/paths/widgets/path_stage_card.dart lib/features/paths/widgets/path_edit_sheet.dart
+      - name: Verify documentation parity
+        run: python scripts/audit/documentation_parity.py
+      - name: Commit final fix
+        run: |
+          git config user.name "nkuchenov-hash"
+          git config user.email "nkuchenov-hash@users.noreply.github.com"
+          git add -A
+          git commit -m "Match Paths movement to Plans and Notes"
+          git push origin HEAD:fix/paths-hold-to-reorder-20260904
