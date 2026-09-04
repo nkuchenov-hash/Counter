@@ -40,6 +40,7 @@ class AppReorderableList extends StatelessWidget {
     this.spacing = 8,
     this.physics,
     this.primary,
+    this.shrinkWrap = false,
   });
 
   final int itemCount;
@@ -53,6 +54,7 @@ class AppReorderableList extends StatelessWidget {
   final double spacing;
   final ScrollPhysics? physics;
   final bool? primary;
+  final bool shrinkWrap;
 
   @override
   Widget build(BuildContext context) {
@@ -81,6 +83,7 @@ class AppReorderableList extends StatelessWidget {
       padding: padding,
       physics: physics,
       primary: primary,
+      shrinkWrap: shrinkWrap,
     );
   }
 }
