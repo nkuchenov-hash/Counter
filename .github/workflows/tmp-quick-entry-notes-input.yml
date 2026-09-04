@@ -15,6 +15,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: fix/quick-entry-use-notes-input-20260904
+          fetch-depth: 0
       - name: Apply patch
         run: python scripts/tmp_quick_entry_notes_input.py
       - name: Remove temporary files
@@ -47,7 +48,7 @@ jobs:
         run: git checkout -- lib/config/env.dart || rm -f lib/config/env.dart
       - name: Check repository hygiene
         env:
-          STRUCTURE_GROWTH_BASE: main
+          STRUCTURE_GROWTH_BASE: origin/main
         run: python scripts/audit/repository_hygiene.py
       - name: Check documentation parity
         run: python scripts/audit/documentation_parity.py
