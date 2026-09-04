@@ -254,3 +254,8 @@ Allowed exceptions:
 ### Paths: Options + hold-to-move
 
 For ordered Path stages/items, show `more_horiz` as the visible Options affordance. Tap/click opens Edit; Options does **not** start movement. Hold the stage header to move the stage, and hold the action row to move the action, using `AppHoldToReorderListener`. Do not show a second drag glyph beside Options. Path item detail editing uses a sheet with formulation, final result, optional description/context, optional mini-checklist, and time estimate.
+
+
+## Desktop shell chrome
+
+On wide desktop layouts, the shell owns one shared top header for every primary section. Feature pages must not stack a second page AppBar/title above their content on desktop; feature-specific commands may remain in a compact secondary toolbar below the shared header. This rule applies to shell/menu chrome only and does not authorize redesigning feature cards, rows, editors, or other local controls. Phone and tablet chrome remain feature-adaptive unless separately specified.

@@ -2,39 +2,50 @@ part of '../app_shell.dart';
 
 mixin ShellChrome on ShellLifecycle, ShellMoreMenu, ShellVoiceInput {
   List<Widget> buildShellPages() => <Widget>[
-        timelineTabHost,
-        planningTabHost,
-        calendarTabHost,
-        listsTabHost,
-        StreamBuilder<List<CategoryRule>>(
-          stream: DatabaseService.instance.categoryStream,
-          initialData: rules,
-          builder: (context, snapshot) {
-            final r = snapshot.data ?? rules;
-            return CategoriesPage(
-              rules: r,
-              onChanged: () async {
-                if (mounted) {
-                  setState(() {
-                    rules = List.from(DatabaseService.instance.rules);
-                  });
-                }
-              },
-            );
+    timelineTabHost,
+    planningTabHost,
+    calendarTabHost,
+    listsTabHost,
+    StreamBuilder<List<CategoryRule>>(
+      stream: DatabaseService.instance.categoryStream,
+      initialData: rules,
+      builder: (context, snapshot) {
+        final r = snapshot.data ?? rules;
+        return CategoriesPage(
+          rules: r,
+          onChanged: () async {
+            if (mounted) {
+              setState(() {
+                rules = List.from(DatabaseService.instance.rules);
+              });
+            }
           },
-        ),
-        ProfilePage(
-          onSaved: () {
-            if (mounted) setState(() {});
-            unawaited(refreshDesktopTrayMenu());
-          },
-          onDesktopVoiceHotkeyChanged: (_) => reattachDesktopVoiceHotkey(),
-          onTestDesktopVoice: () {
-            unawaited(toggleDesktopVoiceWidget());
-          },
-        ),
-        const PathsPage(),
-      ];
+        );
+      },
+    ),
+    ProfilePage(
+      onSaved: () {
+        if (mounted) setState(() {});
+        unawaited(refreshDesktopTrayMenu());
+      },
+      onDesktopVoiceHotkeyChanged: (_) => reattachDesktopVoiceHotkey(),
+      onTestDesktopVoice: () {
+        unawaited(toggleDesktopVoiceWidget());
+      },
+    ),
+    const PathsPage(),
+  ];
+
+  String _desktopSectionTitle(String loc) => switch (shellPageIndex) {
+    0 => t(loc, 'tab_timeline'),
+    1 => t(loc, 'tab_planning'),
+    2 => t(loc, 'calendar'),
+    3 => t(loc, 'tab_lists'),
+    4 => t(loc, 'more_menu_categories'),
+    5 => t(loc, 'more_menu_profile'),
+    6 => loc.toLowerCase().startsWith('ru') ? 'Пути' : 'Paths',
+    _ => t(loc, 'app_title'),
+  };
 
   Widget buildShellDashboard(BuildContext context) {
     rebuildMetricsTick('AppShell');
@@ -56,6 +67,9 @@ mixin ShellChrome on ShellLifecycle, ShellMoreMenu, ShellVoiceInput {
             final scheme = Theme.of(context).colorScheme;
             shellLayout.applyShellFrame(shellPageIndex);
             final loc = currentLocale.value;
+            final desktopShell =
+                shellFormFactorForWidth(MediaQuery.sizeOf(context).width) ==
+                ShellFormFactor.desktop;
             final builtTabs = kShellDeferHiddenTabsUntilFirstFrame
                 ? 1
                 : pages.length;
@@ -84,29 +98,43 @@ mixin ShellChrome on ShellLifecycle, ShellMoreMenu, ShellVoiceInput {
                         child: Scaffold(
                           backgroundColor: scheme.surface,
                           resizeToAvoidBottomInset: true,
-                          appBar: shellPageIndex <= 3
+                          appBar: desktopShell || shellPageIndex <= 3
                               ? AppBar(
                                   toolbarHeight: kGlobalCompactHeaderHeight,
-                                  backgroundColor: kGlobalCompactHeaderColor,
-                                  foregroundColor:
-                                      kGlobalCompactHeaderForeground,
+                                  backgroundColor: desktopShell
+                                      ? scheme.surface
+                                      : kGlobalCompactHeaderColor,
+                                  foregroundColor: desktopShell
+                                      ? scheme.onSurface
+                                      : kGlobalCompactHeaderForeground,
                                   surfaceTintColor: Colors.transparent,
                                   automaticallyImplyLeading: false,
                                   elevation: 0,
                                   scrolledUnderElevation: 0,
                                   titleSpacing: 16,
+                                  shape: desktopShell
+                                      ? Border(
+                                          bottom: BorderSide(
+                                            color: scheme.outlineVariant
+                                                .withValues(alpha: 0.65),
+                                          ),
+                                        )
+                                      : null,
                                   title: Row(
                                     children: [
                                       Text(
-                                        t(loc, 'app_title'),
+                                        desktopShell
+                                            ? _desktopSectionTitle(loc)
+                                            : t(loc, 'app_title'),
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                         style: Theme.of(context)
                                             .textTheme
                                             .titleMedium
                                             ?.copyWith(
-                                              color:
-                                                  kGlobalCompactHeaderForeground,
+                                              color: desktopShell
+                                                  ? scheme.onSurface
+                                                  : kGlobalCompactHeaderForeground,
                                               fontWeight: FontWeight.w700,
                                               height: 1.0,
                                             ),
@@ -120,11 +148,14 @@ mixin ShellChrome on ShellLifecycle, ShellMoreMenu, ShellVoiceInput {
                                             listenable: selectedDateListenable,
                                             builder: (context, _) =>
                                                 GlobalAppHeader(
-                                              selectedDate: selectedDate,
-                                              onDateSelected:
-                                                  selectShellHeaderDate,
-                                              compact: true,
-                                            ),
+                                                  selectedDate: selectedDate,
+                                                  onDateSelected:
+                                                      selectShellHeaderDate,
+                                                  compact: true,
+                                                  foregroundColor: desktopShell
+                                                      ? scheme.onSurface
+                                                      : null,
+                                                ),
                                           ),
                                         ),
                                       ),
@@ -147,32 +178,32 @@ mixin ShellChrome on ShellLifecycle, ShellMoreMenu, ShellVoiceInput {
                                             children: pages,
                                           )
                                         : ShellFlags.useLazyIndexedStack
-                                            ? LazyIndexedStack(
-                                                index: shellPageIndex,
-                                                children: pages,
-                                              )
-                                            : IndexedStack(
-                                                index: shellPageIndex,
-                                                sizing: StackFit.expand,
-                                                children: pages,
-                                              ),
+                                        ? LazyIndexedStack(
+                                            index: shellPageIndex,
+                                            children: pages,
+                                          )
+                                        : IndexedStack(
+                                            index: shellPageIndex,
+                                            sizing: StackFit.expand,
+                                            children: pages,
+                                          ),
                                   ),
                                 ],
                               );
                               return switch (formFactor) {
                                 ShellFormFactor.desktop => DesktopShellFrame(
-                                    selectedIndex: desktopSideNavSelectedIndex(
-                                      shellPageIndex,
-                                    ),
-                                    onTabSelected: onDesktopSideNavSelected,
-                                    child: mainColumn,
+                                  selectedIndex: desktopSideNavSelectedIndex(
+                                    shellPageIndex,
                                   ),
+                                  onTabSelected: onDesktopSideNavSelected,
+                                  child: mainColumn,
+                                ),
                                 ShellFormFactor.tablet => TabletShellFrame(
-                                    child: mainColumn,
-                                  ),
+                                  child: mainColumn,
+                                ),
                                 ShellFormFactor.phone => PhoneShellFrame(
-                                    child: mainColumn,
-                                  ),
+                                  child: mainColumn,
+                                ),
                               };
                             },
                           ),
@@ -198,7 +229,7 @@ mixin ShellChrome on ShellLifecycle, ShellMoreMenu, ShellVoiceInput {
                                     padding: EdgeInsets.only(
                                       bottom:
                                           MediaQuery.paddingOf(context).bottom +
-                                              bulkReservePx,
+                                          bulkReservePx,
                                     ),
                                     child: child,
                                   );
@@ -257,11 +288,11 @@ mixin ShellChrome on ShellLifecycle, ShellMoreMenu, ShellVoiceInput {
                   actions: {
                     DesktopVoiceCommandIntent:
                         CallbackAction<DesktopVoiceCommandIntent>(
-                      onInvoke: (_) {
-                        unawaited(toggleDesktopVoiceWidget());
-                        return null;
-                      },
-                    ),
+                          onInvoke: (_) {
+                            unawaited(toggleDesktopVoiceWidget());
+                            return null;
+                          },
+                        ),
                   },
                   child: shell,
                 ),

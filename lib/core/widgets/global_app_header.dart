@@ -67,26 +67,29 @@ class GlobalAppHeader extends StatelessWidget {
     required this.onDateSelected,
     this.enabled = true,
     this.compact = false,
+    this.foregroundColor,
   });
 
   final DateTime selectedDate;
   final void Function(DateTime date) onDateSelected;
   final bool enabled;
   final bool compact;
+  final Color? foregroundColor;
 
   @override
   Widget build(BuildContext context) {
     rebuildMetricsTick('GlobalAppHeader');
     final loc = currentLocale.value;
+    final compactForeground = foregroundColor ?? kGlobalCompactHeaderForeground;
     final titleStyle = compact
         ? Theme.of(context).textTheme.titleSmall?.copyWith(
-                color: kGlobalCompactHeaderForeground,
+                color: compactForeground,
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
                 height: 1.1,
               ) ??
-              const TextStyle(
-                color: kGlobalCompactHeaderForeground,
+              TextStyle(
+                color: compactForeground,
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
                 height: 1.1,
@@ -94,7 +97,7 @@ class GlobalAppHeader extends StatelessWidget {
         : Theme.of(context).appBarTheme.titleTextStyle ??
               const TextStyle(fontSize: 20, fontWeight: FontWeight.w500);
     final clockStyle = titleStyle.copyWith(
-      color: compact ? kGlobalCompactHeaderForeground : titleStyle.color,
+      color: compact ? compactForeground : titleStyle.color,
       fontSize: compact ? 13 : 14,
       fontWeight: compact ? FontWeight.w600 : FontWeight.w400,
     );
@@ -104,10 +107,7 @@ class GlobalAppHeader extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       child: Padding(
-        padding: EdgeInsets.symmetric(
-          vertical: compact ? 2 : 4,
-          horizontal: 2,
-        ),
+        padding: EdgeInsets.symmetric(vertical: compact ? 2 : 4, horizontal: 2),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
