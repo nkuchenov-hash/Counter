@@ -555,12 +555,7 @@ class _PathsPageState extends State<PathsPage> {
     unawaited(_saveOptimistic(current, current.copyWith(stages: stages)));
   }
 
-  void _reorderActions(
-    ProjectPathSnapshot path,
-    int stageIndex,
-    int oldIndex,
-    int newIndex,
-  ) {
+  void _reorderActions(ProjectPathSnapshot path, int stageIndex, int oldIndex, int newIndex) {
     final current = _localPathById(path.pathId) ?? path;
     final stages = List<PathStageSnapshot>.from(current.stages);
     if (stageIndex < 0 || stageIndex >= stages.length) return;
@@ -569,8 +564,7 @@ class _PathsPageState extends State<PathsPage> {
     if (oldIndex < 0 || oldIndex >= actions.length) return;
     if (newIndex > oldIndex) newIndex -= 1;
     if (newIndex < 0 || newIndex >= actions.length || newIndex == oldIndex) return;
-    final moved = actions.removeAt(oldIndex);
-    actions.insert(newIndex, moved);
+    actions.insert(newIndex, actions.removeAt(oldIndex));
     stages[stageIndex] = stage.copyWith(actions: actions);
     unawaited(_saveOptimistic(current, current.copyWith(stages: stages)));
   }
@@ -860,18 +854,11 @@ class _PathsPageState extends State<PathsPage> {
             ),
           ]),
           const SizedBox(height: 6),
-          Text.rich(
-            TextSpan(
-              style: Theme.of(context).textTheme.bodyLarge,
-              children: [
-                TextSpan(
-                  text: _ru ? 'Цель: ' : 'Goal: ',
-                  style: const TextStyle(fontWeight: FontWeight.w800),
-                ),
-                TextSpan(text: path.goal),
-              ],
-            ),
-          ),
+          Text.rich(TextSpan(style: Theme.of(context).textTheme.bodyLarge, children: [
+            TextSpan(text: _ru ? 'Цель: ' : 'Goal: ',
+              style: const TextStyle(fontWeight: FontWeight.w800)),
+            TextSpan(text: path.goal),
+          ])),
           const SizedBox(height: 14),
         ],
       ),
@@ -976,28 +963,24 @@ class _PathsPageState extends State<PathsPage> {
     );
   }
 
-  Widget _actionRow(
-    ProjectPathSnapshot path,
-    int stageIndex,
-    int actionIndex,
-    Widget dragHandle,
-  ) {
+  Widget _actionRow(ProjectPathSnapshot path, int stageIndex, int actionIndex, Widget dragHandle) {
     final action = path.stages[stageIndex].actions[actionIndex];
     final theme = Theme.of(context), scheme = theme.colorScheme;
     return Container(
       padding: const EdgeInsets.fromLTRB(22, 14, 16, 14),
-      decoration: BoxDecoration(border: Border(bottom: BorderSide(color: scheme.outlineVariant.withValues(alpha: .55)))),
+      decoration: BoxDecoration(border: Border(bottom: BorderSide(
+        color: scheme.outlineVariant.withValues(alpha: .55)))),
       child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Padding(padding: const EdgeInsets.only(top: 1), child: PlanCardCheckbox(
-          selectMode: false, isSelected: false, displayIsDone: action.isDone, toggleDoneEnabled: true,
-          onToggleDone: () => _toggleAction(path, stageIndex, actionIndex, !action.isDone),
-        )),
+          selectMode: false, isSelected: false, displayIsDone: action.isDone,
+          toggleDoneEnabled: true, onToggleDone: () =>
+            _toggleAction(path, stageIndex, actionIndex, !action.isDone))),
         const SizedBox(width: 14),
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(action.text, style: theme.textTheme.bodyLarge?.copyWith(
             color: action.isDone ? scheme.onSurfaceVariant : scheme.onSurface,
-            decoration: action.isDone ? TextDecoration.lineThrough : null, fontWeight: FontWeight.w400,
-          )),
+            decoration: action.isDone ? TextDecoration.lineThrough : null,
+            fontWeight: FontWeight.w400)),
           if (action.expectedResult.isNotEmpty) ...[
             const SizedBox(height: 4),
             Text('${_ru ? 'Результат' : 'Output'}: ${action.expectedResult}',
@@ -1005,22 +988,12 @@ class _PathsPageState extends State<PathsPage> {
           ],
         ])),
         const SizedBox(width: 12),
-        Padding(
-          padding: const EdgeInsets.only(top: 2),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                '${action.minutes} ${_ru ? 'мин' : 'min'}',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: scheme.onSurfaceVariant,
-                ),
-              ),
-              const SizedBox(width: 4),
-              dragHandle,
-            ],
-          ),
-        ),
+        Padding(padding: const EdgeInsets.only(top: 2), child: Row(
+          mainAxisSize: MainAxisSize.min, children: [
+            Text('${action.minutes} ${_ru ? 'мин' : 'min'}',
+              style: theme.textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant)),
+            const SizedBox(width: 4), dragHandle,
+          ])),
       ]),
     );
   }
