@@ -1,0 +1,48 @@
+name: Temporary compact Paths layout fix
+
+on:
+  push:
+    branches:
+      - fix/paths-compact-headings-top-layout-20260904
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/paths-compact-headings-top-layout-20260904
+      - name: Apply compact Paths layout patch
+        run: python scripts/tmp_fix_paths_compact_top_layout.py
+      - name: Remove temporary files from tracked tree
+        run: |
+          git rm scripts/tmp_fix_paths_compact_top_layout.py
+          git rm .github/workflows/tmp-fix-paths-compact-top-layout.yml
+      - name: Set up Flutter 3.41.6
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.6'
+          channel: stable
+          cache: true
+      - name: Install dependencies
+        run: flutter pub get
+      - name: Restore unchanged dependency lockfile
+        run: git checkout -- pubspec.lock
+      - name: Format changed Dart
+        run: dart format lib/features/paths/paths_page.dart lib/features/paths/widgets/path_stage_card.dart lib/features/planning/widgets/planning_filter_controls.dart
+      - name: Analyze changed Dart
+        run: flutter analyze --no-fatal-infos lib/features/paths/paths_page.dart lib/features/paths/widgets/path_stage_card.dart lib/features/planning/widgets/planning_filter_controls.dart
+      - name: Verify documentation parity
+        run: python scripts/audit/documentation_parity.py
+      - name: Check whitespace
+        run: git diff --check
+      - name: Commit final fix
+        run: |
+          git config user.name "nkuchenov-hash"
+          git config user.email "nkuchenov-hash@users.noreply.github.com"
+          git add -A
+          git commit -m "Compact Paths headings and top spacing"
+          git push origin HEAD:fix/paths-compact-headings-top-layout-20260904
