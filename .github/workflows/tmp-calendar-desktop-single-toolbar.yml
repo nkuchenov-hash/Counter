@@ -27,8 +27,6 @@ jobs:
           flutter-version: '3.41.6'
           channel: stable
           cache: true
-      - name: Create env.dart
-        run: cp lib/env.example.dart lib/env.dart
       - name: Install dependencies
         run: flutter pub get
       - name: Restore lockfile
