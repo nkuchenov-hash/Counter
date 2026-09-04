@@ -1,0 +1,53 @@
+name: Temporary clean Paths structure manifest
+
+on:
+  push:
+    branches:
+      - fix/paths-variant2-structure-20260904
+
+permissions:
+  contents: write
+
+jobs:
+  regenerate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/paths-variant2-structure-20260904
+          fetch-depth: 0
+      - name: Restore canonical generator and align exclusions
+        run: |
+          git checkout origin/main -- scripts/manual/generate_app_structure_detailed.py
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('scripts/manual/generate_app_structure_detailed.py')
+          s = p.read_text()
+          old = '''def tracked() -> list[str]:
+              out = subprocess.check_output(["git", "ls-files"], cwd=ROOT, text=True)
+              return sorted(l.strip().replace("\\\\", "/") for l in out.splitlines() if l.strip())
+          '''
+          new = '''def tracked() -> list[str]:
+              out = subprocess.check_output(["git", "ls-files"], cwd=ROOT, text=True)
+              return sorted(
+                  path
+                  for line in out.splitlines()
+                  if (path := line.strip().replace("\\\\", "/"))
+                  and not path.startswith("marketing/")
+              )
+          '''
+          if s.count(old) != 1:
+              raise SystemExit(f'tracked() match count = {s.count(old)}')
+          p.write_text(s.replace(old, new, 1))
+          PY
+      - name: Remove this temporary workflow from tracked set
+        run: git rm .github/workflows/tmp-clean-regenerate-paths-structure.yml
+      - name: Regenerate detailed manifest
+        run: python scripts/manual/generate_app_structure_detailed.py
+      - name: Commit clean manifest
+        run: |
+          git config user.name "nkuchenov-hash"
+          git config user.email "nkuchenov-hash@users.noreply.github.com"
+          git add -A
+          git commit -m "Fix detailed structure generation parity"
+          git push origin HEAD:fix/paths-variant2-structure-20260904
