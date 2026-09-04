@@ -201,7 +201,7 @@ class _CalendarViewState extends State<CalendarView>
     unawaited(_onDayTapped(_selectedDay.add(Duration(days: delta))));
   }
 
-  void _openAddPlanForSelectedDay() {
+  void _openAddPlanForSelectedDay([String initialTitle = '']) {
     final d = _selectedDay;
     final dateKey = calendarDayKey(d);
     final categoryId =
@@ -213,7 +213,7 @@ class _CalendarViewState extends State<CalendarView>
     final draft = PlanningTask(
       id: 0,
       planRowId: null,
-      title: '',
+      title: initialTitle.trim(),
       categoryId: categoryId,
       isDone: false,
       dateKey: dateKey,
@@ -237,6 +237,7 @@ class _CalendarViewState extends State<CalendarView>
     final today = DatabaseService.instance.getTimelineDeviceLocalToday();
     final viewportW = MediaQuery.sizeOf(context).width;
     final showPills = calendarShowsEventPills(viewportW);
+    final desktopCalendar = viewportW >= kShellDesktopNavBreakpoint;
 
     final calendarArea = Padding(
       padding: EdgeInsets.fromLTRB(
@@ -245,7 +246,16 @@ class _CalendarViewState extends State<CalendarView>
         viewportW >= kShellDesktopNavBreakpoint ? 16 : 12,
         8,
       ),
-      child: _mode == CalendarViewMode.month
+      child: desktopCalendar && _dayFocusActive
+          ? CalendarWeekCompactStrip(
+              weekStart: calendarWeekStartMonday(_selectedDay),
+              selectedDay: _selectedDay,
+              today: today,
+              tasksByDay: _tasksByDayKey,
+              onDayTap: (d) => unawaited(_onDayTapped(d)),
+              minimal: true,
+            )
+          : _mode == CalendarViewMode.month
           ? CalendarMonthGrid(
               focusedMonth: _focusedMonth,
               highlightDay: _dayFocusActive ? _selectedDay : null,
@@ -255,6 +265,7 @@ class _CalendarViewState extends State<CalendarView>
               showEventPills: showPills,
               browsing: !_dayFocusActive,
               onDayTap: (d) => unawaited(_onDayTapped(d)),
+              currentMonthOnly: desktopCalendar,
             )
           : _dayFocusActive
           ? CalendarWeekCompactStrip(
@@ -316,7 +327,22 @@ class _CalendarViewState extends State<CalendarView>
             ),
             if (!_dayFocusActive)
               Expanded(child: calendarArea)
-            else ...[
+            else if (desktopCalendar) ...[
+              SizedBox(height: 58, child: calendarArea),
+              const Divider(height: 1),
+              Expanded(
+                child: CalendarSelectedDayTaskPanel(
+                  loc: loc,
+                  selectedDay: _selectedDay,
+                  stream: _dayStream,
+                  onCollapse: _collapseDayFocus,
+                  onEditTask: widget.onEditTask,
+                  onAddPlan: _openAddPlanForSelectedDay,
+                  onStartRecordFromTask: widget.onStartRecordFromTask,
+                  desktopQuickAdd: true,
+                ),
+              ),
+            ] else ...[
               Flexible(
                 flex: _mode == CalendarViewMode.week ? 2 : 4,
                 child: calendarArea,

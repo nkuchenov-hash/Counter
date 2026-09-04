@@ -87,8 +87,13 @@ class CalendarChromeHeader extends StatelessWidget {
 
     if (isWide) {
       final isRu = loc.toLowerCase().startsWith('ru');
+      final weekStart = calendarWeekStartMonday(selectedDay);
+      final weekEnd = weekStart.add(const Duration(days: 6));
+      final desktopTitle = dayFocusActive
+          ? '${DateFormat.MMMd(loc).format(weekStart)} – ${DateFormat.MMMd(loc).format(weekEnd)}'
+          : title;
       return Padding(
-        padding: const EdgeInsets.fromLTRB(24, 14, 24, 10),
+        padding: const EdgeInsets.fromLTRB(24, 8, 24, 8),
         child: SizedBox(
           height: 44,
           child: Row(
@@ -103,28 +108,44 @@ class CalendarChromeHeader extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 24),
-              IconButton(
-                icon: const Icon(Icons.chevron_left_rounded),
-                onPressed: onPrev,
-                visualDensity: VisualDensity.compact,
-              ),
-              ConstrainedBox(
-                constraints: const BoxConstraints(minWidth: 150, maxWidth: 260),
-                child: Text(
-                  title,
-                  textAlign: TextAlign.center,
-                  maxLines: 1,
-                  softWrap: false,
-                  overflow: TextOverflow.ellipsis,
-                  style: titleStyle,
+              Expanded(
+                child: Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.chevron_left_rounded),
+                      onPressed: onPrev,
+                      visualDensity: VisualDensity.compact,
+                    ),
+                    Expanded(
+                      child: Text(
+                        desktopTitle,
+                        textAlign: TextAlign.center,
+                        maxLines: 1,
+                        softWrap: false,
+                        overflow: TextOverflow.ellipsis,
+                        style: titleStyle,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.chevron_right_rounded),
+                      onPressed: onNext,
+                      visualDensity: VisualDensity.compact,
+                    ),
+                    if (showToday) ...[
+                      const SizedBox(width: 8),
+                      FilledButton.tonal(
+                        onPressed: onToday,
+                        style: FilledButton.styleFrom(
+                          visualDensity: VisualDensity.compact,
+                          padding: const EdgeInsets.symmetric(horizontal: 14),
+                        ),
+                        child: Text(t(loc, 'calendar_today')),
+                      ),
+                    ],
+                  ],
                 ),
               ),
-              IconButton(
-                icon: const Icon(Icons.chevron_right_rounded),
-                onPressed: onNext,
-                visualDensity: VisualDensity.compact,
-              ),
-              const SizedBox(width: 18),
+              const SizedBox(width: 24),
               SegmentedButton<_CalendarChromeView>(
                 segments: [
                   ButtonSegment(
@@ -147,16 +168,6 @@ class CalendarChromeHeader extends StatelessWidget {
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
               ),
-              const Spacer(),
-              if (showToday)
-                FilledButton.tonal(
-                  onPressed: onToday,
-                  style: FilledButton.styleFrom(
-                    visualDensity: VisualDensity.compact,
-                    padding: const EdgeInsets.symmetric(horizontal: 14),
-                  ),
-                  child: Text(t(loc, 'calendar_today')),
-                ),
             ],
           ),
         ),

@@ -18,6 +18,7 @@ class CalendarMonthGrid extends StatelessWidget {
     required this.showEventPills,
     required this.browsing,
     required this.onDayTap,
+    this.currentMonthOnly = false,
   });
 
   final DateTime focusedMonth;
@@ -28,18 +29,22 @@ class CalendarMonthGrid extends StatelessWidget {
   final bool showEventPills;
   final bool browsing;
   final ValueChanged<DateTime> onDayTap;
+  final bool currentMonthOnly;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final loc = currentLocale.value;
     final first = DateTime(focusedMonth.year, focusedMonth.month, 1);
+    final last = DateTime(focusedMonth.year, focusedMonth.month + 1, 0);
     final gridStart = first.subtract(Duration(days: first.weekday - 1));
+    final gridEnd = last.add(Duration(days: 7 - last.weekday));
+    final monthRowCount = currentMonthOnly
+        ? (gridEnd.difference(gridStart).inDays + 1) ~/ 7
+        : 6;
     final weekdayLabels = List<String>.generate(
       7,
-      (i) => DateFormat.E(loc).format(
-        DateTime(2024, 1, 1 + i),
-      ),
+      (i) => DateFormat.E(loc).format(DateTime(2024, 1, 1 + i)),
     );
 
     return Column(
@@ -52,9 +57,9 @@ class CalendarMonthGrid extends StatelessWidget {
                   child: Text(
                     label,
                     style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                          color: scheme.onSurfaceVariant,
-                          fontWeight: FontWeight.w600,
-                        ),
+                      color: scheme.onSurfaceVariant,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ),
@@ -64,43 +69,48 @@ class CalendarMonthGrid extends StatelessWidget {
         Expanded(
           child: LayoutBuilder(
             builder: (context, constraints) {
-              final cellH = constraints.maxHeight / 6;
+              final cellH = constraints.maxHeight / monthRowCount;
               final maxEvents = cellH >= 100
                   ? 4
                   : cellH >= 72
-                      ? 3
-                      : 2;
+                  ? 3
+                  : 2;
               return Stack(
                 children: [
                   Column(
                     children: [
-                      for (var row = 0; row < 6; row++)
+                      for (var row = 0; row < monthRowCount; row++)
                         SizedBox(
                           height: cellH,
                           child: Row(
                             children: [
                               for (var col = 0; col < 7; col++)
                                 Expanded(
-                                  child: CalendarMonthDayCell(
-                                    day: gridStart.add(
-                                      Duration(days: row * 7 + col),
-                                    ),
-                                    focusedMonth: focusedMonth,
-                                    highlightDay: highlightDay,
-                                    today: today,
-                                    tasks: tasksByDay[
-                                            calendarDayKey(
-                                              gridStart.add(
-                                                Duration(
-                                                  days: row * 7 + col,
-                                                ),
-                                              ),
-                                            )] ??
-                                        const [],
-                                    showEventPills: showEventPills,
-                                    maxVisibleEvents: maxEvents,
-                                    browsing: browsing,
-                                    onTap: onDayTap,
+                                  child: Builder(
+                                    builder: (context) {
+                                      final day = gridStart.add(
+                                        Duration(days: row * 7 + col),
+                                      );
+                                      final inFocusedMonth =
+                                          day.year == focusedMonth.year &&
+                                          day.month == focusedMonth.month;
+                                      if (currentMonthOnly && !inFocusedMonth) {
+                                        return const SizedBox.shrink();
+                                      }
+                                      return CalendarMonthDayCell(
+                                        day: day,
+                                        focusedMonth: focusedMonth,
+                                        highlightDay: highlightDay,
+                                        today: today,
+                                        tasks:
+                                            tasksByDay[calendarDayKey(day)] ??
+                                            const [],
+                                        showEventPills: showEventPills,
+                                        maxVisibleEvents: maxEvents,
+                                        browsing: browsing,
+                                        onTap: onDayTap,
+                                      );
+                                    },
                                   ),
                                 ),
                             ],
@@ -272,13 +282,13 @@ class _CalendarDayNumberBadge extends StatelessWidget {
             maxLines: 1,
             softWrap: false,
             style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  fontWeight: selected || isToday
-                      ? FontWeight.w700
-                      : FontWeight.w500,
-                  fontSize: 14,
-                  height: 1,
-                  color: fg,
-                ),
+              fontWeight: selected || isToday
+                  ? FontWeight.w700
+                  : FontWeight.w500,
+              fontSize: 14,
+              height: 1,
+              color: fg,
+            ),
           ),
         ),
       ),

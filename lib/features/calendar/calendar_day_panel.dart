@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:counter/core/widgets/app_button.dart';
+import 'package:counter/core/widgets/compact_nav_controls.dart';
 import 'package:counter/core/widgets/app_loading.dart';
 import 'package:counter/core/widgets/app_state_views.dart';
 import 'package:counter/core/widgets/plan_time_task_card.dart';
@@ -21,6 +22,7 @@ class CalendarSelectedDayTaskPanel extends StatelessWidget {
     required this.onEditTask,
     required this.onAddPlan,
     required this.onStartRecordFromTask,
+    this.desktopQuickAdd = false,
   });
 
   final String loc;
@@ -28,13 +30,15 @@ class CalendarSelectedDayTaskPanel extends StatelessWidget {
   final Stream<List<PlanningTask>>? stream;
   final VoidCallback onCollapse;
   final void Function(PlanningTask task) onEditTask;
-  final VoidCallback onAddPlan;
+  final ValueChanged<String> onAddPlan;
+  final bool desktopQuickAdd;
   final Future<void> Function(
     String title,
     int categoryId,
     String dateKey, {
     String? sourcePlanPocketRecordId,
-  }) onStartRecordFromTask;
+  })
+  onStartRecordFromTask;
 
   @override
   Widget build(BuildContext context) {
@@ -43,47 +47,48 @@ class CalendarSelectedDayTaskPanel extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(12, 8, 4, 4),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  title,
-                  maxLines: 1,
-                  softWrap: false,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: scheme.onSurface,
-                      ),
+        if (!desktopQuickAdd)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 8, 4, 4),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    title,
+                    maxLines: 1,
+                    softWrap: false,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: scheme.onSurface,
+                    ),
+                  ),
                 ),
-              ),
-              IconButton(
-                tooltip: t(loc, 'calendar_collapse'),
-                icon: const Icon(Icons.keyboard_arrow_up_rounded),
-                onPressed: onCollapse,
-              ),
-            ],
+                IconButton(
+                  tooltip: t(loc, 'calendar_collapse'),
+                  icon: const Icon(Icons.keyboard_arrow_up_rounded),
+                  onPressed: onCollapse,
+                ),
+              ],
+            ),
           ),
-        ),
         Padding(
-          padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
-          child: AppButton(
-            label: t(loc, 'calendar_add_plan'),
-            icon: Icons.add_rounded,
-            onPressed: onAddPlan,
-            expand: true,
-          ),
+          padding: EdgeInsets.fromLTRB(12, desktopQuickAdd ? 8 : 0, 12, 8),
+          child: desktopQuickAdd
+              ? _CalendarDayQuickAdd(loc: loc, onAddPlan: onAddPlan)
+              : AppButton(
+                  label: t(loc, 'calendar_add_plan'),
+                  icon: Icons.add_rounded,
+                  onPressed: () => onAddPlan(''),
+                  expand: true,
+                ),
         ),
         Expanded(
           child: StreamBuilder<List<PlanningTask>>(
             stream: stream,
             builder: (context, snapshot) {
               final all = snapshot.data ?? const <PlanningTask>[];
-              final scheduled = all
-                  .where((t) => t.startTime != null)
-                  .toList()
+              final scheduled = all.where((t) => t.startTime != null).toList()
                 ..sort((a, b) {
                   final as = a.startTime;
                   final bs = b.startTime;
@@ -114,14 +119,16 @@ class CalendarSelectedDayTaskPanel extends StatelessWidget {
                     if (et != null) return '${hhmm(st)} – ${hhmm(et)}';
                     return hhmm(st);
                   }
+
                   return PlanTimeTaskCard(
                     task: task,
                     density: planTimeCardDensityForList(task: task),
                     surface: PlanCardSurface.calendar,
                     timeLabel: timeLabel(),
                     displayIsDone: task.isDone,
-                    toggleDoneEnabled:
-                        !task.planRowIdForBackend.startsWith('optimistic-'),
+                    toggleDoneEnabled: !task.planRowIdForBackend.startsWith(
+                      'optimistic-',
+                    ),
                     onToggleDone: () {
                       final next = !task.isDone;
                       DatabaseService.instance.applyOptimisticPlanningTask(
@@ -142,7 +149,7 @@ class CalendarSelectedDayTaskPanel extends StatelessWidget {
                             final dateKey = task.startTime != null
                                 ? task.dateKey
                                 : DatabaseService.instance
-                                    .getTimelineDeviceLocalTodayDateKey();
+                                      .getTimelineDeviceLocalTodayDateKey();
                             unawaited(
                               onStartRecordFromTask(
                                 task.title,
@@ -150,8 +157,8 @@ class CalendarSelectedDayTaskPanel extends StatelessWidget {
                                 dateKey,
                                 sourcePlanPocketRecordId:
                                     DatabaseService.pocketRelationIdOrNull(
-                                  task.pocketRecordId,
-                                ),
+                                      task.pocketRecordId,
+                                    ),
                               ),
                             );
                           },
@@ -164,6 +171,51 @@ class CalendarSelectedDayTaskPanel extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _CalendarDayQuickAdd extends StatefulWidget {
+  const _CalendarDayQuickAdd({required this.loc, required this.onAddPlan});
+
+  final String loc;
+  final ValueChanged<String> onAddPlan;
+
+  @override
+  State<_CalendarDayQuickAdd> createState() => _CalendarDayQuickAddState();
+}
+
+class _CalendarDayQuickAddState extends State<_CalendarDayQuickAdd> {
+  final _controller = TextEditingController();
+  final _focusNode = FocusNode();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    final value = _controller.text.trim();
+    if (value.isEmpty) {
+      _focusNode.requestFocus();
+      return;
+    }
+    widget.onAddPlan(value);
+    _controller.clear();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AppQuickEntryRow(
+      controller: _controller,
+      focusNode: _focusNode,
+      hintText: t(widget.loc, 'calendar_add_plan'),
+      actionLabel: t(widget.loc, 'add'),
+      actionIcon: Icons.add_rounded,
+      onAction: _submit,
+      onSubmitted: (_) => _submit(),
     );
   }
 }
