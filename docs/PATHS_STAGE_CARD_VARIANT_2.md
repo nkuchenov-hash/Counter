@@ -39,7 +39,7 @@ Keep the Options control in the right-side header controls between progress and 
 - stage title: 20px, 800, line-height 1.18;
 - criteria: 14px, line-height 1.4;
 - progress pill: 30px high, 11px horizontal padding, 13px/800 text;
-- stage Options target: 36×36px; press-and-hold starts the canonical reorder gesture;
+- stage Options target: 36×36px; it is an editing control only;
 - chevron box: 28×28px;
 - action row padding: `14px 16px 14px 22px`;
 - completion checkbox: canonical 32px `PlanCardCheckbox`;
@@ -50,7 +50,7 @@ Keep the Options control in the right-side header controls between progress and 
 - action divider: `#E9ECEF`;
 - add-item footer padding: `8px 20px 10px`.
 
-Nested action reordering is an added behavior requirement. It must not redesign the approved row; use the same Options control as the quiet trailing control beside time, with press-and-hold invoking reorder.
+Nested action reordering is an added behavior requirement. It must not redesign the approved row; keep the Options control as the quiet trailing editing control beside time. Holding the action row itself invokes reorder.
 
 ## State colors
 
@@ -73,9 +73,9 @@ Both levels remain reorderable:
 
 Both use stable domain keys, canonical drag mechanics, immediate local reordering, and asynchronous Path revision persistence.
 
-## Options control and detailed editing
+## Options control, hold-to-move, and detailed editing
 
-The visible drag glyph is replaced by an **Options** control for every stage and every stage item. A normal click/tap opens editing. Holding the same control starts the canonical reorder gesture, so ordering remains available without a separate drag icon.
+The visible drag glyph is replaced by an **Options** control for every stage and every stage item. A normal click/tap opens editing. **Options never owns movement.** Paths uses the same surface hold-to-move model as Plans and Notes: hold the stage header for roughly 300 ms to move that stage; hold an action row for roughly 300 ms to move that action. The stage listener is scoped to the header so it does not compete with the nested action reorder surface.
 
 Stage editing changes the stage wording and completion criterion. Item editing owns four content levels: formulation, final expected result, optional description/context, and an optional mini-checklist. The Path heading is a first-class editable name, separate from the Path goal; both are revisioned with the rest of Path content.
 

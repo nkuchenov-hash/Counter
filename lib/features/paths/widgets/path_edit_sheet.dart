@@ -37,19 +37,19 @@ class PathActionEditDraft {
 
 enum _PathOptionAction { edit }
 
-/// Options is the visible affordance. Holding the same control starts the
-/// canonical reorder gesture, so Paths keeps drag ordering without exposing a
-/// separate drag icon.
-class PathOptionsReorderButton extends StatelessWidget {
-  const PathOptionsReorderButton({
+/// Visible Options affordance for a Path stage/item.
+///
+/// Movement is intentionally not attached to this button. Paths follows the
+/// same hold-to-move interaction as Plans and Notes: holding the stage header
+/// or item row starts reorder, while Options remains a normal editing menu.
+class PathOptionsButton extends StatelessWidget {
+  const PathOptionsButton({
     super.key,
-    required this.index,
     required this.ru,
     required this.onEdit,
     this.tooltip,
   });
 
-  final int index;
   final bool ru;
   final VoidCallback onEdit;
   final String? tooltip;
@@ -58,33 +58,29 @@ class PathOptionsReorderButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = Theme.of(context).colorScheme.onSurfaceVariant;
     final label = tooltip ?? (ru ? 'Опции' : 'Options');
-    return ReorderableDelayedDragStartListener(
-      index: index,
-      child: PopupMenuButton<_PathOptionAction>(
-        tooltip:
-            '$label · ${ru ? 'удерживайте для перемещения' : 'hold to reorder'}',
-        position: PopupMenuPosition.under,
-        onSelected: (value) {
-          if (value == _PathOptionAction.edit) onEdit();
-        },
-        itemBuilder: (context) => [
-          PopupMenuItem<_PathOptionAction>(
-            value: _PathOptionAction.edit,
-            child: Row(
-              children: [
-                const Icon(Icons.edit_outlined, size: 19),
-                const SizedBox(width: 10),
-                Text(ru ? 'Изменить' : 'Edit'),
-              ],
-            ),
+    return PopupMenuButton<_PathOptionAction>(
+      tooltip: label,
+      position: PopupMenuPosition.under,
+      onSelected: (value) {
+        if (value == _PathOptionAction.edit) onEdit();
+      },
+      itemBuilder: (context) => [
+        PopupMenuItem<_PathOptionAction>(
+          value: _PathOptionAction.edit,
+          child: Row(
+            children: [
+              const Icon(Icons.edit_outlined, size: 19),
+              const SizedBox(width: 10),
+              Text(ru ? 'Изменить' : 'Edit'),
+            ],
           ),
-        ],
-        child: MouseRegion(
-          cursor: SystemMouseCursors.basic,
-          child: SizedBox.square(
-            dimension: 36,
-            child: Icon(Icons.more_horiz_rounded, size: 21, color: color),
-          ),
+        ),
+      ],
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: SizedBox.square(
+          dimension: 36,
+          child: Icon(Icons.more_horiz_rounded, size: 21, color: color),
         ),
       ),
     );

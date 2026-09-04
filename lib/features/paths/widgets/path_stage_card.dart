@@ -132,7 +132,10 @@ class _PathStageCardState extends State<PathStageCard> {
             Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                _header(theme, stateColor, doneCount),
+                AppHoldToReorderListener(
+                  index: widget.index,
+                  child: _header(theme, stateColor, doneCount),
+                ),
                 if (_expanded) _body(theme),
               ],
             ),
@@ -224,8 +227,7 @@ class _PathStageCardState extends State<PathStageCard> {
         dragLabelBuilder: (actionIndex) => widget.ru
             ? 'Перетащить пункт ${actionIndex + 1}'
             : 'Reorder item ${actionIndex + 1}',
-        dragHandleBuilder: (context, actionIndex) => PathOptionsReorderButton(
-          index: actionIndex,
+        dragHandleBuilder: (context, actionIndex) => PathOptionsButton(
           ru: widget.ru,
           tooltip: widget.ru ? 'Опции пункта' : 'Item options',
           onEdit: () => widget.onEditAction(actionIndex),
@@ -247,16 +249,20 @@ class _PathStageCardState extends State<PathStageCard> {
             ),
           ),
         ),
-        itemBuilder: (context, actionIndex, actionDragHandle) => _PathActionRow(
-          action: widget.stage.actions[actionIndex],
-          ru: widget.ru,
-          dragHandle: actionDragHandle,
-          textColor: _text(theme),
-          mutedColor: _muted(theme),
-          dividerColor: _outlineSoft(theme),
-          onToggle: (done) => widget.onToggleAction(actionIndex, done),
-          onEdit: () => widget.onEditAction(actionIndex),
-        ),
+        itemBuilder: (context, actionIndex, actionDragHandle) =>
+            AppHoldToReorderListener(
+              index: actionIndex,
+              child: _PathActionRow(
+                action: widget.stage.actions[actionIndex],
+                ru: widget.ru,
+                dragHandle: actionDragHandle,
+                textColor: _text(theme),
+                mutedColor: _muted(theme),
+                dividerColor: _outlineSoft(theme),
+                onToggle: (done) => widget.onToggleAction(actionIndex, done),
+                onEdit: () => widget.onEditAction(actionIndex),
+              ),
+            ),
       ),
     );
   }

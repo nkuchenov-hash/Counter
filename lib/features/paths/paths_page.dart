@@ -907,8 +907,7 @@ class _PathsPageState extends State<PathsPage> {
           ValueKey('path-stage-${path.pathId}-${path.stages[index].id}'),
       dragLabelBuilder: (index) =>
           _ru ? 'Перетащить этап ${index + 1}' : 'Reorder stage ${index + 1}',
-      dragHandleBuilder: (context, index) => PathOptionsReorderButton(
-        index: index,
+      dragHandleBuilder: (context, index) => PathOptionsButton(
         ru: _ru,
         tooltip: _ru ? 'Опции этапа' : 'Stage options',
         onEdit: () => unawaited(_editStage(path, index)),

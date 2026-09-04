@@ -22,6 +22,29 @@ typedef AppReorderLabelBuilder = String Function(int index);
 typedef AppReorderHandleBuilder =
     Widget Function(BuildContext context, int index);
 
+const Duration kAppHoldToReorderDelay = Duration(milliseconds: 300);
+
+/// Arms reorder only after a short hold on the item surface.
+///
+/// This matches the interaction used by Plan cards and Notes blocks: a normal
+/// tap/click remains available to the feature, while holding the surface for
+/// roughly 300 ms starts movement without requiring a visible drag handle.
+class AppHoldToReorderListener extends ReorderableDragStartListener {
+  const AppHoldToReorderListener({
+    super.key,
+    required super.index,
+    required super.child,
+    this.delay = kAppHoldToReorderDelay,
+  });
+
+  final Duration delay;
+
+  @override
+  MultiDragGestureRecognizer createRecognizer() {
+    return DelayedMultiDragGestureRecognizer(delay: delay, debugOwner: this);
+  }
+}
+
 /// Canonical vertical reorder surface for app-owned ordered collections.
 ///
 /// The feature owns the item surface. This helper owns the discoverable drag
