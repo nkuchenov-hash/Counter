@@ -5,7 +5,7 @@ The Path detail screen uses the approved Variant 2 stage anatomy. This is a stru
 ## Page hierarchy
 
 1. Category breadcrumb.
-2. Compact Path heading.
+2. Compact Path heading; the feature must not promote it above the restrained `titleLarge` hierarchy.
 3. Goal line with the `Цель:` / `Goal:` label emphasized.
 4. Ordered stage cards.
 5. Add-stage action.
