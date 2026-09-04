@@ -169,7 +169,8 @@ mixin ShellChrome on ShellLifecycle, ShellMoreMenu, ShellVoiceInput {
                               final mainColumn = Column(
                                 children: [
                                   const ShellTopStatusBars(),
-                                  if (formFactor == ShellFormFactor.desktop)
+                                  if (formFactor == ShellFormFactor.desktop &&
+                                      shellPageIndex != 2)
                                     Padding(
                                       padding: const EdgeInsets.fromLTRB(
                                         24,

@@ -4,7 +4,10 @@ import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-/// Month/week mode toggle, prev/next, Today, collapse — top chrome row.
+enum _CalendarChromeView { month, week, day }
+
+/// Calendar navigation chrome. Desktop uses one compact row; phone/tablet keep
+/// the existing two-row layout.
 class CalendarChromeHeader extends StatelessWidget {
   const CalendarChromeHeader({
     super.key,
@@ -16,6 +19,7 @@ class CalendarChromeHeader extends StatelessWidget {
     required this.weekAnchor,
     required this.dayFocusActive,
     required this.onModeChanged,
+    required this.onDaySelected,
     required this.onPrev,
     required this.onNext,
     required this.onToday,
@@ -31,6 +35,7 @@ class CalendarChromeHeader extends StatelessWidget {
   final DateTime weekAnchor;
   final bool dayFocusActive;
   final ValueChanged<CalendarViewMode> onModeChanged;
+  final VoidCallback onDaySelected;
   final VoidCallback onPrev;
   final VoidCallback onNext;
   final VoidCallback onToday;
@@ -38,6 +43,9 @@ class CalendarChromeHeader extends StatelessWidget {
   final bool showToday;
 
   String _title(bool compact) {
+    if (!compact && dayFocusActive) {
+      return DateFormat.yMMMEd(loc).format(selectedDay);
+    }
     if (mode == CalendarViewMode.month) {
       return calendarMonthHeaderTitle(focusedMonth, loc);
     }
@@ -51,6 +59,24 @@ class CalendarChromeHeader extends StatelessWidget {
     return '${DateFormat.MMMd(loc).format(start)} – ${DateFormat.MMMd(loc).format(end)}';
   }
 
+  _CalendarChromeView get _desktopSelection {
+    if (dayFocusActive) return _CalendarChromeView.day;
+    return mode == CalendarViewMode.month
+        ? _CalendarChromeView.month
+        : _CalendarChromeView.week;
+  }
+
+  void _onDesktopSelection(Set<_CalendarChromeView> selection) {
+    switch (selection.first) {
+      case _CalendarChromeView.month:
+        onModeChanged(CalendarViewMode.month);
+      case _CalendarChromeView.week:
+        onModeChanged(CalendarViewMode.week);
+      case _CalendarChromeView.day:
+        onDaySelected();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final viewportW = MediaQuery.sizeOf(context).width;
@@ -58,15 +84,88 @@ class CalendarChromeHeader extends StatelessWidget {
     final isWide = viewportW >= kShellDesktopNavBreakpoint;
     final title = _title(compact);
     final titleStyle = calendarHeaderTitleStyle(context, compact: compact);
-    final sidePad = dayFocusActive ? (compact ? 88.0 : 96.0) : 48.0;
 
+    if (isWide) {
+      final isRu = loc.toLowerCase().startsWith('ru');
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(24, 14, 24, 10),
+        child: SizedBox(
+          height: 44,
+          child: Row(
+            children: [
+              Text(
+                t(loc, 'calendar'),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  height: 1.1,
+                ),
+              ),
+              const SizedBox(width: 24),
+              IconButton(
+                icon: const Icon(Icons.chevron_left_rounded),
+                onPressed: onPrev,
+                visualDensity: VisualDensity.compact,
+              ),
+              ConstrainedBox(
+                constraints: const BoxConstraints(minWidth: 150, maxWidth: 260),
+                child: Text(
+                  title,
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  softWrap: false,
+                  overflow: TextOverflow.ellipsis,
+                  style: titleStyle,
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.chevron_right_rounded),
+                onPressed: onNext,
+                visualDensity: VisualDensity.compact,
+              ),
+              const SizedBox(width: 18),
+              SegmentedButton<_CalendarChromeView>(
+                segments: [
+                  ButtonSegment(
+                    value: _CalendarChromeView.month,
+                    label: Text(t(loc, 'calendar_month_view')),
+                  ),
+                  ButtonSegment(
+                    value: _CalendarChromeView.week,
+                    label: Text(t(loc, 'calendar_week_view')),
+                  ),
+                  ButtonSegment(
+                    value: _CalendarChromeView.day,
+                    label: Text(isRu ? 'День' : 'Day'),
+                  ),
+                ],
+                selected: {_desktopSelection},
+                onSelectionChanged: _onDesktopSelection,
+                style: const ButtonStyle(
+                  visualDensity: VisualDensity.compact,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+              ),
+              const Spacer(),
+              if (showToday)
+                FilledButton.tonal(
+                  onPressed: onToday,
+                  style: FilledButton.styleFrom(
+                    visualDensity: VisualDensity.compact,
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                  ),
+                  child: Text(t(loc, 'calendar_today')),
+                ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final sidePad = dayFocusActive ? (compact ? 88.0 : 96.0) : 48.0;
     return Padding(
-      padding: EdgeInsets.fromLTRB(
-        isWide ? 16 : 8,
-        isWide ? 12 : 8,
-        isWide ? 16 : 8,
-        4,
-      ),
+      padding: const EdgeInsets.fromLTRB(8, 8, 8, 4),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -137,7 +236,7 @@ class CalendarChromeHeader extends StatelessWidget {
                 ],
                 selected: {mode},
                 onSelectionChanged: (s) => onModeChanged(s.first),
-                style: ButtonStyle(
+                style: const ButtonStyle(
                   visualDensity: VisualDensity.compact,
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
