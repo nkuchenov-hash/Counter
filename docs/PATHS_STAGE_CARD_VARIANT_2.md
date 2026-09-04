@@ -1,52 +1,74 @@
 # Paths stage card — approved Variant 2
 
-The Path detail screen uses the approved Variant 2 stage anatomy. This is a structural contract, not a color-only treatment of the previous `ExpansionTile`. The production card must use the explicit anatomy below; wrapping the old `ExpansionTile` in new colors is not an acceptable implementation of this variant.
-
-The canonical implementation is `lib/features/paths/widgets/path_stage_card.dart`; `lib/features/paths/paths_page.dart` composes it and owns Path-level actions and persistence.
+The approved HTML mockup is the visual source of truth for the Path detail screen. Flutter must port that layout literally rather than reinterpret it or restyle an older card anatomy.
 
 ## Page hierarchy
 
 1. Category breadcrumb.
-2. Compact Path heading; the feature must not promote it above the restrained `titleLarge` hierarchy.
-3. Goal line with the `Цель:` / `Goal:` label emphasized.
+2. Compact Path heading; do not promote it to an oversized feature-local heading.
+3. Goal line with the `Цель:` / `Goal:` label emphasized in bold.
 4. Ordered stage cards.
 5. Add-stage action.
 
 The former executable-structure status chip is not part of the page.
 
-## Stage anatomy
+## Literal stage anatomy
 
-Each stage card has:
+The approved HTML order is:
 
-- a subtle rounded surface and 4px state accent rail on the far left;
-- a separate soft header zone with a bottom divider;
-- the canonical stage drag handle at the far left of the header;
-- a numbered circular badge followed by the stage title;
-- completion criteria directly below the title, aligned with the title text rather than the drag handle;
-- progress pill plus expand/collapse chevron at the right;
-- a quieter white body containing ordered actions;
-- action rows with canonical completion checkbox, regular-weight action text, muted result text, time, and canonical action drag handle;
-- `Добавить пункт` / `Add item` at the bottom of the body.
+- 4px state rail on the far left of the whole card;
+- soft header zone;
+- main header block = 34px number badge + 12px gap + title/criteria block;
+- right header controls = progress pill + 6px gap + stage drag handle + 6px gap + chevron;
+- bottom divider;
+- white action body;
+- add-item footer.
 
-Pending stages are expanded by default so the Path can be read as one structured document. Completed stages collapse by default. Reopening an action reopens its stage.
+Do not move the stage drag handle to the far left. The approved HTML places it in the right-side header controls between progress and chevron.
 
-## State color
+## Literal light-theme metrics
 
-- completed stage: green;
-- current stage: amber;
-- later pending stage: theme primary/brand accent.
+- card radius: 14px;
+- card border: `#DDE1E6`;
+- card shadow: `0 3px 12px rgba(20,24,28,.07)`;
+- card-to-card gap: 12px;
+- stage header padding: `12px 12px 12px 18px`;
+- header main/side gap: 14px;
+- number badge: 34×34px;
+- title-to-criteria gap: 5px;
+- stage title: 20px, 800, line-height 1.18;
+- criteria: 14px, line-height 1.4;
+- progress pill: 30px high, 11px horizontal padding, 13px/800 text;
+- stage drag target: canonical 36×36px `AppReorderHandle`;
+- chevron box: 28×28px;
+- action row padding: `14px 16px 14px 22px`;
+- completion checkbox: canonical 32px `PlanCardCheckbox`;
+- checkbox/text gap: 14px;
+- action text: 16px, 400, line-height 1.35;
+- result text: 14px, line-height 1.35, 4px below action text;
+- minutes: 13px, 4px top alignment;
+- action divider: `#E9ECEF`;
+- add-item footer padding: `8px 20px 10px`.
 
-State color is an accent. It must not turn the whole card into a saturated block.
+Nested action reordering is an added behavior requirement. It must not redesign the approved row; use the canonical action drag handle as a quiet trailing control beside time.
 
-## Typography
+## State colors
 
-Stage titles use the restrained theme `titleMedium` hierarchy. Action text uses normal body weight. The stage card must not introduce oversized feature-local headings.
+Use the HTML state system in light theme:
 
-## Reorder behavior
+- completed: `#2E9F58` green;
+- current: `#D89614` amber;
+- later pending: `#8C949E` neutral.
 
-Both levels are reorderable:
+State color is an accent only. Completed/current header tints remain subtle; the whole card must never become a saturated state block.
+
+## Behavior
+
+Pending stages are expanded by default. Completed stages collapse by default. Reopening an action reopens its stage.
+
+Both levels remain reorderable:
 
 - stages reorder in the outer `AppReorderableList`;
-- actions reorder in a nested `AppReorderableList`.
+- actions reorder in the nested `AppReorderableList`.
 
-Both use stable domain keys, canonical `AppReorderHandle`, immediate local order updates, and asynchronous Path revision persistence.
+Both use stable domain keys, canonical drag mechanics, immediate local reordering, and asynchronous Path revision persistence.

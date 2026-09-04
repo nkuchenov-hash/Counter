@@ -7,11 +7,10 @@ import 'package:flutter/material.dart';
 typedef PathActionToggle = void Function(int actionIndex, bool done);
 typedef PathActionReorder = void Function(int oldIndex, int newIndex);
 
-/// Variant-2 Path stage surface.
+/// Literal Flutter port of the approved Paths Variant-2 HTML card.
 ///
-/// Structure is intentionally explicit rather than based on [ExpansionTile]:
-/// drag handle at the far left, number/title + completion criteria in the
-/// center, progress + chevron at the right, then a quieter action body.
+/// Light-theme geometry, spacing, radii, shadows, typography, state tints,
+/// control order, and row anatomy intentionally mirror the approved HTML.
 class PathStageCard extends StatefulWidget {
   const PathStageCard({
     super.key,
@@ -41,6 +40,14 @@ class PathStageCard extends StatefulWidget {
 }
 
 class _PathStageCardState extends State<PathStageCard> {
+  static const _htmlText = Color(0xFF1F2328);
+  static const _htmlMuted = Color(0xFF6F7782);
+  static const _htmlOutline = Color(0xFFDDE1E6);
+  static const _htmlOutlineSoft = Color(0xFFE9ECEF);
+  static const _htmlGreen = Color(0xFF2E9F58);
+  static const _htmlAmber = Color(0xFFD89614);
+  static const _htmlNeutral = Color(0xFF8C949E);
+
   late bool _expanded;
 
   @override
@@ -59,52 +66,67 @@ class _PathStageCardState extends State<PathStageCard> {
     }
   }
 
-  Color _accent(ColorScheme scheme) {
-    if (widget.stage.isDone) return Colors.green.shade600;
-    if (widget.current) return Colors.amber.shade700;
-    return scheme.primary;
+  bool _light(ThemeData theme) => theme.brightness == Brightness.light;
+
+  Color _stateColor() {
+    if (widget.stage.isDone) return _htmlGreen;
+    if (widget.current) return _htmlAmber;
+    return _htmlNeutral;
   }
 
-  Color _headerColor(ThemeData theme, Color accent) {
-    final scheme = theme.colorScheme;
-    final base = theme.brightness == Brightness.dark
-        ? scheme.surfaceContainerHigh
-        : scheme.surfaceContainerLow;
-    final tint = widget.stage.isDone || widget.current ? .045 : .018;
-    return Color.alphaBlend(accent.withValues(alpha: tint), base);
+  Color _headerColor(ThemeData theme) {
+    final state = _stateColor();
+    if (_light(theme)) {
+      final alpha = widget.stage.isDone || widget.current ? .075 : .08;
+      return Color.alphaBlend(state.withValues(alpha: alpha), Colors.white);
+    }
+    final base = theme.colorScheme.surfaceContainerLow;
+    final alpha = widget.stage.isDone || widget.current ? .09 : .08;
+    return Color.alphaBlend(state.withValues(alpha: alpha), base);
   }
+
+  Color _outline(ThemeData theme) =>
+      _light(theme) ? _htmlOutline : theme.colorScheme.outlineVariant;
+
+  Color _outlineSoft(ThemeData theme) => _light(theme)
+      ? _htmlOutlineSoft
+      : theme.colorScheme.outlineVariant.withValues(alpha: .55);
+
+  Color _text(ThemeData theme) =>
+      _light(theme) ? _htmlText : theme.colorScheme.onSurface;
+
+  Color _muted(ThemeData theme) =>
+      _light(theme) ? _htmlMuted : theme.colorScheme.onSurfaceVariant;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
-    final accent = _accent(scheme);
+    final stateColor = _stateColor();
     final doneCount = widget.stage.actions.where((action) => action.isDone).length;
-    final shadow = theme.brightness == Brightness.dark
-        ? const <BoxShadow>[]
-        : <BoxShadow>[
-            BoxShadow(
-              color: Colors.black.withValues(alpha: .035),
-              blurRadius: 24,
-              offset: const Offset(0, 8),
-            ),
-          ];
 
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: scheme.surface,
-        border: Border.all(color: scheme.outlineVariant),
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: shadow,
+        color: theme.colorScheme.surface,
+        border: Border.all(color: _outline(theme)),
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: _light(theme)
+            ? const [
+                BoxShadow(
+                  color: Color.fromRGBO(20, 24, 28, .07),
+                  blurRadius: 12,
+                  offset: Offset(0, 3),
+                ),
+              ]
+            : const [],
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(17),
+        borderRadius: BorderRadius.circular(13),
         child: Stack(
           children: [
             Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                _header(theme, accent, doneCount),
+                _header(theme, stateColor, doneCount),
                 if (_expanded) _body(theme),
               ],
             ),
@@ -112,7 +134,10 @@ class _PathStageCardState extends State<PathStageCard> {
               left: 0,
               top: 0,
               bottom: 0,
-              child: SizedBox(width: 4, child: ColoredBox(color: accent)),
+              child: SizedBox(
+                width: 4,
+                child: ColoredBox(color: stateColor),
+              ),
             ),
           ],
         ),
@@ -120,57 +145,50 @@ class _PathStageCardState extends State<PathStageCard> {
     );
   }
 
-  Widget _header(ThemeData theme, Color accent, int doneCount) {
-    final scheme = theme.colorScheme;
+  Widget _header(ThemeData theme, Color stateColor, int doneCount) {
     final criteria = '${widget.ru ? 'Критерий завершения' : 'Completion criteria'}: '
         '${widget.stage.completionCriteria}';
 
     return Material(
-      color: _headerColor(theme, accent),
+      color: _headerColor(theme),
       child: InkWell(
         onTap: () => setState(() => _expanded = !_expanded),
         child: Container(
           width: double.infinity,
-          padding: const EdgeInsets.fromLTRB(16, 18, 16, 17),
+          padding: const EdgeInsets.fromLTRB(18, 12, 12, 12),
           decoration: BoxDecoration(
-            border: Border(
-              bottom: BorderSide(color: scheme.outlineVariant),
-            ),
+            border: Border(bottom: BorderSide(color: _outlineSoft(theme))),
           ),
           child: LayoutBuilder(
             builder: (context, constraints) {
-              final compact = constraints.maxWidth < 680;
+              final compact = constraints.maxWidth <= 760;
               final main = _StageHeaderMain(
                 index: widget.index,
                 title: widget.stage.title,
                 criteria: criteria,
-                accent: accent,
                 done: widget.stage.isDone,
+                current: widget.current,
+                compact: compact,
+                textColor: _text(theme),
+                mutedColor: _muted(theme),
               );
               final side = _StageHeaderSide(
                 expanded: _expanded,
                 done: widget.stage.isDone,
+                current: widget.current,
                 doneCount: doneCount,
                 totalCount: widget.stage.actions.length,
-                accent: accent,
+                dragHandle: widget.stageDragHandle,
+                mutedColor: _muted(theme),
               );
 
               if (compact) {
-                return Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    widget.stageDragHandle,
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          main,
-                          const SizedBox(height: 10),
-                          Align(alignment: Alignment.centerLeft, child: side),
-                        ],
-                      ),
-                    ),
+                    main,
+                    const SizedBox(height: 12),
+                    Align(alignment: Alignment.centerRight, child: side),
                   ],
                 );
               }
@@ -178,10 +196,8 @@ class _PathStageCardState extends State<PathStageCard> {
               return Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  widget.stageDragHandle,
-                  const SizedBox(width: 8),
                   Expanded(child: main),
-                  const SizedBox(width: 16),
+                  const SizedBox(width: 14),
                   side,
                 ],
               );
@@ -193,45 +209,44 @@ class _PathStageCardState extends State<PathStageCard> {
   }
 
   Widget _body(ThemeData theme) {
-    final scheme = theme.colorScheme;
     return ColoredBox(
-      color: scheme.surface,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 8, 14, 10),
-        child: AppReorderableList(
-          itemCount: widget.stage.actions.length,
-          itemKeyBuilder: (actionIndex) => ValueKey(
-            'path-action-${widget.pathId}-${widget.stage.id}-'
-            '${widget.stage.actions[actionIndex].id}',
-          ),
-          dragLabelBuilder: (actionIndex) => widget.ru
-              ? 'Перетащить пункт ${actionIndex + 1}'
-              : 'Reorder item ${actionIndex + 1}',
-          onReorder: widget.onReorderAction,
-          spacing: 0,
-          shrinkWrap: true,
-          primary: false,
-          physics: const NeverScrollableScrollPhysics(),
-          footer: Padding(
-            padding: const EdgeInsets.only(top: 6, left: 4),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: AppButton.ghost(
-                label: widget.ru ? 'Добавить пункт' : 'Add item',
-                icon: Icons.add_rounded,
-                size: AppButtonSize.s,
-                onPressed: widget.onAddAction,
-              ),
+      color: theme.colorScheme.surface,
+      child: AppReorderableList(
+        itemCount: widget.stage.actions.length,
+        itemKeyBuilder: (actionIndex) => ValueKey(
+          'path-action-${widget.pathId}-${widget.stage.id}-'
+          '${widget.stage.actions[actionIndex].id}',
+        ),
+        dragLabelBuilder: (actionIndex) => widget.ru
+            ? 'Перетащить пункт ${actionIndex + 1}'
+            : 'Reorder item ${actionIndex + 1}',
+        onReorder: widget.onReorderAction,
+        spacing: 0,
+        shrinkWrap: true,
+        primary: false,
+        physics: const NeverScrollableScrollPhysics(),
+        footer: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 10),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: AppButton.ghost(
+              label: widget.ru ? 'Добавить пункт' : 'Add item',
+              icon: Icons.add_rounded,
+              size: AppButtonSize.s,
+              onPressed: widget.onAddAction,
             ),
           ),
-          itemBuilder: (context, actionIndex, actionDragHandle) =>
-              _PathActionRow(
-                action: widget.stage.actions[actionIndex],
-                ru: widget.ru,
-                dragHandle: actionDragHandle,
-                onToggle: (done) => widget.onToggleAction(actionIndex, done),
-              ),
         ),
+        itemBuilder: (context, actionIndex, actionDragHandle) =>
+            _PathActionRow(
+              action: widget.stage.actions[actionIndex],
+              ru: widget.ru,
+              dragHandle: actionDragHandle,
+              textColor: _text(theme),
+              mutedColor: _muted(theme),
+              dividerColor: _outlineSoft(theme),
+              onToggle: (done) => widget.onToggleAction(actionIndex, done),
+            ),
       ),
     );
   }
@@ -242,64 +257,82 @@ class _StageHeaderMain extends StatelessWidget {
     required this.index,
     required this.title,
     required this.criteria,
-    required this.accent,
     required this.done,
+    required this.current,
+    required this.compact,
+    required this.textColor,
+    required this.mutedColor,
   });
 
   final int index;
   final String title;
   final String criteria;
-  final Color accent;
   final bool done;
+  final bool current;
+  final bool compact;
+  final Color textColor;
+  final Color mutedColor;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    final badgeBackground = done
+        ? _PathStageCardState._htmlGreen.withValues(alpha: .13)
+        : current
+            ? _PathStageCardState._htmlAmber.withValues(alpha: .14)
+            : _PathStageCardState._htmlNeutral.withValues(alpha: .13);
+    final badgeText = done ? _PathStageCardState._htmlGreen : textColor;
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Container(
-              width: 34,
-              height: 34,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: accent.withValues(alpha: .13),
-                shape: BoxShape.circle,
-              ),
-              child: Text(
-                '${index + 1}',
-                style: theme.textTheme.labelLarge?.copyWith(
-                  color: accent,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                title,
-                style: theme.textTheme.titleMedium?.copyWith(
-                  color: done ? Colors.green.shade700 : scheme.onSurface,
-                  fontWeight: FontWeight.w800,
-                  height: 1.25,
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 7),
-        Padding(
-          padding: const EdgeInsets.only(left: 46),
+        Container(
+          width: 34,
+          height: 34,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: badgeBackground,
+            shape: BoxShape.circle,
+          ),
           child: Text(
-            criteria,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: scheme.onSurfaceVariant,
-              height: 1.45,
+            '${index + 1}',
+            style: TextStyle(
+              color: badgeText,
+              fontSize: 15,
+              height: 1,
+              fontWeight: FontWeight.w800,
             ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                maxLines: compact ? null : 1,
+                overflow: compact ? TextOverflow.visible : TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: done ? _PathStageCardState._htmlGreen : textColor,
+                  fontSize: 20,
+                  height: 1.18,
+                  letterSpacing: -.24,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 5),
+              Text(
+                criteria,
+                maxLines: compact ? null : 1,
+                overflow: compact ? TextOverflow.visible : TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: mutedColor,
+                  fontSize: 14,
+                  height: 1.4,
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+            ],
           ),
         ),
       ],
@@ -311,44 +344,70 @@ class _StageHeaderSide extends StatelessWidget {
   const _StageHeaderSide({
     required this.expanded,
     required this.done,
+    required this.current,
     required this.doneCount,
     required this.totalCount,
-    required this.accent,
+    required this.dragHandle,
+    required this.mutedColor,
   });
 
   final bool expanded;
   final bool done;
+  final bool current;
   final int doneCount;
   final int totalCount;
-  final Color accent;
+  final Widget dragHandle;
+  final Color mutedColor;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final stateColor = done
+        ? _PathStageCardState._htmlGreen
+        : current
+            ? _PathStageCardState._htmlAmber
+            : _PathStageCardState._htmlNeutral;
+    final backgroundAlpha = done
+        ? .13
+        : current
+            ? .14
+            : .12;
+
     return Padding(
-      padding: const EdgeInsets.only(top: 2),
+      padding: const EdgeInsets.only(top: 1),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+            height: 30,
+            alignment: Alignment.center,
+            padding: const EdgeInsets.symmetric(horizontal: 11),
             decoration: BoxDecoration(
-              color: accent.withValues(alpha: .13),
+              color: stateColor.withValues(alpha: backgroundAlpha),
               borderRadius: BorderRadius.circular(999),
             ),
             child: Text(
               '${done ? '✓ ' : ''}$doneCount/$totalCount',
-              style: theme.textTheme.labelLarge?.copyWith(
-                color: accent,
+              style: TextStyle(
+                color: stateColor,
+                fontSize: 13,
+                height: 1,
                 fontWeight: FontWeight.w800,
               ),
             ),
           ),
-          const SizedBox(width: 8),
-          Icon(
-            expanded ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
-            size: 24,
-            color: theme.colorScheme.onSurfaceVariant,
+          const SizedBox(width: 6),
+          dragHandle,
+          const SizedBox(width: 6),
+          SizedBox(
+            width: 28,
+            height: 28,
+            child: Icon(
+              expanded
+                  ? Icons.keyboard_arrow_up_rounded
+                  : Icons.keyboard_arrow_down_rounded,
+              size: 24,
+              color: mutedColor,
+            ),
           ),
         ],
       ),
@@ -361,39 +420,36 @@ class _PathActionRow extends StatelessWidget {
     required this.action,
     required this.ru,
     required this.dragHandle,
+    required this.textColor,
+    required this.mutedColor,
+    required this.dividerColor,
     required this.onToggle,
   });
 
   final PathActionSnapshot action;
   final bool ru;
   final Widget dragHandle;
+  final Color textColor;
+  final Color mutedColor;
+  final Color dividerColor;
   final ValueChanged<bool> onToggle;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
     return Container(
-      padding: const EdgeInsets.fromLTRB(4, 14, 0, 14),
+      padding: const EdgeInsets.fromLTRB(22, 14, 16, 14),
       decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(
-            color: scheme.outlineVariant.withValues(alpha: .5),
-          ),
-        ),
+        border: Border(bottom: BorderSide(color: dividerColor)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
-            padding: const EdgeInsets.only(top: 1),
-            child: PlanCardCheckbox(
-              selectMode: false,
-              isSelected: false,
-              displayIsDone: action.isDone,
-              toggleDoneEnabled: true,
-              onToggleDone: () => onToggle(!action.isDone),
-            ),
+          PlanCardCheckbox(
+            selectMode: false,
+            isSelected: false,
+            displayIsDone: action.isDone,
+            toggleDoneEnabled: true,
+            onToggleDone: () => onToggle(!action.isDone),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -402,43 +458,46 @@ class _PathActionRow extends StatelessWidget {
               children: [
                 Text(
                   action.text,
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    color: action.isDone
-                        ? scheme.onSurfaceVariant
-                        : scheme.onSurface,
+                  style: TextStyle(
+                    color: action.isDone ? mutedColor : textColor,
                     decoration:
                         action.isDone ? TextDecoration.lineThrough : null,
+                    fontSize: 16,
+                    height: 1.35,
                     fontWeight: FontWeight.w400,
-                    height: 1.42,
                   ),
                 ),
                 if (action.expectedResult.isNotEmpty) ...[
                   const SizedBox(height: 4),
                   Text(
                     '${ru ? 'Результат' : 'Output'}: ${action.expectedResult}',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: scheme.onSurfaceVariant,
-                      height: 1.42,
+                    style: TextStyle(
+                      color: mutedColor,
+                      fontSize: 14,
+                      height: 1.35,
+                      fontWeight: FontWeight.w400,
                     ),
                   ),
                 ],
               ],
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 14),
           Padding(
-            padding: const EdgeInsets.only(top: 3),
+            padding: const EdgeInsets.only(top: 4),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
                   '${action.minutes} ${ru ? 'мин' : 'min'}',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: scheme.onSurfaceVariant,
+                  style: TextStyle(
+                    color: mutedColor,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w400,
                   ),
                 ),
                 const SizedBox(width: 2),
-                dragHandle,
+                Opacity(opacity: .72, child: dragHandle),
               ],
             ),
           ),
