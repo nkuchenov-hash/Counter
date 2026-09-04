@@ -40,7 +40,8 @@ class CalendarWeekPlannerGrid extends StatelessWidget {
                     final day = weekStart.add(Duration(days: i));
                     final key = calendarDayKey(day);
                     final tasks = tasksByDay[key] ?? const <PlanningTask>[];
-                    final isToday = day.year == today.year &&
+                    final isToday =
+                        day.year == today.year &&
                         day.month == today.month &&
                         day.day == today.day;
                     return Padding(
@@ -48,11 +49,17 @@ class CalendarWeekPlannerGrid extends StatelessWidget {
                       child: DecoratedBox(
                         decoration: BoxDecoration(
                           color: isToday
-                              ? scheme.secondaryContainer.withValues(alpha: 0.22)
-                              : scheme.surfaceContainerLow.withValues(alpha: 0.35),
+                              ? scheme.secondaryContainer.withValues(
+                                  alpha: 0.22,
+                                )
+                              : scheme.surfaceContainerLow.withValues(
+                                  alpha: 0.35,
+                                ),
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(
-                            color: scheme.outlineVariant.withValues(alpha: 0.45),
+                            color: scheme.outlineVariant.withValues(
+                              alpha: 0.45,
+                            ),
                           ),
                         ),
                         child: Material(
@@ -65,7 +72,12 @@ class CalendarWeekPlannerGrid extends StatelessWidget {
                               InkWell(
                                 onTap: () => onDayTap(day),
                                 child: Padding(
-                                  padding: const EdgeInsets.fromLTRB(8, 8, 8, 6),
+                                  padding: const EdgeInsets.fromLTRB(
+                                    8,
+                                    8,
+                                    8,
+                                    6,
+                                  ),
                                   child: Column(
                                     children: [
                                       Text(
@@ -93,7 +105,12 @@ class CalendarWeekPlannerGrid extends StatelessWidget {
                               ),
                               Expanded(
                                 child: SingleChildScrollView(
-                                  padding: const EdgeInsets.fromLTRB(4, 0, 4, 6),
+                                  padding: const EdgeInsets.fromLTRB(
+                                    4,
+                                    0,
+                                    4,
+                                    6,
+                                  ),
                                   child: CalendarDayEventList(
                                     tasks: tasks
                                         .where((t) => t.startTime != null)
@@ -133,7 +150,7 @@ class CalendarWeekPlannerGrid extends StatelessWidget {
   }
 }
 
-/// Compact week strip shown when a day is focused in week mode.
+/// Compact week strip shown when a day is focused.
 class CalendarWeekCompactStrip extends StatelessWidget {
   const CalendarWeekCompactStrip({
     super.key,
@@ -142,6 +159,7 @@ class CalendarWeekCompactStrip extends StatelessWidget {
     required this.today,
     required this.tasksByDay,
     required this.onDayTap,
+    this.minimal = false,
   });
 
   final DateTime weekStart;
@@ -149,6 +167,7 @@ class CalendarWeekCompactStrip extends StatelessWidget {
   final DateTime today;
   final Map<String, List<PlanningTask>> tasksByDay;
   final ValueChanged<DateTime> onDayTap;
+  final bool minimal;
 
   @override
   Widget build(BuildContext context) {
@@ -163,12 +182,57 @@ class CalendarWeekCompactStrip extends StatelessWidget {
                 final day = weekStart.add(Duration(days: i));
                 final key = calendarDayKey(day);
                 final tasks = tasksByDay[key] ?? const <PlanningTask>[];
-                final selected = day.year == selectedDay.year &&
+                final selected =
+                    day.year == selectedDay.year &&
                     day.month == selectedDay.month &&
                     day.day == selectedDay.day;
-                final isToday = day.year == today.year &&
+                final isToday =
+                    day.year == today.year &&
                     day.month == today.month &&
                     day.day == today.day;
+
+                if (minimal) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 2),
+                    child: Material(
+                      color: selected
+                          ? scheme.primaryContainer.withValues(alpha: 0.65)
+                          : isToday
+                          ? scheme.surfaceContainerLow.withValues(alpha: 0.5)
+                          : Colors.transparent,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        side: selected
+                            ? BorderSide(color: scheme.primary, width: 1.5)
+                            : isToday
+                            ? BorderSide(
+                                color: scheme.primary.withValues(alpha: 0.45),
+                              )
+                            : BorderSide.none,
+                      ),
+                      clipBehavior: Clip.antiAlias,
+                      child: InkWell(
+                        onTap: () => onDayTap(day),
+                        borderRadius: BorderRadius.circular(10),
+                        child: Center(
+                          child: Text(
+                            '${DateFormat.E(loc).format(day)} ${day.day}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.labelLarge
+                                ?.copyWith(
+                                  fontWeight: selected
+                                      ? FontWeight.w700
+                                      : FontWeight.w600,
+                                  color: scheme.onSurface,
+                                ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                }
+
                 return Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 2),
                   child: Material(
@@ -199,9 +263,7 @@ class CalendarWeekCompactStrip extends StatelessWidget {
                               DateFormat.E(loc).format(day),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .labelSmall
+                              style: Theme.of(context).textTheme.labelSmall
                                   ?.copyWith(
                                     color: scheme.onSurfaceVariant,
                                     fontWeight: FontWeight.w600,
@@ -214,8 +276,9 @@ class CalendarWeekCompactStrip extends StatelessWidget {
                               alignment: Alignment.center,
                               decoration: selected
                                   ? BoxDecoration(
-                                      color: scheme.primaryContainer
-                                          .withValues(alpha: 0.65),
+                                      color: scheme.primaryContainer.withValues(
+                                        alpha: 0.65,
+                                      ),
                                       borderRadius: BorderRadius.circular(8),
                                       border: Border.all(
                                         color: scheme.primary,
@@ -226,9 +289,7 @@ class CalendarWeekCompactStrip extends StatelessWidget {
                               child: Text(
                                 '${day.day}',
                                 maxLines: 1,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .titleSmall
+                                style: Theme.of(context).textTheme.titleSmall
                                     ?.copyWith(fontWeight: FontWeight.w700),
                               ),
                             ),
