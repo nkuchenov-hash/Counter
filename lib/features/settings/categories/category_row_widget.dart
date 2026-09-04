@@ -65,8 +65,6 @@ class CategoryDepthLayout {
   const CategoryDepthLayout({
     required this.side,
     required this.iconBrowse,
-    required this.iconEdit,
-    required this.gearIconSize,
     required this.fontSize,
     required this.fontWeight,
     required this.contentPadding,
@@ -77,8 +75,6 @@ class CategoryDepthLayout {
 
   final double side;
   final double iconBrowse;
-  final double iconEdit;
-  final double gearIconSize;
   final double fontSize;
   final FontWeight fontWeight;
   final double contentPadding;
@@ -93,8 +89,6 @@ class CategoryDepthLayout {
       return CategoryDepthLayout(
         side: side,
         iconBrowse: 36 * scale,
-        iconEdit: 30 * scale,
-        gearIconSize: 22 * scale,
         fontSize: (15 * scale).clamp(11.0, 20.0),
         fontWeight: FontWeight.bold,
         contentPadding: (8 * scale).clamp(3.0, 12.0),
@@ -107,8 +101,6 @@ class CategoryDepthLayout {
       return CategoryDepthLayout(
         side: side,
         iconBrowse: 28 * scale,
-        iconEdit: 24 * scale,
-        gearIconSize: 20 * scale,
         fontSize: (12 * scale).clamp(9.0, 16.0),
         fontWeight: FontWeight.w600,
         contentPadding: (6 * scale).clamp(3.0, 10.0),
@@ -120,8 +112,6 @@ class CategoryDepthLayout {
     return CategoryDepthLayout(
       side: side,
       iconBrowse: 22 * scale,
-      iconEdit: 19 * scale,
-      gearIconSize: 18 * scale,
       fontSize: (10.5 * scale).clamp(8.0, 14.0),
       fontWeight: FontWeight.w500,
       contentPadding: (4 * scale).clamp(2.0, 8.0),
@@ -139,18 +129,6 @@ const double kCategoryGlassAlpha = 0.175;
 const double kCategoryGlassAlphaSelected = 0.22;
 const double kCategoryGroupStripeWidth = 6;
 
-class CategoryDragData {
-  const CategoryDragData({
-    required this.categoryId,
-    required this.sourceParentId,
-    required this.sourceIndex,
-  });
-
-  final int categoryId;
-  final int? sourceParentId;
-  final int sourceIndex;
-}
-
 enum CategoryBandLayout { horizontalPeek, wrapGrid }
 
 class CategoryRowWidget extends StatelessWidget {
@@ -161,15 +139,9 @@ class CategoryRowWidget extends StatelessWidget {
     required this.immediateParentId,
     required this.selectedId,
     required this.onSelect,
-    required this.onFullSettingsTap,
-    required this.onAppearanceTap,
     required this.onLongPressOpenEditor,
-    this.onReorder,
-    this.canMoveToParent,
-    this.onMoveToParent,
     this.onAddTap,
     this.showAdd = false,
-    this.editMode = false,
     this.layout = CategoryBandLayout.wrapGrid,
   });
 
@@ -178,34 +150,23 @@ class CategoryRowWidget extends StatelessWidget {
   final int? immediateParentId;
   final int? selectedId;
   final void Function(int? id) onSelect;
-  final void Function(CategoryRule r) onFullSettingsTap;
-  final void Function(CategoryRule r) onAppearanceTap;
   final void Function(CategoryRule r) onLongPressOpenEditor;
-  final void Function(int oldIndex, int newIndex)? onReorder;
-  final bool Function(CategoryDragData data, int? newParentId)? canMoveToParent;
-  final void Function(CategoryDragData data, int? newParentId)? onMoveToParent;
   final VoidCallback? onAddTap;
   final bool showAdd;
-  final bool editMode;
   final CategoryBandLayout layout;
 
   static Widget _buildCategoryTile({
     required BuildContext context,
     required CategoryRule r,
     required bool isSelected,
-    required bool editMode,
     required CategoryDepthLayout layout,
     required void Function(int? id) onSelect,
     required void Function(CategoryRule r) onLongPressOpenEditor,
-    required void Function(CategoryRule r) onFullSettingsTap,
-    required void Function(CategoryRule r) onAppearanceTap,
   }) {
     final scheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     final color = r.colorOrDefault;
     final label = categoryTileLabel(r);
-    final isDefault = r.id == DatabaseService.instance.defaultCategoryId;
-    final loc = currentLocale.value;
     final glassAlpha = isSelected
         ? kCategoryGlassAlphaSelected
         : kCategoryGlassAlpha;
@@ -213,45 +174,12 @@ class CategoryRowWidget extends StatelessWidget {
       color.withValues(alpha: glassAlpha),
       scheme.surface,
     );
-    final minTap = (layout.side * 0.42).clamp(32.0, 44.0);
     final labelStyle = textTheme.titleSmall?.copyWith(
       fontSize: layout.fontSize,
       fontWeight: layout.fontWeight,
       height: 1.15,
       color: textTheme.bodyLarge?.color,
     );
-    final iconWidget = Icon(
-      r.iconOrDefault,
-      size: editMode ? layout.iconEdit : layout.iconBrowse,
-      color: color,
-    );
-    final iconHitTarget = editMode
-        ? InkWell(
-            onTap: () => onAppearanceTap(r),
-            borderRadius: BorderRadius.circular(8),
-            child: SizedBox(
-              width: minTap,
-              height: minTap,
-              child: Center(child: iconWidget),
-            ),
-          )
-        : Padding(
-            padding: const EdgeInsets.symmetric(vertical: 2),
-            child: iconWidget,
-          );
-    final gear = editMode
-        ? IconButton(
-            icon: const Icon(Icons.settings_rounded),
-            iconSize: layout.gearIconSize,
-            style: IconButton.styleFrom(
-              minimumSize: Size(minTap, minTap),
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              padding: EdgeInsets.zero,
-            ),
-            onPressed: () => onFullSettingsTap(r),
-            tooltip: t(loc, 'edit_keywords'),
-          )
-        : null;
     final radius = layout.borderRadius;
 
     return SizedBox(
@@ -271,7 +199,7 @@ class CategoryRowWidget extends StatelessWidget {
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: () => onSelect(isSelected ? null : r.id),
-          onLongPress: editMode ? null : () => onLongPressOpenEditor(r),
+          onLongPress: () => onLongPressOpenEditor(r),
           borderRadius: BorderRadius.circular(radius),
           child: Padding(
             padding: EdgeInsets.all(layout.contentPadding),
@@ -280,16 +208,14 @@ class CategoryRowWidget extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  if (editMode && gear != null)
-                    FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [iconHitTarget, gear],
-                      ),
-                    )
-                  else
-                    iconHitTarget,
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 2),
+                    child: Icon(
+                      r.iconOrDefault,
+                      size: layout.iconBrowse,
+                      color: color,
+                    ),
+                  ),
                   Text(
                     label,
                     maxLines: 2,
@@ -297,16 +223,6 @@ class CategoryRowWidget extends StatelessWidget {
                     textAlign: TextAlign.center,
                     style: labelStyle,
                   ),
-                  if (isDefault && editMode)
-                    Text(
-                      t(loc, 'default_label'),
-                      style: textTheme.labelSmall?.copyWith(
-                        fontSize: (layout.fontSize * 0.65).clamp(8.0, 11.0),
-                        color: scheme.primary,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
                 ],
               ),
             ),
@@ -390,102 +306,13 @@ class CategoryRowWidget extends StatelessWidget {
           final dLayout = CategoryDepthLayout.forDepthAndSide(depth, side);
 
           Widget cell(CategoryRule r) => _buildCategoryTile(
-                context: context,
-                r: r,
-                isSelected: selectedId == r.id,
-                editMode: editMode,
-                layout: dLayout,
-                onSelect: onSelect,
-                onLongPressOpenEditor: onLongPressOpenEditor,
-                onFullSettingsTap: onFullSettingsTap,
-                onAppearanceTap: onAppearanceTap,
-              );
-
-          bool isCenterDrop(GlobalKey key, Offset globalOffset) {
-            final box = key.currentContext?.findRenderObject();
-            if (box is! RenderBox || !box.hasSize) return true;
-            final local = box.globalToLocal(globalOffset);
-            final x = local.dx / box.size.width;
-            final y = local.dy / box.size.height;
-            return x >= 0.22 && x <= 0.78 && y >= 0.22 && y <= 0.78;
-          }
-
-          Widget dragMovable(int index, Widget child) {
-            if (!editMode || onReorder == null || onMoveToParent == null) {
-              return child;
-            }
-            final item = items[index];
-            final dropKey = GlobalKey();
-            final payload = CategoryDragData(
-              categoryId: item.id,
-              sourceParentId: immediateParentId,
-              sourceIndex: index,
-            );
-
-            bool canAccept(CategoryDragData data, Offset offset) {
-              if (data.categoryId == item.id) return false;
-              if (isCenterDrop(dropKey, offset)) {
-                return canMoveToParent?.call(data, item.id) ?? true;
-              }
-              return data.sourceParentId == immediateParentId;
-            }
-
-            return KeyedSubtree(
-              key: dropKey,
-              child: DragTarget<CategoryDragData>(
-                onWillAcceptWithDetails: (details) =>
-                    canAccept(details.data, details.offset),
-                onAcceptWithDetails: (details) {
-                  final data = details.data;
-                  if (isCenterDrop(dropKey, details.offset)) {
-                    if (canMoveToParent?.call(data, item.id) ?? true) {
-                      onMoveToParent!(data, item.id);
-                    }
-                    return;
-                  }
-                  if (data.sourceParentId != immediateParentId) return;
-                  final from = data.sourceIndex;
-                  final to = index;
-                  if (from == to) return;
-                  if (from < to) {
-                    onReorder!(from, to + 1);
-                  } else {
-                    onReorder!(from, to);
-                  }
-                },
-                builder: (context, candidate, rejected) {
-                  final highlighted = candidate.isNotEmpty;
-                  return LongPressDraggable<CategoryDragData>(
-                    data: payload,
-                    dragAnchorStrategy: pointerDragAnchorStrategy,
-                    feedback: Material(
-                      color: Colors.transparent,
-                      child: SizedBox(
-                        width: dLayout.side,
-                        height: dLayout.side,
-                        child: Opacity(opacity: 0.92, child: child),
-                      ),
-                    ),
-                    childWhenDragging: Opacity(opacity: 0.35, child: child),
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        border: Border.all(
-                          color: highlighted
-                              ? Theme.of(context).colorScheme.primary
-                              : Colors.transparent,
-                          width: 2,
-                        ),
-                        borderRadius: BorderRadius.circular(
-                          dLayout.borderRadius + 2,
-                        ),
-                      ),
-                      child: child,
-                    ),
-                  );
-                },
-              ),
-            );
-          }
+            context: context,
+            r: r,
+            isSelected: selectedId == r.id,
+            layout: dLayout,
+            onSelect: onSelect,
+            onLongPressOpenEditor: onLongPressOpenEditor,
+          );
 
           if (layout == CategoryBandLayout.horizontalPeek) {
             var count = items.length;
@@ -505,7 +332,7 @@ class CategoryRowWidget extends StatelessWidget {
                       return SizedBox(
                         width: dLayout.side,
                         height: dLayout.side,
-                        child: dragMovable(i, cell(items[i])),
+                        child: cell(items[i]),
                       );
                     }
                     return SizedBox(
@@ -525,8 +352,7 @@ class CategoryRowWidget extends StatelessWidget {
             alignment: WrapAlignment.start,
             crossAxisAlignment: WrapCrossAlignment.start,
             children: [
-              for (var i = 0; i < items.length; i++)
-                dragMovable(i, cell(items[i])),
+              for (var i = 0; i < items.length; i++) cell(items[i]),
               if (showAdd && onAddTap != null) _addTile(context, dLayout),
             ],
           );
@@ -555,33 +381,6 @@ class CategoryRowWidget extends StatelessWidget {
             left: kCategoryStripeInnerPadAfterBorder,
           ),
           child: bandMath,
-        ),
-      );
-    }
-
-    if (editMode && onMoveToParent != null) {
-      final bandParentId = immediateParentId;
-      final bandChild = inner;
-      inner = DragTarget<CategoryDragData>(
-        onWillAcceptWithDetails: (details) {
-          final data = details.data;
-          if (data.sourceParentId == bandParentId) return false;
-          return canMoveToParent?.call(data, bandParentId) ?? true;
-        },
-        onAcceptWithDetails: (details) {
-          final data = details.data;
-          if (data.sourceParentId == bandParentId) return;
-          if (canMoveToParent?.call(data, bandParentId) ?? true) {
-            onMoveToParent!(data, bandParentId);
-          }
-        },
-        builder: (context, candidate, rejected) => DecoratedBox(
-          decoration: BoxDecoration(
-            color: candidate.isNotEmpty
-                ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.05)
-                : Colors.transparent,
-          ),
-          child: bandChild,
         ),
       );
     }

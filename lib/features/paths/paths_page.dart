@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:counter/core/shell_adaptive.dart';
 import 'package:counter/core/widgets/app_button.dart';
+import 'package:counter/core/widgets/compact_nav_controls.dart';
 import 'package:counter/core/widgets/app_icon_button.dart';
 import 'package:counter/core/widgets/app_loading.dart';
 import 'package:counter/core/widgets/app_state_views.dart';
@@ -26,6 +27,7 @@ class PathsPage extends StatefulWidget {
   @override
   State<PathsPage> createState() => _PathsPageState();
 }
+
 class _PathsPageState extends State<PathsPage> {
   static const _visibilityPrefsKey = 'category_visibility_paths_roots_v1';
   final PathRepository _repository = PathRepository();
@@ -52,6 +54,7 @@ class _PathsPageState extends State<PathsPage> {
     super.initState();
     unawaited(_load());
   }
+
   Future<Set<String>?> _loadVisibilityPrefs() async {
     final prefs = await SharedPreferences.getInstance();
     if (!prefs.containsKey(_visibilityPrefsKey)) return null;
@@ -60,6 +63,7 @@ class _PathsPageState extends State<PathsPage> {
         .where((value) => value.isNotEmpty)
         .toSet();
   }
+
   Future<void> _saveVisibilityPrefs(Set<String>? keys) async {
     final prefs = await SharedPreferences.getInstance();
     if (keys == null) {
@@ -70,6 +74,7 @@ class _PathsPageState extends State<PathsPage> {
       ..sort();
     await prefs.setStringList(_visibilityPrefsKey, values);
   }
+
   Future<void> _load() async {
     if (mounted) {
       setState(() {
@@ -107,6 +112,7 @@ class _PathsPageState extends State<PathsPage> {
       });
     }
   }
+
   ProjectPathSnapshot? get _selectedPath {
     final id = _selectedPathId;
     if (id == null) return null;
@@ -115,6 +121,7 @@ class _PathsPageState extends State<PathsPage> {
     }
     return null;
   }
+
   ProjectPathSnapshot? _localPathById(String pathId) {
     for (final path in _catalog.paths) {
       if (path.pathId == pathId) return path;
@@ -670,49 +677,54 @@ class _PathsPageState extends State<PathsPage> {
     final desktopShell = shellUsesSideNavigation(
       MediaQuery.sizeOf(context).width,
     );
+    final actions = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        AppIconButton(
+          icon: Icons.account_tree_outlined,
+          tooltip: _ru ? 'Папки в Путях' : 'Folders in Paths',
+          onPressed: _loading ? null : () => unawaited(_openFolderSelector()),
+        ),
+        AppIconButton(
+          icon: Icons.refresh_rounded,
+          tooltip: _ru ? 'Обновить' : 'Refresh',
+          onPressed: _loading ? null : () => unawaited(_load()),
+          loading: _loading,
+        ),
+      ],
+    );
+    if (desktopShell) {
+      return AppDesktopSectionControlRow(
+        title: _ru ? 'Пути' : 'Paths',
+        controls: actions,
+      );
+    }
     return Padding(
-      padding: desktopShell
-          ? const EdgeInsets.fromLTRB(12, 0, 8, 0)
-          : const EdgeInsets.fromLTRB(20, 0, 12, 12),
+      padding: const EdgeInsets.fromLTRB(20, 0, 12, 12),
       child: Row(
         children: [
-          if (!desktopShell) ...[
-            Icon(Icons.alt_route_rounded, color: scheme.primary),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    _ru ? 'Пути' : 'Paths',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
+          Icon(Icons.alt_route_rounded, color: scheme.primary),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _ru ? 'Пути' : 'Paths',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+                ),
+                Text(
+                  _ru ? 'Цель → этапы → действия.' : 'Goal → stages → actions.',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: scheme.onSurfaceVariant,
                   ),
-                  Text(
-                    _ru
-                        ? 'Цель → этапы → действия.'
-                        : 'Goal → stages → actions.',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: scheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ] else
-            const Spacer(),
-          AppIconButton(
-            icon: Icons.account_tree_outlined,
-            tooltip: _ru ? 'Папки в Путях' : 'Folders in Paths',
-            onPressed: _loading ? null : () => unawaited(_openFolderSelector()),
           ),
-          AppIconButton(
-            icon: Icons.refresh_rounded,
-            tooltip: _ru ? 'Обновить' : 'Refresh',
-            onPressed: _loading ? null : () => unawaited(_load()),
-            loading: _loading,
-          ),
+          actions,
         ],
       ),
     );
