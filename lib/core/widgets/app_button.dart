@@ -1,41 +1,15 @@
 import 'package:flutter/material.dart';
 
 enum AppButtonVariant {
-  /// Solid primary button — main CTA.
   primary,
-
-  /// Tonal / muted button — secondary action.
   secondary,
-
-  /// Outlined button — tertiary action.
   outlined,
-
-  /// Text-only / ghost action.
   ghost,
-
-  /// Solid red button — destructive action (delete, archive, reset).
   destructive,
 }
 
-enum AppButtonSize {
-  /// Small inline action.
-  s,
+enum AppButtonSize { s, m, l }
 
-  /// Default medium action.
-  m,
-
-  /// Large prominent action.
-  l,
-}
-
-/// Standard app button. Use this in place of raw `FilledButton` / `OutlinedButton`
-/// so spacing, icon size, and loading states stay consistent.
-///
-/// ```dart
-/// AppButton.primary(label: 'Save', size: AppButtonSize.m, onPressed: _save)
-/// AppButton.danger(label: 'Delete', icon: Icons.delete, onPressed: _del)
-/// AppButton.secondary(label: 'Saving...', loading: true, onPressed: null)
-/// ```
 class AppButton extends StatelessWidget {
   const AppButton({
     super.key,
@@ -49,7 +23,6 @@ class AppButton extends StatelessWidget {
     this.fullWidth,
   });
 
-  /// Convenience: primary CTA.
   const AppButton.primary({
     super.key,
     required this.label,
@@ -61,7 +34,6 @@ class AppButton extends StatelessWidget {
     this.fullWidth,
   }) : variant = AppButtonVariant.primary;
 
-  /// Convenience: secondary (tonal) action.
   const AppButton.secondary({
     super.key,
     required this.label,
@@ -73,7 +45,6 @@ class AppButton extends StatelessWidget {
     this.fullWidth,
   }) : variant = AppButtonVariant.secondary;
 
-  /// Convenience: outlined / tertiary action.
   const AppButton.outlined({
     super.key,
     required this.label,
@@ -85,7 +56,6 @@ class AppButton extends StatelessWidget {
     this.fullWidth,
   }) : variant = AppButtonVariant.outlined;
 
-  /// Convenience: text / ghost action.
   const AppButton.ghost({
     super.key,
     required this.label,
@@ -97,7 +67,6 @@ class AppButton extends StatelessWidget {
     this.fullWidth,
   }) : variant = AppButtonVariant.ghost;
 
-  /// Convenience: destructive (delete / archive) action.
   const AppButton.destructive({
     super.key,
     required this.label,
@@ -109,8 +78,6 @@ class AppButton extends StatelessWidget {
     this.fullWidth,
   }) : variant = AppButtonVariant.destructive;
 
-  /// Convenience: danger action. Same Flutter behavior as [AppButton.destructive],
-  /// matching Figma's "Button / Danger" naming.
   const AppButton.danger({
     super.key,
     required this.label,
@@ -123,63 +90,48 @@ class AppButton extends StatelessWidget {
   }) : variant = AppButtonVariant.destructive;
 
   final String label;
-
-  /// Pass `null` to disable. While [loading] is true, the button is also disabled.
   final VoidCallback? onPressed;
-
   final AppButtonVariant variant;
   final AppButtonSize size;
   final IconData? icon;
-
-  /// When true, swap the label/icon for an inline spinner. The button stays
-  /// disabled while loading, regardless of [onPressed].
   final bool loading;
-
-  /// When true, the button stretches to fill its parent's width.
   final bool expand;
-
-  /// Preferred replacement for [expand]. When null, [expand] is honored for
-  /// backwards compatibility.
   final bool? fullWidth;
 
   double get _height => switch (size) {
-    AppButtonSize.s => 36,
-    AppButtonSize.m => 44,
-    AppButtonSize.l => 52,
-  };
+        AppButtonSize.s => 36,
+        AppButtonSize.m => 44,
+        AppButtonSize.l => 52,
+      };
 
   EdgeInsetsGeometry get _padding => switch (size) {
-    AppButtonSize.s => const EdgeInsets.symmetric(horizontal: 12),
-    AppButtonSize.m => const EdgeInsets.symmetric(horizontal: 16),
-    AppButtonSize.l => const EdgeInsets.symmetric(horizontal: 20),
-  };
+        AppButtonSize.s => const EdgeInsets.symmetric(horizontal: 12),
+        AppButtonSize.m => const EdgeInsets.symmetric(horizontal: 16),
+        AppButtonSize.l => const EdgeInsets.symmetric(horizontal: 20),
+      };
 
   double get _iconSize => switch (size) {
-    AppButtonSize.s => 16,
-    AppButtonSize.m => 18,
-    AppButtonSize.l => 20,
-  };
+        AppButtonSize.s => 16,
+        AppButtonSize.m => 18,
+        AppButtonSize.l => 20,
+      };
 
-  TextStyle? _textStyle(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    return switch (size) {
-      AppButtonSize.s => textTheme.labelMedium,
-      AppButtonSize.m => textTheme.labelLarge,
-      AppButtonSize.l => textTheme.titleSmall,
-    }?.copyWith(fontWeight: FontWeight.w700);
-  }
+  TextStyle? _textStyle(BuildContext context) => switch (size) {
+        AppButtonSize.s => Theme.of(context).textTheme.labelMedium,
+        AppButtonSize.m => Theme.of(context).textTheme.labelLarge,
+        AppButtonSize.l => Theme.of(context).textTheme.titleSmall,
+      }
+          ?.copyWith(fontWeight: FontWeight.w700);
 
-  ButtonStyle _baseStyle(BuildContext context) {
-    return ButtonStyle(
-      minimumSize: WidgetStatePropertyAll(Size(0, _height)),
-      padding: WidgetStatePropertyAll(_padding),
-      tapTargetSize: MaterialTapTargetSize.padded,
-      shape: WidgetStatePropertyAll(
-        RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ),
-      textStyle: WidgetStatePropertyAll(_textStyle(context)),
-    );
-  }
+  ButtonStyle _baseStyle(BuildContext context) => ButtonStyle(
+        minimumSize: WidgetStatePropertyAll(Size(0, _height)),
+        padding: WidgetStatePropertyAll(_padding),
+        tapTargetSize: MaterialTapTargetSize.padded,
+        shape: WidgetStatePropertyAll(
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+        textStyle: WidgetStatePropertyAll(_textStyle(context)),
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -193,7 +145,6 @@ class AppButton extends StatelessWidget {
       AppButtonVariant.outlined ||
       AppButtonVariant.ghost => scheme.primary,
     };
-
     final child = loading
         ? SizedBox(
             width: _iconSize,
@@ -203,52 +154,132 @@ class AppButton extends StatelessWidget {
               valueColor: AlwaysStoppedAnimation<Color>(spinnerColor),
             ),
           )
-        : (icon != null
-              ? Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(icon, size: _iconSize),
-                    const SizedBox(width: 8),
-                    Text(label),
-                  ],
-                )
-              : Text(label));
-
-    final btn = switch (variant) {
+        : icon == null
+            ? Text(label)
+            : Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(icon, size: _iconSize),
+                  const SizedBox(width: 8),
+                  Text(label),
+                ],
+              );
+    final button = switch (variant) {
       AppButtonVariant.primary => FilledButton(
-        style: _baseStyle(context),
-        onPressed: disabled ? null : onPressed,
-        child: child,
-      ),
+          style: _baseStyle(context),
+          onPressed: disabled ? null : onPressed,
+          child: child,
+        ),
       AppButtonVariant.secondary => FilledButton.tonal(
-        style: _baseStyle(context),
-        onPressed: disabled ? null : onPressed,
-        child: child,
-      ),
+          style: _baseStyle(context),
+          onPressed: disabled ? null : onPressed,
+          child: child,
+        ),
       AppButtonVariant.outlined => OutlinedButton(
-        style: _baseStyle(context),
-        onPressed: disabled ? null : onPressed,
-        child: child,
-      ),
+          style: _baseStyle(context),
+          onPressed: disabled ? null : onPressed,
+          child: child,
+        ),
       AppButtonVariant.ghost => TextButton(
-        style: _baseStyle(context),
-        onPressed: disabled ? null : onPressed,
-        child: child,
-      ),
+          style: _baseStyle(context),
+          onPressed: disabled ? null : onPressed,
+          child: child,
+        ),
       AppButtonVariant.destructive => FilledButton(
-        style: _baseStyle(context).merge(
-          FilledButton.styleFrom(
-            backgroundColor: scheme.error,
-            foregroundColor: scheme.onError,
-            disabledBackgroundColor: scheme.onSurface.withValues(alpha: 0.12),
-            disabledForegroundColor: scheme.onSurface.withValues(alpha: 0.38),
+          style: _baseStyle(context).merge(
+            FilledButton.styleFrom(
+              backgroundColor: scheme.error,
+              foregroundColor: scheme.onError,
+              disabledBackgroundColor: scheme.onSurface.withValues(alpha: 0.12),
+              disabledForegroundColor: scheme.onSurface.withValues(alpha: 0.38),
+            ),
+          ),
+          onPressed: disabled ? null : onPressed,
+          child: child,
+        ),
+    };
+    return stretch ? SizedBox(width: double.infinity, child: button) : button;
+  }
+}
+
+class AppFormDialogField {
+  const AppFormDialogField({
+    required this.keyName,
+    required this.label,
+    this.initialValue = '',
+    this.autofocus = false,
+    this.keyboardType,
+    this.validator,
+  });
+
+  final String keyName;
+  final String label;
+  final String initialValue;
+  final bool autofocus;
+  final TextInputType? keyboardType;
+  final String? Function(String?)? validator;
+}
+
+Future<Map<String, String>?> showAppFormDialog({
+  required BuildContext context,
+  required String title,
+  required String cancelLabel,
+  required String submitLabel,
+  required List<AppFormDialogField> fields,
+}) async {
+  final formKey = GlobalKey<FormState>();
+  final controllers = <String, TextEditingController>{
+    for (final field in fields)
+      field.keyName: TextEditingController(text: field.initialValue),
+  };
+  final result = await showDialog<Map<String, String>>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      title: Text(title),
+      content: SizedBox(
+        width: 620,
+        child: Form(
+          key: formKey,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (var i = 0; i < fields.length; i++) ...[
+                  TextFormField(
+                    controller: controllers[fields[i].keyName],
+                    autofocus: fields[i].autofocus,
+                    keyboardType: fields[i].keyboardType,
+                    decoration: InputDecoration(labelText: fields[i].label),
+                    validator: fields[i].validator,
+                  ),
+                  if (i != fields.length - 1) const SizedBox(height: 12),
+                ],
+              ],
+            ),
           ),
         ),
-        onPressed: disabled ? null : onPressed,
-        child: child,
       ),
-    };
-
-    return stretch ? SizedBox(width: double.infinity, child: btn) : btn;
+      actions: [
+        AppButton.ghost(
+          label: cancelLabel,
+          onPressed: () => Navigator.of(dialogContext).pop(),
+        ),
+        AppButton.primary(
+          label: submitLabel,
+          icon: Icons.add_rounded,
+          onPressed: () {
+            if (formKey.currentState?.validate() != true) return;
+            Navigator.of(dialogContext).pop({
+              for (final field in fields)
+                field.keyName: controllers[field.keyName]!.text.trim(),
+            });
+          },
+        ),
+      ],
+    ),
+  );
+  for (final controller in controllers.values) {
+    controller.dispose();
   }
+  return result;
 }
