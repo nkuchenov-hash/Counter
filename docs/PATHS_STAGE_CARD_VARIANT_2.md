@@ -2,6 +2,8 @@
 
 The Path detail screen uses the approved Variant 2 stage anatomy. This is a structural contract, not a color-only treatment of the previous `ExpansionTile`. The production card must use the explicit anatomy below; wrapping the old `ExpansionTile` in new colors is not an acceptable implementation of this variant.
 
+The canonical implementation is `lib/features/paths/widgets/path_stage_card.dart`; `lib/features/paths/paths_page.dart` composes it and owns Path-level actions and persistence.
+
 ## Page hierarchy
 
 1. Category breadcrumb.
