@@ -6,7 +6,7 @@ import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-/// Full-month 6×7 grid with weekday headers and per-day event indicators.
+/// Month grid with weekday headers and per-day event indicators.
 class CalendarMonthGrid extends StatelessWidget {
   const CalendarMonthGrid({
     super.key,
@@ -91,12 +91,6 @@ class CalendarMonthGrid extends StatelessWidget {
                                       final day = gridStart.add(
                                         Duration(days: row * 7 + col),
                                       );
-                                      final inFocusedMonth =
-                                          day.year == focusedMonth.year &&
-                                          day.month == focusedMonth.month;
-                                      if (currentMonthOnly && !inFocusedMonth) {
-                                        return const SizedBox.shrink();
-                                      }
                                       return CalendarMonthDayCell(
                                         day: day,
                                         focusedMonth: focusedMonth,
