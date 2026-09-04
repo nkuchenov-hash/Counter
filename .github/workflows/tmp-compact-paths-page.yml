@@ -1,0 +1,28 @@
+name: Temporary compact Paths page
+
+on:
+  push:
+    branches:
+      - fix/paths-header-action-reorder-20260904
+
+permissions:
+  contents: write
+
+jobs:
+  compact:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/paths-header-action-reorder-20260904
+      - name: Compact Paths page
+        run: python scripts/tmp_compact_paths_page.py
+      - name: Commit compacted result
+        run: |
+          git config user.name "nkuchenov-hash"
+          git config user.email "nkuchenov-hash@users.noreply.github.com"
+          rm scripts/tmp_compact_paths_page.py
+          rm .github/workflows/tmp-compact-paths-page.yml
+          git add -A
+          git commit -m "Keep Paths page under structure limit"
+          git push origin HEAD:fix/paths-header-action-reorder-20260904
