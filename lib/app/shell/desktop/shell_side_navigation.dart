@@ -18,58 +18,62 @@ class ShellSideNavigation extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final loc = currentLocale.value;
     final isRu = loc.toLowerCase().startsWith('ru');
-    final items = <({IconData icon, IconData selectedIcon, String label, int index})>[
-      (
-        icon: Icons.timeline_outlined,
-        selectedIcon: Icons.timeline_rounded,
-        label: t(loc, 'tab_timeline'),
-        index: 0,
-      ),
-      (
-        icon: Icons.checklist_outlined,
-        selectedIcon: Icons.checklist_rounded,
-        label: t(loc, 'tab_planning'),
-        index: 1,
-      ),
-      (
-        icon: Icons.calendar_month_outlined,
-        selectedIcon: Icons.calendar_month_rounded,
-        label: t(loc, 'calendar'),
-        index: 2,
-      ),
-      (
-        icon: Icons.format_list_bulleted_outlined,
-        selectedIcon: Icons.format_list_bulleted_rounded,
-        label: t(loc, 'tab_lists'),
-        index: 3,
-      ),
-      (
-        icon: Icons.alt_route_outlined,
-        selectedIcon: Icons.alt_route_rounded,
-        label: isRu ? 'Пути' : 'Paths',
-        index: 6,
-      ),
-      (
-        icon: Icons.label_outlined,
-        selectedIcon: Icons.label_rounded,
-        label: t(loc, 'more_menu_categories'),
-        index: 4,
-      ),
-      (
-        icon: Icons.person_outline_rounded,
-        selectedIcon: Icons.person_rounded,
-        label: t(loc, 'more_menu_profile'),
-        index: 5,
-      ),
-      (
-        icon: Icons.more_horiz_rounded,
-        selectedIcon: Icons.more_horiz_rounded,
-        label: t(loc, 'tab_more'),
-        index: 7,
-      ),
-    ];
+    final items =
+        <({IconData icon, IconData selectedIcon, String label, int index})>[
+          (
+            icon: Icons.timeline_outlined,
+            selectedIcon: Icons.timeline_rounded,
+            label: t(loc, 'tab_timeline'),
+            index: 0,
+          ),
+          (
+            icon: Icons.checklist_outlined,
+            selectedIcon: Icons.checklist_rounded,
+            label: t(loc, 'tab_planning'),
+            index: 1,
+          ),
+          (
+            icon: Icons.calendar_month_outlined,
+            selectedIcon: Icons.calendar_month_rounded,
+            label: t(loc, 'calendar'),
+            index: 2,
+          ),
+          (
+            icon: Icons.format_list_bulleted_outlined,
+            selectedIcon: Icons.format_list_bulleted_rounded,
+            label: t(loc, 'tab_lists'),
+            index: 3,
+          ),
+          (
+            icon: Icons.alt_route_outlined,
+            selectedIcon: Icons.alt_route_rounded,
+            label: isRu ? 'Пути' : 'Paths',
+            index: 6,
+          ),
+          (
+            icon: Icons.label_outlined,
+            selectedIcon: Icons.label_rounded,
+            label: t(loc, 'more_menu_categories'),
+            index: 4,
+          ),
+          (
+            icon: Icons.person_outline_rounded,
+            selectedIcon: Icons.person_rounded,
+            label: t(loc, 'more_menu_profile'),
+            index: 5,
+          ),
+          (
+            icon: Icons.more_horiz_rounded,
+            selectedIcon: Icons.more_horiz_rounded,
+            label: t(loc, 'tab_more'),
+            index: 7,
+          ),
+        ];
     return Material(
       color: scheme.surfaceContainerLow.withValues(alpha: 0.55),
+      shape: Border(
+        right: BorderSide(color: scheme.outlineVariant.withValues(alpha: 0.9)),
+      ),
       child: SizedBox(
         width: width,
         child: SafeArea(
@@ -144,10 +148,9 @@ class ShellSideNavItem extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                          color: fg,
-                          fontWeight:
-                              selected ? FontWeight.w700 : FontWeight.w500,
-                        ),
+                      color: fg,
+                      fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                    ),
                   ),
                 ),
               ],

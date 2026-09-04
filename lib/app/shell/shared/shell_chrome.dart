@@ -123,9 +123,7 @@ mixin ShellChrome on ShellLifecycle, ShellMoreMenu, ShellVoiceInput {
                                   title: Row(
                                     children: [
                                       Text(
-                                        desktopShell
-                                            ? _desktopSectionTitle(loc)
-                                            : t(loc, 'app_title'),
+                                        t(loc, 'app_title'),
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                         style: Theme.of(context)
@@ -171,6 +169,31 @@ mixin ShellChrome on ShellLifecycle, ShellMoreMenu, ShellVoiceInput {
                               final mainColumn = Column(
                                 children: [
                                   const ShellTopStatusBars(),
+                                  if (formFactor == ShellFormFactor.desktop)
+                                    Padding(
+                                      padding: const EdgeInsets.fromLTRB(
+                                        24,
+                                        18,
+                                        24,
+                                        12,
+                                      ),
+                                      child: Align(
+                                        alignment:
+                                            AlignmentDirectional.centerStart,
+                                        child: Text(
+                                          _desktopSectionTitle(loc),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .headlineSmall
+                                              ?.copyWith(
+                                                fontWeight: FontWeight.w800,
+                                                height: 1.1,
+                                              ),
+                                        ),
+                                      ),
+                                    ),
                                   Expanded(
                                     child: kShellDeferHiddenTabsUntilFirstFrame
                                         ? LazyIndexedStack(
