@@ -1,6 +1,6 @@
 # Paths stage card — approved Variant 2
 
-The Path detail screen uses the approved Variant 2 stage anatomy. This is a structural contract, not a color-only treatment of the previous `ExpansionTile`.
+The Path detail screen uses the approved Variant 2 stage anatomy. This is a structural contract, not a color-only treatment of the previous `ExpansionTile`. The production card must use the explicit anatomy below; wrapping the old `ExpansionTile` in new colors is not an acceptable implementation of this variant.
 
 ## Page hierarchy
 
