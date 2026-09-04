@@ -1,0 +1,34 @@
+name: Temporary Paths line-count cleanup
+
+on:
+  push:
+    branches:
+      - fix/paths-compact-headings-top-layout-20260904
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/paths-compact-headings-top-layout-20260904
+      - name: Apply cleanup
+        run: python scripts/tmp_compact_paths_page_line_count.py
+      - name: Remove temporary files
+        run: |
+          git rm scripts/tmp_compact_paths_page_line_count.py
+          git rm .github/workflows/tmp-compact-paths-page-line-count.yml
+      - name: Check line count and whitespace
+        run: |
+          test "$(wc -l < lib/features/paths/paths_page.dart)" -le 1000
+          git diff --check
+      - name: Commit cleanup
+        run: |
+          git config user.name "nkuchenov-hash"
+          git config user.email "nkuchenov-hash@users.noreply.github.com"
+          git add -A
+          git commit -m "Keep Paths page within architecture limit"
+          git push origin HEAD:fix/paths-compact-headings-top-layout-20260904
