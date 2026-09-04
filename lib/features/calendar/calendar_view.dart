@@ -30,14 +30,15 @@ class CalendarView extends StatefulWidget {
   final DateTime selectedDate;
   final DateTime focusedDay;
   final Future<void> Function(DateTime selectedDay, DateTime focusedDay)
-      onSelectDate;
+  onSelectDate;
   final void Function(PlanningTask task) onEditTask;
   final Future<void> Function(
     String title,
     int categoryId,
     String dateKey, {
     String? sourcePlanPocketRecordId,
-  }) onStartRecordFromTask;
+  })
+  onStartRecordFromTask;
 
   @override
   State<CalendarView> createState() => _CalendarViewState();
@@ -66,11 +67,12 @@ class _CalendarViewState extends State<CalendarView>
     _weekAnchor = calendarWeekStartMonday(_selectedDay);
     _dayStream = _createDayStream(_selectedDay);
     unawaited(_warmAndReloadIndicators());
-    _planningRefreshSub =
-        DatabaseService.instance.planningRefreshEvents.listen((_) {
-      if (!mounted) return;
-      unawaited(_reloadIndicators());
-    });
+    _planningRefreshSub = DatabaseService.instance.planningRefreshEvents.listen(
+      (_) {
+        if (!mounted) return;
+        unawaited(_reloadIndicators());
+      },
+    );
   }
 
   @override
@@ -137,6 +139,18 @@ class _CalendarViewState extends State<CalendarView>
     setState(() => _dayFocusActive = false);
   }
 
+  void _activateDayView() {
+    final d = _selectedDay;
+    setState(() {
+      _mode = CalendarViewMode.week;
+      _dayFocusActive = true;
+      _weekAnchor = calendarWeekStartMonday(d);
+      _dayStream = _createDayStream(d);
+    });
+    unawaited(widget.onSelectDate(d, d));
+    unawaited(_reloadIndicators());
+  }
+
   Future<void> _onDayTapped(DateTime day) async {
     final d = calendarDateOnly(day);
     if (_dayFocusActive && _isSameDay(d, _selectedDay)) {
@@ -171,25 +185,20 @@ class _CalendarViewState extends State<CalendarView>
 
   void _shiftMonth(int delta) {
     setState(() {
-      _focusedMonth = DateTime(
-        _focusedMonth.year,
-        _focusedMonth.month + delta,
-      );
+      _focusedMonth = DateTime(_focusedMonth.year, _focusedMonth.month + delta);
     });
     unawaited(_reloadIndicators());
   }
 
   void _shiftWeek(int delta) {
-    if (_dayFocusActive) {
-      unawaited(
-        _onDayTapped(_selectedDay.add(Duration(days: delta * 7))),
-      );
-      return;
-    }
     setState(() {
       _weekAnchor = _weekAnchor.add(Duration(days: delta * 7));
     });
     unawaited(_reloadIndicators());
+  }
+
+  void _shiftDay(int delta) {
+    unawaited(_onDayTapped(_selectedDay.add(Duration(days: delta))));
   }
 
   void _openAddPlanForSelectedDay() {
@@ -248,21 +257,21 @@ class _CalendarViewState extends State<CalendarView>
               onDayTap: (d) => unawaited(_onDayTapped(d)),
             )
           : _dayFocusActive
-              ? CalendarWeekCompactStrip(
-                  weekStart: calendarWeekStartMonday(_selectedDay),
-                  selectedDay: _selectedDay,
-                  today: today,
-                  tasksByDay: _tasksByDayKey,
-                  onDayTap: (d) => unawaited(_onDayTapped(d)),
-                )
-              : CalendarWeekPlannerGrid(
-                  weekStart: _weekAnchor,
-                  today: today,
-                  tasksByDay: _tasksByDayKey,
-                  loading: _monthIndicatorsLoading,
-                  showEventPills: showPills,
-                  onDayTap: (d) => unawaited(_onDayTapped(d)),
-                ),
+          ? CalendarWeekCompactStrip(
+              weekStart: calendarWeekStartMonday(_selectedDay),
+              selectedDay: _selectedDay,
+              today: today,
+              tasksByDay: _tasksByDayKey,
+              onDayTap: (d) => unawaited(_onDayTapped(d)),
+            )
+          : CalendarWeekPlannerGrid(
+              weekStart: _weekAnchor,
+              today: today,
+              tasksByDay: _tasksByDayKey,
+              loading: _monthIndicatorsLoading,
+              showEventPills: showPills,
+              onDayTap: (d) => unawaited(_onDayTapped(d)),
+            ),
     );
 
     return Scaffold(
@@ -282,6 +291,7 @@ class _CalendarViewState extends State<CalendarView>
               dayFocusActive: _dayFocusActive,
               onModeChanged: (m) {
                 setState(() {
+                  _dayFocusActive = false;
                   _mode = m;
                   if (m == CalendarViewMode.week) {
                     _weekAnchor = calendarWeekStartMonday(_selectedDay);
@@ -289,10 +299,15 @@ class _CalendarViewState extends State<CalendarView>
                 });
                 unawaited(_reloadIndicators());
               },
-              onPrev: () => _mode == CalendarViewMode.month
+              onDaySelected: _activateDayView,
+              onPrev: () => _dayFocusActive
+                  ? _shiftDay(-1)
+                  : _mode == CalendarViewMode.month
                   ? _shiftMonth(-1)
                   : _shiftWeek(-1),
-              onNext: () => _mode == CalendarViewMode.month
+              onNext: () => _dayFocusActive
+                  ? _shiftDay(1)
+                  : _mode == CalendarViewMode.month
                   ? _shiftMonth(1)
                   : _shiftWeek(1),
               onToday: _goToday,
