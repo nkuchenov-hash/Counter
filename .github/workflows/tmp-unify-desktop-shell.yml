@@ -1,0 +1,57 @@
+name: Temporary unify desktop shell
+
+on:
+  push:
+    branches:
+      - fix/desktop-shell-unified-menu-header-20260904
+
+permissions:
+  contents: write
+
+jobs:
+  apply-and-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/desktop-shell-unified-menu-header-20260904
+          fetch-depth: 0
+      - name: Apply desktop shell patch
+        run: python scripts/tmp_unify_desktop_shell.py
+      - name: Remove temporary patch files
+        run: |
+          git rm scripts/tmp_unify_desktop_shell.py
+          git rm .github/workflows/tmp-unify-desktop-shell.yml
+      - name: Set up Flutter 3.41.6
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.6'
+          channel: stable
+          cache: true
+      - name: Create env.dart
+        run: |
+          mkdir -p lib/core/env
+          printf '%s\n' 'abstract final class Env {' '  static const String placeholder = '\'''\'';' '}' > lib/core/env/env.dart
+      - name: Install dependencies
+        run: flutter pub get
+      - name: Restore lockfile
+        run: git checkout -- pubspec.lock
+      - name: Format changed Dart
+        run: dart format lib/core/widgets/global_app_header.dart lib/app/shell/shared/shell_chrome.dart lib/features/paths/paths_page.dart lib/features/settings/categories/category_list_view.dart lib/features/profile/profile_view.dart
+      - name: Verify Paths page size ratchet
+        run: test "$(wc -l < lib/features/paths/paths_page.dart)" -le 1000
+      - name: Analyze desktop-shell changes
+        run: flutter analyze --no-fatal-infos lib/core/widgets/global_app_header.dart lib/app/shell/shared/shell_chrome.dart lib/features/paths/paths_page.dart lib/features/settings/categories/category_list_view.dart lib/features/profile/profile_view.dart
+      - name: Verify documentation parity
+        run: python scripts/audit/documentation_parity.py
+      - name: Check whitespace
+        run: git diff --check
+      - name: Build release web
+        run: flutter build web --release --base-href="/Counter/" --no-tree-shake-icons --no-wasm-dry-run --pwa-strategy=none
+      - name: Commit final patch
+        run: |
+          git config user.name "nkuchenov-hash"
+          git config user.email "nkuchenov-hash@users.noreply.github.com"
+          git add -A
+          git commit -m "Unify desktop shell menu and header chrome"
+          git push origin HEAD:fix/desktop-shell-unified-menu-header-20260904
