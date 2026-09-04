@@ -147,6 +147,7 @@ Each mapping must answer:
 - Reorderable items use stable domain keys; visual position is updated locally as soon as Flutter emits `onReorder`.
 - Persistence is asynchronous and must not block drag motion. Failed persistence restores/reconciles the last confirmed order without duplicating items.
 - Use `buildDefaultDragHandles: false`; the canonical handle owns the drag start so desktop/web/mobile behavior is consistent.
+- Nested ordered groups use the same `AppReorderableList`, not feature-local drag code. Set `shrinkWrap: true`, `primary: false`, and non-scrolling physics when the nested list lives inside another scroll/reorder surface; keep stable domain keys at both levels.
 
 ### Timezone Icons
 
