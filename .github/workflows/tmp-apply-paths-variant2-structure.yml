@@ -1,0 +1,28 @@
+name: Temporary Paths Variant 2 patch
+
+on:
+  push:
+    branches:
+      - fix/paths-variant2-structure-20260904
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/paths-variant2-structure-20260904
+      - name: Apply structural patch
+        run: python scripts/tmp_apply_paths_variant2_structure.py
+      - name: Commit result
+        run: |
+          git config user.name "nkuchenov-hash"
+          git config user.email "nkuchenov-hash@users.noreply.github.com"
+          rm scripts/tmp_apply_paths_variant2_structure.py
+          rm .github/workflows/tmp-apply-paths-variant2-structure.yml
+          git add -A
+          git commit -m "Rebuild Paths stage cards to match Variant 2"
+          git push origin HEAD:fix/paths-variant2-structure-20260904
