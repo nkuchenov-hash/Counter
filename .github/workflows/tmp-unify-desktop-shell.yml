@@ -17,7 +17,9 @@ jobs:
           ref: fix/desktop-shell-unified-menu-header-20260904
           fetch-depth: 0
       - name: Apply desktop shell patch
-        run: python scripts/tmp_unify_desktop_shell.py
+        run: |
+          python scripts/tmp_unify_desktop_shell.py
+          sed -i "/core\/widgets\/app_loading.dart/d" lib/features/settings/categories/category_list_view.dart
       - name: Remove temporary patch files
         run: |
           git rm scripts/tmp_unify_desktop_shell.py
