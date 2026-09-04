@@ -53,8 +53,7 @@ class PathRepository {
       final resolvedCategory = categoryPocketBaseId.isEmpty
           ? null
           : _database.getCategoryRuleByBackendRowId(categoryPocketBaseId);
-      final category =
-          resolvedCategory == null || resolvedCategory.isArchived
+      final category = resolvedCategory == null || resolvedCategory.isArchived
           ? CategoryRule.uncategorized()
           : resolvedCategory;
 
@@ -118,9 +117,11 @@ class PathRepository {
     required CategoryRule category,
     required String goal,
     required List<PathStageSnapshot> stages,
+    String? name,
     String source = 'manual',
   }) async {
     final cleanGoal = goal.trim();
+    final cleanName = name?.trim() ?? '';
     final audit = auditPathStructure(goal: cleanGoal, stages: stages);
     final categoryPocketBaseId = category.backendRowId?.trim() ?? '';
     if (!audit.isValid || categoryPocketBaseId.isEmpty) return null;
@@ -137,6 +138,7 @@ class PathRepository {
         goal: cleanGoal,
         stages: stages.map((stage) => stage.toJson()).toList(growable: false),
         source: source,
+        name: cleanName.isEmpty ? category.name.trim() : cleanName,
       );
       final revisionRecordId = (revision['id'] ?? '').toString().trim();
       if (revisionRecordId.isEmpty) return null;
@@ -230,6 +232,7 @@ class PathRepository {
             .map((stage) => stage.toJson())
             .toList(growable: false),
         source: 'manual',
+        name: requested.name,
         parentRevisionId: current.revisionId,
       );
       final revisionRecordId = (revision['id'] ?? '').toString().trim();
@@ -244,6 +247,7 @@ class PathRepository {
         revisionRecordId: revisionRecordId,
         revisionId: revisionId,
         category: current.category,
+        name: requested.name,
         goal: requested.goal,
         status: PathStatus.active,
         version: version,
@@ -280,6 +284,11 @@ class PathRepository {
     }
 
     final content = _asStringMap(revisionRow['content']);
+    final storedName = (content['name'] ?? '').toString().trim();
+    final fallbackName = category.id == CategoryRule.uncategorizedSyntheticId
+        ? goal
+        : category.name.trim();
+    final name = storedName.isEmpty ? fallbackName : storedName;
     final rawStages = content['stages'];
     final stages = <PathStageSnapshot>[];
     if (rawStages is List) {
@@ -300,6 +309,7 @@ class PathRepository {
       revisionRecordId: revisionRecordId,
       revisionId: revisionId,
       category: category,
+      name: name,
       goal: goal,
       status: PathStatus.active,
       version: version,

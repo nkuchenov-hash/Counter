@@ -19,12 +19,12 @@ The approved HTML order is:
 - 4px state rail on the far left of the whole card;
 - soft header zone;
 - main header block = 34px number badge + 12px gap + title/criteria block;
-- right header controls = progress pill + 6px gap + stage drag handle + 6px gap + chevron;
+- right header controls = progress pill + 6px gap + Options control + 6px gap + chevron;
 - bottom divider;
 - white action body;
 - add-item footer.
 
-Do not move the stage drag handle to the far left. The approved HTML places it in the right-side header controls between progress and chevron.
+Keep the Options control in the right-side header controls between progress and chevron. It replaces the visible drag glyph without changing the approved card geometry.
 
 ## Literal light-theme metrics
 
@@ -39,7 +39,7 @@ Do not move the stage drag handle to the far left. The approved HTML places it i
 - stage title: 20px, 800, line-height 1.18;
 - criteria: 14px, line-height 1.4;
 - progress pill: 30px high, 11px horizontal padding, 13px/800 text;
-- stage drag target: canonical 36×36px `AppReorderHandle`;
+- stage Options target: 36×36px; press-and-hold starts the canonical reorder gesture;
 - chevron box: 28×28px;
 - action row padding: `14px 16px 14px 22px`;
 - completion checkbox: canonical 32px `PlanCardCheckbox`;
@@ -50,7 +50,7 @@ Do not move the stage drag handle to the far left. The approved HTML places it i
 - action divider: `#E9ECEF`;
 - add-item footer padding: `8px 20px 10px`.
 
-Nested action reordering is an added behavior requirement. It must not redesign the approved row; use the canonical action drag handle as a quiet trailing control beside time.
+Nested action reordering is an added behavior requirement. It must not redesign the approved row; use the same Options control as the quiet trailing control beside time, with press-and-hold invoking reorder.
 
 ## State colors
 
@@ -72,3 +72,11 @@ Both levels remain reorderable:
 - actions reorder in the nested `AppReorderableList`.
 
 Both use stable domain keys, canonical drag mechanics, immediate local reordering, and asynchronous Path revision persistence.
+
+## Options control and detailed editing
+
+The visible drag glyph is replaced by an **Options** control for every stage and every stage item. A normal click/tap opens editing. Holding the same control starts the canonical reorder gesture, so ordering remains available without a separate drag icon.
+
+Stage editing changes the stage wording and completion criterion. Item editing owns four content levels: formulation, final expected result, optional description/context, and an optional mini-checklist. The Path heading is a first-class editable name, separate from the Path goal; both are revisioned with the rest of Path content.
+
+The detailed Path item sheet is the single item editor for these fields; do not create a second parallel editor contract.

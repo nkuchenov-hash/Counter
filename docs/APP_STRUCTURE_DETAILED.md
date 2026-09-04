@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `ea3ae8b1` on 2026-09-04.**
+**Generated from input HEAD `cb03c96f` on 2026-09-04.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 846 — each appears **exactly once** below.
+**Tracked files:** 848 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -26,8 +26,8 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Role | Count |
 | :--- | ---: |
-| `production UI` | 166 |
-| `test` | 108 |
+| `production UI` | 167 |
+| `test` | 109 |
 | `Brain/data` | 87 |
 | `platform build` | 83 |
 | `shared foundation` | 64 |
@@ -56,8 +56,8 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 465 |
-| `REQUIRED_FOR_TEST_OR_TOOLING` | 200 |
+| `PROVEN_REQUIRED` | 466 |
+| `REQUIRED_FOR_TEST_OR_TOOLING` | 201 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
 | `GOVERNING_DOCUMENTATION` | 36 |
 | `HISTORICAL_RECORD` | 17 |
@@ -67,7 +67,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 782 |
+| `HIGH` | 784 |
 | `MEDIUM` | 64 |
 
 ---
@@ -12035,8 +12035,8 @@ EN:
 - **Human purpose:** Shared design-system widget — Desktop/web drag scroll. Plans, Timeline, and Lists reuse this instead of copying button/card styles.
 - **What this is:** Shared design-system widget — Desktop/web drag scroll.
 - **Why needed:** Plans, Timeline, and Lists reuse this instead of copying button/card styles.
-- **Contents:** Canonical Flutter widget (`MouseDragScrollBehavior`, `AppReorderItemBuilder`, `AppReorderItemKeyBuilder`, `AppReorderLabelBuilder`, `AppReorderableList`, `AppReorderHandle`).
-- **Key code names:** `MouseDragScrollBehavior`, `AppReorderItemBuilder`, `AppReorderItemKeyBuilder`, `AppReorderLabelBuilder`, `AppReorderableList`, `AppReorderHandle`
+- **Contents:** Canonical Flutter widget (`MouseDragScrollBehavior`, `AppReorderItemBuilder`, `AppReorderItemKeyBuilder`, `AppReorderLabelBuilder`, `AppReorderHandleBuilder`, `AppReorderableList`).
+- **Key code names:** `MouseDragScrollBehavior`, `AppReorderItemBuilder`, `AppReorderItemKeyBuilder`, `AppReorderLabelBuilder`, `AppReorderHandleBuilder`, `AppReorderableList`, `AppReorderHandle`
 - **Repository role:** shared foundation
 - **Evidence of use:** Imported/exported by production Dart: `lib/features/paths/paths_page.dart`, `lib/features/paths/widgets/path_stage_card.dart`, `lib/features/planning/planning_page_shell.dart`, `lib/features/timeline/timeline_view.dart`.
 - **Necessity status:** PROVEN_REQUIRED
@@ -14008,8 +14008,8 @@ EN:
 - **Human purpose:** Brain helper for data/sync — Path lifecycle, immutable revision snapshot types, stages/actions, project-independent structure audit. Shared PocketBase/auth/parse logic used by multiple tabs.
 - **What this is:** Brain helper for data/sync — Path lifecycle, immutable revision snapshot types, stages/actions, project-independent structure audit.
 - **Why needed:** Shared PocketBase/auth/parse logic used by multiple tabs.
-- **Contents:** Dart helpers and types (`PathStatus`, `PathActionSnapshot`, `PathStageSnapshot`, `ProjectPathSnapshot`, `PathCatalogSnapshot`, `PathCategoryNode`).
-- **Key code names:** `PathStatus`, `PathActionSnapshot`, `PathStageSnapshot`, `ProjectPathSnapshot`, `PathCatalogSnapshot`, `PathCategoryNode`, `PathCategoryProjection`, `_PathCategoryIndex`
+- **Contents:** Dart helpers and types (`PathStatus`, `PathChecklistItemSnapshot`, `PathActionSnapshot`, `PathStageSnapshot`, `ProjectPathSnapshot`, `PathCatalogSnapshot`).
+- **Key code names:** `PathStatus`, `PathChecklistItemSnapshot`, `PathActionSnapshot`, `PathStageSnapshot`, `ProjectPathSnapshot`, `PathCatalogSnapshot`, `PathCategoryNode`, `PathCategoryProjection`, `_PathCategoryIndex`
 - **Repository role:** Brain/data
 - **Evidence of use:** Imported/exported by production Dart: `lib/data/paths/path_repository.dart`.
 - **Necessity status:** PROVEN_REQUIRED
@@ -14049,7 +14049,7 @@ EN:
 - **Contents:** Dart helpers and types (`PathRepository`).
 - **Key code names:** `PathRepository`
 - **Repository role:** Brain/data
-- **Evidence of use:** Imported/exported by production Dart: `lib/data/plans/path_planner_bridge.dart`, `lib/features/paths/paths_page.dart`, `lib/features/paths/widgets/path_stage_card.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/data/plans/path_planner_bridge.dart`, `lib/features/paths/paths_page.dart`, `lib/features/paths/widgets/path_edit_sheet.dart`, `lib/features/paths/widgets/path_stage_card.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -14066,7 +14066,7 @@ RU:
 - **Зачем:** Общая логика PocketBase и auth для нескольких вкладок.
 - **Содержимое:** Dart-хелперы и типы (logic in `path_repository`).
 - **Роль в репозитории:** Brain/data
-- **Доказательства использования:** Импортируется production Dart: `lib/data/plans/path_planner_bridge.dart`, `lib/features/paths/paths_page.dart`, `lib/features/paths/widgets/path_stage_card.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/data/plans/path_planner_bridge.dart`, `lib/features/paths/paths_page.dart`, `lib/features/paths/widgets/path_edit_sheet.dart`, `lib/features/paths/widgets/path_stage_card.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -17905,6 +17905,44 @@ RU:
 - **Связано с:** `lib/features/paths/`, `docs/APP_STRUCTURE.md`
 
 
+### `lib/features/paths/widgets/path_edit_sheet.dart`
+
+EN:
+
+- **Human purpose:** `path_edit_sheet.dart` on paths area — Path / stage / action editor sheets, item mini-checklist + description editor, and Options-as-delayed-reorder control. Users see `path_edit_sheet.dart` when using paths area.
+- **What this is:** `path_edit_sheet.dart` on paths area — Path / stage / action editor sheets, item mini-checklist + description editor, and Options-as-delayed-reorder control.
+- **Why needed:** Users see `path_edit_sheet.dart` when using paths area.
+- **Contents:** Primary symbols: `PathEditDraft`, `PathStageEditDraft`, `PathActionEditDraft`, `_PathOptionAction`, `PathOptionsReorderButton`, `_TwoFieldPathEditSheet`.
+- **Key code names:** `PathEditDraft`, `PathStageEditDraft`, `PathActionEditDraft`, `_PathOptionAction`, `PathOptionsReorderButton`, `_TwoFieldPathEditSheet`, `_TwoFieldPathEditSheetState`, `_ChecklistRowDraft`, `_PathActionEditSheet`, `_PathActionEditSheetState`
+- **Repository role:** production UI
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/paths/paths_page.dart`, `lib/features/paths/widgets/path_stage_card.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** repository root
+- **Responsibilities:** Path / stage / action editor sheets, item mini-checklist + description editor, and Options-as-delayed-reorder control
+- **When to open:** When behavior tied to `path_edit_sheet.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** APP_STRUCTURE role: Path / stage / action editor sheets, item mini-checklist + description editor, and Options-as-delayed-reorder control
+
+RU:
+
+- **Зачем файл человеку:** `path_edit_sheet.dart` на paths — Пользователь открывает sheet/dialog из entry `path_edit_sheet`.. Пользователь видит UI из `path_edit_sheet.dart` на paths.
+- **Что это:** `path_edit_sheet.dart` на paths — Пользователь открывает sheet/dialog из entry `path_edit_sheet`..
+- **Зачем:** Пользователь видит UI из `path_edit_sheet.dart` на paths.
+- **Содержимое:** Основные символы: `PathEditDraft`, `PathStageEditDraft`, `PathActionEditDraft`, `_PathOptionAction`, `PathOptionsReorderButton`, `_TwoFieldPathEditSheet`.
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Импортируется production Dart: `lib/features/paths/paths_page.dart`, `lib/features/paths/widgets/path_stage_card.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** корень репозитория
+- **Обязанности:** Пользователь открывает sheet/dialog из entry `path_edit_sheet`.
+- **Когда открывать:** Когда ломается поведение, связанное с `path_edit_sheet.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/features/paths/widgets/`, `docs/APP_STRUCTURE.md`
+
+
 ### `lib/features/paths/widgets/path_stage_card.dart`
 
 EN:
@@ -17912,8 +17950,8 @@ EN:
 - **Human purpose:** `path_stage_card.dart` on paths area — path stage card. Users see `path_stage_card.dart` when using paths area.
 - **What this is:** `path_stage_card.dart` on paths area — path stage card.
 - **Why needed:** Users see `path_stage_card.dart` when using paths area.
-- **Contents:** Primary symbols: `PathActionToggle`, `PathActionReorder`, `PathStageCard`, `_PathStageCardState`, `_StageHeaderMain`, `_StageHeaderSide`.
-- **Key code names:** `PathActionToggle`, `PathActionReorder`, `PathStageCard`, `_PathStageCardState`, `_StageHeaderMain`, `_StageHeaderSide`, `_PathActionRow`
+- **Contents:** Primary symbols: `PathActionToggle`, `PathActionEdit`, `PathActionReorder`, `PathStageCard`, `_PathStageCardState`, `_StageHeaderMain`.
+- **Key code names:** `PathActionToggle`, `PathActionEdit`, `PathActionReorder`, `PathStageCard`, `_PathStageCardState`, `_StageHeaderMain`, `_StageHeaderSide`
 - **Repository role:** production UI
 - **Evidence of use:** Imported/exported by production Dart: `lib/features/paths/paths_page.dart`.
 - **Necessity status:** PROVEN_REQUIRED
@@ -33301,6 +33339,44 @@ RU:
 - **Владелец / слой:** тесты
 - **Обязанности:** Assert ожидаемого поведения `notes_canonical_components`.
 - **Когда открывать:** Падение CI или правка кода рядом с `notes_canonical_components`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
+
+
+### `test/notes_clipboard_selection_contract_test.dart`
+
+EN:
+
+- **Human purpose:** Automated test `notes_clipboard_selection_contract_test` — verifies behavior without manual tapping. Prevents regressions when related production code changes.
+- **What this is:** Automated test `notes_clipboard_selection_contract_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **Contents:** Test cases (symbols: main).
+- **Key code names:** `main`
+- **Repository role:** test
+- **Evidence of use:** Flutter test file; exercised via `flutter test test/notes_clipboard_selection_contract_test.dart` / CI when enabled.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Lost automated coverage for its contract.
+- **Confidence:** HIGH
+- **Owner / layer:** tests
+- **Responsibilities:** Assert expected behavior for `notes_clipboard_selection_contract_test` scenario.
+- **When to open:** CI failure or changing code near `notes_clipboard_selection_contract`.
+- **Can it be deleted?** Lost automated coverage for its contract.
+- **Connected to:** `test/` suite; production subject near `notes_clipboard_selection_contract`.
+
+RU:
+
+- **Зачем файл человеку:** Автотест `notes_clipboard_selection_contract` — проверяет поведение без ручного UI. Ловит регрессии при изменении связанного production-кода.
+- **Что это:** Автотест `notes_clipboard_selection_contract` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `notes_clipboard_selection_contract`.
+- **Роль в репозитории:** test
+- **Доказательства использования:** Файл теста Flutter; запускается через `flutter test test/notes_clipboard_selection_contract_test.dart`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Пропадёт автоматическая проверка своего контракта.
+- **Уверенность:** HIGH
+- **Владелец / слой:** тесты
+- **Обязанности:** Assert ожидаемого поведения `notes_clipboard_selection_contract`.
+- **Когда открывать:** Падение CI или правка кода рядом с `notes_clipboard_selection_contract`.
 - **Можно удалить?** Нет — нужен для тестов.
 - **Связано с:** Production files под `lib/` с похожим именем.
 

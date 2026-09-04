@@ -248,3 +248,7 @@ Allowed exceptions:
 - Every Component Lab example must be labeled with Figma name, Flutter mapping, variant, size, and state where applicable.
 - Labels belong to the lab/demo wrapper, not to production components.
 - Lab label/spec text is selectable/copyable for design review; this is lab-only and must not make production UI text selectable by default.
+
+### Paths: Options-as-reorder control
+
+For ordered Path stages/items, show `more_horiz` as the visible Options affordance. Tap/click opens Edit; press-and-hold on the same control invokes the canonical reorder listener. Do not show a second drag glyph beside Options. Path item detail editing uses a sheet with formulation, final result, optional description/context, optional mini-checklist, and time estimate.
