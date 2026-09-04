@@ -158,7 +158,12 @@ EVIDENCE: EvidenceIndex | None = None
 
 def tracked() -> list[str]:
     out = subprocess.check_output(["git", "ls-files"], cwd=ROOT, text=True)
-    return sorted(l.strip().replace("\\", "/") for l in out.splitlines() if l.strip())
+    return sorted(
+        path
+        for line in out.splitlines()
+        if (path := line.strip().replace("\\", "/"))
+        and not path.startswith("marketing/")
+    )
 
 
 def sha() -> str:
