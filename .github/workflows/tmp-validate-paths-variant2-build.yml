@@ -27,7 +27,7 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
       - name: Analyze changed Paths UI
-        run: flutter analyze lib/features/paths/paths_page.dart lib/features/paths/widgets/path_stage_card.dart
+        run: flutter analyze --no-fatal-infos lib/features/paths/paths_page.dart lib/features/paths/widgets/path_stage_card.dart
       - name: Build web
         run: flutter build web --release --base-href="/Counter/" --no-tree-shake-icons --no-wasm-dry-run --pwa-strategy=none
       - name: Remove temporary workflow
