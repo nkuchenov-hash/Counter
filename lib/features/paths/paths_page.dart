@@ -815,7 +815,8 @@ class _PathsPageState extends State<PathsPage> {
     final currentIndex = path.stages.indexWhere((stage) => !stage.isDone);
     final breadcrumb = _breadcrumb(path);
     return AppReorderableList(
-      padding: const EdgeInsets.fromLTRB(20, 18, 20, 40),
+      padding: const EdgeInsets.fromLTRB(24, 28, 24, 56),
+      spacing: 12,
       itemCount: path.stages.length,
       itemKeyBuilder: (index) =>
           ValueKey('path-stage-${path.pathId}-${path.stages[index].id}'),
@@ -834,7 +835,7 @@ class _PathsPageState extends State<PathsPage> {
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 6),
           ],
           Row(children: [
             Expanded(
@@ -863,11 +864,11 @@ class _PathsPageState extends State<PathsPage> {
               style: const TextStyle(fontWeight: FontWeight.w800)),
             TextSpan(text: path.goal),
           ])),
-          const SizedBox(height: 14),
+          const SizedBox(height: 22),
         ],
       ),
       footer: Padding(
-        padding: const EdgeInsets.only(top: 12),
+        padding: const EdgeInsets.only(top: 14),
         child: Align(
           alignment: Alignment.centerLeft,
           child: AppButton.secondary(
