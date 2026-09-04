@@ -1,0 +1,37 @@
+name: Temporary sync Paths editor branch with main
+
+on:
+  push:
+    branches:
+      - feat/paths-editors-options-20260904
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/paths-editors-options-20260904
+          fetch-depth: 0
+      - name: Configure git
+        run: |
+          git config user.name "nkuchenov-hash"
+          git config user.email "nkuchenov-hash@users.noreply.github.com"
+      - name: Merge latest main
+        run: |
+          git fetch origin main
+          git merge -X ours --no-edit origin/main
+      - name: Remove temporary workflow from tracked tree
+        run: git rm .github/workflows/tmp-sync-path-structure.yml
+      - name: Regenerate detailed structure after merge
+        run: python3 scripts/manual/generate_app_structure_detailed.py
+      - name: Verify documentation parity
+        run: python3 scripts/audit/documentation_parity.py
+      - name: Commit final generated structure and workflow removal
+        run: |
+          git add -A
+          git commit -m "Finalize Paths editor structure parity"
+          git push origin HEAD:feat/paths-editors-options-20260904
