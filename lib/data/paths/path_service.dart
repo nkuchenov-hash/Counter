@@ -115,6 +115,7 @@ extension PathServiceExtension on DatabaseService {
     required String goal,
     required List<Map<String, dynamic>> stages,
     required String source,
+    String? name,
     String? parentRevisionId,
   }) async {
     await ensurePocketBaseReady();
@@ -129,7 +130,10 @@ extension PathServiceExtension on DatabaseService {
             'version': version,
             'lifecycle': lifecycle,
             'goal': goal.trim(),
-            'content': <String, dynamic>{'stages': stages},
+            'content': <String, dynamic>{
+              'name': name?.trim() ?? '',
+              'stages': stages,
+            },
             'source': source,
             'parent_revision_id': parentRevisionId?.trim() ?? '',
           },

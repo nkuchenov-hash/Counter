@@ -1,10 +1,12 @@
 import 'package:counter/core/widgets/app_button.dart';
 import 'package:counter/core/widgets/mouse_drag_scroll_behavior.dart';
 import 'package:counter/core/widgets/plan_time_task_card/plan_card_controls.dart';
+import 'package:counter/features/paths/widgets/path_edit_sheet.dart';
 import 'package:counter/data/paths/path_repository.dart';
 import 'package:flutter/material.dart';
 
 typedef PathActionToggle = void Function(int actionIndex, bool done);
+typedef PathActionEdit = void Function(int actionIndex);
 typedef PathActionReorder = void Function(int oldIndex, int newIndex);
 
 /// Literal Flutter port of the approved Paths Variant-2 HTML card.
@@ -22,6 +24,7 @@ class PathStageCard extends StatefulWidget {
     required this.stageDragHandle,
     required this.onAddAction,
     required this.onToggleAction,
+    required this.onEditAction,
     required this.onReorderAction,
   });
 
@@ -33,6 +36,7 @@ class PathStageCard extends StatefulWidget {
   final Widget stageDragHandle;
   final VoidCallback onAddAction;
   final PathActionToggle onToggleAction;
+  final PathActionEdit onEditAction;
   final PathActionReorder onReorderAction;
 
   @override
@@ -102,7 +106,9 @@ class _PathStageCardState extends State<PathStageCard> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final stateColor = _stateColor();
-    final doneCount = widget.stage.actions.where((action) => action.isDone).length;
+    final doneCount = widget.stage.actions
+        .where((action) => action.isDone)
+        .length;
 
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -134,10 +140,7 @@ class _PathStageCardState extends State<PathStageCard> {
               left: 0,
               top: 0,
               bottom: 0,
-              child: SizedBox(
-                width: 4,
-                child: ColoredBox(color: stateColor),
-              ),
+              child: SizedBox(width: 4, child: ColoredBox(color: stateColor)),
             ),
           ],
         ),
@@ -146,7 +149,8 @@ class _PathStageCardState extends State<PathStageCard> {
   }
 
   Widget _header(ThemeData theme, Color stateColor, int doneCount) {
-    final criteria = '${widget.ru ? 'Критерий завершения' : 'Completion criteria'}: '
+    final criteria =
+        '${widget.ru ? 'Критерий завершения' : 'Completion criteria'}: '
         '${widget.stage.completionCriteria}';
 
     return Material(
@@ -220,6 +224,12 @@ class _PathStageCardState extends State<PathStageCard> {
         dragLabelBuilder: (actionIndex) => widget.ru
             ? 'Перетащить пункт ${actionIndex + 1}'
             : 'Reorder item ${actionIndex + 1}',
+        dragHandleBuilder: (context, actionIndex) => PathOptionsReorderButton(
+          index: actionIndex,
+          ru: widget.ru,
+          tooltip: widget.ru ? 'Опции пункта' : 'Item options',
+          onEdit: () => widget.onEditAction(actionIndex),
+        ),
         onReorder: widget.onReorderAction,
         spacing: 0,
         shrinkWrap: true,
@@ -237,16 +247,16 @@ class _PathStageCardState extends State<PathStageCard> {
             ),
           ),
         ),
-        itemBuilder: (context, actionIndex, actionDragHandle) =>
-            _PathActionRow(
-              action: widget.stage.actions[actionIndex],
-              ru: widget.ru,
-              dragHandle: actionDragHandle,
-              textColor: _text(theme),
-              mutedColor: _muted(theme),
-              dividerColor: _outlineSoft(theme),
-              onToggle: (done) => widget.onToggleAction(actionIndex, done),
-            ),
+        itemBuilder: (context, actionIndex, actionDragHandle) => _PathActionRow(
+          action: widget.stage.actions[actionIndex],
+          ru: widget.ru,
+          dragHandle: actionDragHandle,
+          textColor: _text(theme),
+          mutedColor: _muted(theme),
+          dividerColor: _outlineSoft(theme),
+          onToggle: (done) => widget.onToggleAction(actionIndex, done),
+          onEdit: () => widget.onEditAction(actionIndex),
+        ),
       ),
     );
   }
@@ -278,8 +288,8 @@ class _StageHeaderMain extends StatelessWidget {
     final badgeBackground = done
         ? _PathStageCardState._htmlGreen.withValues(alpha: .13)
         : current
-            ? _PathStageCardState._htmlAmber.withValues(alpha: .14)
-            : _PathStageCardState._htmlNeutral.withValues(alpha: .13);
+        ? _PathStageCardState._htmlAmber.withValues(alpha: .14)
+        : _PathStageCardState._htmlNeutral.withValues(alpha: .13);
     final badgeText = done ? _PathStageCardState._htmlGreen : textColor;
 
     return Row(
@@ -311,7 +321,9 @@ class _StageHeaderMain extends StatelessWidget {
               Text(
                 title,
                 maxLines: compact ? null : 1,
-                overflow: compact ? TextOverflow.visible : TextOverflow.ellipsis,
+                overflow: compact
+                    ? TextOverflow.visible
+                    : TextOverflow.ellipsis,
                 style: TextStyle(
                   color: done ? _PathStageCardState._htmlGreen : textColor,
                   fontSize: 20,
@@ -324,7 +336,9 @@ class _StageHeaderMain extends StatelessWidget {
               Text(
                 criteria,
                 maxLines: compact ? null : 1,
-                overflow: compact ? TextOverflow.visible : TextOverflow.ellipsis,
+                overflow: compact
+                    ? TextOverflow.visible
+                    : TextOverflow.ellipsis,
                 style: TextStyle(
                   color: mutedColor,
                   fontSize: 14,
@@ -364,13 +378,13 @@ class _StageHeaderSide extends StatelessWidget {
     final stateColor = done
         ? _PathStageCardState._htmlGreen
         : current
-            ? _PathStageCardState._htmlAmber
-            : _PathStageCardState._htmlNeutral;
+        ? _PathStageCardState._htmlAmber
+        : _PathStageCardState._htmlNeutral;
     final backgroundAlpha = done
         ? .13
         : current
-            ? .14
-            : .12;
+        ? .14
+        : .12;
 
     return Padding(
       padding: const EdgeInsets.only(top: 1),
@@ -424,6 +438,7 @@ class _PathActionRow extends StatelessWidget {
     required this.mutedColor,
     required this.dividerColor,
     required this.onToggle,
+    required this.onEdit,
   });
 
   final PathActionSnapshot action;
@@ -433,9 +448,13 @@ class _PathActionRow extends StatelessWidget {
   final Color mutedColor;
   final Color dividerColor;
   final ValueChanged<bool> onToggle;
+  final VoidCallback onEdit;
 
   @override
   Widget build(BuildContext context) {
+    final checklistDone = action.checklist.where((item) => item.isDone).length;
+    final hasDetails =
+        action.description.isNotEmpty || action.checklist.isNotEmpty;
     return Container(
       padding: const EdgeInsets.fromLTRB(22, 14, 16, 14),
       decoration: BoxDecoration(
@@ -453,33 +472,56 @@ class _PathActionRow extends StatelessWidget {
           ),
           const SizedBox(width: 14),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  action.text,
-                  style: TextStyle(
-                    color: action.isDone ? mutedColor : textColor,
-                    decoration:
-                        action.isDone ? TextDecoration.lineThrough : null,
-                    fontSize: 16,
-                    height: 1.35,
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
-                if (action.expectedResult.isNotEmpty) ...[
-                  const SizedBox(height: 4),
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: onEdit,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   Text(
-                    '${ru ? 'Результат' : 'Output'}: ${action.expectedResult}',
+                    action.text,
                     style: TextStyle(
-                      color: mutedColor,
-                      fontSize: 14,
+                      color: action.isDone ? mutedColor : textColor,
+                      decoration: action.isDone
+                          ? TextDecoration.lineThrough
+                          : null,
+                      fontSize: 16,
                       height: 1.35,
                       fontWeight: FontWeight.w400,
                     ),
                   ),
+                  if (action.expectedResult.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      '${ru ? 'Результат' : 'Output'}: ${action.expectedResult}',
+                      style: TextStyle(
+                        color: mutedColor,
+                        fontSize: 14,
+                        height: 1.35,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                  ],
+                  if (hasDetails) ...[
+                    const SizedBox(height: 5),
+                    Text(
+                      [
+                        if (action.description.isNotEmpty)
+                          ru ? 'есть описание' : 'description',
+                        if (action.checklist.isNotEmpty)
+                          '${ru ? 'чек-лист' : 'checklist'} '
+                              '$checklistDone/${action.checklist.length}',
+                      ].join(' · '),
+                      style: TextStyle(
+                        color: mutedColor,
+                        fontSize: 12.5,
+                        height: 1.3,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
           ),
           const SizedBox(width: 14),
@@ -496,8 +538,8 @@ class _PathActionRow extends StatelessWidget {
                     fontWeight: FontWeight.w400,
                   ),
                 ),
-                const SizedBox(width: 2),
-                Opacity(opacity: .72, child: dragHandle),
+                const SizedBox(width: 4),
+                dragHandle,
               ],
             ),
           ),

@@ -72,3 +72,9 @@ Both levels remain reorderable:
 - actions reorder in the nested `AppReorderableList`.
 
 Both use stable domain keys, canonical drag mechanics, immediate local reordering, and asynchronous Path revision persistence.
+
+## Options control and detailed editing
+
+The visible drag glyph is replaced by an **Options** control for every stage and every stage item. A normal click/tap opens editing. Holding the same control starts the canonical reorder gesture, so ordering remains available without a separate drag icon.
+
+Stage editing changes the stage wording and completion criterion. Item editing owns four content levels: formulation, final expected result, optional description/context, and an optional mini-checklist. The Path heading is a first-class editable name, separate from the Path goal; both are revisioned with the rest of Path content.

@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `ea3ae8b1` on 2026-09-04.**
+**Generated from input HEAD `6a45fee` on 2026-09-04.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 846 — each appears **exactly once** below.
+**Tracked files:** 848 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -31,7 +31,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | `Brain/data` | 87 |
 | `platform build` | 83 |
 | `shared foundation` | 64 |
-| `developer tool` | 58 |
+| `developer tool` | 59 |
 | `platform resource` | 44 |
 | `Desktop Voice runtime` | 36 |
 | `governing documentation` | 36 |
@@ -43,7 +43,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | `localization` | 13 |
 | `installer` | 12 |
 | `Brain Voice` | 10 |
-| `CI/deployment` | 9 |
+| `CI/deployment` | 10 |
 | `shared time` | 7 |
 | `package metadata` | 6 |
 | `shared diagnostics` | 6 |
@@ -56,8 +56,8 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 465 |
-| `REQUIRED_FOR_TEST_OR_TOOLING` | 200 |
+| `PROVEN_REQUIRED` | 466 |
+| `REQUIRED_FOR_TEST_OR_TOOLING` | 201 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
 | `GOVERNING_DOCUMENTATION` | 36 |
 | `HISTORICAL_RECORD` | 17 |
@@ -67,7 +67,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 782 |
+| `HIGH` | 784 |
 | `MEDIUM` | 64 |
 
 ---
@@ -4659,6 +4659,43 @@ RU:
 - **Связано с:** `.github/`, Flutter tooling.
 
 
+### `.github/workflows/tmp-apply-path-editors.yml`
+
+EN:
+
+- **Human purpose:** GitHub Actions workflow `.github/workflows/tmp-apply-path-editors.yml` defines the repository automation named by this workflow file. The CI system loads `.github/workflows/tmp-apply-path-editors.yml` to run its declared triggers, permissions, jobs, and checks.
+- **What this is:** GitHub Actions workflow `.github/workflows/tmp-apply-path-editors.yml` defines the repository automation named by this workflow file.
+- **Why needed:** The CI system loads `.github/workflows/tmp-apply-path-editors.yml` to run its declared triggers, permissions, jobs, and checks.
+- **Contents:** YAML workflow definition specific to `tmp-apply-path-editors.yml`.
+- **Repository role:** CI/deployment
+- **Evidence of use:** GitHub Actions discovers workflows under `.github/workflows/`; see `docs/DEPLOY.md` for publish/build intent.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Broken CI deploy or Windows installer pipeline.
+- **Confidence:** HIGH
+- **Owner / layer:** CI
+- **Responsibilities:** Own the GitHub Actions behavior declared by `tmp-apply-path-editors.yml`.
+- **When to open:** When behavior tied to `tmp-apply-path-editors.yml` breaks or you need to change its documented role.
+- **Can it be deleted?** Broken CI deploy or Windows installer pipeline.
+- **Connected to:** Flutter `.github` tooling.
+
+RU:
+
+- **Зачем файл человеку:** Автоматизация GitHub Actions `tmp-apply-path-editors.yml` для CI и операций репозитория. GitHub Actions читает `tmp-apply-path-editors.yml` и запускает описанные в нём события, проверки и служебные шаги.
+- **Что это:** Автоматизация GitHub Actions `tmp-apply-path-editors.yml` для CI и операций репозитория.
+- **Зачем:** GitHub Actions читает `tmp-apply-path-editors.yml` и запускает описанные в нём события, проверки и служебные шаги.
+- **Содержимое:** YAML-триггеры, permissions и шаги CI, относящиеся к workflow `tmp-apply-path-editors.yml`.
+- **Роль в репозитории:** CI/deployment
+- **Доказательства использования:** GitHub Actions подхватывает workflow из `.github/workflows/`; см. `docs/DEPLOY.md`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Сломается CI deploy или сборка Windows installer.
+- **Уверенность:** HIGH
+- **Владелец / слой:** CI
+- **Обязанности:** Управляет CI-сценарием `tmp-apply-path-editors.yml` и его границами выполнения.
+- **Когда открывать:** Когда ломается поведение, связанное с `tmp-apply-path-editors.yml`.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `.github/`, Flutter tooling.
+
+
 ### `.github/workflows/windows-desktop-build.yml`
 
 EN:
@@ -5815,7 +5852,7 @@ EN:
 - **Why needed:** Quick answer to ‘where does X live?’ without reading the full encyclopedia.
 - **Contents:** Tables of `lib/data`, features, scripts; architecture guard entry points.
 - **Repository role:** governing documentation
-- **Evidence of use:** (1) Governing/ops/product documentation read by humans and agents (see `docs/PROJECT_KNOWLEDGE_PACK.md` / AGENTS routing). (2) Referenced by: `.cursor/rules/flutter_expert.mdc`, `.github/copilot-instructions.md`, `AGENTS.md`, `AGENT_NAVIGATION.md`.
+- **Evidence of use:** (1) Governing/ops/product documentation read by humans and agents (see `docs/PROJECT_KNOWLEDGE_PACK.md` / AGENTS routing). (2) Referenced by: `.cursor/rules/flutter_expert.mdc`, `.github/copilot-instructions.md`, `.github/workflows/tmp-apply-path-editors.yml`, `AGENTS.md`.
 - **Necessity status:** GOVERNING_DOCUMENTATION
 - **Deletion consequence:** Lost architecture/ops rule or agent routing instruction.
 - **Confidence:** HIGH
@@ -6111,7 +6148,7 @@ EN:
 - **Why needed:** Tracked because `docs` needs `PATHS_STAGE_CARD_VARIANT_2.md` for build, CI, or maintenance.
 - **Contents:** Open `PATHS_STAGE_CARD_VARIANT_2.md` when working on `docs` (see folder section above).
 - **Repository role:** governing documentation
-- **Evidence of use:** Governing/ops/product documentation read by humans and agents (see `docs/PROJECT_KNOWLEDGE_PACK.md` / AGENTS routing).
+- **Evidence of use:** (1) Governing/ops/product documentation read by humans and agents (see `docs/PROJECT_KNOWLEDGE_PACK.md` / AGENTS routing). (2) Referenced by: `scripts/manual/tmp_patch_paths_editors_20260904.py`.
 - **Necessity status:** GOVERNING_DOCUMENTATION
 - **Deletion consequence:** Lost architecture/ops rule or agent routing instruction.
 - **Confidence:** HIGH
@@ -12035,8 +12072,8 @@ EN:
 - **Human purpose:** Shared design-system widget — Desktop/web drag scroll. Plans, Timeline, and Lists reuse this instead of copying button/card styles.
 - **What this is:** Shared design-system widget — Desktop/web drag scroll.
 - **Why needed:** Plans, Timeline, and Lists reuse this instead of copying button/card styles.
-- **Contents:** Canonical Flutter widget (`MouseDragScrollBehavior`, `AppReorderItemBuilder`, `AppReorderItemKeyBuilder`, `AppReorderLabelBuilder`, `AppReorderableList`, `AppReorderHandle`).
-- **Key code names:** `MouseDragScrollBehavior`, `AppReorderItemBuilder`, `AppReorderItemKeyBuilder`, `AppReorderLabelBuilder`, `AppReorderableList`, `AppReorderHandle`
+- **Contents:** Canonical Flutter widget (`MouseDragScrollBehavior`, `AppReorderItemBuilder`, `AppReorderItemKeyBuilder`, `AppReorderLabelBuilder`, `AppReorderHandleBuilder`, `AppReorderableList`).
+- **Key code names:** `MouseDragScrollBehavior`, `AppReorderItemBuilder`, `AppReorderItemKeyBuilder`, `AppReorderLabelBuilder`, `AppReorderHandleBuilder`, `AppReorderableList`, `AppReorderHandle`
 - **Repository role:** shared foundation
 - **Evidence of use:** Imported/exported by production Dart: `lib/features/paths/paths_page.dart`, `lib/features/paths/widgets/path_stage_card.dart`, `lib/features/planning/planning_page_shell.dart`, `lib/features/timeline/timeline_view.dart`.
 - **Necessity status:** PROVEN_REQUIRED
@@ -14008,8 +14045,8 @@ EN:
 - **Human purpose:** Brain helper for data/sync — Path lifecycle, immutable revision snapshot types, stages/actions, project-independent structure audit. Shared PocketBase/auth/parse logic used by multiple tabs.
 - **What this is:** Brain helper for data/sync — Path lifecycle, immutable revision snapshot types, stages/actions, project-independent structure audit.
 - **Why needed:** Shared PocketBase/auth/parse logic used by multiple tabs.
-- **Contents:** Dart helpers and types (`PathStatus`, `PathActionSnapshot`, `PathStageSnapshot`, `ProjectPathSnapshot`, `PathCatalogSnapshot`, `PathCategoryNode`).
-- **Key code names:** `PathStatus`, `PathActionSnapshot`, `PathStageSnapshot`, `ProjectPathSnapshot`, `PathCatalogSnapshot`, `PathCategoryNode`, `PathCategoryProjection`, `_PathCategoryIndex`
+- **Contents:** Dart helpers and types (`PathStatus`, `PathChecklistItemSnapshot`, `PathActionSnapshot`, `PathStageSnapshot`, `ProjectPathSnapshot`, `PathCatalogSnapshot`).
+- **Key code names:** `PathStatus`, `PathChecklistItemSnapshot`, `PathActionSnapshot`, `PathStageSnapshot`, `ProjectPathSnapshot`, `PathCatalogSnapshot`, `PathCategoryNode`, `PathCategoryProjection`, `_PathCategoryIndex`
 - **Repository role:** Brain/data
 - **Evidence of use:** Imported/exported by production Dart: `lib/data/paths/path_repository.dart`.
 - **Necessity status:** PROVEN_REQUIRED
@@ -17912,8 +17949,8 @@ EN:
 - **Human purpose:** `path_stage_card.dart` on paths area — path stage card. Users see `path_stage_card.dart` when using paths area.
 - **What this is:** `path_stage_card.dart` on paths area — path stage card.
 - **Why needed:** Users see `path_stage_card.dart` when using paths area.
-- **Contents:** Primary symbols: `PathActionToggle`, `PathActionReorder`, `PathStageCard`, `_PathStageCardState`, `_StageHeaderMain`, `_StageHeaderSide`.
-- **Key code names:** `PathActionToggle`, `PathActionReorder`, `PathStageCard`, `_PathStageCardState`, `_StageHeaderMain`, `_StageHeaderSide`, `_PathActionRow`
+- **Contents:** Primary symbols: `PathActionToggle`, `PathActionEdit`, `PathActionReorder`, `PathStageCard`, `_PathStageCardState`, `_StageHeaderMain`.
+- **Key code names:** `PathActionToggle`, `PathActionEdit`, `PathActionReorder`, `PathStageCard`, `_PathStageCardState`, `_StageHeaderMain`, `_StageHeaderSide`
 - **Repository role:** production UI
 - **Evidence of use:** Imported/exported by production Dart: `lib/features/paths/paths_page.dart`.
 - **Necessity status:** PROVEN_REQUIRED
@@ -29031,7 +29068,7 @@ EN:
 - **Why needed:** Maintains owner-readable structure guide in sync with repo after changes.
 - **Contents:** Python generator + curated folder/file descriptions.
 - **Repository role:** developer tool
-- **Evidence of use:** (1) Invoked or documented by: `AGENT_NAVIGATION.md`, `docs/APP_STRUCTURE.md`, `docs/reports/ARCHITECTURE_GUARD_BASELINE_2026-07-17.md`, `docs/reports/FINAL_STRUCTURE_AUDIT_2026-07-06.md`, `docs/reports/FINAL_STRUCTURE_PARITY_AND_DOC_CLEANUP_2026-07-03.md`. (2) Generator for `docs/APP_STRUCTURE_DETAILED.md`; input is `git ls-files` + guide modules.
+- **Evidence of use:** (1) Invoked or documented by: `.github/workflows/tmp-apply-path-editors.yml`, `AGENT_NAVIGATION.md`, `docs/APP_STRUCTURE.md`, `docs/reports/ARCHITECTURE_GUARD_BASELINE_2026-07-17.md`, `docs/reports/FINAL_STRUCTURE_AUDIT_2026-07-06.md`. (2) Generator for `docs/APP_STRUCTURE_DETAILED.md`; input is `git ls-files` + guide modules.
 - **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Deletion consequence:** Broken audit/deploy/manual maintenance command.
 - **Confidence:** HIGH
@@ -29048,7 +29085,7 @@ RU:
 - **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
 - **Содержимое:** Команды PowerShell/Python/Dart в `generate_app_structure_detailed.py`.
 - **Роль в репозитории:** developer tool
-- **Доказательства использования:** (1) Вызывается или описан в: `AGENT_NAVIGATION.md`, `docs/APP_STRUCTURE.md`, `docs/reports/ARCHITECTURE_GUARD_BASELINE_2026-07-17.md`, `docs/reports/FINAL_STRUCTURE_AUDIT_2026-07-06.md`, `docs/reports/FINAL_STRUCTURE_PARITY_AND_DOC_CLEANUP_2026-07-03.md`. (2) Генератор `docs/APP_STRUCTURE_DETAILED.md`; вход — `git ls-files` и guide-модули.
+- **Доказательства использования:** (1) Вызывается или описан в: `.github/workflows/tmp-apply-path-editors.yml`, `AGENT_NAVIGATION.md`, `docs/APP_STRUCTURE.md`, `docs/reports/ARCHITECTURE_GUARD_BASELINE_2026-07-17.md`, `docs/reports/FINAL_STRUCTURE_AUDIT_2026-07-06.md`. (2) Генератор `docs/APP_STRUCTURE_DETAILED.md`; вход — `git ls-files` и guide-модули.
 - **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Что будет, если удалить:** Сломается audit/deploy или ручная команда сопровождения.
 - **Уверенность:** HIGH
@@ -30017,6 +30054,43 @@ RU:
 - **Владелец / слой:** инструменты разработчика
 - **Обязанности:** Workflow, описанный в header или `docs/DEPLOY.md`.
 - **Когда открывать:** Owner или CI запускает `td.ps1` по инструкции в repo docs.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `scripts/manual/`, `docs/DEPLOY.md`.
+
+
+### `scripts/manual/tmp_patch_paths_editors_20260904.py`
+
+EN:
+
+- **Human purpose:** Developer script `tmp_patch_paths_editors_20260904.py` — run manually for maintenance, smoke test, or deploy helper. Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **What this is:** Developer script `tmp_patch_paths_editors_20260904.py` — run manually for maintenance, smoke test, or deploy helper.
+- **Why needed:** Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **Contents:** PowerShell, Python, or Dart commands for `tmp_patch_paths_editors_20260904.py`.
+- **Repository role:** developer tool
+- **Evidence of use:** Invoked or documented by: `.github/workflows/tmp-apply-path-editors.yml`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Broken audit/deploy/manual maintenance command.
+- **Confidence:** HIGH
+- **Owner / layer:** developer tooling
+- **Responsibilities:** See script header comments for exact behavior.
+- **When to open:** When workflow documented for `tmp_patch_paths_editors_20260904.py` is needed.
+- **Can it be deleted?** No — part of documented dev workflow unless cleanup report removed it.
+- **Connected to:** `scripts/manual/`, `docs/DEPLOY.md`.
+
+RU:
+
+- **Зачем файл человеку:** Dev/CI скрипт `tmp_patch_paths_editors_20260904.py` — повторяемая команда из repo docs. Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Что это:** Dev/CI скрипт `tmp_patch_paths_editors_20260904.py` — повторяемая команда из repo docs.
+- **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Содержимое:** Команды PowerShell/Python/Dart в `tmp_patch_paths_editors_20260904.py`.
+- **Роль в репозитории:** developer tool
+- **Доказательства использования:** Вызывается или описан в: `.github/workflows/tmp-apply-path-editors.yml`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Сломается audit/deploy или ручная команда сопровождения.
+- **Уверенность:** HIGH
+- **Владелец / слой:** инструменты разработчика
+- **Обязанности:** Workflow, описанный в header или `docs/DEPLOY.md`.
+- **Когда открывать:** Owner или CI запускает `tmp_patch_paths_editors_20260904.py` по инструкции в repo docs.
 - **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
 - **Связано с:** `scripts/manual/`, `docs/DEPLOY.md`.
 

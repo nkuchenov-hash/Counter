@@ -2,6 +2,40 @@ import 'package:counter/data/models.dart';
 
 enum PathStatus { draft, reviewed, active, archived }
 
+class PathChecklistItemSnapshot {
+  const PathChecklistItemSnapshot({
+    required this.id,
+    required this.text,
+    required this.isDone,
+  });
+
+  final String id;
+  final String text;
+  final bool isDone;
+
+  PathChecklistItemSnapshot copyWith({String? text, bool? isDone}) =>
+      PathChecklistItemSnapshot(
+        id: id,
+        text: text ?? this.text,
+        isDone: isDone ?? this.isDone,
+      );
+
+  factory PathChecklistItemSnapshot.fromJson(
+    Map<String, dynamic> json, {
+    required String fallbackId,
+  }) => PathChecklistItemSnapshot(
+    id: (json['id'] ?? fallbackId).toString(),
+    text: (json['text'] ?? '').toString().trim(),
+    isDone: json['isDone'] == true || json['is_done'] == true,
+  );
+
+  Map<String, dynamic> toJson() => <String, dynamic>{
+    'id': id,
+    'text': text,
+    'isDone': isDone,
+  };
+}
+
 class PathActionSnapshot {
   const PathActionSnapshot({
     required this.id,
@@ -10,6 +44,8 @@ class PathActionSnapshot {
     required this.minutes,
     required this.track,
     required this.isDone,
+    this.description = '',
+    this.checklist = const <PathChecklistItemSnapshot>[],
   });
 
   final String id;
@@ -18,14 +54,26 @@ class PathActionSnapshot {
   final int minutes;
   final String track;
   final bool isDone;
+  final String description;
+  final List<PathChecklistItemSnapshot> checklist;
 
-  PathActionSnapshot copyWith({bool? isDone}) => PathActionSnapshot(
+  PathActionSnapshot copyWith({
+    String? text,
+    String? expectedResult,
+    int? minutes,
+    String? track,
+    bool? isDone,
+    String? description,
+    List<PathChecklistItemSnapshot>? checklist,
+  }) => PathActionSnapshot(
     id: id,
-    text: text,
-    expectedResult: expectedResult,
-    minutes: minutes,
-    track: track,
+    text: text ?? this.text,
+    expectedResult: expectedResult ?? this.expectedResult,
+    minutes: minutes ?? this.minutes,
+    track: track ?? this.track,
     isDone: isDone ?? this.isDone,
+    description: description ?? this.description,
+    checklist: checklist ?? this.checklist,
   );
 
   factory PathActionSnapshot.fromJson(
@@ -38,6 +86,19 @@ class PathActionSnapshot {
         : rawMinutes is num
         ? rawMinutes.round()
         : int.tryParse(rawMinutes?.toString() ?? '') ?? 0;
+    final checklist = <PathChecklistItemSnapshot>[];
+    final rawChecklist = json['checklist'];
+    if (rawChecklist is List) {
+      for (var index = 0; index < rawChecklist.length; index++) {
+        final raw = rawChecklist[index];
+        if (raw is! Map) continue;
+        final item = PathChecklistItemSnapshot.fromJson(
+          Map<String, dynamic>.from(raw),
+          fallbackId: '$fallbackId-check-$index',
+        );
+        if (item.text.isNotEmpty) checklist.add(item);
+      }
+    }
     return PathActionSnapshot(
       id: (json['id'] ?? fallbackId).toString(),
       text: (json['text'] ?? '').toString().trim(),
@@ -45,6 +106,8 @@ class PathActionSnapshot {
       minutes: minutes,
       track: (json['track'] ?? 'execution').toString().trim(),
       isDone: json['isDone'] == true || json['is_done'] == true,
+      description: (json['description'] ?? '').toString().trim(),
+      checklist: checklist,
     );
   }
 
@@ -55,6 +118,8 @@ class PathActionSnapshot {
     'minutes': minutes,
     'track': track,
     'isDone': isDone,
+    'description': description,
+    'checklist': checklist.map((item) => item.toJson()).toList(growable: false),
   };
 }
 
@@ -74,12 +139,14 @@ class PathStageSnapshot {
   final List<PathActionSnapshot> actions;
 
   PathStageSnapshot copyWith({
+    String? title,
+    String? completionCriteria,
     bool? isDone,
     List<PathActionSnapshot>? actions,
   }) => PathStageSnapshot(
     id: id,
-    title: title,
-    completionCriteria: completionCriteria,
+    title: title ?? this.title,
+    completionCriteria: completionCriteria ?? this.completionCriteria,
     isDone: isDone ?? this.isDone,
     actions: actions ?? this.actions,
   );
@@ -131,6 +198,7 @@ class ProjectPathSnapshot {
     required this.revisionRecordId,
     required this.revisionId,
     required this.category,
+    this.name = '',
     required this.goal,
     required this.status,
     required this.version,
@@ -142,12 +210,14 @@ class ProjectPathSnapshot {
   final String revisionRecordId;
   final String revisionId;
   final CategoryRule category;
+  final String name;
   final String goal;
   final PathStatus status;
   final int version;
   final List<PathStageSnapshot> stages;
 
   ProjectPathSnapshot copyWith({
+    String? name,
     String? goal,
     List<PathStageSnapshot>? stages,
   }) => ProjectPathSnapshot(
@@ -156,6 +226,7 @@ class ProjectPathSnapshot {
     revisionRecordId: revisionRecordId,
     revisionId: revisionId,
     category: category,
+    name: name ?? this.name,
     goal: goal ?? this.goal,
     status: status,
     version: version,
@@ -335,8 +406,7 @@ Set<String> pathCategoryKeysForRootIds({
     categoryRoots: categoryRoots,
     selectedKeys: <String>{
       for (final id in rootIds)
-        if (index.byId[id] != null)
-          pathCategoryPreferenceKey(index.byId[id]!),
+        if (index.byId[id] != null) pathCategoryPreferenceKey(index.byId[id]!),
     },
   );
 }
@@ -403,9 +473,11 @@ PathCategoryProjection buildPathCategoryProjection({
     final directPaths = List<ProjectPathSnapshot>.from(
       pathsByCategoryId[category.id] ?? const <ProjectPathSnapshot>[],
     );
-    directPaths.sort(
-      (a, b) => a.goal.toLowerCase().compareTo(b.goal.toLowerCase()),
-    );
+    directPaths.sort((a, b) {
+      final aName = a.name.trim().isEmpty ? a.goal : a.name;
+      final bName = b.name.trim().isEmpty ? b.goal : b.name;
+      return aName.toLowerCase().compareTo(bName.toLowerCase());
+    });
     if (category.isArchived || (directPaths.isEmpty && childNodes.isEmpty)) {
       return null;
     }

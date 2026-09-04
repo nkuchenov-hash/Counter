@@ -8,17 +8,19 @@ class MouseDragScrollBehavior extends MaterialScrollBehavior {
 
   @override
   Set<PointerDeviceKind> get dragDevices => {
-        PointerDeviceKind.touch,
-        PointerDeviceKind.stylus,
-        PointerDeviceKind.mouse,
-        PointerDeviceKind.trackpad,
-      };
+    PointerDeviceKind.touch,
+    PointerDeviceKind.stylus,
+    PointerDeviceKind.mouse,
+    PointerDeviceKind.trackpad,
+  };
 }
 
 typedef AppReorderItemBuilder =
     Widget Function(BuildContext context, int index, Widget dragHandle);
 typedef AppReorderItemKeyBuilder = Key Function(int index);
 typedef AppReorderLabelBuilder = String Function(int index);
+typedef AppReorderHandleBuilder =
+    Widget Function(BuildContext context, int index);
 
 /// Canonical vertical reorder surface for app-owned ordered collections.
 ///
@@ -35,6 +37,7 @@ class AppReorderableList extends StatelessWidget {
     required this.itemBuilder,
     required this.onReorder,
     required this.dragLabelBuilder,
+    this.dragHandleBuilder,
     this.header,
     this.footer,
     this.padding = EdgeInsets.zero,
@@ -49,6 +52,7 @@ class AppReorderableList extends StatelessWidget {
   final AppReorderItemBuilder itemBuilder;
   final ReorderCallback onReorder;
   final AppReorderLabelBuilder dragLabelBuilder;
+  final AppReorderHandleBuilder? dragHandleBuilder;
   final Widget? header;
   final Widget? footer;
   final EdgeInsets padding;
@@ -70,10 +74,11 @@ class AppReorderableList extends StatelessWidget {
           child: itemBuilder(
             context,
             index,
-            AppReorderHandle(
-              index: index,
-              tooltip: dragLabelBuilder(index),
-            ),
+            dragHandleBuilder?.call(context, index) ??
+                AppReorderHandle(
+                  index: index,
+                  tooltip: dragLabelBuilder(index),
+                ),
           ),
         );
       },
@@ -115,11 +120,7 @@ class AppReorderHandle extends StatelessWidget {
             child: SizedBox(
               width: 36,
               height: 36,
-              child: Icon(
-                Icons.drag_indicator_rounded,
-                size: 20,
-                color: color,
-              ),
+              child: Icon(Icons.drag_indicator_rounded, size: 20, color: color),
             ),
           ),
         ),
