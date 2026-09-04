@@ -36,7 +36,7 @@ Keep the Options control in the right-side header controls between progress and 
 - header main/side gap: 14px;
 - number badge: 34×34px;
 - title-to-criteria gap: 5px;
-- stage title: 20px, 800, line-height 1.18;
+- stage title: 16px, 800, line-height 1.25;
 - criteria: 14px, line-height 1.4;
 - progress pill: 30px high, 11px horizontal padding, 13px/800 text;
 - stage Options target: 36×36px; it is an editing control only;

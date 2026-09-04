@@ -20,17 +20,14 @@ class PlanningSortModeBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 8, 12, 6),
+      padding: const EdgeInsets.fromLTRB(12, 0, 12, 6),
       child: Align(
         alignment: AlignmentDirectional.centerStart,
         child: SizedBox(
           height: kAppCompactControlHeight,
           child: SegmentedButton<PlanSortMode>(
             showSelectedIcon: false,
-            style: appCompactSegmentedButtonStyle(
-              context,
-              segmentWidth: 78,
-            ),
+            style: appCompactSegmentedButtonStyle(context, segmentWidth: 78),
             segments: [
               ButtonSegment<PlanSortMode>(
                 value: PlanSortMode.category,

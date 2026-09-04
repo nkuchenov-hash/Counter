@@ -661,6 +661,7 @@ class _PathsPageState extends State<PathsPage> {
     return Material(
       color: scheme.surface,
       child: SafeArea(
+        top: false,
         bottom: false,
         child: Column(
           children: [
@@ -676,7 +677,12 @@ class _PathsPageState extends State<PathsPage> {
   Widget _header() {
     final scheme = Theme.of(context).colorScheme;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 14, 12, 12),
+      padding: EdgeInsets.fromLTRB(
+        20,
+        MediaQuery.paddingOf(context).top,
+        12,
+        12,
+      ),
       child: Row(
         children: [
           Icon(Icons.alt_route_rounded, color: scheme.primary),
@@ -900,7 +906,7 @@ class _PathsPageState extends State<PathsPage> {
     final currentIndex = path.stages.indexWhere((stage) => !stage.isDone);
     final breadcrumb = _breadcrumb(path);
     return AppReorderableList(
-      padding: const EdgeInsets.fromLTRB(24, 28, 24, 56),
+      padding: const EdgeInsets.fromLTRB(24, 0, 24, 56),
       spacing: 12,
       itemCount: path.stages.length,
       itemKeyBuilder: (index) =>
