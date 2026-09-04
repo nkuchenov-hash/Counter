@@ -15,6 +15,18 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: feat/paths-editors-options-20260904
+      - name: Fix patch documentation fallback
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('scripts/manual/tmp_patch_paths_editors_20260904.py')
+          text = p.read_text()
+          old = "    else:\n        raise SystemExit('Path stage card row not found in docs/APP_STRUCTURE.md')\n    app_structure.write_text('\\n'.join(rows) + '\\n')"
+          new = "    else:\n        rows.append('| `features/paths/widgets/path_edit_sheet.dart` | Path / stage / action editor sheets, item mini-checklist + description editor, and Options-as-delayed-reorder control |')\n    app_structure.write_text('\\n'.join(rows) + '\\n')"
+          if old not in text:
+              raise SystemExit('documentation fallback pattern not found')
+          p.write_text(text.replace(old, new, 1))
+          PY
       - name: Apply patch
         run: python3 scripts/manual/tmp_patch_paths_editors_20260904.py
       - name: Format changed Dart files
