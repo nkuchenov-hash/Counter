@@ -18,30 +18,6 @@ class _PathFolderChoice {
   final Set<String>? rootKeys;
 }
 
-class _PathActionDraft {
-  const _PathActionDraft({
-    required this.text,
-    required this.expectedResult,
-    required this.minutes,
-  });
-
-  final String text;
-  final String expectedResult;
-  final int minutes;
-}
-
-class _PathStageDraft {
-  const _PathStageDraft({
-    required this.title,
-    required this.completionCriteria,
-    required this.firstAction,
-  });
-
-  final String title;
-  final String completionCriteria;
-  final _PathActionDraft firstAction;
-}
-
 class PathsPage extends StatefulWidget {
   const PathsPage({super.key});
 
@@ -98,10 +74,12 @@ class _PathsPageState extends State<PathsPage> {
   }
 
   Future<void> _load() async {
-    if (mounted) setState(() {
-      _loading = true;
-      _error = null;
-    });
+    if (mounted) {
+      setState(() {
+        _loading = true;
+        _error = null;
+      });
+    }
     try {
       final prefsFuture = _loadVisibilityPrefs();
       final catalog = await _repository.loadActivePaths();
@@ -357,7 +335,9 @@ class _PathsPageState extends State<PathsPage> {
     );
     if (confirmed != true) return;
     if (!await _repository.deletePath(path)) {
-      if (mounted) _snack(_ru ? 'Не удалось удалить путь.' : 'Could not delete Path.');
+      if (mounted) {
+        _snack(_ru ? 'Не удалось удалить путь.' : 'Could not delete Path.');
+      }
       return;
     }
     _confirmedPaths.remove(path.pathId);
@@ -437,12 +417,10 @@ class _PathsPageState extends State<PathsPage> {
     }
   }
 
-  String? _requiredField(String? value) {
-    if (value == null || value.trim().isEmpty) {
-      return _ru ? 'Обязательное поле' : 'Required field';
-    }
-    return null;
-  }
+  String? _requiredField(String? value) =>
+      value == null || value.trim().isEmpty
+          ? (_ru ? 'Обязательное поле' : 'Required field')
+          : null;
 
   String? _minutesField(String? value) {
     final minutes = int.tryParse(value?.trim() ?? '');
@@ -455,236 +433,111 @@ class _PathsPageState extends State<PathsPage> {
   String _manualElementId(String prefix) =>
       '$prefix-${DateTime.now().microsecondsSinceEpoch}';
 
-  Future<_PathActionDraft?> _showActionDialog() async {
-    final formKey = GlobalKey<FormState>();
-    final textController = TextEditingController();
-    final resultController = TextEditingController();
-    final minutesController = TextEditingController(text: '15');
-    final value = await showDialog<_PathActionDraft>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(_ru ? 'Добавить пункт этапа' : 'Add stage item'),
-        content: SizedBox(
-          width: 620,
-          child: Form(
-            key: formKey,
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextFormField(
-                    controller: textController,
-                    autofocus: true,
-                    decoration: InputDecoration(
-                      labelText: _ru ? 'Пункт этапа' : 'Stage item',
-                    ),
-                    validator: _requiredField,
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: resultController,
-                    decoration: InputDecoration(
-                      labelText: _ru ? 'Ожидаемый результат' : 'Expected result',
-                    ),
-                    validator: _requiredField,
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: minutesController,
-                    keyboardType: TextInputType.number,
-                    decoration: InputDecoration(
-                      labelText: _ru ? 'Минуты' : 'Minutes',
-                    ),
-                    validator: _minutesField,
-                  ),
-                ],
-              ),
-            ),
+  Future<Map<String, String>?> _actionDraft() => showAppFormDialog(
+        context: context,
+        title: _ru ? 'Добавить пункт этапа' : 'Add stage item',
+        cancelLabel: _ru ? 'Отмена' : 'Cancel',
+        submitLabel: _ru ? 'Добавить' : 'Add',
+        fields: [
+          AppFormDialogField(
+            keyName: 'action',
+            label: _ru ? 'Пункт этапа' : 'Stage item',
+            autofocus: true,
+            validator: _requiredField,
           ),
-        ),
-        actions: [
-          AppButton.ghost(
-            label: _ru ? 'Отмена' : 'Cancel',
-            onPressed: () => Navigator.of(dialogContext).pop(),
+          AppFormDialogField(
+            keyName: 'result',
+            label: _ru ? 'Ожидаемый результат' : 'Expected result',
+            validator: _requiredField,
           ),
-          AppButton.primary(
-            label: _ru ? 'Добавить' : 'Add',
-            icon: Icons.add_rounded,
-            onPressed: () {
-              if (formKey.currentState?.validate() != true) return;
-              Navigator.of(dialogContext).pop(
-                _PathActionDraft(
-                  text: textController.text.trim(),
-                  expectedResult: resultController.text.trim(),
-                  minutes: int.parse(minutesController.text.trim()),
-                ),
-              );
-            },
+          AppFormDialogField(
+            keyName: 'minutes',
+            label: _ru ? 'Минуты' : 'Minutes',
+            initialValue: '15',
+            keyboardType: TextInputType.number,
+            validator: _minutesField,
           ),
         ],
-      ),
-    );
-    textController.dispose();
-    resultController.dispose();
-    minutesController.dispose();
-    return value;
-  }
+      );
 
-  Future<_PathStageDraft?> _showStageDialog() async {
-    final formKey = GlobalKey<FormState>();
-    final titleController = TextEditingController();
-    final criteriaController = TextEditingController();
-    final actionController = TextEditingController();
-    final resultController = TextEditingController();
-    final minutesController = TextEditingController(text: '15');
-    final value = await showDialog<_PathStageDraft>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(_ru ? 'Добавить этап' : 'Add stage'),
-        content: SizedBox(
-          width: 620,
-          child: Form(
-            key: formKey,
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextFormField(
-                    controller: titleController,
-                    autofocus: true,
-                    decoration: InputDecoration(
-                      labelText: _ru ? 'Название этапа' : 'Stage title',
-                    ),
-                    validator: _requiredField,
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: criteriaController,
-                    decoration: InputDecoration(
-                      labelText: _ru ? 'Готово, когда' : 'Done when',
-                    ),
-                    validator: _requiredField,
-                  ),
-                  const SizedBox(height: 18),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      _ru ? 'Первый пункт' : 'First item',
-                      style: Theme.of(context)
-                          .textTheme
-                          .titleSmall
-                          ?.copyWith(fontWeight: FontWeight.w700),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  TextFormField(
-                    controller: actionController,
-                    decoration: InputDecoration(
-                      labelText: _ru ? 'Действие' : 'Action',
-                    ),
-                    validator: _requiredField,
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: resultController,
-                    decoration: InputDecoration(
-                      labelText: _ru ? 'Ожидаемый результат' : 'Expected result',
-                    ),
-                    validator: _requiredField,
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: minutesController,
-                    keyboardType: TextInputType.number,
-                    decoration: InputDecoration(
-                      labelText: _ru ? 'Минуты' : 'Minutes',
-                    ),
-                    validator: _minutesField,
-                  ),
-                ],
-              ),
-            ),
+  Future<Map<String, String>?> _stageDraft() => showAppFormDialog(
+        context: context,
+        title: _ru ? 'Добавить этап' : 'Add stage',
+        cancelLabel: _ru ? 'Отмена' : 'Cancel',
+        submitLabel: _ru ? 'Добавить этап' : 'Add stage',
+        fields: [
+          AppFormDialogField(
+            keyName: 'title',
+            label: _ru ? 'Название этапа' : 'Stage title',
+            autofocus: true,
+            validator: _requiredField,
           ),
-        ),
-        actions: [
-          AppButton.ghost(
-            label: _ru ? 'Отмена' : 'Cancel',
-            onPressed: () => Navigator.of(dialogContext).pop(),
+          AppFormDialogField(
+            keyName: 'criteria',
+            label: _ru ? 'Готово, когда' : 'Done when',
+            validator: _requiredField,
           ),
-          AppButton.primary(
-            label: _ru ? 'Добавить этап' : 'Add stage',
-            icon: Icons.add_rounded,
-            onPressed: () {
-              if (formKey.currentState?.validate() != true) return;
-              Navigator.of(dialogContext).pop(
-                _PathStageDraft(
-                  title: titleController.text.trim(),
-                  completionCriteria: criteriaController.text.trim(),
-                  firstAction: _PathActionDraft(
-                    text: actionController.text.trim(),
-                    expectedResult: resultController.text.trim(),
-                    minutes: int.parse(minutesController.text.trim()),
-                  ),
-                ),
-              );
-            },
+          AppFormDialogField(
+            keyName: 'action',
+            label: _ru ? 'Первый пункт' : 'First item',
+            validator: _requiredField,
+          ),
+          AppFormDialogField(
+            keyName: 'result',
+            label: _ru ? 'Ожидаемый результат' : 'Expected result',
+            validator: _requiredField,
+          ),
+          AppFormDialogField(
+            keyName: 'minutes',
+            label: _ru ? 'Минуты' : 'Minutes',
+            initialValue: '15',
+            keyboardType: TextInputType.number,
+            validator: _minutesField,
           ),
         ],
-      ),
-    );
-    titleController.dispose();
-    criteriaController.dispose();
-    actionController.dispose();
-    resultController.dispose();
-    minutesController.dispose();
-    return value;
-  }
+      );
 
   Future<void> _addAction(ProjectPathSnapshot path, int stageIndex) async {
-    final draft = await _showActionDialog();
+    final draft = await _actionDraft();
     if (!mounted || draft == null) return;
     final current = _localPathById(path.pathId) ?? path;
     if (stageIndex < 0 || stageIndex >= current.stages.length) return;
     final stages = List<PathStageSnapshot>.from(current.stages);
     final stage = stages[stageIndex];
     final actions = List<PathActionSnapshot>.from(stage.actions)
-      ..add(
-        PathActionSnapshot(
-          id: _manualElementId('manual-action'),
-          text: draft.text,
-          expectedResult: draft.expectedResult,
-          minutes: draft.minutes,
-          track: 'execution',
-          isDone: false,
-        ),
-      );
+      ..add(PathActionSnapshot(
+        id: _manualElementId('manual-action'),
+        text: draft['action']!,
+        expectedResult: draft['result']!,
+        minutes: int.parse(draft['minutes']!),
+        track: 'execution',
+        isDone: false,
+      ));
     stages[stageIndex] = stage.copyWith(actions: actions);
     unawaited(_saveOptimistic(current, current.copyWith(stages: stages)));
   }
 
   Future<void> _addStage(ProjectPathSnapshot path) async {
-    final draft = await _showStageDialog();
+    final draft = await _stageDraft();
     if (!mounted || draft == null) return;
     final current = _localPathById(path.pathId) ?? path;
     final stages = List<PathStageSnapshot>.from(current.stages)
-      ..add(
-        PathStageSnapshot(
-          id: _manualElementId('manual-stage'),
-          title: draft.title,
-          completionCriteria: draft.completionCriteria,
-          isDone: false,
-          actions: <PathActionSnapshot>[
-            PathActionSnapshot(
-              id: _manualElementId('manual-action'),
-              text: draft.firstAction.text,
-              expectedResult: draft.firstAction.expectedResult,
-              minutes: draft.firstAction.minutes,
-              track: 'execution',
-              isDone: false,
-            ),
-          ],
-        ),
-      );
+      ..add(PathStageSnapshot(
+        id: _manualElementId('manual-stage'),
+        title: draft['title']!,
+        completionCriteria: draft['criteria']!,
+        isDone: false,
+        actions: [
+          PathActionSnapshot(
+            id: _manualElementId('manual-action'),
+            text: draft['action']!,
+            expectedResult: draft['result']!,
+            minutes: int.parse(draft['minutes']!),
+            track: 'execution',
+            isDone: false,
+          ),
+        ],
+      ));
     unawaited(_saveOptimistic(current, current.copyWith(stages: stages)));
   }
 
