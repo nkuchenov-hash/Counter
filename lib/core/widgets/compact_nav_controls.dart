@@ -198,12 +198,15 @@ class AppQuickEntryRow extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 8),
-        AppButton.primary(
-          label: actionLabel,
-          icon: actionIcon,
-          onPressed: onAction,
-          loading: loading,
-          size: AppButtonSize.m,
+        SizedBox(
+          height: kAppCompactControlHeight,
+          child: AppButton.primary(
+            label: actionLabel,
+            icon: actionIcon,
+            onPressed: onAction,
+            loading: loading,
+            size: AppButtonSize.m,
+          ),
         ),
       ],
     );
