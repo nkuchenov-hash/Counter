@@ -101,7 +101,8 @@ class AppCompactTextTab extends StatelessWidget {
 /// Canonical one-line heading row for desktop primary sections.
 ///
 /// Feature-owned controls live on the same line as the section name; the shell
-/// must not add a second copy of the title above this row.
+/// must not add a second copy of the title above this row. Keep this chrome to
+/// one visual line; section-specific content starts below it.
 class AppDesktopSectionControlRow extends StatelessWidget {
   const AppDesktopSectionControlRow({
     super.key,
