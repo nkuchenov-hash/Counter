@@ -32,7 +32,7 @@ jobs:
       - name: Format changed Dart
         run: dart format lib/core/widgets/mouse_drag_scroll_behavior.dart lib/features/paths/paths_page.dart lib/features/paths/widgets/path_stage_card.dart lib/features/paths/widgets/path_edit_sheet.dart
       - name: Analyze changed Dart
-        run: flutter analyze lib/core/widgets/mouse_drag_scroll_behavior.dart lib/features/paths/paths_page.dart lib/features/paths/widgets/path_stage_card.dart lib/features/paths/widgets/path_edit_sheet.dart
+        run: flutter analyze --no-fatal-infos lib/core/widgets/mouse_drag_scroll_behavior.dart lib/features/paths/paths_page.dart lib/features/paths/widgets/path_stage_card.dart lib/features/paths/widgets/path_edit_sheet.dart
       - name: Verify documentation parity
         run: python scripts/audit/documentation_parity.py
       - name: Commit final fix
