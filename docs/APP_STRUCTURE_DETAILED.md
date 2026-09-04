@@ -2,7 +2,7 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `82370f1` on 2026-09-04.**
+**Generated from input HEAD `cb03c96f` on 2026-09-04.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
@@ -27,7 +27,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | Role | Count |
 | :--- | ---: |
 | `production UI` | 167 |
-| `test` | 108 |
+| `test` | 109 |
 | `Brain/data` | 87 |
 | `platform build` | 83 |
 | `shared foundation` | 64 |
@@ -43,7 +43,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | `localization` | 13 |
 | `installer` | 12 |
 | `Brain Voice` | 10 |
-| `CI/deployment` | 10 |
+| `CI/deployment` | 9 |
 | `shared time` | 7 |
 | `package metadata` | 6 |
 | `shared diagnostics` | 6 |
@@ -56,8 +56,8 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 467 |
-| `REQUIRED_FOR_TEST_OR_TOOLING` | 200 |
+| `PROVEN_REQUIRED` | 466 |
+| `REQUIRED_FOR_TEST_OR_TOOLING` | 201 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
 | `GOVERNING_DOCUMENTATION` | 36 |
 | `HISTORICAL_RECORD` | 17 |
@@ -4655,43 +4655,6 @@ RU:
 - **Владелец / слой:** CI
 - **Обязанности:** Управляет CI-сценарием `install-xiaomi-sleep-runtime.yml` и его границами выполнения.
 - **Когда открывать:** Когда ломается поведение, связанное с `install-xiaomi-sleep-runtime.yml`.
-- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
-- **Связано с:** `.github/`, Flutter tooling.
-
-
-### `.github/workflows/tmp-regenerate-path-structure.yml`
-
-EN:
-
-- **Human purpose:** GitHub Actions workflow `.github/workflows/tmp-regenerate-path-structure.yml` defines the repository automation named by this workflow file. The CI system loads `.github/workflows/tmp-regenerate-path-structure.yml` to run its declared triggers, permissions, jobs, and checks.
-- **What this is:** GitHub Actions workflow `.github/workflows/tmp-regenerate-path-structure.yml` defines the repository automation named by this workflow file.
-- **Why needed:** The CI system loads `.github/workflows/tmp-regenerate-path-structure.yml` to run its declared triggers, permissions, jobs, and checks.
-- **Contents:** YAML workflow definition specific to `tmp-regenerate-path-structure.yml`.
-- **Repository role:** CI/deployment
-- **Evidence of use:** GitHub Actions discovers workflows under `.github/workflows/`; see `docs/DEPLOY.md` for publish/build intent.
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Broken CI deploy or Windows installer pipeline.
-- **Confidence:** HIGH
-- **Owner / layer:** CI
-- **Responsibilities:** Own the GitHub Actions behavior declared by `tmp-regenerate-path-structure.yml`.
-- **When to open:** When behavior tied to `tmp-regenerate-path-structure.yml` breaks or you need to change its documented role.
-- **Can it be deleted?** Broken CI deploy or Windows installer pipeline.
-- **Connected to:** Flutter `.github` tooling.
-
-RU:
-
-- **Зачем файл человеку:** Автоматизация GitHub Actions `tmp-regenerate-path-structure.yml` для CI и операций репозитория. GitHub Actions читает `tmp-regenerate-path-structure.yml` и запускает описанные в нём события, проверки и служебные шаги.
-- **Что это:** Автоматизация GitHub Actions `tmp-regenerate-path-structure.yml` для CI и операций репозитория.
-- **Зачем:** GitHub Actions читает `tmp-regenerate-path-structure.yml` и запускает описанные в нём события, проверки и служебные шаги.
-- **Содержимое:** YAML-триггеры, permissions и шаги CI, относящиеся к workflow `tmp-regenerate-path-structure.yml`.
-- **Роль в репозитории:** CI/deployment
-- **Доказательства использования:** GitHub Actions подхватывает workflow из `.github/workflows/`; см. `docs/DEPLOY.md`.
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Сломается CI deploy или сборка Windows installer.
-- **Уверенность:** HIGH
-- **Владелец / слой:** CI
-- **Обязанности:** Управляет CI-сценарием `tmp-regenerate-path-structure.yml` и его границами выполнения.
-- **Когда открывать:** Когда ломается поведение, связанное с `tmp-regenerate-path-structure.yml`.
 - **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
 - **Связано с:** `.github/`, Flutter tooling.
 
@@ -33376,6 +33339,44 @@ RU:
 - **Владелец / слой:** тесты
 - **Обязанности:** Assert ожидаемого поведения `notes_canonical_components`.
 - **Когда открывать:** Падение CI или правка кода рядом с `notes_canonical_components`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
+
+
+### `test/notes_clipboard_selection_contract_test.dart`
+
+EN:
+
+- **Human purpose:** Automated test `notes_clipboard_selection_contract_test` — verifies behavior without manual tapping. Prevents regressions when related production code changes.
+- **What this is:** Automated test `notes_clipboard_selection_contract_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **Contents:** Test cases (symbols: main).
+- **Key code names:** `main`
+- **Repository role:** test
+- **Evidence of use:** Flutter test file; exercised via `flutter test test/notes_clipboard_selection_contract_test.dart` / CI when enabled.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Lost automated coverage for its contract.
+- **Confidence:** HIGH
+- **Owner / layer:** tests
+- **Responsibilities:** Assert expected behavior for `notes_clipboard_selection_contract_test` scenario.
+- **When to open:** CI failure or changing code near `notes_clipboard_selection_contract`.
+- **Can it be deleted?** Lost automated coverage for its contract.
+- **Connected to:** `test/` suite; production subject near `notes_clipboard_selection_contract`.
+
+RU:
+
+- **Зачем файл человеку:** Автотест `notes_clipboard_selection_contract` — проверяет поведение без ручного UI. Ловит регрессии при изменении связанного production-кода.
+- **Что это:** Автотест `notes_clipboard_selection_contract` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `notes_clipboard_selection_contract`.
+- **Роль в репозитории:** test
+- **Доказательства использования:** Файл теста Flutter; запускается через `flutter test test/notes_clipboard_selection_contract_test.dart`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Пропадёт автоматическая проверка своего контракта.
+- **Уверенность:** HIGH
+- **Владелец / слой:** тесты
+- **Обязанности:** Assert ожидаемого поведения `notes_clipboard_selection_contract`.
+- **Когда открывать:** Падение CI или правка кода рядом с `notes_clipboard_selection_contract`.
 - **Можно удалить?** Нет — нужен для тестов.
 - **Связано с:** Production files под `lib/` с похожим именем.
 
