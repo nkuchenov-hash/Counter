@@ -332,8 +332,8 @@ class _StageHeaderMain extends StatelessWidget {
                     : TextOverflow.ellipsis,
                 style: TextStyle(
                   color: done ? _PathStageCardState._htmlGreen : textColor,
-                  fontSize: 20,
-                  height: 1.18,
+                  fontSize: 16,
+                  height: 1.25,
                   letterSpacing: -.24,
                   fontWeight: FontWeight.w800,
                 ),
