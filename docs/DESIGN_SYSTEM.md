@@ -24,7 +24,7 @@ Figma component names should stay clean and designer-facing. Flutter component n
 | `Tabs` | `AppSegmentedTabs` |
 | `Sheet / Edit` | `showAppEditSheet` + `AppEditSheetSurface` |
 | `Header` | `AppShellHeader` |
-| `Reorder` | `AppReorderableList` + `AppReorderHandle` |
+| `Reorder` | `AppReorderableList` + `AppReorderHandle` / `AppHoldToReorderListener` |
 
 For buttons specifically:
 
@@ -141,13 +141,15 @@ Each mapping must answer:
 
 ### Drag / Reorder
 
-- Current canonical: `AppReorderableList` + `AppReorderHandle` in `lib/core/widgets/mouse_drag_scroll_behavior.dart`.
+- Current canonical: `AppReorderableList`, `AppReorderHandle`, and `AppHoldToReorderListener` in `lib/core/widgets/mouse_drag_scroll_behavior.dart`.
 - Figma `Reorder` maps to this shared Flutter mechanism; feature screens own their item/card surface but must not recreate reorder gesture plumbing.
-- The handle is explicit and discoverable (`drag_indicator`), with tooltip/semantics and a 36px interaction box.
+- Use `AppReorderHandle` when an explicit discoverable drag handle is required. Use `AppHoldToReorderListener` when the product interaction is hold-the-surface-to-move, as in Plan cards, Notes blocks, and Paths.
+- Canonical surface hold delay is about 300 ms. Normal tap/click behavior remains available until the hold arms movement.
 - Reorderable items use stable domain keys; visual position is updated locally as soon as Flutter emits `onReorder`.
 - Persistence is asynchronous and must not block drag motion. Failed persistence restores/reconciles the last confirmed order without duplicating items.
-- Use `buildDefaultDragHandles: false`; the canonical handle owns the drag start so desktop/web/mobile behavior is consistent.
+- Use `buildDefaultDragHandles: false`; the app-owned explicit handle or delayed surface listener owns drag start so desktop/web/mobile behavior is consistent.
 - Nested ordered groups use the same `AppReorderableList`, not feature-local drag code. Set `shrinkWrap: true`, `primary: false`, and non-scrolling physics when the nested list lives inside another scroll/reorder surface; keep stable domain keys at both levels.
+- For nested hold-to-reorder surfaces, do not wrap a parent listener around the child reorder region. Scope the parent hold listener to its own header/surface so parent and child delayed recognizers cannot compete for the same hold.
 
 ### Timezone Icons
 
@@ -249,6 +251,6 @@ Allowed exceptions:
 - Labels belong to the lab/demo wrapper, not to production components.
 - Lab label/spec text is selectable/copyable for design review; this is lab-only and must not make production UI text selectable by default.
 
-### Paths: Options-as-reorder control
+### Paths: Options + hold-to-move
 
-For ordered Path stages/items, show `more_horiz` as the visible Options affordance. Tap/click opens Edit; press-and-hold on the same control invokes the canonical reorder listener. Do not show a second drag glyph beside Options. Path item detail editing uses a sheet with formulation, final result, optional description/context, optional mini-checklist, and time estimate.
+For ordered Path stages/items, show `more_horiz` as the visible Options affordance. Tap/click opens Edit; Options does **not** start movement. Hold the stage header to move the stage, and hold the action row to move the action, using `AppHoldToReorderListener`. Do not show a second drag glyph beside Options. Path item detail editing uses a sheet with formulation, final result, optional description/context, optional mini-checklist, and time estimate.
