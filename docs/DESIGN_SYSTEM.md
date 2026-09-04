@@ -23,6 +23,7 @@ Figma component names should stay clean and designer-facing. Flutter component n
 | `Tabs` | `AppSegmentedTabs` |
 | `Sheet / Edit` | `showAppEditSheet` + `AppEditSheetSurface` |
 | `Header` | `AppShellHeader` |
+| `Reorder` | `AppReorderableList` + `AppReorderHandle` |
 
 For buttons specifically:
 
@@ -103,6 +104,7 @@ Each mapping must answer:
 
 - Motion should be short, predictable, and tied to state changes.
 - Drag/reorder and sheet animations must not block input.
+- Reorder updates local order before persistence; network or PocketBase revision writes never own drag motion.
 
 ## Canonical Component Categories
 
@@ -125,6 +127,15 @@ Each mapping must answer:
 - Raw `IconButton` remains legacy allowed temporarily until migrated.
 - New feature-screen icon actions should not introduce fresh raw `IconButton` unless documented as temporary legacy.
 - Icon-only actions require a tooltip or semantic label where practical.
+
+### Drag / Reorder
+
+- Current canonical: `AppReorderableList` + `AppReorderHandle` in `lib/core/widgets/mouse_drag_scroll_behavior.dart`.
+- Figma `Reorder` maps to this shared Flutter mechanism; feature screens own their item/card surface but must not recreate reorder gesture plumbing.
+- The handle is explicit and discoverable (`drag_indicator`), with tooltip/semantics and a 36px interaction box.
+- Reorderable items use stable domain keys; visual position is updated locally as soon as Flutter emits `onReorder`.
+- Persistence is asynchronous and must not block drag motion. Failed persistence restores/reconciles the last confirmed order without duplicating items.
+- Use `buildDefaultDragHandles: false`; the canonical handle owns the drag start so desktop/web/mobile behavior is consistent.
 
 ### Timezone Icons
 
