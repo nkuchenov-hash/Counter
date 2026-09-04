@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `7f74dae9` on 2026-09-04.**
+**Generated from input HEAD `ea3ae8b1` on 2026-09-04.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 849 — each appears **exactly once** below.
+**Tracked files:** 846 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -31,10 +31,10 @@ python scripts/manual/generate_app_structure_detailed.py
 | `Brain/data` | 87 |
 | `platform build` | 83 |
 | `shared foundation` | 64 |
-| `developer tool` | 59 |
+| `developer tool` | 58 |
 | `platform resource` | 44 |
-| `governing documentation` | 37 |
 | `Desktop Voice runtime` | 36 |
+| `governing documentation` | 36 |
 | `shared Voice system` | 22 |
 | `test fixture` | 22 |
 | `historical engineering record` | 17 |
@@ -43,7 +43,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | `localization` | 13 |
 | `installer` | 12 |
 | `Brain Voice` | 10 |
-| `CI/deployment` | 10 |
+| `CI/deployment` | 9 |
 | `shared time` | 7 |
 | `package metadata` | 6 |
 | `shared diagnostics` | 6 |
@@ -56,10 +56,10 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 466 |
-| `REQUIRED_FOR_TEST_OR_TOOLING` | 201 |
+| `PROVEN_REQUIRED` | 465 |
+| `REQUIRED_FOR_TEST_OR_TOOLING` | 200 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
-| `GOVERNING_DOCUMENTATION` | 37 |
+| `GOVERNING_DOCUMENTATION` | 36 |
 | `HISTORICAL_RECORD` | 17 |
 | `GENERATED_CANONICAL_OUTPUT` | 1 |
 
@@ -67,8 +67,8 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 784 |
-| `MEDIUM` | 65 |
+| `HIGH` | 782 |
+| `MEDIUM` | 64 |
 
 ---
 
@@ -89,7 +89,6 @@ Evidence is computed from Dart import/export/`part` graphs, bounded path referen
 ### Root / config
 
 - [`igropoisk/`](#folder-igropoisk)
-- [`marketing/`](#folder-marketing)
 - [`pb_migrations/`](#folder-pb_migrations)
 - [`igropoisk/scripts/`](#folder-igropoiskscripts)
 
@@ -541,30 +540,6 @@ RU:
 - **Когда открывать:** macOS signing, sandbox entitlements, menu bar, ошибки desktop build.
 - **Можно удалить?** Нет — если нужна поддержка macOS desktop.
 - **Связанные пути:** `ios/` (mobile Apple) vs этот desktop target.
-
----
-
-## Folder: `marketing/`
-
-EN:
-
-- **What this folder is:** Repository path `marketing/` — tracked config, assets, or tooling for Life OS.
-- **Why it exists:** Git tracks `marketing` because release, CI, or maintenance workflow depends on these files.
-- **What lives here:** Tracked files listed below with individual explanations.
-- **What part of the app it affects:** Repo workflow or platform build tied to this path — see child file entries.
-- **When to open it:** Maintenance or build work involving `marketing`.
-- **Can it be deleted?** No — part of repository tooling or config unless cleanup report says otherwise.
-- **Main related paths:** `docs/APP_STRUCTURE.md`, `CHANGELOG.md`.
-
-RU:
-
-- **Что это за папка:** Служебный каталог репозитория `marketing/`.
-- **Зачем нужна:** Хранит файлы, необходимые отдельной части сборки, данных проекта или сопровождения репозитория.
-- **Что здесь лежит:** Отслеживаемые Git файлы и дочерние каталоги; каждый элемент описан ниже.
-- **На что влияет в приложении:** Влияет на ту часть продукта или процесса сборки, которой принадлежит этот путь.
-- **Когда открывать:** Открывать при работе с файлами и процессами, связанными с `marketing/`.
-- **Можно удалить?** Нет — part of repository tooling or config если отчёт cleanup не сказал иное.
-- **Связанные пути:** `docs/APP_STRUCTURE.md`, `CHANGELOG.md`.
 
 ---
 
@@ -4680,43 +4655,6 @@ RU:
 - **Владелец / слой:** CI
 - **Обязанности:** Управляет CI-сценарием `install-xiaomi-sleep-runtime.yml` и его границами выполнения.
 - **Когда открывать:** Когда ломается поведение, связанное с `install-xiaomi-sleep-runtime.yml`.
-- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
-- **Связано с:** `.github/`, Flutter tooling.
-
-
-### `.github/workflows/tmp-regenerate-app-structure-detailed.yml`
-
-EN:
-
-- **Human purpose:** GitHub Actions workflow `.github/workflows/tmp-regenerate-app-structure-detailed.yml` defines the repository automation named by this workflow file. The CI system loads `.github/workflows/tmp-regenerate-app-structure-detailed.yml` to run its declared triggers, permissions, jobs, and checks.
-- **What this is:** GitHub Actions workflow `.github/workflows/tmp-regenerate-app-structure-detailed.yml` defines the repository automation named by this workflow file.
-- **Why needed:** The CI system loads `.github/workflows/tmp-regenerate-app-structure-detailed.yml` to run its declared triggers, permissions, jobs, and checks.
-- **Contents:** YAML workflow definition specific to `tmp-regenerate-app-structure-detailed.yml`.
-- **Repository role:** CI/deployment
-- **Evidence of use:** GitHub Actions discovers workflows under `.github/workflows/`; see `docs/DEPLOY.md` for publish/build intent.
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Broken CI deploy or Windows installer pipeline.
-- **Confidence:** HIGH
-- **Owner / layer:** CI
-- **Responsibilities:** Own the GitHub Actions behavior declared by `tmp-regenerate-app-structure-detailed.yml`.
-- **When to open:** When behavior tied to `tmp-regenerate-app-structure-detailed.yml` breaks or you need to change its documented role.
-- **Can it be deleted?** Broken CI deploy or Windows installer pipeline.
-- **Connected to:** Flutter `.github` tooling.
-
-RU:
-
-- **Зачем файл человеку:** Автоматизация GitHub Actions `tmp-regenerate-app-structure-detailed.yml` для CI и операций репозитория. GitHub Actions читает `tmp-regenerate-app-structure-detailed.yml` и запускает описанные в нём события, проверки и служебные шаги.
-- **Что это:** Автоматизация GitHub Actions `tmp-regenerate-app-structure-detailed.yml` для CI и операций репозитория.
-- **Зачем:** GitHub Actions читает `tmp-regenerate-app-structure-detailed.yml` и запускает описанные в нём события, проверки и служебные шаги.
-- **Содержимое:** YAML-триггеры, permissions и шаги CI, относящиеся к workflow `tmp-regenerate-app-structure-detailed.yml`.
-- **Роль в репозитории:** CI/deployment
-- **Доказательства использования:** GitHub Actions подхватывает workflow из `.github/workflows/`; см. `docs/DEPLOY.md`.
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Сломается CI deploy или сборка Windows installer.
-- **Уверенность:** HIGH
-- **Владелец / слой:** CI
-- **Обязанности:** Управляет CI-сценарием `tmp-regenerate-app-structure-detailed.yml` и его границами выполнения.
-- **Когда открывать:** Когда ломается поведение, связанное с `tmp-regenerate-app-structure-detailed.yml`.
 - **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
 - **Связано с:** `.github/`, Flutter tooling.
 
@@ -27307,80 +27245,6 @@ RU:
 - **Связано с:** `macos/Runner/Info.plist`, Flutter embedder.
 
 
-### `marketing/README.md`
-
-EN:
-
-- **Human purpose:** Markdown document `README.md` in `marketing` — repo tooling or config. Tracked because `marketing` needs `README.md` for build, CI, or maintenance.
-- **What this is:** Markdown document `README.md` in `marketing` — repo tooling or config.
-- **Why needed:** Tracked because `marketing` needs `README.md` for build, CI, or maintenance.
-- **Contents:** Open `README.md` when working on `marketing` (see folder section above).
-- **Repository role:** governing documentation
-- **Evidence of use:** Governing/ops/product documentation read by humans and agents (see `docs/PROJECT_KNOWLEDGE_PACK.md` / AGENTS routing).
-- **Necessity status:** GOVERNING_DOCUMENTATION
-- **Deletion consequence:** Lost architecture/ops rule or agent routing instruction.
-- **Confidence:** HIGH
-- **Owner / layer:** repository root
-- **Responsibilities:** Supports `marketing` workflow for `README.md`.
-- **When to open:** When build output or maintenance cites `README.md`.
-- **Can it be deleted?** No — part of repository tooling or config.
-- **Connected to:** `marketing/`, `docs/APP_STRUCTURE.md`.
-
-RU:
-
-- **Зачем файл человеку:** Текстовая спецификация `README.md` в разделе `marketing`. Фиксирует правила, состояние или справочную информацию, относящуюся к `marketing`.
-- **Что это:** Текстовая спецификация `README.md` в разделе `marketing`.
-- **Зачем:** Фиксирует правила, состояние или справочную информацию, относящуюся к `marketing`.
-- **Содержимое:** Структурированный Markdown-текст по теме `README.md` без runtime-логики приложения.
-- **Роль в репозитории:** governing documentation
-- **Доказательства использования:** Управляющая/операционная документация для людей и агентов (см. Project Knowledge / AGENTS).
-- **Статус необходимости:** GOVERNING_DOCUMENTATION
-- **Что будет, если удалить:** Пропадёт архитектурное/операционное правило.
-- **Уверенность:** HIGH
-- **Владелец / слой:** корень репозитория
-- **Обязанности:** Хранит актуальную документацию по назначению `README.md`.
-- **Когда открывать:** When результат сборки or maintenance cites `README.md`.
-- **Можно удалить?** Нет — конфигурация/инструмент репозитория.
-- **Связано с:** `marketing/`, `docs/APP_STRUCTURE.md`.
-
-
-### `marketing/index.html`
-
-EN:
-
-- **Human purpose:** html file `index.html` in `marketing` — repo tooling or config. Tracked because `marketing` needs `index.html` for build, CI, or maintenance.
-- **What this is:** html file `index.html` in `marketing` — repo tooling or config.
-- **Why needed:** Tracked because `marketing` needs `index.html` for build, CI, or maintenance.
-- **Contents:** Open `index.html` when working on `marketing` (see folder section above).
-- **Repository role:** developer tool
-- **Evidence of use:** Tracked repository file `marketing/index.html` retained for tooling/config.
-- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
-- **Deletion consequence:** May break tooling or configuration; verify before delete.
-- **Confidence:** MEDIUM
-- **Owner / layer:** repository root
-- **Responsibilities:** Supports `marketing` workflow for `index.html`.
-- **When to open:** When build output or maintenance cites `index.html`.
-- **Can it be deleted?** No — part of repository tooling or config.
-- **Connected to:** `marketing/`, `docs/APP_STRUCTURE.md`.
-
-RU:
-
-- **Зачем файл человеку:** `index.html` — отслеживаемый ресурс области `marketing` с отдельной ролью. Поддерживает процесс, сборку, данные или runtime-задачу области `marketing` для `index.html`.
-- **Что это:** `index.html` — отслеживаемый ресурс области `marketing` с отдельной ролью.
-- **Зачем:** Поддерживает процесс, сборку, данные или runtime-задачу области `marketing` для `index.html`.
-- **Содержимое:** Данные или код `index.html`, необходимые его подтверждённой роли и указанным ниже связям.
-- **Роль в репозитории:** developer tool
-- **Доказательства использования:** Отслеживаемый файл `marketing/index.html` для tooling/config.
-- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
-- **Что будет, если удалить:** Может сломать tooling; проверять перед удалением.
-- **Уверенность:** MEDIUM
-- **Владелец / слой:** корень репозитория
-- **Обязанности:** Реализует назначение `index.html` для области `marketing`.
-- **Когда открывать:** When результат сборки or maintenance cites `index.html`.
-- **Можно удалить?** Нет — конфигурация/инструмент репозитория.
-- **Связано с:** `marketing/`, `docs/APP_STRUCTURE.md`.
-
-
 ### `pb_hooks/01_sleep_sync_runtime_bootcheck.pb.js`
 
 EN:
@@ -29167,7 +29031,7 @@ EN:
 - **Why needed:** Maintains owner-readable structure guide in sync with repo after changes.
 - **Contents:** Python generator + curated folder/file descriptions.
 - **Repository role:** developer tool
-- **Evidence of use:** (1) Invoked or documented by: `.github/workflows/tmp-regenerate-app-structure-detailed.yml`, `AGENT_NAVIGATION.md`, `docs/APP_STRUCTURE.md`, `docs/reports/ARCHITECTURE_GUARD_BASELINE_2026-07-17.md`, `docs/reports/FINAL_STRUCTURE_AUDIT_2026-07-06.md`. (2) Generator for `docs/APP_STRUCTURE_DETAILED.md`; input is `git ls-files` + guide modules.
+- **Evidence of use:** (1) Invoked or documented by: `AGENT_NAVIGATION.md`, `docs/APP_STRUCTURE.md`, `docs/reports/ARCHITECTURE_GUARD_BASELINE_2026-07-17.md`, `docs/reports/FINAL_STRUCTURE_AUDIT_2026-07-06.md`, `docs/reports/FINAL_STRUCTURE_PARITY_AND_DOC_CLEANUP_2026-07-03.md`. (2) Generator for `docs/APP_STRUCTURE_DETAILED.md`; input is `git ls-files` + guide modules.
 - **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Deletion consequence:** Broken audit/deploy/manual maintenance command.
 - **Confidence:** HIGH
@@ -29184,7 +29048,7 @@ RU:
 - **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
 - **Содержимое:** Команды PowerShell/Python/Dart в `generate_app_structure_detailed.py`.
 - **Роль в репозитории:** developer tool
-- **Доказательства использования:** (1) Вызывается или описан в: `.github/workflows/tmp-regenerate-app-structure-detailed.yml`, `AGENT_NAVIGATION.md`, `docs/APP_STRUCTURE.md`, `docs/reports/ARCHITECTURE_GUARD_BASELINE_2026-07-17.md`, `docs/reports/FINAL_STRUCTURE_AUDIT_2026-07-06.md`. (2) Генератор `docs/APP_STRUCTURE_DETAILED.md`; вход — `git ls-files` и guide-модули.
+- **Доказательства использования:** (1) Вызывается или описан в: `AGENT_NAVIGATION.md`, `docs/APP_STRUCTURE.md`, `docs/reports/ARCHITECTURE_GUARD_BASELINE_2026-07-17.md`, `docs/reports/FINAL_STRUCTURE_AUDIT_2026-07-06.md`, `docs/reports/FINAL_STRUCTURE_PARITY_AND_DOC_CLEANUP_2026-07-03.md`. (2) Генератор `docs/APP_STRUCTURE_DETAILED.md`; вход — `git ls-files` и guide-модули.
 - **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Что будет, если удалить:** Сломается audit/deploy или ручная команда сопровождения.
 - **Уверенность:** HIGH
