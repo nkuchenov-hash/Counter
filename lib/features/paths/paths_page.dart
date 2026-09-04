@@ -661,7 +661,6 @@ class _PathsPageState extends State<PathsPage> {
     return Material(
       color: scheme.surface,
       child: SafeArea(
-        top: false,
         bottom: false,
         child: Column(
           children: [
@@ -677,12 +676,7 @@ class _PathsPageState extends State<PathsPage> {
   Widget _header() {
     final scheme = Theme.of(context).colorScheme;
     return Padding(
-      padding: EdgeInsets.fromLTRB(
-        20,
-        MediaQuery.paddingOf(context).top,
-        12,
-        12,
-      ),
+      padding: const EdgeInsets.fromLTRB(20, 0, 12, 12),
       child: Row(
         children: [
           Icon(Icons.alt_route_rounded, color: scheme.primary),
