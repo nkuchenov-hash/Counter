@@ -512,7 +512,7 @@ class _PathsPageState extends State<PathsPage> {
         track: 'execution',
         isDone: false,
       ));
-    stages[stageIndex] = stage.copyWith(actions: actions);
+    stages[stageIndex] = stage.copyWith(actions: actions, isDone: false);
     unawaited(_saveOptimistic(current, current.copyWith(stages: stages)));
   }
 
@@ -555,14 +555,6 @@ class _PathsPageState extends State<PathsPage> {
     unawaited(_saveOptimistic(current, current.copyWith(stages: stages)));
   }
 
-  void _toggleStage(ProjectPathSnapshot path, int index, bool done) {
-    final current = _localPathById(path.pathId) ?? path;
-    final stages = List<PathStageSnapshot>.from(current.stages);
-    if (index < 0 || index >= stages.length) return;
-    stages[index] = stages[index].copyWith(isDone: done);
-    unawaited(_saveOptimistic(current, current.copyWith(stages: stages)));
-  }
-
   void _toggleAction(
     ProjectPathSnapshot path,
     int stageIndex,
@@ -576,7 +568,8 @@ class _PathsPageState extends State<PathsPage> {
     if (actionIndex < 0 || actionIndex >= stage.actions.length) return;
     final actions = List<PathActionSnapshot>.from(stage.actions);
     actions[actionIndex] = actions[actionIndex].copyWith(isDone: done);
-    stages[stageIndex] = stage.copyWith(actions: actions);
+    final stageDone = actions.isNotEmpty && actions.every((action) => action.isDone);
+    stages[stageIndex] = stage.copyWith(actions: actions, isDone: stageDone);
     unawaited(_saveOptimistic(current, current.copyWith(stages: stages)));
   }
 
@@ -915,10 +908,6 @@ class _PathsPageState extends State<PathsPage> {
         ExpansionTile(
           initiallyExpanded: current, backgroundColor: headerColor, collapsedBackgroundColor: headerColor,
           tilePadding: const EdgeInsets.fromLTRB(18, 12, 10, 12), shape: const Border(), collapsedShape: const Border(),
-          leading: PlanCardCheckbox(
-            selectMode: false, isSelected: false, displayIsDone: stage.isDone, toggleDoneEnabled: true,
-            onToggleDone: () => _toggleStage(path, index, !stage.isDone),
-          ),
           title: Row(children: [
             Container(
               width: 34, height: 34, alignment: Alignment.center,
