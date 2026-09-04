@@ -149,6 +149,15 @@ class NotesEditorBlockItem extends StatelessWidget {
               ),
             )
           : _selectableSpan(context, effectiveStyle);
+      final renderedText = Text.rich(
+        span,
+        key: textKey,
+        strutStyle: StrutStyle.fromTextStyle(
+          effectiveStyle,
+          forceStrutHeight: true,
+        ),
+        softWrap: true,
+      );
       return Listener(
         behavior: HitTestBehavior.translucent,
         onPointerDown: (_) {
@@ -180,15 +189,9 @@ class NotesEditorBlockItem extends StatelessWidget {
             onTap();
           },
           onLongPress: text.isEmpty ? onEmptyLongPress : null,
-          child: Text.rich(
-            span,
-            key: textKey,
-            strutStyle: StrutStyle.fromTextStyle(
-              effectiveStyle,
-              forceStrutHeight: true,
-            ),
-            softWrap: true,
-          ),
+          child: text.isEmpty
+              ? SelectionContainer.disabled(child: renderedText)
+              : renderedText,
         ),
       );
     }
@@ -236,7 +239,9 @@ class NotesEditorBlockItem extends StatelessWidget {
               SizedBox(
                 width: kNotesLeadingSize,
                 height: 24,
-                child: Center(child: marker),
+                child: Center(
+                  child: SelectionContainer.disabled(child: marker),
+                ),
               ),
               const SizedBox(width: kNotesLeadingGap),
               Expanded(child: selectableText()),
