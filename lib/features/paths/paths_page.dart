@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:counter/core/widgets/app_button.dart';
 import 'package:counter/core/widgets/app_icon_button.dart';
 import 'package:counter/core/widgets/app_loading.dart';
+import 'package:counter/core/widgets/app_reorderable_list.dart';
 import 'package:counter/core/widgets/app_state_views.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/data/paths/path_repository.dart';
@@ -15,6 +16,30 @@ import 'package:shared_preferences/shared_preferences.dart';
 class _PathFolderChoice {
   const _PathFolderChoice(this.rootKeys);
   final Set<String>? rootKeys;
+}
+
+class _PathActionDraft {
+  const _PathActionDraft({
+    required this.text,
+    required this.expectedResult,
+    required this.minutes,
+  });
+
+  final String text;
+  final String expectedResult;
+  final int minutes;
+}
+
+class _PathStageDraft {
+  const _PathStageDraft({
+    required this.title,
+    required this.completionCriteria,
+    required this.firstAction,
+  });
+
+  final String title;
+  final String completionCriteria;
+  final _PathActionDraft firstAction;
 }
 
 class PathsPage extends StatefulWidget {
@@ -112,6 +137,13 @@ class _PathsPageState extends State<PathsPage> {
     if (id == null) return null;
     for (final path in _projection.visiblePaths) {
       if (path.pathId == id) return path;
+    }
+    return null;
+  }
+
+  ProjectPathSnapshot? _localPathById(String pathId) {
+    for (final path in _catalog.paths) {
+      if (path.pathId == pathId) return path;
     }
     return null;
   }
@@ -405,11 +437,278 @@ class _PathsPageState extends State<PathsPage> {
     }
   }
 
+  String? _requiredField(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return _ru ? 'Обязательное поле' : 'Required field';
+    }
+    return null;
+  }
+
+  String? _minutesField(String? value) {
+    final minutes = int.tryParse(value?.trim() ?? '');
+    if (minutes == null || minutes < 1 || minutes > 30) {
+      return _ru ? 'От 1 до 30 минут' : 'Enter 1–30 minutes';
+    }
+    return null;
+  }
+
+  String _manualElementId(String prefix) =>
+      '$prefix-${DateTime.now().microsecondsSinceEpoch}';
+
+  Future<_PathActionDraft?> _showActionDialog() async {
+    final formKey = GlobalKey<FormState>();
+    final textController = TextEditingController();
+    final resultController = TextEditingController();
+    final minutesController = TextEditingController(text: '15');
+    final value = await showDialog<_PathActionDraft>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(_ru ? 'Добавить пункт этапа' : 'Add stage item'),
+        content: SizedBox(
+          width: 620,
+          child: Form(
+            key: formKey,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextFormField(
+                    controller: textController,
+                    autofocus: true,
+                    decoration: InputDecoration(
+                      labelText: _ru ? 'Пункт этапа' : 'Stage item',
+                    ),
+                    validator: _requiredField,
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: resultController,
+                    decoration: InputDecoration(
+                      labelText: _ru ? 'Ожидаемый результат' : 'Expected result',
+                    ),
+                    validator: _requiredField,
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: minutesController,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      labelText: _ru ? 'Минуты' : 'Minutes',
+                    ),
+                    validator: _minutesField,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        actions: [
+          AppButton.ghost(
+            label: _ru ? 'Отмена' : 'Cancel',
+            onPressed: () => Navigator.of(dialogContext).pop(),
+          ),
+          AppButton.primary(
+            label: _ru ? 'Добавить' : 'Add',
+            icon: Icons.add_rounded,
+            onPressed: () {
+              if (formKey.currentState?.validate() != true) return;
+              Navigator.of(dialogContext).pop(
+                _PathActionDraft(
+                  text: textController.text.trim(),
+                  expectedResult: resultController.text.trim(),
+                  minutes: int.parse(minutesController.text.trim()),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+    textController.dispose();
+    resultController.dispose();
+    minutesController.dispose();
+    return value;
+  }
+
+  Future<_PathStageDraft?> _showStageDialog() async {
+    final formKey = GlobalKey<FormState>();
+    final titleController = TextEditingController();
+    final criteriaController = TextEditingController();
+    final actionController = TextEditingController();
+    final resultController = TextEditingController();
+    final minutesController = TextEditingController(text: '15');
+    final value = await showDialog<_PathStageDraft>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(_ru ? 'Добавить этап' : 'Add stage'),
+        content: SizedBox(
+          width: 620,
+          child: Form(
+            key: formKey,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextFormField(
+                    controller: titleController,
+                    autofocus: true,
+                    decoration: InputDecoration(
+                      labelText: _ru ? 'Название этапа' : 'Stage title',
+                    ),
+                    validator: _requiredField,
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: criteriaController,
+                    decoration: InputDecoration(
+                      labelText: _ru ? 'Готово, когда' : 'Done when',
+                    ),
+                    validator: _requiredField,
+                  ),
+                  const SizedBox(height: 18),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      _ru ? 'Первый пункт' : 'First item',
+                      style: Theme.of(context)
+                          .textTheme
+                          .titleSmall
+                          ?.copyWith(fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: actionController,
+                    decoration: InputDecoration(
+                      labelText: _ru ? 'Действие' : 'Action',
+                    ),
+                    validator: _requiredField,
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: resultController,
+                    decoration: InputDecoration(
+                      labelText: _ru ? 'Ожидаемый результат' : 'Expected result',
+                    ),
+                    validator: _requiredField,
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: minutesController,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      labelText: _ru ? 'Минуты' : 'Minutes',
+                    ),
+                    validator: _minutesField,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        actions: [
+          AppButton.ghost(
+            label: _ru ? 'Отмена' : 'Cancel',
+            onPressed: () => Navigator.of(dialogContext).pop(),
+          ),
+          AppButton.primary(
+            label: _ru ? 'Добавить этап' : 'Add stage',
+            icon: Icons.add_rounded,
+            onPressed: () {
+              if (formKey.currentState?.validate() != true) return;
+              Navigator.of(dialogContext).pop(
+                _PathStageDraft(
+                  title: titleController.text.trim(),
+                  completionCriteria: criteriaController.text.trim(),
+                  firstAction: _PathActionDraft(
+                    text: actionController.text.trim(),
+                    expectedResult: resultController.text.trim(),
+                    minutes: int.parse(minutesController.text.trim()),
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+    titleController.dispose();
+    criteriaController.dispose();
+    actionController.dispose();
+    resultController.dispose();
+    minutesController.dispose();
+    return value;
+  }
+
+  Future<void> _addAction(ProjectPathSnapshot path, int stageIndex) async {
+    final draft = await _showActionDialog();
+    if (!mounted || draft == null) return;
+    final current = _localPathById(path.pathId) ?? path;
+    if (stageIndex < 0 || stageIndex >= current.stages.length) return;
+    final stages = List<PathStageSnapshot>.from(current.stages);
+    final stage = stages[stageIndex];
+    final actions = List<PathActionSnapshot>.from(stage.actions)
+      ..add(
+        PathActionSnapshot(
+          id: _manualElementId('manual-action'),
+          text: draft.text,
+          expectedResult: draft.expectedResult,
+          minutes: draft.minutes,
+          track: 'execution',
+          isDone: false,
+        ),
+      );
+    stages[stageIndex] = stage.copyWith(actions: actions);
+    unawaited(_saveOptimistic(current, current.copyWith(stages: stages)));
+  }
+
+  Future<void> _addStage(ProjectPathSnapshot path) async {
+    final draft = await _showStageDialog();
+    if (!mounted || draft == null) return;
+    final current = _localPathById(path.pathId) ?? path;
+    final stages = List<PathStageSnapshot>.from(current.stages)
+      ..add(
+        PathStageSnapshot(
+          id: _manualElementId('manual-stage'),
+          title: draft.title,
+          completionCriteria: draft.completionCriteria,
+          isDone: false,
+          actions: <PathActionSnapshot>[
+            PathActionSnapshot(
+              id: _manualElementId('manual-action'),
+              text: draft.firstAction.text,
+              expectedResult: draft.firstAction.expectedResult,
+              minutes: draft.firstAction.minutes,
+              track: 'execution',
+              isDone: false,
+            ),
+          ],
+        ),
+      );
+    unawaited(_saveOptimistic(current, current.copyWith(stages: stages)));
+  }
+
+  void _reorderStages(
+    ProjectPathSnapshot path,
+    int oldIndex,
+    int newIndex,
+  ) {
+    final current = _localPathById(path.pathId) ?? path;
+    final stages = List<PathStageSnapshot>.from(current.stages);
+    if (oldIndex < 0 || oldIndex >= stages.length) return;
+    if (newIndex > oldIndex) newIndex -= 1;
+    if (newIndex < 0 || newIndex >= stages.length || newIndex == oldIndex) return;
+    final moved = stages.removeAt(oldIndex);
+    stages.insert(newIndex, moved);
+    unawaited(_saveOptimistic(current, current.copyWith(stages: stages)));
+  }
+
   void _toggleStage(ProjectPathSnapshot path, int index, bool done) {
-    final stages = List<PathStageSnapshot>.from(path.stages);
+    final current = _localPathById(path.pathId) ?? path;
+    final stages = List<PathStageSnapshot>.from(current.stages);
     if (index < 0 || index >= stages.length) return;
     stages[index] = stages[index].copyWith(isDone: done);
-    unawaited(_saveOptimistic(path, path.copyWith(stages: stages)));
+    unawaited(_saveOptimistic(current, current.copyWith(stages: stages)));
   }
 
   void _toggleAction(
@@ -418,14 +717,15 @@ class _PathsPageState extends State<PathsPage> {
     int actionIndex,
     bool done,
   ) {
-    final stages = List<PathStageSnapshot>.from(path.stages);
+    final current = _localPathById(path.pathId) ?? path;
+    final stages = List<PathStageSnapshot>.from(current.stages);
     if (stageIndex < 0 || stageIndex >= stages.length) return;
     final stage = stages[stageIndex];
     if (actionIndex < 0 || actionIndex >= stage.actions.length) return;
     final actions = List<PathActionSnapshot>.from(stage.actions);
     actions[actionIndex] = actions[actionIndex].copyWith(isDone: done);
     stages[stageIndex] = stage.copyWith(actions: actions);
-    unawaited(_saveOptimistic(path, path.copyWith(stages: stages)));
+    unawaited(_saveOptimistic(current, current.copyWith(stages: stages)));
   }
 
   @override
@@ -656,43 +956,66 @@ class _PathsPageState extends State<PathsPage> {
     final audit = _repository.audit(path);
     final currentIndex = path.stages.indexWhere((stage) => !stage.isDone);
     final breadcrumb = _breadcrumb(path);
-    return ListView(
+    return AppReorderableList(
       padding: const EdgeInsets.fromLTRB(20, 18, 20, 40),
-      children: [
-        if (breadcrumb.contains(' › '))
-          Text(
-            breadcrumb,
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
-        Row(children: [
-          Expanded(
-            child: Text(
-              _categoryName(path.category),
-              style: Theme.of(context)
-                  .textTheme
-                  .headlineSmall
-                  ?.copyWith(fontWeight: FontWeight.w800),
+      itemCount: path.stages.length,
+      itemKeyBuilder: (index) =>
+          ValueKey('path-stage-${path.pathId}-${path.stages[index].id}'),
+      dragLabelBuilder: (index) => _ru
+          ? 'Перетащить этап ${index + 1}'
+          : 'Reorder stage ${index + 1}',
+      onReorder: (oldIndex, newIndex) =>
+          _reorderStages(path, oldIndex, newIndex),
+      header: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (breadcrumb.contains(' › '))
+            Text(
+              breadcrumb,
+              style: Theme.of(context).textTheme.bodySmall,
             ),
+          Row(children: [
+            Expanded(
+              child: Text(
+                _categoryName(path.category),
+                style: Theme.of(context)
+                    .textTheme
+                    .headlineSmall
+                    ?.copyWith(fontWeight: FontWeight.w800),
+              ),
+            ),
+            AppIconButton(
+              icon: Icons.edit_outlined,
+              tooltip: _ru ? 'Изменить цель' : 'Edit goal',
+              onPressed: () => unawaited(_editGoal(path)),
+            ),
+            AppIconButton(
+              icon: Icons.delete_outline_rounded,
+              tooltip: _ru ? 'Удалить путь' : 'Delete Path',
+              onPressed: () => unawaited(_deletePath(path)),
+            ),
+          ]),
+          const SizedBox(height: 6),
+          Text(path.goal, style: Theme.of(context).textTheme.bodyLarge),
+          const SizedBox(height: 12),
+          _auditCard(audit),
+          const SizedBox(height: 14),
+        ],
+      ),
+      footer: Padding(
+        padding: const EdgeInsets.only(top: 12),
+        child: Align(
+          alignment: Alignment.centerLeft,
+          child: AppButton.secondary(
+            label: _ru ? 'Добавить этап' : 'Add stage',
+            icon: Icons.add_rounded,
+            size: AppButtonSize.s,
+            onPressed: () => unawaited(_addStage(path)),
           ),
-          AppIconButton(
-            icon: Icons.edit_outlined,
-            tooltip: _ru ? 'Изменить цель' : 'Edit goal',
-            onPressed: () => unawaited(_editGoal(path)),
-          ),
-          AppIconButton(
-            icon: Icons.delete_outline_rounded,
-            tooltip: _ru ? 'Удалить путь' : 'Delete Path',
-            onPressed: () => unawaited(_deletePath(path)),
-          ),
-        ]),
-        const SizedBox(height: 6),
-        Text(path.goal, style: Theme.of(context).textTheme.bodyLarge),
-        const SizedBox(height: 12),
-        _auditCard(audit),
-        const SizedBox(height: 14),
-        for (var i = 0; i < path.stages.length; i++)
-          _stageCard(path, i, i == currentIndex),
-      ],
+        ),
+      ),
+      itemBuilder: (context, index, dragHandle) =>
+          _stageCard(path, index, index == currentIndex, dragHandle),
     );
   }
 
@@ -722,7 +1045,12 @@ class _PathsPageState extends State<PathsPage> {
     );
   }
 
-  Widget _stageCard(ProjectPathSnapshot path, int index, bool current) {
+  Widget _stageCard(
+    ProjectPathSnapshot path,
+    int index,
+    bool current,
+    Widget dragHandle,
+  ) {
     final stage = path.stages[index];
     final dark = Theme.of(context).brightness == Brightness.dark;
     final completed = Colors.green.shade600;
@@ -730,7 +1058,6 @@ class _PathsPageState extends State<PathsPage> {
     final accent = stage.isDone ? completed : (current ? active : null);
     final doneCount = stage.actions.where((action) => action.isDone).length;
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
         color: accent?.withValues(alpha: dark ? 0.16 : 0.10),
         border: Border.all(
@@ -748,24 +1075,44 @@ class _PathsPageState extends State<PathsPage> {
         ),
         title: Text(
           '${index + 1}. ${stage.title}',
-          style: TextStyle(
-            color: stage.isDone ? completed : null,
-            fontWeight: FontWeight.w800,
-            decoration: stage.isDone ? TextDecoration.lineThrough : null,
-          ),
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                color: stage.isDone ? completed : null,
+                fontWeight: FontWeight.w800,
+                decoration: stage.isDone ? TextDecoration.lineThrough : null,
+              ),
         ),
         subtitle: Text(
           '${_ru ? 'Готово, когда' : 'Done when'}: ${stage.completionCriteria}',
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
         ),
-        trailing: Text(
-          '${stage.isDone ? (_ru ? 'Готово · ' : 'Done · ') : current ? (_ru ? 'Сейчас · ' : 'Now · ') : ''}'
-          '$doneCount/${stage.actions.length}',
-          style: TextStyle(color: accent, fontWeight: FontWeight.w700),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              '${stage.isDone ? (_ru ? 'Готово · ' : 'Done · ') : current ? (_ru ? 'Сейчас · ' : 'Now · ') : ''}'
+              '$doneCount/${stage.actions.length}',
+              style: TextStyle(color: accent, fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(width: 4),
+            dragHandle,
+          ],
         ),
         children: [
-          for (var i = 0; i < stage.actions.length; i++) _actionRow(path, index, i),
+          for (var i = 0; i < stage.actions.length; i++)
+            _actionRow(path, index, i),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 2, 16, 12),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: AppButton.ghost(
+                label: _ru ? 'Добавить пункт' : 'Add item',
+                icon: Icons.add_rounded,
+                size: AppButtonSize.s,
+                onPressed: () => unawaited(_addAction(path, index)),
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -783,11 +1130,11 @@ class _PathsPageState extends State<PathsPage> {
       ),
       title: Text(
         action.text,
-        style: TextStyle(
-          color: action.isDone ? completed : null,
-          decoration: action.isDone ? TextDecoration.lineThrough : null,
-          fontWeight: FontWeight.w600,
-        ),
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: action.isDone ? completed : null,
+              decoration: action.isDone ? TextDecoration.lineThrough : null,
+              fontWeight: FontWeight.w400,
+            ),
       ),
       subtitle: action.expectedResult.isEmpty
           ? null
