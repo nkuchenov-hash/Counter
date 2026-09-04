@@ -1,0 +1,52 @@
+name: Temporary desktop calendar single toolbar
+
+on:
+  push:
+    branches:
+      - fix/calendar-desktop-single-toolbar-20260904
+
+permissions:
+  contents: write
+
+jobs:
+  apply-and-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/calendar-desktop-single-toolbar-20260904
+      - name: Apply fix
+        run: python scripts/tmp_calendar_desktop_single_toolbar.py
+      - name: Remove temporary files
+        run: |
+          git rm scripts/tmp_calendar_desktop_single_toolbar.py
+          git rm .github/workflows/tmp-calendar-desktop-single-toolbar.yml
+      - name: Set up Flutter 3.41.6
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.6'
+          channel: stable
+          cache: true
+      - name: Create env.dart
+        run: cp lib/env.example.dart lib/env.dart
+      - name: Install dependencies
+        run: flutter pub get
+      - name: Restore lockfile
+        run: git checkout -- pubspec.lock
+      - name: Format changed Dart
+        run: dart format lib/features/calendar/calendar_chrome_header.dart lib/features/calendar/calendar_view.dart lib/app/shell/shared/shell_chrome.dart
+      - name: Analyze changed Dart
+        run: flutter analyze --no-fatal-infos lib/features/calendar/calendar_chrome_header.dart lib/features/calendar/calendar_view.dart lib/app/shell/shared/shell_chrome.dart
+      - name: Verify documentation parity
+        run: python scripts/audit/documentation_parity.py
+      - name: Check whitespace
+        run: git diff --check
+      - name: Build release web
+        run: flutter build web --release --base-href="/Counter/" --no-tree-shake-icons --no-wasm-dry-run --pwa-strategy=none
+      - name: Commit final fix
+        run: |
+          git config user.name "nkuchenov-hash"
+          git config user.email "nkuchenov-hash@users.noreply.github.com"
+          git add -A
+          git commit -m "Align desktop calendar controls in one row"
+          git push origin HEAD:fix/calendar-desktop-single-toolbar-20260904
