@@ -25,7 +25,8 @@ typedef AppReorderLabelBuilder = String Function(int index);
 /// The feature owns the item surface. This helper owns the discoverable drag
 /// handle and Flutter reorder plumbing so drag behavior stays consistent.
 /// Callers must apply local order immediately in [onReorder] and persist it
-/// asynchronously.
+/// asynchronously. Nested lists reuse this same primitive with [shrinkWrap]
+/// and non-scrolling physics instead of introducing feature-local drag code.
 class AppReorderableList extends StatelessWidget {
   const AppReorderableList({
     super.key,
@@ -40,6 +41,7 @@ class AppReorderableList extends StatelessWidget {
     this.spacing = 8,
     this.physics,
     this.primary,
+    this.shrinkWrap = false,
   });
 
   final int itemCount;
@@ -53,6 +55,7 @@ class AppReorderableList extends StatelessWidget {
   final double spacing;
   final ScrollPhysics? physics;
   final bool? primary;
+  final bool shrinkWrap;
 
   @override
   Widget build(BuildContext context) {
@@ -81,6 +84,7 @@ class AppReorderableList extends StatelessWidget {
       padding: padding,
       physics: physics,
       primary: primary,
+      shrinkWrap: shrinkWrap,
     );
   }
 }
