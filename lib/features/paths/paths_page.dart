@@ -5,7 +5,7 @@ import 'package:counter/core/widgets/app_icon_button.dart';
 import 'package:counter/core/widgets/app_loading.dart';
 import 'package:counter/core/widgets/app_state_views.dart';
 import 'package:counter/core/widgets/mouse_drag_scroll_behavior.dart';
-import 'package:counter/core/widgets/plan_time_task_card/plan_card_controls.dart';
+import 'package:counter/features/paths/widgets/path_stage_card.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/data/paths/path_repository.dart';
 import 'package:counter/l10n/dictionary.dart';
@@ -827,11 +827,15 @@ class _PathsPageState extends State<PathsPage> {
       header: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (breadcrumb.contains(' › '))
+          if (breadcrumb.contains(' › ')) ...[
             Text(
               breadcrumb,
-              style: Theme.of(context).textTheme.bodySmall,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
+            const SizedBox(height: 12),
+          ],
           Row(children: [
             Expanded(
               child: Text(
@@ -853,7 +857,7 @@ class _PathsPageState extends State<PathsPage> {
               onPressed: () => unawaited(_deletePath(path)),
             ),
           ]),
-          const SizedBox(height: 6),
+          const SizedBox(height: 8),
           Text.rich(TextSpan(style: Theme.of(context).textTheme.bodyLarge, children: [
             TextSpan(text: _ru ? 'Цель: ' : 'Goal: ',
               style: const TextStyle(fontWeight: FontWeight.w800)),
@@ -874,127 +878,21 @@ class _PathsPageState extends State<PathsPage> {
           ),
         ),
       ),
-      itemBuilder: (context, index, dragHandle) =>
-          _stageCard(path, index, index == currentIndex, dragHandle),
+      itemBuilder: (context, index, dragHandle) => PathStageCard(
+        pathId: path.pathId,
+        stage: path.stages[index],
+        index: index,
+        current: index == currentIndex,
+        ru: _ru,
+        stageDragHandle: dragHandle,
+        onAddAction: () => unawaited(_addAction(path, index)),
+        onToggleAction: (actionIndex, done) =>
+            _toggleAction(path, index, actionIndex, done),
+        onReorderAction: (oldIndex, newIndex) =>
+            _reorderActions(path, index, oldIndex, newIndex),
+      ),
     );
   }
 
-  Widget _stageCard(ProjectPathSnapshot path, int index, bool current, Widget dragHandle) {
-    final stage = path.stages[index];
-    final theme = Theme.of(context), scheme = theme.colorScheme;
-    final dark = theme.brightness == Brightness.dark;
-    final completed = Colors.green.shade600, active = Colors.amber.shade700;
-    final accent = stage.isDone ? completed : (current ? active : scheme.outline);
-    final headerBase = stage.isDone ? completed : (current ? active : scheme.surfaceContainerHighest);
-    final headerColor = headerBase.withValues(
-      alpha: stage.isDone ? (dark ? .18 : .08) : current ? (dark ? .16 : .07) : (dark ? .30 : .48),
-    );
-    final doneCount = stage.actions.where((action) => action.isDone).length;
-    return Container(
-      clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(border: Border.all(color: scheme.outlineVariant), borderRadius: BorderRadius.circular(14)),
-      child: Stack(children: [
-        ExpansionTile(
-          initiallyExpanded: current, backgroundColor: headerColor, collapsedBackgroundColor: headerColor,
-          tilePadding: const EdgeInsets.fromLTRB(18, 12, 10, 12), shape: const Border(), collapsedShape: const Border(),
-          title: Row(children: [
-            Container(
-              width: 34, height: 34, alignment: Alignment.center,
-              decoration: BoxDecoration(color: accent.withValues(alpha: dark ? .24 : .12), shape: BoxShape.circle),
-              child: Text('${index + 1}', style: const TextStyle(fontWeight: FontWeight.w800)),
-            ),
-            const SizedBox(width: 12),
-            Expanded(child: Text(stage.title, style: theme.textTheme.titleMedium?.copyWith(
-              color: stage.isDone ? completed : null, fontWeight: FontWeight.w800,
-            ))),
-            const SizedBox(width: 10),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
-              decoration: BoxDecoration(color: accent.withValues(alpha: dark ? .24 : .12), borderRadius: BorderRadius.circular(999)),
-              child: Text('${stage.isDone ? '✓ ' : ''}$doneCount/${stage.actions.length}',
-                style: TextStyle(color: accent, fontWeight: FontWeight.w800)),
-            ),
-            const SizedBox(width: 6), dragHandle,
-          ]),
-          subtitle: Padding(
-            padding: const EdgeInsets.only(top: 5),
-            child: Text('${_ru ? 'Критерий завершения' : 'Completion criteria'}: ${stage.completionCriteria}',
-              maxLines: 2, overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant)),
-          ),
-          children: [
-            Container(
-              color: scheme.surface,
-              child: AppReorderableList(
-                itemCount: stage.actions.length,
-                itemKeyBuilder: (actionIndex) => ValueKey(
-                  'path-action-${path.pathId}-${stage.id}-${stage.actions[actionIndex].id}',
-                ),
-                dragLabelBuilder: (actionIndex) => _ru
-                    ? 'Перетащить пункт ${actionIndex + 1}'
-                    : 'Reorder item ${actionIndex + 1}',
-                onReorder: (oldIndex, newIndex) =>
-                    _reorderActions(path, index, oldIndex, newIndex),
-                spacing: 0,
-                shrinkWrap: true,
-                primary: false,
-                physics: const NeverScrollableScrollPhysics(),
-                header: const Divider(height: 1),
-                footer: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 4, 20, 10),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: AppButton.ghost(
-                      label: _ru ? 'Добавить пункт' : 'Add item',
-                      icon: Icons.add_rounded,
-                      size: AppButtonSize.s,
-                      onPressed: () => unawaited(_addAction(path, index)),
-                    ),
-                  ),
-                ),
-                itemBuilder: (context, actionIndex, actionDragHandle) =>
-                    _actionRow(path, index, actionIndex, actionDragHandle),
-              ),
-            ),
-          ],
-        ),
-        Positioned(left: 0, top: 0, bottom: 0, child: Container(width: 4, color: accent)),
-      ]),
-    );
-  }
 
-  Widget _actionRow(ProjectPathSnapshot path, int stageIndex, int actionIndex, Widget dragHandle) {
-    final action = path.stages[stageIndex].actions[actionIndex];
-    final theme = Theme.of(context), scheme = theme.colorScheme;
-    return Container(
-      padding: const EdgeInsets.fromLTRB(22, 14, 16, 14),
-      decoration: BoxDecoration(border: Border(bottom: BorderSide(
-        color: scheme.outlineVariant.withValues(alpha: .55)))),
-      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Padding(padding: const EdgeInsets.only(top: 1), child: PlanCardCheckbox(
-          selectMode: false, isSelected: false, displayIsDone: action.isDone,
-          toggleDoneEnabled: true, onToggleDone: () =>
-            _toggleAction(path, stageIndex, actionIndex, !action.isDone))),
-        const SizedBox(width: 14),
-        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(action.text, style: theme.textTheme.bodyLarge?.copyWith(
-            color: action.isDone ? scheme.onSurfaceVariant : scheme.onSurface,
-            decoration: action.isDone ? TextDecoration.lineThrough : null,
-            fontWeight: FontWeight.w400)),
-          if (action.expectedResult.isNotEmpty) ...[
-            const SizedBox(height: 4),
-            Text('${_ru ? 'Результат' : 'Output'}: ${action.expectedResult}',
-              style: theme.textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant)),
-          ],
-        ])),
-        const SizedBox(width: 12),
-        Padding(padding: const EdgeInsets.only(top: 2), child: Row(
-          mainAxisSize: MainAxisSize.min, children: [
-            Text('${action.minutes} ${_ru ? 'мин' : 'min'}',
-              style: theme.textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant)),
-            const SizedBox(width: 4), dragHandle,
-          ])),
-      ]),
-    );
-  }
 }
