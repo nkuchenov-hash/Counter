@@ -2,6 +2,7 @@ import 'package:counter/core/widgets/app_button.dart';
 import 'package:flutter/material.dart';
 
 const double kAppCompactControlHeight = 44;
+const double kAppQuickEntryControlHeight = 40;
 const double kAppCompactControlFontSize = 12;
 
 ButtonStyle appCompactSegmentedButtonStyle(
@@ -142,8 +143,144 @@ class AppDesktopSectionControlRow extends StatelessWidget {
   }
 }
 
+/// Canonical input surface shared with the Notes library.
+///
+/// This is the Notes quick-add/search field promoted to core so Planning,
+/// Timeline and Notes cannot drift to different input geometry or surfaces.
+class AppLibraryInput extends StatefulWidget {
+  const AppLibraryInput({
+    super.key,
+    required this.controller,
+    required this.focusNode,
+    required this.hintText,
+    required this.textInputAction,
+    this.textCapitalization = TextCapitalization.none,
+    this.onChanged,
+    this.onSubmitted,
+    this.suffixIcon,
+    this.showSearchIcon = true,
+  });
+
+  final TextEditingController controller;
+  final FocusNode focusNode;
+  final String hintText;
+  final TextInputAction textInputAction;
+  final TextCapitalization textCapitalization;
+  final ValueChanged<String>? onChanged;
+  final ValueChanged<String>? onSubmitted;
+  final Widget? suffixIcon;
+  final bool showSearchIcon;
+
+  @override
+  State<AppLibraryInput> createState() => _AppLibraryInputState();
+}
+
+class _AppLibraryInputState extends State<AppLibraryInput> {
+  bool _hovered = false;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.focusNode.addListener(_handleFocusChanged);
+  }
+
+  @override
+  void didUpdateWidget(covariant AppLibraryInput oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.focusNode == widget.focusNode) return;
+    oldWidget.focusNode.removeListener(_handleFocusChanged);
+    widget.focusNode.addListener(_handleFocusChanged);
+  }
+
+  @override
+  void dispose() {
+    widget.focusNode.removeListener(_handleFocusChanged);
+    super.dispose();
+  }
+
+  void _handleFocusChanged() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final dark = theme.brightness == Brightness.dark;
+    final meta = dark
+        ? scheme.onSurfaceVariant.withValues(alpha: 0.92)
+        : const Color(0xFF94A3B8);
+    final normalFill = dark
+        ? scheme.surfaceContainerHigh.withValues(alpha: 0.82)
+        : const Color(0xFFFFFFFF).withValues(alpha: 0.82);
+    final hoverFill = dark
+        ? scheme.surfaceContainerHighest.withValues(alpha: 0.92)
+        : const Color(0xFFFFFFFF).withValues(alpha: 0.96);
+    final normalBorder = dark
+        ? scheme.outlineVariant.withValues(alpha: 0.82)
+        : const Color(0xFFD9E0EA);
+    final focusBorder = scheme.primary.withValues(alpha: dark ? 0.86 : 0.62);
+
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 90),
+        curve: Curves.easeOut,
+        height: kAppQuickEntryControlHeight,
+        decoration: BoxDecoration(
+          color: _hovered ? hoverFill : normalFill,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: widget.focusNode.hasFocus ? focusBorder : normalBorder,
+            width: widget.focusNode.hasFocus && dark ? 1.2 : 1,
+          ),
+        ),
+        child: TextField(
+          controller: widget.controller,
+          focusNode: widget.focusNode,
+          textInputAction: widget.textInputAction,
+          textCapitalization: widget.textCapitalization,
+          textAlignVertical: TextAlignVertical.center,
+          onChanged: widget.onChanged,
+          onSubmitted: widget.onSubmitted,
+          style: TextStyle(fontSize: 14, color: scheme.onSurface),
+          decoration: InputDecoration(
+            constraints: const BoxConstraints.tightFor(
+              height: kAppQuickEntryControlHeight,
+            ),
+            hintText: widget.hintText,
+            hintStyle: TextStyle(fontSize: 14, color: meta),
+            prefixIcon: widget.showSearchIcon
+                ? Icon(Icons.search_rounded, size: 18, color: meta)
+                : const SizedBox.shrink(),
+            prefixIconConstraints: BoxConstraints.tightFor(
+              width: widget.showSearchIcon ? kAppQuickEntryControlHeight : 0,
+              height: kAppQuickEntryControlHeight,
+            ),
+            suffixIcon: widget.suffixIcon,
+            suffixIconConstraints: widget.suffixIcon != null
+                ? const BoxConstraints.tightFor(
+                    width: kAppQuickEntryControlHeight,
+                    height: kAppQuickEntryControlHeight,
+                  )
+                : null,
+            isDense: true,
+            filled: false,
+            hoverColor: Colors.transparent,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 14),
+            border: InputBorder.none,
+            enabledBorder: InputBorder.none,
+            focusedBorder: InputBorder.none,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// Canonical quick-entry line shared by desktop Planning and Timeline.
-/// The field and action are deliberately the same 44px height and 12px radius.
+/// The field is the same component as Notes; field and action share height and radius.
 class AppQuickEntryRow extends StatelessWidget {
   const AppQuickEntryRow({
     super.key,
@@ -168,39 +305,21 @@ class AppQuickEntryRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    const radius = 12.0;
-    final enabledBorder = OutlineInputBorder(
-      borderRadius: BorderRadius.circular(radius),
-      borderSide: BorderSide(color: scheme.outline),
-    );
-    final focusedBorder = enabledBorder.copyWith(
-      borderSide: BorderSide(color: scheme.primary, width: 1.5),
-    );
     return Row(
       children: [
         Expanded(
-          child: SizedBox(
-            height: kAppCompactControlHeight,
-            child: TextField(
-              controller: controller,
-              focusNode: focusNode,
-              textInputAction: TextInputAction.done,
-              onSubmitted: onSubmitted,
-              decoration: InputDecoration(
-                hintText: hintText,
-                isDense: true,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 14),
-                border: enabledBorder,
-                enabledBorder: enabledBorder,
-                focusedBorder: focusedBorder,
-              ),
-            ),
+          child: AppLibraryInput(
+            controller: controller,
+            focusNode: focusNode,
+            hintText: hintText,
+            textInputAction: TextInputAction.done,
+            showSearchIcon: false,
+            onSubmitted: onSubmitted,
           ),
         ),
         const SizedBox(width: 8),
         SizedBox(
-          height: kAppCompactControlHeight,
+          height: kAppQuickEntryControlHeight,
           child: AppButton.primary(
             label: actionLabel,
             icon: actionIcon,
