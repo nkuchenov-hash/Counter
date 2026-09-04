@@ -1,6 +1,7 @@
 // GLM Notes v3 page surfaces — literal background + centered column shells.
 // Presentation only. No Brain / PocketBase imports.
 
+import 'package:counter/core/widgets/compact_nav_controls.dart';
 import 'package:flutter/material.dart';
 
 /// Editor column (`max-w-3xl`).
@@ -19,7 +20,7 @@ const double kGlmTitleSizeMobile = 28;
 const double kGlmBodySize = 16;
 const double kGlmMetaSize = 12;
 const double kGlmPillHeight = 32;
-const double kNotesLibraryControlHeight = 40;
+const double kNotesLibraryControlHeight = kAppQuickEntryControlHeight;
 
 /// Muted blue-grey metadata (`text-muted` in GLM light theme).
 const Color kGlmMetaColor = Color(0xFF94A3B8);
@@ -201,7 +202,8 @@ class NotesGlmEditorFrame extends StatelessWidget {
 
 /// GLM glass pill for add-block actions.
 BoxDecoration notesGlmGlassPillDecoration({BuildContext? context}) {
-  final dark = context != null && Theme.of(context).brightness == Brightness.dark;
+  final dark =
+      context != null && Theme.of(context).brightness == Brightness.dark;
   final scheme = context != null ? Theme.of(context).colorScheme : null;
   return BoxDecoration(
     color: dark
@@ -229,7 +231,8 @@ InputDecoration notesGlmSearchDecoration({
   Widget? suffixIcon,
   BuildContext? context,
 }) {
-  final dark = context != null && Theme.of(context).brightness == Brightness.dark;
+  final dark =
+      context != null && Theme.of(context).brightness == Brightness.dark;
   final scheme = context != null ? Theme.of(context).colorScheme : null;
   final meta = context != null ? notesGlmMetaColor(context) : kGlmMetaColor;
   final fill = dark
@@ -244,11 +247,7 @@ InputDecoration notesGlmSearchDecoration({
     ),
     hintText: hintText,
     hintStyle: TextStyle(fontSize: 14, color: meta),
-    prefixIcon: Icon(
-      Icons.search_rounded,
-      size: 18,
-      color: meta,
-    ),
+    prefixIcon: Icon(Icons.search_rounded, size: 18, color: meta),
     suffixIcon: suffixIcon,
     filled: true,
     fillColor: fill,
@@ -274,10 +273,9 @@ InputDecoration notesGlmSearchDecoration({
   );
 }
 
-/// Canonical Notes library input used by both Search and quick-add.
-/// Owns height, border, radius and hover/focus surface so the two controls
-/// cannot visually drift apart again.
-class NotesGlmLibraryInput extends StatefulWidget {
+/// Notes compatibility wrapper over the canonical core library input.
+/// Search, Notes quick-add, Planning and Timeline now render the same field.
+class NotesGlmLibraryInput extends StatelessWidget {
   const NotesGlmLibraryInput({
     super.key,
     required this.controller,
@@ -302,109 +300,17 @@ class NotesGlmLibraryInput extends StatefulWidget {
   final bool showSearchIcon;
 
   @override
-  State<NotesGlmLibraryInput> createState() => _NotesGlmLibraryInputState();
-}
-
-class _NotesGlmLibraryInputState extends State<NotesGlmLibraryInput> {
-  bool _hovered = false;
-
-  @override
-  void initState() {
-    super.initState();
-    widget.focusNode.addListener(_handleFocusChanged);
-  }
-
-  @override
-  void didUpdateWidget(covariant NotesGlmLibraryInput oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.focusNode == widget.focusNode) return;
-    oldWidget.focusNode.removeListener(_handleFocusChanged);
-    widget.focusNode.addListener(_handleFocusChanged);
-  }
-
-  @override
-  void dispose() {
-    widget.focusNode.removeListener(_handleFocusChanged);
-    super.dispose();
-  }
-
-  void _handleFocusChanged() {
-    if (mounted) setState(() {});
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
-    final dark = theme.brightness == Brightness.dark;
-    final meta = notesGlmMetaColor(context);
-    final normalFill = dark
-        ? scheme.surfaceContainerHigh.withValues(alpha: 0.82)
-        : const Color(0xFFFFFFFF).withValues(alpha: 0.82);
-    final hoverFill = dark
-        ? scheme.surfaceContainerHighest.withValues(alpha: 0.92)
-        : const Color(0xFFFFFFFF).withValues(alpha: 0.96);
-    final normalBorder = dark
-        ? scheme.outlineVariant.withValues(alpha: 0.82)
-        : const Color(0xFFD9E0EA);
-    final focusBorder = scheme.primary.withValues(alpha: dark ? 0.86 : 0.62);
-
-    return MouseRegion(
-      onEnter: (_) => setState(() => _hovered = true),
-      onExit: (_) => setState(() => _hovered = false),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 90),
-        curve: Curves.easeOut,
-        height: kNotesLibraryControlHeight,
-        decoration: BoxDecoration(
-color: _hovered ? hoverFill : normalFill,
-borderRadius: BorderRadius.circular(12),
-border: Border.all(
-  color: widget.focusNode.hasFocus ? focusBorder : normalBorder,
-  width: widget.focusNode.hasFocus && dark ? 1.2 : 1,
-),
-        ),
-        child: TextField(
-controller: widget.controller,
-focusNode: widget.focusNode,
-textInputAction: widget.textInputAction,
-textCapitalization: widget.textCapitalization,
-textAlignVertical: TextAlignVertical.center,
-onChanged: widget.onChanged,
-onSubmitted: widget.onSubmitted,
-style: TextStyle(fontSize: 14, color: scheme.onSurface),
-decoration: InputDecoration(
-  constraints: const BoxConstraints.tightFor(
-    height: kNotesLibraryControlHeight,
-  ),
-  hintText: widget.hintText,
-  hintStyle: TextStyle(fontSize: 14, color: meta),
-  prefixIcon: widget.showSearchIcon
-      ? Icon(Icons.search_rounded, size: 18, color: meta)
-      : const SizedBox.shrink(),
-  prefixIconConstraints: BoxConstraints.tightFor(
-    width: widget.showSearchIcon ? kNotesLibraryControlHeight : 0,
-    height: kNotesLibraryControlHeight,
-  ),
-  suffixIcon: widget.suffixIcon,
-  suffixIconConstraints: widget.suffixIcon != null
-      ? const BoxConstraints.tightFor(
-          width: kNotesLibraryControlHeight,
-          height: kNotesLibraryControlHeight,
-        )
-      : null,
-  isDense: true,
-  filled: false,
-  hoverColor: Colors.transparent,
-  contentPadding: const EdgeInsets.symmetric(horizontal: 14),
-  border: InputBorder.none,
-  enabledBorder: InputBorder.none,
-  focusedBorder: InputBorder.none,
-),
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => AppLibraryInput(
+    controller: controller,
+    focusNode: focusNode,
+    hintText: hintText,
+    textInputAction: textInputAction,
+    textCapitalization: textCapitalization,
+    onChanged: onChanged,
+    onSubmitted: onSubmitted,
+    suffixIcon: suffixIcon,
+    showSearchIcon: showSearchIcon,
+  );
 }
 
 /// GLM glass card surface for library note cards.
@@ -413,7 +319,8 @@ BoxDecoration notesGlmGlassCardDecoration({
   BuildContext? context,
   bool selected = false,
 }) {
-  final dark = context != null && Theme.of(context).brightness == Brightness.dark;
+  final dark =
+      context != null && Theme.of(context).brightness == Brightness.dark;
   final scheme = context != null ? Theme.of(context).colorScheme : null;
   final Color fill;
   final Color borderColor;
@@ -422,10 +329,7 @@ BoxDecoration notesGlmGlassCardDecoration({
   if (dark) {
     final base = scheme!.surfaceContainerHigh;
     fill = selected
-        ? Color.alphaBlend(
-            scheme.primary.withValues(alpha: 0.14),
-            base,
-          )
+        ? Color.alphaBlend(scheme.primary.withValues(alpha: 0.14), base)
         : base.withValues(alpha: 0.82);
     borderColor = selected
         ? scheme.primary.withValues(alpha: 0.62)
