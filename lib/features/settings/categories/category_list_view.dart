@@ -1,7 +1,7 @@
 import 'dart:async';
 
+import 'package:counter/core/shell_adaptive.dart';
 import 'package:counter/core/widgets/app_icon_button.dart';
-import 'package:counter/core/widgets/app_loading.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/settings/categories/category_appearance_sheet.dart';
@@ -103,10 +103,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
     return childHeight + 1;
   }
 
-  bool _canMoveCategoryToParent(
-    CategoryDragData data,
-    int? newParentId,
-  ) {
+  bool _canMoveCategoryToParent(CategoryDragData data, int? newParentId) {
     if (!_categoryEditMode) return false;
     if (newParentId == data.categoryId) return false;
     if (newParentId == data.sourceParentId) return false;
@@ -317,35 +314,68 @@ class _CategoriesPageState extends State<CategoriesPage> {
     final textTheme = Theme.of(context).textTheme;
     final loc = currentLocale.value;
     final roots = _getItemsForDepth(0);
+    final desktopShell = shellUsesSideNavigation(
+      MediaQuery.sizeOf(context).width,
+    );
 
     return Scaffold(
       resizeToAvoidBottomInset: true,
-      appBar: AppBar(
-        title: Text(t(loc, 'categories_title')),
-        actions: [
-          AppIconButton(
-            icon: _useHorizontalScrollLayout
-                ? Icons.grid_view_rounded
-                : Icons.view_week_rounded,
-            tooltip: _useHorizontalScrollLayout
-                ? t(loc, 'switch_to_wrap')
-                : t(loc, 'switch_to_scrollable'),
-            onPressed: () => setState(
-              () => _useHorizontalScrollLayout = !_useHorizontalScrollLayout,
+      appBar: desktopShell
+          ? null
+          : AppBar(
+              title: Text(t(loc, 'categories_title')),
+              actions: [
+                AppIconButton(
+                  icon: _useHorizontalScrollLayout
+                      ? Icons.grid_view_rounded
+                      : Icons.view_week_rounded,
+                  tooltip: _useHorizontalScrollLayout
+                      ? t(loc, 'switch_to_wrap')
+                      : t(loc, 'switch_to_scrollable'),
+                  onPressed: () => setState(
+                    () => _useHorizontalScrollLayout =
+                        !_useHorizontalScrollLayout,
+                  ),
+                ),
+                AppIconButton(
+                  tooltip: t(loc, 'add_category'),
+                  onPressed: () => unawaited(_addRule()),
+                  icon: Icons.add_rounded,
+                ),
+                const SizedBox(width: 4),
+              ],
             ),
-          ),
-          AppIconButton(
-            tooltip: t(loc, 'add_category'),
-            onPressed: () => unawaited(_addRule()),
-            icon: Icons.add_rounded,
-          ),
-          const SizedBox(width: 4),
-        ],
-      ),
       body: SafeArea(
+        top: !desktopShell,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            if (desktopShell)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(8, 2, 8, 2),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    AppIconButton(
+                      icon: _useHorizontalScrollLayout
+                          ? Icons.grid_view_rounded
+                          : Icons.view_week_rounded,
+                      tooltip: _useHorizontalScrollLayout
+                          ? t(loc, 'switch_to_wrap')
+                          : t(loc, 'switch_to_scrollable'),
+                      onPressed: () => setState(
+                        () => _useHorizontalScrollLayout =
+                            !_useHorizontalScrollLayout,
+                      ),
+                    ),
+                    AppIconButton(
+                      tooltip: t(loc, 'add_category'),
+                      onPressed: () => unawaited(_addRule()),
+                      icon: Icons.add_rounded,
+                    ),
+                  ],
+                ),
+              ),
             SwitchListTile(
               dense: true,
               visualDensity: VisualDensity.compact,
