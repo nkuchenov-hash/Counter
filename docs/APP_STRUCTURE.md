@@ -546,6 +546,25 @@ Every production Notes feature module above must be listed by exact filename (no
 
 ---
 
+### 3.2.P People — Settings-owned personal relationship domain
+
+People is an on-demand Settings feature. External address books stay in a hidden source index and never become visible People merely because a contact exists in a provider.
+
+| Path | Role |
+| :--- | :--- |
+| `lib/data/people/people_models.dart` | Person, Circle, source-contact and integration domain types |
+| `lib/data/people/people_service.dart` | On-demand PocketBase CRUD, photo upload, source-index review/link operations, device/Telegram import and bounded birthday reminder reconcile |
+| `lib/data/people/people_device_contacts_bridge.dart` | Explicit user-triggered Android/iOS address-book bridge; no startup scan |
+| `lib/data/people/people_integration_service.dart` | Client for server-owned Google/Microsoft/VK/Facebook People source connections and sync |
+| `lib/features/settings/people/people_settings_page.dart` | Stable export for Settings → Account → People |
+| `lib/features/settings/people/people_settings_page_impl.dart` | People / Circles / Sources page composition and Person/Circle list state |
+| `lib/features/settings/people/people_avatar.dart` | Person/source avatar renderer with uploaded-photo and source-avatar fallback |
+| `lib/features/settings/people/people_person_editor.dart` | Person editor: photo, contact data, relationship, birthday/reminders, circles and notes |
+| `lib/features/settings/people/people_sources_section.dart` | Provider cards, sync/import controls and explicit Add / Link / Ignore / Block review flow |
+| `lib/features/settings/people/people_strings.dart` | Feature-local EN/RU copy for the People settings surface |
+
+**People source law:** provider records have explicit review, linked, ignored, and blocked states; only an explicit Add/Link action creates or connects a visible Person. Suppression survives later source syncs. Circles are many-to-many and are not task Categories.
+
 ## 4. Repository root (non-`lib/`)
 
 | Path | Role | Notes |

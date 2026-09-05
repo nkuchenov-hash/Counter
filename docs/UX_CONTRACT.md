@@ -167,3 +167,13 @@ Performance, responsiveness, and stability are **P0 correctness**, not polish. S
 - **During Planning Time-mode card drag/resize only:** horizontal date paging may be temporarily locked while the card owns the gesture; restore date swipe when the interaction ends.
 - **Vertical scroll** stays vertical; tap opens edit; long press starts drag where supported. Gesture conflicts are P0 bugs.
 - **Performance work** must not stack experiments on a regressing build. If swipe/startup/optimistic UI regresses, **stop** and apply the Performance Kill Switch Law (`ARCHITECTURE.md` § PERFORMANCE_KILL_SWITCH_LAW) — disable the risky path, restore stable paging, restore live optimistic sources, then re-measure. Profile-mode/DevTools proof is required **before** re-enabling any experimental preload layer; “the cache exists” / “snapshot is ready” / “body cache exists” is **not** sufficient if the user sees lag, loading, or crash.
+
+## People / source hygiene contract
+
+- Entry point: Settings → Account → People; People is not a primary app tab.
+- Sections: People, Circles, Sources.
+- Person supports photo, email, phone, relationship, optional-year birthday, reminders, multiple Circles and notes.
+- Sources are a hidden review index, never the visible People list.
+- Explicit source actions: Add, Link, Ignore, Block. Ignore/Block survives later source syncs.
+- Device contacts sync only after user action and OS permission; no startup address-book scan.
+- Plan reminder reconciliation must not cancel People birthday reminders.

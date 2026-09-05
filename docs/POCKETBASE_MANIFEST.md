@@ -238,3 +238,13 @@ Versioned server schema/data migrations live in **`pb_migrations/`** and are par
 | :--- | :--- |
 | **`docs/DATA_MAP.md`** | Field names, business keys, operational laws. |
 | **`ARCHITECTURE.md`** | Brain / gate / data flow. |
+
+## People collections (2026-09-03)
+
+Collections: `people`, `people_circles`, `people_source_contacts`, `people_integrations`.
+
+- User-facing People collections are owner-scoped to `profiles.id`; `people_integrations` is server-only.
+- External sync writes the hidden source index and never auto-creates visible People.
+- Device contacts are imported only after explicit user action and OS permission.
+- Google Contacts/Microsoft/VK/Facebook use server-owned integration routes under `/api/people-integrations/`.
+- Telegram supports explicit export import; no fake bot/OAuth contact sync is presented.

@@ -218,3 +218,20 @@ Paths are no longer encoded as Planner rows. Server schema is governed by `docs/
 | `path_revisions` | `parent_revision_id` | Previous revision business id. |
 
 **Path → Planner source identity:** `path_id + revision_id + action_id`. Scheduling/materialization belongs only to `lib/data/plans/path_planner_bridge.dart` and downstream Planning code.
+
+## People domain (2026-09-03)
+
+People is a separate personal-relationship domain and does not reuse plan Categories.
+
+### `people`
+- PocketBase system `id`, owner `user_id`, stable business `person_id`.
+- `display_name`, `primary_email`, `primary_phone`, photo/source-avatar, relationship status, birthday/reminder settings, Circles, notes and archive state.
+
+### `people_circles`
+Owner-scoped stable circles. One Person may belong to multiple Circles; Circles are independent of task Categories.
+
+### `people_source_contacts`
+Hidden provider index with durable review/linked/ignored/blocked state. A source row becomes visible only after explicit Add/Link.
+
+### `people_integrations`
+Server-only OAuth/session rows for Google Contacts, Microsoft, VK and Facebook. Tokens stay server-side.
