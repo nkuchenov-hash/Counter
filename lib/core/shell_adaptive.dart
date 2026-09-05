@@ -9,6 +9,12 @@ const double kShellDesktopNavBreakpoint = 900;
 /// Expanded side navigation width (icons + labels).
 const double kShellSideNavWidth = 272;
 
+/// Canonical desktop content gutter from the side navigation and window edge.
+const double kShellDesktopContentHorizontalPadding = 24;
+
+/// Canonical top inset for the first row of every primary desktop section.
+const double kShellDesktopContentTopPadding = 6;
+
 bool shellUsesSideNavigation(double width) =>
     width >= kShellDesktopNavBreakpoint;
 

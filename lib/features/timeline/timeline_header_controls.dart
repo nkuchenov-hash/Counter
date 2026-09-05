@@ -101,7 +101,12 @@ class TimelineHeaderControls extends StatelessWidget {
         if (!showStatsView) ...[
           if (desktopShell)
             Padding(
-              padding: const EdgeInsets.fromLTRB(24, 0, 16, 8),
+              padding: const EdgeInsets.fromLTRB(
+                kShellDesktopContentHorizontalPadding,
+                0,
+                kShellDesktopContentHorizontalPadding,
+                8,
+              ),
               child: AppQuickEntryRow(
                 controller: titleController,
                 focusNode: titleFocus,

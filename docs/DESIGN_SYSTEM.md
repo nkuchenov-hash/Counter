@@ -259,3 +259,11 @@ For ordered Path stages/items, show `more_horiz` as the visible Options affordan
 ## Desktop shell chrome
 
 On wide desktop layouts, the shell owns the global LIFE OS header and the side-navigation boundary, but it must not inject a duplicate section title above a feature that already owns its heading. `AppDesktopSectionControlRow` is the canonical one-line desktop section row: Timeline pairs its title with List / Stats, Planning pairs its title with its sort selector, Calendar pairs its title with period navigation and Month / Week / Day, Paths pairs its title with Path actions, and Categories pairs its title with category actions. Lists / Notes keep their existing internal title and receive no extra shell title. Profile may retain a shell-owned section heading until its own feature chrome is migrated. Planning and Timeline use the same `AppQuickEntryRow` for their desktop entry line. Its field is the canonical Notes library input promoted to core (`AppLibraryInput`), and the Add/Start primary action is locked to the same 40px height and 12px corner radius. Planning places that entry line directly below the title/mode row and its tags below the entry line. This contract changes desktop chrome only; feature cards, rows, editors, phone chrome, and tablet chrome are not redesigned by it. The obsolete Categories edit-mode toggle and its edit-mode-only drag/reparent chrome are removed rather than preserved as a second UI state.
+
+
+### Desktop primary-section gutters
+
+- Primary desktop sections use one outer horizontal gutter: `kShellDesktopContentHorizontalPadding = 24px` from the side-navigation divider and from the right window edge.
+- The first desktop section row starts at `kShellDesktopContentTopPadding = 6px`. Do not add feature-local top padding above it.
+- Section headers, quick-entry rows, calendar surfaces, Timeline/Stats, list/card bodies, Paths folders/detail, Categories bands, Notes/Lists library and Profile settings must align to this same outer gutter. Desktop library/settings shells must not add a narrower centered max-width on top of that gutter.
+- Phone/tablet spacing is form-factor-owned and is not changed by this desktop contract.

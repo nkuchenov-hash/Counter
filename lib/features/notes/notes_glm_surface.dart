@@ -1,6 +1,7 @@
 // GLM Notes v3 page surfaces — literal background + centered column shells.
 // Presentation only. No Brain / PocketBase imports.
 
+import 'package:counter/core/shell_adaptive.dart';
 import 'package:counter/core/widgets/compact_nav_controls.dart';
 import 'package:flutter/material.dart';
 
@@ -114,7 +115,9 @@ class NotesGlmLibraryFrame extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final wide = MediaQuery.sizeOf(context).width >= 900;
+    final width = MediaQuery.sizeOf(context).width;
+    final wide = width >= 900;
+    final desktop = shellUsesSideNavigation(width);
     return NotesGlmBackground(
       child: SafeArea(
         top: false,
@@ -122,11 +125,23 @@ class NotesGlmLibraryFrame extends StatelessWidget {
         child: Align(
           alignment: Alignment.topCenter,
           child: ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: maxWidth),
+            constraints: BoxConstraints(
+              maxWidth: desktop ? double.infinity : maxWidth,
+            ),
             child: Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: wide ? 24 : 20,
-                vertical: 16,
+              padding: EdgeInsets.fromLTRB(
+                desktop
+                    ? kShellDesktopContentHorizontalPadding
+                    : wide
+                    ? 24
+                    : 20,
+                desktop ? kShellDesktopContentTopPadding : 16,
+                desktop
+                    ? kShellDesktopContentHorizontalPadding
+                    : wide
+                    ? 24
+                    : 20,
+                16,
               ),
               child: child,
             ),

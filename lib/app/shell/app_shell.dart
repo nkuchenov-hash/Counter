@@ -24,6 +24,7 @@ import 'package:counter/shared/voice/platforms/desktop/desktop_voice_hotkey_mark
 import 'package:counter/shared/voice/platforms/desktop/desktop_voice_settings.dart';
 import 'package:counter/shared/voice/platforms/desktop/desktop_voice_smoke_bridge.dart';
 import 'package:counter/shared/voice/recognition/speech_engine_controller.dart';
+import 'package:counter/core/shell_adaptive.dart';
 import 'package:counter/core/shell_layout_state.dart';
 import 'package:counter/core/widgets/global_app_header.dart';
 import 'package:counter/core/widgets/lazy_indexed_stack.dart';

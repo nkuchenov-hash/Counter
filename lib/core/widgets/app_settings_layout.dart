@@ -1,3 +1,4 @@
+import 'package:counter/core/shell_adaptive.dart';
 import 'package:flutter/material.dart';
 
 /// Max content width for settings screens by form factor.
@@ -217,17 +218,22 @@ class AppSettingsPageBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final desktop = shellUsesSideNavigation(MediaQuery.sizeOf(context).width);
     return ColoredBox(
       color: scheme.surfaceContainerLowest,
       child: Align(
         alignment: Alignment.topCenter,
         child: ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: settingsContentMaxWidth(context)),
+          constraints: BoxConstraints(
+            maxWidth: desktop
+                ? double.infinity
+                : settingsContentMaxWidth(context),
+          ),
           child: ListView(
             padding: EdgeInsets.fromLTRB(
-              16,
-              16,
-              16,
+              desktop ? kShellDesktopContentHorizontalPadding : 16,
+              desktop ? 0 : 16,
+              desktop ? kShellDesktopContentHorizontalPadding : 16,
               16 + MediaQuery.viewPaddingOf(context).bottom,
             ),
             children: children,
@@ -319,8 +325,8 @@ class AppSettingsSwitchRow extends StatelessWidget {
           : Text(
               subtitle!,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
       value: value,
       onChanged: onChanged,
@@ -379,11 +385,7 @@ class AppSettingsActionRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: children,
-    );
+    return Wrap(spacing: 8, runSpacing: 8, children: children);
   }
 }
 
@@ -409,12 +411,7 @@ class AppSettingsCardGrid extends StatelessWidget {
           spacing: 16,
           runSpacing: 16,
           children: children
-              .map(
-                (c) => SizedBox(
-                  width: cardWidth.clamp(280, 540),
-                  child: c,
-                ),
-              )
+              .map((c) => SizedBox(width: cardWidth.clamp(280, 540), child: c))
               .toList(),
         );
       },

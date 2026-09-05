@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:counter/core/shell_adaptive.dart';
 import 'package:counter/core/widgets/compact_nav_controls.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/features/planning/planning_sort_mode.dart';
@@ -179,7 +180,12 @@ class PlanningQuickAddChrome extends StatelessWidget {
           );
     return Padding(
       padding: desktop
-          ? const EdgeInsets.fromLTRB(24, 0, 16, 10)
+          ? const EdgeInsets.fromLTRB(
+              kShellDesktopContentHorizontalPadding,
+              0,
+              kShellDesktopContentHorizontalPadding,
+              10,
+            )
           : const EdgeInsets.fromLTRB(16, 4, 16, 10),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

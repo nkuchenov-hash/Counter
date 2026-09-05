@@ -132,27 +132,7 @@ class _PlanningPageState extends State<PlanningPage>
   late final PlanningTimeViewCoordinator timeView;
   bool _activePlanningResourcesLoaded = false;
 
-  /// Hour-grid day timeline scroll (edge auto-scroll while dragging a plan).
-
-  /// Duration-true timeline scale for the active Time-mode canvas build.
-
-  /// Local preview height while dragging (intrinsic card height).
-
-  /// Active vertical timeline drag (Time mode); local preview only until drop.
-
-  /// Midpoint insert-before/after target while dragging over another card.
-
-  /// Finger delta (never overwritten by preview snap); used for hit-test on release.
-
-  /// Canvas-local Y of finger within dragged card at pointer-down (inset + local dy).
-
-  /// Monotonic id per vertical drag gesture (stamped on target-card intents).
-
-  /// Top/bottom edge resize (Time mode); local preview until release.
-
   static const double _kShellBulkBarReservePx = 56;
-
-  /// Pixels per second while the drag pointer sits in the top/bottom 10% bands.
 
   StreamSubscription<void>? _planningTimeSub;
   StreamSubscription<void>? _tagsCatalogSub;
@@ -1569,7 +1549,12 @@ class _PlanningPageState extends State<PlanningPage>
       return _buildTagGroupedListView(tasks, planActualByPbId);
     }
     return ReorderableListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      padding: EdgeInsets.symmetric(
+        horizontal: shellUsesSideNavigation(MediaQuery.sizeOf(context).width)
+            ? kShellDesktopContentHorizontalPadding
+            : 8,
+        vertical: 8,
+      ),
       buildDefaultDragHandles: false,
       proxyDecorator: planningReorderProxyDecorator,
       itemCount: tasks.length,
@@ -1653,7 +1638,12 @@ class _PlanningPageState extends State<PlanningPage>
       return _buildTagGroupedListView(tasks, planActualByPbId);
     }
     return ReorderableListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      padding: EdgeInsets.symmetric(
+        horizontal: shellUsesSideNavigation(MediaQuery.sizeOf(context).width)
+            ? kShellDesktopContentHorizontalPadding
+            : 8,
+        vertical: 8,
+      ),
       buildDefaultDragHandles: false,
       proxyDecorator: planningReorderProxyDecorator,
       itemCount: tasks.length,

@@ -1,3 +1,4 @@
+import 'package:counter/core/shell_adaptive.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/l10n/category_db_display.dart';
@@ -289,13 +290,11 @@ class CategoryRowWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final sideMargin = shellUsesSideNavigation(MediaQuery.sizeOf(context).width)
+        ? kShellDesktopContentHorizontalPadding
+        : kCategoryBandScreenMarginH;
     final bandMath = Padding(
-      padding: const EdgeInsets.fromLTRB(
-        kCategoryBandScreenMarginH,
-        6,
-        kCategoryBandScreenMarginH,
-        6,
-      ),
+      padding: EdgeInsets.fromLTRB(sideMargin, 6, sideMargin, 6),
       child: LayoutBuilder(
         builder: (context, c) {
           final avail = c.maxWidth;

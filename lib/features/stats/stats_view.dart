@@ -1,3 +1,4 @@
+import 'package:counter/core/shell_adaptive.dart';
 import 'package:counter/core/widgets/compact_nav_controls.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
@@ -172,22 +173,26 @@ class _StatsViewState extends State<StatsView> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+          padding: EdgeInsets.fromLTRB(
+            shellUsesSideNavigation(MediaQuery.sizeOf(context).width)
+                ? kShellDesktopContentHorizontalPadding
+                : 12,
+            8,
+            shellUsesSideNavigation(MediaQuery.sizeOf(context).width)
+                ? kShellDesktopContentHorizontalPadding
+                : 12,
+            4,
+          ),
           child: Align(
             alignment: Alignment.centerLeft,
             child: SegmentedButton<_StatsMode>(
               showSelectedIcon: false,
-              style: appCompactSegmentedButtonStyle(
-                context,
-                segmentWidth: 112,
-              ),
+              style: appCompactSegmentedButtonStyle(context, segmentWidth: 112),
               segments: [
                 ButtonSegment<_StatsMode>(
                   value: _StatsMode.details,
                   icon: const Icon(Icons.account_tree_rounded),
-                  label: AppCompactSegmentLabel(
-                    text: _copy('List', 'Список'),
-                  ),
+                  label: AppCompactSegmentLabel(text: _copy('List', 'Список')),
                 ),
                 ButtonSegment<_StatsMode>(
                   value: _StatsMode.visual,

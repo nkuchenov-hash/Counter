@@ -1,3 +1,4 @@
+import 'package:counter/core/shell_adaptive.dart';
 import 'package:counter/core/widgets/app_button.dart';
 import 'package:flutter/material.dart';
 
@@ -117,7 +118,12 @@ class AppDesktopSectionControlRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 6, 16, 6),
+      padding: const EdgeInsets.fromLTRB(
+        kShellDesktopContentHorizontalPadding,
+        kShellDesktopContentTopPadding,
+        kShellDesktopContentHorizontalPadding,
+        6,
+      ),
       child: SizedBox(
         height: kAppCompactControlHeight,
         child: Row(

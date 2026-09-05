@@ -718,8 +718,12 @@ class _PathsPageState extends State<PathsPage> {
         );
       }
     }
+    final sidePadding =
+        shellUsesSideNavigation(MediaQuery.sizeOf(context).width)
+        ? kShellDesktopContentHorizontalPadding
+        : 12.0;
     return ListView(
-      padding: const EdgeInsets.fromLTRB(12, 12, 12, 24),
+      padding: EdgeInsets.fromLTRB(sidePadding, 12, sidePadding, 24),
       children: widgets,
     );
   }

@@ -173,9 +173,9 @@ mixin ShellChrome on ShellLifecycle, ShellMoreMenu, ShellVoiceInput {
                                       shellPageIndex == 5)
                                     Padding(
                                       padding: const EdgeInsets.fromLTRB(
-                                        24,
-                                        18,
-                                        24,
+                                        kShellDesktopContentHorizontalPadding,
+                                        kShellDesktopContentTopPadding,
+                                        kShellDesktopContentHorizontalPadding,
                                         12,
                                       ),
                                       child: Align(
