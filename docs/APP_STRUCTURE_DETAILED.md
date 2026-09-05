@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `a68bfcf9` on 2026-09-05.**
+**Generated from input HEAD `3da164b9` on 2026-09-05.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 862 — each appears **exactly once** below.
+**Tracked files:** 861 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -31,10 +31,10 @@ python scripts/manual/generate_app_structure_detailed.py
 | `Brain/data` | 91 |
 | `platform build` | 83 |
 | `shared foundation` | 64 |
-| `developer tool` | 59 |
+| `developer tool` | 58 |
 | `platform resource` | 44 |
+| `governing documentation` | 37 |
 | `Desktop Voice runtime` | 36 |
-| `governing documentation` | 36 |
 | `shared Voice system` | 22 |
 | `test fixture` | 22 |
 | `PocketBase migration` | 17 |
@@ -43,7 +43,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | `localization` | 13 |
 | `installer` | 12 |
 | `Brain Voice` | 10 |
-| `CI/deployment` | 10 |
+| `CI/deployment` | 9 |
 | `shared time` | 7 |
 | `package metadata` | 6 |
 | `shared diagnostics` | 6 |
@@ -56,10 +56,10 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 478 |
-| `REQUIRED_FOR_TEST_OR_TOOLING` | 203 |
+| `PROVEN_REQUIRED` | 477 |
+| `REQUIRED_FOR_TEST_OR_TOOLING` | 202 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
-| `GOVERNING_DOCUMENTATION` | 36 |
+| `GOVERNING_DOCUMENTATION` | 37 |
 | `HISTORICAL_RECORD` | 17 |
 | `GENERATED_CANONICAL_OUTPUT` | 1 |
 
@@ -68,7 +68,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | Confidence | Count |
 | :--- | ---: |
 | `HIGH` | 796 |
-| `MEDIUM` | 66 |
+| `MEDIUM` | 65 |
 
 ---
 
@@ -275,6 +275,7 @@ Evidence is computed from Dart import/export/`part` graphs, bounded path referen
 - [`.cursor/`](#folder-cursor)
 - [`docs/`](#folder-docs)
 - [`.cursor/rules/`](#folder-cursorrules)
+- [`docs/releases/`](#folder-docsreleases)
 - [`docs/reports/`](#folder-docsreports)
 - [`docs/specs/`](#folder-docsspecs)
 - [`docs/website/`](#folder-docswebsite)
@@ -782,6 +783,30 @@ RU:
 - **Когда открывать:** Ошибки несовпадения версии Gradle.
 - **Можно удалить?** Нет — нужен для сборки Android.
 - **Связанные пути:** `android/settings.gradle.kts`.
+
+---
+
+## Folder: `docs/releases/`
+
+EN:
+
+- **What this folder is:** Documentation topic folder `docs/releases/` — releases notes.
+- **Why it exists:** Groups related markdown specs so owners find written guidance by topic.
+- **What lives here:** Markdown files listed in file sections below.
+- **What part of the app it affects:** Development and AI context — not app runtime.
+- **When to open it:** Reading or editing docs about releases.
+- **Can it be deleted?** No — governing or report documentation.
+- **Main related paths:** `docs/PROJECT_KNOWLEDGE_PACK.md`, `CHANGELOG.md`.
+
+RU:
+
+- **Что это за папка:** Тематический каталог документации `docs/releases/`.
+- **Зачем нужна:** Группирует правила, спецификации и справочные материалы по одной теме, не смешивая их с runtime-кодом.
+- **Что здесь лежит:** Текстовые спецификации и связанные справочные материалы; конкретный состав описан ниже.
+- **На что влияет в приложении:** Development and AI context — не runtime приложения.
+- **Когда открывать:** Открывать при проверке или обновлении документации по этой теме.
+- **Можно удалить?** Нет — governing-документация или отчёт.
+- **Связанные пути:** `docs/PROJECT_KNOWLEDGE_PACK.md`, `CHANGELOG.md`.
 
 ---
 
@@ -4709,43 +4734,6 @@ RU:
 - **Связано с:** `.github/`, Flutter tooling.
 
 
-### `.github/workflows/people-main-sync.yml`
-
-EN:
-
-- **Human purpose:** GitHub Actions workflow `.github/workflows/people-main-sync.yml` defines the repository automation named by this workflow file. The CI system loads `.github/workflows/people-main-sync.yml` to run its declared triggers, permissions, jobs, and checks.
-- **What this is:** GitHub Actions workflow `.github/workflows/people-main-sync.yml` defines the repository automation named by this workflow file.
-- **Why needed:** The CI system loads `.github/workflows/people-main-sync.yml` to run its declared triggers, permissions, jobs, and checks.
-- **Contents:** YAML workflow definition specific to `people-main-sync.yml`.
-- **Repository role:** CI/deployment
-- **Evidence of use:** GitHub Actions discovers workflows under `.github/workflows/`; see `docs/DEPLOY.md` for publish/build intent.
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Broken CI deploy or Windows installer pipeline.
-- **Confidence:** HIGH
-- **Owner / layer:** CI
-- **Responsibilities:** Own the GitHub Actions behavior declared by `people-main-sync.yml`.
-- **When to open:** When behavior tied to `people-main-sync.yml` breaks or you need to change its documented role.
-- **Can it be deleted?** Broken CI deploy or Windows installer pipeline.
-- **Connected to:** Flutter `.github` tooling.
-
-RU:
-
-- **Зачем файл человеку:** Автоматизация GitHub Actions `people-main-sync.yml` для CI и операций репозитория. GitHub Actions читает `people-main-sync.yml` и запускает описанные в нём события, проверки и служебные шаги.
-- **Что это:** Автоматизация GitHub Actions `people-main-sync.yml` для CI и операций репозитория.
-- **Зачем:** GitHub Actions читает `people-main-sync.yml` и запускает описанные в нём события, проверки и служебные шаги.
-- **Содержимое:** YAML-триггеры, permissions и шаги CI, относящиеся к workflow `people-main-sync.yml`.
-- **Роль в репозитории:** CI/deployment
-- **Доказательства использования:** GitHub Actions подхватывает workflow из `.github/workflows/`; см. `docs/DEPLOY.md`.
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Сломается CI deploy или сборка Windows installer.
-- **Уверенность:** HIGH
-- **Владелец / слой:** CI
-- **Обязанности:** Управляет CI-сценарием `people-main-sync.yml` и его границами выполнения.
-- **Когда открывать:** Когда ломается поведение, связанное с `people-main-sync.yml`.
-- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
-- **Связано с:** `.github/`, Flutter tooling.
-
-
 ### `.github/workflows/windows-desktop-build.yml`
 
 EN:
@@ -6446,6 +6434,43 @@ RU:
 - **Когда открывать:** Перед изменением interaction flows, edit sheets или offline banner.
 - **Можно удалить?** Нет — governing документация.
 - **Связано с:** `docs/ARCHITECTURE.md`, offline bar в `app_shell.dart`, `docs/DESIGN_SYSTEM.md`.
+
+
+### `docs/releases/2026-09-06-people.md`
+
+EN:
+
+- **Human purpose:** Markdown document `2026-09-06-people.md` in `docs/releases` — repo tooling or config. Tracked because `docs/releases` needs `2026-09-06-people.md` for build, CI, or maintenance.
+- **What this is:** Markdown document `2026-09-06-people.md` in `docs/releases` — repo tooling or config.
+- **Why needed:** Tracked because `docs/releases` needs `2026-09-06-people.md` for build, CI, or maintenance.
+- **Contents:** Open `2026-09-06-people.md` when working on `docs/releases` (see folder section above).
+- **Repository role:** governing documentation
+- **Evidence of use:** Governing/ops/product documentation read by humans and agents (see `docs/PROJECT_KNOWLEDGE_PACK.md` / AGENTS routing).
+- **Necessity status:** GOVERNING_DOCUMENTATION
+- **Deletion consequence:** Lost architecture/ops rule or agent routing instruction.
+- **Confidence:** HIGH
+- **Owner / layer:** documentation
+- **Responsibilities:** Supports `docs/releases` workflow for `2026-09-06-people.md`.
+- **When to open:** When build output or maintenance cites `2026-09-06-people.md`.
+- **Can it be deleted?** No — governing/current documentation.
+- **Connected to:** `docs/releases/`, `docs/APP_STRUCTURE.md`.
+
+RU:
+
+- **Зачем файл человеку:** Текстовая спецификация `2026-09-06-people.md` в разделе `docs/releases`. Фиксирует правила, состояние или справочную информацию, относящуюся к `docs/releases`.
+- **Что это:** Текстовая спецификация `2026-09-06-people.md` в разделе `docs/releases`.
+- **Зачем:** Фиксирует правила, состояние или справочную информацию, относящуюся к `docs/releases`.
+- **Содержимое:** Структурированный Markdown-текст по теме `2026-09-06-people.md` без runtime-логики приложения.
+- **Роль в репозитории:** governing documentation
+- **Доказательства использования:** Управляющая/операционная документация для людей и агентов (см. Project Knowledge / AGENTS).
+- **Статус необходимости:** GOVERNING_DOCUMENTATION
+- **Что будет, если удалить:** Пропадёт архитектурное/операционное правило.
+- **Уверенность:** HIGH
+- **Владелец / слой:** документация
+- **Обязанности:** Хранит актуальную документацию по назначению `2026-09-06-people.md`.
+- **Когда открывать:** When результат сборки or maintenance cites `2026-09-06-people.md`.
+- **Можно удалить?** Нет — governing документация.
+- **Связано с:** `docs/releases/`, `docs/APP_STRUCTURE.md`.
 
 
 ### `docs/reports/ARCHITECTURE_GUARD_BASELINE_2026-07-17.md`
@@ -29597,43 +29622,6 @@ RU:
 - **Когда открывать:** Owner или CI запускает `export_price_reporter_timesheet.dart` по инструкции в repo docs.
 - **Можно удалить?** Возможно — ручной экспорт для биллинга; удалять только если не используете.
 - **Связано с:** `docs/website/INTERNAL_NOTES_NOT_FOR_SITE.md`, `exports/` folder.
-
-
-### `scripts/manual/finalize_people_main.py`
-
-EN:
-
-- **Human purpose:** Developer script `finalize_people_main.py` — run manually for maintenance, smoke test, or deploy helper. Automates a repeatable task documented in repo notes or `DEPLOY.md`.
-- **What this is:** Developer script `finalize_people_main.py` — run manually for maintenance, smoke test, or deploy helper.
-- **Why needed:** Automates a repeatable task documented in repo notes or `DEPLOY.md`.
-- **Contents:** PowerShell, Python, or Dart commands for `finalize_people_main.py`.
-- **Repository role:** developer tool
-- **Evidence of use:** Documented manual developer/audit script under `scripts/`; run from repo docs or AGENTS.md workflows.
-- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
-- **Deletion consequence:** Broken audit/deploy/manual maintenance command.
-- **Confidence:** MEDIUM
-- **Owner / layer:** developer tooling
-- **Responsibilities:** See script header comments for exact behavior.
-- **When to open:** When workflow documented for `finalize_people_main.py` is needed.
-- **Can it be deleted?** No — part of documented dev workflow unless cleanup report removed it.
-- **Connected to:** `scripts/manual/`, `docs/DEPLOY.md`.
-
-RU:
-
-- **Зачем файл человеку:** Dev/CI скрипт `finalize_people_main.py` — повторяемая команда из repo docs. Автоматизирует deploy, audit или maintenance без ad-hoc notes.
-- **Что это:** Dev/CI скрипт `finalize_people_main.py` — повторяемая команда из repo docs.
-- **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
-- **Содержимое:** Команды PowerShell/Python/Dart в `finalize_people_main.py`.
-- **Роль в репозитории:** developer tool
-- **Доказательства использования:** Ручной dev/audit скрипт в `scripts/`; запускается по инструкции в docs/AGENTS.
-- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
-- **Что будет, если удалить:** Сломается audit/deploy или ручная команда сопровождения.
-- **Уверенность:** MEDIUM
-- **Владелец / слой:** инструменты разработчика
-- **Обязанности:** Workflow, описанный в header или `docs/DEPLOY.md`.
-- **Когда открывать:** Owner или CI запускает `finalize_people_main.py` по инструкции в repo docs.
-- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
-- **Связано с:** `scripts/manual/`, `docs/DEPLOY.md`.
 
 
 ### `scripts/manual/generate_app_structure_detailed.py`
