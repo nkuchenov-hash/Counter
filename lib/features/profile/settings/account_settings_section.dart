@@ -5,10 +5,12 @@ import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/auth/oauth_session.dart';
 import 'package:counter/features/profile/calendar_integrations/calendar_integrations_section.dart';
+import 'package:counter/features/profile/people/people_l10n.dart';
+import 'package:counter/features/profile/people/people_page.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
 
-/// Account: current user, connected calendars, and logout.
+/// Account: current user, People, connected calendars, and logout.
 class AccountSecuritySection extends StatelessWidget {
   const AccountSecuritySection({super.key});
 
@@ -75,6 +77,26 @@ class AccountSecuritySection extends StatelessWidget {
                 ],
               ),
             ),
+            const Divider(height: 24),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              minVerticalPadding: 8,
+              leading: const Icon(Icons.people_alt_outlined),
+              title: Text(
+                peopleT(loc, 'title'),
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              subtitle: Text(peopleT(loc, 'subtitle')),
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute<void>(builder: (_) => const PeoplePage()),
+                );
+              },
+            ),
+            const Divider(height: 24),
             const CalendarIntegrationsSection(),
           ],
         );
