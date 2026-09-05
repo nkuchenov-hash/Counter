@@ -70,6 +70,20 @@ abstract class PbAppApiRoutes {
 
   static String calendarIntegrationConnection(String provider) =>
       '/api/calendar-integrations/$provider';
+
+  /// People cloud source integrations. Device contacts and Telegram export are
+  /// intentionally client-owned and do not use these routes.
+  static const String peopleIntegrationsStatus =
+      '/api/people-integrations/status';
+
+  static String peopleIntegrationConnect(String provider) =>
+      '/api/people-integrations/$provider/connect';
+
+  static String peopleIntegrationSync(String provider) =>
+      '/api/people-integrations/$provider/sync';
+
+  static String peopleIntegrationConnection(String provider) =>
+      '/api/people-integrations/$provider';
 }
 
 /// PocketBase collection names (Admin → Collections). Must match server.
@@ -83,6 +97,10 @@ abstract class PbCollections {
   static const String pathRevisions = 'path_revisions';
   static const String sleepSyncConnections = 'sleep_sync_connections';
   static const String calendarIntegrations = 'calendar_integrations';
+  static const String people = 'people';
+  static const String peopleCircles = 'people_circles';
+  static const String peopleSourceContacts = 'people_source_contacts';
+  static const String peopleIntegrations = 'people_integrations';
 }
 
 /// PocketBase Admin → OAuth2 provider **names** must match these strings exactly.

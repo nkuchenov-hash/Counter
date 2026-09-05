@@ -5,8 +5,8 @@ import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/auth/oauth_session.dart';
 import 'package:counter/features/profile/calendar_integrations/calendar_integrations_section.dart';
-import 'package:counter/features/profile/people/people_l10n.dart';
-import 'package:counter/features/profile/people/people_page.dart';
+import 'package:counter/features/settings/people/people_settings_page.dart';
+import 'package:counter/features/settings/people/people_strings.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
 
@@ -80,19 +80,24 @@ class AccountSecuritySection extends StatelessWidget {
             const Divider(height: 24),
             ListTile(
               contentPadding: EdgeInsets.zero,
-              minVerticalPadding: 8,
-              leading: const Icon(Icons.people_alt_outlined),
+              leading: const Icon(Icons.people_alt_rounded),
               title: Text(
                 peopleT(loc, 'title'),
-                style: theme.textTheme.bodyLarge?.copyWith(
+                style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w600,
                 ),
               ),
-              subtitle: Text(peopleT(loc, 'subtitle')),
+              subtitle: Text(
+                peopleT(loc, 'subtitle'),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
               trailing: const Icon(Icons.chevron_right_rounded),
               onTap: () {
                 Navigator.of(context).push(
-                  MaterialPageRoute<void>(builder: (_) => const PeoplePage()),
+                  MaterialPageRoute<void>(
+                    builder: (_) => const PeopleSettingsPage(),
+                  ),
                 );
               },
             ),
