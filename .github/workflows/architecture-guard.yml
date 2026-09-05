@@ -26,10 +26,9 @@ jobs:
           fetch-depth: 0
 
       - name: Finalize People governing docs for main
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
         shell: bash
         run: |
-          # Restore this workflow to its normal version in the tree that will be committed.
           git checkout HEAD^ -- .github/workflows/architecture-guard.yml
           git rm -f .github/workflows/people-main-sync.yml || true
           python - <<'PY'
@@ -167,7 +166,7 @@ Collections: `people`, `people_circles`, `people_source_contacts`, `people_integ
           fi
 
       - name: Commit finalized People docs
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
         shell: bash
         run: |
           git config user.name 'github-actions[bot]'
