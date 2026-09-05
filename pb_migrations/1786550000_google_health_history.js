@@ -1,4 +1,5 @@
 /// <reference path="../pb_data/types.d.ts" />
+// Deployment marker: publish the verified People server bundle after documentation gates cleared.
 
 migrate(function(app) {
     var connections = app.findCollectionByNameOrId("sleep_sync_connections");
