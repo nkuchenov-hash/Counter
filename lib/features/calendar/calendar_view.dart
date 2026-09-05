@@ -241,9 +241,9 @@ class _CalendarViewState extends State<CalendarView>
 
     final calendarArea = Padding(
       padding: EdgeInsets.fromLTRB(
-        viewportW >= kShellDesktopNavBreakpoint ? 16 : 12,
+        desktopCalendar ? kShellDesktopContentHorizontalPadding : 12,
         4,
-        viewportW >= kShellDesktopNavBreakpoint ? 16 : 12,
+        desktopCalendar ? kShellDesktopContentHorizontalPadding : 12,
         8,
       ),
       child: desktopCalendar && _dayFocusActive

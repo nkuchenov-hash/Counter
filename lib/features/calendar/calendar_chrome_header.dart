@@ -93,7 +93,12 @@ class CalendarChromeHeader extends StatelessWidget {
           ? '${DateFormat.MMMd(loc).format(weekStart)} – ${DateFormat.MMMd(loc).format(weekEnd)}'
           : title;
       return Padding(
-        padding: const EdgeInsets.fromLTRB(24, 8, 24, 8),
+        padding: const EdgeInsets.fromLTRB(
+          kShellDesktopContentHorizontalPadding,
+          kShellDesktopContentTopPadding,
+          kShellDesktopContentHorizontalPadding,
+          6,
+        ),
         child: SizedBox(
           height: 44,
           child: Row(

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:counter/core/shell_adaptive.dart';
 import 'package:counter/core/widgets/app_button.dart';
 import 'package:counter/core/widgets/compact_nav_controls.dart';
 import 'package:counter/core/widgets/app_loading.dart';
@@ -73,7 +74,12 @@ class CalendarSelectedDayTaskPanel extends StatelessWidget {
             ),
           ),
         Padding(
-          padding: EdgeInsets.fromLTRB(12, desktopQuickAdd ? 8 : 0, 12, 8),
+          padding: EdgeInsets.fromLTRB(
+            desktopQuickAdd ? kShellDesktopContentHorizontalPadding : 12,
+            desktopQuickAdd ? 8 : 0,
+            desktopQuickAdd ? kShellDesktopContentHorizontalPadding : 12,
+            8,
+          ),
           child: desktopQuickAdd
               ? _CalendarDayQuickAdd(loc: loc, onAddPlan: onAddPlan)
               : AppButton(
@@ -105,7 +111,12 @@ class CalendarSelectedDayTaskPanel extends StatelessWidget {
                 return AppEmptyState(message: t(loc, 'no_planned_tasks_date'));
               }
               return ListView.separated(
-                padding: const EdgeInsets.fromLTRB(12, 4, 12, 16),
+                padding: EdgeInsets.fromLTRB(
+                  desktopQuickAdd ? kShellDesktopContentHorizontalPadding : 12,
+                  4,
+                  desktopQuickAdd ? kShellDesktopContentHorizontalPadding : 12,
+                  16,
+                ),
                 itemCount: scheduled.length,
                 separatorBuilder: (_, _) => const SizedBox(height: 8),
                 itemBuilder: (context, index) {

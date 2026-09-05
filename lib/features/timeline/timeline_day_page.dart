@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:counter/core/shell_adaptive.dart';
 import 'package:counter/shared/diagnostics/performance/rebuild_metrics.dart';
 import 'package:counter/shared/diagnostics/performance/runtime_flags.dart';
 import 'package:counter/core/widgets/app_state_views.dart';
@@ -55,7 +56,8 @@ class TimelineDayCardListState extends State<TimelineDayCardList>
   List<Map<String, dynamic>> _recordMaps() {
     final db = DatabaseService.instance;
     final live = widget.liveRecordMaps;
-    final startDayRecords = live ??
+    final startDayRecords =
+        live ??
         (widget.isActive
             ? db.peekTimelineRecordsForDate(widget.date)
             : db.timelineBodyEntryForDate(widget.date).records);
@@ -203,7 +205,16 @@ class TimelineLazyRecordListState extends State<TimelineLazyRecordList> {
       );
     }
     return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+      padding: EdgeInsets.fromLTRB(
+        shellUsesSideNavigation(MediaQuery.sizeOf(context).width)
+            ? kShellDesktopContentHorizontalPadding
+            : 12,
+        12,
+        shellUsesSideNavigation(MediaQuery.sizeOf(context).width)
+            ? kShellDesktopContentHorizontalPadding
+            : 12,
+        12,
+      ),
       physics: const AlwaysScrollableScrollPhysics(),
       cacheExtent: 320,
       addAutomaticKeepAlives: false,

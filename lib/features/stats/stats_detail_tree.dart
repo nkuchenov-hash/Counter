@@ -1,3 +1,4 @@
+import 'package:counter/core/shell_adaptive.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/l10n/dictionary.dart';
@@ -50,7 +51,13 @@ class StatsDetailTree extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding: EdgeInsets.symmetric(
+            horizontal:
+                shellUsesSideNavigation(MediaQuery.sizeOf(context).width)
+                ? kShellDesktopContentHorizontalPadding
+                : 16,
+            vertical: 8,
+          ),
           child: Text(
             t(
               currentLocale.value,
@@ -65,7 +72,16 @@ class StatsDetailTree extends StatelessWidget {
         const Divider(height: 1),
         Expanded(
           child: ListView.builder(
-            padding: const EdgeInsets.fromLTRB(12, 8, 12, 24),
+            padding: EdgeInsets.fromLTRB(
+              shellUsesSideNavigation(MediaQuery.sizeOf(context).width)
+                  ? kShellDesktopContentHorizontalPadding
+                  : 12,
+              8,
+              shellUsesSideNavigation(MediaQuery.sizeOf(context).width)
+                  ? kShellDesktopContentHorizontalPadding
+                  : 12,
+              24,
+            ),
             itemCount: roots.length,
             itemBuilder: (context, index) =>
                 _buildStatsNode(context, scheme, roots[index], 0, ''),

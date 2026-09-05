@@ -1569,7 +1569,12 @@ class _PlanningPageState extends State<PlanningPage>
       return _buildTagGroupedListView(tasks, planActualByPbId);
     }
     return ReorderableListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      padding: EdgeInsets.symmetric(
+        horizontal: shellUsesSideNavigation(MediaQuery.sizeOf(context).width)
+            ? kShellDesktopContentHorizontalPadding
+            : 8,
+        vertical: 8,
+      ),
       buildDefaultDragHandles: false,
       proxyDecorator: planningReorderProxyDecorator,
       itemCount: tasks.length,
@@ -1653,7 +1658,12 @@ class _PlanningPageState extends State<PlanningPage>
       return _buildTagGroupedListView(tasks, planActualByPbId);
     }
     return ReorderableListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      padding: EdgeInsets.symmetric(
+        horizontal: shellUsesSideNavigation(MediaQuery.sizeOf(context).width)
+            ? kShellDesktopContentHorizontalPadding
+            : 8,
+        vertical: 8,
+      ),
       buildDefaultDragHandles: false,
       proxyDecorator: planningReorderProxyDecorator,
       itemCount: tasks.length,

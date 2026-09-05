@@ -1,3 +1,4 @@
+import 'package:counter/core/shell_adaptive.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/planning/widgets/planning_group_section.dart';
 import 'package:counter/features/planning/widgets/planning_list_grouping.dart';
@@ -31,7 +32,7 @@ class PlanningTagGroupedList extends StatelessWidget {
   final bool Function(PlanningTask task) canReorderTask;
   final PlanningGroupedPlanCardRowBuilder planCardRow;
   final void Function(int groupId, int oldIndex, int newIndex)
-      onTagBucketReorder;
+  onTagBucketReorder;
 
   @override
   Widget build(BuildContext context) {
@@ -85,8 +86,12 @@ class PlanningTagGroupedList extends StatelessWidget {
         );
       }
     }
+    final sidePadding =
+        shellUsesSideNavigation(MediaQuery.sizeOf(context).width)
+        ? kShellDesktopContentHorizontalPadding
+        : 8.0;
     return ListView(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      padding: EdgeInsets.symmetric(horizontal: sidePadding, vertical: 8),
       children: children,
     );
   }

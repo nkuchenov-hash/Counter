@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:counter/core/shell_adaptive.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/l10n/category_db_display.dart';
@@ -53,7 +54,16 @@ class StatsVisualOverview extends StatelessWidget {
     }
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(12, 10, 12, 28),
+      padding: EdgeInsets.fromLTRB(
+        shellUsesSideNavigation(MediaQuery.sizeOf(context).width)
+            ? kShellDesktopContentHorizontalPadding
+            : 12,
+        10,
+        shellUsesSideNavigation(MediaQuery.sizeOf(context).width)
+            ? kShellDesktopContentHorizontalPadding
+            : 12,
+        28,
+      ),
       children: [
         Text(
           _copy('Time distribution', 'Распределение времени'),
@@ -233,7 +243,9 @@ class _StatsVisualData {
       }
       final previous = result.last;
       final sameRoot = previous.rootId == session.rootId;
-      final gapSeconds = session.startWall.difference(previous.endWall).inSeconds;
+      final gapSeconds = session.startWall
+          .difference(previous.endWall)
+          .inSeconds;
       if (sameRoot && gapSeconds <= 60) {
         final mergedEnd = session.endWall.isAfter(previous.endWall)
             ? session.endWall
@@ -304,7 +316,9 @@ class _DistributionCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: scheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.45)),
+        border: Border.all(
+          color: scheme.outlineVariant.withValues(alpha: 0.45),
+        ),
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {
@@ -327,10 +341,11 @@ class _DistributionCard extends StatelessWidget {
                   children: [
                     Text(
                       _formatDuration(data.totalSeconds),
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -0.5,
-                      ),
+                      style: Theme.of(context).textTheme.headlineSmall
+                          ?.copyWith(
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -0.5,
+                          ),
                     ),
                     Text(
                       t(currentLocale.value, 'total'),
@@ -346,9 +361,7 @@ class _DistributionCard extends StatelessWidget {
           final legend = _DistributionLegend(data: data);
 
           if (!wide) {
-            return Column(
-              children: [donut, const SizedBox(height: 4), legend],
-            );
+            return Column(children: [donut, const SizedBox(height: 4), legend]);
           }
           return Row(
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -403,9 +416,9 @@ class _DistributionLegend extends StatelessWidget {
                 const SizedBox(width: 8),
                 Text(
                   _formatDuration(slice.seconds),
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(width: 8),
                 SizedBox(
@@ -504,7 +517,9 @@ class _DayCategoryChart extends StatelessWidget {
       decoration: BoxDecoration(
         color: scheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.45)),
+        border: Border.all(
+          color: scheme.outlineVariant.withValues(alpha: 0.45),
+        ),
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {
@@ -531,7 +546,9 @@ class _DayCategoryChart extends StatelessWidget {
                   height: chartHeight,
                   child: DecoratedBox(
                     decoration: BoxDecoration(
-                      color: scheme.surfaceContainerHighest.withValues(alpha: 0.24),
+                      color: scheme.surfaceContainerHighest.withValues(
+                        alpha: 0.24,
+                      ),
                       borderRadius: BorderRadius.circular(14),
                     ),
                   ),
@@ -577,10 +594,16 @@ class _DayCategoryChart extends StatelessWidget {
                         left: bodyLeft + 5,
                         width: math.max(0.0, bodyWidth - 10),
                         top: top,
-                        height: math.min(height, math.max(0.0, chartHeight - top)),
+                        height: math.min(
+                          height,
+                          math.max(0.0, chartHeight - top),
+                        ),
                         child: Container(
                           padding: showLabel
-                              ? const EdgeInsets.symmetric(horizontal: 9, vertical: 4)
+                              ? const EdgeInsets.symmetric(
+                                  horizontal: 9,
+                                  vertical: 4,
+                                )
                               : EdgeInsets.zero,
                           decoration: BoxDecoration(
                             color: session.color.withValues(alpha: 0.68),
@@ -600,8 +623,10 @@ class _DayCategoryChart extends StatelessWidget {
                                     const SizedBox(width: 6),
                                     Expanded(
                                       child: Column(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                         children: [
                                           Text(
                                             session.label,
@@ -611,7 +636,9 @@ class _DayCategoryChart extends StatelessWidget {
                                                 .textTheme
                                                 .bodySmall
                                                 ?.copyWith(
-                                                  color: _foregroundFor(session.color),
+                                                  color: _foregroundFor(
+                                                    session.color,
+                                                  ),
                                                   fontWeight: FontWeight.w800,
                                                 ),
                                           ),
