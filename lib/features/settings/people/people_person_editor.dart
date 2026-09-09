@@ -2,13 +2,15 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:counter/core/widgets/app_button.dart';
+import 'package:counter/core/widgets/omni_date_time_picker_dialog.dart';
 import 'package:counter/data/people/people_models.dart';
 import 'package:counter/data/people/people_service.dart';
 import 'package:counter/features/settings/people/people_avatar.dart';
 import 'package:counter/features/settings/people/people_strings.dart';
+import 'package:counter/services/notification_service.dart';
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class PeoplePersonEditorResult {
   const PeoplePersonEditorResult.saved(this.person) : archivedRecordId = null;
@@ -18,6 +20,29 @@ class PeoplePersonEditorResult {
   final String? archivedRecordId;
 }
 
+class _ContactDraft {
+  _ContactDraft({String label = '', String value = '', String link = ''})
+      : labelController = TextEditingController(text: label),
+        valueController = TextEditingController(text: value),
+        linkController = TextEditingController(text: link);
+
+  final TextEditingController labelController;
+  final TextEditingController valueController;
+  final TextEditingController linkController;
+
+  Map<String, String> toMap() => <String, String>{
+        'label': labelController.text.trim(),
+        'value': valueController.text.trim(),
+        'link': linkController.text.trim(),
+      };
+
+  void dispose() {
+    labelController.dispose();
+    valueController.dispose();
+    linkController.dispose();
+  }
+}
+
 Future<PeoplePersonEditorResult?> showPeoplePersonEditor({
   required BuildContext context,
   required PeopleService service,
@@ -25,20 +50,73 @@ Future<PeoplePersonEditorResult?> showPeoplePersonEditor({
   required String locale,
   LifePerson? person,
 }) async {
-  final nameController = TextEditingController(text: person?.displayName ?? '');
-  final emailController = TextEditingController(text: person?.primaryEmail ?? '');
-  final phoneController = TextEditingController(text: person?.primaryPhone ?? '');
-  final yearController = TextEditingController(
-    text: person?.birthdayYear?.toString() ?? '',
+  final metaRaw = person?.sourceRefs['_lifeos'];
+  final meta = metaRaw is Map
+      ? Map<String, dynamic>.from(metaRaw)
+      : <String, dynamic>{};
+
+  final legacyParts = (person?.displayName ?? '')
+      .trim()
+      .split(RegExp(r'\s+'))
+      .where((part) => part.isNotEmpty)
+      .toList(growable: false);
+  final firstNameController = TextEditingController(
+    text: (meta['first_name']?.toString().trim().isNotEmpty ?? false)
+        ? meta['first_name'].toString().trim()
+        : (legacyParts.isEmpty ? '' : legacyParts.first),
+  );
+  final lastNameController = TextEditingController(
+    text: (meta['last_name']?.toString().trim().isNotEmpty ?? false)
+        ? meta['last_name'].toString().trim()
+        : (legacyParts.length <= 1 ? '' : legacyParts.skip(1).join(' ')),
   );
   final notesController = TextEditingController(text: person?.notes ?? '');
-  var status = person?.relationshipStatus ?? PersonRelationshipStatus.known;
-  if (status == PersonRelationshipStatus.ignored ||
-      status == PersonRelationshipStatus.blocked) {
-    status = PersonRelationshipStatus.known;
+
+  final relationships = <String>{
+    if (meta['relationships'] is List)
+      for (final value in meta['relationships'] as List)
+        if (value.toString().trim().isNotEmpty) value.toString().trim(),
+  };
+  final relationshipController = TextEditingController();
+
+  final contacts = <_ContactDraft>[];
+  final contactsRaw = meta['contacts'];
+  if (contactsRaw is List) {
+    for (final raw in contactsRaw) {
+      if (raw is! Map) continue;
+      final map = Map<String, dynamic>.from(raw);
+      contacts.add(_ContactDraft(
+        label: map['label']?.toString() ?? '',
+        value: map['value']?.toString() ?? '',
+        link: map['link']?.toString() ?? '',
+      ));
+    }
   }
-  int? month = person?.birthdayMonth;
-  int? day = person?.birthdayDay;
+  if (contacts.isEmpty) {
+    if ((person?.primaryPhone ?? '').trim().isNotEmpty) {
+      contacts.add(_ContactDraft(
+        label: peopleT(locale, 'phone'),
+        value: person!.primaryPhone,
+        link: 'tel:${person.primaryPhone}',
+      ));
+    }
+    if ((person?.primaryEmail ?? '').trim().isNotEmpty) {
+      contacts.add(_ContactDraft(
+        label: peopleT(locale, 'email'),
+        value: person!.primaryEmail,
+        link: 'mailto:${person.primaryEmail}',
+      ));
+    }
+  }
+
+  DateTime? birthday = person?.birthdayMonth != null && person?.birthdayDay != null
+      ? DateTime(
+          person?.birthdayYear ?? 2000,
+          person!.birthdayMonth!,
+          person.birthdayDay!,
+        )
+      : null;
+  var birthdayYearKnown = person?.birthdayYear != null;
   var notificationsEnabled = person?.birthdayNotificationsEnabled ?? false;
   final selectedCircles = <String>{
     ...person?.circleRecordIds ?? const <String>[],
@@ -52,12 +130,66 @@ Future<PeoplePersonEditorResult?> showPeoplePersonEditor({
   var saving = false;
   String? validationError;
 
+  String displayName() => <String>[
+        firstNameController.text.trim(),
+        lastNameController.text.trim(),
+      ].where((part) => part.isNotEmpty).join(' ');
+
+  String primaryForLabel(String needle) {
+    for (final item in contacts) {
+      final label = item.labelController.text.trim().toLowerCase();
+      if (label.contains(needle)) return item.valueController.text.trim();
+    }
+    return '';
+  }
+
   try {
     return await showDialog<PeoplePersonEditorResult>(
       context: context,
-      barrierDismissible: !saving,
+      barrierDismissible: false,
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, setDialogState) {
+          Future<void> chooseBirthday() async {
+            final now = DateTime.now();
+            final picked = await showOmniDateTimePickerDialog(
+              context,
+              initial: birthday ?? DateTime(now.year - 30, now.month, now.day),
+              firstDate: DateTime(1900, 1, 1),
+              lastDate: DateTime(now.year, 12, 31, 23, 59),
+            );
+            if (picked == null || !dialogContext.mounted) return;
+            setDialogState(() {
+              birthday = DateTime(picked.year, picked.month, picked.day);
+              birthdayYearKnown = true;
+              validationError = null;
+            });
+          }
+
+          Future<void> setBirthdayNotifications(bool value) async {
+            if (!value) {
+              setDialogState(() => notificationsEnabled = false);
+              return;
+            }
+            if (birthday == null) {
+              await chooseBirthday();
+              if (birthday == null) return;
+            }
+            final status = await NotificationService.instance.requestPermissions();
+            if (!dialogContext.mounted) return;
+            if (status == PlanAlarmPermissionStatus.denied ||
+                status == PlanAlarmPermissionStatus.permanentlyDenied) {
+              setDialogState(() {
+                notificationsEnabled = false;
+                validationError = peopleT(locale, 'notifications_permission_needed');
+              });
+              return;
+            }
+            setDialogState(() {
+              notificationsEnabled = true;
+              validationError = null;
+            });
+          }
+
           Future<void> choosePhoto() async {
             try {
               final file = await openFile(
@@ -65,11 +197,7 @@ Future<PeoplePersonEditorResult?> showPeoplePersonEditor({
                   XTypeGroup(
                     label: 'Images',
                     extensions: <String>['jpg', 'jpeg', 'png', 'webp'],
-                    mimeTypes: <String>[
-                      'image/jpeg',
-                      'image/png',
-                      'image/webp',
-                    ],
+                    mimeTypes: <String>['image/jpeg', 'image/png', 'image/webp'],
                   ),
                 ],
               );
@@ -77,9 +205,7 @@ Future<PeoplePersonEditorResult?> showPeoplePersonEditor({
               final bytes = await file.readAsBytes();
               if (bytes.isEmpty) return;
               if (bytes.length > 8 * 1024 * 1024) {
-                setDialogState(
-                  () => validationError = peopleT(locale, 'photo_too_large'),
-                );
+                setDialogState(() => validationError = peopleT(locale, 'photo_too_large'));
                 return;
               }
               setDialogState(() {
@@ -90,89 +216,79 @@ Future<PeoplePersonEditorResult?> showPeoplePersonEditor({
               });
             } catch (_) {
               if (dialogContext.mounted) {
-                setDialogState(
-                  () => validationError = peopleT(locale, 'photo_failed'),
-                );
+                setDialogState(() => validationError = peopleT(locale, 'photo_failed'));
               }
             }
           }
 
           Future<void> save() async {
-            final name = nameController.text.trim();
-            if (name.isEmpty) {
-              setDialogState(
-                () => validationError = peopleT(locale, 'required_name'),
-              );
+            final firstName = firstNameController.text.trim();
+            final lastName = lastNameController.text.trim();
+            if (firstName.isEmpty) {
+              setDialogState(() => validationError = peopleT(locale, 'required_first_name'));
               return;
             }
-            if ((month == null) != (day == null)) {
-              setDialogState(
-                () => validationError = peopleT(locale, 'invalid_birthday'),
-              );
-              return;
-            }
-            final yearText = yearController.text.trim();
-            final year = yearText.isEmpty ? null : int.tryParse(yearText);
-            if (yearText.isNotEmpty && year == null) {
-              setDialogState(
-                () => validationError = peopleT(locale, 'invalid_birthday'),
-              );
-              return;
-            }
-            if (month != null && day != null) {
-              final validationYear = year ?? 2000;
-              final date = DateTime(validationYear, month!, day!);
-              if (date.month != month || date.day != day) {
-                setDialogState(
-                  () => validationError = peopleT(locale, 'invalid_birthday'),
-                );
-                return;
-              }
-            }
+
+            final cleanedContacts = contacts
+                .map((item) => item.toMap())
+                .where((item) => item['value']!.isNotEmpty || item['link']!.isNotEmpty)
+                .toList(growable: false);
+            final sourceRefs = <String, dynamic>{
+              ...?person?.sourceRefs,
+              '_lifeos': <String, dynamic>{
+                'first_name': firstName,
+                'last_name': lastName,
+                'relationships': relationships.toList(growable: false),
+                'contacts': cleanedContacts,
+              },
+            };
+            final birthdayMonth = birthday?.month;
+            final birthdayDay = birthday?.day;
+            final birthdayYear = birthday == null || !birthdayYearKnown ? null : birthday!.year;
+            final reminders = reminderDays.toList()..sort((a, b) => b.compareTo(a));
+
             setDialogState(() {
               saving = true;
               validationError = null;
             });
             try {
-              final reminders = reminderDays.toList()
-                ..sort((a, b) => b.compareTo(a));
               final saved = person == null
                   ? await service.createPerson(
-                      displayName: name,
-                      relationshipStatus: status,
-                      birthdayMonth: month,
-                      birthdayDay: day,
-                      birthdayYear: year,
+                      displayName: displayName(),
+                      relationshipStatus: PersonRelationshipStatus.known,
+                      birthdayMonth: birthdayMonth,
+                      birthdayDay: birthdayDay,
+                      birthdayYear: birthdayYear,
                       birthdayNotificationsEnabled: notificationsEnabled,
                       birthdayReminderDays: reminders,
                       circleRecordIds: selectedCircles.toList(growable: false),
                       notes: notesController.text,
-                      primaryEmail: emailController.text,
-                      primaryPhone: phoneController.text,
+                      primaryEmail: primaryForLabel('mail'),
+                      primaryPhone: primaryForLabel(locale.toLowerCase().startsWith('ru') ? 'тел' : 'phone'),
+                      sourceRefs: sourceRefs,
                       photoBytes: newPhotoBytes,
                       photoFilename: newPhotoFilename,
                     )
                   : await service.updatePerson(
                       recordId: person.recordId,
-                      displayName: name,
-                      relationshipStatus: status,
-                      birthdayMonth: month,
-                      birthdayDay: day,
-                      birthdayYear: year,
+                      displayName: displayName(),
+                      relationshipStatus: PersonRelationshipStatus.known,
+                      birthdayMonth: birthdayMonth,
+                      birthdayDay: birthdayDay,
+                      birthdayYear: birthdayYear,
                       birthdayNotificationsEnabled: notificationsEnabled,
                       birthdayReminderDays: reminders,
                       circleRecordIds: selectedCircles.toList(growable: false),
                       notes: notesController.text,
-                      primaryEmail: emailController.text,
-                      primaryPhone: phoneController.text,
+                      primaryEmail: primaryForLabel('mail'),
+                      primaryPhone: primaryForLabel(locale.toLowerCase().startsWith('ru') ? 'тел' : 'phone'),
+                      sourceRefs: sourceRefs,
                       photoBytes: newPhotoBytes,
                       photoFilename: newPhotoFilename,
                       removePhoto: removePhoto,
                     );
               if (dialogContext.mounted) {
-                Navigator.of(dialogContext).pop(
-                  PeoplePersonEditorResult.saved(saved),
-                );
+                Navigator.of(dialogContext).pop(PeoplePersonEditorResult.saved(saved));
               }
             } catch (_) {
               if (!dialogContext.mounted) return;
@@ -189,9 +305,7 @@ Future<PeoplePersonEditorResult?> showPeoplePersonEditor({
             try {
               await service.archivePerson(person.recordId);
               if (dialogContext.mounted) {
-                Navigator.of(dialogContext).pop(
-                  PeoplePersonEditorResult.archived(person.recordId),
-                );
+                Navigator.of(dialogContext).pop(PeoplePersonEditorResult.archived(person.recordId));
               }
             } catch (_) {
               if (!dialogContext.mounted) return;
@@ -203,22 +317,20 @@ Future<PeoplePersonEditorResult?> showPeoplePersonEditor({
           }
 
           final previewUrl = removePhoto ? person?.sourceAvatarUrl ?? '' : person?.avatarUrl ?? '';
+          final theme = Theme.of(context);
           return AlertDialog(
-            title: Text(
-              peopleT(locale, person == null ? 'add_person' : 'edit_person'),
-            ),
+            title: Text(peopleT(locale, person == null ? 'add_person' : 'edit_person')),
             content: SizedBox(
-              width: 560,
+              width: 620,
               child: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         PeopleAvatar(
-                          name: nameController.text,
+                          name: displayName(),
                           imageUrl: previewUrl,
                           bytes: newPhotoBytes,
                           radius: 38,
@@ -232,12 +344,9 @@ Future<PeoplePersonEditorResult?> showPeoplePersonEditor({
                               AppButton.secondary(
                                 label: peopleT(locale, 'choose_photo'),
                                 icon: Icons.photo_camera_back_rounded,
-                                onPressed: saving
-                                    ? null
-                                    : () => unawaited(choosePhoto()),
+                                onPressed: saving ? null : () => unawaited(choosePhoto()),
                               ),
-                              if (newPhotoBytes != null ||
-                                  (person?.photoFileName.isNotEmpty ?? false))
+                              if (newPhotoBytes != null || (person?.photoFileName.isNotEmpty ?? false))
                                 AppButton.ghost(
                                   label: peopleT(locale, 'remove_photo'),
                                   onPressed: saving
@@ -252,167 +361,211 @@ Future<PeoplePersonEditorResult?> showPeoplePersonEditor({
                         ),
                       ],
                     ),
-                    const SizedBox(height: 18),
-                    TextField(
-                      controller: nameController,
-                      autofocus: person == null,
-                      textCapitalization: TextCapitalization.words,
-                      enabled: !saving,
-                      onChanged: (_) => setDialogState(() {}),
-                      decoration: InputDecoration(
-                        labelText: peopleT(locale, 'name'),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    DropdownButtonFormField<PersonRelationshipStatus>(
-                      initialValue: status,
-                      decoration: InputDecoration(
-                        labelText: peopleT(locale, 'relationship'),
-                      ),
-                      items: <PersonRelationshipStatus>[
-                        PersonRelationshipStatus.important,
-                        PersonRelationshipStatus.known,
-                        PersonRelationshipStatus.reference,
-                      ]
-                          .map(
-                            (value) => DropdownMenuItem<PersonRelationshipStatus>(
-                              value: value,
-                              child: Text(_statusLabel(locale, value)),
-                            ),
-                          )
-                          .toList(growable: false),
-                      onChanged: saving
-                          ? null
-                          : (value) {
-                              if (value != null) {
-                                setDialogState(() => status = value);
-                              }
-                            },
-                    ),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: phoneController,
-                      enabled: !saving,
-                      keyboardType: TextInputType.phone,
-                      decoration: InputDecoration(
-                        labelText: peopleT(locale, 'phone'),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: emailController,
-                      enabled: !saving,
-                      keyboardType: TextInputType.emailAddress,
-                      decoration: InputDecoration(
-                        labelText: peopleT(locale, 'email'),
-                      ),
-                    ),
-                    const SizedBox(height: 18),
+                    const SizedBox(height: 20),
                     Row(
                       children: [
                         Expanded(
-                          child: Text(
-                            peopleT(locale, 'birthday'),
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleSmall
-                                ?.copyWith(fontWeight: FontWeight.w700),
+                          child: TextField(
+                            controller: firstNameController,
+                            autofocus: person == null,
+                            enabled: !saving,
+                            textCapitalization: TextCapitalization.words,
+                            onChanged: (_) => setDialogState(() {}),
+                            decoration: InputDecoration(labelText: peopleT(locale, 'first_name')),
                           ),
                         ),
-                        if (month != null || day != null ||
-                            yearController.text.isNotEmpty)
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: TextField(
+                            controller: lastNameController,
+                            enabled: !saving,
+                            textCapitalization: TextCapitalization.words,
+                            onChanged: (_) => setDialogState(() {}),
+                            decoration: InputDecoration(labelText: peopleT(locale, 'last_name')),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    Text(peopleT(locale, 'relationships'), style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        for (final relationship in relationships)
+                          InputChip(
+                            label: Text(relationship),
+                            onDeleted: saving ? null : () => setDialogState(() => relationships.remove(relationship)),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: relationshipController,
+                            enabled: !saving,
+                            textCapitalization: TextCapitalization.sentences,
+                            decoration: InputDecoration(hintText: peopleT(locale, 'relationship_hint')),
+                            onSubmitted: (_) {
+                              final value = relationshipController.text.trim();
+                              if (value.isEmpty) return;
+                              setDialogState(() {
+                                relationships.add(value);
+                                relationshipController.clear();
+                              });
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        IconButton.filledTonal(
+                          tooltip: peopleT(locale, 'add'),
+                          onPressed: saving
+                              ? null
+                              : () {
+                                  final value = relationshipController.text.trim();
+                                  if (value.isEmpty) return;
+                                  setDialogState(() {
+                                    relationships.add(value);
+                                    relationshipController.clear();
+                                  });
+                                },
+                          icon: const Icon(Icons.add_rounded),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: theme.colorScheme.outlineVariant),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(child: Text(peopleT(locale, 'contact_details'), style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700))),
+                              AppButton.ghost(
+                                label: peopleT(locale, 'add_contact'),
+                                icon: Icons.add_link_rounded,
+                                onPressed: saving ? null : () => setDialogState(() => contacts.add(_ContactDraft())),
+                              ),
+                            ],
+                          ),
+                          if (contacts.isEmpty) ...[
+                            const SizedBox(height: 10),
+                            Text(peopleT(locale, 'contact_details_hint'), style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                          ],
+                          for (var index = 0; index < contacts.length; index++) ...[
+                            if (index > 0) const SizedBox(height: 14),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                SizedBox(
+                                  width: 125,
+                                  child: TextField(
+                                    controller: contacts[index].labelController,
+                                    enabled: !saving,
+                                    decoration: InputDecoration(labelText: peopleT(locale, 'contact_type')),
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: TextField(
+                                    controller: contacts[index].valueController,
+                                    enabled: !saving,
+                                    decoration: InputDecoration(labelText: peopleT(locale, 'contact_value')),
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: TextField(
+                                    controller: contacts[index].linkController,
+                                    enabled: !saving,
+                                    keyboardType: TextInputType.url,
+                                    decoration: InputDecoration(labelText: peopleT(locale, 'contact_link')),
+                                  ),
+                                ),
+                                IconButton(
+                                  tooltip: peopleT(locale, 'open_link'),
+                                  onPressed: contacts[index].linkController.text.trim().isEmpty
+                                      ? null
+                                      : () {
+                                          final uri = Uri.tryParse(contacts[index].linkController.text.trim());
+                                          if (uri != null) unawaited(launchUrl(uri));
+                                        },
+                                  icon: const Icon(Icons.open_in_new_rounded),
+                                ),
+                                IconButton(
+                                  tooltip: peopleT(locale, 'remove_contact'),
+                                  onPressed: saving
+                                      ? null
+                                      : () => setDialogState(() {
+                                            final removed = contacts.removeAt(index);
+                                            removed.dispose();
+                                          }),
+                                  icon: const Icon(Icons.close_rounded),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    Row(
+                      children: [
+                        Expanded(child: Text(peopleT(locale, 'birthday'), style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700))),
+                        if (birthday != null)
                           AppButton.ghost(
                             label: peopleT(locale, 'clear'),
                             onPressed: saving
                                 ? null
                                 : () => setDialogState(() {
-                                      month = null;
-                                      day = null;
-                                      yearController.clear();
+                                      birthday = null;
                                       notificationsEnabled = false;
                                     }),
                           ),
                       ],
                     ),
                     const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: DropdownButtonFormField<int>(
-                            initialValue: month,
-                            decoration: InputDecoration(
-                              labelText: peopleT(locale, 'birthday_month'),
-                            ),
-                            items: <DropdownMenuItem<int>>[
-                              for (var value = 1; value <= 12; value++)
-                                DropdownMenuItem<int>(
-                                  value: value,
-                                  child: Text('$value'),
-                                ),
-                            ],
-                            onChanged: saving
-                                ? null
-                                : (value) => setDialogState(() => month = value),
-                          ),
+                    InkWell(
+                      borderRadius: BorderRadius.circular(12),
+                      onTap: saving ? null : () => unawaited(chooseBirthday()),
+                      child: InputDecorator(
+                        decoration: InputDecoration(
+                          labelText: peopleT(locale, 'birthday'),
+                          suffixIcon: const Icon(Icons.calendar_month_rounded),
                         ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: DropdownButtonFormField<int>(
-                            initialValue: day,
-                            decoration: InputDecoration(
-                              labelText: peopleT(locale, 'birthday_day'),
-                            ),
-                            items: <DropdownMenuItem<int>>[
-                              for (var value = 1; value <= 31; value++)
-                                DropdownMenuItem<int>(
-                                  value: value,
-                                  child: Text('$value'),
-                                ),
-                            ],
-                            onChanged: saving
-                                ? null
-                                : (value) => setDialogState(() => day = value),
-                          ),
+                        child: Text(
+                          birthday == null
+                              ? peopleT(locale, 'birthday_unknown')
+                              : birthdayYearKnown
+                                  ? '${birthday!.day.toString().padLeft(2, '0')}.${birthday!.month.toString().padLeft(2, '0')}.${birthday!.year}'
+                                  : '${birthday!.day.toString().padLeft(2, '0')}.${birthday!.month.toString().padLeft(2, '0')}',
                         ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: TextField(
-                            controller: yearController,
-                            enabled: !saving,
-                            keyboardType: TextInputType.number,
-                            inputFormatters: <TextInputFormatter>[
-                              FilteringTextInputFormatter.digitsOnly,
-                              LengthLimitingTextInputFormatter(4),
-                            ],
-                            decoration: InputDecoration(
-                              labelText: peopleT(locale, 'birthday_year'),
-                            ),
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
-                    const SizedBox(height: 8),
+                    if (birthday != null)
+                      CheckboxListTile(
+                        contentPadding: EdgeInsets.zero,
+                        value: !birthdayYearKnown,
+                        title: Text(peopleT(locale, 'birthday_year_unknown')),
+                        onChanged: saving ? null : (value) => setDialogState(() => birthdayYearKnown = value != true),
+                      ),
                     SwitchListTile(
                       contentPadding: EdgeInsets.zero,
                       title: Text(peopleT(locale, 'birthday_notifications')),
-                      subtitle: Text(
-                        peopleT(locale, 'birthday_notifications_hint'),
-                      ),
-                      value: notificationsEnabled && month != null && day != null,
-                      onChanged: saving || month == null || day == null
-                          ? null
-                          : (value) => setDialogState(
-                                () => notificationsEnabled = value,
-                              ),
+                      subtitle: Text(peopleT(locale, 'birthday_notifications_hint')),
+                      value: notificationsEnabled,
+                      onChanged: saving ? null : (value) => unawaited(setBirthdayNotifications(value)),
                     ),
-                    if (notificationsEnabled && month != null && day != null) ...[
-                      Text(
-                        peopleT(locale, 'remind_when'),
-                        style: Theme.of(context)
-                            .textTheme
-                            .titleSmall
-                            ?.copyWith(fontWeight: FontWeight.w700),
-                      ),
+                    if (notificationsEnabled) ...[
+                      Text(peopleT(locale, 'remind_when'), style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
                       const SizedBox(height: 8),
                       Wrap(
                         spacing: 8,
@@ -436,14 +589,8 @@ Future<PeoplePersonEditorResult?> showPeoplePersonEditor({
                       ),
                     ],
                     if (circles.isNotEmpty) ...[
-                      const SizedBox(height: 18),
-                      Text(
-                        peopleT(locale, 'circles'),
-                        style: Theme.of(context)
-                            .textTheme
-                            .titleSmall
-                            ?.copyWith(fontWeight: FontWeight.w700),
-                      ),
+                      const SizedBox(height: 24),
+                      Text(peopleT(locale, 'circles'), style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
                       const SizedBox(height: 8),
                       Wrap(
                         spacing: 8,
@@ -466,24 +613,17 @@ Future<PeoplePersonEditorResult?> showPeoplePersonEditor({
                         ],
                       ),
                     ],
-                    const SizedBox(height: 18),
+                    const SizedBox(height: 24),
                     TextField(
                       controller: notesController,
                       enabled: !saving,
                       minLines: 3,
                       maxLines: 8,
-                      decoration: InputDecoration(
-                        labelText: peopleT(locale, 'notes'),
-                      ),
+                      decoration: InputDecoration(labelText: peopleT(locale, 'notes')),
                     ),
                     if (validationError != null) ...[
                       const SizedBox(height: 12),
-                      Text(
-                        validationError!,
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.error,
-                        ),
-                      ),
+                      Text(validationError!, style: TextStyle(color: theme.colorScheme.error)),
                     ],
                   ],
                 ),
@@ -497,9 +637,7 @@ Future<PeoplePersonEditorResult?> showPeoplePersonEditor({
                 ),
               AppButton.ghost(
                 label: peopleT(locale, 'cancel'),
-                onPressed: saving
-                    ? null
-                    : () => Navigator.of(dialogContext).pop(),
+                onPressed: saving ? null : () => Navigator.of(dialogContext).pop(),
               ),
               AppButton.primary(
                 label: peopleT(locale, 'save'),
@@ -512,22 +650,15 @@ Future<PeoplePersonEditorResult?> showPeoplePersonEditor({
       ),
     );
   } finally {
-    nameController.dispose();
-    emailController.dispose();
-    phoneController.dispose();
-    yearController.dispose();
+    firstNameController.dispose();
+    lastNameController.dispose();
+    relationshipController.dispose();
     notesController.dispose();
+    for (final contact in contacts) {
+      contact.dispose();
+    }
   }
 }
-
-String _statusLabel(String locale, PersonRelationshipStatus status) =>
-    switch (status) {
-      PersonRelationshipStatus.important => peopleT(locale, 'status_important'),
-      PersonRelationshipStatus.known => peopleT(locale, 'status_known'),
-      PersonRelationshipStatus.reference => peopleT(locale, 'status_reference'),
-      PersonRelationshipStatus.ignored => peopleT(locale, 'ignored'),
-      PersonRelationshipStatus.blocked => peopleT(locale, 'blocked'),
-    };
 
 String _reminderLabel(String locale, int days) {
   if (days == 0) return peopleT(locale, 'remind_same_day');
