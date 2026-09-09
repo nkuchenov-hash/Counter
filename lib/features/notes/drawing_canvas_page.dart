@@ -1,7 +1,6 @@
 // Full-screen Notes drawing editor using the canonical V3 drawing controls.
-//
-// Pure feature UI: accepts an optional PNG data URL and returns a PNG data URL.
-// Brain/PocketBase ownership remains in the composing Notes editor.
+// Accepts an optional PNG data URL and returns a PNG data URL; PocketBase
+// ownership stays in the composing Notes editor.
 
 import 'dart:convert';
 import 'dart:math' as math;
@@ -36,20 +35,13 @@ Future<void> showDrawingCanvas({
   return Navigator.of(context).push<void>(
     MaterialPageRoute<void>(
       fullscreenDialog: true,
-      builder: (_) => DrawingCanvasPage(
-        initialData: initialData,
-        onSave: onSave,
-      ),
+      builder: (_) => DrawingCanvasPage(initialData: initialData, onSave: onSave),
     ),
   );
 }
 
 class DrawingCanvasPage extends StatefulWidget {
-  const DrawingCanvasPage({
-    super.key,
-    this.initialData,
-    required this.onSave,
-  });
+  const DrawingCanvasPage({super.key, this.initialData, required this.onSave});
 
   final String? initialData;
   final ValueChanged<String> onSave;
@@ -63,7 +55,6 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
   final List<_DrawingStroke> _strokes = [];
   final List<List<_DrawingStroke>> _undo = [];
   final List<List<_DrawingStroke>> _redo = [];
-
   NotesDrawingTool _tool = NotesDrawingTool.pen;
   Color _color = kNotesDrawingColors.first.color;
   double _strokeWidth = 6;
@@ -215,6 +206,7 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
         final nextPoint = _shiftPressed
             ? _lockToEightDirections(current.points.first, point)
             : point;
+        if ((nextPoint - current.points.last).distance < 0.35) return;
         setState(() => current.points.add(nextPoint));
         break;
       case NotesDrawingTool.lasso:
@@ -239,9 +231,7 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
 
   void _onPanEnd() {
     final current = _current;
-    if (current != null && current.points.isNotEmpty) {
-      _strokes.add(current);
-    }
+    if (current != null && current.points.isNotEmpty) _strokes.add(current);
     setState(() {
       _current = null;
       _lassoOrigin = null;
@@ -306,9 +296,7 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              t(currentLocale.value, 'notes_v3_editor_image_too_large'),
-            ),
+            content: Text(t(currentLocale.value, 'notes_v3_editor_image_too_large')),
           ),
         );
         return;
@@ -407,8 +395,7 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
               colors: kNotesDrawingColors,
               onColorSelected: (color) => setState(() => _color = color),
               strokeWidth: _strokeWidth,
-              onStrokeWidthChanged: (value) =>
-                  setState(() => _strokeWidth = value),
+              onStrokeWidthChanged: (value) => setState(() => _strokeWidth = value),
               pencilTooltip: isRu ? 'Карандаш' : 'Pencil',
               penTooltip: isRu ? 'Перо' : 'Pen',
               finelinerTooltip: isRu ? 'Линер' : 'Fineliner',
@@ -438,7 +425,7 @@ double? _defaultStrokeWidth(NotesDrawingTool tool) => switch (tool) {
   NotesDrawingTool.pen => 6,
   NotesDrawingTool.fineliner => 2,
   NotesDrawingTool.marker => 18,
-  NotesDrawingTool.highlighter => 28,
+  NotesDrawingTool.highlighter => 24,
   NotesDrawingTool.brush => 14,
   NotesDrawingTool.fountainPen => 8,
   NotesDrawingTool.eraser => 24,
@@ -463,7 +450,6 @@ class _DrawingPreset {
     this.erase = false,
     this.blendMode = BlendMode.srcOver,
   });
-
   final _DrawingStrokeKind kind;
   final double width;
   final double opacity;
@@ -578,7 +564,6 @@ class _DrawingStroke {
     required this.blendMode,
     required this.points,
   });
-
   final _DrawingStrokeKind kind;
   final Color color;
   final double width;
@@ -593,7 +578,6 @@ class _DrawingStroke {
   final bool flatEnds;
   final BlendMode blendMode;
   final List<Offset> points;
-
   Path? _cachedPath;
   int _cachedPointCount = -1;
 
@@ -625,24 +609,22 @@ class _DrawingStroke {
     return path;
   }
 
-  _DrawingStroke copyWith({List<Offset>? points}) {
-    return _DrawingStroke(
-      kind: kind,
-      color: color,
-      width: width,
-      opacity: opacity,
-      thinning: thinning,
-      streamline: streamline,
-      simulatePressure: simulatePressure,
-      variance: variance,
-      taperEnd: taperEnd,
-      nibAngleDegrees: nibAngleDegrees,
-      nibContrast: nibContrast,
-      flatEnds: flatEnds,
-      blendMode: blendMode,
-      points: points ?? List<Offset>.from(this.points),
-    );
-  }
+  _DrawingStroke copyWith({List<Offset>? points}) => _DrawingStroke(
+    kind: kind,
+    color: color,
+    width: width,
+    opacity: opacity,
+    thinning: thinning,
+    streamline: streamline,
+    simulatePressure: simulatePressure,
+    variance: variance,
+    taperEnd: taperEnd,
+    nibAngleDegrees: nibAngleDegrees,
+    nibContrast: nibContrast,
+    flatEnds: flatEnds,
+    blendMode: blendMode,
+    points: points ?? List<Offset>.from(this.points),
+  );
 }
 
 class _DrawingPainter extends CustomPainter {
@@ -652,7 +634,6 @@ class _DrawingPainter extends CustomPainter {
     required this.initialImage,
     required this.selectedStrokeIndex,
   });
-
   final List<_DrawingStroke> strokes;
   final _DrawingStroke? current;
   final ui.Image? initialImage;
@@ -675,9 +656,8 @@ class _DrawingPainter extends CustomPainter {
       final stroke = strokes[index];
       _drawStroke(canvas, stroke);
       if (selectedStrokeIndex == index) {
-        final bounds = _strokeBounds(stroke);
         canvas.drawRect(
-          bounds.inflate(stroke.width + 8),
+          _strokeBounds(stroke).inflate(stroke.width + 8),
           Paint()
             ..color = const Color(0xFF6366F1)
             ..style = PaintingStyle.stroke
@@ -691,7 +671,6 @@ class _DrawingPainter extends CustomPainter {
   void _drawStroke(Canvas canvas, _DrawingStroke stroke) {
     if (stroke.points.isEmpty) return;
     final color = stroke.color.withValues(alpha: stroke.opacity);
-
     switch (stroke.kind) {
       case _DrawingStrokeKind.outline:
         canvas.drawPath(
@@ -728,11 +707,15 @@ class _DrawingPainter extends CustomPainter {
                 ..style = PaintingStyle.fill,
             );
           } else {
-            canvas.drawCircle(stroke.points.first, stroke.width / 2, Paint()
-              ..color = color
-              ..blendMode = stroke.blendMode
-              ..style = PaintingStyle.fill
-              ..isAntiAlias = true);
+            canvas.drawCircle(
+              stroke.points.first,
+              stroke.width / 2,
+              Paint()
+                ..color = color
+                ..blendMode = stroke.blendMode
+                ..style = PaintingStyle.fill
+                ..isAntiAlias = true,
+            );
           }
         } else {
           canvas.drawPath(stroke.renderPath(), paint);
@@ -747,10 +730,10 @@ class _DrawingPainter extends CustomPainter {
     var right = left;
     var bottom = top;
     for (final point in stroke.points.skip(1)) {
-      left = point.dx < left ? point.dx : left;
-      top = point.dy < top ? point.dy : top;
-      right = point.dx > right ? point.dx : right;
-      bottom = point.dy > bottom ? point.dy : bottom;
+      left = math.min(left, point.dx);
+      top = math.min(top, point.dy);
+      right = math.max(right, point.dx);
+      bottom = math.max(bottom, point.dy);
     }
     return Rect.fromLTRB(left, top, right, bottom);
   }
@@ -759,12 +742,9 @@ class _DrawingPainter extends CustomPainter {
   bool shouldRepaint(covariant _DrawingPainter oldDelegate) => true;
 }
 
-/// Dart-native adaptation of Drawesome's brush profiles. Drawesome itself is a
-/// React/TypeScript package; embedding that runtime would create a web-only
-/// parallel editor. Notes keeps its Flutter canvas and ports the drawing feel:
-/// streamlined input, synthetic pressure, per-tool thinning, deterministic
-/// variance, brush taper, fountain-nib directionality, and fixed-width tools.
-/// Source inspiration: https://github.com/benjitaylor/drawesome (MIT).
+// Dart-native adaptation of Drawesome's brush profiles. The Flutter canvas
+// keeps one cross-platform editor while porting pressure/thinning/streamlining,
+// deterministic variance, brush taper and fountain-nib directionality.
 final class _NotesDrawesomeBrush {
   const _NotesDrawesomeBrush._();
 
@@ -783,11 +763,9 @@ final class _NotesDrawesomeBrush {
     final points = _streamline(rawPoints, streamline.clamp(0.0, 1.0).toDouble());
     if (points.isEmpty) return Path();
     if (points.length == 1) {
-      final radius = safeSize / 2;
       return Path()
-        ..addOval(Rect.fromCircle(center: points.first, radius: radius));
+        ..addOval(Rect.fromCircle(center: points.first, radius: safeSize / 2));
     }
-
     final radii = _pressureRadii(
       points,
       size: safeSize,
@@ -800,7 +778,6 @@ final class _NotesDrawesomeBrush {
     );
     final left = <Offset>[];
     final right = <Offset>[];
-
     for (var i = 0; i < points.length; i++) {
       final direction = _directionAt(points, i);
       final normal = Offset(-direction.dy, direction.dx);
@@ -808,33 +785,19 @@ final class _NotesDrawesomeBrush {
       left.add(points[i] + offset);
       right.add(points[i] - offset);
     }
-
     final path = Path();
     _appendSmoothSide(path, left, moveToFirst: true);
-
     final endDirection = _directionAt(points, points.length - 1);
     final endTip = points.last + endDirection * radii.last;
-    path.quadraticBezierTo(
-      endTip.dx,
-      endTip.dy,
-      right.last.dx,
-      right.last.dy,
-    );
-
+    path.quadraticBezierTo(endTip.dx, endTip.dy, right.last.dx, right.last.dy);
     _appendSmoothSide(
       path,
       right.reversed.toList(growable: false),
       moveToFirst: false,
     );
-
     final startDirection = _directionAt(points, 0);
     final startTip = points.first - startDirection * radii.first;
-    path.quadraticBezierTo(
-      startTip.dx,
-      startTip.dy,
-      left.first.dx,
-      left.first.dy,
-    );
+    path.quadraticBezierTo(startTip.dx, startTip.dy, left.first.dx, left.first.dy);
     path.close();
     return path;
   }
@@ -852,15 +815,9 @@ final class _NotesDrawesomeBrush {
       path.lineTo(points.last.dx, points.last.dy);
       return path;
     }
-
     for (var i = 1; i < points.length - 1; i++) {
       final midpoint = _midpoint(points[i], points[i + 1]);
-      path.quadraticBezierTo(
-        points[i].dx,
-        points[i].dy,
-        midpoint.dx,
-        midpoint.dy,
-      );
+      path.quadraticBezierTo(points[i].dx, points[i].dy, midpoint.dx, midpoint.dy);
     }
     path.lineTo(points.last.dx, points.last.dy);
     return path;
@@ -868,20 +825,17 @@ final class _NotesDrawesomeBrush {
 
   static List<Offset> _streamline(List<Offset> rawPoints, double strength) {
     if (rawPoints.isEmpty) return const <Offset>[];
-
     final unique = <Offset>[rawPoints.first];
     for (final point in rawPoints.skip(1)) {
       if ((point - unique.last).distance >= 0.08) unique.add(point);
     }
     if (unique.length <= 1) return unique;
-
     final follow = 0.18 + (1 - strength) * 0.62;
     final result = <Offset>[unique.first];
     for (final point in unique.skip(1)) {
       final previous = result.last;
       result.add(previous + (point - previous) * follow);
     }
-
     final last = result.last;
     result[result.length - 1] = last + (unique.last - last) * 0.45;
     return result;
@@ -904,51 +858,39 @@ final class _NotesDrawesomeBrush {
     }
     final totalLength = cumulative.last;
     var pressure = 0.68;
-
     for (var i = 0; i < points.length; i++) {
       if (simulatePressure && i > 0) {
         final distance = (points[i] - points[i - 1]).distance;
-        final normalizedSpeed = (distance / (size * 2.4))
-            .clamp(0.0, 1.0)
-            .toDouble();
-        final targetPressure = (1 - normalizedSpeed)
-            .clamp(0.12, 1.0)
-            .toDouble();
-        pressure += (targetPressure - pressure) * 0.22;
+        final speed = (distance / (size * 2.4)).clamp(0.0, 1.0).toDouble();
+        final target = (1 - speed).clamp(0.12, 1.0).toDouble();
+        pressure += (target - pressure) * 0.22;
       }
-
-      final effectivePressure = simulatePressure
+      final effective = simulatePressure
           ? pressure * pressure * (3 - 2 * pressure)
           : 0.5;
       var radius = size *
           0.5 *
-          (1 + (effectivePressure - 0.5) * 2 * thinning)
+          (1 + (effective - 0.5) * 2 * thinning)
               .clamp(0.34, 1.62)
               .toDouble();
-
       if (variance > 0) {
         final point = points[i];
-        final noise = math.sin(
-          i * 12.9898 + point.dx * 0.067 + point.dy * 0.037,
-        );
+        final noise = math.sin(i * 12.9898 + point.dx * 0.067 + point.dy * 0.037);
         radius *= 1 + noise * variance * 0.055;
       }
-
       if (nibAngleDegrees != null && nibContrast > 0) {
         final direction = _directionAt(points, i);
         final theta = math.atan2(direction.dy, direction.dx);
         final nib = nibAngleDegrees * math.pi / 180;
         final acrossNib = math.sin(theta - nib).abs();
-        final nibFactor = (1 - nibContrast) + nibContrast * acrossNib;
-        radius *= nibFactor.clamp(0.12, 1.0).toDouble();
+        radius *= ((1 - nibContrast) + nibContrast * acrossNib)
+            .clamp(0.12, 1.0)
+            .toDouble();
       }
-
       if (taperEnd > 0 && totalLength > 0) {
         final remaining = totalLength - cumulative[i];
-        final taper = (remaining / taperEnd).clamp(0.06, 1.0).toDouble();
-        radius *= taper;
+        radius *= (remaining / taperEnd).clamp(0.06, 1.0).toDouble();
       }
-
       result.add(math.max(0.12, radius).toDouble());
     }
     return result;
@@ -963,10 +905,8 @@ final class _NotesDrawesomeBrush {
     } else {
       delta = points[index + 1] - points[index - 1];
     }
-
     final length = delta.distance;
-    if (length <= 0.0001) return const Offset(1, 0);
-    return delta / length;
+    return length <= 0.0001 ? const Offset(1, 0) : delta / length;
   }
 
   static void _appendSmoothSide(
@@ -981,15 +921,9 @@ final class _NotesDrawesomeBrush {
       path.lineTo(points.last.dx, points.last.dy);
       return;
     }
-
     for (var i = 1; i < points.length - 1; i++) {
       final midpoint = _midpoint(points[i], points[i + 1]);
-      path.quadraticBezierTo(
-        points[i].dx,
-        points[i].dy,
-        midpoint.dx,
-        midpoint.dy,
-      );
+      path.quadraticBezierTo(points[i].dx, points[i].dy, midpoint.dx, midpoint.dy);
     }
     path.lineTo(points.last.dx, points.last.dy);
   }
@@ -998,27 +932,25 @@ final class _NotesDrawesomeBrush {
       Offset((a.dx + b.dx) / 2, (a.dy + b.dy) / 2);
 }
 
-List<_DrawingStroke> _cloneStrokes(List<_DrawingStroke> source) {
-  return [
-    for (final stroke in source)
-      _DrawingStroke(
-        kind: stroke.kind,
-        color: stroke.color,
-        width: stroke.width,
-        opacity: stroke.opacity,
-        thinning: stroke.thinning,
-        streamline: stroke.streamline,
-        simulatePressure: stroke.simulatePressure,
-        variance: stroke.variance,
-        taperEnd: stroke.taperEnd,
-        nibAngleDegrees: stroke.nibAngleDegrees,
-        nibContrast: stroke.nibContrast,
-        flatEnds: stroke.flatEnds,
-        blendMode: stroke.blendMode,
-        points: List<Offset>.from(stroke.points),
-      ),
-  ];
-}
+List<_DrawingStroke> _cloneStrokes(List<_DrawingStroke> source) => [
+  for (final stroke in source)
+    _DrawingStroke(
+      kind: stroke.kind,
+      color: stroke.color,
+      width: stroke.width,
+      opacity: stroke.opacity,
+      thinning: stroke.thinning,
+      streamline: stroke.streamline,
+      simulatePressure: stroke.simulatePressure,
+      variance: stroke.variance,
+      taperEnd: stroke.taperEnd,
+      nibAngleDegrees: stroke.nibAngleDegrees,
+      nibContrast: stroke.nibContrast,
+      flatEnds: stroke.flatEnds,
+      blendMode: stroke.blendMode,
+      points: List<Offset>.from(stroke.points),
+    ),
+];
 
 Uint8List? _decodeDataUrl(String? raw) {
   final value = raw?.trim() ?? '';
