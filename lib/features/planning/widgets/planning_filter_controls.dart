@@ -7,6 +7,8 @@ import 'package:counter/features/planning/planning_sort_mode.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
 
+const double kPlanningDesktopChromeMaxWidth = 1240;
+
 /// Compact sort-mode tabs above the Planning quick-add row.
 class PlanningSortModeBar extends StatelessWidget {
   const PlanningSortModeBar({
@@ -68,7 +70,21 @@ class PlanningSortModeBar extends StatelessWidget {
     );
     final title = desktopTitle;
     if (title != null) {
-      return AppDesktopSectionControlRow(title: title, controls: selector);
+      return Align(
+        alignment: Alignment.topCenter,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(
+            maxWidth: kPlanningDesktopChromeMaxWidth,
+          ),
+          child: SizedBox(
+            width: double.infinity,
+            child: AppDesktopSectionControlRow(
+              title: title,
+              controls: selector,
+            ),
+          ),
+        ),
+      );
     }
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 0, 12, 6),
@@ -178,7 +194,7 @@ class PlanningQuickAddChrome extends StatelessWidget {
               smartButton,
             ],
           );
-    return Padding(
+    final content = Padding(
       padding: desktop
           ? const EdgeInsets.fromLTRB(
               kShellDesktopContentHorizontalPadding,
@@ -193,6 +209,16 @@ class PlanningQuickAddChrome extends StatelessWidget {
         children: desktop
             ? [inputRow, const SizedBox(height: 8), tagsRow]
             : [tagsRow, const SizedBox(height: 10), inputRow],
+      ),
+    );
+    if (!desktop) return content;
+    return Align(
+      alignment: Alignment.topCenter,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(
+          maxWidth: kPlanningDesktopChromeMaxWidth,
+        ),
+        child: SizedBox(width: double.infinity, child: content),
       ),
     );
   }

@@ -167,17 +167,22 @@ class PlanCardPlayButtonState extends State<PlanCardPlayButton> {
           child: SizedBox(
             width: widget.size,
             height: widget.size,
-            child: Center(
-              child: CustomPaint(
-                size: const Size(
-                  PlanCardGeom.playIconWidth,
-                  PlanCardGeom.playIconHeight,
-                ),
-                painter: PlanCardPlayIconPainter(
-                  fill: _hovered
-                      ? const Color(0xFF4A4A4A)
-                      : PlanCardTokens.playFill,
-                  cornerRadius: PlanCardGeom.playIconCornerRadius,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: _hovered
+                    ? const Color(0xFFDEDEDE)
+                    : PlanCardTokens.menuBg,
+                shape: BoxShape.circle,
+              ),
+              child: Center(
+                child: CustomPaint(
+                  size: const Size(14, 16),
+                  painter: PlanCardPlayIconPainter(
+                    fill: _hovered
+                        ? const Color(0xFF4A4A4A)
+                        : PlanCardTokens.playFill,
+                    cornerRadius: PlanCardGeom.playIconCornerRadius,
+                  ),
                 ),
               ),
             ),
@@ -313,7 +318,11 @@ class PlanCardMenuButtonState extends State<PlanCardMenuButton> {
                       : PlanCardTokens.menuBg,
                   shape: BoxShape.circle,
                 ),
-                child: const CustomPaint(painter: PlanCardMenuIconPainter()),
+                child: Icon(
+                  Icons.more_vert_rounded,
+                  size: 18,
+                  color: PlanCardTokens.menuStroke,
+                ),
               ),
             ),
           ),

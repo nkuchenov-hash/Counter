@@ -160,6 +160,7 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard>
         widget.surface == PlanCardSurface.timeline &&
         widget.timelineVisualDensity != null;
     final timeViewTrailingPlay = isTimeViewCard && _showPlay;
+    final timeViewTrailingMenu = isTimeViewCard && widget.onOpenMenu != null;
 
     final hovered = _hovered && !widget.interacting;
     final selected = widget.selectMode && widget.isSelected;
@@ -170,8 +171,8 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard>
         : widget.interacting
         ? scheme.primary.withValues(alpha: 0.45)
         : hovered
-        ? scheme.outlineVariant.withValues(alpha: isTimeViewCard ? 0.76 : 0.62)
-        : scheme.outlineVariant.withValues(alpha: isTimeViewCard ? 0.54 : 0.38);
+        ? scheme.outlineVariant.withValues(alpha: isTimeViewCard ? 0.80 : 0.62)
+        : scheme.outlineVariant.withValues(alpha: isTimeViewCard ? 0.58 : 0.38);
     final borderWidth = selected
         ? 1.25
         : widget.highlightAsRunning
@@ -196,7 +197,7 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard>
     if (hovered) {
       surface = Color.alphaBlend(
         scheme.surfaceContainerHighest.withValues(
-          alpha: isTimeViewCard ? 0.12 : 0.28,
+          alpha: isTimeViewCard ? 0.10 : 0.28,
         ),
         surface,
       );
@@ -218,8 +219,7 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard>
         : null;
 
     Widget body;
-    if (widget.surface == PlanCardSurface.timeline &&
-        widget.timelineVisualDensity != null) {
+    if (isTimeViewCard) {
       body = TimeViewDensityBody(
         visual: widget.timelineVisualDensity!,
         heightPx: widget.timelineBlockHeightPx ?? kPlanTimeCardMinHeightPx,
@@ -242,7 +242,7 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard>
         onToggleDone: widget.onToggleDone,
         onSelectToggle: widget.onSelectToggle,
         onPlay: null,
-        onOpenMenu: widget.onOpenMenu,
+        onOpenMenu: null,
         onBodyTap: widget.onTap,
         onBodyLongPress: widget.onLongPress,
       );
@@ -353,10 +353,19 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard>
         color: surface,
         borderRadius: BorderRadius.circular(PlanCardGeom.radius),
         border: Border.all(color: borderColor, width: borderWidth),
-        boxShadow: PlanCardTokens.cardShadow(
-          widget.interacting,
-          hovered: hovered,
-        ),
+        boxShadow: isTimeViewCard
+            ? [
+                BoxShadow(
+                  color: Color(hovered ? 0x20000000 : 0x16000000),
+                  blurRadius: hovered ? 12 : 9,
+                  spreadRadius: -2,
+                  offset: const Offset(0, 3),
+                ),
+              ]
+            : PlanCardTokens.cardShadow(
+                widget.interacting,
+                hovered: hovered,
+              ),
       ),
       child: ClipRRect(
         clipBehavior: Clip.none,
@@ -366,9 +375,7 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard>
             final w = constraints.maxWidth;
             final timelineBlockH = widget.timelineBlockHeightPx;
             final measuredH =
-                widget.surface == PlanCardSurface.timeline &&
-                    widget.timelineVisualDensity != null &&
-                    timelineBlockH != null
+                isTimeViewCard && timelineBlockH != null
                 ? timelineBlockH
                 : planTimeCardMeasureHeight(
                     hasTags: _visibleTags.isNotEmpty,
@@ -384,10 +391,16 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard>
                 !widget.timelineFillHeight &&
                 effectiveDensity != PlanTimeTaskCardDensity.micro &&
                 resolvedHeight >= PlanCardGeom.watermarkMinCardHeight;
-            final bodyContent = timeViewTrailingPlay
+            final trailingControlCount =
+                (timeViewTrailingPlay ? 1 : 0) + (timeViewTrailingMenu ? 1 : 0);
+            final trailingControlsWidth = trailingControlCount == 0
+                ? 0.0
+                : trailingControlCount * PlanCardGeom.controlSize +
+                      (trailingControlCount - 1) * 8.0;
+            final bodyContent = trailingControlCount > 0
                 ? Padding(
                     padding: EdgeInsets.only(
-                      right: PlanCardGeom.controlSize + 10,
+                      right: trailingControlsWidth + PlanCardGeom.padRight,
                     ),
                     child: body,
                   )
@@ -407,14 +420,26 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard>
                       cardHeight: resolvedHeight,
                     ),
                   bodyContent,
-                  if (timeViewTrailingPlay)
+                  if (trailingControlCount > 0)
                     Positioned(
                       top: math.max(
                         0.0,
                         (resolvedHeight - PlanCardGeom.controlSize) / 2,
                       ),
-                      right: 8,
-                      child: PlanCardPlayButton(onPlay: widget.onPlay),
+                      right: PlanCardGeom.padRight,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (timeViewTrailingPlay)
+                            PlanCardPlayButton(onPlay: widget.onPlay),
+                          if (timeViewTrailingPlay && timeViewTrailingMenu)
+                            const SizedBox(width: 8),
+                          if (timeViewTrailingMenu)
+                            PlanCardMenuButton(
+                              onOpenMenu: widget.onOpenMenu!,
+                            ),
+                        ],
+                      ),
                     ),
                 ],
               ),

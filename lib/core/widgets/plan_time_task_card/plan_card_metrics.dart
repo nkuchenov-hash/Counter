@@ -2,8 +2,9 @@ import 'dart:math' as math;
 
 enum PlanTimeTaskCardDensity { micro, compact, medium, large }
 
-/// Minimum rendered CardPlan height in Time View (VerySmall).
-const double kPlanTimeCardMinHeightPx = 38.0;
+/// Minimum rendered CardPlan height in Time View.
+/// 32px control + 12px inset on both edges = 56px.
+const double kPlanTimeCardMinHeightPx = 56.0;
 const double kPlanTimeMinCardHeightPx = kPlanTimeCardMinHeightPx;
 
 /// Minimum scheduled duration in Time View (minutes).
@@ -19,9 +20,11 @@ const double kPlanTimeHourVerticalPaddingPx = 4.0;
 /// Visual height of a full 60-minute card (Medium anchor).
 const double kPlanTimeOneHourCardHeightPx = 120.0;
 
-/// Dense hour: at most six 10-minute cards (6×38 + 5×4 = 248).
+/// Dense hour: at most six 10-minute cards with stable 56px card geometry.
 const int kPlanTimeMaxCardsPerHour = 6;
-const double kPlanTimeMaxHourHeightPx = 248.0;
+const double kPlanTimeMaxHourHeightPx =
+    kPlanTimeMaxCardsPerHour * kPlanTimeMinCardHeightPx +
+    (kPlanTimeMaxCardsPerHour - 1) * kPlanTimeCardGapPx;
 
 /// Hard cap for a single hour band (prevents infinite day growth).
 const double kPlanTimeMaxReasonableHourHeightPx = kPlanTimeMaxHourHeightPx;
