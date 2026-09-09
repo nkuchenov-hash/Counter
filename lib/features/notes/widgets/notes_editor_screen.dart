@@ -78,6 +78,15 @@ class NotesEditorScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final embeddedScope = NotesEmbeddedEditorScope.maybeOf(context);
     final embedded = embeddedScope != null;
+    final inheritedTheme = Theme.of(context);
+    final notesEditorTheme = inheritedTheme.copyWith(
+      inputDecorationTheme: inheritedTheme.inputDecorationTheme.copyWith(
+        filled: false,
+        fillColor: Colors.transparent,
+        hoverColor: Colors.transparent,
+        focusColor: Colors.transparent,
+      ),
+    );
     final editor = LayoutBuilder(
       builder: (context, constraints) {
         final desktop = embedded || constraints.maxWidth >= 768;
@@ -134,15 +143,21 @@ class NotesEditorScreen extends StatelessWidget {
     );
 
     if (embedded) {
-      return Material(
-        color: NotesFigmaTokens.surfaceCard(context),
-        child: editor,
+      return Theme(
+        data: notesEditorTheme,
+        child: Material(
+          color: NotesFigmaTokens.surfaceCard(context),
+          child: editor,
+        ),
       );
     }
-    return Scaffold(
-      backgroundColor: NotesFigmaTokens.canvas(context),
-      resizeToAvoidBottomInset: true,
-      body: editor,
+    return Theme(
+      data: notesEditorTheme,
+      child: Scaffold(
+        backgroundColor: NotesFigmaTokens.canvas(context),
+        resizeToAvoidBottomInset: true,
+        body: editor,
+      ),
     );
   }
 }
