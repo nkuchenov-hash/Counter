@@ -117,9 +117,9 @@ class PlanCardInvariantBody extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 SizedBox(
-                  height: PlanCardGeom.titleRowHeight,
+                  height: PlanCardGeom.controlSize,
                   child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       Expanded(
                         child: PlanCardTitleRow(
@@ -171,9 +171,9 @@ class PlanCardInvariantBody extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           SizedBox(
-            height: PlanCardGeom.titleRowHeight,
+            height: PlanCardGeom.controlSize,
             child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Expanded(
                   child: PlanCardTitleRow(
@@ -375,4 +375,3 @@ class PlanCardProgressRow extends StatelessWidget {
     );
   }
 }
-
