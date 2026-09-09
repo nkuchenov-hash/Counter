@@ -9,6 +9,8 @@ import 'package:counter/shared/time/plan_time_labels.dart';
 import 'package:counter/data/models.dart';
 import 'package:flutter/material.dart';
 
+const double _kPlanningListCardMaxWidth = 1192;
+
 /// Meta icons for notes / checklist / parent plan (shared list + time cards).
 List<Widget> planningTaskMetaIcons(BuildContext context, PlanningTask task) {
   final base = Theme.of(context).iconTheme.color;
@@ -150,27 +152,36 @@ class PlanCard extends StatelessWidget {
         overlayColor: WidgetStateProperty.all(Colors.transparent),
       ),
     );
-    return Theme(
-      data: suppressChildInk,
-      child: PlanTimeTaskCard(
-        task: task,
-        density: density,
-        surface: PlanCardSurface.list,
-        timeLabel: listTimeLabel(task),
-        displayIsDone: displayIsDone,
-        selectMode: selectMode,
-        isSelected: isSelected,
-        highlightAsRunning: highlightAsRunning,
-        toggleDoneEnabled: toggleDoneEnabled,
-        planTrackedSeconds: planTrackedSeconds,
-        planEstimatedSeconds: planEstimatedSeconds,
-        metaIcons: metaIcons,
-        onToggleDone: onToggleDone,
-        onSelectToggle: onBodyTap,
-        onPlay: (!selectMode && !displayIsDone) ? onPlay : null,
-        onOpenMenu: onOpenMenu,
-        onTap: onBodyTap,
-        onLongPress: onLongPress,
+    return Align(
+      alignment: Alignment.topCenter,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: _kPlanningListCardMaxWidth),
+        child: SizedBox(
+          width: double.infinity,
+          child: Theme(
+            data: suppressChildInk,
+            child: PlanTimeTaskCard(
+              task: task,
+              density: density,
+              surface: PlanCardSurface.list,
+              timeLabel: listTimeLabel(task),
+              displayIsDone: displayIsDone,
+              selectMode: selectMode,
+              isSelected: isSelected,
+              highlightAsRunning: highlightAsRunning,
+              toggleDoneEnabled: toggleDoneEnabled,
+              planTrackedSeconds: planTrackedSeconds,
+              planEstimatedSeconds: planEstimatedSeconds,
+              metaIcons: metaIcons,
+              onToggleDone: onToggleDone,
+              onSelectToggle: onBodyTap,
+              onPlay: (!selectMode && !displayIsDone) ? onPlay : null,
+              onOpenMenu: onOpenMenu,
+              onTap: onBodyTap,
+              onLongPress: onLongPress,
+            ),
+          ),
+        ),
       ),
     );
   }

@@ -6,6 +6,8 @@ import 'package:counter/l10n/category_db_display.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
 
+const double _kPlanningGroupedListMaxWidth = 1240;
+
 /// Category-sort grouped plan list for one planning day.
 class PlanningCategoryGroupedList extends StatelessWidget {
   const PlanningCategoryGroupedList({
@@ -94,9 +96,21 @@ class PlanningCategoryGroupedList extends StatelessWidget {
         shellUsesSideNavigation(MediaQuery.sizeOf(context).width)
         ? kShellDesktopContentHorizontalPadding
         : 8.0;
-    return ListView(
-      padding: EdgeInsets.symmetric(horizontal: sidePadding, vertical: 8),
-      children: children,
+    return Align(
+      alignment: Alignment.topCenter,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: _kPlanningGroupedListMaxWidth),
+        child: SizedBox(
+          width: double.infinity,
+          child: ListView(
+            padding: EdgeInsets.symmetric(
+              horizontal: sidePadding,
+              vertical: 8,
+            ),
+            children: children,
+          ),
+        ),
+      ),
     );
   }
 }
