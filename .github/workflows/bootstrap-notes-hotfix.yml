@@ -1,84 +1,55 @@
-name: Bootstrap Notes production hotfix
+name: Notes quick-add vertical alignment hotfix
 
 on:
-  push:
-    branches: [gh-pages]
-    paths:
-      - '.github/workflows/bootstrap-notes-hotfix.yml'
-  pull_request:
-    branches: [gh-pages]
-    paths:
-      - '.github/workflows/bootstrap-notes-hotfix.yml'
-
-permissions:
-  contents: write
-
-concurrency:
-  group: notes-production-hotfix
-  cancel-in-progress: false
+  workflow_dispatch:
 
 jobs:
-  build-and-deploy:
-    if: >-
-      (github.event_name == 'pull_request' &&
-       github.event.pull_request.head.ref == 'hotfix/run-notes-production-build') ||
-      startsWith(github.event.head_commit.message, 'Trigger Notes production hotfix')
+  definition-only:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
     steps:
-      - name: Snapshot current Pages support files
-        uses: actions/checkout@v4
-        with:
-          ref: gh-pages
-          path: pages
-          fetch-depth: 1
+      - run: |
+          python3 - <<'PY'
+          from pathlib import Path
 
-      - name: Checkout production hotfix source
-        uses: actions/checkout@v4
-        with:
-          ref: 1c251d4191a6733d7950a95ba1840cb29d884842
-          path: app
-          fetch-depth: 0
+          def replace_once(text, old, new, label):
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f'{label}: expected 1 match, got {count}')
+              return text.replace(old, new, 1)
 
-      - name: Set up Flutter 3.41.6
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.41.6'
-          channel: stable
+          surface = Path('lib/features/notes/notes_glm_surface.dart')
+          s = surface.read_text()
+          if 'const double kNotesLibraryControlHeight = 40;' not in s:
+              raise SystemExit('canonical 40px Notes control missing')
+          if 'class NotesGlmLibraryInput extends StatefulWidget' not in s:
+              raise SystemExit('canonical Notes input missing')
 
-      - name: Create env.dart
-        working-directory: app
-        run: |
-          mkdir -p lib/core/env
-          printf '%s\n' 'abstract final class Env {' '  static const String placeholder = '\'''\'';' '}' > lib/core/env/env.dart
+          # Force the InputDecorator itself to the same exact 40px box as the
+          # outer control. Without this, the no-icon quick-add variant can keep
+          # a taller intrinsic text layout and paint its hint above visual center.
+          s = replace_once(
+              s,
+              '''decoration: InputDecoration(\n  hintText: widget.hintText,''',
+              '''decoration: InputDecoration(\n  constraints: const BoxConstraints.tightFor(\n    height: kNotesLibraryControlHeight,\n  ),\n  hintText: widget.hintText,''',
+              'tight input decoration height',
+          )
 
-      - name: Install Flutter dependencies
-        working-directory: app
-        run: flutter pub get
+          # Search already gets a 40px prefix-icon slot, which also stabilizes
+          # vertical layout. Give quick-add the same 40px vertical slot but zero
+          # horizontal width so its text starts at the same x-position as before.
+          s = replace_once(
+              s,
+              '''  prefixIcon: widget.showSearchIcon\n      ? Icon(Icons.search_rounded, size: 18, color: meta)\n      : null,\n  prefixIconConstraints: widget.showSearchIcon\n      ? const BoxConstraints.tightFor(\n          width: kNotesLibraryControlHeight,\n          height: kNotesLibraryControlHeight,\n        )\n      : null,''',
+              '''  prefixIcon: widget.showSearchIcon\n      ? Icon(Icons.search_rounded, size: 18, color: meta)\n      : const SizedBox.shrink(),\n  prefixIconConstraints: BoxConstraints.tightFor(\n    width: widget.showSearchIcon ? kNotesLibraryControlHeight : 0,\n    height: kNotesLibraryControlHeight,\n  ),''',
+              'quick-add vertical prefix slot',
+          )
 
-      - name: Build LIFE OS web hotfix
-        working-directory: app
-        run: |
-          SOURCE_SHA=$(git rev-parse HEAD)
-          SHORT_SHA=$(git rev-parse --short HEAD)
-          BUILD_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-          flutter build web --release --base-href="/Counter/" --no-tree-shake-icons --no-wasm-dry-run --pwa-strategy=none \
-            --dart-define=GIT_COMMIT="$SHORT_SHA" \
-            --dart-define=BUILD_TIME="$BUILD_TIME"
-          printf '%s\n' "$SOURCE_SHA" > build/web/.lifeos-source-sha
-
-      - name: Preserve published companion content and deploy trigger
-        run: |
-          if [ -d pages/igropoisk ]; then
-            rm -rf app/build/web/igropoisk
-            cp -R pages/igropoisk app/build/web/igropoisk
-          fi
-          mkdir -p app/build/web/.github/workflows
-          cp pages/.github/workflows/deploy.yml app/build/web/.github/workflows/deploy.yml
-
-      - name: Deploy hotfix to gh-pages
-        uses: JamesIves/github-pages-deploy-action@v4
-        with:
-          folder: app/build/web
-          branch: gh-pages
-          commit-message: 'Deploy Notes toolbar production hotfix from 1c251d4191a6733d7950a95ba1840cb29d884842'
+          surface.write_text(s)
+          final = surface.read_text()
+          if 'height: kNotesLibraryControlHeight,\n  ),\n  hintText: widget.hintText' not in final:
+              raise SystemExit('input decoration is not locked to 40px')
+          if 'width: widget.showSearchIcon ? kNotesLibraryControlHeight : 0' not in final:
+              raise SystemExit('quick-add zero-width 40px vertical slot missing')
+          if 'textAlignVertical: TextAlignVertical.center' not in final:
+              raise SystemExit('center text alignment missing')
+          PY
