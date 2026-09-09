@@ -156,10 +156,10 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard>
     final effectiveTimeLabel = widget.timeLabel.trim().isNotEmpty
         ? widget.timeLabel.trim()
         : planCardWallTimeLabel(widget.task);
-    final timeViewTrailingPlay =
+    final isTimeViewCard =
         widget.surface == PlanCardSurface.timeline &&
-        widget.timelineVisualDensity != null &&
-        _showPlay;
+        widget.timelineVisualDensity != null;
+    final timeViewTrailingPlay = isTimeViewCard && _showPlay;
 
     final hovered = _hovered && !widget.interacting;
     final selected = widget.selectMode && widget.isSelected;
@@ -170,8 +170,8 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard>
         : widget.interacting
         ? scheme.primary.withValues(alpha: 0.45)
         : hovered
-        ? scheme.outlineVariant.withValues(alpha: 0.62)
-        : scheme.outlineVariant.withValues(alpha: 0.38);
+        ? scheme.outlineVariant.withValues(alpha: isTimeViewCard ? 0.76 : 0.62)
+        : scheme.outlineVariant.withValues(alpha: isTimeViewCard ? 0.54 : 0.38);
     final borderWidth = selected
         ? 1.25
         : widget.highlightAsRunning
@@ -182,15 +182,22 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard>
         ? 1.25
         : 1.0;
 
+    final baseSurface = isTimeViewCard
+        ? (scheme.brightness == Brightness.light
+              ? const Color(0xFFFFFFFF)
+              : scheme.surfaceContainerHigh)
+        : PlanCardTokens.surface;
     var surface = selected
         ? Color.alphaBlend(
             scheme.primaryContainer.withValues(alpha: 0.16),
-            PlanCardTokens.surface,
+            baseSurface,
           )
-        : PlanCardTokens.surface;
+        : baseSurface;
     if (hovered) {
       surface = Color.alphaBlend(
-        scheme.surfaceContainerHighest.withValues(alpha: 0.28),
+        scheme.surfaceContainerHighest.withValues(
+          alpha: isTimeViewCard ? 0.12 : 0.28,
+        ),
         surface,
       );
     }
