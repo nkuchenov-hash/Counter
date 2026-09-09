@@ -18,10 +18,10 @@ PlanTimeCardVisualDensity planTimeCardVisualDensityForRenderedHeight(
   double renderedHeightPx,
 ) {
   final h = math.max(renderedHeightPx, kPlanTimeCardMinHeightPx);
-  if (h <= 56) return PlanTimeCardVisualDensity.verySmall;
-  if (h <= 68) return PlanTimeCardVisualDensity.small;
-  if (h <= 94) return PlanTimeCardVisualDensity.moreCompact;
-  if (h <= 112) return PlanTimeCardVisualDensity.compact;
+  if (h <= 79) return PlanTimeCardVisualDensity.verySmall;
+  if (h <= 99) return PlanTimeCardVisualDensity.small;
+  if (h <= 119) return PlanTimeCardVisualDensity.moreCompact;
+  if (h <= 139) return PlanTimeCardVisualDensity.compact;
   return PlanTimeCardVisualDensity.medium;
 }
 
