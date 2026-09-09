@@ -173,7 +173,17 @@ class NotesAudioBlock extends StatelessWidget {
   }
 }
 
-enum NotesDrawingTool { pen, highlighter, eraser, lasso }
+enum NotesDrawingTool {
+  pencil,
+  pen,
+  fineliner,
+  marker,
+  highlighter,
+  brush,
+  fountainPen,
+  eraser,
+  lasso,
+}
 
 enum NotesRecorderState { ready, recording, paused, permissionBlocked }
 
@@ -201,6 +211,11 @@ class NotesDrawingControls extends StatelessWidget {
     required this.undoTooltip,
     required this.redoTooltip,
     required this.strokeWidthLabel,
+    this.pencilTooltip = 'Pencil',
+    this.finelinerTooltip = 'Fineliner',
+    this.markerTooltip = 'Marker',
+    this.brushTooltip = 'Brush',
+    this.fountainPenTooltip = 'Fountain Pen',
     this.canUndo = false,
     this.canRedo = false,
     this.onUndo,
@@ -214,8 +229,13 @@ class NotesDrawingControls extends StatelessWidget {
   final ValueChanged<Color> onColorSelected;
   final double strokeWidth;
   final ValueChanged<double> onStrokeWidthChanged;
+  final String pencilTooltip;
   final String penTooltip;
+  final String finelinerTooltip;
+  final String markerTooltip;
   final String highlighterTooltip;
+  final String brushTooltip;
+  final String fountainPenTooltip;
   final String eraserTooltip;
   final String lassoTooltip;
   final String undoTooltip;
@@ -245,15 +265,41 @@ class NotesDrawingControls extends StatelessWidget {
               child: Row(
                 children: [
                   _drawingToolButton(
+                    tool: NotesDrawingTool.pencil,
+                    icon: Icons.edit_outlined,
+                    tooltip: pencilTooltip,
+                  ),
+                  _drawingToolButton(
                     tool: NotesDrawingTool.pen,
                     icon: Icons.edit_rounded,
                     tooltip: penTooltip,
+                  ),
+                  _drawingToolButton(
+                    tool: NotesDrawingTool.fineliner,
+                    icon: Icons.mode_edit_outline_rounded,
+                    tooltip: finelinerTooltip,
+                  ),
+                  _drawingToolButton(
+                    tool: NotesDrawingTool.marker,
+                    icon: Icons.brush_rounded,
+                    tooltip: markerTooltip,
                   ),
                   _drawingToolButton(
                     tool: NotesDrawingTool.highlighter,
                     icon: Icons.border_color_rounded,
                     tooltip: highlighterTooltip,
                   ),
+                  _drawingToolButton(
+                    tool: NotesDrawingTool.brush,
+                    icon: Icons.format_paint_rounded,
+                    tooltip: brushTooltip,
+                  ),
+                  _drawingToolButton(
+                    tool: NotesDrawingTool.fountainPen,
+                    icon: Icons.create_rounded,
+                    tooltip: fountainPenTooltip,
+                  ),
+                  const SizedBox(width: 4),
                   _drawingToolButton(
                     tool: NotesDrawingTool.eraser,
                     icon: Icons.auto_fix_off_rounded,
