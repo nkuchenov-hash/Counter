@@ -1,12 +1,9 @@
 import 'dart:async';
-import 'dart:math' as math;
 
 import 'package:counter/core/shell_adaptive.dart';
-import 'package:counter/core/widgets/plan_time_task_card.dart';
 import 'package:counter/shared/diagnostics/performance/shell_flags.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
-import 'package:counter/features/planning/plan_time_view_layout.dart';
 import 'package:counter/features/planning/planning_day_start_prefs.dart';
 import 'package:counter/features/planning/time_view/planning_time_view_coordinator.dart';
 import 'package:counter/l10n/dictionary.dart';
@@ -17,49 +14,6 @@ import 'package:counter/features/planning/time_view/time_view_card_layer.dart';
 import 'package:counter/features/planning/time_view/time_view_hour_grid.dart';
 
 const double kPlanningTimeViewMaxContentWidth = 1240;
-
-/// Display guard for Time View geometry.
-///
-/// Some scheduled slots can be shorter than the invariant 56px card body. The
-/// interaction layer must never inflate those cards independently, otherwise the
-/// rendered card becomes taller than the slot and physically overlaps the next
-/// one. Pack the final rendered rectangles here so every card gets its full
-/// invariant height and at least the canonical inter-card gap.
-List<PlanTimeViewBlockLayout> _packTimelineLayoutsForDisplay(
-  List<PlanTimeViewBlockLayout> layouts,
-) {
-  if (layouts.isEmpty) return const <PlanTimeViewBlockLayout>[];
-
-  final sorted = List<PlanTimeViewBlockLayout>.from(layouts)
-    ..sort((a, b) {
-      final byTop = a.topPx.compareTo(b.topPx);
-      if (byTop != 0) return byTop;
-      return a.task.planRowIdForBackend.compareTo(b.task.planRowIdForBackend);
-    });
-
-  final packed = <PlanTimeViewBlockLayout>[];
-  double? previousBottom;
-  for (final layout in sorted) {
-    final renderedHeight = math.max(layout.heightPx, kPlanTimeCardMinHeightPx);
-    final renderedTop = previousBottom == null
-        ? layout.topPx
-        : math.max(layout.topPx, previousBottom + kPlanTimeCardGapPx);
-    final visual = planTimeCardVisualDensityForRenderedHeight(renderedHeight);
-    packed.add(
-      PlanTimeViewBlockLayout(
-        task: layout.task,
-        projection: layout.projection,
-        topPx: renderedTop,
-        heightPx: renderedHeight,
-        density: planTimeCardTaskDensityForVisual(visual),
-        visualDensity: visual,
-        hasScheduleConflict: layout.hasScheduleConflict,
-      ),
-    );
-    previousBottom = renderedTop + renderedHeight;
-  }
-  return packed;
-}
 
 extension PlanningTimeViewTimeViewCanvas on PlanningTimeViewCoordinator {
   Widget buildProportionalDayTimelineCanvas({
@@ -83,16 +37,8 @@ extension PlanningTimeViewTimeViewCanvas on PlanningTimeViewCoordinator {
     );
     activeTimelineDurationGrid = durationResult.grid;
     final grid = durationResult.grid;
-    final layouts = _packTimelineLayoutsForDisplay(durationResult.layouts);
-    final packedBottom = layouts.isEmpty
-        ? 0.0
-        : layouts
-            .map((layout) => layout.topPx + layout.heightPx)
-            .reduce(math.max);
-    final canvasHeight = math.max(
-      timelineCanvasHeightPx(grid),
-      packedBottom + kPlanTimeHourVerticalPaddingPx,
-    );
+    final layouts = durationResult.layouts;
+    final canvasHeight = timelineCanvasHeightPx(grid);
     final gridColor = scheme.outlineVariant.withValues(alpha: 0.18);
     final railColor = scheme.brightness == Brightness.light
         ? const Color(0xFFB6C0CC)
@@ -202,7 +148,7 @@ extension PlanningTimeViewTimeViewCanvas on PlanningTimeViewCoordinator {
                                   top: grid.hourLineY(i),
                                   left: 0,
                                   right: 0,
-                                  height: grid.hourBandHeightPx,
+                                  height: grid.hourHeightPxAtIndex(i),
                                   child: Stack(
                                     children: [
                                       Positioned(
