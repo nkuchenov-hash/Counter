@@ -15,6 +15,7 @@ import 'package:counter/features/notes/widgets/notes_canonical_components.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 
 const List<NotesDrawingColorOption> kNotesDrawingColors = [
   NotesDrawingColorOption(color: Color(0xFF0F172A), label: 'Black'),
@@ -65,7 +66,7 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
 
   NotesDrawingTool _tool = NotesDrawingTool.pen;
   Color _color = kNotesDrawingColors.first.color;
-  double _strokeWidth = 4;
+  double _strokeWidth = 6;
   _DrawingStroke? _current;
   ui.Image? _initialImage;
   bool _loading = true;
@@ -143,34 +144,45 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
     });
   }
 
+  void _selectTool(NotesDrawingTool tool) {
+    setState(() {
+      _tool = tool;
+      final defaultSize = _defaultStrokeWidth(tool);
+      if (defaultSize != null) _strokeWidth = defaultSize;
+    });
+  }
+
   void _onPanStart(DragStartDetails details) {
     final point = details.localPosition;
     switch (_tool) {
+      case NotesDrawingTool.pencil:
       case NotesDrawingTool.pen:
+      case NotesDrawingTool.fineliner:
+      case NotesDrawingTool.marker:
       case NotesDrawingTool.highlighter:
+      case NotesDrawingTool.brush:
+      case NotesDrawingTool.fountainPen:
+      case NotesDrawingTool.eraser:
         _pushUndo();
+        final preset = _drawingPreset(_tool, _strokeWidth);
         setState(() {
           _selectedStrokeIndex = null;
           _current = _DrawingStroke(
-            kind: _tool == NotesDrawingTool.highlighter
-                ? _DrawingStrokeKind.highlighter
-                : _DrawingStrokeKind.pen,
-            color: _color,
-            width: _tool == NotesDrawingTool.highlighter
-                ? (_strokeWidth * 2.5).clamp(6, 40).toDouble()
-                : _strokeWidth,
-            opacity: _tool == NotesDrawingTool.highlighter ? 0.32 : 1,
+            kind: preset.kind,
+            color: preset.erase ? Colors.white : _color,
+            width: preset.width,
+            opacity: preset.opacity,
+            thinning: preset.thinning,
+            streamline: preset.streamline,
+            simulatePressure: preset.simulatePressure,
+            variance: preset.variance,
+            taperEnd: preset.taperEnd,
+            nibAngleDegrees: preset.nibAngleDegrees,
+            nibContrast: preset.nibContrast,
+            flatEnds: preset.flatEnds,
+            blendMode: preset.blendMode,
             points: [point],
           );
-        });
-        break;
-      case NotesDrawingTool.eraser:
-        final index = _nearestStroke(point);
-        if (index == null) return;
-        _pushUndo();
-        setState(() {
-          _strokes.removeAt(index);
-          _selectedStrokeIndex = null;
         });
         break;
       case NotesDrawingTool.lasso:
@@ -190,16 +202,20 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
   void _onPanUpdate(DragUpdateDetails details) {
     final point = details.localPosition;
     switch (_tool) {
+      case NotesDrawingTool.pencil:
       case NotesDrawingTool.pen:
+      case NotesDrawingTool.fineliner:
+      case NotesDrawingTool.marker:
       case NotesDrawingTool.highlighter:
+      case NotesDrawingTool.brush:
+      case NotesDrawingTool.fountainPen:
+      case NotesDrawingTool.eraser:
         final current = _current;
         if (current == null) return;
-        setState(() => current.points.add(point));
-        break;
-      case NotesDrawingTool.eraser:
-        final index = _nearestStroke(point);
-        if (index == null) return;
-        setState(() => _strokes.removeAt(index));
+        final nextPoint = _shiftPressed
+            ? _lockToEightDirections(current.points.first, point)
+            : point;
+        setState(() => current.points.add(nextPoint));
         break;
       case NotesDrawingTool.lasso:
         final index = _selectedStrokeIndex;
@@ -233,11 +249,28 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
     });
   }
 
+  bool get _shiftPressed {
+    final keys = HardwareKeyboard.instance.logicalKeysPressed;
+    return keys.contains(LogicalKeyboardKey.shiftLeft) ||
+        keys.contains(LogicalKeyboardKey.shiftRight);
+  }
+
+  Offset _lockToEightDirections(Offset origin, Offset point) {
+    final delta = point - origin;
+    final distance = delta.distance;
+    if (distance < 0.5) return point;
+    const step = math.pi / 4;
+    final angle = math.atan2(delta.dy, delta.dx);
+    final snapped = (angle / step).round() * step;
+    return origin + Offset(math.cos(snapped), math.sin(snapped)) * distance;
+  }
+
   int? _nearestStroke(Offset point, {double extraTolerance = 0}) {
     var bestDistance = double.infinity;
     int? bestIndex;
     for (var index = _strokes.length - 1; index >= 0; index--) {
       final stroke = _strokes[index];
+      if (stroke.kind == _DrawingStrokeKind.eraser) continue;
       final tolerance = stroke.width / 2 + 12 + extraTolerance;
       for (final candidate in stroke.points) {
         final distance = (candidate - point).distance;
@@ -369,15 +402,20 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
             ),
             NotesDrawingControls(
               selectedTool: _tool,
-              onToolSelected: (tool) => setState(() => _tool = tool),
+              onToolSelected: _selectTool,
               selectedColor: _color,
               colors: kNotesDrawingColors,
               onColorSelected: (color) => setState(() => _color = color),
               strokeWidth: _strokeWidth,
               onStrokeWidthChanged: (value) =>
                   setState(() => _strokeWidth = value),
+              pencilTooltip: isRu ? 'Карандаш' : 'Pencil',
               penTooltip: isRu ? 'Перо' : 'Pen',
-              highlighterTooltip: isRu ? 'Маркер' : 'Highlighter',
+              finelinerTooltip: isRu ? 'Линер' : 'Fineliner',
+              markerTooltip: isRu ? 'Маркер' : 'Marker',
+              highlighterTooltip: isRu ? 'Выделитель' : 'Highlighter',
+              brushTooltip: isRu ? 'Кисть' : 'Brush',
+              fountainPenTooltip: isRu ? 'Перьевая ручка' : 'Fountain Pen',
               eraserTooltip: isRu ? 'Ластик' : 'Eraser',
               lassoTooltip: isRu ? 'Лассо' : 'Lasso',
               undoTooltip: t(loc, 'notes_drawing_undo'),
@@ -395,7 +433,133 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
   }
 }
 
-enum _DrawingStrokeKind { pen, highlighter }
+double? _defaultStrokeWidth(NotesDrawingTool tool) => switch (tool) {
+  NotesDrawingTool.pencil => 1,
+  NotesDrawingTool.pen => 6,
+  NotesDrawingTool.fineliner => 2,
+  NotesDrawingTool.marker => 18,
+  NotesDrawingTool.highlighter => 28,
+  NotesDrawingTool.brush => 14,
+  NotesDrawingTool.fountainPen => 8,
+  NotesDrawingTool.eraser => 24,
+  NotesDrawingTool.lasso => null,
+};
+
+enum _DrawingStrokeKind { outline, centerline, highlighter, eraser }
+
+class _DrawingPreset {
+  const _DrawingPreset({
+    required this.kind,
+    required this.width,
+    required this.opacity,
+    required this.thinning,
+    required this.streamline,
+    required this.simulatePressure,
+    this.variance = 0,
+    this.taperEnd = 0,
+    this.nibAngleDegrees,
+    this.nibContrast = 0,
+    this.flatEnds = false,
+    this.erase = false,
+    this.blendMode = BlendMode.srcOver,
+  });
+
+  final _DrawingStrokeKind kind;
+  final double width;
+  final double opacity;
+  final double thinning;
+  final double streamline;
+  final bool simulatePressure;
+  final double variance;
+  final double taperEnd;
+  final double? nibAngleDegrees;
+  final double nibContrast;
+  final bool flatEnds;
+  final bool erase;
+  final BlendMode blendMode;
+}
+
+_DrawingPreset _drawingPreset(NotesDrawingTool tool, double size) {
+  final safeSize = size.clamp(1.0, 40.0).toDouble();
+  return switch (tool) {
+    NotesDrawingTool.pencil => _DrawingPreset(
+      kind: _DrawingStrokeKind.outline,
+      width: safeSize,
+      opacity: 0.85,
+      thinning: 0.5,
+      streamline: 0.5,
+      simulatePressure: true,
+      variance: 0.85,
+    ),
+    NotesDrawingTool.pen => _DrawingPreset(
+      kind: _DrawingStrokeKind.outline,
+      width: safeSize,
+      opacity: 1,
+      thinning: 0.5,
+      streamline: 0.5,
+      simulatePressure: true,
+      variance: 0.3,
+    ),
+    NotesDrawingTool.fineliner => _DrawingPreset(
+      kind: _DrawingStrokeKind.centerline,
+      width: safeSize,
+      opacity: 1,
+      thinning: 0,
+      streamline: 0.55,
+      simulatePressure: false,
+    ),
+    NotesDrawingTool.marker => _DrawingPreset(
+      kind: _DrawingStrokeKind.outline,
+      width: safeSize,
+      opacity: 1,
+      thinning: 0.12,
+      streamline: 0.5,
+      simulatePressure: true,
+      variance: 0.5,
+    ),
+    NotesDrawingTool.highlighter => _DrawingPreset(
+      kind: _DrawingStrokeKind.highlighter,
+      width: safeSize,
+      opacity: 0.75,
+      thinning: 0,
+      streamline: 0.6,
+      simulatePressure: false,
+      flatEnds: true,
+      blendMode: BlendMode.multiply,
+    ),
+    NotesDrawingTool.brush => _DrawingPreset(
+      kind: _DrawingStrokeKind.outline,
+      width: safeSize,
+      opacity: 1,
+      thinning: 0.42,
+      streamline: 0.55,
+      simulatePressure: true,
+      variance: 0.9,
+      taperEnd: safeSize * 1.15,
+    ),
+    NotesDrawingTool.fountainPen => _DrawingPreset(
+      kind: _DrawingStrokeKind.outline,
+      width: safeSize,
+      opacity: 1,
+      thinning: 0.1,
+      streamline: 0.5,
+      simulatePressure: true,
+      variance: 0.45,
+      nibAngleDegrees: 45,
+      nibContrast: 0.85,
+    ),
+    NotesDrawingTool.eraser => _DrawingPreset(
+      kind: _DrawingStrokeKind.eraser,
+      width: safeSize,
+      opacity: 1,
+      thinning: 0,
+      streamline: 0.55,
+      simulatePressure: false,
+      erase: true,
+    ),
+    NotesDrawingTool.lasso => throw StateError('Lasso does not create strokes'),
+  };
+}
 
 class _DrawingStroke {
   _DrawingStroke({
@@ -403,6 +567,15 @@ class _DrawingStroke {
     required this.color,
     required this.width,
     required this.opacity,
+    required this.thinning,
+    required this.streamline,
+    required this.simulatePressure,
+    required this.variance,
+    required this.taperEnd,
+    required this.nibAngleDegrees,
+    required this.nibContrast,
+    required this.flatEnds,
+    required this.blendMode,
     required this.points,
   });
 
@@ -410,6 +583,15 @@ class _DrawingStroke {
   final Color color;
   final double width;
   final double opacity;
+  final double thinning;
+  final double streamline;
+  final bool simulatePressure;
+  final double variance;
+  final double taperEnd;
+  final double? nibAngleDegrees;
+  final double nibContrast;
+  final bool flatEnds;
+  final BlendMode blendMode;
   final List<Offset> points;
 
   Path? _cachedPath;
@@ -420,12 +602,23 @@ class _DrawingStroke {
       return _cachedPath!;
     }
     final path = switch (kind) {
-      _DrawingStrokeKind.pen => _NotesDrawesomeBrush.buildPenPath(
-          points,
-          size: width,
-        ),
-      _DrawingStrokeKind.highlighter =>
-        _NotesDrawesomeBrush.buildCenterlinePath(points),
+      _DrawingStrokeKind.outline => _NotesDrawesomeBrush.buildPenPath(
+        points,
+        size: width,
+        streamline: streamline,
+        thinning: thinning,
+        simulatePressure: simulatePressure,
+        variance: variance,
+        taperEnd: taperEnd,
+        nibAngleDegrees: nibAngleDegrees,
+        nibContrast: nibContrast,
+      ),
+      _DrawingStrokeKind.centerline ||
+      _DrawingStrokeKind.highlighter ||
+      _DrawingStrokeKind.eraser => _NotesDrawesomeBrush.buildCenterlinePath(
+        points,
+        streamline: streamline,
+      ),
     };
     _cachedPath = path;
     _cachedPointCount = points.length;
@@ -438,6 +631,15 @@ class _DrawingStroke {
       color: color,
       width: width,
       opacity: opacity,
+      thinning: thinning,
+      streamline: streamline,
+      simulatePressure: simulatePressure,
+      variance: variance,
+      taperEnd: taperEnd,
+      nibAngleDegrees: nibAngleDegrees,
+      nibContrast: nibContrast,
+      flatEnds: flatEnds,
+      blendMode: blendMode,
       points: points ?? List<Offset>.from(this.points),
     );
   }
@@ -491,37 +693,50 @@ class _DrawingPainter extends CustomPainter {
     final color = stroke.color.withValues(alpha: stroke.opacity);
 
     switch (stroke.kind) {
-      case _DrawingStrokeKind.pen:
+      case _DrawingStrokeKind.outline:
         canvas.drawPath(
           stroke.renderPath(),
           Paint()
             ..color = color
             ..style = PaintingStyle.fill
+            ..blendMode = stroke.blendMode
             ..isAntiAlias = true,
         );
         break;
+      case _DrawingStrokeKind.centerline:
       case _DrawingStrokeKind.highlighter:
+      case _DrawingStrokeKind.eraser:
+        final paint = Paint()
+          ..color = color
+          ..strokeWidth = stroke.width
+          ..strokeCap = stroke.flatEnds ? StrokeCap.butt : StrokeCap.round
+          ..strokeJoin = StrokeJoin.round
+          ..style = PaintingStyle.stroke
+          ..blendMode = stroke.blendMode
+          ..isAntiAlias = true;
         if (stroke.points.length == 1) {
-          canvas.drawCircle(
-            stroke.points.first,
-            stroke.width / 2,
-            Paint()
+          if (stroke.flatEnds) {
+            canvas.drawRect(
+              Rect.fromCenter(
+                center: stroke.points.first,
+                width: stroke.width,
+                height: stroke.width,
+              ),
+              Paint()
+                ..color = color
+                ..blendMode = stroke.blendMode
+                ..style = PaintingStyle.fill,
+            );
+          } else {
+            canvas.drawCircle(stroke.points.first, stroke.width / 2, Paint()
               ..color = color
+              ..blendMode = stroke.blendMode
               ..style = PaintingStyle.fill
-              ..isAntiAlias = true,
-          );
-          break;
+              ..isAntiAlias = true);
+          }
+        } else {
+          canvas.drawPath(stroke.renderPath(), paint);
         }
-        canvas.drawPath(
-          stroke.renderPath(),
-          Paint()
-            ..color = color
-            ..strokeWidth = stroke.width
-            ..strokeCap = StrokeCap.round
-            ..strokeJoin = StrokeJoin.round
-            ..style = PaintingStyle.stroke
-            ..isAntiAlias = true,
-        );
         break;
     }
   }
@@ -544,26 +759,28 @@ class _DrawingPainter extends CustomPainter {
   bool shouldRepaint(covariant _DrawingPainter oldDelegate) => true;
 }
 
-/// Small Dart-native port of Drawesome's freehand ideas. Drawesome itself is a
-/// React/TypeScript package, so embedding its runtime in Flutter would add a
-/// web-only parallel editor. Notes instead keeps its existing canvas and uses
-/// streamlined points, synthetic pressure/thinning, smooth outlines and round
-/// caps here. Source inspiration: https://github.com/benjitaylor/drawesome (MIT).
+/// Dart-native adaptation of Drawesome's brush profiles. Drawesome itself is a
+/// React/TypeScript package; embedding that runtime would create a web-only
+/// parallel editor. Notes keeps its Flutter canvas and ports the drawing feel:
+/// streamlined input, synthetic pressure, per-tool thinning, deterministic
+/// variance, brush taper, fountain-nib directionality, and fixed-width tools.
+/// Source inspiration: https://github.com/benjitaylor/drawesome (MIT).
 final class _NotesDrawesomeBrush {
   const _NotesDrawesomeBrush._();
 
   static Path buildPenPath(
     List<Offset> rawPoints, {
     required double size,
-    double streamline = 0.48,
-    double thinning = 0.62,
-    double smoothing = 0.62,
+    required double streamline,
+    required double thinning,
+    required bool simulatePressure,
+    required double variance,
+    required double taperEnd,
+    required double? nibAngleDegrees,
+    required double nibContrast,
   }) {
     final safeSize = math.max(0.5, size).toDouble();
-    final points = _streamline(
-      rawPoints,
-      streamline.clamp(0.0, 1.0).toDouble(),
-    );
+    final points = _streamline(rawPoints, streamline.clamp(0.0, 1.0).toDouble());
     if (points.isEmpty) return Path();
     if (points.length == 1) {
       final radius = safeSize / 2;
@@ -575,7 +792,11 @@ final class _NotesDrawesomeBrush {
       points,
       size: safeSize,
       thinning: thinning.clamp(0.0, 1.0).toDouble(),
-      smoothing: smoothing.clamp(0.0, 1.0).toDouble(),
+      simulatePressure: simulatePressure,
+      variance: variance.clamp(0.0, 1.0).toDouble(),
+      taperEnd: math.max(0.0, taperEnd).toDouble(),
+      nibAngleDegrees: nibAngleDegrees,
+      nibContrast: nibContrast.clamp(0.0, 1.0).toDouble(),
     );
     final left = <Offset>[];
     final right = <Offset>[];
@@ -620,12 +841,9 @@ final class _NotesDrawesomeBrush {
 
   static Path buildCenterlinePath(
     List<Offset> rawPoints, {
-    double streamline = 0.56,
+    required double streamline,
   }) {
-    final points = _streamline(
-      rawPoints,
-      streamline.clamp(0.0, 1.0).toDouble(),
-    );
+    final points = _streamline(rawPoints, streamline.clamp(0.0, 1.0).toDouble());
     final path = Path();
     if (points.isEmpty) return path;
     path.moveTo(points.first.dx, points.first.dy);
@@ -673,14 +891,22 @@ final class _NotesDrawesomeBrush {
     List<Offset> points, {
     required double size,
     required double thinning,
-    required double smoothing,
+    required bool simulatePressure,
+    required double variance,
+    required double taperEnd,
+    required double? nibAngleDegrees,
+    required double nibContrast,
   }) {
     final result = <double>[];
+    final cumulative = List<double>.filled(points.length, 0);
+    for (var i = 1; i < points.length; i++) {
+      cumulative[i] = cumulative[i - 1] + (points[i] - points[i - 1]).distance;
+    }
+    final totalLength = cumulative.last;
     var pressure = 0.68;
-    final pressureFollow = 0.16 + (1 - smoothing) * 0.22;
 
     for (var i = 0; i < points.length; i++) {
-      if (i > 0) {
+      if (simulatePressure && i > 0) {
         final distance = (points[i] - points[i - 1]).distance;
         final normalizedSpeed = (distance / (size * 2.4))
             .clamp(0.0, 1.0)
@@ -688,13 +914,42 @@ final class _NotesDrawesomeBrush {
         final targetPressure = (1 - normalizedSpeed)
             .clamp(0.12, 1.0)
             .toDouble();
-        pressure += (targetPressure - pressure) * pressureFollow;
+        pressure += (targetPressure - pressure) * 0.22;
       }
 
-      final widthFactor = (1 + (pressure - 0.5) * 2 * thinning)
-          .clamp(0.34, 1.62)
-          .toDouble();
-      result.add(size * 0.5 * widthFactor);
+      final effectivePressure = simulatePressure
+          ? pressure * pressure * (3 - 2 * pressure)
+          : 0.5;
+      var radius = size *
+          0.5 *
+          (1 + (effectivePressure - 0.5) * 2 * thinning)
+              .clamp(0.34, 1.62)
+              .toDouble();
+
+      if (variance > 0) {
+        final point = points[i];
+        final noise = math.sin(
+          i * 12.9898 + point.dx * 0.067 + point.dy * 0.037,
+        );
+        radius *= 1 + noise * variance * 0.055;
+      }
+
+      if (nibAngleDegrees != null && nibContrast > 0) {
+        final direction = _directionAt(points, i);
+        final theta = math.atan2(direction.dy, direction.dx);
+        final nib = nibAngleDegrees * math.pi / 180;
+        final acrossNib = math.sin(theta - nib).abs();
+        final nibFactor = (1 - nibContrast) + nibContrast * acrossNib;
+        radius *= nibFactor.clamp(0.12, 1.0).toDouble();
+      }
+
+      if (taperEnd > 0 && totalLength > 0) {
+        final remaining = totalLength - cumulative[i];
+        final taper = (remaining / taperEnd).clamp(0.06, 1.0).toDouble();
+        radius *= taper;
+      }
+
+      result.add(math.max(0.12, radius).toDouble());
     }
     return result;
   }
@@ -751,6 +1006,15 @@ List<_DrawingStroke> _cloneStrokes(List<_DrawingStroke> source) {
         color: stroke.color,
         width: stroke.width,
         opacity: stroke.opacity,
+        thinning: stroke.thinning,
+        streamline: stroke.streamline,
+        simulatePressure: stroke.simulatePressure,
+        variance: stroke.variance,
+        taperEnd: stroke.taperEnd,
+        nibAngleDegrees: stroke.nibAngleDegrees,
+        nibContrast: stroke.nibContrast,
+        flatEnds: stroke.flatEnds,
+        blendMode: stroke.blendMode,
         points: List<Offset>.from(stroke.points),
       ),
   ];
