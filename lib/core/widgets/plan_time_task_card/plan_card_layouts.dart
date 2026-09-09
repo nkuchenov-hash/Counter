@@ -204,16 +204,16 @@ class TimeViewLeftControls extends StatelessWidget {
   }
 }
 
-/// Responsive CardPlan shell: fixed left rail, expanding center, fixed right menu.
+/// Responsive CardPlan shell with one invariant edge inset.
 class TimeViewResponsiveShell extends StatelessWidget {
   const TimeViewResponsiveShell({
     required this.heightPx,
     required this.leftControls,
     required this.center,
     this.menu,
-    this.padVertical = 0,
+    this.padVertical = PlanCardGeom.padTopSmall,
     this.horizontalPadLeft = PlanCardGeom.padLeft,
-    this.horizontalPadRight = 6,
+    this.horizontalPadRight = PlanCardGeom.padRight,
   });
 
   final double heightPx;
@@ -236,7 +236,7 @@ class TimeViewResponsiveShell extends StatelessWidget {
           padVertical,
         ),
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             leftControls,
             const SizedBox(width: PlanCardGeom.timeViewRailToContentGap),
@@ -255,8 +255,8 @@ class TimeViewVerticalShell extends StatelessWidget {
     required this.heightPx,
     required this.common,
     required this.body,
-    this.padTop = 6,
-    this.padBottom = 4,
+    this.padTop = PlanCardGeom.padTopMediumLarge,
+    this.padBottom = PlanCardGeom.footerBottomPad,
   });
 
   final double heightPx;
@@ -273,7 +273,7 @@ class TimeViewVerticalShell extends StatelessWidget {
         padding: EdgeInsets.fromLTRB(
           PlanCardGeom.padLeft,
           padTop,
-          8,
+          PlanCardGeom.padRight,
           padBottom,
         ),
         child: Row(
@@ -289,7 +289,7 @@ class TimeViewVerticalShell extends StatelessWidget {
   }
 }
 
-/// VerySmall 38px ? single row, reference-sized controls (CardPlan ref).
+/// VerySmall 56px — full-size controls with invariant 12px edge insets.
 class TimeViewVerySmallLayout extends StatelessWidget {
   const TimeViewVerySmallLayout({
     required this.common,
@@ -303,8 +303,6 @@ class TimeViewVerySmallLayout extends StatelessWidget {
   Widget build(BuildContext context) {
     return TimeViewResponsiveShell(
       heightPx: heightPx,
-      padVertical: 0,
-      horizontalPadRight: 8,
       leftControls: TimeViewLeftControls(common: common),
       menu: common.onOpenMenu != null
           ? PlanCardMenuButton(onOpenMenu: common.onOpenMenu!)
@@ -339,7 +337,7 @@ class TimeViewVerySmallLayout extends StatelessWidget {
   }
 }
 
-/// Small 39?54px ? title row + tags/time metadata row (CardPlan ref).
+/// Small 57–68px — title row + tags/time metadata row.
 class TimeViewSmallLayout extends StatelessWidget {
   const TimeViewSmallLayout({required this.common, required this.heightPx});
 
@@ -351,12 +349,12 @@ class TimeViewSmallLayout extends StatelessWidget {
     return TimeViewTwoRowCenterLayout(
       common: common,
       heightPx: heightPx,
-      padVertical: 6,
+      padVertical: PlanCardGeom.padTopSmall,
     );
   }
 }
 
-/// MoreCompact 55?77px ? same rhythm as Small with slightly more breathing room.
+/// MoreCompact 69–94px — two rows with the same edge rhythm.
 class TimeViewMoreCompactLayout extends StatelessWidget {
   const TimeViewMoreCompactLayout({
     required this.common,
@@ -371,7 +369,7 @@ class TimeViewMoreCompactLayout extends StatelessWidget {
     return TimeViewTwoRowCenterLayout(
       common: common,
       heightPx: heightPx,
-      padVertical: 7,
+      padVertical: PlanCardGeom.padTopSmall,
     );
   }
 }
@@ -401,7 +399,7 @@ class TimeViewTwoRowCenterLayout extends StatelessWidget {
         onLongPress: common.onBodyLongPress,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
             PlanCardTitleRow(
@@ -425,7 +423,7 @@ class TimeViewTwoRowCenterLayout extends StatelessWidget {
   }
 }
 
-/// Compact 78?94px ? vertical rail, title/tags, optional footer (CardPlan ref).
+/// Compact 95–112px — full metadata within invariant edge insets.
 class TimeViewCompactLayout extends StatelessWidget {
   const TimeViewCompactLayout({required this.common, required this.heightPx});
 
@@ -488,7 +486,7 @@ class TimeViewCompactLayout extends StatelessWidget {
   }
 }
 
-/// Medium 95px+ ? full CardPlan hierarchy (CardPlan ref).
+/// Medium 113px+ — full CardPlan hierarchy.
 class TimeViewMediumLayout extends StatelessWidget {
   const TimeViewMediumLayout({required this.common, required this.heightPx});
 
@@ -508,7 +506,6 @@ class TimeViewMediumLayout extends StatelessWidget {
     return TimeViewVerticalShell(
       heightPx: heightPx,
       common: common,
-      padTop: 8,
       body: PlanCardBodyTapShell(
         onTap: common.onBodyTap,
         onLongPress: common.onBodyLongPress,
@@ -897,4 +894,3 @@ class TimelinePlanCardLarge extends StatelessWidget {
     );
   }
 }
-
