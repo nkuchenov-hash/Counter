@@ -12,7 +12,7 @@ import 'package:counter/features/planning/time_view/planning_time_view.dart';
 import 'package:counter/features/planning/time_view/time_view_card_layer.dart';
 import 'package:counter/features/planning/time_view/time_view_hour_grid.dart';
 
-const kPlanningTimeViewCanvasColor = Color(0xFFD0D5DD);
+const double kPlanningTimeViewMaxContentWidth = 1240;
 
 extension PlanningTimeViewTimeViewCanvas on PlanningTimeViewCoordinator {
   Widget buildProportionalDayTimelineCanvas({
@@ -38,7 +38,7 @@ extension PlanningTimeViewTimeViewCanvas on PlanningTimeViewCoordinator {
     final grid = durationResult.grid;
     final layouts = durationResult.layouts;
     final canvasHeight = timelineCanvasHeightPx(grid);
-    final gridColor = scheme.outlineVariant.withValues(alpha: 0.28);
+    final gridColor = scheme.outlineVariant.withValues(alpha: 0.18);
     final nowTop = timelineNowLineTopPx(planWallDay, rangeStart, rangeEnd, grid);
     final wallNow = profileWallNow();
     final nowLabel = nowTop != null
@@ -69,7 +69,13 @@ extension PlanningTimeViewTimeViewCanvas on PlanningTimeViewCoordinator {
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          Row(
+          Align(
+            alignment: Alignment.topCenter,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(
+                maxWidth: kPlanningTimeViewMaxContentWidth,
+              ),
+              child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               SizedBox(
@@ -87,7 +93,7 @@ extension PlanningTimeViewTimeViewCanvas on PlanningTimeViewCoordinator {
                           hourLabel(visibleHours[i]),
                           style: Theme.of(host.context).textTheme.labelSmall?.copyWith(
                             color: scheme.onSurfaceVariant,
-                            fontWeight: FontWeight.w600,
+                            fontWeight: FontWeight.w500,
                             fontSize: 11,
                           ),
                         ),
@@ -137,11 +143,16 @@ extension PlanningTimeViewTimeViewCanvas on PlanningTimeViewCoordinator {
                       Positioned.fill(
                         child: DecoratedBox(
                           decoration: BoxDecoration(
-                            color: kPlanningTimeViewCanvasColor,
-                            borderRadius: BorderRadius.circular(10),
+                            color: Color.alphaBlend(
+                              scheme.surfaceContainerHighest.withValues(
+                                alpha: 0.10,
+                              ),
+                              scheme.surface,
+                            ),
+                            borderRadius: BorderRadius.circular(12),
                             border: Border.all(
                               color: scheme.outlineVariant.withValues(
-                                alpha: 0.32,
+                                alpha: 0.16,
                               ),
                             ),
                           ),
@@ -178,7 +189,7 @@ extension PlanningTimeViewTimeViewCanvas on PlanningTimeViewCoordinator {
                                   visualDensity: VisualDensity.compact,
                                   style: IconButton.styleFrom(
                                     foregroundColor: scheme.onSurfaceVariant
-                                        .withValues(alpha: 0.5),
+                                        .withValues(alpha: 0.38),
                                     tapTargetSize:
                                         MaterialTapTargetSize.shrinkWrap,
                                   ),
@@ -315,7 +326,9 @@ extension PlanningTimeViewTimeViewCanvas on PlanningTimeViewCoordinator {
           ),
         ],
       ),
-    ],
+            ),
+          ),
+        ],
       ),
     );
     if (ShellFlags.enableTimelineRepaintBoundary) {
