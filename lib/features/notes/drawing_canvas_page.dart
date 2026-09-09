@@ -4,13 +4,13 @@
 // Brain/PocketBase ownership remains in the composing Notes editor.
 
 import 'dart:convert';
+import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:counter/core/widgets/app_button.dart';
 import 'package:counter/core/widgets/app_icon_button.dart';
 import 'package:counter/data/models.dart';
-import 'package:counter/features/notes/drawing/notes_drawesome_brush.dart';
 import 'package:counter/features/notes/widgets/notes_canonical_components.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
@@ -420,12 +420,12 @@ class _DrawingStroke {
       return _cachedPath!;
     }
     final path = switch (kind) {
-      _DrawingStrokeKind.pen => NotesDrawesomeBrush.buildPenPath(
+      _DrawingStrokeKind.pen => _NotesDrawesomeBrush.buildPenPath(
           points,
           size: width,
         ),
       _DrawingStrokeKind.highlighter =>
-        NotesDrawesomeBrush.buildCenterlinePath(points),
+        _NotesDrawesomeBrush.buildCenterlinePath(points),
     };
     _cachedPath = path;
     _cachedPointCount = points.length;
@@ -501,18 +501,27 @@ class _DrawingPainter extends CustomPainter {
         );
         break;
       case _DrawingStrokeKind.highlighter:
-        final paint = Paint()
-          ..color = color
-          ..strokeWidth = stroke.width
-          ..strokeCap = StrokeCap.round
-          ..strokeJoin = StrokeJoin.round
-          ..style = PaintingStyle.stroke
-          ..isAntiAlias = true;
         if (stroke.points.length == 1) {
-          canvas.drawCircle(stroke.points.first, stroke.width / 2, paint);
-        } else {
-          canvas.drawPath(stroke.renderPath(), paint);
+          canvas.drawCircle(
+            stroke.points.first,
+            stroke.width / 2,
+            Paint()
+              ..color = color
+              ..style = PaintingStyle.fill
+              ..isAntiAlias = true,
+          );
+          break;
         }
+        canvas.drawPath(
+          stroke.renderPath(),
+          Paint()
+            ..color = color
+            ..strokeWidth = stroke.width
+            ..strokeCap = StrokeCap.round
+            ..strokeJoin = StrokeJoin.round
+            ..style = PaintingStyle.stroke
+            ..isAntiAlias = true,
+        );
         break;
     }
   }
@@ -533,6 +542,205 @@ class _DrawingPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _DrawingPainter oldDelegate) => true;
+}
+
+/// Small Dart-native port of Drawesome's freehand ideas. Drawesome itself is a
+/// React/TypeScript package, so embedding its runtime in Flutter would add a
+/// web-only parallel editor. Notes instead keeps its existing canvas and uses
+/// streamlined points, synthetic pressure/thinning, smooth outlines and round
+/// caps here. Source inspiration: https://github.com/benjitaylor/drawesome (MIT).
+final class _NotesDrawesomeBrush {
+  const _NotesDrawesomeBrush._();
+
+  static Path buildPenPath(
+    List<Offset> rawPoints, {
+    required double size,
+    double streamline = 0.48,
+    double thinning = 0.62,
+    double smoothing = 0.62,
+  }) {
+    final safeSize = math.max(0.5, size).toDouble();
+    final points = _streamline(
+      rawPoints,
+      streamline.clamp(0.0, 1.0).toDouble(),
+    );
+    if (points.isEmpty) return Path();
+    if (points.length == 1) {
+      final radius = safeSize / 2;
+      return Path()
+        ..addOval(Rect.fromCircle(center: points.first, radius: radius));
+    }
+
+    final radii = _pressureRadii(
+      points,
+      size: safeSize,
+      thinning: thinning.clamp(0.0, 1.0).toDouble(),
+      smoothing: smoothing.clamp(0.0, 1.0).toDouble(),
+    );
+    final left = <Offset>[];
+    final right = <Offset>[];
+
+    for (var i = 0; i < points.length; i++) {
+      final direction = _directionAt(points, i);
+      final normal = Offset(-direction.dy, direction.dx);
+      final offset = normal * radii[i];
+      left.add(points[i] + offset);
+      right.add(points[i] - offset);
+    }
+
+    final path = Path();
+    _appendSmoothSide(path, left, moveToFirst: true);
+
+    final endDirection = _directionAt(points, points.length - 1);
+    final endTip = points.last + endDirection * radii.last;
+    path.quadraticBezierTo(
+      endTip.dx,
+      endTip.dy,
+      right.last.dx,
+      right.last.dy,
+    );
+
+    _appendSmoothSide(
+      path,
+      right.reversed.toList(growable: false),
+      moveToFirst: false,
+    );
+
+    final startDirection = _directionAt(points, 0);
+    final startTip = points.first - startDirection * radii.first;
+    path.quadraticBezierTo(
+      startTip.dx,
+      startTip.dy,
+      left.first.dx,
+      left.first.dy,
+    );
+    path.close();
+    return path;
+  }
+
+  static Path buildCenterlinePath(
+    List<Offset> rawPoints, {
+    double streamline = 0.56,
+  }) {
+    final points = _streamline(
+      rawPoints,
+      streamline.clamp(0.0, 1.0).toDouble(),
+    );
+    final path = Path();
+    if (points.isEmpty) return path;
+    path.moveTo(points.first.dx, points.first.dy);
+    if (points.length == 1) return path;
+    if (points.length == 2) {
+      path.lineTo(points.last.dx, points.last.dy);
+      return path;
+    }
+
+    for (var i = 1; i < points.length - 1; i++) {
+      final midpoint = _midpoint(points[i], points[i + 1]);
+      path.quadraticBezierTo(
+        points[i].dx,
+        points[i].dy,
+        midpoint.dx,
+        midpoint.dy,
+      );
+    }
+    path.lineTo(points.last.dx, points.last.dy);
+    return path;
+  }
+
+  static List<Offset> _streamline(List<Offset> rawPoints, double strength) {
+    if (rawPoints.isEmpty) return const <Offset>[];
+
+    final unique = <Offset>[rawPoints.first];
+    for (final point in rawPoints.skip(1)) {
+      if ((point - unique.last).distance >= 0.08) unique.add(point);
+    }
+    if (unique.length <= 1) return unique;
+
+    final follow = 0.18 + (1 - strength) * 0.62;
+    final result = <Offset>[unique.first];
+    for (final point in unique.skip(1)) {
+      final previous = result.last;
+      result.add(previous + (point - previous) * follow);
+    }
+
+    final last = result.last;
+    result[result.length - 1] = last + (unique.last - last) * 0.45;
+    return result;
+  }
+
+  static List<double> _pressureRadii(
+    List<Offset> points, {
+    required double size,
+    required double thinning,
+    required double smoothing,
+  }) {
+    final result = <double>[];
+    var pressure = 0.68;
+    final pressureFollow = 0.16 + (1 - smoothing) * 0.22;
+
+    for (var i = 0; i < points.length; i++) {
+      if (i > 0) {
+        final distance = (points[i] - points[i - 1]).distance;
+        final normalizedSpeed = (distance / (size * 2.4))
+            .clamp(0.0, 1.0)
+            .toDouble();
+        final targetPressure = (1 - normalizedSpeed)
+            .clamp(0.12, 1.0)
+            .toDouble();
+        pressure += (targetPressure - pressure) * pressureFollow;
+      }
+
+      final widthFactor = (1 + (pressure - 0.5) * 2 * thinning)
+          .clamp(0.34, 1.62)
+          .toDouble();
+      result.add(size * 0.5 * widthFactor);
+    }
+    return result;
+  }
+
+  static Offset _directionAt(List<Offset> points, int index) {
+    final Offset delta;
+    if (index <= 0) {
+      delta = points[1] - points[0];
+    } else if (index >= points.length - 1) {
+      delta = points.last - points[points.length - 2];
+    } else {
+      delta = points[index + 1] - points[index - 1];
+    }
+
+    final length = delta.distance;
+    if (length <= 0.0001) return const Offset(1, 0);
+    return delta / length;
+  }
+
+  static void _appendSmoothSide(
+    Path path,
+    List<Offset> points, {
+    required bool moveToFirst,
+  }) {
+    if (points.isEmpty) return;
+    if (moveToFirst) path.moveTo(points.first.dx, points.first.dy);
+    if (points.length == 1) return;
+    if (points.length == 2) {
+      path.lineTo(points.last.dx, points.last.dy);
+      return;
+    }
+
+    for (var i = 1; i < points.length - 1; i++) {
+      final midpoint = _midpoint(points[i], points[i + 1]);
+      path.quadraticBezierTo(
+        points[i].dx,
+        points[i].dy,
+        midpoint.dx,
+        midpoint.dy,
+      );
+    }
+    path.lineTo(points.last.dx, points.last.dy);
+  }
+
+  static Offset _midpoint(Offset a, Offset b) =>
+      Offset((a.dx + b.dx) / 2, (a.dy + b.dy) / 2);
 }
 
 List<_DrawingStroke> _cloneStrokes(List<_DrawingStroke> source) {
