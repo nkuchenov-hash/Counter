@@ -27,7 +27,7 @@ final class NotesDrawesomeBrush {
     double thinning = 0.62,
     double smoothing = 0.62,
   }) {
-    final safeSize = math.max(0.5, size);
+    final safeSize = math.max(0.5, size).toDouble();
     final points = _streamline(
       rawPoints,
       streamline.clamp(0.0, 1.0).toDouble(),
