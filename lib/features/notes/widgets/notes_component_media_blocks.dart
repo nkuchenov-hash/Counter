@@ -236,65 +236,71 @@ class NotesDrawingControls extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final erasing = selectedTool == NotesDrawingTool.eraser;
+    final sliderMax = erasing ? 96.0 : 24.0;
     return Material(
       color: scheme.surface,
       elevation: 6,
       shadowColor: scheme.shadow.withValues(alpha: 0.16),
-      borderRadius: BorderRadius.circular(18),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(10, 10, 10, 12),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _buildToolTray(context),
-            const SizedBox(height: 10),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              crossAxisAlignment: WrapCrossAlignment.center,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _buildToolTray(context),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                for (final option in colors)
-                  _NotesDrawingColorButton(
-                    option: option,
-                    selected: option.color == selectedColor,
-                    onPressed: () => onColorSelected(option.color),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    for (final option in colors)
+                      _NotesDrawingColorButton(
+                        option: option,
+                        selected: option.color == selectedColor,
+                        onPressed: () => onColorSelected(option.color),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Semantics(
+                  label: strokeWidthLabel,
+                  value: strokeWidth.toStringAsFixed(1),
+                  slider: true,
+                  child: Row(
+                    children: [
+                      Text(
+                        strokeWidthLabel,
+                        style: Theme.of(context).textTheme.labelMedium,
+                      ),
+                      Expanded(
+                        child: Slider(
+                          value: strokeWidth.clamp(1.0, sliderMax).toDouble(),
+                          min: 1,
+                          max: sliderMax,
+                          divisions: erasing ? 95 : 23,
+                          label: strokeWidth.toStringAsFixed(0),
+                          onChanged: onStrokeWidthChanged,
+                        ),
+                      ),
+                    ],
                   ),
+                ),
               ],
             ),
-            const SizedBox(height: 8),
-            Semantics(
-              label: strokeWidthLabel,
-              value: strokeWidth.toStringAsFixed(1),
-              slider: true,
-              child: Row(
-                children: [
-                  Text(
-                    strokeWidthLabel,
-                    style: Theme.of(context).textTheme.labelMedium,
-                  ),
-                  Expanded(
-                    child: Slider(
-                      value: strokeWidth.clamp(1.0, 24.0).toDouble(),
-                      min: 1,
-                      max: 24,
-                      divisions: 23,
-                      label: strokeWidth.toStringAsFixed(0),
-                      onChanged: onStrokeWidthChanged,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
   Widget _buildToolTray(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return Container(
-      height: 76,
+      height: 104,
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,
@@ -304,37 +310,16 @@ class NotesDrawingControls extends StatelessWidget {
             scheme.surfaceContainerLow.withValues(alpha: 0.98),
           ],
         ),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.7)),
-        boxShadow: [
-          BoxShadow(
-            color: scheme.shadow.withValues(alpha: 0.12),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-          BoxShadow(
-            color: scheme.onSurface.withValues(alpha: 0.04),
-            blurRadius: 1,
-            offset: const Offset(0, -1),
-          ),
-        ],
+        border: Border(
+          bottom: BorderSide(color: scheme.outlineVariant.withValues(alpha: 0.7)),
+        ),
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(15),
+      child: ClipRect(
         child: Stack(
           children: [
-            Positioned(
-              left: 0,
-              right: 0,
-              top: 0,
-              child: Container(
-                height: 1,
-                color: scheme.onSurface.withValues(alpha: 0.08),
-              ),
-            ),
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.fromLTRB(8, 2, 8, 0),
+              padding: const EdgeInsets.fromLTRB(8, 0, 8, 0),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
@@ -347,15 +332,15 @@ class NotesDrawingControls extends StatelessWidget {
                   _physicalTool(NotesDrawingTool.fountainPen, fountainPenTooltip),
                   _physicalTool(NotesDrawingTool.eraser, eraserTooltip),
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(8, 14, 8, 8),
+                    padding: const EdgeInsets.fromLTRB(8, 14, 8, 14),
                     child: Container(
                       width: 1,
-                      height: 34,
+                      height: 40,
                       color: scheme.outlineVariant,
                     ),
                   ),
                   Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
+                    padding: const EdgeInsets.only(bottom: 14),
                     child: AppIconButton(
                       icon: Icons.gesture_rounded,
                       tooltip: lassoTooltip,
@@ -366,7 +351,7 @@ class NotesDrawingControls extends StatelessWidget {
                     ),
                   ),
                   Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
+                    padding: const EdgeInsets.only(bottom: 14),
                     child: AppIconButton(
                       icon: Icons.undo_rounded,
                       tooltip: undoTooltip,
@@ -376,7 +361,7 @@ class NotesDrawingControls extends StatelessWidget {
                     ),
                   ),
                   Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
+                    padding: const EdgeInsets.only(bottom: 14),
                     child: AppIconButton(
                       icon: Icons.redo_rounded,
                       tooltip: redoTooltip,
@@ -386,6 +371,17 @@ class NotesDrawingControls extends StatelessWidget {
                     ),
                   ),
                 ],
+              ),
+            ),
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              height: 12,
+              child: IgnorePointer(
+                child: ColoredBox(
+                  color: scheme.surfaceContainerHighest.withValues(alpha: 0.92),
+                ),
               ),
             ),
           ],
@@ -429,12 +425,12 @@ class _NotesPhysicalToolButton extends StatelessWidget {
           onTap: onPressed,
           containedInkWell: true,
           highlightShape: BoxShape.rectangle,
-          radius: 26,
+          radius: 30,
           child: SizedBox(
-            width: 40,
-            height: 74,
+            width: 50,
+            height: 104,
             child: AnimatedSlide(
-              offset: Offset(0, selected ? -0.08 : 0),
+              offset: Offset(0, selected ? -0.045 : 0),
               duration: const Duration(milliseconds: 150),
               curve: Curves.easeOutCubic,
               child: Stack(
@@ -442,24 +438,24 @@ class _NotesPhysicalToolButton extends StatelessWidget {
                 children: [
                   if (selected)
                     Positioned(
-                      bottom: 7,
+                      bottom: 12,
                       child: Container(
-                        width: 30,
+                        width: 36,
                         height: 12,
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(99),
                           boxShadow: [
                             BoxShadow(
                               color: color.withValues(alpha: 0.30),
-                              blurRadius: 14,
-                              spreadRadius: 1,
+                              blurRadius: 16,
+                              spreadRadius: 2,
                             ),
                           ],
                         ),
                       ),
                     ),
                   CustomPaint(
-                    size: const Size(30, 88),
+                    size: const Size(35, 102),
                     painter: _NotesPhysicalToolPainter(
                       tool: tool,
                       ink: color,
