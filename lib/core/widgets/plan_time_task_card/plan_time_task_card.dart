@@ -156,6 +156,10 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard>
     final effectiveTimeLabel = widget.timeLabel.trim().isNotEmpty
         ? widget.timeLabel.trim()
         : planCardWallTimeLabel(widget.task);
+    final timeViewTrailingPlay =
+        widget.surface == PlanCardSurface.timeline &&
+        widget.timelineVisualDensity != null &&
+        _showPlay;
 
     final hovered = _hovered && !widget.interacting;
     final selected = widget.selectMode && widget.isSelected;
@@ -220,7 +224,7 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard>
         selectMode: widget.selectMode,
         isSelected: widget.isSelected,
         hasRepeat: _hasRepeat,
-        showPlay: _showPlay,
+        showPlay: false,
         visibleTags: _visibleTags,
         scheduleConflict: widget.scheduleConflict,
         toggleDoneEnabled: widget.toggleDoneEnabled,
@@ -230,7 +234,7 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard>
         spacing: cardSpacing,
         onToggleDone: widget.onToggleDone,
         onSelectToggle: widget.onSelectToggle,
-        onPlay: widget.onPlay,
+        onPlay: null,
         onOpenMenu: widget.onOpenMenu,
         onBodyTap: widget.onTap,
         onBodyLongPress: widget.onLongPress,
@@ -367,13 +371,22 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard>
             final h = constraints.maxHeight.isFinite
                 ? constraints.maxHeight
                 : measuredH;
+            final resolvedHeight = h.isFinite ? h : measuredH;
             final showWatermark =
                 widget.surface != PlanCardSurface.timeline &&
                 !widget.timelineFillHeight &&
                 effectiveDensity != PlanTimeTaskCardDensity.micro &&
-                h >= PlanCardGeom.watermarkMinCardHeight;
+                resolvedHeight >= PlanCardGeom.watermarkMinCardHeight;
+            final bodyContent = timeViewTrailingPlay
+                ? Padding(
+                    padding: EdgeInsets.only(
+                      right: PlanCardGeom.controlSize + 10,
+                    ),
+                    child: body,
+                  )
+                : body;
             return SizedBox(
-              height: h.isFinite ? h : measuredH,
+              height: resolvedHeight,
               width: w.isFinite ? w : null,
               child: Stack(
                 fit: StackFit.passthrough,
@@ -384,9 +397,18 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard>
                       color: categoryTone,
                       density: effectiveDensity,
                       cardWidth: w.isFinite ? w : PlanCardGeom.refWidth,
-                      cardHeight: h.isFinite ? h : measuredH,
+                      cardHeight: resolvedHeight,
                     ),
-                  body,
+                  bodyContent,
+                  if (timeViewTrailingPlay)
+                    Positioned(
+                      top: math.max(
+                        0.0,
+                        (resolvedHeight - PlanCardGeom.controlSize) / 2,
+                      ),
+                      right: 8,
+                      child: PlanCardPlayButton(onPlay: widget.onPlay),
+                    ),
                 ],
               ),
             );
@@ -430,4 +452,3 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard>
     return card;
   }
 }
-
