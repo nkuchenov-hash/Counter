@@ -181,25 +181,6 @@ extension PlanningTimeViewTimeViewCanvas on PlanningTimeViewCoordinator {
                           return Stack(
                             clipBehavior: Clip.none,
                             children: [
-                              Positioned.fill(
-                                child: DecoratedBox(
-                                  decoration: BoxDecoration(
-                                    color: scheme.brightness == Brightness.light
-                                        ? const Color(0xFFF1F4F8)
-                                        : Color.alphaBlend(
-                                            scheme.surfaceContainerHighest
-                                                .withValues(alpha: 0.22),
-                                            scheme.surface,
-                                          ),
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                      color: scheme.outlineVariant.withValues(
-                                        alpha: 0.22,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
                               for (var i = 0; i < visibleHours.length; i++)
                                 Positioned(
                                   top: grid.hourLineY(i),
