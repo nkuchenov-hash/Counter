@@ -524,8 +524,6 @@ class TimelineResizeEdgeHandle extends StatefulWidget {
 }
 
 class TimelineResizeEdgeHandleState extends State<TimelineResizeEdgeHandle> {
-  bool _hover = false;
-  bool _dragging = false;
   int? _activePointer;
   double _startGlobalDy = 0;
 
@@ -533,7 +531,6 @@ class TimelineResizeEdgeHandleState extends State<TimelineResizeEdgeHandle> {
     if (_activePointer != null) return;
     _activePointer = event.pointer;
     _startGlobalDy = event.position.dy;
-    setState(() => _dragging = true);
     widget.onResizeStart?.call();
   }
 
@@ -548,26 +545,18 @@ class TimelineResizeEdgeHandleState extends State<TimelineResizeEdgeHandle> {
   void _endResize(PointerUpEvent event) {
     if (_activePointer != event.pointer) return;
     _activePointer = null;
-    setState(() => _dragging = false);
     widget.onResizeEnd?.call();
   }
 
   void _cancelResize(PointerCancelEvent event) {
     if (_activePointer != event.pointer) return;
     _activePointer = null;
-    setState(() => _dragging = false);
     widget.onResizeCancel?.call();
   }
 
   @override
   Widget build(BuildContext context) {
-    final scheme = widget.scheme;
-    final emphasized = _hover || _dragging || widget.active;
-    final gripAlpha = emphasized ? 0.82 : 0.34;
-
     return MouseRegion(
-      onEnter: (_) => setState(() => _hover = true),
-      onExit: (_) => setState(() => _hover = false),
       cursor: SystemMouseCursors.resizeUpDown,
       child: Listener(
         behavior: HitTestBehavior.opaque,
@@ -578,35 +567,6 @@ class TimelineResizeEdgeHandleState extends State<TimelineResizeEdgeHandle> {
         child: SizedBox(
           height: widget.height,
           width: double.infinity,
-          child: Stack(
-            alignment:
-                widget.isTop ? Alignment.topCenter : Alignment.bottomCenter,
-            children: [
-              AnimatedOpacity(
-                opacity: emphasized ? 1 : 0,
-                duration: const Duration(milliseconds: 80),
-                child: Container(
-                  height: 2,
-                  width: double.infinity,
-                  color: scheme.primary.withValues(alpha: 0.38),
-                ),
-              ),
-              Padding(
-                padding: EdgeInsets.only(
-                  top: widget.isTop ? 3 : 0,
-                  bottom: widget.isTop ? 0 : 3,
-                ),
-                child: Container(
-                  width: 34,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: scheme.primary.withValues(alpha: gripAlpha),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                ),
-              ),
-            ],
-          ),
         ),
       ),
     );
