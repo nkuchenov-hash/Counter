@@ -10,6 +10,7 @@ import 'dart:ui' as ui;
 import 'package:counter/core/widgets/app_button.dart';
 import 'package:counter/core/widgets/app_icon_button.dart';
 import 'package:counter/data/models.dart';
+import 'package:counter/features/notes/drawing/notes_drawesome_brush.dart';
 import 'package:counter/features/notes/widgets/notes_canonical_components.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
@@ -151,6 +152,9 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
         setState(() {
           _selectedStrokeIndex = null;
           _current = _DrawingStroke(
+            kind: _tool == NotesDrawingTool.highlighter
+                ? _DrawingStrokeKind.highlighter
+                : _DrawingStrokeKind.pen,
             color: _color,
             width: _tool == NotesDrawingTool.highlighter
                 ? (_strokeWidth * 2.5).clamp(6, 40).toDouble()
@@ -391,21 +395,46 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
   }
 }
 
+enum _DrawingStrokeKind { pen, highlighter }
+
 class _DrawingStroke {
   _DrawingStroke({
+    required this.kind,
     required this.color,
     required this.width,
     required this.opacity,
     required this.points,
   });
 
+  final _DrawingStrokeKind kind;
   final Color color;
   final double width;
   final double opacity;
   final List<Offset> points;
 
+  Path? _cachedPath;
+  int _cachedPointCount = -1;
+
+  Path renderPath() {
+    if (_cachedPath != null && _cachedPointCount == points.length) {
+      return _cachedPath!;
+    }
+    final path = switch (kind) {
+      _DrawingStrokeKind.pen => NotesDrawesomeBrush.buildPenPath(
+          points,
+          size: width,
+        ),
+      _DrawingStrokeKind.highlighter =>
+        NotesDrawesomeBrush.buildCenterlinePath(points),
+    };
+    _cachedPath = path;
+    _cachedPointCount = points.length;
+    return path;
+  }
+
   _DrawingStroke copyWith({List<Offset>? points}) {
     return _DrawingStroke(
+      kind: kind,
       color: color,
       width: width,
       opacity: opacity,
@@ -446,7 +475,7 @@ class _DrawingPainter extends CustomPainter {
       if (selectedStrokeIndex == index) {
         final bounds = _strokeBounds(stroke);
         canvas.drawRect(
-          bounds.inflate(8),
+          bounds.inflate(stroke.width + 8),
           Paint()
             ..color = const Color(0xFF6366F1)
             ..style = PaintingStyle.stroke
@@ -459,21 +488,33 @@ class _DrawingPainter extends CustomPainter {
 
   void _drawStroke(Canvas canvas, _DrawingStroke stroke) {
     if (stroke.points.isEmpty) return;
-    final paint = Paint()
-      ..color = stroke.color.withValues(alpha: stroke.opacity)
-      ..strokeWidth = stroke.width
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round
-      ..style = PaintingStyle.stroke;
-    if (stroke.points.length == 1) {
-      canvas.drawPoints(ui.PointMode.points, stroke.points, paint);
-      return;
+    final color = stroke.color.withValues(alpha: stroke.opacity);
+
+    switch (stroke.kind) {
+      case _DrawingStrokeKind.pen:
+        canvas.drawPath(
+          stroke.renderPath(),
+          Paint()
+            ..color = color
+            ..style = PaintingStyle.fill
+            ..isAntiAlias = true,
+        );
+        break;
+      case _DrawingStrokeKind.highlighter:
+        final paint = Paint()
+          ..color = color
+          ..strokeWidth = stroke.width
+          ..strokeCap = StrokeCap.round
+          ..strokeJoin = StrokeJoin.round
+          ..style = PaintingStyle.stroke
+          ..isAntiAlias = true;
+        if (stroke.points.length == 1) {
+          canvas.drawCircle(stroke.points.first, stroke.width / 2, paint);
+        } else {
+          canvas.drawPath(stroke.renderPath(), paint);
+        }
+        break;
     }
-    final path = Path()..moveTo(stroke.points.first.dx, stroke.points.first.dy);
-    for (final point in stroke.points.skip(1)) {
-      path.lineTo(point.dx, point.dy);
-    }
-    canvas.drawPath(path, paint);
   }
 
   Rect _strokeBounds(_DrawingStroke stroke) {
@@ -498,6 +539,7 @@ List<_DrawingStroke> _cloneStrokes(List<_DrawingStroke> source) {
   return [
     for (final stroke in source)
       _DrawingStroke(
+        kind: stroke.kind,
         color: stroke.color,
         width: stroke.width,
         opacity: stroke.opacity,
