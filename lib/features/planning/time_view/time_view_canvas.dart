@@ -38,7 +38,7 @@ extension PlanningTimeViewTimeViewCanvas on PlanningTimeViewCoordinator {
     final grid = durationResult.grid;
     final layouts = durationResult.layouts;
     final canvasHeight = timelineCanvasHeightPx(grid);
-    final gridColor = scheme.outlineVariant.withValues(alpha: 0.18);
+    final gridColor = scheme.onSurfaceVariant.withValues(alpha: 0.30);
     final nowTop = timelineNowLineTopPx(planWallDay, rangeStart, rangeEnd, grid);
     final wallNow = profileWallNow();
     final nowLabel = nowTop != null
@@ -92,8 +92,8 @@ extension PlanningTimeViewTimeViewCanvas on PlanningTimeViewCoordinator {
                         child: Text(
                           hourLabel(visibleHours[i]),
                           style: Theme.of(host.context).textTheme.labelSmall?.copyWith(
-                            color: scheme.onSurfaceVariant,
-                            fontWeight: FontWeight.w500,
+                            color: scheme.onSurface.withValues(alpha: 0.66),
+                            fontWeight: FontWeight.w600,
                             fontSize: 11,
                           ),
                         ),
@@ -111,7 +111,7 @@ extension PlanningTimeViewTimeViewCanvas on PlanningTimeViewCoordinator {
                                 vertical: 2,
                               ),
                               decoration: BoxDecoration(
-                                color: scheme.primary.withValues(alpha: 0.92),
+                                color: scheme.primary.withValues(alpha: 0.98),
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Text(
@@ -145,14 +145,14 @@ extension PlanningTimeViewTimeViewCanvas on PlanningTimeViewCoordinator {
                           decoration: BoxDecoration(
                             color: Color.alphaBlend(
                               scheme.surfaceContainerHighest.withValues(
-                                alpha: 0.10,
+                                alpha: 0.22,
                               ),
                               scheme.surface,
                             ),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
                               color: scheme.outlineVariant.withValues(
-                                alpha: 0.16,
+                                alpha: 0.24,
                               ),
                             ),
                           ),
@@ -189,7 +189,7 @@ extension PlanningTimeViewTimeViewCanvas on PlanningTimeViewCoordinator {
                                   visualDensity: VisualDensity.compact,
                                   style: IconButton.styleFrom(
                                     foregroundColor: scheme.onSurfaceVariant
-                                        .withValues(alpha: 0.38),
+                                        .withValues(alpha: 0.44),
                                     tapTargetSize:
                                         MaterialTapTargetSize.shrinkWrap,
                                   ),
@@ -310,10 +310,10 @@ extension PlanningTimeViewTimeViewCanvas on PlanningTimeViewCoordinator {
                           right: 0,
                           child: IgnorePointer(
                             child: Container(
-                              height: 2,
+                              height: 3,
                               decoration: BoxDecoration(
-                                color: scheme.primary.withValues(alpha: 0.85),
-                                borderRadius: BorderRadius.circular(1),
+                                color: scheme.primary,
+                                borderRadius: BorderRadius.circular(1.5),
                               ),
                             ),
                           ),
