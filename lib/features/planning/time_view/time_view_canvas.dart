@@ -40,7 +40,9 @@ extension PlanningTimeViewTimeViewCanvas on PlanningTimeViewCoordinator {
     final layouts = durationResult.layouts;
     final canvasHeight = timelineCanvasHeightPx(grid);
     final gridColor = scheme.outlineVariant.withValues(alpha: 0.18);
-    final railColor = scheme.onSurfaceVariant.withValues(alpha: 0.34);
+    final railColor = scheme.brightness == Brightness.light
+        ? const Color(0xFFB6C0CC)
+        : const Color(0xFF667483);
     final nowTop = timelineNowLineTopPx(planWallDay, rangeStart, rangeEnd, grid);
     final wallNow = profileWallNow();
     final nowLabel = nowTop != null
@@ -127,12 +129,8 @@ extension PlanningTimeViewTimeViewCanvas on PlanningTimeViewCoordinator {
                                 width: 7,
                                 height: 7,
                                 decoration: BoxDecoration(
-                                  color: scheme.surface,
+                                  color: railColor,
                                   shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: railColor,
-                                    width: 1.4,
-                                  ),
                                 ),
                               ),
                             ),
