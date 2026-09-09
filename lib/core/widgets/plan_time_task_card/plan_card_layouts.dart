@@ -289,7 +289,7 @@ class TimeViewVerticalShell extends StatelessWidget {
   }
 }
 
-/// VerySmall 56px — full-size controls with invariant 12px edge insets.
+/// VerySmall 56–79px — full-size controls with invariant 12px edge insets.
 class TimeViewVerySmallLayout extends StatelessWidget {
   const TimeViewVerySmallLayout({
     required this.common,
@@ -307,37 +307,40 @@ class TimeViewVerySmallLayout extends StatelessWidget {
       menu: common.onOpenMenu != null
           ? PlanCardMenuButton(onOpenMenu: common.onOpenMenu!)
           : null,
-      center: PlanCardBodyTapShell(
-        onTap: common.onBodyTap,
-        onLongPress: common.onBodyLongPress,
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Expanded(
-              child: PlanCardTitleRow(
-                title: common.task.title,
-                displayIsDone: common.displayIsDone,
-                hasRepeat: common.hasRepeat,
-                maxLines: 1,
-                metaIcons: common.metaIcons,
+      center: SizedBox(
+        height: PlanCardGeom.controlSize,
+        child: PlanCardBodyTapShell(
+          onTap: common.onBodyTap,
+          onLongPress: common.onBodyLongPress,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: PlanCardTitleRow(
+                  title: common.task.title,
+                  displayIsDone: common.displayIsDone,
+                  hasRepeat: common.hasRepeat,
+                  maxLines: 1,
+                  metaIcons: common.metaIcons,
+                ),
               ),
-            ),
-            if (common.visibleTags.isNotEmpty) ...[
-              const SizedBox(width: 4),
-              TimeViewTagStack(tags: common.visibleTags),
+              if (common.visibleTags.isNotEmpty) ...[
+                const SizedBox(width: 4),
+                TimeViewTagStack(tags: common.visibleTags),
+              ],
+              if (common.timeLabel.isNotEmpty) ...[
+                const SizedBox(width: 6),
+                PlanCardTimeText(label: common.timeLabel),
+              ],
             ],
-            if (common.timeLabel.isNotEmpty) ...[
-              const SizedBox(width: 6),
-              PlanCardTimeText(label: common.timeLabel),
-            ],
-          ],
+          ),
         ),
       ),
     );
   }
 }
 
-/// Small 57–68px — title row + tags/time metadata row.
+/// Small 80–99px — title centered on the checkbox, metadata below.
 class TimeViewSmallLayout extends StatelessWidget {
   const TimeViewSmallLayout({required this.common, required this.heightPx});
 
@@ -354,7 +357,7 @@ class TimeViewSmallLayout extends StatelessWidget {
   }
 }
 
-/// MoreCompact 69–94px — two rows with the same edge rhythm.
+/// MoreCompact 100–119px — two rows with the same edge rhythm.
 class TimeViewMoreCompactLayout extends StatelessWidget {
   const TimeViewMoreCompactLayout({
     required this.common,
@@ -402,12 +405,18 @@ class TimeViewTwoRowCenterLayout extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            PlanCardTitleRow(
-              title: common.task.title,
-              displayIsDone: common.displayIsDone,
-              hasRepeat: common.hasRepeat,
-              maxLines: 1,
-              metaIcons: common.metaIcons,
+            SizedBox(
+              height: PlanCardGeom.controlSize,
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: PlanCardTitleRow(
+                  title: common.task.title,
+                  displayIsDone: common.displayIsDone,
+                  hasRepeat: common.hasRepeat,
+                  maxLines: 1,
+                  metaIcons: common.metaIcons,
+                ),
+              ),
             ),
             const SizedBox(height: 2),
             TimeViewTagsRow(
@@ -423,7 +432,7 @@ class TimeViewTwoRowCenterLayout extends StatelessWidget {
   }
 }
 
-/// Compact 95–112px — full metadata within invariant edge insets.
+/// Compact 120–139px — full metadata within invariant edge insets.
 class TimeViewCompactLayout extends StatelessWidget {
   const TimeViewCompactLayout({required this.common, required this.heightPx});
 
@@ -444,9 +453,9 @@ class TimeViewCompactLayout extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             SizedBox(
-              height: 20,
+              height: PlanCardGeom.controlSize,
               child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Expanded(
                     child: PlanCardTitleRow(
@@ -486,7 +495,7 @@ class TimeViewCompactLayout extends StatelessWidget {
   }
 }
 
-/// Medium 113px+ — full CardPlan hierarchy.
+/// Medium 140px+ — full CardPlan hierarchy.
 class TimeViewMediumLayout extends StatelessWidget {
   const TimeViewMediumLayout({required this.common, required this.heightPx});
 
@@ -513,9 +522,9 @@ class TimeViewMediumLayout extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             SizedBox(
-              height: PlanCardGeom.titleRowHeight,
+              height: PlanCardGeom.controlSize,
               child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Expanded(
                     child: PlanCardTitleRow(
@@ -657,12 +666,18 @@ class TimelinePlanCardSmall extends StatelessWidget {
                   ? Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        PlanCardTitleRow(
-                          title: task.title,
-                          displayIsDone: displayIsDone,
-                          hasRepeat: hasRepeat,
-                          maxLines: 1,
-                          metaIcons: metaIcons,
+                        SizedBox(
+                          height: PlanCardGeom.controlSize,
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: PlanCardTitleRow(
+                              title: task.title,
+                              displayIsDone: displayIsDone,
+                              hasRepeat: hasRepeat,
+                              maxLines: 1,
+                              metaIcons: metaIcons,
+                            ),
+                          ),
                         ),
                         const Spacer(),
                         PlanCardFooterRow(
@@ -677,12 +692,18 @@ class TimelinePlanCardSmall extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        PlanCardTitleRow(
-                          title: task.title,
-                          displayIsDone: displayIsDone,
-                          hasRepeat: hasRepeat,
-                          maxLines: 1,
-                          metaIcons: metaIcons,
+                        SizedBox(
+                          height: PlanCardGeom.controlSize,
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: PlanCardTitleRow(
+                              title: task.title,
+                              displayIsDone: displayIsDone,
+                              hasRepeat: hasRepeat,
+                              maxLines: 1,
+                              metaIcons: metaIcons,
+                            ),
+                          ),
                         ),
                         if (showTagRow)
                           Padding(
