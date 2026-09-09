@@ -354,6 +354,7 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
       body: SafeArea(
         top: false,
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Expanded(
               child: RepaintBoundary(
@@ -428,7 +429,7 @@ double? _defaultStrokeWidth(NotesDrawingTool tool) => switch (tool) {
   NotesDrawingTool.highlighter => 24,
   NotesDrawingTool.brush => 14,
   NotesDrawingTool.fountainPen => 8,
-  NotesDrawingTool.eraser => 24,
+  NotesDrawingTool.eraser => 36,
   NotesDrawingTool.lasso => null,
 };
 
@@ -466,7 +467,9 @@ class _DrawingPreset {
 }
 
 _DrawingPreset _drawingPreset(NotesDrawingTool tool, double size) {
-  final safeSize = size.clamp(1.0, 40.0).toDouble();
+  final safeSize = size
+      .clamp(1.0, tool == NotesDrawingTool.eraser ? 96.0 : 40.0)
+      .toDouble();
   return switch (tool) {
     NotesDrawingTool.pencil => _DrawingPreset(
       kind: _DrawingStrokeKind.outline,
