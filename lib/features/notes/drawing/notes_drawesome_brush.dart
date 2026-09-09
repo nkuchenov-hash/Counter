@@ -28,7 +28,10 @@ final class NotesDrawesomeBrush {
     double smoothing = 0.62,
   }) {
     final safeSize = math.max(0.5, size);
-    final points = _streamline(rawPoints, streamline.clamp(0.0, 1.0));
+    final points = _streamline(
+      rawPoints,
+      streamline.clamp(0.0, 1.0).toDouble(),
+    );
     if (points.isEmpty) return Path();
     if (points.length == 1) {
       final radius = safeSize / 2;
@@ -38,8 +41,8 @@ final class NotesDrawesomeBrush {
     final radii = _pressureRadii(
       points,
       size: safeSize,
-      thinning: thinning.clamp(0.0, 1.0),
-      smoothing: smoothing.clamp(0.0, 1.0),
+      thinning: thinning.clamp(0.0, 1.0).toDouble(),
+      smoothing: smoothing.clamp(0.0, 1.0).toDouble(),
     );
     final left = <Offset>[];
     final right = <Offset>[];
@@ -84,7 +87,10 @@ final class NotesDrawesomeBrush {
     List<Offset> rawPoints, {
     double streamline = 0.56,
   }) {
-    final points = _streamline(rawPoints, streamline.clamp(0.0, 1.0));
+    final points = _streamline(
+      rawPoints,
+      streamline.clamp(0.0, 1.0).toDouble(),
+    );
     final path = Path();
     if (points.isEmpty) return path;
     path.moveTo(points.first.dx, points.first.dy);
@@ -145,8 +151,12 @@ final class NotesDrawesomeBrush {
     for (var i = 0; i < points.length; i++) {
       if (i > 0) {
         final distance = (points[i] - points[i - 1]).distance;
-        final normalizedSpeed = (distance / (size * 2.4)).clamp(0.0, 1.0);
-        final targetPressure = (1 - normalizedSpeed).clamp(0.12, 1.0);
+        final normalizedSpeed = (distance / (size * 2.4))
+            .clamp(0.0, 1.0)
+            .toDouble();
+        final targetPressure = (1 - normalizedSpeed)
+            .clamp(0.12, 1.0)
+            .toDouble();
         pressure += (targetPressure - pressure) * pressureFollow;
       }
 
