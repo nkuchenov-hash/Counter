@@ -13,15 +13,20 @@ enum PlanTimeCardVisualDensity {
   medium,
 }
 
-/// Maps final rendered block height to CardPlan visual density.
+/// Maps final rendered block height to the canonical CardPlan layout.
+///
+/// The 56px minimum keeps the 32px checkbox/control at full size with the
+/// invariant 12px edge inset. Short cards stay one-row until there is enough
+/// real height for the metadata row; as soon as the card can safely fit the
+/// richer canonical layout, it must use it instead of hiding card content.
 PlanTimeCardVisualDensity planTimeCardVisualDensityForRenderedHeight(
   double renderedHeightPx,
 ) {
   final h = math.max(renderedHeightPx, kPlanTimeCardMinHeightPx);
-  if (h <= 79) return PlanTimeCardVisualDensity.verySmall;
-  if (h <= 99) return PlanTimeCardVisualDensity.small;
-  if (h <= 119) return PlanTimeCardVisualDensity.moreCompact;
-  if (h <= 139) return PlanTimeCardVisualDensity.compact;
+  if (h <= 73) return PlanTimeCardVisualDensity.verySmall;
+  if (h <= 79) return PlanTimeCardVisualDensity.small;
+  if (h <= 94) return PlanTimeCardVisualDensity.moreCompact;
+  if (h <= 112) return PlanTimeCardVisualDensity.compact;
   return PlanTimeCardVisualDensity.medium;
 }
 
