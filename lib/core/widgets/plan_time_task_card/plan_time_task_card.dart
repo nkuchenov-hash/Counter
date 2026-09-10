@@ -205,9 +205,10 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard>
 
     final effectiveDensity = widget.density;
     final useInvariantSlots =
-        (effectiveDensity == PlanTimeTaskCardDensity.medium ||
-            effectiveDensity == PlanTimeTaskCardDensity.large) &&
-        widget.showProgressBar;
+        widget.showProgressBar &&
+        (isTimeViewCard ||
+            effectiveDensity == PlanTimeTaskCardDensity.medium ||
+            effectiveDensity == PlanTimeTaskCardDensity.large);
     const cardSpacing = PlanCardVerticalSpacing.shared;
     final progressSlot = useInvariantSlots
         ? PlanCardProgressSlot(
@@ -362,10 +363,7 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard>
                   offset: const Offset(0, 3),
                 ),
               ]
-            : PlanCardTokens.cardShadow(
-                widget.interacting,
-                hovered: hovered,
-              ),
+            : PlanCardTokens.cardShadow(widget.interacting, hovered: hovered),
       ),
       child: ClipRRect(
         clipBehavior: Clip.none,
@@ -374,8 +372,7 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard>
           builder: (context, constraints) {
             final w = constraints.maxWidth;
             final timelineBlockH = widget.timelineBlockHeightPx;
-            final measuredH =
-                isTimeViewCard && timelineBlockH != null
+            final measuredH = isTimeViewCard && timelineBlockH != null
                 ? timelineBlockH
                 : planTimeCardMeasureHeight(
                     hasTags: _visibleTags.isNotEmpty,
@@ -435,9 +432,7 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard>
                           if (timeViewTrailingPlay && timeViewTrailingMenu)
                             const SizedBox(width: 8),
                           if (timeViewTrailingMenu)
-                            PlanCardMenuButton(
-                              onOpenMenu: widget.onOpenMenu!,
-                            ),
+                            PlanCardMenuButton(onOpenMenu: widget.onOpenMenu!),
                         ],
                       ),
                     ),

@@ -20,11 +20,11 @@ const double kPlanTimeHourVerticalPaddingPx = 4.0;
 /// Visual height of a full 60-minute card (Medium anchor).
 const double kPlanTimeOneHourCardHeightPx = 120.0;
 
-/// Dense hour: at most six 10-minute cards with stable 56px card geometry.
+/// Dense hour: six exact 10-minute starts. Each 60px slot can preserve
+/// the canonical 56px minimum card plus the 4px boundary gap.
 const int kPlanTimeMaxCardsPerHour = 6;
 const double kPlanTimeMaxHourHeightPx =
-    kPlanTimeMaxCardsPerHour * kPlanTimeMinCardHeightPx +
-    (kPlanTimeMaxCardsPerHour - 1) * kPlanTimeCardGapPx;
+    kPlanTimeMaxCardsPerHour * (kPlanTimeMinCardHeightPx + kPlanTimeCardGapPx);
 
 /// Hard cap for a single hour band (prevents infinite day growth).
 const double kPlanTimeMaxReasonableHourHeightPx = kPlanTimeMaxHourHeightPx;
@@ -40,8 +40,7 @@ double planTimeCardRenderedHeightPxForDuration(int durationMinutes) {
   if (dur <= 60) {
     return 75 + (dur - 30) * (kPlanTimeOneHourCardHeightPx - 75) / 30;
   }
-  return kPlanTimeOneHourCardHeightPx +
-      math.sqrt((dur - 60).toDouble()) * 8;
+  return kPlanTimeOneHourCardHeightPx + math.sqrt((dur - 60).toDouble()) * 8;
 }
 
 /// Default hour band height before stretch.
