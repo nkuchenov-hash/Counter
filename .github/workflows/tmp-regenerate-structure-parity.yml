@@ -26,7 +26,7 @@ jobs:
           git rm .github/workflows/tmp-regenerate-structure-parity.yml
           python scripts/manual/generate_app_structure_detailed.py
           python scripts/audit/documentation_parity.py
-          git add docs/APP_STRUCTURE_DETAILED.md .github/workflows/tmp-regenerate-structure-parity.yml
+          git add -A
           git diff --cached --check
           git commit -m "Regenerate detailed structure parity"
           git push origin HEAD:docs/restore-structure-parity-20260910
