@@ -167,7 +167,7 @@ double planCardBodyGestureLeftInsetPx(
 /// Right inset for timeline drag/tap body zone.
 ///
 /// Time View renders Play + Menu as trailing controls. The body drag/tap
-/// overlay must stop before both controls so pointer hover/tap reaches them.
+/// overlay stops before both controls so their hover and click targets stay live.
 double planCardBodyGestureRightInsetPx({
   bool hasPlay = false,
   bool hasMenu = true,
