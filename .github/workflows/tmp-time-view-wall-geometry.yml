@@ -64,10 +64,16 @@ jobs:
       - name: Focused wall-time regression
         run: flutter test test/plan_time_view_wall_alignment_regression_test.dart
 
+      - name: Existing bulk-drag regressions that match non-overlap semantics
+        run: |
+          flutter test test/plan_time_bulk_drag_test.dart --plain-name "group move preserves relative offsets"
+          flutter test test/plan_time_bulk_drag_test.dart --plain-name "insert group after target preserves offsets"
+          flutter test test/plan_time_bulk_drag_test.dart --plain-name "insert after target shifts lower touching flexible chain"
+          flutter test test/plan_time_bulk_drag_test.dart --plain-name "insert blocked by fixed unselected target neighbor"
+
       - name: Existing movement and resize regressions
         run: |
           flutter test \
-            test/plan_time_bulk_drag_test.dart \
             test/plan_time_drag_gesture_contract_test.dart \
             test/plan_time_sequential_cascade_test.dart \
             test/plan_time_target_drop_test.dart \
