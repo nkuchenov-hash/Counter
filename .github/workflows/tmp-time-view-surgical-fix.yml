@@ -30,16 +30,30 @@ jobs:
           else
             echo "skip=false" >> "$GITHUB_OUTPUT"
           fi
-      - name: Apply surgical geometry and progress fixes
+      - name: Apply and validate surgical fix
         if: steps.gate.outputs.skip != 'true'
         shell: bash
         run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('tools/tmp_patch_time_view.py')
+          source = path.read_text(encoding='utf-8')
+          old = """      assert(\n        (layout.topPx - expectedTop).abs() < 0.51,\n        'TIME_VIEW_WALL_START_MISMATCH: '\n        'top ${layout.topPx} != wall-time y $expectedTop',\n      );\n'''"""
+          new = """      assert(\n        (layout.topPx - expectedTop).abs() < 0.51,\n        'TIME_VIEW_WALL_START_MISMATCH: '\n        'top ${layout.topPx} != wall-time y $expectedTop',\n      );\n    }\n'''"""
+          if old not in source:
+              raise SystemExit('assert-loop patch target not found')
+          path.write_text(source.replace(old, new, 1), encoding='utf-8')
+          PY
           python3 tools/tmp_patch_time_view.py
           dart format \
             lib/features/planning/plan_time_view_layout.dart \
             lib/core/widgets/plan_time_task_card/plan_time_task_card.dart \
             lib/core/widgets/plan_time_task_card/plan_card_metrics.dart \
             test/plan_time_view_wall_alignment_regression_test.dart
+          flutter pub get
+          flutter test test/plan_time_view_wall_alignment_regression_test.dart
+          flutter analyze --no-fatal-infos --no-fatal-warnings
+          flutter build web --release --base-href="/Counter/" --no-tree-shake-icons --no-wasm-dry-run
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add \
