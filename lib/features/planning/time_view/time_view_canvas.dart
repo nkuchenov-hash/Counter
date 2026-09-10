@@ -39,10 +39,17 @@ extension PlanningTimeViewTimeViewCanvas on PlanningTimeViewCoordinator {
     final grid = durationResult.grid;
     final layouts = durationResult.layouts;
     final canvasHeight = timelineCanvasHeightPx(grid);
-    final gridColor = scheme.outlineVariant.withValues(alpha: 0.18);
+    final canvasSurface = scheme.brightness == Brightness.light
+        ? Color.alphaBlend(
+            scheme.surfaceContainerHighest.withValues(alpha: 0.24),
+            scheme.surface,
+          )
+        : scheme.surfaceContainerLow;
+    final gridColor = scheme.outlineVariant.withValues(alpha: 0.30);
     final railColor = scheme.brightness == Brightness.light
-        ? const Color(0xFFB6C0CC)
-        : const Color(0xFF667483);
+        ? const Color(0xFFA6B1BE)
+        : const Color(0xFF748190);
+    final nowLineColor = scheme.error.withValues(alpha: 0.94);
     final nowTop = timelineNowLineTopPx(planWallDay, rangeStart, rangeEnd, grid);
     if (nowTop != null) {
       maybeAutoScrollTimelineToNow(nowTop, canvasHeight);
@@ -69,8 +76,9 @@ extension PlanningTimeViewTimeViewCanvas on PlanningTimeViewCoordinator {
       return compact ? '$mod' : clock;
     }
 
-    final canvas = SizedBox(
+    final canvas = Container(
       height: canvasHeight + 8,
+      color: canvasSurface,
       child: Align(
         alignment: Alignment.topCenter,
         child: ConstrainedBox(
@@ -110,7 +118,7 @@ extension PlanningTimeViewTimeViewCanvas on PlanningTimeViewCoordinator {
                                   .labelSmall
                                   ?.copyWith(
                                     color: scheme.onSurface.withValues(
-                                      alpha: 0.64,
+                                      alpha: 0.72,
                                     ),
                                     fontWeight: FontWeight.w600,
                                     fontSize: 11,
@@ -176,7 +184,7 @@ extension PlanningTimeViewTimeViewCanvas on PlanningTimeViewCoordinator {
                                           style: IconButton.styleFrom(
                                             foregroundColor: scheme
                                                 .onSurfaceVariant
-                                                .withValues(alpha: 0.38),
+                                                .withValues(alpha: 0.42),
                                             tapTargetSize:
                                                 MaterialTapTargetSize.shrinkWrap,
                                           ),
@@ -312,12 +320,10 @@ extension PlanningTimeViewTimeViewCanvas on PlanningTimeViewCoordinator {
                                   right: 0,
                                   child: IgnorePointer(
                                     child: Container(
-                                      height: 2,
+                                      height: 3,
                                       decoration: BoxDecoration(
-                                        color: scheme.primary.withValues(
-                                          alpha: 0.78,
-                                        ),
-                                        borderRadius: BorderRadius.circular(1),
+                                        color: nowLineColor,
+                                        borderRadius: BorderRadius.circular(2),
                                       ),
                                     ),
                                   ),
