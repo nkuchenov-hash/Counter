@@ -39,10 +39,17 @@ extension PlanningTimeViewTimeViewCanvas on PlanningTimeViewCoordinator {
     final grid = durationResult.grid;
     final layouts = durationResult.layouts;
     final canvasHeight = timelineCanvasHeightPx(grid);
-    final gridColor = scheme.outlineVariant.withValues(alpha: 0.18);
+    final canvasSurface = scheme.brightness == Brightness.light
+        ? Color.alphaBlend(
+            scheme.surfaceContainerHighest.withValues(alpha: 0.24),
+            scheme.surface,
+          )
+        : scheme.surfaceContainerLow;
+    final gridColor = scheme.outlineVariant.withValues(alpha: 0.30);
     final railColor = scheme.brightness == Brightness.light
-        ? const Color(0xFFB6C0CC)
-        : const Color(0xFF667483);
+        ? const Color(0xFFA6B1BE)
+        : const Color(0xFF748190);
+    final nowLineColor = scheme.error.withValues(alpha: 0.94);
     final nowTop = timelineNowLineTopPx(planWallDay, rangeStart, rangeEnd, grid);
     if (nowTop != null) {
       maybeAutoScrollTimelineToNow(nowTop, canvasHeight);
@@ -71,264 +78,265 @@ extension PlanningTimeViewTimeViewCanvas on PlanningTimeViewCoordinator {
 
     final canvas = SizedBox(
       height: canvasHeight + 8,
-      child: Align(
-        alignment: Alignment.topCenter,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(
-            maxWidth: kPlanningTimeViewMaxContentWidth,
-          ),
-          child: SizedBox(
-            width: double.infinity,
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: contentHorizontalInset),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SizedBox(
-                    width: railWidth,
-                    height: canvasHeight,
-                    child: Stack(
-                      clipBehavior: Clip.none,
-                      children: [
-                        Positioned(
-                          top: 0,
-                          bottom: 0,
-                          left: axisX,
-                          child: IgnorePointer(
-                            child: Container(width: 1, color: railColor),
-                          ),
-                        ),
-                        for (var i = 0; i < visibleHours.length; i++) ...[
+      child: ColoredBox(
+        color: canvasSurface,
+        child: Align(
+          alignment: Alignment.topCenter,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(
+              maxWidth: kPlanningTimeViewMaxContentWidth,
+            ),
+            child: SizedBox(
+              width: double.infinity,
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: contentHorizontalInset),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(
+                      width: railWidth,
+                      height: canvasHeight,
+                      child: Stack(
+                        clipBehavior: Clip.none,
+                        children: [
                           Positioned(
-                            top: grid.hourLineY(i) - 6,
-                            left: 0,
-                            right: 14,
-                            child: Text(
-                              hourLabel(visibleHours[i]),
-                              style: Theme.of(host.context)
-                                  .textTheme
-                                  .labelSmall
-                                  ?.copyWith(
-                                    color: scheme.onSurface.withValues(
-                                      alpha: 0.64,
-                                    ),
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 11,
-                                  ),
+                            top: 0,
+                            bottom: 0,
+                            left: axisX,
+                            child: IgnorePointer(
+                              child: Container(width: 1, color: railColor),
                             ),
                           ),
-                          Positioned(
-                            top: grid.hourLineY(i) - 3,
-                            left: axisX - 3,
-                            child: IgnorePointer(
-                              child: Container(
-                                width: 7,
-                                height: 7,
-                                decoration: BoxDecoration(
-                                  color: railColor,
-                                  shape: BoxShape.circle,
+                          for (var i = 0; i < visibleHours.length; i++) ...[
+                            Positioned(
+                              top: grid.hourLineY(i) - 6,
+                              left: 0,
+                              right: 14,
+                              child: Text(
+                                hourLabel(visibleHours[i]),
+                                style: Theme.of(host.context)
+                                    .textTheme
+                                    .labelSmall
+                                    ?.copyWith(
+                                      color: scheme.onSurface.withValues(
+                                        alpha: 0.72,
+                                      ),
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 11,
+                                    ),
+                              ),
+                            ),
+                            Positioned(
+                              top: grid.hourLineY(i) - 3,
+                              left: axisX - 3,
+                              child: IgnorePointer(
+                                child: Container(
+                                  width: 7,
+                                  height: 7,
+                                  decoration: BoxDecoration(
+                                    color: railColor,
+                                    shape: BoxShape.circle,
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
+                          ],
                         ],
-                      ],
+                      ),
                     ),
-                  ),
-                  Expanded(
-                    child: SizedBox(
-                      height: canvasHeight,
-                      child: LayoutBuilder(
-                        builder: (context, constraints) {
-                          return Stack(
-                            clipBehavior: Clip.none,
-                            children: [
-                              for (var i = 0; i < visibleHours.length; i++)
-                                Positioned(
-                                  top: grid.hourLineY(i),
-                                  left: 0,
-                                  right: 0,
-                                  height: grid.hourHeightPxAtIndex(i),
-                                  child: Stack(
-                                    children: [
-                                      Positioned(
-                                        top: 0,
-                                        left: 0,
-                                        right: 0,
-                                        child: Divider(
-                                          height: 1,
-                                          thickness: 1,
-                                          color: gridColor,
-                                        ),
-                                      ),
-                                      Positioned(
-                                        top: 0,
-                                        right: 4,
-                                        child: IconButton(
-                                          tooltip: t(loc, 'plan_quick_add_hour'),
-                                          padding: EdgeInsets.zero,
-                                          constraints:
-                                              const BoxConstraints.tightFor(
-                                                width: 28,
-                                                height: 28,
-                                              ),
-                                          visualDensity: VisualDensity.compact,
-                                          style: IconButton.styleFrom(
-                                            foregroundColor: scheme
-                                                .onSurfaceVariant
-                                                .withValues(alpha: 0.38),
-                                            tapTargetSize:
-                                                MaterialTapTargetSize.shrinkWrap,
+                    Expanded(
+                      child: SizedBox(
+                        height: canvasHeight,
+                        child: LayoutBuilder(
+                          builder: (context, constraints) {
+                            return Stack(
+                              clipBehavior: Clip.none,
+                              children: [
+                                for (var i = 0; i < visibleHours.length; i++)
+                                  Positioned(
+                                    top: grid.hourLineY(i),
+                                    left: 0,
+                                    right: 0,
+                                    height: grid.hourHeightPxAtIndex(i),
+                                    child: Stack(
+                                      children: [
+                                        Positioned(
+                                          top: 0,
+                                          left: 0,
+                                          right: 0,
+                                          child: Divider(
+                                            height: 1,
+                                            thickness: 1,
+                                            color: gridColor,
                                           ),
-                                          iconSize: 18,
-                                          icon: const Icon(Icons.add_rounded),
-                                          onPressed: () => host
-                                              .openQuickAddForHour(
-                                                visibleHours[i],
-                                              ),
                                         ),
-                                      ),
-                                      Positioned.fill(
-                                        child: DragTarget<PlanningTask>(
-                                          hitTestBehavior:
-                                              HitTestBehavior.translucent,
-                                          onWillAcceptWithDetails: (_) =>
-                                              !host.planSelectMode &&
-                                              timelineVerticalDragPlanKey ==
-                                                  null &&
-                                              timelineResizePlanKey == null,
-                                          onAcceptWithDetails: (details) {
-                                            unawaited(
-                                              onPlanningTaskDroppedOnHour(
-                                                details.data,
-                                                visibleHours[i],
-                                              ),
-                                            );
-                                          },
-                                          builder:
-                                              (context, candidate, rejected) {
-                                                final hover =
-                                                    candidate.isNotEmpty;
-                                                return GestureDetector(
-                                                  behavior: HitTestBehavior
-                                                      .translucent,
-                                                  onTap: () => host
-                                                      .openQuickAddForHour(
-                                                        visibleHours[i],
+                                        Positioned(
+                                          top: 0,
+                                          right: 4,
+                                          child: IconButton(
+                                            tooltip: t(loc, 'plan_quick_add_hour'),
+                                            padding: EdgeInsets.zero,
+                                            constraints:
+                                                const BoxConstraints.tightFor(
+                                                  width: 28,
+                                                  height: 28,
+                                                ),
+                                            visualDensity: VisualDensity.compact,
+                                            style: IconButton.styleFrom(
+                                              foregroundColor: scheme
+                                                  .onSurfaceVariant
+                                                  .withValues(alpha: 0.42),
+                                              tapTargetSize:
+                                                  MaterialTapTargetSize.shrinkWrap,
+                                            ),
+                                            iconSize: 18,
+                                            icon: const Icon(Icons.add_rounded),
+                                            onPressed: () => host
+                                                .openQuickAddForHour(
+                                                  visibleHours[i],
+                                                ),
+                                          ),
+                                        ),
+                                        Positioned.fill(
+                                          child: DragTarget<PlanningTask>(
+                                            hitTestBehavior:
+                                                HitTestBehavior.translucent,
+                                            onWillAcceptWithDetails: (_) =>
+                                                !host.planSelectMode &&
+                                                timelineVerticalDragPlanKey ==
+                                                    null &&
+                                                timelineResizePlanKey == null,
+                                            onAcceptWithDetails: (details) {
+                                              unawaited(
+                                                onPlanningTaskDroppedOnHour(
+                                                  details.data,
+                                                  visibleHours[i],
+                                                ),
+                                              );
+                                            },
+                                            builder:
+                                                (context, candidate, rejected) {
+                                                  final hover =
+                                                      candidate.isNotEmpty;
+                                                  return GestureDetector(
+                                                    behavior: HitTestBehavior
+                                                        .translucent,
+                                                    onTap: () => host
+                                                        .openQuickAddForHour(
+                                                          visibleHours[i],
+                                                        ),
+                                                    child: AnimatedContainer(
+                                                      duration: const Duration(
+                                                        milliseconds: 120,
                                                       ),
-                                                  child: AnimatedContainer(
-                                                    duration: const Duration(
-                                                      milliseconds: 120,
+                                                      decoration: BoxDecoration(
+                                                        color: hover
+                                                            ? scheme
+                                                                  .primaryContainer
+                                                                  .withValues(
+                                                                    alpha: 0.28,
+                                                                  )
+                                                            : null,
+                                                      ),
                                                     ),
-                                                    decoration: BoxDecoration(
-                                                      color: hover
-                                                          ? scheme
-                                                                .primaryContainer
-                                                                .withValues(
-                                                                  alpha: 0.28,
-                                                                )
-                                                          : null,
-                                                    ),
-                                                  ),
-                                                );
-                                              },
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              if (timelineDragInsertMarkerTopPx != null &&
-                                  timelineVerticalDragPlanKey != null)
-                                Positioned(
-                                  top: timelineDragInsertMarkerTopPx!.clamp(
-                                    0,
-                                    canvasHeight - 4,
-                                  ),
-                                  left: 6,
-                                  right: 6,
-                                  child: Container(
-                                    height: 3,
-                                    decoration: BoxDecoration(
-                                      color: scheme.primary.withValues(
-                                        alpha: 0.62,
-                                      ),
-                                      borderRadius: BorderRadius.circular(2),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: scheme.primary.withValues(
-                                            alpha: 0.2,
+                                                  );
+                                                },
                                           ),
-                                          blurRadius: 4,
-                                          offset: const Offset(0, 1),
                                         ),
                                       ],
                                     ),
                                   ),
-                                ),
-                              ...[
-                                ...layouts
-                                    .where(
-                                      (l) =>
-                                          host.planKey(l.task) !=
-                                          timelineElevatedPlanKey(),
-                                    )
-                                    .map(
-                                      (layout) => buildTimelinePlanStackLayer(
-                                        layout: layout,
-                                        canvasHeight: canvasHeight,
-                                        scheme: scheme,
-                                        planWallDay: planWallDay,
-                                        rangeStart: rangeStart,
-                                        rangeEnd: rangeEnd,
-                                        selectedDayKey: selectedDayKey,
-                                        planActualByPbId: planActualByPbId,
-                                        scheduledInRange: scheduledInRange,
-                                      ),
+                                if (timelineDragInsertMarkerTopPx != null &&
+                                    timelineVerticalDragPlanKey != null)
+                                  Positioned(
+                                    top: timelineDragInsertMarkerTopPx!.clamp(
+                                      0,
+                                      canvasHeight - 4,
                                     ),
-                                ...layouts
-                                    .where(
-                                      (l) =>
-                                          host.planKey(l.task) ==
-                                          timelineElevatedPlanKey(),
-                                    )
-                                    .map(
-                                      (layout) => buildTimelinePlanStackLayer(
-                                        layout: layout,
-                                        canvasHeight: canvasHeight,
-                                        scheme: scheme,
-                                        planWallDay: planWallDay,
-                                        rangeStart: rangeStart,
-                                        rangeEnd: rangeEnd,
-                                        selectedDayKey: selectedDayKey,
-                                        planActualByPbId: planActualByPbId,
-                                        scheduledInRange: scheduledInRange,
-                                      ),
-                                    ),
-                              ],
-                              if (nowTop != null)
-                                Positioned(
-                                  top: nowTop.clamp(0, canvasHeight - 1),
-                                  left: 0,
-                                  right: 0,
-                                  child: IgnorePointer(
+                                    left: 6,
+                                    right: 6,
                                     child: Container(
-                                      height: 2,
+                                      height: 3,
                                       decoration: BoxDecoration(
                                         color: scheme.primary.withValues(
-                                          alpha: 0.78,
+                                          alpha: 0.62,
                                         ),
-                                        borderRadius: BorderRadius.circular(1),
+                                        borderRadius: BorderRadius.circular(2),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: scheme.primary.withValues(
+                                              alpha: 0.2,
+                                            ),
+                                            blurRadius: 4,
+                                            offset: const Offset(0, 1),
+                                          ),
+                                        ],
                                       ),
                                     ),
                                   ),
-                                ),
-                            ],
-                          );
-                        },
+                                ...[
+                                  ...layouts
+                                      .where(
+                                        (l) =>
+                                            host.planKey(l.task) !=
+                                            timelineElevatedPlanKey(),
+                                      )
+                                      .map(
+                                        (layout) => buildTimelinePlanStackLayer(
+                                          layout: layout,
+                                          canvasHeight: canvasHeight,
+                                          scheme: scheme,
+                                          planWallDay: planWallDay,
+                                          rangeStart: rangeStart,
+                                          rangeEnd: rangeEnd,
+                                          selectedDayKey: selectedDayKey,
+                                          planActualByPbId: planActualByPbId,
+                                          scheduledInRange: scheduledInRange,
+                                        ),
+                                      ),
+                                  ...layouts
+                                      .where(
+                                        (l) =>
+                                            host.planKey(l.task) ==
+                                            timelineElevatedPlanKey(),
+                                      )
+                                      .map(
+                                        (layout) => buildTimelinePlanStackLayer(
+                                          layout: layout,
+                                          canvasHeight: canvasHeight,
+                                          scheme: scheme,
+                                          planWallDay: planWallDay,
+                                          rangeStart: rangeStart,
+                                          rangeEnd: rangeEnd,
+                                          selectedDayKey: selectedDayKey,
+                                          planActualByPbId: planActualByPbId,
+                                          scheduledInRange: scheduledInRange,
+                                        ),
+                                      ),
+                                ],
+                                if (nowTop != null)
+                                  Positioned(
+                                    top: nowTop.clamp(0, canvasHeight - 1),
+                                    left: 0,
+                                    right: 0,
+                                    child: IgnorePointer(
+                                      child: Container(
+                                        height: 3,
+                                        decoration: BoxDecoration(
+                                          color: nowLineColor,
+                                          borderRadius: BorderRadius.circular(2),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            );
+                          },
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
