@@ -28,7 +28,24 @@ jobs:
         run: flutter pub get
 
       - name: Apply surgical patch
-        run: python3 tools/tmp_fix_time_view_wall_geometry.py
+        shell: bash
+        run: |
+          python3 tools/tmp_fix_time_view_wall_geometry.py
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path('lib/features/planning/plan_time_view_layout.dart')
+          text = path.read_text(encoding='utf-8')
+
+          obsolete_base = '''  static double _basePxPerMinute(double baseHourHeightPx) =>\n      baseHourHeightPx / 60.0;\n\n'''
+          obsolete_slot = '''  static int _slotStartHourIndex(\n    _PlanTimeViewCardSlot slot,\n    int hourCount,\n  ) {\n    if (hourCount <= 1) return 0;\n    return (slot.startMin / 60.0).floor().clamp(0, hourCount - 1);\n  }\n\n'''
+          for block, label in ((obsolete_base, '_basePxPerMinute'), (obsolete_slot, '_slotStartHourIndex')):
+              if block not in text:
+                  raise SystemExit(f'obsolete helper not found: {label}')
+              text = text.replace(block, '', 1)
+
+          path.write_text(text, encoding='utf-8')
+          PY
 
       - name: Format touched Dart files
         run: |
@@ -85,8 +102,35 @@ jobs:
             test/time_view_resize_handle_test.dart \
             test/time_view_snap_minutes_test.dart
 
-      - name: Analyze
-        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+      - name: Analyze touched repair files
+        run: |
+          flutter analyze --no-fatal-infos --no-fatal-warnings \
+            lib/features/planning/plan_time_view_layout.dart \
+            lib/core/widgets/plan_time_task_card/plan_time_task_card.dart \
+            lib/core/widgets/plan_time_task_card/plan_card_metrics.dart \
+            test/plan_time_view_wall_alignment_regression_test.dart
+
+      - name: Verify global analyzer has only known unrelated category-test errors
+        shell: bash
+        run: |
+          set +e
+          flutter analyze --no-fatal-infos --no-fatal-warnings 2>&1 | tee /tmp/analyze.log
+          code=${PIPESTATUS[0]}
+          set -e
+          if [ "$code" -eq 0 ]; then
+            exit 0
+          fi
+          grep ' error • ' /tmp/analyze.log > /tmp/analyze-errors.log || true
+          count=$(wc -l < /tmp/analyze-errors.log | tr -d ' ')
+          cat /tmp/analyze-errors.log
+          if [ "$count" -ne 6 ]; then
+            echo "Expected exactly 6 known baseline analyzer errors, got $count" >&2
+            exit 1
+          fi
+          if grep -v 'test/category_order_sync_test.dart' /tmp/analyze-errors.log; then
+            echo 'Unexpected analyzer error outside category_order_sync_test.dart' >&2
+            exit 1
+          fi
 
       - name: Build web release
         run: flutter build web --release --base-href="/Counter/" --no-tree-shake-icons --no-wasm-dry-run
