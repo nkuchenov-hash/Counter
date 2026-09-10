@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `3da164b9` on 2026-09-05.**
+**Generated from input HEAD `d2968442` on 2026-09-10.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 861 — each appears **exactly once** below.
+**Tracked files:** 862 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -27,7 +27,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | Role | Count |
 | :--- | ---: |
 | `production UI` | 173 |
-| `test` | 109 |
+| `test` | 110 |
 | `Brain/data` | 91 |
 | `platform build` | 83 |
 | `shared foundation` | 64 |
@@ -57,7 +57,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | Necessity | Count |
 | :--- | ---: |
 | `PROVEN_REQUIRED` | 477 |
-| `REQUIRED_FOR_TEST_OR_TOOLING` | 202 |
+| `REQUIRED_FOR_TEST_OR_TOOLING` | 203 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
 | `GOVERNING_DOCUMENTATION` | 37 |
 | `HISTORICAL_RECORD` | 17 |
@@ -67,7 +67,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 796 |
+| `HIGH` | 797 |
 | `MEDIUM` | 65 |
 
 ---
@@ -12188,7 +12188,7 @@ EN:
 - **Contents:** Canonical Flutter widget (`_OmniDateTimePickerDialog`, `_OmniDateTimePickerDialogState`).
 - **Key code names:** `_OmniDateTimePickerDialog`, `_OmniDateTimePickerDialogState`
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/shared/edit_sheet/parallel_record_panels.dart`, `lib/features/shared/planning_task_edit_sheet.dart`, `lib/features/shared/timeline_record_edit_sheet.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/settings/people/people_person_editor.dart`, `lib/features/shared/edit_sheet/parallel_record_panels.dart`, `lib/features/shared/planning_task_edit_sheet.dart`, `lib/features/shared/timeline_record_edit_sheet.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -12205,7 +12205,7 @@ RU:
 - **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
 - **Содержимое:** Канонический Flutter-виджет (logic in `omni_date_time_picker_dialog`).
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/features/shared/edit_sheet/parallel_record_panels.dart`, `lib/features/shared/planning_task_edit_sheet.dart`, `lib/features/shared/timeline_record_edit_sheet.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/features/settings/people/people_person_editor.dart`, `lib/features/shared/edit_sheet/parallel_record_panels.dart`, `lib/features/shared/planning_task_edit_sheet.dart`, `lib/features/shared/timeline_record_edit_sheet.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -17835,7 +17835,7 @@ EN:
 - **What this is:** `notes_component_media_blocks.dart` on notes area — Canonical image/drawing frame and audio block states shared across widths.
 - **Why needed:** Users see `notes_component_media_blocks.dart` when using notes area.
 - **Contents:** Primary symbols: `NotesMediaBlock`, `NotesAudioBlock`, `NotesDrawingTool`, `NotesRecorderState`, `NotesDrawingColorOption`, `NotesDrawingControls`.
-- **Key code names:** `NotesMediaBlock`, `NotesAudioBlock`, `NotesDrawingTool`, `NotesRecorderState`, `NotesDrawingColorOption`, `NotesDrawingControls`, `NotesRecorderControls`
+- **Key code names:** `NotesMediaBlock`, `NotesAudioBlock`, `NotesDrawingTool`, `NotesRecorderState`, `NotesDrawingColorOption`, `NotesDrawingControls`
 - **Repository role:** production UI
 - **Evidence of use:** Included by `lib/features/notes/widgets/notes_canonical_components.dart` through a `part` directive (not imported directly).
 - **Necessity status:** PROVEN_REQUIRED
@@ -20715,8 +20715,8 @@ EN:
 - **Human purpose:** `people_person_editor.dart` on settings area — Person editor: photo, contact data, relationship, birthday/reminders, circles and notes. Users see `people_person_editor.dart` when using settings area.
 - **What this is:** `people_person_editor.dart` on settings area — Person editor: photo, contact data, relationship, birthday/reminders, circles and notes.
 - **Why needed:** Users see `people_person_editor.dart` when using settings area.
-- **Contents:** Primary symbols: `PeoplePersonEditorResult`.
-- **Key code names:** `PeoplePersonEditorResult`
+- **Contents:** Primary symbols: `PeoplePersonEditorResult`, `_ContactDraft`.
+- **Key code names:** `PeoplePersonEditorResult`, `_ContactDraft`
 - **Repository role:** production UI
 - **Evidence of use:** Imported/exported by production Dart: `lib/features/settings/people/people_settings_page_impl.dart`.
 - **Necessity status:** PROVEN_REQUIRED
@@ -23123,7 +23123,7 @@ EN:
 - **Contents:** Platform service code in `notification_service.dart` (`PlanAlarmPermissionStatus`, `NotificationService`).
 - **Key code names:** `PlanAlarmPermissionStatus`, `NotificationService`
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/data/database_service.dart`, `lib/data/people/people_service.dart`, `lib/data/records/unfilled_time_gap_service.dart`, `lib/features/profile/settings/notification_settings_section.dart`, `lib/main.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/data/database_service.dart`, `lib/data/people/people_service.dart`, `lib/data/records/unfilled_time_gap_service.dart`, `lib/features/profile/settings/notification_settings_section.dart`, `lib/features/settings/people/people_person_editor.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -23140,7 +23140,7 @@ RU:
 - **Зачем:** OS API (уведомления, voice, tray) не могут жить в PocketBase brain.
 - **Содержимое:** Platform-код сервиса в `notification_service.dart` (logic in `notification_service`).
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/data/database_service.dart`, `lib/data/people/people_service.dart`, `lib/data/records/unfilled_time_gap_service.dart`, `lib/features/profile/settings/notification_settings_section.dart`, `lib/main.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/data/database_service.dart`, `lib/data/people/people_service.dart`, `lib/data/records/unfilled_time_gap_service.dart`, `lib/features/profile/settings/notification_settings_section.dart`, `lib/features/settings/people/people_person_editor.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -34625,6 +34625,44 @@ RU:
 - **Владелец / слой:** тесты
 - **Обязанности:** Assert ожидаемого поведения `plan_time_view_layout`.
 - **Когда открывать:** Падение CI или правка кода рядом с `plan_time_view_layout`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
+
+
+### `test/plan_time_view_wall_alignment_regression_test.dart`
+
+EN:
+
+- **Human purpose:** Automated test `plan_time_view_wall_alignment_regression_test` — verifies behavior without manual tapping. Prevents regressions when related production code changes.
+- **What this is:** Automated test `plan_time_view_wall_alignment_regression_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **Contents:** Test cases (symbols: main).
+- **Key code names:** `main`
+- **Repository role:** test
+- **Evidence of use:** Flutter test file; exercised via `flutter test test/plan_time_view_wall_alignment_regression_test.dart` / CI when enabled.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Lost automated coverage for its contract.
+- **Confidence:** HIGH
+- **Owner / layer:** tests
+- **Responsibilities:** Assert expected behavior for `plan_time_view_wall_alignment_regression_test` scenario.
+- **When to open:** CI failure or changing code near `plan_time_view_wall_alignment_regression`.
+- **Can it be deleted?** Lost automated coverage for its contract.
+- **Connected to:** `test/` suite; production subject near `plan_time_view_wall_alignment_regression`.
+
+RU:
+
+- **Зачем файл человеку:** Автотест `plan_time_view_wall_alignment_regression` — проверяет поведение без ручного UI. Ловит регрессии при изменении связанного production-кода.
+- **Что это:** Автотест `plan_time_view_wall_alignment_regression` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `plan_time_view_wall_alignment_regression`.
+- **Роль в репозитории:** test
+- **Доказательства использования:** Файл теста Flutter; запускается через `flutter test test/plan_time_view_wall_alignment_regression_test.dart`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Пропадёт автоматическая проверка своего контракта.
+- **Уверенность:** HIGH
+- **Владелец / слой:** тесты
+- **Обязанности:** Assert ожидаемого поведения `plan_time_view_wall_alignment_regression`.
+- **Когда открывать:** Падение CI или правка кода рядом с `plan_time_view_wall_alignment_regression`.
 - **Можно удалить?** Нет — нужен для тестов.
 - **Связано с:** Production files под `lib/` с похожим именем.
 
