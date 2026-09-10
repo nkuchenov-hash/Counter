@@ -27,6 +27,18 @@ jobs:
         run: |
           set -euo pipefail
           python3 tools/tmp_planning_time_precision_fix.py
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('lib/features/planning/plan_time_view_layout.dart')
+          text = path.read_text(encoding='utf-8')
+          helper = """  static bool _wallAdjacent(double prevEndMin, double nextStartMin) =>\n      (nextStartMin - prevEndMin).abs() < 0.01;\n\n"""
+          if helper not in text:
+              marker = "  /// Resolve only the wall-clock hours that need extra visual room.\n"
+              if marker not in text:
+                  raise SystemExit('hour-height marker not found')
+              text = text.replace(marker, helper + marker, 1)
+              path.write_text(text, encoding='utf-8')
+          PY
           dart format \
             lib/core/widgets/plan_time_task_card/plan_card_density.dart \
             lib/core/widgets/plan_time_task_card/plan_card_geometry.dart \
