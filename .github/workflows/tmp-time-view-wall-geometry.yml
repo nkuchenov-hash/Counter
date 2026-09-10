@@ -41,19 +41,23 @@ jobs:
       - name: Enforce surgical diff boundary
         shell: bash
         run: |
-          mapfile -t changed < <(git diff --name-only -- \
-            lib test | sort)
+          mapfile -t changed < <(git diff --name-only -- lib test | sort)
           printf '%s\n' "${changed[@]}"
           allowed=$(cat <<'EOF'
           lib/core/widgets/plan_time_task_card/plan_card_metrics.dart
           lib/core/widgets/plan_time_task_card/plan_time_task_card.dart
           lib/features/planning/plan_time_view_layout.dart
-          test/plan_time_view_wall_alignment_regression_test.dart
           EOF
           )
           actual=$(printf '%s\n' "${changed[@]}")
           if [ "$actual" != "$allowed" ]; then
-            echo 'Unexpected production/test files changed.' >&2
+            echo 'Unexpected tracked production/test files changed.' >&2
+            exit 1
+          fi
+          test -f test/plan_time_view_wall_alignment_regression_test.dart
+          unexpected_untracked=$(git ls-files --others --exclude-standard | grep -v '^test/plan_time_view_wall_alignment_regression_test.dart$' || true)
+          if [ -n "$unexpected_untracked" ]; then
+            echo "Unexpected untracked files: $unexpected_untracked" >&2
             exit 1
           fi
 
