@@ -215,6 +215,7 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard>
             planTrackedSeconds: widget.planTrackedSeconds,
             planEstimatedSeconds: widget.planEstimatedSeconds,
             categoryColor: categoryTone,
+            isRunning: widget.highlightAsRunning,
             spacing: cardSpacing,
           )
         : null;

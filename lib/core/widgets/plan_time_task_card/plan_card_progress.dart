@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:counter/core/widgets/plan_time_task_card/plan_card_controls.dart';
 import 'package:counter/core/widgets/plan_time_task_card/plan_card_geometry.dart';
 import 'package:counter/core/widgets/plan_time_task_card/plan_card_metrics.dart';
@@ -5,24 +7,84 @@ import 'package:counter/core/widgets/plan_time_task_card/plan_card_sections.dart
 import 'package:counter/data/models.dart';
 import 'package:flutter/material.dart';
 
-class PlanCardProgressSlot extends StatelessWidget {
+class PlanCardProgressSlot extends StatefulWidget {
   const PlanCardProgressSlot({
     required this.planTrackedSeconds,
     required this.categoryColor,
     this.planEstimatedSeconds,
+    this.isRunning = false,
     this.spacing = PlanCardVerticalSpacing.shared,
   });
 
   final int planTrackedSeconds;
   final int? planEstimatedSeconds;
   final Color categoryColor;
+  final bool isRunning;
   final PlanCardVerticalSpacing spacing;
 
   @override
+  State<PlanCardProgressSlot> createState() => _PlanCardProgressSlotState();
+}
+
+class _PlanCardProgressSlotState extends State<PlanCardProgressSlot> {
+  Timer? _ticker;
+  late int _displayTrackedSeconds;
+
+  @override
+  void initState() {
+    super.initState();
+    _displayTrackedSeconds = widget.planTrackedSeconds;
+    _syncTicker();
+  }
+
+  @override
+  void didUpdateWidget(covariant PlanCardProgressSlot oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!widget.isRunning || !oldWidget.isRunning) {
+      _displayTrackedSeconds = widget.planTrackedSeconds;
+    } else if (widget.planTrackedSeconds > _displayTrackedSeconds) {
+      // Parent aggregates include the open record through planetary-now.
+      // Accept a newer authoritative value, but never jump a live counter back.
+      _displayTrackedSeconds = widget.planTrackedSeconds;
+    }
+    if (widget.isRunning != oldWidget.isRunning) {
+      _syncTicker();
+    }
+  }
+
+  void _syncTicker() {
+    _ticker?.cancel();
+    _ticker = null;
+    if (!widget.isRunning) return;
+    _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!mounted) return;
+      setState(() => _displayTrackedSeconds++);
+    });
+  }
+
+  String _liveLabel(int seconds) {
+    final value = seconds.clamp(0, 8640000);
+    final hours = value ~/ 3600;
+    final minutes = (value % 3600) ~/ 60;
+    final secs = value % 60;
+    final mm = minutes.toString().padLeft(2, '0');
+    final ss = secs.toString().padLeft(2, '0');
+    if (hours > 0) return '${hours.toString().padLeft(2, '0')}:$mm:$ss';
+    return '$mm:$ss';
+  }
+
+  @override
+  void dispose() {
+    _ticker?.cancel();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final estimated = planEstimatedSeconds ?? 0;
-    final hasActual = planTrackedSeconds > 0;
-    final slotHeight = spacing.progressSlotHeight(
+    final estimated = widget.planEstimatedSeconds ?? 0;
+    final tracked = _displayTrackedSeconds;
+    final hasActual = tracked > 0 || widget.isRunning;
+    final slotHeight = widget.spacing.progressSlotHeight(
       hasTrackedProgress: hasActual,
     );
     return SizedBox(
@@ -31,14 +93,17 @@ class PlanCardProgressSlot extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           SizedBox(
-            height: spacing.actualTimeSlotHeight,
+            height: widget.spacing.actualTimeSlotHeight,
             child: hasActual
                 ? Align(
                     alignment: Alignment.centerRight,
                     child: Text(
-                      PlanCardProgressRow.formatCompact(planTrackedSeconds),
+                      widget.isRunning
+                          ? _liveLabel(tracked)
+                          : PlanCardProgressRow.formatCompact(tracked),
                       maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                      softWrap: false,
+                      overflow: TextOverflow.clip,
                       style: const TextStyle(
                         fontSize: 10,
                         height: 1.2,
@@ -49,14 +114,14 @@ class PlanCardProgressSlot extends StatelessWidget {
                   )
                 : const SizedBox.shrink(),
           ),
-          SizedBox(height: spacing.progressAfterActualGap),
+          SizedBox(height: widget.spacing.progressAfterActualGap),
           PlanCardProgressRow(
-            trackedSeconds: planTrackedSeconds,
+            trackedSeconds: tracked,
             estimatedSeconds: estimated,
-            categoryColor: categoryColor,
+            categoryColor: widget.categoryColor,
             compact: true,
             alwaysShowTrack: true,
-            trackHeight: spacing.progressBarHeight,
+            trackHeight: widget.spacing.progressBarHeight,
           ),
         ],
       ),
