@@ -71,9 +71,9 @@ void main() {
     expect(c.topPx, closeTo(result.grid.yForMinute(120), 0.01));
     expect(d.topPx, closeTo(result.grid.yForMinute(150), 0.01));
     expect(c.topPx, closeTo(result.grid.hourLineY(2), 0.01));
-    expect(b.topPx, greaterThanOrEqualTo(a.topPx + a.heightPx + 3.49));
-    expect(c.topPx, greaterThanOrEqualTo(b.topPx + b.heightPx + 3.49));
-    expect(d.topPx, greaterThanOrEqualTo(c.topPx + c.heightPx + 3.49));
+    expect(b.topPx - (a.topPx + a.heightPx), closeTo(4, 0.01));
+    expect(c.topPx - (b.topPx + b.heightPx), closeTo(4, 0.01));
+    expect(d.topPx - (c.topPx + c.heightPx), closeTo(4, 0.01));
   });
 
   test('every 5-minute start uses the exact shared timeline Y coordinate', () {
@@ -102,7 +102,7 @@ void main() {
   });
 
   test(
-    'touching scheduled cards keep the canonical 4px minimum visual gap',
+    'touching scheduled cards keep exactly the canonical 4px visual gap',
     () {
       final result = _layout([
         _projection(hour: 15, minute: 0, durationMinutes: 10, id: 'gap-a'),
@@ -115,7 +115,7 @@ void main() {
       expect(b.topPx, closeTo(result.grid.yForMinute(70), 0.001));
       expect(
         b.topPx - (a.topPx + a.heightPx),
-        greaterThanOrEqualTo(kPlanTimeCardGapPx - 0.01),
+        closeTo(kPlanTimeCardGapPx, 0.01),
       );
     },
   );

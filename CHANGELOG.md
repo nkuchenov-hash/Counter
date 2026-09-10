@@ -1,3 +1,7 @@
+## 2026-09-10 — Planning Time exact adjacent spacing [fix]
+
+- Corrected the Time View elastic-hour geometry so cards whose wall times directly follow each other render with exactly 4px between their visible rectangles, including mixed-duration sequences; card starts and hour lines remain on the same wall-time Y scale.
+
 ## 2026-09-10 — Planning Time precision and controls [fix]
 
 - Kept Time View card starts on the same wall-time Y scale as hour grid lines with 5-minute interaction precision and the existing 4px minimum card gap.

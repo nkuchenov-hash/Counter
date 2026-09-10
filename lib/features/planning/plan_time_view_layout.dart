@@ -241,8 +241,12 @@ abstract final class PlanTimeViewLayoutCalculator {
       final hasAdjacentNext =
           i + 1 < slots.length &&
           _wallAdjacent(slot.endMin, slots[i + 1].startMin);
+      // The hour only needs to stretch enough for the canonical minimum
+      // rendered card height. Actual card height is derived from the shared
+      // wall-time Y span below, so a wall-adjacent boundary can stay exactly
+      // kPlanTimeCardGapPx instead of becoming an arbitrarily large empty gap.
       final requiredSpanPx =
-          _cardHeightPx(slot.durationMin) +
+          kPlanTimeCardMinHeightPx +
           (hasAdjacentNext ? kPlanTimeCardGapPx : 0.0);
       final wallSpanMinutes = math.max(1.0, slot.endMin - slot.startMin);
       final requiredHourHeight = (requiredSpanPx / wallSpanMinutes * 60.0)
@@ -345,9 +349,17 @@ abstract final class PlanTimeViewLayoutCalculator {
   ) {
     final layouts = <PlanTimeViewBlockLayout>[];
 
-    for (final slot in slots) {
-      final heightPx = _cardHeightPx(slot.durationMin);
+    for (var i = 0; i < slots.length; i++) {
+      final slot = slots[i];
       final topPx = yScale.yForMinute(slot.startMin);
+      final endPx = yScale.yForMinute(slot.endMin);
+      final hasAdjacentNext =
+          i + 1 < slots.length &&
+          _wallAdjacent(slot.endMin, slots[i + 1].startMin);
+      final boundaryGapPx = hasAdjacentNext ? kPlanTimeCardGapPx : 0.0;
+      final heightPx = math
+          .max(kPlanTimeCardMinHeightPx, endPx - topPx - boundaryGapPx)
+          .toDouble();
 
       // TIME_VIEW_CARD_CONTENT_DENSITY_FROM_AVAILABLE_HEIGHT — inner layout only.
       final visual = planTimeCardVisualDensityForRenderedHeight(heightPx);
@@ -476,8 +488,19 @@ abstract final class PlanTimeViewLayoutCalculator {
     for (var i = 0; i < layouts.length; i++) {
       final layout = layouts[i];
       final slot = slots[i];
-      final expectedHeight = _cardHeightPx(slot.durationMin);
       final expectedTop = yScale.yForMinute(slot.startMin);
+      final expectedEnd = yScale.yForMinute(slot.endMin);
+      final hasAdjacentNext =
+          i + 1 < slots.length &&
+          _wallAdjacent(slot.endMin, slots[i + 1].startMin);
+      final expectedHeight = math
+          .max(
+            kPlanTimeCardMinHeightPx,
+            expectedEnd -
+                expectedTop -
+                (hasAdjacentNext ? kPlanTimeCardGapPx : 0.0),
+          )
+          .toDouble();
 
       assert(
         layout.heightPx >= kPlanTimeCardMinHeightPx - 0.01,
@@ -503,13 +526,20 @@ abstract final class PlanTimeViewLayoutCalculator {
       final slotA = slots[i];
       final slotB = slots[i + 1];
       if (slotB.startMin >= slotA.endMin - 0.01) {
-        final requiredGap = _wallAdjacent(slotA.endMin, slotB.startMin)
-            ? kPlanTimeCardGapPx
-            : 0.0;
-        assert(
-          b.topPx >= a.topPx + a.heightPx + requiredGap - 0.51,
-          'TIME_VIEW_VISUAL_OVERLAP: ${a.task.title} -> ${b.task.title}',
-        );
+        final wallAdjacent = _wallAdjacent(slotA.endMin, slotB.startMin);
+        final actualGap = b.topPx - (a.topPx + a.heightPx);
+        if (wallAdjacent) {
+          assert(
+            (actualGap - kPlanTimeCardGapPx).abs() < 0.51,
+            'TIME_VIEW_ADJACENT_GAP_MISMATCH: '
+            '${a.task.title} -> ${b.task.title}; gap=$actualGap',
+          );
+        } else {
+          assert(
+            actualGap >= -0.51,
+            'TIME_VIEW_VISUAL_OVERLAP: ${a.task.title} -> ${b.task.title}',
+          );
+        }
       }
     }
 
