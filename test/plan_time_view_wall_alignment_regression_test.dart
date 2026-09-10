@@ -76,6 +76,50 @@ void main() {
     expect(d.topPx, greaterThanOrEqualTo(c.topPx + c.heightPx + 3.49));
   });
 
+  test('every 5-minute start uses the exact shared timeline Y coordinate', () {
+    for (var minute = 0; minute < 60; minute += 5) {
+      final result = _layout([
+        _projection(
+          hour: 14,
+          minute: minute,
+          durationMinutes: 10,
+          id: 'five-$minute',
+        ),
+      ]);
+      expect(
+        result.layouts.single.topPx,
+        closeTo(result.grid.yForMinute(minute.toDouble()), 0.001),
+      );
+    }
+
+    final hourBoundary = _layout([
+      _projection(hour: 15, minute: 0, durationMinutes: 10, id: 'hour'),
+    ]);
+    expect(
+      hourBoundary.layouts.single.topPx,
+      closeTo(hourBoundary.grid.hourLineY(1), 0.001),
+    );
+  });
+
+  test(
+    'touching scheduled cards keep the canonical 4px minimum visual gap',
+    () {
+      final result = _layout([
+        _projection(hour: 15, minute: 0, durationMinutes: 10, id: 'gap-a'),
+        _projection(hour: 15, minute: 10, durationMinutes: 10, id: 'gap-b'),
+      ]);
+
+      final a = result.layouts[0];
+      final b = result.layouts[1];
+      expect(a.topPx, closeTo(result.grid.yForMinute(60), 0.001));
+      expect(b.topPx, closeTo(result.grid.yForMinute(70), 0.001));
+      expect(
+        b.topPx - (a.topPx + a.heightPx),
+        greaterThanOrEqualTo(kPlanTimeCardGapPx - 0.01),
+      );
+    },
+  );
+
   test('only hours that need room stretch', () {
     final result = _layout([
       _projection(hour: 15, minute: 0, durationMinutes: 45, id: 'a'),
@@ -134,4 +178,50 @@ void main() {
 
     expect(find.text('15m'), findsOneWidget);
   });
+
+  testWidgets(
+    'running progress time is fully visible and advances every second',
+    (tester) async {
+      final projection = _projection(
+        hour: 15,
+        minute: 0,
+        durationMinutes: 60,
+        id: 'live-progress',
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 600,
+              height: 140,
+              child: PlanTimeTaskCard(
+                task: projection.projectedTask,
+                density: PlanTimeTaskCardDensity.medium,
+                surface: PlanCardSurface.timeline,
+                timelineVisualDensity: PlanTimeCardVisualDensity.medium,
+                timelineBlockHeightPx: 140,
+                timelineFillHeight: true,
+                showProgressBar: true,
+                timeLabel: '15:00 – 16:00',
+                planTrackedSeconds: 10,
+                planEstimatedSeconds: 3600,
+                highlightAsRunning: true,
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      final initial = find.text('00:10');
+      expect(initial, findsOneWidget);
+      expect(tester.getSize(initial).height, lessThanOrEqualTo(12.01));
+      expect(tester.takeException(), isNull);
+
+      await tester.pump(const Duration(seconds: 1));
+      expect(find.text('00:11'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
 }

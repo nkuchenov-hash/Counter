@@ -1,3 +1,9 @@
+## 2026-09-10 — Planning Time precision and controls [fix]
+
+- Kept Time View card starts on the same wall-time Y scale as hour grid lines with 5-minute interaction precision and the existing 4px minimum card gap.
+- Restored pointer access to the trailing Play control without changing its existing hover design or card drag/resize behavior.
+- Made running actual time above the progress bar fully visible and locally live to the second.
+
 ## 2026-08-27 — Stats visual overview [product]
 
 - Replaced the experimental Overview / Day / Plan-Fact Stats surfaces with two focused modes: the original expandable time tree and a visual Charts view.

@@ -164,6 +164,17 @@ double planCardBodyGestureLeftInsetPx(
         PlanCardGeom.railToContentGap,
 };
 
-/// Right inset for timeline drag/tap body zone ? excludes menu button column.
-double planCardBodyGestureRightInsetPx({bool hasMenu = true}) =>
-    hasMenu ? PlanCardGeom.menuSize + PlanCardGeom.padRight : 0;
+/// Right inset for timeline drag/tap body zone.
+///
+/// Time View renders Play + Menu as trailing controls. The body drag/tap
+/// overlay must stop before both controls so pointer hover/tap reaches them.
+double planCardBodyGestureRightInsetPx({
+  bool hasPlay = false,
+  bool hasMenu = true,
+}) {
+  final count = (hasPlay ? 1 : 0) + (hasMenu ? 1 : 0);
+  if (count == 0) return 0;
+  return PlanCardGeom.padRight +
+      count * PlanCardGeom.controlSize +
+      (count - 1) * 8.0;
+}

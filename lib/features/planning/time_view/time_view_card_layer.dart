@@ -80,6 +80,8 @@ extension PlanningTimeViewTimeViewCardLayer on PlanningTimeViewCoordinator {
         ? timelineResizeTimeLabel
         : timelineVerticalDragTimeLabel;
     final blockDensity = layout.density;
+    final displayDone = host.planDoneOverride[planKey] ?? layout.task.isDone;
+    final hasTrailingPlay = !host.planSelectMode && !displayDone;
     final resizeHeightPx = math.max(heightPx, kPlanTimeCardMinHeightPx);
     final reduceMotion = MediaQuery.disableAnimationsOf(host.context);
     final settleDuration = isInteracting || reduceMotion
@@ -176,7 +178,9 @@ extension PlanningTimeViewTimeViewCardLayer on PlanningTimeViewCoordinator {
                     blockDensity,
                     timeline: true,
                   ),
-                  controlsRightInset: planCardBodyGestureRightInsetPx(),
+                  controlsRightInset: planCardBodyGestureRightInsetPx(
+                    hasPlay: hasTrailingPlay,
+                  ),
                   onMovePointerDown: canMove
                       ? () {
                           setTimelineInteractionLock(true);
@@ -237,12 +241,12 @@ extension PlanningTimeViewTimeViewCardLayer on PlanningTimeViewCoordinator {
                       : null,
                   onVerticalDragEnd: canMove
                       ? () =>
-                          commitTimelineVerticalDragWithOptionalRecurrenceScope(
-                            planWallDay: planWallDay,
-                            rangeStart: rangeStart,
-                            rangeEnd: rangeEnd,
-                            scheduledInRange: scheduledInRange,
-                          )
+                            commitTimelineVerticalDragWithOptionalRecurrenceScope(
+                              planWallDay: planWallDay,
+                              rangeStart: rangeStart,
+                              rangeEnd: rangeEnd,
+                              scheduledInRange: scheduledInRange,
+                            )
                       : null,
                   onVerticalDragCancel: canMove
                       ? cancelTimelineVerticalDrag
@@ -286,9 +290,7 @@ extension PlanningTimeViewTimeViewCardLayer on PlanningTimeViewCoordinator {
                         context: host.context,
                         task: layout.task,
                         key: planKey,
-                        displayDone:
-                            host.planDoneOverride[planKey] ??
-                            layout.task.isDone,
+                        displayDone: displayDone,
                         isSelected: host.selectedPlanKeys.contains(planKey),
                         planActualByPbId: planActualByPbId,
                         timelineEmbedded: true,
@@ -495,7 +497,8 @@ extension PlanningTimeViewRecurringInteractionController
     );
     if (scope == null || !host.mounted) return;
 
-    final instanceDay = task.recurrenceInstanceDateKey?.trim().isNotEmpty == true
+    final instanceDay =
+        task.recurrenceInstanceDateKey?.trim().isNotEmpty == true
         ? task.recurrenceInstanceDateKey!.trim().substring(0, 10)
         : DatabaseService.instance.planningWallScheduleDateKey(task);
     final mutationRowId = timeViewRecurringMutationRowId(
@@ -511,23 +514,24 @@ extension PlanningTimeViewRecurringInteractionController
     );
 
     DatabaseService.instance.applyOptimisticPlanningTask(updated);
-    DatabaseService.instance.notifyPlanningRefresh(scheduleNetworkRefresh: false);
+    DatabaseService.instance.notifyPlanningRefresh(
+      scheduleNetworkRefresh: false,
+    );
     if (host.mounted) host.notifySetState(() {});
 
-    final ok =
-        await DatabaseService.instance.updatePlanningTaskWithRecurrenceScope(
-      mutationRowId,
-      scope: scope,
-      planBusinessId:
-          businessId.isEmpty || businessId.startsWith('virt-')
+    final ok = await DatabaseService.instance
+        .updatePlanningTaskWithRecurrenceScope(
+          mutationRowId,
+          scope: scope,
+          planBusinessId: businessId.isEmpty || businessId.startsWith('virt-')
               ? null
               : businessId,
-      startTimeDisplay: newStartWall,
-      endDateTimeDisplay: newEndWall,
-      clearEnd: newEndWall == null,
-      suppressAppSnack: true,
-      recurrenceInstanceDateKey: instanceDay,
-    );
+          startTimeDisplay: newStartWall,
+          endDateTimeDisplay: newEndWall,
+          clearEnd: newEndWall == null,
+          suppressAppSnack: true,
+          recurrenceInstanceDateKey: instanceDay,
+        );
 
     DatabaseService.instance.clearOptimisticPlanningForPlanRow(
       task.planRowIdForBackend,

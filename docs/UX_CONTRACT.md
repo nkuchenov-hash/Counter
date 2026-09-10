@@ -138,10 +138,10 @@ Performance, responsiveness, and stability are **P0 correctness**, not polish. S
 - **Timezone / storage:** Plan and record instants are stored as **UTC ISO**. Time mode projects them into the **profile timezone** for day filter, block placement, labels, and drag/resize math. User-entered wall time at create/edit belongs to the **current profile timezone**.
 - **Current-time line:** Uses profile-projected “now”; renders **above** plan cards (`IgnorePointer`); must not sit behind blocks.
 - **Visible range:** No “outside visible range” / out-of-hours fallback bucket. Scheduled cards outside the selected wall day or visible hour range are **not shown**.
-- **Snap / duration:** Time mode supports **10-minute** minimum duration and **10-minute** snap for move and top/bottom resize (`timelineSnapMinutes`, `kPlanScheduleSnapMinutes`, `kPlanTimeMinDurationMinutes`).
+- **Snap / duration:** Time mode supports **10-minute** minimum duration and **5-minute** snap for move and top/bottom resize (`timelineSnapMinutes`, `kPlanScheduleSnapMinutes`, `kPlanTimeMinDurationMinutes`). Card top positions are exact wall-time projections on the same Y scale as the timeline grid: an hour-boundary start aligns exactly with that hour line, and no post-layout packing may shift the card top.
 - **Dense hour cap:** One wall-clock hour visually stretches to at most **248 px** (six 10-minute cards at 38 px + 4 px gaps). Card heights use piecewise anchors (10→38, 30→75, 60→120 px), not unbounded proportional stretch.
 - **Card density:** Short blocks use **micro** / **compact** layouts (essential controls only). **Medium** / **large** blocks show progress separator + category breadcrumb + planned time footer (`PlanTimeTaskCard`).
-- **Interactions:** Checkbox, play, menu, body tap, drag, and resize keep independent hit zones; optimistic schedule updates follow the Iron Laws.
+- **Interactions:** Checkbox, play, menu, body tap, drag, and resize keep independent hit zones; Time View body drag/tap overlays must not cover trailing Play/Menu controls; optimistic schedule updates follow the Iron Laws.
 
 ## Edit sheet Save (local-first)
 

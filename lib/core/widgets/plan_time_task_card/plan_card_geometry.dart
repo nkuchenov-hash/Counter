@@ -34,7 +34,7 @@ abstract final class PlanCardGeom {
   static const double titleToTagsGap = 2;
   static const double emptyTagsSlotHeight = 18;
   static const double tagsToProgressGap = 3;
-  static const double actualTimeSlotHeight = 8;
+  static const double actualTimeSlotHeight = 12;
   static const double progressAfterActualGap = 3;
   static const double progressBarHeight = 3;
   static const double footerBlockGap = 6;
