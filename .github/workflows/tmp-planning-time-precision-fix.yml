@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   patch:
-    if: github.event.head_commit.message != 'Fix Planning Time precision and controls'
+    if: ${{ github.event.head_commit.message != 'Fix Planning Time precision and controls' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -28,38 +28,7 @@ jobs:
         run: |
           set -euo pipefail
           python3 tools/tmp_planning_time_precision_fix.py
-
-          # Flutter 3.41 WidgetTester has no moveMouseTo shortcut; use a real mouse TestGesture.
-          python3 - <<'PY'
-          from pathlib import Path
-          p = Path('test/time_view_interaction_block_test.dart')
-          s = p.read_text(encoding='utf-8')
-          material_import = "import 'package:flutter/material.dart';"
-          if "package:flutter/gestures.dart" not in s:
-              s = s.replace(
-                  material_import,
-                  "import 'package:flutter/gestures.dart';\n" + material_import,
-                  1,
-              )
-          old = """      await tester.moveMouseTo(tester.getCenter(play));
-      await tester.pump();"""
-          new = """      final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
-      await mouse.addPointer(location: Offset.zero);
-      await mouse.moveTo(tester.getCenter(play));
-      await tester.pump();"""
-          if old not in s:
-              raise SystemExit('mouse hover test patch target not found')
-          s = s.replace(old, new, 1)
-          old = """      expect(playCount, 1);
-      expect(moveStarts, 0);"""
-          new = """      expect(playCount, 1);
-      expect(moveStarts, 0);
-      await mouse.removePointer();"""
-          if old not in s:
-              raise SystemExit('mouse cleanup test patch target not found')
-          s = s.replace(old, new, 1)
-          p.write_text(s, encoding='utf-8')
-          PY
+          python3 -c "from pathlib import Path; p=Path('test/time_view_interaction_block_test.dart'); s=p.read_text(encoding='utf-8'); s=s.replace(\"import 'package:flutter/material.dart';\", \"import 'package:flutter/gestures.dart';\\nimport 'package:flutter/material.dart';\", 1); s=s.replace(\"      await tester.moveMouseTo(tester.getCenter(play));\\n      await tester.pump();\", \"      final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);\\n      await mouse.addPointer(location: Offset.zero);\\n      await mouse.moveTo(tester.getCenter(play));\\n      await tester.pump();\", 1); s=s.replace(\"      expect(playCount, 1);\\n      expect(moveStarts, 0);\", \"      expect(playCount, 1);\\n      expect(moveStarts, 0);\\n      await mouse.removePointer();\", 1); p.write_text(s, encoding='utf-8')"
 
           dart format \
             lib/core/widgets/plan_time_task_card/plan_card_density.dart \
