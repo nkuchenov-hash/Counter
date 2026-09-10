@@ -10,6 +10,7 @@ permissions:
 
 jobs:
   patch:
+    if: github.event.head_commit.message != 'Fix Planning Time precision and controls'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -27,28 +28,41 @@ jobs:
         run: |
           set -euo pipefail
           python3 tools/tmp_planning_time_precision_fix.py
-          python3 - <<'PY'
-          from pathlib import Path
-          path = Path('lib/features/planning/plan_time_view_layout.dart')
-          text = path.read_text(encoding='utf-8')
-          helper = """  static bool _wallAdjacent(double prevEndMin, double nextStartMin) =>\n      (nextStartMin - prevEndMin).abs() < 0.01;\n\n"""
-          if helper not in text:
-              marker = "  /// Resolve only the wall-clock hours that need extra visual room.\n"
-              if marker not in text:
-                  raise SystemExit('hour-height marker not found')
-              text = text.replace(marker, helper + marker, 1)
-              path.write_text(text, encoding='utf-8')
-          PY
           dart format \
             lib/core/widgets/plan_time_task_card/plan_card_density.dart \
             lib/core/widgets/plan_time_task_card/plan_card_geometry.dart \
             lib/core/widgets/plan_time_task_card/plan_card_progress.dart \
             lib/core/widgets/plan_time_task_card/plan_time_task_card.dart \
-            lib/features/planning/plan_time_view_layout.dart \
             lib/features/planning/time_view/time_view_card_layer.dart \
             test/plan_time_view_wall_alignment_regression_test.dart \
             test/time_view_interaction_block_test.dart
+
           git rm .github/workflows/tmp-planning-time-precision-fix.yml tools/tmp_planning_time_precision_fix.py
+
+          python3 - <<'PY'
+          import subprocess
+          allowed = {
+              'CHANGELOG.md',
+              'docs/UX_CONTRACT.md',
+              'lib/core/widgets/plan_time_task_card/plan_card_density.dart',
+              'lib/core/widgets/plan_time_task_card/plan_card_geometry.dart',
+              'lib/core/widgets/plan_time_task_card/plan_card_progress.dart',
+              'lib/core/widgets/plan_time_task_card/plan_time_task_card.dart',
+              'lib/features/planning/time_view/time_view_card_layer.dart',
+              'test/plan_time_view_wall_alignment_regression_test.dart',
+              'test/time_view_interaction_block_test.dart',
+          }
+          changed = set(subprocess.check_output(
+              ['git', 'diff', '--name-only', 'origin/main'], text=True
+          ).splitlines())
+          unexpected = sorted(changed - allowed)
+          if unexpected:
+              raise SystemExit(f'Unexpected out-of-scope changes: {unexpected}')
+          if 'lib/features/planning/plan_time_view_layout.dart' in changed:
+              raise SystemExit('Time View layout algorithm changed unexpectedly')
+          print('SCOPE_GUARD_OK:', ', '.join(sorted(changed)))
+          PY
+
           mkdir -p lib/core/env
           if [ ! -f lib/core/env/env.dart ]; then
             printf '%s\n' 'abstract final class Env {' '  static const String placeholder = '\'''\'';' '}' > lib/core/env/env.dart
@@ -56,14 +70,14 @@ jobs:
           flutter pub get
           flutter test \
             test/plan_time_view_wall_alignment_regression_test.dart \
-            test/time_view_interaction_block_test.dart \
-            test/plan_time_view_layout_test.dart
+            test/time_view_interaction_block_test.dart
           flutter analyze --no-fatal-infos --no-fatal-warnings
           flutter build web --release --base-href="/Counter/" --no-tree-shake-icons --no-wasm-dry-run
           python scripts/audit/documentation_parity.py
           python scripts/audit/pocketbase_schema_contract.py
           python scripts/audit/deployment_contract.py
           git diff --check
+
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
