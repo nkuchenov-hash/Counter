@@ -11,7 +11,10 @@ const int _browserExtensionConsumedRequestLimit = 48;
 mixin ShellBrowserExtensionQuickAdd on ShellDashboardBase {
   Future<void> initializeBrowserExtensionBridge() async {
     if (!kIsWeb) return;
-    await browserExtensionRecordSub?.cancel();
+    final existingSub = browserExtensionRecordSub;
+    if (existingSub != null) {
+      await existingSub.cancel();
+    }
     browserExtensionRecordSub =
         DatabaseService.instance.timeUpdates.listen((_) {
       unawaited(_publishBrowserExtensionRecordSnapshot());
@@ -150,8 +153,20 @@ mixin ShellBrowserExtensionQuickAdd on ShellDashboardBase {
           );
           return;
         }
-        final recordId = await DatabaseService.instance.startTimer(rawText);
-        final ok = recordId != null && recordId.trim().isNotEmpty;
+        final db = DatabaseService.instance;
+        final recordId = await db.startTimer(rawText);
+        if (recordId != null && recordId.trim().isNotEmpty) {
+          try {
+            await db.primaryRecordWriteNetworkChain;
+            await db.getRecords(forceNetwork: true);
+          } catch (_) {}
+        }
+        final confirmed = db.browserExtensionActiveRecordSnapshot();
+        final ok =
+            recordId != null &&
+            recordId.trim().isNotEmpty &&
+            confirmed['active'] == true &&
+            confirmed['recordId']?.toString().trim() == recordId.trim();
         if (ok) {
           await _markBrowserExtensionRequestConsumed(prefs, requestId);
         }
@@ -165,8 +180,12 @@ mixin ShellBrowserExtensionQuickAdd on ShellDashboardBase {
         return;
 
       case 'stop_record':
-        final ok = await DatabaseService.instance.stopAllRunningRecords();
+        final db = DatabaseService.instance;
+        final ok = await db.stopAllRunningRecords();
         if (ok) {
+          try {
+            await db.getRecords(forceNetwork: true);
+          } catch (_) {}
           await _markBrowserExtensionRequestConsumed(prefs, requestId);
         }
         await _publishBrowserExtensionRecordSnapshot();
