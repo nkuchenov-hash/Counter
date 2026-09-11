@@ -26,7 +26,6 @@ const copy = ru
       stop: 'Стоп',
       open: 'Открыть LIFE OS',
       checking: 'Проверяю текущую запись…',
-      refreshing: 'Обновляю…',
       starting: 'Запускаю запись…',
       stopping: 'Останавливаю…',
       enterTitle: 'Введите название записи.',
@@ -43,7 +42,6 @@ const copy = ru
       stop: 'Stop',
       open: 'Open LIFE OS',
       checking: 'Checking current record…',
-      refreshing: 'Refreshing…',
       starting: 'Starting record…',
       stopping: 'Stopping…',
       enterTitle: 'Enter a record title.',
@@ -168,7 +166,7 @@ async function refreshState() {
   }
 
   renderSnapshot(response.snapshot);
-  setStatus(response.refreshing ? copy.refreshing : '');
+  setStatus('');
   return true;
 }
 
