@@ -109,7 +109,7 @@ class PlanningTimeViewCoordinator {
   static const int kTimelineDefaultBlockMinutes = 30;
   static const double kTimelineHourHeightMinPx = 120;
   static const double kTimelineHourHeightMaxPx = 160;
-  static const double kTimelineRailWidthDesktopPx = 48;
+  static const double kTimelineRailWidthDesktopPx = 88;
   static const double kTimelineRailWidthMobilePx = 28;
   static const double kTimelineCompactBreakpoint = 600;
   static const double kTimelineResizeHandlePx = 16;

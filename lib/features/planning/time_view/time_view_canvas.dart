@@ -73,10 +73,7 @@ extension PlanningTimeViewTimeViewCanvas on PlanningTimeViewCoordinator {
     final axisX = railWidth - 10.0;
     const hourLabelHeight = 20.0;
     const hourDotSize = 8.0;
-    const hourLabelToAxisGap = 16.0;
     const hourLabelWidth = 48.0;
-    final hourLabelRightInset =
-        (railWidth - axisX) + hourLabelToAxisGap;
     final prevMarker = t(loc, 'day_length_prev_day');
     final nextMarker = t(loc, 'day_length_next_day');
     String hourLabel(int extHour) {
@@ -124,11 +121,11 @@ extension PlanningTimeViewTimeViewCanvas on PlanningTimeViewCoordinator {
                         for (var i = 0; i < visibleHours.length; i++) ...[
                           Positioned(
                             top: grid.hourLineY(i) - hourLabelHeight / 2,
-                            right: hourLabelRightInset,
+                            left: 0,
                             width: hourLabelWidth,
                             height: hourLabelHeight,
                             child: Align(
-                              alignment: Alignment.centerRight,
+                              alignment: Alignment.centerLeft,
                               child: Text(
                                 hourLabel(visibleHours[i]),
                                 maxLines: 1,
@@ -162,6 +159,37 @@ extension PlanningTimeViewTimeViewCanvas on PlanningTimeViewCoordinator {
                             ),
                           ),
                         ],
+                        if (nowTop != null && nowLabel != null)
+                          Positioned(
+                            top: nowTop.clamp(0, canvasHeight - 1) - 10,
+                            right: 0,
+                            child: IgnorePointer(
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 3,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: nowLineColor,
+                                  borderRadius: BorderRadius.circular(5),
+                                ),
+                                child: Text(
+                                  nowLabel,
+                                  maxLines: 1,
+                                  softWrap: false,
+                                  style: Theme.of(host.context)
+                                      .textTheme
+                                      .labelSmall
+                                      ?.copyWith(
+                                        color: nowBadgeForeground,
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 10,
+                                        height: 1,
+                                      ),
+                                ),
+                              ),
+                            ),
+                          ),
                       ],
                     ),
                   ),
@@ -345,38 +373,6 @@ extension PlanningTimeViewTimeViewCanvas on PlanningTimeViewCoordinator {
                                     child: Container(
                                       height: 1,
                                       color: nowLineColor,
-                                    ),
-                                  ),
-                                ),
-                              if (nowTop != null && nowLabel != null)
-                                Positioned(
-                                  top:
-                                      nowTop.clamp(0, canvasHeight - 1) - 10,
-                                  left: 8,
-                                  child: IgnorePointer(
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 6,
-                                        vertical: 3,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: nowLineColor,
-                                        borderRadius: BorderRadius.circular(5),
-                                      ),
-                                      child: Text(
-                                        nowLabel,
-                                        maxLines: 1,
-                                        softWrap: false,
-                                        style: Theme.of(host.context)
-                                            .textTheme
-                                            .labelSmall
-                                            ?.copyWith(
-                                              color: nowBadgeForeground,
-                                              fontWeight: FontWeight.w700,
-                                              fontSize: 10,
-                                              height: 1,
-                                            ),
-                                      ),
                                     ),
                                   ),
                                 ),

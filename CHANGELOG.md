@@ -1,3 +1,8 @@
+## 2026-09-11 — Planning Time left-edge alignment [fix]
+
+- Kept Time View hour labels inside the shared left content boundary by widening the timeline rail and taking that space from the schedule canvas instead of allowing labels to protrude left.
+- Moved the current-time badge back to the left side of the horizontal current-time line; timeline Y/time, drag/drop, resize and scheduling behavior are unchanged.
+
 ## 2026-09-11 — Planning Time hour-label clipping [fix]
 
 - Fixed the enlarged Time View hour labels being clipped by the narrow rail: labels now use a fixed-width box anchored to the time axis with the intended gap, without moving the timeline axis/cards or changing scheduling geometry.
