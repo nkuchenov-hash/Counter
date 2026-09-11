@@ -1,6 +1,6 @@
 name: Android release APK
 
-# Manual artifact trigger: 2026-09-09 flexible People editor release.
+# Rebuild current Android ARM64 package after Victor icon rollout.
 on:
   workflow_dispatch:
   push:
@@ -52,9 +52,9 @@ jobs:
       - name: Publish immutable LIFE OS Android release
         uses: ncipollo/release-action@v1
         with:
-          tag: life-os-1.0.0-build1-20260909-people-flex
-          name: LIFE OS 1.0.0+1 — People flexible editor
-          body: Android ARM64 release for 2026-09-09. People now uses separate first and last names, user-defined relationship tags, a visually separate flexible contact-details block with multiple phones/emails/messengers/links, the canonical LIFE OS date picker for birthdays, and an explicit notification-permission flow when birthday reminders are enabled.
+          tag: life-os-1.0.0-build1-20260911-victor-current
+          name: LIFE OS 1.0.0+1 — Victor icon current build
+          body: Android ARM64 release rebuilt from current main after the approved Victor raven app icon rollout.
           artifacts: LIFE-OS-Android-arm64.apk
           immutableCreate: true
           makeLatest: true
