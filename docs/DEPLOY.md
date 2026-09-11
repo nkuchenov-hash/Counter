@@ -61,6 +61,22 @@ Category icons use dynamic `IconData` from stored `icon_code_point` values. Unti
 - Git remote `origin` → `https://github.com/nkuchenov-hash/Counter.git`
 - Permission to push to `main`
 
+## Browser extension (Chrome / Edge / Chromium browsers)
+
+The unpacked Manifest V3 companion lives in `browser_extension/`.
+
+Install for development/testing:
+
+1. Open the browser extensions page (`chrome://extensions` or the Chromium equivalent).
+2. Enable **Developer mode**.
+3. Choose **Load unpacked** and select the repository `browser_extension/` folder.
+4. Pin **LIFE OS Quick Add** if desired.
+5. `Alt+Shift+L` opens the Quick Add popup. The context menu can add selected text or the current page.
+
+The extension does **not** authenticate to PocketBase and never writes PocketBase directly. It opens/focuses the deployed LIFE OS web app with a one-shot Quick Add request. After the normal app auth/bootstrap completes, `lib/app/shell/shared/shell_browser_extension.dart` delegates creation to the existing Planning Brain path and stores the processed request id locally to prevent refresh duplicates.
+
+The production web origin used by the extension is `https://nkuchenov-hash.github.io/Counter/`. If the canonical web origin changes, update `browser_extension/manifest.json` and `browser_extension/service_worker.js` together.
+
 ## Auth Flow And PocketBase Admin Setup
 
 The app uses the PocketBase `profiles` auth collection as the only server login source. Startup follows one gate:
