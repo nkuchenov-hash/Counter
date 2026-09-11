@@ -177,3 +177,13 @@ Performance, responsiveness, and stability are **P0 correctness**, not polish. S
 - Explicit source actions: Add, Link, Ignore, Block. Ignore/Block survives later source syncs.
 - Device contacts sync only after user action and OS permission; no startup address-book scan.
 - Plan reminder reconciliation must not cancel People birthday reminders.
+
+
+## Browser extension Quick Add
+
+- The browser companion is a fast capture surface, not a second LIFE OS client: it never writes PocketBase directly.
+- Toolbar Quick Add may target either **today’s Plan** or **Lists**. Context-menu capture of selected text or the current page targets today’s Plan.
+- Submitting from the extension opens or focuses the authenticated LIFE OS web app and hands off one one-shot request.
+- The web shell consumes that request only after the normal auth/profile bootstrap and delegates creation to the existing Planning Brain path so category matching, scheduling, optimistic UI, offline queueing, timezone rules, and realtime behavior stay canonical.
+- Each request carries a unique id. Successfully consumed ids are remembered locally so refresh/rebuild cannot create duplicate tasks.
+- Browser-extension work must not add blocking startup work; handoff runs after first frame.
