@@ -1,10 +1,10 @@
-## 2026-09-11 — Browser extension live current-record refresh [fix]
-
 ## 2026-09-11 — Duration-responsive PlanCard redesign [ui]
 
 - Reworked canonical Time View `PlanTimeTaskCard` layouts to match the approved duration-responsive card design: 12px checkbox→content spacing, larger title/tag rhythm, 2px progress separator, tighter progress/footer spacing, and bottom-pinned breadcrumbs.
 - Every Time View Plan card now renders its category icon as the existing low-opacity category watermark; Play uses a larger 24×26 triangle with 8px rounded corners on a transparent default background while checkbox/Play/Options hover behavior and completed-card strikethrough/state behavior are preserved.
 - Component Lab now includes 10/30/45/60/90-minute Time View examples plus a completed-state example.
+
+## 2026-09-11 — Browser extension live current-record refresh [fix]
 
 
 - Fixed stale active-record state: cached/open-tab snapshots are now render-only and can no longer suppress a canonical Brain/PocketBase refresh.
