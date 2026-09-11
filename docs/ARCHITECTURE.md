@@ -214,4 +214,10 @@ Run `.\scripts\audit\architecture_guard.ps1 -Strict`, `python scripts/audit/repo
 
 ## Browser companion boundary
 
-The Manifest V3 browser companion under `browser_extension/` is an input surface only. It may open/focus the deployed web app and pass a bounded one-shot Quick Add request through URL parameters, but it must not authenticate to PocketBase or create/update PocketBase rows itself. The authenticated web shell consumes the request after first frame in `lib/app/shell/shared/shell_browser_extension.dart`, dedupes request ids locally, and delegates all task creation to the existing Planning Brain APIs. This preserves the single PocketBase owner, optimistic/offline semantics, timezone/category rules, and performance kill-switch contract.
+The Manifest V3 companion under `browser_extension/` is a projection/action client for the authenticated LIFE OS web app, never a PocketBase client. It must not copy PocketBase auth tokens, credentials, collection logic, or direct row mutations into extension code.
+
+The canonical current-record state is resolved by Brain from the primary running record and reduced to a bounded browser projection (active flag, title, category path/color, start time, record id, theme/locale metadata). The authenticated web shell mirrors that projection to browser-local storage for the extension to read. The elapsed timer is rendered locally from the canonical start timestamp; timer ticks never cause backend polling.
+
+Start/Stop commands are one-shot requests handled by `lib/app/shell/shared/shell_browser_extension.dart`. Start delegates to the existing `DatabaseService.startTimer` / primary Highlander path; Stop delegates to the existing Brain stop path. When no LIFE OS tab is open, the service worker may create an inactive same-origin bridge tab, but it must wait for Brain confirmation (including the primary network chain for Start) before closing it. Request IDs remain locally deduped.
+
+This boundary preserves single PocketBase ownership, category inference, singleton-running semantics, optimistic/offline behavior, timezone rules, and the performance kill-switch contract.
