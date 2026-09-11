@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "LIFE OS",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "See the current LIFE OS record, start or stop a record, and open the web app.",
   "permissions": [
     "contextMenus",
