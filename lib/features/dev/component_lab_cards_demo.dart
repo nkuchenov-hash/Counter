@@ -49,21 +49,74 @@ class ComponentLabPlanCardsDemo extends StatelessWidget {
       end: DateTime(2026, 6, 15, 10, 15),
       rrule: 'FREQ=DAILY',
     );
-    final timeShort = _mockTask(
-      title: 'Quick sync',
+    final time10 = _mockTask(
+      title: 'Price Reporter Email Check',
       start: DateTime(2026, 6, 15, 14, 0),
-      end: DateTime(2026, 6, 15, 14, 30),
+      end: DateTime(2026, 6, 15, 14, 10),
+      tags: const [
+        Tag(tagId: 2, name: 'встречи', color: '#F55D88', icon: 'label'),
+        Tag(tagId: 3, name: 'gsa / co', color: '#7118E5', icon: 'label'),
+      ],
     );
-    final timeLong = _mockTask(
-      title: 'Deep work block',
-      start: DateTime(2026, 6, 15, 11, 0),
-      end: DateTime(2026, 6, 15, 14, 0),
+    final time30 = time10.copyWith(
+      endDateTime: DateTime(2026, 6, 15, 14, 30),
+    );
+    final time45 = time10.copyWith(
+      endDateTime: DateTime(2026, 6, 15, 14, 45),
+    );
+    final time60 = time10.copyWith(
+      endDateTime: DateTime(2026, 6, 15, 15, 0),
+    );
+    final time90 = time10.copyWith(
+      endDateTime: DateTime(2026, 6, 15, 15, 30),
       notesPlain: 'Focus session',
       checklist: const [
         {'text': 'Outline', 'done': true},
         {'text': 'Draft', 'done': false},
       ],
     );
+
+    Widget timeExample({
+      required String title,
+      required PlanningTask task,
+      required int durationMinutes,
+      int trackedSeconds = 0,
+      bool completed = false,
+      bool running = false,
+    }) {
+      final height = planTimeCardRenderedHeightPxForDuration(durationMinutes);
+      return _LabExample(
+        title: title,
+        flutterMapping:
+            'PlanCard(timelineBlock: true, timelineBlockHeightPx: '
+            '${height.toStringAsFixed(2)})',
+        variant: 'time / ${durationMinutes}min',
+        state: completed ? 'completed' : (running ? 'running' : 'default'),
+        fullWidth: true,
+        note:
+            'Canonical duration-responsive Time View card. Category watermark '
+            'comes from the category presentation.',
+        child: SizedBox(
+          height: height,
+          child: PlanCard(
+            task: completed ? task.copyWith(isDone: true) : task,
+            planTrackedSeconds: trackedSeconds,
+            planEstimatedSeconds: durationMinutes * 60,
+            displayIsDone: completed,
+            selectMode: false,
+            isSelected: false,
+            highlightAsRunning: running,
+            toggleDoneEnabled: true,
+            timelineBlock: true,
+            timelineBlockHeightPx: height,
+            onToggleDone: _noop,
+            onBodyTap: _noop,
+            onPlay: _noop,
+            onOpenMenu: (_) {},
+          ),
+        ),
+      );
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -135,61 +188,47 @@ class ComponentLabPlanCardsDemo extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 12),
-        _LabExample(
-          title: 'PlanCard / Time / Short block',
-          flutterMapping:
-              'PlanCard(timelineBlock: true, timelineBlockHeightPx: 64)',
-          variant: 'time',
-          state: 'compact',
-          fullWidth: true,
-          note: 'Same widget as Planning Time mode duration blocks.',
-          child: SizedBox(
-            height: 64,
-            child: PlanCard(
-              task: timeShort,
-              planTrackedSeconds: 600,
-              planEstimatedSeconds: 1800,
-              displayIsDone: false,
-              selectMode: false,
-              isSelected: false,
-              highlightAsRunning: false,
-              toggleDoneEnabled: true,
-              timelineBlock: true,
-              timelineBlockHeightPx: 64,
-              onToggleDone: _noop,
-              onBodyTap: _noop,
-              onPlay: _noop,
-              onOpenMenu: (_) {},
-            ),
-          ),
+        timeExample(
+          title: 'PlanCard / Time / 10 min',
+          task: time10,
+          durationMinutes: 10,
         ),
         const SizedBox(height: 12),
-        _LabExample(
-          title: 'PlanCard / Time / Long block + progress',
-          flutterMapping:
-              'PlanCard(timelineBlock: true, timelineBlockHeightPx: 180)',
-          variant: 'time',
-          state: 'medium',
-          fullWidth: true,
-          child: SizedBox(
-            height: 180,
-            child: PlanCard(
-              task: timeLong,
-              planTrackedSeconds: 5400,
-              planEstimatedSeconds: 10800,
-              displayIsDone: false,
-              selectMode: false,
-              isSelected: false,
-              highlightAsRunning: true,
-              toggleDoneEnabled: true,
-              timelineBlock: true,
-              timelineBlockHeightPx: 180,
-              onToggleDone: _noop,
-              onBodyTap: _noop,
-              onPlay: _noop,
-              onOpenMenu: (_) {},
-            ),
-          ),
+        timeExample(
+          title: 'PlanCard / Time / 30 min',
+          task: time30,
+          durationMinutes: 30,
+          trackedSeconds: 600,
+        ),
+        const SizedBox(height: 12),
+        timeExample(
+          title: 'PlanCard / Time / 45 min',
+          task: time45,
+          durationMinutes: 45,
+          trackedSeconds: 900,
+        ),
+        const SizedBox(height: 12),
+        timeExample(
+          title: 'PlanCard / Time / 60 min / Running',
+          task: time60,
+          durationMinutes: 60,
+          trackedSeconds: 1200,
+          running: true,
+        ),
+        const SizedBox(height: 12),
+        timeExample(
+          title: 'PlanCard / Time / 90 min',
+          task: time90,
+          durationMinutes: 90,
+          trackedSeconds: 2700,
+        ),
+        const SizedBox(height: 12),
+        timeExample(
+          title: 'PlanCard / Time / 30 min / Completed',
+          task: time30,
+          durationMinutes: 30,
+          trackedSeconds: 1800,
+          completed: true,
         ),
       ],
     );

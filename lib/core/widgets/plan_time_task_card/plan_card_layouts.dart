@@ -289,7 +289,8 @@ class TimeViewVerticalShell extends StatelessWidget {
   }
 }
 
-/// VerySmall 56–79px — full-size controls with invariant 12px edge insets.
+/// VerySmall — title + tags fit beside the canonical checkbox.
+/// Trailing Play / Options are owned by [PlanTimeTaskCard].
 class TimeViewVerySmallLayout extends StatelessWidget {
   const TimeViewVerySmallLayout({
     required this.common,
@@ -301,46 +302,11 @@ class TimeViewVerySmallLayout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return TimeViewResponsiveShell(
-      heightPx: heightPx,
-      leftControls: TimeViewLeftControls(common: common),
-      menu: common.onOpenMenu != null
-          ? PlanCardMenuButton(onOpenMenu: common.onOpenMenu!)
-          : null,
-      center: SizedBox(
-        height: PlanCardGeom.controlSize,
-        child: PlanCardBodyTapShell(
-          onTap: common.onBodyTap,
-          onLongPress: common.onBodyLongPress,
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Expanded(
-                child: PlanCardTitleRow(
-                  title: common.task.title,
-                  displayIsDone: common.displayIsDone,
-                  hasRepeat: common.hasRepeat,
-                  maxLines: 1,
-                  metaIcons: common.metaIcons,
-                ),
-              ),
-              if (common.visibleTags.isNotEmpty) ...[
-                const SizedBox(width: 4),
-                TimeViewTagStack(tags: common.visibleTags),
-              ],
-              if (common.timeLabel.isNotEmpty) ...[
-                const SizedBox(width: 6),
-                PlanCardTimeText(label: common.timeLabel),
-              ],
-            ],
-          ),
-        ),
-      ),
-    );
+    return _TimeViewShortStackLayout(common: common, heightPx: heightPx);
   }
 }
 
-/// Small 80–99px — title centered on the checkbox, metadata below.
+/// Small — first footer/progress tier (30-minute reference is 75px).
 class TimeViewSmallLayout extends StatelessWidget {
   const TimeViewSmallLayout({required this.common, required this.heightPx});
 
@@ -349,15 +315,16 @@ class TimeViewSmallLayout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return TimeViewTwoRowCenterLayout(
+    return _TimeViewFooterStackLayout(
       common: common,
       heightPx: heightPx,
-      padVertical: PlanCardGeom.padTopSmall,
+      tight: true,
+      fullProgressSlot: false,
     );
   }
 }
 
-/// MoreCompact 100–119px — two rows with the same edge rhythm.
+/// MoreCompact — same hierarchy as Small with additional vertical air.
 class TimeViewMoreCompactLayout extends StatelessWidget {
   const TimeViewMoreCompactLayout({
     required this.common,
@@ -369,70 +336,16 @@ class TimeViewMoreCompactLayout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return TimeViewTwoRowCenterLayout(
+    return _TimeViewFooterStackLayout(
       common: common,
       heightPx: heightPx,
-      padVertical: PlanCardGeom.padTopSmall,
+      tight: false,
+      fullProgressSlot: false,
     );
   }
 }
 
-class TimeViewTwoRowCenterLayout extends StatelessWidget {
-  const TimeViewTwoRowCenterLayout({
-    required this.common,
-    required this.heightPx,
-    required this.padVertical,
-  });
-
-  final TimeViewCardCommon common;
-  final double heightPx;
-  final double padVertical;
-
-  @override
-  Widget build(BuildContext context) {
-    return TimeViewResponsiveShell(
-      heightPx: heightPx,
-      padVertical: padVertical,
-      leftControls: TimeViewLeftControls(common: common),
-      menu: common.onOpenMenu != null
-          ? PlanCardMenuButton(onOpenMenu: common.onOpenMenu!)
-          : null,
-      center: PlanCardBodyTapShell(
-        onTap: common.onBodyTap,
-        onLongPress: common.onBodyLongPress,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          mainAxisAlignment: MainAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SizedBox(
-              height: PlanCardGeom.controlSize,
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: PlanCardTitleRow(
-                  title: common.task.title,
-                  displayIsDone: common.displayIsDone,
-                  hasRepeat: common.hasRepeat,
-                  maxLines: 1,
-                  metaIcons: common.metaIcons,
-                ),
-              ),
-            ),
-            const SizedBox(height: 2),
-            TimeViewTagsRow(
-              tags: common.visibleTags,
-              trailing: common.timeLabel.isNotEmpty
-                  ? PlanCardTimeText(label: common.timeLabel)
-                  : null,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Compact 120–139px — full metadata within invariant edge insets.
+/// Compact — footer/progress hierarchy for mid-height Time View cards.
 class TimeViewCompactLayout extends StatelessWidget {
   const TimeViewCompactLayout({required this.common, required this.heightPx});
 
@@ -441,61 +354,16 @@ class TimeViewCompactLayout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final showProgress = common.showProgressBar && common.metricsBlock != null;
-    final showBreadcrumb = common.categoryTrail.trim().isNotEmpty;
-    return TimeViewVerticalShell(
-      heightPx: heightPx,
+    return _TimeViewFooterStackLayout(
       common: common,
-      body: PlanCardBodyTapShell(
-        onTap: common.onBodyTap,
-        onLongPress: common.onBodyLongPress,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            SizedBox(
-              height: PlanCardGeom.controlSize,
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Expanded(
-                    child: PlanCardTitleRow(
-                      title: common.task.title,
-                      displayIsDone: common.displayIsDone,
-                      hasRepeat: common.hasRepeat,
-                      maxLines: 1,
-                      metaIcons: common.metaIcons,
-                    ),
-                  ),
-                  if (common.onOpenMenu != null)
-                    PlanCardMenuButton(onOpenMenu: common.onOpenMenu!),
-                ],
-              ),
-            ),
-            if (common.visibleTags.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 2),
-                child: TimeViewTagsRow(tags: common.visibleTags),
-              ),
-            if (showProgress) ...[
-              const SizedBox(height: 4),
-              common.metricsBlock!,
-            ],
-            const Expanded(child: SizedBox.shrink()),
-            if (showBreadcrumb || common.timeLabel.isNotEmpty)
-              PlanCardFooterRow(
-                categoryTrail: showBreadcrumb ? common.categoryTrail : '',
-                timeLabel: common.timeLabel,
-                scheduleConflict: common.scheduleConflict,
-                categoryColor: common.categoryColor,
-              ),
-          ],
-        ),
-      ),
+      heightPx: heightPx,
+      tight: false,
+      fullProgressSlot: false,
     );
   }
 }
 
-/// Medium 140px+ — full CardPlan hierarchy.
+/// Medium — same hierarchy with the live actual-time slot retained.
 class TimeViewMediumLayout extends StatelessWidget {
   const TimeViewMediumLayout({required this.common, required this.heightPx});
 
@@ -504,29 +372,62 @@ class TimeViewMediumLayout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final progressSlot =
-        common.metricsBlock ??
-        PlanCardProgressSlot(
-          planTrackedSeconds: 0,
-          categoryColor: common.categoryColor,
-          spacing: common.spacing,
-        );
-    final showBreadcrumb = common.categoryTrail.trim().isNotEmpty;
-    return TimeViewVerticalShell(
-      heightPx: heightPx,
+    return _TimeViewFooterStackLayout(
       common: common,
-      body: PlanCardBodyTapShell(
-        onTap: common.onBodyTap,
-        onLongPress: common.onBodyLongPress,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            SizedBox(
-              height: PlanCardGeom.controlSize,
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
+      heightPx: heightPx,
+      tight: false,
+      fullProgressSlot: true,
+    );
+  }
+}
+
+class _TimeViewShortStackLayout extends StatelessWidget {
+  const _TimeViewShortStackLayout({
+    required this.common,
+    required this.heightPx,
+  });
+
+  final TimeViewCardCommon common;
+  final double heightPx;
+
+  @override
+  Widget build(BuildContext context) {
+    const contentLeft =
+        PlanCardGeom.padLeft +
+        PlanCardGeom.controlSize +
+        PlanCardGeom.timeViewRailToContentGap;
+    return SizedBox(
+      height: heightPx,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Positioned(
+            left: PlanCardGeom.padLeft,
+            top: PlanCardGeom.padTopSmall,
+            child: PlanCardCheckbox(
+              selectMode: common.selectMode,
+              isSelected: common.isSelected,
+              displayIsDone: common.displayIsDone,
+              toggleDoneEnabled: common.toggleDoneEnabled,
+              onToggleDone: common.onToggleDone,
+              onSelectToggle: common.onSelectToggle,
+            ),
+          ),
+          Positioned(
+            left: contentLeft,
+            right: PlanCardGeom.padRight,
+            top: 0,
+            bottom: 0,
+            child: PlanCardBodyTapShell(
+              onTap: common.onBodyTap,
+              onLongPress: common.onBodyLongPress,
+              child: Stack(
                 children: [
-                  Expanded(
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    top: 5,
+                    height: PlanCardGeom.titleLineHeight,
                     child: PlanCardTitleRow(
                       title: common.task.title,
                       displayIsDone: common.displayIsDone,
@@ -535,37 +436,164 @@ class TimeViewMediumLayout extends StatelessWidget {
                       metaIcons: common.metaIcons,
                     ),
                   ),
-                  if (common.onOpenMenu != null)
-                    PlanCardMenuButton(onOpenMenu: common.onOpenMenu!),
+                  if (common.visibleTags.isNotEmpty || common.timeLabel.isNotEmpty)
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      top:
+                          5 +
+                          PlanCardGeom.titleLineHeight +
+                          PlanCardGeom.timeViewTitleToTagsGap,
+                      height: PlanCardGeom.tagRowHeight,
+                      child: TimeViewTagsRow(
+                        tags: common.visibleTags,
+                        trailing: common.timeLabel.isNotEmpty
+                            ? PlanCardTimeText(label: common.timeLabel)
+                            : null,
+                      ),
+                    ),
                 ],
               ),
             ),
-            if (common.visibleTags.isNotEmpty)
-              Padding(
-                padding: EdgeInsets.only(top: common.spacing.titleToTagsGap),
-                child: TimeViewTagsRow(tags: common.visibleTags),
-              ),
-            const Expanded(child: SizedBox.shrink()),
-            if (common.showProgressBar) ...[
-              progressSlot,
-              SizedBox(height: common.spacing.footerBlockGap),
-            ] else if (showBreadcrumb || common.timeLabel.isNotEmpty)
-              const Padding(
-                padding: EdgeInsets.only(bottom: 4),
-                child: Divider(
-                  height: 1,
-                  thickness: 1,
-                  color: PlanCardTokens.dividerColor,
-                ),
-              ),
-            PlanCardFooterRow(
-              categoryTrail: showBreadcrumb ? common.categoryTrail : '',
-              timeLabel: common.timeLabel,
-              scheduleConflict: common.scheduleConflict,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TimeViewFooterStackLayout extends StatelessWidget {
+  const _TimeViewFooterStackLayout({
+    required this.common,
+    required this.heightPx,
+    required this.tight,
+    required this.fullProgressSlot,
+  });
+
+  final TimeViewCardCommon common;
+  final double heightPx;
+  final bool tight;
+  final bool fullProgressSlot;
+
+  @override
+  Widget build(BuildContext context) {
+    const contentLeft =
+        PlanCardGeom.padLeft +
+        PlanCardGeom.controlSize +
+        PlanCardGeom.timeViewRailToContentGap;
+    final contentTop = tight ? PlanCardGeom.timeViewTightContentTop : 8.0;
+    final titleToTags =
+        tight ? 5.0 : PlanCardGeom.timeViewTitleToTagsGap;
+    final footerBottom = tight
+        ? PlanCardGeom.timeViewTightFooterBottomPad
+        : PlanCardGeom.timeViewFooterBottomPad;
+    final progressToFooter = tight
+        ? PlanCardGeom.timeViewTightProgressToFooterGap
+        : PlanCardGeom.timeViewProgressToFooterGap;
+    final showFooter =
+        common.categoryTrail.trim().isNotEmpty || common.timeLabel.isNotEmpty;
+    final metrics = common.metricsBlock;
+    final showProgress = common.showProgressBar && metrics != null;
+    final progressHeight = fullProgressSlot && metrics != null
+        ? common.spacing.progressSlotHeight(
+            hasTrackedProgress: metrics.planTrackedSeconds > 0 || metrics.isRunning,
+          )
+        : PlanCardGeom.progressBarHeight;
+
+    Widget? progress;
+    if (showProgress && metrics != null) {
+      progress = fullProgressSlot
+          ? metrics
+          : PlanCardProgressRow(
+              trackedSeconds: metrics.planTrackedSeconds,
+              estimatedSeconds: metrics.planEstimatedSeconds ?? 0,
               categoryColor: common.categoryColor,
+              compact: true,
+              alwaysShowTrack: true,
+              trackHeight: PlanCardGeom.progressBarHeight,
+            );
+    }
+
+    return SizedBox(
+      height: heightPx,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Positioned(
+            left: PlanCardGeom.padLeft,
+            top: PlanCardGeom.padTopMediumLarge,
+            child: PlanCardCheckbox(
+              selectMode: common.selectMode,
+              isSelected: common.isSelected,
+              displayIsDone: common.displayIsDone,
+              toggleDoneEnabled: common.toggleDoneEnabled,
+              onToggleDone: common.onToggleDone,
+              onSelectToggle: common.onSelectToggle,
             ),
-          ],
-        ),
+          ),
+          Positioned(
+            left: contentLeft,
+            right: PlanCardGeom.padRight,
+            top: 0,
+            bottom: 0,
+            child: PlanCardBodyTapShell(
+              onTap: common.onBodyTap,
+              onLongPress: common.onBodyLongPress,
+              child: Stack(
+                children: [
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    top: contentTop,
+                    height: PlanCardGeom.titleLineHeight,
+                    child: PlanCardTitleRow(
+                      title: common.task.title,
+                      displayIsDone: common.displayIsDone,
+                      hasRepeat: common.hasRepeat,
+                      maxLines: 1,
+                      metaIcons: common.metaIcons,
+                    ),
+                  ),
+                  if (common.visibleTags.isNotEmpty)
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      top:
+                          contentTop +
+                          PlanCardGeom.titleLineHeight +
+                          titleToTags,
+                      height: PlanCardGeom.tagRowHeight,
+                      child: TimeViewTagsRow(tags: common.visibleTags),
+                    ),
+                  if (progress != null)
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      bottom:
+                          footerBottom +
+                          PlanCardGeom.footerTextHeight +
+                          progressToFooter,
+                      height: progressHeight,
+                      child: progress,
+                    ),
+                  if (showFooter)
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      bottom: footerBottom,
+                      height: PlanCardGeom.footerTextHeight,
+                      child: PlanCardFooterRow(
+                        categoryTrail: common.categoryTrail,
+                        timeLabel: common.timeLabel,
+                        scheduleConflict: common.scheduleConflict,
+                        categoryColor: common.categoryColor,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
