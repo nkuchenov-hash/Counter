@@ -94,12 +94,12 @@ jobs:
       - name: Publish installer to rolling LIFE OS release
         uses: ncipollo/release-action@v1
         with:
-          tag: life-os-latest
-          name: LIFE OS — Latest Apps
-          body: Rolling public downloads for LIFE OS native applications. Release history is shown on the LIFE OS website from CHANGELOG.md.
+          tag: life-os-windows-20260911-victor-icon
+          name: LIFE OS Windows — Victor icon
+          body: Windows installer rebuilt with the approved Victor raven app icon.
           artifacts: installer/windows/output/CounterSetup.exe
-          allowUpdates: true
-          replacesArtifacts: true
+          allowUpdates: false
+          replacesArtifacts: false
           makeLatest: true
           prerelease: false
 
