@@ -1,3 +1,7 @@
+## 2026-09-11 — Planning Time hour-label clipping [fix]
+
+- Fixed the enlarged Time View hour labels being clipped by the narrow rail: labels now use a fixed-width box anchored to the time axis with the intended gap, without moving the timeline axis/cards or changing scheduling geometry.
+
 ## 2026-09-11 — Planning Time rail and current-time marker [ui]
 
 - Increased Time View hour-label size and label-to-axis spacing, with each hour dot vertically centered on its hour text.
