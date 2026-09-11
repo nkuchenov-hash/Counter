@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `56917e81` on 2026-09-11.**
+**Generated from input HEAD `95c23522` on 2026-09-11.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 868 — each appears **exactly once** below.
+**Tracked files:** 873 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -26,12 +26,12 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Role | Count |
 | :--- | ---: |
-| `production UI` | 177 |
+| `production UI` | 174 |
 | `test` | 110 |
 | `Brain/data` | 91 |
-| `platform build` | 85 |
+| `platform build` | 83 |
 | `shared foundation` | 64 |
-| `developer tool` | 58 |
+| `developer tool` | 63 |
 | `platform resource` | 44 |
 | `governing documentation` | 37 |
 | `Desktop Voice runtime` | 36 |
@@ -47,6 +47,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | `shared time` | 7 |
 | `package metadata` | 6 |
 | `shared diagnostics` | 6 |
+| `asset` | 5 |
 | `audit tool` | 5 |
 | `mobile/web Voice adapters` | 2 |
 | `generated documentation` | 1 |
@@ -56,8 +57,8 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 483 |
-| `REQUIRED_FOR_TEST_OR_TOOLING` | 203 |
+| `PROVEN_REQUIRED` | 478 |
+| `REQUIRED_FOR_TEST_OR_TOOLING` | 213 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
 | `GOVERNING_DOCUMENTATION` | 37 |
 | `HISTORICAL_RECORD` | 17 |
@@ -67,8 +68,8 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 803 |
-| `MEDIUM` | 65 |
+| `HIGH` | 798 |
+| `MEDIUM` | 75 |
 
 ---
 
@@ -88,9 +89,11 @@ Evidence is computed from Dart import/export/`part` graphs, bounded path referen
 
 ### Root / config
 
+- [`branding/`](#folder-branding)
 - [`browser_extension/`](#folder-browser_extension)
 - [`igropoisk/`](#folder-igropoisk)
 - [`pb_migrations/`](#folder-pb_migrations)
+- [`browser_extension/icons/`](#folder-browser_extensionicons)
 - [`igropoisk/scripts/`](#folder-igropoiskscripts)
 
 ### lib/
@@ -352,6 +355,54 @@ RU:
 - **Когда открывать:** Открывать при ошибках сборки Android, разрешений, ресурсов или системного запуска.
 - **Можно удалить?** Нет — если нужна поддержка Android APK.
 - **Связанные пути:** `android.ps1`, `.github/workflows/`.
+
+---
+
+## Folder: `branding/`
+
+EN:
+
+- **What this folder is:** Repository path `branding/` — tracked config, assets, or tooling for Life OS.
+- **Why it exists:** Git tracks `branding` because release, CI, or maintenance workflow depends on these files.
+- **What lives here:** Tracked files listed below with individual explanations.
+- **What part of the app it affects:** Repo workflow or platform build tied to this path — see child file entries.
+- **When to open it:** Maintenance or build work involving `branding`.
+- **Can it be deleted?** No — part of repository tooling or config unless cleanup report says otherwise.
+- **Main related paths:** `docs/APP_STRUCTURE.md`, `CHANGELOG.md`.
+
+RU:
+
+- **Что это за папка:** Служебный каталог репозитория `branding/`.
+- **Зачем нужна:** Хранит файлы, необходимые отдельной части сборки, данных проекта или сопровождения репозитория.
+- **Что здесь лежит:** Отслеживаемые Git файлы и дочерние каталоги; каждый элемент описан ниже.
+- **На что влияет в приложении:** Влияет на ту часть продукта или процесса сборки, которой принадлежит этот путь.
+- **Когда открывать:** Открывать при работе с файлами и процессами, связанными с `branding/`.
+- **Можно удалить?** Нет — part of repository tooling or config если отчёт cleanup не сказал иное.
+- **Связанные пути:** `docs/APP_STRUCTURE.md`, `CHANGELOG.md`.
+
+---
+
+## Folder: `browser_extension/`
+
+EN:
+
+- **What this folder is:** Repository path `browser_extension/` — tracked config, assets, or tooling for Life OS.
+- **Why it exists:** Git tracks `browser_extension` because release, CI, or maintenance workflow depends on these files.
+- **What lives here:** Tracked files listed below with individual explanations.
+- **What part of the app it affects:** Repo workflow or platform build tied to this path — see child file entries.
+- **When to open it:** Maintenance or build work involving `browser_extension`.
+- **Can it be deleted?** No — part of repository tooling or config unless cleanup report says otherwise.
+- **Main related paths:** `docs/APP_STRUCTURE.md`, `CHANGELOG.md`.
+
+RU:
+
+- **Что это за папка:** Служебный каталог репозитория `browser_extension/`.
+- **Зачем нужна:** Хранит файлы, необходимые отдельной части сборки, данных проекта или сопровождения репозитория.
+- **Что здесь лежит:** Отслеживаемые Git файлы и дочерние каталоги; каждый элемент описан ниже.
+- **На что влияет в приложении:** Влияет на ту часть продукта или процесса сборки, которой принадлежит этот путь.
+- **Когда открывать:** Открывать при работе с файлами и процессами, связанными с `browser_extension/`.
+- **Можно удалить?** Нет — part of repository tooling or config если отчёт cleanup не сказал иное.
+- **Связанные пути:** `docs/APP_STRUCTURE.md`, `CHANGELOG.md`.
 
 ---
 
@@ -643,30 +694,6 @@ RU:
 
 ---
 
-## Folder: `browser_extension/`
-
-EN:
-
-- **What this folder is:** Manifest V3 browser companion for LIFE OS Quick Add.
-- **Why it exists:** Lets Chrome/Edge/Yandex users capture a task or page and jump into the authenticated LIFE OS web app without duplicating PocketBase logic.
-- **What lives here:** Extension manifest, service worker, popup HTML/CSS/JS.
-- **What part of the app it affects:** Browser-only Quick Add and web-app launch.
-- **When to open it:** Extension popup, shortcut, context-menu, or deployed web URL changes.
-- **Can it be deleted?** No — the browser companion would stop existing.
-- **Main related paths:** `lib/app/shell/shared/shell_browser_extension.dart`, `docs/DEPLOY.md`.
-
-RU:
-
-- **Что это за папка:** Manifest V3 расширение браузера для быстрого добавления задач в LIFE OS.
-- **Зачем нужна:** Даёт быстрый ввод из Chrome/Edge/Яндекс.Браузера без отдельной логики PocketBase.
-- **Что здесь лежит:** Manifest, service worker и popup HTML/CSS/JS.
-- **На что влияет в приложении:** Browser-only Quick Add и открытие web-версии.
-- **Когда открывать:** Меняется popup, hotkey, context menu или адрес web-приложения.
-- **Можно удалить?** Нет — исчезнет browser companion.
-- **Связанные пути:** `lib/app/shell/shared/shell_browser_extension.dart`, `docs/DEPLOY.md`.
-
----
-
 ## Folder: `web/`
 
 EN:
@@ -808,6 +835,30 @@ RU:
 - **Когда открывать:** Ошибки несовпадения версии Gradle.
 - **Можно удалить?** Нет — нужен для сборки Android.
 - **Связанные пути:** `android/settings.gradle.kts`.
+
+---
+
+## Folder: `browser_extension/icons/`
+
+EN:
+
+- **What this folder is:** Repository path `browser_extension/icons/` — tracked config, assets, or tooling for Life OS.
+- **Why it exists:** Git tracks `browser_extension/icons` because release, CI, or maintenance workflow depends on these files.
+- **What lives here:** Tracked files listed below with individual explanations.
+- **What part of the app it affects:** Repo workflow or platform build tied to this path — see child file entries.
+- **When to open it:** Maintenance or build work involving `browser_extension/icons`.
+- **Can it be deleted?** No — part of repository tooling or config unless cleanup report says otherwise.
+- **Main related paths:** `docs/APP_STRUCTURE.md`, `CHANGELOG.md`.
+
+RU:
+
+- **Что это за папка:** Служебный каталог репозитория `browser_extension/icons/`.
+- **Зачем нужна:** Хранит файлы, необходимые отдельной части сборки, данных проекта или сопровождения репозитория.
+- **Что здесь лежит:** Отслеживаемые Git файлы и дочерние каталоги; каждый элемент описан ниже.
+- **На что влияет в приложении:** Влияет на ту часть продукта или процесса сборки, которой принадлежит этот путь.
+- **Когда открывать:** Открывать при работе с файлами и процессами, связанными с `browser_extension/icons/`.
+- **Можно удалить?** Нет — part of repository tooling or config если отчёт cleanup не сказал иное.
+- **Связанные пути:** `docs/APP_STRUCTURE.md`, `CHANGELOG.md`.
 
 ---
 
@@ -4944,187 +4995,6 @@ RU:
 - **Связано с:** `AGENTS.md`, `docs/ARCHITECTURE.md`, `CHANGELOG.md`.
 
 
-### `browser_extension/manifest.json`
-
-EN:
-
-- **Human purpose:** Browser extension manifest for LIFE OS Quick Add.
-- **What this is:** Manifest V3 metadata, permissions, popup, service worker and Alt+Shift+L command.
-- **Why needed:** Chromium browsers need it to install and run the companion.
-- **Contents:** Extension permissions, action popup, host permission and command registration.
-- **Repository role:** platform build
-- **Evidence of use:** Entry manifest for the tracked `browser_extension/` product artifact.
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Browser extension cannot be loaded.
-- **Confidence:** HIGH
-- **Owner / layer:** browser companion
-- **Responsibilities:** Declare extension runtime surfaces and permissions.
-- **When to open:** Installing the unpacked extension or changing permissions/hotkey.
-- **Can it be deleted?** No — required for the extension.
-- **Connected to:** `browser_extension/service_worker.js`, `browser_extension/popup.html`.
-
-RU:
-
-- **Зачем файл человеку:** Manifest V3 для LIFE OS Quick Add.
-- **Что это:** Описание расширения, permissions, popup, service worker и Alt+Shift+L.
-- **Зачем:** Без manifest Chromium не загрузит расширение.
-- **Содержимое:** Runtime surfaces и permissions.
-- **Роль в репозитории:** platform build
-- **Доказательства использования:** Entry manifest каталога `browser_extension/`.
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Расширение не загрузится.
-- **Уверенность:** HIGH
-- **Владелец / слой:** browser companion
-- **Обязанности:** Конфигурация расширения.
-- **Когда открывать:** Permissions, hotkey, install.
-- **Можно удалить?** Нет.
-- **Связано с:** service worker и popup.
-
-### `browser_extension/popup.css`
-
-EN:
-
-- **Human purpose:** Compact visual styling for the Quick Add popup.
-- **What this is:** Local CSS for the extension popup only.
-- **Why needed:** Keeps the capture surface readable and lightweight without loading Flutter.
-- **Contents:** Popup spacing, fields, button, status and light/dark color-scheme rules.
-- **Repository role:** production UI
-- **Evidence of use:** Loaded by `browser_extension/popup.html`.
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Popup loses intended layout and interaction styling.
-- **Confidence:** HIGH
-- **Owner / layer:** browser companion
-- **Responsibilities:** Browser popup presentation.
-- **When to open:** Extension popup visual changes.
-- **Can it be deleted?** No — required by popup HTML.
-- **Connected to:** `browser_extension/popup.html`.
-
-RU:
-
-- **Зачем файл человеку:** Стили компактного Quick Add popup.
-- **Что это:** Локальный CSS расширения.
-- **Зачем:** Popup остаётся быстрым и не грузит Flutter UI.
-- **Содержимое:** Spacing, поля, кнопка, status, light/dark.
-- **Роль в репозитории:** production UI
-- **Доказательства использования:** Подключён из `popup.html`.
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Popup потеряет layout/style.
-- **Уверенность:** HIGH
-- **Владелец / слой:** browser companion
-- **Обязанности:** Presentation popup.
-- **Когда открывать:** Визуальные изменения popup.
-- **Можно удалить?** Нет.
-- **Связано с:** `popup.html`.
-
-### `browser_extension/popup.html`
-
-EN:
-
-- **Human purpose:** Quick Add capture surface shown from the browser toolbar.
-- **What this is:** Small HTML popup with task text, destination and open-app action.
-- **Why needed:** Gives task entry without loading the full Flutter UI inside the extension.
-- **Contents:** Task textarea, Plan/Lists selector, submit/open buttons.
-- **Repository role:** production UI
-- **Evidence of use:** Declared as `action.default_popup` by `browser_extension/manifest.json`.
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Toolbar action has no Quick Add UI.
-- **Confidence:** HIGH
-- **Owner / layer:** browser companion
-- **Responsibilities:** Capture browser task intent.
-- **When to open:** Popup fields or copy changes.
-- **Can it be deleted?** No — required by manifest.
-- **Connected to:** `browser_extension/popup.js`, `browser_extension/popup.css`.
-
-RU:
-
-- **Зачем файл человеку:** Quick Add окно из toolbar браузера.
-- **Что это:** Небольшой HTML popup с текстом задачи и выбором назначения.
-- **Зачем:** Быстрый ввод без Flutter внутри расширения.
-- **Содержимое:** Textarea, Plan/Lists selector, кнопки.
-- **Роль в репозитории:** production UI
-- **Доказательства использования:** `action.default_popup` в manifest.
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Не будет Quick Add popup.
-- **Уверенность:** HIGH
-- **Владелец / слой:** browser companion
-- **Обязанности:** Capture task intent.
-- **Когда открывать:** Поля и copy popup.
-- **Можно удалить?** Нет.
-- **Связано с:** popup JS/CSS.
-
-### `browser_extension/popup.js`
-
-EN:
-
-- **Human purpose:** Handles Quick Add popup interactions and draft persistence.
-- **What this is:** Extension-side controller for submit/open shortcuts.
-- **Why needed:** Sends explicit user intent to the service worker and preserves unfinished draft text locally.
-- **Contents:** Ctrl/Cmd+Enter submit, local draft storage, runtime messages.
-- **Repository role:** production UI
-- **Evidence of use:** Loaded by `browser_extension/popup.html`.
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Popup controls stop working.
-- **Confidence:** HIGH
-- **Owner / layer:** browser companion
-- **Responsibilities:** Popup interaction state and messaging.
-- **When to open:** Submit behavior or draft persistence changes.
-- **Can it be deleted?** No — required by popup HTML.
-- **Connected to:** `browser_extension/service_worker.js`.
-
-RU:
-
-- **Зачем файл человеку:** Логика Quick Add popup и сохранение черновика.
-- **Что это:** JS-контроллер submit/open действий.
-- **Зачем:** Передаёт явное действие пользователя в service worker.
-- **Содержимое:** Ctrl/Cmd+Enter, storage, runtime messages.
-- **Роль в репозитории:** production UI
-- **Доказательства использования:** Загружается из `popup.html`.
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Кнопки popup перестанут работать.
-- **Уверенность:** HIGH
-- **Владелец / слой:** browser companion
-- **Обязанности:** Interaction state и messaging.
-- **Когда открывать:** Submit/draft behavior.
-- **Можно удалить?** Нет.
-- **Связано с:** service worker.
-
-### `browser_extension/service_worker.js`
-
-EN:
-
-- **Human purpose:** Browser-extension background coordinator.
-- **What this is:** Manifest V3 service worker that focuses LIFE OS, builds one-shot Quick Add URLs and owns context-menu capture.
-- **Why needed:** Keeps browser integration separate from Flutter and avoids direct PocketBase writes.
-- **Contents:** Tab focus/open, request IDs, selection/page context menus and popup message handling.
-- **Repository role:** platform build
-- **Evidence of use:** Declared as the extension background service worker by `browser_extension/manifest.json`.
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Quick Add handoff, context menus and web-app opening stop working.
-- **Confidence:** HIGH
-- **Owner / layer:** browser companion
-- **Responsibilities:** Browser API integration and one-shot handoff.
-- **When to open:** Web URL, context menus or tab-focus behavior changes.
-- **Can it be deleted?** No — required by manifest.
-- **Connected to:** `lib/app/shell/shared/shell_browser_extension.dart`.
-
-RU:
-
-- **Зачем файл человеку:** Background coordinator расширения.
-- **Что это:** Manifest V3 service worker для focus/open LIFE OS и context menu.
-- **Зачем:** Browser API остаётся вне Flutter и не пишет PocketBase напрямую.
-- **Содержимое:** Tabs, request ID, selection/page menu, runtime messages.
-- **Роль в репозитории:** platform build
-- **Доказательства использования:** Background service worker в manifest.
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Quick Add handoff и context menu перестанут работать.
-- **Уверенность:** HIGH
-- **Владелец / слой:** browser companion
-- **Обязанности:** Browser API integration.
-- **Когда открывать:** URL/context menu/tab focus.
-- **Можно удалить?** Нет.
-- **Связано с:** shell browser-extension handoff.
-
-
 ### `CHANGELOG.md`
 
 EN:
@@ -6085,6 +5955,376 @@ RU:
 - **Когда открывать:** Gradle sync падает на settings или не видит `:app` module.
 - **Можно удалить?** Нет — без него не соберётся Android APK.
 - **Связано с:** `android/build.gradle.kts`, `android/app/build.gradle.kts`.
+
+
+### `branding/life_os_app_icon_master.png`
+
+EN:
+
+- **Human purpose:** PNG image asset `life_os_app_icon_master.png` in `branding` — repo tooling or config. Tracked because `branding` needs `life_os_app_icon_master.png` for build, CI, or maintenance.
+- **What this is:** PNG image asset `life_os_app_icon_master.png` in `branding` — repo tooling or config.
+- **Why needed:** Tracked because `branding` needs `life_os_app_icon_master.png` for build, CI, or maintenance.
+- **Contents:** Open `life_os_app_icon_master.png` when working on `branding` (see folder section above).
+- **Repository role:** asset
+- **Evidence of use:** Tracked repository file `branding/life_os_app_icon_master.png` retained for tooling/config.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** May break tooling or configuration; verify before delete.
+- **Confidence:** MEDIUM
+- **Owner / layer:** repository root
+- **Responsibilities:** Supports `branding` workflow for `life_os_app_icon_master.png`.
+- **When to open:** When build output or maintenance cites `life_os_app_icon_master.png`.
+- **Can it be deleted?** No — part of repository tooling or config.
+- **Connected to:** `branding/`, `docs/APP_STRUCTURE.md`.
+
+RU:
+
+- **Зачем файл человеку:** `life_os_app_icon_master.png` — отслеживаемый ресурс области `branding` с отдельной ролью. Поддерживает процесс, сборку, данные или runtime-задачу области `branding` для `life_os_app_icon_master.png`.
+- **Что это:** `life_os_app_icon_master.png` — отслеживаемый ресурс области `branding` с отдельной ролью.
+- **Зачем:** Поддерживает процесс, сборку, данные или runtime-задачу области `branding` для `life_os_app_icon_master.png`.
+- **Содержимое:** Данные или код `life_os_app_icon_master.png`, необходимые его подтверждённой роли и указанным ниже связям.
+- **Роль в репозитории:** asset
+- **Доказательства использования:** Отслеживаемый файл `branding/life_os_app_icon_master.png` для tooling/config.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Может сломать tooling; проверять перед удалением.
+- **Уверенность:** MEDIUM
+- **Владелец / слой:** корень репозитория
+- **Обязанности:** Реализует назначение `life_os_app_icon_master.png` для области `branding`.
+- **Когда открывать:** When результат сборки or maintenance cites `life_os_app_icon_master.png`.
+- **Можно удалить?** Нет — конфигурация/инструмент репозитория.
+- **Связано с:** `branding/`, `docs/APP_STRUCTURE.md`.
+
+
+### `browser_extension/icons/icon128.png`
+
+EN:
+
+- **Human purpose:** PNG image asset `icon128.png` in `browser_extension/icons` — repo tooling or config. Tracked because `browser_extension/icons` needs `icon128.png` for build, CI, or maintenance.
+- **What this is:** PNG image asset `icon128.png` in `browser_extension/icons` — repo tooling or config.
+- **Why needed:** Tracked because `browser_extension/icons` needs `icon128.png` for build, CI, or maintenance.
+- **Contents:** Open `icon128.png` when working on `browser_extension/icons` (see folder section above).
+- **Repository role:** asset
+- **Evidence of use:** Tracked repository file `browser_extension/icons/icon128.png` retained for tooling/config.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** May break tooling or configuration; verify before delete.
+- **Confidence:** MEDIUM
+- **Owner / layer:** repository root
+- **Responsibilities:** Supports `browser_extension/icons` workflow for `icon128.png`.
+- **When to open:** When build output or maintenance cites `icon128.png`.
+- **Can it be deleted?** No — part of repository tooling or config.
+- **Connected to:** `browser_extension/icons/`, `docs/APP_STRUCTURE.md`.
+
+RU:
+
+- **Зачем файл человеку:** `icon128.png` — отслеживаемый ресурс области `browser_extension/icons` с отдельной ролью. Поддерживает процесс, сборку, данные или runtime-задачу области `browser_extension/icons` для `icon128.png`.
+- **Что это:** `icon128.png` — отслеживаемый ресурс области `browser_extension/icons` с отдельной ролью.
+- **Зачем:** Поддерживает процесс, сборку, данные или runtime-задачу области `browser_extension/icons` для `icon128.png`.
+- **Содержимое:** Данные или код `icon128.png`, необходимые его подтверждённой роли и указанным ниже связям.
+- **Роль в репозитории:** asset
+- **Доказательства использования:** Отслеживаемый файл `browser_extension/icons/icon128.png` для tooling/config.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Может сломать tooling; проверять перед удалением.
+- **Уверенность:** MEDIUM
+- **Владелец / слой:** корень репозитория
+- **Обязанности:** Реализует назначение `icon128.png` для области `browser_extension/icons`.
+- **Когда открывать:** When результат сборки or maintenance cites `icon128.png`.
+- **Можно удалить?** Нет — конфигурация/инструмент репозитория.
+- **Связано с:** `browser_extension/icons/`, `docs/APP_STRUCTURE.md`.
+
+
+### `browser_extension/icons/icon16.png`
+
+EN:
+
+- **Human purpose:** PNG image asset `icon16.png` in `browser_extension/icons` — repo tooling or config. Tracked because `browser_extension/icons` needs `icon16.png` for build, CI, or maintenance.
+- **What this is:** PNG image asset `icon16.png` in `browser_extension/icons` — repo tooling or config.
+- **Why needed:** Tracked because `browser_extension/icons` needs `icon16.png` for build, CI, or maintenance.
+- **Contents:** Open `icon16.png` when working on `browser_extension/icons` (see folder section above).
+- **Repository role:** asset
+- **Evidence of use:** Tracked repository file `browser_extension/icons/icon16.png` retained for tooling/config.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** May break tooling or configuration; verify before delete.
+- **Confidence:** MEDIUM
+- **Owner / layer:** repository root
+- **Responsibilities:** Supports `browser_extension/icons` workflow for `icon16.png`.
+- **When to open:** When build output or maintenance cites `icon16.png`.
+- **Can it be deleted?** No — part of repository tooling or config.
+- **Connected to:** `browser_extension/icons/`, `docs/APP_STRUCTURE.md`.
+
+RU:
+
+- **Зачем файл человеку:** `icon16.png` — отслеживаемый ресурс области `browser_extension/icons` с отдельной ролью. Поддерживает процесс, сборку, данные или runtime-задачу области `browser_extension/icons` для `icon16.png`.
+- **Что это:** `icon16.png` — отслеживаемый ресурс области `browser_extension/icons` с отдельной ролью.
+- **Зачем:** Поддерживает процесс, сборку, данные или runtime-задачу области `browser_extension/icons` для `icon16.png`.
+- **Содержимое:** Данные или код `icon16.png`, необходимые его подтверждённой роли и указанным ниже связям.
+- **Роль в репозитории:** asset
+- **Доказательства использования:** Отслеживаемый файл `browser_extension/icons/icon16.png` для tooling/config.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Может сломать tooling; проверять перед удалением.
+- **Уверенность:** MEDIUM
+- **Владелец / слой:** корень репозитория
+- **Обязанности:** Реализует назначение `icon16.png` для области `browser_extension/icons`.
+- **Когда открывать:** When результат сборки or maintenance cites `icon16.png`.
+- **Можно удалить?** Нет — конфигурация/инструмент репозитория.
+- **Связано с:** `browser_extension/icons/`, `docs/APP_STRUCTURE.md`.
+
+
+### `browser_extension/icons/icon32.png`
+
+EN:
+
+- **Human purpose:** PNG image asset `icon32.png` in `browser_extension/icons` — repo tooling or config. Tracked because `browser_extension/icons` needs `icon32.png` for build, CI, or maintenance.
+- **What this is:** PNG image asset `icon32.png` in `browser_extension/icons` — repo tooling or config.
+- **Why needed:** Tracked because `browser_extension/icons` needs `icon32.png` for build, CI, or maintenance.
+- **Contents:** Open `icon32.png` when working on `browser_extension/icons` (see folder section above).
+- **Repository role:** asset
+- **Evidence of use:** Tracked repository file `browser_extension/icons/icon32.png` retained for tooling/config.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** May break tooling or configuration; verify before delete.
+- **Confidence:** MEDIUM
+- **Owner / layer:** repository root
+- **Responsibilities:** Supports `browser_extension/icons` workflow for `icon32.png`.
+- **When to open:** When build output or maintenance cites `icon32.png`.
+- **Can it be deleted?** No — part of repository tooling or config.
+- **Connected to:** `browser_extension/icons/`, `docs/APP_STRUCTURE.md`.
+
+RU:
+
+- **Зачем файл человеку:** `icon32.png` — отслеживаемый ресурс области `browser_extension/icons` с отдельной ролью. Поддерживает процесс, сборку, данные или runtime-задачу области `browser_extension/icons` для `icon32.png`.
+- **Что это:** `icon32.png` — отслеживаемый ресурс области `browser_extension/icons` с отдельной ролью.
+- **Зачем:** Поддерживает процесс, сборку, данные или runtime-задачу области `browser_extension/icons` для `icon32.png`.
+- **Содержимое:** Данные или код `icon32.png`, необходимые его подтверждённой роли и указанным ниже связям.
+- **Роль в репозитории:** asset
+- **Доказательства использования:** Отслеживаемый файл `browser_extension/icons/icon32.png` для tooling/config.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Может сломать tooling; проверять перед удалением.
+- **Уверенность:** MEDIUM
+- **Владелец / слой:** корень репозитория
+- **Обязанности:** Реализует назначение `icon32.png` для области `browser_extension/icons`.
+- **Когда открывать:** When результат сборки or maintenance cites `icon32.png`.
+- **Можно удалить?** Нет — конфигурация/инструмент репозитория.
+- **Связано с:** `browser_extension/icons/`, `docs/APP_STRUCTURE.md`.
+
+
+### `browser_extension/icons/icon48.png`
+
+EN:
+
+- **Human purpose:** PNG image asset `icon48.png` in `browser_extension/icons` — repo tooling or config. Tracked because `browser_extension/icons` needs `icon48.png` for build, CI, or maintenance.
+- **What this is:** PNG image asset `icon48.png` in `browser_extension/icons` — repo tooling or config.
+- **Why needed:** Tracked because `browser_extension/icons` needs `icon48.png` for build, CI, or maintenance.
+- **Contents:** Open `icon48.png` when working on `browser_extension/icons` (see folder section above).
+- **Repository role:** asset
+- **Evidence of use:** Tracked repository file `browser_extension/icons/icon48.png` retained for tooling/config.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** May break tooling or configuration; verify before delete.
+- **Confidence:** MEDIUM
+- **Owner / layer:** repository root
+- **Responsibilities:** Supports `browser_extension/icons` workflow for `icon48.png`.
+- **When to open:** When build output or maintenance cites `icon48.png`.
+- **Can it be deleted?** No — part of repository tooling or config.
+- **Connected to:** `browser_extension/icons/`, `docs/APP_STRUCTURE.md`.
+
+RU:
+
+- **Зачем файл человеку:** `icon48.png` — отслеживаемый ресурс области `browser_extension/icons` с отдельной ролью. Поддерживает процесс, сборку, данные или runtime-задачу области `browser_extension/icons` для `icon48.png`.
+- **Что это:** `icon48.png` — отслеживаемый ресурс области `browser_extension/icons` с отдельной ролью.
+- **Зачем:** Поддерживает процесс, сборку, данные или runtime-задачу области `browser_extension/icons` для `icon48.png`.
+- **Содержимое:** Данные или код `icon48.png`, необходимые его подтверждённой роли и указанным ниже связям.
+- **Роль в репозитории:** asset
+- **Доказательства использования:** Отслеживаемый файл `browser_extension/icons/icon48.png` для tooling/config.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Может сломать tooling; проверять перед удалением.
+- **Уверенность:** MEDIUM
+- **Владелец / слой:** корень репозитория
+- **Обязанности:** Реализует назначение `icon48.png` для области `browser_extension/icons`.
+- **Когда открывать:** When результат сборки or maintenance cites `icon48.png`.
+- **Можно удалить?** Нет — конфигурация/инструмент репозитория.
+- **Связано с:** `browser_extension/icons/`, `docs/APP_STRUCTURE.md`.
+
+
+### `browser_extension/manifest.json`
+
+EN:
+
+- **Human purpose:** JSON data/config `manifest.json` in `browser_extension` — repo tooling or config. Tracked because `browser_extension` needs `manifest.json` for build, CI, or maintenance.
+- **What this is:** JSON data/config `manifest.json` in `browser_extension` — repo tooling or config.
+- **Why needed:** Tracked because `browser_extension` needs `manifest.json` for build, CI, or maintenance.
+- **Contents:** Open `manifest.json` when working on `browser_extension` (see folder section above).
+- **Repository role:** developer tool
+- **Evidence of use:** Tracked repository file `browser_extension/manifest.json` retained for tooling/config.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** May break tooling or configuration; verify before delete.
+- **Confidence:** MEDIUM
+- **Owner / layer:** repository root
+- **Responsibilities:** Supports `browser_extension` workflow for `manifest.json`.
+- **When to open:** When build output or maintenance cites `manifest.json`.
+- **Can it be deleted?** No — part of repository tooling or config.
+- **Connected to:** `browser_extension/`, `docs/APP_STRUCTURE.md`.
+
+RU:
+
+- **Зачем файл человеку:** `manifest.json` — JSON-описание области `browser_extension`. Передаёт структурированные данные или настройки компонентам, связанным с `browser_extension`.
+- **Что это:** `manifest.json` — JSON-описание области `browser_extension`.
+- **Зачем:** Передаёт структурированные данные или настройки компонентам, связанным с `browser_extension`.
+- **Содержимое:** Структурированные JSON-поля для сценария `manifest.json`.
+- **Роль в репозитории:** developer tool
+- **Доказательства использования:** Отслеживаемый файл `browser_extension/manifest.json` для tooling/config.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Может сломать tooling; проверять перед удалением.
+- **Уверенность:** MEDIUM
+- **Владелец / слой:** корень репозитория
+- **Обязанности:** Хранит машинно-читаемые данные `manifest.json` для своего владельца.
+- **Когда открывать:** When результат сборки or maintenance cites `manifest.json`.
+- **Можно удалить?** Нет — конфигурация/инструмент репозитория.
+- **Связано с:** `browser_extension/`, `docs/APP_STRUCTURE.md`.
+
+
+### `browser_extension/popup.css`
+
+EN:
+
+- **Human purpose:** css file `popup.css` in `browser_extension` — repo tooling or config. Tracked because `browser_extension` needs `popup.css` for build, CI, or maintenance.
+- **What this is:** css file `popup.css` in `browser_extension` — repo tooling or config.
+- **Why needed:** Tracked because `browser_extension` needs `popup.css` for build, CI, or maintenance.
+- **Contents:** Open `popup.css` when working on `browser_extension` (see folder section above).
+- **Repository role:** developer tool
+- **Evidence of use:** Tracked repository file `browser_extension/popup.css` retained for tooling/config.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** May break tooling or configuration; verify before delete.
+- **Confidence:** MEDIUM
+- **Owner / layer:** repository root
+- **Responsibilities:** Supports `browser_extension` workflow for `popup.css`.
+- **When to open:** When build output or maintenance cites `popup.css`.
+- **Can it be deleted?** No — part of repository tooling or config.
+- **Connected to:** `browser_extension/`, `docs/APP_STRUCTURE.md`.
+
+RU:
+
+- **Зачем файл человеку:** `popup.css` — отслеживаемый ресурс области `browser_extension` с отдельной ролью. Поддерживает процесс, сборку, данные или runtime-задачу области `browser_extension` для `popup.css`.
+- **Что это:** `popup.css` — отслеживаемый ресурс области `browser_extension` с отдельной ролью.
+- **Зачем:** Поддерживает процесс, сборку, данные или runtime-задачу области `browser_extension` для `popup.css`.
+- **Содержимое:** Данные или код `popup.css`, необходимые его подтверждённой роли и указанным ниже связям.
+- **Роль в репозитории:** developer tool
+- **Доказательства использования:** Отслеживаемый файл `browser_extension/popup.css` для tooling/config.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Может сломать tooling; проверять перед удалением.
+- **Уверенность:** MEDIUM
+- **Владелец / слой:** корень репозитория
+- **Обязанности:** Реализует назначение `popup.css` для области `browser_extension`.
+- **Когда открывать:** When результат сборки or maintenance cites `popup.css`.
+- **Можно удалить?** Нет — конфигурация/инструмент репозитория.
+- **Связано с:** `browser_extension/`, `docs/APP_STRUCTURE.md`.
+
+
+### `browser_extension/popup.html`
+
+EN:
+
+- **Human purpose:** html file `popup.html` in `browser_extension` — repo tooling or config. Tracked because `browser_extension` needs `popup.html` for build, CI, or maintenance.
+- **What this is:** html file `popup.html` in `browser_extension` — repo tooling or config.
+- **Why needed:** Tracked because `browser_extension` needs `popup.html` for build, CI, or maintenance.
+- **Contents:** Open `popup.html` when working on `browser_extension` (see folder section above).
+- **Repository role:** developer tool
+- **Evidence of use:** Tracked repository file `browser_extension/popup.html` retained for tooling/config.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** May break tooling or configuration; verify before delete.
+- **Confidence:** MEDIUM
+- **Owner / layer:** repository root
+- **Responsibilities:** Supports `browser_extension` workflow for `popup.html`.
+- **When to open:** When build output or maintenance cites `popup.html`.
+- **Can it be deleted?** No — part of repository tooling or config.
+- **Connected to:** `browser_extension/`, `docs/APP_STRUCTURE.md`.
+
+RU:
+
+- **Зачем файл человеку:** `popup.html` — отслеживаемый ресурс области `browser_extension` с отдельной ролью. Поддерживает процесс, сборку, данные или runtime-задачу области `browser_extension` для `popup.html`.
+- **Что это:** `popup.html` — отслеживаемый ресурс области `browser_extension` с отдельной ролью.
+- **Зачем:** Поддерживает процесс, сборку, данные или runtime-задачу области `browser_extension` для `popup.html`.
+- **Содержимое:** Данные или код `popup.html`, необходимые его подтверждённой роли и указанным ниже связям.
+- **Роль в репозитории:** developer tool
+- **Доказательства использования:** Отслеживаемый файл `browser_extension/popup.html` для tooling/config.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Может сломать tooling; проверять перед удалением.
+- **Уверенность:** MEDIUM
+- **Владелец / слой:** корень репозитория
+- **Обязанности:** Реализует назначение `popup.html` для области `browser_extension`.
+- **Когда открывать:** When результат сборки or maintenance cites `popup.html`.
+- **Можно удалить?** Нет — конфигурация/инструмент репозитория.
+- **Связано с:** `browser_extension/`, `docs/APP_STRUCTURE.md`.
+
+
+### `browser_extension/popup.js`
+
+EN:
+
+- **Human purpose:** JavaScript source `popup.js` in `browser_extension` — repo tooling or config. Tracked because `browser_extension` needs `popup.js` for build, CI, or maintenance.
+- **What this is:** JavaScript source `popup.js` in `browser_extension` — repo tooling or config.
+- **Why needed:** Tracked because `browser_extension` needs `popup.js` for build, CI, or maintenance.
+- **Contents:** Open `popup.js` when working on `browser_extension` (see folder section above).
+- **Repository role:** developer tool
+- **Evidence of use:** Tracked repository file `browser_extension/popup.js` retained for tooling/config.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** May break tooling or configuration; verify before delete.
+- **Confidence:** MEDIUM
+- **Owner / layer:** repository root
+- **Responsibilities:** Supports `browser_extension` workflow for `popup.js`.
+- **When to open:** When build output or maintenance cites `popup.js`.
+- **Can it be deleted?** No — part of repository tooling or config.
+- **Connected to:** `browser_extension/`, `docs/APP_STRUCTURE.md`.
+
+RU:
+
+- **Зачем файл человеку:** `popup.js` — JavaScript-модуль для области `browser_extension`. Обеспечивает автоматизацию или web-логику области `browser_extension` для сценария `popup.js`.
+- **Что это:** `popup.js` — JavaScript-модуль для области `browser_extension`.
+- **Зачем:** Обеспечивает автоматизацию или web-логику области `browser_extension` для сценария `popup.js`.
+- **Содержимое:** JavaScript-код и настройки, относящиеся к задаче `popup.js`.
+- **Роль в репозитории:** developer tool
+- **Доказательства использования:** Отслеживаемый файл `browser_extension/popup.js` для tooling/config.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Может сломать tooling; проверять перед удалением.
+- **Уверенность:** MEDIUM
+- **Владелец / слой:** корень репозитория
+- **Обязанности:** Реализует JavaScript-часть сценария `popup.js` в своём каталоге.
+- **Когда открывать:** When результат сборки or maintenance cites `popup.js`.
+- **Можно удалить?** Нет — конфигурация/инструмент репозитория.
+- **Связано с:** `browser_extension/`, `docs/APP_STRUCTURE.md`.
+
+
+### `browser_extension/service_worker.js`
+
+EN:
+
+- **Human purpose:** JavaScript source `service_worker.js` in `browser_extension` — repo tooling or config. Tracked because `browser_extension` needs `service_worker.js` for build, CI, or maintenance.
+- **What this is:** JavaScript source `service_worker.js` in `browser_extension` — repo tooling or config.
+- **Why needed:** Tracked because `browser_extension` needs `service_worker.js` for build, CI, or maintenance.
+- **Contents:** Open `service_worker.js` when working on `browser_extension` (see folder section above).
+- **Repository role:** developer tool
+- **Evidence of use:** Referenced by: `browser_extension/manifest.json`, `docs/DEPLOY.md`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** May break tooling or configuration; verify before delete.
+- **Confidence:** MEDIUM
+- **Owner / layer:** repository root
+- **Responsibilities:** Supports `browser_extension` workflow for `service_worker.js`.
+- **When to open:** When build output or maintenance cites `service_worker.js`.
+- **Can it be deleted?** No — part of repository tooling or config.
+- **Connected to:** `browser_extension/`, `docs/APP_STRUCTURE.md`.
+
+RU:
+
+- **Зачем файл человеку:** `service_worker.js` — JavaScript-модуль для области `browser_extension`. Обеспечивает автоматизацию или web-логику области `browser_extension` для сценария `service_worker.js`.
+- **Что это:** `service_worker.js` — JavaScript-модуль для области `browser_extension`.
+- **Зачем:** Обеспечивает автоматизацию или web-логику области `browser_extension` для сценария `service_worker.js`.
+- **Содержимое:** JavaScript-код и настройки, относящиеся к задаче `service_worker.js`.
+- **Роль в репозитории:** developer tool
+- **Доказательства использования:** Упоминается в: `browser_extension/manifest.json`, `docs/DEPLOY.md`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Может сломать tooling; проверять перед удалением.
+- **Уверенность:** MEDIUM
+- **Владелец / слой:** корень репозитория
+- **Обязанности:** Реализует JavaScript-часть сценария `service_worker.js` в своём каталоге.
+- **Когда открывать:** When результат сборки or maintenance cites `service_worker.js`.
+- **Можно удалить?** Нет — конфигурация/инструмент репозитория.
+- **Связано с:** `browser_extension/`, `docs/APP_STRUCTURE.md`.
 
 
 ### `docs/APP_STRUCTURE.md`
@@ -10423,6 +10663,44 @@ RU:
 - **Связано с:** Все main tabs, `app_shell.dart`
 
 
+### `lib/app/shell/shared/shell_browser_extension.dart`
+
+EN:
+
+- **Human purpose:** App shell wiring — Web-only browser-extension handoff: consumes one-shot Quick Add URL requests after first frame, dedupes request IDs locally, and delegates creation to existing Planning Brain entry points. Connects bottom tabs, voice, edit sheets, and offline banner across the whole app.
+- **What this is:** App shell wiring — Web-only browser-extension handoff: consumes one-shot Quick Add URL requests after first frame, dedupes request IDs locally, and delegates creation to existing Planning Brain entry points.
+- **Why needed:** Connects bottom tabs, voice, edit sheets, and offline banner across the whole app.
+- **Contents:** Shell mixin or widget (`ShellBrowserExtensionQuickAdd`).
+- **Key code names:** `ShellBrowserExtensionQuickAdd`
+- **Repository role:** production UI
+- **Evidence of use:** Included by `lib/app/shell/app_shell.dart` through a `part` directive (not imported directly).
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Brain/library compile failure in `lib/app/shell/app_shell.dart` and broken related UI/data ops.
+- **Confidence:** HIGH
+- **Owner / layer:** app shell
+- **Responsibilities:** Web-only browser-extension handoff: consumes one-shot Quick Add URL requests after first frame, dedupes request IDs locally, and delegates creation to existing Planning Brain entry points
+- **When to open:** Bottom tabs, voice routing, edit modal host, offline banner slot.
+- **Can it be deleted?** Brain/library compile failure in `lib/app/shell/app_shell.dart` and broken related UI/data ops.
+- **Connected to:** All main tabs, `app_shell.dart`; APP_STRUCTURE role: Web-only browser-extension handoff: consumes one-shot Quick Add URL requests after first frame, dedupes request IDs loca
+
+RU:
+
+- **Зачем файл человеку:** Оболочка приложения (shell) — Web-only browser-extension handoff: consumes one-shot Quick Add URL requests after first frame, dedupes request IDs locally, and delegates creation to existing Planning Brain entry points. Связывает вкладки, voice, edit sheets и offline banner.
+- **Что это:** Оболочка приложения (shell) — Web-only browser-extension handoff: consumes one-shot Quick Add URL requests after first frame, dedupes request IDs locally, and delegates creation to existing Planning Brain entry points.
+- **Зачем:** Связывает вкладки, voice, edit sheets и offline banner.
+- **Содержимое:** Shell mixin или виджет (logic in `shell_browser_extension`).
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Подключён из `lib/app/shell/app_shell.dart` через `part` (не импортируется напрямую).
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Сломается компиляция `lib/app/shell/app_shell.dart` и связанные экраны/данные.
+- **Уверенность:** HIGH
+- **Владелец / слой:** оболочка приложения
+- **Обязанности:** Реализует в shell: Web-only browser-extension handoff: consumes one-shot Quick Add URL requests after first frame, dedupes request IDs locally, and delegates creation to existing Planning Brain entry points.
+- **Когда открывать:** Навигация, voice, edit host.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** Все main tabs, `app_shell.dart`
+
+
 ### `lib/app/shell/shared/shell_chrome.dart`
 
 EN:
@@ -10573,44 +10851,6 @@ RU:
 - **Когда открывать:** Навигация, voice, edit host.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Все main tabs, `app_shell.dart`
-
-
-### `lib/app/shell/shared/shell_browser_extension.dart`
-
-EN:
-
-- **Human purpose:** Web-shell receiver for one-shot LIFE OS browser-extension Quick Add requests.
-- **What this is:** Shell part that validates URL parameters, dedupes request IDs and delegates creation to the existing Planning Brain.
-- **Why needed:** The extension must reuse authenticated app behavior instead of implementing a second PocketBase client.
-- **Contents:** `ShellBrowserExtensionQuickAdd`, local processed-request history, Plan/Lists navigation.
-- **Key code names:** `ShellBrowserExtensionQuickAdd`
-- **Repository role:** production UI
-- **Evidence of use:** Included by `lib/app/shell/app_shell.dart` through a `part` directive and invoked by shell lifecycle after first frame.
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Extension can open LIFE OS but Quick Add requests will not be consumed.
-- **Confidence:** HIGH
-- **Owner / layer:** app shell
-- **Responsibilities:** Authenticated browser-extension handoff only; PocketBase writes remain in Brain.
-- **When to open:** Extension Quick Add duplicate, routing or handoff failures.
-- **Can it be deleted?** No — required for browser Quick Add.
-- **Connected to:** `browser_extension/service_worker.js`, `lib/data/plan_service.dart`.
-
-RU:
-
-- **Зачем файл человеку:** Принимает одноразовый Quick Add из browser extension после загрузки web-shell.
-- **Что это:** Shell part: проверяет URL, защищает от дублей и передаёт создание в существующий Planning Brain.
-- **Зачем:** Расширение не должно становиться вторым PocketBase-клиентом.
-- **Содержимое:** `ShellBrowserExtensionQuickAdd`, processed request IDs, переход в План/Списки.
-- **Роль в репозитории:** production UI
-- **Доказательства использования:** Подключён как `part` из `app_shell.dart` и вызывается lifecycle после первого frame.
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Web откроется, но Quick Add не создаст задачу.
-- **Уверенность:** HIGH
-- **Владелец / слой:** app shell
-- **Обязанности:** Только handoff; PocketBase остаётся в Brain.
-- **Когда открывать:** Дубли, routing, handoff extension.
-- **Можно удалить?** Нет.
-- **Связано с:** service worker и `plan_service.dart`.
 
 
 ### `lib/app/shell/shared/shell_lifecycle.dart`
@@ -12732,8 +12972,8 @@ EN:
 - **Human purpose:** Shared design-system widget — Progress/invariant card shells. Plans, Timeline, and Lists reuse this instead of copying button/card styles.
 - **What this is:** Shared design-system widget — Progress/invariant card shells.
 - **Why needed:** Plans, Timeline, and Lists reuse this instead of copying button/card styles.
-- **Contents:** Canonical Flutter widget (`PlanCardProgressSlot`, `PlanCardInvariantBody`, `PlanCardRailShell`, `PlanCardProgressRow`).
-- **Key code names:** `PlanCardProgressSlot`, `PlanCardInvariantBody`, `PlanCardRailShell`, `PlanCardProgressRow`
+- **Contents:** Canonical Flutter widget (`PlanCardProgressSlot`, `_PlanCardProgressSlotState`, `PlanCardInvariantBody`, `PlanCardRailShell`, `PlanCardProgressRow`).
+- **Key code names:** `PlanCardProgressSlot`, `_PlanCardProgressSlotState`, `PlanCardInvariantBody`, `PlanCardRailShell`, `PlanCardProgressRow`
 - **Repository role:** shared foundation
 - **Evidence of use:** Imported/exported by production Dart: `lib/core/widgets/plan_time_task_card/plan_card_layouts.dart`, `lib/core/widgets/plan_time_task_card/plan_time_task_card.dart`.
 - **Necessity status:** PROVEN_REQUIRED
