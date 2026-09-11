@@ -171,17 +171,27 @@ Each mapping must answer:
 
 ### PlanTimeTaskCard (Time mode scheduled plans)
 
-Canonical widget: `PlanTimeTaskCard` in `lib/core/widgets/plan_time_task_card.dart` (`_PlanningTaskCard` in Time mode).
+Canonical widget: `PlanTimeTaskCard` in `lib/core/widgets/plan_time_task_card.dart` (`PlanCard` is the production wrapper).
 
 | Rule | Detail |
 | :--- | :--- |
-| **Separator** | Progress bar is the **only** separator between content and footer. **No** duplicate divider line. |
-| **Footer** | Category breadcrumbs **left**, planned time **right** (medium/large only). |
-| **Category color** | Breadcrumb/path and watermark use the **category color**, not link blue. Watermark = low-opacity category icon. |
-| **Density tiers** | **micro** (<56px), **compact** (56–90px), **medium** (90–130px), **large** (≥130px) — chosen by **rendered block height**, not duration label alone. |
-| **Micro / compact** | Checkbox, play, title, duration/time, menu only. **Do not** force full footer, tag row, or large watermark on 5–15 minute / short blocks. |
-| **Hover** | Full-card hover surface; checkbox, play, and menu keep **independent** hit targets. |
-| **Resize affordance** | Top/bottom 16px hit zones; hover shows subtle handle; floating time preview during drag/resize. |
+| **Duration-responsive layout** | Time View cards change composition by **rendered height**. Equal-duration cards must always resolve to the same rendered height and visual tier, independent of adjacency. |
+| **10–15 min / very small** | 32px completion checkbox, title, tags, planned time, trailing Play and Options. No footer/progress is forced into the minimum-height card. |
+| **30 min / first footer tier** | Title/tags use a tighter top inset so the card can keep more air between tags and the 2px progress bar while retaining a visible footer and bottom breathing room. |
+| **45 min+** | Breadcrumb footer remains pinned to the bottom; the progress separator stays close to the footer instead of floating high above it. 60min+ keeps the live actual-time slot above the progress bar. |
+| **Checkbox/content spacing** | Checkbox stays 32×32 with 12px card-edge inset. Time View checkbox → text gap is **12px**. |
+| **Vertical rhythm** | Title → tags = **6px** normally. 30min uses 5px; tags → progress is at least 6px and 8px at the 30min anchor. |
+| **Progress** | Progress bar is **2px high** and is the only separator between content and footer. No duplicate divider line. Progress → breadcrumbs = **5px** normally and **4px** at the 30min anchor. |
+| **Footer** | Category breadcrumbs left, planned time right. Breadcrumbs → bottom edge = **10px** normally and **5px** at the 30min anchor. |
+| **Category background icon** | **Every Time View Plan card** shows the category icon as the existing low-opacity, category-colored watermark behind card content. |
+| **Play** | Default background is transparent. Triangle is 24×26px, optically shifted 2px right, with **8px rounded corners**. Hover remains explicit. |
+| **Hover** | Completion checkbox, Play and Options each keep their own hover feedback and hit target; card hover remains independent. |
+| **Completed state** | Existing completion behavior is preserved: checked checkbox, title strikethrough and completed-card opacity/state treatment remain canonical. |
+| **Resize affordance** | Existing Time View drag/resize hit zones and scheduling geometry are unchanged by card styling. |
+
+The executable spacing and control tokens live in
+`lib/core/widgets/plan_time_task_card/plan_card_geometry.dart`; feature screens must
+not recreate local duration-specific copies.
 
 ### Chips / Tags
 
