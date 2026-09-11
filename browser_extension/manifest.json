@@ -1,0 +1,29 @@
+{
+  "manifest_version": 3,
+  "name": "LIFE OS Quick Add",
+  "version": "0.1.0",
+  "description": "Quickly add a plan or list item to LIFE OS and open the web app.",
+  "permissions": [
+    "contextMenus",
+    "storage",
+    "tabs"
+  ],
+  "host_permissions": [
+    "https://nkuchenov-hash.github.io/Counter/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "LIFE OS Quick Add"
+  },
+  "background": {
+    "service_worker": "service_worker.js"
+  },
+  "commands": {
+    "_execute_action": {
+      "suggested_key": {
+        "default": "Alt+Shift+L"
+      },
+      "description": "Open LIFE OS Quick Add"
+    }
+  }
+}
