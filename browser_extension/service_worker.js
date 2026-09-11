@@ -5,6 +5,8 @@ const BRIDGE_TIMEOUT_MS = 12000;
 const BRIDGE_POLL_MS = 250;
 const OPEN_TAB_SNAPSHOT_WAIT_MS = 2200;
 
+let refreshPromise = null;
+
 function requestId() {
   if (globalThis.crypto?.randomUUID) {
     return globalThis.crypto.randomUUID();
@@ -201,55 +203,49 @@ async function runBridgeAction(action, text = '') {
 }
 
 async function refreshLifeOsStateInBackground() {
-  try {
-    const tabs = await findLifeOsTabs();
-    for (const tab of tabs) {
-      const snapshot = await waitForSnapshotFromTab(tab.id);
-      if (snapshot) {
-        await broadcastSnapshot(snapshot);
-        return snapshot;
-      }
-    }
+  if (refreshPromise) return refreshPromise;
 
-    const result = await runBridgeAction('bridge_sync');
-    if (result.ok && result.snapshot) {
-      await cacheSnapshot(result.snapshot);
-      await broadcastSnapshot(result.snapshot);
-      return result.snapshot;
+  refreshPromise = (async () => {
+    try {
+      // Never trust an open-tab/local cache as "fresh". It is only an
+      // instant-render fallback. Every refresh goes through bridge_sync,
+      // which forces Brain to reconcile records from the network first.
+      const result = await runBridgeAction('bridge_sync');
+      if (result.ok && result.snapshot) {
+        await cacheSnapshot(result.snapshot);
+        await broadcastSnapshot(result.snapshot);
+        return result.snapshot;
+      }
+    } catch (_) {
+      // If the authenticated bridge cannot complete, retain the last known
+      // projection instead of blanking a usable popup.
+    } finally {
+      refreshPromise = null;
     }
-  } catch (_) {}
-  return null;
+    return null;
+  })();
+
+  return refreshPromise;
 }
 
 async function getLifeOsState() {
   const openSnapshot = await readSnapshotFromOpenTab();
-  if (openSnapshot) {
-    return { ok: true, snapshot: openSnapshot, refreshing: false };
-  }
+  const cached = openSnapshot ?? await readCachedSnapshot();
 
-  const cached = await readCachedSnapshot();
   if (cached) {
     refreshLifeOsStateInBackground().catch(() => {});
     return { ok: true, snapshot: cached, refreshing: true };
   }
 
-  const tabs = await findLifeOsTabs();
-  for (const tab of tabs) {
-    const snapshot = await waitForSnapshotFromTab(tab.id);
-    if (snapshot) {
-      return { ok: true, snapshot, refreshing: false };
-    }
-  }
-
   try {
-    const result = await runBridgeAction('bridge_sync');
-    if (result.ok && result.snapshot) {
-      return { ok: true, snapshot: result.snapshot, refreshing: false };
+    const fresh = await refreshLifeOsStateInBackground();
+    if (fresh) {
+      return { ok: true, snapshot: fresh, refreshing: false };
     }
     return {
       ok: false,
       authRequired: true,
-      error: result.error ?? 'LIFE OS is not ready.',
+      error: 'LIFE OS is not ready.',
     };
   } catch (error) {
     return {
@@ -362,6 +358,13 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
   if (message.type === 'getLifeOsState') {
     void getLifeOsState().then(sendResponse);
+    return true;
+  }
+
+  if (message.type === 'refreshLifeOsState') {
+    void refreshLifeOsStateInBackground()
+      .then((snapshot) => sendResponse({ ok: snapshot != null, snapshot }))
+      .catch((error) => sendResponse({ ok: false, error: String(error) }));
     return true;
   }
 

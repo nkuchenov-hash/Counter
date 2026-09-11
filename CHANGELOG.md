@@ -1,3 +1,9 @@
+## 2026-09-11 — Browser extension live current-record refresh [fix]
+
+- Fixed stale active-record state: cached/open-tab snapshots are now render-only and can no longer suppress a canonical Brain/PocketBase refresh.
+- Every popup open forces `bridge_sync`; while the popup stays open it refreshes every 15 seconds, with service-worker de-duplication so overlapping refreshes do not create parallel bridge tabs.
+- Published browser companion v0.2.2.
+
 ## 2026-09-11 — Time View equal-duration card height [fix]
 
 - Fixed a Time View geometry bug where the last task in an adjacent group could render slightly taller than the previous task with the same duration.

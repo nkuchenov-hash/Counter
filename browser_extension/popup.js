@@ -51,6 +51,7 @@ const copy = ru
 
 let snapshot = null;
 let timerHandle = null;
+let refreshHandle = null;
 let hasRenderedSnapshot = false;
 
 currentLabel.textContent = copy.current;
@@ -253,7 +254,14 @@ chrome.runtime.onMessage.addListener((message) => {
 });
 
 timerHandle = setInterval(renderTimer, 1000);
-window.addEventListener('unload', () => clearInterval(timerHandle));
+refreshHandle = setInterval(() => {
+  void chrome.runtime.sendMessage({ type: 'refreshLifeOsState' });
+}, 15000);
+
+window.addEventListener('unload', () => {
+  clearInterval(timerHandle);
+  clearInterval(refreshHandle);
+});
 
 void restoreCachedState().then(() => {
   void refreshState();

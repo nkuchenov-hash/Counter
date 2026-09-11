@@ -218,6 +218,8 @@ The Manifest V3 companion under `browser_extension/` is a projection/action clie
 
 The canonical current-record state is resolved by Brain from the primary running record and reduced to a bounded browser projection (active flag, title, category path/color, start time, record id, theme/locale metadata). The authenticated web shell mirrors that projection to browser-local storage for the extension to read. The elapsed timer is rendered locally from the canonical start timestamp; timer ticks never cause backend polling.
 
+Browser-local and open-tab snapshots are presentation caches only. They may render immediately, but they are never proof of freshness: each popup open starts a canonical `bridge_sync`, and an already open popup periodically requests the same Brain-backed refresh. Refresh calls are de-duplicated in the service worker so overlapping polls do not boot multiple bridge tabs.
+
 Start/Stop commands are one-shot requests handled by `lib/app/shell/shared/shell_browser_extension.dart`. Start delegates to the existing `DatabaseService.startTimer` / primary Highlander path; Stop delegates to the existing Brain stop path. When no LIFE OS tab is open, the service worker may create an inactive same-origin bridge tab, but it must wait for Brain confirmation (including the primary network chain for Start) before closing it. Request IDs remain locally deduped.
 
 This boundary preserves single PocketBase ownership, category inference, singleton-running semantics, optimistic/offline behavior, timezone rules, and the performance kill-switch contract.
