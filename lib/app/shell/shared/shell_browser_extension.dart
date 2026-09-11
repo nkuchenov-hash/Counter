@@ -22,16 +22,48 @@ mixin ShellBrowserExtensionQuickAdd on ShellDashboardBase {
     await _publishBrowserExtensionRecordSnapshot();
   }
 
+  Future<Map<String, dynamic>> _browserExtensionRecordSnapshot() async {
+    final db = DatabaseService.instance;
+    Map<String, dynamic>? row;
+    try {
+      row = await db.activeRecordStream.first.timeout(
+        const Duration(seconds: 2),
+        onTimeout: () => null,
+      );
+    } catch (_) {}
+
+    final base = <String, dynamic>{
+      'active': row != null,
+      'updatedAtUtc': DateTime.now().toUtc().toIso8601String(),
+      'locale': currentLocale.value,
+      'themeMode': db.settings.themeMode,
+    };
+    if (row == null) return base;
+
+    final title = (row['title'] ?? '').toString().trim();
+    final start = CategoryServiceExtension.startTimeFromRecord(row);
+    final businessId = (row['record_id'] ?? '').toString().trim();
+    final categoryPath = db.categoryDisplayPathForRecordData(row);
+    final categoryColor = db.categoryDisplayColorForRecordData(row);
+    final rgbHex = (categoryColor.toARGB32() & 0x00FFFFFF)
+        .toRadixString(16)
+        .padLeft(6, '0')
+        .toUpperCase();
+
+    return <String, dynamic>{
+      ...base,
+      'title': title,
+      'categoryPath': categoryPath,
+      'startTimeUtc': start?.toUtc().toIso8601String(),
+      'recordId': businessId,
+      'categoryColor': '#$rgbHex',
+    };
+  }
+
   Future<void> _publishBrowserExtensionRecordSnapshot() async {
     if (!kIsWeb) return;
     try {
-      final db = DatabaseService.instance;
-      final snapshot = <String, dynamic>{
-        ...db.browserExtensionActiveRecordSnapshot(),
-        'updatedAtUtc': DateTime.now().toUtc().toIso8601String(),
-        'locale': currentLocale.value,
-        'themeMode': db.settings.themeMode,
-      };
+      final snapshot = await _browserExtensionRecordSnapshot();
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(
         _browserExtensionRecordSnapshotKey,
@@ -161,7 +193,7 @@ mixin ShellBrowserExtensionQuickAdd on ShellDashboardBase {
             await db.getRecords(forceNetwork: true);
           } catch (_) {}
         }
-        final confirmed = db.browserExtensionActiveRecordSnapshot();
+        final confirmed = await _browserExtensionRecordSnapshot();
         final ok =
             recordId != null &&
             recordId.trim().isNotEmpty &&
