@@ -60,6 +60,7 @@ import 'package:flutter/foundation.dart' show kDebugMode, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 part 'shared/shell_core.dart';
 part 'shared/shell_task_actions.dart';
@@ -69,6 +70,7 @@ part 'shared/shell_more_menu.dart';
 part 'shared/shell_voice_routing.dart';
 part 'shared/shell_voice_input.dart';
 part 'shared/shell_voice_integration.dart';
+part 'shared/shell_browser_extension.dart';
 part 'shared/shell_lifecycle.dart';
 part 'shared/shell_chrome.dart';
 
@@ -167,6 +169,7 @@ class ShellDashboardState extends State<LifeOSDashboard>
         ShellVoiceRouting,
         ShellVoiceInput,
         ShellVoiceIntegration,
+        ShellBrowserExtensionQuickAdd,
         ShellLifecycle,
         ShellChrome {
   @override
