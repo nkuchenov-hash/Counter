@@ -45,7 +45,10 @@ mixin ShellLifecycle
     unawaited(UnfilledTimeGapService.instance.start());
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      unawaited(consumeBrowserExtensionQuickAddIfPresent());
+      unawaited(() async {
+        await initializeBrowserExtensionBridge();
+        await consumeBrowserExtensionQuickAddIfPresent();
+      }());
       StartupLog.deferred(
         name: 'timelineTasksLoad',
         reason: 'notNeededForFirstFrame',
@@ -95,6 +98,7 @@ mixin ShellLifecycle
     deviceLocalMidnightWatchTimer?.cancel();
     notificationSub?.cancel();
     categoryRulesSub?.cancel();
+    browserExtensionRecordSub?.cancel();
     titleController.dispose();
     titleFocus.dispose();
     shellLayout.dispose();
