@@ -210,3 +210,8 @@ Every new feature prompt must answer:
 6. Do **docs / tests / APP_STRUCTURE_DETAILED** need updates?
 
 Run `.\scripts\audit\architecture_guard.ps1 -Strict`, `python scripts/audit/repository_hygiene.py`, and `python scripts/audit/documentation_parity.py` after structural edits. Regenerate `docs/APP_STRUCTURE_DETAILED.md` after tree changes.
+
+
+## Browser companion boundary
+
+The Manifest V3 browser companion under `browser_extension/` is an input surface only. It may open/focus the deployed web app and pass a bounded one-shot Quick Add request through URL parameters, but it must not authenticate to PocketBase or create/update PocketBase rows itself. The authenticated web shell consumes the request after first frame in `lib/app/shell/shared/shell_browser_extension.dart`, dedupes request ids locally, and delegates all task creation to the existing Planning Brain APIs. This preserves the single PocketBase owner, optimistic/offline semantics, timezone/category rules, and performance kill-switch contract.
