@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `d2968442` on 2026-09-10.**
+**Generated from input HEAD `efc661ba` on 2026-09-11.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 862 — each appears **exactly once** below.
+**Tracked files:** 868 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -26,10 +26,10 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Role | Count |
 | :--- | ---: |
-| `production UI` | 173 |
+| `production UI` | 177 |
 | `test` | 110 |
 | `Brain/data` | 91 |
-| `platform build` | 83 |
+| `platform build` | 85 |
 | `shared foundation` | 64 |
 | `developer tool` | 58 |
 | `platform resource` | 44 |
@@ -56,7 +56,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 477 |
+| `PROVEN_REQUIRED` | 483 |
 | `REQUIRED_FOR_TEST_OR_TOOLING` | 203 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
 | `GOVERNING_DOCUMENTATION` | 37 |
@@ -67,7 +67,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 797 |
+| `HIGH` | 803 |
 | `MEDIUM` | 65 |
 
 ---
@@ -88,6 +88,7 @@ Evidence is computed from Dart import/export/`part` graphs, bounded path referen
 
 ### Root / config
 
+- [`browser_extension/`](#folder-browser_extension)
 - [`igropoisk/`](#folder-igropoisk)
 - [`pb_migrations/`](#folder-pb_migrations)
 - [`igropoisk/scripts/`](#folder-igropoiskscripts)
@@ -639,6 +640,30 @@ RU:
 - **Когда открывать:** Добавление/изменение поведения; падение CI.
 - **Можно удалить?** Нет — нужен для тестов.
 - **Связанные пути:** Production files под `lib/` с похожими именами.
+
+---
+
+## Folder: `browser_extension/`
+
+EN:
+
+- **What this folder is:** Manifest V3 browser companion for LIFE OS Quick Add.
+- **Why it exists:** Lets Chrome/Edge/Yandex users capture a task or page and jump into the authenticated LIFE OS web app without duplicating PocketBase logic.
+- **What lives here:** Extension manifest, service worker, popup HTML/CSS/JS.
+- **What part of the app it affects:** Browser-only Quick Add and web-app launch.
+- **When to open it:** Extension popup, shortcut, context-menu, or deployed web URL changes.
+- **Can it be deleted?** No — the browser companion would stop existing.
+- **Main related paths:** `lib/app/shell/shared/shell_browser_extension.dart`, `docs/DEPLOY.md`.
+
+RU:
+
+- **Что это за папка:** Manifest V3 расширение браузера для быстрого добавления задач в LIFE OS.
+- **Зачем нужна:** Даёт быстрый ввод из Chrome/Edge/Яндекс.Браузера без отдельной логики PocketBase.
+- **Что здесь лежит:** Manifest, service worker и popup HTML/CSS/JS.
+- **На что влияет в приложении:** Browser-only Quick Add и открытие web-версии.
+- **Когда открывать:** Меняется popup, hotkey, context menu или адрес web-приложения.
+- **Можно удалить?** Нет — исчезнет browser companion.
+- **Связанные пути:** `lib/app/shell/shared/shell_browser_extension.dart`, `docs/DEPLOY.md`.
 
 ---
 
@@ -4917,6 +4942,187 @@ RU:
 - **Когда открывать:** Ищете, в каком файле живёт фича; начало AI-сессии.
 - **Можно удалить?** Нет — конфигурация/инструмент репозитория.
 - **Связано с:** `AGENTS.md`, `docs/ARCHITECTURE.md`, `CHANGELOG.md`.
+
+
+### `browser_extension/manifest.json`
+
+EN:
+
+- **Human purpose:** Browser extension manifest for LIFE OS Quick Add.
+- **What this is:** Manifest V3 metadata, permissions, popup, service worker and Alt+Shift+L command.
+- **Why needed:** Chromium browsers need it to install and run the companion.
+- **Contents:** Extension permissions, action popup, host permission and command registration.
+- **Repository role:** platform build
+- **Evidence of use:** Entry manifest for the tracked `browser_extension/` product artifact.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Browser extension cannot be loaded.
+- **Confidence:** HIGH
+- **Owner / layer:** browser companion
+- **Responsibilities:** Declare extension runtime surfaces and permissions.
+- **When to open:** Installing the unpacked extension or changing permissions/hotkey.
+- **Can it be deleted?** No — required for the extension.
+- **Connected to:** `browser_extension/service_worker.js`, `browser_extension/popup.html`.
+
+RU:
+
+- **Зачем файл человеку:** Manifest V3 для LIFE OS Quick Add.
+- **Что это:** Описание расширения, permissions, popup, service worker и Alt+Shift+L.
+- **Зачем:** Без manifest Chromium не загрузит расширение.
+- **Содержимое:** Runtime surfaces и permissions.
+- **Роль в репозитории:** platform build
+- **Доказательства использования:** Entry manifest каталога `browser_extension/`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Расширение не загрузится.
+- **Уверенность:** HIGH
+- **Владелец / слой:** browser companion
+- **Обязанности:** Конфигурация расширения.
+- **Когда открывать:** Permissions, hotkey, install.
+- **Можно удалить?** Нет.
+- **Связано с:** service worker и popup.
+
+### `browser_extension/popup.css`
+
+EN:
+
+- **Human purpose:** Compact visual styling for the Quick Add popup.
+- **What this is:** Local CSS for the extension popup only.
+- **Why needed:** Keeps the capture surface readable and lightweight without loading Flutter.
+- **Contents:** Popup spacing, fields, button, status and light/dark color-scheme rules.
+- **Repository role:** production UI
+- **Evidence of use:** Loaded by `browser_extension/popup.html`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Popup loses intended layout and interaction styling.
+- **Confidence:** HIGH
+- **Owner / layer:** browser companion
+- **Responsibilities:** Browser popup presentation.
+- **When to open:** Extension popup visual changes.
+- **Can it be deleted?** No — required by popup HTML.
+- **Connected to:** `browser_extension/popup.html`.
+
+RU:
+
+- **Зачем файл человеку:** Стили компактного Quick Add popup.
+- **Что это:** Локальный CSS расширения.
+- **Зачем:** Popup остаётся быстрым и не грузит Flutter UI.
+- **Содержимое:** Spacing, поля, кнопка, status, light/dark.
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Подключён из `popup.html`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Popup потеряет layout/style.
+- **Уверенность:** HIGH
+- **Владелец / слой:** browser companion
+- **Обязанности:** Presentation popup.
+- **Когда открывать:** Визуальные изменения popup.
+- **Можно удалить?** Нет.
+- **Связано с:** `popup.html`.
+
+### `browser_extension/popup.html`
+
+EN:
+
+- **Human purpose:** Quick Add capture surface shown from the browser toolbar.
+- **What this is:** Small HTML popup with task text, destination and open-app action.
+- **Why needed:** Gives task entry without loading the full Flutter UI inside the extension.
+- **Contents:** Task textarea, Plan/Lists selector, submit/open buttons.
+- **Repository role:** production UI
+- **Evidence of use:** Declared as `action.default_popup` by `browser_extension/manifest.json`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Toolbar action has no Quick Add UI.
+- **Confidence:** HIGH
+- **Owner / layer:** browser companion
+- **Responsibilities:** Capture browser task intent.
+- **When to open:** Popup fields or copy changes.
+- **Can it be deleted?** No — required by manifest.
+- **Connected to:** `browser_extension/popup.js`, `browser_extension/popup.css`.
+
+RU:
+
+- **Зачем файл человеку:** Quick Add окно из toolbar браузера.
+- **Что это:** Небольшой HTML popup с текстом задачи и выбором назначения.
+- **Зачем:** Быстрый ввод без Flutter внутри расширения.
+- **Содержимое:** Textarea, Plan/Lists selector, кнопки.
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** `action.default_popup` в manifest.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Не будет Quick Add popup.
+- **Уверенность:** HIGH
+- **Владелец / слой:** browser companion
+- **Обязанности:** Capture task intent.
+- **Когда открывать:** Поля и copy popup.
+- **Можно удалить?** Нет.
+- **Связано с:** popup JS/CSS.
+
+### `browser_extension/popup.js`
+
+EN:
+
+- **Human purpose:** Handles Quick Add popup interactions and draft persistence.
+- **What this is:** Extension-side controller for submit/open shortcuts.
+- **Why needed:** Sends explicit user intent to the service worker and preserves unfinished draft text locally.
+- **Contents:** Ctrl/Cmd+Enter submit, local draft storage, runtime messages.
+- **Repository role:** production UI
+- **Evidence of use:** Loaded by `browser_extension/popup.html`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Popup controls stop working.
+- **Confidence:** HIGH
+- **Owner / layer:** browser companion
+- **Responsibilities:** Popup interaction state and messaging.
+- **When to open:** Submit behavior or draft persistence changes.
+- **Can it be deleted?** No — required by popup HTML.
+- **Connected to:** `browser_extension/service_worker.js`.
+
+RU:
+
+- **Зачем файл человеку:** Логика Quick Add popup и сохранение черновика.
+- **Что это:** JS-контроллер submit/open действий.
+- **Зачем:** Передаёт явное действие пользователя в service worker.
+- **Содержимое:** Ctrl/Cmd+Enter, storage, runtime messages.
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Загружается из `popup.html`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Кнопки popup перестанут работать.
+- **Уверенность:** HIGH
+- **Владелец / слой:** browser companion
+- **Обязанности:** Interaction state и messaging.
+- **Когда открывать:** Submit/draft behavior.
+- **Можно удалить?** Нет.
+- **Связано с:** service worker.
+
+### `browser_extension/service_worker.js`
+
+EN:
+
+- **Human purpose:** Browser-extension background coordinator.
+- **What this is:** Manifest V3 service worker that focuses LIFE OS, builds one-shot Quick Add URLs and owns context-menu capture.
+- **Why needed:** Keeps browser integration separate from Flutter and avoids direct PocketBase writes.
+- **Contents:** Tab focus/open, request IDs, selection/page context menus and popup message handling.
+- **Repository role:** platform build
+- **Evidence of use:** Declared as the extension background service worker by `browser_extension/manifest.json`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Quick Add handoff, context menus and web-app opening stop working.
+- **Confidence:** HIGH
+- **Owner / layer:** browser companion
+- **Responsibilities:** Browser API integration and one-shot handoff.
+- **When to open:** Web URL, context menus or tab-focus behavior changes.
+- **Can it be deleted?** No — required by manifest.
+- **Connected to:** `lib/app/shell/shared/shell_browser_extension.dart`.
+
+RU:
+
+- **Зачем файл человеку:** Background coordinator расширения.
+- **Что это:** Manifest V3 service worker для focus/open LIFE OS и context menu.
+- **Зачем:** Browser API остаётся вне Flutter и не пишет PocketBase напрямую.
+- **Содержимое:** Tabs, request ID, selection/page menu, runtime messages.
+- **Роль в репозитории:** platform build
+- **Доказательства использования:** Background service worker в manifest.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Quick Add handoff и context menu перестанут работать.
+- **Уверенность:** HIGH
+- **Владелец / слой:** browser companion
+- **Обязанности:** Browser API integration.
+- **Когда открывать:** URL/context menu/tab focus.
+- **Можно удалить?** Нет.
+- **Связано с:** shell browser-extension handoff.
 
 
 ### `CHANGELOG.md`
@@ -10367,6 +10573,44 @@ RU:
 - **Когда открывать:** Навигация, voice, edit host.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Все main tabs, `app_shell.dart`
+
+
+### `lib/app/shell/shared/shell_browser_extension.dart`
+
+EN:
+
+- **Human purpose:** Web-shell receiver for one-shot LIFE OS browser-extension Quick Add requests.
+- **What this is:** Shell part that validates URL parameters, dedupes request IDs and delegates creation to the existing Planning Brain.
+- **Why needed:** The extension must reuse authenticated app behavior instead of implementing a second PocketBase client.
+- **Contents:** `ShellBrowserExtensionQuickAdd`, local processed-request history, Plan/Lists navigation.
+- **Key code names:** `ShellBrowserExtensionQuickAdd`
+- **Repository role:** production UI
+- **Evidence of use:** Included by `lib/app/shell/app_shell.dart` through a `part` directive and invoked by shell lifecycle after first frame.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Extension can open LIFE OS but Quick Add requests will not be consumed.
+- **Confidence:** HIGH
+- **Owner / layer:** app shell
+- **Responsibilities:** Authenticated browser-extension handoff only; PocketBase writes remain in Brain.
+- **When to open:** Extension Quick Add duplicate, routing or handoff failures.
+- **Can it be deleted?** No — required for browser Quick Add.
+- **Connected to:** `browser_extension/service_worker.js`, `lib/data/plan_service.dart`.
+
+RU:
+
+- **Зачем файл человеку:** Принимает одноразовый Quick Add из browser extension после загрузки web-shell.
+- **Что это:** Shell part: проверяет URL, защищает от дублей и передаёт создание в существующий Planning Brain.
+- **Зачем:** Расширение не должно становиться вторым PocketBase-клиентом.
+- **Содержимое:** `ShellBrowserExtensionQuickAdd`, processed request IDs, переход в План/Списки.
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Подключён как `part` из `app_shell.dart` и вызывается lifecycle после первого frame.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Web откроется, но Quick Add не создаст задачу.
+- **Уверенность:** HIGH
+- **Владелец / слой:** app shell
+- **Обязанности:** Только handoff; PocketBase остаётся в Brain.
+- **Когда открывать:** Дубли, routing, handoff extension.
+- **Можно удалить?** Нет.
+- **Связано с:** service worker и `plan_service.dart`.
 
 
 ### `lib/app/shell/shared/shell_lifecycle.dart`
