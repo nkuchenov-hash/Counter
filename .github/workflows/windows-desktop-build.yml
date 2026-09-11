@@ -5,6 +5,8 @@ on:
   push:
     paths:
       - '.github/workflows/windows-desktop-build.yml'
+      - 'windows/runner/resources/app_icon.ico'
+      - 'branding/life_os_app_icon_master.png'
 
 permissions:
   contents: write
