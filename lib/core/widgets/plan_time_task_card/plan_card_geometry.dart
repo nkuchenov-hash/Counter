@@ -15,14 +15,14 @@ abstract final class PlanCardGeom {
   static const double railWidth = 32;
   static const double railToContentGap = 12;
   static const double checkboxPlayGap = 8;
-  static const double playIconWidth = 22;
-  static const double playIconHeight = 24;
-  static const double playIconCornerRadius = 4.0;
+  static const double playIconWidth = 24;
+  static const double playIconHeight = 26;
+  static const double playIconCornerRadius = 8.0;
   static const double recurringIconSize = 15;
   static const double titleToRecurringGap = 5;
   static const double playAfterCheckboxGap = 4;
   static const double menuSize = controlSize;
-  static const double timeViewRailToContentGap = 6;
+  static const double timeViewRailToContentGap = 12;
   static const double contentSpanMediumLarge = 260;
   static const double radius = 12;
   static const double refHeightMicro = 56;
@@ -36,7 +36,7 @@ abstract final class PlanCardGeom {
   static const double tagsToProgressGap = 3;
   static const double actualTimeSlotHeight = 12;
   static const double progressAfterActualGap = 3;
-  static const double progressBarHeight = 3;
+  static const double progressBarHeight = 2;
   static const double footerBlockGap = 6;
   static const double footerTimeGap = 6;
   static const double footerTimeRightSafePad = 0;
@@ -47,6 +47,15 @@ abstract final class PlanCardGeom {
   static const double titleRowHeight = 33;
   static const double timelineBlockAllowancePx = 2;
   static const double watermarkMinCardHeight = 90;
+  // Time View CardPlan rhythm approved for duration-based layouts.
+  static const double timeViewTitleToTagsGap = 6;
+  static const double timeViewTagsToProgressGap = 6;
+  static const double timeViewTightTagsToProgressGap = 8;
+  static const double timeViewProgressToFooterGap = 5;
+  static const double timeViewTightProgressToFooterGap = 4;
+  static const double timeViewFooterBottomPad = 10;
+  static const double timeViewTightFooterBottomPad = 5;
+  static const double timeViewTightContentTop = 5;
 
   static double refHeight(PlanTimeTaskCardDensity d) => switch (d) {
     PlanTimeTaskCardDensity.micro => refHeightMicro,
