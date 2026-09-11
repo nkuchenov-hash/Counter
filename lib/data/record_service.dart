@@ -920,6 +920,36 @@ extension RecordServiceExtension on DatabaseService {
     );
   }
 
+  /// Browser companion read model. This stays inside the Brain boundary:
+  /// the extension receives only the canonical running-record projection and
+  /// never reads PocketBase directly.
+  Map<String, dynamic> browserExtensionActiveRecordSnapshot() {
+    final row = _canonicalPrimaryRunningFlatRow();
+    if (row == null) {
+      return <String, dynamic>{'active': false};
+    }
+
+    final title = (row['title'] ?? '').toString().trim();
+    final start =
+        CategoryServiceExtension._parseDateTimeUtc(row['start_time']);
+    final businessId = (row['record_id'] ?? '').toString().trim();
+    final categoryPath = cachedPrimaryRunningCategoryPath ?? '';
+    final categoryColor = categoryDisplayColorForRecordData(row);
+    final rgbHex = (categoryColor.toARGB32() & 0x00FFFFFF)
+        .toRadixString(16)
+        .padLeft(6, '0')
+        .toUpperCase();
+
+    return <String, dynamic>{
+      'active': true,
+      'title': title,
+      'categoryPath': categoryPath,
+      'startTimeUtc': start?.toUtc().toIso8601String(),
+      'recordId': businessId,
+      'categoryColor': '#$rgbHex',
+    };
+  }
+
   Future<String?> startTimer(String title) async {
     return startTimerWithCategory(title);
   }
