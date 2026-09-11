@@ -339,7 +339,7 @@ class TimeViewMoreCompactLayout extends StatelessWidget {
     return _TimeViewFooterStackLayout(
       common: common,
       heightPx: heightPx,
-      tight: true,
+      tight: false,
       fullProgressSlot: false,
     );
   }
