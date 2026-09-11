@@ -63,17 +63,19 @@ Category icons use dynamic `IconData` from stored `icon_code_point` values. Unti
 
 ## Browser extension (Chrome / Edge / Chromium browsers)
 
-The unpacked Manifest V3 companion lives in `browser_extension/`.
+The unpacked Manifest V3 LIFE OS companion lives in `browser_extension/`.
 
 Install for development/testing:
 
-1. Open the browser extensions page (`chrome://extensions` or the Chromium equivalent).
+1. Open the browser extensions page (`chrome://extensions`, `edge://extensions`, or the Chromium equivalent).
 2. Enable **Developer mode**.
-3. Choose **Load unpacked** and select the repository `browser_extension/` folder.
-4. Pin **LIFE OS Quick Add** if desired.
-5. `Alt+Shift+L` opens the Quick Add popup. The context menu can add selected text or the current page.
+3. Choose **Load unpacked** and select the `browser_extension/` folder (the folder that contains `manifest.json`).
+4. Pin **LIFE OS** if desired.
+5. `Alt+Shift+L` opens the companion popup.
 
-The extension does **not** authenticate to PocketBase and never writes PocketBase directly. It opens/focuses the deployed LIFE OS web app with a one-shot Quick Add request. After normal app auth/bootstrap completes, `lib/app/shell/shared/shell_browser_extension.dart` delegates creation to the existing Planning Brain path and stores the processed request id locally to prevent refresh duplicates.
+The popup shows the **current active record with a live elapsed timer**, can **start a new running record**, can **stop the active record**, and has a one-click **Open LIFE OS** action. Context-menu actions may start the selected text or current page title as a record.
+
+The extension does **not** authenticate to PocketBase and never writes PocketBase directly. It uses the already authenticated LIFE OS web origin as a bridge. If no app tab is open, an inactive temporary LIFE OS tab may be created to execute the Brain command; the bridge waits for the canonical result before closing.
 
 The production web origin used by the extension is `https://nkuchenov-hash.github.io/Counter/`. If the canonical web origin changes, update `browser_extension/manifest.json` and `browser_extension/service_worker.js` together.
 
