@@ -3,38 +3,52 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>LIFE OS Quick Add</title>
+  <title>LIFE OS</title>
   <link rel="stylesheet" href="popup.css">
 </head>
 <body>
   <main class="panel">
-    <header class="header">
-      <div>
-        <div class="eyebrow">LIFE OS</div>
-        <h1>Quick Add</h1>
+    <header class="topbar">
+      <div class="brand-block">
+        <div class="brand">LIFE OS</div>
+        <div id="bridgeState" class="bridge-state"></div>
       </div>
-      <button id="openApp" class="icon-button" type="button" title="Open LIFE OS" aria-label="Open LIFE OS">
-        ↗
-      </button>
+      <button id="openAppIcon" class="icon-button" type="button" aria-label="Open LIFE OS" title="Open LIFE OS">↗</button>
     </header>
 
-    <label class="field">
-      <span>Task</span>
-      <textarea id="taskText" rows="4" maxlength="1200" autofocus placeholder="What needs to be done?"></textarea>
-    </label>
+    <section id="currentCard" class="record-card" aria-live="polite">
+      <div class="record-accent"></div>
+      <div class="record-content">
+        <div class="section-label" id="currentLabel">Current record</div>
+        <div class="record-main">
+          <div class="record-copy">
+            <h1 id="recordTitle">Loading…</h1>
+            <div id="recordCategory" class="record-category"></div>
+          </div>
+          <button id="stopRecord" class="stop-button" type="button" hidden>
+            <span class="stop-square" aria-hidden="true"></span>
+            <span id="stopLabel">Stop</span>
+          </button>
+        </div>
+        <div id="recordTimer" class="record-timer" hidden>00:00:00</div>
+      </div>
+    </section>
 
-    <label class="field compact">
-      <span>Destination</span>
-      <select id="target">
-        <option value="plan">Plan · today</option>
-        <option value="list">Lists · inbox</option>
-      </select>
-    </label>
+    <section class="new-record">
+      <label class="section-label" id="newRecordLabel" for="recordText">New record</label>
+      <textarea id="recordText" rows="2" maxlength="1200" placeholder="What are you doing?"></textarea>
+      <button id="startRecord" class="primary-button" type="button">
+        <span aria-hidden="true">▶</span>
+        <span id="startLabel">Start record</span>
+      </button>
+    </section>
+
+    <button id="openApp" class="secondary-button" type="button">
+      <span id="openLabel">Open LIFE OS</span>
+      <span aria-hidden="true">↗</span>
+    </button>
 
     <div id="status" class="status" role="status" aria-live="polite"></div>
-
-    <button id="addTask" class="primary" type="button">Add to LIFE OS</button>
-    <div class="hint">Ctrl/⌘ + Enter · Alt+Shift+L opens this window</div>
   </main>
   <script src="popup.js"></script>
 </body>
