@@ -1,3 +1,9 @@
+## 2026-09-11 — Time View equal-duration card height [fix]
+
+- Fixed a Time View geometry bug where the last task in an adjacent group could render slightly taller than the previous task with the same duration.
+- Card height is now determined only by canonical duration/card metrics; adjacency only reserves the canonical 4px boundary gap by stretching the affected hour when needed.
+- Added a focused regression test for two adjacent 10-minute cards where the second card ends the group.
+
 ## 2026-09-11 — Browser extension sync-state polish [fix]
 
 - Fixed the Stop control appearing before an active record was confirmed.
