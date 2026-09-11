@@ -33,6 +33,10 @@ html[data-theme="dark"] {
   box-sizing: border-box;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 body {
   margin: 0;
   width: 390px;
@@ -68,13 +72,6 @@ button {
   line-height: 1.1;
   font-weight: 800;
   letter-spacing: -0.02em;
-}
-
-.bridge-state {
-  min-height: 15px;
-  margin-top: 3px;
-  color: var(--text-muted);
-  font-size: 11px;
 }
 
 .icon-button {

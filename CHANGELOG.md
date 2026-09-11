@@ -1,3 +1,9 @@
+## 2026-09-11 — Browser extension sync-state polish [fix]
+
+- Fixed the Stop control appearing before an active record was confirmed.
+- Removed the duplicate top-level Syncing label and stopped replacing the current-record card with Syncing on every popup open.
+- Reused the last canonical running-record snapshot immediately, warmed it from open LIFE OS tabs, and refreshed it in the background so the popup opens as a usable mini-client instead of a blocking loading screen.
+
 ## 2026-09-11 — Browser extension record companion [fix]
 
 - Replaced the Quick Add-only popup with a LIFE OS mini companion: canonical current active record, live elapsed timer, Stop, new running-record Start, and one-click web-app access.

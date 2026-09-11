@@ -1,8 +1,9 @@
 const LIFE_OS_BASE = 'https://nkuchenov-hash.github.io/Counter/';
 const LIFE_OS_MATCH = 'https://nkuchenov-hash.github.io/Counter/*';
 const MAX_TEXT_LENGTH = 1600;
-const BRIDGE_TIMEOUT_MS = 20000;
+const BRIDGE_TIMEOUT_MS = 12000;
 const BRIDGE_POLL_MS = 250;
+const OPEN_TAB_SNAPSHOT_WAIT_MS = 2200;
 
 function requestId() {
   if (globalThis.crypto?.randomUUID) {
@@ -103,6 +104,23 @@ async function cacheSnapshot(snapshot) {
   await chrome.storage.local.set({ lifeOsLastSnapshot: snapshot });
 }
 
+async function readCachedSnapshot() {
+  const saved = await chrome.storage.local.get('lifeOsLastSnapshot');
+  return saved.lifeOsLastSnapshot && typeof saved.lifeOsLastSnapshot === 'object'
+    ? saved.lifeOsLastSnapshot
+    : null;
+}
+
+async function broadcastSnapshot(snapshot) {
+  if (!snapshot || typeof snapshot !== 'object') return;
+  try {
+    await chrome.runtime.sendMessage({
+      type: 'lifeOsStateUpdated',
+      snapshot,
+    });
+  } catch (_) {}
+}
+
 async function readSnapshotFromOpenTab() {
   const tabs = await findLifeOsTabs();
   for (const tab of tabs) {
@@ -113,6 +131,21 @@ async function readSnapshotFromOpenTab() {
         return data.snapshot;
       }
     } catch (_) {}
+  }
+  return null;
+}
+
+async function waitForSnapshotFromTab(tabId, timeoutMs = OPEN_TAB_SNAPSHOT_WAIT_MS) {
+  const started = Date.now();
+  while (Date.now() - started < timeoutMs) {
+    try {
+      const data = await readBridgeData(tabId);
+      if (data?.snapshot && typeof data.snapshot === 'object') {
+        await cacheSnapshot(data.snapshot);
+        return data.snapshot;
+      }
+    } catch (_) {}
+    await sleep(BRIDGE_POLL_MS);
   }
   return null;
 }
@@ -167,16 +200,51 @@ async function runBridgeAction(action, text = '') {
   }
 }
 
+async function refreshLifeOsStateInBackground() {
+  try {
+    const tabs = await findLifeOsTabs();
+    for (const tab of tabs) {
+      const snapshot = await waitForSnapshotFromTab(tab.id);
+      if (snapshot) {
+        await broadcastSnapshot(snapshot);
+        return snapshot;
+      }
+    }
+
+    const result = await runBridgeAction('bridge_sync');
+    if (result.ok && result.snapshot) {
+      await cacheSnapshot(result.snapshot);
+      await broadcastSnapshot(result.snapshot);
+      return result.snapshot;
+    }
+  } catch (_) {}
+  return null;
+}
+
 async function getLifeOsState() {
   const openSnapshot = await readSnapshotFromOpenTab();
   if (openSnapshot) {
-    return { ok: true, snapshot: openSnapshot };
+    return { ok: true, snapshot: openSnapshot, refreshing: false };
+  }
+
+  const cached = await readCachedSnapshot();
+  if (cached) {
+    refreshLifeOsStateInBackground().catch(() => {});
+    return { ok: true, snapshot: cached, refreshing: true };
+  }
+
+  const tabs = await findLifeOsTabs();
+  for (const tab of tabs) {
+    const snapshot = await waitForSnapshotFromTab(tab.id);
+    if (snapshot) {
+      return { ok: true, snapshot, refreshing: false };
+    }
   }
 
   try {
     const result = await runBridgeAction('bridge_sync');
     if (result.ok && result.snapshot) {
-      return { ok: true, snapshot: result.snapshot };
+      return { ok: true, snapshot: result.snapshot, refreshing: false };
     }
     return {
       ok: false,
@@ -192,6 +260,16 @@ async function getLifeOsState() {
   }
 }
 
+async function warmSnapshotFromTab(tabId) {
+  if (!Number.isInteger(tabId)) return;
+  try {
+    const snapshot = await waitForSnapshotFromTab(tabId, 3000);
+    if (snapshot) {
+      await broadcastSnapshot(snapshot);
+    }
+  } catch (_) {}
+}
+
 async function startRecord(text) {
   const cleaned = cleanText(text);
   if (!cleaned) {
@@ -199,6 +277,9 @@ async function startRecord(text) {
   }
   try {
     const result = await runBridgeAction('start_record', cleaned);
+    if (result.ok && result.snapshot) {
+      await broadcastSnapshot(result.snapshot);
+    }
     return result.ok
       ? { ok: true, snapshot: result.snapshot }
       : { ok: false, error: result.error ?? 'Could not start record.' };
@@ -210,6 +291,9 @@ async function startRecord(text) {
 async function stopRecord() {
   try {
     const result = await runBridgeAction('stop_record');
+    if (result.ok && result.snapshot) {
+      await broadcastSnapshot(result.snapshot);
+    }
     return result.ok
       ? { ok: true, snapshot: result.snapshot }
       : { ok: false, error: result.error ?? 'Could not stop record.' };
@@ -230,6 +314,11 @@ chrome.runtime.onInstalled.addListener(async () => {
     title: 'Start page in LIFE OS',
     contexts: ['page'],
   });
+
+  const tabs = await findLifeOsTabs();
+  for (const tab of tabs) {
+    warmSnapshotFromTab(tab.id).catch(() => {});
+  }
 });
 
 chrome.contextMenus.onClicked.addListener((info, tab) => {
@@ -247,6 +336,16 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
       void startRecord(title);
     }
   }
+});
+
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  if (changeInfo.status !== 'complete') return;
+  if (!tab?.url?.startsWith(LIFE_OS_BASE)) return;
+  warmSnapshotFromTab(tabId).catch(() => {});
+});
+
+chrome.tabs.onActivated.addListener(({ tabId }) => {
+  warmSnapshotFromTab(tabId).catch(() => {});
 });
 
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
