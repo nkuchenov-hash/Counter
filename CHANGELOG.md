@@ -1,3 +1,8 @@
+## 2026-09-11 — Planning Time rail and current-time marker [ui]
+
+- Increased Time View hour-label size and label-to-axis spacing, with each hour dot vertically centered on its hour text.
+- Restored the current-time marker as a thin high-contrast horizontal line with an attached current-time badge, without changing Time View scheduling or interaction geometry.
+
 ## 2026-09-10 — Planning Time exact adjacent spacing [fix]
 
 - Corrected the Time View elastic-hour geometry so cards whose wall times directly follow each other render with exactly 4px between their visible rectangles, including mixed-duration sequences; card starts and hour lines remain on the same wall-time Y scale.
