@@ -46,7 +46,7 @@ mixin ShellBrowserExtensionQuickAdd on ShellDashboardBase {
 
     if (!added) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(t(currentLocale.value, 'browser_extension_add_failed'))),
+        SnackBar(content: Text(t(currentLocale.value, 'sync_failed_retry'))),
       );
       return;
     }
@@ -63,18 +63,6 @@ mixin ShellBrowserExtensionQuickAdd on ShellDashboardBase {
     if (!mounted) return;
 
     _showBrowserExtensionTarget(target);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          t(
-            currentLocale.value,
-            target == 'list'
-                ? 'browser_extension_added_list'
-                : 'browser_extension_added_plan',
-          ),
-        ),
-      ),
-    );
   }
 
   void _showBrowserExtensionTarget(String target) {
