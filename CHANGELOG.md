@@ -1,3 +1,8 @@
+## 2026-09-11 — Browser extension Quick Add [feature]
+
+- Added a Manifest V3 LIFE OS browser companion with a compact Quick Add popup, `Alt+Shift+L` action shortcut, context-menu capture for selected text/current pages, and one-click access to the deployed web app.
+- Added a web-shell handoff that consumes one-shot extension requests after first frame, dedupes request IDs in local preferences, and creates Plans/Lists through the existing Planning Brain path rather than direct PocketBase writes.
+
 ## 2026-09-11 — Planning Time hour-label clipping [fix]
 
 - Fixed the enlarged Time View hour labels being clipped by the narrow rail: labels now use a fixed-width box anchored to the time axis with the intended gap, without moving the timeline axis/cards or changing scheduling geometry.
