@@ -13,7 +13,7 @@ permissions:
 
 jobs:
   build-windows-installer:
-    runs-on: windows-latest
+    # Pin VS 2022: windows-latest currently resolves to VS 18, which rejects\n    # transitive Flutter plugins that still include <experimental/coroutine>.\n    runs-on: windows-2022
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
