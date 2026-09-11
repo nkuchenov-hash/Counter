@@ -170,18 +170,24 @@ class PlanCardPlayButtonState extends State<PlanCardPlayButton> {
             child: DecoratedBox(
               decoration: BoxDecoration(
                 color: _hovered
-                    ? const Color(0xFFDEDEDE)
-                    : PlanCardTokens.menuBg,
+                    ? PlanCardTokens.menuBg
+                    : Colors.transparent,
                 shape: BoxShape.circle,
               ),
               child: Center(
-                child: CustomPaint(
-                  size: const Size(14, 16),
-                  painter: PlanCardPlayIconPainter(
-                    fill: _hovered
-                        ? const Color(0xFF4A4A4A)
-                        : PlanCardTokens.playFill,
-                    cornerRadius: PlanCardGeom.playIconCornerRadius,
+                child: Transform.translate(
+                  offset: const Offset(2, 0),
+                  child: CustomPaint(
+                    size: const Size(
+                      PlanCardGeom.playIconWidth,
+                      PlanCardGeom.playIconHeight,
+                    ),
+                    painter: PlanCardPlayIconPainter(
+                      fill: _hovered
+                          ? const Color(0xFF4A4A4A)
+                          : PlanCardTokens.playFill,
+                      cornerRadius: PlanCardGeom.playIconCornerRadius,
+                    ),
                   ),
                 ),
               ),
