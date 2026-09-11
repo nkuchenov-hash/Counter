@@ -179,11 +179,15 @@ Performance, responsiveness, and stability are **P0 correctness**, not polish. S
 - Plan reminder reconciliation must not cancel People birthday reminders.
 
 
-## Browser extension Quick Add
+## Browser extension companion
 
-- The browser companion is a fast capture surface, not a second LIFE OS client: it never writes PocketBase directly.
-- Toolbar Quick Add may target either **today’s Plan** or **Lists**. Context-menu capture of selected text or the current page targets today’s Plan.
-- Submitting from the extension opens or focuses the authenticated LIFE OS web app and hands off one one-shot request.
-- The web shell consumes that request only after the normal auth/profile bootstrap and delegates creation to the existing Planning Brain path so category matching, scheduling, optimistic UI, offline queueing, timezone rules, and realtime behavior stay canonical.
-- Each request carries a unique id. Successfully consumed ids are remembered locally so refresh/rebuild cannot create duplicate tasks.
-- Browser-extension work must not add blocking startup work; handoff runs after first frame.
+- The browser extension is a compact LIFE OS companion, not a second backend client.
+- Popup order is fixed: **Current record** → **New record** → **Open LIFE OS**.
+- **Current record** shows the canonical primary running record, its category path, category-color accent, and a locally ticking elapsed timer derived from the Brain-owned start time. If nothing is running, show an explicit empty state.
+- **Stop** ends the current primary record through the existing Brain stop path.
+- **New record** starts an actual running Timeline record through the existing Brain `startTimer` / Highlander path. Category inference, singleton-running enforcement, optimistic state, offline behavior, timezone rules, and PocketBase ownership remain canonical.
+- **Open LIFE OS** is always a visible one-click action.
+- The popup follows LIFE OS design tokens and canonical geometry: app/card surfaces from `AppColors`, 18px card radius, 12px control radius, monochrome primary actions, semantic error color for Stop, and data-driven category color only as the running-card accent.
+- The extension never stores PocketBase credentials and never calls PocketBase directly. When needed it opens an inactive authenticated LIFE OS web bridge tab; the web shell executes the command after normal auth/profile bootstrap and publishes only a bounded running-record snapshot back to browser-local storage.
+- Browser requests carry unique IDs and successful requests are deduped. A temporary bridge tab must stay alive until the canonical primary-record network chain has completed and the resulting running state is confirmed.
+- Bridge setup and request consumption run after the first frame and must not block normal LIFE OS startup.
