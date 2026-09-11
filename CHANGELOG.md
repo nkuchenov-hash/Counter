@@ -1,3 +1,9 @@
+## 2026-09-11 — Browser extension record companion [fix]
+
+- Replaced the Quick Add-only popup with a LIFE OS mini companion: canonical current active record, live elapsed timer, Stop, new running-record Start, and one-click web-app access.
+- Routed record reads and Start/Stop actions through the authenticated LIFE OS web shell and existing Brain/Highlander paths; the extension still stores no PocketBase credentials and performs no direct PocketBase mutations.
+- Rebuilt the popup from LIFE OS design tokens and card/button geometry, while preserving the approved Victor browser-extension icon.
+
 ## 2026-09-11 — Browser extension Quick Add [feature]
 
 
