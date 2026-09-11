@@ -12,7 +12,6 @@ const startLabel = document.getElementById('startLabel');
 const openApp = document.getElementById('openApp');
 const openAppIcon = document.getElementById('openAppIcon');
 const openLabel = document.getElementById('openLabel');
-const bridgeState = document.getElementById('bridgeState');
 const status = document.getElementById('status');
 
 const ru = (navigator.language || '').toLowerCase().startsWith('ru');
@@ -26,8 +25,8 @@ const copy = ru
       start: 'Начать запись',
       stop: 'Стоп',
       open: 'Открыть LIFE OS',
-      syncing: 'Синхронизация…',
-      connected: 'Данные LIFE OS',
+      checking: 'Проверяю текущую запись…',
+      refreshing: 'Обновляю…',
       starting: 'Запускаю запись…',
       stopping: 'Останавливаю…',
       enterTitle: 'Введите название записи.',
@@ -43,8 +42,8 @@ const copy = ru
       start: 'Start record',
       stop: 'Stop',
       open: 'Open LIFE OS',
-      syncing: 'Syncing…',
-      connected: 'LIFE OS data',
+      checking: 'Checking current record…',
+      refreshing: 'Refreshing…',
       starting: 'Starting record…',
       stopping: 'Stopping…',
       enterTitle: 'Enter a record title.',
@@ -54,6 +53,7 @@ const copy = ru
 
 let snapshot = null;
 let timerHandle = null;
+let hasRenderedSnapshot = false;
 
 currentLabel.textContent = copy.current;
 newRecordLabel.textContent = copy.newRecord;
@@ -100,6 +100,7 @@ function renderTimer() {
 
 function renderSnapshot(next) {
   snapshot = normalizeSnapshot(next);
+  hasRenderedSnapshot = snapshot != null;
   applyTheme(snapshot?.themeMode);
 
   const active = snapshot?.active === true;
@@ -127,7 +128,6 @@ function renderSnapshot(next) {
     currentCard.style.setProperty('--record-accent', 'var(--border)');
   }
 
-  bridgeState.textContent = copy.connected;
 }
 
 async function restoreCachedState() {
@@ -140,23 +140,35 @@ async function restoreCachedState() {
   }
   if (saved.lifeOsLastSnapshot) {
     renderSnapshot(saved.lifeOsLastSnapshot);
-  } else {
-    recordTitle.textContent = copy.syncing;
-    recordCategory.textContent = '';
-    bridgeState.textContent = copy.syncing;
+    return true;
   }
+
+  currentCard.classList.remove('active');
+  stopRecord.hidden = true;
+  recordTimer.hidden = true;
+  recordTitle.textContent = copy.checking;
+  recordCategory.textContent = '';
+  recordCategory.hidden = true;
+  currentCard.style.setProperty('--record-accent', 'var(--border)');
+  return false;
 }
 
 async function refreshState() {
-  bridgeState.textContent = copy.syncing;
   const response = await chrome.runtime.sendMessage({ type: 'getLifeOsState' });
   if (!response?.ok) {
-    bridgeState.textContent = '';
+    if (!hasRenderedSnapshot) {
+      recordTitle.textContent = copy.noActive;
+      recordCategory.textContent = copy.noActiveSub;
+      recordCategory.hidden = false;
+      stopRecord.hidden = true;
+      recordTimer.hidden = true;
+    }
     setStatus(response?.authRequired ? copy.auth : copy.failed, true);
     return false;
   }
+
   renderSnapshot(response.snapshot);
-  setStatus('');
+  setStatus(response.refreshing ? copy.refreshing : '');
   return true;
 }
 
@@ -234,6 +246,13 @@ startRecord.addEventListener('click', () => void handleStart());
 stopRecord.addEventListener('click', () => void handleStop());
 openApp.addEventListener('click', () => void handleOpenApp());
 openAppIcon.addEventListener('click', () => void handleOpenApp());
+
+chrome.runtime.onMessage.addListener((message) => {
+  if (message?.type !== 'lifeOsStateUpdated') return;
+  if (!message.snapshot || typeof message.snapshot !== 'object') return;
+  renderSnapshot(message.snapshot);
+  setStatus('');
+});
 
 timerHandle = setInterval(renderTimer, 1000);
 window.addEventListener('unload', () => clearInterval(timerHandle));
