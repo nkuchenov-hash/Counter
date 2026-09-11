@@ -367,7 +367,7 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard>
             : PlanCardTokens.cardShadow(widget.interacting, hovered: hovered),
       ),
       child: ClipRRect(
-        clipBehavior: Clip.none,
+        clipBehavior: Clip.antiAlias,
         borderRadius: BorderRadius.circular(PlanCardGeom.radius),
         child: LayoutBuilder(
           builder: (context, constraints) {
@@ -384,11 +384,11 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard>
                 ? constraints.maxHeight
                 : measuredH;
             final resolvedHeight = h.isFinite ? h : measuredH;
-            final showWatermark =
-                widget.surface != PlanCardSurface.timeline &&
-                !widget.timelineFillHeight &&
-                effectiveDensity != PlanTimeTaskCardDensity.micro &&
-                resolvedHeight >= PlanCardGeom.watermarkMinCardHeight;
+            final showWatermark = isTimeViewCard
+                ? categoryIcon != null
+                : !widget.timelineFillHeight &&
+                    effectiveDensity != PlanTimeTaskCardDensity.micro &&
+                    resolvedHeight >= PlanCardGeom.watermarkMinCardHeight;
             final trailingControlCount =
                 (timeViewTrailingPlay ? 1 : 0) + (timeViewTrailingMenu ? 1 : 0);
             final trailingControlsWidth = trailingControlCount == 0
