@@ -1,5 +1,11 @@
 ## 2026-09-11 — Browser extension Quick Add [feature]
 
+
+## [2026-09-11] - Victor app icon rollout [shipped]
+
+* **Branding:** [shipped] Applied the approved Victor raven + clock-dial + checklist icon across Android/Wear, Web/PWA, iOS/iPadOS, macOS, Windows, browser extension, and LIFE OS website favicons; rebuilt the public extension ZIP.
+* **Android:** [shipped] New ARM64 release APK is produced from the refreshed launcher icon.
+
 - Added a Manifest V3 LIFE OS browser companion with a compact Quick Add popup, `Alt+Shift+L` action shortcut, context-menu capture for selected text/current pages, and one-click access to the deployed web app.
 - Added a web-shell handoff that consumes one-shot extension requests after first frame, dedupes request IDs in local preferences, and creates Plans/Lists through the existing Planning Brain path rather than direct PocketBase writes.
 
