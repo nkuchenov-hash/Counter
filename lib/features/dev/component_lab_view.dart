@@ -11,7 +11,6 @@ import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/core/widgets/chip_component.dart';
 import 'package:flutter/material.dart';
-
 part 'component_lab_cards_demo.dart';
 part 'component_lab_notes_demo.dart';
 
