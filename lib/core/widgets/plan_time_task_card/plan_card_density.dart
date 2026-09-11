@@ -47,14 +47,18 @@ PlanTimeTaskCardDensity planTimeCardTaskDensityForVisual(
 }
 
 bool planTimeCardShowProgressForVisual(PlanTimeCardVisualDensity density) {
-  return density == PlanTimeCardVisualDensity.compact ||
+  return density == PlanTimeCardVisualDensity.small ||
+      density == PlanTimeCardVisualDensity.moreCompact ||
+      density == PlanTimeCardVisualDensity.compact ||
       density == PlanTimeCardVisualDensity.medium;
 }
 
 bool planTimeCardShowFooterBreadcrumbForVisual(
   PlanTimeCardVisualDensity density,
 ) {
-  return density == PlanTimeCardVisualDensity.compact ||
+  return density == PlanTimeCardVisualDensity.small ||
+      density == PlanTimeCardVisualDensity.moreCompact ||
+      density == PlanTimeCardVisualDensity.compact ||
       density == PlanTimeCardVisualDensity.medium;
 }
 
