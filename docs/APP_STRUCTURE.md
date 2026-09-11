@@ -106,7 +106,7 @@ Product sections own section-specific code later; this phase only separates shel
 | `app/shell/shared/shell_task_actions.dart` | Shell task/record action orchestration, shared record-start retry and source-plan suggestion prompt presentation; preference/matching/link policy lives in Brain *(part)* |
 | `app/shell/shared/shell_tab_host.dart` | Timeline/Planning/Calendar/Lists tab composition; depends explicitly on `ShellEditHosts` instead of concrete dashboard casts *(part)* |
 | `app/shell/shared/shell_lifecycle.dart` | Shell startup/dispose wiring; delegates Planning baseline to `PlannerStartupService`; no Path migration/governance runs from shell startup *(part)* |
-| `app/shell/shared/shell_browser_extension.dart` | Web-only browser-extension handoff: consumes one-shot Quick Add URL requests after first frame, dedupes request IDs locally, and delegates creation to existing Planning Brain entry points *(part)* |
+| `app/shell/shared/shell_browser_extension.dart` | Web-only browser-companion bridge: mirrors the canonical running-record projection, consumes start/stop/sync requests after auth bootstrap, dedupes request IDs locally, and delegates all record mutations to Brain *(part)* |
 | `app/shell/shared/shell_chrome.dart` | Responsive shell scaffold/chrome: destination pages, app bar, form-factor frame, FAB, bottom navigation, desktop voice shortcuts *(part)* |
 | `app/shell/shared/shell_edit_hosts.dart` | Timeline/plan edit modal hosts *(part)* |
 | `app/shell/shared/shell_more_menu.dart` | More bottom sheet and shell navigation actions only; Paths opens shell destination 6 *(part)* |
@@ -573,7 +573,7 @@ People is an on-demand Settings feature. External address books stay in a hidden
 | `android/` | Android Gradle project | Flutter-generated + app manifest; build outputs under `android/build/` (gitignored) |
 | `ios/` | iOS Xcode project | Flutter-generated; `Pods/` gitignored |
 | `web/` | Web shell (`index.html`, icons, manifest) | GitHub Pages base-href `/Counter/` |
-| `browser_extension/` | Chrome/Edge/Yandex Manifest V3 companion | Quick Add popup, Alt+Shift+L action, context-menu capture, and web-app launch; never writes PocketBase directly |
+| `browser_extension/` | Chrome/Edge/Yandex Manifest V3 companion | Current active record + live timer, Start/Stop record actions, Alt+Shift+L popup, context-menu start, and web-app launch; never writes PocketBase directly |
 | `windows/`, `linux/`, `macos/` | Desktop embedders | Flutter platform runners |
 | `test/` | Unit/widget tests | `flutter test`; perf and domain tests |
 | `integration_test/` | Device integration tests | Emulator/device only |

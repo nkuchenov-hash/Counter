@@ -1,6 +1,7 @@
 // Life OS dashboard — shell state + composition root.
 
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io' show exit, Platform;
 
 import 'package:counter/core/app_snackbar.dart';
@@ -114,6 +115,7 @@ mixin ShellDashboardBase on State<LifeOSDashboard> {
 
   StreamSubscription<String?>? notificationSub;
   StreamSubscription<List<CategoryRule>>? categoryRulesSub;
+  StreamSubscription<void>? browserExtensionRecordSub;
 
   final ShellLayoutController shellLayout = ShellLayoutController();
   final SpeechEngineController speechEngine = SpeechEngineController();
