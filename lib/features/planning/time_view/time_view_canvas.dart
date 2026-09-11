@@ -49,8 +49,17 @@ extension PlanningTimeViewTimeViewCanvas on PlanningTimeViewCoordinator {
     final railColor = scheme.brightness == Brightness.light
         ? const Color(0xFFA6B1BE)
         : const Color(0xFF748190);
-    final nowLineColor = scheme.error.withValues(alpha: 0.94);
+    final nowLineColor = scheme.brightness == Brightness.light
+        ? const Color(0xCC000000)
+        : scheme.onSurface.withValues(alpha: 0.84);
+    final nowBadgeForeground = scheme.brightness == Brightness.light
+        ? Colors.white
+        : scheme.surface;
     final nowTop = timelineNowLineTopPx(planWallDay, rangeStart, rangeEnd, grid);
+    final wallNow = profileWallNow();
+    final nowLabel = nowTop != null
+        ? '${wallNow.hour.toString().padLeft(2, '0')}:${wallNow.minute.toString().padLeft(2, '0')}'
+        : null;
     if (nowTop != null) {
       maybeAutoScrollTimelineToNow(nowTop, canvasHeight);
     }
@@ -62,6 +71,11 @@ extension PlanningTimeViewTimeViewCanvas on PlanningTimeViewCoordinator {
         ? kShellDesktopContentHorizontalPadding
         : 8.0;
     final axisX = railWidth - 10.0;
+    const hourLabelHeight = 20.0;
+    const hourDotSize = 8.0;
+    const hourLabelToAxisGap = 16.0;
+    final hourLabelRightInset =
+        (railWidth - axisX) + hourLabelToAxisGap;
     final prevMarker = t(loc, 'day_length_prev_day');
     final nextMarker = t(loc, 'day_length_next_day');
     String hourLabel(int extHour) {
@@ -108,30 +122,37 @@ extension PlanningTimeViewTimeViewCanvas on PlanningTimeViewCoordinator {
                         ),
                         for (var i = 0; i < visibleHours.length; i++) ...[
                           Positioned(
-                            top: grid.hourLineY(i) - 6,
+                            top: grid.hourLineY(i) - hourLabelHeight / 2,
                             left: 0,
-                            right: 14,
-                            child: Text(
-                              hourLabel(visibleHours[i]),
-                              style: Theme.of(host.context)
-                                  .textTheme
-                                  .labelSmall
-                                  ?.copyWith(
-                                    color: scheme.onSurface.withValues(
-                                      alpha: 0.72,
+                            right: hourLabelRightInset,
+                            height: hourLabelHeight,
+                            child: Align(
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                hourLabel(visibleHours[i]),
+                                maxLines: 1,
+                                softWrap: false,
+                                style: Theme.of(host.context)
+                                    .textTheme
+                                    .labelSmall
+                                    ?.copyWith(
+                                      color: scheme.onSurface.withValues(
+                                        alpha: 0.78,
+                                      ),
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 13,
+                                      height: 1,
                                     ),
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 11,
-                                  ),
+                              ),
                             ),
                           ),
                           Positioned(
-                            top: grid.hourLineY(i) - 3,
-                            left: axisX - 3,
+                            top: grid.hourLineY(i) - hourDotSize / 2,
+                            left: axisX - hourDotSize / 2,
                             child: IgnorePointer(
                               child: Container(
-                                width: 7,
-                                height: 7,
+                                width: hourDotSize,
+                                height: hourDotSize,
                                 decoration: BoxDecoration(
                                   color: railColor,
                                   shape: BoxShape.circle,
@@ -315,15 +336,45 @@ extension PlanningTimeViewTimeViewCanvas on PlanningTimeViewCoordinator {
                               ],
                               if (nowTop != null)
                                 Positioned(
-                                  top: nowTop.clamp(0, canvasHeight - 1),
+                                  top:
+                                      nowTop.clamp(0, canvasHeight - 1) - 0.5,
                                   left: 0,
                                   right: 0,
                                   child: IgnorePointer(
                                     child: Container(
-                                      height: 3,
+                                      height: 1,
+                                      color: nowLineColor,
+                                    ),
+                                  ),
+                                ),
+                              if (nowTop != null && nowLabel != null)
+                                Positioned(
+                                  top:
+                                      nowTop.clamp(0, canvasHeight - 1) - 10,
+                                  left: 8,
+                                  child: IgnorePointer(
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 6,
+                                        vertical: 3,
+                                      ),
                                       decoration: BoxDecoration(
                                         color: nowLineColor,
-                                        borderRadius: BorderRadius.circular(2),
+                                        borderRadius: BorderRadius.circular(5),
+                                      ),
+                                      child: Text(
+                                        nowLabel,
+                                        maxLines: 1,
+                                        softWrap: false,
+                                        style: Theme.of(host.context)
+                                            .textTheme
+                                            .labelSmall
+                                            ?.copyWith(
+                                              color: nowBadgeForeground,
+                                              fontWeight: FontWeight.w700,
+                                              fontSize: 10,
+                                              height: 1,
+                                            ),
                                       ),
                                     ),
                                   ),
