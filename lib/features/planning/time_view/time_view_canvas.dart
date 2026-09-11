@@ -74,6 +74,7 @@ extension PlanningTimeViewTimeViewCanvas on PlanningTimeViewCoordinator {
     const hourLabelHeight = 20.0;
     const hourDotSize = 8.0;
     const hourLabelToAxisGap = 16.0;
+    const hourLabelWidth = 48.0;
     final hourLabelRightInset =
         (railWidth - axisX) + hourLabelToAxisGap;
     final prevMarker = t(loc, 'day_length_prev_day');
@@ -123,11 +124,11 @@ extension PlanningTimeViewTimeViewCanvas on PlanningTimeViewCoordinator {
                         for (var i = 0; i < visibleHours.length; i++) ...[
                           Positioned(
                             top: grid.hourLineY(i) - hourLabelHeight / 2,
-                            left: 0,
                             right: hourLabelRightInset,
+                            width: hourLabelWidth,
                             height: hourLabelHeight,
                             child: Align(
-                              alignment: Alignment.centerLeft,
+                              alignment: Alignment.centerRight,
                               child: Text(
                                 hourLabel(visibleHours[i]),
                                 maxLines: 1,
