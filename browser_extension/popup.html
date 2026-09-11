@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LIFE OS Quick Add</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <main class="panel">
+    <header class="header">
+      <div>
+        <div class="eyebrow">LIFE OS</div>
+        <h1>Quick Add</h1>
+      </div>
+      <button id="openApp" class="icon-button" type="button" title="Open LIFE OS" aria-label="Open LIFE OS">
+        ↗
+      </button>
+    </header>
+
+    <label class="field">
+      <span>Task</span>
+      <textarea id="taskText" rows="4" maxlength="1200" autofocus placeholder="What needs to be done?"></textarea>
+    </label>
+
+    <label class="field compact">
+      <span>Destination</span>
+      <select id="target">
+        <option value="plan">Plan · today</option>
+        <option value="list">Lists · inbox</option>
+      </select>
+    </label>
+
+    <div id="status" class="status" role="status" aria-live="polite"></div>
+
+    <button id="addTask" class="primary" type="button">Add to LIFE OS</button>
+    <div class="hint">Ctrl/⌘ + Enter · Alt+Shift+L opens this window</div>
+  </main>
+  <script src="popup.js"></script>
+</body>
+</html>

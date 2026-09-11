@@ -1,6 +1,7 @@
 part of '../app_shell.dart';
 
-mixin ShellLifecycle on ShellTabHost, ShellVoiceIntegration {
+mixin ShellLifecycle
+    on ShellTabHost, ShellVoiceIntegration, ShellBrowserExtensionQuickAdd {
   void initializeShellLifecycle() {
     selectedDate = DatabaseService.instance.getTimelineDeviceLocalToday();
     focusedDay = DatabaseService.instance.getTimelineDeviceLocalToday();
@@ -44,6 +45,7 @@ mixin ShellLifecycle on ShellTabHost, ShellVoiceIntegration {
     unawaited(UnfilledTimeGapService.instance.start());
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(consumeBrowserExtensionQuickAddIfPresent());
       StartupLog.deferred(
         name: 'timelineTasksLoad',
         reason: 'notNeededForFirstFrame',
