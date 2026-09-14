@@ -241,11 +241,12 @@ abstract final class PlanTimeViewLayoutCalculator {
       final hasAdjacentNext =
           i + 1 < slots.length &&
           _wallAdjacent(slot.endMin, slots[i + 1].startMin);
-      // Stretch this hour only enough to fit the canonical rendered height
-      // for this duration. Adjacency affects only the reserved boundary gap;
-      // it must never change the card's own height.
+      // Stretch only enough to guarantee the minimum usable card height.
+      // The actual card then fills its shared wall-time span below. This keeps
+      // contiguous tasks attached instead of leaving fake blank space when a
+      // short task stretches the surrounding hour.
       final requiredSpanPx =
-          _cardHeightPx(slot.durationMin) +
+          kPlanTimeCardMinHeightPx +
           (hasAdjacentNext ? kPlanTimeCardGapPx : 0.0);
       final wallSpanMinutes = math.max(1.0, slot.endMin - slot.startMin);
       final requiredHourHeight = (requiredSpanPx / wallSpanMinutes * 60.0)
@@ -351,7 +352,14 @@ abstract final class PlanTimeViewLayoutCalculator {
     for (var i = 0; i < slots.length; i++) {
       final slot = slots[i];
       final topPx = yScale.yForMinute(slot.startMin);
-      final heightPx = _cardHeightPx(slot.durationMin);
+      final endPx = yScale.yForMinute(slot.endMin);
+      final hasAdjacentNext =
+          i + 1 < slots.length &&
+          _wallAdjacent(slot.endMin, slots[i + 1].startMin);
+      final boundaryGapPx = hasAdjacentNext ? kPlanTimeCardGapPx : 0.0;
+      final heightPx = math
+          .max(kPlanTimeCardMinHeightPx, endPx - topPx - boundaryGapPx)
+          .toDouble();
 
       // TIME_VIEW_CARD_CONTENT_DENSITY_FROM_AVAILABLE_HEIGHT — inner layout only.
       final visual = planTimeCardVisualDensityForRenderedHeight(heightPx);
@@ -481,7 +489,18 @@ abstract final class PlanTimeViewLayoutCalculator {
       final layout = layouts[i];
       final slot = slots[i];
       final expectedTop = yScale.yForMinute(slot.startMin);
-      final expectedHeight = _cardHeightPx(slot.durationMin);
+      final expectedEnd = yScale.yForMinute(slot.endMin);
+      final hasAdjacentNext =
+          i + 1 < slots.length &&
+          _wallAdjacent(slot.endMin, slots[i + 1].startMin);
+      final expectedHeight = math
+          .max(
+            kPlanTimeCardMinHeightPx,
+            expectedEnd -
+                expectedTop -
+                (hasAdjacentNext ? kPlanTimeCardGapPx : 0.0),
+          )
+          .toDouble();
 
       assert(
         layout.heightPx >= kPlanTimeCardMinHeightPx - 0.01,
