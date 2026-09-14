@@ -15,27 +15,57 @@ class TimeViewYScale {
     required this.visibleHours,
     required this.rangeStart,
     required this.totalMinutes,
-    required List<double> hourHeightsPx,
     required this.packedBottomPx,
-  }) : hourHeightsPx = List<double>.unmodifiable(hourHeightsPx),
-       assert(hourHeightsPx.length == visibleHours.length);
+    List<double>? hourHeightsPx,
+    List<double>? minuteBreaks,
+    List<double>? yBreaks,
+  }) {
+    if (minuteBreaks != null && yBreaks != null) {
+      assert(minuteBreaks.length == yBreaks.length);
+      assert(minuteBreaks.length >= 2);
+      _minuteBreaks = List<double>.unmodifiable(minuteBreaks);
+      _yBreaks = List<double>.unmodifiable(yBreaks);
+    } else {
+      final heights =
+          hourHeightsPx ??
+          List<double>.filled(
+            visibleHours.length,
+            kPlanTimeViewBaseHourHeightMinPx,
+          );
+      assert(heights.length == visibleHours.length);
+      final minutes = <double>[0];
+      final ys = <double>[0];
+      var y = 0.0;
+      for (var i = 0; i < heights.length; i++) {
+        y += heights[i];
+        minutes.add((i + 1) * 60.0);
+        ys.add(y);
+      }
+      _minuteBreaks = List<double>.unmodifiable(minutes);
+      _yBreaks = List<double>.unmodifiable(ys);
+    }
+  }
 
   final List<int> visibleHours;
   final int rangeStart;
   final double totalMinutes;
-  final List<double> hourHeightsPx;
   final double packedBottomPx;
 
-  late final List<double> hourTopsPx = _buildHourTops(hourHeightsPx);
+  late final List<double> _minuteBreaks;
+  late final List<double> _yBreaks;
 
-  static List<double> _buildHourTops(List<double> heights) {
-    var y = 0.0;
-    return List<double>.generate(heights.length, (index) {
-      final top = y;
-      y += heights[index];
-      return top;
-    }, growable: false);
-  }
+  late final List<double> hourTopsPx = List<double>.generate(
+    visibleHours.length,
+    (index) => yForMinute(index * 60.0),
+    growable: false,
+  );
+
+  late final List<double> hourHeightsPx = List<double>.generate(
+    visibleHours.length,
+    (index) =>
+        yForMinute((index + 1) * 60.0) - yForMinute(index * 60.0),
+    growable: false,
+  );
 
   /// Legacy aliases kept for existing Time View call sites/tests.
   List<double> get rubberPxPerMinuteByHour => [
@@ -45,22 +75,16 @@ class TimeViewYScale {
   List<double> get hourHeights => hourHeightsPx;
   List<double> get hourTops => hourTopsPx;
 
-  /// Compatibility getter only. Piecewise callers must use
-  /// [pxPerMinuteAtHourIndex].
   double get rubberPxPerMinute =>
       hourHeightsPx.isEmpty ? 0.0 : hourHeightsPx.first / 60.0;
 
-  /// Compatibility getter only. The canvas uses [hourHeightPxAtIndex].
   double get hourBandHeightPx =>
       hourHeightsPx.isEmpty ? 0.0 : hourHeightsPx.first;
 
   double hourHeightPxAtIndex(int hourIndex) =>
       hourHeightsPx[hourIndex.clamp(0, hourHeightsPx.length - 1)];
 
-  double get _hourGridBottomPx {
-    if (hourHeightsPx.isEmpty) return 0.0;
-    return hourTopsPx.last + hourHeightsPx.last;
-  }
+  double get _hourGridBottomPx => _yBreaks.isEmpty ? 0.0 : _yBreaks.last;
 
   double get totalHeightPx =>
       math.max(_hourGridBottomPx, packedBottomPx) +
@@ -77,42 +101,91 @@ class TimeViewYScale {
     return (m / 60.0).floor().clamp(0, visibleHours.length - 1);
   }
 
-  /// Piecewise absolute Y for minutes from visible-range start.
+  int _segmentIndexForMinute(double minute) {
+    var low = 0;
+    var high = _minuteBreaks.length - 2;
+    while (low <= high) {
+      final mid = (low + high) >> 1;
+      final start = _minuteBreaks[mid];
+      final end = _minuteBreaks[mid + 1];
+      if (minute < start) {
+        high = mid - 1;
+      } else if (minute >= end) {
+        low = mid + 1;
+      } else {
+        return mid;
+      }
+    }
+    return (low - 1).clamp(0, _minuteBreaks.length - 2);
+  }
+
+  int _segmentIndexForY(double y) {
+    var low = 0;
+    var high = _yBreaks.length - 2;
+    while (low <= high) {
+      final mid = (low + high) >> 1;
+      final start = _yBreaks[mid];
+      final end = _yBreaks[mid + 1];
+      if (y < start) {
+        high = mid - 1;
+      } else if (y >= end) {
+        low = mid + 1;
+      } else {
+        return mid;
+      }
+    }
+    return (low - 1).clamp(0, _yBreaks.length - 2);
+  }
+
+  /// Canonical piecewise absolute Y for minutes from visible-range start.
+  ///
+  /// Breakpoints may exist inside an hour at plan boundaries. A short plan can
+  /// therefore get the pixels it needs without inflating the remaining
+  /// 50 minutes of the same wall-clock hour.
   double yForMinute(double minuteFromRangeStart) {
-    if (hourHeightsPx.isEmpty || totalMinutes <= 0) return 0.0;
+    if (_minuteBreaks.length < 2 || totalMinutes <= 0) return 0.0;
     final m = minuteFromRangeStart.clamp(0.0, totalMinutes).toDouble();
     if (m >= totalMinutes) return _hourGridBottomPx;
-    final hourIndex = hourIndexForMinutesFromRangeStart(m);
-    final localMinute = m - hourIndex * 60.0;
-    return hourTopsPx[hourIndex] +
-        localMinute * pxPerMinuteAtHourIndex(hourIndex);
+    final i = _segmentIndexForMinute(m);
+    final startMin = _minuteBreaks[i];
+    final endMin = _minuteBreaks[i + 1];
+    final startY = _yBreaks[i];
+    final endY = _yBreaks[i + 1];
+    final spanMin = endMin - startMin;
+    if (spanMin <= 0) return startY;
+    final t = (m - startMin) / spanMin;
+    return startY + (endY - startY) * t;
   }
 
   double yForMinutesFromRangeStart(double minutesFromRangeStart) =>
       yForMinute(minutesFromRangeStart);
 
   double minuteForY(double y) {
-    if (hourHeightsPx.isEmpty || totalMinutes <= 0) return 0.0;
+    if (_yBreaks.length < 2 || totalMinutes <= 0) return 0.0;
     final yy = y.clamp(0.0, _hourGridBottomPx).toDouble();
     if (yy >= _hourGridBottomPx) return totalMinutes;
-    for (var i = 0; i < hourHeightsPx.length; i++) {
-      final top = hourTopsPx[i];
-      final bottom = top + hourHeightsPx[i];
-      if (yy <= bottom || i == hourHeightsPx.length - 1) {
-        final ppm = pxPerMinuteAtHourIndex(i);
-        if (ppm <= 0) return i * 60.0;
-        return (i * 60.0 + (yy - top) / ppm).clamp(0.0, totalMinutes);
-      }
-    }
-    return totalMinutes;
+    final i = _segmentIndexForY(yy);
+    final startY = _yBreaks[i];
+    final endY = _yBreaks[i + 1];
+    final startMin = _minuteBreaks[i];
+    final endMin = _minuteBreaks[i + 1];
+    final spanY = endY - startY;
+    if (spanY <= 0) return startMin;
+    final t = (yy - startY) / spanY;
+    return (startMin + (endMin - startMin) * t).clamp(
+      0.0,
+      totalMinutes,
+    );
   }
 
   double minutesFromY(double y) => minuteForY(y);
 
-  /// Hour grid / rail line for extended hour at [visibleHours] index.
+  /// Hour grid / rail line in the same local piecewise scale as plan cards.
   double hourLineY(int hourIndex) {
-    if (hourTopsPx.isEmpty) return 0.0;
-    return hourTopsPx[hourIndex.clamp(0, hourTopsPx.length - 1)];
+    if (visibleHours.isEmpty) return 0.0;
+    return yForMinute(
+      hourIndex.clamp(0, visibleHours.length - 1) * 60.0,
+    );
   }
 
   void logHourLine(int hourIndex) {
@@ -217,50 +290,72 @@ abstract final class PlanTimeViewLayoutCalculator {
   static bool _wallAdjacent(double prevEndMin, double nextStartMin) =>
       (nextStartMin - prevEndMin).abs() < 0.01;
 
-  /// Resolve only the wall-clock hours that need extra visual room.
+  /// Build a local piecewise wall-time scale.
   ///
-  /// Wall time is the source of truth: cards are never moved away from their
-  /// scheduled minute to manufacture visual clearance. When stable card
-  /// geometry needs more room, the affected hour(s) stretch through the same
-  /// piecewise time/Y scale used by pointer-to-time conversion.
-  static List<double> _resolveHourHeightsPx({
+  /// Each plan interval gets only the pixel density required by its canonical
+  /// duration-responsive card. Empty time keeps the normal base density. This
+  /// prevents a 10-minute task from stretching an entire hour and making a
+  /// following 30/45-minute task unnecessarily huge.
+  static ({List<double> minuteBreaks, List<double> yBreaks})
+  _buildLocalScaleProfile({
     required List<_PlanTimeViewCardSlot> slots,
-    required int hourCount,
+    required double totalMinutes,
     required double baseHourHeightPx,
   }) {
-    final heights = List<double>.filled(hourCount, baseHourHeightPx);
-    if (hourCount == 0 || slots.isEmpty) return heights;
-    final totalMinutes = hourCount * 60.0;
+    final basePxPerMinute = baseHourHeightPx / 60.0;
+    final breakSet = <double>{0.0, totalMinutes};
 
-    for (var i = 0; i < slots.length; i++) {
-      final slot = slots[i];
-      final visibleStart = slot.startMin.clamp(0.0, totalMinutes).toDouble();
-      final visibleEnd = slot.endMin.clamp(0.0, totalMinutes).toDouble();
-      if (visibleEnd <= visibleStart + 0.01) continue;
-
-      final hasAdjacentNext =
-          i + 1 < slots.length &&
-          _wallAdjacent(slot.endMin, slots[i + 1].startMin);
-      // Stretch only enough to guarantee the minimum usable card height.
-      // The actual card then fills its shared wall-time span below. This keeps
-      // contiguous tasks attached instead of leaving fake blank space when a
-      // short task stretches the surrounding hour.
-      final requiredSpanPx =
-          kPlanTimeCardMinHeightPx +
-          (hasAdjacentNext ? kPlanTimeCardGapPx : 0.0);
-      final wallSpanMinutes = math.max(1.0, slot.endMin - slot.startMin);
-      final requiredHourHeight = (requiredSpanPx / wallSpanMinutes * 60.0)
-          .clamp(baseHourHeightPx, kPlanTimeMaxHourHeightPx)
-          .toDouble();
-
-      final firstHour = (visibleStart / 60.0).floor().clamp(0, hourCount - 1);
-      final lastMinute = math.max(visibleStart, visibleEnd - 0.001);
-      final lastHour = (lastMinute / 60.0).floor().clamp(0, hourCount - 1);
-      for (var hour = firstHour; hour <= lastHour; hour++) {
-        heights[hour] = math.max(heights[hour], requiredHourHeight);
-      }
+    for (var minute = 60.0; minute < totalMinutes; minute += 60.0) {
+      breakSet.add(minute);
     }
-    return heights;
+    for (final slot in slots) {
+      breakSet.add(slot.startMin.clamp(0.0, totalMinutes).toDouble());
+      breakSet.add(slot.endMin.clamp(0.0, totalMinutes).toDouble());
+    }
+
+    final minuteBreaks = breakSet.toList()..sort();
+    final yBreaks = <double>[0.0];
+    var y = 0.0;
+
+    for (var segmentIndex = 0;
+        segmentIndex < minuteBreaks.length - 1;
+        segmentIndex++) {
+      final segmentStart = minuteBreaks[segmentIndex];
+      final segmentEnd = minuteBreaks[segmentIndex + 1];
+      final segmentMinutes = segmentEnd - segmentStart;
+      if (segmentMinutes <= 0) {
+        yBreaks.add(y);
+        continue;
+      }
+
+      var pxPerMinute = basePxPerMinute;
+      for (var slotIndex = 0; slotIndex < slots.length; slotIndex++) {
+        final slot = slots[slotIndex];
+        if (slot.endMin <= segmentStart + 0.001 ||
+            slot.startMin >= segmentEnd - 0.001) {
+          continue;
+        }
+        final hasAdjacentNext =
+            slotIndex + 1 < slots.length &&
+            _wallAdjacent(slot.endMin, slots[slotIndex + 1].startMin);
+        final desiredSpanPx =
+            _cardHeightPx(slot.durationMin) +
+            (hasAdjacentNext ? kPlanTimeCardGapPx : 0.0);
+        final wallSpanMinutes = math.max(1.0, slot.endMin - slot.startMin);
+        pxPerMinute = math.max(
+          pxPerMinute,
+          desiredSpanPx / wallSpanMinutes,
+        );
+      }
+
+      y += segmentMinutes * pxPerMinute;
+      yBreaks.add(y);
+    }
+
+    return (
+      minuteBreaks: List<double>.unmodifiable(minuteBreaks),
+      yBreaks: List<double>.unmodifiable(yBreaks),
+    );
   }
 
   static ({TimeViewYScale grid, List<PlanTimeViewBlockLayout> layouts})
@@ -300,16 +395,17 @@ abstract final class PlanTimeViewLayoutCalculator {
       return a.task.planRowIdForBackend.compareTo(b.task.planRowIdForBackend);
     });
 
-    final hourHeightsPx = _resolveHourHeightsPx(
+    final scaleProfile = _buildLocalScaleProfile(
       slots: slots,
-      hourCount: visibleHours.length,
+      totalMinutes: totalMinutes,
       baseHourHeightPx: baseH,
     );
     final provisionalScale = TimeViewYScale(
       visibleHours: visibleHours,
       rangeStart: rangeStart,
       totalMinutes: totalMinutes,
-      hourHeightsPx: hourHeightsPx,
+      minuteBreaks: scaleProfile.minuteBreaks,
+      yBreaks: scaleProfile.yBreaks,
       packedBottomPx: 0,
     );
     final layouts = _placeCards(slots, provisionalScale);
@@ -321,9 +417,11 @@ abstract final class PlanTimeViewLayoutCalculator {
       visibleHours: visibleHours,
       rangeStart: rangeStart,
       totalMinutes: totalMinutes,
-      hourHeightsPx: hourHeightsPx,
+      minuteBreaks: scaleProfile.minuteBreaks,
+      yBreaks: scaleProfile.yBreaks,
       packedBottomPx: packedBottom,
     );
+    final hourHeightsPx = yScale.hourHeightsPx;
 
     for (var i = 0; i < visibleHours.length; i++) {
       yScale.logHourLine(i);
