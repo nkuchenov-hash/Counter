@@ -144,6 +144,48 @@ void main() {
     }
   });
 
+  test(
+    '16:00 sequential chain stays visually contiguous across 17:00',
+    () {
+      final result = _layout([
+        _projection(hour: 16, minute: 0, durationMinutes: 10, id: 'chain-a'),
+        _projection(hour: 16, minute: 10, durationMinutes: 45, id: 'chain-b'),
+        _projection(hour: 16, minute: 55, durationMinutes: 45, id: 'chain-c'),
+        _projection(hour: 17, minute: 40, durationMinutes: 15, id: 'chain-d'),
+      ]);
+
+      for (var i = 0; i < result.layouts.length - 1; i++) {
+        final current = result.layouts[i];
+        final next = result.layouts[i + 1];
+        expect(
+          next.topPx - (current.topPx + current.heightPx),
+          closeTo(kPlanTimeCardGapPx, 0.01),
+        );
+      }
+
+      final sixteenTenToFiftyFive = result.layouts[1];
+      final sixteenFiftyFiveToSeventeenForty = result.layouts[2];
+      final y1625 = result.grid.yForMinute(145);
+      final y1700 = result.grid.yForMinute(180);
+
+      expect(y1625, greaterThan(sixteenTenToFiftyFive.topPx));
+      expect(
+        y1625,
+        lessThan(
+          sixteenTenToFiftyFive.topPx + sixteenTenToFiftyFive.heightPx,
+        ),
+      );
+      expect(y1700, greaterThan(sixteenFiftyFiveToSeventeenForty.topPx));
+      expect(
+        y1700,
+        lessThan(
+          sixteenFiftyFiveToSeventeenForty.topPx +
+              sixteenFiftyFiveToSeventeenForty.heightPx,
+        ),
+      );
+    },
+  );
+
   testWidgets('compact Time View card keeps its progress slot', (tester) async {
     final projection = _projection(
       hour: 15,
