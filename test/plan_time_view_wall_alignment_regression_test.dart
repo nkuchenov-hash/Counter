@@ -186,6 +186,51 @@ void main() {
     },
   );
 
+  test('short plan stretches only its local interval', () {
+    final result = _layout([
+      _projection(hour: 14, minute: 0, durationMinutes: 10, id: 'local-a'),
+      _projection(hour: 14, minute: 10, durationMinutes: 45, id: 'local-b'),
+      _projection(hour: 14, minute: 55, durationMinutes: 15, id: 'local-c'),
+    ]);
+
+    final a = result.layouts[0];
+    final b = result.layouts[1];
+    final c = result.layouts[2];
+
+    expect(
+      a.heightPx,
+      closeTo(planTimeCardRenderedHeightPxForDuration(10), 0.01),
+    );
+    expect(
+      b.heightPx,
+      closeTo(planTimeCardRenderedHeightPxForDuration(45), 0.01),
+    );
+    expect(
+      c.heightPx,
+      closeTo(planTimeCardRenderedHeightPxForDuration(15), 0.01),
+    );
+
+    expect(
+      b.topPx - (a.topPx + a.heightPx),
+      closeTo(kPlanTimeCardGapPx, 0.01),
+    );
+    expect(
+      c.topPx - (b.topPx + b.heightPx),
+      closeTo(kPlanTimeCardGapPx, 0.01),
+    );
+
+    // The short 10-minute card must not inflate the entire 14:00 hour.
+    expect(result.grid.hourHeightsPx[0], lessThan(220));
+
+    final y1439 = result.grid.yForMinute(39);
+    expect(y1439, greaterThan(b.topPx));
+    expect(y1439, lessThan(b.topPx + b.heightPx));
+
+    final y1500 = result.grid.yForMinute(60);
+    expect(y1500, greaterThan(c.topPx));
+    expect(y1500, lessThan(c.topPx + c.heightPx));
+  });
+
   testWidgets('compact Time View card keeps its progress slot', (tester) async {
     final projection = _projection(
       hour: 15,
