@@ -244,6 +244,248 @@ extension PlanningTimeViewTimeViewDragController on PlanningTimeViewCoordinator 
     host.notifySetState(clearTimelineInteractionState);
   }
 
+  TimeViewInsertionCascadeResult _computeRigidBulkDragCascade({
+    required List<PlanningTask> scheduledTasks,
+    required Set<String> draggedPlanIds,
+    required String primaryDraggedPlanId,
+    required Set<String> fixedPlanIds,
+    required Map<String, int> capturedOffsets,
+    TimeViewInsertionIntent? targetIntent,
+    DateTime? emptyCanvasStartWall,
+  }) {
+    final resolveDuration =
+        DatabaseService.instance.resolvePlanDurationMinutesFromTags;
+    final byId = <String, PlanningTask>{
+      for (final task in scheduledTasks) task.planRowIdForBackend: task,
+    };
+    final primary = byId[primaryDraggedPlanId];
+    final primaryStart = primary?.startTime;
+    if (primary == null || primaryStart == null) {
+      return const TimeViewInsertionCascadeResult(
+        accepted: false,
+        blockedReason: 'bulkScheduleMissing',
+      );
+    }
+
+    final offsets = <String, int>{};
+    var minOffset = 0;
+    var maxEndOffset = 0;
+    var first = true;
+    for (final id in draggedPlanIds) {
+      final member = byId[id];
+      final start = member?.startTime;
+      if (member == null || start == null) {
+        return const TimeViewInsertionCascadeResult(
+          accepted: false,
+          blockedReason: 'bulkScheduleMissing',
+        );
+      }
+      final actualOffset = start.difference(primaryStart).inMinutes;
+      final offset = capturedOffsets[id] ?? actualOffset;
+      offsets[id] = offset;
+      final duration = planWallDurationMinutesForCascade(
+        member,
+        resolveDurationMinutes: resolveDuration,
+      );
+      if (first) {
+        minOffset = offset;
+        maxEndOffset = offset + duration;
+        first = false;
+      } else {
+        minOffset = math.min(minOffset, offset);
+        maxEndOffset = math.max(maxEndOffset, offset + duration);
+      }
+    }
+
+    final DateTime desiredPrimaryStart;
+    if (targetIntent != null) {
+      if (!byId.containsKey(targetIntent.targetPlanId) ||
+          draggedPlanIds.contains(targetIntent.targetPlanId)) {
+        return const TimeViewInsertionCascadeResult(
+          accepted: false,
+          blockedReason: 'targetMissing',
+        );
+      }
+      desiredPrimaryStart = targetIntent.insertBefore
+          ? targetIntent.targetStartWall.subtract(
+              Duration(minutes: maxEndOffset),
+            )
+          : targetIntent.targetEndWall.subtract(
+              Duration(minutes: minOffset),
+            );
+    } else if (emptyCanvasStartWall != null) {
+      desiredPrimaryStart = emptyCanvasStartWall;
+    } else {
+      return const TimeViewInsertionCascadeResult(
+        accepted: false,
+        blockedReason: 'missingIntent',
+      );
+    }
+
+    final movedSelectedById = <String, PlanningTask>{};
+    DateTime? groupStart;
+    DateTime? groupEnd;
+    for (final id in draggedPlanIds) {
+      final member = byId[id]!;
+      final offset = offsets[id]!;
+      final start = desiredPrimaryStart.add(Duration(minutes: offset));
+      final duration = planWallDurationMinutesForCascade(
+        member,
+        resolveDurationMinutes: resolveDuration,
+      );
+      final effectiveEnd = start.add(Duration(minutes: duration));
+      final explicitEnd = member.endDateTime != null ? effectiveEnd : null;
+      movedSelectedById[id] = member.copyWith(
+        startTime: start,
+        endDateTime: explicitEnd,
+        clearEnd: explicitEnd == null,
+      );
+      if (groupStart == null || start.isBefore(groupStart)) {
+        groupStart = start;
+      }
+      if (groupEnd == null || effectiveEnd.isAfter(groupEnd)) {
+        groupEnd = effectiveEnd;
+      }
+    }
+
+    if (groupStart == null || groupEnd == null) {
+      return const TimeViewInsertionCascadeResult(
+        accepted: false,
+        blockedReason: 'bulkScheduleMissing',
+      );
+    }
+
+    final groupProxy = primary.copyWith(
+      startTime: groupStart,
+      endDateTime: groupEnd,
+      clearEnd: false,
+    );
+    final reduced = <PlanningTask>[
+      for (final row in scheduledTasks)
+        if (!draggedPlanIds.contains(row.planRowIdForBackend))
+          row
+        else if (row.planRowIdForBackend == primaryDraggedPlanId)
+          groupProxy,
+    ];
+
+    final List<PlanningTask>? cascadedReduced;
+    if (targetIntent != null) {
+      final ordered = buildExplicitOrderForTargetInsert(
+        scheduled: reduced,
+        draggedPlanId: primaryDraggedPlanId,
+        targetPlanId: targetIntent.targetPlanId,
+        insertBefore: targetIntent.insertBefore,
+      );
+      cascadedReduced = cascadeScheduledPlansForExplicitTimeViewOrderWithBarriers(
+        explicitOrder: ordered,
+        resolveDurationMinutes: resolveDuration,
+        fixedPlanIds: fixedPlanIds,
+        draggedPlanIds: <String>{primaryDraggedPlanId},
+      );
+    } else {
+      cascadedReduced = cascadeScheduledPlansForTimeViewDayWithBarriers(
+        reduced,
+        resolveDurationMinutes: resolveDuration,
+        fixedPlanIds: fixedPlanIds,
+        draggedPlanIds: <String>{primaryDraggedPlanId},
+      );
+    }
+
+    if (cascadedReduced == null) {
+      String? blockedId;
+      for (final id in fixedPlanIds) {
+        if (!draggedPlanIds.contains(id)) {
+          blockedId = id;
+          break;
+        }
+      }
+      return TimeViewInsertionCascadeResult(
+        accepted: false,
+        blockedReason: 'fixedBarrier',
+        blockedByFixedPlanId: blockedId,
+      );
+    }
+
+    PlanningTask? cascadedProxy;
+    for (final row in cascadedReduced) {
+      if (row.planRowIdForBackend == primaryDraggedPlanId) {
+        cascadedProxy = row;
+        break;
+      }
+    }
+    final cascadedGroupStart = cascadedProxy?.startTime;
+    if (cascadedProxy == null || cascadedGroupStart == null) {
+      return const TimeViewInsertionCascadeResult(
+        accepted: false,
+        blockedReason: 'primaryMissing',
+      );
+    }
+
+    final groupShift = cascadedGroupStart.difference(groupStart);
+    final finalSelectedById = <String, PlanningTask>{};
+    for (final entry in movedSelectedById.entries) {
+      final member = entry.value;
+      final start = member.startTime!.add(groupShift);
+      final end = member.endDateTime?.add(groupShift);
+      finalSelectedById[entry.key] = member.copyWith(
+        startTime: start,
+        endDateTime: end,
+        clearEnd: end == null,
+      );
+    }
+
+    final reducedById = <String, PlanningTask>{
+      for (final row in cascadedReduced) row.planRowIdForBackend: row,
+    };
+    final resolved = <PlanningTask>[
+      for (final original in scheduledTasks)
+        if (finalSelectedById.containsKey(original.planRowIdForBackend))
+          finalSelectedById[original.planRowIdForBackend]!
+        else
+          reducedById[original.planRowIdForBackend] ?? original,
+    ];
+
+    final finalPrimary = finalSelectedById[primaryDraggedPlanId];
+    final finalPrimaryStart = finalPrimary?.startTime;
+    if (finalPrimary == null || finalPrimaryStart == null) {
+      return const TimeViewInsertionCascadeResult(
+        accepted: false,
+        blockedReason: 'primaryMissing',
+      );
+    }
+    for (final entry in offsets.entries) {
+      final memberStart = finalSelectedById[entry.key]?.startTime;
+      if (memberStart == null ||
+          memberStart.difference(finalPrimaryStart).inMinutes != entry.value) {
+        return const TimeViewInsertionCascadeResult(
+          accepted: false,
+          blockedReason: 'bulkRelativeOffsetsChanged',
+        );
+      }
+    }
+
+    if (scheduledPlansHaveWallOverlap(
+      resolved.where((row) => row.startTime != null).toList(growable: false),
+      resolveDurationMinutes: resolveDuration,
+    )) {
+      return const TimeViewInsertionCascadeResult(
+        accepted: false,
+        blockedReason: 'overlap',
+      );
+    }
+
+    final patches = diffSequentialCascadePatches(scheduledTasks, resolved);
+    final shifted = patches.map((patch) => patch.task.planRowIdForBackend).toSet();
+    return TimeViewInsertionCascadeResult(
+      accepted: true,
+      patches: patches,
+      previewRows: resolved,
+      shiftedPlanIds: shifted,
+      draggedStartWall: finalPrimary.startTime,
+      draggedEndWall: finalPrimary.endDateTime,
+    );
+  }
+
   void commitTimelineVerticalDrag({
     required DateTime planWallDay,
     required int rangeStart,
@@ -364,20 +606,30 @@ extension PlanningTimeViewTimeViewDragController on PlanningTimeViewCoordinator 
       );
     }
 
-    final cascadeResult = computeTimeViewInsertionCascade(
-      scheduledTasks: scheduledInRange,
-      draggedPlanIds: draggedPlanIds,
-      primaryDraggedPlanId: task.planRowIdForBackend,
-      fixedPlanIds: fixedPlanIds,
-      resolveDurationMinutes:
-          DatabaseService.instance.resolvePlanDurationMinutesFromTags,
-      targetIntent: insertionIntent,
-      emptyCanvasStartWall: emptyCanvasStartWall,
-      emptyCanvasHadEnd: timelineVerticalDragHadEnd,
-      emptyCanvasDurationMin: durMin,
-      bulkRelativeOffsetMinutes:
-          bulkOffsets.isEmpty ? null : bulkOffsets,
-    );
+    final cascadeResult = draggedPlanIds.length > 1
+        ? _computeRigidBulkDragCascade(
+            scheduledTasks: scheduledInRange,
+            draggedPlanIds: draggedPlanIds,
+            primaryDraggedPlanId: task.planRowIdForBackend,
+            fixedPlanIds: fixedPlanIds,
+            capturedOffsets: bulkOffsets,
+            targetIntent: insertionIntent,
+            emptyCanvasStartWall: emptyCanvasStartWall,
+          )
+        : computeTimeViewInsertionCascade(
+            scheduledTasks: scheduledInRange,
+            draggedPlanIds: draggedPlanIds,
+            primaryDraggedPlanId: task.planRowIdForBackend,
+            fixedPlanIds: fixedPlanIds,
+            resolveDurationMinutes:
+                DatabaseService.instance.resolvePlanDurationMinutesFromTags,
+            targetIntent: insertionIntent,
+            emptyCanvasStartWall: emptyCanvasStartWall,
+            emptyCanvasHadEnd: timelineVerticalDragHadEnd,
+            emptyCanvasDurationMin: durMin,
+            bulkRelativeOffsetMinutes:
+                bulkOffsets.isEmpty ? null : bulkOffsets,
+          );
 
     if (!cascadeResult.accepted) {
       if (cascadeResult.blockedReason == 'fixedBarrier') {
