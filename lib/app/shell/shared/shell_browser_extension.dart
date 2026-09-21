@@ -76,6 +76,7 @@ mixin ShellBrowserExtensionQuickAdd on ShellDashboardBase {
     required String requestId,
     required String action,
     required bool ok,
+    bool settled = true,
     String? error,
   }) async {
     try {
@@ -86,6 +87,7 @@ mixin ShellBrowserExtensionQuickAdd on ShellDashboardBase {
           'requestId': requestId,
           'action': action,
           'ok': ok,
+          'settled': settled,
           if (error != null && error.isNotEmpty) 'error': error,
           'completedAtUtc': DateTime.now().toUtc().toIso8601String(),
         }),
@@ -185,29 +187,49 @@ mixin ShellBrowserExtensionQuickAdd on ShellDashboardBase {
           );
           return;
         }
+
         final db = DatabaseService.instance;
         final recordId = await db.startTimer(rawText);
-        if (recordId != null && recordId.trim().isNotEmpty) {
-          try {
-            await db.primaryRecordWriteNetworkChain;
-            await db.getRecords(forceNetwork: true);
-          } catch (_) {}
+        final accepted = recordId != null && recordId.trim().isNotEmpty;
+        if (!accepted) {
+          await _publishBrowserExtensionRecordSnapshot();
+          await _writeBrowserExtensionResponse(
+            requestId: requestId,
+            action: action,
+            ok: false,
+            error: 'record_start_failed',
+          );
+          return;
         }
-        final confirmed = await _browserExtensionRecordSnapshot();
-        final ok =
-            recordId != null &&
-            recordId.trim().isNotEmpty &&
-            confirmed['active'] == true &&
-            confirmed['recordId']?.toString().trim() == recordId.trim();
-        if (ok) {
-          await _markBrowserExtensionRequestConsumed(prefs, requestId);
-        }
+
+        // startTimer() performs the canonical optimistic Highlander handoff
+        // synchronously before returning. The extension must acknowledge that
+        // local success immediately instead of blocking the popup on the
+        // PocketBase network chain.
+        await _markBrowserExtensionRequestConsumed(prefs, requestId);
         await _publishBrowserExtensionRecordSnapshot();
         await _writeBrowserExtensionResponse(
           requestId: requestId,
           action: action,
-          ok: ok,
-          error: ok ? null : 'record_start_failed',
+          ok: true,
+          settled: false,
+        );
+
+        // Keep the bridge page alive until Brain finishes the primary network
+        // chain. The service worker treats settled=false as an early ACK and
+        // closes the temporary tab only after the settled response arrives.
+        try {
+          await db.primaryRecordWriteNetworkChain;
+        } catch (_) {}
+        try {
+          await db.getRecords(forceNetwork: true);
+        } catch (_) {}
+        await _publishBrowserExtensionRecordSnapshot();
+        await _writeBrowserExtensionResponse(
+          requestId: requestId,
+          action: action,
+          ok: true,
+          settled: true,
         );
         return;
 
