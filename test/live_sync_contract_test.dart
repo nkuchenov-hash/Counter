@@ -246,7 +246,7 @@ void main() {
     final manifest = File('browser_extension/manifest.json').readAsStringSync();
 
     expect(popup, contains("const RECORDS_REALTIME_TOPIC = 'records/*';"));
-    expect(popup, contains('new EventSource(`${config.baseUrl}/api/realtime`)'));
+    expect(popup, contains(r'new EventSource(`${config.baseUrl}/api/realtime`)'));
     expect(popup, contains("source.addEventListener('PB_CONNECT'"));
     expect(popup, contains('applyRecordRealtimeEvent'));
     expect(popup, isNot(contains('refreshHandle = setInterval')));
