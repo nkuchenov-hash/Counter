@@ -57,9 +57,24 @@ extension RecordRealtimeExtension on DatabaseService {
   }
 
   Future<void> _reconcileRealtimeGapAuthoritativeState() async {
-    // Records/plans/outboxes/categories use the canonical foreground recovery
-    // path. Then explicitly rehydrate profile + tags because those catalog
-    // subscriptions can also miss events during the same transport gap.
+    // Full clients register plans and/or catalog bridges. Reuse their canonical
+    // foreground recovery, then explicitly rehydrate profile + tags because
+    // those catalog subscriptions can also miss events during the same gap.
+    // Wear-lite intentionally registers records only; keep its recovery cheap
+    // and do not pull Plans/catalog domains that the watch does not display.
+    final hasFullAppRealtimeBridge =
+        _plansRealtimeUnsubscribe != null ||
+        _categoriesRealtimeUnsubscribe != null ||
+        _tagsRealtimeUnsubscribe != null ||
+        _profileRealtimeUnsubscribe != null;
+
+    if (!hasFullAppRealtimeBridge) {
+      _lastSuccessfulRecordsNetworkFetchAt = null;
+      await _fetchRecordsIntoCache(forceNetwork: true);
+      await _reconcileDuplicatePrimaryRunningRecords();
+      return;
+    }
+
     await refreshForegroundData();
     try {
       await _loadSettingsFromNoco();
