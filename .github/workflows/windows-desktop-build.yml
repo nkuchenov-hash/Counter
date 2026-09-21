@@ -2,11 +2,26 @@ name: Windows desktop build
 
 on:
   workflow_dispatch:
-  push:
+  pull_request:
+    branches: [main]
     paths:
+      - 'lib/**'
+      - 'test/live_sync_contract_test.dart'
+      - 'test/realtime_gap_convergence_contract_test.dart'
+      - 'pubspec.yaml'
+      - 'pubspec.lock'
+      - 'windows/**'
+      - 'installer/windows/**'
       - '.github/workflows/windows-desktop-build.yml'
-      - 'windows/runner/resources/app_icon.ico'
-      - 'branding/life_os_app_icon_master.png'
+  push:
+    branches: [main]
+    paths:
+      - 'lib/**'
+      - 'pubspec.yaml'
+      - 'pubspec.lock'
+      - 'windows/**'
+      - 'installer/windows/**'
+      - '.github/workflows/windows-desktop-build.yml'
 
 permissions:
   contents: write
@@ -16,6 +31,7 @@ jobs:
     # Pin VS 2022: windows-latest currently resolves to VS 18, which rejects
     # transitive Flutter plugins that still include <experimental/coroutine>.
     runs-on: windows-2022
+    timeout-minutes: 45
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -48,8 +64,11 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Run voice command parser test
-        run: flutter test test/voice_command_parser_test.dart
+      - name: Run live-sync and voice regression tests
+        run: flutter test test/live_sync_contract_test.dart test/realtime_gap_convergence_contract_test.dart test/voice_command_parser_test.dart
+
+      - name: Analyze runtime app
+        run: flutter analyze lib --no-fatal-infos --no-fatal-warnings
 
       - name: Build Windows release (desktop voice enabled via dart-define)
         env:
@@ -91,12 +110,13 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
-      - name: Publish installer to rolling LIFE OS release
+      - name: Publish installer to LIFE OS release
+        if: github.event_name != 'pull_request'
         uses: ncipollo/release-action@v1
         with:
-          tag: life-os-windows-20260911-victor-icon
-          name: LIFE OS Windows — Victor icon
-          body: Windows installer rebuilt with the approved Victor raven app icon.
+          tag: life-os-windows-${{ github.run_number }}-${{ github.sha }}
+          name: LIFE OS Windows — build ${{ github.run_number }}
+          body: Windows installer built from the current shared LIFE OS runtime. Realtime reconnects reconcile authoritative PocketBase state so cross-device changes cannot remain stale after an SSE/network gap.
           artifacts: installer/windows/output/CounterSetup.exe
           allowUpdates: false
           replacesArtifacts: false
