@@ -53,6 +53,11 @@ extension RecordRealtimeExtension on DatabaseService {
         !_hasAuthenticatedUserId) {
       return;
     }
+
+    // A successful PB_CONNECT proves the PocketBase endpoint is reachable
+    // again. Do not let an older HTTP circuit cooldown suppress the immediate
+    // authoritative pull that closes the missed-event gap.
+    _clearPocketBaseConnectivityBackoff();
     _scheduleRealtimeGapCatchUp();
   }
 
