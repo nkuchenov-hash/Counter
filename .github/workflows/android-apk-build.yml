@@ -20,6 +20,10 @@ on:
       - 'android/**'
       - '.github/workflows/android-apk-build.yml'
 
+concurrency:
+  group: android-release-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: write
 
