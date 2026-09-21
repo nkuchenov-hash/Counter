@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `95c23522` on 2026-09-11.**
+**Generated from input HEAD `49aa761e` on 2026-09-21.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 873 — each appears **exactly once** below.
+**Tracked files:** 874 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -27,7 +27,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | Role | Count |
 | :--- | ---: |
 | `production UI` | 174 |
-| `test` | 110 |
+| `test` | 111 |
 | `Brain/data` | 91 |
 | `platform build` | 83 |
 | `shared foundation` | 64 |
@@ -58,7 +58,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | Necessity | Count |
 | :--- | ---: |
 | `PROVEN_REQUIRED` | 478 |
-| `REQUIRED_FOR_TEST_OR_TOOLING` | 213 |
+| `REQUIRED_FOR_TEST_OR_TOOLING` | 214 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
 | `GOVERNING_DOCUMENTATION` | 37 |
 | `HISTORICAL_RECORD` | 17 |
@@ -68,7 +68,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 798 |
+| `HIGH` | 799 |
 | `MEDIUM` | 75 |
 
 ---
@@ -5004,7 +5004,7 @@ EN:
 - **Why needed:** Prevents rebuilding features; shows what already landed and when.
 - **Contents:** Technical bullets with file names, tagged [shipped]/[wip]/[rollback].
 - **Repository role:** governing documentation
-- **Evidence of use:** (1) Governing/ops/product documentation read by humans and agents (see `docs/PROJECT_KNOWLEDGE_PACK.md` / AGENTS routing). (2) Referenced by: `.github/workflows/windows-desktop-build.yml`, `AGENTS.md`, `AGENT_NAVIGATION.md`, `docs/PROJECT_KNOWLEDGE_PACK.md`.
+- **Evidence of use:** (1) Governing/ops/product documentation read by humans and agents (see `docs/PROJECT_KNOWLEDGE_PACK.md` / AGENTS routing). (2) Referenced by: `AGENTS.md`, `AGENT_NAVIGATION.md`, `docs/PROJECT_KNOWLEDGE_PACK.md`, `docs/ROADMAP.md`.
 - **Necessity status:** GOVERNING_DOCUMENTATION
 - **Deletion consequence:** Lost architecture/ops rule or agent routing instruction.
 - **Confidence:** HIGH
@@ -5966,7 +5966,7 @@ EN:
 - **Why needed:** Tracked because `branding` needs `life_os_app_icon_master.png` for build, CI, or maintenance.
 - **Contents:** Open `life_os_app_icon_master.png` when working on `branding` (see folder section above).
 - **Repository role:** asset
-- **Evidence of use:** Tracked repository file `branding/life_os_app_icon_master.png` retained for tooling/config.
+- **Evidence of use:** Referenced by: `.github/workflows/windows-desktop-build.yml`, `CHANGELOG.md`.
 - **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Deletion consequence:** May break tooling or configuration; verify before delete.
 - **Confidence:** MEDIUM
@@ -5983,7 +5983,7 @@ RU:
 - **Зачем:** Поддерживает процесс, сборку, данные или runtime-задачу области `branding` для `life_os_app_icon_master.png`.
 - **Содержимое:** Данные или код `life_os_app_icon_master.png`, необходимые его подтверждённой роли и указанным ниже связям.
 - **Роль в репозитории:** asset
-- **Доказательства использования:** Отслеживаемый файл `branding/life_os_app_icon_master.png` для tooling/config.
+- **Доказательства использования:** Упоминается в: `.github/workflows/windows-desktop-build.yml`, `CHANGELOG.md`.
 - **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Что будет, если удалить:** Может сломать tooling; проверять перед удалением.
 - **Уверенность:** MEDIUM
@@ -10667,8 +10667,8 @@ RU:
 
 EN:
 
-- **Human purpose:** App shell wiring — Web-only browser-extension handoff: consumes one-shot Quick Add URL requests after first frame, dedupes request IDs locally, and delegates creation to existing Planning Brain entry points. Connects bottom tabs, voice, edit sheets, and offline banner across the whole app.
-- **What this is:** App shell wiring — Web-only browser-extension handoff: consumes one-shot Quick Add URL requests after first frame, dedupes request IDs locally, and delegates creation to existing Planning Brain entry points.
+- **Human purpose:** App shell wiring — Web-only browser-companion bridge: mirrors the canonical running-record projection, consumes start/stop/sync requests after auth bootstrap, dedupes request IDs locally, and delegates all record mutations to Brain. Connects bottom tabs, voice, edit sheets, and offline banner across the whole app.
+- **What this is:** App shell wiring — Web-only browser-companion bridge: mirrors the canonical running-record projection, consumes start/stop/sync requests after auth bootstrap, dedupes request IDs locally, and delegates all record mutations to Brain.
 - **Why needed:** Connects bottom tabs, voice, edit sheets, and offline banner across the whole app.
 - **Contents:** Shell mixin or widget (`ShellBrowserExtensionQuickAdd`).
 - **Key code names:** `ShellBrowserExtensionQuickAdd`
@@ -10678,15 +10678,15 @@ EN:
 - **Deletion consequence:** Brain/library compile failure in `lib/app/shell/app_shell.dart` and broken related UI/data ops.
 - **Confidence:** HIGH
 - **Owner / layer:** app shell
-- **Responsibilities:** Web-only browser-extension handoff: consumes one-shot Quick Add URL requests after first frame, dedupes request IDs locally, and delegates creation to existing Planning Brain entry points
+- **Responsibilities:** Web-only browser-companion bridge: mirrors the canonical running-record projection, consumes start/stop/sync requests after auth bootstrap, dedupes request IDs locally, and delegates all record mutations to Brain
 - **When to open:** Bottom tabs, voice routing, edit modal host, offline banner slot.
 - **Can it be deleted?** Brain/library compile failure in `lib/app/shell/app_shell.dart` and broken related UI/data ops.
-- **Connected to:** All main tabs, `app_shell.dart`; APP_STRUCTURE role: Web-only browser-extension handoff: consumes one-shot Quick Add URL requests after first frame, dedupes request IDs loca
+- **Connected to:** All main tabs, `app_shell.dart`; APP_STRUCTURE role: Web-only browser-companion bridge: mirrors the canonical running-record projection, consumes start/stop/sync requests af
 
 RU:
 
-- **Зачем файл человеку:** Оболочка приложения (shell) — Web-only browser-extension handoff: consumes one-shot Quick Add URL requests after first frame, dedupes request IDs locally, and delegates creation to existing Planning Brain entry points. Связывает вкладки, voice, edit sheets и offline banner.
-- **Что это:** Оболочка приложения (shell) — Web-only browser-extension handoff: consumes one-shot Quick Add URL requests after first frame, dedupes request IDs locally, and delegates creation to existing Planning Brain entry points.
+- **Зачем файл человеку:** Оболочка приложения (shell) — Web-only browser-companion bridge: mirrors the canonical running-record projection, consumes start/stop/sync requests after auth bootstrap, dedupes request IDs locally, and delegates all record mutations to Brain. Связывает вкладки, voice, edit sheets и offline banner.
+- **Что это:** Оболочка приложения (shell) — Web-only browser-companion bridge: mirrors the canonical running-record projection, consumes start/stop/sync requests after auth bootstrap, dedupes request IDs locally, and delegates all record mutations to Brain.
 - **Зачем:** Связывает вкладки, voice, edit sheets и offline banner.
 - **Содержимое:** Shell mixin или виджет (logic in `shell_browser_extension`).
 - **Роль в репозитории:** production UI
@@ -10695,7 +10695,7 @@ RU:
 - **Что будет, если удалить:** Сломается компиляция `lib/app/shell/app_shell.dart` и связанные экраны/данные.
 - **Уверенность:** HIGH
 - **Владелец / слой:** оболочка приложения
-- **Обязанности:** Реализует в shell: Web-only browser-extension handoff: consumes one-shot Quick Add URL requests after first frame, dedupes request IDs locally, and delegates creation to existing Planning Brain entry points.
+- **Обязанности:** Реализует в shell: Web-only browser-companion bridge: mirrors the canonical running-record projection, consumes start/stop/sync requests after auth bootstrap, dedupes request IDs locally, and delegates all record mutations to Brain.
 - **Когда открывать:** Навигация, voice, edit host.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Все main tabs, `app_shell.dart`
@@ -12747,7 +12747,7 @@ EN:
 - **Why needed:** Plans, Timeline, and Lists reuse this instead of copying button/card styles.
 - **Contents:** Canonical Flutter widget (logic in `plan_time_task_card`).
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/core/widgets/plan_card.dart`, `lib/data/plan_time_sequential_cascade.dart`, `lib/features/calendar/calendar_day_panel.dart`, `lib/features/planning/plan_time_view_layout.dart`, `lib/features/planning/time_view/planning_time_view.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/core/widgets/plan_card.dart`, `lib/data/plan_time_sequential_cascade.dart`, `lib/features/calendar/calendar_day_panel.dart`, `lib/features/dev/component_lab_view.dart`, `lib/features/planning/plan_time_view_layout.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -12764,7 +12764,7 @@ RU:
 - **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
 - **Содержимое:** Канонический Flutter-виджет (logic in `plan_time_task_card`).
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/core/widgets/plan_card.dart`, `lib/data/plan_time_sequential_cascade.dart`, `lib/features/calendar/calendar_day_panel.dart`, `lib/features/planning/plan_time_view_layout.dart`, `lib/features/planning/time_view/planning_time_view.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/core/widgets/plan_card.dart`, `lib/data/plan_time_sequential_cascade.dart`, `lib/features/calendar/calendar_day_panel.dart`, `lib/features/dev/component_lab_view.dart`, `lib/features/planning/plan_time_view_layout.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -12897,7 +12897,7 @@ EN:
 - **What this is:** Shared design-system widget — Time View CardPlan layout variants.
 - **Why needed:** Plans, Timeline, and Lists reuse this instead of copying button/card styles.
 - **Contents:** Canonical Flutter widget (`TimeViewDensityBody`, `TimeViewCardCommon`, `TimeViewLeftControls`, `TimeViewResponsiveShell`, `TimeViewVerticalShell`, `TimeViewVerySmallLayout`).
-- **Key code names:** `TimeViewDensityBody`, `TimeViewCardCommon`, `TimeViewLeftControls`, `TimeViewResponsiveShell`, `TimeViewVerticalShell`, `TimeViewVerySmallLayout`, `TimeViewSmallLayout`, `TimeViewMoreCompactLayout`, `TimeViewTwoRowCenterLayout`
+- **Key code names:** `TimeViewDensityBody`, `TimeViewCardCommon`, `TimeViewLeftControls`, `TimeViewResponsiveShell`, `TimeViewVerticalShell`, `TimeViewVerySmallLayout`, `TimeViewSmallLayout`, `TimeViewMoreCompactLayout`, `TimeViewCompactLayout`, `TimeViewMediumLayout`
 - **Repository role:** shared foundation
 - **Evidence of use:** Imported/exported by production Dart: `lib/core/widgets/plan_time_task_card/plan_time_task_card.dart`.
 - **Necessity status:** PROVEN_REQUIRED
@@ -34809,6 +34809,44 @@ RU:
 - **Связано с:** Production files под `lib/` с похожим именем.
 
 
+### `test/plan_rule_chain_append_test.dart`
+
+EN:
+
+- **Human purpose:** Automated test `plan_rule_chain_append_test` — verifies behavior without manual tapping. Prevents regressions when related production code changes.
+- **What this is:** Automated test `plan_rule_chain_append_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **Contents:** Test cases (symbols: main).
+- **Key code names:** `main`
+- **Repository role:** test
+- **Evidence of use:** Flutter test file; exercised via `flutter test test/plan_rule_chain_append_test.dart` / CI when enabled.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Lost automated coverage for its contract.
+- **Confidence:** HIGH
+- **Owner / layer:** tests
+- **Responsibilities:** Assert expected behavior for `plan_rule_chain_append_test` scenario.
+- **When to open:** CI failure or changing code near `plan_rule_chain_append`.
+- **Can it be deleted?** Lost automated coverage for its contract.
+- **Connected to:** `test/` suite; production subject near `plan_rule_chain_append`.
+
+RU:
+
+- **Зачем файл человеку:** Автотест `plan_rule_chain_append` — проверяет поведение без ручного UI. Ловит регрессии при изменении связанного production-кода.
+- **Что это:** Автотест `plan_rule_chain_append` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `plan_rule_chain_append`.
+- **Роль в репозитории:** test
+- **Доказательства использования:** Файл теста Flutter; запускается через `flutter test test/plan_rule_chain_append_test.dart`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Пропадёт автоматическая проверка своего контракта.
+- **Уверенность:** HIGH
+- **Владелец / слой:** тесты
+- **Обязанности:** Assert ожидаемого поведения `plan_rule_chain_append`.
+- **Когда открывать:** Падение CI или правка кода рядом с `plan_rule_chain_append`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
+
+
 ### `test/plan_time_bulk_drag_test.dart`
 
 EN:
@@ -36999,7 +37037,7 @@ EN:
 - **Why needed:** Win32 resource compiler and Inno Setup use this for taskbar/Explorer/Start menu branding.
 - **Contents:** Multi-size ICO raster for Windows shell icons.
 - **Repository role:** platform resource
-- **Evidence of use:** (1) Tracked Flutter platform file under `windows/runner/resources/` (individual role: `app_icon.ico` for that platform project). (2) Also referenced by: `scripts/manual/structure_file_ru_curated.py`, `scripts/manual/structure_guide_data.py`, `scripts/manual/structure_platform_file_guides.py`.
+- **Evidence of use:** (1) Tracked Flutter platform file under `windows/runner/resources/` (individual role: `app_icon.ico` for that platform project). (2) Also referenced by: `.github/workflows/windows-desktop-build.yml`, `scripts/manual/structure_file_ru_curated.py`, `scripts/manual/structure_guide_data.py`.
 - **Necessity status:** REQUIRED_BY_PLATFORM_CONVENTION
 - **Deletion consequence:** Unavailable or broken platform build for that OS target.
 - **Confidence:** HIGH
