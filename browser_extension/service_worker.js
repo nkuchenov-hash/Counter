@@ -2,6 +2,7 @@ const LIFE_OS_BASE = 'https://nkuchenov-hash.github.io/Counter/';
 const LIFE_OS_MATCH = 'https://nkuchenov-hash.github.io/Counter/*';
 const MAX_TEXT_LENGTH = 1600;
 const BRIDGE_TIMEOUT_MS = 12000;
+const BRIDGE_SETTLE_TIMEOUT_MS = 90000;
 const BRIDGE_POLL_MS = 250;
 const OPEN_TAB_SNAPSHOT_WAIT_MS = 2200;
 
@@ -152,16 +153,22 @@ async function waitForSnapshotFromTab(tabId, timeoutMs = OPEN_TAB_SNAPSHOT_WAIT_
   return null;
 }
 
-async function waitForBridgeResponse(tabId, id) {
+async function waitForBridgeResponse(
+  tabId,
+  id,
+  { requireSettled = false, timeoutMs = BRIDGE_TIMEOUT_MS } = {},
+) {
   const started = Date.now();
-  while (Date.now() - started < BRIDGE_TIMEOUT_MS) {
+  while (Date.now() - started < timeoutMs) {
     try {
       const data = await readBridgeData(tabId);
-      if (
-        data?.response &&
-        typeof data.response === 'object' &&
-        data.response.requestId === id
-      ) {
+      const response = data?.response;
+      const matches =
+        response &&
+        typeof response === 'object' &&
+        response.requestId === id;
+      const settled = response?.settled !== false;
+      if (matches && (!requireSettled || settled)) {
         if (data.snapshot && typeof data.snapshot === 'object') {
           await cacheSnapshot(data.snapshot);
         }
@@ -170,7 +177,35 @@ async function waitForBridgeResponse(tabId, id) {
     } catch (_) {}
     await sleep(BRIDGE_POLL_MS);
   }
-  throw new Error('LIFE OS bridge timed out.');
+  throw new Error(
+    requireSettled
+      ? 'LIFE OS bridge settlement timed out.'
+      : 'LIFE OS bridge timed out.',
+  );
+}
+
+async function closeBridgeTab(tabId) {
+  try {
+    await chrome.tabs.remove(tabId);
+  } catch (_) {}
+}
+
+async function settleBridgeTab(tabId, id) {
+  try {
+    const data = await waitForBridgeResponse(tabId, id, {
+      requireSettled: true,
+      timeoutMs: BRIDGE_SETTLE_TIMEOUT_MS,
+    });
+    if (data?.snapshot && typeof data.snapshot === 'object') {
+      await cacheSnapshot(data.snapshot);
+      await broadcastSnapshot(data.snapshot);
+    }
+  } catch (_) {
+    // The local start was already acknowledged. A slow/offline network chain
+    // must not leave the temporary bridge tab around forever.
+  } finally {
+    await closeBridgeTab(tabId);
+  }
 }
 
 async function runBridgeAction(action, text = '') {
@@ -187,18 +222,28 @@ async function runBridgeAction(action, text = '') {
   try {
     const data = await waitForBridgeResponse(tab.id, id);
     const response = data.response ?? {};
-    return {
+    const pending = response.settled === false;
+    const result = {
       ok: response.ok === true,
+      pending,
       error: response.error ? String(response.error) : null,
       snapshot:
         data.snapshot && typeof data.snapshot === 'object'
           ? data.snapshot
           : null,
     };
-  } finally {
-    try {
-      await chrome.tabs.remove(tab.id);
-    } catch (_) {}
+
+    if (pending && result.ok) {
+      // Return the optimistic canonical handoff to the popup now, but keep
+      // this background bridge page alive until Brain's network chain settles.
+      void settleBridgeTab(tab.id, id);
+    } else {
+      await closeBridgeTab(tab.id);
+    }
+    return result;
+  } catch (error) {
+    await closeBridgeTab(tab.id);
+    throw error;
   }
 }
 
@@ -277,7 +322,11 @@ async function startRecord(text) {
       await broadcastSnapshot(result.snapshot);
     }
     return result.ok
-      ? { ok: true, snapshot: result.snapshot }
+      ? {
+          ok: true,
+          pending: result.pending === true,
+          snapshot: result.snapshot,
+        }
       : { ok: false, error: result.error ?? 'Could not start record.' };
   } catch (error) {
     return { ok: false, authRequired: true, error: String(error) };

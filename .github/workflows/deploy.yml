@@ -128,10 +128,59 @@ jobs:
         run: |
           set -euo pipefail
           test -f marketing/index.html
+          test -f browser_extension/manifest.json
           rm -rf build/web/lifeos
           mkdir -p build/web/lifeos
           cp -R marketing/. build/web/lifeos/
+          python3 <<'PY'
+          from pathlib import Path
+          from zipfile import ZIP_DEFLATED, ZipFile
+          import json
+          import re
+          import shutil
+
+          source = Path('browser_extension')
+          manifest = json.loads((source / 'manifest.json').read_text(encoding='utf-8'))
+          version = str(manifest['version']).strip()
+          if not re.fullmatch(r'\d+\.\d+\.\d+', version):
+              raise SystemExit(f'Invalid browser extension version: {version!r}')
+
+          downloads = Path('build/web/lifeos/downloads')
+          downloads.mkdir(parents=True, exist_ok=True)
+          package = downloads / f'life-os-browser-extension-v{version}.zip'
+          with ZipFile(package, 'w', compression=ZIP_DEFLATED) as archive:
+              for path in sorted(source.rglob('*')):
+                  if path.is_file():
+                      archive.write(path, path.relative_to(source).as_posix())
+              archive.writestr(
+                  'INSTALL.txt',
+                  'LIFE OS Browser Extension v' + version + '\n\n'
+                  '1. Extract this ZIP to a permanent folder.\n'
+                  '2. Open chrome://extensions/, edge://extensions/, or browser://extensions/.\n'
+                  '3. Enable Developer mode.\n'
+                  '4. Choose Load unpacked.\n'
+                  '5. Select the extracted folder containing manifest.json.\n\n'
+                  'Shortcut: Alt+Shift+L\n',
+              )
+
+          shutil.copyfile(package, downloads / 'life-os-browser-extension-latest.zip')
+
+          index = Path('build/web/lifeos/index.html')
+          text = index.read_text(encoding='utf-8')
+          text, count = re.subn(
+              r'life-os-browser-extension-v\d+\.\d+\.\d+\.zip',
+              package.name,
+              text,
+          )
+          if count == 0:
+              raise SystemExit('Browser extension download link marker not found')
+          index.write_text(text, encoding='utf-8')
+          print(f'Packaged {package}')
+          PY
           test -f build/web/lifeos/index.html
+          test -f build/web/lifeos/downloads/life-os-browser-extension-v0.2.3.zip
+          test -f build/web/lifeos/downloads/life-os-browser-extension-latest.zip
+          grep -Fq 'life-os-browser-extension-v0.2.3.zip' build/web/lifeos/index.html
 
       - name: Preserve published content and default-branch workflows
         if: steps.freshness.outputs.fresh == 'true'
