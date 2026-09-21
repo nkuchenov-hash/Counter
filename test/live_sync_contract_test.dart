@@ -237,4 +237,26 @@ void main() {
     expect(realtime, contains('_cancelRealtimeRecoverySubscription()'));
     expect(realtime, contains('!_hasAuthenticatedUserId || isPbRealtimeUnavailable'));
   });
+
+  test('browser companion uses PocketBase realtime instead of 15-second polling', () {
+    final popup = File('browser_extension/popup.js').readAsStringSync();
+    final worker = File(
+      'browser_extension/service_worker.js',
+    ).readAsStringSync();
+    final manifest = File('browser_extension/manifest.json').readAsStringSync();
+
+    expect(popup, contains("const RECORDS_REALTIME_TOPIC = 'records/*';"));
+    expect(popup, contains('new EventSource(`${config.baseUrl}/api/realtime`)'));
+    expect(popup, contains("source.addEventListener('PB_CONNECT'"));
+    expect(popup, contains('applyRecordRealtimeEvent'));
+    expect(popup, isNot(contains('refreshHandle = setInterval')));
+
+    expect(worker, contains("type === 'getLifeOsRealtimeConfig'"));
+    expect(worker, contains("auth: readBySuffix('pb_auth')"));
+    expect(worker, contains("const POCKETBASE_BASE = 'https://217-114-0-201.sslip.io';"));
+
+    expect(manifest, contains('"version": "0.2.4"'));
+    expect(manifest, contains('"https://217-114-0-201.sslip.io/*"'));
+    expect(manifest, contains('connect-src \'self\' https://217-114-0-201.sslip.io'));
+  });
 }
