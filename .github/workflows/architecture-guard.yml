@@ -42,12 +42,12 @@ jobs:
       - name: Check deployment ordering contract
         run: python scripts/audit/deployment_contract.py
 
-      - name: Check all PocketBase JavaScript syntax
+      - name: Check PocketBase and browser-extension JavaScript syntax
         shell: bash
         run: |
-          mapfile -d '' files < <(find pb_hooks pb_migrations -type f -name '*.js' -print0 | sort -z)
+          mapfile -d '' files < <(find pb_hooks pb_migrations browser_extension -type f -name '*.js' -print0 | sort -z)
           if (( ${#files[@]} == 0 )); then
-            echo 'No PocketBase JavaScript files found.' >&2
+            echo 'No JavaScript files found for syntax validation.' >&2
             exit 1
           fi
           for file in "${files[@]}"; do node --check "$file"; done
