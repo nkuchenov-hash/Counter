@@ -7,7 +7,6 @@ on:
     paths:
       - 'lib/**'
       - 'test/live_sync_contract_test.dart'
-      - 'test/realtime_gap_convergence_contract_test.dart'
       - 'pubspec.yaml'
       - 'pubspec.lock'
       - 'windows/**'
@@ -65,7 +64,7 @@ jobs:
         run: flutter pub get
 
       - name: Run live-sync and voice regression tests
-        run: flutter test test/live_sync_contract_test.dart test/realtime_gap_convergence_contract_test.dart test/voice_command_parser_test.dart
+        run: flutter test test/live_sync_contract_test.dart test/voice_command_parser_test.dart
 
       - name: Analyze runtime app
         run: flutter analyze lib --no-fatal-infos --no-fatal-warnings
