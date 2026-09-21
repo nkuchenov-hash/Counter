@@ -14,6 +14,8 @@ const openAppIcon = document.getElementById('openAppIcon');
 const openLabel = document.getElementById('openLabel');
 const status = document.getElementById('status');
 
+const REQUEST_TIMEOUT_MS = 15000;
+
 const ru = (navigator.language || '').toLowerCase().startsWith('ru');
 const copy = ru
   ? {
@@ -26,7 +28,7 @@ const copy = ru
       stop: 'Стоп',
       open: 'Открыть LIFE OS',
       checking: 'Проверяю текущую запись…',
-      starting: 'Запускаю запись…',
+      starting: 'Запускаю…',
       stopping: 'Останавливаю…',
       enterTitle: 'Введите название записи.',
       auth: 'Откройте LIFE OS и войдите в аккаунт.',
@@ -42,7 +44,7 @@ const copy = ru
       stop: 'Stop',
       open: 'Open LIFE OS',
       checking: 'Checking current record…',
-      starting: 'Starting record…',
+      starting: 'Starting…',
       stopping: 'Stopping…',
       enterTitle: 'Enter a record title.',
       auth: 'Open LIFE OS and sign in first.',
@@ -64,6 +66,23 @@ openLabel.textContent = copy.open;
 function setStatus(message = '', isError = false) {
   status.textContent = message;
   status.classList.toggle('error', isError);
+}
+
+async function sendRuntimeMessage(message, timeoutMs = REQUEST_TIMEOUT_MS) {
+  let timeoutHandle = null;
+  try {
+    return await Promise.race([
+      chrome.runtime.sendMessage(message),
+      new Promise((_, reject) => {
+        timeoutHandle = setTimeout(
+          () => reject(new Error('LIFE OS request timed out.')),
+          timeoutMs,
+        );
+      }),
+    ]);
+  } finally {
+    if (timeoutHandle !== null) clearTimeout(timeoutHandle);
+  }
 }
 
 function applyTheme(themeMode) {
@@ -126,7 +145,6 @@ function renderSnapshot(next) {
     stopRecord.hidden = true;
     currentCard.style.setProperty('--record-accent', 'var(--border)');
   }
-
 }
 
 async function restoreCachedState() {
@@ -153,8 +171,24 @@ async function restoreCachedState() {
 }
 
 async function refreshState() {
-  const response = await chrome.runtime.sendMessage({ type: 'getLifeOsState' });
-  if (!response?.ok) {
+  try {
+    const response = await sendRuntimeMessage({ type: 'getLifeOsState' });
+    if (!response?.ok) {
+      if (!hasRenderedSnapshot) {
+        recordTitle.textContent = copy.noActive;
+        recordCategory.textContent = copy.noActiveSub;
+        recordCategory.hidden = false;
+        stopRecord.hidden = true;
+        recordTimer.hidden = true;
+      }
+      setStatus(response?.authRequired ? copy.auth : copy.failed, true);
+      return false;
+    }
+
+    renderSnapshot(response.snapshot);
+    setStatus('');
+    return true;
+  } catch (_) {
     if (!hasRenderedSnapshot) {
       recordTitle.textContent = copy.noActive;
       recordCategory.textContent = copy.noActiveSub;
@@ -162,13 +196,9 @@ async function refreshState() {
       stopRecord.hidden = true;
       recordTimer.hidden = true;
     }
-    setStatus(response?.authRequired ? copy.auth : copy.failed, true);
+    setStatus(copy.failed, true);
     return false;
   }
-
-  renderSnapshot(response.snapshot);
-  setStatus('');
-  return true;
 }
 
 async function handleStart() {
@@ -181,53 +211,76 @@ async function handleStart() {
 
   startRecord.disabled = true;
   stopRecord.disabled = true;
-  setStatus(copy.starting);
-
-  const response = await chrome.runtime.sendMessage({
-    type: 'startRecord',
-    text,
-  });
-
-  startRecord.disabled = false;
-  stopRecord.disabled = false;
-
-  if (!response?.ok) {
-    setStatus(response?.authRequired ? copy.auth : copy.failed, true);
-    return;
-  }
-
-  await chrome.storage.local.set({ lifeOsRecordDraft: '' });
-  recordText.value = '';
-  renderSnapshot(response.snapshot);
+  startLabel.textContent = copy.starting;
   setStatus('');
+
+  try {
+    const response = await sendRuntimeMessage({
+      type: 'startRecord',
+      text,
+    });
+
+    if (!response?.ok) {
+      setStatus(response?.authRequired ? copy.auth : copy.failed, true);
+      return;
+    }
+
+    await chrome.storage.local.set({ lifeOsRecordDraft: '' });
+    recordText.value = '';
+    if (response.snapshot && typeof response.snapshot === 'object') {
+      renderSnapshot(response.snapshot);
+    } else {
+      void refreshState();
+    }
+    setStatus('');
+  } catch (_) {
+    setStatus(copy.failed, true);
+  } finally {
+    startRecord.disabled = false;
+    stopRecord.disabled = false;
+    startLabel.textContent = copy.start;
+  }
 }
 
 async function handleStop() {
   stopRecord.disabled = true;
   startRecord.disabled = true;
-  setStatus(copy.stopping);
-
-  const response = await chrome.runtime.sendMessage({ type: 'stopRecord' });
-
-  stopRecord.disabled = false;
-  startRecord.disabled = false;
-
-  if (!response?.ok) {
-    setStatus(response?.authRequired ? copy.auth : copy.failed, true);
-    return;
-  }
-
-  renderSnapshot(response.snapshot);
+  stopLabel.textContent = copy.stopping;
   setStatus('');
+
+  try {
+    const response = await sendRuntimeMessage({ type: 'stopRecord' });
+    if (!response?.ok) {
+      setStatus(response?.authRequired ? copy.auth : copy.failed, true);
+      return;
+    }
+
+    if (response.snapshot && typeof response.snapshot === 'object') {
+      renderSnapshot(response.snapshot);
+    } else {
+      void refreshState();
+    }
+    setStatus('');
+  } catch (_) {
+    setStatus(copy.failed, true);
+  } finally {
+    stopRecord.disabled = false;
+    startRecord.disabled = false;
+    stopLabel.textContent = copy.stop;
+  }
 }
 
 async function handleOpenApp() {
-  const response = await chrome.runtime.sendMessage({ type: 'openLifeOs' });
-  if (!response?.ok) {
+  try {
+    const response = await sendRuntimeMessage({ type: 'openLifeOs' });
+    if (!response?.ok) {
+      setStatus(copy.failed, true);
+      return;
+    }
+    window.close();
+  } catch (_) {
     setStatus(copy.failed, true);
-    return;
   }
-  window.close();
 }
 
 recordText.addEventListener('input', () => {
@@ -255,7 +308,7 @@ chrome.runtime.onMessage.addListener((message) => {
 
 timerHandle = setInterval(renderTimer, 1000);
 refreshHandle = setInterval(() => {
-  void chrome.runtime.sendMessage({ type: 'refreshLifeOsState' });
+  void sendRuntimeMessage({ type: 'refreshLifeOsState' }).catch(() => {});
 }, 15000);
 
 window.addEventListener('unload', () => {
