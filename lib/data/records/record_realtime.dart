@@ -56,6 +56,23 @@ extension RecordRealtimeExtension on DatabaseService {
     _scheduleRealtimeGapCatchUp();
   }
 
+  Future<void> _reconcileRealtimeGapAuthoritativeState() async {
+    // Records/plans/outboxes/categories use the canonical foreground recovery
+    // path. Then explicitly rehydrate profile + tags because those catalog
+    // subscriptions can also miss events during the same transport gap.
+    await refreshForegroundData();
+    try {
+      await _loadSettingsFromNoco();
+    } catch (_) {}
+    try {
+      await fetchTagsForCurrentUser(scope: TagCatalogScope.plan);
+      notifyTagsCatalogChanged();
+    } catch (_) {}
+    try {
+      await _loadRulesFromNoco();
+    } catch (_) {}
+  }
+
   void _scheduleRealtimeGapCatchUp() {
     _realtimeGapCatchUpTimer?.cancel();
     _realtimeGapCatchUpTimer = Timer(const Duration(milliseconds: 200), () {
@@ -75,7 +92,7 @@ extension RecordRealtimeExtension on DatabaseService {
         'realtime transport reconnected; authoritative catch-up starting',
       );
       unawaited(
-        refreshForegroundData().then((_) {
+        _reconcileRealtimeGapAuthoritativeState().then((_) {
           planStreamLifecycleLog(
             'realtime reconnect authoritative catch-up complete',
           );
