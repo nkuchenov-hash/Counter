@@ -15,6 +15,7 @@ const openLabel = document.getElementById('openLabel');
 const status = document.getElementById('status');
 
 const REQUEST_TIMEOUT_MS = 15000;
+const RECORDS_REALTIME_TOPIC = 'records/*';
 
 const ru = (navigator.language || '').toLowerCase().startsWith('ru');
 const copy = ru
@@ -53,8 +54,10 @@ const copy = ru
 
 let snapshot = null;
 let timerHandle = null;
-let refreshHandle = null;
 let hasRenderedSnapshot = false;
+let realtimeSource = null;
+let realtimeHasConnected = false;
+let realtimeCanonicalRefreshPromise = null;
 
 currentLabel.textContent = copy.current;
 newRecordLabel.textContent = copy.newRecord;
@@ -201,6 +204,137 @@ async function refreshState() {
   }
 }
 
+function refreshCanonicalStateFromRealtime() {
+  if (realtimeCanonicalRefreshPromise) return realtimeCanonicalRefreshPromise;
+  realtimeCanonicalRefreshPromise = (async () => {
+    try {
+      const response = await sendRuntimeMessage({ type: 'refreshLifeOsState' });
+      if (response?.ok && response.snapshot) {
+        renderSnapshot(response.snapshot);
+        setStatus('');
+      }
+    } catch (_) {
+      // Keep the instant event projection. EventSource will reconnect itself,
+      // and PB_CONNECT will request another authoritative reconciliation.
+    } finally {
+      realtimeCanonicalRefreshPromise = null;
+    }
+  })();
+  return realtimeCanonicalRefreshPromise;
+}
+
+function applyRecordRealtimeEvent(messageEvent) {
+  let payload = null;
+  try {
+    payload = JSON.parse(messageEvent.data || '{}');
+  } catch (_) {
+    return;
+  }
+  if (!payload || typeof payload !== 'object') return;
+  const record = payload.record && typeof payload.record === 'object'
+    ? payload.record
+    : null;
+  if (!record) {
+    void refreshCanonicalStateFromRealtime();
+    return;
+  }
+
+  const action = String(payload.action ?? '').toLowerCase();
+  const recordId = String(record.record_id ?? record.id ?? '').trim();
+  const statusValue = String(record.status ?? '').toLowerCase();
+  const endTime = String(record.end_time ?? '').trim();
+  const running = action !== 'delete' && !endTime && statusValue === 'running';
+
+  if (running) {
+    const sameRecord = snapshot?.recordId && snapshot.recordId === recordId;
+    renderSnapshot({
+      ...(snapshot ?? {}),
+      active: true,
+      title: String(record.title ?? '').trim(),
+      startTimeUtc: String(record.start_time ?? '').trim(),
+      recordId,
+      categoryPath: sameRecord ? snapshot.categoryPath : '',
+      categoryColor: sameRecord ? snapshot.categoryColor : '',
+      updatedAtUtc: new Date().toISOString(),
+    });
+  } else if (
+    snapshot?.active &&
+    recordId &&
+    snapshot.recordId === recordId
+  ) {
+    renderSnapshot({
+      ...(snapshot ?? {}),
+      active: false,
+      title: '',
+      categoryPath: '',
+      startTimeUtc: null,
+      recordId: '',
+      categoryColor: '',
+      updatedAtUtc: new Date().toISOString(),
+    });
+  }
+
+  // The raw event makes start/stop/title state visible immediately. The
+  // canonical bridge follows in the background to resolve category metadata
+  // and server-side Highlander/overlap cleanup exactly like the main apps.
+  void refreshCanonicalStateFromRealtime();
+}
+
+async function postRealtimeSubscription(baseUrl, clientId, token) {
+  const response = await fetch(`${baseUrl}/api/realtime`, {
+    method: 'POST',
+    headers: {
+      Authorization: token,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      clientId,
+      subscriptions: [RECORDS_REALTIME_TOPIC],
+    }),
+  });
+  if (!response.ok) {
+    throw new Error(`PocketBase realtime subscription failed: ${response.status}`);
+  }
+}
+
+async function connectRealtime() {
+  try {
+    const config = await sendRuntimeMessage({
+      type: 'getLifeOsRealtimeConfig',
+    });
+    if (!config?.ok || !config.baseUrl || !config.token) return;
+
+    realtimeSource?.close();
+    realtimeHasConnected = false;
+    const source = new EventSource(`${config.baseUrl}/api/realtime`);
+    realtimeSource = source;
+
+    source.addEventListener('PB_CONNECT', (event) => {
+      const clientId = String(event.lastEventId ?? '').trim();
+      if (!clientId) return;
+      const reconnect = realtimeHasConnected;
+      realtimeHasConnected = true;
+      void postRealtimeSubscription(
+        config.baseUrl,
+        clientId,
+        config.token,
+      ).then(() => {
+        if (reconnect) {
+          void refreshCanonicalStateFromRealtime();
+        }
+      }).catch(() => {
+        // A stale/revoked token is handled by the normal authenticated bridge;
+        // do not replace a usable cached card with a connection error.
+      });
+    });
+
+    source.addEventListener(RECORDS_REALTIME_TOPIC, applyRecordRealtimeEvent);
+  } catch (_) {
+    // The authenticated bridge remains the fallback on popup open. Realtime is
+    // opportunistic only when a valid web session is available.
+  }
+}
+
 async function handleStart() {
   const text = recordText.value.trim();
   if (!text) {
@@ -307,16 +441,15 @@ chrome.runtime.onMessage.addListener((message) => {
 });
 
 timerHandle = setInterval(renderTimer, 1000);
-refreshHandle = setInterval(() => {
-  void sendRuntimeMessage({ type: 'refreshLifeOsState' }).catch(() => {});
-}, 15000);
 
 window.addEventListener('unload', () => {
   clearInterval(timerHandle);
-  clearInterval(refreshHandle);
+  realtimeSource?.close();
+  realtimeSource = null;
 });
 
-void restoreCachedState().then(() => {
-  void refreshState();
+void restoreCachedState().then(async () => {
+  await refreshState();
+  void connectRealtime();
   recordText.focus();
 });

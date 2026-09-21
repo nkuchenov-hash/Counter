@@ -177,10 +177,11 @@ jobs:
           index.write_text(text, encoding='utf-8')
           print(f'Packaged {package}')
           PY
+          EXT_VERSION="$(python3 -c "import json; print(json.load(open('browser_extension/manifest.json', encoding='utf-8'))['version'])")"
           test -f build/web/lifeos/index.html
-          test -f build/web/lifeos/downloads/life-os-browser-extension-v0.2.3.zip
+          test -f "build/web/lifeos/downloads/life-os-browser-extension-v${EXT_VERSION}.zip"
           test -f build/web/lifeos/downloads/life-os-browser-extension-latest.zip
-          grep -Fq 'life-os-browser-extension-v0.2.3.zip' build/web/lifeos/index.html
+          grep -Fq "life-os-browser-extension-v${EXT_VERSION}.zip" build/web/lifeos/index.html
 
       - name: Preserve published content and default-branch workflows
         if: steps.freshness.outputs.fresh == 'true'

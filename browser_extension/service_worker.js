@@ -1,5 +1,6 @@
 const LIFE_OS_BASE = 'https://nkuchenov-hash.github.io/Counter/';
 const LIFE_OS_MATCH = 'https://nkuchenov-hash.github.io/Counter/*';
+const POCKETBASE_BASE = 'https://217-114-0-201.sslip.io';
 const MAX_TEXT_LENGTH = 1600;
 const BRIDGE_TIMEOUT_MS = 12000;
 const BRIDGE_SETTLE_TIMEOUT_MS = 90000;
@@ -7,6 +8,7 @@ const BRIDGE_POLL_MS = 250;
 const OPEN_TAB_SNAPSHOT_WAIT_MS = 2200;
 
 let refreshPromise = null;
+let realtimeAuthSnapshot = null;
 
 function requestId() {
   if (globalThis.crypto?.randomUUID) {
@@ -30,6 +32,21 @@ function bridgeUrl(action, id, text = '') {
     url.searchParams.set('life_text', cleaned);
   }
   return url.toString();
+}
+
+function normalizeRealtimeAuth(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  const token = String(raw.token ?? '').trim();
+  const model = raw.model && typeof raw.model === 'object' ? raw.model : null;
+  const ownerId = String(model?.id ?? '').trim();
+  if (!token || !ownerId) return null;
+  return { token, ownerId };
+}
+
+function rememberRealtimeAuth(raw) {
+  const normalized = normalizeRealtimeAuth(raw);
+  if (normalized) realtimeAuthSnapshot = normalized;
+  return normalized;
 }
 
 async function findLifeOsTabs() {
@@ -91,11 +108,18 @@ async function readBridgeData(tabId) {
       return {
         snapshot: readBySuffix('browser_extension_record_snapshot_v2'),
         response: readBySuffix('browser_extension_response_v2'),
+        auth: readBySuffix('pb_auth'),
       };
     },
   });
 
-  return results?.[0]?.result ?? { snapshot: null, response: null };
+  const data = results?.[0]?.result ?? {
+    snapshot: null,
+    response: null,
+    auth: null,
+  };
+  rememberRealtimeAuth(data.auth);
+  return data;
 }
 
 function sleep(ms) {
@@ -221,6 +245,7 @@ async function runBridgeAction(action, text = '') {
 
   try {
     const data = await waitForBridgeResponse(tab.id, id);
+    rememberRealtimeAuth(data.auth);
     const response = data.response ?? {};
     const pending = response.settled === false;
     const result = {
@@ -253,8 +278,8 @@ async function refreshLifeOsStateInBackground() {
   refreshPromise = (async () => {
     try {
       // Never trust an open-tab/local cache as "fresh". It is only an
-      // instant-render fallback. Every refresh goes through bridge_sync,
-      // which forces Brain to reconcile records from the network first.
+      // instant-render fallback. Every canonical refresh goes through
+      // bridge_sync, which forces Brain to reconcile records from PocketBase.
       const result = await runBridgeAction('bridge_sync');
       if (result.ok && result.snapshot) {
         await cacheSnapshot(result.snapshot);
@@ -299,6 +324,36 @@ async function getLifeOsState() {
       error: String(error),
     };
   }
+}
+
+async function getLifeOsRealtimeConfig() {
+  const tabs = await findLifeOsTabs();
+  for (const tab of tabs) {
+    try {
+      const data = await readBridgeData(tab.id);
+      const auth = rememberRealtimeAuth(data?.auth);
+      if (auth) {
+        return { ok: true, baseUrl: POCKETBASE_BASE, ...auth };
+      }
+    } catch (_) {}
+  }
+
+  if (realtimeAuthSnapshot) {
+    return { ok: true, baseUrl: POCKETBASE_BASE, ...realtimeAuthSnapshot };
+  }
+
+  try {
+    await runBridgeAction('bridge_sync');
+  } catch (_) {}
+  if (realtimeAuthSnapshot) {
+    return { ok: true, baseUrl: POCKETBASE_BASE, ...realtimeAuthSnapshot };
+  }
+
+  return {
+    ok: false,
+    authRequired: true,
+    error: 'LIFE OS realtime session is not ready.',
+  };
 }
 
 async function warmSnapshotFromTab(tabId) {
@@ -407,6 +462,11 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
   if (message.type === 'getLifeOsState') {
     void getLifeOsState().then(sendResponse);
+    return true;
+  }
+
+  if (message.type === 'getLifeOsRealtimeConfig') {
+    void getLifeOsRealtimeConfig().then(sendResponse);
     return true;
   }
 

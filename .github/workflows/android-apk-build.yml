@@ -1,11 +1,28 @@
 name: Android release APK
 
-# Rebuild current Android ARM64 package after Victor icon rollout.
 on:
   workflow_dispatch:
-  push:
+  pull_request:
+    branches: [main]
     paths:
+      - 'lib/**'
+      - 'test/live_sync_contract_test.dart'
+      - 'pubspec.yaml'
+      - 'pubspec.lock'
+      - 'android/**'
       - '.github/workflows/android-apk-build.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'lib/**'
+      - 'pubspec.yaml'
+      - 'pubspec.lock'
+      - 'android/**'
+      - '.github/workflows/android-apk-build.yml'
+
+concurrency:
+  group: android-release-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: write
@@ -35,6 +52,9 @@ jobs:
       - name: Analyze runtime app
         run: flutter analyze lib --no-fatal-infos --no-fatal-warnings
 
+      - name: Run live-sync regression tests
+        run: flutter test test/live_sync_contract_test.dart
+
       - name: Build arm64 release APK
         run: flutter build apk --release --target-platform android-arm64 --split-per-abi --no-tree-shake-icons
 
@@ -50,11 +70,12 @@ jobs:
           retention-days: 14
 
       - name: Publish immutable LIFE OS Android release
+        if: github.event_name != 'pull_request'
         uses: ncipollo/release-action@v1
         with:
-          tag: life-os-1.0.0-build1-20260911-victor-current
-          name: LIFE OS 1.0.0+1 — Victor icon current build
-          body: Android ARM64 release rebuilt from current main after the approved Victor raven app icon rollout.
+          tag: life-os-android-${{ github.run_number }}-${{ github.sha }}
+          name: LIFE OS Android — build ${{ github.run_number }}
+          body: Android ARM64 release built from the current shared LIFE OS runtime. Realtime reconnects reconcile authoritative PocketBase state so cross-device changes cannot remain stale after an SSE/network gap.
           artifacts: LIFE-OS-Android-arm64.apk
           immutableCreate: true
           makeLatest: true
