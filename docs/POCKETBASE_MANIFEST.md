@@ -9,6 +9,7 @@ This file is the **single source of truth** for how this app talks to **PocketBa
 - `POST /api/ai/parse-task` — optional structured parsing for voice/plan text; implemented behind the reverse proxy. Client calls `DatabaseService.parseTaskViaAiBackend` only (no vendor-specific SDKs).
 - `POST /api/ai/transcribe-command` — authenticated audio transcription. `command_mode: true` serves Desktop Voice; `command_mode: false` serves freeform Notes audio and returns `raw_transcript` or `transcript`. Audio remains stored/playable if transcription fails.
 - `POST /api/auth/request-password-reset` — safe password-reset lookup/send route implemented in `pb_hooks/auth.request_password_reset.pb.js`. Body: `{ "email": "..." }`. Response exposes only `{ "exists": false }` or `{ "exists": true, "sent": true }`; SMTP failure returns a generic mail-unavailable error. The route must never return profile ids, user ids, or private fields.
+- `GET /api/sleep-sync/status`, `POST /api/sleep-sync/xiaomi/connect`, `POST /api/sleep-sync/run`, `POST /api/sleep-sync/settings`, `DELETE /api/sleep-sync/connection` — authenticated server-owned sleep integration. **Xiaomi Cloud is the primary production source**; Google Health is stale-data recovery only. Governing behavior: `docs/SERVER_SLEEP_SYNC_DEPLOY.md`.
 
 ---
 
@@ -41,7 +42,7 @@ This file is the **single source of truth** for how this app talks to **PocketBa
 | **categories** | `user_id` | `profiles.id` | **Owner** | Same ownership pattern. |
 | **paths** | `user_id` | `profiles.id` | **Owner** | Stable Path/project identity + category relation + single `active_revision_link` execution relation. |
 | **path_revisions** | `user_id` | `profiles.id` | **Owner** | Append-only Path snapshots; project linkage by stable `path_id`. |
-| **sleep_sync_connections** | `user_id` | `profiles.id` | **Owner (server-only)** | Closed collection for encrypted Google Fit connection/sync state; clients use `/api/sleep-sync/*`. |
+| **sleep_sync_connections** | `user_id` | `profiles.id` | **Owner (server-only)** | Closed connection/sync state. Active provider is `xiaomi`; legacy `google_fit` / `google_health` rows may exist for migration/recovery. Clients use `/api/sleep-sync/*`, never direct collection access. |
 | **calendar_integrations** | `user_id` | `profiles.id` | **Owner (server-only)** | Closed Microsoft/Google calendar connection state; clients use `/api/calendar-integrations/*`. |
 
 **Cross-rule intent:** A **record** is always owned via **`records.user_id`**. If **`source_plan_id`** is set, the linked **plan must belong to the same user** so analytics and security stay consistent (enforce in PocketBase rules or hooks).
@@ -97,6 +98,9 @@ Password reset is app-owned through `POST /api/auth/request-password-reset`; do 
 | `start_time`, `end_time` | date | ISO strings; timeline buckets use **wall-clock** (see DATA_MAP). |
 | `record_id` | text | Business UUID (passive); never used as REST path **id**. |
 | `tags_link` | relation(s) | Optional expand `kPbRecordTagsExpand`. |
+| `sleep_source` | text | Imported sleep provider marker. Current primary value: `xiaomi`; legacy values may exist for historical/recovery rows. |
+| `sleep_external_id` | text | Provider sleep identity used for exact-idempotent imports; Xiaomi revised-night overlap dedupe is additionally required because boundaries may change. |
+| `external_source` / `external_id` / `external_kind` | text | Generic imported-record provenance used by current Xiaomi sleep rows (`xiaomi`, provider interval id, `sleep`). |
 
 ### 4.5 `tags` (if used)
 
@@ -138,23 +142,23 @@ Password reset is app-owned through `POST /api/auth/request-password-reset`; do 
 
 ### 4.8 `sleep_sync_connections` (server-owned)
 
-Created by `pb_migrations/1785390000_server_sleep_sync.js`. Direct client collection rules are closed; authenticated Flutter uses the app-owned `/api/sleep-sync/*` routes.
+Originally created by `pb_migrations/1785390000_server_sleep_sync.js`; later sleep migrations extend provider/state fields for Google Health history and Xiaomi Cloud. Direct client collection rules are closed; authenticated Flutter uses the app-owned `/api/sleep-sync/*` routes.
 
 | Field | Type | Notes |
 | :--- | :--- | :--- |
 | `user_id` | relation | → `profiles.id`; cascade delete. |
-| `provider` | select | `google_fit`; unique together with owner. |
-| `enabled` | bool | Background sync enabled. |
-| `daily_sync_minutes` | integer | Profile-local minute of day, 0–1439. |
+| `provider` | select | Current schema includes `xiaomi` plus legacy/recovery Google providers. **Xiaomi is the active primary production provider.** Unique together with owner. |
+| `enabled` | bool | Background sync enabled. Xiaomi remains enabled while active; legacy Google rows are disabled except temporary recovery execution. |
+| `daily_sync_minutes` | integer | Legacy/configured minute of day. It **must not gate missing-current-day Xiaomi sync**; missing-day checks run every 15 minutes regardless of this value. |
 | `status` | select | `disconnected` / `connecting` / `connected` / `syncing` / `error`. |
-| `refresh_token_enc`, `access_token_enc` | text | Server-encrypted OAuth credentials; never exposed as client data. |
-| `access_token_expires_at` | date | OAuth token expiry. |
-| `oauth_state`, `oauth_state_expires_at` | text/date | OAuth handshake state. |
-| `last_sync_at`, `last_sync_local_day` | date/text | Last completed server sync. |
+| `refresh_token_enc`, `access_token_enc` | text | Legacy Google OAuth credentials; server-only. Xiaomi credentials are stored server-side by the Xiaomi runtime and never exposed to clients. |
+| `access_token_expires_at` | date | OAuth token expiry where applicable. |
+| `oauth_state`, `oauth_state_expires_at` | text/date | Authorization handshake state. |
+| `last_sync_at`, `last_sync_local_day` | date/text | Last completed server sync / local-day marker. |
 | `last_session_count`, `last_imported_count` | integer | Last sync diagnostics. |
 | `last_error` | text | Bounded server diagnostic. |
 
-The same migration adds `records.sleep_source` and `records.sleep_external_id` plus a partial unique owner/source/external-id index for idempotent imported sleep.
+The base migration adds `records.sleep_source` and `records.sleep_external_id` plus a partial unique owner/source/external-id index for exact-idempotent imported sleep. Xiaomi can revise bedtime/wake boundaries and therefore change an interval-derived external id; server overlap dedupe in `pb_hooks/sleep_sync.pb.js` is additionally required. See `docs/SERVER_SLEEP_SYNC_DEPLOY.md` for the complete scheduling, endpoint, dedupe, and fallback contract.
 
 ### 4.9 `calendar_integrations` (server-owned)
 
@@ -216,11 +220,12 @@ PocketBase Admin should enforce **multi-tenant isolation** and **plan integrity*
 - **POST `records`:** Body always includes **`user_id`** from **`authStore.record.id`**; optional **`source_plan_id`** when starting from a plan or after user confirmation / manual dropdown.
 - **PATCH `records`:** Optional **`source_plan_id`** updates only when the user changes link; **`null`** clears the relation.
 - **Errors:** **401** (session) and **403** (forbidden / wrong plan owner) → snackbar + log; no silent failure.
+- **Sleep:** Flutter never owns the recurring Xiaomi scheduler. It may request status/manual run and refresh local records, but server correctness must continue with all clients closed.
 
 
 ### 6.1 PocketBase migrations
 
-Versioned server schema/data migrations live in **`pb_migrations/`** and are part of the release contract. Apply them before deploying a client that depends on the new schema. `1787076000_durable_paths.js` creates `paths` / `path_revisions` and imports existing `LIFEOS_PATH::V2` roots deterministically without mutating the source rows.
+Versioned server schema/data migrations live in **`pb_migrations/`** and are part of the release contract. Apply them before deploying a client that depends on the new schema. `1787076000_durable_paths.js` creates `paths` / `path_revisions` and imports existing `LIFEOS_PATH::V2` roots deterministically without mutating the source rows. Sleep schema evolution includes the base server sleep migration and subsequent provider/recovery/Xiaomi migrations; do not infer the current sleep schema from the oldest migration alone.
 
 ---
 
@@ -238,6 +243,7 @@ Versioned server schema/data migrations live in **`pb_migrations/`** and are par
 | :--- | :--- |
 | **`docs/DATA_MAP.md`** | Field names, business keys, operational laws. |
 | **`ARCHITECTURE.md`** | Brain / gate / data flow. |
+| **`docs/SERVER_SLEEP_SYNC_DEPLOY.md`** | Canonical Xiaomi Cloud sleep pipeline, endpoint family, cadence, dedupe, fallback, and production verification. |
 
 ## People collections (2026-09-03)
 
