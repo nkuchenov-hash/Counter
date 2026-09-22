@@ -13,7 +13,6 @@ class EditSheetAutosaveGate {
   Timer? _timer;
   bool _dirty = false;
   int _revision = 0;
-  int _lastDispatchedRevision = 0;
 
   bool get isDirty => _dirty;
 
@@ -38,7 +37,6 @@ class EditSheetAutosaveGate {
     _timer?.cancel();
     _timer = Timer(debounce, () {
       _timer = null;
-      _lastDispatchedRevision = _revision;
       // The timer itself is proof that this user edit was scheduled. Run it
       // even if an older async completion attempted to mark the sheet clean.
       action();
@@ -51,7 +49,6 @@ class EditSheetAutosaveGate {
     _timer?.cancel();
     _timer = null;
     if (force || _dirty) {
-      _lastDispatchedRevision = _revision;
       action();
     }
     _dirty = false;
