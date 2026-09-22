@@ -139,6 +139,18 @@ mixin ShellBrowserExtensionQuickAdd on ShellDashboardBase {
     }
   }
 
+  Map<String, dynamic>? _browserExtensionStoredResponse(
+    SharedPreferences prefs,
+  ) {
+    final raw = prefs.getString(_browserExtensionResponseKey);
+    if (raw == null || raw.trim().isEmpty) return null;
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is Map) return Map<String, dynamic>.from(decoded);
+    } catch (_) {}
+    return null;
+  }
+
   Future<bool> _browserExtensionRequestWasConsumed(
     SharedPreferences prefs,
     String requestId,
@@ -205,6 +217,18 @@ mixin ShellBrowserExtensionQuickAdd on ShellDashboardBase {
     final alreadyConsumed =
         await _browserExtensionRequestWasConsumed(prefs, requestId);
     if (alreadyConsumed) {
+      final previous = _browserExtensionStoredResponse(prefs);
+      final samePendingStart =
+          action == 'start_record' &&
+          previous?['requestId']?.toString() == requestId &&
+          previous?['settled'] == false;
+      if (samePendingStart) {
+        // The URL command can remain visible for one more 250 ms poll after
+        // the early ACK. Never turn that ACK into a false settled response;
+        // _settleBrowserExtensionStartRecord owns the final confirmation.
+        return;
+      }
+
       final snapshot = await _browserExtensionRecordSnapshot();
       await _storeBrowserExtensionRecordSnapshot(snapshot);
       await _writeBrowserExtensionResponse(
