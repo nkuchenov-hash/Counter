@@ -2,9 +2,10 @@ import 'dart:async';
 
 /// Debounced background sync for edit sheets; [flush] on explicit Save / close.
 ///
-/// The gate is revision-aware: completion of an older async save must never
-/// mark a newer local edit clean. This is a correctness invariant for live
-/// optimistic editing, not merely a debounce helper.
+/// Correctness rule: completion of an older async save must never cancel a
+/// newer edit that is still waiting for its debounce window. A pending timer
+/// therefore represents unsent user intent and cannot be cleared by
+/// [markClean].
 class EditSheetAutosaveGate {
   EditSheetAutosaveGate({this.debounce = const Duration(milliseconds: 100)});
 
@@ -16,7 +17,7 @@ class EditSheetAutosaveGate {
 
   bool get isDirty => _dirty;
 
-  /// Monotonic local edit generation. Useful in tests/diagnostics.
+  /// Monotonic local edit generation for diagnostics/tests.
   int get revision => _revision;
 
   void markDirty() {
@@ -24,10 +25,11 @@ class EditSheetAutosaveGate {
     _revision++;
   }
 
-  /// Marks clean only when no edit newer than the most recently dispatched
-  /// save exists. An older request finishing after fresh typing is ignored.
+  /// Marks the sheet clean only when there is no newer debounced edit waiting
+  /// to be sent. This prevents an older network request from suppressing the
+  /// next rename/edit while it is still inside the debounce window.
   void markClean() {
-    if (_revision != _lastDispatchedRevision) return;
+    if (_timer != null) return;
     _dirty = false;
   }
 
@@ -36,8 +38,9 @@ class EditSheetAutosaveGate {
     _timer?.cancel();
     _timer = Timer(debounce, () {
       _timer = null;
-      if (!_dirty) return;
       _lastDispatchedRevision = _revision;
+      // The timer itself is proof that this user edit was scheduled. Run it
+      // even if an older async completion attempted to mark the sheet clean.
       action();
     });
   }
@@ -51,11 +54,7 @@ class EditSheetAutosaveGate {
       _lastDispatchedRevision = _revision;
       action();
     }
-    // The dispatched revision is locally clean. A later edit increments
-    // [_revision], and completion of this request cannot clear that edit.
-    if (_revision == _lastDispatchedRevision) {
-      _dirty = false;
-    }
+    _dirty = false;
   }
 
   void dispose() {
