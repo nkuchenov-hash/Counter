@@ -47,10 +47,9 @@ routerAdd("DELETE", "/api/sleep-sync/connection", function(e) {
     return require(__hooks + "/xiaomi_sleep_runtime.js").remove(e);
 }, $apis.requireAuth("profiles"));
 
-// From the configured morning start onward, retry every 15 minutes until the
-// current local day's Xiaomi sleep exists in PocketBase. Clearing last_sync_at
-// only for a missing day bypasses the runtime's maintenance throttle without
-// generating any extra Xiaomi calls after today's record has arrived.
+// Retry every 15 minutes while the current local waking day has no Xiaomi sleep.
+// Do not wait for an arbitrary morning clock time: if Xiaomi already published
+// the completed night, LIFE OS should import it immediately.
 cronAdd("lifeos_xiaomi_sleep_sync", "*/15 * * * *", function() {
     var app = $app;
     var rows = [];
@@ -64,10 +63,6 @@ cronAdd("lifeos_xiaomi_sleep_sync", "*/15 * * * *", function() {
         try { profile = app.findRecordById("profiles", userId); } catch (_) { continue; }
         var offsetHours = Number(profile.get("timezone_offset") || 0);
         var local = new Date(now.getTime() + offsetHours * 60 * 60 * 1000);
-        var localMinutes = local.getUTCHours() * 60 + local.getUTCMinutes();
-        var requestedStart = Number(connection.get("daily_sync_minutes") || 8 * 60);
-        var morningStart = requestedStart >= 4 * 60 && requestedStart < 12 * 60 ? requestedStart : 8 * 60;
-        if (localMinutes < morningStart) continue;
         var localDayStartMs = Date.UTC(local.getUTCFullYear(), local.getUTCMonth(), local.getUTCDate()) - offsetHours * 60 * 60 * 1000;
         var localDayEndMs = localDayStartMs + 24 * 60 * 60 * 1000;
         try {
@@ -84,10 +79,60 @@ cronAdd("lifeos_xiaomi_sleep_sync", "*/15 * * * *", function() {
 
     try { require(__hooks + "/xiaomi_sleep_runtime.js").cron(app); } catch (_) {}
 
+    // Remove only genuine duplicate versions of the same Xiaomi night. Xiaomi
+    // can revise bedtime/wake boundaries, which changes the source external id.
+    // Strongly overlapping records are the same night; separate naps remain.
+    for (var d = 0; d < rows.length; d++) {
+        var dedupeUserId = String(rows[d].get("user_id") || "");
+        if (!dedupeUserId) continue;
+        var recentSleep = [];
+        try {
+            recentSleep = app.findRecordsByFilter(
+                "records",
+                "user_id = {:uid} && (sleep_source = 'xiaomi' || external_source = 'xiaomi') && end_time >= {:cutoff}",
+                "-end_time",
+                100,
+                0,
+                { uid: dedupeUserId, cutoff: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString() }
+            );
+        } catch (_) { continue; }
+        var removed = {};
+        for (var a = 0; a < recentSleep.length; a++) {
+            var first = recentSleep[a];
+            if (removed[first.id]) continue;
+            var firstStart = new Date(String(first.get("start_time") || ""));
+            var firstEnd = new Date(String(first.get("end_time") || ""));
+            if (isNaN(firstStart.getTime()) || isNaN(firstEnd.getTime()) || firstEnd.getTime() <= firstStart.getTime()) continue;
+            for (var b = a + 1; b < recentSleep.length; b++) {
+                var second = recentSleep[b];
+                if (removed[second.id]) continue;
+                var secondStart = new Date(String(second.get("start_time") || ""));
+                var secondEnd = new Date(String(second.get("end_time") || ""));
+                if (isNaN(secondStart.getTime()) || isNaN(secondEnd.getTime()) || secondEnd.getTime() <= secondStart.getTime()) continue;
+                var overlap = Math.max(0, Math.min(firstEnd.getTime(), secondEnd.getTime()) - Math.max(firstStart.getTime(), secondStart.getTime()));
+                var firstDuration = firstEnd.getTime() - firstStart.getTime();
+                var secondDuration = secondEnd.getTime() - secondStart.getTime();
+                var shorter = Math.min(firstDuration, secondDuration);
+                if (shorter <= 0 || overlap / shorter < 0.60) continue;
+                var keeper = firstDuration >= secondDuration ? first : second;
+                var duplicate = keeper.id === first.id ? second : first;
+                try {
+                    app.delete(duplicate);
+                    removed[duplicate.id] = true;
+                } catch (_) {}
+                if (keeper.id === second.id) {
+                    first = second;
+                    firstStart = secondStart;
+                    firstEnd = secondEnd;
+                    firstDuration = secondDuration;
+                }
+            }
+        }
+    }
+
     // Keep the primary timeline continuous around sleep. Once a completed Xiaomi
     // sleep exists, the nearest preceding non-sleep record may not continue
-    // through sleep; close it exactly at sleep.start_time. The entire reconcile
-    // stays inside this cron handler because PocketBase JSVM isolates handlers.
+    // through sleep; close it exactly at sleep.start_time.
     for (var r = 0; r < rows.length; r++) {
         var reconcileUserId = String(rows[r].get("user_id") || "");
         if (!reconcileUserId) continue;
@@ -136,10 +181,9 @@ cronAdd("lifeos_xiaomi_sleep_sync", "*/15 * * * *", function() {
     }
 });
 
-// Immediately after each PocketBase restart, force one Xiaomi pass when the
-// configured morning start has passed and today's Xiaomi sleep is still absent.
-// This also makes a deployment self-healing instead of waiting for the next
-// quarter-hour scheduler tick.
+// Immediately after each PocketBase restart, force one Xiaomi pass whenever
+// today's Xiaomi sleep is absent. This makes deploy/restart self-healing and is
+// intentionally independent from a configured morning clock time.
 onBootstrap(function(e) {
     e.next();
     var app = e.app;
@@ -154,10 +198,6 @@ onBootstrap(function(e) {
         try { xiaomiProfile = app.findRecordById("profiles", xiaomiUserId); } catch (_) { continue; }
         var xiaomiOffset = Number(xiaomiProfile.get("timezone_offset") || 0);
         var xiaomiLocal = new Date(now.getTime() + xiaomiOffset * 60 * 60 * 1000);
-        var xiaomiMinutes = xiaomiLocal.getUTCHours() * 60 + xiaomiLocal.getUTCMinutes();
-        var xiaomiRequestedStart = Number(xiaomi.get("daily_sync_minutes") || 8 * 60);
-        var xiaomiMorningStart = xiaomiRequestedStart >= 4 * 60 && xiaomiRequestedStart < 12 * 60 ? xiaomiRequestedStart : 8 * 60;
-        if (xiaomiMinutes < xiaomiMorningStart) continue;
         var xiaomiDayStartMs = Date.UTC(xiaomiLocal.getUTCFullYear(), xiaomiLocal.getUTCMonth(), xiaomiLocal.getUTCDate()) - xiaomiOffset * 60 * 60 * 1000;
         var xiaomiDayEndMs = xiaomiDayStartMs + 24 * 60 * 60 * 1000;
         try {
@@ -172,6 +212,56 @@ onBootstrap(function(e) {
         try { app.save(xiaomi); } catch (_) {}
     }
     try { require(__hooks + "/xiaomi_sleep_runtime.js").cron(app); } catch (_) {}
+
+    // Run duplicate repair at startup as well, so historical revised Xiaomi
+    // sessions are cleaned immediately instead of waiting for the next cron tick.
+    for (var xd = 0; xd < xiaomiRows.length; xd++) {
+        var startupDedupeUserId = String(xiaomiRows[xd].get("user_id") || "");
+        if (!startupDedupeUserId) continue;
+        var startupRecentSleep = [];
+        try {
+            startupRecentSleep = app.findRecordsByFilter(
+                "records",
+                "user_id = {:uid} && (sleep_source = 'xiaomi' || external_source = 'xiaomi') && end_time >= {:cutoff}",
+                "-end_time",
+                100,
+                0,
+                { uid: startupDedupeUserId, cutoff: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString() }
+            );
+        } catch (_) { continue; }
+        var startupRemoved = {};
+        for (var sa = 0; sa < startupRecentSleep.length; sa++) {
+            var startupFirst = startupRecentSleep[sa];
+            if (startupRemoved[startupFirst.id]) continue;
+            var startupFirstStart = new Date(String(startupFirst.get("start_time") || ""));
+            var startupFirstEnd = new Date(String(startupFirst.get("end_time") || ""));
+            if (isNaN(startupFirstStart.getTime()) || isNaN(startupFirstEnd.getTime()) || startupFirstEnd.getTime() <= startupFirstStart.getTime()) continue;
+            for (var sb = sa + 1; sb < startupRecentSleep.length; sb++) {
+                var startupSecond = startupRecentSleep[sb];
+                if (startupRemoved[startupSecond.id]) continue;
+                var startupSecondStart = new Date(String(startupSecond.get("start_time") || ""));
+                var startupSecondEnd = new Date(String(startupSecond.get("end_time") || ""));
+                if (isNaN(startupSecondStart.getTime()) || isNaN(startupSecondEnd.getTime()) || startupSecondEnd.getTime() <= startupSecondStart.getTime()) continue;
+                var startupOverlap = Math.max(0, Math.min(startupFirstEnd.getTime(), startupSecondEnd.getTime()) - Math.max(startupFirstStart.getTime(), startupSecondStart.getTime()));
+                var startupFirstDuration = startupFirstEnd.getTime() - startupFirstStart.getTime();
+                var startupSecondDuration = startupSecondEnd.getTime() - startupSecondStart.getTime();
+                var startupShorter = Math.min(startupFirstDuration, startupSecondDuration);
+                if (startupShorter <= 0 || startupOverlap / startupShorter < 0.60) continue;
+                var startupKeeper = startupFirstDuration >= startupSecondDuration ? startupFirst : startupSecond;
+                var startupDuplicate = startupKeeper.id === startupFirst.id ? startupSecond : startupFirst;
+                try {
+                    app.delete(startupDuplicate);
+                    startupRemoved[startupDuplicate.id] = true;
+                } catch (_) {}
+                if (startupKeeper.id === startupSecond.id) {
+                    startupFirst = startupSecond;
+                    startupFirstStart = startupSecondStart;
+                    startupFirstEnd = startupSecondEnd;
+                    startupFirstDuration = startupSecondDuration;
+                }
+            }
+        }
+    }
 
     // Run the same boundary repair once at startup so an already-imported sleep
     // immediately repairs a stale running record without waiting for :00/:15/:30/:45.
@@ -224,17 +314,17 @@ onBootstrap(function(e) {
     // authorization. This never asks for a second login and never runs when any
     // recent sleep record is already present.
     var cutoff = new Date(Date.now() - 36 * 60 * 60 * 1000).toISOString();
-    var rows = [];
-    try { rows = app.findRecordsByFilter("sleep_sync_connections", "enabled = true && provider = 'xiaomi'", "", 500, 0); } catch (_) { return; }
-    for (var i = 0; i < rows.length; i++) {
-        var userId = String(rows[i].get("user_id") || "");
-        if (!userId) continue;
+    var fallbackRows = [];
+    try { fallbackRows = app.findRecordsByFilter("sleep_sync_connections", "enabled = true && provider = 'xiaomi'", "", 500, 0); } catch (_) { return; }
+    for (var fi = 0; fi < fallbackRows.length; fi++) {
+        var fallbackUserId = String(fallbackRows[fi].get("user_id") || "");
+        if (!fallbackUserId) continue;
         try {
-            app.findFirstRecordByFilter("records", "user_id = {:uid} && (title = 'Sleep' || title = 'Сон') && end_time >= {:cutoff}", { uid: userId, cutoff: cutoff });
+            app.findFirstRecordByFilter("records", "user_id = {:uid} && (title = 'Sleep' || title = 'Сон') && end_time >= {:cutoff}", { uid: fallbackUserId, cutoff: cutoff });
             continue;
         } catch (_) {}
         var health = null;
-        try { health = app.findFirstRecordByFilter("sleep_sync_connections", "user_id = {:uid} && provider = 'google_health'", { uid: userId }); } catch (_) { continue; }
+        try { health = app.findFirstRecordByFilter("sleep_sync_connections", "user_id = {:uid} && provider = 'google_health'", { uid: fallbackUserId }); } catch (_) { continue; }
         if (!String(health.get("refresh_token_enc") || "")) continue;
         var originalEnabled = !!health.get("enabled");
         health.set("enabled", true);
