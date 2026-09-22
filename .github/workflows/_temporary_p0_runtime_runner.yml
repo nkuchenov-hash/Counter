@@ -1,0 +1,45 @@
+name: Temporary P0 runtime runner
+on:
+  push:
+    branches:
+      - fix/instant-live-sync-and-record-edit-stability
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/instant-live-sync-and-record-edit-stability
+          fetch-depth: 0
+      - name: Execute embedded surgical patch
+        shell: bash
+        run: |
+          python3 - <<'BOOT'
+          from pathlib import Path
+          raw = Path('.github/workflows/_temporary_p0_runtime_patch.yml').read_text(encoding='utf-8')
+          marker = "          python3 - <<'PY'\n"
+          start = raw.index(marker) + len(marker)
+          end = raw.index("\n          PY\n", start)
+          body = raw[start:end]
+          body = '\n'.join(line[10:] if line.startswith('          ') else line for line in body.splitlines())
+          exec(compile(body, 'embedded_p0_patch.py', 'exec'))
+          BOOT
+
+          dart format \
+            lib/data/records/record_realtime.dart \
+            lib/data/records/record_crud.dart \
+            lib/features/shared/edit_sheet/sheet_autosave_gate.dart \
+            lib/features/shared/timeline_record_edit_sheet.dart \
+            test/edit_sheet_autosave_test.dart \
+            test/live_sync_contract_test.dart
+          git diff --check
+
+          git rm .github/workflows/_temporary_p0_runtime_patch.yml
+          git rm .github/workflows/_temporary_p0_runtime_runner.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Apply final P0 runtime patch"
+          git push origin HEAD:fix/instant-live-sync-and-record-edit-stability
