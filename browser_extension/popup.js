@@ -59,6 +59,7 @@ let realtimeSource = null;
 let realtimeHasConnected = false;
 let realtimeCanonicalRefreshPromise = null;
 let startInFlight = false;
+let pendingStartTitle = '';
 
 currentLabel.textContent = copy.current;
 newRecordLabel.textContent = copy.newRecord;
@@ -101,6 +102,15 @@ function applyTheme(themeMode) {
 function normalizeSnapshot(value) {
   if (!value || typeof value !== 'object') return null;
   return value;
+}
+
+function shouldIgnoreIncomingSnapshot(next) {
+  if (!startInFlight || !pendingStartTitle) return false;
+  if (!next || typeof next !== 'object') return true;
+  return !(
+    next.active === true &&
+    String(next.title ?? '').trim() === pendingStartTitle
+  );
 }
 
 function formatElapsed(startTimeUtc) {
@@ -189,7 +199,9 @@ async function refreshState() {
       return false;
     }
 
-    renderSnapshot(response.snapshot);
+    if (!shouldIgnoreIncomingSnapshot(response.snapshot)) {
+      renderSnapshot(response.snapshot);
+    }
     setStatus('');
     return true;
   } catch (_) {
@@ -210,7 +222,11 @@ function refreshCanonicalStateFromRealtime() {
   realtimeCanonicalRefreshPromise = (async () => {
     try {
       const response = await sendRuntimeMessage({ type: 'refreshLifeOsState' });
-      if (response?.ok && response.snapshot) {
+      if (
+        response?.ok &&
+        response.snapshot &&
+        !shouldIgnoreIncomingSnapshot(response.snapshot)
+      ) {
         renderSnapshot(response.snapshot);
         setStatus('');
       }
@@ -236,7 +252,7 @@ function applyRecordRealtimeEvent(messageEvent) {
     ? payload.record
     : null;
   if (!record) {
-    void refreshCanonicalStateFromRealtime();
+    if (!startInFlight) void refreshCanonicalStateFromRealtime();
     return;
   }
 
@@ -245,13 +261,18 @@ function applyRecordRealtimeEvent(messageEvent) {
   const statusValue = String(record.status ?? '').toLowerCase();
   const endTime = String(record.end_time ?? '').trim();
   const running = action !== 'delete' && !endTime && statusValue === 'running';
+  const eventTitle = String(record.title ?? '').trim();
+
+  if (startInFlight && pendingStartTitle) {
+    if (!running || eventTitle !== pendingStartTitle) return;
+  }
 
   if (running) {
     const sameRecord = snapshot?.recordId && snapshot.recordId === recordId;
     renderSnapshot({
       ...(snapshot ?? {}),
       active: true,
-      title: String(record.title ?? '').trim(),
+      title: eventTitle,
       startTimeUtc: String(record.start_time ?? '').trim(),
       recordId,
       categoryPath: sameRecord ? snapshot.categoryPath : '',
@@ -349,6 +370,7 @@ async function handleStart() {
   };
 
   startInFlight = true;
+  pendingStartTitle = text;
   startRecord.disabled = true;
   stopRecord.disabled = true;
   startLabel.textContent = copy.starting;
@@ -392,6 +414,7 @@ async function handleStart() {
     setStatus(copy.failed, true);
   } finally {
     startInFlight = false;
+    pendingStartTitle = '';
     startRecord.disabled = false;
     stopRecord.disabled = false;
     startLabel.textContent = copy.start;
@@ -456,8 +479,16 @@ openApp.addEventListener('click', () => void handleOpenApp());
 openAppIcon.addEventListener('click', () => void handleOpenApp());
 
 chrome.runtime.onMessage.addListener((message) => {
+  if (message?.type === 'lifeOsCommandFailed') {
+    if (message.action === 'start_record') {
+      setStatus(copy.failed, true);
+      void refreshState();
+    }
+    return;
+  }
   if (message?.type !== 'lifeOsStateUpdated') return;
   if (!message.snapshot || typeof message.snapshot !== 'object') return;
+  if (shouldIgnoreIncomingSnapshot(message.snapshot)) return;
   renderSnapshot(message.snapshot);
   setStatus('');
 });
