@@ -121,6 +121,7 @@ jobs:
           name: LIFE OS Windows — build ${{ github.run_number }}
           body: Windows installer built from the current shared LIFE OS runtime. Realtime reconnects reconcile authoritative PocketBase state so cross-device changes cannot remain stale after an SSE/network gap.
           artifacts: installer/windows/output/CounterSetup.exe
+          immutableCreate: true
           allowUpdates: false
           replacesArtifacts: false
           makeLatest: true
