@@ -22,6 +22,7 @@ description: Revisions and corrections for DATA_MAP.md.
 | **records** | Base | Standard collection. |
 | **plans** | Base | Standard collection. |
 | **tags** | Base | Standard collection. |
+| **sleep_sync_connections** | Base, server-only | Closed provider connection/sync state. Xiaomi Cloud is the active primary sleep provider; clients use `/api/sleep-sync/*`. |
 
 ## 1. Collection: `records`
 **Business PK:** `record_id` (UUID) | **System PK (REST):** `id` (15-char String)
@@ -45,6 +46,12 @@ description: Revisions and corrections for DATA_MAP.md.
 | **tags** | String | Metadata | NO | Comma-separated tags string. |
 | **checklist** | JSON | Complex | **YES** | Default is `[]`. Encoded as JSON string in API layer. |
 | **note** | String | Text | NO | User remarks or comments. |
+| **sleep_source** | String | Imported sleep | NO | Provider marker. Current primary value is `xiaomi`; historical/recovery rows may use legacy Google values. |
+| **sleep_external_id** | String | Imported sleep identity | NO | Exact provider identity for idempotency. Not sufficient by itself for Xiaomi revised-night dedupe because revised boundaries may change interval-derived IDs. |
+| **external_source** | String | Generic import provenance | NO | Current Xiaomi sleep rows use `xiaomi`. |
+| **external_id** | String | Generic import identity | NO | Provider-derived identity; synchronized with Xiaomi sleep identity where applicable. |
+| **external_kind** | String | Generic import kind | NO | Current imported sleep rows use `sleep`. |
+| **external_updated_at** | ISO8601 String | Import metadata | NO | Last provider reconciliation time. |
 
 ### 🛠 Operational Rules for `records`:
 1. **The ID Duality Law**: The Brain MUST distinguish between the **System ID** (`id`) and the **Business UUID** (`record_id`).
@@ -60,6 +67,7 @@ description: Revisions and corrections for DATA_MAP.md.
 8. **Optimistic timeline UI**: Merge **in-memory-only** overlays into timeline before HTTP completes. Revert on failure.
 9. **Stats day scope**: Durations use **`timezone_offset`** with `utcRangeForWallClockDate`.
 10. **Server interval hooks** (`pb_hooks/records.interval_sanitize.pb.js`): PocketBase MUST run hooks that reject `end_time < start_time` on primary rows and auto-truncate overlaps per `user_id` so multi-device Sacred Singleton cannot corrupt timelines.
+11. **Imported Xiaomi sleep law:** Server sleep sync is authoritative. Missing current-day Xiaomi sleep is retried every 15 minutes without a morning-time gate. Strongly overlapping Xiaomi sleep intervals (≥60% of the shorter interval) are revised versions of one night and are deduped; separate non-overlapping naps remain distinct. A preceding root non-sleep record that crosses the imported sleep start is closed exactly at `sleep.start_time`. See `docs/SERVER_SLEEP_SYNC_DEPLOY.md`.
 
 ## 2. Collection: `categories`
 **Business PK:** `category_id` (string, data) | **System PK (REST):** `id` (15-char String)
@@ -198,6 +206,22 @@ description: Revisions and corrections for DATA_MAP.md.
 | **domain** | String (Select) | Data | NO | Tag isolation: `plan` (Planning / timeline tag pickers) vs `list` (Lists / backlog tag pickers). Legacy rows with empty domain are treated as **`plan`**. New list tags MUST be created with `list`. |
 | **default_plan_duration_minutes** | Number | Planning | NO | Optional default block length in minutes for auto-scheduled plans carrying this tag. Empty/null = no tag default. Client clamps 1–1440. PocketBase may return integer or double (e.g. `10.0`); client parser must accept `num` / `int` / `double`. |
 
+## 6. Server sleep synchronization
+
+`docs/SERVER_SLEEP_SYNC_DEPLOY.md` is the behavior contract; `docs/POCKETBASE_MANIFEST.md` is the schema/API contract.
+
+### `sleep_sync_connections`
+- `user_id`: owner relation → `profiles.id`.
+- `provider`: current primary production value is `xiaomi`; legacy `google_fit` / `google_health` rows may remain for migration or recovery.
+- `enabled`, `status`, `last_sync_at`, `last_sync_local_day`, `last_session_count`, `last_imported_count`, `last_error`: server sync state/diagnostics.
+- Google OAuth token fields remain server-only for legacy/recovery providers. Xiaomi authorization material is server-side and is never exposed to Flutter.
+
+### Xiaomi source laws
+- Primary cloud family: `/app/v1/relatives/get_aggregated_data`, `/app/v1/relatives/get_fitness_data`, `/app/v1/relatives/get_latest_data`.
+- Historical `/app/v1/data/...` endpoints are fallback only; a successful stale response is not freshness proof.
+- While the current profile-local day has no Xiaomi sleep record, server sync is forced every 15 minutes with **no morning-time gate**.
+- Xiaomi may revise one night’s boundaries, changing interval-derived external identity. Exact ID idempotency is therefore supplemented by ≥60% shorter-interval overlap dedupe; separate naps are preserved.
+- Imported sleep is authoritative over a preceding root record that crosses sleep start; that record closes at the imported `sleep.start_time`.
 
 ## Paths — durable revision vocabulary
 
