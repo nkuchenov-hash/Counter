@@ -58,6 +58,7 @@ let hasRenderedSnapshot = false;
 let realtimeSource = null;
 let realtimeHasConnected = false;
 let realtimeCanonicalRefreshPromise = null;
+let startInFlight = false;
 
 currentLabel.textContent = copy.current;
 newRecordLabel.textContent = copy.newRecord;
@@ -274,9 +275,6 @@ function applyRecordRealtimeEvent(messageEvent) {
     });
   }
 
-  // The raw event makes start/stop/title state visible immediately. The
-  // canonical bridge follows in the background to resolve category metadata
-  // and server-side Highlander/overlap cleanup exactly like the main apps.
   void refreshCanonicalStateFromRealtime();
 }
 
@@ -322,20 +320,15 @@ async function connectRealtime() {
         if (reconnect) {
           void refreshCanonicalStateFromRealtime();
         }
-      }).catch(() => {
-        // A stale/revoked token is handled by the normal authenticated bridge;
-        // do not replace a usable cached card with a connection error.
-      });
+      }).catch(() => {});
     });
 
     source.addEventListener(RECORDS_REALTIME_TOPIC, applyRecordRealtimeEvent);
-  } catch (_) {
-    // The authenticated bridge remains the fallback on popup open. Realtime is
-    // opportunistic only when a valid web session is available.
-  }
+  } catch (_) {}
 }
 
 async function handleStart() {
+  if (startInFlight) return;
   const text = recordText.value.trim();
   if (!text) {
     setStatus(copy.enterTitle, true);
@@ -343,10 +336,26 @@ async function handleStart() {
     return;
   }
 
+  const previousSnapshot = snapshot ? { ...snapshot } : null;
+  const optimisticSnapshot = {
+    ...(snapshot ?? {}),
+    active: true,
+    title: text,
+    categoryPath: '',
+    categoryColor: '',
+    startTimeUtc: new Date().toISOString(),
+    recordId: `pending-${Date.now()}`,
+    updatedAtUtc: new Date().toISOString(),
+  };
+
+  startInFlight = true;
   startRecord.disabled = true;
   stopRecord.disabled = true;
   startLabel.textContent = copy.starting;
   setStatus('');
+  renderSnapshot(optimisticSnapshot);
+  recordText.value = '';
+  await chrome.storage.local.set({ lifeOsRecordDraft: '' });
 
   try {
     const response = await sendRuntimeMessage({
@@ -355,12 +364,17 @@ async function handleStart() {
     });
 
     if (!response?.ok) {
+      if (previousSnapshot) {
+        renderSnapshot(previousSnapshot);
+      } else {
+        renderSnapshot({ active: false });
+      }
+      recordText.value = text;
+      await chrome.storage.local.set({ lifeOsRecordDraft: text });
       setStatus(response?.authRequired ? copy.auth : copy.failed, true);
       return;
     }
 
-    await chrome.storage.local.set({ lifeOsRecordDraft: '' });
-    recordText.value = '';
     if (response.snapshot && typeof response.snapshot === 'object') {
       renderSnapshot(response.snapshot);
     } else {
@@ -368,8 +382,16 @@ async function handleStart() {
     }
     setStatus('');
   } catch (_) {
+    if (previousSnapshot) {
+      renderSnapshot(previousSnapshot);
+    } else {
+      renderSnapshot({ active: false });
+    }
+    recordText.value = text;
+    await chrome.storage.local.set({ lifeOsRecordDraft: text });
     setStatus(copy.failed, true);
   } finally {
+    startInFlight = false;
     startRecord.disabled = false;
     stopRecord.disabled = false;
     startLabel.textContent = copy.start;
