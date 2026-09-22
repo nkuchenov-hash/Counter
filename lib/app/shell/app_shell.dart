@@ -116,6 +116,8 @@ mixin ShellDashboardBase on State<LifeOSDashboard> {
   StreamSubscription<String?>? notificationSub;
   StreamSubscription<List<CategoryRule>>? categoryRulesSub;
   StreamSubscription<void>? browserExtensionRecordSub;
+  Timer? browserExtensionCommandPollTimer;
+  bool browserExtensionCommandPollInFlight = false;
 
   final ShellLayoutController shellLayout = ShellLayoutController();
   final SpeechEngineController speechEngine = SpeechEngineController();
