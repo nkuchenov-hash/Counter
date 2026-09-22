@@ -87,50 +87,68 @@ extension RecordCacheProjectionExtension on DatabaseService {
   }
 
   /// Per-call **async\*** stream: one subscription per [TimelinePage] (recreated on date change only).
-  /// Mutations update [_cachedFlatRecords] then [_timeUpdateController]; this stream **awaits** that
-  /// broadcast and yields [nextPayload] — no intentional empty “reset” event before the new list.
-  /// Do not tie this to [fetchRecords] re-entry in a way that completes the stream between ticks.
+  ///
+  /// The stream is intentionally long-lived even when a page subscribes before
+  /// database/profile readiness. Startup must never turn that early subscription
+  /// into a dead stream that only recovers after navigation. Likewise, transient
+  /// projection errors keep the last visible state instead of emitting a fake
+  /// empty state/flicker.
   Stream<List<Map<String, dynamic>>> recordsStream(DateTime date) async* {
-    if (!_isInitialized || !(currentProfileId?.isNotEmpty ?? false)) {
-      yield [];
-      return;
-    }
-    if (_cachedFlatRecords.isEmpty) {
-      unawaited(_fetchRecordsIntoCache(forceNetwork: true));
-    }
+    bool isReady() =>
+        _isInitialized && (currentProfileId?.isNotEmpty ?? false);
 
     List<Map<String, dynamic>> nextPayload() {
+      return peekTimelineRecordsForDate(date);
+    }
+
+    String? lastStreamSig;
+    var hasEmitted = false;
+
+    Future<List<Map<String, dynamic>>?> payloadWhenReady() async {
+      if (!isReady()) return null;
+      if (_cachedFlatRecords.isEmpty) {
+        try {
+          await _fetchRecordsIntoCache(forceNetwork: true);
+        } catch (e, st) {
+          DatabaseService._log('recordsStream initial catch-up: $e');
+          if (kDebugMode) {
+            debugPrint(st.toString());
+          }
+        }
+      }
+      if (!isReady()) return null;
       try {
-        return peekTimelineRecordsForDate(date);
+        return nextPayload();
       } catch (e, st) {
         DatabaseService._log('recordsStream nextPayload: $e');
         if (kDebugMode) {
           debugPrint(st.toString());
         }
-        return <Map<String, dynamic>>[];
+        return null;
       }
     }
 
-    String? lastStreamSig;
-    try {
-      final first = nextPayload();
+    final first = await payloadWhenReady();
+    if (first != null) {
       lastStreamSig = _timelineRecordsStreamDistinctSignature(first);
+      hasEmitted = true;
       yield first;
-    } catch (_) {
-      yield <Map<String, dynamic>>[];
     }
+
     await for (final _ in timeUpdates) {
-      try {
-        final next = nextPayload();
-        final sig = _timelineRecordsStreamDistinctSignature(next);
-        if (lastStreamSig == sig) {
-          continue;
-        }
-        lastStreamSig = sig;
-        yield next;
-      } catch (_) {
-        yield <Map<String, dynamic>>[];
+      final next = await payloadWhenReady();
+      if (next == null) {
+        // Keep the existing page state. Never turn a transient startup/network
+        // condition into a visible empty-state regression.
+        continue;
       }
+      final sig = _timelineRecordsStreamDistinctSignature(next);
+      if (hasEmitted && lastStreamSig == sig) {
+        continue;
+      }
+      lastStreamSig = sig;
+      hasEmitted = true;
+      yield next;
     }
   }
 }
@@ -179,6 +197,11 @@ extension RecordBrainTestBridge on DatabaseService {
   @visibleForTesting
   void debugSeedPendingStartRecordForTest(Map<String, dynamic> timelineRow) {
     _optimisticPendingStartRecordMap = Map<String, dynamic>.from(timelineRow);
+  }
+
+  @visibleForTesting
+  void debugNotifyTimelineForTest() {
+    _notifyTimelineAfterRecordCacheMutation();
   }
 
   @visibleForTesting
