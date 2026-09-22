@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:counter/core/shell_adaptive.dart';
 import 'package:counter/shared/diagnostics/performance/rebuild_metrics.dart';
 import 'package:counter/shared/diagnostics/performance/runtime_flags.dart';
+import 'package:counter/core/widgets/app_loading.dart';
 import 'package:counter/core/widgets/app_state_views.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
@@ -84,7 +85,18 @@ class TimelineDayCardListState extends State<TimelineDayCardList>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    final db = DatabaseService.instance;
     final recordMaps = _recordMaps();
+
+    // Online cold start is not an empty state. Until the first authoritative
+    // records snapshot arrives, keep the active page in a stable loading state
+    // instead of flashing "no records" and then replacing it moments later.
+    if (recordMaps.isEmpty &&
+        widget.isActive &&
+        !db.recordsSnapshotReadyForDisplay) {
+      return const AppLoading();
+    }
+
     if (widget.showStatsView) {
       if (recordMaps.isEmpty) {
         return EmptyStatePlaceholder(
@@ -168,7 +180,7 @@ class TimelineLazyRecordListState extends State<TimelineLazyRecordList> {
   void initState() {
     super.initState();
     if (_needsActiveOverlay) {
-      _activeSub = DatabaseService.instance.activeRecordStream.listen((active) {
+      _activeSub = DatabaseService.instance.activeRecordLiveStream.listen((active) {
         if (!mounted) return;
         String? otherDay;
         if (active != null) {
