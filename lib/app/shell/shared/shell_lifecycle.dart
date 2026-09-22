@@ -96,6 +96,7 @@ mixin ShellLifecycle
     unawaited(speechEngine.dispose());
     SleepForegroundReconcileService.instance.stop();
     deviceLocalMidnightWatchTimer?.cancel();
+    browserExtensionCommandPollTimer?.cancel();
     notificationSub?.cancel();
     categoryRulesSub?.cancel();
     browserExtensionRecordSub?.cancel();
