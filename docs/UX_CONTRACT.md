@@ -10,6 +10,18 @@ This document defines how Life OS behaves when people interact with it. It is th
 - Loading, empty, disabled, and offline states are first-class states, not afterthought text.
 - Feature screens compose canonical components from `lib/core/widgets/` and approved shared feature widgets.
 
+## Instant Interaction / No-Glitch Law
+
+`docs/INSTANT_INTERACTION_CONTRACT.md` is mandatory for every shared-state or interactive UI change.
+
+- **A glitchy function is worse than an absent function.** Lag, flicker, stale data, false empty state, stale edit rollback, duplicate state, frozen UI, or a requirement to navigate/refresh/relaunch before current state appears is a **P0 regression**.
+- An already-open screen must react to local cache/realtime state immediately; page switching must never be the mechanism that makes received data visible.
+- Shared domain state is event-driven. Periodic polling may update a clock/progress label but must not be the mechanism that discovers record/plan/category/tag/profile state changes.
+- The newest user intent wins. Older autosave completions, network responses, realtime echoes, cache hydration, or background reconciliation must never overwrite a newer local edit.
+- Online cold start must never present unknown state as a successful empty state. Preserve known cached content; otherwise use the canonical loading state until the first authoritative snapshot resolves.
+- Reconnect/resume must converge automatically without user action; missed realtime events require one coalesced authoritative catch-up.
+- Code merge, green CI, and deployment are not by themselves end-to-end proof. Shared-state work is not complete until the applicable acceptance matrix in `docs/INSTANT_INTERACTION_CONTRACT.md` passes.
+
 ## Tap Feedback
 
 - Tappable controls must have an obvious pressed/selected/disabled state.
@@ -120,7 +132,7 @@ This document defines how Life OS behaves when people interact with it. It is th
 
 ## Performance & Responsiveness Contract
 
-Performance, responsiveness, and stability are **P0 correctness**, not polish. See `docs/ARCHITECTURE.md` § **PERFORMANCE_KILL_SWITCH_LAW**.
+Performance, responsiveness, and stability are **P0 correctness**, not polish. See `docs/ARCHITECTURE.md` § **PERFORMANCE_KILL_SWITCH_LAW** and `docs/INSTANT_INTERACTION_CONTRACT.md`.
 
 - Every user action must produce **visible feedback within ~100ms**.
 - Local/optimistic UI must update **before** network I/O for record/plan mutations.
@@ -147,6 +159,7 @@ Performance, responsiveness, and stability are **P0 correctness**, not polish. S
 
 - **Save is a local commit button**, not a network gate. Valid Save applies optimistic Brain/cache/UI **immediately**, shows **Changes saved** (or a specific validation error), and closes the sheet without waiting for PocketBase.
 - **Explicit Save beats autosave:** `EditSheetAutosaveGate.flush(force: true)` always runs the latest draft sync and cancels pending debounce; autosave debounce must read the latest controller state at fire time, not a stale captured draft.
+- **Revision safety:** completion of an older autosave must never mark a newer pending edit clean; rapid rename/edit must converge to the newest draft without another user action.
 - **Network is background:** PocketBase PATCH runs after local apply; retriable failures keep optimistic UI and enqueue outbox; non-retriable failures roll back once with one error snack.
 - **Validation feedback:** Empty title or missing required times show an immediate localized warning — never a silent no-op tap.
 
@@ -190,5 +203,5 @@ Performance, responsiveness, and stability are **P0 correctness**, not polish. S
 - The popup follows LIFE OS design tokens and canonical geometry: app/card surfaces from `AppColors`, 18px card radius, 12px control radius, monochrome primary actions, semantic error color for Stop, and data-driven category color only as the running-card accent.
 - The extension never stores PocketBase credentials and never calls PocketBase directly. When needed it opens an inactive authenticated LIFE OS web bridge tab; the web shell executes the command after normal auth/profile bootstrap and publishes only a bounded running-record snapshot back to browser-local storage.
 - Browser requests carry unique IDs and successful requests are deduped. A temporary bridge tab must stay alive until the canonical primary-record network chain has completed and the resulting running state is confirmed.
-- Browser-local snapshots are **render-only cache**. Opening the popup must always trigger a fresh `bridge_sync` through the authenticated web app; an open LIFE OS tab's stored snapshot must never suppress that canonical refresh. While the popup remains open, it refreshes the canonical current-record state periodically and applies pushed snapshots without blocking the local elapsed timer.
+- Browser-local snapshots are **render-only cache**. Opening the popup must always trigger a fresh `bridge_sync` through the authenticated web app; an open LIFE OS tab's stored snapshot must never suppress that canonical refresh. While the popup remains open, shared record state must arrive event-driven without an application-imposed polling delay; a local elapsed timer may tick independently.
 - Bridge setup and request consumption run after the first frame and must not block normal LIFE OS startup.
