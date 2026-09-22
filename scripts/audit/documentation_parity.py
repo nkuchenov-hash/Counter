@@ -54,6 +54,7 @@ PATH_PREFIXES = (
     "macos/",
     "installer/",
     "server/",
+    "pb_hooks/",
     "pb_migrations/",
     "igropoisk/",
     "test/",
@@ -224,12 +225,62 @@ def check_semantic_contract_drift() -> list[str]:
     return issues
 
 
+def check_sleep_contract_parity() -> list[str]:
+    """Keep code-facing sleep docs aligned with the Xiaomi production contract."""
+    issues: list[str] = []
+    required: dict[Path, tuple[str, ...]] = {
+        ROOT / "docs" / "ARCHITECTURE.md": (
+            "SERVER_SLEEP_SYNC_LAW",
+            "Xiaomi Health cloud is the primary production source",
+            "every **15 minutes regardless of configured morning time**",
+            "docs/SERVER_SLEEP_SYNC_DEPLOY.md",
+        ),
+        ROOT / "docs" / "DATA_MAP.md": (
+            "Server sleep synchronization",
+            "/app/v1/relatives/get_aggregated_data",
+            "no morning-time gate",
+            "≥60% shorter-interval overlap dedupe",
+        ),
+        ROOT / "docs" / "POCKETBASE_MANIFEST.md": (
+            "Xiaomi Cloud is the primary production source",
+            "Xiaomi is the active primary production provider",
+            "must not gate missing-current-day Xiaomi sync",
+            "docs/SERVER_SLEEP_SYNC_DEPLOY.md",
+        ),
+        ROOT / "docs" / "APP_STRUCTURE.md": (
+            "health/health_sleep_policy.dart",
+            "health/health_sleep_sync_service.dart",
+            "health/sleep_foreground_reconcile_service.dart",
+            "health/cloud_sleep_sync_service.dart",
+        ),
+        ROOT / "docs" / "SERVER_SLEEP_SYNC_DEPLOY.md": (
+            "Xiaomi Health cloud",
+            "/app/v1/relatives/get_latest_data",
+            "every **15 minutes**",
+            "Do not wait for a configured morning clock time",
+            "60% of the shorter interval",
+        ),
+    }
+    for path, tokens in required.items():
+        if not path.exists():
+            issues.append(f"SLEEP_CONTRACT_DOC_MISSING {path.relative_to(ROOT).as_posix()}")
+            continue
+        body = path.read_text(encoding="utf-8")
+        for token in tokens:
+            if token not in body:
+                issues.append(
+                    f"SLEEP_CONTRACT_DOC_DRIFT {path.relative_to(ROOT).as_posix()} -> {token}"
+                )
+    return issues
+
+
 def main() -> int:
     issues = (
         check_explicit_references()
         + check_app_structure_reverse_manifest()
         + check_detailed_structure_exact_manifest()
         + check_semantic_contract_drift()
+        + check_sleep_contract_parity()
     )
     if issues:
         print("documentation_parity: FAIL")
