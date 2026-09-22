@@ -2,11 +2,11 @@
 
 **Not architecture law.** This file lists which repo docs to upload into Project Knowledge (max 25). Current governing docs live in git; use this as the upload manifest only.
 
-**Pack count:** 15 documents (≤25 limit)
+**Pack count:** 14 documents (≤25 limit)
 
 ---
 
-## Upload these 15 files
+## Upload these 14 files
 
 | # | Path | Topic |
 | :---: | :--- | :--- |
@@ -15,16 +15,15 @@
 | 3 | `CHANGELOG.md` | Shipped history |
 | 4 | `docs/APP_STRUCTURE.md` | Concise structure map |
 | 5 | `docs/APP_STRUCTURE_DETAILED.md` | Bilingual per-file guide |
-| 6 | `docs/ARCHITECTURE.md` | Iron Laws, data flow |
-| 7 | `docs/UX_CONTRACT.md` | Interaction behavior |
-| 8 | `docs/INSTANT_INTERACTION_CONTRACT.md` | P0 instant UI, no-glitch, cross-client convergence and acceptance law |
-| 9 | `docs/DATA_MAP.md` | Field names, business IDs |
-| 10 | `docs/POCKETBASE_MANIFEST.md` | PB collections, relations |
-| 11 | `docs/DESIGN_SYSTEM.md` | Design system contract |
-| 12 | `docs/reports/DESIGN_SYSTEM_INVENTORY.md` | Component inventory / V7 debt |
-| 13 | `docs/DEPLOY.md` | Web deploy, auth admin, Windows installer |
-| 14 | `docs/ROADMAP.md` | Current priority / status |
-| 15 | `docs/reports/FINAL_STRUCTURE_PARITY_AND_DOC_CLEANUP_2026-07-03.md` | Structure parity proof, removed-docs log |
+| 6 | `docs/ARCHITECTURE.md` | Iron Laws, data flow, Instant Convergence / No-Glitch Law |
+| 7 | `docs/UX_CONTRACT.md` | Interaction behavior and mandatory shared-state acceptance gate |
+| 8 | `docs/DATA_MAP.md` | Field names, business IDs |
+| 9 | `docs/POCKETBASE_MANIFEST.md` | PB collections, relations |
+| 10 | `docs/DESIGN_SYSTEM.md` | Design system contract |
+| 11 | `docs/reports/DESIGN_SYSTEM_INVENTORY.md` | Component inventory / V7 debt |
+| 12 | `docs/DEPLOY.md` | Web deploy, auth admin, Windows installer |
+| 13 | `docs/ROADMAP.md` | Current priority / status |
+| 14 | `docs/reports/FINAL_STRUCTURE_PARITY_AND_DOC_CLEANUP_2026-07-03.md` | Structure parity proof, removed-docs log |
 
 ---
 
@@ -57,8 +56,8 @@ Earlier parity pass already removed intermediate Pass 3–4D reports, lockdown a
 
 ## Confirmation
 
-- One source of truth per topic in the 15-doc pack
-- `docs/INSTANT_INTERACTION_CONTRACT.md` is mandatory project knowledge for any shared-state/UI change
+- One source of truth per topic in the 14-doc pack
+- Instant/no-glitch acceptance law is embedded directly in `docs/ARCHITECTURE.md` + `docs/UX_CONTRACT.md`
 - No duplicate Russian structure guide
 - No external sync / re-upload instructions
 - Architecture decomposition complete; pack is docs-only hygiene
