@@ -1,22 +1,20 @@
 const LIFE_OS_BASE = 'https://nkuchenov-hash.github.io/Counter/';
 const LIFE_OS_MATCH = 'https://nkuchenov-hash.github.io/Counter/*';
 const POCKETBASE_BASE = 'https://217-114-0-201.sslip.io';
+const BRIDGE_VERSION = 3;
 const MAX_TEXT_LENGTH = 1600;
 const BRIDGE_TIMEOUT_MS = 12000;
-const LIVE_COMMAND_ACK_TIMEOUT_MS = 5000;
+const LIVE_COMMAND_ACK_TIMEOUT_MS = 6000;
 const BRIDGE_SETTLE_TIMEOUT_MS = 90000;
 const BRIDGE_POLL_MS = 250;
 const OPEN_TAB_SNAPSHOT_WAIT_MS = 2200;
-const BRIDGE_COMMAND_KEY = 'browser_extension_command_v3';
-const BRIDGE_SNAPSHOT_KEY = 'browser_extension_record_snapshot_v2';
 
 let refreshPromise = null;
+let mutationPromise = null;
 let realtimeAuthSnapshot = null;
 
 function requestId() {
-  if (globalThis.crypto?.randomUUID) {
-    return globalThis.crypto.randomUUID();
-  }
+  if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();
   return `life-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
@@ -31,9 +29,7 @@ function bridgeUrl(action, id, text = '') {
   url.searchParams.set('life_request', id);
   url.searchParams.set('life_bridge', '1');
   const cleaned = cleanText(text);
-  if (cleaned) {
-    url.searchParams.set('life_text', cleaned);
-  }
+  if (cleaned) url.searchParams.set('life_text', cleaned);
   return url.toString();
 }
 
@@ -125,36 +121,36 @@ async function readBridgeData(tabId) {
   return data;
 }
 
-async function writeBridgeCommand(tabId, command) {
+function snapshotFromBridgeData(data) {
+  const responseSnapshot = data?.response?.snapshot;
+  if (responseSnapshot && typeof responseSnapshot === 'object') {
+    return responseSnapshot;
+  }
+  return data?.snapshot && typeof data.snapshot === 'object'
+    ? data.snapshot
+    : null;
+}
+
+function supportsLiveUrlBridge(data) {
+  const snapshot = snapshotFromBridgeData(data);
+  return Number(snapshot?.bridgeVersion ?? 0) >= BRIDGE_VERSION;
+}
+
+async function putUrlCommandOnTab(tabId, action, id, text = '') {
   const results = await chrome.scripting.executeScript({
     target: { tabId },
     world: 'MAIN',
-    args: [command, BRIDGE_COMMAND_KEY, BRIDGE_SNAPSHOT_KEY],
-    func: (payload, commandSuffix, snapshotSuffix) => {
+    args: [action, id, cleanText(text)],
+    func: (commandAction, requestIdValue, commandText) => {
       try {
-        let prefix = 'flutter.';
-        for (let i = 0; i < localStorage.length; i += 1) {
-          const key = localStorage.key(i);
-          if (!key) continue;
-          if (key === snapshotSuffix) {
-            prefix = '';
-            break;
-          }
-          if (key.endsWith(snapshotSuffix)) {
-            prefix = key.slice(0, key.length - snapshotSuffix.length);
-            break;
-          }
-        }
-
-        // shared_preferences_web stores strings as JSON-encoded string values.
-        // The inner JSON is the command object; the outer JSON preserves the
-        // SharedPreferences String type so Dart getString() can read it after
-        // reload().
-        const commandString = JSON.stringify(payload);
-        localStorage.setItem(
-          `${prefix}${commandSuffix}`,
-          JSON.stringify(commandString),
-        );
+        const url = new URL(location.href);
+        url.searchParams.set('life_source', 'browser_extension');
+        url.searchParams.set('life_action', commandAction);
+        url.searchParams.set('life_request', requestIdValue);
+        url.searchParams.set('life_bridge', '1');
+        if (commandText) url.searchParams.set('life_text', commandText);
+        else url.searchParams.delete('life_text');
+        history.replaceState(history.state, '', url.toString());
         return true;
       } catch (_) {
         return false;
@@ -162,6 +158,33 @@ async function writeBridgeCommand(tabId, command) {
     },
   });
   return results?.[0]?.result === true;
+}
+
+async function clearUrlCommandFromTab(tabId, id) {
+  try {
+    await chrome.scripting.executeScript({
+      target: { tabId },
+      world: 'MAIN',
+      args: [id],
+      func: (requestIdValue) => {
+        try {
+          const url = new URL(location.href);
+          if (url.searchParams.get('life_request') !== requestIdValue) return;
+          for (const key of [
+            'life_source',
+            'life_action',
+            'life_request',
+            'life_bridge',
+            'life_text',
+            'life_target',
+          ]) {
+            url.searchParams.delete(key);
+          }
+          history.replaceState(history.state, '', url.toString());
+        } catch (_) {}
+      },
+    });
+  } catch (_) {}
 }
 
 function sleep(ms) {
@@ -183,21 +206,20 @@ async function readCachedSnapshot() {
 async function broadcastSnapshot(snapshot) {
   if (!snapshot || typeof snapshot !== 'object') return;
   try {
-    await chrome.runtime.sendMessage({
-      type: 'lifeOsStateUpdated',
-      snapshot,
-    });
+    await chrome.runtime.sendMessage({ type: 'lifeOsStateUpdated', snapshot });
   } catch (_) {}
 }
 
-function snapshotFromBridgeData(data) {
-  const responseSnapshot = data?.response?.snapshot;
-  if (responseSnapshot && typeof responseSnapshot === 'object') {
-    return responseSnapshot;
-  }
-  return data?.snapshot && typeof data.snapshot === 'object'
-    ? data.snapshot
-    : null;
+async function broadcastCommandFailure(response, snapshot) {
+  try {
+    await chrome.runtime.sendMessage({
+      type: 'lifeOsCommandFailed',
+      action: String(response?.action ?? ''),
+      requestId: String(response?.requestId ?? ''),
+      error: response?.error ? String(response.error) : 'command_not_confirmed',
+      snapshot,
+    });
+  } catch (_) {}
 }
 
 async function readSnapshotFromOpenTab() {
@@ -270,6 +292,16 @@ async function closeBridgeTab(tabId) {
   } catch (_) {}
 }
 
+function bridgeResult(data) {
+  const response = data?.response ?? {};
+  return {
+    ok: response.ok === true,
+    pending: response.settled === false,
+    error: response.error ? String(response.error) : null,
+    snapshot: snapshotFromBridgeData(data),
+  };
+}
+
 async function settleBridgePage(tabId, id, { closeWhenDone = false } = {}) {
   try {
     const data = await waitForBridgeResponse(tabId, id, {
@@ -281,68 +313,51 @@ async function settleBridgePage(tabId, id, { closeWhenDone = false } = {}) {
       await cacheSnapshot(snapshot);
       await broadcastSnapshot(snapshot);
     }
-  } catch (_) {
-    // The local start was already acknowledged. A slow/offline network chain
-    // must not keep a temporary bridge tab around forever.
-  } finally {
-    if (closeWhenDone) {
-      await closeBridgeTab(tabId);
+    if (data?.response?.ok !== true) {
+      await broadcastCommandFailure(data?.response, snapshot);
     }
+  } catch (_) {
+    // Early local acceptance has already been returned. A timed-out settlement
+    // is reconciled the next time current state is refreshed.
+  } finally {
+    if (closeWhenDone) await closeBridgeTab(tabId);
   }
 }
 
-function bridgeResult(data) {
-  const response = data?.response ?? {};
-  const snapshot = snapshotFromBridgeData(data);
-  return {
-    ok: response.ok === true,
-    pending: response.settled === false,
-    error: response.error ? String(response.error) : null,
-    snapshot,
-  };
-}
-
-async function tryOpenTabCommand(action, id, text = '') {
+async function tryLiveMutation(action, id, text = '') {
   const tabs = await findLifeOsTabs();
   for (const tab of tabs) {
     try {
-      const written = await writeBridgeCommand(tab.id, {
-        requestId: id,
-        action,
-        text: cleanText(text),
-        createdAtUtc: new Date().toISOString(),
-      });
-      if (!written) continue;
+      const before = await readBridgeData(tab.id);
+      if (!supportsLiveUrlBridge(before)) continue;
+      const installed = await putUrlCommandOnTab(tab.id, action, id, text);
+      if (!installed) continue;
 
-      const data = await waitForBridgeResponse(tab.id, id, {
-        timeoutMs: LIVE_COMMAND_ACK_TIMEOUT_MS,
-      });
-      rememberRealtimeAuth(data.auth);
-      const result = bridgeResult(data);
-      if (result.pending && result.ok) {
-        void settleBridgePage(tab.id, id, { closeWhenDone: false });
+      try {
+        const data = await waitForBridgeResponse(tab.id, id, {
+          timeoutMs: LIVE_COMMAND_ACK_TIMEOUT_MS,
+        });
+        const result = bridgeResult(data);
+        await clearUrlCommandFromTab(tab.id, id);
+        if (result.pending && result.ok) {
+          void settleBridgePage(tab.id, id, { closeWhenDone: false });
+        }
+        return result;
+      } catch (_) {
+        await clearUrlCommandFromTab(tab.id, id);
+        // The fallback uses the same request id. If this tab accepted the
+        // command late, shared request dedupe prevents a duplicate mutation.
       }
-      return result;
-    } catch (_) {
-      // Fall through to the hidden-tab bootstrap. The same request id is used,
-      // so if the live tab processes the command late, Brain deduplication
-      // prevents a duplicate record.
-    }
+    } catch (_) {}
   }
   return null;
 }
 
-async function runBridgeAction(action, text = '') {
-  const id = requestId();
-
-  const liveResult = await tryOpenTabCommand(action, id, text);
-  if (liveResult) return liveResult;
-
+async function runHiddenBridgeAction(action, id, text = '') {
   const tab = await chrome.tabs.create({
     url: bridgeUrl(action, id, text),
     active: false,
   });
-
   if (!Number.isInteger(tab.id)) {
     throw new Error('Could not create LIFE OS bridge tab.');
   }
@@ -351,10 +366,7 @@ async function runBridgeAction(action, text = '') {
     const data = await waitForBridgeResponse(tab.id, id);
     rememberRealtimeAuth(data.auth);
     const result = bridgeResult(data);
-
     if (result.pending && result.ok) {
-      // Return the optimistic canonical handoff to the popup now, but keep
-      // this background bridge page alive until Brain's network chain settles.
       void settleBridgePage(tab.id, id, { closeWhenDone: true });
     } else {
       await closeBridgeTab(tab.id);
@@ -366,32 +378,50 @@ async function runBridgeAction(action, text = '') {
   }
 }
 
+async function runMutationBridgeAction(action, text = '') {
+  if (mutationPromise) {
+    return { ok: false, error: 'record_mutation_busy', snapshot: null };
+  }
+
+  mutationPromise = (async () => {
+    const id = requestId();
+    const liveResult = await tryLiveMutation(action, id, text);
+    if (liveResult) return liveResult;
+    return runHiddenBridgeAction(action, id, text);
+  })();
+
+  try {
+    return await mutationPromise;
+  } finally {
+    mutationPromise = null;
+  }
+}
+
 async function refreshLifeOsStateInBackground() {
   if (refreshPromise) return refreshPromise;
-
   refreshPromise = (async () => {
     try {
-      const result = await runBridgeAction('bridge_sync');
+      // State reconciliation uses its own temporary tab so it can never
+      // overwrite a live start/stop command in the user's open LIFE OS tab.
+      const result = await runHiddenBridgeAction('bridge_sync', requestId());
       if (result.ok && result.snapshot) {
         await cacheSnapshot(result.snapshot);
         await broadcastSnapshot(result.snapshot);
         return result.snapshot;
       }
     } catch (_) {
-      // Retain the last known projection instead of blanking a usable popup.
+      // Retain last known state when network/auth reconciliation is unavailable.
     } finally {
       refreshPromise = null;
     }
     return null;
   })();
-
   return refreshPromise;
 }
 
 async function getLifeOsState() {
   const openSnapshot = await readSnapshotFromOpenTab();
   const cached = openSnapshot ?? await readCachedSnapshot();
-
   if (cached) {
     refreshLifeOsStateInBackground().catch(() => {});
     return { ok: true, snapshot: cached, refreshing: true };
@@ -399,20 +429,10 @@ async function getLifeOsState() {
 
   try {
     const fresh = await refreshLifeOsStateInBackground();
-    if (fresh) {
-      return { ok: true, snapshot: fresh, refreshing: false };
-    }
-    return {
-      ok: false,
-      authRequired: true,
-      error: 'LIFE OS is not ready.',
-    };
+    if (fresh) return { ok: true, snapshot: fresh, refreshing: false };
+    return { ok: false, authRequired: true, error: 'LIFE OS is not ready.' };
   } catch (error) {
-    return {
-      ok: false,
-      authRequired: true,
-      error: String(error),
-    };
+    return { ok: false, authRequired: true, error: String(error) };
   }
 }
 
@@ -422,9 +442,7 @@ async function getLifeOsRealtimeConfig() {
     try {
       const data = await readBridgeData(tab.id);
       const auth = rememberRealtimeAuth(data?.auth);
-      if (auth) {
-        return { ok: true, baseUrl: POCKETBASE_BASE, ...auth };
-      }
+      if (auth) return { ok: true, baseUrl: POCKETBASE_BASE, ...auth };
     } catch (_) {}
   }
 
@@ -433,12 +451,11 @@ async function getLifeOsRealtimeConfig() {
   }
 
   try {
-    await runBridgeAction('bridge_sync');
+    await runHiddenBridgeAction('bridge_sync', requestId());
   } catch (_) {}
   if (realtimeAuthSnapshot) {
     return { ok: true, baseUrl: POCKETBASE_BASE, ...realtimeAuthSnapshot };
   }
-
   return {
     ok: false,
     authRequired: true,
@@ -450,19 +467,15 @@ async function warmSnapshotFromTab(tabId) {
   if (!Number.isInteger(tabId)) return;
   try {
     const snapshot = await waitForSnapshotFromTab(tabId, 3000);
-    if (snapshot) {
-      await broadcastSnapshot(snapshot);
-    }
+    if (snapshot) await broadcastSnapshot(snapshot);
   } catch (_) {}
 }
 
 async function startRecord(text) {
   const cleaned = cleanText(text);
-  if (!cleaned) {
-    return { ok: false, error: 'Record title is empty.' };
-  }
+  if (!cleaned) return { ok: false, error: 'Record title is empty.' };
   try {
-    const result = await runBridgeAction('start_record', cleaned);
+    const result = await runMutationBridgeAction('start_record', cleaned);
     if (result.ok && result.snapshot) {
       await cacheSnapshot(result.snapshot);
       await broadcastSnapshot(result.snapshot);
@@ -481,7 +494,7 @@ async function startRecord(text) {
 
 async function stopRecord() {
   try {
-    const result = await runBridgeAction('stop_record');
+    const result = await runMutationBridgeAction('stop_record');
     if (result.ok && result.snapshot) {
       await cacheSnapshot(result.snapshot);
       await broadcastSnapshot(result.snapshot);
@@ -508,25 +521,18 @@ chrome.runtime.onInstalled.addListener(async () => {
   });
 
   const tabs = await findLifeOsTabs();
-  for (const tab of tabs) {
-    warmSnapshotFromTab(tab.id).catch(() => {});
-  }
+  for (const tab of tabs) warmSnapshotFromTab(tab.id).catch(() => {});
 });
 
 chrome.contextMenus.onClicked.addListener((info, tab) => {
   if (info.menuItemId === 'life-os-start-selection') {
     const selected = cleanText(info.selectionText);
-    if (selected) {
-      void startRecord(selected);
-    }
+    if (selected) void startRecord(selected);
     return;
   }
-
   if (info.menuItemId === 'life-os-start-page') {
     const title = cleanText(tab?.title);
-    if (title) {
-      void startRecord(title);
-    }
+    if (title) void startRecord(title);
   }
 });
 
@@ -541,9 +547,7 @@ chrome.tabs.onActivated.addListener(({ tabId }) => {
 });
 
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-  if (!message || typeof message !== 'object') {
-    return false;
-  }
+  if (!message || typeof message !== 'object') return false;
 
   if (message.type === 'openLifeOs') {
     void openLifeOs()
@@ -551,33 +555,27 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       .catch((error) => sendResponse({ ok: false, error: String(error) }));
     return true;
   }
-
   if (message.type === 'getLifeOsState') {
     void getLifeOsState().then(sendResponse);
     return true;
   }
-
   if (message.type === 'getLifeOsRealtimeConfig') {
     void getLifeOsRealtimeConfig().then(sendResponse);
     return true;
   }
-
   if (message.type === 'refreshLifeOsState') {
     void refreshLifeOsStateInBackground()
       .then((snapshot) => sendResponse({ ok: snapshot != null, snapshot }))
       .catch((error) => sendResponse({ ok: false, error: String(error) }));
     return true;
   }
-
   if (message.type === 'startRecord') {
     void startRecord(message.text).then(sendResponse);
     return true;
   }
-
   if (message.type === 'stopRecord') {
     void stopRecord().then(sendResponse);
     return true;
   }
-
   return false;
 });
