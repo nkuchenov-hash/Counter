@@ -38,6 +38,13 @@ extension RecordCacheProjectionExtension on DatabaseService {
     return list;
   }
 
+  /// True once this app session has either completed an authoritative records
+  /// pull or is deliberately operating from offline/backoff cache. An online
+  /// cold start must not claim that an empty cache means "no records" before
+  /// the first server snapshot arrives.
+  bool get recordsSnapshotReadyForDisplay =>
+      _lastSuccessfulRecordsNetworkFetchAt != null || _pbHttpBackoffActive;
+
   /// Fingerprint for [recordsStream] — skips a [timeUpdates] tick when the day’s rows are visually unchanged.
   String _timelineRecordsStreamDistinctSignature(
     List<Map<String, dynamic>> rows,
@@ -147,6 +154,76 @@ extension RecordCacheProjectionExtension on DatabaseService {
         continue;
       }
       lastStreamSig = sig;
+      hasEmitted = true;
+      yield next;
+    }
+  }
+
+  Map<String, dynamic>? _activeRecordLiveSnapshot() {
+    final pending = _optimisticPendingStartRecordMap;
+    if (pending != null &&
+        pending['endTime'] == null &&
+        CategoryServiceExtension.isRecordMapActuallyRunning(pending)) {
+      final data = Map<String, dynamic>.from(pending);
+      final st = data['startTime'] as DateTime?;
+      final en = data['endTime'] as DateTime?;
+      if (st != null) data['startTimeDisplay'] = _profileWallFromUtc(st);
+      if (en != null) data['endTimeDisplay'] = _profileWallFromUtc(en);
+      return data;
+    }
+
+    final canonical = _canonicalPrimaryRunningFlatRow();
+    if (canonical == null) return null;
+    final data = Map<String, dynamic>.from(canonical);
+    if (data['endTime'] != null ||
+        !CategoryServiceExtension.isRecordMapActuallyRunning(data)) {
+      return null;
+    }
+    final st = data['startTime'] as DateTime?;
+    final en = data['endTime'] as DateTime?;
+    if (st != null) data['startTimeDisplay'] = _profileWallFromUtc(st);
+    if (en != null) data['endTimeDisplay'] = _profileWallFromUtc(en);
+    return data;
+  }
+
+  String _activeRecordLiveSignature(Map<String, dynamic>? row) {
+    if (row == null) return '<none>';
+    return <String>[
+      (row['record_id'] ?? '').toString().trim(),
+      (row['id'] ?? row['backendRestPathId'] ?? '').toString().trim(),
+      (row['title'] ?? '').toString(),
+      (row['status'] ?? '').toString().trim().toLowerCase(),
+      (row['startTime'] ?? row['start_time'] ?? '').toString(),
+      (row['endTime'] ?? row['end_time'] ?? '').toString(),
+      (row['categoryId'] ?? row['category_id'] ?? '').toString(),
+    ].join('|');
+  }
+
+  /// Event-driven primary-running-record state for visible UI.
+  ///
+  /// Domain state changes are pushed by the same [timeUpdates] bus used by
+  /// Timeline cache mutations/realtime events. There is deliberately no
+  /// periodic polling here; a local clock widget may tick elapsed text on its
+  /// own without delaying state propagation.
+  Stream<Map<String, dynamic>?> get activeRecordLiveStream async* {
+    var hasEmitted = false;
+    String? lastSignature;
+
+    if (recordsSnapshotReadyForDisplay || _cachedFlatRecords.isNotEmpty) {
+      final first = _activeRecordLiveSnapshot();
+      lastSignature = _activeRecordLiveSignature(first);
+      hasEmitted = true;
+      yield first;
+    }
+
+    await for (final _ in timeUpdates) {
+      if (!recordsSnapshotReadyForDisplay && _cachedFlatRecords.isEmpty) {
+        continue;
+      }
+      final next = _activeRecordLiveSnapshot();
+      final sig = _activeRecordLiveSignature(next);
+      if (hasEmitted && sig == lastSignature) continue;
+      lastSignature = sig;
       hasEmitted = true;
       yield next;
     }
