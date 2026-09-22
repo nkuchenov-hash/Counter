@@ -60,3 +60,81 @@ jobs:
             git fetch --no-tags --prune origin main
             git diff --check "origin/main...HEAD"
           fi
+
+  browser-extension-web-build:
+    name: browser-extension-web-build
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect browser companion changes
+        id: browser
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          if git diff --quiet "$BASE_SHA...HEAD" -- \
+            browser_extension \
+            lib/app/shell/app_shell.dart \
+            lib/app/shell/shared/shell_browser_extension.dart \
+            lib/app/shell/shared/shell_lifecycle.dart; then
+            echo 'changed=false' >> "$GITHUB_OUTPUT"
+          else
+            echo 'changed=true' >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Validate browser companion contract markers
+        if: steps.browser.outputs.changed == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import json
+
+          manifest = json.loads(Path('browser_extension/manifest.json').read_text(encoding='utf-8'))
+          version = tuple(int(x) for x in manifest['version'].split('.'))
+          if version < (0, 2, 5):
+              raise SystemExit('Browser extension bridge fix requires manifest >= 0.2.5')
+
+          shell = Path('lib/app/shell/shared/shell_browser_extension.dart').read_text(encoding='utf-8')
+          worker = Path('browser_extension/service_worker.js').read_text(encoding='utf-8')
+          popup = Path('browser_extension/popup.js').read_text(encoding='utf-8')
+          required = {
+              'shell bridge v3': ('_browserExtensionBridgeVersion = 3', shell),
+              'tab-scoped URL command': ('putUrlCommandOnTab', worker),
+              'early accepted response': ("settled: false", shell),
+              'optimistic popup start': ('optimisticSnapshot', popup),
+              'stale snapshot guard': ('shouldIgnoreIncomingSnapshot', popup),
+          }
+          missing = [name for name, (needle, text) in required.items() if needle not in text]
+          if missing:
+              raise SystemExit('Browser companion contract markers missing: ' + ', '.join(missing))
+          PY
+
+      - name: Set up Flutter 3.41.6
+        if: steps.browser.outputs.changed == 'true'
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.6'
+          channel: stable
+
+      - name: Create env.dart
+        if: steps.browser.outputs.changed == 'true'
+        shell: bash
+        run: |
+          mkdir -p lib/core/env
+          printf '%s\n' 'abstract final class Env {' '  static const String placeholder = '\'''\'';' '}' > lib/core/env/env.dart
+
+      - name: Install Flutter dependencies
+        if: steps.browser.outputs.changed == 'true'
+        run: flutter pub get
+
+      - name: Build LIFE OS web with browser bridge
+        if: steps.browser.outputs.changed == 'true'
+        run: flutter build web --release --base-href="/Counter/" --no-tree-shake-icons --no-wasm-dry-run --pwa-strategy=none
