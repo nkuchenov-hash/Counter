@@ -6,8 +6,7 @@ const String _browserExtensionRecordSnapshotKey =
     'browser_extension_record_snapshot_v2';
 const String _browserExtensionResponseKey =
     'browser_extension_response_v2';
-const String _browserExtensionCommandKey =
-    'browser_extension_command_v3';
+const int _browserExtensionBridgeVersion = 3;
 const int _browserExtensionConsumedRequestLimit = 48;
 
 mixin ShellBrowserExtensionQuickAdd on ShellDashboardBase {
@@ -23,11 +22,11 @@ mixin ShellBrowserExtensionQuickAdd on ShellDashboardBase {
     });
     browserExtensionCommandPollTimer?.cancel();
     browserExtensionCommandPollTimer = Timer.periodic(
-      const Duration(milliseconds: 350),
-      (_) => unawaited(_pollBrowserExtensionCommand()),
+      const Duration(milliseconds: 250),
+      (_) => unawaited(_pollBrowserExtensionUrlCommand()),
     );
     await _publishBrowserExtensionRecordSnapshot();
-    await _pollBrowserExtensionCommand();
+    await _pollBrowserExtensionUrlCommand();
   }
 
   Future<Map<String, dynamic>> _browserExtensionRecordSnapshot() async {
@@ -41,6 +40,7 @@ mixin ShellBrowserExtensionQuickAdd on ShellDashboardBase {
     } catch (_) {}
 
     final base = <String, dynamic>{
+      'bridgeVersion': _browserExtensionBridgeVersion,
       'active': row != null,
       'updatedAtUtc': DateTime.now().toUtc().toIso8601String(),
       'locale': currentLocale.value,
@@ -74,6 +74,7 @@ mixin ShellBrowserExtensionQuickAdd on ShellDashboardBase {
   }) {
     final db = DatabaseService.instance;
     return <String, dynamic>{
+      'bridgeVersion': _browserExtensionBridgeVersion,
       'active': true,
       'title': title,
       'categoryPath': '',
@@ -117,6 +118,7 @@ mixin ShellBrowserExtensionQuickAdd on ShellDashboardBase {
       await prefs.setString(
         _browserExtensionResponseKey,
         jsonEncode(<String, dynamic>{
+          'bridgeVersion': _browserExtensionBridgeVersion,
           'requestId': requestId,
           'action': action,
           'ok': ok,
@@ -165,77 +167,32 @@ mixin ShellBrowserExtensionQuickAdd on ShellDashboardBase {
     await prefs.setStringList(_browserExtensionConsumedRequestIdsKey, next);
   }
 
-  Future<void> _pollBrowserExtensionCommand() async {
+  Future<void> _pollBrowserExtensionUrlCommand() async {
     if (!kIsWeb || browserExtensionCommandPollInFlight) return;
+    final params = Uri.base.queryParameters;
+    if (params['life_source'] != 'browser_extension') return;
+    final requestId = (params['life_request'] ?? '').trim();
+    final action = (params['life_action'] ?? '').trim();
+    if (requestId.isEmpty || action.isEmpty) return;
+
     browserExtensionCommandPollInFlight = true;
     try {
       final prefs = await _browserExtensionPrefs();
       if (prefs == null) return;
-
-      // The extension writes directly to this origin's localStorage. Reload is
-      // required because SharedPreferences keeps an in-memory cache.
-      await prefs.reload();
-      final raw = prefs.getString(_browserExtensionCommandKey);
-      if (raw == null || raw.trim().isEmpty) return;
-
-      Map<String, dynamic>? command;
-      try {
-        final decoded = jsonDecode(raw);
-        if (decoded is Map) {
-          command = Map<String, dynamic>.from(decoded);
-        }
-      } catch (_) {}
-      if (command == null) {
-        await prefs.remove(_browserExtensionCommandKey);
-        return;
-      }
-
-      final requestId = (command['requestId'] ?? '').toString().trim();
-      final action = (command['action'] ?? '').toString().trim();
-      if (requestId.isEmpty || action.isEmpty) {
-        await prefs.remove(_browserExtensionCommandKey);
-        return;
-      }
-
       await _consumeBrowserExtensionCommand(
         prefs: prefs,
         requestId: requestId,
         action: action,
-        rawText: (command['text'] ?? '').toString(),
-        target: (command['target'] ?? '').toString(),
+        rawText: params['life_text'] ?? '',
+        target: params['life_target'] ?? '',
       );
-
-      // Do not erase a newer command that may have arrived while this one was
-      // being processed.
-      await prefs.reload();
-      final latestRaw = prefs.getString(_browserExtensionCommandKey);
-      if (latestRaw == raw) {
-        await prefs.remove(_browserExtensionCommandKey);
-      }
     } finally {
       browserExtensionCommandPollInFlight = false;
     }
   }
 
   Future<void> consumeBrowserExtensionQuickAddIfPresent() async {
-    if (!kIsWeb) return;
-
-    final params = Uri.base.queryParameters;
-    if (params['life_source'] != 'browser_extension') return;
-
-    final action = (params['life_action'] ?? '').trim();
-    final requestId = (params['life_request'] ?? '').trim();
-    if (action.isEmpty || requestId.isEmpty) return;
-
-    final prefs = await _browserExtensionPrefs();
-    if (prefs == null) return;
-    await _consumeBrowserExtensionCommand(
-      prefs: prefs,
-      requestId: requestId,
-      action: action,
-      rawText: params['life_text'] ?? '',
-      target: params['life_target'] ?? '',
-    );
+    await _pollBrowserExtensionUrlCommand();
   }
 
   Future<void> _consumeBrowserExtensionCommand({
@@ -319,9 +276,8 @@ mixin ShellBrowserExtensionQuickAdd on ShellDashboardBase {
           snapshot: optimisticSnapshot,
         );
 
-        // Do not block the command channel on PocketBase. Brain already made
-        // the canonical Highlander handoff locally. Finish persistence and
-        // authoritative reconciliation in the background.
+        // Brain already applied the local Highlander handoff. Do not keep the
+        // browser popup waiting for PocketBase; reconcile persistence later.
         unawaited(
           _settleBrowserExtensionStartRecord(
             requestId: requestId,
@@ -401,17 +357,12 @@ mixin ShellBrowserExtensionQuickAdd on ShellDashboardBase {
     required String recordId,
   }) async {
     final db = DatabaseService.instance;
-    var networkOk = true;
     try {
       await db.primaryRecordWriteNetworkChain;
-    } catch (_) {
-      networkOk = false;
-    }
+    } catch (_) {}
     try {
       await db.getRecords(forceNetwork: true);
-    } catch (_) {
-      networkOk = false;
-    }
+    } catch (_) {}
 
     final snapshot = await _browserExtensionRecordSnapshot();
     await _storeBrowserExtensionRecordSnapshot(snapshot);
@@ -420,9 +371,9 @@ mixin ShellBrowserExtensionQuickAdd on ShellDashboardBase {
     await _writeBrowserExtensionResponse(
       requestId: requestId,
       action: 'start_record',
-      ok: networkOk && confirmed,
+      ok: confirmed,
       settled: true,
-      error: networkOk && confirmed ? null : 'record_start_not_confirmed',
+      error: confirmed ? null : 'record_start_not_confirmed',
       snapshot: snapshot,
     );
   }
