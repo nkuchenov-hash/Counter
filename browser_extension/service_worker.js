@@ -3,9 +3,12 @@ const LIFE_OS_MATCH = 'https://nkuchenov-hash.github.io/Counter/*';
 const POCKETBASE_BASE = 'https://217-114-0-201.sslip.io';
 const MAX_TEXT_LENGTH = 1600;
 const BRIDGE_TIMEOUT_MS = 12000;
+const LIVE_COMMAND_ACK_TIMEOUT_MS = 5000;
 const BRIDGE_SETTLE_TIMEOUT_MS = 90000;
 const BRIDGE_POLL_MS = 250;
 const OPEN_TAB_SNAPSHOT_WAIT_MS = 2200;
+const BRIDGE_COMMAND_KEY = 'browser_extension_command_v3';
+const BRIDGE_SNAPSHOT_KEY = 'browser_extension_record_snapshot_v2';
 
 let refreshPromise = null;
 let realtimeAuthSnapshot = null;
@@ -122,6 +125,45 @@ async function readBridgeData(tabId) {
   return data;
 }
 
+async function writeBridgeCommand(tabId, command) {
+  const results = await chrome.scripting.executeScript({
+    target: { tabId },
+    world: 'MAIN',
+    args: [command, BRIDGE_COMMAND_KEY, BRIDGE_SNAPSHOT_KEY],
+    func: (payload, commandSuffix, snapshotSuffix) => {
+      try {
+        let prefix = 'flutter.';
+        for (let i = 0; i < localStorage.length; i += 1) {
+          const key = localStorage.key(i);
+          if (!key) continue;
+          if (key === snapshotSuffix) {
+            prefix = '';
+            break;
+          }
+          if (key.endsWith(snapshotSuffix)) {
+            prefix = key.slice(0, key.length - snapshotSuffix.length);
+            break;
+          }
+        }
+
+        // shared_preferences_web stores strings as JSON-encoded string values.
+        // The inner JSON is the command object; the outer JSON preserves the
+        // SharedPreferences String type so Dart getString() can read it after
+        // reload().
+        const commandString = JSON.stringify(payload);
+        localStorage.setItem(
+          `${prefix}${commandSuffix}`,
+          JSON.stringify(commandString),
+        );
+        return true;
+      } catch (_) {
+        return false;
+      }
+    },
+  });
+  return results?.[0]?.result === true;
+}
+
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -148,14 +190,25 @@ async function broadcastSnapshot(snapshot) {
   } catch (_) {}
 }
 
+function snapshotFromBridgeData(data) {
+  const responseSnapshot = data?.response?.snapshot;
+  if (responseSnapshot && typeof responseSnapshot === 'object') {
+    return responseSnapshot;
+  }
+  return data?.snapshot && typeof data.snapshot === 'object'
+    ? data.snapshot
+    : null;
+}
+
 async function readSnapshotFromOpenTab() {
   const tabs = await findLifeOsTabs();
   for (const tab of tabs) {
     try {
       const data = await readBridgeData(tab.id);
-      if (data?.snapshot && typeof data.snapshot === 'object') {
-        await cacheSnapshot(data.snapshot);
-        return data.snapshot;
+      const snapshot = snapshotFromBridgeData(data);
+      if (snapshot) {
+        await cacheSnapshot(snapshot);
+        return snapshot;
       }
     } catch (_) {}
   }
@@ -167,9 +220,10 @@ async function waitForSnapshotFromTab(tabId, timeoutMs = OPEN_TAB_SNAPSHOT_WAIT_
   while (Date.now() - started < timeoutMs) {
     try {
       const data = await readBridgeData(tabId);
-      if (data?.snapshot && typeof data.snapshot === 'object') {
-        await cacheSnapshot(data.snapshot);
-        return data.snapshot;
+      const snapshot = snapshotFromBridgeData(data);
+      if (snapshot) {
+        await cacheSnapshot(snapshot);
+        return snapshot;
       }
     } catch (_) {}
     await sleep(BRIDGE_POLL_MS);
@@ -193,8 +247,10 @@ async function waitForBridgeResponse(
         response.requestId === id;
       const settled = response?.settled !== false;
       if (matches && (!requireSettled || settled)) {
-        if (data.snapshot && typeof data.snapshot === 'object') {
-          await cacheSnapshot(data.snapshot);
+        const snapshot = snapshotFromBridgeData(data);
+        if (snapshot) {
+          await cacheSnapshot(snapshot);
+          data.snapshot = snapshot;
         }
         return data;
       }
@@ -214,26 +270,74 @@ async function closeBridgeTab(tabId) {
   } catch (_) {}
 }
 
-async function settleBridgeTab(tabId, id) {
+async function settleBridgePage(tabId, id, { closeWhenDone = false } = {}) {
   try {
     const data = await waitForBridgeResponse(tabId, id, {
       requireSettled: true,
       timeoutMs: BRIDGE_SETTLE_TIMEOUT_MS,
     });
-    if (data?.snapshot && typeof data.snapshot === 'object') {
-      await cacheSnapshot(data.snapshot);
-      await broadcastSnapshot(data.snapshot);
+    const snapshot = snapshotFromBridgeData(data);
+    if (snapshot) {
+      await cacheSnapshot(snapshot);
+      await broadcastSnapshot(snapshot);
     }
   } catch (_) {
     // The local start was already acknowledged. A slow/offline network chain
-    // must not leave the temporary bridge tab around forever.
+    // must not keep a temporary bridge tab around forever.
   } finally {
-    await closeBridgeTab(tabId);
+    if (closeWhenDone) {
+      await closeBridgeTab(tabId);
+    }
   }
+}
+
+function bridgeResult(data) {
+  const response = data?.response ?? {};
+  const snapshot = snapshotFromBridgeData(data);
+  return {
+    ok: response.ok === true,
+    pending: response.settled === false,
+    error: response.error ? String(response.error) : null,
+    snapshot,
+  };
+}
+
+async function tryOpenTabCommand(action, id, text = '') {
+  const tabs = await findLifeOsTabs();
+  for (const tab of tabs) {
+    try {
+      const written = await writeBridgeCommand(tab.id, {
+        requestId: id,
+        action,
+        text: cleanText(text),
+        createdAtUtc: new Date().toISOString(),
+      });
+      if (!written) continue;
+
+      const data = await waitForBridgeResponse(tab.id, id, {
+        timeoutMs: LIVE_COMMAND_ACK_TIMEOUT_MS,
+      });
+      rememberRealtimeAuth(data.auth);
+      const result = bridgeResult(data);
+      if (result.pending && result.ok) {
+        void settleBridgePage(tab.id, id, { closeWhenDone: false });
+      }
+      return result;
+    } catch (_) {
+      // Fall through to the hidden-tab bootstrap. The same request id is used,
+      // so if the live tab processes the command late, Brain deduplication
+      // prevents a duplicate record.
+    }
+  }
+  return null;
 }
 
 async function runBridgeAction(action, text = '') {
   const id = requestId();
+
+  const liveResult = await tryOpenTabCommand(action, id, text);
+  if (liveResult) return liveResult;
+
   const tab = await chrome.tabs.create({
     url: bridgeUrl(action, id, text),
     active: false,
@@ -246,22 +350,12 @@ async function runBridgeAction(action, text = '') {
   try {
     const data = await waitForBridgeResponse(tab.id, id);
     rememberRealtimeAuth(data.auth);
-    const response = data.response ?? {};
-    const pending = response.settled === false;
-    const result = {
-      ok: response.ok === true,
-      pending,
-      error: response.error ? String(response.error) : null,
-      snapshot:
-        data.snapshot && typeof data.snapshot === 'object'
-          ? data.snapshot
-          : null,
-    };
+    const result = bridgeResult(data);
 
-    if (pending && result.ok) {
+    if (result.pending && result.ok) {
       // Return the optimistic canonical handoff to the popup now, but keep
       // this background bridge page alive until Brain's network chain settles.
-      void settleBridgeTab(tab.id, id);
+      void settleBridgePage(tab.id, id, { closeWhenDone: true });
     } else {
       await closeBridgeTab(tab.id);
     }
@@ -277,9 +371,6 @@ async function refreshLifeOsStateInBackground() {
 
   refreshPromise = (async () => {
     try {
-      // Never trust an open-tab/local cache as "fresh". It is only an
-      // instant-render fallback. Every canonical refresh goes through
-      // bridge_sync, which forces Brain to reconcile records from PocketBase.
       const result = await runBridgeAction('bridge_sync');
       if (result.ok && result.snapshot) {
         await cacheSnapshot(result.snapshot);
@@ -287,8 +378,7 @@ async function refreshLifeOsStateInBackground() {
         return result.snapshot;
       }
     } catch (_) {
-      // If the authenticated bridge cannot complete, retain the last known
-      // projection instead of blanking a usable popup.
+      // Retain the last known projection instead of blanking a usable popup.
     } finally {
       refreshPromise = null;
     }
@@ -374,6 +464,7 @@ async function startRecord(text) {
   try {
     const result = await runBridgeAction('start_record', cleaned);
     if (result.ok && result.snapshot) {
+      await cacheSnapshot(result.snapshot);
       await broadcastSnapshot(result.snapshot);
     }
     return result.ok
@@ -392,6 +483,7 @@ async function stopRecord() {
   try {
     const result = await runBridgeAction('stop_record');
     if (result.ok && result.snapshot) {
+      await cacheSnapshot(result.snapshot);
       await broadcastSnapshot(result.snapshot);
     }
     return result.ok
