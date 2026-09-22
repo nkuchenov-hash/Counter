@@ -1,64 +1,5 @@
 part of '../app_shell.dart';
 
-/// Shared phone/web/desktop/iOS reconnect bridge.
-///
-/// PocketBase restores SSE subscriptions after a transport break, but events
-/// that happened while the transport was down are not replayed. PB_CONNECT is
-/// therefore a convergence boundary: every successful connect/reconnect
-/// schedules one coalesced authoritative catch-up. This is push-first recovery,
-/// not polling.
-class _ShellRealtimeReconnectCatchUp {
-  static bool _attached = false;
-  static Timer? _debounce;
-  static Future<void>? _catchUpInFlight;
-
-  static Future<void> _catchUpAllSharedState() {
-    final active = _catchUpInFlight;
-    if (active != null) return active;
-    late final Future<void> run;
-    run = () async {
-      final db = DatabaseService.instance;
-      // Records + plans/lists + mutation outboxes first.
-      await db.refreshForegroundData();
-      // A transport gap can also miss category/profile/tag events. Reconcile
-      // those authoritative catalogs once; never wait for a page navigation.
-      try {
-        await Future.wait<void>([
-          db.forceRefreshFromServer(),
-          () async {
-            await db.fetchTagsForCurrentUser(scope: TagCatalogScope.plan);
-            db.notifyTagsCatalogChanged();
-          }(),
-        ]);
-      } catch (_) {}
-    }().whenComplete(() {
-      if (identical(_catchUpInFlight, run)) _catchUpInFlight = null;
-    });
-    _catchUpInFlight = run;
-    return run;
-  }
-
-  static Future<void> attach() async {
-    if (_attached) return;
-    try {
-      final realtime = DatabaseService.instance.pocketBase.realtime;
-      await realtime.subscribe('PB_CONNECT', (_) {
-        _debounce?.cancel();
-        _debounce = Timer(const Duration(milliseconds: 75), () {
-          _debounce = null;
-          unawaited(_catchUpAllSharedState());
-        });
-      });
-      _attached = true;
-    } catch (e) {
-      _attached = false;
-      if (kDebugMode) {
-        debugPrint('[PB_CONNECT] catch-up subscription failed: $e');
-      }
-    }
-  }
-}
-
 mixin ShellLifecycle
     on ShellTabHost, ShellVoiceIntegration, ShellBrowserExtensionQuickAdd {
   void initializeShellLifecycle() {
@@ -91,11 +32,6 @@ mixin ShellLifecycle
     );
     rules = List.from(DatabaseService.instance.rules);
     selectedCategoryId = DatabaseService.instance.defaultCategoryId;
-
-    // Realtime gaps must heal without navigation, pull-to-refresh, or relaunch.
-    // PB_CONNECT fires for a restored SSE transport; the catch-up itself is
-    // coalesced and reconciles every shared user-state catalog.
-    unawaited(_ShellRealtimeReconnectCatchUp.attach());
 
     DesktopVoiceAcceptanceBridge.runCommand = runDesktopVoiceAcceptanceCommand;
     DesktopVoiceAcceptanceBridge.simulateHotkeyToggle =
