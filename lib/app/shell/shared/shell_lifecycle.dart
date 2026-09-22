@@ -1,5 +1,37 @@
 part of '../app_shell.dart';
 
+/// Shared phone/web/desktop/iOS reconnect bridge.
+///
+/// PocketBase restores SSE subscriptions after a transport break, but events
+/// that happened while the transport was down are not replayed. PB_CONNECT is
+/// therefore a convergence boundary: every successful connect/reconnect
+/// schedules one coalesced authoritative foreground refresh. This is push-first
+/// recovery, not polling.
+class _ShellRealtimeReconnectCatchUp {
+  static bool _attached = false;
+  static Timer? _debounce;
+
+  static Future<void> attach() async {
+    if (_attached) return;
+    try {
+      final realtime = DatabaseService.instance.pocketBase.realtime;
+      await realtime.subscribe('PB_CONNECT', (_) {
+        _debounce?.cancel();
+        _debounce = Timer(const Duration(milliseconds: 75), () {
+          _debounce = null;
+          unawaited(DatabaseService.instance.refreshForegroundData());
+        });
+      });
+      _attached = true;
+    } catch (e) {
+      _attached = false;
+      if (kDebugMode) {
+        debugPrint('[PB_CONNECT] catch-up subscription failed: $e');
+      }
+    }
+  }
+}
+
 mixin ShellLifecycle
     on ShellTabHost, ShellVoiceIntegration, ShellBrowserExtensionQuickAdd {
   void initializeShellLifecycle() {
@@ -32,6 +64,11 @@ mixin ShellLifecycle
     );
     rules = List.from(DatabaseService.instance.rules);
     selectedCategoryId = DatabaseService.instance.defaultCategoryId;
+
+    // Realtime gaps must heal without navigation, pull-to-refresh, or relaunch.
+    // PB_CONNECT fires for a restored SSE transport; the catch-up itself is
+    // coalesced by DatabaseService.refreshForegroundData().
+    unawaited(_ShellRealtimeReconnectCatchUp.attach());
 
     DesktopVoiceAcceptanceBridge.runCommand = runDesktopVoiceAcceptanceCommand;
     DesktopVoiceAcceptanceBridge.simulateHotkeyToggle =
