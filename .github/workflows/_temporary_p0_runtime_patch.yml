@@ -1,0 +1,406 @@
+name: Temporary P0 runtime patch
+
+on:
+  push:
+    branches:
+      - fix/instant-live-sync-and-record-edit-stability
+
+permissions:
+  contents: write
+
+concurrency:
+  group: temporary-p0-runtime-patch
+  cancel-in-progress: false
+
+jobs:
+  patch:
+    if: ${{ !contains(github.event.head_commit.message, 'Apply final P0 runtime patch') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/instant-live-sync-and-record-edit-stability
+          fetch-depth: 0
+      - name: Apply surgical runtime and contract patch
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path, old, new):
+              p = Path(path)
+              s = p.read_text(encoding='utf-8')
+              if old not in s:
+                  raise SystemExit(f'expected block not found in {path}: {old[:120]!r}')
+              p.write_text(s.replace(old, new, 1), encoding='utf-8')
+
+          # 1) Brain-level serialization + stale realtime echo suppression.
+          path = 'lib/data/records/record_realtime.dart'
+          p = Path(path)
+          s = p.read_text(encoding='utf-8')
+          old = "Timer? _realtimeGapCatchUpTimer;\n\nextension RecordRealtimeExtension on DatabaseService {\n"
+          new = """Timer? _realtimeGapCatchUpTimer;
+
+// P0 no-glitch law: record PATCHes are serialized so two rapid autosaves can
+// never complete on the server out of order. While the newest local edit is
+// settling, realtime echoes for that same row are ignored; the local shadow is
+// already the newest user intent and must not flicker back to an older value.
+Future<void> _recordEditNetworkTail = Future<void>.value();
+int _recordLocalEditGenerationClock = 0;
+final Map<String, int> _pendingRecordLocalEditGenerationByKey = <String, int>{};
+final Map<String, DateTime> _pendingRecordLocalEditExpiryByKey =
+    <String, DateTime>{};
+
+extension RecordRealtimeExtension on DatabaseService {
+  String _pendingRecordEditKey(String raw) => raw.trim().toLowerCase();
+
+  void _pruneExpiredPendingRecordLocalEdits() {
+    if (_pendingRecordLocalEditExpiryByKey.isEmpty) return;
+    final now = DateTime.now();
+    final expired = <String>[];
+    for (final entry in _pendingRecordLocalEditExpiryByKey.entries) {
+      if (!now.isBefore(entry.value)) expired.add(entry.key);
+    }
+    for (final key in expired) {
+      _pendingRecordLocalEditExpiryByKey.remove(key);
+      _pendingRecordLocalEditGenerationByKey.remove(key);
+    }
+  }
+
+  int _beginPendingRecordLocalEdit(Iterable<String> rawKeys) {
+    _pruneExpiredPendingRecordLocalEdits();
+    final generation = ++_recordLocalEditGenerationClock;
+    final expiresAt = DateTime.now().add(const Duration(seconds: 15));
+    for (final raw in rawKeys) {
+      final key = _pendingRecordEditKey(raw);
+      if (key.isEmpty) continue;
+      _pendingRecordLocalEditGenerationByKey[key] = generation;
+      _pendingRecordLocalEditExpiryByKey[key] = expiresAt;
+    }
+    return generation;
+  }
+
+  bool _shouldSuppressRealtimeForPendingLocalEdit(RecordModel record) {
+    _pruneExpiredPendingRecordLocalEdits();
+    final businessId = (record.data['record_id'] ?? '').toString().trim();
+    for (final raw in <String>[record.id, businessId]) {
+      final key = _pendingRecordEditKey(raw);
+      if (key.isNotEmpty &&
+          _pendingRecordLocalEditGenerationByKey.containsKey(key)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  void _schedulePendingRecordLocalEditRelease({
+    required Iterable<String> rawKeys,
+    required int generation,
+  }) {
+    final keys = <String>{
+      for (final raw in rawKeys)
+        if (_pendingRecordEditKey(raw).isNotEmpty) _pendingRecordEditKey(raw),
+    };
+    Timer(const Duration(milliseconds: 750), () {
+      for (final key in keys) {
+        if (_pendingRecordLocalEditGenerationByKey[key] == generation) {
+          _pendingRecordLocalEditGenerationByKey.remove(key);
+          _pendingRecordLocalEditExpiryByKey.remove(key);
+        }
+      }
+    });
+  }
+
+  Future<bool> _queueRecordEditNetwork({
+    required Iterable<String> keys,
+    required Future<bool> Function() action,
+  }) {
+    final normalizedKeys = <String>[
+      for (final raw in keys)
+        if (_pendingRecordEditKey(raw).isNotEmpty) raw,
+    ];
+    final generation = _beginPendingRecordLocalEdit(normalizedKeys);
+    final completer = Completer<bool>();
+    final previous = _recordEditNetworkTail;
+    final run = () async {
+      try {
+        await previous;
+      } catch (_) {}
+      try {
+        completer.complete(await action());
+      } catch (e, st) {
+        completer.completeError(e, st);
+      } finally {
+        _schedulePendingRecordLocalEditRelease(
+          rawKeys: normalizedKeys,
+          generation: generation,
+        );
+      }
+    }();
+    _recordEditNetworkTail = run;
+    return completer.future;
+  }
+
+  /// Editor autosave may await this in its own background task. It never gates
+  /// the optimistic UI; it only prevents an older completion from declaring a
+  /// newer draft clean before the serialized PATCH chain settles.
+  Future<void> waitForPendingRecordEditNetwork() async {
+    try {
+      await _recordEditNetworkTail;
+    } catch (_) {}
+  }
+"""
+          if old not in s:
+              raise SystemExit('record_realtime header anchor missing')
+          s = s.replace(old, new, 1)
+          old2 = """    final rec = e.record;
+    if (rec == null) return;
+    try {
+      _upsertFlatRecordFromPbModel(
+"""
+          new2 = """    final rec = e.record;
+    if (rec == null) return;
+    if (_shouldSuppressRealtimeForPendingLocalEdit(rec)) {
+      return;
+    }
+    try {
+      _upsertFlatRecordFromPbModel(
+"""
+          if old2 not in s:
+              raise SystemExit('record_realtime handler anchor missing')
+          s = s.replace(old2, new2, 1)
+          p.write_text(s, encoding='utf-8')
+
+          # 2) Serialize every actual record PATCH in the Brain. Callers remain
+          # optimistic/fire-and-forget; only the network phases queue.
+          path = 'lib/data/records/record_crud.dart'
+          p = Path(path)
+          s = p.read_text(encoding='utf-8')
+          sig = """  Future<bool> _patchRecordUpdateNetworkPhase({
+    required String originalInput,
+    required String resolvedPbId,
+    required String businessId,
+    required Map<String, dynamic> updates,
+    Map<String, dynamic>? rollbackRow,
+    int rollbackIndex = -1,
+  }) async {
+"""
+          wrapper = """  Future<bool> _patchRecordUpdateNetworkPhase({
+    required String originalInput,
+    required String resolvedPbId,
+    required String businessId,
+    required Map<String, dynamic> updates,
+    Map<String, dynamic>? rollbackRow,
+    int rollbackIndex = -1,
+  }) {
+    return _queueRecordEditNetwork(
+      keys: <String>[originalInput, resolvedPbId, businessId],
+      action: () => _patchRecordUpdateNetworkPhaseUnserialized(
+        originalInput: originalInput,
+        resolvedPbId: resolvedPbId,
+        businessId: businessId,
+        updates: updates,
+        rollbackRow: rollbackRow,
+        rollbackIndex: rollbackIndex,
+      ),
+    );
+  }
+
+  Future<bool> _patchRecordUpdateNetworkPhaseUnserialized({
+    required String originalInput,
+    required String resolvedPbId,
+    required String businessId,
+    required Map<String, dynamic> updates,
+    Map<String, dynamic>? rollbackRow,
+    int rollbackIndex = -1,
+  }) async {
+"""
+          if sig not in s:
+              raise SystemExit('record_crud network phase signature missing')
+          p.write_text(s.replace(sig, wrapper, 1), encoding='utf-8')
+
+          # 3) Editor cleanliness is revision-aware AND waits for the background
+          # Brain PATCH chain, without delaying local UI or sheet close.
+          path = 'lib/features/shared/edit_sheet/sheet_autosave_gate.dart'
+          p = Path(path)
+          s = p.read_text(encoding='utf-8')
+          old = """  void markClean() {
+    if (_timer != null) return;
+    _dirty = false;
+  }
+"""
+          new = """  void markClean() => markCleanIfRevision(_revision);
+
+  /// An async save may only clear dirty state for the exact edit generation it
+  /// started from. Older completions cannot clean a newer rename/edit.
+  void markCleanIfRevision(int revision) {
+    if (_timer != null || _revision != revision) return;
+    _dirty = false;
+  }
+"""
+          if old not in s:
+              raise SystemExit('autosave markClean anchor missing')
+          p.write_text(s.replace(old, new, 1), encoding='utf-8')
+
+          path = 'lib/features/shared/timeline_record_edit_sheet.dart'
+          p = Path(path)
+          s = p.read_text(encoding='utf-8')
+          old = """  }) async {
+    if (!_isPersistedRecord) return;
+    await DatabaseService.instance.updateRecord(
+      recordId: _recordUpdateKey,
+"""
+          new = """  }) async {
+    if (!_isPersistedRecord) return;
+    final syncRevision = _recordAutosaveGate.revision;
+    await DatabaseService.instance.updateRecord(
+      recordId: _recordUpdateKey,
+"""
+          if old not in s:
+              raise SystemExit('record sheet sync start anchor missing')
+          s = s.replace(old, new, 1)
+          old = """      bypassConflictCheck: true,
+    );
+    if (!mounted) return;
+    _recordAutosaveGate.markClean();
+  }
+"""
+          new = """      bypassConflictCheck: true,
+    );
+    await DatabaseService.instance.waitForPendingRecordEditNetwork();
+    if (!mounted) return;
+    _recordAutosaveGate.markCleanIfRevision(syncRevision);
+  }
+"""
+          if old not in s:
+              raise SystemExit('record sheet sync end anchor missing')
+          p.write_text(s.replace(old, new, 1), encoding='utf-8')
+
+          # 4) Executable regression coverage.
+          path = 'test/edit_sheet_autosave_test.dart'
+          p = Path(path)
+          s = p.read_text(encoding='utf-8')
+          marker = "  });\n}\n"
+          test = """
+
+    test('older network settlement cannot clean newer edit generation', () {
+      final gate = EditSheetAutosaveGate();
+      gate.markDirty();
+      final older = gate.revision;
+      gate.markDirty();
+      final newest = gate.revision;
+
+      gate.markCleanIfRevision(older);
+      expect(gate.isDirty, isTrue);
+
+      gate.markCleanIfRevision(newest);
+      expect(gate.isDirty, isFalse);
+      gate.dispose();
+    });
+"""
+          pos = s.rfind(marker)
+          if pos < 0:
+              raise SystemExit('autosave test final marker missing')
+          s = s[:pos] + test + s[pos:]
+          p.write_text(s, encoding='utf-8')
+
+          path = 'test/live_sync_contract_test.dart'
+          p = Path(path)
+          s = p.read_text(encoding='utf-8')
+          insertion = """
+
+  test('rapid record edits serialize network and reject stale realtime echoes', () {
+    final crud = File('lib/data/records/record_crud.dart').readAsStringSync();
+    final realtime = File(
+      'lib/data/records/record_realtime.dart',
+    ).readAsStringSync();
+    final sheet = File(
+      'lib/features/shared/timeline_record_edit_sheet.dart',
+    ).readAsStringSync();
+
+    expect(crud, contains('_queueRecordEditNetwork('));
+    expect(crud, contains('_patchRecordUpdateNetworkPhaseUnserialized('));
+    expect(realtime, contains('_recordEditNetworkTail'));
+    expect(realtime, contains('_shouldSuppressRealtimeForPendingLocalEdit'));
+    expect(realtime, contains('_pendingRecordLocalEditGenerationByKey'));
+    expect(realtime, contains('waitForPendingRecordEditNetwork()'));
+
+    final handlerStart = realtime.indexOf(
+      'void _onPbRecordsSubscriptionEvent(RecordSubscriptionEvent e)',
+    );
+    final handlerEnd = realtime.indexOf(
+      'void _installRealtimeGapGuard()',
+      handlerStart,
+    );
+    final handler = realtime.substring(handlerStart, handlerEnd);
+    expect(
+      handler.indexOf('_shouldSuppressRealtimeForPendingLocalEdit(rec)'),
+      lessThan(handler.indexOf('_upsertFlatRecordFromPbModel(')),
+    );
+
+    expect(sheet, contains('final syncRevision = _recordAutosaveGate.revision;'));
+    expect(sheet, contains('waitForPendingRecordEditNetwork()'));
+    expect(sheet, contains('markCleanIfRevision(syncRevision)'));
+  });
+"""
+          pos = s.rfind('\n}')
+          if pos < 0:
+              raise SystemExit('live sync test final brace missing')
+          s = s[:pos] + insertion + s[pos:]
+          p.write_text(s, encoding='utf-8')
+
+          # 5) Put the no-glitch acceptance rule in the always-read agent files.
+          path = 'AGENTS.md'
+          p = Path(path)
+          s = p.read_text(encoding='utf-8')
+          anchor = "- `docs/UX_CONTRACT.md`\n"
+          if anchor in s and 'INSTANT_CONVERGENCE / NO_GLITCH_LAW' not in s:
+              s = s.replace(
+                  anchor,
+                  anchor + "- For every shared-state/UI change, `docs/ARCHITECTURE.md` § **INSTANT_CONVERGENCE / NO_GLITCH_LAW** and `docs/UX_CONTRACT.md` § **Instant Interaction / No-Glitch Law** are mandatory. A glitchy function is worse than an absent function; compile/CI/deploy alone are not acceptance.\n",
+                  1,
+              )
+          p.write_text(s, encoding='utf-8')
+
+          path = '.cursor/rules/flutter_expert.mdc'
+          p = Path(path)
+          s = p.read_text(encoding='utf-8')
+          anchor = "## 7. Testing & Verification\n"
+          law = """## 6.1 INSTANT CONVERGENCE / NO-GLITCH LAW (P0)
+- **A glitchy function is worse than an absent function.** Lag, flicker, stale/false-empty state, stale edit rollback, polling-delayed shared state, or needing navigation/refresh/relaunch is a P0 regression.
+- Already-open clients must react event-driven to shared-state changes; domain correctness must never depend on polling.
+- The newest local intent wins over older autosave completions, network responses, realtime echoes, cache hydration, or background reconciliation.
+- Reconnect/resume must converge automatically through the canonical recovery owner.
+- Before declaring shared-state work complete, run the acceptance gate in `docs/UX_CONTRACT.md` (local optimistic, open peer, reverse direction, rapid edit, reconnect, resume, cold start, invariants, performance, production artifact).
+
+"""
+          if anchor not in s:
+              raise SystemExit('flutter expert testing anchor missing')
+          if '## 6.1 INSTANT CONVERGENCE / NO-GLITCH LAW' not in s:
+              s = s.replace(anchor, law + anchor, 1)
+          p.write_text(s, encoding='utf-8')
+          PY
+
+          dart format \
+            lib/data/records/record_realtime.dart \
+            lib/data/records/record_crud.dart \
+            lib/features/shared/edit_sheet/sheet_autosave_gate.dart \
+            lib/features/shared/timeline_record_edit_sheet.dart \
+            test/edit_sheet_autosave_test.dart \
+            test/live_sync_contract_test.dart
+
+          git diff --check
+
+          # Self-remove so this operational helper never lands in the PR/main.
+          git rm .github/workflows/_temporary_p0_runtime_patch.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add AGENTS.md .cursor/rules/flutter_expert.mdc \
+            lib/data/records/record_realtime.dart \
+            lib/data/records/record_crud.dart \
+            lib/features/shared/edit_sheet/sheet_autosave_gate.dart \
+            lib/features/shared/timeline_record_edit_sheet.dart \
+            test/edit_sheet_autosave_test.dart \
+            test/live_sync_contract_test.dart
+          git commit -m "Apply final P0 runtime patch"
+          git push origin HEAD:fix/instant-live-sync-and-record-edit-stability
