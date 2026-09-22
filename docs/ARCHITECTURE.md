@@ -22,6 +22,7 @@
 | `lib/data/plans/diagnostics/` | **Brain plans diagnostics** | Planning-domain duplicate / stream lifecycle log (`plan_duplicate_log.dart`). Lives inside Brain; not shared diagnostics and not feature UI. |
 | `lib/data/paths/` | **Path domain** | Durable Path models/revisions + repository; PocketBase I/O is `path_service.dart` as a DatabaseService part. No project-specific templates, Planner scheduling, or marker parsing. |
 | `lib/features/paths/` | **Paths UI** | First-class Paths destination. Displays/edits Path domain data only; no project bootstrap, migration, or Planner generation on page open. |
+| `pb_hooks/sleep_sync.pb.js`, `pb_hooks/xiaomi_sleep_runtime.js`, `pb_hooks/xiaomi_sleep_bridge.py` | **Server sleep runtime** | Xiaomi Cloud is primary. Server scheduling/import/dedupe must work with every client closed. Governing contract: `docs/SERVER_SLEEP_SYNC_DEPLOY.md`. |
 | `lib/app/shell/app_shell.dart` | **The Navigator** | Thin entry re-export; canonical shell under `lib/app/shell/`. |
 | `lib/main.dart` | **The ignition** | Calls `ensurePocketBaseReady()`, then restores session and loads profile. |
 
@@ -43,6 +44,7 @@
 - **INSTANT_PURGE_PROTOCOL:** Optimistic UI before await where the Brain already does so; revert on failure.
 - **LAW_OF_OPTIMISTIC_UI (Shadow State):** No user-driven **Start / Stop / Update** on records may block the UI on a network round-trip. The Brain applies a **local shadow** (cache + timeline/active streams) in **<100 ms**, then runs PocketBase **PATCH/POST** asynchronously; on failure it **rolls back** to the last stable snapshot and surfaces a **single** sync error (see `database_service.dart`).
 - **OFFLINE-FIRST / LOCAL MUTATION QUEUE LAW:** Retriable network/backoff failures enqueue local mutations and keep the optimistic UI. Do **not** roll back on normal internet loss; roll back only on non-retriable validation/schema errors. Pending mutations drain on boot, reconnect, app resume, login/session restore, and tap-to-retry. 401/403 pauses sync until valid auth/session is restored. The server remains final authority for Singleton Timeline Law and overlap cleanup. Anchors: `lib/data/local_sync/record_mutation_outbox.dart`, `lib/data/local_sync/plan_mutation_outbox.dart`, `lib/data/local_sync/offline_sync_state.dart`, `lib/data/local_sync/sync_manager.dart`, `DbCoreExtension.flushPendingLocalMutations`, `RecordServiceExtension.flushPendingRecordMutations`, `PlanServiceExtension.flushPendingPlanMutations`, and shell presentation `lib/app/shell/shared/offline_sync_status_bar.dart`.
+- **SERVER_SLEEP_SYNC_LAW:** Completed sleep ingestion is server-owned. **Xiaomi Health cloud is the primary production source**; Flutter foreground reconciliation is convenience/refresh only and must never be required for correctness. The server uses the current Xiaomi `/app/v1/relatives/...` aggregate/raw/latest endpoint family; historical `/app/v1/data/...` endpoints are fallback only. If the current profile-local day has no Xiaomi sleep, the server retries every **15 minutes regardless of configured morning time**, and performs the same self-heal on PocketBase bootstrap. Xiaomi may revise one night’s boundaries and therefore external id; strongly overlapping Xiaomi intervals (≥60% of the shorter interval) are deduped while separate naps remain. Imported sleep is authoritative over a preceding root record that crosses `sleep.start_time`, which must be closed at that boundary. Full operational contract: `docs/SERVER_SLEEP_SYNC_DEPLOY.md`; schema: `docs/POCKETBASE_MANIFEST.md`; field vocabulary: `docs/DATA_MAP.md`.
 - **LAW_OF_THE_MAIN_THREAD (Iron Rules):**
   - **~100ms visual feedback:** User gestures must reflect in the UI within about **100ms** (optimistic/shadow first).
   - **Zero-await UI:** Do not `await` network, DB writes, or Wear sync **before** the UI updates for that action; use **`unawaited`** background sync with rollback on failure.
@@ -144,6 +146,7 @@
 - **Voice / STT:** Immutable rules in **§9 Voice Input Protocol** — do not “clean up” without preserving bilingual toggle, session persistence, and web BCP-47 bypass semantics.
 - **Biometrics and other capabilities:** guard with `kIsWeb` and platform capabilities as in `app_shell` / services.
 - **Records realtime:** After a valid session, the Brain subscribes to `records` (`subscribe('*', …)`) so **Web and mobile** share the same in-memory cache updates from server pushes; login flows must re-arm this subscription if init ran before auth.
+- **Server sleep:** Xiaomi sleep ingestion is not a client/hardware feature path; it is a PocketBase server subsystem governed by **SERVER_SLEEP_SYNC_LAW** and `docs/SERVER_SLEEP_SYNC_DEPLOY.md`. Client lifecycle hooks may refresh/reconcile presentation but cannot become the primary scheduler.
 
 ### 8.1 Omni-Picker (UI Iron Rule)
 
@@ -171,6 +174,7 @@ Web vs. Mobile STT: Web (kIsWeb) MUST use strict BCP-47 tags (e.g., ru-RU) bypas
 | **POCKETBASE_MANIFEST.md** | PB URL, collections, `category_id` / `category_link`, auth. |
 | **DATA_MAP.md** | Field naming reference (legacy Noco table UIDs are historical only). |
 | **APP_STRUCTURE.md** | Layer map, import boundaries, Structure Growth Law. |
+| **SERVER_SLEEP_SYNC_DEPLOY.md** | Xiaomi Cloud server sleep architecture, freshness, cadence, dedupe, fallback and production verification. |
 
 ---
 
@@ -183,6 +187,7 @@ New features must integrate into the **existing** architecture — not parallel 
 - Extend the canonical screen, service, Brain module, or shared widget that already owns the domain.
 - Do **not** create duplicate local components, duplicate PocketBase constants, duplicate offline/outbox paths, or duplicate timezone/date helpers when a canonical home exists (see `docs/APP_STRUCTURE.md`, `docs/DESIGN_SYSTEM.md`).
 - PocketBase schema or field-name changes require **`docs/DATA_MAP.md`** and **`docs/POCKETBASE_MANIFEST.md`** updates before client behavior ships.
+- Server sleep behavior changes require `docs/SERVER_SLEEP_SYNC_DEPLOY.md` plus the executable checks in `scripts/audit/deployment_contract.py`; changing only code is an architecture violation.
 
 ### File size / decomposition law
 
