@@ -9,6 +9,7 @@ Before any structural, behavior, data, PocketBase, performance, or UI/design cha
 - `docs/ROADMAP.md` — current plan, phases, bugs. Read first before suggesting structural changes.
 - `docs/ARCHITECTURE.md` — Iron Laws, core contracts, data flow, PERFORMANCE_KILL_SWITCH_LAW.
 - `docs/UX_CONTRACT.md` — behavior contract: taps, save/edit/delete, loading/empty/error, offline, optimistic UI, performance.
+- `docs/INSTANT_INTERACTION_CONTRACT.md` — mandatory P0 no-glitch, instant live-state, latest-intent, reconnect, and acceptance law.
 - `docs/APP_STRUCTURE.md` — physical directory map and module import rules.
 - `docs/DATA_MAP.md` — field names and business IDs (single source of truth for PocketBase schema).
 - `docs/POCKETBASE_MANIFEST.md` — PocketBase URL, collections, relation fields, API rules.
@@ -18,6 +19,12 @@ Before any structural, behavior, data, PocketBase, performance, or UI/design cha
 - `AGENT_NAVIGATION.md` — navigation map and AI laws.
 
 Do not paste these docs into code or instructions; reference them.
+
+## Instant interaction / no-glitch is a release law
+
+A glitchy function is worse than an absent function. Lag, flicker, stale state, false empty state, stale edit rollback, polling-delayed shared state, or a requirement to navigate/refresh/relaunch before current state appears is a **P0 regression**.
+
+For shared-state changes, compile/CI/deploy are necessary but not sufficient proof. Apply `docs/INSTANT_INTERACTION_CONTRACT.md`: local optimistic response, already-open second client, reverse direction, rapid edit/rename, disconnect/reconnect, resume, cold start, invariant checks, performance, and exact production artifact verification. An already-open screen must react to realtime data without page switching. Older network/realtime results must never overwrite newer user intent.
 
 ## Performance is P0 correctness
 
