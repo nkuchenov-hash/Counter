@@ -12,7 +12,7 @@ This document defines how Life OS behaves when people interact with it. It is th
 
 ## Instant Interaction / No-Glitch Law
 
-`docs/INSTANT_INTERACTION_CONTRACT.md` is mandatory for every shared-state or interactive UI change.
+This section is a mandatory P0 release law for every shared-state or interactive UI change and operationalizes `ARCHITECTURE.md` § **INSTANT_CONVERGENCE / NO_GLITCH_LAW**.
 
 - **A glitchy function is worse than an absent function.** Lag, flicker, stale data, false empty state, stale edit rollback, duplicate state, frozen UI, or a requirement to navigate/refresh/relaunch before current state appears is a **P0 regression**.
 - An already-open screen must react to local cache/realtime state immediately; page switching must never be the mechanism that makes received data visible.
@@ -20,7 +20,24 @@ This document defines how Life OS behaves when people interact with it. It is th
 - The newest user intent wins. Older autosave completions, network responses, realtime echoes, cache hydration, or background reconciliation must never overwrite a newer local edit.
 - Online cold start must never present unknown state as a successful empty state. Preserve known cached content; otherwise use the canonical loading state until the first authoritative snapshot resolves.
 - Reconnect/resume must converge automatically without user action; missed realtime events require one coalesced authoritative catch-up.
-- Code merge, green CI, and deployment are not by themselves end-to-end proof. Shared-state work is not complete until the applicable acceptance matrix in `docs/INSTANT_INTERACTION_CONTRACT.md` passes.
+- Code merge, green CI, and deployment are not by themselves end-to-end proof.
+
+### Mandatory shared-state acceptance gate
+
+Before shared-state work may be called complete, verify the applicable cases:
+
+1. **Local optimistic:** the originating client reflects the mutation in ~100ms or less, before network I/O.
+2. **Already-open peer:** a second client already on the relevant screen reflects the mutation without navigation, refresh, or relaunch.
+3. **Reverse direction:** repeat the mutation from the second client back to the first.
+4. **Rapid edit/rename:** successive edits converge to the newest value without flicker, stale rollback, or another user action.
+5. **Disconnect/reconnect:** disconnect one client, mutate from another, reconnect; the disconnected client converges automatically.
+6. **Resume:** background/suspend and resume does not leave stale active/shared state.
+7. **Cold start:** cached content does not disappear; unknown state is not rendered as empty.
+8. **Domain invariants:** singleton active record, ordering, relations, and other affected invariants remain valid.
+9. **Performance:** no application-imposed domain polling delay, network await on the hot path, rebuild storm, or visible jank.
+10. **Production artifact:** relevant tests/analyzers/builds pass on the exact merge candidate and the deployed/released artifact containing that SHA is verified after merge.
+
+Source-string tests alone are not end-to-end proof. Prefer deterministic state-machine/integration tests; when an automated two-client harness is unavailable, explicitly record the manual two-client acceptance scenario instead of treating compile/CI as equivalent to visible production behavior.
 
 ## Tap Feedback
 
@@ -132,7 +149,7 @@ This document defines how Life OS behaves when people interact with it. It is th
 
 ## Performance & Responsiveness Contract
 
-Performance, responsiveness, and stability are **P0 correctness**, not polish. See `docs/ARCHITECTURE.md` § **PERFORMANCE_KILL_SWITCH_LAW** and `docs/INSTANT_INTERACTION_CONTRACT.md`.
+Performance, responsiveness, and stability are **P0 correctness**, not polish. See `docs/ARCHITECTURE.md` § **PERFORMANCE_KILL_SWITCH_LAW** and **INSTANT_CONVERGENCE / NO_GLITCH_LAW**.
 
 - Every user action must produce **visible feedback within ~100ms**.
 - Local/optimistic UI must update **before** network I/O for record/plan mutations.
