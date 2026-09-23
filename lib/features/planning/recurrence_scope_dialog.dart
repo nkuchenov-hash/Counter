@@ -57,18 +57,26 @@ Future<RecurrenceEditScope?> showRecurrenceScopeDialog(
     context: context,
     builder: (ctx) {
       return AlertDialog(
-        title: Text(t(locale, titleKey)),
+        titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 12),
+        contentPadding: const EdgeInsets.fromLTRB(24, 0, 24, 0),
+        actionsPadding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
+        title: Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: Text(t(locale, titleKey)),
+        ),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               ListTile(
+                contentPadding: EdgeInsets.zero,
                 title: Text(t(locale, thisKey)),
                 onTap: () =>
                     Navigator.of(ctx).pop(RecurrenceEditScope.singleOccurrence),
               ),
               ListTile(
+                contentPadding: EdgeInsets.zero,
                 enabled: recurrenceEditScopeIsSupported(
                   RecurrenceEditScope.thisAndFuture,
                 ),
@@ -86,6 +94,7 @@ Future<RecurrenceEditScope?> showRecurrenceScopeDialog(
                     : null,
               ),
               ListTile(
+                contentPadding: EdgeInsets.zero,
                 title: Text(t(locale, seriesKey)),
                 onTap: () =>
                     Navigator.of(ctx).pop(RecurrenceEditScope.entireSeries),
