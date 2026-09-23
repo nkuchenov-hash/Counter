@@ -214,10 +214,10 @@ const Map<String, String> kEnL10n = {
   'plan_recurrence_edit_scope_title': 'Edit recurring event',
   'plan_recurrence_delete_scope_title': 'Delete recurring event',
   'plan_recurrence_edit_this': 'This event',
-  'plan_recurrence_edit_future': 'This and following events',
+  'plan_recurrence_edit_future': 'This and all following events',
   'plan_recurrence_edit_series': 'All events in the series',
   'plan_recurrence_delete_this': 'Delete this event',
-  'plan_recurrence_delete_future': 'Delete this and following events',
+  'plan_recurrence_delete_future': 'Delete this and all following events',
   'plan_recurrence_delete_series': 'Delete entire series',
   'plan_recurrence_future_disabled_hint':
       'Series split is not available yet for this repeat rule.',

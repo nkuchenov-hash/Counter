@@ -153,10 +153,11 @@ Performance, responsiveness, and stability are **P0 correctness**, not polish. S
 ## Recurring plan edit/delete scope
 
 - **One stored row per series:** Client expands `plans.rrule` into virtual `virt-{seriesPb}-{YYYY-MM-DD}` rows for the visible window; `exception_dates` omits instances; materialized one-offs link to the series via `parent_plan_id` + `recurrence_instance_date_key`.
-- **Scope dialog (EN/RU):** Editing or deleting a recurring/virtual/materialized occurrence prompts:
+- **Historical immutability:** A recurring edit/delete must never rewrite earlier occurrences. Past recurrence history remains attached to the old series definition.
+- **Scope dialog (EN/RU):** Editing or deleting a recurring/virtual/materialized occurrence has exactly two choices:
   - **This event** — single occurrence only (`exception_dates` + materialized one-off on edit; exception only on delete for virtual rows).
-  - **This and following events** — disabled until safe RRULE split-series (UNTIL boundary) ships.
-  - **All events in the series** — PATCH/DELETE the stored series row only (15-char PocketBase `id`; never `virt-*`).
+  - **This and all following events** — split at the selected occurrence. The historical series gets an `UNTIL` boundary immediately before that day; edits create a new future series from the selected occurrence, while delete stops the series at that boundary. Existing materialized future exceptions move with the future series.
+- **No “all series” mutation:** There is no user action that retroactively changes/deletes earlier occurrences. Legacy `entireSeries` callers canonicalize to the future-safe split behavior.
 - **Dedupe:** Materialized occurrence for `{seriesPb, instanceDate}` suppresses the matching virtual card. Virtual rows must never enter persistent caches or REST PATCH/DELETE paths.
 
 ## Gesture Ownership / Date Swipe Law

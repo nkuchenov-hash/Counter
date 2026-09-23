@@ -1,3 +1,10 @@
+## 2026-09-23 — Recurring-plan immutable history [fix]
+
+- Replaced recurring edit/delete scope with two user choices: one occurrence or this and all following occurrences; removed user-facing whole-series mutation.
+- Implemented future scope as an RRULE series split so earlier recurrence history stays unchanged while future materialized exceptions move with the new future series.
+- Fixed recurring occurrence editing to inherit the parent recurrence rule and aligned the recurrence scope dialog to one left edge.
+- Added canonical `docs/FUNCTIONS.md` and `docs/USER_GUIDE.md` recurrence documentation.
+
 ## 2026-09-11 — Duration-responsive PlanCard redesign [ui]
 
 - Reworked canonical Time View `PlanTimeTaskCard` layouts to match the approved duration-responsive card design: 12px checkbox→content spacing, larger title/tag rhythm, 2px progress separator, tighter progress/footer spacing, and bottom-pinned breadcrumbs.

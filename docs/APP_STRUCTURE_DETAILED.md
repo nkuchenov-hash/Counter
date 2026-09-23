@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `49aa761e` on 2026-09-21.**
+**Generated from input HEAD `8330c2f5` on 2026-09-23.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 874 — each appears **exactly once** below.
+**Tracked files:** 877 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -28,12 +28,12 @@ python scripts/manual/generate_app_structure_detailed.py
 | :--- | ---: |
 | `production UI` | 174 |
 | `test` | 111 |
-| `Brain/data` | 91 |
+| `Brain/data` | 92 |
 | `platform build` | 83 |
 | `shared foundation` | 64 |
 | `developer tool` | 63 |
 | `platform resource` | 44 |
-| `governing documentation` | 37 |
+| `governing documentation` | 39 |
 | `Desktop Voice runtime` | 36 |
 | `shared Voice system` | 22 |
 | `test fixture` | 22 |
@@ -57,10 +57,10 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 478 |
+| `PROVEN_REQUIRED` | 479 |
 | `REQUIRED_FOR_TEST_OR_TOOLING` | 214 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
-| `GOVERNING_DOCUMENTATION` | 37 |
+| `GOVERNING_DOCUMENTATION` | 39 |
 | `HISTORICAL_RECORD` | 17 |
 | `GENERATED_CANONICAL_OUTPUT` | 1 |
 
@@ -68,7 +68,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 799 |
+| `HIGH` | 802 |
 | `MEDIUM` | 75 |
 
 ---
@@ -5004,7 +5004,7 @@ EN:
 - **Why needed:** Prevents rebuilding features; shows what already landed and when.
 - **Contents:** Technical bullets with file names, tagged [shipped]/[wip]/[rollback].
 - **Repository role:** governing documentation
-- **Evidence of use:** (1) Governing/ops/product documentation read by humans and agents (see `docs/PROJECT_KNOWLEDGE_PACK.md` / AGENTS routing). (2) Referenced by: `AGENTS.md`, `AGENT_NAVIGATION.md`, `docs/PROJECT_KNOWLEDGE_PACK.md`, `docs/ROADMAP.md`.
+- **Evidence of use:** (1) Governing/ops/product documentation read by humans and agents (see `docs/PROJECT_KNOWLEDGE_PACK.md` / AGENTS routing). (2) Referenced by: `AGENTS.md`, `AGENT_NAVIGATION.md`, `docs/FUNCTIONS.md`, `docs/PROJECT_KNOWLEDGE_PACK.md`.
 - **Necessity status:** GOVERNING_DOCUMENTATION
 - **Deletion consequence:** Lost architecture/ops rule or agent routing instruction.
 - **Confidence:** HIGH
@@ -5966,7 +5966,7 @@ EN:
 - **Why needed:** Tracked because `branding` needs `life_os_app_icon_master.png` for build, CI, or maintenance.
 - **Contents:** Open `life_os_app_icon_master.png` when working on `branding` (see folder section above).
 - **Repository role:** asset
-- **Evidence of use:** Referenced by: `.github/workflows/windows-desktop-build.yml`, `CHANGELOG.md`.
+- **Evidence of use:** Referenced by: `CHANGELOG.md`.
 - **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Deletion consequence:** May break tooling or configuration; verify before delete.
 - **Confidence:** MEDIUM
@@ -5983,7 +5983,7 @@ RU:
 - **Зачем:** Поддерживает процесс, сборку, данные или runtime-задачу области `branding` для `life_os_app_icon_master.png`.
 - **Содержимое:** Данные или код `life_os_app_icon_master.png`, необходимые его подтверждённой роли и указанным ниже связям.
 - **Роль в репозитории:** asset
-- **Доказательства использования:** Упоминается в: `.github/workflows/windows-desktop-build.yml`, `CHANGELOG.md`.
+- **Доказательства использования:** Упоминается в: `CHANGELOG.md`.
 - **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Что будет, если удалить:** Может сломать tooling; проверять перед удалением.
 - **Уверенность:** MEDIUM
@@ -6299,7 +6299,7 @@ EN:
 - **Why needed:** Tracked because `browser_extension` needs `service_worker.js` for build, CI, or maintenance.
 - **Contents:** Open `service_worker.js` when working on `browser_extension` (see folder section above).
 - **Repository role:** developer tool
-- **Evidence of use:** Referenced by: `browser_extension/manifest.json`, `docs/DEPLOY.md`.
+- **Evidence of use:** Referenced by: `browser_extension/manifest.json`, `docs/DEPLOY.md`, `test/live_sync_contract_test.dart`.
 - **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Deletion consequence:** May break tooling or configuration; verify before delete.
 - **Confidence:** MEDIUM
@@ -6316,7 +6316,7 @@ RU:
 - **Зачем:** Обеспечивает автоматизацию или web-логику области `browser_extension` для сценария `service_worker.js`.
 - **Содержимое:** JavaScript-код и настройки, относящиеся к задаче `service_worker.js`.
 - **Роль в репозитории:** developer tool
-- **Доказательства использования:** Упоминается в: `browser_extension/manifest.json`, `docs/DEPLOY.md`.
+- **Доказательства использования:** Упоминается в: `browser_extension/manifest.json`, `docs/DEPLOY.md`, `test/live_sync_contract_test.dart`.
 - **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Что будет, если удалить:** Может сломать tooling; проверять перед удалением.
 - **Уверенность:** MEDIUM
@@ -6586,6 +6586,43 @@ RU:
 - **Связано с:** `lib/core/widgets/`, `docs/reports/DESIGN_SYSTEM_INVENTORY.md`, Component Lab.
 
 
+### `docs/FUNCTIONS.md`
+
+EN:
+
+- **Human purpose:** Markdown document `FUNCTIONS.md` in `docs` — repo tooling or config. Tracked because `docs` needs `FUNCTIONS.md` for build, CI, or maintenance.
+- **What this is:** Markdown document `FUNCTIONS.md` in `docs` — repo tooling or config.
+- **Why needed:** Tracked because `docs` needs `FUNCTIONS.md` for build, CI, or maintenance.
+- **Contents:** Open `FUNCTIONS.md` when working on `docs` (see folder section above).
+- **Repository role:** governing documentation
+- **Evidence of use:** (1) Governing/ops/product documentation read by humans and agents (see `docs/PROJECT_KNOWLEDGE_PACK.md` / AGENTS routing). (2) Referenced by: `CHANGELOG.md`, `docs/PROJECT_KNOWLEDGE_PACK.md`, `docs/USER_GUIDE.md`.
+- **Necessity status:** GOVERNING_DOCUMENTATION
+- **Deletion consequence:** Lost architecture/ops rule or agent routing instruction.
+- **Confidence:** HIGH
+- **Owner / layer:** documentation
+- **Responsibilities:** Supports `docs` workflow for `FUNCTIONS.md`.
+- **When to open:** When build output or maintenance cites `FUNCTIONS.md`.
+- **Can it be deleted?** No — governing/current documentation.
+- **Connected to:** `docs/`, `docs/APP_STRUCTURE.md`.
+
+RU:
+
+- **Зачем файл человеку:** Текстовая спецификация `FUNCTIONS.md` в разделе `docs`. Фиксирует правила, состояние или справочную информацию, относящуюся к `docs`.
+- **Что это:** Текстовая спецификация `FUNCTIONS.md` в разделе `docs`.
+- **Зачем:** Фиксирует правила, состояние или справочную информацию, относящуюся к `docs`.
+- **Содержимое:** Структурированный Markdown-текст по теме `FUNCTIONS.md` без runtime-логики приложения.
+- **Роль в репозитории:** governing documentation
+- **Доказательства использования:** Управляющая/операционная документация для людей и агентов (см. Project Knowledge / AGENTS).
+- **Статус необходимости:** GOVERNING_DOCUMENTATION
+- **Что будет, если удалить:** Пропадёт архитектурное/операционное правило.
+- **Уверенность:** HIGH
+- **Владелец / слой:** документация
+- **Обязанности:** Хранит актуальную документацию по назначению `FUNCTIONS.md`.
+- **Когда открывать:** When результат сборки or maintenance cites `FUNCTIONS.md`.
+- **Можно удалить?** Нет — governing документация.
+- **Связано с:** `docs/`, `docs/APP_STRUCTURE.md`.
+
+
 ### `docs/NOTES_EDITOR_CONTRACT.md`
 
 EN:
@@ -6817,7 +6854,7 @@ EN:
 - **Why needed:** Tracked because `docs` needs `SERVER_SLEEP_SYNC_DEPLOY.md` for build, CI, or maintenance.
 - **Contents:** Open `SERVER_SLEEP_SYNC_DEPLOY.md` when working on `docs` (see folder section above).
 - **Repository role:** governing documentation
-- **Evidence of use:** (1) Governing/ops/product documentation read by humans and agents (see `docs/PROJECT_KNOWLEDGE_PACK.md` / AGENTS routing). (2) Referenced by: `scripts/audit/documentation_parity.py`.
+- **Evidence of use:** (1) Governing/ops/product documentation read by humans and agents (see `docs/PROJECT_KNOWLEDGE_PACK.md` / AGENTS routing). (2) Referenced by: `docs/ARCHITECTURE.md`, `docs/DATA_MAP.md`, `docs/POCKETBASE_MANIFEST.md`, `scripts/audit/deployment_contract.py`.
 - **Necessity status:** GOVERNING_DOCUMENTATION
 - **Deletion consequence:** Lost architecture/ops rule or agent routing instruction.
 - **Confidence:** HIGH
@@ -6841,6 +6878,43 @@ RU:
 - **Владелец / слой:** документация
 - **Обязанности:** Хранит актуальную документацию по назначению `SERVER_SLEEP_SYNC_DEPLOY.md`.
 - **Когда открывать:** When результат сборки or maintenance cites `SERVER_SLEEP_SYNC_DEPLOY.md`.
+- **Можно удалить?** Нет — governing документация.
+- **Связано с:** `docs/`, `docs/APP_STRUCTURE.md`.
+
+
+### `docs/USER_GUIDE.md`
+
+EN:
+
+- **Human purpose:** Markdown document `USER_GUIDE.md` in `docs` — repo tooling or config. Tracked because `docs` needs `USER_GUIDE.md` for build, CI, or maintenance.
+- **What this is:** Markdown document `USER_GUIDE.md` in `docs` — repo tooling or config.
+- **Why needed:** Tracked because `docs` needs `USER_GUIDE.md` for build, CI, or maintenance.
+- **Contents:** Open `USER_GUIDE.md` when working on `docs` (see folder section above).
+- **Repository role:** governing documentation
+- **Evidence of use:** (1) Governing/ops/product documentation read by humans and agents (see `docs/PROJECT_KNOWLEDGE_PACK.md` / AGENTS routing). (2) Referenced by: `CHANGELOG.md`, `docs/FUNCTIONS.md`, `docs/PROJECT_KNOWLEDGE_PACK.md`.
+- **Necessity status:** GOVERNING_DOCUMENTATION
+- **Deletion consequence:** Lost architecture/ops rule or agent routing instruction.
+- **Confidence:** HIGH
+- **Owner / layer:** documentation
+- **Responsibilities:** Supports `docs` workflow for `USER_GUIDE.md`.
+- **When to open:** When build output or maintenance cites `USER_GUIDE.md`.
+- **Can it be deleted?** No — governing/current documentation.
+- **Connected to:** `docs/`, `docs/APP_STRUCTURE.md`.
+
+RU:
+
+- **Зачем файл человеку:** Текстовая спецификация `USER_GUIDE.md` в разделе `docs`. Фиксирует правила, состояние или справочную информацию, относящуюся к `docs`.
+- **Что это:** Текстовая спецификация `USER_GUIDE.md` в разделе `docs`.
+- **Зачем:** Фиксирует правила, состояние или справочную информацию, относящуюся к `docs`.
+- **Содержимое:** Структурированный Markdown-текст по теме `USER_GUIDE.md` без runtime-логики приложения.
+- **Роль в репозитории:** governing documentation
+- **Доказательства использования:** Управляющая/операционная документация для людей и агентов (см. Project Knowledge / AGENTS).
+- **Статус необходимости:** GOVERNING_DOCUMENTATION
+- **Что будет, если удалить:** Пропадёт архитектурное/операционное правило.
+- **Уверенность:** HIGH
+- **Владелец / слой:** документация
+- **Обязанности:** Хранит актуальную документацию по назначению `USER_GUIDE.md`.
+- **Когда открывать:** When результат сборки or maintenance cites `USER_GUIDE.md`.
 - **Можно удалить?** Нет — governing документация.
 - **Связано с:** `docs/`, `docs/APP_STRUCTURE.md`.
 
@@ -15469,6 +15543,44 @@ RU:
 - **Связано с:** UI вызывает `DatabaseService.instance`; Plans, Lists, Time View
 
 
+### `lib/data/plans/plan_recurrence_split_helpers.dart`
+
+EN:
+
+- **Human purpose:** Focused brain module for plans and lists: future-safe recurring-series split, historical immutability, future exception re-parenting, and split delete semantics. Maintains plans and lists consistency between PocketBase and the UI cache.
+- **What this is:** Focused brain module for plans and lists: future-safe recurring-series split, historical immutability, future exception re-parenting, and split delete semantics.
+- **Why needed:** Maintains plans and lists consistency between PocketBase and the UI cache.
+- **Contents:** Dart helpers and extensions (`PlanRecurrenceSplitExtension`).
+- **Key code names:** `PlanRecurrenceSplitExtension`
+- **Repository role:** Brain/data
+- **Evidence of use:** Included by `lib/data/database_service.dart` through a `part` directive (not imported directly).
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Brain/library compile failure in `lib/data/database_service.dart` and broken related UI/data ops.
+- **Confidence:** HIGH
+- **Owner / layer:** Brain Plans
+- **Responsibilities:** Future-safe recurring-series split, historical immutability, future exception re-parenting, and split delete semantics
+- **When to open:** Plan/list save, Time View layout, recurrence, tags on plans, offline queue.
+- **Can it be deleted?** Brain/library compile failure in `lib/data/database_service.dart` and broken related UI/data ops.
+- **Connected to:** UI calls via `DatabaseService.instance`; Plans tab, Lists tab, Time View; APP_STRUCTURE role: Future-safe recurring-series split, historical immutability, future exception re-parenting, and split delete semantics
+
+RU:
+
+- **Зачем файл человеку:** Сфокусированный модуль данных для plans and lists — файл `plan_recurrence_split_helpers`. Держит plans and lists согласованным с PocketBase и экранами.
+- **Что это:** Сфокусированный модуль данных для plans and lists — файл `plan_recurrence_split_helpers`.
+- **Зачем:** Держит plans and lists согласованным с PocketBase и экранами.
+- **Содержимое:** Dart-код (`PlanRecurrenceSplitExtension`).
+- **Роль в репозитории:** Brain/data
+- **Доказательства использования:** Подключён из `lib/data/database_service.dart` через `part` (не импортируется напрямую).
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Сломается компиляция `lib/data/database_service.dart` и связанные экраны/данные.
+- **Уверенность:** HIGH
+- **Владелец / слой:** Brain — планы
+- **Обязанности:** Реализует назначение `plan_recurrence_split_helpers.dart` для области `lib/data/plans`.
+- **Когда открывать:** Планы/списки: сохранение, Time View, повтор, теги.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** UI вызывает `DatabaseService.instance`; Plans, Lists, Time View
+
+
 ### `lib/data/plans/plan_snapshot_helpers.dart`
 
 EN:
@@ -16465,7 +16577,7 @@ EN:
 - **Contents:** Dart helpers and types (`RecurrenceEditScope`).
 - **Key code names:** `RecurrenceEditScope`
 - **Repository role:** Brain/data
-- **Evidence of use:** Imported/exported by production Dart: `lib/data/database_service.dart`, `lib/features/planning/recurrence_scope_dialog.dart`, `lib/features/planning/time_view/time_view_card_layer.dart`, `lib/features/shared/edit_sheet/parallel_record_panels.dart`, `lib/features/shared/planning_task_edit_sheet.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/data/database_service.dart`, `lib/features/planning/recurrence_scope_dialog.dart`, `lib/features/planning/time_view/time_view_card_layer.dart`, `lib/features/shared/edit_sheet/parallel_record_panels.dart`, `lib/features/shared/timeline_record_edit_sheet.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -16482,7 +16594,7 @@ RU:
 - **Зачем:** Общая логика PocketBase и auth для нескольких вкладок.
 - **Содержимое:** Dart-хелперы и типы (logic in `recurrence_edit_scope`).
 - **Роль в репозитории:** Brain/data
-- **Доказательства использования:** Импортируется production Dart: `lib/data/database_service.dart`, `lib/features/planning/recurrence_scope_dialog.dart`, `lib/features/planning/time_view/time_view_card_layer.dart`, `lib/features/shared/edit_sheet/parallel_record_panels.dart`, `lib/features/shared/planning_task_edit_sheet.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/data/database_service.dart`, `lib/features/planning/recurrence_scope_dialog.dart`, `lib/features/planning/time_view/time_view_card_layer.dart`, `lib/features/shared/edit_sheet/parallel_record_panels.dart`, `lib/features/shared/timeline_record_edit_sheet.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -19076,7 +19188,8 @@ EN:
 - **Human purpose:** `recurrence_scope_dialog.dart` on Plans tab (second bottom tab) — Plans tab: date pager shell + day page body, quick-add tag controller, Time View modules, settings, bulk edit. Users see `recurrence_scope_dialog.dart` when using Plans tab (second bottom tab).
 - **What this is:** `recurrence_scope_dialog.dart` on Plans tab (second bottom tab) — Plans tab: date pager shell + day page body, quick-add tag controller, Time View modules, settings, bulk edit.
 - **Why needed:** Users see `recurrence_scope_dialog.dart` when using Plans tab (second bottom tab).
-- **Contents:** Modal UI widgets and controllers in `recurrence_scope_dialog.dart`.
+- **Contents:** Primary symbols: `RecurrenceEditScopeGate`.
+- **Key code names:** `RecurrenceEditScopeGate`
 - **Repository role:** production UI
 - **Evidence of use:** Imported/exported by production Dart: `lib/features/planning/planning_page.dart`, `lib/features/planning/time_view/time_view_card_layer.dart`, `lib/features/shared/edit_sheet/parallel_record_panels.dart`, `lib/features/shared/planning_task_edit_sheet.dart`, `lib/features/shared/timeline_record_edit_sheet.dart`.
 - **Necessity status:** PROVEN_REQUIRED
@@ -19093,7 +19206,7 @@ RU:
 - **Зачем файл человеку:** `recurrence_scope_dialog.dart` на вкладка Plans (вторая снизу) — Пользователь открывает sheet/dialog из entry `recurrence_scope_dialog`.. Пользователь видит UI из `recurrence_scope_dialog.dart` на вкладка Plans (вторая снизу).
 - **Что это:** `recurrence_scope_dialog.dart` на вкладка Plans (вторая снизу) — Пользователь открывает sheet/dialog из entry `recurrence_scope_dialog`..
 - **Зачем:** Пользователь видит UI из `recurrence_scope_dialog.dart` на вкладка Plans (вторая снизу).
-- **Содержимое:** Modal UI и controllers в `recurrence_scope_dialog.dart`.
+- **Содержимое:** Основные символы: `RecurrenceEditScopeGate`.
 - **Роль в репозитории:** production UI
 - **Доказательства использования:** Импортируется production Dart: `lib/features/planning/planning_page.dart`, `lib/features/planning/time_view/time_view_card_layer.dart`, `lib/features/shared/edit_sheet/parallel_record_panels.dart`, `lib/features/shared/planning_task_edit_sheet.dart`, `lib/features/shared/timeline_record_edit_sheet.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
@@ -29598,7 +29711,7 @@ EN:
 - **Why needed:** Automates a repeatable task documented in repo notes or `DEPLOY.md`.
 - **Contents:** PowerShell, Python, or Dart commands for `deployment_contract.py`.
 - **Repository role:** audit tool
-- **Evidence of use:** Invoked or documented by: `.github/workflows/architecture-guard.yml`, `.github/workflows/deploy-pocketbase.yml`, `docs/reports/DEPLOYMENT_PIPELINE_REPAIR_2026-08-24.md`.
+- **Evidence of use:** Invoked or documented by: `.github/workflows/architecture-guard.yml`, `.github/workflows/deploy-pocketbase.yml`, `docs/ARCHITECTURE.md`, `docs/reports/DEPLOYMENT_PIPELINE_REPAIR_2026-08-24.md`.
 - **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Deletion consequence:** Broken audit/deploy/manual maintenance command.
 - **Confidence:** HIGH
@@ -29615,7 +29728,7 @@ RU:
 - **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
 - **Содержимое:** Команды PowerShell/Python/Dart в `deployment_contract.py`.
 - **Роль в репозитории:** audit tool
-- **Доказательства использования:** Вызывается или описан в: `.github/workflows/architecture-guard.yml`, `.github/workflows/deploy-pocketbase.yml`, `docs/reports/DEPLOYMENT_PIPELINE_REPAIR_2026-08-24.md`.
+- **Доказательства использования:** Вызывается или описан в: `.github/workflows/architecture-guard.yml`, `.github/workflows/deploy-pocketbase.yml`, `docs/ARCHITECTURE.md`, `docs/reports/DEPLOYMENT_PIPELINE_REPAIR_2026-08-24.md`.
 - **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Что будет, если удалить:** Сломается audit/deploy или ручная команда сопровождения.
 - **Уверенность:** HIGH
@@ -37037,7 +37150,7 @@ EN:
 - **Why needed:** Win32 resource compiler and Inno Setup use this for taskbar/Explorer/Start menu branding.
 - **Contents:** Multi-size ICO raster for Windows shell icons.
 - **Repository role:** platform resource
-- **Evidence of use:** (1) Tracked Flutter platform file under `windows/runner/resources/` (individual role: `app_icon.ico` for that platform project). (2) Also referenced by: `.github/workflows/windows-desktop-build.yml`, `scripts/manual/structure_file_ru_curated.py`, `scripts/manual/structure_guide_data.py`.
+- **Evidence of use:** (1) Tracked Flutter platform file under `windows/runner/resources/` (individual role: `app_icon.ico` for that platform project). (2) Also referenced by: `scripts/manual/structure_file_ru_curated.py`, `scripts/manual/structure_guide_data.py`, `scripts/manual/structure_platform_file_guides.py`.
 - **Necessity status:** REQUIRED_BY_PLATFORM_CONVENTION
 - **Deletion consequence:** Unavailable or broken platform build for that OS target.
 - **Confidence:** HIGH

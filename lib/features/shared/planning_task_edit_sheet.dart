@@ -114,15 +114,12 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
     _quillScrollController = ScrollController();
     _categoryId = widget.task.categoryId;
     _selectedTags = List<Tag>.from(widget.task.tags);
-    _reminderMinutes = widget.task.reminderOffset;
-    _repeatUi = planRepeatUiFromTask(widget.task);
-    _rruleCustomRaw = _repeatUi == PlanRepeatUi.custom
-        ? widget.task.rrule?.trim()
-        : null;
+    final recurrenceSource = DatabaseService.instance.planningRecurrenceEditSource(widget.task);
+    _reminderMinutes = widget.task.reminderOffset ?? recurrenceSource.reminderOffset;
+    _repeatUi = planRepeatUiFromTask(recurrenceSource);
+    _rruleCustomRaw = _repeatUi == PlanRepeatUi.custom ? recurrenceSource.rrule?.trim() : null;
     _rruleCustomController = TextEditingController(
-      text: _repeatUi == PlanRepeatUi.custom
-          ? (widget.task.rrule?.trim() ?? '')
-          : '',
+      text: _repeatUi == PlanRepeatUi.custom ? (recurrenceSource.rrule?.trim() ?? '') : '',
     );
     if (!_startedAsUndatedBacklog) {
       DatabaseService.instance

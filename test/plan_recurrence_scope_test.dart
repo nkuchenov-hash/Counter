@@ -67,37 +67,51 @@ void main() {
   });
 
   group('recurrence scope model', () {
-    test('thisAndFuture is not supported yet', () {
-      expect(
-        recurrenceEditScopeIsSupported(RecurrenceEditScope.thisAndFuture),
-        isFalse,
-      );
+    test('only occurrence and this/future are user-supported', () {
       expect(
         recurrenceEditScopeIsSupported(RecurrenceEditScope.singleOccurrence),
         isTrue,
       );
       expect(
-        recurrenceEditScopeIsSupported(RecurrenceEditScope.entireSeries),
+        recurrenceEditScopeIsSupported(RecurrenceEditScope.thisAndFuture),
         isTrue,
+      );
+      expect(
+        recurrenceEditScopeIsSupported(RecurrenceEditScope.entireSeries),
+        isFalse,
+      );
+      expect(
+        canonicalRecurrenceEditScope(RecurrenceEditScope.entireSeries),
+        RecurrenceEditScope.thisAndFuture,
       );
     });
   });
 
-  group('recurrence scope APIs', () {
-    test('thisAndFuture update and delete return false when unsupported', () async {
-      final db = DatabaseService.instance;
-      final updated = await db.updatePlanningTaskWithRecurrenceScope(
-        'virt-$_seriesPb-$_dayKey',
-        scope: RecurrenceEditScope.thisAndFuture,
-        suppressAppSnack: true,
+  group('recurrence split RRULE helpers', () {
+    test('historical rule ends immediately before split boundary', () {
+      final out = recurrenceRruleEndingBefore(
+        'FREQ=WEEKLY;BYDAY=MO;COUNT=20',
+        DateTime.utc(2026, 9, 28),
       );
-      final deleted = await db.deletePlanningTaskWithRecurrenceScope(
-        'virt-$_seriesPb-$_dayKey',
-        scope: RecurrenceEditScope.thisAndFuture,
-        suppressAppSnack: true,
+      expect(out, contains('FREQ=WEEKLY'));
+      expect(out, contains('BYDAY=MO'));
+      expect(out, contains('UNTIL=20260927T235959Z'));
+      expect(out, isNot(contains('COUNT=')));
+    });
+
+    test('COUNT is reduced only by already consumed occurrences', () {
+      expect(
+        recurrenceRruleWithRemainingCount('FREQ=DAILY;COUNT=10', 3),
+        'FREQ=DAILY;COUNT=7',
       );
-      expect(updated, isFalse);
-      expect(deleted, isFalse);
+      expect(
+        recurrenceRruleWithRemainingCount('FREQ=DAILY;COUNT=3', 3),
+        isNull,
+      );
+      expect(
+        recurrenceRruleWithRemainingCount('FREQ=DAILY', 500),
+        'FREQ=DAILY',
+      );
     });
   });
 

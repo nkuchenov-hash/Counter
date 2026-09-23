@@ -84,6 +84,11 @@ Password reset is app-owned through `POST /api/auth/request-password-reset`; do 
 | `title`, `is_done`, `order`, times, `checklist`, `notes_delta`, `notes_plain`, `tags` | — | See **`docs/DATA_MAP.md`**. |
 | `initial_date_key` | text | Wall day `YYYY-MM-DD` of original plan commitment; **does not change** when the task is postponed to a future day. |
 | `is_postponed` | bool | `true` when the scheduled wall day is after `initial_date_key` (bulk/single move ahead). |
+| `rrule` | text | RFC 5545 recurrence rule for a stored series template. Empty/null = non-recurring. |
+| `exception_dates` | json | `YYYY-MM-DD` dates suppressed from normal JIT series expansion. Default `[]`. |
+| `parent_plan_id` | relation | Optional self-relation → `plans.id`. For a materialized recurring occurrence, points to its recurrence series row. |
+| `recurrence_instance_date_key` | text | Optional `YYYY-MM-DD` original occurrence date for a materialized recurrence exception. Used with `parent_plan_id` for dedupe and future-series reparenting. |
+| `reminder_offset` | number | Optional minutes before plan start for the reminder. |
 | `tags_link` | relation(s) | Expand: `kPbPlanTagsExpand`. |
 
 ### 4.4 `records` (timeline)

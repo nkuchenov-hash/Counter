@@ -2,11 +2,11 @@
 
 **Not architecture law.** This file lists which repo docs to upload into Project Knowledge (max 25). Current governing docs live in git; use this as the upload manifest only.
 
-**Pack count:** 14 documents (≤25 limit)
+**Pack count:** 16 documents (≤25 limit)
 
 ---
 
-## Upload these 14 files
+## Upload these 16 files
 
 | # | Path | Topic |
 | :---: | :--- | :--- |
@@ -24,6 +24,8 @@
 | 12 | `docs/DEPLOY.md` | Web deploy, auth admin, Windows installer |
 | 13 | `docs/ROADMAP.md` | Current priority / status |
 | 14 | `docs/reports/FINAL_STRUCTURE_PARITY_AND_DOC_CLEANUP_2026-07-03.md` | Structure parity proof, removed-docs log |
+| 15 | `docs/FUNCTIONS.md` | Canonical product-function behavior for AI/developers |
+| 16 | `docs/USER_GUIDE.md` | Human-readable product instructions |
 
 ---
 
@@ -56,7 +58,7 @@ Earlier parity pass already removed intermediate Pass 3–4D reports, lockdown a
 
 ## Confirmation
 
-- One source of truth per topic in the 14-doc pack
+- One source of truth per topic in the 16-doc pack
 - No duplicate Russian structure guide
 - No external sync / re-upload instructions
 - Architecture decomposition complete; pack is docs-only hygiene
