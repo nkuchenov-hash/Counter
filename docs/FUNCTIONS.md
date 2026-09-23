@@ -4,9 +4,9 @@
 
 ## planning.recurring_plans — Повторяющиеся планы
 
-**Статус:** реализовано  
-**Владелец:** Planning / Brain  
-**Постоянная коллекция:** `plans`  
+**Статус:** реализовано
+**Владелец:** Planning / Brain
+**Постоянная коллекция:** `plans`
 **Основной код:** `lib/data/plans/plan_recurrence_helpers.dart`, `lib/data/plans/plan_recurrence_split_helpers.dart`, `lib/data/recurrence_edit_scope.dart`, `lib/features/planning/recurrence_scope_dialog.dart`
 
 ### Хранение и генерация повторений
