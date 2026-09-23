@@ -132,6 +132,42 @@ void main() {
         isTrue,
       );
     });
+
+    test('detects legacy materialized rows through their recurring parent', () {
+      final db = DatabaseService.instance;
+      db.applyOptimisticPlanningTask(
+        PlanningTask(
+          id: 0,
+          title: 'Series parent',
+          categoryId: 1,
+          isDone: false,
+          dateKey: _dayKey,
+          order: 0,
+          startTime: DateTime(2026, 6, 23, 9),
+          planRowId: 'biz-series-parent-fallback',
+          pocketRecordId: _seriesPb,
+          rrule: 'FREQ=DAILY',
+        ),
+      );
+
+      final legacyMaterialized = PlanningTask(
+        id: 0,
+        title: 'Occurrence renamed by an older client',
+        categoryId: 1,
+        isDone: false,
+        dateKey: _dayKey,
+        order: 0,
+        startTime: DateTime(2026, 6, 23, 9),
+        planRowId: 'biz-legacy-occurrence',
+        pocketRecordId: 'legacyoccurr0001',
+        parentPlanPocketId: _seriesPb,
+      );
+
+      expect(
+        db.planningTaskIsRecurringForScope(legacyMaterialized),
+        isTrue,
+      );
+    });
   });
 
   group('virtual id guards', () {
