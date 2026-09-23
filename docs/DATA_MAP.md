@@ -121,7 +121,7 @@ description: Revisions and corrections for DATA_MAP.md.
 | **is_done** | Bool | State | **YES** | `true` = completed; `false` = pending. |
 | **start_time** | ISO8601 String | Time | NO | Scheduled start time (PocketBase `date`). |
 | **end_time** | ISO8601 String | Time | NO | Scheduled deadline/finish time (PocketBase `date`). |
-| **parent_plan_id**| Relation | Hierarchy | NO | Relation to **plans** `id` (15-char, **self-collection**). Optional parent plan for sub-tasks; use `expand` for nested plan trees. |
+| **parent_plan_id**| Relation | Hierarchy / Recurrence | NO | Relation to **plans** `id` (15-char, **self-collection**). Used either for nested plan hierarchy or, on a materialized recurring occurrence, to point to its recurrence series row. |
 | **checklist** | JSON | Complex | **YES** | Array of sub-items (default: `[]`). |
 | **order** | Number | UI | **YES** | Manual sorting index (default: `0`). |
 | **notes_delta** | JSON | Complex | NO | Quill Delta (JSON array) for rich-text notes in the Idea Editor. |
@@ -132,6 +132,7 @@ description: Revisions and corrections for DATA_MAP.md.
 | **is_postponed** | Bool | Audit | NO | `true` when the scheduled wall day is after [initial_date_key] (bulk/single move to a future day). |
 | **rrule** | String | Recurrence | NO | RFC 5545 recurrence rule (e.g. `FREQ=WEEKLY;BYDAY=TU`). Store with or without `RRULE:` prefix; client normalizes. Null / empty = non-recurring. |
 | **exception_dates** | JSON Array | Recurrence | NO | Array of ISO-8601 **date** strings (`YYYY-MM-DD`) for instances to **omit** when expanding [rrule] (skipped or materially changed elsewhere). Default `[]`. |
+| **recurrence_instance_date_key** | String | Recurrence | NO | Wall day `YYYY-MM-DD` of a materialized recurring occurrence. Together with `parent_plan_id`, identifies which series instance this real row replaces/suppresses. Null on the recurrence template and on ordinary non-recurring plans. |
 | **reminder_offset** | Number | UI / alarms | NO | Minutes before [start_time] for a local reminder; null = no reminder. Client: [NotificationService] maps expanded [PlanningTask]s inside a 7-day window to at most 50 OS-scheduled notifications (`flutter_local_notifications`). |
 
 ### 🛠 Operational Logic for `plans`:
@@ -144,8 +145,9 @@ description: Revisions and corrections for DATA_MAP.md.
 3. **Time Interpretation:**
    * These timestamps represent **intent**, not actual work duration.
    * **Rule:** When converting a "Plan" into a "Record", `plan.start_time` is a suggestion; `record.start_time` is the actual moment the user hits "Start".
-4. **Hierarchical Plans:**
-   * **`parent_plan_id`** is a **Relation** to another row’s system `id` in **plans** (self-collection). Use `expand` for nested task lists.
+4. **`parent_plan_id` dual role:**
+   * For ordinary hierarchy, it points to another plan row as the parent task.
+   * For a materialized recurring occurrence, it points to the recurrence series row; `recurrence_instance_date_key` carries the original series date. This pair is used for recurrence dedupe and split/reparent operations.
 5. **REST Construction**: Plans MUST use the PocketBase **System `id`** for `PATCH` and `DELETE` URL paths. Do not use the `plan_id` UUID in the URL.
 6. **JIT recurring (rrule):** The client keeps **one** row per series. [DatabaseService] expands [rrule] into **virtual** [PlanningTask] copies for the visible calendar window; dates in [exception_dates] produce no instance. The stored row’s [start_time] / [end_time] define duration and DTSTART anchor. Do not pre-insert future rows for each occurrence.
 
