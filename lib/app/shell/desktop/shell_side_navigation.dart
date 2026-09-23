@@ -1,3 +1,4 @@
+import 'package:counter/features/timeline/unfilled_time_gap_banner.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
 
@@ -83,17 +84,25 @@ class ShellSideNavigation extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                for (final item in items)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 4),
-                    child: ShellSideNavItem(
-                      icon: item.icon,
-                      selectedIcon: item.selectedIcon,
-                      label: item.label,
-                      selected: selectedIndex == item.index,
-                      onTap: () => onTabSelected(item.index),
-                    ),
+                Expanded(
+                  child: ListView(
+                    padding: EdgeInsets.zero,
+                    children: [
+                      for (final item in items)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 4),
+                          child: ShellSideNavItem(
+                            icon: item.icon,
+                            selectedIcon: item.selectedIcon,
+                            label: item.label,
+                            selected: selectedIndex == item.index,
+                            onTap: () => onTabSelected(item.index),
+                          ),
+                        ),
+                    ],
                   ),
+                ),
+                const UnfilledTimeGapSidebarCard(),
               ],
             ),
           ),

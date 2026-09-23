@@ -6,8 +6,22 @@ import 'package:counter/data/records/unfilled_time_gap_service.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
 
+/// Legacy top-banner entry point.
+///
+/// Unfilled-time prompts are intentionally forbidden from occupying the top
+/// shell/status area. Keep this as a no-op so an accidental legacy call cannot
+/// reintroduce the full-width banner.
+@Deprecated('Use UnfilledTimeGapSidebarCard in the desktop side navigation.')
 class UnfilledTimeGapBanner extends StatelessWidget {
   const UnfilledTimeGapBanner({super.key});
+
+  @override
+  Widget build(BuildContext context) => const SizedBox.shrink();
+}
+
+/// Compact desktop/web prompt that lives in the left navigation rail only.
+class UnfilledTimeGapSidebarCard extends StatelessWidget {
+  const UnfilledTimeGapSidebarCard({super.key});
 
   String _time(BuildContext context, DateTime utc) {
     final wall = DatabaseService.instance.applyUserOffset(utc.toUtc());
@@ -27,33 +41,59 @@ class UnfilledTimeGapBanner extends StatelessWidget {
         final range =
             '${_time(context, gap.startUtc)}–${_time(context, gap.endUtc)}';
         final scheme = Theme.of(context).colorScheme;
-        return Material(
-          color: scheme.secondaryContainer,
-          child: SafeArea(
-            top: false,
-            bottom: false,
+        return Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: scheme.surfaceContainerHigh,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: scheme.outlineVariant.withValues(alpha: 0.8),
+              ),
+            ),
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              child: Row(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Icon(
-                    Icons.schedule_rounded,
-                    color: scheme.onSecondaryContainer,
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      '${t(locale, 'unfilled_time_banner')} · $range',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: scheme.onSecondaryContainer,
-                        fontWeight: FontWeight.w600,
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(
+                        Icons.schedule_rounded,
+                        size: 20,
+                        color: scheme.onSurfaceVariant,
                       ),
-                    ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              t(locale, 'unfilled_time_banner'),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.labelLarge
+                                  ?.copyWith(fontWeight: FontWeight.w700),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              range,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(color: scheme.onSurfaceVariant),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(height: 10),
                   AppButton.secondary(
                     label: t(locale, 'unfilled_time_fill'),
                     size: AppButtonSize.s,
+                    fullWidth: true,
                     onPressed: () => _openEditor(context, gap),
                   ),
                 ],
