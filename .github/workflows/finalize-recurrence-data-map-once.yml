@@ -1,0 +1,40 @@
+name: Finalize recurrence DATA_MAP once
+on:
+  push:
+    branches: [fix/recurrence-dialog-alignment]
+permissions:
+  contents: write
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Patch DATA_MAP and remove temporary workflow
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('docs/DATA_MAP.md')
+          s = p.read_text(encoding='utf-8')
+          s = s.replace(
+              '| **parent_plan_id**| Relation | Hierarchy | NO | Relation to **plans** `id` (15-char, **self-collection**). Optional parent plan for sub-tasks; use `expand` for nested plan trees. |',
+              '| **parent_plan_id**| Relation | Hierarchy / Recurrence | NO | Relation to **plans** `id` (15-char, **self-collection**). Used either for nested plan hierarchy or, on a materialized recurring occurrence, to point to its recurrence series row. |',
+          )
+          s = s.replace(
+              '| **exception_dates** | JSON Array | Recurrence | NO | Array of ISO-8601 **date** strings (`YYYY-MM-DD`) for instances to **omit** when expanding [rrule] (skipped or materially changed elsewhere). Default `[]`. |\n| **reminder_offset**',
+              '| **exception_dates** | JSON Array | Recurrence | NO | Array of ISO-8601 **date** strings (`YYYY-MM-DD`) for instances to **omit** when expanding [rrule] (skipped or materially changed elsewhere). Default `[]`. |\n| **recurrence_instance_date_key** | String | Recurrence | NO | Wall day `YYYY-MM-DD` of a materialized recurring occurrence. Together with `parent_plan_id`, identifies which series instance this real row replaces/suppresses. Null on the recurrence template and on ordinary non-recurring plans. |\n| **reminder_offset**',
+          )
+          s = s.replace(
+              '4. **Hierarchical Plans:**\n   * **`parent_plan_id`** is a **Relation** to another row’s system `id` in **plans** (self-collection). Use `expand` for nested task lists.\n5. **REST Construction**',
+              '4. **`parent_plan_id` dual role:**\n   * For ordinary hierarchy, it points to another plan row as the parent task.\n   * For a materialized recurring occurrence, it points to the recurrence series row; `recurrence_instance_date_key` carries the original series date. This pair is used for recurrence dedupe and split/reparent operations.\n5. **REST Construction**',
+          )
+          p.write_text(s, encoding='utf-8')
+          PY
+          rm .github/workflows/finalize-recurrence-data-map-once.yml
+          git add docs/DATA_MAP.md .github/workflows/finalize-recurrence-data-map-once.yml
+          git config user.name "life-os-recurrence-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git commit -m "Document recurrence instance schema"
+          git push origin HEAD:fix/recurrence-dialog-alignment
