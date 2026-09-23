@@ -32,7 +32,7 @@ class RecurrenceEditScopeGate {
   }
 }
 
-/// Returns chosen scope, or null when dismissed.
+/// Returns the selected occurrence scope, or null when dismissed.
 Future<RecurrenceEditScope?> showRecurrenceScopeDialog(
   BuildContext context, {
   required PlanningTask task,
@@ -48,67 +48,41 @@ Future<RecurrenceEditScope?> showRecurrenceScopeDialog(
   final futureKey = isDelete
       ? 'plan_recurrence_delete_future'
       : 'plan_recurrence_edit_future';
-  final seriesKey = isDelete
-      ? 'plan_recurrence_delete_series'
-      : 'plan_recurrence_edit_series';
-  const futureDisabledKey = 'plan_recurrence_future_disabled_hint';
 
   return showDialog<RecurrenceEditScope>(
     context: context,
-    builder: (ctx) {
-      return AlertDialog(
-        titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 12),
-        contentPadding: const EdgeInsets.fromLTRB(24, 0, 24, 0),
-        actionsPadding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
-        title: Align(
-          alignment: AlignmentDirectional.centerStart,
-          child: Text(t(locale, titleKey)),
-        ),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                title: Text(t(locale, thisKey)),
-                onTap: () =>
-                    Navigator.of(ctx).pop(RecurrenceEditScope.singleOccurrence),
-              ),
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                enabled: recurrenceEditScopeIsSupported(
-                  RecurrenceEditScope.thisAndFuture,
-                ),
-                title: Text(t(locale, futureKey)),
-                subtitle: recurrenceEditScopeIsSupported(
-                        RecurrenceEditScope.thisAndFuture)
-                    ? null
-                    : Text(t(locale, futureDisabledKey)),
-                onTap: recurrenceEditScopeIsSupported(
-                  RecurrenceEditScope.thisAndFuture,
-                )
-                    ? () => Navigator.of(
-                        ctx,
-                      ).pop(RecurrenceEditScope.thisAndFuture)
-                    : null,
-              ),
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                title: Text(t(locale, seriesKey)),
-                onTap: () =>
-                    Navigator.of(ctx).pop(RecurrenceEditScope.entireSeries),
-              ),
-            ],
+    builder: (ctx) => AlertDialog(
+      titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 12),
+      contentPadding: const EdgeInsets.fromLTRB(24, 0, 24, 0),
+      actionsPadding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
+      title: Align(
+        alignment: AlignmentDirectional.centerStart,
+        child: Text(t(locale, titleKey)),
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            title: Text(t(locale, thisKey)),
+            onTap: () =>
+                Navigator.of(ctx).pop(RecurrenceEditScope.singleOccurrence),
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: Text(t(locale, 'cancel')),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            title: Text(t(locale, futureKey)),
+            onTap: () =>
+                Navigator.of(ctx).pop(RecurrenceEditScope.thisAndFuture),
           ),
         ],
-      );
-    },
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(ctx).pop(),
+          child: Text(t(locale, 'cancel')),
+        ),
+      ],
+    ),
   );
 }

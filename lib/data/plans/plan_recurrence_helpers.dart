@@ -804,31 +804,11 @@ extension PlanRecurrenceExtension on DatabaseService {
     List<String>? planExceptionDates,
     String? recurrenceInstanceDateKey,
   }) async {
-    if (scope == RecurrenceEditScope.thisAndFuture) {
-      if (!suppressAppSnack) AppSnack.failed();
-      return false;
-    }
-    final cached = _findCachedPlanningTaskForEdit(
-      planRowId,
-      planBusinessId: planBusinessId,
-    );
-    if (scope == RecurrenceEditScope.entireSeries) {
-      final seriesPb = _resolveRecurrenceSeriesPocketId(
-        planRowId: planRowId,
+    final effectiveScope = canonicalRecurrenceEditScope(scope);
+    if (effectiveScope == RecurrenceEditScope.thisAndFuture) {
+      return _updateRecurringThisAndFuture(
+        planRowId,
         planBusinessId: planBusinessId,
-        cached: cached,
-      );
-      if (seriesPb == null ||
-          !DatabaseService._isLikelyPocketBaseRowId(seriesPb)) {
-        if (!suppressAppSnack) AppSnack.failed();
-        return false;
-      }
-      final seriesTask = cached?.rrule?.trim().isNotEmpty == true
-          ? cached
-          : _findCachedPlanningTaskForEdit(seriesPb);
-      return updatePlanningTask(
-        seriesPb,
-        planBusinessId: seriesTask?.planRowId ?? planBusinessId,
         title: title,
         categoryId: categoryId,
         isDone: isDone,
@@ -849,7 +829,6 @@ extension PlanRecurrenceExtension on DatabaseService {
         patchPlanAlarmRecurrence: patchPlanAlarmRecurrence,
         planRrule: planRrule,
         planReminderOffset: planReminderOffset,
-        planExceptionDates: planExceptionDates,
         recurrenceInstanceDateKey: recurrenceInstanceDateKey,
       );
     }
@@ -893,36 +872,21 @@ extension PlanRecurrenceExtension on DatabaseService {
     if (!_isPlansTableConfigured) return false;
     final rid = planRowId.trim();
     if (rid.isEmpty) return false;
-
-    if (scope == RecurrenceEditScope.thisAndFuture) {
-      if (!suppressAppSnack) AppSnack.failed();
-      return false;
+    final effectiveScope = canonicalRecurrenceEditScope(scope);
+    if (effectiveScope == RecurrenceEditScope.thisAndFuture) {
+      return _deleteRecurringThisAndFuture(
+        rid,
+        planBusinessId: planBusinessId,
+        recurrenceInstanceDateKey: recurrenceInstanceDateKey,
+        suppressAppSnack: suppressAppSnack,
+      );
     }
-
     final cached = _findCachedPlanningTaskForEdit(
       rid,
       planBusinessId: planBusinessId,
     );
-
-    if (scope == RecurrenceEditScope.entireSeries) {
-      final seriesPb = _resolveRecurrenceSeriesPocketId(
-        planRowId: rid,
-        planBusinessId: planBusinessId,
-        cached: cached,
-      );
-      if (seriesPb == null ||
-          !DatabaseService._isLikelyPocketBaseRowId(seriesPb)) {
-        if (!suppressAppSnack) AppSnack.failed();
-        return false;
-      }
-      return deletePlanningTasksBulk([seriesPb]);
-    }
-
     final virt = _parseVirtualPlanRowId(rid);
-    if (virt != null) {
-      return deletePlanningTasksBulk([rid]);
-    }
-
+    if (virt != null) return deletePlanningTasksBulk([rid]);
     if (_isMaterializedRecurrenceException(
       cached ??
           PlanningTask(
@@ -936,7 +900,6 @@ extension PlanRecurrenceExtension on DatabaseService {
     )) {
       return deletePlanningTasksBulk([rid]);
     }
-
     final instDay = _resolveRecurrenceInstanceDateKey(
       planRowId: rid,
       recurrenceInstanceDateKey: recurrenceInstanceDateKey,
@@ -954,7 +917,6 @@ extension PlanRecurrenceExtension on DatabaseService {
         );
       }
     }
-
     return deletePlanningTasksBulk([rid]);
   }
 
