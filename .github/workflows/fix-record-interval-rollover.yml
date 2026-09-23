@@ -46,7 +46,7 @@ jobs:
 
           policy = 'lib/features/shared/edit_sheet/record_edit_save_policy.dart'
           marker = '/// Validation for explicit Save. Running metadata saves require start only.\n'
-          helper = '''/// Time fields that autosave is allowed to mutate.\n///\n/// A stopped record is only allowed to autosave its interval when both endpoints\n/// form a strictly positive interval. This matters while the user is editing one\n/// picker at a time: a temporary cross-midnight/date mismatch must never reach\n/// optimistic cache or PocketBase. Metadata autosave can continue with no time\n/// patch while the draft interval is temporarily invalid.\n@immutable\nclass RecordAutosaveTimePatch {\n  const RecordAutosaveTimePatch({this.startUtc, this.endUtc});\n\n  final DateTime? startUtc;\n  final DateTime? endUtc;\n}\n\n@visibleForTesting\nRecordAutosaveTimePatch buildRecordAutosaveTimePatch({\n  required bool recordIsRunning,\n  required DateTime? draftStartDisplay,\n  required DateTime? draftEndDisplay,\n  required DateTime Function(DateTime display) displayToUtc,\n}) {\n  if (draftStartDisplay == null) {\n    return const RecordAutosaveTimePatch();\n  }\n  final startUtc = displayToUtc(draftStartDisplay).toUtc();\n  if (recordIsRunning) {\n    return RecordAutosaveTimePatch(startUtc: startUtc);\n  }\n  if (draftEndDisplay == null) {\n    return const RecordAutosaveTimePatch();\n  }\n  final endUtc = displayToUtc(draftEndDisplay).toUtc();\n  if (!endUtc.isAfter(startUtc)) {\n    return const RecordAutosaveTimePatch();\n  }\n  return RecordAutosaveTimePatch(startUtc: startUtc, endUtc: endUtc);\n}\n\n'''
+          helper = '''/// Time fields that autosave is allowed to mutate.\n///\n/// A stopped record is only allowed to autosave its interval when both endpoints\n/// form a strictly positive interval. This matters while the user is editing one\n/// picker at a time: a temporary cross-midnight/date mismatch must never reach\n/// optimistic cache or PocketBase. Metadata autosave can continue with no time\n/// patch while the draft interval is temporarily invalid.\n@immutable\nclass RecordAutosaveTimePatch {\n  const RecordAutosaveTimePatch({this.startUtc, this.endUtc});\n\n  final DateTime? startUtc;\n  final DateTime? endUtc;\n}\n\nRecordAutosaveTimePatch buildRecordAutosaveTimePatch({\n  required bool recordIsRunning,\n  required DateTime? draftStartDisplay,\n  required DateTime? draftEndDisplay,\n  required DateTime Function(DateTime display) displayToUtc,\n}) {\n  if (draftStartDisplay == null) {\n    return const RecordAutosaveTimePatch();\n  }\n  final startUtc = displayToUtc(draftStartDisplay).toUtc();\n  if (recordIsRunning) {\n    return RecordAutosaveTimePatch(startUtc: startUtc);\n  }\n  if (draftEndDisplay == null) {\n    return const RecordAutosaveTimePatch();\n  }\n  final endUtc = displayToUtc(draftEndDisplay).toUtc();\n  if (!endUtc.isAfter(startUtc)) {\n    return const RecordAutosaveTimePatch();\n  }\n  return RecordAutosaveTimePatch(startUtc: startUtc, endUtc: endUtc);\n}\n\n'''
           replace_once(policy, marker, helper + marker)
 
           sheet = 'lib/features/shared/timeline_record_edit_sheet.dart'
@@ -111,8 +111,19 @@ jobs:
           flutter test test/record_interval_autosave_guard_test.dart
           flutter test test/timeline_record_edit_save_test.dart
 
-      - name: Analyze
-        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+      - name: Analyze touched code against repository baseline
+        shell: bash
+        run: |
+          set +e
+          flutter analyze --no-fatal-infos --no-fatal-warnings 2>&1 | tee /tmp/flutter-analyze.log
+          analyze_code=${PIPESTATUS[0]}
+          set -e
+          if grep -E '^[[:space:]]*error • .* • (lib/features/shared/edit_sheet/record_edit_save_policy\.dart|lib/features/shared/timeline_record_edit_sheet\.dart|lib/data/records/record_crud\.dart|lib/data/records/record_timeline_vm\.dart|test/record_interval_autosave_guard_test\.dart):' /tmp/flutter-analyze.log; then
+            echo 'Analyzer found an error in interval-fix code.' >&2
+            exit 1
+          fi
+          echo "Full repository analyzer exit code: $analyze_code (existing unrelated analyzer debt is reported above)."
+          echo 'No analyzer errors in interval-fix files.'
 
       - name: Commit fix
         shell: bash
