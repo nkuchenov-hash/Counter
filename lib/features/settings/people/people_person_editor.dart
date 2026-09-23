@@ -120,9 +120,6 @@ Future<PeoplePersonEditorResult?> showPeoplePersonEditor({
     }
   }
 
-  // Birthday date and birthday year are intentionally separate concepts.
-  // A date can exist without a known year, so the date always uses leap-year
-  // 2000 internally and the optional year is stored independently.
   DateTime? birthdayDate =
       person?.birthdayMonth != null && person?.birthdayDay != null
           ? DateTime(2000, person!.birthdayMonth!, person.birthdayDay!)
@@ -690,7 +687,7 @@ Future<PeoplePersonEditorResult?> showPeoplePersonEditor({
                             controller: birthdayYearController,
                             enabled: !saving && birthdayDate != null,
                             keyboardType: TextInputType.number,
-                            inputFormatters: const <TextInputFormatter>[
+                            inputFormatters: <TextInputFormatter>[
                               FilteringTextInputFormatter.digitsOnly,
                               LengthLimitingTextInputFormatter(4),
                             ],
