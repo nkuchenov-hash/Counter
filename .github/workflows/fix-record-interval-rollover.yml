@@ -1,0 +1,136 @@
+name: One-shot record interval rollover fix
+
+on:
+  push:
+    paths:
+      - '.github/workflows/fix-record-interval-rollover.yml'
+      - 'tools/fix_record_interval_rollover.trigger'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: one-shot-record-interval-rollover-fix
+  cancel-in-progress: false
+
+jobs:
+  fix:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Set up Flutter 3.41.6
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.6'
+          channel: stable
+
+      - name: Apply interval rollover fix
+        shell: bash
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+
+          def replace_once(path, old, new):
+              p = Path(path)
+              text = p.read_text(encoding='utf-8')
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f'{path}: expected exactly 1 match, got {count}')
+              p.write_text(text.replace(old, new, 1), encoding='utf-8')
+
+          policy = 'lib/features/shared/edit_sheet/record_edit_save_policy.dart'
+          marker = '/// Validation for explicit Save. Running metadata saves require start only.\n'
+          helper = '''/// Time fields that autosave is allowed to mutate.\n///\n/// A stopped record is only allowed to autosave its interval when both endpoints\n/// form a strictly positive interval. This matters while the user is editing one\n/// picker at a time: a temporary cross-midnight/date mismatch must never reach\n/// optimistic cache or PocketBase. Metadata autosave can continue with no time\n/// patch while the draft interval is temporarily invalid.\n@immutable\nclass RecordAutosaveTimePatch {\n  const RecordAutosaveTimePatch({this.startUtc, this.endUtc});\n\n  final DateTime? startUtc;\n  final DateTime? endUtc;\n}\n\n@visibleForTesting\nRecordAutosaveTimePatch buildRecordAutosaveTimePatch({\n  required bool recordIsRunning,\n  required DateTime? draftStartDisplay,\n  required DateTime? draftEndDisplay,\n  required DateTime Function(DateTime display) displayToUtc,\n}) {\n  if (draftStartDisplay == null) {\n    return const RecordAutosaveTimePatch();\n  }\n  final startUtc = displayToUtc(draftStartDisplay).toUtc();\n  if (recordIsRunning) {\n    return RecordAutosaveTimePatch(startUtc: startUtc);\n  }\n  if (draftEndDisplay == null) {\n    return const RecordAutosaveTimePatch();\n  }\n  final endUtc = displayToUtc(draftEndDisplay).toUtc();\n  if (!endUtc.isAfter(startUtc)) {\n    return const RecordAutosaveTimePatch();\n  }\n  return RecordAutosaveTimePatch(startUtc: startUtc, endUtc: endUtc);\n}\n\n'''
+          replace_once(policy, marker, helper + marker)
+
+          sheet = 'lib/features/shared/timeline_record_edit_sheet.dart'
+          marker = '  void _applyFuzzyCategoryFromRecordTitle(String title) {\n'
+          helper = '''  RecordAutosaveTimePatch _autosaveTimePatch() =>\n      buildRecordAutosaveTimePatch(\n        recordIsRunning: widget.record.endTime == null,\n        draftStartDisplay: _startDisplay,\n        draftEndDisplay: _endDisplay,\n        displayToUtc: displayToUtc,\n      );\n\n'''
+          replace_once(sheet, marker, helper + marker)
+
+          replace_once(
+              sheet,
+              '''    final isRunning = widget.record.endTime == null;\n    final startUtc = _startDisplay != null ? displayToUtc(_startDisplay!) : null;\n    DateTime? endUtc;\n    if (!isRunning && _startDisplay != null && _endDisplay != null) {\n      endUtc = displayToUtc(_endDisplay!);\n    }\n''',
+              '''    final timePatch = _autosaveTimePatch();\n    final startUtc = timePatch.startUtc;\n    final endUtc = timePatch.endUtc;\n''',
+          )
+          replace_once(
+              sheet,
+              '''      final tRunning = widget.record.endTime == null;\n      final tStartUtc =\n          _startDisplay != null ? displayToUtc(_startDisplay!) : null;\n      DateTime? tEndUtc;\n      if (!tRunning && _startDisplay != null && _endDisplay != null) {\n        tEndUtc = displayToUtc(_endDisplay!);\n      }\n''',
+              '''      final tTimePatch = _autosaveTimePatch();\n      final tStartUtc = tTimePatch.startUtc;\n      final tEndUtc = tTimePatch.endUtc;\n''',
+          )
+          replace_once(
+              sheet,
+              '''          final isRunning = widget.record.endTime == null;\n          final startUtc =\n              _startDisplay != null ? displayToUtc(_startDisplay!) : null;\n          DateTime? endUtc;\n          if (!isRunning && _startDisplay != null && _endDisplay != null) {\n            endUtc = displayToUtc(_endDisplay!);\n          }\n''',
+              '''          final timePatch = _autosaveTimePatch();\n          final startUtc = timePatch.startUtc;\n          final endUtc = timePatch.endUtc;\n''',
+          )
+
+          crud = 'lib/data/records/record_crud.dart'
+          old = '''      final existingRow = existingIndex >= 0\n          ? _cachedFlatRecords[existingIndex]\n          : null;\n      final oldCategoryId = existingRow != null\n'''
+          new = '''      final existingRow = existingIndex >= 0\n          ? _cachedFlatRecords[existingIndex]\n          : null;\n      if (startTime != null || endTime != null) {\n        final storedStart = existingRow == null\n            ? null\n            : CategoryServiceExtension._parseDateTimeUtc(\n                existingRow['start_time'] ?? existingRow['startTime'],\n              );\n        final storedEnd = existingRow == null\n            ? null\n            : CategoryServiceExtension._parseDateTimeUtc(\n                existingRow['end_time'] ?? existingRow['endTime'],\n              );\n        final effectiveStart = startTime?.toUtc() ?? storedStart;\n        final effectiveEnd = endTime?.toUtc() ?? storedEnd;\n        if (effectiveStart != null &&\n            effectiveEnd != null &&\n            !effectiveEnd.isAfter(effectiveStart)) {\n          DatabaseService._log(\n            'updateRecord: rejected invalid interval end<=start record=$originalInput',\n          );\n          return _timelineRecordFromCacheInput(originalInput);\n        }\n      }\n      final oldCategoryId = existingRow != null\n'''
+          replace_once(crud, old, new)
+
+          old = '''      if (title != null) row['title'] = title;\n      if (startTime != null) {\n        row['start_time'] = startTime.toUtc().toIso8601String();\n        if (endTime == null) row['status'] = 'running';\n      }\n      if (endTime != null) {\n        row['end_time'] = endTime.toUtc().toIso8601String();\n        row['status'] = 'stopped';\n      }\n      var resolvedCategoryId = categoryId;\n'''
+          new = '''      if (title != null) row['title'] = title;\n      final storedStart = CategoryServiceExtension._parseDateTimeUtc(\n        row['start_time'] ?? row['startTime'],\n      );\n      final storedEnd = CategoryServiceExtension._parseDateTimeUtc(\n        row['end_time'] ?? row['endTime'],\n      );\n      final effectiveStart = startTime?.toUtc() ?? storedStart;\n      final effectiveEnd = endTime?.toUtc() ?? storedEnd;\n      final hasTimePatch = startTime != null || endTime != null;\n      final invalidTimePatch = hasTimePatch &&\n          effectiveStart != null &&\n          effectiveEnd != null &&\n          !effectiveEnd.isAfter(effectiveStart);\n      if (invalidTimePatch) {\n        DatabaseService._log(\n          'applyOptimisticRecordRowEdit: rejected invalid interval end<=start record=$originalInput',\n        );\n      } else {\n        if (startTime != null) {\n          row['start_time'] = startTime.toUtc().toIso8601String();\n          if (endTime == null && storedEnd == null) row['status'] = 'running';\n        }\n        if (endTime != null) {\n          row['end_time'] = endTime.toUtc().toIso8601String();\n          row['status'] = 'stopped';\n        }\n      }\n      var resolvedCategoryId = categoryId;\n'''
+          replace_once(crud, old, new)
+
+          vm = 'lib/data/records/record_timeline_vm.dart'
+          replace_once(
+              vm,
+              '''      final endOrNow = endTimeUtc ?? DatabaseService.getPlanetaryNow();\n      final duration = endOrNow.difference(startTimeUtc);\n      return '$start — $end (${_timelineFormatDuration(duration)})';\n''',
+              '''      final endOrNow = endTimeUtc ?? DatabaseService.getPlanetaryNow();\n      final duration = endOrNow.difference(startTimeUtc);\n      if (duration.isNegative) {\n        DatabaseService._log(\n          'TIMELINE_INVALID_INTERVAL: end before start; suppressing negative duration',\n        );\n        return '$start — $end';\n      }\n      return '$start — $end (${_timelineFormatDuration(duration)})';\n''',
+          )
+
+          changelog = Path('CHANGELOG.md')
+          text = changelog.read_text(encoding='utf-8')
+          entry = '''## 2026-09-23 — Record midnight interval guard [fix]\n\n- Prevented stopped-record autosave from writing temporary invalid start/end picker states across midnight or date edits.\n- Added Brain-side guards so record time mutations with `end_time <= start_time` are rejected before optimistic cache or PocketBase writes.\n- Timeline no longer prints negative durations for legacy invalid rows; the server interval-order hook remains the final persistence gate.\n\n'''
+          if entry not in text:
+              changelog.write_text(entry + text, encoding='utf-8')
+
+          test_path = Path('test/record_interval_autosave_guard_test.dart')
+          test_path.write_text('''import 'package:counter/features/shared/edit_sheet/record_edit_save_policy.dart';\nimport 'package:flutter_test/flutter_test.dart';\n\nvoid main() {\n  DateTime identity(DateTime value) => value;\n\n  test('stopped autosave drops reversed one-day interval instead of persisting it', () {\n    final patch = buildRecordAutosaveTimePatch(\n      recordIsRunning: false,\n      draftStartDisplay: DateTime.utc(2026, 9, 24, 0, 26),\n      draftEndDisplay: DateTime.utc(2026, 9, 23, 3, 11),\n      displayToUtc: identity,\n    );\n\n    expect(patch.startUtc, isNull);\n    expect(patch.endUtc, isNull);\n  });\n\n  test('valid cross-midnight stopped interval autosaves both endpoints', () {\n    final start = DateTime.utc(2026, 9, 23, 23, 30);\n    final end = DateTime.utc(2026, 9, 24, 0, 30);\n    final patch = buildRecordAutosaveTimePatch(\n      recordIsRunning: false,\n      draftStartDisplay: start,\n      draftEndDisplay: end,\n      displayToUtc: identity,\n    );\n\n    expect(patch.startUtc, start);\n    expect(patch.endUtc, end);\n  });\n\n  test('running autosave may patch start but never manufactures an end', () {\n    final start = DateTime.utc(2026, 9, 24, 0, 26);\n    final patch = buildRecordAutosaveTimePatch(\n      recordIsRunning: true,\n      draftStartDisplay: start,\n      draftEndDisplay: DateTime.utc(2026, 9, 23, 3, 11),\n      displayToUtc: identity,\n    );\n\n    expect(patch.startUtc, start);\n    expect(patch.endUtc, isNull);\n  });\n}\n''', encoding='utf-8')
+          PY
+
+          dart format \
+            lib/features/shared/edit_sheet/record_edit_save_policy.dart \
+            lib/features/shared/timeline_record_edit_sheet.dart \
+            lib/data/records/record_crud.dart \
+            lib/data/records/record_timeline_vm.dart \
+            test/record_interval_autosave_guard_test.dart
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Regression tests
+        run: |
+          flutter test test/record_interval_autosave_guard_test.dart
+          flutter test test/timeline_record_edit_save_test.dart
+
+      - name: Analyze
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+
+      - name: Commit fix
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff --quiet && [[ -z "$(git status --porcelain test/record_interval_autosave_guard_test.dart)" ]]; then
+            echo 'No changes to commit.'
+            exit 0
+          fi
+          git config user.name 'nkuchenov-hash'
+          git config user.email 'nkuchenov@gmail.com'
+          git add \
+            lib/features/shared/edit_sheet/record_edit_save_policy.dart \
+            lib/features/shared/timeline_record_edit_sheet.dart \
+            lib/data/records/record_crud.dart \
+            lib/data/records/record_timeline_vm.dart \
+            test/record_interval_autosave_guard_test.dart \
+            CHANGELOG.md
+          git commit -m 'Fix record interval rollover corruption'
+          git pull --rebase origin main
+          git push origin HEAD:main
