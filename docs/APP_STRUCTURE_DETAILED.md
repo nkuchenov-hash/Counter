@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `985efb1e` on 2026-09-23.**
+**Generated from input HEAD `8330c2f5` on 2026-09-23.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 874 — each appears **exactly once** below.
+**Tracked files:** 877 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -28,12 +28,12 @@ python scripts/manual/generate_app_structure_detailed.py
 | :--- | ---: |
 | `production UI` | 174 |
 | `test` | 111 |
-| `Brain/data` | 91 |
+| `Brain/data` | 92 |
 | `platform build` | 83 |
 | `shared foundation` | 64 |
 | `developer tool` | 63 |
 | `platform resource` | 44 |
-| `governing documentation` | 37 |
+| `governing documentation` | 39 |
 | `Desktop Voice runtime` | 36 |
 | `shared Voice system` | 22 |
 | `test fixture` | 22 |
@@ -57,10 +57,10 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 478 |
+| `PROVEN_REQUIRED` | 479 |
 | `REQUIRED_FOR_TEST_OR_TOOLING` | 214 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
-| `GOVERNING_DOCUMENTATION` | 37 |
+| `GOVERNING_DOCUMENTATION` | 39 |
 | `HISTORICAL_RECORD` | 17 |
 | `GENERATED_CANONICAL_OUTPUT` | 1 |
 
@@ -68,7 +68,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 799 |
+| `HIGH` | 802 |
 | `MEDIUM` | 75 |
 
 ---
@@ -5004,7 +5004,7 @@ EN:
 - **Why needed:** Prevents rebuilding features; shows what already landed and when.
 - **Contents:** Technical bullets with file names, tagged [shipped]/[wip]/[rollback].
 - **Repository role:** governing documentation
-- **Evidence of use:** (1) Governing/ops/product documentation read by humans and agents (see `docs/PROJECT_KNOWLEDGE_PACK.md` / AGENTS routing). (2) Referenced by: `AGENTS.md`, `AGENT_NAVIGATION.md`, `docs/PROJECT_KNOWLEDGE_PACK.md`, `docs/ROADMAP.md`.
+- **Evidence of use:** (1) Governing/ops/product documentation read by humans and agents (see `docs/PROJECT_KNOWLEDGE_PACK.md` / AGENTS routing). (2) Referenced by: `AGENTS.md`, `AGENT_NAVIGATION.md`, `docs/FUNCTIONS.md`, `docs/PROJECT_KNOWLEDGE_PACK.md`.
 - **Necessity status:** GOVERNING_DOCUMENTATION
 - **Deletion consequence:** Lost architecture/ops rule or agent routing instruction.
 - **Confidence:** HIGH
@@ -6586,6 +6586,43 @@ RU:
 - **Связано с:** `lib/core/widgets/`, `docs/reports/DESIGN_SYSTEM_INVENTORY.md`, Component Lab.
 
 
+### `docs/FUNCTIONS.md`
+
+EN:
+
+- **Human purpose:** Markdown document `FUNCTIONS.md` in `docs` — repo tooling or config. Tracked because `docs` needs `FUNCTIONS.md` for build, CI, or maintenance.
+- **What this is:** Markdown document `FUNCTIONS.md` in `docs` — repo tooling or config.
+- **Why needed:** Tracked because `docs` needs `FUNCTIONS.md` for build, CI, or maintenance.
+- **Contents:** Open `FUNCTIONS.md` when working on `docs` (see folder section above).
+- **Repository role:** governing documentation
+- **Evidence of use:** (1) Governing/ops/product documentation read by humans and agents (see `docs/PROJECT_KNOWLEDGE_PACK.md` / AGENTS routing). (2) Referenced by: `CHANGELOG.md`, `docs/PROJECT_KNOWLEDGE_PACK.md`, `docs/USER_GUIDE.md`.
+- **Necessity status:** GOVERNING_DOCUMENTATION
+- **Deletion consequence:** Lost architecture/ops rule or agent routing instruction.
+- **Confidence:** HIGH
+- **Owner / layer:** documentation
+- **Responsibilities:** Supports `docs` workflow for `FUNCTIONS.md`.
+- **When to open:** When build output or maintenance cites `FUNCTIONS.md`.
+- **Can it be deleted?** No — governing/current documentation.
+- **Connected to:** `docs/`, `docs/APP_STRUCTURE.md`.
+
+RU:
+
+- **Зачем файл человеку:** Текстовая спецификация `FUNCTIONS.md` в разделе `docs`. Фиксирует правила, состояние или справочную информацию, относящуюся к `docs`.
+- **Что это:** Текстовая спецификация `FUNCTIONS.md` в разделе `docs`.
+- **Зачем:** Фиксирует правила, состояние или справочную информацию, относящуюся к `docs`.
+- **Содержимое:** Структурированный Markdown-текст по теме `FUNCTIONS.md` без runtime-логики приложения.
+- **Роль в репозитории:** governing documentation
+- **Доказательства использования:** Управляющая/операционная документация для людей и агентов (см. Project Knowledge / AGENTS).
+- **Статус необходимости:** GOVERNING_DOCUMENTATION
+- **Что будет, если удалить:** Пропадёт архитектурное/операционное правило.
+- **Уверенность:** HIGH
+- **Владелец / слой:** документация
+- **Обязанности:** Хранит актуальную документацию по назначению `FUNCTIONS.md`.
+- **Когда открывать:** When результат сборки or maintenance cites `FUNCTIONS.md`.
+- **Можно удалить?** Нет — governing документация.
+- **Связано с:** `docs/`, `docs/APP_STRUCTURE.md`.
+
+
 ### `docs/NOTES_EDITOR_CONTRACT.md`
 
 EN:
@@ -6841,6 +6878,43 @@ RU:
 - **Владелец / слой:** документация
 - **Обязанности:** Хранит актуальную документацию по назначению `SERVER_SLEEP_SYNC_DEPLOY.md`.
 - **Когда открывать:** When результат сборки or maintenance cites `SERVER_SLEEP_SYNC_DEPLOY.md`.
+- **Можно удалить?** Нет — governing документация.
+- **Связано с:** `docs/`, `docs/APP_STRUCTURE.md`.
+
+
+### `docs/USER_GUIDE.md`
+
+EN:
+
+- **Human purpose:** Markdown document `USER_GUIDE.md` in `docs` — repo tooling or config. Tracked because `docs` needs `USER_GUIDE.md` for build, CI, or maintenance.
+- **What this is:** Markdown document `USER_GUIDE.md` in `docs` — repo tooling or config.
+- **Why needed:** Tracked because `docs` needs `USER_GUIDE.md` for build, CI, or maintenance.
+- **Contents:** Open `USER_GUIDE.md` when working on `docs` (see folder section above).
+- **Repository role:** governing documentation
+- **Evidence of use:** (1) Governing/ops/product documentation read by humans and agents (see `docs/PROJECT_KNOWLEDGE_PACK.md` / AGENTS routing). (2) Referenced by: `CHANGELOG.md`, `docs/FUNCTIONS.md`, `docs/PROJECT_KNOWLEDGE_PACK.md`.
+- **Necessity status:** GOVERNING_DOCUMENTATION
+- **Deletion consequence:** Lost architecture/ops rule or agent routing instruction.
+- **Confidence:** HIGH
+- **Owner / layer:** documentation
+- **Responsibilities:** Supports `docs` workflow for `USER_GUIDE.md`.
+- **When to open:** When build output or maintenance cites `USER_GUIDE.md`.
+- **Can it be deleted?** No — governing/current documentation.
+- **Connected to:** `docs/`, `docs/APP_STRUCTURE.md`.
+
+RU:
+
+- **Зачем файл человеку:** Текстовая спецификация `USER_GUIDE.md` в разделе `docs`. Фиксирует правила, состояние или справочную информацию, относящуюся к `docs`.
+- **Что это:** Текстовая спецификация `USER_GUIDE.md` в разделе `docs`.
+- **Зачем:** Фиксирует правила, состояние или справочную информацию, относящуюся к `docs`.
+- **Содержимое:** Структурированный Markdown-текст по теме `USER_GUIDE.md` без runtime-логики приложения.
+- **Роль в репозитории:** governing documentation
+- **Доказательства использования:** Управляющая/операционная документация для людей и агентов (см. Project Knowledge / AGENTS).
+- **Статус необходимости:** GOVERNING_DOCUMENTATION
+- **Что будет, если удалить:** Пропадёт архитектурное/операционное правило.
+- **Уверенность:** HIGH
+- **Владелец / слой:** документация
+- **Обязанности:** Хранит актуальную документацию по назначению `USER_GUIDE.md`.
+- **Когда открывать:** When результат сборки or maintenance cites `USER_GUIDE.md`.
 - **Можно удалить?** Нет — governing документация.
 - **Связано с:** `docs/`, `docs/APP_STRUCTURE.md`.
 
@@ -15464,6 +15538,44 @@ RU:
 - **Уверенность:** HIGH
 - **Владелец / слой:** Brain — планы
 - **Обязанности:** Реализует назначение `plan_recurrence_helpers.dart` для области `lib/data/plans`.
+- **Когда открывать:** Планы/списки: сохранение, Time View, повтор, теги.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** UI вызывает `DatabaseService.instance`; Plans, Lists, Time View
+
+
+### `lib/data/plans/plan_recurrence_split_helpers.dart`
+
+EN:
+
+- **Human purpose:** Focused brain module for plans and lists: future-safe recurring-series split, historical immutability, future exception re-parenting, and split delete semantics. Maintains plans and lists consistency between PocketBase and the UI cache.
+- **What this is:** Focused brain module for plans and lists: future-safe recurring-series split, historical immutability, future exception re-parenting, and split delete semantics.
+- **Why needed:** Maintains plans and lists consistency between PocketBase and the UI cache.
+- **Contents:** Dart helpers and extensions (`PlanRecurrenceSplitExtension`).
+- **Key code names:** `PlanRecurrenceSplitExtension`
+- **Repository role:** Brain/data
+- **Evidence of use:** Included by `lib/data/database_service.dart` through a `part` directive (not imported directly).
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Brain/library compile failure in `lib/data/database_service.dart` and broken related UI/data ops.
+- **Confidence:** HIGH
+- **Owner / layer:** Brain Plans
+- **Responsibilities:** Future-safe recurring-series split, historical immutability, future exception re-parenting, and split delete semantics
+- **When to open:** Plan/list save, Time View layout, recurrence, tags on plans, offline queue.
+- **Can it be deleted?** Brain/library compile failure in `lib/data/database_service.dart` and broken related UI/data ops.
+- **Connected to:** UI calls via `DatabaseService.instance`; Plans tab, Lists tab, Time View; APP_STRUCTURE role: Future-safe recurring-series split, historical immutability, future exception re-parenting, and split delete semantics
+
+RU:
+
+- **Зачем файл человеку:** Сфокусированный модуль данных для plans and lists — файл `plan_recurrence_split_helpers`. Держит plans and lists согласованным с PocketBase и экранами.
+- **Что это:** Сфокусированный модуль данных для plans and lists — файл `plan_recurrence_split_helpers`.
+- **Зачем:** Держит plans and lists согласованным с PocketBase и экранами.
+- **Содержимое:** Dart-код (`PlanRecurrenceSplitExtension`).
+- **Роль в репозитории:** Brain/data
+- **Доказательства использования:** Подключён из `lib/data/database_service.dart` через `part` (не импортируется напрямую).
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Сломается компиляция `lib/data/database_service.dart` и связанные экраны/данные.
+- **Уверенность:** HIGH
+- **Владелец / слой:** Brain — планы
+- **Обязанности:** Реализует назначение `plan_recurrence_split_helpers.dart` для области `lib/data/plans`.
 - **Когда открывать:** Планы/списки: сохранение, Time View, повтор, теги.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** UI вызывает `DatabaseService.instance`; Plans, Lists, Time View
