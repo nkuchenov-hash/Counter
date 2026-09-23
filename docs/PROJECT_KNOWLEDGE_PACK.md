@@ -15,8 +15,8 @@
 | 3 | `CHANGELOG.md` | Shipped history |
 | 4 | `docs/APP_STRUCTURE.md` | Concise structure map |
 | 5 | `docs/APP_STRUCTURE_DETAILED.md` | Bilingual per-file guide |
-| 6 | `docs/ARCHITECTURE.md` | Iron Laws, data flow |
-| 7 | `docs/UX_CONTRACT.md` | Interaction behavior |
+| 6 | `docs/ARCHITECTURE.md` | Iron Laws, data flow, Instant Convergence / No-Glitch Law |
+| 7 | `docs/UX_CONTRACT.md` | Interaction behavior and mandatory shared-state acceptance gate |
 | 8 | `docs/DATA_MAP.md` | Field names, business IDs |
 | 9 | `docs/POCKETBASE_MANIFEST.md` | PB collections, relations |
 | 10 | `docs/DESIGN_SYSTEM.md` | Design system contract |
@@ -57,6 +57,7 @@ Earlier parity pass already removed intermediate Pass 3–4D reports, lockdown a
 ## Confirmation
 
 - One source of truth per topic in the 14-doc pack
+- Instant/no-glitch acceptance law is embedded directly in `docs/ARCHITECTURE.md` + `docs/UX_CONTRACT.md`
 - No duplicate Russian structure guide
 - No external sync / re-upload instructions
 - Architecture decomposition complete; pack is docs-only hygiene

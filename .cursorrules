@@ -2,6 +2,8 @@
 
 Authoritative always-applied Flutter rules live in **`.cursor/rules/flutter_expert.mdc`**, including **LAW OF THE MAIN THREAD** and the **REACTIVE UI HOT-PATH LAW**. Governing runtime contracts are in **`docs/ARCHITECTURE.md`**.
 
+**Mandatory for every shared-state/UI change:** read and obey **`docs/ARCHITECTURE.md` § INSTANT_CONVERGENCE / NO_GLITCH_LAW** together with **`docs/UX_CONTRACT.md` § Instant Interaction / No-Glitch Law**. A glitchy function is worse than an absent function: lag, flicker, stale/false-empty state, stale edit rollback, polling-delayed state, or a need to navigate/refresh/relaunch is a **P0 regression**. Do not call work complete from compile/CI/deploy alone; run the applicable local-optimistic, already-open peer, rapid-edit, disconnect/reconnect, resume, cold-start, invariant, performance, and production-artifact acceptance gates in the UX contract.
+
 **Mandatory for ALL PocketBase/database work:** read **`docs/POCKETBASE_MANIFEST.md`** together with **`docs/DATA_MAP.md`**. Do not invent alternate URL shapes, relation payloads, ID semantics, or parsing behavior; update the governing docs first if the stack changes.
 
 **Performance is correctness:** no expensive projection, sorting, cache/database traversal, full-list transformation, network work, logging, or other domain work may be hidden inside Flutter `build()`, sort comparators, painters, layout callbacks, or frequently firing listeners without explicit bounded cost and regression coverage. Offscreen `PageView` / `IndexedStack` pages must remain operationally idle unless the background work is explicitly required. Periodic visual updates must invalidate the smallest possible UI scope and must be cancelled on dispose.

@@ -1,6 +1,6 @@
 # LIFE OS: Architecture (PocketBase)
 
-**Runtime law:** The app’s primary backend is **PocketBase** (`pocketbase` Dart SDK). URL, collection names, auth, and **record → category** relations (`category_id`, `category_link` + expand) are defined in **`POCKETBASE_MANIFEST.md`**. **`docs/DATA_MAP.md`** remains the vocabulary for **field names** and business IDs (`user_id`, `record_id`, `plan_id`, `categories.category_id`, etc.).
+**Runtime law:** The app’s primary backend is **PocketBase** (`pocketbase` Dart SDK). URL, collection names, auth, and **record → category** relations (`category_id`, `category_link` + expand) are defined in **`POCKETBASE_MANIFEST.md`**. **`docs/DATA_MAP.md`** remains the vocabulary for **field names** and business IDs (`user_id`, `record_id`, `plan_id`, `categories.category_id`, etc.). The **INSTANT_CONVERGENCE / NO_GLITCH_LAW** below together with `docs/UX_CONTRACT.md` defines the mandatory P0 law for visible latency, latest-intent ordering, reconnect convergence, and release acceptance.
 
 ---
 
@@ -43,6 +43,7 @@
 - **OWNERSHIP:** Every query filters by current user, e.g. `user_id = "<uuid>"` in PB filter strings.
 - **INSTANT_PURGE_PROTOCOL:** Optimistic UI before await where the Brain already does so; revert on failure.
 - **LAW_OF_OPTIMISTIC_UI (Shadow State):** No user-driven **Start / Stop / Update** on records may block the UI on a network round-trip. The Brain applies a **local shadow** (cache + timeline/active streams) in **<100 ms**, then runs PocketBase **PATCH/POST** asynchronously; on failure it **rolls back** to the last stable snapshot and surfaces a **single** sync error (see `database_service.dart`).
+- **INSTANT_CONVERGENCE / NO_GLITCH_LAW (P0):** A glitchy function is worse than an absent function. Shared state must be event-driven and visible on an already-open client as soon as the local/realtime state reaches Brain; navigation, manual refresh, relaunch, or periodic domain polling are forbidden recovery mechanisms. Unknown online startup state must never be rendered as a successful empty state. The newest local edit must not be overwritten by an older autosave completion, network response, realtime echo, cache hydrate, or background reconciliation. Reconnect/resume must converge automatically through the single canonical recovery owner. The mandatory acceptance matrix and definition of done live in `docs/UX_CONTRACT.md` § **Instant Interaction / No-Glitch Law** and apply to every shared-state/UI change.
 - **OFFLINE-FIRST / LOCAL MUTATION QUEUE LAW:** Retriable network/backoff failures enqueue local mutations and keep the optimistic UI. Do **not** roll back on normal internet loss; roll back only on non-retriable validation/schema errors. Pending mutations drain on boot, reconnect, app resume, login/session restore, and tap-to-retry. 401/403 pauses sync until valid auth/session is restored. The server remains final authority for Singleton Timeline Law and overlap cleanup. Anchors: `lib/data/local_sync/record_mutation_outbox.dart`, `lib/data/local_sync/plan_mutation_outbox.dart`, `lib/data/local_sync/offline_sync_state.dart`, `lib/data/local_sync/sync_manager.dart`, `DbCoreExtension.flushPendingLocalMutations`, `RecordServiceExtension.flushPendingRecordMutations`, `PlanServiceExtension.flushPendingPlanMutations`, and shell presentation `lib/app/shell/shared/offline_sync_status_bar.dart`.
 - **SERVER_SLEEP_SYNC_LAW:** Completed sleep ingestion is server-owned. **Xiaomi Health cloud is the primary production source**; Flutter foreground reconciliation is convenience/refresh only and must never be required for correctness. The server uses the current Xiaomi `/app/v1/relatives/...` aggregate/raw/latest endpoint family; historical `/app/v1/data/...` endpoints are fallback only. If the current profile-local day has no Xiaomi sleep, the server retries every **15 minutes regardless of configured morning time**, and performs the same self-heal on PocketBase bootstrap. Xiaomi may revise one night’s boundaries and therefore external id; strongly overlapping Xiaomi intervals (≥60% of the shorter interval) are deduped while separate naps remain. Imported sleep is authoritative over a preceding root record that crosses `sleep.start_time`, which must be closed at that boundary. Full operational contract: `docs/SERVER_SLEEP_SYNC_DEPLOY.md`; schema: `docs/POCKETBASE_MANIFEST.md`; field vocabulary: `docs/DATA_MAP.md`.
 - **LAW_OF_THE_MAIN_THREAD (Iron Rules):**
@@ -145,7 +146,7 @@
 
 - **Voice / STT:** Immutable rules in **§9 Voice Input Protocol** — do not “clean up” without preserving bilingual toggle, session persistence, and web BCP-47 bypass semantics.
 - **Biometrics and other capabilities:** guard with `kIsWeb` and platform capabilities as in `app_shell` / services.
-- **Records realtime:** After a valid session, the Brain subscribes to `records` (`subscribe('*', …)`) so **Web and mobile** share the same in-memory cache updates from server pushes; login flows must re-arm this subscription if init ran before auth.
+- **Records realtime:** After a valid session, the Brain subscribes to `records` (`subscribe('*', …)`) so **Web and mobile** share the same in-memory cache updates from server pushes; login flows must re-arm this subscription if init ran before auth. `PB_CONNECT` transport recovery is single-owned by the Brain: a real SSE gap triggers one coalesced authoritative catch-up because PocketBase does not replay events missed while disconnected. Visible state propagation itself is event-driven; no domain polling delay is allowed.
 - **Server sleep:** Xiaomi sleep ingestion is not a client/hardware feature path; it is a PocketBase server subsystem governed by **SERVER_SLEEP_SYNC_LAW** and `docs/SERVER_SLEEP_SYNC_DEPLOY.md`. Client lifecycle hooks may refresh/reconcile presentation but cannot become the primary scheduler.
 
 ### 8.1 Omni-Picker (UI Iron Rule)
@@ -174,6 +175,7 @@ Web vs. Mobile STT: Web (kIsWeb) MUST use strict BCP-47 tags (e.g., ru-RU) bypas
 | **POCKETBASE_MANIFEST.md** | PB URL, collections, `category_id` / `category_link`, auth. |
 | **DATA_MAP.md** | Field naming reference (legacy Noco table UIDs are historical only). |
 | **APP_STRUCTURE.md** | Layer map, import boundaries, Structure Growth Law. |
+| **UX_CONTRACT.md** | P0 no-glitch interaction law and mandatory shared-state acceptance matrix. |
 | **SERVER_SLEEP_SYNC_DEPLOY.md** | Xiaomi Cloud server sleep architecture, freshness, cadence, dedupe, fallback and production verification. |
 
 ---
@@ -185,7 +187,7 @@ New features must integrate into the **existing** architecture — not parallel 
 **Integration rules:**
 
 - Extend the canonical screen, service, Brain module, or shared widget that already owns the domain.
-- Do **not** create duplicate local components, duplicate PocketBase constants, duplicate offline/outbox paths, or duplicate timezone/date helpers when a canonical home exists (see `docs/APP_STRUCTURE.md`, `docs/DESIGN_SYSTEM.md`).
+- Do **not** create duplicate local components, duplicate PocketBase constants, duplicate offline/outbox paths, duplicate timezone/date helpers, or duplicate realtime/reconnect owners when a canonical home exists (see `docs/APP_STRUCTURE.md`, `docs/DESIGN_SYSTEM.md`, and this document’s core contracts).
 - PocketBase schema or field-name changes require **`docs/DATA_MAP.md`** and **`docs/POCKETBASE_MANIFEST.md`** updates before client behavior ships.
 - Server sleep behavior changes require `docs/SERVER_SLEEP_SYNC_DEPLOY.md` plus the executable checks in `scripts/audit/deployment_contract.py`; changing only code is an architecture violation.
 
@@ -213,18 +215,19 @@ Every new feature prompt must answer:
 4. Does it need **PocketBase schema / DATA_MAP** changes?
 5. Does it create a **file-size or mixed-responsibility** risk?
 6. Do **docs / tests / APP_STRUCTURE_DETAILED** need updates?
+7. Which `docs/UX_CONTRACT.md` shared-state acceptance cases apply, and how will already-open peer, rapid edit, reconnect/resume, cold-start, and production artifact behavior be verified?
 
 Run `.\scripts\audit\architecture_guard.ps1 -Strict`, `python scripts/audit/repository_hygiene.py`, and `python scripts/audit/documentation_parity.py` after structural edits. Regenerate `docs/APP_STRUCTURE_DETAILED.md` after tree changes.
 
 
 ## Browser companion boundary
 
-The Manifest V3 companion under `browser_extension/` is a projection/action client for the authenticated LIFE OS web app, never a PocketBase client. It must not copy PocketBase auth tokens, credentials, collection logic, or direct row mutations into extension code.
+The Manifest V3 companion under `browser_extension/` is a projection/action client for LIFE OS shared state. It obeys `docs/UX_CONTRACT.md` § **Instant Interaction / No-Glitch Law**: current-record mutations are event-driven while the popup is open and may not depend on a 15-second/periodic domain polling delay.
 
-The canonical current-record state is resolved by Brain from the primary running record and reduced to a bounded browser projection (active flag, title, category path/color, start time, record id, theme/locale metadata). The authenticated web shell mirrors that projection to browser-local storage for the extension to read. The elapsed timer is rendered locally from the canonical start timestamp; timer ticks never cause backend polling.
+The canonical current-record state is resolved from the same PocketBase/Brain-owned record model and reduced to a bounded browser projection (active flag, title, category path/color, start time, record id, theme/locale metadata). The elapsed timer is rendered locally from the canonical start timestamp; timer ticks never cause backend polling.
 
-Browser-local and open-tab snapshots are presentation caches only. They may render immediately, but they are never proof of freshness: each popup open starts a canonical `bridge_sync`, and an already open popup periodically requests the same Brain-backed refresh. Refresh calls are de-duplicated in the service worker so overlapping polls do not boot multiple bridge tabs.
+Browser-local and open-tab snapshots are presentation caches only. They may render immediately, but they are never proof of freshness: each popup open performs a canonical freshness sync, and the open popup applies realtime record events immediately without waiting for navigation or a periodic refresh interval.
 
-Start/Stop commands are one-shot requests handled by `lib/app/shell/shared/shell_browser_extension.dart`. Start delegates to the existing `DatabaseService.startTimer` / primary Highlander path; Stop delegates to the existing Brain stop path. When no LIFE OS tab is open, the service worker may create an inactive same-origin bridge tab, but it must wait for Brain confirmation (including the primary network chain for Start) before closing it. Request IDs remain locally deduped.
+Start/Stop commands remain one-shot requests through the existing LIFE OS record/Highlander semantics. Request IDs remain locally deduped and a temporary bridge/bootstrap path must not close before the resulting canonical running state is confirmed.
 
-This boundary preserves single PocketBase ownership, category inference, singleton-running semantics, optimistic/offline behavior, timezone rules, and the performance kill-switch contract.
+This boundary preserves category inference, singleton-running semantics, optimistic/offline behavior, timezone rules, and the performance/no-glitch contracts.

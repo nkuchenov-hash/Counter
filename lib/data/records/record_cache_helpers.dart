@@ -38,6 +38,13 @@ extension RecordCacheProjectionExtension on DatabaseService {
     return list;
   }
 
+  /// True once this app session has either completed an authoritative records
+  /// pull or is deliberately operating from offline/backoff cache. An online
+  /// cold start must not claim that an empty cache means "no records" before
+  /// the first server snapshot arrives.
+  bool get recordsSnapshotReadyForDisplay =>
+      _lastSuccessfulRecordsNetworkFetchAt != null || _pbHttpBackoffActive;
+
   /// Fingerprint for [recordsStream] — skips a [timeUpdates] tick when the day’s rows are visually unchanged.
   String _timelineRecordsStreamDistinctSignature(
     List<Map<String, dynamic>> rows,
@@ -87,50 +94,138 @@ extension RecordCacheProjectionExtension on DatabaseService {
   }
 
   /// Per-call **async\*** stream: one subscription per [TimelinePage] (recreated on date change only).
-  /// Mutations update [_cachedFlatRecords] then [_timeUpdateController]; this stream **awaits** that
-  /// broadcast and yields [nextPayload] — no intentional empty “reset” event before the new list.
-  /// Do not tie this to [fetchRecords] re-entry in a way that completes the stream between ticks.
+  ///
+  /// The stream is intentionally long-lived even when a page subscribes before
+  /// database/profile readiness. Startup must never turn that early subscription
+  /// into a dead stream that only recovers after navigation. Likewise, transient
+  /// projection errors keep the last visible state instead of emitting a fake
+  /// empty state/flicker.
   Stream<List<Map<String, dynamic>>> recordsStream(DateTime date) async* {
-    if (!_isInitialized || !(currentProfileId?.isNotEmpty ?? false)) {
-      yield [];
-      return;
-    }
-    if (_cachedFlatRecords.isEmpty) {
-      unawaited(_fetchRecordsIntoCache(forceNetwork: true));
-    }
+    bool isReady() =>
+        _isInitialized && (currentProfileId?.isNotEmpty ?? false);
 
     List<Map<String, dynamic>> nextPayload() {
+      return peekTimelineRecordsForDate(date);
+    }
+
+    String? lastStreamSig;
+    var hasEmitted = false;
+
+    Future<List<Map<String, dynamic>>?> payloadWhenReady() async {
+      if (!isReady()) return null;
+      if (_cachedFlatRecords.isEmpty) {
+        try {
+          await _fetchRecordsIntoCache(forceNetwork: true);
+        } catch (e, st) {
+          DatabaseService._log('recordsStream initial catch-up: $e');
+          if (kDebugMode) {
+            debugPrint(st.toString());
+          }
+        }
+      }
+      if (!isReady()) return null;
       try {
-        return peekTimelineRecordsForDate(date);
+        return nextPayload();
       } catch (e, st) {
         DatabaseService._log('recordsStream nextPayload: $e');
         if (kDebugMode) {
           debugPrint(st.toString());
         }
-        return <Map<String, dynamic>>[];
+        return null;
       }
     }
 
-    String? lastStreamSig;
-    try {
-      final first = nextPayload();
+    final first = await payloadWhenReady();
+    if (first != null) {
       lastStreamSig = _timelineRecordsStreamDistinctSignature(first);
+      hasEmitted = true;
       yield first;
-    } catch (_) {
-      yield <Map<String, dynamic>>[];
     }
+
     await for (final _ in timeUpdates) {
-      try {
-        final next = nextPayload();
-        final sig = _timelineRecordsStreamDistinctSignature(next);
-        if (lastStreamSig == sig) {
-          continue;
-        }
-        lastStreamSig = sig;
-        yield next;
-      } catch (_) {
-        yield <Map<String, dynamic>>[];
+      final next = await payloadWhenReady();
+      if (next == null) {
+        // Keep the existing page state. Never turn a transient startup/network
+        // condition into a visible empty-state regression.
+        continue;
       }
+      final sig = _timelineRecordsStreamDistinctSignature(next);
+      if (hasEmitted && lastStreamSig == sig) {
+        continue;
+      }
+      lastStreamSig = sig;
+      hasEmitted = true;
+      yield next;
+    }
+  }
+
+  Map<String, dynamic>? _activeRecordLiveSnapshot() {
+    final pending = _optimisticPendingStartRecordMap;
+    if (pending != null &&
+        pending['endTime'] == null &&
+        CategoryServiceExtension.isRecordMapActuallyRunning(pending)) {
+      final data = Map<String, dynamic>.from(pending);
+      final st = data['startTime'] as DateTime?;
+      final en = data['endTime'] as DateTime?;
+      if (st != null) data['startTimeDisplay'] = _profileWallFromUtc(st);
+      if (en != null) data['endTimeDisplay'] = _profileWallFromUtc(en);
+      return data;
+    }
+
+    final canonical = _canonicalPrimaryRunningFlatRow();
+    if (canonical == null) return null;
+    final data = Map<String, dynamic>.from(canonical);
+    if (data['endTime'] != null ||
+        !CategoryServiceExtension.isRecordMapActuallyRunning(data)) {
+      return null;
+    }
+    final st = data['startTime'] as DateTime?;
+    final en = data['endTime'] as DateTime?;
+    if (st != null) data['startTimeDisplay'] = _profileWallFromUtc(st);
+    if (en != null) data['endTimeDisplay'] = _profileWallFromUtc(en);
+    return data;
+  }
+
+  String _activeRecordLiveSignature(Map<String, dynamic>? row) {
+    if (row == null) return '<none>';
+    return <String>[
+      (row['record_id'] ?? '').toString().trim(),
+      (row['id'] ?? row['backendRestPathId'] ?? '').toString().trim(),
+      (row['title'] ?? '').toString(),
+      (row['status'] ?? '').toString().trim().toLowerCase(),
+      (row['startTime'] ?? row['start_time'] ?? '').toString(),
+      (row['endTime'] ?? row['end_time'] ?? '').toString(),
+      (row['categoryId'] ?? row['category_id'] ?? '').toString(),
+    ].join('|');
+  }
+
+  /// Event-driven primary-running-record state for visible UI.
+  ///
+  /// Domain state changes are pushed by the same [timeUpdates] bus used by
+  /// Timeline cache mutations/realtime events. There is deliberately no
+  /// periodic polling here; a local clock widget may tick elapsed text on its
+  /// own without delaying state propagation.
+  Stream<Map<String, dynamic>?> get activeRecordLiveStream async* {
+    var hasEmitted = false;
+    String? lastSignature;
+
+    if (recordsSnapshotReadyForDisplay || _cachedFlatRecords.isNotEmpty) {
+      final first = _activeRecordLiveSnapshot();
+      lastSignature = _activeRecordLiveSignature(first);
+      hasEmitted = true;
+      yield first;
+    }
+
+    await for (final _ in timeUpdates) {
+      if (!recordsSnapshotReadyForDisplay && _cachedFlatRecords.isEmpty) {
+        continue;
+      }
+      final next = _activeRecordLiveSnapshot();
+      final sig = _activeRecordLiveSignature(next);
+      if (hasEmitted && sig == lastSignature) continue;
+      lastSignature = sig;
+      hasEmitted = true;
+      yield next;
     }
   }
 }
@@ -179,6 +274,11 @@ extension RecordBrainTestBridge on DatabaseService {
   @visibleForTesting
   void debugSeedPendingStartRecordForTest(Map<String, dynamic> timelineRow) {
     _optimisticPendingStartRecordMap = Map<String, dynamic>.from(timelineRow);
+  }
+
+  @visibleForTesting
+  void debugNotifyTimelineForTest() {
+    _notifyTimelineAfterRecordCacheMutation();
   }
 
   @visibleForTesting
