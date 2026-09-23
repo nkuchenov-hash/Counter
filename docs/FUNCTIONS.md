@@ -1,58 +1,70 @@
-# LIFE OS Function Encyclopedia
+# LIFE OS — Энциклопедия функций
 
-Canonical product-behavior reference for AI developers and maintainers. Code and this document must stay synchronized. User-facing explanations live in `docs/USER_GUIDE.md`.
+Каноническое описание поведения функций LIFE OS для AI-разработчиков и сопровождающих проект. Реальный код и этот документ должны оставаться синхронизированными. Пользовательские объяснения находятся в `docs/USER_GUIDE.md`.
 
-## planning.recurring_plans — Recurring plans
+## planning.recurring_plans — Повторяющиеся планы
 
-**Status:** implemented  
-**Owner:** Planning / Brain  
-**Persistent collection:** `plans`  
-**Primary code:** `lib/data/plans/plan_recurrence_helpers.dart`, `lib/data/plans/plan_recurrence_split_helpers.dart`, `lib/data/recurrence_edit_scope.dart`, `lib/features/planning/recurrence_scope_dialog.dart`
+**Статус:** реализовано  
+**Владелец:** Planning / Brain  
+**Постоянная коллекция:** `plans`  
+**Основной код:** `lib/data/plans/plan_recurrence_helpers.dart`, `lib/data/plans/plan_recurrence_split_helpers.dart`, `lib/data/recurrence_edit_scope.dart`, `lib/features/planning/recurrence_scope_dialog.dart`
 
-### Storage and expansion
+### Хранение и генерация повторений
 
-- One PocketBase `plans` row with `rrule` is a recurrence series.
-- Ordinary occurrences are generated just-in-time for the visible window; they are not persisted as individual rows.
-- Virtual IDs are `virt-{seriesPocketId}-{YYYY-MM-DD}` and must never be used as PocketBase REST IDs.
-- `exception_dates` suppresses specific generated occurrences.
-- A separately edited/completed occurrence is materialized as a real `plans` row linked by `parent_plan_id` + `recurrence_instance_date_key`.
-- A materialized occurrence suppresses the matching virtual occurrence.
+- Одна строка PocketBase `plans` с `rrule` представляет серию повторений.
+- Обычные повторения генерируются только для нужного диапазона дат и не хранятся как отдельные строки.
+- Виртуальный ID имеет вид `virt-{seriesPocketId}-{YYYY-MM-DD}` и никогда не должен использоваться как PocketBase REST ID.
+- `exception_dates` содержит даты, которые нужно исключить из обычной генерации серии.
+- Отдельно изменённое или завершённое повторение материализуется как реальная строка `plans`, связанная с серией через `parent_plan_id` + `recurrence_instance_date_key`.
+- Если материализованное повторение уже существует, соответствующая виртуальная копия не показывается.
 
-### Edit/delete scope
+### Область изменения и удаления
 
-The product exposes exactly two scopes:
+Пользователю доступны ровно два варианта:
 
-1. **This event** — one occurrence only. Edit materializes it; delete adds/keeps the occurrence exception.
-2. **This and all following events** — the recurrence is split at the selected occurrence. Earlier occurrences keep the old series definition. A future edit creates a new series; a future delete ends the old series immediately before the selected occurrence.
+1. **Только это событие** — действие применяется только к выбранному повторению. При редактировании оно материализуется; при удалении выбранная дата исключается из серии.
+2. **Это и все следующие события** — серия делится на выбранном повторении. Всё, что было раньше, остаётся привязано к старой части серии и не меняется. При редактировании создаётся новая будущая серия; при удалении старая серия заканчивается непосредственно перед выбранным повторением.
 
-There is no user-facing “all series” operation because it would retroactively rewrite history. The legacy `entireSeries` enum value canonicalizes to `thisAndFuture` for compatibility.
+Пользовательского варианта **«Вся серия»** нет, потому что такое действие могло бы задним числом переписать прошлые виртуальные повторения. Старое значение enum `entireSeries` сохраняется только для совместимости и канонизируется в `thisAndFuture`.
 
-### Split invariants
+### Неизменяемость прошлого
 
-- Historical series fields (title, category, notes, schedule, recurrence cadence) are never patched by a future edit; only its RRULE boundary/old exceptions are adjusted.
-- The historical RRULE ends with `UNTIL` immediately before the split wall day.
-- If the unchanged original RRULE used `COUNT`, the new future series receives only the remaining count.
-- Existing materialized occurrences on/after the split boundary are re-parented to the new future series so their exception semantics remain valid.
-- Existing materialized occurrences before the boundary remain linked to the historical series.
-- Editing one occurrence never completes/deletes/renames the recurrence series.
-- Completing one virtual occurrence materializes only that occurrence as done; the recurrence continues.
+- Изменение будущей части серии не патчит исторические поля старой серии: название, категорию, заметки, расписание и параметры повторения прошлого.
+- У старой серии изменяется только граница RRULE и связанные с разделением исключения.
+- Старый RRULE получает `UNTIL` непосредственно перед датой разделения.
+- Если исходный RRULE использовал `COUNT`, новая будущая серия получает только оставшееся количество повторений.
+- Материализованные исключения на выбранной дате и после неё перепривязываются к новой будущей серии, сохраняя собственные изменения.
+- Материализованные исключения до границы остаются привязаны к исторической серии.
+- Изменение одного повторения не переименовывает, не завершает и не удаляет остальные повторения.
+- Завершение одного виртуального повторения материализует только его как выполненное; серия продолжается.
 
-### Time
+### Редактируемые поля
 
-- Recurrence is evaluated in profile wall-clock semantics.
-- Persistent timestamps remain UTC.
-- Split boundaries use the selected occurrence’s profile-wall date, converted to UTC only for RFC5545 `UNTIL`.
+Выбор области действия должен применяться независимо от того, какое поле изменено: название, категория, дата/время, заметки, чек-лист, теги, напоминание или правило повторения. Простое переименование повторяющегося события не имеет отдельного обходного пути и также требует выбора области действия.
 
-### Documentation synchronization rule
+### Время
 
-Any change to recurrence behavior must update, in the same change set:
+- Повторения вычисляются в wall-clock времени часового пояса профиля.
+- Постоянные временные значения в базе остаются UTC.
+- Граница разделения определяется по дате выбранного повторения в часовом поясе профиля; в UTC она переводится только там, где это требуется RFC 5545 `UNTIL`.
 
-- `docs/FUNCTIONS.md`
-- `docs/USER_GUIDE.md`
-- `docs/UX_CONTRACT.md` when user-visible behavior changes
-- `docs/ARCHITECTURE.md` when an invariant changes
-- `docs/DATA_MAP.md` / `docs/POCKETBASE_MANIFEST.md` if persistence changes
-- `docs/APP_STRUCTURE.md` / detailed structure if ownership or files change
-- `CHANGELOG.md` when shipped
+### Инварианты UI
 
-If code and documentation disagree, treat it as a defect and report the discrepancy rather than silently choosing one.
+- Диалог редактирования/удаления повторяющегося события показывает только два рабочих варианта: одно событие или это и все следующие.
+- В диалоге нет отключённого третьего пункта и нет технического текста про внутреннее разделение RRULE.
+- Заголовок и оба пункта диалога выровнены по одной левой границе.
+- Если пользователь закрывает диалог, изменение повторяющейся задачи не применяется.
+
+### Правило синхронизации документации
+
+При любом изменении механики повторений в том же наборе изменений необходимо проверить и при необходимости обновить:
+
+- `docs/FUNCTIONS.md`;
+- `docs/USER_GUIDE.md`;
+- `docs/UX_CONTRACT.md`, если меняется видимое пользователю поведение;
+- `docs/ARCHITECTURE.md`, если меняется системный инвариант;
+- `docs/DATA_MAP.md` / `docs/POCKETBASE_MANIFEST.md`, если меняется хранение;
+- `docs/APP_STRUCTURE.md` и подробную структуру, если меняются файлы или ownership;
+- `CHANGELOG.md` для поставленного изменения.
+
+Если документация и реальное поведение приложения расходятся, это считается дефектом. Нельзя молча выбирать одну из версий как правильную.
