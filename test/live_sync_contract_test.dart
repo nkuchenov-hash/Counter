@@ -238,6 +238,34 @@ void main() {
     expect(realtime, contains('!_hasAuthenticatedUserId || isPbRealtimeUnavailable'));
   });
 
+  test('open Timeline stays live without navigation, polling, or false empty', () {
+    final cache = File(
+      'lib/data/records/record_cache_helpers.dart',
+    ).readAsStringSync();
+    final timeline = File(
+      'lib/features/timeline/timeline_day_page.dart',
+    ).readAsStringSync();
+
+    expect(cache, contains('if (!isReady()) return null;'));
+    expect(cache, contains('await for (final _ in timeUpdates)'));
+    expect(cache, contains('if (next == null)'));
+    expect(cache, contains('continue;'));
+
+    final activeStart = cache.indexOf(
+      'Stream<Map<String, dynamic>?> get activeRecordLiveStream async*',
+    );
+    expect(activeStart, greaterThanOrEqualTo(0));
+    final activeBody = cache.substring(activeStart);
+    expect(activeBody, contains('await for (final _ in timeUpdates)'));
+    expect(activeBody, isNot(contains('Future.delayed')));
+    expect(activeBody, isNot(contains('Timer.periodic')));
+    expect(timeline, contains('activeRecordLiveStream.listen'));
+    expect(timeline, isNot(contains('activeRecordStream.listen')));
+
+    expect(timeline, contains('!db.recordsSnapshotReadyForDisplay'));
+    expect(timeline, contains('return const AppLoading();'));
+  });
+
   test('browser companion uses PocketBase realtime instead of 15-second polling', () {
     final popup = File('browser_extension/popup.js').readAsStringSync();
     final worker = File(
