@@ -1,6 +1,8 @@
 // ---------------------------------------------------------------------------
 // Omni-Picker (Web / desktop): single dialog — typed date + calendar, typed time + drum.
 // See ARCHITECTURE.md §8.1 Omni-Picker Law — never chain showDatePicker + showTimePicker.
+// A fixed full-year 2000 range is the canonical month/day-only mode used for
+// yearless birthdays: no year and no time are shown in the picker UI.
 // ---------------------------------------------------------------------------
 
 import 'package:counter/l10n/dictionary.dart';
@@ -57,6 +59,14 @@ class _OmniDateTimePickerDialogState extends State<_OmniDateTimePickerDialog> {
 
   bool _dateTextFromCalendar = false;
   bool _ignoreWheelCallback = false;
+
+  bool get _monthDayOnly =>
+      widget.firstDate.year == 2000 &&
+      widget.firstDate.month == 1 &&
+      widget.firstDate.day == 1 &&
+      widget.lastDate.year == 2000 &&
+      widget.lastDate.month == 12 &&
+      widget.lastDate.day == 31;
 
   DateTime _clampDay(DateTime d) {
     final day = DateTime(d.year, d.month, d.day);
@@ -144,6 +154,20 @@ class _OmniDateTimePickerDialogState extends State<_OmniDateTimePickerDialog> {
     });
   }
 
+  void _setMonth(int month) {
+    final maxDay = DateTime(2000, month + 1, 0).day;
+    final day = _selectedDay.day.clamp(1, maxDay);
+    setState(() {
+      _selectedDay = DateTime(2000, month, day);
+    });
+  }
+
+  void _setDay(int day) {
+    setState(() {
+      _selectedDay = DateTime(2000, _selectedDay.month, day);
+    });
+  }
+
   void _applyTimeFromWheel(DateTime dt) {
     if (_ignoreWheelCallback) return;
     final h = dt.hour.clamp(0, 23);
@@ -203,6 +227,11 @@ class _OmniDateTimePickerDialogState extends State<_OmniDateTimePickerDialog> {
   }
 
   void _submit() {
+    if (_monthDayOnly) {
+      final d = _selectedDay;
+      Navigator.of(context).pop(DateTime(2000, d.month, d.day));
+      return;
+    }
     final form = _formKey.currentState;
     if (form == null) return;
     if (!form.validate()) return;
@@ -218,12 +247,106 @@ class _OmniDateTimePickerDialogState extends State<_OmniDateTimePickerDialog> {
   static const double _kTimeBoxWidth = 76;
   static const double _kDrumHeight = 216;
 
+  Widget _buildMonthDayPicker(
+    BuildContext context,
+    ThemeData theme,
+    ColorScheme scheme,
+  ) {
+    final loc = currentLocale.value;
+    final maxDay = DateTime(2000, _selectedDay.month + 1, 0).day;
+    final months = List<int>.generate(12, (index) => index + 1);
+
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 420),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          DropdownButtonFormField<int>(
+            initialValue: _selectedDay.month,
+            decoration: InputDecoration(
+              labelText: loc.toLowerCase().startsWith('ru') ? 'Месяц' : 'Month',
+            ),
+            items: [
+              for (final month in months)
+                DropdownMenuItem<int>(
+                  value: month,
+                  child: Text(
+                    DateFormat.MMMM(loc).format(DateTime(2000, month, 1)),
+                  ),
+                ),
+            ],
+            onChanged: (value) {
+              if (value != null) _setMonth(value);
+            },
+          ),
+          const SizedBox(height: 18),
+          Text(
+            loc.toLowerCase().startsWith('ru') ? 'День' : 'Day',
+            style: theme.textTheme.labelLarge?.copyWith(
+              color: scheme.onSurfaceVariant,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (var day = 1; day <= maxDay; day++)
+                SizedBox(
+                  width: 44,
+                  height: 40,
+                  child: day == _selectedDay.day
+                      ? FilledButton(
+                          onPressed: () => _setDay(day),
+                          style: FilledButton.styleFrom(
+                            padding: EdgeInsets.zero,
+                            minimumSize: const Size(44, 40),
+                          ),
+                          child: Text('$day'),
+                        )
+                      : TextButton(
+                          onPressed: () => _setDay(day),
+                          style: TextButton.styleFrom(
+                            padding: EdgeInsets.zero,
+                            minimumSize: const Size(44, 40),
+                          ),
+                          child: Text('$day'),
+                        ),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final loc = currentLocale.value;
     final theme = Theme.of(context);
     final mat = MaterialLocalizations.of(context);
     final scheme = theme.colorScheme;
+
+    if (_monthDayOnly) {
+      return AlertDialog(
+        title: Text(loc.toLowerCase().startsWith('ru') ? 'Дата рождения' : 'Birthday date'),
+        content: _buildMonthDayPicker(context, theme, scheme),
+        actionsAlignment: MainAxisAlignment.end,
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(t(loc, 'cancel')),
+          ),
+          FilledButton(
+            onPressed: _submit,
+            child: Text(t(loc, 'save')),
+          ),
+        ],
+      );
+    }
+
     final screenW = MediaQuery.sizeOf(context).width;
     final dialogW = screenW - 48 < _kDialogContentMaxWidth
         ? screenW - 48
