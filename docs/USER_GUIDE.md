@@ -1,36 +1,47 @@
-# LIFE OS — User Guide
+# LIFE OS — Руководство пользователя
 
-Human-readable instructions for LIFE OS. Technical implementation details are in `docs/FUNCTIONS.md`.
+Понятная пользовательская документация LIFE OS. Техническая механика функций описана в `docs/FUNCTIONS.md`.
 
-## Recurring plans
+## Повторяющиеся планы
 
-A recurring plan is one plan that LIFE OS automatically shows again according to its repeat rule — for example, a workout every Monday.
+Повторяющийся план — это обычный план, который LIFE OS автоматически показывает снова по заданному расписанию. Например: тренировка каждый понедельник.
 
-### Editing a recurring plan
+### Изменение повторяющегося плана
 
-When you change a recurring occurrence, LIFE OS asks where the change should apply:
+Когда вы изменяете одно из повторений, LIFE OS спрашивает, куда применить изменение:
 
-- **Only this event** — changes only the occurrence you opened. The rest of the recurring plan stays unchanged.
-- **This and all following events** — changes the occurrence you opened and every later occurrence. Earlier occurrences stay exactly as they were.
+- **Только это событие** — изменится только открытое повторение. Остальные повторения не изменятся.
+- **Это и все следующие события** — изменится открытое повторение и все последующие. Все предыдущие события останутся такими, какими были.
 
-There is intentionally no “Entire series” option: LIFE OS does not rewrite earlier recurrence history when you change what should happen from now on.
+Варианта **«Вся серия»** нет специально: изменение повторяющегося плана не должно переписывать прошлое.
 
-**Example:** “Gym” repeats every Monday. You open September 28 and rename it to “Swimming”.
+**Пример:** «Тренировка» повторяется каждый понедельник. Вы открываете событие 28 сентября и меняете название на «Бассейн».
 
-- **Only this event:** September 28 becomes “Swimming”; October 5 and later are still “Gym”.
-- **This and all following events:** September 28, October 5, October 12 and later become “Swimming”; Mondays before September 28 remain “Gym”.
+- **Только это событие:** только 28 сентября станет «Бассейн». 5 октября и следующие события останутся «Тренировка».
+- **Это и все следующие события:** 28 сентября, 5 октября, 12 октября и все дальнейшие повторения станут «Бассейн». Понедельники до 28 сентября останутся «Тренировка».
 
-### Deleting a recurring plan
+Это относится не только к названию. Тот же выбор применяется при изменении категории, времени, заметок, чек-листа, тегов, напоминания или правила повторения.
 
-The same two choices apply:
+### Удаление повторяющегося плана
 
-- **Delete only this event** — skips only the selected occurrence.
-- **Delete this and all following events** — removes the selected occurrence and stops the recurrence from that point onward. Earlier occurrences remain in history.
+При удалении доступны те же два варианта:
 
-### Completing one occurrence
+- **Удалить только это событие** — исчезнет только выбранное повторение.
+- **Удалить это и все следующие** — выбранное событие и все последующие повторения будут удалены. Более ранние события останутся в истории.
 
-Marking one occurrence complete does not complete the whole recurrence. LIFE OS records that occurrence as completed and keeps generating later occurrences.
+### Завершение одного повторения
 
-### Individually changed occurrences
+Если отметить одно повторение выполненным, вся последовательность не завершается. LIFE OS сохраняет выбранное событие как выполненное и продолжает создавать следующие повторения по расписанию.
 
-An occurrence that you edited separately remains its own exception. If it lies on or after a later split point, LIFE OS keeps it attached to the new future series instead of recreating or overwriting it.
+### Отдельно изменённые события
+
+Если какое-то повторение уже было отдельно изменено, оно остаётся отдельным исключением. Если позже серия делится на выбранной дате, такие исключения после этой даты переносятся в новую будущую часть серии и не создаются заново и не перезаписываются.
+
+### Главное правило
+
+**Прошлое не меняется.**
+
+Изменение повторяющегося плана всегда означает одно из двух:
+
+1. изменить только выбранное событие;
+2. изменить выбранное событие и всё, что будет после него.
