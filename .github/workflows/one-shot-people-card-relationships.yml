@@ -1,0 +1,69 @@
+name: One-shot People card relationship fix
+
+on:
+  push:
+    branches: [gh-pages]
+    paths:
+      - .github/workflows/one-shot-people-card-relationships.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Replace legacy People card status with relationship tags
+        shell: python
+        run: |
+          from pathlib import Path
+
+          path = Path('lib/features/settings/people/people_settings_page_impl.dart')
+          text = path.read_text(encoding='utf-8')
+
+          replacements = [
+              (
+                  """              statusLabel: _statusLabel(person.relationshipStatus),\n""",
+                  """              relationshipLabels: _relationshipLabels(person),\n""",
+              ),
+              (
+                  """  String _statusLabel(PersonRelationshipStatus status) => switch (status) {\n        PersonRelationshipStatus.important => peopleT(_locale, 'status_important'),\n        PersonRelationshipStatus.known => peopleT(_locale, 'status_known'),\n        PersonRelationshipStatus.reference => peopleT(_locale, 'status_reference'),\n        PersonRelationshipStatus.ignored => peopleT(_locale, 'ignored'),\n        PersonRelationshipStatus.blocked => peopleT(_locale, 'blocked'),\n      };\n""",
+                  """  List<String> _relationshipLabels(LifePerson person) {\n    final metaRaw = person.sourceRefs['_lifeos'];\n    if (metaRaw is! Map) return const <String>[];\n    final relationshipsRaw = metaRaw['relationships'];\n    if (relationshipsRaw is! List) return const <String>[];\n    final seen = <String>{};\n    return <String>[\n      for (final value in relationshipsRaw)\n        if (value.toString().trim().isNotEmpty &&\n            seen.add(value.toString().trim()))\n          value.toString().trim(),\n    ];\n  }\n""",
+              ),
+              (
+                  """    required this.statusLabel,\n""",
+                  """    required this.relationshipLabels,\n""",
+              ),
+              (
+                  """  final String statusLabel;\n""",
+                  """  final List<String> relationshipLabels;\n""",
+              ),
+              (
+                  """                        Text(\n                          statusLabel,\n                          style: theme.textTheme.labelMedium?.copyWith(\n                            fontWeight: FontWeight.w700,\n                          ),\n                        ),\n""",
+                  """                        for (final relationship in relationshipLabels)\n                          Text(\n                            relationship,\n                            style: theme.textTheme.labelMedium?.copyWith(\n                              fontWeight: FontWeight.w700,\n                            ),\n                          ),\n""",
+              ),
+          ]
+
+          for old, new in replacements:
+              if old not in text:
+                  raise SystemExit(f'Expected People card source block not found:\n{old}')
+              text = text.replace(old, new, 1)
+
+          path.write_text(text, encoding='utf-8')
+
+      - name: Commit to main
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "nkuchenov-hash"
+          git config user.email "nkuchenov@gmail.com"
+          git add lib/features/settings/people/people_settings_page_impl.dart
+          git diff --cached --check
+          git commit -m "Show custom relationships on People cards"
+          git push origin HEAD:main
