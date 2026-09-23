@@ -52,33 +52,33 @@ def main() -> int:
         if token not in web:
             violations.append(f"WEB_DEPLOY_ORDERING_MISSING {token}")
 
-    # Any independent Web entry could reintroduce a race with migrations.
     if "branches:\n      - main" in web or "branches: [main]" in web:
         violations.append("WEB_DEPLOY_DIRECT_MAIN_PUSH_FORBIDDEN")
     if "workflow_dispatch:" in web:
         violations.append("WEB_DEPLOY_MANUAL_BYPASS_FORBIDDEN")
-
-    # The deployment branch is also the repository default branch. Publishing
-    # must not delete the upstream PocketBase workflow or allow older SHA builds
-    # to race newer ones back onto gh-pages.
     if "group: life-os-web-deploy-${{" in web:
         violations.append("WEB_DEPLOY_SHA_SCOPED_CONCURRENCY_FORBIDDEN")
 
     # SLEEP_SYNC_CONTRACT: Xiaomi Cloud is the primary server-owned source.
-    # Current endpoints are mandatory because the legacy /app/v1/data family can
-    # return successful but stale history while Mi Fitness already has newer data.
+    # Relatives/share and authenticated self-account API families can lag
+    # independently while returning success, so every pass must merge both.
     for token in (
         'XIAOMI_AGGREGATED_PATH = "/app/v1/relatives/get_aggregated_data"',
         'XIAOMI_FITNESS_PATH = "/app/v1/relatives/get_fitness_data"',
         'XIAOMI_LATEST_PATH = "/app/v1/relatives/get_latest_data"',
-        "_fetch_current_sleep_api",
-        "_fetch_legacy_sleep_api",
+        'XIAOMI_SELF_FITNESS_PATH = "/app/v1/data/get_fitness_data_by_time"',
+        "_fetch_relatives_sleep_api",
+        "_fetch_self_sleep_api",
+        '"POST",\n            XIAOMI_SELF_FITNESS_PATH',
+        "sessions.update(relatives)",
+        "sessions.update(self_data)",
     ):
         if token not in xiaomi_bridge:
             violations.append(f"XIAOMI_SLEEP_BRIDGE_CONTRACT_MISSING {token}")
 
-    # Missing current-day sleep must be retried every 15 minutes regardless of
-    # configured morning time. Startup uses the same self-healing rule.
+    if "if current:\n                return current" in xiaomi_bridge:
+        violations.append("XIAOMI_SLEEP_STALE_NONEMPTY_SHORT_CIRCUIT_FORBIDDEN")
+
     for token in (
         'cronAdd("lifeos_xiaomi_sleep_sync", "*/15 * * * *"',
         'provider = \'xiaomi\'',
@@ -96,9 +96,6 @@ def main() -> int:
         if forbidden in sleep_hook:
             violations.append(f"XIAOMI_SLEEP_MORNING_GATE_FORBIDDEN {forbidden}")
 
-    # Xiaomi may revise bedtime/wake boundaries, changing interval-based source
-    # IDs. Strong overlap dedupe is therefore required in addition to exact-id
-    # idempotency; non-overlapping naps remain separate.
     for token in (
         "overlap / shorter < 0.60",
         "45 * 24 * 60 * 60 * 1000",
@@ -107,8 +104,6 @@ def main() -> int:
         if token not in sleep_hook:
             violations.append(f"XIAOMI_SLEEP_DEDUPE_CONTRACT_MISSING {token}")
 
-    # Runtime must remain Xiaomi-owned; legacy providers can only be disabled or
-    # used through explicit recovery paths.
     for token in (
         'var __xiaomiProvider = "xiaomi"',
         'var providers = ["google_fit", "google_health"]',
@@ -116,14 +111,12 @@ def main() -> int:
         if token not in xiaomi_runtime:
             violations.append(f"XIAOMI_SLEEP_RUNTIME_CONTRACT_MISSING {token}")
 
-    # Governing documentation is executable policy too. This prevents code from
-    # being corrected while the Project Knowledge still teaches the old Google
-    # Fit-primary architecture.
     for token in (
         "Xiaomi Health cloud",
         "/app/v1/relatives/get_aggregated_data",
-        "/app/v1/relatives/get_fitness_data",
         "/app/v1/relatives/get_latest_data",
+        "/app/v1/data/get_fitness_data_by_time",
+        "merge both Xiaomi API families",
         "every **15 minutes**",
         "Do not wait for a configured morning clock time",
         "60% of the shorter interval",
@@ -139,7 +132,7 @@ def main() -> int:
         return 1
 
     print(
-        "deployment_contract: OK server-before-web ordering, Xiaomi sleep freshness, "
+        "deployment_contract: OK server-before-web ordering, merged Xiaomi sleep freshness, "
         "missing-day cadence, dedupe, and documentation contracts enforced"
     )
     return 0
