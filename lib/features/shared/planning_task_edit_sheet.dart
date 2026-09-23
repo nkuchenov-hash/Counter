@@ -91,6 +91,9 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
   bool get _isPersistedPlan =>
       widget.task.planRowIdForBackend.trim().isNotEmpty;
 
+  bool get _baselineIsRecurring =>
+      DatabaseService.instance.planningTaskIsRecurringForScope(_baselineTask);
+
   @override
   void initState() {
     super.initState();
@@ -181,7 +184,8 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    if (_isPersistedPlan) {
+    if (_isPersistedPlan &&
+        (!_baselineIsRecurring || _recurrenceEditScopeChosen != null)) {
       _planAutosaveGate.flush(() {
         final latest = _buildDraftTask();
         if (latest != null) {
@@ -218,10 +222,7 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
 
   void _flushDirtyPlanDraftForLifecycle() {
     if (!_isPersistedPlan || !_planAutosaveGate.isDirty) return;
-    if (DatabaseService.instance.planningTaskIsRecurringForScope(
-          _baselineTask,
-        ) &&
-        _recurrenceEditScopeChosen == null) {
+    if (_baselineIsRecurring && _recurrenceEditScopeChosen == null) {
       // Recurring edits still require the explicit scope decision; never guess
       // while the app is being backgrounded.
       return;
@@ -300,9 +301,7 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
 
   Future<void> _syncPlanDraftToNetwork(PlanningTask draft) async {
     if (!_isPersistedPlan) return;
-    if (DatabaseService.instance.planningTaskIsRecurringForScope(
-      _baselineTask,
-    )) {
+    if (_baselineIsRecurring) {
       if (_recurrenceEditScopeChosen == null) {
         if (_recurrenceScopePromptOpen || !mounted) return;
         _recurrenceScopePromptOpen = true;
@@ -378,6 +377,12 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
     if (!_isPersistedPlan) return;
 
     void applyAndSync(PlanningTask draft) {
+      // Never mutate a recurring occurrence locally before the user has chosen
+      // whether the edit applies to this occurrence or to the whole series.
+      if (_baselineIsRecurring && _recurrenceEditScopeChosen == null) {
+        unawaited(_syncPlanDraftToNetwork(draft));
+        return;
+      }
       _applyPlanDraftLocally(draft);
       unawaited(_syncPlanDraftToNetwork(draft));
     }
@@ -492,17 +497,44 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
       month >= 1 && month <= 12 ? kShortMonths[month - 1] : '';
 
   void _commitSave() {
-    final updated = _buildDraftTask();
+    unawaited(_commitSaveAsync());
+  }
+
+  Future<void> _commitSaveAsync() async {
+    var updated = _buildDraftTask();
     if (updated == null) {
       AppSnack.warning(t(currentLocale.value, 'edit_save_title_required'));
       return;
     }
-    // Explicit Save owns this draft snapshot (incl. newly created category).
-    // Do not rebuild inside flush — autosave must not race with an older snapshot.
-    _applyPlanDraftLocally(updated);
+
+    // Save must not close the sheet until recurrence scope is explicit.
+    // Otherwise a title-only edit can silently fall through as one occurrence.
+    if (_isPersistedPlan &&
+        _baselineIsRecurring &&
+        _recurrenceEditScopeChosen == null) {
+      if (_recurrenceScopePromptOpen || !mounted) return;
+      _recurrenceScopePromptOpen = true;
+      final scope = await showRecurrenceScopeDialog(
+        context,
+        task: _baselineTask,
+        isDelete: false,
+      );
+      _recurrenceScopePromptOpen = false;
+      if (!mounted || scope == null) return;
+      _recurrenceEditScopeChosen = scope;
+      updated = _buildDraftTask();
+      if (updated == null) return;
+    }
+
+    // Non-recurring edits keep the existing instant local update. Recurring
+    // edits are applied by the scoped database operation so the correct target
+    // (single materialized occurrence vs series) owns the optimistic state.
+    if (!_baselineIsRecurring) {
+      _applyPlanDraftLocally(updated);
+    }
     if (_isPersistedPlan) {
       _planAutosaveGate.flush(() {
-        unawaited(_syncPlanDraftToNetwork(updated));
+        unawaited(_syncPlanDraftToNetwork(updated!));
       }, force: true);
     }
     AppSnack.changesSaved();
