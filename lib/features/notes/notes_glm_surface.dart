@@ -1,4 +1,4 @@
-// GLM Notes v3 page surfaces — literal background + centered column shells.
+// Notes surfaces — shared visual layer for the Notes library and editor.
 // Presentation only. No Brain / PocketBase imports.
 
 import 'package:counter/core/shell_adaptive.dart';
@@ -8,7 +8,7 @@ import 'package:flutter/material.dart';
 /// Editor column (`max-w-3xl`).
 const double kGlmEditorMaxWidth = 768;
 
-/// Library content (`max-w-5xl`).
+/// Notes library content width. Desktop side-nav layouts remain full width.
 const double kGlmLibraryMaxWidth = 1440;
 
 const double kGlmEditorPadH = 20;
@@ -23,14 +23,20 @@ const double kGlmMetaSize = 12;
 const double kGlmPillHeight = 32;
 const double kNotesLibraryControlHeight = kAppQuickEntryControlHeight;
 
-/// Muted blue-grey metadata (`text-muted` in GLM light theme).
-const Color kGlmMetaColor = Color(0xFF94A3B8);
+// v32-gapfix5 reference palette.
+const Color kNotesInk = Color(0xFF111827);
+const Color kNotesMuted = Color(0xFF6B7280);
+const Color kNotesAccent = Color(0xFF2563EB);
+const Color kNotesRule = Color(0xFFDFE3E8);
+const Color kNotesPaper = Color(0xFFF7F8FA);
+const Color kNotesCard = Color(0xFFFCFDFE);
+const Color kNotesCardBorder = Color(0xFFEEF1F5);
+const Color kNotesFolderPane = Color(0xFFE3ECF8);
 
-/// Secondary pill label on light glass.
+/// Kept for existing editor widgets that use the old public token names.
+const Color kGlmMetaColor = Color(0xFF6B7280);
 const Color kGlmPillTextColor = Color(0xFF475569);
-
-/// Barely-visible active block wash.
-const Color kGlmActiveBlockWash = Color(0x0A6366F1);
+const Color kGlmActiveBlockWash = Color(0x0A2563EB);
 
 Color notesGlmMetaColor(BuildContext context) {
   final theme = Theme.of(context);
@@ -48,7 +54,7 @@ Color notesGlmPillTextColor(BuildContext context) {
   return kGlmPillTextColor;
 }
 
-/// Soft full-page gradient matching the supplied GLM screenshot.
+/// Full-page Notes background from the supplied v32-gapfix5 mockup.
 class NotesGlmBackground extends StatelessWidget {
   const NotesGlmBackground({super.key, required this.child});
 
@@ -56,21 +62,22 @@ class NotesGlmBackground extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    if (isDark) {
-      return ColoredBox(
-        color: Theme.of(context).colorScheme.surface,
-        child: child,
-      );
+    final theme = Theme.of(context);
+    if (theme.brightness == Brightness.dark) {
+      return ColoredBox(color: theme.colorScheme.surface, child: child);
     }
     return SizedBox.expand(
       child: DecoratedBox(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFFF8F9FD), Color(0xFFF5F6FC)],
-            stops: [0.0, 0.55],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFFF7F8FA),
+              Color(0xFFEDF4FA),
+              Color(0xFFF7F8FA),
+            ],
+            stops: [0.0, 0.46, 1.0],
           ),
         ),
         child: Stack(
@@ -79,18 +86,9 @@ class NotesGlmBackground extends StatelessWidget {
             const DecoratedBox(
               decoration: BoxDecoration(
                 gradient: RadialGradient(
-                  center: Alignment(-0.85, 0.95),
-                  radius: 1.1,
-                  colors: [Color(0x38EEF0FF), Color(0x00EEF0FF)],
-                ),
-              ),
-            ),
-            const DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: RadialGradient(
-                  center: Alignment(0.9, 0.92),
-                  radius: 1.0,
-                  colors: [Color(0x30FFF1F5), Color(0x00FFF1F5)],
+                  center: Alignment(-0.12, -0.9),
+                  radius: 0.72,
+                  colors: [Color(0xD9D9E5F2), Color(0x00D9E5F2)],
                 ),
               ),
             ),
@@ -102,7 +100,7 @@ class NotesGlmBackground extends StatelessWidget {
   }
 }
 
-/// Centers Notes library content at GLM `max-w-5xl` on a full-bleed gradient.
+/// Centers Notes library content while respecting the normal LIFE OS shell.
 class NotesGlmLibraryFrame extends StatelessWidget {
   const NotesGlmLibraryFrame({
     super.key,
@@ -133,14 +131,14 @@ class NotesGlmLibraryFrame extends StatelessWidget {
                 desktop
                     ? kShellDesktopContentHorizontalPadding
                     : wide
-                    ? 24
-                    : 20,
-                desktop ? kShellDesktopContentTopPadding : 16,
+                        ? 24
+                        : 12,
+                desktop ? kShellDesktopContentTopPadding : 12,
                 desktop
                     ? kShellDesktopContentHorizontalPadding
                     : wide
-                    ? 24
-                    : 20,
+                        ? 24
+                        : 12,
                 16,
               ),
               child: child,
@@ -189,9 +187,7 @@ class NotesGlmEditorFrame extends StatelessWidget {
                     border: hasOuterCanvas
                         ? Border.symmetric(
                             vertical: BorderSide(
-                              color: scheme.outlineVariant.withValues(
-                                alpha: 0.45,
-                              ),
+                              color: scheme.outlineVariant.withValues(alpha: 0.45),
                             ),
                           )
                         : null,
@@ -215,81 +211,71 @@ class NotesGlmEditorFrame extends StatelessWidget {
   }
 }
 
-/// GLM glass pill for add-block actions.
 BoxDecoration notesGlmGlassPillDecoration({BuildContext? context}) {
-  final dark =
-      context != null && Theme.of(context).brightness == Brightness.dark;
+  final dark = context != null && Theme.of(context).brightness == Brightness.dark;
   final scheme = context != null ? Theme.of(context).colorScheme : null;
   return BoxDecoration(
     color: dark
         ? scheme!.surfaceContainerHigh.withValues(alpha: 0.88)
-        : const Color(0xFFFFFFFF).withValues(alpha: 0.82),
-    borderRadius: BorderRadius.circular(999),
+        : const Color(0xFFF7F8FA).withValues(alpha: 0.80),
+    borderRadius: BorderRadius.circular(18),
     border: Border.all(
       color: dark
           ? scheme!.outlineVariant.withValues(alpha: 0.78)
-          : const Color(0xFFE2E8F0),
+          : const Color(0xFFDFE3E8).withValues(alpha: 0.82),
     ),
     boxShadow: [
       BoxShadow(
-        color: Colors.black.withValues(alpha: dark ? 0.18 : 0.04),
-        blurRadius: dark ? 8 : 3,
-        offset: const Offset(0, 1),
+        color: Colors.black.withValues(alpha: dark ? 0.16 : 0.035),
+        blurRadius: dark ? 8 : 12,
+        offset: const Offset(0, 3),
       ),
     ],
   );
 }
 
-/// GLM library search field surface.
 InputDecoration notesGlmSearchDecoration({
   required String hintText,
   Widget? suffixIcon,
   BuildContext? context,
 }) {
-  final dark =
-      context != null && Theme.of(context).brightness == Brightness.dark;
+  final dark = context != null && Theme.of(context).brightness == Brightness.dark;
   final scheme = context != null ? Theme.of(context).colorScheme : null;
   final meta = context != null ? notesGlmMetaColor(context) : kGlmMetaColor;
   final fill = dark
       ? scheme!.surfaceContainerHigh.withValues(alpha: 0.82)
-      : const Color(0xFFFFFFFF).withValues(alpha: 0.75);
+      : const Color(0xFFF7F8FA).withValues(alpha: 0.78);
   final borderColor = dark
       ? scheme!.outlineVariant.withValues(alpha: 0.78)
-      : const Color(0xFFE2E8F0).withValues(alpha: 0.95);
+      : const Color(0xFFDFE3E8).withValues(alpha: 0.78);
   return InputDecoration(
-    constraints: const BoxConstraints.tightFor(
-      height: kNotesLibraryControlHeight,
-    ),
+    constraints: const BoxConstraints.tightFor(height: kNotesLibraryControlHeight),
     hintText: hintText,
-    hintStyle: TextStyle(fontSize: 14, color: meta),
+    hintStyle: TextStyle(fontSize: 13.5, color: meta),
     prefixIcon: Icon(Icons.search_rounded, size: 18, color: meta),
     suffixIcon: suffixIcon,
     filled: true,
     fillColor: fill,
     isDense: true,
-    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+    contentPadding: const EdgeInsets.symmetric(horizontal: 13, vertical: 11),
     enabledBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(18),
       borderSide: BorderSide(color: borderColor),
     ),
     focusedBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(18),
       borderSide: BorderSide(
-        color: (scheme?.primary ?? const Color(0xFF6366F1)).withValues(
-          alpha: dark ? 0.82 : 0.55,
-        ),
-        width: dark ? 1.2 : 1,
+        color: (scheme?.primary ?? kNotesAccent).withValues(alpha: dark ? 0.82 : 0.42),
       ),
     ),
     border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(18),
       borderSide: BorderSide(color: borderColor),
     ),
   );
 }
 
 /// Notes compatibility wrapper over the canonical core library input.
-/// Search, Notes quick-add, Planning and Timeline now render the same field.
 class NotesGlmLibraryInput extends StatelessWidget {
   const NotesGlmLibraryInput({
     super.key,
@@ -316,70 +302,53 @@ class NotesGlmLibraryInput extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => AppLibraryInput(
-    controller: controller,
-    focusNode: focusNode,
-    hintText: hintText,
-    textInputAction: textInputAction,
-    textCapitalization: textCapitalization,
-    onChanged: onChanged,
-    onSubmitted: onSubmitted,
-    suffixIcon: suffixIcon,
-    showSearchIcon: showSearchIcon,
-  );
+        controller: controller,
+        focusNode: focusNode,
+        hintText: hintText,
+        textInputAction: textInputAction,
+        textCapitalization: textCapitalization,
+        onChanged: onChanged,
+        onSubmitted: onSubmitted,
+        suffixIcon: suffixIcon,
+        showSearchIcon: showSearchIcon,
+      );
 }
 
-/// GLM glass card surface for library note cards.
+/// Card surface from the supplied Notes mockup: quiet paper, 14px corners,
+/// no decorative hover elevation. Selection is the only emphasized state.
 BoxDecoration notesGlmGlassCardDecoration({
-  double radius = 16,
+  double radius = 14,
   BuildContext? context,
   bool selected = false,
 }) {
-  final dark =
-      context != null && Theme.of(context).brightness == Brightness.dark;
+  final dark = context != null && Theme.of(context).brightness == Brightness.dark;
   final scheme = context != null ? Theme.of(context).colorScheme : null;
-  final Color fill;
-  final Color borderColor;
-  final List<BoxShadow> shadows;
-
   if (dark) {
-    final base = scheme!.surfaceContainerHigh;
-    fill = selected
-        ? Color.alphaBlend(scheme.primary.withValues(alpha: 0.14), base)
-        : base.withValues(alpha: 0.82);
-    borderColor = selected
-        ? scheme.primary.withValues(alpha: 0.62)
-        : scheme.outlineVariant.withValues(alpha: 0.62);
-    shadows = [
-      BoxShadow(
+    final darkScheme = scheme!;
+    return BoxDecoration(
+      color: selected
+          ? Color.alphaBlend(
+              darkScheme.primary.withValues(alpha: 0.13),
+              darkScheme.surfaceContainerHigh,
+            )
+          : darkScheme.surfaceContainerHigh.withValues(alpha: 0.86),
+      borderRadius: BorderRadius.circular(radius),
+      border: Border.all(
         color: selected
-            ? scheme.primary.withValues(alpha: 0.12)
-            : Colors.black.withValues(alpha: 0.18),
-        blurRadius: selected ? 14 : 10,
-        offset: const Offset(0, 3),
+            ? darkScheme.primary.withValues(alpha: 0.55)
+            : darkScheme.outlineVariant.withValues(alpha: 0.62),
+        width: selected ? 1.2 : 1,
       ),
-    ];
-  } else {
-    fill = selected
-        ? const Color(0xFFF1F3FF).withValues(alpha: 0.94)
-        : const Color(0xFFFFFFFF).withValues(alpha: 0.72);
-    borderColor = selected
-        ? const Color(0xFF6366F1).withValues(alpha: 0.45)
-        : const Color(0xFFE8ECF4);
-    shadows = [
-      BoxShadow(
-        color: selected
-            ? const Color(0xFF6366F1).withValues(alpha: 0.08)
-            : Colors.black.withValues(alpha: 0.03),
-        blurRadius: selected ? 12 : 8,
-        offset: const Offset(0, 2),
-      ),
-    ];
+    );
   }
-
   return BoxDecoration(
-    color: fill,
+    color: selected ? const Color(0xFFF4F7FB) : kNotesCard.withValues(alpha: 0.94),
     borderRadius: BorderRadius.circular(radius),
-    border: Border.all(color: borderColor, width: selected ? 1.2 : 1),
-    boxShadow: shadows,
+    border: Border.all(
+      color: selected
+          ? kNotesAccent.withValues(alpha: 0.32)
+          : kNotesCardBorder,
+      width: selected ? 1.2 : 1,
+    ),
   );
 }
