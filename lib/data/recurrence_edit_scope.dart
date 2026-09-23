@@ -25,7 +25,9 @@ RecurrenceEditScope canonicalRecurrenceEditScope(RecurrenceEditScope scope) =>
 String _rruleUtcStamp(DateTime value) {
   final u = value.toUtc();
   String two(int v) => v.toString().padLeft(2, '0');
-  return '${u.year.toString().padLeft(4, '0')}${two(u.month)}${two(u.day)}T${two(u.hour)}${two(u.minute)}${two(u.second)}Z';
+  return '${u.year.toString().padLeft(4, '0')}'
+      '${two(u.month)}${two(u.day)}T'
+      '${two(u.hour)}${two(u.minute)}${two(u.second)}Z';
 }
 
 /// Returns the same recurrence cadence, ending immediately before [cutoffUtc].
@@ -38,10 +40,12 @@ String recurrenceRruleEndingBefore(String raw, DateTime cutoffUtc) {
   final parts = body
       .split(';')
       .map((e) => e.trim())
-      .where((e) =>
-          e.isNotEmpty &&
-          !e.toUpperCase().startsWith('UNTIL=') &&
-          !e.toUpperCase().startsWith('COUNT='))
+      .where(
+        (e) =>
+            e.isNotEmpty &&
+            !e.toUpperCase().startsWith('UNTIL=') &&
+            !e.toUpperCase().startsWith('COUNT='),
+      )
       .toList();
   final end = cutoffUtc.toUtc().subtract(const Duration(seconds: 1));
   parts.add('UNTIL=${_rruleUtcStamp(end)}');
