@@ -33,4 +33,4 @@ Marking one occurrence complete does not complete the whole recurrence. LIFE OS 
 
 ### Individually changed occurrences
 
-An occurrence that you edited separately remains its own exception. It does not get silently overwritten by later recurrence changes that start after it unless it lies inside the selected future range, in which case it stays attached to that future recurrence as an exception.
+An occurrence that you edited separately remains its own exception. If it lies on or after a later split point, LIFE OS keeps it attached to the new future series instead of recreating or overwriting it.
