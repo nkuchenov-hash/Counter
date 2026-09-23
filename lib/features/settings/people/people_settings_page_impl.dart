@@ -236,7 +236,7 @@ class _PeopleSettingsPageState extends State<PeopleSettingsPage> {
           for (final person in visible)
             _PersonCard(
               person: person,
-              statusLabel: _statusLabel(person.relationshipStatus),
+              relationshipLabels: _relationshipLabels(person),
               birthdayLabel: _birthdayLabel(person),
               circleNames: <String>[
                 for (final id in person.circleRecordIds)
@@ -434,13 +434,19 @@ class _PeopleSettingsPageState extends State<PeopleSettingsPage> {
     }
   }
 
-  String _statusLabel(PersonRelationshipStatus status) => switch (status) {
-        PersonRelationshipStatus.important => peopleT(_locale, 'status_important'),
-        PersonRelationshipStatus.known => peopleT(_locale, 'status_known'),
-        PersonRelationshipStatus.reference => peopleT(_locale, 'status_reference'),
-        PersonRelationshipStatus.ignored => peopleT(_locale, 'ignored'),
-        PersonRelationshipStatus.blocked => peopleT(_locale, 'blocked'),
-      };
+  List<String> _relationshipLabels(LifePerson person) {
+    final metaRaw = person.sourceRefs['_lifeos'];
+    if (metaRaw is! Map) return const <String>[];
+    final relationshipsRaw = metaRaw['relationships'];
+    if (relationshipsRaw is! List) return const <String>[];
+    final seen = <String>{};
+    return <String>[
+      for (final value in relationshipsRaw)
+        if (value.toString().trim().isNotEmpty &&
+            seen.add(value.toString().trim()))
+          value.toString().trim(),
+    ];
+  }
 
   String _birthdayLabel(LifePerson person) {
     if (!person.hasBirthday) return peopleT(_locale, 'birthday_unknown');
@@ -459,14 +465,14 @@ class _PeopleSettingsPageState extends State<PeopleSettingsPage> {
 class _PersonCard extends StatelessWidget {
   const _PersonCard({
     required this.person,
-    required this.statusLabel,
+    required this.relationshipLabels,
     required this.birthdayLabel,
     required this.circleNames,
     required this.onTap,
   });
 
   final LifePerson person;
-  final String statusLabel;
+  final List<String> relationshipLabels;
   final String birthdayLabel;
   final List<String> circleNames;
   final VoidCallback onTap;
@@ -507,12 +513,13 @@ class _PersonCard extends StatelessWidget {
                       spacing: 10,
                       runSpacing: 4,
                       children: [
-                        Text(
-                          statusLabel,
-                          style: theme.textTheme.labelMedium?.copyWith(
-                            fontWeight: FontWeight.w700,
+                        for (final relationship in relationshipLabels)
+                          Text(
+                            relationship,
+                            style: theme.textTheme.labelMedium?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
-                        ),
                         Text(
                           birthdayLabel,
                           style: theme.textTheme.bodySmall?.copyWith(
