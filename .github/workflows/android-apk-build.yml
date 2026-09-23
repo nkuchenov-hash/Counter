@@ -7,6 +7,7 @@ on:
     paths:
       - 'lib/**'
       - 'test/live_sync_contract_test.dart'
+      - 'test/plan_recurrence_scope_test.dart'
       - 'pubspec.yaml'
       - 'pubspec.lock'
       - 'android/**'
@@ -15,6 +16,7 @@ on:
     branches: [main]
     paths:
       - 'lib/**'
+      - 'test/plan_recurrence_scope_test.dart'
       - 'pubspec.yaml'
       - 'pubspec.lock'
       - 'android/**'
@@ -52,8 +54,8 @@ jobs:
       - name: Analyze runtime app
         run: flutter analyze lib --no-fatal-infos --no-fatal-warnings
 
-      - name: Run live-sync regression tests
-        run: flutter test test/live_sync_contract_test.dart
+      - name: Run live-sync and recurrence regression tests
+        run: flutter test test/live_sync_contract_test.dart test/plan_recurrence_scope_test.dart
 
       - name: Build arm64 release APK
         run: flutter build apk --release --target-platform android-arm64 --split-per-abi --no-tree-shake-icons

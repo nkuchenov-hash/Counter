@@ -10,7 +10,6 @@ import 'package:counter/features/shared/edit_sheet/category_edit_draft.dart';
 import 'package:counter/shared/categories/picker/category_tree_picker.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
-import 'package:counter/data/recurrence_edit_scope.dart';
 import 'package:counter/features/planning/recurrence_scope_dialog.dart';
 import 'package:counter/features/profile/tag_settings_hub.dart';
 import 'package:counter/core/widgets/chip_component.dart';
@@ -83,13 +82,12 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
   late final TextEditingController _rruleCustomController;
   late final PlanningTask _baselineTask;
   final EditSheetAutosaveGate _planAutosaveGate = EditSheetAutosaveGate();
-  RecurrenceEditScope? _recurrenceEditScopeChosen;
-  bool _recurrenceScopePromptOpen = false;
+  final RecurrenceEditScopeGate _recurrenceScopeGate = RecurrenceEditScopeGate();
   StreamSubscription<DocChange>? _planQuillChangesSub;
   Timer? _titleAssistDebounce;
 
-  bool get _isPersistedPlan =>
-      widget.task.planRowIdForBackend.trim().isNotEmpty;
+  bool get _isPersistedPlan => widget.task.planRowIdForBackend.trim().isNotEmpty;
+  bool get _baselineIsRecurring => DatabaseService.instance.planningTaskIsRecurringForScope(_baselineTask);
 
   @override
   void initState() {
@@ -181,7 +179,7 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    if (_isPersistedPlan) {
+    if (_isPersistedPlan && !_recurrenceScopeGate.requiresChoice(_baselineIsRecurring)) {
       _planAutosaveGate.flush(() {
         final latest = _buildDraftTask();
         if (latest != null) {
@@ -205,7 +203,6 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
     super.dispose();
   }
 
-
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state != AppLifecycleState.inactive &&
@@ -218,14 +215,7 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
 
   void _flushDirtyPlanDraftForLifecycle() {
     if (!_isPersistedPlan || !_planAutosaveGate.isDirty) return;
-    if (DatabaseService.instance.planningTaskIsRecurringForScope(
-          _baselineTask,
-        ) &&
-        _recurrenceEditScopeChosen == null) {
-      // Recurring edits still require the explicit scope decision; never guess
-      // while the app is being backgrounded.
-      return;
-    }
+    if (_recurrenceScopeGate.requiresChoice(_baselineIsRecurring)) return;
     _planAutosaveGate.flush(() {
       final latest = _buildDraftTask();
       if (latest == null) return;
@@ -300,25 +290,14 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
 
   Future<void> _syncPlanDraftToNetwork(PlanningTask draft) async {
     if (!_isPersistedPlan) return;
-    if (DatabaseService.instance.planningTaskIsRecurringForScope(
-      _baselineTask,
-    )) {
-      if (_recurrenceEditScopeChosen == null) {
-        if (_recurrenceScopePromptOpen || !mounted) return;
-        _recurrenceScopePromptOpen = true;
-        final scope = await showRecurrenceScopeDialog(
-          context,
-          task: _baselineTask,
-          isDelete: false,
-        );
-        _recurrenceScopePromptOpen = false;
-        if (!mounted) return;
-        if (scope == null) {
-          _planAutosaveGate.markClean();
-          return;
-        }
-        _recurrenceEditScopeChosen = scope;
-      }
+    final scope = await _recurrenceScopeGate.resolve(
+      context,
+      task: _baselineTask,
+      isRecurring: _baselineIsRecurring,
+    );
+    if (!mounted || scope == null) {
+      _planAutosaveGate.markClean();
+      return;
     }
     final baseline = _baselineTask;
     final anchorShort = DatabaseService.instance.planningAuditAnchorDateKey(
@@ -341,7 +320,7 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
         );
     await DatabaseService.instance.updatePlanningTaskWithRecurrenceScope(
       draft.planRowIdForBackend,
-      scope: _recurrenceEditScopeChosen ?? RecurrenceEditScope.singleOccurrence,
+      scope: scope,
       planBusinessId: draft.planRowId,
       title: draft.title,
       categoryId: draft.categoryId,
@@ -378,6 +357,10 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
     if (!_isPersistedPlan) return;
 
     void applyAndSync(PlanningTask draft) {
+      if (_recurrenceScopeGate.requiresChoice(_baselineIsRecurring)) {
+        unawaited(_syncPlanDraftToNetwork(draft));
+        return;
+      }
       _applyPlanDraftLocally(draft);
       unawaited(_syncPlanDraftToNetwork(draft));
     }
@@ -491,19 +474,30 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
   String _shortMonth(int month) =>
       month >= 1 && month <= 12 ? kShortMonths[month - 1] : '';
 
-  void _commitSave() {
-    final updated = _buildDraftTask();
+  void _commitSave() => unawaited(_commitSaveAsync());
+
+  Future<void> _commitSaveAsync() async {
+    var updated = _buildDraftTask();
     if (updated == null) {
       AppSnack.warning(t(currentLocale.value, 'edit_save_title_required'));
       return;
     }
-    // Explicit Save owns this draft snapshot (incl. newly created category).
-    // Do not rebuild inside flush — autosave must not race with an older snapshot.
-    _applyPlanDraftLocally(updated);
     if (_isPersistedPlan) {
-      _planAutosaveGate.flush(() {
-        unawaited(_syncPlanDraftToNetwork(updated));
-      }, force: true);
+      final scope = await _recurrenceScopeGate.resolve(
+        context,
+        task: _baselineTask,
+        isRecurring: _baselineIsRecurring,
+      );
+      if (!mounted || scope == null) return;
+      updated = _buildDraftTask();
+      if (updated == null) return;
+    }
+    if (!_baselineIsRecurring) _applyPlanDraftLocally(updated);
+    if (_isPersistedPlan) {
+      _planAutosaveGate.flush(
+        () => unawaited(_syncPlanDraftToNetwork(updated!)),
+        force: true,
+      );
     }
     AppSnack.changesSaved();
     if (widget.onSaved != null) {

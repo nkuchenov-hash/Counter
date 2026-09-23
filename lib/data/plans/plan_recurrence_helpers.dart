@@ -210,11 +210,21 @@ extension PlanRecurrenceExtension on DatabaseService {
     return series != null && DatabaseService._isLikelyPocketBaseRowId(series);
   }
 
+  bool _hasRecurringParentInCache(PlanningTask task) {
+    final parent = task.parentPlanPocketId?.trim() ?? '';
+    if (!DatabaseService._isLikelyPocketBaseRowId(parent)) return false;
+    final series = _findCachedPlanningTaskForEdit(parent);
+    return series?.rrule?.trim().isNotEmpty == true;
+  }
+
   /// UI + Brain: recurring occurrence, virtual JIT row, or materialized exception.
+  /// The parent-series fallback preserves scope behavior for legacy/materialized
+  /// rows whose recurrence instance key was not rehydrated by older clients.
   bool planningTaskIsRecurringForScope(PlanningTask task) {
     if (_isJitVirtualPlanningTask(task)) return true;
     if (task.rrule?.trim().isNotEmpty == true) return true;
-    return _isMaterializedRecurrenceException(task);
+    if (_isMaterializedRecurrenceException(task)) return true;
+    return _hasRecurringParentInCache(task);
   }
 
 
