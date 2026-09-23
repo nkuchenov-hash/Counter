@@ -23,15 +23,22 @@ The LIFE OS phone/web/desktop client is **not required** for this path to run. X
 
 ## Xiaomi API contract
 
-The current Xiaomi Health API family is the `relatives` API used by the pinned `mi-fitness` runtime:
+Xiaomi exposes more than one usable Health API family and either can lag while still returning a successful response. LIFE OS therefore **must merge both Xiaomi API families on every sync** instead of treating a merely non-empty response as fresh.
+
+Relatives/share family used by the pinned `mi-fitness` runtime:
 
 - `/app/v1/relatives/get_aggregated_data`
 - `/app/v1/relatives/get_fitness_data`
 - `/app/v1/relatives/get_latest_data`
 
-The historical `/app/v1/data/...` endpoints are **compatibility fallback only**. They must never become the primary path again merely because they still return HTTP success: they can return stale history while Mi Fitness already contains newer sleep.
+Authenticated self-account data family:
 
-The bridge must reconcile aggregate + latest + raw sleep data on each current-API pass. If the primary regional backend is stale, it probes the known Xiaomi Health regions and keeps the freshest successful result.
+- `/app/v1/data/get_aggregated_fitness_data_by_time`
+- `/app/v1/data/get_fitness_data_by_time`
+
+The self-account data endpoints use Xiaomi's encrypted **POST** request path and do not require `relative_uid`. The relatives endpoints use the library's current GET path. Neither family may short-circuit the other merely because it returned one or more old rows.
+
+The bridge reconciles aggregate + latest + raw relatives data with self-account aggregate/raw data on every pass. If the primary regional backend is stale, it probes the known Xiaomi Health regions and keeps the freshest successful result.
 
 ## Missing-day synchronization law
 
@@ -77,7 +84,8 @@ If the immediately preceding root non-sleep record has no end or extends through
 
 - Normal Xiaomi reads cover recent history on every pass.
 - The runtime periodically performs a wider reconciliation window so delayed provider corrections can update earlier nights.
-- Current Xiaomi API results are preferred; legacy endpoint results exist only as fallback.
+- Relatives and self-account Xiaomi results are merged; **freshness, not API-family priority, decides the useful result**.
+- A non-empty but stale response must never prevent querying the other Xiaomi family.
 - Duplicate cleanup covers the recent history window, not only the newest night.
 
 ## Connection and fallback rules
@@ -105,9 +113,10 @@ The deployment verifier must report at least:
 
 Architecture Guard / deployment contract must fail if any of these invariants regress:
 
-- current Xiaomi `relatives` aggregate endpoint is missing;
-- current Xiaomi latest-data endpoint is missing;
-- current Xiaomi raw fitness endpoint is missing;
+- Xiaomi `relatives` aggregate/latest/raw endpoints disappear;
+- the authenticated self-account `/app/v1/data/get_fitness_data_by_time` POST path disappears;
+- the bridge stops merging relatives + self-account results;
+- a non-empty relatives response is again allowed to skip the self-account freshness query;
 - the active sleep cron is no longer `*/15 * * * *`;
 - a morning-time gate is reintroduced before missing-day sync;
 - Xiaomi revised-night overlap dedupe disappears;
@@ -122,6 +131,6 @@ For an authenticated client use `GET /api/sleep-sync/status`. Operationally veri
 1. **Source freshness:** Xiaomi bridge latest session end/day.
 2. **Database freshness:** latest Xiaomi `records.end_time` / local day.
 
-If the bridge is fresh but PocketBase is stale, investigate scheduler/import logic. If both are stale while Mi Fitness visibly has newer sleep, investigate the Xiaomi API family/region before touching Timeline UI.
+If the bridge is fresh but PocketBase is stale, investigate scheduler/import logic. If both are stale while Mi Fitness visibly has newer sleep, investigate all Xiaomi API families/regions before touching Timeline UI.
 
 Never expose Xiaomi credentials, token files, user ids, server secrets, or raw authorization payloads in logs or user-facing diagnostics.
