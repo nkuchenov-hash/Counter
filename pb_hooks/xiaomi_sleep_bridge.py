@@ -33,13 +33,14 @@ XIAOMI_HEALTH_REGION_URLS = (
     "https://us.hlth.io.mi.com",
 )
 
-# Current mi-fitness uses the relatives API family. Keep the historical data
-# endpoints only as a compatibility fallback for older Xiaomi account layouts.
+# Xiaomi exposes both relatives/share endpoints and self-account data endpoints.
+# Either family may lag while still returning HTTP success, so every sync merges
+# all successful sleep sources and chooses freshness by the resulting sessions.
 XIAOMI_AGGREGATED_PATH = "/app/v1/relatives/get_aggregated_data"
 XIAOMI_FITNESS_PATH = "/app/v1/relatives/get_fitness_data"
 XIAOMI_LATEST_PATH = "/app/v1/relatives/get_latest_data"
-XIAOMI_LEGACY_AGGREGATED_PATH = "/app/v1/data/get_aggregated_fitness_data_by_time"
-XIAOMI_LEGACY_FITNESS_PATH = "/app/v1/data/get_fitness_data_by_time"
+XIAOMI_SELF_AGGREGATED_PATH = "/app/v1/data/get_aggregated_fitness_data_by_time"
+XIAOMI_SELF_FITNESS_PATH = "/app/v1/data/get_fitness_data_by_time"
 
 
 def _utc_now() -> str:
@@ -162,7 +163,7 @@ def _latest_end_epoch(sessions: dict[str, dict[str, Any]]) -> float:
     return latest
 
 
-async def _fetch_current_sleep_api(
+async def _fetch_relatives_sleep_api(
     client: MiHealthClient,
     uid: int,
     start: int,
@@ -171,22 +172,23 @@ async def _fetch_current_sleep_api(
 ) -> dict[str, dict[str, Any]]:
     sessions: dict[str, dict[str, Any]] = {}
 
-    response = await client._request(
-        "GET",
-        XIAOMI_AGGREGATED_PATH,
-        params={
-            "relative_uid": uid,
-            "key": "sleep",
-            "tag": "daily_report",
-            "start_time": start,
-            "end_time": end,
-            "limit": limit,
-        },
-    )
-    sessions.update(_sessions_from_rows(_rows_from_response(response)))
+    try:
+        response = await client._request(
+            "GET",
+            XIAOMI_AGGREGATED_PATH,
+            params={
+                "relative_uid": uid,
+                "key": "sleep",
+                "tag": "daily_report",
+                "start_time": start,
+                "end_time": end,
+                "limit": limit,
+            },
+        )
+        sessions.update(_sessions_from_rows(_rows_from_response(response)))
+    except Exception:
+        pass
 
-    # The daily report can lag behind the latest device upload. Xiaomi's current
-    # API exposes a dedicated latest-data endpoint; reconcile it on every pass.
     try:
         latest_response = await client._request(
             "GET",
@@ -202,7 +204,6 @@ async def _fetch_current_sleep_api(
     except Exception:
         pass
 
-    # Raw records are useful when the daily aggregate has not settled yet.
     try:
         raw_response = await client._request(
             "GET",
@@ -222,34 +223,41 @@ async def _fetch_current_sleep_api(
     return sessions
 
 
-async def _fetch_legacy_sleep_api(
+async def _fetch_self_sleep_api(
     client: MiHealthClient,
-    uid: int,
     start: int,
     end: int,
     limit: int,
 ) -> dict[str, dict[str, Any]]:
+    """Read the authenticated account's own sleep through Xiaomi data APIs.
+
+    These endpoints use encrypted POST requests and intentionally do not pass a
+    relative_uid. They are merged with the relatives API because either Xiaomi
+    family can be stale independently while still returning a successful result.
+    """
     sessions: dict[str, dict[str, Any]] = {}
-    response = await client._request(
-        "GET",
-        XIAOMI_LEGACY_AGGREGATED_PATH,
-        params={
-            "relative_uid": uid,
-            "key": "sleep",
-            "tag": "daily_report",
-            "start_time": start,
-            "end_time": end,
-            "limit": limit,
-        },
-    )
-    sessions.update(_sessions_from_rows(_rows_from_response(response)))
+
+    try:
+        response = await client._request(
+            "POST",
+            XIAOMI_SELF_AGGREGATED_PATH,
+            params={
+                "key": "sleep",
+                "tag": "daily_report",
+                "start_time": start,
+                "end_time": end,
+                "limit": limit,
+            },
+        )
+        sessions.update(_sessions_from_rows(_rows_from_response(response)))
+    except Exception:
+        pass
 
     try:
         raw_response = await client._request(
-            "GET",
-            XIAOMI_LEGACY_FITNESS_PATH,
+            "POST",
+            XIAOMI_SELF_FITNESS_PATH,
             params={
-                "relative_uid": uid,
                 "key": "sleep",
                 "start_time": start,
                 "end_time": end,
@@ -259,6 +267,7 @@ async def _fetch_legacy_sleep_api(
         sessions.update(_sessions_from_rows(_rows_from_response(raw_response)))
     except Exception:
         pass
+
     return sessions
 
 
@@ -271,13 +280,12 @@ async def _fetch_sleep_for_base(
     limit: int,
 ) -> dict[str, dict[str, Any]]:
     async with MiHealthClient.from_token(token_path, base_url=base_url) as client:
-        try:
-            current = await _fetch_current_sleep_api(client, uid, start, end, limit)
-            if current:
-                return current
-        except Exception:
-            pass
-        return await _fetch_legacy_sleep_api(client, uid, start, end, limit)
+        sessions: dict[str, dict[str, Any]] = {}
+        relatives = await _fetch_relatives_sleep_api(client, uid, start, end, limit)
+        sessions.update(relatives)
+        self_data = await _fetch_self_sleep_api(client, start, end, limit)
+        sessions.update(self_data)
+        return sessions
 
 
 async def _login(args: argparse.Namespace) -> int:
