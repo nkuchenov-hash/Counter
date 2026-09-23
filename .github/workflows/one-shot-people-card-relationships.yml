@@ -67,3 +67,5 @@ jobs:
           git diff --cached --check
           git commit -m "Show custom relationships on People cards"
           git push origin HEAD:main
+
+# trigger: 2026-09-23T22:05Z
