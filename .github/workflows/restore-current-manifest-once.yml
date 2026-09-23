@@ -1,0 +1,43 @@
+name: Restore current PocketBase manifest once
+on:
+  push:
+    branches: [fix/recurrence-dialog-alignment]
+permissions:
+  contents: write
+jobs:
+  restore:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Restore current main manifest and add recurrence fields
+        shell: bash
+        run: |
+          git fetch origin main
+          git checkout origin/main -- docs/POCKETBASE_MANIFEST.md
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('docs/POCKETBASE_MANIFEST.md')
+          s = p.read_text(encoding='utf-8')
+          anchor = "| `is_postponed` | bool | `true` when the scheduled wall day is after `initial_date_key` (bulk/single move ahead). |\n"
+          addition = (
+              "| `rrule` | text | RFC 5545 recurrence rule for a stored series template. Empty/null = non-recurring. |\n"
+              "| `exception_dates` | json | `YYYY-MM-DD` dates suppressed from normal JIT series expansion. Default `[]`. |\n"
+              "| `parent_plan_id` | relation | Optional self-relation → `plans.id`. For a materialized recurring occurrence, points to its recurrence series row. |\n"
+              "| `recurrence_instance_date_key` | text | Optional `YYYY-MM-DD` original occurrence date for a materialized recurrence exception. Used with `parent_plan_id` for dedupe and future-series reparenting. |\n"
+              "| `reminder_offset` | number | Optional minutes before plan start for the reminder. |\n"
+          )
+          if '`recurrence_instance_date_key`' not in s:
+              if anchor not in s:
+                  raise SystemExit('plans anchor not found in current main manifest')
+              s = s.replace(anchor, anchor + addition, 1)
+          p.write_text(s, encoding='utf-8')
+          PY
+          rm .github/workflows/restore-current-manifest-once.yml
+          git add docs/POCKETBASE_MANIFEST.md .github/workflows/restore-current-manifest-once.yml
+          git config user.name "life-os-recurrence-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git commit -m "Restore current PocketBase manifest with recurrence schema"
+          git pull --rebase origin fix/recurrence-dialog-alignment
+          git push origin HEAD:fix/recurrence-dialog-alignment
