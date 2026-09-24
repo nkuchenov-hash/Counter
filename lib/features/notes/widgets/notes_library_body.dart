@@ -127,7 +127,7 @@ class _NotesLibraryBodyState extends State<NotesLibraryBody> {
     if (availableWidth <= 931) return 2;
     if (availableWidth <= 1168) return 4;
     final wideCount = ((availableWidth + 12) / 252).floor();
-    return wideCount.clamp(5, 8);
+    return wideCount.clamp(5, 8).toInt();
   }
 
   @override
