@@ -143,5 +143,7 @@ jobs:
             test/record_interval_autosave_guard_test.dart \
             CHANGELOG.md
           git commit -m 'Fix record interval rollover corruption'
+          git reset --hard HEAD
+          git clean -fd
           git pull --rebase origin main
           git push origin HEAD:main
