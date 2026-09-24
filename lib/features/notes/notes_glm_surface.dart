@@ -6,9 +6,6 @@ import 'package:flutter/material.dart';
 /// Editor column (`max-w-3xl`).
 const double kGlmEditorMaxWidth = 768;
 
-/// Exact v32-gapfix5 Notes page max-width.
-const double kGlmLibraryMaxWidth = 1360;
-
 const double kGlmEditorPadH = 20;
 const double kGlmEditorPadV = 16;
 const double kGlmTopBarHeight = 56;
@@ -98,42 +95,41 @@ class NotesGlmBackground extends StatelessWidget {
   }
 }
 
-/// Exact Notes page frame from the HTML, inside the existing LIFE OS shell.
+/// Notes uses the full content area supplied by the LIFE OS shell. The HTML's
+/// geometry defines the internal layout, not a fixed desktop canvas width.
 class NotesGlmLibraryFrame extends StatelessWidget {
   const NotesGlmLibraryFrame({
     super.key,
     required this.child,
-    this.maxWidth = kGlmLibraryMaxWidth,
   });
 
   final Widget child;
-  final double maxWidth;
 
   @override
   Widget build(BuildContext context) {
-    final width = MediaQuery.sizeOf(context).width;
-    final EdgeInsets pagePadding;
-    if (width <= 520) {
-      pagePadding = const EdgeInsets.fromLTRB(12, 10, 12, 20);
-    } else if (width <= 1023) {
-      pagePadding = const EdgeInsets.symmetric(horizontal: 18);
-    } else {
-      pagePadding = const EdgeInsets.fromLTRB(28, 12, 28, 28);
-    }
-
     return NotesGlmBackground(
       child: SafeArea(
         top: false,
         bottom: false,
-        child: Align(
-          alignment: Alignment.topCenter,
-          child: ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: maxWidth),
-            child: Padding(
-              padding: pagePadding,
-              child: child,
-            ),
-          ),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final width = constraints.maxWidth;
+            final EdgeInsets pagePadding;
+            if (width <= 520) {
+              pagePadding = const EdgeInsets.fromLTRB(12, 10, 12, 20);
+            } else if (width <= 1023) {
+              pagePadding = const EdgeInsets.symmetric(horizontal: 18);
+            } else {
+              pagePadding = const EdgeInsets.fromLTRB(28, 12, 28, 28);
+            }
+            return SizedBox(
+              width: double.infinity,
+              child: Padding(
+                padding: pagePadding,
+                child: child,
+              ),
+            );
+          },
         ),
       ),
     );
@@ -261,7 +257,9 @@ InputDecoration notesGlmSearchDecoration({
     focusedBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(18),
       borderSide: BorderSide(
-        color: (scheme?.primary ?? kNotesAccent).withValues(alpha: dark ? 0.82 : 0.42),
+        color: (scheme?.primary ?? kNotesAccent).withValues(
+          alpha: dark ? 0.82 : 0.42,
+        ),
       ),
     ),
     border: OutlineInputBorder(
@@ -345,7 +343,9 @@ BoxDecoration notesGlmGlassCardDecoration({
     );
   }
   return BoxDecoration(
-    color: selected ? const Color(0xFFF4F7FB) : kNotesCard.withValues(alpha: 0.94),
+    color: selected
+        ? const Color(0xFFF4F7FB)
+        : kNotesCard.withValues(alpha: 0.94),
     borderRadius: BorderRadius.circular(radius),
     border: Border.all(
       color: selected
