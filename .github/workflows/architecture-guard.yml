@@ -56,6 +56,7 @@ jobs:
               registry_row = re.compile(r"^\|\s*`([a-z0-9_.-]+)`\s*\|", re.M)
               site_id = re.compile(r"data-function-id=[\"']([a-z0-9_.-]+)[\"']")
               code_ref = re.compile(r"`((?:lib|docs|browser_extension|server|pb_hooks|pb_migrations)/[^`]+)`")
+              site_code = re.compile(r"<code>([^<]+)</code>")
               ids = registry_row.findall(functions)
               site_ids = site_id.findall(site)
 
@@ -105,6 +106,16 @@ jobs:
                   clean = ref.split("#", 1)[0]
                   if not (root / clean).exists():
                       issues.append(f"FUNCTION_BROKEN_CODE_REF {clean}")
+
+              # Web cards are independently validated because they are copied into
+              # the production Pages artifact and can drift from FUNCTIONS.md.
+              for code_block in site_code.findall(site):
+                  for ref in (part.strip() for part in code_block.split("·")):
+                      if not ref or ref.startswith("docs/"):
+                          continue
+                      clean = ref.split("#", 1)[0].strip()
+                      if clean.startswith(("lib/", "browser_extension/", "server/", "pb_hooks/", "pb_migrations/")) and not (root / clean).exists():
+                          issues.append(f"ENCYCLOPEDIA_BROKEN_CODE_REF {clean}")
 
           if issues:
               print("function_encyclopedia_contract: FAIL")
