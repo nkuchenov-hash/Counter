@@ -29,7 +29,7 @@
 | `paths.planner_bridge` | Единственная граница Path → Planner | Paths / Planning | `lib/data/plans/path_planner_bridge.dart` | реализовано |
 | `voice.generic` | Голосовой ввод в Timeline/Planning/Backlog | Voice / Shell | `lib/app/shell/shared/shell_voice_input.dart`, `lib/shared/voice/` | реализовано |
 | `voice.desktop` | Desktop GOLOS, hotkey, tray, commands | Voice / Shell | `lib/features/voice/`, `lib/shared/voice/platforms/desktop/`, `shell_voice_routing.dart` | реализовано |
-| `health.sleep` | Device/cloud sleep import + reconcile | Health / Brain | `lib/data/health/`, `lib/services/health/` | реализовано по поддерживаемым источникам |
+| `health.sleep` | Device/cloud sleep import + reconcile | Health / Brain | `lib/data/health/`, `lib/services/health_connect/` | реализовано по поддерживаемым источникам |
 | `calendar.integrations` | Google/Microsoft calendar connection/sync | Integrations | `lib/data/calendar_integrations/`, `docs/CALENDAR_INTEGRATIONS.md` | реализовано по контракту интеграции |
 | `offline.sync` | Optimistic mutations + durable outboxes | Brain / Shell | `lib/data/local_sync/`, `lib/data/db_core.dart` | реализовано |
 | `browser.extension` | Browser companion start/stop/sync | Shell / browser extension | `lib/app/shell/shared/shell_browser_extension.dart`, `browser_extension/` | реализовано |
