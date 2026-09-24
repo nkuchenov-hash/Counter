@@ -1,4 +1,4 @@
-// Notes library body — exact v32-gapfix5 grid/list geometry plus the existing
+// Notes library body — v32-gapfix5 grid/list geometry plus the existing
 // desktop master-detail editor. Data and mutations remain in ListsPage/Brain.
 
 import 'dart:async';
@@ -7,6 +7,7 @@ import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/notes/note_editor_page.dart';
 import 'package:counter/features/notes/notes_glm_surface.dart';
+import 'package:counter/features/notes/notes_visual_tokens.dart';
 import 'package:counter/features/notes/widgets/note_card.dart';
 import 'package:counter/features/notes/widgets/notes_editor_screen.dart';
 import 'package:counter/l10n/dictionary.dart';
@@ -14,8 +15,8 @@ import 'package:flutter/material.dart';
 
 const double kNotesEmbeddedWorkspaceBreakpoint = 1100;
 
-bool notesUsesEmbeddedWorkspace(double viewportWidth) =>
-    viewportWidth >= kNotesEmbeddedWorkspaceBreakpoint;
+bool notesUsesEmbeddedWorkspace(double workspaceWidth) =>
+    workspaceWidth >= kNotesEmbeddedWorkspaceBreakpoint;
 
 class NotesLibraryBody extends StatefulWidget {
   const NotesLibraryBody({
@@ -52,6 +53,7 @@ class NotesLibraryBody extends StatefulWidget {
 class _NotesLibraryBodyState extends State<NotesLibraryBody> {
   PlanningTask? _selectedTask;
   List<String>? _editingOrder;
+  double _lastWorkspaceWidth = 0;
 
   @override
   void initState() {
@@ -103,23 +105,52 @@ class _NotesLibraryBodyState extends State<NotesLibraryBody> {
     return out;
   }
 
+  NotesSectionPalette _surfacePaletteFor(List<NoteCardData> cards) {
+    if (cards.isEmpty) return NotesSectionPalette.all;
+    final categoryId = cards.first.task.categoryId;
+    for (final card in cards.skip(1)) {
+      if (card.task.categoryId != categoryId) return NotesSectionPalette.all;
+    }
+    final first = cards.first;
+    return NotesSectionPalette.forCategory(
+      first.categoryName,
+      first.categoryColor,
+    );
+  }
+
+  int _gridColumnCount(double availableWidth) {
+    // The HTML breakpoints are viewport based while this widget receives the
+    // already-padded folder body. These thresholds are the same visual points
+    // translated into the real inner workspace. Wider displays add columns to
+    // preserve the reference card density rather than stretching five cards.
+    if (availableWidth <= 440) return 1;
+    if (availableWidth <= 931) return 2;
+    if (availableWidth <= 1168) return 4;
+    final wideCount = ((availableWidth + 12) / 252).floor();
+    return wideCount.clamp(5, 8).toInt();
+  }
+
   @override
   Widget build(BuildContext context) {
     final tasks = _orderedTasks();
     final cards = _buildCards(context, tasks);
+    final palette = _surfacePaletteFor(cards);
     return LayoutBuilder(
       builder: (context, constraints) {
-        final viewportWidth = MediaQuery.sizeOf(context).width;
-        final wide = notesUsesEmbeddedWorkspace(viewportWidth);
+        _lastWorkspaceWidth = constraints.maxWidth;
+        final wide = notesUsesEmbeddedWorkspace(constraints.maxWidth);
         final selected = wide ? _selectedTask : null;
 
         if (selected == null) {
-          return _withRefresh(
-            _buildCollection(
-              context,
-              cards,
-              view: widget.view,
-              availableWidth: constraints.maxWidth,
+          return NotesSectionPaletteScope(
+            palette: palette,
+            child: _withRefresh(
+              _buildCollection(
+                context,
+                cards,
+                view: widget.view,
+                availableWidth: constraints.maxWidth,
+              ),
             ),
           );
         }
@@ -128,45 +159,48 @@ class _NotesLibraryBodyState extends State<NotesLibraryBody> {
             .clamp(300.0, 380.0)
             .toDouble();
         final scheme = Theme.of(context).colorScheme;
-        return Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            SizedBox(
-              width: listWidth,
-              child: Padding(
-                padding: const EdgeInsets.only(right: 14),
-                child: _withRefresh(
-                  _buildCollection(
-                    context,
-                    cards,
-                    view: NotesLibraryView.list,
-                    availableWidth: listWidth,
-                    selectedId: selected.planRowIdForBackend,
-                    compactList: true,
-                  ),
-                ),
-              ),
-            ),
-            VerticalDivider(
-              width: 1,
-              thickness: 1,
-              color: scheme.outlineVariant.withValues(alpha: 0.65),
-            ),
-            Expanded(
-              child: ColoredBox(
-                color: scheme.surface,
-                child: NotesEmbeddedEditorScope(
-                  onClose: _closeEmbeddedEditor,
-                  child: NoteEditorPage(
-                    key: ValueKey<String>(
-                      'embedded-note-${selected.planRowIdForBackend}',
+        return NotesSectionPaletteScope(
+          palette: palette,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              SizedBox(
+                width: listWidth,
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 14),
+                  child: _withRefresh(
+                    _buildCollection(
+                      context,
+                      cards,
+                      view: NotesLibraryView.list,
+                      availableWidth: listWidth,
+                      selectedId: selected.planRowIdForBackend,
+                      compactList: true,
                     ),
-                    task: selected,
                   ),
                 ),
               ),
-            ),
-          ],
+              VerticalDivider(
+                width: 1,
+                thickness: 1,
+                color: scheme.outlineVariant.withValues(alpha: 0.65),
+              ),
+              Expanded(
+                child: ColoredBox(
+                  color: scheme.surface,
+                  child: NotesEmbeddedEditorScope(
+                    onClose: _closeEmbeddedEditor,
+                    child: NoteEditorPage(
+                      key: ValueKey<String>(
+                        'embedded-note-${selected.planRowIdForBackend}',
+                      ),
+                      task: selected,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         );
       },
     );
@@ -213,17 +247,10 @@ class _NotesLibraryBodyState extends State<NotesLibraryBody> {
     bool compactList = false,
   }) {
     final db = DatabaseService.instance;
-    final viewportWidth = MediaQuery.sizeOf(context).width;
 
     if (view == NotesLibraryView.grid) {
-      final count = viewportWidth > 1280
-          ? 5
-          : viewportWidth > 1023
-              ? 4
-              : viewportWidth > 520
-                  ? 2
-                  : 1;
-      final mobileSingle = viewportWidth <= 520;
+      final count = _gridColumnCount(availableWidth);
+      final mobileSingle = count == 1;
       return GridView.builder(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: EdgeInsets.zero,
@@ -247,6 +274,7 @@ class _NotesLibraryBodyState extends State<NotesLibraryBody> {
 
     final scheme = Theme.of(context).colorScheme;
     final dark = Theme.of(context).brightness == Brightness.dark;
+    final palette = NotesSectionPaletteScope.of(context);
     return Container(
       decoration: BoxDecoration(
         color: dark
@@ -256,7 +284,7 @@ class _NotesLibraryBodyState extends State<NotesLibraryBody> {
         border: Border.all(
           color: dark
               ? scheme.outlineVariant.withValues(alpha: 0.68)
-              : const Color(0xFFD8E0E9),
+              : Color.lerp(palette.pane, const Color(0xFFD8E0E9), 0.52)!,
         ),
       ),
       clipBehavior: Clip.antiAlias,
@@ -325,7 +353,7 @@ class _NotesLibraryBodyState extends State<NotesLibraryBody> {
   }
 
   void _openNote(BuildContext context, PlanningTask task) {
-    if (!notesUsesEmbeddedWorkspace(MediaQuery.sizeOf(context).width)) {
+    if (!notesUsesEmbeddedWorkspace(_lastWorkspaceWidth)) {
       widget.onTap(task);
       return;
     }
@@ -355,6 +383,7 @@ class _NotesListHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final dark = Theme.of(context).brightness == Brightness.dark;
+    final palette = NotesSectionPaletteScope.of(context);
     final labelStyle = TextStyle(
       fontSize: 10.5,
       fontWeight: FontWeight.w700,
@@ -374,7 +403,7 @@ class _NotesListHeader extends StatelessWidget {
           decoration: BoxDecoration(
             color: dark
                 ? scheme.surfaceContainerHigh.withValues(alpha: 0.72)
-                : kNotesFolderPane,
+                : palette.pane,
             border: Border(
               bottom: BorderSide(
                 color: scheme.outlineVariant.withValues(alpha: 0.62),
