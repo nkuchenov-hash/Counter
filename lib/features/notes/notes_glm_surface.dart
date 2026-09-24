@@ -1,15 +1,13 @@
 // Notes surfaces — shared visual layer for the Notes library and editor.
 // Presentation only. No Brain / PocketBase imports.
 
-import 'package:counter/core/shell_adaptive.dart';
-import 'package:counter/core/widgets/compact_nav_controls.dart';
 import 'package:flutter/material.dart';
 
 /// Editor column (`max-w-3xl`).
 const double kGlmEditorMaxWidth = 768;
 
-/// Notes library content width. Desktop side-nav layouts remain full width.
-const double kGlmLibraryMaxWidth = 1440;
+/// Exact v32-gapfix5 Notes page max-width.
+const double kGlmLibraryMaxWidth = 1360;
 
 const double kGlmEditorPadH = 20;
 const double kGlmEditorPadV = 16;
@@ -21,7 +19,7 @@ const double kGlmTitleSizeMobile = 28;
 const double kGlmBodySize = 16;
 const double kGlmMetaSize = 12;
 const double kGlmPillHeight = 32;
-const double kNotesLibraryControlHeight = kAppQuickEntryControlHeight;
+const double kNotesLibraryControlHeight = 42;
 
 // v32-gapfix5 reference palette.
 const Color kNotesInk = Color(0xFF111827);
@@ -100,7 +98,7 @@ class NotesGlmBackground extends StatelessWidget {
   }
 }
 
-/// Centers Notes library content while respecting the normal LIFE OS shell.
+/// Exact Notes page frame from the HTML, inside the existing LIFE OS shell.
 class NotesGlmLibraryFrame extends StatelessWidget {
   const NotesGlmLibraryFrame({
     super.key,
@@ -114,8 +112,15 @@ class NotesGlmLibraryFrame extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final width = MediaQuery.sizeOf(context).width;
-    final wide = width >= 900;
-    final desktop = shellUsesSideNavigation(width);
+    final EdgeInsets pagePadding;
+    if (width <= 520) {
+      pagePadding = const EdgeInsets.fromLTRB(12, 10, 12, 20);
+    } else if (width <= 1023) {
+      pagePadding = const EdgeInsets.symmetric(horizontal: 18);
+    } else {
+      pagePadding = const EdgeInsets.fromLTRB(28, 12, 28, 28);
+    }
+
     return NotesGlmBackground(
       child: SafeArea(
         top: false,
@@ -123,24 +128,9 @@ class NotesGlmLibraryFrame extends StatelessWidget {
         child: Align(
           alignment: Alignment.topCenter,
           child: ConstrainedBox(
-            constraints: BoxConstraints(
-              maxWidth: desktop ? double.infinity : maxWidth,
-            ),
+            constraints: BoxConstraints(maxWidth: maxWidth),
             child: Padding(
-              padding: EdgeInsets.fromLTRB(
-                desktop
-                    ? kShellDesktopContentHorizontalPadding
-                    : wide
-                        ? 24
-                        : 12,
-                desktop ? kShellDesktopContentTopPadding : 12,
-                desktop
-                    ? kShellDesktopContentHorizontalPadding
-                    : wide
-                        ? 24
-                        : 12,
-                16,
-              ),
+              padding: pagePadding,
               child: child,
             ),
           ),
@@ -238,6 +228,7 @@ InputDecoration notesGlmSearchDecoration({
   required String hintText,
   Widget? suffixIcon,
   BuildContext? context,
+  bool showSearchIcon = true,
 }) {
   final dark = context != null && Theme.of(context).brightness == Brightness.dark;
   final scheme = context != null ? Theme.of(context).colorScheme : null;
@@ -247,17 +238,22 @@ InputDecoration notesGlmSearchDecoration({
       : const Color(0xFFF7F8FA).withValues(alpha: 0.78);
   final borderColor = dark
       ? scheme!.outlineVariant.withValues(alpha: 0.78)
-      : const Color(0xFFDFE3E8).withValues(alpha: 0.78);
+      : const Color(0xFFDFE3E8).withValues(alpha: 0.76);
   return InputDecoration(
-    constraints: const BoxConstraints.tightFor(height: kNotesLibraryControlHeight),
+    constraints: const BoxConstraints.tightFor(height: 42),
     hintText: hintText,
     hintStyle: TextStyle(fontSize: 13.5, color: meta),
-    prefixIcon: Icon(Icons.search_rounded, size: 18, color: meta),
+    prefixIcon: showSearchIcon
+        ? Icon(Icons.search_rounded, size: 18, color: meta)
+        : null,
+    prefixIconConstraints: showSearchIcon
+        ? const BoxConstraints(minWidth: 40, minHeight: 42)
+        : null,
     suffixIcon: suffixIcon,
     filled: true,
     fillColor: fill,
     isDense: true,
-    contentPadding: const EdgeInsets.symmetric(horizontal: 13, vertical: 11),
+    contentPadding: EdgeInsets.fromLTRB(showSearchIcon ? 0 : 13, 11, 13, 11),
     enabledBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(18),
       borderSide: BorderSide(color: borderColor),
@@ -275,7 +271,7 @@ InputDecoration notesGlmSearchDecoration({
   );
 }
 
-/// Notes compatibility wrapper over the canonical core library input.
+/// Notes library input that follows the HTML's exact 42px search geometry.
 class NotesGlmLibraryInput extends StatelessWidget {
   const NotesGlmLibraryInput({
     super.key,
@@ -301,16 +297,23 @@ class NotesGlmLibraryInput extends StatelessWidget {
   final bool showSearchIcon;
 
   @override
-  Widget build(BuildContext context) => AppLibraryInput(
+  Widget build(BuildContext context) => TextField(
         controller: controller,
         focusNode: focusNode,
-        hintText: hintText,
         textInputAction: textInputAction,
         textCapitalization: textCapitalization,
         onChanged: onChanged,
         onSubmitted: onSubmitted,
-        suffixIcon: suffixIcon,
-        showSearchIcon: showSearchIcon,
+        style: TextStyle(
+          fontSize: 13.5,
+          color: Theme.of(context).colorScheme.onSurface,
+        ),
+        decoration: notesGlmSearchDecoration(
+          hintText: hintText,
+          suffixIcon: suffixIcon,
+          context: context,
+          showSearchIcon: showSearchIcon,
+        ),
       );
 }
 
