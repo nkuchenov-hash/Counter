@@ -78,16 +78,8 @@ class NoteCard extends StatelessWidget {
         );
 }
 
-Color _folderTint(NoteCardData data) => Color.alphaBlend(
-      data.categoryColor.withValues(alpha: 0.14),
-      kNotesPaper,
-    );
-
-Color _noteTint(NoteCardData data) => Color.lerp(
-      Colors.white,
-      _folderTint(data),
-      0.12,
-    )!;
+NotesSectionPalette _categoryPalette(NoteCardData data) =>
+    NotesSectionPalette.forCategory(data.categoryName, data.categoryColor);
 
 class _GridCard extends StatelessWidget {
   const _GridCard({
@@ -118,16 +110,17 @@ class _GridCard extends StatelessWidget {
         ? t(loc, 'notes_v3_untitled')
         : data.task.title.trim();
     final preview = _plainPreview(data);
-    final baseFill = dark ? scheme.surfaceContainerHigh : _noteTint(data);
+    final activePalette = NotesSectionPaletteScope.of(context);
+    final baseFill = dark ? scheme.surfaceContainerHigh : activePalette.note;
     final doneFill = dark
         ? Color.lerp(baseFill, scheme.surfaceContainerHighest, 0.40)!
-        : Color.lerp(baseFill, _folderTint(data), 0.40)!;
+        : Color.lerp(baseFill, activePalette.pane, 0.40)!;
     final borderColor = selected
         ? scheme.primary.withValues(alpha: 0.40)
         : dark
             ? scheme.outlineVariant.withValues(alpha: 0.62)
             : Color.lerp(
-                _folderTint(data),
+                activePalette.tab,
                 kNotesCardBorder,
                 0.76,
               )!;
@@ -255,12 +248,13 @@ class _ListRow extends StatelessWidget {
         ? t(loc, 'notes_v3_untitled')
         : data.task.title.trim();
     final preview = _plainPreview(data);
+    final activePalette = NotesSectionPaletteScope.of(context);
     final normalFill = dark
         ? scheme.surfaceContainerHigh.withValues(alpha: 0.72)
         : Colors.white.withValues(alpha: 0.56);
     final doneFill = dark
         ? Color.lerp(normalFill, scheme.surfaceContainerHighest, 0.38)!
-        : Color.lerp(Colors.white, _folderTint(data), 0.38)!;
+        : Color.lerp(Colors.white, activePalette.pane, 0.38)!;
     final selectedFill = dark
         ? scheme.surfaceContainerHighest
         : const Color(0xFFF3F7FB);
@@ -382,6 +376,7 @@ class _CategoryBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final name = data.categoryName?.trim() ?? '';
     if (name.isEmpty) return const SizedBox.shrink();
+    final palette = _categoryPalette(data);
     return Align(
       alignment: Alignment.centerLeft,
       child: Container(
@@ -389,7 +384,7 @@ class _CategoryBadge extends StatelessWidget {
         constraints: const BoxConstraints(maxWidth: 150),
         padding: const EdgeInsets.symmetric(horizontal: 8),
         decoration: BoxDecoration(
-          color: notesTintBackground(data.categoryColor),
+          color: palette.badge,
           borderRadius: BorderRadius.circular(7),
         ),
         child: Row(
@@ -399,7 +394,7 @@ class _CategoryBadge extends StatelessWidget {
               Icon(
                 IconData(data.categoryIconCodePoint!, fontFamily: 'MaterialIcons'),
                 size: 13,
-                color: data.categoryColor,
+                color: palette.accent,
               ),
               const SizedBox(width: 6),
             ],
@@ -412,7 +407,7 @@ class _CategoryBadge extends StatelessWidget {
                   fontSize: 11.5,
                   height: 1,
                   fontWeight: FontWeight.w600,
-                  color: data.categoryColor,
+                  color: palette.accent,
                 ),
               ),
             ),
@@ -428,21 +423,24 @@ class _CategoryTile extends StatelessWidget {
   final NoteCardData data;
 
   @override
-  Widget build(BuildContext context) => Container(
-        width: 36,
-        height: 36,
-        decoration: BoxDecoration(
-          color: notesTintBackground(data.categoryColor),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: data.categoryIconCodePoint == null
-            ? null
-            : Icon(
-                IconData(data.categoryIconCodePoint!, fontFamily: 'MaterialIcons'),
-                size: 20,
-                color: data.categoryColor,
-              ),
-      );
+  Widget build(BuildContext context) {
+    final palette = _categoryPalette(data);
+    return Container(
+      width: 36,
+      height: 36,
+      decoration: BoxDecoration(
+        color: palette.badge,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: data.categoryIconCodePoint == null
+          ? null
+          : Icon(
+              IconData(data.categoryIconCodePoint!, fontFamily: 'MaterialIcons'),
+              size: 20,
+              color: palette.accent,
+            ),
+    );
+  }
 }
 
 class _DoneCheck extends StatelessWidget {
@@ -551,8 +549,6 @@ String _doneLabel(String locale) {
 }
 
 String _recentLabel(String locale, DateTime? dt) {
-  // The HTML intentionally uses a stable compact status ("Недавно") instead
-  // of exposing different time strings in every card. Keep that visual rhythm.
   switch (locale) {
     case 'ru':
       return 'Недавно';
