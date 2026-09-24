@@ -1,5 +1,5 @@
-// Notes library body — responsive grid/list plus the existing desktop
-// master-detail editor. Data and mutations remain in DatabaseService/ListsPage.
+// Notes library body — exact v32-gapfix5 grid/list geometry plus the existing
+// desktop master-detail editor. Data and mutations remain in ListsPage/Brain.
 
 import 'dart:async';
 
@@ -11,15 +11,11 @@ import 'package:counter/features/notes/widgets/note_card.dart';
 import 'package:counter/features/notes/widgets/notes_editor_screen.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 const double kNotesEmbeddedWorkspaceBreakpoint = 1100;
-const String _kNotesDateSortPref = 'lifeos.notes.dateSort';
 
 bool notesUsesEmbeddedWorkspace(double viewportWidth) =>
     viewportWidth >= kNotesEmbeddedWorkspaceBreakpoint;
-
-enum _NotesDateSort { updated, created }
 
 class NotesLibraryBody extends StatefulWidget {
   const NotesLibraryBody({
@@ -56,25 +52,16 @@ class NotesLibraryBody extends StatefulWidget {
 class _NotesLibraryBodyState extends State<NotesLibraryBody> {
   PlanningTask? _selectedTask;
   List<String>? _editingOrder;
-  _NotesDateSort _dateSort = _NotesDateSort.updated;
-  List<String>? _checkboxOrder;
 
   @override
   void initState() {
     super.initState();
-    if (widget.checkboxesOn) _captureCheckboxOrder();
-    unawaited(_loadDateSort());
     unawaited(_hydrateTimestamps());
   }
 
   @override
   void didUpdateWidget(covariant NotesLibraryBody oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.checkboxesOn) {
-      _reconcileCheckboxOrder(reset: !oldWidget.checkboxesOn);
-    } else if (oldWidget.checkboxesOn) {
-      _checkboxOrder = null;
-    }
     if (widget.tasks.any(
       (task) => task.createdAt == null || task.updatedAt == null,
     )) {
@@ -83,16 +70,14 @@ class _NotesLibraryBodyState extends State<NotesLibraryBody> {
 
     final selectedId = _selectedTask?.planRowIdForBackend;
     if (selectedId == null) return;
-    PlanningTask? refreshed;
     for (final task in widget.tasks) {
       if (task.planRowIdForBackend == selectedId) {
-        refreshed = task;
-        break;
+        _selectedTask = task;
+        return;
       }
     }
-    // Autosave/network refreshes may transiently omit the row. Do not tear down
-    // the editor or keyboard focus until a stable replacement is available.
-    if (refreshed != null) _selectedTask = refreshed;
+    // Autosave/network refreshes may transiently omit the row. Keep editor
+    // focus alive until the stable replacement snapshot arrives.
   }
 
   Future<void> _hydrateTimestamps({bool force = false}) async {
@@ -100,64 +85,42 @@ class _NotesLibraryBodyState extends State<NotesLibraryBody> {
     if (mounted) setState(() {});
   }
 
-  Future<void> _loadDateSort() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final raw = prefs.getString(_kNotesDateSortPref);
-      if (!mounted) return;
-      setState(() {
-        _dateSort = raw == 'created'
-            ? _NotesDateSort.created
-            : _NotesDateSort.updated;
-      });
-    } catch (_) {}
-  }
-
-  Future<void> _setDateSort(_NotesDateSort value) async {
-    if (_dateSort == value) return;
-    setState(() {
-      _dateSort = value;
-      if (_selectedTask != null) {
-        _editingOrder = null;
-        _editingOrder = _sortedTasks()
-            .map((task) => task.planRowIdForBackend)
-            .toList(growable: false);
-      }
+  List<PlanningTask> _orderedTasks() {
+    final out = List<PlanningTask>.from(widget.tasks);
+    final order = _editingOrder;
+    if (_selectedTask == null || order == null) return out;
+    final rank = <String, int>{
+      for (var i = 0; i < order.length; i++) order[i]: i,
+    };
+    out.sort((a, b) {
+      final ar = rank[a.planRowIdForBackend];
+      final br = rank[b.planRowIdForBackend];
+      if (ar != null && br != null) return ar.compareTo(br);
+      if (ar != null) return -1;
+      if (br != null) return 1;
+      return 0;
     });
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(
-        _kNotesDateSortPref,
-        value == _NotesDateSort.created ? 'created' : 'updated',
-      );
-    } catch (_) {}
+    return out;
   }
 
   @override
   Widget build(BuildContext context) {
-    final tasks = _sortedTasks();
+    final tasks = _orderedTasks();
     final cards = _buildCards(context, tasks);
     return LayoutBuilder(
       builder: (context, constraints) {
-        final wide = notesUsesEmbeddedWorkspace(MediaQuery.sizeOf(context).width);
+        final viewportWidth = MediaQuery.sizeOf(context).width;
+        final wide = notesUsesEmbeddedWorkspace(viewportWidth);
         final selected = wide ? _selectedTask : null;
+
         if (selected == null) {
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _buildSortControl(context),
-              const SizedBox(height: 7),
-              Expanded(
-                child: _withRefresh(
-                  _buildCollection(
-                    context,
-                    cards,
-                    view: widget.view,
-                    availableWidth: constraints.maxWidth,
-                  ),
-                ),
-              ),
-            ],
+          return _withRefresh(
+            _buildCollection(
+              context,
+              cards,
+              view: widget.view,
+              availableWidth: constraints.maxWidth,
+            ),
           );
         }
 
@@ -172,24 +135,15 @@ class _NotesLibraryBodyState extends State<NotesLibraryBody> {
               width: listWidth,
               child: Padding(
                 padding: const EdgeInsets.only(right: 14),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    _buildSortControl(context),
-                    const SizedBox(height: 7),
-                    Expanded(
-                      child: _withRefresh(
-                        _buildCollection(
-                          context,
-                          cards,
-                          view: NotesLibraryView.list,
-                          availableWidth: listWidth,
-                          selectedId: selected.planRowIdForBackend,
-                          compactList: true,
-                        ),
-                      ),
-                    ),
-                  ],
+                child: _withRefresh(
+                  _buildCollection(
+                    context,
+                    cards,
+                    view: NotesLibraryView.list,
+                    availableWidth: listWidth,
+                    selectedId: selected.planRowIdForBackend,
+                    compactList: true,
+                  ),
                 ),
               ),
             ),
@@ -218,163 +172,12 @@ class _NotesLibraryBodyState extends State<NotesLibraryBody> {
     );
   }
 
-  int _compareTasks(PlanningTask a, PlanningTask b) {
-    final db = DatabaseService.instance;
-    if (a.isDone != b.isDone) return a.isDone ? 1 : -1;
-    final ap = db.isNotePinned(a);
-    final bp = db.isNotePinned(b);
-    if (ap != bp) return ap ? -1 : 1;
-    final ad = _dateSort == _NotesDateSort.created
-        ? (a.createdAt ?? a.updatedAt)
-        : (a.updatedAt ?? a.createdAt);
-    final bd = _dateSort == _NotesDateSort.created
-        ? (b.createdAt ?? b.updatedAt)
-        : (b.updatedAt ?? b.createdAt);
-    if (ad != null && bd != null) {
-      final byDate = bd.compareTo(ad);
-      if (byDate != 0) return byDate;
-    } else if (ad != null) {
-      return -1;
-    } else if (bd != null) {
-      return 1;
-    }
-    final byOrder = a.order.compareTo(b.order);
-    if (byOrder != 0) return byOrder;
-    return a.title.compareTo(b.title);
-  }
-
   String _itemKey(PlanningTask task) {
     final custom = widget.itemKey;
     if (custom != null) return custom(task);
     final backend = task.planRowIdForBackend.trim();
     if (backend.isNotEmpty) return backend;
     return 'note-${task.id}-${task.order}-${task.title}';
-  }
-
-  void _captureCheckboxOrder() {
-    final ordered = List<PlanningTask>.from(widget.tasks)..sort(_compareTasks);
-    _checkboxOrder = [for (final task in ordered) _itemKey(task)];
-  }
-
-  void _reconcileCheckboxOrder({bool reset = false}) {
-    if (reset || _checkboxOrder == null) {
-      _captureCheckboxOrder();
-      return;
-    }
-    final current = <String>{for (final task in widget.tasks) _itemKey(task)};
-    _checkboxOrder!.removeWhere((id) => !current.contains(id));
-    final known = _checkboxOrder!.toSet();
-    final additions = List<PlanningTask>.from(widget.tasks)..sort(_compareTasks);
-    for (final task in additions) {
-      final id = _itemKey(task);
-      if (known.add(id)) _checkboxOrder!.add(id);
-    }
-  }
-
-  List<PlanningTask> _sortedTasks() {
-    final out = List<PlanningTask>.from(widget.tasks);
-    if (widget.checkboxesOn) {
-      _reconcileCheckboxOrder();
-      final rank = <String, int>{
-        for (var i = 0; i < (_checkboxOrder?.length ?? 0); i++)
-          _checkboxOrder![i]: i,
-      };
-      out.sort((a, b) {
-        final ar = rank[_itemKey(a)] ?? (1 << 30);
-        final br = rank[_itemKey(b)] ?? (1 << 30);
-        return ar.compareTo(br);
-      });
-      return out;
-    }
-
-    final editingOrder = _editingOrder;
-    if (_selectedTask != null && editingOrder != null) {
-      final rank = <String, int>{
-        for (var i = 0; i < editingOrder.length; i++) editingOrder[i]: i,
-      };
-      out.sort((a, b) {
-        final ar = rank[a.planRowIdForBackend];
-        final br = rank[b.planRowIdForBackend];
-        if (ar != null && br != null) return ar.compareTo(br);
-        if (ar != null) return -1;
-        if (br != null) return 1;
-        return _compareTasks(a, b);
-      });
-      return out;
-    }
-    out.sort(_compareTasks);
-    return out;
-  }
-
-  Widget _buildSortControl(BuildContext context) {
-    final locale = currentLocale.value;
-    final scheme = Theme.of(context).colorScheme;
-    return Align(
-      alignment: Alignment.centerRight,
-      child: PopupMenuButton<_NotesDateSort>(
-        tooltip: _sortTooltip(locale),
-        initialValue: _dateSort,
-        onSelected: (value) => unawaited(_setDateSort(value)),
-        itemBuilder: (context) => [
-          PopupMenuItem<_NotesDateSort>(
-            value: _NotesDateSort.updated,
-            child: Text(_dateSortLabel(locale, _NotesDateSort.updated)),
-          ),
-          PopupMenuItem<_NotesDateSort>(
-            value: _NotesDateSort.created,
-            child: Text(_dateSortLabel(locale, _NotesDateSort.created)),
-          ),
-        ],
-        child: Container(
-          height: 30,
-          padding: const EdgeInsets.symmetric(horizontal: 9),
-          decoration: BoxDecoration(
-            color: scheme.surface.withValues(alpha: 0.48),
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(
-              color: scheme.outlineVariant.withValues(alpha: 0.42),
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.sort_rounded, size: 16, color: scheme.onSurfaceVariant),
-              const SizedBox(width: 5),
-              Text(
-                _dateSortLabel(locale, _dateSort),
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: scheme.onSurfaceVariant,
-                      fontWeight: FontWeight.w600,
-                    ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  String _sortTooltip(String locale) {
-    switch (locale) {
-      case 'ru': return 'Сортировка заметок';
-      case 'de': return 'Notizen sortieren';
-      case 'fr': return 'Trier les notes';
-      case 'es': return 'Ordenar notas';
-      case 'it': return 'Ordina note';
-      default: return 'Sort notes';
-    }
-  }
-
-  String _dateSortLabel(String locale, _NotesDateSort mode) {
-    final created = mode == _NotesDateSort.created;
-    switch (locale) {
-      case 'ru': return created ? 'По дате создания' : 'По изменению';
-      case 'de': return created ? 'Erstellungsdatum' : 'Letzte Änderung';
-      case 'fr': return created ? 'Date de création' : 'Dernière modification';
-      case 'es': return created ? 'Fecha de creación' : 'Última modificación';
-      case 'it': return created ? 'Data di creazione' : 'Ultima modifica';
-      default: return created ? 'Created' : 'Last modified';
-    }
   }
 
   List<NoteCardData> _buildCards(
@@ -410,23 +213,26 @@ class _NotesLibraryBodyState extends State<NotesLibraryBody> {
     bool compactList = false,
   }) {
     final db = DatabaseService.instance;
+    final viewportWidth = MediaQuery.sizeOf(context).width;
+
     if (view == NotesLibraryView.grid) {
-      final count = availableWidth >= 1180
+      final count = viewportWidth > 1280
           ? 5
-          : availableWidth >= 900
+          : viewportWidth > 1023
               ? 4
-              : availableWidth >= 640
-                  ? 3
-                  : availableWidth >= 400
-                      ? 2
-                      : 1;
+              : viewportWidth > 520
+                  ? 2
+                  : 1;
+      final mobileSingle = viewportWidth <= 520;
       return GridView.builder(
-        padding: const EdgeInsets.only(bottom: 10),
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: EdgeInsets.zero,
         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: count,
           mainAxisSpacing: 12,
           crossAxisSpacing: 12,
-          childAspectRatio: count == 1 ? 1.65 : 1,
+          childAspectRatio: 1,
+          mainAxisExtent: mobileSingle ? 170 : null,
         ),
         itemCount: cards.length,
         itemBuilder: (context, index) => _card(
@@ -459,6 +265,7 @@ class _NotesLibraryBodyState extends State<NotesLibraryBody> {
           if (!compactList) const _NotesListHeader(),
           Expanded(
             child: ListView.builder(
+              physics: const AlwaysScrollableScrollPhysics(),
               padding: EdgeInsets.zero,
               itemCount: cards.length,
               itemBuilder: (context, index) => _card(
@@ -500,7 +307,8 @@ class _NotesLibraryBodyState extends State<NotesLibraryBody> {
       onTogglePin: () => db.toggleNotePin(data.task.planRowIdForBackend),
       onToggleDone: () => db.toggleNoteDone(data.task.planRowIdForBackend),
       onLongPress: () => widget.onLongPress(data.task),
-      onOpenMenu: (anchorCenter) => widget.onOpenMenu?.call(anchorCenter, data.task),
+      onOpenMenu: (anchorCenter) =>
+          widget.onOpenMenu?.call(anchorCenter, data.task),
     );
   }
 
@@ -521,11 +329,10 @@ class _NotesLibraryBodyState extends State<NotesLibraryBody> {
       widget.onTap(task);
       return;
     }
-    final order = _sortedTasks()
-        .map((row) => row.planRowIdForBackend)
-        .toList(growable: false);
     setState(() {
-      _editingOrder = order;
+      _editingOrder = [
+        for (final row in widget.tasks) row.planRowIdForBackend,
+      ];
       _selectedTask = task;
     });
   }
@@ -555,34 +362,54 @@ class _NotesListHeader extends StatelessWidget {
       color: scheme.onSurfaceVariant.withValues(alpha: 0.78),
     );
     final loc = currentLocale.value;
-    return Container(
-      constraints: const BoxConstraints(minHeight: 36),
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      decoration: BoxDecoration(
-        color: dark
-            ? scheme.surfaceContainerHigh.withValues(alpha: 0.72)
-            : kNotesFolderPane,
-        border: Border(
-          bottom: BorderSide(
-            color: scheme.outlineVariant.withValues(alpha: 0.62),
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compact = constraints.maxWidth <= 820;
+        final mid = constraints.maxWidth <= 1180;
+        final gap = mid ? 10.0 : 14.0;
+        return Container(
+          constraints: const BoxConstraints(minHeight: 36),
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          decoration: BoxDecoration(
+            color: dark
+                ? scheme.surfaceContainerHigh.withValues(alpha: 0.72)
+                : kNotesFolderPane,
+            border: Border(
+              bottom: BorderSide(
+                color: scheme.outlineVariant.withValues(alpha: 0.62),
+              ),
+            ),
           ),
-        ),
-      ),
-      child: Row(
-        children: [
-          const SizedBox(width: 46),
-          const SizedBox(width: 14),
-          Expanded(flex: 16, child: Text(_headerNote(loc), style: labelStyle)),
-          const SizedBox(width: 14),
-          Expanded(flex: 12, child: Text(_headerContent(loc), style: labelStyle)),
-          const SizedBox(width: 14),
-          SizedBox(
-            width: 100,
-            child: Text(_headerStatus(loc), textAlign: TextAlign.right, style: labelStyle),
+          child: Row(
+            children: [
+              const SizedBox(width: 46),
+              SizedBox(width: gap),
+              Expanded(
+                flex: mid ? 145 : 160,
+                child: Text(_headerNote(loc), style: labelStyle),
+              ),
+              if (!compact) ...[
+                SizedBox(width: gap),
+                Expanded(
+                  flex: mid ? 100 : 125,
+                  child: Text(_headerContent(loc), style: labelStyle),
+                ),
+              ],
+              SizedBox(width: gap),
+              SizedBox(
+                width: compact ? 80 : (mid ? 90 : 100),
+                child: Text(
+                  _headerStatus(loc),
+                  textAlign: TextAlign.right,
+                  style: labelStyle,
+                ),
+              ),
+              const SizedBox(width: 34),
+            ],
           ),
-          const SizedBox(width: 38),
-        ],
-      ),
+        );
+      },
     );
   }
 

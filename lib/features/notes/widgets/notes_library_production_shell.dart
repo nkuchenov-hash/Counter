@@ -1,13 +1,14 @@
 // Production Lists-tab Notes library shell.
-// The v32 reference is a physical folder workspace: category divider tabs are
-// visually attached to one continuous colored pane. Data/actions still stay in
-// ListsPage; this file only adapts the existing public category-bar callbacks.
+// Visual structure follows LIFE_OS_Notes_MVP_v32_gapfix5.html directly while
+// keeping the existing Lists/Brain callbacks as the data and mutation source.
 
 import 'dart:async';
 import 'dart:convert';
 
 import 'package:counter/data/database_service.dart';
+import 'package:counter/features/notes/note_editor_page.dart';
 import 'package:counter/features/notes/notes_glm_surface.dart';
+import 'package:counter/features/notes/widgets/note_card.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:counter/shared/categories/picker/category_tree_picker.dart';
 import 'package:flutter/material.dart';
@@ -17,11 +18,6 @@ const Color _kAllFolderSurface = Color(0xFFE3ECF8);
 const String _kChipModePrefsKey = 'list_chip_mode';
 const String _kPinnedIdsPrefsKey = 'list_pinned_ids';
 
-/// Full-bleed Notes library workspace.
-///
-/// ListsPage still owns filtering/persistence/Brain behavior. The supplied
-/// category widget exposes those callbacks publicly; Notes adapts them through
-/// a small dynamic boundary so this feature does not import another feature.
 class NotesLibraryProductionShell extends StatelessWidget {
   const NotesLibraryProductionShell({
     super.key,
@@ -62,93 +58,429 @@ class NotesLibraryProductionShell extends StatelessWidget {
     }
   }
 
+  _NotesHeaderAdapter? _headerAdapter() {
+    dynamic candidate = header;
+    try {
+      return _NotesHeaderAdapter(
+        locale: candidate.locale as String,
+        searchController: candidate.searchController as TextEditingController,
+        searchFocus: candidate.searchFocus as FocusNode,
+        searchQuery: candidate.searchQuery as String,
+        onSearchChanged: candidate.onSearchChanged as ValueChanged<String>,
+        onClearSearch: candidate.onClearSearch as VoidCallback,
+        onOpenSettings: candidate.onOpenSettings as VoidCallback,
+        notesView: candidate.notesView as NotesLibraryView,
+        checkboxesOn: candidate.checkboxesOn as bool,
+        onViewChanged: candidate.onViewChanged as ValueChanged<NotesLibraryView>,
+        onCheckboxModeChanged:
+            candidate.onCheckboxModeChanged as ValueChanged<bool>,
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final dark = theme.brightness == Brightness.dark;
-    final width = MediaQuery.sizeOf(context).width;
-    final mobile = width < 600;
-    final adapter = _categoryAdapter();
+    final category = _categoryAdapter();
+    final headerAdapter = _headerAdapter();
     final paneFill = dark
         ? theme.colorScheme.surfaceContainerHigh.withValues(alpha: 0.88)
-        : _paneColorFor(adapter?.filterCategoryId);
+        : _paneColorFor(category?.filterCategoryId);
     final paneBorder = dark
         ? theme.colorScheme.outlineVariant.withValues(alpha: 0.70)
-        : Color.lerp(paneFill, const Color(0xFFBFCAD8), 0.30)!;
+        : Color.lerp(paneFill, const Color(0xFFD8E0E9), 0.30)!;
+    final listView = headerAdapter?.notesView == NotesLibraryView.list;
 
-    final tabs = adapter == null
+    final tabs = category == null
         ? categoryBar
-        : _NotesPhysicalFolderTabs(adapter: adapter);
+        : _NotesPhysicalFolderTabs(
+            adapter: category,
+            onOpenSettings: headerAdapter?.onOpenSettings,
+          );
 
     return NotesGlmLibraryFrame(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           if (topBar != null) topBar!,
-          header,
-          if (!categoryBarInHeader) ...[
-            const SizedBox(height: 11),
-            SizedBox(
-              height: 45,
-              child: Align(
-                alignment: Alignment.bottomLeft,
-                child: tabs,
+          if (headerAdapter == null)
+            header
+          else
+            _HtmlNotesHeader(
+              adapter: headerAdapter,
+              onNewNote: () => unawaited(
+                _createNewNote(
+                  context,
+                  preferredCategoryId: category?.filterCategoryId,
+                ),
               ),
             ),
-          ],
+          const SizedBox(height: 11),
           Expanded(
-            child: Container(
-              decoration: BoxDecoration(
-                color: paneFill,
-                border: Border(
-                  top: BorderSide(color: Colors.transparent),
-                  left: BorderSide(color: paneBorder),
-                  right: BorderSide(color: paneBorder),
-                  bottom: BorderSide(color: paneBorder),
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Positioned.fill(
+                  top: 55,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: paneFill,
+                      border: Border.all(color: paneBorder),
+                      borderRadius: const BorderRadius.only(
+                        topRight: Radius.circular(20),
+                        bottomLeft: Radius.circular(20),
+                        bottomRight: Radius.circular(20),
+                      ),
+                      boxShadow: dark
+                          ? null
+                          : [
+                              BoxShadow(
+                                color: const Color(0xFF3F536C)
+                                    .withValues(alpha: 0.045),
+                                blurRadius: 28,
+                                offset: const Offset(0, 8),
+                              ),
+                            ],
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    padding: listView ? EdgeInsets.zero : const EdgeInsets.all(28),
+                    child: content,
+                  ),
                 ),
-                borderRadius: const BorderRadius.only(
-                  topRight: Radius.circular(20),
-                  bottomLeft: Radius.circular(20),
-                  bottomRight: Radius.circular(20),
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  top: 0,
+                  height: 56,
+                  child: Align(
+                    alignment: Alignment.bottomLeft,
+                    child: tabs,
+                  ),
                 ),
-                boxShadow: dark
-                    ? null
-                    : [
-                        BoxShadow(
-                          color: const Color(0xFF3F536C).withValues(alpha: 0.045),
-                          blurRadius: 28,
-                          offset: const Offset(0, 8),
-                        ),
-                      ],
-              ),
-              padding: EdgeInsets.fromLTRB(
-                mobile ? 12 : 28,
-                mobile ? 14 : 22,
-                mobile ? 12 : 28,
-                mobile ? 10 : 20,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  if (categoryBarInHeader) tabs,
-                  if (tagBar != null) ...[
-                    if (categoryBarInHeader) const SizedBox(height: 6),
-                    tagBar!,
-                  ],
-                  if (inlineAdd != null) ...[
-                    SizedBox(height: tagBar != null ? 8 : 2),
-                    inlineAdd!,
-                    const SizedBox(height: 10),
-                  ] else
-                    const SizedBox(height: 2),
-                  Expanded(child: content),
-                ],
-              ),
+              ],
             ),
           ),
         ],
       ),
     );
+  }
+
+  Future<void> _createNewNote(
+    BuildContext context, {
+    int? preferredCategoryId,
+  }) async {
+    final db = DatabaseService.instance;
+    int? categoryId = preferredCategoryId;
+    if (categoryId == null || !db.categoryExists(categoryId)) {
+      final defaultId = db.defaultCategoryId;
+      if (defaultId != null && db.categoryExists(defaultId)) {
+        categoryId = defaultId;
+      } else {
+        final pairs = db.allCategoryIdPathPairs;
+        if (pairs.isNotEmpty) categoryId = pairs.first.id;
+      }
+    }
+    if (categoryId == null || !context.mounted) return;
+
+    final rowId = await db.createEmptyNote(categoryId: categoryId, title: '');
+    if (rowId == null || !context.mounted) return;
+    final task = db.getCachedPlanningTaskForEdit(rowId);
+    if (task == null) return;
+    await showNoteEditorPage(
+      context: context,
+      task: task,
+      onClosed: () {
+        db.notifyPlanningRefresh(scheduleNetworkRefresh: false);
+      },
+    );
+  }
+}
+
+class _NotesHeaderAdapter {
+  const _NotesHeaderAdapter({
+    required this.locale,
+    required this.searchController,
+    required this.searchFocus,
+    required this.searchQuery,
+    required this.onSearchChanged,
+    required this.onClearSearch,
+    required this.onOpenSettings,
+    required this.notesView,
+    required this.checkboxesOn,
+    required this.onViewChanged,
+    required this.onCheckboxModeChanged,
+  });
+
+  final String locale;
+  final TextEditingController searchController;
+  final FocusNode searchFocus;
+  final String searchQuery;
+  final ValueChanged<String> onSearchChanged;
+  final VoidCallback onClearSearch;
+  final VoidCallback onOpenSettings;
+  final NotesLibraryView notesView;
+  final bool checkboxesOn;
+  final ValueChanged<NotesLibraryView> onViewChanged;
+  final ValueChanged<bool> onCheckboxModeChanged;
+}
+
+class _HtmlNotesHeader extends StatelessWidget {
+  const _HtmlNotesHeader({
+    required this.adapter,
+    required this.onNewNote,
+  });
+
+  final _NotesHeaderAdapter adapter;
+  final VoidCallback onNewNote;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final width = MediaQuery.sizeOf(context).width;
+    final wide = width >= 900;
+    final mobile = width <= 520;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 54),
+          child: Row(
+            crossAxisAlignment:
+                mobile ? CrossAxisAlignment.start : CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Padding(
+                  padding: EdgeInsets.only(top: mobile ? 4 : 0),
+                  child: Text(
+                    t(adapter.locale, 'notes_v3_title'),
+                    maxLines: 1,
+                    softWrap: false,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: wide ? 30 : 24,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: -0.4,
+                      height: 1.15,
+                      color: scheme.onSurface,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              _ViewSwitch(adapter: adapter),
+              const SizedBox(width: 10),
+              _CheckboxModeButton(adapter: adapter),
+              const SizedBox(width: 10),
+              _NewNoteButton(locale: adapter.locale, onPressed: onNewNote),
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
+        NotesGlmLibraryInput(
+          controller: adapter.searchController,
+          focusNode: adapter.searchFocus,
+          hintText: t(adapter.locale, 'notes_v3_search_hint'),
+          textInputAction: TextInputAction.search,
+          textCapitalization: TextCapitalization.sentences,
+          onChanged: adapter.onSearchChanged,
+        ),
+      ],
+    );
+  }
+}
+
+class _ViewSwitch extends StatelessWidget {
+  const _ViewSwitch({required this.adapter});
+  final _NotesHeaderAdapter adapter;
+
+  @override
+  Widget build(BuildContext context) {
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.all(3),
+      decoration: BoxDecoration(
+        color: dark
+            ? scheme.surfaceContainerHigh.withValues(alpha: 0.82)
+            : const Color(0xFFF7F8FA).withValues(alpha: 0.72),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: dark
+              ? scheme.outlineVariant.withValues(alpha: 0.70)
+              : const Color(0xFFDFE3E8).withValues(alpha: 0.72),
+        ),
+        boxShadow: dark
+            ? null
+            : [
+                BoxShadow(
+                  color: const Color(0xFF415269).withValues(alpha: 0.045),
+                  blurRadius: 14,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _HtmlViewButton(
+            icon: Icons.grid_view_rounded,
+            selected: adapter.notesView == NotesLibraryView.grid,
+            onTap: () => adapter.onViewChanged(NotesLibraryView.grid),
+          ),
+          const SizedBox(width: 2),
+          _HtmlViewButton(
+            icon: Icons.view_list_rounded,
+            selected: adapter.notesView == NotesLibraryView.list,
+            onTap: () => adapter.onViewChanged(NotesLibraryView.list),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HtmlViewButton extends StatelessWidget {
+  const _HtmlViewButton({
+    required this.icon,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final scheme = Theme.of(context).colorScheme;
+    return Material(
+      color: selected
+          ? (dark ? scheme.surface : Colors.white)
+          : Colors.transparent,
+      borderRadius: BorderRadius.circular(15),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(15),
+        child: Container(
+          width: 38,
+          height: 34,
+          alignment: Alignment.center,
+          child: Icon(
+            icon,
+            size: 18,
+            color: selected
+                ? scheme.onSurface
+                : scheme.onSurfaceVariant.withValues(alpha: 0.78),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CheckboxModeButton extends StatelessWidget {
+  const _CheckboxModeButton({required this.adapter});
+  final _NotesHeaderAdapter adapter;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    return Material(
+      color: adapter.checkboxesOn
+          ? (dark ? scheme.surfaceContainerHigh : Colors.white)
+          : (dark
+              ? scheme.surfaceContainerHigh.withValues(alpha: 0.82)
+              : const Color(0xFFF7F8FA).withValues(alpha: 0.72)),
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        onTap: () => adapter.onCheckboxModeChanged(!adapter.checkboxesOn),
+        borderRadius: BorderRadius.circular(14),
+        child: Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: adapter.checkboxesOn
+                  ? kNotesAccent.withValues(alpha: 0.22)
+                  : kNotesRule.withValues(alpha: 0.76),
+            ),
+          ),
+          alignment: Alignment.center,
+          child: Icon(
+            adapter.checkboxesOn
+                ? Icons.check_box_rounded
+                : Icons.check_box_outline_blank_rounded,
+            size: 20,
+            color: adapter.checkboxesOn
+                ? kNotesAccent
+                : scheme.onSurfaceVariant.withValues(alpha: 0.78),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _NewNoteButton extends StatelessWidget {
+  const _NewNoteButton({required this.locale, required this.onPressed});
+  final String locale;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final compact = MediaQuery.sizeOf(context).width <= 520;
+    return Material(
+      color: kNotesInk,
+      borderRadius: BorderRadius.circular(18),
+      elevation: 0,
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(18),
+        child: Container(
+          height: 40,
+          padding: EdgeInsets.symmetric(horizontal: compact ? 12 : 16),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.add_rounded, size: 16, color: Colors.white),
+              const SizedBox(width: 7),
+              Text(
+                _newNoteLabel(locale),
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: compact ? 12 : 13,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _newNoteLabel(String locale) {
+    switch (locale) {
+      case 'ru':
+        return 'Новая заметка';
+      case 'de':
+        return 'Neue Notiz';
+      case 'fr':
+        return 'Nouvelle note';
+      case 'es':
+        return 'Nueva nota';
+      case 'it':
+        return 'Nuova nota';
+      default:
+        return 'New note';
+    }
   }
 }
 
@@ -157,7 +489,7 @@ Color _paneColorFor(int? categoryId) {
   final rule = DatabaseService.instance.getCategoryRuleById(categoryId);
   if (rule == null) return _kAllFolderSurface;
   return Color.alphaBlend(
-    rule.colorOrDefault.withValues(alpha: 0.16),
+    rule.colorOrDefault.withValues(alpha: 0.14),
     const Color(0xFFF7F8FA),
   );
 }
@@ -181,9 +513,13 @@ class _NotesCategoryAdapter {
 }
 
 class _NotesPhysicalFolderTabs extends StatefulWidget {
-  const _NotesPhysicalFolderTabs({required this.adapter});
+  const _NotesPhysicalFolderTabs({
+    required this.adapter,
+    this.onOpenSettings,
+  });
 
   final _NotesCategoryAdapter adapter;
+  final VoidCallback? onOpenSettings;
 
   @override
   State<_NotesPhysicalFolderTabs> createState() =>
@@ -243,33 +579,44 @@ class _NotesPhysicalFolderTabsState extends State<_NotesPhysicalFolderTabs> {
   @override
   Widget build(BuildContext context) {
     final ids = _ids;
-    return ScrollConfiguration(
-      behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
-      child: ListView(
-        controller: widget.adapter.scrollController,
-        scrollDirection: Axis.horizontal,
-        clipBehavior: Clip.none,
-        padding: EdgeInsets.zero,
-        children: [
-          _FolderTab(
-            label: _allLabel(currentLocale.value),
-            icon: Icons.format_list_bulleted_rounded,
-            accent: const Color(0xFF285B99),
-            fill: _kAllFolderSurface,
-            selected: widget.adapter.filterCategoryId == null,
-            onTap: () => widget.adapter.onFilterChanged(null),
-          ),
-          for (final id in ids) _categoryTab(id),
-          _FolderTab(
-            label: '',
-            icon: Icons.add_rounded,
-            accent: Colors.white,
-            fill: const Color(0xFF111827),
-            selected: false,
-            compact: true,
-            onTap: () => unawaited(_editSections()),
-          ),
-        ],
+    return SizedBox(
+      height: 56,
+      child: ScrollConfiguration(
+        behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
+        child: ListView(
+          controller: widget.adapter.scrollController,
+          scrollDirection: Axis.horizontal,
+          clipBehavior: Clip.none,
+          padding: const EdgeInsets.only(right: 12),
+          children: [
+            Align(
+              alignment: Alignment.bottomLeft,
+              child: _FolderTab(
+                label: _allLabel(currentLocale.value),
+                icon: Icons.format_list_bulleted_rounded,
+                accent: const Color(0xFF285B99),
+                fill: _kAllFolderSurface,
+                selected: widget.adapter.filterCategoryId == null,
+                onTap: () => widget.adapter.onFilterChanged(null),
+              ),
+            ),
+            for (final id in ids)
+              Align(alignment: Alignment.bottomLeft, child: _categoryTab(id)),
+            Align(
+              alignment: Alignment.bottomLeft,
+              child: _FolderTab(
+                label: '',
+                icon: Icons.add_rounded,
+                accent: Colors.white,
+                fill: kNotesInk,
+                selected: false,
+                compact: true,
+                onTap: () => unawaited(_editSections()),
+                onLongPress: widget.onOpenSettings,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -318,6 +665,7 @@ class _FolderTab extends StatelessWidget {
     required this.selected,
     required this.onTap,
     this.compact = false,
+    this.onLongPress,
   });
 
   final String label;
@@ -327,11 +675,13 @@ class _FolderTab extends StatelessWidget {
   final bool selected;
   final VoidCallback onTap;
   final bool compact;
+  final VoidCallback? onLongPress;
 
   @override
   Widget build(BuildContext context) {
     final dark = Theme.of(context).brightness == Brightness.dark;
     final scheme = Theme.of(context).colorScheme;
+    final mobile = MediaQuery.sizeOf(context).width <= 520;
     final actualFill = dark
         ? (selected
             ? scheme.surfaceContainerHigh
@@ -340,7 +690,7 @@ class _FolderTab extends StatelessWidget {
     final actualAccent = dark ? scheme.onSurface : accent;
     final borderColor = dark
         ? scheme.outlineVariant.withValues(alpha: 0.72)
-        : Color.lerp(actualFill, const Color(0xFF98A8BA), 0.38)!;
+        : Color.lerp(actualFill, const Color(0xFFBFCAD8), 0.55)!;
 
     return Transform.translate(
       offset: Offset(0, selected ? 1 : 0),
@@ -348,14 +698,19 @@ class _FolderTab extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
+          onLongPress: onLongPress,
           borderRadius: const BorderRadius.only(
             topLeft: Radius.circular(12),
             topRight: Radius.circular(12),
           ),
           child: Container(
             height: 38,
-            constraints: BoxConstraints(minWidth: compact ? 46 : 88),
-            padding: EdgeInsets.symmetric(horizontal: compact ? 13 : 16),
+            constraints: BoxConstraints(
+              minWidth: compact ? 46 : (mobile ? 88 : 96),
+            ),
+            padding: EdgeInsets.symmetric(
+              horizontal: compact ? 14 : (mobile ? 14 : 18),
+            ),
             decoration: BoxDecoration(
               color: actualFill,
               borderRadius: const BorderRadius.only(
@@ -367,13 +722,14 @@ class _FolderTab extends StatelessWidget {
                 left: BorderSide(color: borderColor),
                 right: BorderSide(color: borderColor),
                 bottom: BorderSide(
-                  color: selected ? actualFill : borderColor,
+                  color: selected ? actualFill : Colors.transparent,
+                  width: selected ? 0 : 1,
                 ),
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.025),
-                  blurRadius: 6,
+                  color: Colors.white.withValues(alpha: dark ? 0.04 : 0.22),
+                  blurRadius: 1,
                   offset: const Offset(0, -1),
                 ),
               ],
@@ -382,7 +738,7 @@ class _FolderTab extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(icon, size: compact ? 17 : 15, color: actualAccent),
+                Icon(icon, size: compact ? 16 : 15, color: actualAccent),
                 if (!compact) ...[
                   const SizedBox(width: 7),
                   ConstrainedBox(
@@ -410,8 +766,8 @@ class _FolderTab extends StatelessWidget {
   }
 }
 
-/// Existing quick-add contract. This stays intact so creation still goes
-/// through DatabaseService.createEmptyNote and opens the real Notes editor.
+/// Retained for compatibility with ListsPage. The production shell deliberately
+/// does not render this row because the HTML uses a single New Note action.
 class NotesGlmInlineAddRow extends StatelessWidget {
   const NotesGlmInlineAddRow({
     super.key,
@@ -428,50 +784,6 @@ class NotesGlmInlineAddRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Expanded(
-          child: NotesGlmLibraryInput(
-            controller: controller,
-            focusNode: focusNode,
-            hintText: t(locale, 'input_placeholder_list'),
-            textInputAction: TextInputAction.done,
-            showSearchIcon: false,
-            onSubmitted: (_) => onSubmit(),
-          ),
-        ),
-        const SizedBox(width: 8),
-        SizedBox(
-          height: kNotesLibraryControlHeight,
-          child: Material(
-            color: kNotesInk,
-            borderRadius: BorderRadius.circular(18),
-            clipBehavior: Clip.antiAlias,
-            child: InkWell(
-              onTap: onSubmit,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 14),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.add_rounded, size: 18, color: Colors.white),
-                    const SizedBox(width: 5),
-                    Text(
-                      t(locale, 'add'),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
+    return const SizedBox.shrink();
   }
 }

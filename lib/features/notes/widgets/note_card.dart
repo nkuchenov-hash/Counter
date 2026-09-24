@@ -1,6 +1,6 @@
 // Note card for the Notes library (grid + list views).
-// Visual port of LIFE_OS_Notes_MVP_v32_gapfix5.html. Pure UI: all mutations
-// are emitted through callbacks and remain owned by the existing Brain paths.
+// Direct visual port of LIFE_OS_Notes_MVP_v32_gapfix5.html. Mutations remain
+// owned by the existing Brain paths and are emitted only through callbacks.
 
 import 'dart:ui' show FontFeature;
 
@@ -78,6 +78,17 @@ class NoteCard extends StatelessWidget {
         );
 }
 
+Color _folderTint(NoteCardData data) => Color.alphaBlend(
+      data.categoryColor.withValues(alpha: 0.14),
+      kNotesPaper,
+    );
+
+Color _noteTint(NoteCardData data) => Color.lerp(
+      Colors.white,
+      _folderTint(data),
+      0.12,
+    )!;
+
 class _GridCard extends StatelessWidget {
   const _GridCard({
     required this.data,
@@ -100,12 +111,26 @@ class _GridCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final dark = Theme.of(context).brightness == Brightness.dark;
     final loc = currentLocale.value;
     final isDone = data.task.isDone;
     final title = data.task.title.trim().isEmpty
         ? t(loc, 'notes_v3_untitled')
         : data.task.title.trim();
     final preview = _plainPreview(data);
+    final baseFill = dark ? scheme.surfaceContainerHigh : _noteTint(data);
+    final doneFill = dark
+        ? Color.lerp(baseFill, scheme.surfaceContainerHighest, 0.40)!
+        : Color.lerp(baseFill, _folderTint(data), 0.40)!;
+    final borderColor = selected
+        ? scheme.primary.withValues(alpha: 0.40)
+        : dark
+            ? scheme.outlineVariant.withValues(alpha: 0.62)
+            : Color.lerp(
+                _folderTint(data),
+                kNotesCardBorder,
+                0.76,
+              )!;
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -113,29 +138,44 @@ class _GridCard extends StatelessWidget {
       onLongPress: onLongPress,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 140),
-        decoration: notesGlmGlassCardDecoration(
-          radius: 14,
-          context: context,
-          selected: selected,
+        decoration: BoxDecoration(
+          color: isDone ? doneFill : baseFill,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: borderColor,
+            width: selected ? 1.2 : 1,
+          ),
         ),
         padding: const EdgeInsets.fromLTRB(14, 12, 12, 12),
-        child: Opacity(
-          opacity: isDone ? 0.60 : 1,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(
+              height: 25,
+              child: Row(
                 children: [
                   if (checkboxesOn) ...[
-                    _DoneCheck(isDone: isDone, onToggle: onToggleDone, size: 25),
+                    _DoneCheck(
+                      isDone: isDone,
+                      onToggle: onToggleDone,
+                      size: 25,
+                    ),
                     const SizedBox(width: 8),
                   ],
-                  Expanded(child: _CategoryBadge(data: data)),
+                  Expanded(
+                    child: Opacity(
+                      opacity: isDone ? 0.60 : 1,
+                      child: _CategoryBadge(data: data),
+                    ),
+                  ),
                   _NoteCardMenuButton(onPressed: onOpenMenu),
                 ],
               ),
-              const SizedBox(height: 14),
-              _LifeSelectableText(
+            ),
+            const SizedBox(height: 17),
+            Opacity(
+              opacity: isDone ? 0.60 : 1,
+              child: _LifeSelectableText(
                 title,
                 onTap: onOpen,
                 maxLines: 3,
@@ -148,8 +188,11 @@ class _GridCard extends StatelessWidget {
                   color: scheme.onSurface,
                 ),
               ),
-              const SizedBox(height: 7),
-              Expanded(
+            ),
+            const SizedBox(height: 7),
+            Expanded(
+              child: Opacity(
+                opacity: isDone ? 0.60 : 1,
                 child: ClipRect(
                   child: _LifeSelectableText(
                     preview.isEmpty ? t(loc, 'notes_library_no_text') : preview,
@@ -164,19 +207,19 @@ class _GridCard extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: 6),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  if (data.stats.hasDrawing)
-                    _TinyMediaIcon(icon: Icons.draw_outlined),
-                  if (data.stats.hasImage)
-                    _TinyMediaIcon(icon: Icons.image_outlined),
-                  _StatusMeta(data: data),
-                ],
+            ),
+            const SizedBox(height: 6),
+            SizedBox(
+              height: 20,
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: Opacity(
+                  opacity: isDone ? 0.60 : 1,
+                  child: _StatusMeta(data: data),
+                ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -212,95 +255,121 @@ class _ListRow extends StatelessWidget {
         ? t(loc, 'notes_v3_untitled')
         : data.task.title.trim();
     final preview = _plainPreview(data);
-    final rowColor = dark
-        ? scheme.surfaceContainerHigh.withValues(alpha: selected ? 0.96 : 0.72)
-        : selected
-            ? const Color(0xFFF3F7FB)
-            : Colors.white.withValues(alpha: 0.56);
+    final normalFill = dark
+        ? scheme.surfaceContainerHigh.withValues(alpha: 0.72)
+        : Colors.white.withValues(alpha: 0.56);
+    final doneFill = dark
+        ? Color.lerp(normalFill, scheme.surfaceContainerHighest, 0.38)!
+        : Color.lerp(Colors.white, _folderTint(data), 0.38)!;
+    final selectedFill = dark
+        ? scheme.surfaceContainerHighest
+        : const Color(0xFFF3F7FB);
 
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onOpen,
-      onLongPress: onLongPress,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 140),
-        constraints: const BoxConstraints(minHeight: 76),
-        decoration: BoxDecoration(
-          color: rowColor,
-          border: Border(
-            bottom: BorderSide(
-              color: dark
-                  ? scheme.outlineVariant.withValues(alpha: 0.60)
-                  : const Color(0xFFDAE1EA).withValues(alpha: 0.90),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compact = constraints.maxWidth <= 820;
+        final mid = constraints.maxWidth <= 1180;
+        final gap = mid ? 10.0 : 14.0;
+        final statusWidth = compact ? 80.0 : (mid ? 90.0 : 100.0);
+
+        return GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: onOpen,
+          onLongPress: onLongPress,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 140),
+            constraints: const BoxConstraints(minHeight: 76),
+            decoration: BoxDecoration(
+              color: selected ? selectedFill : (isDone ? doneFill : normalFill),
+              border: Border(
+                bottom: BorderSide(
+                  color: dark
+                      ? scheme.outlineVariant.withValues(alpha: 0.60)
+                      : const Color(0xFFDAE1EA).withValues(alpha: 0.90),
+                ),
+              ),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            child: Row(
+              children: [
+                SizedBox(
+                  width: 46,
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: checkboxesOn
+                        ? _DoneCheck(
+                            isDone: isDone,
+                            onToggle: onToggleDone,
+                            size: 36,
+                          )
+                        : Opacity(
+                            opacity: isDone ? 0.60 : 1,
+                            child: _CategoryTile(data: data),
+                          ),
+                  ),
+                ),
+                SizedBox(width: gap),
+                Expanded(
+                  flex: mid ? 145 : 160,
+                  child: Opacity(
+                    opacity: isDone ? 0.60 : 1,
+                    child: _LifeSelectableText(
+                      title,
+                      onTap: onOpen,
+                      maxLines: 1,
+                      style: TextStyle(
+                        fontSize: 14,
+                        height: 1.3,
+                        fontWeight: FontWeight.w600,
+                        decoration: isDone ? TextDecoration.lineThrough : null,
+                        color: scheme.onSurface,
+                      ),
+                    ),
+                  ),
+                ),
+                if (!compact) ...[
+                  SizedBox(width: gap),
+                  Expanded(
+                    flex: mid ? 100 : 125,
+                    child: Opacity(
+                      opacity: isDone ? 0.60 : 1,
+                      child: _LifeSelectableText(
+                        preview.isEmpty
+                            ? t(loc, 'notes_library_no_text')
+                            : preview,
+                        onTap: onOpen,
+                        maxLines: 1,
+                        style: TextStyle(
+                          fontSize: 12,
+                          height: 1.35,
+                          color: scheme.onSurfaceVariant,
+                          fontStyle: preview.isEmpty ? FontStyle.italic : null,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+                SizedBox(width: gap),
+                SizedBox(
+                  width: statusWidth,
+                  child: Align(
+                    alignment: Alignment.centerRight,
+                    child: Opacity(
+                      opacity: isDone ? 0.60 : 1,
+                      child: _StatusMeta(data: data),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 4),
+                SizedBox(
+                  width: 34,
+                  child: _NoteCardMenuButton(onPressed: onOpenMenu),
+                ),
+              ],
             ),
           ),
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        child: Opacity(
-          opacity: isDone ? 0.60 : 1,
-          child: Row(
-            children: [
-              SizedBox(
-                width: 46,
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: checkboxesOn
-                      ? _DoneCheck(
-                          isDone: isDone,
-                          onToggle: onToggleDone,
-                          size: 36,
-                        )
-                      : _CategoryTile(data: data),
-                ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                flex: 16,
-                child: _LifeSelectableText(
-                  title,
-                  onTap: onOpen,
-                  maxLines: 1,
-                  style: TextStyle(
-                    fontSize: 14,
-                    height: 1.3,
-                    fontWeight: FontWeight.w600,
-                    decoration: isDone ? TextDecoration.lineThrough : null,
-                    color: scheme.onSurface,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                flex: 12,
-                child: _LifeSelectableText(
-                  preview.isEmpty ? t(loc, 'notes_library_no_text') : preview,
-                  onTap: onOpen,
-                  maxLines: 1,
-                  style: TextStyle(
-                    fontSize: 12,
-                    height: 1.35,
-                    color: scheme.onSurfaceVariant,
-                    fontStyle: preview.isEmpty ? FontStyle.italic : null,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 14),
-              SizedBox(
-                width: 100,
-                child: Align(
-                  alignment: Alignment.centerRight,
-                  child: _StatusMeta(data: data),
-                ),
-              ),
-              const SizedBox(width: 4),
-              SizedBox(
-                width: 34,
-                child: _NoteCardMenuButton(onPressed: onOpenMenu),
-              ),
-            ],
-          ),
-        ),
-      ),
+        );
+      },
     );
   }
 }
@@ -332,7 +401,7 @@ class _CategoryBadge extends StatelessWidget {
                 size: 13,
                 color: data.categoryColor,
               ),
-              const SizedBox(width: 5),
+              const SizedBox(width: 6),
             ],
             Flexible(
               child: Text(
@@ -342,7 +411,7 @@ class _CategoryBadge extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 11.5,
                   height: 1,
-                  fontWeight: FontWeight.w700,
+                  fontWeight: FontWeight.w600,
                   color: data.categoryColor,
                 ),
               ),
@@ -429,8 +498,8 @@ class _StatusMeta extends StatelessWidget {
       return Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.checklist_rounded, size: 13, color: color),
-          const SizedBox(width: 4),
+          Icon(Icons.format_list_bulleted_rounded, size: 13, color: color),
+          const SizedBox(width: 5),
           Text(
             '${data.stats.checklistChecked}/${data.stats.checklistTotal}',
             style: TextStyle(
@@ -443,23 +512,14 @@ class _StatusMeta extends StatelessWidget {
       );
     }
     return Text(
-      data.task.isDone ? _doneLabel(loc) : _relative(data.task.updatedAt ?? data.task.createdAt),
+      data.task.isDone
+          ? _doneLabel(loc)
+          : _recentLabel(loc, data.task.updatedAt ?? data.task.createdAt),
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
       style: TextStyle(fontSize: 11, color: color),
     );
   }
-}
-
-class _TinyMediaIcon extends StatelessWidget {
-  const _TinyMediaIcon({required this.icon});
-  final IconData icon;
-
-  @override
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(right: 6),
-        child: Icon(icon, size: 13, color: notesGlmMetaColor(context)),
-      );
 }
 
 String _plainPreview(NoteCardData data) {
@@ -490,18 +550,23 @@ String _doneLabel(String locale) {
   }
 }
 
-String _relative(DateTime? dt) {
-  if (dt == null) return '';
-  final diff = DateTime.now().difference(dt);
-  final loc = currentLocale.value;
-  final min = diff.inMinutes;
-  if (min < 1) return t(loc, 'notes_v3_just_now');
-  if (min < 60) return t(loc, 'notes_v3_min_ago').replaceAll('{n}', '$min');
-  final hr = diff.inHours;
-  if (hr < 24) return t(loc, 'notes_v3_hr_ago').replaceAll('{n}', '$hr');
-  final day = diff.inDays;
-  if (day < 7) return t(loc, 'notes_v3_day_ago').replaceAll('{n}', '$day');
-  return '${dt.month}/${dt.day}';
+String _recentLabel(String locale, DateTime? dt) {
+  // The HTML intentionally uses a stable compact status ("Недавно") instead
+  // of exposing different time strings in every card. Keep that visual rhythm.
+  switch (locale) {
+    case 'ru':
+      return 'Недавно';
+    case 'de':
+      return 'Kürzlich';
+    case 'fr':
+      return 'Récent';
+    case 'es':
+      return 'Reciente';
+    case 'it':
+      return 'Recente';
+    default:
+      return 'Recent';
+  }
 }
 
 class _NoteCardMenuButton extends StatefulWidget {
