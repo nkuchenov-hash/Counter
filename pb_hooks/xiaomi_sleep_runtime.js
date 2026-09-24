@@ -4,8 +4,6 @@
 var __xiaomiCollection = "sleep_sync_connections";
 var __xiaomiProvider = "xiaomi";
 var __xiaomiDefaultMinutes = 8 * 60;
-var __xiaomiMorningEndMinutes = 12 * 60;
-var __xiaomiMorningRetryMs = 60 * 60 * 1000;
 var __xiaomiMaintenanceMs = 60 * 60 * 1000;
 var __xiaomiFullSyncMs = 7 * 24 * 60 * 60 * 1000;
 var __xiaomiPython = "/opt/lifeos-xiaomi-sleep/bin/python";
@@ -571,24 +569,21 @@ function cron(app) {
             if (!userId || !__xiaomiHasToken(userId)) continue;
             var profile = __xiaomiProfile(app, userId);
             var local = __xiaomiLocalClock(profile, now);
-            var requestedStart = Number(connection.get("daily_sync_minutes") || __xiaomiDefaultMinutes);
-            var morningStart = requestedStart >= 4 * 60 && requestedStart < __xiaomiMorningEndMinutes
-                ? requestedStart
-                : __xiaomiDefaultMinutes;
+
+            // Missing-today is authoritative: when today's completed Xiaomi
+            // sleep is absent from PocketBase, every scheduler invocation must
+            // actually query Xiaomi. Do not apply a second last_sync/morning
+            // gate here; the outer scheduler already defines the cadence.
+            if (!__xiaomiHasSleepForLocalDay(app, userId, profile, local.day)) {
+                __xiaomiRunSafe(app, connection);
+                continue;
+            }
+
+            // Once today's sleep exists, stop the aggressive wake-up path and
+            // retain only low-frequency maintenance/history reconciliation.
             var lastSync = __xiaomiDate(connection.get("last_sync_at"));
             var ageMs = lastSync ? now.getTime() - lastSync.getTime() : Number.MAX_SAFE_INTEGER;
-            var inMorningWindow = local.minutes >= morningStart && local.minutes < __xiaomiMorningEndMinutes;
-
-            if (inMorningWindow) {
-                // The hourly wake-up retries exist only until today's completed
-                // Xiaomi sleep is actually present in PocketBase.
-                if (__xiaomiHasSleepForLocalDay(app, userId, profile, local.day)) continue;
-                if (ageMs < __xiaomiMorningRetryMs) continue;
-            } else {
-                // Outside the wake-up window keep only a low-frequency repair
-                // pass. Weekly 30-day reconciliation still happens inside it.
-                if (ageMs < __xiaomiMaintenanceMs) continue;
-            }
+            if (ageMs < __xiaomiMaintenanceMs) continue;
             __xiaomiRunSafe(app, connection);
         } catch (_) {}
     }
