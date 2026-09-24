@@ -13,42 +13,41 @@ class SleepForegroundReconcileService with WidgetsBindingObserver {
   static final SleepForegroundReconcileService instance =
       SleepForegroundReconcileService._();
 
-  static const Duration _cloudForegroundThrottle = Duration(minutes: 15);
-  static const Duration _foregroundReconcileInterval = Duration(minutes: 15);
-  static const int _morningStartMinutes = 4 * 60;
-  static const int _morningEndMinutes = 12 * 60;
+  static const Duration _foregroundPocketBaseCatchUpInterval =
+      Duration(seconds: 30);
 
   bool _started = false;
   bool _reconcileRunning = false;
-  Timer? _foregroundReconcileTimer;
+  bool _catchUpRunning = false;
+  Timer? _foregroundCatchUpTimer;
 
   void start() {
     if (_started) return;
     _started = true;
     WidgetsBinding.instance.addObserver(this);
-    _startForegroundReconcileTimer();
+    _startForegroundCatchUpTimer();
     unawaited(reconcile());
   }
 
   void stop() {
     if (!_started) return;
     _started = false;
-    _foregroundReconcileTimer?.cancel();
-    _foregroundReconcileTimer = null;
+    _foregroundCatchUpTimer?.cancel();
+    _foregroundCatchUpTimer = null;
     WidgetsBinding.instance.removeObserver(this);
   }
 
-  void _startForegroundReconcileTimer() {
-    _foregroundReconcileTimer?.cancel();
-    _foregroundReconcileTimer = Timer.periodic(
-      _foregroundReconcileInterval,
+  void _startForegroundCatchUpTimer() {
+    _foregroundCatchUpTimer?.cancel();
+    _foregroundCatchUpTimer = Timer.periodic(
+      _foregroundPocketBaseCatchUpInterval,
       (_) {
         if (!_started ||
             WidgetsBinding.instance.lifecycleState !=
                 AppLifecycleState.resumed) {
           return;
         }
-        unawaited(reconcile());
+        unawaited(_catchUpFromPocketBase());
       },
     );
   }
@@ -58,19 +57,41 @@ class SleepForegroundReconcileService with WidgetsBindingObserver {
     _reconcileRunning = true;
     try {
       await _syncDeviceSleep();
-      await _syncCloudSleep();
-      // Server-side Xiaomi sync can create records after the generic foreground
-      // catch-up pull has already completed. Force one records refresh after
-      // sleep reconciliation so a missed realtime event cannot leave Timeline
-      // on stale cached data until the next app resume. This also runs from the
-      // periodic foreground reconcile so an app left open all morning still
-      // catches server-side sleep imports even if no realtime reconnect occurs.
+
       final db = DatabaseService.instance;
-      if (db.isInitialized && (db.currentProfileId?.isNotEmpty == true)) {
+      if (!db.isInitialized || (db.currentProfileId?.isNotEmpty != true)) {
+        return;
+      }
+
+      // Always begin with authoritative PocketBase state. The server may have
+      // already imported sleep while this client was open and a realtime event
+      // may have been missed.
+      await db.getRecords(forceNetwork: true);
+
+      final localNow = db.applyUserOffset(DatabaseService.getPlanetaryNow());
+      if (!await _hasTodayXiaomiSleep(db, localNow)) {
+        // Opening or resuming LIFE OS must not wait for the next server cron.
+        // If today's Xiaomi sleep is still absent, request one immediate server
+        // sync, then re-read authoritative records.
+        await _syncCloudSleepNow();
         await db.getRecords(forceNetwork: true);
       }
     } finally {
       _reconcileRunning = false;
+    }
+  }
+
+  Future<void> _catchUpFromPocketBase() async {
+    if (_catchUpRunning) return;
+    _catchUpRunning = true;
+    try {
+      final db = DatabaseService.instance;
+      if (!db.isInitialized || (db.currentProfileId?.isNotEmpty != true)) return;
+      final localNow = db.applyUserOffset(DatabaseService.getPlanetaryNow());
+      if (await _hasTodayXiaomiSleep(db, localNow)) return;
+      await db.getRecords(forceNetwork: true);
+    } finally {
+      _catchUpRunning = false;
     }
   }
 
@@ -79,7 +100,6 @@ class SleepForegroundReconcileService with WidgetsBindingObserver {
     await service.start();
     final current = service.state.value;
     if (!current.enabled || !service.isSupported) return;
-    // Device sleep already has its own ten-minute automatic throttle.
     await service.sync();
   }
 
@@ -107,38 +127,11 @@ class SleepForegroundReconcileService with WidgetsBindingObserver {
     return false;
   }
 
-  Future<void> _syncCloudSleep() async {
-    final db = DatabaseService.instance;
-    if (!db.isInitialized || (db.currentProfileId?.isNotEmpty != true)) return;
-
+  Future<void> _syncCloudSleepNow() async {
     final service = CloudSleepSyncService.instance;
     await service.loadStatus();
     final current = service.state.value;
     if (!current.configured || !current.enabled) return;
-
-    // A foreground cloud pull is primarily a wake-up accelerator. Outside the
-    // morning window the server-side scheduler owns reconciliation.
-    final localNow = db.applyUserOffset(DatabaseService.getPlanetaryNow());
-    final localMinutes = localNow.hour * 60 + localNow.minute;
-    if (localMinutes < _morningStartMinutes ||
-        localMinutes >= _morningEndMinutes) {
-      return;
-    }
-
-    // Once today's completed Xiaomi sleep is present, foreground resumes stop
-    // hitting Xiaomi for the rest of the morning.
-    if (await _hasTodayXiaomiSleep(db, localNow)) return;
-
-    // Opening/resuming LIFE OS several times must not repeatedly hit Xiaomi.
-    // The server timestamp is shared by all clients, so this also suppresses
-    // duplicate phone/web/desktop foreground pulls.
-    final lastSync = current.lastSyncUtc;
-    final nowUtc = DateTime.now().toUtc();
-    if (lastSync != null) {
-      final age = nowUtc.difference(lastSync);
-      if (!age.isNegative && age < _cloudForegroundThrottle) return;
-    }
-
     await service.syncNow();
   }
 
