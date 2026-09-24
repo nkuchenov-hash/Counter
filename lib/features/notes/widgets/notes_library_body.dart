@@ -118,6 +118,18 @@ class _NotesLibraryBodyState extends State<NotesLibraryBody> {
     );
   }
 
+  int _gridColumnCount(double availableWidth) {
+    // The HTML breakpoints are viewport based while this widget receives the
+    // already-padded folder body. These thresholds are the same visual points
+    // translated into the real inner workspace. Wider displays add columns to
+    // preserve the reference card density rather than stretching five cards.
+    if (availableWidth <= 440) return 1;
+    if (availableWidth <= 931) return 2;
+    if (availableWidth <= 1168) return 4;
+    final wideCount = ((availableWidth + 12) / 252).floor();
+    return wideCount.clamp(5, 8);
+  }
+
   @override
   Widget build(BuildContext context) {
     final tasks = _orderedTasks();
@@ -237,14 +249,8 @@ class _NotesLibraryBodyState extends State<NotesLibraryBody> {
     final db = DatabaseService.instance;
 
     if (view == NotesLibraryView.grid) {
-      final count = availableWidth > 1280
-          ? 5
-          : availableWidth > 1023
-              ? 4
-              : availableWidth > 520
-                  ? 2
-                  : 1;
-      final mobileSingle = availableWidth <= 520;
+      final count = _gridColumnCount(availableWidth);
+      final mobileSingle = count == 1;
       return GridView.builder(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: EdgeInsets.zero,
