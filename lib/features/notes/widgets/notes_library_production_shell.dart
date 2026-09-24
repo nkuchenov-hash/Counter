@@ -100,7 +100,12 @@ class NotesLibraryProductionShell extends StatelessWidget {
             child: Container(
               decoration: BoxDecoration(
                 color: paneFill,
-                border: Border.all(color: paneBorder),
+                border: Border(
+                  top: BorderSide(color: Colors.transparent),
+                  left: BorderSide(color: paneBorder),
+                  right: BorderSide(color: paneBorder),
+                  bottom: BorderSide(color: paneBorder),
+                ),
                 borderRadius: const BorderRadius.only(
                   topRight: Radius.circular(20),
                   bottomLeft: Radius.circular(20),
