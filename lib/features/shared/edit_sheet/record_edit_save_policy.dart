@@ -18,9 +18,9 @@ enum RecordEditSaveMode {
 @immutable
 class RecordEditSaveValidation {
   const RecordEditSaveValidation.ok(this.mode)
-      : errorKey = null,
-        startUtc = null,
-        endUtc = null;
+    : errorKey = null,
+      startUtc = null,
+      endUtc = null;
 
   const RecordEditSaveValidation.okWithTimes({
     required this.mode,
@@ -29,9 +29,9 @@ class RecordEditSaveValidation {
   }) : errorKey = null;
 
   const RecordEditSaveValidation.error(this.errorKey)
-      : mode = null,
-        startUtc = null,
-        endUtc = null;
+    : mode = null,
+      startUtc = null,
+      endUtc = null;
 
   final RecordEditSaveMode? mode;
   final String? errorKey;
@@ -68,6 +68,44 @@ bool recordEditHasUpdatableRecordKey({
   if (systemOrOptimisticId.trim().isNotEmpty) return true;
   final biz = (businessRecordId ?? '').trim();
   return biz.isNotEmpty;
+}
+
+/// Time fields that autosave is allowed to mutate.
+///
+/// A stopped record is only allowed to autosave its interval when both endpoints
+/// form a strictly positive interval. This matters while the user is editing one
+/// picker at a time: a temporary cross-midnight/date mismatch must never reach
+/// optimistic cache or PocketBase. Metadata autosave can continue with no time
+/// patch while the draft interval is temporarily invalid.
+@immutable
+class RecordAutosaveTimePatch {
+  const RecordAutosaveTimePatch({this.startUtc, this.endUtc});
+
+  final DateTime? startUtc;
+  final DateTime? endUtc;
+}
+
+RecordAutosaveTimePatch buildRecordAutosaveTimePatch({
+  required bool recordIsRunning,
+  required DateTime? draftStartDisplay,
+  required DateTime? draftEndDisplay,
+  required DateTime Function(DateTime display) displayToUtc,
+}) {
+  if (draftStartDisplay == null) {
+    return const RecordAutosaveTimePatch();
+  }
+  final startUtc = displayToUtc(draftStartDisplay).toUtc();
+  if (recordIsRunning) {
+    return RecordAutosaveTimePatch(startUtc: startUtc);
+  }
+  if (draftEndDisplay == null) {
+    return const RecordAutosaveTimePatch();
+  }
+  final endUtc = displayToUtc(draftEndDisplay).toUtc();
+  if (!endUtc.isAfter(startUtc)) {
+    return const RecordAutosaveTimePatch();
+  }
+  return RecordAutosaveTimePatch(startUtc: startUtc, endUtc: endUtc);
 }
 
 /// Validation for explicit Save. Running metadata saves require start only.
@@ -220,7 +258,7 @@ RunningRecordCategorySaveUiOutcome runningRecordCategorySaveUiOutcome({
 /// Shape of records category PATCH keys after duality resolve.
 @visibleForTesting
 ({String? categoryId, String? categoryLink})?
-    recordCategoryPatchFieldsFromRelationId({
+recordCategoryPatchFieldsFromRelationId({
   required String? pocketBaseCategoryRowId,
 }) {
   final pb = (pocketBaseCategoryRowId ?? '').trim();

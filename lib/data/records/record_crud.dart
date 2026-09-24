@@ -514,13 +514,33 @@ extension RecordCrudExtension on DatabaseService {
     if (idx >= 0) {
       final row = _cachedFlatRecords[idx];
       if (title != null) row['title'] = title;
-      if (startTime != null) {
-        row['start_time'] = startTime.toUtc().toIso8601String();
-        if (endTime == null) row['status'] = 'running';
-      }
-      if (endTime != null) {
-        row['end_time'] = endTime.toUtc().toIso8601String();
-        row['status'] = 'stopped';
+      final storedStart = CategoryServiceExtension._parseDateTimeUtc(
+        row['start_time'] ?? row['startTime'],
+      );
+      final storedEnd = CategoryServiceExtension._parseDateTimeUtc(
+        row['end_time'] ?? row['endTime'],
+      );
+      final effectiveStart = startTime?.toUtc() ?? storedStart;
+      final effectiveEnd = endTime?.toUtc() ?? storedEnd;
+      final hasTimePatch = startTime != null || endTime != null;
+      final invalidTimePatch =
+          hasTimePatch &&
+          effectiveStart != null &&
+          effectiveEnd != null &&
+          !effectiveEnd.isAfter(effectiveStart);
+      if (invalidTimePatch) {
+        DatabaseService._log(
+          'applyOptimisticRecordRowEdit: rejected invalid interval end<=start record=$originalInput',
+        );
+      } else {
+        if (startTime != null) {
+          row['start_time'] = startTime.toUtc().toIso8601String();
+          if (endTime == null && storedEnd == null) row['status'] = 'running';
+        }
+        if (endTime != null) {
+          row['end_time'] = endTime.toUtc().toIso8601String();
+          row['status'] = 'stopped';
+        }
       }
       var resolvedCategoryId = categoryId;
       var shouldWriteCategory = categoryId != null;
@@ -857,6 +877,28 @@ extension RecordCrudExtension on DatabaseService {
       final existingRow = existingIndex >= 0
           ? _cachedFlatRecords[existingIndex]
           : null;
+      if (startTime != null || endTime != null) {
+        final storedStart = existingRow == null
+            ? null
+            : CategoryServiceExtension._parseDateTimeUtc(
+                existingRow['start_time'] ?? existingRow['startTime'],
+              );
+        final storedEnd = existingRow == null
+            ? null
+            : CategoryServiceExtension._parseDateTimeUtc(
+                existingRow['end_time'] ?? existingRow['endTime'],
+              );
+        final effectiveStart = startTime?.toUtc() ?? storedStart;
+        final effectiveEnd = endTime?.toUtc() ?? storedEnd;
+        if (effectiveStart != null &&
+            effectiveEnd != null &&
+            !effectiveEnd.isAfter(effectiveStart)) {
+          DatabaseService._log(
+            'updateRecord: rejected invalid interval end<=start record=$originalInput',
+          );
+          return _timelineRecordFromCacheInput(originalInput);
+        }
+      }
       final oldCategoryId = existingRow != null
           ? categoryIdFromRecordRow(existingRow)
           : null;

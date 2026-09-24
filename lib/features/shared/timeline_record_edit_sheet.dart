@@ -51,8 +51,7 @@ class TimelineRecordSheetContent extends StatefulWidget {
       TimelineRecordSheetContentState();
 }
 
-class TimelineRecordSheetContentState
-    extends State<TimelineRecordSheetContent>
+class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
     with SingleTickerProviderStateMixin {
   late TextEditingController _titleController;
   late QuillController _recordQuillController;
@@ -75,9 +74,9 @@ class TimelineRecordSheetContentState
   /// True when Save/autosave can PATCH an existing/optimistic row (not past-date create).
   /// Prefer [record.id]; fall back to business `record_id` when fromMap dropped a UUID id.
   bool get _isPersistedRecord => recordEditHasUpdatableRecordKey(
-        systemOrOptimisticId: widget.record.id,
-        businessRecordId: widget.record.recordId,
-      );
+    systemOrOptimisticId: widget.record.id,
+    businessRecordId: widget.record.recordId,
+  );
 
   /// Prefer REST system / optimistic id; UUID `record_id` keeps updates working when id was filtered.
   String get _recordUpdateKey {
@@ -99,6 +98,13 @@ class TimelineRecordSheetContentState
     }
     return out;
   }
+
+  RecordAutosaveTimePatch _autosaveTimePatch() => buildRecordAutosaveTimePatch(
+    recordIsRunning: widget.record.endTime == null,
+    draftStartDisplay: _startDisplay,
+    draftEndDisplay: _endDisplay,
+    displayToUtc: displayToUtc,
+  );
 
   void _applyFuzzyCategoryFromRecordTitle(String title) {
     final fuzzy = DatabaseService.instance.findCategoryByFuzzyMatch(title);
@@ -195,12 +201,9 @@ class TimelineRecordSheetContentState
         .trim();
     final checklistPayload = _checklistForApi();
     final planPatch = _sourcePlanPatchArgs();
-    final isRunning = widget.record.endTime == null;
-    final startUtc = _startDisplay != null ? displayToUtc(_startDisplay!) : null;
-    DateTime? endUtc;
-    if (!isRunning && _startDisplay != null && _endDisplay != null) {
-      endUtc = displayToUtc(_endDisplay!);
-    }
+    final timePatch = _autosaveTimePatch();
+    final startUtc = timePatch.startUtc;
+    final endUtc = timePatch.endUtc;
     _applyRecordLocalEdit(
       title: title,
       noteText: noteText,
@@ -219,13 +222,9 @@ class TimelineRecordSheetContentState
           .trim();
       final tChecklist = _checklistForApi();
       final tPlanPatch = _sourcePlanPatchArgs();
-      final tRunning = widget.record.endTime == null;
-      final tStartUtc =
-          _startDisplay != null ? displayToUtc(_startDisplay!) : null;
-      DateTime? tEndUtc;
-      if (!tRunning && _startDisplay != null && _endDisplay != null) {
-        tEndUtc = displayToUtc(_endDisplay!);
-      }
+      final tTimePatch = _autosaveTimePatch();
+      final tStartUtc = tTimePatch.startUtc;
+      final tEndUtc = tTimePatch.endUtc;
       unawaited(
         _syncRecordToNetwork(
           title: tTitle,
@@ -237,6 +236,7 @@ class TimelineRecordSheetContentState
         ),
       );
     }
+
     if (immediate) {
       _recordAutosaveGate.flush(syncLatest);
     } else {
@@ -282,7 +282,9 @@ class TimelineRecordSheetContentState
     WidgetsBinding.instance.addPostFrameCallback((_) {
       unawaited(_loadPlansForLink());
     });
-    _recordQuillChangesSub = _recordQuillController.document.changes.listen((_) {
+    _recordQuillChangesSub = _recordQuillController.document.changes.listen((
+      _,
+    ) {
       if (!mounted) return;
       _onRecordFieldChanged();
     });
@@ -494,36 +496,29 @@ class TimelineRecordSheetContentState
   @override
   void dispose() {
     if (_isPersistedRecord) {
-      _recordAutosaveGate.flush(
-        () {
-          final title = _titleController.text.trim();
-          if (title.isEmpty) return;
-          final noteText = _recordQuillController.document
-              .toPlainText()
-              .replaceAll('\u200b', '')
-              .trim();
-          final checklistPayload = _checklistForApi();
-          final planPatch = _sourcePlanPatchArgs();
-          final isRunning = widget.record.endTime == null;
-          final startUtc =
-              _startDisplay != null ? displayToUtc(_startDisplay!) : null;
-          DateTime? endUtc;
-          if (!isRunning && _startDisplay != null && _endDisplay != null) {
-            endUtc = displayToUtc(_endDisplay!);
-          }
-          unawaited(
-            _syncRecordToNetwork(
-              title: title,
-              noteText: noteText,
-              checklistPayload: checklistPayload,
-              planPatch: planPatch,
-              startUtc: startUtc,
-              endUtc: endUtc,
-            ),
-          );
-        },
-        force: _recordAutosaveGate.isDirty,
-      );
+      _recordAutosaveGate.flush(() {
+        final title = _titleController.text.trim();
+        if (title.isEmpty) return;
+        final noteText = _recordQuillController.document
+            .toPlainText()
+            .replaceAll('\u200b', '')
+            .trim();
+        final checklistPayload = _checklistForApi();
+        final planPatch = _sourcePlanPatchArgs();
+        final timePatch = _autosaveTimePatch();
+        final startUtc = timePatch.startUtc;
+        final endUtc = timePatch.endUtc;
+        unawaited(
+          _syncRecordToNetwork(
+            title: title,
+            noteText: noteText,
+            checklistPayload: checklistPayload,
+            planPatch: planPatch,
+            startUtc: startUtc,
+            endUtc: endUtc,
+          ),
+        );
+      }, force: _recordAutosaveGate.isDirty);
     }
     unawaited(_recordQuillChangesSub?.cancel());
     _recordAutosaveGate.dispose();
@@ -630,10 +625,10 @@ class TimelineRecordSheetContentState
             originalTaskCategoryId:
                 widget.record.categoryId ??
                 CategoryRule.uncategorizedSyntheticId,
-            existsInTree:
-                DatabaseService.instance.categoryExists(_categoryId!),
-            knownPairIds: DatabaseService.instance.allCategoryIdPathPairs
-                .map((p) => p.id),
+            existsInTree: DatabaseService.instance.categoryExists(_categoryId!),
+            knownPairIds: DatabaseService.instance.allCategoryIdPathPairs.map(
+              (p) => p.id,
+            ),
           );
 
     // Running active record: metadata/category Save — end_time stays null.
@@ -651,7 +646,8 @@ class TimelineRecordSheetContentState
 
       final originalCat = widget.record.categoryId;
       final requestedCat = draft.categoryId;
-      final categoryOk = requestedCat == null ||
+      final categoryOk =
+          requestedCat == null ||
           DatabaseService.instance.canResolveRecordCategoryForPbPatch(
             requestedCat,
           );
@@ -664,10 +660,10 @@ class TimelineRecordSheetContentState
         endUtc: null,
         categoryId: draft.categoryId,
       );
-      final visibleCat = DatabaseService.instance.visibleRecordCategoryLocalIdForKey(
-        _recordUpdateKey,
-      );
-      final patchDualOk = requestedCat == null ||
+      final visibleCat = DatabaseService.instance
+          .visibleRecordCategoryLocalIdForKey(_recordUpdateKey);
+      final patchDualOk =
+          requestedCat == null ||
           requestedCat == originalCat ||
           DatabaseService.instance.recordDualCategoryRelationFields(
                 requestedCat,
@@ -693,26 +689,20 @@ class TimelineRecordSheetContentState
         planPatch: planPatch,
         startUtc: draft.startUtc,
         endUtc: null,
-      ).copyWith(
-        status: 'running',
-        categoryId: draft.categoryId,
-      );
-      _recordAutosaveGate.flush(
-        () {
-          unawaited(
-            _syncRecordToNetwork(
-              title: draft.title,
-              noteText: noteText,
-              checklistPayload: checklistPayload,
-              planPatch: planPatch,
-              startUtc: draft.startUtc,
-              endUtc: null,
-              categoryId: draft.categoryId,
-            ),
-          );
-        },
-        force: true,
-      );
+      ).copyWith(status: 'running', categoryId: draft.categoryId);
+      _recordAutosaveGate.flush(() {
+        unawaited(
+          _syncRecordToNetwork(
+            title: draft.title,
+            noteText: noteText,
+            checklistPayload: checklistPayload,
+            planPatch: planPatch,
+            startUtc: draft.startUtc,
+            endUtc: null,
+            categoryId: draft.categoryId,
+          ),
+        );
+      }, force: true);
       AppSnack.changesSaved();
       widget.onSaved(optimistic);
       return;
@@ -723,7 +713,8 @@ class TimelineRecordSheetContentState
     final endUtc = validation.endUtc!;
     final planPatchStopped = _sourcePlanPatchArgs();
     final originalCatStopped = widget.record.categoryId;
-    final categoryOkStopped = saveCategoryId == null ||
+    final categoryOkStopped =
+        saveCategoryId == null ||
         DatabaseService.instance.canResolveRecordCategoryForPbPatch(
           saveCategoryId,
         );
@@ -736,11 +727,10 @@ class TimelineRecordSheetContentState
       endUtc: endUtc,
       categoryId: saveCategoryId,
     );
-    final visibleCatStopped =
-        DatabaseService.instance.visibleRecordCategoryLocalIdForKey(
-      _recordUpdateKey,
-    );
-    final patchDualOkStopped = saveCategoryId == null ||
+    final visibleCatStopped = DatabaseService.instance
+        .visibleRecordCategoryLocalIdForKey(_recordUpdateKey);
+    final patchDualOkStopped =
+        saveCategoryId == null ||
         saveCategoryId == originalCatStopped ||
         DatabaseService.instance.recordDualCategoryRelationFields(
               saveCategoryId,
@@ -767,22 +757,19 @@ class TimelineRecordSheetContentState
       startUtc: startUtc,
       endUtc: endUtc,
     ).copyWith(categoryId: saveCategoryId);
-    _recordAutosaveGate.flush(
-      () {
-        unawaited(
-          _syncRecordToNetwork(
-            title: title,
-            noteText: noteText,
-            checklistPayload: checklistPayload,
-            planPatch: planPatchStopped,
-            startUtc: startUtc,
-            endUtc: endUtc,
-            categoryId: saveCategoryId,
-          ),
-        );
-      },
-      force: true,
-    );
+    _recordAutosaveGate.flush(() {
+      unawaited(
+        _syncRecordToNetwork(
+          title: title,
+          noteText: noteText,
+          checklistPayload: checklistPayload,
+          planPatch: planPatchStopped,
+          startUtc: startUtc,
+          endUtc: endUtc,
+          categoryId: saveCategoryId,
+        ),
+      );
+    }, force: true);
     AppSnack.changesSaved();
     widget.onSaved(optimisticStopped);
     unawaited(
@@ -815,8 +802,8 @@ class TimelineRecordSheetContentState
             categoryId: _categoryId!,
           )
         : (pairs.isNotEmpty
-            ? pairs.first.id
-            : CategoryRule.uncategorizedSyntheticId);
+              ? pairs.first.id
+              : CategoryRule.uncategorizedSyntheticId);
 
     return Material(
       clipBehavior: Clip.none,

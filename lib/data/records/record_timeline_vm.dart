@@ -60,8 +60,7 @@ extension RecordTimelineVmExtension on DatabaseService {
     Future<void>.delayed(Duration.zero, () {
       try {
         if (!_timelineDayIndexDirty &&
-            _timelineDayIndexBuiltAtRecordCount ==
-                _cachedFlatRecords.length) {
+            _timelineDayIndexBuiltAtRecordCount == _cachedFlatRecords.length) {
           return;
         }
         _buildTimelineDayIndexImpl();
@@ -75,7 +74,7 @@ extension RecordTimelineVmExtension on DatabaseService {
     final sw = Stopwatch()..start();
     final buckets = <String, List<Map<String, dynamic>>>{};
     final ownerIds = _recordRowOwnerIdMatchSet();
-  try {
+    try {
       for (final row in _cachedFlatRecords) {
         if (_rowHasNonEmptyParent(row['parent_id'])) continue;
         if (_optimisticRowDeletedRaw(row)) continue;
@@ -89,9 +88,9 @@ extension RecordTimelineVmExtension on DatabaseService {
         final recordDayStr = _timelineDeviceLocalDayKeyFromUtc(stUtc);
         try {
           final map = _mergeOptimisticIntoRecordMap(_rowToRecordMap(row));
-          buckets.putIfAbsent(recordDayStr, () => <Map<String, dynamic>>[]).add(
-            map,
-          );
+          buckets
+              .putIfAbsent(recordDayStr, () => <Map<String, dynamic>>[])
+              .add(map);
         } catch (e, st) {
           final rowData =
               '${CategoryServiceExtension.recordsTablePk(row)} ${(row['record_id'] ?? '').toString().trim()} data=$row';
@@ -189,7 +188,8 @@ extension RecordTimelineVmExtension on DatabaseService {
 
   List<Map<String, dynamic>> _timelineDayIndexRowsForKey(String targetDayStr) {
     _ensureTimelineDayIndex();
-    final indexReady = !_timelineDayIndexDirty &&
+    final indexReady =
+        !_timelineDayIndexDirty &&
         _timelineDayIndexBuiltAtRecordCount == _cachedFlatRecords.length;
     final base = indexReady
         ? List<Map<String, dynamic>>.from(
@@ -260,8 +260,11 @@ extension RecordTimelineVmExtension on DatabaseService {
     ensureTimelineWarmWindow(center);
     if (criticalOnly) {
       for (final offset in [-1, 0, 1]) {
-        final d = DateTime(center.year, center.month, center.day)
-            .add(Duration(days: offset));
+        final d = DateTime(
+          center.year,
+          center.month,
+          center.day,
+        ).add(Duration(days: offset));
         timelineWarmSnapshotForDate(d);
         timelineBodyEntryForDate(d, allowEmergencyBuild: true);
         buildTimelineDayRenderSnapshot(d);
@@ -277,9 +280,11 @@ extension RecordTimelineVmExtension on DatabaseService {
   }
 
   void scheduleTimelineMountedWindowBootBackground(DateTime center) {
-    unawaited(Future.microtask(() {
-      prepareTimelineMountedWindowBoot(center);
-    }));
+    unawaited(
+      Future.microtask(() {
+        prepareTimelineMountedWindowBoot(center);
+      }),
+    );
   }
 
   TimelineDayRenderSnapshot? timelineRenderSnapshotForDate(DateTime wallDay) {
@@ -308,8 +313,7 @@ extension RecordTimelineVmExtension on DatabaseService {
       final catId = catRaw is int
           ? catRaw
           : int.tryParse(catRaw?.toString() ?? '') ?? 0;
-      final categoryReady =
-          catId == 0 || getCategoryRuleById(catId) != null;
+      final categoryReady = catId == 0 || getCategoryRuleById(catId) != null;
       if (!categoryReady) missing = 'category';
       cards.add(
         TimelineCardRenderDto(
@@ -338,8 +342,11 @@ extension RecordTimelineVmExtension on DatabaseService {
     final sw = Stopwatch()..start();
     var ready = 0;
     for (final offset in [-1, 0, 1]) {
-      final day = DateTime(center.year, center.month, center.day)
-          .add(Duration(days: offset));
+      final day = DateTime(
+        center.year,
+        center.month,
+        center.day,
+      ).add(Duration(days: offset));
       buildTimelineDayRenderSnapshot(day);
       if (isTimelineDateFullyReady(day)) ready++;
     }
@@ -511,8 +518,11 @@ extension RecordTimelineVmExtension on DatabaseService {
     cache.setCenter(centerKey);
     final sw = Stopwatch()..start();
     for (final offset in [-1, 0, 1]) {
-      final day = DateTime(center.year, center.month, center.day)
-          .add(Duration(days: offset));
+      final day = DateTime(
+        center.year,
+        center.month,
+        center.day,
+      ).add(Duration(days: offset));
       final entry = _buildTimelineBodyEntry(day, source: 'criticalPrebuild');
       cache.put(entry.dateKey, entry);
     }
@@ -527,8 +537,11 @@ extension RecordTimelineVmExtension on DatabaseService {
           : label == 'tomorrow'
           ? 1
           : 0;
-      final day = DateTime(center.year, center.month, center.day)
-          .add(Duration(days: offset));
+      final day = DateTime(
+        center.year,
+        center.month,
+        center.day,
+      ).add(Duration(days: offset));
       final key = _timelineDateKeyFromDate(day);
       final cache = timelineDayBodyCache;
     }
@@ -549,8 +562,11 @@ extension RecordTimelineVmExtension on DatabaseService {
       )) {
         if (gen != _timelineBodyPrebuildGeneration) return;
         await Future<void>.delayed(Duration.zero);
-        final day = DateTime(center.year, center.month, center.day)
-            .add(Duration(days: offset));
+        final day = DateTime(
+          center.year,
+          center.month,
+          center.day,
+        ).add(Duration(days: offset));
         final key = _timelineDateKeyFromDate(day);
         final cache = timelineDayBodyCache;
         if (cache.isBodyReady(key)) {
@@ -562,8 +578,7 @@ extension RecordTimelineVmExtension on DatabaseService {
         cache.put(key, entry);
         bodySw.stop();
         ready++;
-        if (ready % 4 == 0 || ready == total) {
-        }
+        if (ready % 4 == 0 || ready == total) {}
       }
       sw.stop();
       timelineDayBodyCache.logMemory(
@@ -649,7 +664,8 @@ extension RecordTimelineVmExtension on DatabaseService {
     final rowBiz = (data['record_id'] ?? '').toString().trim();
     final canonicalBiz =
         canonicalRunningBiz ?? resolveCanonicalPrimaryRunningBusinessId();
-    final isRunning = type == 'record' &&
+    final isRunning =
+        type == 'record' &&
         CategoryServiceExtension.isRecordMapActuallyRunning(data) &&
         canonicalBiz != null &&
         canonicalBiz.isNotEmpty &&
@@ -658,22 +674,29 @@ extension RecordTimelineVmExtension on DatabaseService {
     final endTimeUtc = CategoryServiceExtension.endTimeFromRecord(data);
     if (isRunning) {
       if (startTimeUtc != null) {
-        final start =
-            _timelineFormatTimeOfDay(_profileWallFromUtc(startTimeUtc));
-        final duration =
-            DatabaseService.getPlanetaryNow().difference(startTimeUtc);
+        final start = _timelineFormatTimeOfDay(
+          _profileWallFromUtc(startTimeUtc),
+        );
+        final duration = DatabaseService.getPlanetaryNow().difference(
+          startTimeUtc,
+        );
         return '$start — ... (${_timelineFormatDuration(duration)})';
       }
       return 'running';
     }
     if (startTimeUtc != null) {
-      final start =
-          _timelineFormatTimeOfDay(_profileWallFromUtc(startTimeUtc));
+      final start = _timelineFormatTimeOfDay(_profileWallFromUtc(startTimeUtc));
       final end = endTimeUtc != null
           ? _timelineFormatTimeOfDay(_profileWallFromUtc(endTimeUtc))
           : '...';
       final endOrNow = endTimeUtc ?? DatabaseService.getPlanetaryNow();
       final duration = endOrNow.difference(startTimeUtc);
+      if (duration.isNegative) {
+        DatabaseService._log(
+          'TIMELINE_INVALID_INTERVAL: end before start; suppressing negative duration',
+        );
+        return '$start — $end';
+      }
       return '$start — $end (${_timelineFormatDuration(duration)})';
     }
     return '–';
@@ -733,12 +756,17 @@ extension RecordTimelineVmExtension on DatabaseService {
     Map<String, dynamic> data,
   ) {
     final biz = (data['record_id'] ?? '').toString().trim();
-    final sys = (data['id'] ?? data['backendNumericId'] ?? '').toString().trim();
-    final cacheKey = biz.isNotEmpty ? biz : (sys.isNotEmpty ? sys : data.hashCode.toString());
+    final sys = (data['id'] ?? data['backendNumericId'] ?? '')
+        .toString()
+        .trim();
+    final cacheKey = biz.isNotEmpty
+        ? biz
+        : (sys.isNotEmpty ? sys : data.hashCode.toString());
     final dayCache = _timelineLazyRowVmByDay.putIfAbsent(dateKey, () => {});
     final hit = dayCache[cacheKey];
     if (hit != null) return hit;
-    final built = _timelineRowVmFromMapOrNull(data) ?? _timelineFallbackRowVm(data);
+    final built =
+        _timelineRowVmFromMapOrNull(data) ?? _timelineFallbackRowVm(data);
     dayCache[cacheKey] = built;
     return built;
   }
@@ -747,8 +775,9 @@ extension RecordTimelineVmExtension on DatabaseService {
     Map<String, dynamic> data, {
     String? canonicalRunningBiz,
   }) {
-    final systemRowId =
-        (data['id'] ?? data['backendNumericId'] ?? '').toString().trim();
+    final systemRowId = (data['id'] ?? data['backendNumericId'] ?? '')
+        .toString()
+        .trim();
     final businessRecordId = (data['record_id'] ?? '').toString().trim();
     final title =
         data['title'] as String? ??
@@ -757,7 +786,8 @@ extension RecordTimelineVmExtension on DatabaseService {
     final canonicalBiz =
         canonicalRunningBiz ?? resolveCanonicalPrimaryRunningBusinessId();
     final isPlanned = type == 'planned';
-    final isCanonicalRunning = type == 'record' &&
+    final isCanonicalRunning =
+        type == 'record' &&
         CategoryServiceExtension.isRecordMapActuallyRunning(data) &&
         canonicalBiz != null &&
         canonicalBiz.isNotEmpty &&
@@ -797,7 +827,9 @@ extension RecordTimelineVmExtension on DatabaseService {
     TimelineRecordRowVm vm,
   ) {
     final biz = (data['record_id'] ?? '').toString().trim();
-    final sys = (data['id'] ?? data['backendNumericId'] ?? '').toString().trim();
+    final sys = (data['id'] ?? data['backendNumericId'] ?? '')
+        .toString()
+        .trim();
     final cacheKey = biz.isNotEmpty
         ? biz
         : (sys.isNotEmpty ? sys : data.hashCode.toString());

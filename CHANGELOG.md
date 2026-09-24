@@ -1,3 +1,9 @@
+## 2026-09-23 — Record midnight interval guard [fix]
+
+- Prevented stopped-record autosave from writing temporary invalid start/end picker states across midnight or date edits.
+- Added Brain-side guards so record time mutations with `end_time <= start_time` are rejected before optimistic cache or PocketBase writes.
+- Timeline no longer prints negative durations for legacy invalid rows; the server interval-order hook remains the final persistence gate.
+
 ## 2026-09-23 — Recurring-plan immutable history [fix]
 
 - Replaced recurring edit/delete scope with two user choices: one occurrence or this and all following occurrences; removed user-facing whole-series mutation.
