@@ -32,7 +32,89 @@ jobs:
         run: python scripts/audit/documentation_parity.py
 
       - name: Check function encyclopedia parity
-        run: python scripts/audit/function_encyclopedia_contract.py
+        shell: bash
+        run: |
+          python - <<'PY'
+          import re
+          import sys
+          from pathlib import Path
+
+          root = Path.cwd()
+          functions_path = root / "docs/FUNCTIONS.md"
+          guide_path = root / "docs/USER_GUIDE.md"
+          site_path = root / "marketing/docs/index.html"
+          issues = []
+
+          for path in (functions_path, guide_path, site_path):
+              if not path.exists():
+                  issues.append(f"MISSING {path.relative_to(root).as_posix()}")
+
+          if not issues:
+              functions = functions_path.read_text(encoding="utf-8")
+              guide = guide_path.read_text(encoding="utf-8")
+              site = site_path.read_text(encoding="utf-8")
+              registry_row = re.compile(r"^\|\s*`([a-z0-9_.-]+)`\s*\|", re.M)
+              site_id = re.compile(r"data-function-id=[\"']([a-z0-9_.-]+)[\"']")
+              code_ref = re.compile(r"`((?:lib|docs|browser_extension|server|pb_hooks|pb_migrations)/[^`]+)`")
+              ids = registry_row.findall(functions)
+              site_ids = site_id.findall(site)
+
+              if not ids:
+                  issues.append("FUNCTION_REGISTRY_EMPTY")
+              if len(ids) != len(set(ids)):
+                  issues.append("FUNCTION_REGISTRY_DUPLICATES")
+              if len(site_ids) != len(set(site_ids)):
+                  issues.append("ENCYCLOPEDIA_DUPLICATE_IDS")
+
+              missing = sorted(set(ids) - set(site_ids))
+              stale = sorted(set(site_ids) - set(ids))
+              if missing:
+                  issues.append("ENCYCLOPEDIA_MISSING_IDS " + ",".join(missing))
+              if stale:
+                  issues.append("ENCYCLOPEDIA_STALE_IDS " + ",".join(stale))
+
+              for token in ('id="q"', 'type="search"', 'aria-label=', '@media(max-width:', 'docs/FUNCTIONS.md', 'docs/USER_GUIDE.md', 'Production'):
+                  if token not in site:
+                      issues.append(f"ENCYCLOPEDIA_UI_CONTRACT_MISSING {token}")
+
+              user_domains = {
+                  "timeline": ("Timeline", "Запись времени"),
+                  "planning": ("Plans", "Планирование"),
+                  "lists": ("Lists",),
+                  "calendar": ("Calendar",),
+                  "categories": ("Categories",),
+                  "tags": ("тег", "Tags"),
+                  "profile": ("Profile",),
+                  "stats": ("Stats",),
+                  "notes": ("Notes",),
+                  "paths": ("Paths",),
+                  "voice": ("Голос",),
+                  "health": ("Health", "Сон"),
+                  "offline": ("Offline", "синхронизац"),
+                  "browser": ("Browser companion",),
+                  "auth": ("авторизац", "OAuth"),
+                  "shell": ("navigation", "навигац"),
+                  "wear": ("Wear",),
+              }
+              domains = {x.split(".", 1)[0] for x in ids}
+              for domain, needles in user_domains.items():
+                  if domain in domains and not any(n.lower() in guide.lower() for n in needles):
+                      issues.append(f"USER_GUIDE_DOMAIN_MISSING {domain}")
+
+              for ref in code_ref.findall(functions):
+                  clean = ref.split("#", 1)[0]
+                  if not (root / clean).exists():
+                      issues.append(f"FUNCTION_BROKEN_CODE_REF {clean}")
+
+          if issues:
+              print("function_encyclopedia_contract: FAIL")
+              for issue in issues:
+                  print(f"  - {issue}")
+              print(f"ISSUES={len(issues)}")
+              sys.exit(1)
+
+          print(f"function_encyclopedia_contract: OK ({len(ids)} capabilities)")
+          PY
 
       - name: Check repository hygiene and structure growth
         env:
