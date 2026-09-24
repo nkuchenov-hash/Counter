@@ -1,13 +1,12 @@
 // Production Lists-tab Notes library shell.
 // The v32 reference is a physical folder workspace: category divider tabs are
 // visually attached to one continuous colored pane. Data/actions still stay in
-// ListsPage; this file only adapts the existing category-bar callbacks.
+// ListsPage; this file only adapts the existing public category-bar callbacks.
 
 import 'dart:async';
 import 'dart:convert';
 
 import 'package:counter/data/database_service.dart';
-import 'package:counter/features/lists/lists_filters.dart';
 import 'package:counter/features/notes/notes_glm_surface.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:counter/shared/categories/picker/category_tree_picker.dart';
@@ -20,9 +19,9 @@ const String _kPinnedIdsPrefsKey = 'list_pinned_ids';
 
 /// Full-bleed Notes library workspace.
 ///
-/// The Lists page still supplies [ListsCategoryChipBar] so filtering, persisted
-/// category state and the Brain stay unchanged. In Notes presentation we adapt
-/// that bar into the physical divider-tabs from LIFE_OS_Notes_MVP_v32_gapfix5.
+/// ListsPage still owns filtering/persistence/Brain behavior. The supplied
+/// category widget exposes those callbacks publicly; Notes adapts them through
+/// a small dynamic boundary so this feature does not import another feature.
 class NotesLibraryProductionShell extends StatelessWidget {
   const NotesLibraryProductionShell({
     super.key,
@@ -44,19 +43,23 @@ class NotesLibraryProductionShell extends StatelessWidget {
   final Widget content;
 
   _NotesCategoryAdapter? _categoryAdapter() {
-    Widget candidate = categoryBar;
+    dynamic candidate = categoryBar;
     if (candidate is SizedBox && candidate.child != null) {
-      candidate = candidate.child!;
+      candidate = candidate.child;
     }
-    if (candidate is! ListsCategoryChipBar) return null;
-    return _NotesCategoryAdapter(
-      chipIds: candidate.chipIds,
-      chipMode: candidate.chipMode,
-      filterCategoryId: candidate.filterCategoryId,
-      scrollController: candidate.scrollController,
-      onFilterChanged: candidate.onFilterChanged,
-      onManualChipReorder: candidate.onManualChipReorder,
-    );
+    try {
+      return _NotesCategoryAdapter(
+        chipIds: List<int>.from(candidate.chipIds as List),
+        chipMode: candidate.chipMode as String,
+        filterCategoryId: candidate.filterCategoryId as int?,
+        scrollController: candidate.scrollController as ScrollController,
+        onFilterChanged: candidate.onFilterChanged as ValueChanged<int?>,
+        onManualChipReorder:
+            candidate.onManualChipReorder as void Function(int, int),
+      );
+    } catch (_) {
+      return null;
+    }
   }
 
   @override
@@ -336,67 +339,64 @@ class _FolderTab extends StatelessWidget {
 
     return Transform.translate(
       offset: Offset(0, selected ? 1 : 0),
-      child: Padding(
-        padding: EdgeInsets.zero,
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: onTap,
-            borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(12),
-              topRight: Radius.circular(12),
-            ),
-            child: Container(
-              height: 38,
-              constraints: BoxConstraints(minWidth: compact ? 46 : 88),
-              padding: EdgeInsets.symmetric(horizontal: compact ? 13 : 16),
-              decoration: BoxDecoration(
-                color: actualFill,
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(12),
-                  topRight: Radius.circular(12),
-                ),
-                border: Border(
-                  top: BorderSide(color: borderColor),
-                  left: BorderSide(color: borderColor),
-                  right: BorderSide(color: borderColor),
-                  bottom: BorderSide(
-                    color: selected ? actualFill : borderColor,
-                  ),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.025),
-                    blurRadius: 6,
-                    offset: const Offset(0, -1),
-                  ),
-                ],
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(12),
+            topRight: Radius.circular(12),
+          ),
+          child: Container(
+            height: 38,
+            constraints: BoxConstraints(minWidth: compact ? 46 : 88),
+            padding: EdgeInsets.symmetric(horizontal: compact ? 13 : 16),
+            decoration: BoxDecoration(
+              color: actualFill,
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(12),
+                topRight: Radius.circular(12),
               ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(icon, size: compact ? 17 : 15, color: actualAccent),
-                  if (!compact) ...[
-                    const SizedBox(width: 7),
-                    ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 160),
-                      child: Text(
-                        label,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 12.5,
-                          height: 1,
-                          fontWeight:
-                              selected ? FontWeight.w700 : FontWeight.w500,
-                          color: actualAccent,
-                        ),
+              border: Border(
+                top: BorderSide(color: borderColor),
+                left: BorderSide(color: borderColor),
+                right: BorderSide(color: borderColor),
+                bottom: BorderSide(
+                  color: selected ? actualFill : borderColor,
+                ),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.025),
+                  blurRadius: 6,
+                  offset: const Offset(0, -1),
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, size: compact ? 17 : 15, color: actualAccent),
+                if (!compact) ...[
+                  const SizedBox(width: 7),
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 160),
+                    child: Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        height: 1,
+                        fontWeight:
+                            selected ? FontWeight.w700 : FontWeight.w500,
+                        color: actualAccent,
                       ),
                     ),
-                  ],
+                  ),
                 ],
-              ),
+              ],
             ),
           ),
         ),
