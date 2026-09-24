@@ -31,7 +31,7 @@ class NotesSectionPalette {
   final Color accent;
   final Color badge;
 
-  static NotesSectionPalette all = const NotesSectionPalette(
+  static const NotesSectionPalette all = NotesSectionPalette(
     tab: Color(0xFFE3ECF8),
     pane: Color(0xFFE3ECF8),
     note: Color(0xFFFCFDFE),
@@ -159,6 +159,29 @@ class NotesSectionPalette {
       ),
     );
   }
+}
+
+class NotesSectionPaletteScope extends InheritedWidget {
+  const NotesSectionPaletteScope({
+    super.key,
+    required this.palette,
+    required super.child,
+  });
+
+  final NotesSectionPalette palette;
+
+  static NotesSectionPalette of(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<NotesSectionPaletteScope>()
+          ?.palette ??
+      NotesSectionPalette.all;
+
+  @override
+  bool updateShouldNotify(NotesSectionPaletteScope oldWidget) =>
+      oldWidget.palette.tab != palette.tab ||
+      oldWidget.palette.pane != palette.pane ||
+      oldWidget.palette.note != palette.note ||
+      oldWidget.palette.accent != palette.accent ||
+      oldWidget.palette.badge != palette.badge;
 }
 
 Color notesMutedColor(ColorScheme scheme) =>
