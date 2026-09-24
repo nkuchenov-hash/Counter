@@ -14,23 +14,43 @@ class SleepForegroundReconcileService with WidgetsBindingObserver {
       SleepForegroundReconcileService._();
 
   static const Duration _cloudForegroundThrottle = Duration(minutes: 15);
+  static const Duration _foregroundReconcileInterval = Duration(minutes: 15);
   static const int _morningStartMinutes = 4 * 60;
   static const int _morningEndMinutes = 12 * 60;
 
   bool _started = false;
   bool _reconcileRunning = false;
+  Timer? _foregroundReconcileTimer;
 
   void start() {
     if (_started) return;
     _started = true;
     WidgetsBinding.instance.addObserver(this);
+    _startForegroundReconcileTimer();
     unawaited(reconcile());
   }
 
   void stop() {
     if (!_started) return;
     _started = false;
+    _foregroundReconcileTimer?.cancel();
+    _foregroundReconcileTimer = null;
     WidgetsBinding.instance.removeObserver(this);
+  }
+
+  void _startForegroundReconcileTimer() {
+    _foregroundReconcileTimer?.cancel();
+    _foregroundReconcileTimer = Timer.periodic(
+      _foregroundReconcileInterval,
+      (_) {
+        if (!_started ||
+            WidgetsBinding.instance.lifecycleState !=
+                AppLifecycleState.resumed) {
+          return;
+        }
+        unawaited(reconcile());
+      },
+    );
   }
 
   Future<void> reconcile() async {
@@ -42,7 +62,9 @@ class SleepForegroundReconcileService with WidgetsBindingObserver {
       // Server-side Xiaomi sync can create records after the generic foreground
       // catch-up pull has already completed. Force one records refresh after
       // sleep reconciliation so a missed realtime event cannot leave Timeline
-      // on stale cached data until the next app resume.
+      // on stale cached data until the next app resume. This also runs from the
+      // periodic foreground reconcile so an app left open all morning still
+      // catches server-side sleep imports even if no realtime reconnect occurs.
       final db = DatabaseService.instance;
       if (db.isInitialized && (db.currentProfileId?.isNotEmpty == true)) {
         await db.getRecords(forceNetwork: true);
