@@ -1,4 +1,4 @@
-// Notes library body — exact v32-gapfix5 grid/list geometry plus the existing
+// Notes library body — v32-gapfix5 grid/list geometry plus the existing
 // desktop master-detail editor. Data and mutations remain in ListsPage/Brain.
 
 import 'dart:async';
@@ -14,8 +14,8 @@ import 'package:flutter/material.dart';
 
 const double kNotesEmbeddedWorkspaceBreakpoint = 1100;
 
-bool notesUsesEmbeddedWorkspace(double viewportWidth) =>
-    viewportWidth >= kNotesEmbeddedWorkspaceBreakpoint;
+bool notesUsesEmbeddedWorkspace(double workspaceWidth) =>
+    workspaceWidth >= kNotesEmbeddedWorkspaceBreakpoint;
 
 class NotesLibraryBody extends StatefulWidget {
   const NotesLibraryBody({
@@ -52,6 +52,7 @@ class NotesLibraryBody extends StatefulWidget {
 class _NotesLibraryBodyState extends State<NotesLibraryBody> {
   PlanningTask? _selectedTask;
   List<String>? _editingOrder;
+  double _lastWorkspaceWidth = 0;
 
   @override
   void initState() {
@@ -109,8 +110,8 @@ class _NotesLibraryBodyState extends State<NotesLibraryBody> {
     final cards = _buildCards(context, tasks);
     return LayoutBuilder(
       builder: (context, constraints) {
-        final viewportWidth = MediaQuery.sizeOf(context).width;
-        final wide = notesUsesEmbeddedWorkspace(viewportWidth);
+        _lastWorkspaceWidth = constraints.maxWidth;
+        final wide = notesUsesEmbeddedWorkspace(constraints.maxWidth);
         final selected = wide ? _selectedTask : null;
 
         if (selected == null) {
@@ -213,17 +214,16 @@ class _NotesLibraryBodyState extends State<NotesLibraryBody> {
     bool compactList = false,
   }) {
     final db = DatabaseService.instance;
-    final viewportWidth = MediaQuery.sizeOf(context).width;
 
     if (view == NotesLibraryView.grid) {
-      final count = viewportWidth > 1280
+      final count = availableWidth > 1280
           ? 5
-          : viewportWidth > 1023
+          : availableWidth > 1023
               ? 4
-              : viewportWidth > 520
+              : availableWidth > 520
                   ? 2
                   : 1;
-      final mobileSingle = viewportWidth <= 520;
+      final mobileSingle = availableWidth <= 520;
       return GridView.builder(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: EdgeInsets.zero,
@@ -325,7 +325,7 @@ class _NotesLibraryBodyState extends State<NotesLibraryBody> {
   }
 
   void _openNote(BuildContext context, PlanningTask task) {
-    if (!notesUsesEmbeddedWorkspace(MediaQuery.sizeOf(context).width)) {
+    if (!notesUsesEmbeddedWorkspace(_lastWorkspaceWidth)) {
       widget.onTap(task);
       return;
     }
