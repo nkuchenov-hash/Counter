@@ -4,13 +4,16 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   group('EditSheetAutosaveGate', () {
     test('schedule debounces flush until timer fires', () async {
-      final gate = EditSheetAutosaveGate(debounce: const Duration(milliseconds: 40));
+      final gate = EditSheetAutosaveGate(
+        debounce: const Duration(milliseconds: 40),
+      );
       var runs = 0;
       gate.schedule(() => runs++);
       expect(runs, 0);
       expect(gate.isDirty, isTrue);
       await Future<void>.delayed(const Duration(milliseconds: 55));
       expect(runs, 1);
+      expect(gate.isDirty, isFalse);
       gate.dispose();
     });
 
@@ -44,18 +47,41 @@ void main() {
     });
 
     test('schedule coalesces rapid edits into one flush', () async {
-      final gate = EditSheetAutosaveGate(debounce: const Duration(milliseconds: 50));
+      final gate = EditSheetAutosaveGate(
+        debounce: const Duration(milliseconds: 50),
+      );
       var runs = 0;
       gate.schedule(() => runs++);
       gate.schedule(() => runs++);
       gate.schedule(() => runs++);
       await Future<void>.delayed(const Duration(milliseconds: 70));
       expect(runs, 1);
+      expect(gate.isDirty, isFalse);
+      gate.dispose();
+    });
+
+    test('a new edit stays dirty after an earlier dispatch', () async {
+      final gate = EditSheetAutosaveGate(
+        debounce: const Duration(milliseconds: 35),
+      );
+      var runs = 0;
+      gate.schedule(() => runs++);
+      await Future<void>.delayed(const Duration(milliseconds: 45));
+      expect(runs, 1);
+      expect(gate.isDirty, isFalse);
+
+      gate.schedule(() => runs++);
+      expect(gate.isDirty, isTrue);
+      await Future<void>.delayed(const Duration(milliseconds: 45));
+      expect(runs, 2);
+      expect(gate.isDirty, isFalse);
       gate.dispose();
     });
 
     test('flush cancels pending debounced schedule', () async {
-      final gate = EditSheetAutosaveGate(debounce: const Duration(milliseconds: 80));
+      final gate = EditSheetAutosaveGate(
+        debounce: const Duration(milliseconds: 80),
+      );
       var runs = 0;
       gate.schedule(() => runs++);
       gate.flush(() => runs++, force: true);
@@ -65,7 +91,9 @@ void main() {
     });
 
     test('flush with force supersedes pending debounced callback', () async {
-      final gate = EditSheetAutosaveGate(debounce: const Duration(milliseconds: 80));
+      final gate = EditSheetAutosaveGate(
+        debounce: const Duration(milliseconds: 80),
+      );
       var scheduledRuns = 0;
       var flushRuns = 0;
       gate.schedule(() => scheduledRuns++);
