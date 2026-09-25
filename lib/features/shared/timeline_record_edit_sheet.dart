@@ -110,7 +110,6 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
     final fuzzy = DatabaseService.instance.findCategoryByFuzzyMatch(title);
     if (fuzzy != null && fuzzy.id != _categoryId && mounted) {
       setState(() => _categoryId = fuzzy.id);
-      _onRecordFieldChanged(immediate: true);
     }
   }
 
@@ -187,31 +186,15 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
       sourcePlanPocketRecordId: planPatch.id,
       bypassConflictCheck: true,
     );
-    if (!mounted) return;
-    _recordAutosaveGate.markClean();
   }
 
   void _onRecordFieldChanged({bool immediate = false}) {
     if (!_isPersistedRecord) return;
     final title = _titleController.text.trim();
     if (title.isEmpty) return;
-    final noteText = _recordQuillController.document
-        .toPlainText()
-        .replaceAll('\u200b', '')
-        .trim();
-    final checklistPayload = _checklistForApi();
-    final planPatch = _sourcePlanPatchArgs();
-    final timePatch = _autosaveTimePatch();
-    final startUtc = timePatch.startUtc;
-    final endUtc = timePatch.endUtc;
-    _applyRecordLocalEdit(
-      title: title,
-      noteText: noteText,
-      checklistPayload: checklistPayload,
-      planPatch: planPatch,
-      startUtc: startUtc,
-      endUtc: endUtc,
-    );
+
+    // Keep keystrokes sheet-local. The Brain/Timeline is updated once when the
+    // debounce fires (or immediately for discrete controls), not on every char.
     _recordAutosaveGate.markDirty();
     void syncLatest() {
       final tTitle = _titleController.text.trim();
@@ -869,8 +852,7 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
                                 isDense: true,
                                 labelText: t(
                                   currentLocale.value,
-                                  'category_label',
-                                ),
+                                  'category_label'),
                               ),
                               onChanged: (id) {
                                 if (id == null) return;
