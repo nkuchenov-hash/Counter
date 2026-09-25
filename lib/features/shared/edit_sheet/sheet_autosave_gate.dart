@@ -1,4 +1,6 @@
-import 'dart:async';/// Debounced background sync for edit sheets; [flush] on explicit Save / close.
+import 'dart:async';
+
+/// Debounced background sync for edit sheets; [flush] on explicit Save / close.
 class EditSheetAutosaveGate {
   EditSheetAutosaveGate({this.debounce = const Duration(milliseconds: 650)});
 
@@ -16,7 +18,12 @@ class EditSheetAutosaveGate {
     _dirty = true;
     _timer?.cancel();
     _timer = Timer(debounce, () {
-      if (_dirty) action();
+      if (!_dirty) return;
+      // Dirty means "draft not dispatched yet", not "network request in flight".
+      // Clear it before dispatch so an older request finishing later cannot make a
+      // newer edit look clean and suppress its debounce.
+      _dirty = false;
+      action();
     });
   }
 
@@ -25,7 +32,9 @@ class EditSheetAutosaveGate {
   void flush(void Function() action, {bool force = false}) {
     _timer?.cancel();
     if (force || _dirty) {
+      _dirty = false;
       action();
+      return;
     }
     _dirty = false;
   }
