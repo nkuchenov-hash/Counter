@@ -31,6 +31,8 @@ class NotesSectionPalette {
   final Color accent;
   final Color badge;
 
+  /// "All" is the only non-category section, so it keeps the neutral blue
+  /// reference palette from the v32 mockup.
   static const NotesSectionPalette all = NotesSectionPalette(
     tab: Color(0xFFE3ECF8),
     pane: Color(0xFFE3ECF8),
@@ -39,124 +41,36 @@ class NotesSectionPalette {
     badge: Color(0xFFE3ECF8),
   );
 
-  static NotesSectionPalette forCategory(String? name, Color fallbackAccent) {
-    final key = (name ?? '').trim().toLowerCase();
-    switch (key) {
-      case 'списки':
-      case 'lists':
-        return const NotesSectionPalette(
-          tab: Color(0xFFDCE9F9),
-          pane: Color(0xFFDCE9F9),
-          note: Color(0xFFF8FBFF),
-          accent: Color(0xFF285B99),
-          badge: Color(0xFFE3ECF8),
-        );
-      case 'идеи':
-      case 'ideas':
-        return const NotesSectionPalette(
-          tab: Color(0xFFDFF2EC),
-          pane: Color(0xFFDFF2EC),
-          note: Color(0xFFF9FDFB),
-          accent: Color(0xFF15766A),
-          badge: Color(0xFFDDF1EB),
-        );
-      case 'книги':
-      case 'books':
-        return const NotesSectionPalette(
-          tab: Color(0xFFECE7F8),
-          pane: Color(0xFFECE7F8),
-          note: Color(0xFFFCFAFF),
-          accent: Color(0xFF6756A8),
-          badge: Color(0xFFECE8F7),
-        );
-      case 'работа':
-      case 'work':
-        return const NotesSectionPalette(
-          tab: Color(0xFFF6E8D6),
-          pane: Color(0xFFF6E8D6),
-          note: Color(0xFFFFFCF7),
-          accent: Color(0xFF8A651D),
-          badge: Color(0xFFF5EBD7),
-        );
-      case 'личное':
-      case 'personal':
-        return const NotesSectionPalette(
-          tab: Color(0xFFF7E4E8),
-          pane: Color(0xFFF7E4E8),
-          note: Color(0xFFFFFAFB),
-          accent: Color(0xFFA8435A),
-          badge: Color(0xFFF6E3E8),
-        );
-      case 'учёба':
-      case 'учеба':
-      case 'study':
-        return const NotesSectionPalette(
-          tab: Color(0xFFE8E4F5),
-          pane: Color(0xFFE8E4F5),
-          note: Color(0xFFFCFBFF),
-          accent: Color(0xFF6756A8),
-          badge: Color(0xFFECE8F7),
-        );
-      case 'проекты':
-      case 'projects':
-        return const NotesSectionPalette(
-          tab: Color(0xFFDFF1EA),
-          pane: Color(0xFFDFF1EA),
-          note: Color(0xFFF9FDFB),
-          accent: Color(0xFF15766A),
-          badge: Color(0xFFDDF1EB),
-        );
-      case 'веб':
-      case 'web':
-        return const NotesSectionPalette(
-          tab: Color(0xFFE2ECF9),
-          pane: Color(0xFFE2ECF9),
-          note: Color(0xFFF9FCFF),
-          accent: Color(0xFF285B99),
-          badge: Color(0xFFE3ECF8),
-        );
-      case 'история':
-      case 'history':
-        return const NotesSectionPalette(
-          tab: Color(0xFFF4EBD6),
-          pane: Color(0xFFF4EBD6),
-          note: Color(0xFFFFFDF8),
-          accent: Color(0xFF8A651D),
-          badge: Color(0xFFF5EBD7),
-        );
-      case 'игры':
-      case 'games':
-        return const NotesSectionPalette(
-          tab: Color(0xFFE9E4F4),
-          pane: Color(0xFFE9E4F4),
-          note: Color(0xFFFCFBFF),
-          accent: Color(0xFF6756A8),
-          badge: Color(0xFFECE8F7),
-        );
-      case 'ремонт':
-      case 'repair':
-        return const NotesSectionPalette(
-          tab: Color(0xFFE8EDF2),
-          pane: Color(0xFFE8EDF2),
-          note: Color(0xFFFBFCFD),
-          accent: Color(0xFF58697C),
-          badge: Color(0xFFE8EDF2),
-        );
-    }
+  /// Category color is the source of truth. The v32 design is reproduced by
+  /// deriving the physical-folder surface, note paper and badge tints from the
+  /// stored LIFE OS category color instead of assigning colors by category name.
+  static NotesSectionPalette forCategory(String? _, Color categoryColor) {
+    final accent = categoryColor;
+    const paper = Color(0xFFF7F8FA);
 
-    final pane = Color.alphaBlend(
-      fallbackAccent.withValues(alpha: 0.14),
-      const Color(0xFFF7F8FA),
+    final tab = Color.alphaBlend(
+      accent.withValues(alpha: 0.16),
+      paper,
     );
+    final pane = Color.alphaBlend(
+      accent.withValues(alpha: 0.14),
+      paper,
+    );
+    final note = Color.alphaBlend(
+      accent.withValues(alpha: 0.025),
+      Colors.white,
+    );
+    final badge = Color.alphaBlend(
+      accent.withValues(alpha: 0.12),
+      Colors.white,
+    );
+
     return NotesSectionPalette(
-      tab: pane,
+      tab: tab,
       pane: pane,
-      note: Color.lerp(Colors.white, pane, 0.12)!,
-      accent: fallbackAccent,
-      badge: Color.alphaBlend(
-        fallbackAccent.withValues(alpha: 0.13),
-        Colors.white,
-      ),
+      note: note,
+      accent: accent,
+      badge: badge,
     );
   }
 }
