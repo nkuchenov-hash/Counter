@@ -10,7 +10,7 @@ enum PlanAutoPlacementMode { nearestFreeSlot, afterLastPlan }
 
 const String _keyPlanAutoPlacementMode = 'plan_auto_placement_mode';
 PlanAutoPlacementMode _planAutoPlacementMode =
-    PlanAutoPlacementMode.nearestFreeSlot;
+    PlanAutoPlacementMode.afterLastPlan;
 
 const int kPlanDayOverloadTotalMinutes = 12 * 60;
 
@@ -33,7 +33,7 @@ extension PlanTimeCascadeExtension on DatabaseService {
     final raw = prefs.getString(_keyPlanAutoPlacementMode);
     _planAutoPlacementMode = PlanAutoPlacementMode.values.firstWhere(
       (mode) => mode.name == raw,
-      orElse: () => PlanAutoPlacementMode.nearestFreeSlot,
+      orElse: () => PlanAutoPlacementMode.afterLastPlan,
     );
   }
 
@@ -167,6 +167,28 @@ extension PlanTimeCascadeExtension on DatabaseService {
     );
   }
 
+  DateTime _afterLastPlanWallStart({
+    required DateTime wallDay,
+    required int timelineDayStartHour,
+    required List<PlanningTask> existingDayPlans,
+  }) {
+    DateTime? latestEnd;
+    for (final p in existingDayPlans) {
+      if (p.startTime == null) continue;
+      final end = _resolvedPlanWallEnd(p);
+      if (end == null) continue;
+      if (latestEnd == null || end.isAfter(latestEnd)) latestEnd = end;
+    }
+    return latestEnd != null
+        ? _snapPlanWallDateTime(latestEnd)
+        : _snapPlanWallDateTime(
+            PlanTimeVisibleWindow.windowStartWall(
+              wallDay,
+              timelineDayStartHour,
+            ),
+          );
+  }
+
   /// Nudge [startWall] forward when it overlaps an existing scheduled task.
   DateTime _avoidPlanWallScheduleCollisions({
     required DateTime startWall,
@@ -274,6 +296,9 @@ extension PlanTimeCascadeExtension on DatabaseService {
   }
 
   /// Auto start/end for a new plan on a day. Explicit parsed range always wins.
+  /// `afterLastPlan` is strict: automatic category defaults cannot insert a
+  /// newly created plan into the middle of the Time View. Explicit user time
+  /// still wins before the placement-mode rule.
   /// When [startUtcInstant] is non-null, category default used a fixed/profile TZ
   /// for wall→UTC; callers should pass UTC to [PlanningTask] and let coalesce
   /// reproject display walls.
@@ -345,6 +370,12 @@ extension PlanTimeCascadeExtension on DatabaseService {
     late final DateTime startWall;
     if (explicitStartWall != null) {
       startWall = explicitStartWall;
+    } else if (_planAutoPlacementMode == PlanAutoPlacementMode.afterLastPlan) {
+      startWall = _afterLastPlanWallStart(
+        wallDay: wallDay,
+        timelineDayStartHour: timelineDayStartHour,
+        existingDayPlans: existingDayPlans,
+      );
     } else {
       final catSchedule = effectiveDefaultPlanScheduleForCategory(categoryId);
       final hhmm = catSchedule?.hhmm;
@@ -361,8 +392,7 @@ extension PlanTimeCascadeExtension on DatabaseService {
         startWall = _snapPlanWallDateTime(
           DateTime(wallDay.year, wallDay.month, wallDay.day, h, m),
         );
-      } else if (_planAutoPlacementMode ==
-          PlanAutoPlacementMode.nearestFreeSlot) {
+      } else {
         final windowStart = PlanTimeVisibleWindow.windowStartWall(
           wallDay,
           timelineDayStartHour,
@@ -379,22 +409,6 @@ extension PlanTimeCascadeExtension on DatabaseService {
           durationMin: durationMin,
           existingDayPlans: existingDayPlans,
         );
-      } else {
-        DateTime? latestEnd;
-        for (final p in existingDayPlans) {
-          if (p.startTime == null) continue;
-          final end = _resolvedPlanWallEnd(p);
-          if (end == null) continue;
-          if (latestEnd == null || end.isAfter(latestEnd)) latestEnd = end;
-        }
-        startWall = latestEnd != null
-            ? _snapPlanWallDateTime(latestEnd)
-            : _snapPlanWallDateTime(
-                PlanTimeVisibleWindow.windowStartWall(
-                  wallDay,
-                  timelineDayStartHour,
-                ),
-              );
       }
     }
 
