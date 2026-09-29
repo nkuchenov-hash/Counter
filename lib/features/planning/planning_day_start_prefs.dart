@@ -10,11 +10,14 @@ class PlanningSheetTimelinePrefs {
   static const String _keyEndExtended = 'visibleDayEndHourExtended';
   static const String _legacyKeyStart = 'planning_day_start_hour';
   static const String _legacyKeyEnd = 'planning_day_end_hour';
+  static const String _keyLateHoursMigration = 'visible_day_end_27_v1_migrated';
 
   static const int extendedMin = PlanTimeVisibleWindow.extendedMin;
   static const int extendedMax = PlanTimeVisibleWindow.extendedMax;
-  static const int defaultStartExtended = PlanTimeVisibleWindow.defaultStartExtended;
-  static const int defaultEndExtended = PlanTimeVisibleWindow.defaultEndExtended;
+  static const int defaultStartExtended =
+      PlanTimeVisibleWindow.defaultStartExtended;
+  static const int defaultEndExtended =
+      PlanTimeVisibleWindow.defaultEndExtended;
   static const int rangeSliderDivisions = 30;
 
   /// Shared drag and resize snap for Planning Time timeline (minutes).
@@ -35,24 +38,41 @@ class PlanningSheetTimelinePrefs {
   static ({int start, int end}) migrateLegacyRange({
     int? legacyStart,
     int? legacyEnd,
-  }) =>
-      PlanTimeVisibleWindow.migrateLegacyRange(
-        legacyStart: legacyStart,
-        legacyEnd: legacyEnd,
-      );
+  }) => PlanTimeVisibleWindow.migrateLegacyRange(
+    legacyStart: legacyStart,
+    legacyEnd: legacyEnd,
+  );
 
   static Future<({int start, int end})> loadVisibleDayRange() async {
     final p = await SharedPreferences.getInstance();
-    if (p.containsKey(_keyStartExtended) && p.containsKey(_keyEndExtended)) {
-      return normalizeExtendedRange(
-        p.getInt(_keyStartExtended) ?? defaultStartExtended,
-        p.getInt(_keyEndExtended) ?? defaultEndExtended,
-      );
+    final migrationDone = p.getBool(_keyLateHoursMigration) ?? false;
+
+    var range =
+        p.containsKey(_keyStartExtended) && p.containsKey(_keyEndExtended)
+        ? normalizeExtendedRange(
+            p.getInt(_keyStartExtended) ?? defaultStartExtended,
+            p.getInt(_keyEndExtended) ?? defaultEndExtended,
+          )
+        : migrateLegacyRange(
+            legacyStart: p.getInt(_legacyKeyStart),
+            legacyEnd: p.containsKey(_legacyKeyEnd)
+                ? p.getInt(_legacyKeyEnd)
+                : null,
+          );
+
+    // 23:00 was the old default end, which rendered no 23:00+ timeline. Upgrade
+    // that stale default once to the supported extended-day end (03:00 next day).
+    if (!migrationDone && range.end == 23) {
+      range = normalizeExtendedRange(range.start, defaultEndExtended);
+      await p.setInt(_keyStartExtended, range.start);
+      await p.setInt(_keyEndExtended, range.end);
+      await p.setInt(_legacyKeyStart, range.start.clamp(0, 23));
+      await p.setInt(_legacyKeyEnd, range.end - 24);
     }
-    return migrateLegacyRange(
-      legacyStart: p.getInt(_legacyKeyStart),
-      legacyEnd: p.containsKey(_legacyKeyEnd) ? p.getInt(_legacyKeyEnd) : null,
-    );
+    if (!migrationDone) {
+      await p.setBool(_keyLateHoursMigration, true);
+    }
+    return range;
   }
 
   static Future<void> saveVisibleDayRange(int start, int end) async {
@@ -84,8 +104,13 @@ class PlanningSheetTimelinePrefs {
     await saveVisibleDayRange(start, end);
   }
 
-  static List<int> visibleExtendedHoursOrdered(int startExtended, int endExtended) =>
-      PlanTimeVisibleWindow.visibleExtendedHoursOrdered(startExtended, endExtended);
+  static List<int> visibleExtendedHoursOrdered(
+    int startExtended,
+    int endExtended,
+  ) => PlanTimeVisibleWindow.visibleExtendedHoursOrdered(
+    startExtended,
+    endExtended,
+  );
 
   @Deprecated('Use visibleExtendedHoursOrdered')
   static List<int> visibleHoursOrdered(int start, int end) =>
@@ -110,32 +135,29 @@ class PlanningSheetTimelinePrefs {
     DateTime wall,
     DateTime day,
     int startExtended,
-  ) =>
-      PlanTimeVisibleWindow.minutesFromWindowStart(wall, day, startExtended);
+  ) => PlanTimeVisibleWindow.minutesFromWindowStart(wall, day, startExtended);
 
   static DateTime wallFromWindowMinutes(
     DateTime day,
     int startExtended,
     double minutesFromWindowStart,
-  ) =>
-      PlanTimeVisibleWindow.wallFromWindowMinutes(
-        day,
-        startExtended,
-        minutesFromWindowStart,
-      );
+  ) => PlanTimeVisibleWindow.wallFromWindowMinutes(
+    day,
+    startExtended,
+    minutesFromWindowStart,
+  );
 
   static bool wallInstantInsideVisibleWindow(
     DateTime wall,
     DateTime day,
     int startExtended,
     int endExtended,
-  ) =>
-      PlanTimeVisibleWindow.wallInstantInsideVisibleWindow(
-        wall,
-        day,
-        startExtended,
-        endExtended,
-      );
+  ) => PlanTimeVisibleWindow.wallInstantInsideVisibleWindow(
+    wall,
+    day,
+    startExtended,
+    endExtended,
+  );
 
   static bool projectedPlanOverlapsVisibleWindow({
     required DateTime wallStart,
@@ -144,15 +166,14 @@ class PlanningSheetTimelinePrefs {
     required DateTime selectedDay,
     required int startExtended,
     required int endExtended,
-  }) =>
-      PlanTimeVisibleWindow.projectedPlanOverlapsVisibleWindow(
-        wallStart: wallStart,
-        wallEnd: wallEnd,
-        durationMinutes: durationMinutes,
-        selectedDay: selectedDay,
-        startExtended: startExtended,
-        endExtended: endExtended,
-      );
+  }) => PlanTimeVisibleWindow.projectedPlanOverlapsVisibleWindow(
+    wallStart: wallStart,
+    wallEnd: wallEnd,
+    durationMinutes: durationMinutes,
+    selectedDay: selectedDay,
+    startExtended: startExtended,
+    endExtended: endExtended,
+  );
 
   static bool needsNextDayTasks(int endExtended) =>
       PlanTimeVisibleWindow.needsNextDayTasks(endExtended);

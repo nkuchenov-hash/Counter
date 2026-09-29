@@ -11,6 +11,8 @@ enum PlanAutoPlacementMode { nearestFreeSlot, afterLastPlan }
 const String _keyPlanAutoPlacementMode = 'plan_auto_placement_mode';
 const String _keyPlanAutoPlacementGapMigration =
     'plan_auto_placement_gap_v2_migrated';
+const String _keyPlanAutoPlacementExplicitChoice =
+    'plan_auto_placement_explicit_choice_v1';
 PlanAutoPlacementMode _planAutoPlacementMode =
     PlanAutoPlacementMode.nearestFreeSlot;
 
@@ -35,11 +37,12 @@ extension PlanTimeCascadeExtension on DatabaseService {
     final raw = prefs.getString(_keyPlanAutoPlacementMode);
     final gapMigrationDone =
         prefs.getBool(_keyPlanAutoPlacementGapMigration) ?? false;
+    final explicitChoice =
+        prefs.getBool(_keyPlanAutoPlacementExplicitChoice) ?? false;
 
-    // The previous regression made afterLastPlan the default. A device that
-    // persisted that value must be returned to smart gap placement once.
-    if (!gapMigrationDone &&
-        raw == PlanAutoPlacementMode.afterLastPlan.name) {
+    // afterLastPlan was once persisted as a broken default. Keep it only when
+    // the user explicitly selected it in settings; otherwise recover to gap fill.
+    if (!explicitChoice && raw == PlanAutoPlacementMode.afterLastPlan.name) {
       _planAutoPlacementMode = PlanAutoPlacementMode.nearestFreeSlot;
       await prefs.setString(
         _keyPlanAutoPlacementMode,
@@ -61,6 +64,7 @@ extension PlanTimeCascadeExtension on DatabaseService {
     _planAutoPlacementMode = mode;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_keyPlanAutoPlacementMode, mode.name);
+    await prefs.setBool(_keyPlanAutoPlacementExplicitChoice, true);
   }
 
   int? sanitizeTagDefaultPlanDurationMinutes(dynamic raw) {
@@ -312,6 +316,18 @@ extension PlanTimeCascadeExtension on DatabaseService {
     );
   }
 
+  bool _planBelongsToWallDay(PlanningTask plan, DateTime wallDay) {
+    final targetKey =
+        '${wallDay.year}-${_two(wallDay.month)}-${_two(wallDay.day)}';
+    final key = plan.dateKey.trim();
+    if (key.length >= 10) return key.substring(0, 10) == targetKey;
+    final start = plan.startTime;
+    if (start == null) return false;
+    return start.year == wallDay.year &&
+        start.month == wallDay.month &&
+        start.day == wallDay.day;
+  }
+
   /// Auto start/end for a new plan on a day. Explicit parsed range always wins.
   /// Default automatic placement uses the earliest free slot where the full
   /// plan duration fits; when no fitting gap remains it naturally appends after
@@ -337,6 +353,9 @@ extension PlanTimeCascadeExtension on DatabaseService {
     int? explicitDurationMinutes,
     DateTime? currentWall,
   }) {
+    final relevantDayPlans = existingDayPlans
+        .where((plan) => _planBelongsToWallDay(plan, wallDay))
+        .toList(growable: false);
     if (hasExplicitTimeRange &&
         explicitStartWall != null &&
         explicitEndWall != null) {
@@ -345,7 +364,7 @@ extension PlanTimeCascadeExtension on DatabaseService {
         explicitEndWall.difference(explicitStartWall).inMinutes,
       );
       var overlapsExisting = false;
-      for (final plan in existingDayPlans) {
+      for (final plan in relevantDayPlans) {
         final existingStart = plan.startTime;
         final existingEnd = _resolvedPlanWallEnd(plan);
         if (existingStart == null ||
@@ -364,7 +383,7 @@ extension PlanTimeCascadeExtension on DatabaseService {
           ? _firstAvailablePlanWallStart(
               earliestStartWall: explicitStartWall,
               durationMin: requestedDurationMin,
-              existingDayPlans: existingDayPlans,
+              existingDayPlans: relevantDayPlans,
             )
           : explicitStartWall;
       return (
@@ -391,7 +410,7 @@ extension PlanTimeCascadeExtension on DatabaseService {
       startWall = _afterLastPlanWallStart(
         wallDay: wallDay,
         timelineDayStartHour: timelineDayStartHour,
-        existingDayPlans: existingDayPlans,
+        existingDayPlans: relevantDayPlans,
       );
     } else {
       final catSchedule = effectiveDefaultPlanScheduleForCategory(categoryId);
@@ -406,8 +425,13 @@ extension PlanTimeCascadeExtension on DatabaseService {
       if (h != null && m != null) {
         usedCategoryDefault = true;
         categoryDefaultTimezoneIana = catSchedule!.timezoneIana;
-        startWall = _snapPlanWallDateTime(
+        final categoryStart = _snapPlanWallDateTime(
           DateTime(wallDay.year, wallDay.month, wallDay.day, h, m),
+        );
+        startWall = _firstAvailablePlanWallStart(
+          earliestStartWall: categoryStart,
+          durationMin: durationMin,
+          existingDayPlans: relevantDayPlans,
         );
       } else {
         final windowStart = PlanTimeVisibleWindow.windowStartWall(
@@ -417,7 +441,7 @@ extension PlanTimeCascadeExtension on DatabaseService {
         startWall = _firstAvailablePlanWallStart(
           earliestStartWall: windowStart,
           durationMin: durationMin,
-          existingDayPlans: existingDayPlans,
+          existingDayPlans: relevantDayPlans,
         );
       }
     }
@@ -425,7 +449,7 @@ extension PlanTimeCascadeExtension on DatabaseService {
     var resolvedStart = _avoidPlanWallScheduleCollisions(
       startWall: startWall,
       durationMin: durationMin,
-      existingDayPlans: existingDayPlans,
+      existingDayPlans: relevantDayPlans,
     );
 
     var endWall =
@@ -451,7 +475,7 @@ extension PlanTimeCascadeExtension on DatabaseService {
       planRowId: probePlanId,
     );
     final cascadedProbe = normalizeSequentialPlanTimesForDay([
-      ...existingDayPlans,
+      ...relevantDayPlans,
       probe,
     ]).firstWhere((t) => t.planRowId == probePlanId);
     resolvedStart = cascadedProbe.startTime ?? resolvedStart;
