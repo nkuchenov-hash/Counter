@@ -205,14 +205,13 @@ text = text.replace(sig_end, relevant, 1)
 start = text.index("  resolveAutoPlanSchedule({")
 end = text.index("\n  PlanningTask planningTaskWithAutoSchedule", start)
 segment = text[start:end]
-init_marker = """    final relevantDayPlans = existingDayPlans
-        .where((plan) => _planBelongsToWallDay(plan, wallDay))
-        .toList(growable: false);
-"""
-init_end = segment.index(init_marker) + len(init_marker)
-segment = segment[:init_end] + segment[init_end:].replace(
-    "existingDayPlans", "relevantDayPlans"
+segment = segment.replace(
+    "for (final plan in existingDayPlans)", "for (final plan in relevantDayPlans)"
 )
+segment = segment.replace(
+    "existingDayPlans: existingDayPlans", "existingDayPlans: relevantDayPlans"
+)
+segment = segment.replace("...existingDayPlans,", "...relevantDayPlans,")
 old_category = """        startWall = _snapPlanWallDateTime(
           DateTime(wallDay.year, wallDay.month, wallDay.day, h, m),
         );
