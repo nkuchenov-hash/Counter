@@ -26,13 +26,13 @@ void main() {
     );
   });
 
-  test('defaults to after-last when no placement preference exists', () async {
+  test('defaults to nearest fitting free slot when no placement preference exists', () async {
     SharedPreferences.setMockInitialValues({});
     await DatabaseService.instance.loadPlanAutoPlacementMode();
 
     expect(
       DatabaseService.instance.planAutoPlacementMode,
-      PlanAutoPlacementMode.afterLastPlan,
+      PlanAutoPlacementMode.nearestFreeSlot,
     );
 
     final schedule = DatabaseService.instance.resolveAutoPlanSchedule(
@@ -47,8 +47,8 @@ void main() {
       currentWall: DateTime(2026, 7, 24, 10, 5),
     );
 
-    expect(schedule.startWall, DateTime(2026, 7, 24, 15));
-    expect(schedule.endWall, DateTime(2026, 7, 24, 15, 30));
+    expect(schedule.startWall, DateTime(2026, 7, 24, 10, 5));
+    expect(schedule.endWall, DateTime(2026, 7, 24, 10, 35));
   });
 
   test('uses the current free gap when duration fits', () {
@@ -80,6 +80,23 @@ void main() {
     );
     expect(schedule.startWall, DateTime(2026, 7, 24, 12));
     expect(schedule.endWall, DateTime(2026, 7, 24, 12, 30));
+  });
+
+  test('collision bump rounds forward and never back into occupied time', () {
+    final schedule = DatabaseService.instance.resolveAutoPlanSchedule(
+      wallDay: DateTime(2026, 7, 24),
+      categoryId: 1,
+      tags: const [],
+      existingDayPlans: [
+        _plan('a', DateTime(2026, 7, 24, 9), DateTime(2026, 7, 24, 10, 2)),
+      ],
+      explicitStartWall: DateTime(2026, 7, 24, 10),
+      explicitDurationMinutes: 30,
+      timelineDayStartHour: 8,
+    );
+
+    expect(schedule.startWall, DateTime(2026, 7, 24, 10, 5));
+    expect(schedule.endWall, DateTime(2026, 7, 24, 10, 35));
   });
 
   test('after-last mode preserves the previous rule', () async {

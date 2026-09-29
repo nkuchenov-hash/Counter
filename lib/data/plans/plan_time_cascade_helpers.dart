@@ -10,7 +10,7 @@ enum PlanAutoPlacementMode { nearestFreeSlot, afterLastPlan }
 
 const String _keyPlanAutoPlacementMode = 'plan_auto_placement_mode';
 PlanAutoPlacementMode _planAutoPlacementMode =
-    PlanAutoPlacementMode.afterLastPlan;
+    PlanAutoPlacementMode.nearestFreeSlot;
 
 const int kPlanDayOverloadTotalMinutes = 12 * 60;
 
@@ -33,7 +33,7 @@ extension PlanTimeCascadeExtension on DatabaseService {
     final raw = prefs.getString(_keyPlanAutoPlacementMode);
     _planAutoPlacementMode = PlanAutoPlacementMode.values.firstWhere(
       (mode) => mode.name == raw,
-      orElse: () => PlanAutoPlacementMode.afterLastPlan,
+      orElse: () => PlanAutoPlacementMode.nearestFreeSlot,
     );
   }
 
@@ -180,7 +180,7 @@ extension PlanTimeCascadeExtension on DatabaseService {
       if (latestEnd == null || end.isAfter(latestEnd)) latestEnd = end;
     }
     return latestEnd != null
-        ? _snapPlanWallDateTime(latestEnd)
+        ? _ceilPlanWallDateTime(latestEnd)
         : _snapPlanWallDateTime(
             PlanTimeVisibleWindow.windowStartWall(
               wallDay,
@@ -209,7 +209,7 @@ extension PlanTimeCascadeExtension on DatabaseService {
         }
       }
       if (bumpTo == null) return start;
-      start = _snapPlanWallDateTime(bumpTo);
+      start = _ceilPlanWallDateTime(bumpTo);
     }
     return start;
   }
@@ -296,9 +296,9 @@ extension PlanTimeCascadeExtension on DatabaseService {
   }
 
   /// Auto start/end for a new plan on a day. Explicit parsed range always wins.
-  /// `afterLastPlan` is strict: automatic category defaults cannot insert a
-  /// newly created plan into the middle of the Time View. Explicit user time
-  /// still wins before the placement-mode rule.
+  /// Default automatic placement uses the earliest free slot where the full
+  /// plan duration fits; when no fitting gap remains it naturally appends after
+  /// the last scheduled plan. `afterLastPlan` remains an explicit user option.
   /// When [startUtcInstant] is non-null, category default used a fixed/profile TZ
   /// for wall→UTC; callers should pass UTC to [PlanningTask] and let coalesce
   /// reproject display walls.
