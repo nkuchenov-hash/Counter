@@ -1,0 +1,130 @@
+name: One-shot recurring scope save-only fix
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.head_ref == 'fix/recurring-scope-save-only'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Apply scoped recurring edit fix
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          sheet = Path('lib/features/shared/planning_task_edit_sheet.dart')
+          text = sheet.read_text(encoding='utf-8')
+          old = '''  void _onPlanFieldChanged({bool immediate = false}) {
+            // New drafts are committed once by the shell on explicit Save. Building a
+            // Quill/checklist draft on every keypress is wasted work on web.
+            if (!_isPersistedPlan) return;
+
+            void applyAndSync(PlanningTask draft) {
+              if (_recurrenceScopeGate.requiresChoice(_baselineIsRecurring)) {
+                unawaited(_syncPlanDraftToNetwork(draft));
+                return;
+              }
+              _applyPlanDraftLocally(draft);
+              unawaited(_syncPlanDraftToNetwork(draft));
+            }
+          '''
+          new = '''  void _onPlanFieldChanged({bool immediate = false}) {
+            // New drafts are committed once by the shell on explicit Save. Building a
+            // Quill/checklist draft on every keypress is wasted work on web.
+            if (!_isPersistedPlan) return;
+
+            // A recurring edit has no persistence scope until the user explicitly
+            // presses Save. Keep title/notes/checklist/category/tag/time changes as
+            // an in-sheet draft so autosave can never open the recurrence dialog.
+            if (_baselineIsRecurring) {
+              _planAutosaveGate.markDirty();
+              return;
+            }
+
+            void applyAndSync(PlanningTask draft) {
+              _applyPlanDraftLocally(draft);
+              unawaited(_syncPlanDraftToNetwork(draft));
+            }
+          '''
+          if old not in text:
+              raise SystemExit('planning_task_edit_sheet.dart target block not found')
+          sheet.write_text(text.replace(old, new, 1), encoding='utf-8')
+
+          ux = Path('docs/UX_CONTRACT.md')
+          ux_text = ux.read_text(encoding='utf-8')
+          old_ux = '- **Scope dialog (EN/RU):** Editing or deleting a recurring/virtual/materialized occurrence prompts:'
+          new_ux = '- **Scope dialog (EN/RU):** Editing a recurring/virtual/materialized occurrence stays as an in-sheet draft while fields are changed; the edit-scope dialog opens only after explicit **Save** (never from title/notes/checklist/category/tag/time autosave). Deleting prompts when Delete is confirmed:'
+          if old_ux not in ux_text:
+              raise SystemExit('UX_CONTRACT recurrence scope line not found')
+          ux.write_text(ux_text.replace(old_ux, new_ux, 1), encoding='utf-8')
+
+          test = Path('test/recurring_edit_scope_save_only_contract_test.dart')
+          test.write_text("""import 'dart:io';
+
+import 'package:flutter_test/flutter_test.dart';
+
+void main() {
+  test('recurring edit scope is requested only from explicit Save', () {
+    final source = File(
+      'lib/features/shared/planning_task_edit_sheet.dart',
+    ).readAsStringSync();
+
+    final fieldStart = source.indexOf(
+      'void _onPlanFieldChanged({bool immediate = false})',
+    );
+    final fieldEnd = source.indexOf(
+      'bool _planDraftsSemanticallyEqual',
+      fieldStart,
+    );
+    expect(fieldStart, greaterThanOrEqualTo(0));
+    expect(fieldEnd, greaterThan(fieldStart));
+    final fieldBlock = source.substring(fieldStart, fieldEnd);
+
+    expect(fieldBlock, contains('if (_baselineIsRecurring)'));
+    expect(fieldBlock, contains('_planAutosaveGate.markDirty();'));
+    expect(fieldBlock, isNot(contains('_recurrenceScopeGate.resolve(')));
+
+    final saveStart = source.indexOf('Future<void> _commitSaveAsync() async');
+    final saveEnd = source.indexOf('PlanningTask? _buildDraftTask()', saveStart);
+    expect(saveStart, greaterThanOrEqualTo(0));
+    expect(saveEnd, greaterThan(saveStart));
+    final saveBlock = source.substring(saveStart, saveEnd);
+
+    expect(saveBlock, contains('final scope = await _recurrenceScopeGate.resolve('));
+  });
+}
+""", encoding='utf-8')
+
+          changelog = Path('CHANGELOG.md')
+          c = changelog.read_text(encoding='utf-8')
+          entry = """## 2026-09-29 — Recurring edit scope only on Save [fix]
+
+- Recurring plan edits now stay as local in-sheet drafts while typing/changing fields; autosave no longer opens the occurrence-scope dialog.
+- The occurrence/future-series choice is requested only after explicit Save, with a regression contract test covering the trigger boundary.
+
+"""
+          if not c.startswith('## 2026-09-29 — Recurring edit scope only on Save [fix]'):
+              changelog.write_text(entry + c, encoding='utf-8')
+
+          Path('.github/workflows/_one_shot_fix_recurring_scope.yml').unlink()
+          PY
+      - name: Verify focused regression
+        run: |
+          flutter test test/recurring_edit_scope_save_only_contract_test.dart
+          flutter analyze --no-fatal-infos --no-fatal-warnings
+      - name: Commit patched branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Fix recurring edit scope prompt timing"
+          git push origin HEAD:${{ github.head_ref }}
