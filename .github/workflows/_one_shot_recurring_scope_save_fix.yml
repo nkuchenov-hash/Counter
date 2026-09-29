@@ -9,7 +9,6 @@ permissions:
 
 jobs:
   patch:
-    if: github.event.head_commit.message == 'chore: run recurring scope save-only fix'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -70,56 +69,60 @@ jobs:
               raise SystemExit('Expected UX recurrence scope line not found')
           ux.write_text(ux_text.replace(old_ux, new_ux, 1), encoding='utf-8')
 
-          test = Path('test/recurring_edit_scope_save_only_contract_test.dart')
-          test.write_text("""import 'dart:io';
-
-import 'package:flutter_test/flutter_test.dart';
-
-void main() {
-  test('recurring edit scope is requested only from explicit Save', () {
-    final source = File(
-      'lib/features/shared/planning_task_edit_sheet.dart',
-    ).readAsStringSync();
-
-    final fieldStart = source.indexOf(
-      'void _onPlanFieldChanged({bool immediate = false})',
-    );
-    final fieldEnd = source.indexOf(
-      'bool _planDraftsSemanticallyEqual',
-      fieldStart,
-    );
-    expect(fieldStart, greaterThanOrEqualTo(0));
-    expect(fieldEnd, greaterThan(fieldStart));
-    final fieldBlock = source.substring(fieldStart, fieldEnd);
-
-    expect(fieldBlock, contains('if (_baselineIsRecurring)'));
-    expect(fieldBlock, contains('_planAutosaveGate.markDirty();'));
-    expect(fieldBlock, isNot(contains('_recurrenceScopeGate.resolve(')));
-
-    final saveStart = source.indexOf('Future<void> _commitSaveAsync() async');
-    final saveEnd = source.indexOf('PlanningTask? _buildDraftTask()', saveStart);
-    expect(saveStart, greaterThanOrEqualTo(0));
-    expect(saveEnd, greaterThan(saveStart));
-    final saveBlock = source.substring(saveStart, saveEnd);
-
-    expect(
-      saveBlock,
-      contains('final scope = await _recurrenceScopeGate.resolve('),
-    );
-  });
-}
-""", encoding='utf-8')
+          test_lines = [
+              "import 'dart:io';",
+              "",
+              "import 'package:flutter_test/flutter_test.dart';",
+              "",
+              "void main() {",
+              "  test('recurring edit scope is requested only from explicit Save', () {",
+              "    final source = File(",
+              "      'lib/features/shared/planning_task_edit_sheet.dart',",
+              "    ).readAsStringSync();",
+              "",
+              "    final fieldStart = source.indexOf(",
+              "      'void _onPlanFieldChanged({bool immediate = false})',",
+              "    );",
+              "    final fieldEnd = source.indexOf(",
+              "      'bool _planDraftsSemanticallyEqual',",
+              "      fieldStart,",
+              "    );",
+              "    expect(fieldStart, greaterThanOrEqualTo(0));",
+              "    expect(fieldEnd, greaterThan(fieldStart));",
+              "    final fieldBlock = source.substring(fieldStart, fieldEnd);",
+              "",
+              "    expect(fieldBlock, contains('if (_baselineIsRecurring)'));",
+              "    expect(fieldBlock, contains('_planAutosaveGate.markDirty();'));",
+              "    expect(fieldBlock, isNot(contains('_recurrenceScopeGate.resolve(')));",
+              "",
+              "    final saveStart = source.indexOf('Future<void> _commitSaveAsync() async');",
+              "    final saveEnd = source.indexOf('PlanningTask? _buildDraftTask()', saveStart);",
+              "    expect(saveStart, greaterThanOrEqualTo(0));",
+              "    expect(saveEnd, greaterThan(saveStart));",
+              "    final saveBlock = source.substring(saveStart, saveEnd);",
+              "",
+              "    expect(",
+              "      saveBlock,",
+              "      contains('final scope = await _recurrenceScopeGate.resolve('),",
+              "    );",
+              "  });",
+              "}",
+          ]
+          Path('test/recurring_edit_scope_save_only_contract_test.dart').write_text(
+              '\n'.join(test_lines) + '\n', encoding='utf-8'
+          )
 
           changelog = Path('CHANGELOG.md')
           c = changelog.read_text(encoding='utf-8')
-          entry = """## 2026-09-29 — Recurring edit scope only on Save [fix]
-
-- Recurring plan edits now stay as local in-sheet drafts while typing/changing fields; autosave no longer opens the occurrence-scope dialog.
-- The occurrence/future-series choice is requested only after explicit Save, with a regression contract test covering the trigger boundary.
-
-"""
-          if not c.startswith('## 2026-09-29 — Recurring edit scope only on Save [fix]'):
-              changelog.write_text(entry + c, encoding='utf-8')
+          entry_lines = [
+              '## 2026-09-29 — Recurring edit scope only on Save [fix]',
+              '',
+              '- Recurring plan edits now stay as local in-sheet drafts while typing/changing fields; autosave no longer opens the occurrence-scope dialog.',
+              '- The occurrence/future-series choice is requested only after explicit Save, with a regression contract test covering the trigger boundary.',
+              '',
+          ]
+          if not c.startswith(entry_lines[0]):
+              changelog.write_text('\n'.join(entry_lines) + '\n' + c, encoding='utf-8')
 
           Path('.github/workflows/_one_shot_recurring_scope_save_fix.yml').unlink()
           PY
