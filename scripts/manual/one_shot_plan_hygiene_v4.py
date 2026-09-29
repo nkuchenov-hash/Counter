@@ -94,7 +94,10 @@ old_test = """  test('create POST reads the post-cascade optimistic schedule', (
     final source = File('lib/data/plan_service.dart').readAsStringSync();
     expect(source, contains('var taskForCreate = task;'));
     expect(source, contains('taskForCreate = candidate;'));
-    expect(source, contains('_buildPocketPlanCreateBody(\\n        taskForCreate,'));
+    expect(
+      source,
+      contains('_buildPocketPlanCreateBody(\\n        taskForCreate,'),
+    );
   });
 """
 new_test = """  test('create POST reads the post-cascade optimistic schedule', () {
