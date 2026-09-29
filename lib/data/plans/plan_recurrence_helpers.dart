@@ -227,7 +227,6 @@ extension PlanRecurrenceExtension on DatabaseService {
     return _hasRecurringParentInCache(task);
   }
 
-
   String? _resolveRecurrenceInstanceDateKey({
     required String planRowId,
     String? recurrenceInstanceDateKey,
@@ -249,7 +248,8 @@ extension PlanRecurrenceExtension on DatabaseService {
   }) {
     final virt = _parseVirtualPlanRowId(planRowId);
     if (virt != null) return virt.parentPocketId;
-    final task = cached ??
+    final task =
+        cached ??
         _findCachedPlanningTaskForEdit(
           planRowId,
           planBusinessId: planBusinessId,
@@ -280,8 +280,9 @@ extension PlanRecurrenceExtension on DatabaseService {
   }
 
   /// JIT expanded row id: `virt-<parentPocketId>-YYYY-MM-DD`. Never pass [virt-] IDs to PocketBase REST.
-  ({String parentPocketId, String instanceDateKey})?
-  _parseVirtualPlanRowId(String raw) {
+  ({String parentPocketId, String instanceDateKey})? _parseVirtualPlanRowId(
+    String raw,
+  ) {
     final s = raw.trim();
     final m = RegExp(r'^virt-(.+)-(\d{4}-\d{2}-\d{2})$').firstMatch(s);
     if (m == null) return null;
@@ -832,6 +833,43 @@ extension PlanRecurrenceExtension on DatabaseService {
         recurrenceInstanceDateKey: recurrenceInstanceDateKey,
       );
     }
+
+    final rid = planRowId.trim();
+    final cached = _findCachedPlanningTaskForEdit(
+      rid,
+      planBusinessId: planBusinessId,
+    );
+    if (cached != null && _isMaterializedRecurrenceException(cached)) {
+      final ok = await _patchMaterializedOccurrenceStrict(
+        cached,
+        title: title,
+        categoryId: categoryId,
+        isDone: isDone,
+        notesPlain: notesPlain,
+        notesDeltaJson: notesDeltaJson,
+        checklist: checklist,
+        parentPlanId: parentPlanId,
+        order: order,
+        startTime: startTime,
+        startTimeDisplay: startTimeDisplay,
+        endDateTime: endDateTime,
+        endDateTimeDisplay: endDateTimeDisplay,
+        clearEnd: clearEnd,
+        tags: tags,
+        planInitialDateKey: planInitialDateKey,
+        planIsPostponed: planIsPostponed,
+      );
+      if (ok) {
+        await _fetchAllPlanningTasksForCurrentUser();
+        notifyPlanningRefresh(scheduleNetworkRefresh: false);
+        _notifyTimelineAfterRecordCacheMutation();
+        if (!suppressAppSnack) AppSnack.updated();
+      } else if (!suppressAppSnack) {
+        AppSnack.failed();
+      }
+      return ok;
+    }
+
     return updatePlanningTask(
       planRowId,
       planBusinessId: planBusinessId,
@@ -919,5 +957,4 @@ extension PlanRecurrenceExtension on DatabaseService {
     }
     return deletePlanningTasksBulk([rid]);
   }
-
 }

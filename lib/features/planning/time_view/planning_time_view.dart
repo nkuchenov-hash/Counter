@@ -687,6 +687,8 @@ extension PlanningTimeViewPlanningTimeView on PlanningTimeViewCoordinator {
       startTime: newStartWall,
       endDateTime: newEndWall,
       clearEnd: newEndWall == null,
+      clearStartUtc: true,
+      clearEndUtc: true,
     );
     DatabaseService.instance.applyOptimisticPlanningTask(updated);
     DatabaseService.instance.notifyPlanningRefresh();
@@ -727,7 +729,11 @@ extension PlanningTimeViewPlanningTimeView on PlanningTimeViewCoordinator {
           '[TIME_VIEW_OPTIMISTIC_APPLIED] id=${task.planRowIdForBackend}',
         );
       }
-      DatabaseService.instance.applyOptimisticPlanningTask(task);
+      final optimisticTask = task.copyWith(
+        clearStartUtc: true,
+        clearEndUtc: true,
+      );
+      DatabaseService.instance.applyOptimisticPlanningTask(optimisticTask);
       unawaited(
         DatabaseService.instance.updatePlanningTask(
           task.planRowIdForBackend,
@@ -812,7 +818,11 @@ extension PlanningTimeViewPlanningTimeView on PlanningTimeViewCoordinator {
           '${e != null ? '${e.hour.toString().padLeft(2, '0')}:${e.minute.toString().padLeft(2, '0')}' : 'open'}',
         );
       }
-      DatabaseService.instance.applyOptimisticPlanningTask(task);
+      final optimisticTask = task.copyWith(
+        clearStartUtc: true,
+        clearEndUtc: true,
+      );
+      DatabaseService.instance.applyOptimisticPlanningTask(optimisticTask);
       unawaited(
         DatabaseService.instance.updatePlanningTask(
           task.planRowIdForBackend,
