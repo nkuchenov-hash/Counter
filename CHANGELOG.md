@@ -1,4 +1,6 @@
 ## 2026-09-29 — Planner no-hidden-cascade recovery [fix]
+- Planning Time View: fixed stale UTC instants overriding manual/recurring wall-time moves, so dragged recurring plans and collision-resolved creates no longer snap back to their old time.
+- Recurrence: single-occurrence edits of materialized recurring plans now await the PocketBase patch before optimistic state is released.
 
 - New plans use an existing fitting gap or append after the last plan; creation never shifts existing plans to make room.
 - Time View rendering no longer performs hidden post-frame schedule mutations.

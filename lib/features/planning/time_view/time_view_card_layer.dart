@@ -563,6 +563,8 @@ extension PlanningTimeViewRecurringInteractionController
       startTime: newStartWall,
       endDateTime: newEndWall,
       clearEnd: newEndWall == null,
+      clearStartUtc: true,
+      clearEndUtc: true,
     );
 
     DatabaseService.instance.applyOptimisticPlanningTask(updated);

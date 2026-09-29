@@ -79,6 +79,7 @@ class PlanningTask {
     List<int>? subRecordIds,
     List<Tag>? tags,
     this.isSynced = true,
+
     /// Wall `YYYY-MM-DD`: audit anchor (commitment day). Set on create; preserved when postponing.
     this.initialDateKey,
     this.isPostponed = false,
@@ -90,12 +91,15 @@ class PlanningTask {
     this.endUtcInstant,
     this.createdAt,
     this.updatedAt,
-  })  : date = date ?? _dateFromDateKey(dateKey),
-        endDateKey = endDateKey ?? (endDateTime != null ? _dateKeyFromDate(endDateTime) : dateKey),
-        subRecordIds = subRecordIds ?? const [],
-        tags = tags ?? const [];
+  }) : date = date ?? _dateFromDateKey(dateKey),
+       endDateKey =
+           endDateKey ??
+           (endDateTime != null ? _dateKeyFromDate(endDateTime) : dateKey),
+       subRecordIds = subRecordIds ?? const [],
+       tags = tags ?? const [];
 
   final int id;
+
   /// Business **plan_id** (UUID) inside Noco `fields` — never use as bulk PATCH outer `id`.
   final String? planRowId;
 
@@ -125,6 +129,7 @@ class PlanningTask {
     if (p.isNotEmpty) return p;
     return id.toString();
   }
+
   final String title;
   final int categoryId;
   final bool isDone;
@@ -135,15 +140,19 @@ class PlanningTask {
   final DateTime? endDateTime;
   final String endDateKey;
   final List<Map<String, dynamic>> checklist;
+
   /// @DATA_MAP `plans.notes_plain` — searchable plain text (may include `LIFEOS_LINK::` prefix for backlog ideas).
   final String? notesPlain;
+
   /// JSON-encoded Quill Delta (`Document.toDelta().toJson()`), @DATA_MAP `plans.notes_delta`.
   final String? notesDeltaJson;
   final int? parentPlanId;
+
   /// PocketBase **plans.parent_plan_id** relation (15-char parent row id).
   final String? parentPlanPocketId;
   final List<int> subRecordIds;
   final List<Tag> tags;
+
   /// Local-only: false for optimistic / outbox rows until PocketBase confirms.
   final bool isSynced;
 
@@ -216,29 +225,30 @@ class PlanningTask {
       '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
   Map<String, dynamic> toJson() => <String, dynamic>{
-        'id': id,
-        'title': title,
-        'category_id': categoryId,
-        'is_done': isDone,
-        'isSynced': isSynced,
-        if (parentPlanPocketId != null && parentPlanPocketId!.trim().isNotEmpty)
-          'parent_plan_id': parentPlanPocketId!.trim()
-        else if (parentPlanId != null)
-          'parent_plan_id': parentPlanId.toString(),
-        if (notesPlain != null && notesPlain!.isNotEmpty) 'notes_plain': notesPlain,
-        if (notesDeltaJson != null && notesDeltaJson!.trim().isNotEmpty)
-          'notes_delta': notesDeltaJson,
-        if (checklist.isNotEmpty) 'checklist': checklist,
-        if (startTime != null) 'start_time': startTime!.toUtc().toIso8601String(),
-        if (endDateTime != null) 'end_time': endDateTime!.toUtc().toIso8601String(),
-        if (rrule != null && rrule!.trim().isNotEmpty) 'rrule': rrule!.trim(),
-        if (exceptionDates.isNotEmpty) 'exception_dates': exceptionDates,
-        if (reminderOffset != null) 'reminder_offset': reminderOffset,
-        if (recurrenceInstanceDateKey != null &&
-            recurrenceInstanceDateKey!.trim().length >= 10)
-          'recurrence_instance_date_key':
-              recurrenceInstanceDateKey!.trim().substring(0, 10),
-      };
+    'id': id,
+    'title': title,
+    'category_id': categoryId,
+    'is_done': isDone,
+    'isSynced': isSynced,
+    if (parentPlanPocketId != null && parentPlanPocketId!.trim().isNotEmpty)
+      'parent_plan_id': parentPlanPocketId!.trim()
+    else if (parentPlanId != null)
+      'parent_plan_id': parentPlanId.toString(),
+    if (notesPlain != null && notesPlain!.isNotEmpty) 'notes_plain': notesPlain,
+    if (notesDeltaJson != null && notesDeltaJson!.trim().isNotEmpty)
+      'notes_delta': notesDeltaJson,
+    if (checklist.isNotEmpty) 'checklist': checklist,
+    if (startTime != null) 'start_time': startTime!.toUtc().toIso8601String(),
+    if (endDateTime != null) 'end_time': endDateTime!.toUtc().toIso8601String(),
+    if (rrule != null && rrule!.trim().isNotEmpty) 'rrule': rrule!.trim(),
+    if (exceptionDates.isNotEmpty) 'exception_dates': exceptionDates,
+    if (reminderOffset != null) 'reminder_offset': reminderOffset,
+    if (recurrenceInstanceDateKey != null &&
+        recurrenceInstanceDateKey!.trim().length >= 10)
+      'recurrence_instance_date_key': recurrenceInstanceDateKey!
+          .trim()
+          .substring(0, 10),
+  };
 
   /// Same as [fromJson]; use when the source is a Noco row `fields` map / REST object.
   factory PlanningTask.fromMap(Map<String, dynamic> map) =>
@@ -251,7 +261,9 @@ class PlanningTask {
   }) {
     dynamic g(String camel, String snake) => json[camel] ?? json[snake];
     final st = g('startTime', 'start_time');
-    final DateTime? startTime = st is DateTime ? st : (st is String ? DateTime.tryParse(st) : null);
+    final DateTime? startTime = st is DateTime
+        ? st
+        : (st is String ? DateTime.tryParse(st) : null);
     final rawDate = g('date', 'date');
     DateTime? date;
     if (rawDate is DateTime) {
@@ -266,7 +278,9 @@ class PlanningTask {
     } else if (rawEnd is String) {
       endDateTime = DateTime.tryParse(rawEnd);
     }
-    final endDateKey = (g('endDateKey', 'end_date_key') as String?) ?? (endDateTime != null ? _dateKeyFromDate(endDateTime) : dateKey);
+    final endDateKey =
+        (g('endDateKey', 'end_date_key') as String?) ??
+        (endDateTime != null ? _dateKeyFromDate(endDateTime) : dateKey);
     final checklist = parseChecklistFromNocoList(json['checklist']);
     final notesPlain =
         json['notes_plain']?.toString() ??
@@ -293,10 +307,14 @@ class PlanningTask {
     final rawSubIds = g('subRecordIds', 'sub_record_ids');
     List<int> subRecordIds = const [];
     if (rawSubIds is List) {
-      subRecordIds = rawSubIds.map((e) => _jsonInt(e)).where((n) => n != 0).toList();
+      subRecordIds = rawSubIds
+          .map((e) => _jsonInt(e))
+          .where((n) => n != 0)
+          .toList();
     }
-    final planPk =
-        (json['plan_row_id'] ?? json['plan_id'] ?? json['planId'])?.toString().trim();
+    final planPk = (json['plan_row_id'] ?? json['plan_id'] ?? json['planId'])
+        ?.toString()
+        .trim();
     // @DATA_MAP `plans.tags` is a read-only **Count** (int). M2M edge rows use link column `cnmo43ed26h293n` (top-level list row, inside `fields`, or nested expand).
     Map<String, dynamic>? fieldsBag;
     if (json['fields'] is Map) {
@@ -320,7 +338,9 @@ class PlanningTask {
     }
 
     // Plain tags_link: full maps (no expand) or id list only.
-    if (tagList.isEmpty && rawPbLinkField is List && rawPbLinkField.isNotEmpty) {
+    if (tagList.isEmpty &&
+        rawPbLinkField is List &&
+        rawPbLinkField.isNotEmpty) {
       final head = rawPbLinkField.first;
       if (head is Map) {
         tagList = _tagsFromPbExpandField(rawPbLinkField);
@@ -333,14 +353,17 @@ class PlanningTask {
         pocketTagCatalog != null &&
         pocketTagCatalog.isNotEmpty &&
         rawPbLinkField.trim().isNotEmpty) {
-      tagList = _tagsFromPbPlainLinkIds(<dynamic>[rawPbLinkField], pocketTagCatalog);
+      tagList = _tagsFromPbPlainLinkIds(<dynamic>[
+        rawPbLinkField,
+      ], pocketTagCatalog);
     }
 
     // —— Legacy Noco ——
     if (tagList.isEmpty) {
       if (rawPlanTags is int) {
-        tagList =
-            rawLinkCol is List ? _parseTagsJson(rawLinkCol) : const <Tag>[];
+        tagList = rawLinkCol is List
+            ? _parseTagsJson(rawLinkCol)
+            : const <Tag>[];
       } else if (rawLinkCol is List) {
         tagList = _parseTagsJson(rawLinkCol);
       } else {
@@ -373,10 +396,15 @@ class PlanningTask {
       ),
       isPostponed: _jsonBool(g('isPostponed', 'is_postponed'), false),
       rrule: _normRruleField(g('rrule', 'rrule')?.toString()),
-      exceptionDates: _parsePlanningExceptionDates(g('exceptionDates', 'exception_dates')),
+      exceptionDates: _parsePlanningExceptionDates(
+        g('exceptionDates', 'exception_dates'),
+      ),
       reminderOffset: _jsonIntNullable(g('reminderOffset', 'reminder_offset')),
       recurrenceInstanceDateKey: _normRecurrenceInstanceKey(
-        g('recurrenceInstanceDateKey', 'recurrence_instance_date_key')?.toString(),
+        g(
+          'recurrenceInstanceDateKey',
+          'recurrence_instance_date_key',
+        )?.toString(),
       ),
       createdAt: _parseIsoDateTime(g('createdAt', 'created')),
       updatedAt: _parseIsoDateTime(g('updatedAt', 'updated')),
@@ -482,7 +510,10 @@ class PlanningTask {
   }
 
   /// `tags_link` when expand is off: list of **collection record id** strings — match catalog [Tag.pbRecordId] or [Tag.tagId].
-  static List<Tag> _tagsFromPbPlainLinkIds(List<dynamic> raw, List<Tag> catalog) {
+  static List<Tag> _tagsFromPbPlainLinkIds(
+    List<dynamic> raw,
+    List<Tag> catalog,
+  ) {
     final byPb = <String, Tag>{};
     final byBiz = <int, Tag>{};
     for (final t in catalog) {
@@ -601,12 +632,17 @@ class PlanningTask {
     bool clearReminderOffset = false,
     DateTime? startUtcInstant,
     DateTime? endUtcInstant,
+    bool clearStartUtc = false,
     bool clearEndUtc = false,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
     final eDt = clearEnd ? null : (endDateTime ?? this.endDateTime);
-    final eDk = endDateKey ?? (eDt != null ? _dateKeyFromDate(eDt) : (clearEnd ? (dateKey ?? this.dateKey) : this.endDateKey));
+    final eDk =
+        endDateKey ??
+        (eDt != null
+            ? _dateKeyFromDate(eDt)
+            : (clearEnd ? (dateKey ?? this.dateKey) : this.endDateKey));
     return PlanningTask(
       id: id ?? this.id,
       planRowId: planRowId ?? this.planRowId,
@@ -622,7 +658,9 @@ class PlanningTask {
       endDateKey: eDk,
       checklist: checklist ?? this.checklist,
       notesPlain: clearNotes ? null : (notesPlain ?? this.notesPlain),
-      notesDeltaJson: clearNotes ? null : (notesDeltaJson ?? this.notesDeltaJson),
+      notesDeltaJson: clearNotes
+          ? null
+          : (notesDeltaJson ?? this.notesDeltaJson),
       parentPlanId: parentPlanId ?? this.parentPlanId,
       parentPlanPocketId: parentPlanPocketId ?? this.parentPlanPocketId,
       subRecordIds: subRecordIds ?? this.subRecordIds,
@@ -631,13 +669,17 @@ class PlanningTask {
       initialDateKey: initialDateKey ?? this.initialDateKey,
       isPostponed: isPostponed ?? this.isPostponed,
       rrule: clearRrule ? null : (rrule ?? this.rrule),
-      exceptionDates: exceptionDates ??
+      exceptionDates:
+          exceptionDates ??
           (clearRrule ? const <String>[] : this.exceptionDates),
-      reminderOffset:
-          clearReminderOffset ? null : (reminderOffset ?? this.reminderOffset),
+      reminderOffset: clearReminderOffset
+          ? null
+          : (reminderOffset ?? this.reminderOffset),
       recurrenceInstanceDateKey:
           recurrenceInstanceDateKey ?? this.recurrenceInstanceDateKey,
-      startUtcInstant: startUtcInstant ?? this.startUtcInstant,
+      startUtcInstant: clearStartUtc
+          ? null
+          : (startUtcInstant ?? this.startUtcInstant),
       endUtcInstant: clearEndUtc || clearEnd
           ? null
           : (endUtcInstant ?? this.endUtcInstant),
@@ -646,7 +688,6 @@ class PlanningTask {
     );
   }
 }
-
 
 class PlanningBulkPatch {
   const PlanningBulkPatch({
@@ -664,11 +705,12 @@ class PlanningBulkPatch {
   final DateTime? startTimeDisplay;
   final DateTime? endDateTimeDisplay;
   final bool clearEnd;
+
   /// Sets [plans.initial_date_key] when non-null (audit anchor).
   final String? initialDateKey;
+
   /// Sets [plans.is_postponed] when non-null.
   final bool? isPostponed;
 }
 
 // --- Stats tree (HIERARCHICAL STATS §8). Pure data. ---
-

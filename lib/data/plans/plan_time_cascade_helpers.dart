@@ -586,6 +586,8 @@ extension PlanTimeCascadeExtension on DatabaseService {
         endDateTime: walls.endWall,
         endDateKey: dayKey,
         clearEnd: false,
+        clearStartUtc: true,
+        clearEndUtc: true,
       ),
       adjusted: walls.startWall != requestedStart,
     );
