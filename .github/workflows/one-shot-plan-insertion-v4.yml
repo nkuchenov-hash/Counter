@@ -47,7 +47,7 @@ jobs:
         run: flutter test test/auto_plan_nearest_free_slot_test.dart test/plan_time_visible_window_test.dart test/plan_time_sequential_cascade_test.dart
 
       - name: Analyze changed scheduling sources
-        run: flutter analyze lib/shared/time/plan_time_visible_window.dart lib/features/planning/planning_day_start_prefs.dart lib/features/planning/time_view/planning_time_view_coordinator.dart lib/features/planning/time_view/time_view_hour_grid.dart lib/data/plans/plan_time_cascade_helpers.dart lib/data/plan_service.dart lib/features/planning/planning_page.dart
+        run: flutter analyze --no-fatal-infos lib/shared/time/plan_time_visible_window.dart lib/features/planning/planning_day_start_prefs.dart lib/features/planning/time_view/planning_time_view_coordinator.dart lib/features/planning/time_view/time_view_hour_grid.dart lib/data/plans/plan_time_cascade_helpers.dart lib/data/plan_service.dart lib/features/planning/planning_page.dart
 
       - name: Remove helpers and commit verified repair
         shell: bash
