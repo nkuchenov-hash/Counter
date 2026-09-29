@@ -912,9 +912,12 @@ class _PlanningPageState extends State<PlanningPage>
     final tagsForCreate = List<Tag>.from(_quickAddTags.creationSelectedTags);
     final existingDay = [
       ..._latestPlanningDayTasks,
-      ..._optimisticTasks.where(
-        (t) => t.dateKey == taskDateKey || t.startTime != null,
-      ),
+      ..._optimisticTasks.where((t) {
+        if (t.dateKey == taskDateKey) return true;
+        final start = t.startTime;
+        if (start == null) return false;
+        return _dateKeyFromDate(start) == taskDateKey;
+      }),
     ];
     final explicitStartWall = range != null
         ? range.startWallOn(wallDay)
@@ -999,9 +1002,12 @@ class _PlanningPageState extends State<PlanningPage>
     var nextOrder = _nextPlanOrderForQuickAdd();
     var cursorPlans = [
       ..._latestPlanningDayTasks,
-      ..._optimisticTasks.where(
-        (t) => t.dateKey == taskDateKey || t.startTime != null,
-      ),
+      ..._optimisticTasks.where((t) {
+        if (t.dateKey == taskDateKey) return true;
+        final start = t.startTime;
+        if (start == null) return false;
+        return _dateKeyFromDate(start) == taskDateKey;
+      }),
     ];
 
     var created = 0;

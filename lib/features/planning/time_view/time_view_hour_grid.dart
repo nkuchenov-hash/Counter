@@ -122,7 +122,7 @@ extension PlanningTimeViewTimeViewHourGrid on PlanningTimeViewCoordinator {
     final scheme = Theme.of(host.context).colorScheme;
     final loc = currentLocale.value;
     final rangeStart = timelineHourStart;
-    final rangeEnd = timelineHourEnd;
+    var rangeEnd = timelineHourEnd;
     final planWallDay = host.pageWidget.selectedDate ?? host.today;
     final selectedDayKey = host.pageWidget.selectedDateString.length >= 10
         ? host.pageWidget.selectedDateString.substring(0, 10)
@@ -132,6 +132,18 @@ extension PlanningTimeViewTimeViewHourGrid on PlanningTimeViewCoordinator {
       planWallDay,
       rangeStart,
     );
+    for (final item in orderedProjected) {
+      final proj = item.projection;
+      if (proj == null) continue;
+      final wallEnd =
+          proj.profileWallEnd ??
+          proj.profileWallStart.add(Duration(minutes: proj.durationMinutes));
+      rangeEnd = PlanningSheetTimelinePrefs.endExtendedIncludingWallEnd(
+        planWallDay,
+        rangeEnd,
+        wallEnd,
+      );
+    }
     final schedulablePre = <PlanningTask>[];
     final unscheduled = <PlanningTask>[];
     final projections = <TimeModeProjectedPlan>[];

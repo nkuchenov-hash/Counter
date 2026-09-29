@@ -813,6 +813,7 @@ extension PlanServiceExtension on DatabaseService {
     required Object categoryFieldForPlan,
   }) async {
     final optimisticId = 'optimistic-$clientPlanId';
+    var taskForCreate = task;
     applyOptimisticPlanningTask(
       task.copyWith(
         pocketRecordId: optimisticId,
@@ -829,7 +830,14 @@ extension PlanServiceExtension on DatabaseService {
           final m = int.tryParse(ymd[1]);
           final d = int.tryParse(ymd[2]);
           if (y != null && m != null && d != null) {
-            applySequentialTimeViewCascadeIfNeeded(wallDay: DateTime(y, m, d));
+            final wallDay = DateTime(y, m, d);
+            applySequentialTimeViewCascadeIfNeeded(wallDay: wallDay);
+            for (final candidate in planningDayTasksSnapshot(wallDay)) {
+              if ((candidate.planRowId?.trim() ?? '') == clientPlanId) {
+                taskForCreate = candidate;
+                break;
+              }
+            }
           }
         }
       }
@@ -838,7 +846,7 @@ extension PlanServiceExtension on DatabaseService {
     late final Map<String, dynamic> body;
     try {
       body = await _buildPocketPlanCreateBody(
-        task,
+        taskForCreate,
         titleTrimmed: titleTrimmed,
         clientPlanId: clientPlanId,
         categoryFieldForPlan: categoryFieldForPlan,

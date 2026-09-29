@@ -3,7 +3,7 @@ abstract final class PlanTimeVisibleWindow {
   static const int extendedMin = -3;
   static const int extendedMax = 27;
   static const int defaultStartExtended = 7;
-  static const int defaultEndExtended = 23;
+  static const int defaultEndExtended = 24;
 
   static int clampStartExtended(int? value) {
     if (value == null) return defaultStartExtended;
@@ -39,7 +39,10 @@ abstract final class PlanTimeVisibleWindow {
     return normalizeExtendedRange(s, e + 24);
   }
 
-  static List<int> visibleExtendedHoursOrdered(int startExtended, int endExtended) {
+  static List<int> visibleExtendedHoursOrdered(
+    int startExtended,
+    int endExtended,
+  ) {
     final range = normalizeExtendedRange(startExtended, endExtended);
     return List<int>.generate(range.end - range.start, (i) => range.start + i);
   }
@@ -84,9 +87,10 @@ abstract final class PlanTimeVisibleWindow {
     int startExtended,
     double minutesFromWindowStart,
   ) {
-    return windowStartWall(day, startExtended).add(
-      Duration(minutes: minutesFromWindowStart.round()),
-    );
+    return windowStartWall(
+      day,
+      startExtended,
+    ).add(Duration(minutes: minutesFromWindowStart.round()));
   }
 
   static bool wallInstantInsideVisibleWindow(
@@ -112,9 +116,28 @@ abstract final class PlanTimeVisibleWindow {
     final range = normalizeExtendedRange(startExtended, endExtended);
     final windowStart = windowStartWall(selectedDay, range.start);
     final windowEnd = windowEndWall(selectedDay, range.end);
-    final taskEnd = wallEnd ??
+    final taskEnd =
+        wallEnd ??
         wallStart.add(Duration(minutes: durationMinutes.clamp(1, 24 * 60)));
     return wallStart.isBefore(windowEnd) && taskEnd.isAfter(windowStart);
+  }
+
+  /// Expand the rendered end boundary enough to keep a scheduled plan visible.
+  /// The persisted/user-selected range remains the baseline; this only grows it
+  /// for actual content and never beyond the supported D+1 03:00 boundary.
+  static int endExtendedIncludingWallEnd(
+    DateTime day,
+    int configuredEndExtended,
+    DateTime wallEnd,
+  ) {
+    final base = clampEndExtended(configuredEndExtended, defaultStartExtended);
+    final minutes = wallEnd.difference(dayMidnight(day)).inMinutes;
+    if (minutes <= 0) return base;
+    final requiredEnd = ((minutes + 59) ~/ 60).clamp(
+      extendedMin + 1,
+      extendedMax,
+    );
+    return requiredEnd > base ? requiredEnd : base;
   }
 
   static bool needsNextDayTasks(int endExtended) =>

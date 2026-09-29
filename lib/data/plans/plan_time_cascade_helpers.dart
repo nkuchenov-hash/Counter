@@ -38,8 +38,7 @@ extension PlanTimeCascadeExtension on DatabaseService {
 
     // The previous regression made afterLastPlan the default. A device that
     // persisted that value must be returned to smart gap placement once.
-    if (!gapMigrationDone &&
-        raw == PlanAutoPlacementMode.afterLastPlan.name) {
+    if (!gapMigrationDone && raw == PlanAutoPlacementMode.afterLastPlan.name) {
       _planAutoPlacementMode = PlanAutoPlacementMode.nearestFreeSlot;
       await prefs.setString(
         _keyPlanAutoPlacementMode,
@@ -406,8 +405,24 @@ extension PlanTimeCascadeExtension on DatabaseService {
       if (h != null && m != null) {
         usedCategoryDefault = true;
         categoryDefaultTimezoneIana = catSchedule!.timezoneIana;
-        startWall = _snapPlanWallDateTime(
+        final defaultSourceCategoryId = catSchedule.sourceCategoryId;
+        final sameDefaultGroupPlans = <PlanningTask>[
+          for (final plan in existingDayPlans)
+            if (defaultSourceCategoryId != null
+                ? effectiveDefaultPlanScheduleForCategory(
+                        plan.categoryId,
+                      )?.sourceCategoryId ==
+                      defaultSourceCategoryId
+                : plan.categoryId == categoryId)
+              plan,
+        ];
+        final categoryAnchor = _snapPlanWallDateTime(
           DateTime(wallDay.year, wallDay.month, wallDay.day, h, m),
+        );
+        startWall = _firstAvailablePlanWallStart(
+          earliestStartWall: categoryAnchor,
+          durationMin: durationMin,
+          existingDayPlans: sameDefaultGroupPlans,
         );
       } else {
         final windowStart = PlanTimeVisibleWindow.windowStartWall(
@@ -422,11 +437,13 @@ extension PlanTimeCascadeExtension on DatabaseService {
       }
     }
 
-    var resolvedStart = _avoidPlanWallScheduleCollisions(
-      startWall: startWall,
-      durationMin: durationMin,
-      existingDayPlans: existingDayPlans,
-    );
+    var resolvedStart = usedCategoryDefault
+        ? startWall
+        : _avoidPlanWallScheduleCollisions(
+            startWall: startWall,
+            durationMin: durationMin,
+            existingDayPlans: existingDayPlans,
+          );
 
     var endWall =
         explicitEndWall != null &&
@@ -435,31 +452,37 @@ extension PlanTimeCascadeExtension on DatabaseService {
         ? explicitEndWall
         : resolvedStart.add(Duration(minutes: durationMin));
 
-    final dayKey =
-        '${wallDay.year}-${_two(wallDay.month)}-${_two(wallDay.day)}';
-    const probePlanId = '__auto_schedule_probe__';
-    final probe = PlanningTask(
-      id: 0,
-      title: '',
-      categoryId: categoryId,
-      isDone: false,
-      dateKey: dayKey,
-      order: 999999,
-      startTime: resolvedStart,
-      endDateTime: endWall,
-      tags: tags,
-      planRowId: probePlanId,
-    );
-    final cascadedProbe = normalizeSequentialPlanTimesForDay([
-      ...existingDayPlans,
-      probe,
-    ]).firstWhere((t) => t.planRowId == probePlanId);
-    resolvedStart = cascadedProbe.startTime ?? resolvedStart;
-    endWall = cascadedProbe.endDateTime ?? endWall;
+    if (!usedCategoryDefault) {
+      final dayKey =
+          '${wallDay.year}-${_two(wallDay.month)}-${_two(wallDay.day)}';
+      const probePlanId = '__auto_schedule_probe__';
+      final probe = PlanningTask(
+        id: 0,
+        title: '',
+        categoryId: categoryId,
+        isDone: false,
+        dateKey: dayKey,
+        order: 999999,
+        startTime: resolvedStart,
+        endDateTime: endWall,
+        tags: tags,
+        planRowId: probePlanId,
+      );
+      final cascadedProbe = normalizeSequentialPlanTimesForDay([
+        ...existingDayPlans,
+        probe,
+      ]).firstWhere((t) => t.planRowId == probePlanId);
+      resolvedStart = cascadedProbe.startTime ?? resolvedStart;
+      endWall = cascadedProbe.endDateTime ?? endWall;
+    }
 
     if (usedCategoryDefault) {
       final startUtc = wallUtcForCategoryDefaultWall(
-        wallDay: wallDay,
+        wallDay: DateTime(
+          resolvedStart.year,
+          resolvedStart.month,
+          resolvedStart.day,
+        ),
         hour: resolvedStart.hour,
         minute: resolvedStart.minute,
         timezoneIana: categoryDefaultTimezoneIana,
