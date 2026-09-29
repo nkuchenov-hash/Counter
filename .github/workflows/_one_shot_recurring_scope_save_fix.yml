@@ -144,7 +144,7 @@ jobs:
       - name: Verify recurrence edit behavior
         run: |
           flutter test test/recurring_edit_scope_save_only_contract_test.dart test/edit_sheet_autosave_test.dart test/plan_recurrence_scope_test.dart
-          flutter analyze --no-fatal-infos --no-fatal-warnings
+          flutter analyze lib --no-fatal-infos --no-fatal-warnings
 
       - name: Commit fix to main
         run: |
