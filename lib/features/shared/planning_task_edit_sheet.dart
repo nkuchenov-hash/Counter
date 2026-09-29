@@ -353,11 +353,15 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
     // Quill/checklist draft on every keypress is wasted work on web.
     if (!_isPersistedPlan) return;
 
+    // A recurring edit has no persistence scope until the user explicitly
+    // presses Save. Keep title/notes/checklist/category/tag/time changes as
+    // an in-sheet draft so autosave can never open the recurrence dialog.
+    if (_baselineIsRecurring) {
+      _planAutosaveGate.markDirty();
+      return;
+    }
+
     void applyAndSync(PlanningTask draft) {
-      if (_recurrenceScopeGate.requiresChoice(_baselineIsRecurring)) {
-        unawaited(_syncPlanDraftToNetwork(draft));
-        return;
-      }
       _applyPlanDraftLocally(draft);
       unawaited(_syncPlanDraftToNetwork(draft));
     }

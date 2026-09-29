@@ -1,3 +1,8 @@
+## 2026-09-29 — Recurring edit scope only on Save [fix]
+
+- Recurring plan edits now stay as local in-sheet drafts while typing/changing fields; autosave no longer opens the occurrence-scope dialog.
+- The occurrence/future-series choice is requested only after explicit Save, with a regression contract test covering the trigger boundary.
+
 ## 2026-09-23 — Record midnight interval guard [fix]
 
 - Prevented stopped-record autosave from writing temporary invalid start/end picker states across midnight or date edits.
