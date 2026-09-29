@@ -11,137 +11,22 @@ permissions:
 jobs:
   patch-and-test:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
         with:
           ref: fix/planning-gap-and-late-timeline-v4
+          token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
 
       - name: Patch planning placement and late-hours window
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 <<'PY'
-          from pathlib import Path
-
-          def replace_once(path, old, new):
-              p = Path(path)
-              text = p.read_text(encoding='utf-8')
-              count = text.count(old)
-              if count != 1:
-                  raise SystemExit(f'{path}: expected exactly one replacement, found {count}')
-              p.write_text(text.replace(old, new, 1), encoding='utf-8')
-
-          # 1) Late timeline: the old default ended at 23:00, which means the last
-          # rendered hour row is 22:00–23:00. Restore the extended day through 03:00.
-          replace_once(
-              'lib/shared/time/plan_time_visible_window.dart',
-              '  static const int defaultEndExtended = 23;',
-              '  static const int defaultEndExtended = 27;',
-          )
-
-          prefs = Path('lib/features/planning/planning_day_start_prefs.dart')
-          text = prefs.read_text(encoding='utf-8')
-          old = """  static const String _legacyKeyEnd = 'planning_day_end_hour';\n"""
-          new = """  static const String _legacyKeyEnd = 'planning_day_end_hour';\n  static const String _keyLateHoursMigration =\n      'visible_day_end_27_v1_migrated';\n"""
-          if text.count(old) != 1:
-              raise SystemExit('planning_day_start_prefs.dart: migration-key anchor mismatch')
-          text = text.replace(old, new, 1)
-          old_load = """  static Future<({int start, int end})> loadVisibleDayRange() async {\n    final p = await SharedPreferences.getInstance();\n    if (p.containsKey(_keyStartExtended) && p.containsKey(_keyEndExtended)) {\n      return normalizeExtendedRange(\n        p.getInt(_keyStartExtended) ?? defaultStartExtended,\n        p.getInt(_keyEndExtended) ?? defaultEndExtended,\n      );\n    }\n    return migrateLegacyRange(\n      legacyStart: p.getInt(_legacyKeyStart),\n      legacyEnd: p.containsKey(_legacyKeyEnd) ? p.getInt(_legacyKeyEnd) : null,\n    );\n  }\n"""
-          new_load = """  static Future<({int start, int end})> loadVisibleDayRange() async {\n    final p = await SharedPreferences.getInstance();\n    final migrationDone = p.getBool(_keyLateHoursMigration) ?? false;\n\n    var range =\n        p.containsKey(_keyStartExtended) && p.containsKey(_keyEndExtended)\n        ? normalizeExtendedRange(\n            p.getInt(_keyStartExtended) ?? defaultStartExtended,\n            p.getInt(_keyEndExtended) ?? defaultEndExtended,\n          )\n        : migrateLegacyRange(\n            legacyStart: p.getInt(_legacyKeyStart),\n            legacyEnd: p.containsKey(_legacyKeyEnd)\n                ? p.getInt(_legacyKeyEnd)\n                : null,\n          );\n\n    // 23:00 was the old default end, which rendered no 23:00+ timeline. Upgrade\n    // that stale default once to the supported extended-day end (03:00 next day).\n    if (!migrationDone && range.end == 23) {\n      range = normalizeExtendedRange(range.start, defaultEndExtended);\n      await p.setInt(_keyStartExtended, range.start);\n      await p.setInt(_keyEndExtended, range.end);\n      await p.setInt(_legacyKeyStart, range.start.clamp(0, 23));\n      await p.setInt(_legacyKeyEnd, range.end - 24);\n    }\n    if (!migrationDone) {\n      await p.setBool(_keyLateHoursMigration, true);\n    }\n    return range;\n  }\n"""
-          if text.count(old_load) != 1:
-              raise SystemExit('planning_day_start_prefs.dart: loadVisibleDayRange anchor mismatch')
-          prefs.write_text(text.replace(old_load, new_load, 1), encoding='utf-8')
-
-          replace_once(
-              'lib/features/planning/time_view/planning_time_view_coordinator.dart',
-              "import 'package:counter/features/planning/plan_time_view_layout.dart';\n",
-              "import 'package:counter/features/planning/plan_time_view_layout.dart';\nimport 'package:counter/features/planning/planning_day_start_prefs.dart';\n",
-          )
-          replace_once(
-              'lib/features/planning/time_view/planning_time_view_coordinator.dart',
-              '  int timelineHourStart = 0;\n  int timelineHourEnd = 23;',
-              '  int timelineHourStart = PlanningSheetTimelinePrefs.defaultStartExtended;\n  int timelineHourEnd = PlanningSheetTimelinePrefs.defaultEndExtended;',
-          )
-
-          # 2) Placement mode: distinguish a deliberate user selection from the
-          # stale afterLastPlan value left by the old regression.
-          helper = Path('lib/data/plans/plan_time_cascade_helpers.dart')
-          text = helper.read_text(encoding='utf-8')
-          old = """const String _keyPlanAutoPlacementGapMigration =\n    'plan_auto_placement_gap_v2_migrated';\n"""
-          new = """const String _keyPlanAutoPlacementGapMigration =\n    'plan_auto_placement_gap_v2_migrated';\nconst String _keyPlanAutoPlacementExplicitChoice =\n    'plan_auto_placement_explicit_choice_v1';\n"""
-          if text.count(old) != 1:
-              raise SystemExit('plan helper: preference key anchor mismatch')
-          text = text.replace(old, new, 1)
-
-          old_load = """    final gapMigrationDone =\n        prefs.getBool(_keyPlanAutoPlacementGapMigration) ?? false;\n\n    // The previous regression made afterLastPlan the default. A device that\n    // persisted that value must be returned to smart gap placement once.\n    if (!gapMigrationDone &&\n        raw == PlanAutoPlacementMode.afterLastPlan.name) {\n      _planAutoPlacementMode = PlanAutoPlacementMode.nearestFreeSlot;\n      await prefs.setString(\n        _keyPlanAutoPlacementMode,\n        PlanAutoPlacementMode.nearestFreeSlot.name,\n      );\n    } else {\n      _planAutoPlacementMode = PlanAutoPlacementMode.values.firstWhere(\n        (mode) => mode.name == raw,\n        orElse: () => PlanAutoPlacementMode.nearestFreeSlot,\n      );\n    }\n\n    if (!gapMigrationDone) {\n      await prefs.setBool(_keyPlanAutoPlacementGapMigration, true);\n    }\n"""
-          new_load = """    final gapMigrationDone =\n        prefs.getBool(_keyPlanAutoPlacementGapMigration) ?? false;\n    final explicitChoice =\n        prefs.getBool(_keyPlanAutoPlacementExplicitChoice) ?? false;\n\n    // afterLastPlan was once persisted as a broken default. Keep it only when\n    // the user explicitly selected it in settings; otherwise recover to gap fill.\n    if (!explicitChoice &&\n        raw == PlanAutoPlacementMode.afterLastPlan.name) {\n      _planAutoPlacementMode = PlanAutoPlacementMode.nearestFreeSlot;\n      await prefs.setString(\n        _keyPlanAutoPlacementMode,\n        PlanAutoPlacementMode.nearestFreeSlot.name,\n      );\n    } else {\n      _planAutoPlacementMode = PlanAutoPlacementMode.values.firstWhere(\n        (mode) => mode.name == raw,\n        orElse: () => PlanAutoPlacementMode.nearestFreeSlot,\n      );\n    }\n\n    if (!gapMigrationDone) {\n      await prefs.setBool(_keyPlanAutoPlacementGapMigration, true);\n    }\n"""
-          if text.count(old_load) != 1:
-              raise SystemExit('plan helper: load mode anchor mismatch')
-          text = text.replace(old_load, new_load, 1)
-
-          old_set = """    final prefs = await SharedPreferences.getInstance();\n    await prefs.setString(_keyPlanAutoPlacementMode, mode.name);\n"""
-          new_set = """    final prefs = await SharedPreferences.getInstance();\n    await prefs.setString(_keyPlanAutoPlacementMode, mode.name);\n    await prefs.setBool(_keyPlanAutoPlacementExplicitChoice, true);\n"""
-          if text.count(old_set) != 1:
-              raise SystemExit('plan helper: set mode anchor mismatch')
-          text = text.replace(old_set, new_set, 1)
-
-          # Filter polluted caller lists by the plan's owning date key. This keeps
-          # optimistic plans from other days from pushing today's new plan to the end.
-          anchor = """  /// Auto start/end for a new plan on a day. Explicit parsed range always wins.\n"""
-          helper_method = """  bool _planBelongsToWallDay(PlanningTask plan, DateTime wallDay) {\n    final targetKey =\n        '${wallDay.year}-${_two(wallDay.month)}-${_two(wallDay.day)}';\n    final key = plan.dateKey.trim();\n    if (key.length >= 10) return key.substring(0, 10) == targetKey;\n    final start = plan.startTime;\n    if (start == null) return false;\n    return start.year == wallDay.year &&\n        start.month == wallDay.month &&\n        start.day == wallDay.day;\n  }\n\n"""
-          if text.count(anchor) != 1:
-              raise SystemExit('plan helper: auto schedule anchor mismatch')
-          text = text.replace(anchor, helper_method + anchor, 1)
-
-          sig_end = """    DateTime? currentWall,\n  }) {\n"""
-          relevant = """    DateTime? currentWall,\n  }) {\n    final relevantDayPlans = existingDayPlans\n        .where((plan) => _planBelongsToWallDay(plan, wallDay))\n        .toList(growable: false);\n"""
-          if text.count(sig_end) != 1:
-              raise SystemExit('plan helper: resolver signature anchor mismatch')
-          text = text.replace(sig_end, relevant, 1)
-
-          start = text.index('  resolveAutoPlanSchedule({')
-          end = text.index('\n  PlanningTask planningTaskWithAutoSchedule', start)
-          segment = text[start:end]
-          segment = segment.replace('for (final plan in existingDayPlans)', 'for (final plan in relevantDayPlans)')
-          segment = segment.replace('existingDayPlans: existingDayPlans', 'existingDayPlans: relevantDayPlans')
-
-          old_category = """        startWall = _snapPlanWallDateTime(\n          DateTime(wallDay.year, wallDay.month, wallDay.day, h, m),\n        );\n"""
-          new_category = """        final categoryStart = _snapPlanWallDateTime(\n          DateTime(wallDay.year, wallDay.month, wallDay.day, h, m),\n        );\n        startWall = _firstAvailablePlanWallStart(\n          earliestStartWall: categoryStart,\n          durationMin: durationMin,\n          existingDayPlans: relevantDayPlans,\n        );\n"""
-          if segment.count(old_category) != 1:
-              raise SystemExit('plan helper: category start anchor mismatch')
-          segment = segment.replace(old_category, new_category, 1)
-          text = text[:start] + segment + text[end:]
-          helper.write_text(text, encoding='utf-8')
-
-          # Regression tests.
-          test = Path('test/plan_time_visible_window_test.dart')
-          text = test.read_text(encoding='utf-8')
-          old = """    test('default 7→23 remains valid', () {\n      final range = PlanTimeVisibleWindow.normalizeExtendedRange(7, 23);\n      expect(range.start, 7);\n      expect(range.end, 23);\n      expect(PlanTimeVisibleWindow.visibleDurationHours(7, 23), 16);\n    });\n"""
-          new = """    test('default visible window reaches 03:00 next day', () {\n      expect(PlanTimeVisibleWindow.defaultStartExtended, 7);\n      expect(PlanTimeVisibleWindow.defaultEndExtended, 27);\n      final hours = PlanTimeVisibleWindow.visibleExtendedHoursOrdered(\n        PlanTimeVisibleWindow.defaultStartExtended,\n        PlanTimeVisibleWindow.defaultEndExtended,\n      );\n      expect(hours.first, 7);\n      expect(hours.last, 26);\n      expect(hours, containsAll(<int>[23, 24, 25, 26]));\n    });\n"""
-          if text.count(old) != 1:
-              raise SystemExit('visible-window test anchor mismatch')
-          test.write_text(text.replace(old, new, 1), encoding='utf-8')
-
-          placement_test = Path('test/auto_plan_nearest_free_slot_test.dart')
-          text = placement_test.read_text(encoding='utf-8')
-          insert = """
-  test('ignores polluted scheduled plans owned by another day', () {\n    final foreign = PlanningTask(\n      id: 0,\n      planRowId: 'foreign',\n      title: 'foreign',\n      categoryId: 1,\n      isDone: false,\n      dateKey: '2026-07-25',\n      order: 0,\n      startTime: DateTime(2026, 7, 24, 8),\n      endDateTime: DateTime(2026, 7, 24, 22),\n    );\n\n    final schedule = DatabaseService.instance.resolveAutoPlanSchedule(\n      wallDay: DateTime(2026, 7, 24),\n      categoryId: 1,\n      tags: const [],\n      existingDayPlans: [foreign],\n      timelineDayStartHour: 8,\n    );\n\n    expect(schedule.startWall, DateTime(2026, 7, 24, 8));\n    expect(schedule.endWall, DateTime(2026, 7, 24, 8, 30));\n  });\n\n"""
-          marker = """  test('target-card drop after is exactly adjacent in scheduled time', () {\n"""
-          if text.count(marker) != 1:
-              raise SystemExit('placement test insertion anchor mismatch')
-          placement_test.write_text(text.replace(marker, insert + marker, 1), encoding='utf-8')
-
-          prefs_test = Path('test/planning_timeline_bounds_prefs_test.dart')
-          prefs_test.write_text("""import 'package:counter/features/planning/planning_day_start_prefs.dart';\nimport 'package:flutter_test/flutter_test.dart';\nimport 'package:shared_preferences/shared_preferences.dart';\n\nvoid main() {\n  test('old 23:00 timeline end migrates once to 03:00 next day', () async {\n    SharedPreferences.setMockInitialValues({\n      'visibleDayStartHourExtended': 7,\n      'visibleDayEndHourExtended': 23,\n    });\n\n    final range = await PlanningSheetTimelinePrefs.loadVisibleDayRange();\n    expect(range.start, 7);\n    expect(range.end, 27);\n    final prefs = await SharedPreferences.getInstance();\n    expect(prefs.getInt('visibleDayEndHourExtended'), 27);\n  });\n\n  test('explicit 23:00 end is preserved after migration marker exists', () async {\n    SharedPreferences.setMockInitialValues({\n      'visibleDayStartHourExtended': 7,\n      'visibleDayEndHourExtended': 23,\n      'visible_day_end_27_v1_migrated': true,\n    });\n\n    final range = await PlanningSheetTimelinePrefs.loadVisibleDayRange();\n    expect(range.start, 7);\n    expect(range.end, 23);\n  });\n}\n""", encoding='utf-8')
-          PY
+        run: python .github/scripts/_patch_planning_gap_late_v4.py
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.41.6'
           channel: stable
+          cache: true
 
       - name: Install dependencies
         run: flutter pub get
@@ -152,16 +37,18 @@ jobs:
       - name: Run focused regression tests
         run: flutter test test/auto_plan_nearest_free_slot_test.dart test/plan_time_visible_window_test.dart test/planning_timeline_bounds_prefs_test.dart
 
-      - name: Analyze touched scheduling and timeline sources
+      - name: Analyze changed scheduling and timeline sources
         run: flutter analyze lib/data/plans/plan_time_cascade_helpers.dart lib/shared/time/plan_time_visible_window.dart lib/features/planning/planning_day_start_prefs.dart lib/features/planning/time_view/planning_time_view_coordinator.dart
 
-      - name: Remove one-shot workflow and commit verified fix
-        shell: bash
+      - name: Remove one-shot helpers
         run: |
-          set -euo pipefail
           git rm .github/workflows/one-shot-fix-planning-gap-late-timeline-v4.yml
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add lib test
-          git commit -m 'Fix plan gap placement and restore late timeline hours'
+          git rm .github/scripts/_patch_planning_gap_late_v4.py
+
+      - name: Commit verified fix
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Fix plan gap placement and restore late timeline hours"
           git push origin HEAD:fix/planning-gap-and-late-timeline-v4
