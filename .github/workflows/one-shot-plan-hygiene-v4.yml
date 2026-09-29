@@ -1,0 +1,62 @@
+name: One-shot plan hygiene v4
+
+on:
+  push:
+    branches:
+      - fix/plan-insertion-timeline-v4
+
+permissions:
+  contents: write
+
+jobs:
+  patch-test-commit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/plan-insertion-timeline-v4
+          fetch-depth: 0
+
+      - name: Apply hygiene patch
+        run: python3 scripts/manual/one_shot_plan_hygiene_v4.py
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.6'
+          channel: stable
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Format changed Dart
+        run: |
+          dart format \
+            lib/data/plan_service.dart \
+            lib/data/plans/plan_time_cascade_helpers.dart \
+            lib/features/planning/planning_page.dart \
+            test/auto_plan_nearest_free_slot_test.dart
+
+      - name: Run focused regression tests
+        run: flutter test test/auto_plan_nearest_free_slot_test.dart test/plan_time_visible_window_test.dart test/plan_time_sequential_cascade_test.dart
+
+      - name: Analyze changed scheduling sources
+        run: flutter analyze --no-fatal-infos lib/data/plan_service.dart lib/data/plans/plan_time_cascade_helpers.dart lib/features/planning/planning_page.dart lib/features/planning/time_view/time_view_hour_grid.dart lib/shared/time/plan_time_visible_window.dart
+
+      - name: Check repository hygiene growth ratchet
+        env:
+          STRUCTURE_GROWTH_BASE: 367dcd4ff49233e6fc8c04a9525648e075416001
+        run: python scripts/audit/repository_hygiene.py
+
+      - name: Remove helpers and commit verified repair
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm .github/workflows/one-shot-plan-hygiene-v4.yml
+          rm scripts/manual/one_shot_plan_hygiene_v4.py
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'Keep plan repair within structure growth ratchet'
+          git push origin HEAD:fix/plan-insertion-timeline-v4

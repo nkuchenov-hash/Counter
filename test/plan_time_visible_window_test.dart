@@ -3,11 +3,11 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('PlanTimeVisibleWindow extended day window', () {
-    test('default 7→23 remains valid', () {
-      final range = PlanTimeVisibleWindow.normalizeExtendedRange(7, 23);
-      expect(range.start, 7);
-      expect(range.end, 23);
-      expect(PlanTimeVisibleWindow.visibleDurationHours(7, 23), 16);
+    test('default day includes the 23:00 hour', () {
+      expect(PlanTimeVisibleWindow.defaultStartExtended, 7);
+      expect(PlanTimeVisibleWindow.defaultEndExtended, 24);
+      expect(PlanTimeVisibleWindow.visibleExtendedHoursOrdered(7, 24).last, 23);
+      expect(PlanTimeVisibleWindow.visibleDurationHours(7, 24), 17);
     });
 
     test('-3→23 maps to previous-day 21:00 start', () {
@@ -120,15 +120,29 @@ void main() {
       );
     });
 
+    test('late scheduled content expands the rendered end boundary', () {
+      final day = DateTime(2026, 6, 23);
+      expect(
+        PlanTimeVisibleWindow.endExtendedIncludingWallEnd(
+          day,
+          24,
+          DateTime(2026, 6, 24, 1, 20),
+        ),
+        26,
+      );
+      expect(
+        PlanTimeVisibleWindow.endExtendedIncludingWallEnd(
+          day,
+          24,
+          DateTime(2026, 6, 24, 4),
+        ),
+        27,
+      );
+    });
+
     test('formatExtendedHourClock maps -3 to 21:00', () {
-      expect(
-        PlanTimeVisibleWindow.formatExtendedHourClock(-3),
-        '21:00',
-      );
-      expect(
-        PlanTimeVisibleWindow.formatExtendedHourClock(27),
-        '03:00',
-      );
+      expect(PlanTimeVisibleWindow.formatExtendedHourClock(-3), '21:00');
+      expect(PlanTimeVisibleWindow.formatExtendedHourClock(27), '03:00');
     });
   });
 }

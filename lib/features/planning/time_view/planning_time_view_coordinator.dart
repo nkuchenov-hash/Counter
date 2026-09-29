@@ -38,7 +38,7 @@ class PlanningTimeViewCoordinator {
   // --- timeline state (public) ---
   String? timeViewCascadeNormalizedDayKey;
   int timelineHourStart = 0;
-  int timelineHourEnd = 23;
+  int timelineHourEnd = 24;
   final ScrollController hourGridScrollController = ScrollController();
   List<TimeModeProjectedPlan> cachedTimeModeProjections = const [];
   List<PlanTimeViewBlockLayout> dragInsertLayoutsCache = const [];
