@@ -3,11 +3,16 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('PlanTimeVisibleWindow extended day window', () {
-    test('default 7→23 remains valid', () {
-      final range = PlanTimeVisibleWindow.normalizeExtendedRange(7, 23);
-      expect(range.start, 7);
-      expect(range.end, 23);
-      expect(PlanTimeVisibleWindow.visibleDurationHours(7, 23), 16);
+    test('default visible window reaches 03:00 next day', () {
+      expect(PlanTimeVisibleWindow.defaultStartExtended, 7);
+      expect(PlanTimeVisibleWindow.defaultEndExtended, 27);
+      final hours = PlanTimeVisibleWindow.visibleExtendedHoursOrdered(
+        PlanTimeVisibleWindow.defaultStartExtended,
+        PlanTimeVisibleWindow.defaultEndExtended,
+      );
+      expect(hours.first, 7);
+      expect(hours.last, 26);
+      expect(hours, containsAll(<int>[23, 24, 25, 26]));
     });
 
     test('-3→23 maps to previous-day 21:00 start', () {
@@ -121,14 +126,8 @@ void main() {
     });
 
     test('formatExtendedHourClock maps -3 to 21:00', () {
-      expect(
-        PlanTimeVisibleWindow.formatExtendedHourClock(-3),
-        '21:00',
-      );
-      expect(
-        PlanTimeVisibleWindow.formatExtendedHourClock(27),
-        '03:00',
-      );
+      expect(PlanTimeVisibleWindow.formatExtendedHourClock(-3), '21:00');
+      expect(PlanTimeVisibleWindow.formatExtendedHourClock(27), '03:00');
     });
   });
 }

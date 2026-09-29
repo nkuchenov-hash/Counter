@@ -4,6 +4,7 @@ import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/data/plan_time_sequential_cascade.dart';
 import 'package:counter/features/planning/plan_time_view_layout.dart';
+import 'package:counter/features/planning/planning_day_start_prefs.dart';
 import 'package:counter/features/planning/planning_sort_mode.dart';
 import 'package:counter/features/planning/time_view/time_view_drag_state.dart';
 import 'package:flutter/material.dart';
@@ -37,8 +38,8 @@ class PlanningTimeViewCoordinator {
 
   // --- timeline state (public) ---
   String? timeViewCascadeNormalizedDayKey;
-  int timelineHourStart = 0;
-  int timelineHourEnd = 23;
+  int timelineHourStart = PlanningSheetTimelinePrefs.defaultStartExtended;
+  int timelineHourEnd = PlanningSheetTimelinePrefs.defaultEndExtended;
   final ScrollController hourGridScrollController = ScrollController();
   List<TimeModeProjectedPlan> cachedTimeModeProjections = const [];
   List<PlanTimeViewBlockLayout> dragInsertLayoutsCache = const [];

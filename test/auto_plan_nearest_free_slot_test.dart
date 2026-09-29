@@ -26,30 +26,33 @@ void main() {
     );
   });
 
-  test('defaults to nearest fitting free slot when no placement preference exists', () async {
-    SharedPreferences.setMockInitialValues({});
-    await DatabaseService.instance.loadPlanAutoPlacementMode();
+  test(
+    'defaults to nearest fitting free slot when no placement preference exists',
+    () async {
+      SharedPreferences.setMockInitialValues({});
+      await DatabaseService.instance.loadPlanAutoPlacementMode();
 
-    expect(
-      DatabaseService.instance.planAutoPlacementMode,
-      PlanAutoPlacementMode.nearestFreeSlot,
-    );
+      expect(
+        DatabaseService.instance.planAutoPlacementMode,
+        PlanAutoPlacementMode.nearestFreeSlot,
+      );
 
-    final schedule = DatabaseService.instance.resolveAutoPlanSchedule(
-      wallDay: DateTime(2026, 7, 24),
-      categoryId: 1,
-      tags: const [],
-      existingDayPlans: [
-        _plan('a', DateTime(2026, 7, 24, 9), DateTime(2026, 7, 24, 10)),
-        _plan('b', DateTime(2026, 7, 24, 14), DateTime(2026, 7, 24, 15)),
-      ],
-      timelineDayStartHour: 8,
-      currentWall: DateTime(2026, 7, 24, 10, 5),
-    );
+      final schedule = DatabaseService.instance.resolveAutoPlanSchedule(
+        wallDay: DateTime(2026, 7, 24),
+        categoryId: 1,
+        tags: const [],
+        existingDayPlans: [
+          _plan('a', DateTime(2026, 7, 24, 9), DateTime(2026, 7, 24, 10)),
+          _plan('b', DateTime(2026, 7, 24, 14), DateTime(2026, 7, 24, 15)),
+        ],
+        timelineDayStartHour: 8,
+        currentWall: DateTime(2026, 7, 24, 10, 5),
+      );
 
-    expect(schedule.startWall, DateTime(2026, 7, 24, 8));
-    expect(schedule.endWall, DateTime(2026, 7, 24, 8, 30));
-  });
+      expect(schedule.startWall, DateTime(2026, 7, 24, 8));
+      expect(schedule.endWall, DateTime(2026, 7, 24, 8, 30));
+    },
+  );
 
   test('uses the earliest free gap even when current time is later', () {
     final schedule = DatabaseService.instance.resolveAutoPlanSchedule(
@@ -73,11 +76,7 @@ void main() {
       categoryId: 1,
       tags: const [],
       existingDayPlans: [
-        _plan(
-          'early',
-          DateTime(2026, 7, 24, 8),
-          DateTime(2026, 7, 24, 10, 45),
-        ),
+        _plan('early', DateTime(2026, 7, 24, 8), DateTime(2026, 7, 24, 10, 45)),
         _plan('a', DateTime(2026, 7, 24, 11), DateTime(2026, 7, 24, 12)),
       ],
       timelineDayStartHour: 8,
@@ -240,6 +239,31 @@ void main() {
     expect(schedule.endWall, DateTime(2026, 7, 24, 11, 30));
     expect(second.startTime, secondStartBefore);
     expect(second.endDateTime, secondEndBefore);
+  });
+
+  test('ignores polluted scheduled plans owned by another day', () {
+    final foreign = PlanningTask(
+      id: 0,
+      planRowId: 'foreign',
+      title: 'foreign',
+      categoryId: 1,
+      isDone: false,
+      dateKey: '2026-07-25',
+      order: 0,
+      startTime: DateTime(2026, 7, 24, 8),
+      endDateTime: DateTime(2026, 7, 24, 22),
+    );
+
+    final schedule = DatabaseService.instance.resolveAutoPlanSchedule(
+      wallDay: DateTime(2026, 7, 24),
+      categoryId: 1,
+      tags: const [],
+      existingDayPlans: [foreign],
+      timelineDayStartHour: 8,
+    );
+
+    expect(schedule.startWall, DateTime(2026, 7, 24, 8));
+    expect(schedule.endWall, DateTime(2026, 7, 24, 8, 30));
   });
 
   test('target-card drop after is exactly adjacent in scheduled time', () {
