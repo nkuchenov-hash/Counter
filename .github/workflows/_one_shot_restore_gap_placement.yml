@@ -1,0 +1,89 @@
+name: One-shot restore smart gap placement
+
+on:
+  push:
+    branches:
+      - fix/restore-smart-plan-gap-placement
+
+permissions:
+  contents: write
+
+jobs:
+  patch-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/restore-smart-plan-gap-placement
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Restore nearest fitting slot as default
+        shell: python
+        run: |
+          from pathlib import Path
+
+          source_path = Path('lib/data/plans/plan_time_cascade_helpers.dart')
+          source = source_path.read_text(encoding='utf-8')
+          source = source.replace(
+              "PlanAutoPlacementMode _planAutoPlacementMode =\n    PlanAutoPlacementMode.afterLastPlan;",
+              "PlanAutoPlacementMode _planAutoPlacementMode =\n    PlanAutoPlacementMode.nearestFreeSlot;",
+              1,
+          )
+          source = source.replace(
+              "orElse: () => PlanAutoPlacementMode.afterLastPlan,",
+              "orElse: () => PlanAutoPlacementMode.nearestFreeSlot,",
+              1,
+          )
+          source = source.replace(
+              "  /// Auto start/end for a new plan on a day. Explicit parsed range always wins.\n  /// `afterLastPlan` is strict: automatic category defaults cannot insert a\n  /// newly created plan into the middle of the Time View. Explicit user time\n  /// still wins before the placement-mode rule.\n",
+              "  /// Auto start/end for a new plan on a day. Explicit parsed range always wins.\n  /// Default automatic placement uses the earliest free slot where the full\n  /// plan duration fits; when no fitting gap remains it naturally appends after\n  /// the last scheduled plan. `afterLastPlan` remains an explicit user option.\n",
+              1,
+          )
+          source_path.write_text(source, encoding='utf-8')
+
+          test_path = Path('test/auto_plan_nearest_free_slot_test.dart')
+          test = test_path.read_text(encoding='utf-8')
+          test = test.replace(
+              "test('defaults to after-last when no placement preference exists', () async {",
+              "test('defaults to nearest fitting free slot when no placement preference exists', () async {",
+              1,
+          )
+          test = test.replace(
+              "DatabaseService.instance.planAutoPlacementMode,\n      PlanAutoPlacementMode.afterLastPlan,",
+              "DatabaseService.instance.planAutoPlacementMode,\n      PlanAutoPlacementMode.nearestFreeSlot,",
+              1,
+          )
+          test = test.replace(
+              "expect(schedule.startWall, DateTime(2026, 7, 24, 15));\n    expect(schedule.endWall, DateTime(2026, 7, 24, 15, 30));",
+              "expect(schedule.startWall, DateTime(2026, 7, 24, 10, 5));\n    expect(schedule.endWall, DateTime(2026, 7, 24, 10, 35));",
+              1,
+          )
+          test_path.write_text(test, encoding='utf-8')
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.6'
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Run placement regression tests
+        run: flutter test test/auto_plan_nearest_free_slot_test.dart
+
+      - name: Analyze runtime app
+        run: flutter analyze lib
+
+      - name: Remove one-shot workflow
+        run: git rm .github/workflows/_one_shot_restore_gap_placement.yml
+
+      - name: Commit verified fix
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add lib/data/plans/plan_time_cascade_helpers.dart test/auto_plan_nearest_free_slot_test.dart .github/workflows/_one_shot_restore_gap_placement.yml
+          git commit -m "Fix automatic plan placement to use fitting timeline gaps"
+          git push origin HEAD:fix/restore-smart-plan-gap-placement
