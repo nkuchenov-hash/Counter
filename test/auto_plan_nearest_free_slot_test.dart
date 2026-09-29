@@ -103,33 +103,40 @@ void main() {
     expect(schedule.endWall, DateTime(2026, 7, 24, 10, 35));
   });
 
-  test('migrates stale persisted after-last default exactly once', () async {
-    SharedPreferences.setMockInitialValues({
-      'plan_auto_placement_mode': 'afterLastPlan',
-    });
+  test(
+    'recovers stale placement state once, then respects explicit choice',
+    () async {
+      SharedPreferences.setMockInitialValues({
+        'plan_auto_placement_mode': 'afterLastPlan',
+        'plan_auto_placement_explicit_choice_v1': true,
+      });
 
-    await DatabaseService.instance.loadPlanAutoPlacementMode();
-    expect(
-      DatabaseService.instance.planAutoPlacementMode,
-      PlanAutoPlacementMode.nearestFreeSlot,
-    );
+      await DatabaseService.instance.loadPlanAutoPlacementMode();
+      expect(
+        DatabaseService.instance.planAutoPlacementMode,
+        PlanAutoPlacementMode.nearestFreeSlot,
+      );
 
-    final prefs = await SharedPreferences.getInstance();
-    expect(
-      prefs.getString('plan_auto_placement_mode'),
-      PlanAutoPlacementMode.nearestFreeSlot.name,
-    );
-    expect(prefs.getBool('plan_auto_placement_gap_v2_migrated'), isTrue);
+      final prefs = await SharedPreferences.getInstance();
+      expect(
+        prefs.getString('plan_auto_placement_mode'),
+        PlanAutoPlacementMode.nearestFreeSlot.name,
+      );
+      expect(
+        prefs.getBool('plan_auto_placement_no_squeeze_v3_recovered'),
+        isTrue,
+      );
 
-    await DatabaseService.instance.setPlanAutoPlacementMode(
-      PlanAutoPlacementMode.afterLastPlan,
-    );
-    await DatabaseService.instance.loadPlanAutoPlacementMode();
-    expect(
-      DatabaseService.instance.planAutoPlacementMode,
-      PlanAutoPlacementMode.afterLastPlan,
-    );
-  });
+      await DatabaseService.instance.setPlanAutoPlacementMode(
+        PlanAutoPlacementMode.afterLastPlan,
+      );
+      await DatabaseService.instance.loadPlanAutoPlacementMode();
+      expect(
+        DatabaseService.instance.planAutoPlacementMode,
+        PlanAutoPlacementMode.afterLastPlan,
+      );
+    },
+  );
 
   test('after-last mode preserves the previous rule', () async {
     await DatabaseService.instance.setPlanAutoPlacementMode(
@@ -265,6 +272,50 @@ void main() {
     expect(schedule.startWall, DateTime(2026, 7, 24, 8));
     expect(schedule.endWall, DateTime(2026, 7, 24, 8, 30));
   });
+
+  test('no fitting earlier gap appends after the final plan', () {
+    final schedule = DatabaseService.instance.resolveAutoPlanSchedule(
+      wallDay: DateTime(2026, 7, 24),
+      categoryId: 1,
+      tags: const [],
+      existingDayPlans: [
+        _plan('a', DateTime(2026, 7, 24, 8), DateTime(2026, 7, 24, 9)),
+        _plan('b', DateTime(2026, 7, 24, 9), DateTime(2026, 7, 24, 10)),
+        _plan('c', DateTime(2026, 7, 24, 10), DateTime(2026, 7, 24, 11)),
+      ],
+      timelineDayStartHour: 8,
+      explicitDurationMinutes: 30,
+    );
+    expect(schedule.startWall, DateTime(2026, 7, 24, 11));
+    expect(schedule.endWall, DateTime(2026, 7, 24, 11, 30));
+  });
+
+  test(
+    'creation and Time View rendering never invoke hidden neighbor cascade',
+    () {
+      final service = File('lib/data/plan_service.dart').readAsStringSync();
+      final createStart = service.indexOf(
+        'Future<bool> _addPlanningTaskPocket(',
+      );
+      final createEnd = service.indexOf(
+        'Future<bool> addPlanningTask(',
+        createStart,
+      );
+      expect(createStart, greaterThanOrEqualTo(0));
+      expect(createEnd, greaterThan(createStart));
+      final createBlock = service.substring(createStart, createEnd);
+      expect(createBlock, contains('resolvePlanningCreateCollision('));
+      expect(
+        createBlock,
+        isNot(contains('applySequentialTimeViewCascadeIfNeeded(')),
+      );
+
+      final grid = File(
+        'lib/features/planning/time_view/time_view_hour_grid.dart',
+      ).readAsStringSync();
+      expect(grid, isNot(contains('maybeNormalizeTimeViewOverlapsOnce(')));
+    },
+  );
 
   test('target-card drop after is exactly adjacent in scheduled time', () {
     final targetEnd = DateTime(2026, 7, 24, 10, 30);

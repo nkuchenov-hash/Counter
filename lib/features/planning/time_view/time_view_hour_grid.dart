@@ -156,9 +156,6 @@ extension PlanningTimeViewTimeViewHourGrid on PlanningTimeViewCoordinator {
       schedulablePre.add(task);
       projections.add(proj);
     }
-    if (schedulablePre.isNotEmpty) {
-      maybeNormalizeTimeViewOverlapsOnce(planWallDay, schedulablePre);
-    }
     cachedTimeModeProjections = projections;
     final visibleHours = PlanningSheetTimelinePrefs.visibleExtendedHoursOrdered(
       rangeStart,

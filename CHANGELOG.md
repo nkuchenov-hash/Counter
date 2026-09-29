@@ -1,3 +1,9 @@
+## 2026-09-29 — Planner no-hidden-cascade recovery [fix]
+
+- New plans use an existing fitting gap or append after the last plan; creation never shifts existing plans to make room.
+- Time View rendering no longer performs hidden post-frame schedule mutations.
+- Recurring Time View drag/drop now resolves target insertion before applying occurrence/future recurrence scope.
+
 ## 2026-09-29 — Recurring edit scope only on Save [fix]
 
 - Recurring plan edits now stay as local in-sheet drafts while typing/changing fields; autosave no longer opens the occurrence-scope dialog.

@@ -812,33 +812,42 @@ extension PlanServiceExtension on DatabaseService {
     required String clientPlanId,
     required Object categoryFieldForPlan,
   }) async {
+    var createTask = task;
+    final requestedStart = task.startTime;
+    if (requestedStart != null) {
+      final wallDay = DateTime(
+        requestedStart.year,
+        requestedStart.month,
+        requestedStart.day,
+      );
+      final freshestDayPlans = planningDayTasksSnapshot(wallDay)
+          .where(
+            (existing) =>
+                existing.planRowIdForBackend != task.planRowIdForBackend,
+          )
+          .toList(growable: false);
+      createTask = resolvePlanningCreateCollision(
+        task: task,
+        wallDay: wallDay,
+        existingDayPlans: freshestDayPlans,
+      ).task;
+    }
+
     final optimisticId = 'optimistic-$clientPlanId';
     applyOptimisticPlanningTask(
-      task.copyWith(
+      createTask.copyWith(
         pocketRecordId: optimisticId,
         planRowId: clientPlanId,
         isSynced: false,
       ),
     );
-    if (task.startTime != null) {
-      final dk = task.dateKey.trim();
-      if (dk.length >= 10) {
-        final ymd = dk.substring(0, 10).split('-');
-        if (ymd.length == 3) {
-          final y = int.tryParse(ymd[0]);
-          final m = int.tryParse(ymd[1]);
-          final d = int.tryParse(ymd[2]);
-          if (y != null && m != null && d != null) {
-            applySequentialTimeViewCascadeIfNeeded(wallDay: DateTime(y, m, d));
-          }
-        }
-      }
-    }
+    // Creation is not a reorder operation. Existing plans must never be shifted
+    // just to make the new row fit; only createTask may be repositioned above.
     notifyPlanningRefresh(scheduleNetworkRefresh: false);
     late final Map<String, dynamic> body;
     try {
       body = await _buildPocketPlanCreateBody(
-        task,
+        createTask,
         titleTrimmed: titleTrimmed,
         clientPlanId: clientPlanId,
         categoryFieldForPlan: categoryFieldForPlan,

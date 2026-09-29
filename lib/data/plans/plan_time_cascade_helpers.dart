@@ -9,8 +9,8 @@ const int kPlanScheduleSnapMinutes = 5;
 enum PlanAutoPlacementMode { nearestFreeSlot, afterLastPlan }
 
 const String _keyPlanAutoPlacementMode = 'plan_auto_placement_mode';
-const String _keyPlanAutoPlacementGapMigration =
-    'plan_auto_placement_gap_v2_migrated';
+const String _keyPlanAutoPlacementRecoveryV3 =
+    'plan_auto_placement_no_squeeze_v3_recovered';
 const String _keyPlanAutoPlacementExplicitChoice =
     'plan_auto_placement_explicit_choice_v1';
 PlanAutoPlacementMode _planAutoPlacementMode =
@@ -35,29 +35,27 @@ extension PlanTimeCascadeExtension on DatabaseService {
   Future<void> loadPlanAutoPlacementMode() async {
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getString(_keyPlanAutoPlacementMode);
-    final gapMigrationDone =
-        prefs.getBool(_keyPlanAutoPlacementGapMigration) ?? false;
-    final explicitChoice =
-        prefs.getBool(_keyPlanAutoPlacementExplicitChoice) ?? false;
+    final recovered = prefs.getBool(_keyPlanAutoPlacementRecoveryV3) ?? false;
 
-    // afterLastPlan was once persisted as a broken default. Keep it only when
-    // the user explicitly selected it in settings; otherwise recover to gap fill.
-    if (!explicitChoice && raw == PlanAutoPlacementMode.afterLastPlan.name) {
+    // Recovery from the September placement regressions. The canonical automatic
+    // behavior is: use the earliest already-free fitting gap; when none exists,
+    // append after the final plan. Force that once even if a broken build persisted
+    // afterLastPlan as the current preference. A later explicit user choice still
+    // works normally after this one-time recovery.
+    if (!recovered) {
       _planAutoPlacementMode = PlanAutoPlacementMode.nearestFreeSlot;
       await prefs.setString(
         _keyPlanAutoPlacementMode,
         PlanAutoPlacementMode.nearestFreeSlot.name,
       );
-    } else {
-      _planAutoPlacementMode = PlanAutoPlacementMode.values.firstWhere(
-        (mode) => mode.name == raw,
-        orElse: () => PlanAutoPlacementMode.nearestFreeSlot,
-      );
+      await prefs.setBool(_keyPlanAutoPlacementRecoveryV3, true);
+      return;
     }
 
-    if (!gapMigrationDone) {
-      await prefs.setBool(_keyPlanAutoPlacementGapMigration, true);
-    }
+    _planAutoPlacementMode = PlanAutoPlacementMode.values.firstWhere(
+      (mode) => mode.name == raw,
+      orElse: () => PlanAutoPlacementMode.nearestFreeSlot,
+    );
   }
 
   Future<void> setPlanAutoPlacementMode(PlanAutoPlacementMode mode) async {

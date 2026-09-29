@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:counter/core/widgets/plan_time_task_card.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
+import 'package:counter/data/plan_time_sequential_cascade.dart';
 import 'package:counter/data/recurrence_edit_scope.dart';
 import 'package:counter/features/planning/plan_time_gesture_contract.dart';
 import 'package:counter/features/planning/plan_time_view_layout.dart';
@@ -364,6 +365,7 @@ extension PlanningTimeViewRecurringInteractionController
         task: task,
         planWallDay: planWallDay,
         rangeStart: rangeStart,
+        scheduledInRange: scheduledInRange,
       ),
     );
   }
@@ -372,6 +374,7 @@ extension PlanningTimeViewRecurringInteractionController
     required PlanningTask task,
     required DateTime planWallDay,
     required int rangeStart,
+    required List<PlanningTask> scheduledInRange,
   }) async {
     final planKey = timelineVerticalDragPlanKey;
     stopHourGridEdgeScroll();
@@ -394,24 +397,71 @@ extension PlanningTimeViewRecurringInteractionController
       math.max(0, grid.totalMinutes - durationMinutes),
     );
     final fingerCanvasY = timelineFingerCanvasY(timelineFingerDragDeltaPx);
-    final topPx = (fingerCanvasY - timelineFingerGrabOffsetCanvasPx)
-        .clamp(0.0, maxTopPx)
-        .toDouble();
-    final startMinutes = snapTimelineMinutes(grid.minutesFromY(topPx));
-    final newStartWall = wallTimeFromTimelineMinutes(
-      startMinutes,
-      planWallDay,
-      rangeStart,
+    final pointerAnchoredTopPx =
+        (fingerCanvasY - timelineFingerGrabOffsetCanvasPx)
+            .clamp(0.0, maxTopPx)
+            .toDouble();
+
+    var insertionIntent = timelineStoredInsertionIntent;
+    if (insertionIntent != null) {
+      insertionIntent = refreshTimeViewInsertionIntentFromScheduled(
+        intent: insertionIntent,
+        scheduled: scheduledInRange,
+        resolveDurationMinutes:
+            DatabaseService.instance.resolvePlanDurationMinutesFromTags,
+      );
+      if (insertionIntent == null) {
+        cancelTimelineVerticalDrag();
+        return;
+      }
+    }
+
+    DateTime? emptyCanvasStartWall;
+    if (insertionIntent == null) {
+      final snappedMin = snapTimelineMinutes(
+        grid.minutesFromY(pointerAnchoredTopPx),
+      );
+      emptyCanvasStartWall = wallTimeFromTimelineMinutes(
+        snappedMin,
+        planWallDay,
+        rangeStart,
+      );
+    }
+
+    final fixedPlanIds = timeViewFixedPlanIdsForTasks(scheduledInRange);
+    // A separate recurrence series must never be silently rescheduled as a
+    // collateral cascade; only the recurrence chosen by the user gets a scope.
+    for (final candidate in scheduledInRange) {
+      if (candidate.planRowIdForBackend != task.planRowIdForBackend &&
+          timeViewTaskIsRecurring(candidate)) {
+        fixedPlanIds.add(candidate.planRowIdForBackend);
+      }
+    }
+
+    final cascadeResult = computeTimeViewInsertionCascade(
+      scheduledTasks: scheduledInRange,
+      draggedPlanIds: <String>{task.planRowIdForBackend},
+      primaryDraggedPlanId: task.planRowIdForBackend,
+      fixedPlanIds: fixedPlanIds,
+      resolveDurationMinutes:
+          DatabaseService.instance.resolvePlanDurationMinutesFromTags,
+      targetIntent: insertionIntent,
+      emptyCanvasStartWall: emptyCanvasStartWall,
+      emptyCanvasHadEnd: timelineVerticalDragHadEnd,
+      emptyCanvasDurationMin: durationMinutes,
     );
-    final newEndWall = timelineVerticalDragHadEnd
-        ? newStartWall.add(Duration(minutes: durationMinutes))
-        : null;
+    if (!cascadeResult.accepted || cascadeResult.draggedStartWall == null) {
+      cancelTimelineVerticalDrag();
+      return;
+    }
 
     host.notifySetState(clearTimelineInteractionState);
     await _chooseAndPersistRecurringSchedule(
       task: task,
-      newStartWall: newStartWall,
-      newEndWall: newEndWall,
+      newStartWall: cascadeResult.draggedStartWall!,
+      newEndWall: cascadeResult.draggedEndWall,
+      cascadeResolved: cascadeResult.previewRows,
+      scheduledBefore: scheduledInRange,
     );
   }
 
@@ -488,6 +538,8 @@ extension PlanningTimeViewRecurringInteractionController
     required PlanningTask task,
     required DateTime newStartWall,
     required DateTime? newEndWall,
+    List<PlanningTask>? cascadeResolved,
+    List<PlanningTask>? scheduledBefore,
   }) async {
     if (!host.mounted) return;
     final scope = await showRecurrenceScopeDialog(
@@ -538,6 +590,19 @@ extension PlanningTimeViewRecurringInteractionController
     );
     if (!ok) {
       DatabaseService.instance.applyOptimisticPlanningTask(task);
+    } else if (cascadeResolved != null && scheduledBefore != null) {
+      final primaryId = task.planRowIdForBackend;
+      persistTimeViewCascadePatches(
+        resolved: <PlanningTask>[
+          for (final row in cascadeResolved)
+            if (row.planRowIdForBackend != primaryId) row,
+        ],
+        scheduledBefore: <PlanningTask>[
+          for (final row in scheduledBefore)
+            if (row.planRowIdForBackend != primaryId) row,
+        ],
+        commitSource: 'recurringTargetDrop:neighbors',
+      );
     }
     DatabaseService.instance.notifyPlanningRefresh();
     if (host.mounted) host.notifySetState(() {});

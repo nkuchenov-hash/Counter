@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:counter/data/models.dart';
 import 'package:counter/data/recurrence_edit_scope.dart';
 import 'package:counter/features/planning/time_view/time_view_card_layer.dart';
@@ -29,22 +31,25 @@ void main() {
     );
   }
 
-  test('single scope converts stored series occurrence to virtual mutation id', () {
-    final series = task(
-      planRowId: 'business-series-id',
-      pocketRecordId: parentPocketId,
-      rrule: 'FREQ=DAILY',
-    );
+  test(
+    'single scope converts stored series occurrence to virtual mutation id',
+    () {
+      final series = task(
+        planRowId: 'business-series-id',
+        pocketRecordId: parentPocketId,
+        rrule: 'FREQ=DAILY',
+      );
 
-    expect(
-      timeViewRecurringMutationRowId(
-        task: series,
-        scope: RecurrenceEditScope.singleOccurrence,
-        instanceDateKey: day,
-      ),
-      'virt-$parentPocketId-$day',
-    );
-  });
+      expect(
+        timeViewRecurringMutationRowId(
+          task: series,
+          scope: RecurrenceEditScope.singleOccurrence,
+          instanceDateKey: day,
+        ),
+        'virt-$parentPocketId-$day',
+      );
+    },
+  );
 
   test('single scope keeps virtual and materialized occurrence identities', () {
     final virtual = task(
@@ -76,6 +81,29 @@ void main() {
       'materializedrow',
     );
   });
+
+  test(
+    'recurring drag commit resolves insertion before recurrence persistence',
+    () {
+      final source = File(
+        'lib/features/planning/time_view/time_view_card_layer.dart',
+      ).readAsStringSync();
+      final start = source.indexOf(
+        'Future<void> _commitRecurringTimelineVerticalDrag({',
+      );
+      final end = source.indexOf(
+        'void commitTimelineResizeWithOptionalRecurrenceScope',
+        start,
+      );
+      expect(start, greaterThanOrEqualTo(0));
+      expect(end, greaterThan(start));
+      final block = source.substring(start, end);
+      expect(block, contains('scheduledInRange'));
+      expect(block, contains('timelineStoredInsertionIntent'));
+      expect(block, contains('computeTimeViewInsertionCascade('));
+      expect(block, contains('cascadeResult.draggedStartWall'));
+    },
+  );
 
   test('entire series scope keeps the original recurrence identity', () {
     final virtual = task(
