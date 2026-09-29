@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `8330c2f5` on 2026-09-23.**
+**Generated from input HEAD `3c1dc658` on 2026-09-29.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 877 — each appears **exactly once** below.
+**Tracked files:** 878 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -27,7 +27,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | Role | Count |
 | :--- | ---: |
 | `production UI` | 174 |
-| `test` | 111 |
+| `test` | 112 |
 | `Brain/data` | 92 |
 | `platform build` | 83 |
 | `shared foundation` | 64 |
@@ -58,7 +58,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | Necessity | Count |
 | :--- | ---: |
 | `PROVEN_REQUIRED` | 479 |
-| `REQUIRED_FOR_TEST_OR_TOOLING` | 214 |
+| `REQUIRED_FOR_TEST_OR_TOOLING` | 215 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
 | `GOVERNING_DOCUMENTATION` | 39 |
 | `HISTORICAL_RECORD` | 17 |
@@ -68,7 +68,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 802 |
+| `HIGH` | 803 |
 | `MEDIUM` | 75 |
 
 ---
@@ -6447,7 +6447,7 @@ EN:
 - **Why needed:** Tracked because `docs` needs `CALENDAR_INTEGRATIONS.md` for build, CI, or maintenance.
 - **Contents:** Open `CALENDAR_INTEGRATIONS.md` when working on `docs` (see folder section above).
 - **Repository role:** governing documentation
-- **Evidence of use:** (1) Governing/ops/product documentation read by humans and agents (see `docs/PROJECT_KNOWLEDGE_PACK.md` / AGENTS routing). (2) Referenced by: `docs/POCKETBASE_MANIFEST.md`, `scripts/audit/documentation_parity.py`.
+- **Evidence of use:** (1) Governing/ops/product documentation read by humans and agents (see `docs/PROJECT_KNOWLEDGE_PACK.md` / AGENTS routing). (2) Referenced by: `docs/FUNCTIONS.md`, `docs/POCKETBASE_MANIFEST.md`, `scripts/audit/documentation_parity.py`.
 - **Necessity status:** GOVERNING_DOCUMENTATION
 - **Deletion consequence:** Lost architecture/ops rule or agent routing instruction.
 - **Confidence:** HIGH
@@ -6595,7 +6595,7 @@ EN:
 - **Why needed:** Tracked because `docs` needs `FUNCTIONS.md` for build, CI, or maintenance.
 - **Contents:** Open `FUNCTIONS.md` when working on `docs` (see folder section above).
 - **Repository role:** governing documentation
-- **Evidence of use:** (1) Governing/ops/product documentation read by humans and agents (see `docs/PROJECT_KNOWLEDGE_PACK.md` / AGENTS routing). (2) Referenced by: `CHANGELOG.md`, `docs/PROJECT_KNOWLEDGE_PACK.md`, `docs/USER_GUIDE.md`.
+- **Evidence of use:** (1) Governing/ops/product documentation read by humans and agents (see `docs/PROJECT_KNOWLEDGE_PACK.md` / AGENTS routing). (2) Referenced by: `.github/workflows/architecture-guard.yml`, `CHANGELOG.md`, `docs/PROJECT_KNOWLEDGE_PACK.md`, `docs/USER_GUIDE.md`.
 - **Necessity status:** GOVERNING_DOCUMENTATION
 - **Deletion consequence:** Lost architecture/ops rule or agent routing instruction.
 - **Confidence:** HIGH
@@ -6632,7 +6632,7 @@ EN:
 - **Why needed:** Tracked because `docs` needs `NOTES_EDITOR_CONTRACT.md` for build, CI, or maintenance.
 - **Contents:** Open `NOTES_EDITOR_CONTRACT.md` when working on `docs` (see folder section above).
 - **Repository role:** governing documentation
-- **Evidence of use:** (1) Governing/ops/product documentation read by humans and agents (see `docs/PROJECT_KNOWLEDGE_PACK.md` / AGENTS routing). (2) Referenced by: `AGENTS.md`, `scripts/audit/documentation_parity.py`.
+- **Evidence of use:** (1) Governing/ops/product documentation read by humans and agents (see `docs/PROJECT_KNOWLEDGE_PACK.md` / AGENTS routing). (2) Referenced by: `AGENTS.md`, `docs/FUNCTIONS.md`, `scripts/audit/documentation_parity.py`.
 - **Necessity status:** GOVERNING_DOCUMENTATION
 - **Deletion consequence:** Lost architecture/ops rule or agent routing instruction.
 - **Confidence:** HIGH
@@ -6854,7 +6854,7 @@ EN:
 - **Why needed:** Tracked because `docs` needs `SERVER_SLEEP_SYNC_DEPLOY.md` for build, CI, or maintenance.
 - **Contents:** Open `SERVER_SLEEP_SYNC_DEPLOY.md` when working on `docs` (see folder section above).
 - **Repository role:** governing documentation
-- **Evidence of use:** (1) Governing/ops/product documentation read by humans and agents (see `docs/PROJECT_KNOWLEDGE_PACK.md` / AGENTS routing). (2) Referenced by: `docs/ARCHITECTURE.md`, `docs/DATA_MAP.md`, `docs/POCKETBASE_MANIFEST.md`, `scripts/audit/deployment_contract.py`.
+- **Evidence of use:** (1) Governing/ops/product documentation read by humans and agents (see `docs/PROJECT_KNOWLEDGE_PACK.md` / AGENTS routing). (2) Referenced by: `docs/ARCHITECTURE.md`, `docs/DATA_MAP.md`, `docs/FUNCTIONS.md`, `docs/POCKETBASE_MANIFEST.md`.
 - **Necessity status:** GOVERNING_DOCUMENTATION
 - **Deletion consequence:** Lost architecture/ops rule or agent routing instruction.
 - **Confidence:** HIGH
@@ -6891,7 +6891,7 @@ EN:
 - **Why needed:** Tracked because `docs` needs `USER_GUIDE.md` for build, CI, or maintenance.
 - **Contents:** Open `USER_GUIDE.md` when working on `docs` (see folder section above).
 - **Repository role:** governing documentation
-- **Evidence of use:** (1) Governing/ops/product documentation read by humans and agents (see `docs/PROJECT_KNOWLEDGE_PACK.md` / AGENTS routing). (2) Referenced by: `CHANGELOG.md`, `docs/FUNCTIONS.md`, `docs/PROJECT_KNOWLEDGE_PACK.md`.
+- **Evidence of use:** (1) Governing/ops/product documentation read by humans and agents (see `docs/PROJECT_KNOWLEDGE_PACK.md` / AGENTS routing). (2) Referenced by: `.github/workflows/architecture-guard.yml`, `CHANGELOG.md`, `docs/FUNCTIONS.md`, `docs/PROJECT_KNOWLEDGE_PACK.md`.
 - **Necessity status:** GOVERNING_DOCUMENTATION
 - **Deletion consequence:** Lost architecture/ops rule or agent routing instruction.
 - **Confidence:** HIGH
@@ -12444,7 +12444,7 @@ EN:
 - **Contents:** Canonical Flutter widget (`AppCompactSegmentLabel`, `AppCompactTextTab`, `AppDesktopSectionControlRow`, `AppLibraryInput`, `_AppLibraryInputState`, `AppQuickEntryRow`).
 - **Key code names:** `AppCompactSegmentLabel`, `AppCompactTextTab`, `AppDesktopSectionControlRow`, `AppLibraryInput`, `_AppLibraryInputState`, `AppQuickEntryRow`
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/calendar/calendar_day_panel.dart`, `lib/features/notes/notes_glm_surface.dart`, `lib/features/paths/paths_page.dart`, `lib/features/planning/widgets/planning_filter_controls.dart`, `lib/features/settings/categories/category_list_view.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/calendar/calendar_day_panel.dart`, `lib/features/paths/paths_page.dart`, `lib/features/planning/widgets/planning_filter_controls.dart`, `lib/features/settings/categories/category_list_view.dart`, `lib/features/shared/edit_sheet/parallel_record_panels.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -12461,7 +12461,7 @@ RU:
 - **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
 - **Содержимое:** Канонический Flutter-виджет (logic in `compact_nav_controls`).
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/features/calendar/calendar_day_panel.dart`, `lib/features/notes/notes_glm_surface.dart`, `lib/features/paths/paths_page.dart`, `lib/features/planning/widgets/planning_filter_controls.dart`, `lib/features/settings/categories/category_list_view.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/features/calendar/calendar_day_panel.dart`, `lib/features/paths/paths_page.dart`, `lib/features/planning/widgets/planning_filter_controls.dart`, `lib/features/settings/categories/category_list_view.dart`, `lib/features/shared/edit_sheet/parallel_record_panels.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -18054,7 +18054,7 @@ EN:
 - **Contents:** Primary symbols: `_NotesStructuredClipboard`, `_NotesStructuredCopyAction`, `NoteEditorPage`, `_NoteEditorPageState`.
 - **Key code names:** `_NotesStructuredClipboard`, `_NotesStructuredCopyAction`, `NoteEditorPage`, `_NoteEditorPageState`
 - **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/lists/lists_view.dart`, `lib/features/notes/widgets/notes_library_body.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/lists/lists_view.dart`, `lib/features/notes/widgets/notes_library_body.dart`, `lib/features/notes/widgets/notes_library_production_shell.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -18071,7 +18071,7 @@ RU:
 - **Зачем:** Пользователь видит UI из `note_editor_page.dart` на Notes library/editor (Lists + full-screen editor).
 - **Содержимое:** Компоновка экрана и state в `note_editor_page.dart`.
 - **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/features/lists/lists_view.dart`, `lib/features/notes/widgets/notes_library_body.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/features/lists/lists_view.dart`, `lib/features/notes/widgets/notes_library_body.dart`, `lib/features/notes/widgets/notes_library_production_shell.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -18206,7 +18206,7 @@ EN:
 - **Contents:** Primary symbols: `NotesGlmBackground`, `NotesGlmLibraryFrame`, `NotesGlmEditorFrame`, `NotesGlmLibraryInput`.
 - **Key code names:** `NotesGlmBackground`, `NotesGlmLibraryFrame`, `NotesGlmEditorFrame`, `NotesGlmLibraryInput`
 - **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/lists/lists_card.dart`, `lib/features/lists/lists_filters.dart`, `lib/features/lists/lists_view.dart`, `lib/features/notes/widgets/note_card.dart`, `lib/features/notes/widgets/notes_library_production_shell.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/lists/lists_card.dart`, `lib/features/lists/lists_filters.dart`, `lib/features/lists/lists_view.dart`, `lib/features/notes/widgets/note_card.dart`, `lib/features/notes/widgets/notes_library_body.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -18223,7 +18223,7 @@ RU:
 - **Зачем:** Пользователь видит UI из `notes_glm_surface.dart` на Notes library/editor (Lists + full-screen editor).
 - **Содержимое:** Dart-модуль `notes_glm_surface.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/features/lists/lists_card.dart`, `lib/features/lists/lists_filters.dart`, `lib/features/lists/lists_view.dart`, `lib/features/notes/widgets/note_card.dart`, `lib/features/notes/widgets/notes_library_production_shell.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/features/lists/lists_card.dart`, `lib/features/lists/lists_filters.dart`, `lib/features/lists/lists_view.dart`, `lib/features/notes/widgets/note_card.dart`, `lib/features/notes/widgets/notes_library_body.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -18279,9 +18279,10 @@ EN:
 - **Human purpose:** `notes_visual_tokens.dart` on notes area — GLM Notes spacing/typography/glass token helpers. Users see `notes_visual_tokens.dart` when using notes area.
 - **What this is:** `notes_visual_tokens.dart` on notes area — GLM Notes spacing/typography/glass token helpers.
 - **Why needed:** Users see `notes_visual_tokens.dart` when using notes area.
-- **Contents:** Dart module `notes_visual_tokens.dart` — open file for classes and helpers.
+- **Contents:** Primary symbols: `NotesSectionPalette`, `NotesSectionPaletteScope`.
+- **Key code names:** `NotesSectionPalette`, `NotesSectionPaletteScope`
 - **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/notes/widgets/note_card.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/notes/widgets/note_card.dart`, `lib/features/notes/widgets/notes_library_body.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -18298,7 +18299,7 @@ RU:
 - **Зачем:** Пользователь видит UI из `notes_visual_tokens.dart` на Notes library/editor (Lists + full-screen editor).
 - **Содержимое:** Dart-модуль `notes_visual_tokens.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/features/notes/widgets/note_card.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/features/notes/widgets/note_card.dart`, `lib/features/notes/widgets/notes_library_body.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -18316,10 +18317,10 @@ EN:
 - **Human purpose:** `note_card.dart` on notes area — Grid/list note card with block preview, pin/done badges. Users see `note_card.dart` when using notes area.
 - **What this is:** `note_card.dart` on notes area — Grid/list note card with block preview, pin/done badges.
 - **Why needed:** Users see `note_card.dart` when using notes area.
-- **Contents:** Primary symbols: `NotesLibraryView`, `NoteCardData`, `NoteCard`, `_GridCard`, `_ListRow`, `_BadgesRow`.
-- **Key code names:** `NotesLibraryView`, `NoteCardData`, `NoteCard`, `_GridCard`, `_ListRow`, `_BadgesRow`, `_Badge`
+- **Contents:** Primary symbols: `NotesLibraryView`, `NoteCardData`, `NoteCard`, `_GridCard`, `_ListRow`.
+- **Key code names:** `NotesLibraryView`, `NoteCardData`, `NoteCard`, `_GridCard`, `_ListRow`
 - **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/lists/lists_view.dart`, `lib/features/notes/widgets/notes_library_body.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/lists/lists_view.dart`, `lib/features/notes/widgets/notes_library_body.dart`, `lib/features/notes/widgets/notes_library_production_shell.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -18336,7 +18337,7 @@ RU:
 - **Зачем:** Пользователь видит UI из `note_card.dart` на Notes library/editor (Lists + full-screen editor).
 - **Содержимое:** Dart-модуль `note_card.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/features/lists/lists_view.dart`, `lib/features/notes/widgets/notes_library_body.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/features/lists/lists_view.dart`, `lib/features/notes/widgets/notes_library_body.dart`, `lib/features/notes/widgets/notes_library_production_shell.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -18658,8 +18659,8 @@ EN:
 - **Human purpose:** `notes_library_body.dart` on notes area — NoteCard. Users see `notes_library_body.dart` when using notes area.
 - **What this is:** `notes_library_body.dart` on notes area — NoteCard.
 - **Why needed:** Users see `notes_library_body.dart` when using notes area.
-- **Contents:** Primary symbols: `_NotesDateSort`, `NotesLibraryBody`, `_NotesLibraryBodyState`.
-- **Key code names:** `_NotesDateSort`, `NotesLibraryBody`, `_NotesLibraryBodyState`
+- **Contents:** Primary symbols: `NotesLibraryBody`, `_NotesLibraryBodyState`.
+- **Key code names:** `NotesLibraryBody`, `_NotesLibraryBodyState`
 - **Repository role:** production UI
 - **Evidence of use:** Imported/exported by production Dart: `lib/features/lists/lists_view.dart`.
 - **Necessity status:** PROVEN_REQUIRED
@@ -18696,8 +18697,8 @@ EN:
 - **Human purpose:** `notes_library_production_shell.dart` on notes area — Production Lists-tab GLM library shell + inline add row. Users see `notes_library_production_shell.dart` when using notes area.
 - **What this is:** `notes_library_production_shell.dart` on notes area — Production Lists-tab GLM library shell + inline add row.
 - **Why needed:** Users see `notes_library_production_shell.dart` when using notes area.
-- **Contents:** Primary symbols: `NotesLibraryProductionShell`, `NotesGlmInlineAddRow`.
-- **Key code names:** `NotesLibraryProductionShell`, `NotesGlmInlineAddRow`
+- **Contents:** Primary symbols: `NotesLibraryProductionShell`, `_NotesHeaderAdapter`, `_HtmlNotesHeader`, `_ViewSwitch`, `_HtmlViewButton`.
+- **Key code names:** `NotesLibraryProductionShell`, `_NotesHeaderAdapter`, `_HtmlNotesHeader`, `_ViewSwitch`, `_HtmlViewButton`
 - **Repository role:** production UI
 - **Evidence of use:** Imported/exported by production Dart: `lib/features/lists/lists_view.dart`.
 - **Necessity status:** PROVEN_REQUIRED
@@ -21952,7 +21953,7 @@ EN:
 - **What this is:** `validateRecordEditSave` / `RecordEditSaveMode` — Timeline record edit Save classify/validate policy.
 - **Why needed:** Save must distinguish create-completed vs running metadata vs stopped interval without guessing from empty UUID filters.
 - **Contents:** Mode enum, validation result, classify/validate helpers (UI-free).
-- **Key code names:** `RecordEditSaveMode`, `RecordEditSaveValidation`, `RunningRecordMetadataSaveDraft`, `RunningRecordCategorySaveUiOutcome`
+- **Key code names:** `RecordEditSaveMode`, `RecordEditSaveValidation`, `RecordAutosaveTimePatch`, `RunningRecordMetadataSaveDraft`, `RunningRecordCategorySaveUiOutcome`
 - **Repository role:** production UI
 - **Evidence of use:** Imported/exported by production Dart: `lib/features/shared/shared_widgets.dart`, `lib/features/shared/timeline_record_edit_sheet.dart`.
 - **Necessity status:** PROVEN_REQUIRED
@@ -22744,10 +22745,10 @@ EN:
 - **Human purpose:** `unfilled_time_gap_banner.dart` on Timeline tab (first bottom tab) — Timeline coordinator. Users see `unfilled_time_gap_banner.dart` when using Timeline tab (first bottom tab).
 - **What this is:** `unfilled_time_gap_banner.dart` on Timeline tab (first bottom tab) — Timeline coordinator.
 - **Why needed:** Users see `unfilled_time_gap_banner.dart` when using Timeline tab (first bottom tab).
-- **Contents:** Primary symbols: `UnfilledTimeGapBanner`.
-- **Key code names:** `UnfilledTimeGapBanner`
+- **Contents:** Primary symbols: `UnfilledTimeGapBanner`, `UnfilledTimeGapSidebarCard`.
+- **Key code names:** `UnfilledTimeGapBanner`, `UnfilledTimeGapSidebarCard`
 - **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/shared/shell_top_status_bars.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/desktop/shell_side_navigation.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -22764,7 +22765,7 @@ RU:
 - **Зачем:** Пользователь видит UI из `unfilled_time_gap_banner.dart` на вкладка Timeline (первая снизу).
 - **Содержимое:** Dart-модуль `unfilled_time_gap_banner.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/shared/shell_top_status_bars.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/desktop/shell_side_navigation.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -23910,7 +23911,7 @@ EN:
 - **Contents:** Path-specific code, data, configuration, or documentation for `lib/shared/categories/picker/category_tree_picker.dart`.
 - **Key code names:** `_CategoryTreePickerSheet`, `_CategoryTreePickerSheetState`, `_CategoryTreeMultiPickerSheet`, `_CategoryTreeMultiPickerSheetState`
 - **Repository role:** developer tool
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/lists/category_filter_tree_field.dart`, `lib/features/lists/lists_filters.dart`, `lib/features/shared/planning_task_edit_sheet.dart`, `lib/features/shared/timeline_record_edit_sheet.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/lists/category_filter_tree_field.dart`, `lib/features/lists/lists_filters.dart`, `lib/features/notes/widgets/notes_library_production_shell.dart`, `lib/features/shared/planning_task_edit_sheet.dart`, `lib/features/shared/timeline_record_edit_sheet.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -23927,7 +23928,7 @@ RU:
 - **Зачем:** Поддерживает процесс, сборку, данные или runtime-задачу области `lib/shared/categories/picker` для `category_tree_picker.dart`.
 - **Содержимое:** Данные или код `category_tree_picker.dart`, необходимые его подтверждённой роли и указанным ниже связям.
 - **Роль в репозитории:** developer tool
-- **Доказательства использования:** Импортируется production Dart: `lib/features/lists/category_filter_tree_field.dart`, `lib/features/lists/lists_filters.dart`, `lib/features/shared/planning_task_edit_sheet.dart`, `lib/features/shared/timeline_record_edit_sheet.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/features/lists/category_filter_tree_field.dart`, `lib/features/lists/lists_filters.dart`, `lib/features/notes/widgets/notes_library_production_shell.dart`, `lib/features/shared/planning_task_edit_sheet.dart`, `lib/features/shared/timeline_record_edit_sheet.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -35754,6 +35755,44 @@ RU:
 - **Владелец / слой:** тесты
 - **Обязанности:** Assert ожидаемого поведения `record_category_edit_brain`.
 - **Когда открывать:** Падение CI или правка кода рядом с `record_category_edit_brain`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
+
+
+### `test/recurring_edit_scope_save_only_contract_test.dart`
+
+EN:
+
+- **Human purpose:** Automated test `recurring_edit_scope_save_only_contract_test` — verifies behavior without manual tapping. Prevents regressions when related production code changes.
+- **What this is:** Automated test `recurring_edit_scope_save_only_contract_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **Contents:** Test cases (symbols: main).
+- **Key code names:** `main`
+- **Repository role:** test
+- **Evidence of use:** Flutter test file; exercised via `flutter test test/recurring_edit_scope_save_only_contract_test.dart` / CI when enabled.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Lost automated coverage for its contract.
+- **Confidence:** HIGH
+- **Owner / layer:** tests
+- **Responsibilities:** Assert expected behavior for `recurring_edit_scope_save_only_contract_test` scenario.
+- **When to open:** CI failure or changing code near `recurring_edit_scope_save_only_contract`.
+- **Can it be deleted?** Lost automated coverage for its contract.
+- **Connected to:** `test/` suite; production subject near `recurring_edit_scope_save_only_contract`.
+
+RU:
+
+- **Зачем файл человеку:** Автотест `recurring_edit_scope_save_only_contract` — проверяет поведение без ручного UI. Ловит регрессии при изменении связанного production-кода.
+- **Что это:** Автотест `recurring_edit_scope_save_only_contract` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `recurring_edit_scope_save_only_contract`.
+- **Роль в репозитории:** test
+- **Доказательства использования:** Файл теста Flutter; запускается через `flutter test test/recurring_edit_scope_save_only_contract_test.dart`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Пропадёт автоматическая проверка своего контракта.
+- **Уверенность:** HIGH
+- **Владелец / слой:** тесты
+- **Обязанности:** Assert ожидаемого поведения `recurring_edit_scope_save_only_contract`.
+- **Когда открывать:** Падение CI или правка кода рядом с `recurring_edit_scope_save_only_contract`.
 - **Можно удалить?** Нет — нужен для тестов.
 - **Связано с:** Production files под `lib/` с похожим именем.
 
