@@ -47,11 +47,11 @@ void main() {
       currentWall: DateTime(2026, 7, 24, 10, 5),
     );
 
-    expect(schedule.startWall, DateTime(2026, 7, 24, 10, 5));
-    expect(schedule.endWall, DateTime(2026, 7, 24, 10, 35));
+    expect(schedule.startWall, DateTime(2026, 7, 24, 8));
+    expect(schedule.endWall, DateTime(2026, 7, 24, 8, 30));
   });
 
-  test('uses the current free gap when duration fits', () {
+  test('uses the earliest free gap even when current time is later', () {
     final schedule = DatabaseService.instance.resolveAutoPlanSchedule(
       wallDay: DateTime(2026, 7, 24),
       categoryId: 1,
@@ -63,8 +63,8 @@ void main() {
       timelineDayStartHour: 8,
       currentWall: DateTime(2026, 7, 24, 10, 5),
     );
-    expect(schedule.startWall, DateTime(2026, 7, 24, 10, 5));
-    expect(schedule.endWall, DateTime(2026, 7, 24, 10, 35));
+    expect(schedule.startWall, DateTime(2026, 7, 24, 8));
+    expect(schedule.endWall, DateTime(2026, 7, 24, 8, 30));
   });
 
   test('skips a gap that is too short', () {
@@ -73,6 +73,11 @@ void main() {
       categoryId: 1,
       tags: const [],
       existingDayPlans: [
+        _plan(
+          'early',
+          DateTime(2026, 7, 24, 8),
+          DateTime(2026, 7, 24, 10, 45),
+        ),
         _plan('a', DateTime(2026, 7, 24, 11), DateTime(2026, 7, 24, 12)),
       ],
       timelineDayStartHour: 8,
@@ -97,6 +102,34 @@ void main() {
 
     expect(schedule.startWall, DateTime(2026, 7, 24, 10, 5));
     expect(schedule.endWall, DateTime(2026, 7, 24, 10, 35));
+  });
+
+  test('migrates stale persisted after-last default exactly once', () async {
+    SharedPreferences.setMockInitialValues({
+      'plan_auto_placement_mode': 'afterLastPlan',
+    });
+
+    await DatabaseService.instance.loadPlanAutoPlacementMode();
+    expect(
+      DatabaseService.instance.planAutoPlacementMode,
+      PlanAutoPlacementMode.nearestFreeSlot,
+    );
+
+    final prefs = await SharedPreferences.getInstance();
+    expect(
+      prefs.getString('plan_auto_placement_mode'),
+      PlanAutoPlacementMode.nearestFreeSlot.name,
+    );
+    expect(prefs.getBool('plan_auto_placement_gap_v2_migrated'), isTrue);
+
+    await DatabaseService.instance.setPlanAutoPlacementMode(
+      PlanAutoPlacementMode.afterLastPlan,
+    );
+    await DatabaseService.instance.loadPlanAutoPlacementMode();
+    expect(
+      DatabaseService.instance.planAutoPlacementMode,
+      PlanAutoPlacementMode.afterLastPlan,
+    );
   });
 
   test('after-last mode preserves the previous rule', () async {
