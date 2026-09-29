@@ -63,8 +63,8 @@ jobs:
 
           ux = Path('docs/UX_CONTRACT.md')
           ux_text = ux.read_text(encoding='utf-8')
-          old_ux = '- **Scope dialog (EN/RU):** Editing or deleting a recurring/virtual/materialized occurrence prompts:'
-          new_ux = '- **Scope dialog (EN/RU):** Editing a recurring/virtual/materialized occurrence stays as an in-sheet draft while fields are changed; the edit-scope dialog opens only after explicit **Save** (never from title/notes/checklist/category/tag/time autosave). Deleting prompts when Delete is confirmed:'
+          old_ux = '- **Scope dialog (EN/RU):** Editing or deleting a recurring/virtual/materialized occurrence has exactly two choices:'
+          new_ux = '- **Scope dialog (EN/RU):** Editing a recurring/virtual/materialized occurrence stays as an in-sheet draft while fields change; the two-choice scope dialog opens only after explicit **Save**, never from autosave while typing/changing fields. Deleting opens the same scope dialog only after the explicit delete action. Choices:'
           if old_ux not in ux_text:
               raise SystemExit('Expected UX recurrence scope line not found')
           ux.write_text(ux_text.replace(old_ux, new_ux, 1), encoding='utf-8')
