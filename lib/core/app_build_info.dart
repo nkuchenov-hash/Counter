@@ -37,4 +37,8 @@ abstract final class AppBuildInfo {
   /// Marker: Performance Kill Switch Law documented (P0V); experimental preload default-off.
   static String get p0vPerfKillSwitchMarker =>
       'P0V_PERF_KILL_SWITCH build: $gitCommit $builtAt';
+
+  /// Marker: recurring edit scope is resolved only after explicit Save.
+  static String get recurringScopeSaveMarker =>
+      'RECURRING_SCOPE_SAVE_ONLY build: $gitCommit $builtAt';
 }
