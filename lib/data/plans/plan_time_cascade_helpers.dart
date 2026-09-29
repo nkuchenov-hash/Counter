@@ -9,6 +9,8 @@ const int kPlanScheduleSnapMinutes = 5;
 enum PlanAutoPlacementMode { nearestFreeSlot, afterLastPlan }
 
 const String _keyPlanAutoPlacementMode = 'plan_auto_placement_mode';
+const String _keyPlanAutoPlacementGapMigration =
+    'plan_auto_placement_gap_v2_migrated';
 PlanAutoPlacementMode _planAutoPlacementMode =
     PlanAutoPlacementMode.nearestFreeSlot;
 
@@ -31,10 +33,28 @@ extension PlanTimeCascadeExtension on DatabaseService {
   Future<void> loadPlanAutoPlacementMode() async {
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getString(_keyPlanAutoPlacementMode);
-    _planAutoPlacementMode = PlanAutoPlacementMode.values.firstWhere(
-      (mode) => mode.name == raw,
-      orElse: () => PlanAutoPlacementMode.nearestFreeSlot,
-    );
+    final gapMigrationDone =
+        prefs.getBool(_keyPlanAutoPlacementGapMigration) ?? false;
+
+    // The previous regression made afterLastPlan the default. A device that
+    // persisted that value must be returned to smart gap placement once.
+    if (!gapMigrationDone &&
+        raw == PlanAutoPlacementMode.afterLastPlan.name) {
+      _planAutoPlacementMode = PlanAutoPlacementMode.nearestFreeSlot;
+      await prefs.setString(
+        _keyPlanAutoPlacementMode,
+        PlanAutoPlacementMode.nearestFreeSlot.name,
+      );
+    } else {
+      _planAutoPlacementMode = PlanAutoPlacementMode.values.firstWhere(
+        (mode) => mode.name == raw,
+        orElse: () => PlanAutoPlacementMode.nearestFreeSlot,
+      );
+    }
+
+    if (!gapMigrationDone) {
+      await prefs.setBool(_keyPlanAutoPlacementGapMigration, true);
+    }
   }
 
   Future<void> setPlanAutoPlacementMode(PlanAutoPlacementMode mode) async {
@@ -126,9 +146,6 @@ extension PlanTimeCascadeExtension on DatabaseService {
     final snapped = ((wholeMinutes + snap - 1) ~/ snap) * snap;
     return dayStart.add(Duration(minutes: snapped));
   }
-
-  bool _samePlanWallDay(DateTime a, DateTime b) =>
-      a.year == b.year && a.month == b.month && a.day == b.day;
 
   DateTime _firstAvailablePlanWallStart({
     required DateTime earliestStartWall,
@@ -397,15 +414,8 @@ extension PlanTimeCascadeExtension on DatabaseService {
           wallDay,
           timelineDayStartHour,
         );
-        final profileNow =
-            currentWall ?? applyUserOffset(DatabaseService.getPlanetaryNow());
-        final earliestStart =
-            _samePlanWallDay(profileNow, wallDay) &&
-                profileNow.isAfter(windowStart)
-            ? profileNow
-            : windowStart;
         startWall = _firstAvailablePlanWallStart(
-          earliestStartWall: earliestStart,
+          earliestStartWall: windowStart,
           durationMin: durationMin,
           existingDayPlans: existingDayPlans,
         );
