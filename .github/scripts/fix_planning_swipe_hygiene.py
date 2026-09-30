@@ -102,36 +102,41 @@ replace_once(
 test = "test/auto_plan_nearest_free_slot_test.dart"
 replace_once(
     test,
-    """    final planning = File(
-      'lib/features/planning/planning_page.dart',
-    ).readAsStringSync();
-    final inactiveStart = planning.indexOf('if (!widget.isActivePlanningDay) {');
-    final actualStart = planning.indexOf(
-      'final planActualByPbId = DatabaseService.instance',
-      inactiveStart,
-    );
-    expect(inactiveStart, greaterThanOrEqualTo(0));
-    expect(actualStart, greaterThan(inactiveStart));
-    final inactiveBlock = planning.substring(inactiveStart, actualStart);
-    expect(inactiveBlock, contains('_sortMode != PlanSortMode.time'));
-    expect(inactiveBlock, contains('TickerMode('));
-    expect(inactiveBlock, contains('enabled: false'));
-    expect(inactiveBlock, contains('IgnorePointer('));
-    expect(inactiveBlock, contains('timeView.buildHourGridView('));
+    """      final planning = File(
+        'lib/features/planning/planning_page.dart',
+      ).readAsStringSync();
+      final inactiveStart = planning.indexOf(
+        'if (!widget.isActivePlanningDay) {',
+      );
+      final actualStart = planning.indexOf(
+        'final planActualByPbId = DatabaseService.instance',
+        inactiveStart,
+      );
+      expect(inactiveStart, greaterThanOrEqualTo(0));
+      expect(actualStart, greaterThan(inactiveStart));
+      final inactiveBlock = planning.substring(inactiveStart, actualStart);
+      expect(inactiveBlock, contains('_sortMode != PlanSortMode.time'));
+      expect(inactiveBlock, contains('TickerMode('));
+      expect(inactiveBlock, contains('enabled: false'));
+      expect(inactiveBlock, contains('IgnorePointer('));
+      expect(inactiveBlock, contains('timeView.buildHourGridView('));
 """,
-    """    final planning = File(
-      'lib/features/planning/planning_page.dart',
-    ).readAsStringSync();
-    expect(planning, contains('timeView.buildFrozenHourGrid('));
+    """      final planning = File(
+        'lib/features/planning/planning_page.dart',
+      ).readAsStringSync();
+      expect(planning, contains('timeView.buildFrozenHourGrid('));
 
-    final hourGrid = File(
-      'lib/features/planning/time_view/time_view_hour_grid.dart',
-    ).readAsStringSync();
-    expect(hourGrid, contains('Widget buildFrozenHourGrid('));
-    expect(hourGrid, contains('aggregateSourcePlanActualSecondsForWallCalendarDay'));
-    expect(hourGrid, contains('TickerMode('));
-    expect(hourGrid, contains('enabled: false'));
-    expect(hourGrid, contains('IgnorePointer('));
-    expect(hourGrid, contains('buildHourGridView(tasks, actualByPlanId)'));
+      final hourGrid = File(
+        'lib/features/planning/time_view/time_view_hour_grid.dart',
+      ).readAsStringSync();
+      expect(hourGrid, contains('Widget buildFrozenHourGrid('));
+      expect(
+        hourGrid,
+        contains('aggregateSourcePlanActualSecondsForWallCalendarDay'),
+      );
+      expect(hourGrid, contains('TickerMode('));
+      expect(hourGrid, contains('enabled: false'));
+      expect(hourGrid, contains('IgnorePointer('));
+      expect(hourGrid, contains('buildHourGridView(tasks, actualByPlanId)'));
 """,
 )
