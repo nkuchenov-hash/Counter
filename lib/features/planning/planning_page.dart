@@ -1518,7 +1518,6 @@ class _PlanningPageState extends State<PlanningPage>
   DateTime _dateForPageIndex(int index) =>
       widget.mountedWindow?.dateAt(index) ?? (widget.selectedDate ?? _today);
 
-  /// Stable PageView path — live planning stream for this page's day.
   Widget _buildActiveDayBody(
     BuildContext context,
     ColorScheme scheme,
@@ -1526,29 +1525,10 @@ class _PlanningPageState extends State<PlanningPage>
   ) {
     final wallDay = widget.selectedDate ?? _today;
     if (!widget.isActivePlanningDay) {
-      if (_sortMode != PlanSortMode.time) {
-        return const ColoredBox(
-          color: Colors.transparent,
-          child: SizedBox.expand(),
-        );
-      }
-      if (tasks.isEmpty) {
-        return TickerMode(
-          enabled: false,
-          child: IgnorePointer(
-            child: PlanningDayEmptyState(onFocusQuickAdd: () {}),
-          ),
-        );
-      }
-      final frozenActualByPbId = DatabaseService.instance
-          .aggregateSourcePlanActualSecondsForWallCalendarDay(wallDay);
-      return TickerMode(
-        enabled: false,
-        child: IgnorePointer(
-          child: RepaintBoundary(
-            child: timeView.buildHourGridView(tasks, frozenActualByPbId),
-          ),
-        ),
+      return timeView.buildFrozenHourGrid(
+        tasks,
+        wallDay,
+        enabled: _sortMode == PlanSortMode.time,
       );
     }
     final planActualByPbId = DatabaseService.instance

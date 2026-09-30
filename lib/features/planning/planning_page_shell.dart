@@ -200,7 +200,10 @@ class _PlanningSwipeWrapperState extends State<PlanningSwipeWrapper> {
             if (mounted) _settleGate.markProgrammaticAnimEnd();
           });
     } else {
-      setState(() => _activePageIndex = page);
+      setState(() {
+        _visiblePageIndex = page;
+        _activePageIndex = page;
+      });
     }
   }
 

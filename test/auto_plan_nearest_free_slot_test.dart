@@ -423,21 +423,20 @@ void main() {
       final planning = File(
         'lib/features/planning/planning_page.dart',
       ).readAsStringSync();
-      final inactiveStart = planning.indexOf(
-        'if (!widget.isActivePlanningDay) {',
+      expect(planning, contains('timeView.buildFrozenHourGrid('));
+
+      final hourGrid = File(
+        'lib/features/planning/time_view/time_view_hour_grid.dart',
+      ).readAsStringSync();
+      expect(hourGrid, contains('Widget buildFrozenHourGrid('));
+      expect(
+        hourGrid,
+        contains('aggregateSourcePlanActualSecondsForWallCalendarDay'),
       );
-      final actualStart = planning.indexOf(
-        'final planActualByPbId = DatabaseService.instance',
-        inactiveStart,
-      );
-      expect(inactiveStart, greaterThanOrEqualTo(0));
-      expect(actualStart, greaterThan(inactiveStart));
-      final inactiveBlock = planning.substring(inactiveStart, actualStart);
-      expect(inactiveBlock, contains('_sortMode != PlanSortMode.time'));
-      expect(inactiveBlock, contains('TickerMode('));
-      expect(inactiveBlock, contains('enabled: false'));
-      expect(inactiveBlock, contains('IgnorePointer('));
-      expect(inactiveBlock, contains('timeView.buildHourGridView('));
+      expect(hourGrid, contains('TickerMode('));
+      expect(hourGrid, contains('enabled: false'));
+      expect(hourGrid, contains('IgnorePointer('));
+      expect(hourGrid, contains('buildHourGridView(tasks, actualByPlanId)'));
     },
   );
 }

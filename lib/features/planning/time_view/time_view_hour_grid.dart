@@ -13,6 +13,27 @@ import 'package:counter/features/planning/time_view/planning_time_view.dart';
 import 'package:counter/features/planning/time_view/time_view_canvas.dart';
 
 extension PlanningTimeViewTimeViewHourGrid on PlanningTimeViewCoordinator {
+  Widget buildFrozenHourGrid(
+    List<PlanningTask> tasks,
+    DateTime wallDay, {
+    required bool enabled,
+  }) {
+    if (!enabled || tasks.isEmpty) {
+      return const ColoredBox(
+        color: Colors.transparent,
+        child: SizedBox.expand(),
+      );
+    }
+    final actualByPlanId = DatabaseService.instance
+        .aggregateSourcePlanActualSecondsForWallCalendarDay(wallDay);
+    return TickerMode(
+      enabled: false,
+      child: IgnorePointer(
+        child: RepaintBoundary(child: buildHourGridView(tasks, actualByPlanId)),
+      ),
+    );
+  }
+
   Future<void> onPlanningTaskDroppedOnHour(
     PlanningTask task,
     int targetHour,
