@@ -48,6 +48,11 @@ replace_once(
     }
 """,
 )
+replace_once(
+    planning,
+    "  /// Stable PageView path — live planning stream for this page's day.\n",
+    "",
+)
 
 hour_grid = "lib/features/planning/time_view/time_view_hour_grid.dart"
 replace_once(
