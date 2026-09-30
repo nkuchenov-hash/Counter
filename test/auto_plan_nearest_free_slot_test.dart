@@ -393,4 +393,50 @@ void main() {
       expect(resolved.endUtcInstant, isNull);
     },
   );
+
+  test(
+    'Time View date swipe prewarms adjacent day and activates after settle',
+    () {
+      final shell = File(
+        'lib/features/planning/planning_page_shell.dart',
+      ).readAsStringSync();
+      expect(shell, contains('late int _activePageIndex;'));
+      expect(shell, contains('allowImplicitScrolling: true,'));
+      expect(shell, contains('index == _activePageIndex'));
+      expect(shell, contains('if (n.depth != 0) return false;'));
+      expect(shell, contains('_activateVisiblePageAfterSettle();'));
+
+      final pageChangedStart = shell.indexOf('onPageChanged: (int index) {');
+      final itemBuilderStart = shell.indexOf(
+        'itemBuilder: (context, index) {',
+        pageChangedStart,
+      );
+      expect(pageChangedStart, greaterThanOrEqualTo(0));
+      expect(itemBuilderStart, greaterThan(pageChangedStart));
+      final pageChangedBlock = shell.substring(
+        pageChangedStart,
+        itemBuilderStart,
+      );
+      expect(pageChangedBlock, isNot(contains('_activePageIndex')));
+      expect(pageChangedBlock, isNot(contains('onPageSettled(')));
+
+      final planning = File(
+        'lib/features/planning/planning_page.dart',
+      ).readAsStringSync();
+      expect(planning, contains('timeView.buildFrozenHourGrid('));
+
+      final hourGrid = File(
+        'lib/features/planning/time_view/time_view_hour_grid.dart',
+      ).readAsStringSync();
+      expect(hourGrid, contains('Widget buildFrozenHourGrid('));
+      expect(
+        hourGrid,
+        contains('aggregateSourcePlanActualSecondsForWallCalendarDay'),
+      );
+      expect(hourGrid, contains('TickerMode('));
+      expect(hourGrid, contains('enabled: false'));
+      expect(hourGrid, contains('IgnorePointer('));
+      expect(hourGrid, contains('buildHourGridView(tasks, actualByPlanId)'));
+    },
+  );
 }

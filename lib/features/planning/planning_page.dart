@@ -1518,19 +1518,19 @@ class _PlanningPageState extends State<PlanningPage>
   DateTime _dateForPageIndex(int index) =>
       widget.mountedWindow?.dateAt(index) ?? (widget.selectedDate ?? _today);
 
-  /// Stable PageView path — live planning stream for this page's day.
   Widget _buildActiveDayBody(
     BuildContext context,
     ColorScheme scheme,
     List<PlanningTask> tasks,
   ) {
+    final wallDay = widget.selectedDate ?? _today;
     if (!widget.isActivePlanningDay) {
-      return const ColoredBox(
-        color: Colors.transparent,
-        child: SizedBox.expand(),
+      return timeView.buildFrozenHourGrid(
+        tasks,
+        wallDay,
+        enabled: _sortMode == PlanSortMode.time,
       );
     }
-    final wallDay = widget.selectedDate ?? _today;
     final planActualByPbId = DatabaseService.instance
         .aggregateSourcePlanActualSecondsForWallCalendarDay(wallDay);
     if (tasks.isEmpty) {
