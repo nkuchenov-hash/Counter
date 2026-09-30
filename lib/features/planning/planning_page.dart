@@ -1524,13 +1524,33 @@ class _PlanningPageState extends State<PlanningPage>
     ColorScheme scheme,
     List<PlanningTask> tasks,
   ) {
+    final wallDay = widget.selectedDate ?? _today;
     if (!widget.isActivePlanningDay) {
-      return const ColoredBox(
-        color: Colors.transparent,
-        child: SizedBox.expand(),
+      if (_sortMode != PlanSortMode.time) {
+        return const ColoredBox(
+          color: Colors.transparent,
+          child: SizedBox.expand(),
+        );
+      }
+      if (tasks.isEmpty) {
+        return TickerMode(
+          enabled: false,
+          child: IgnorePointer(
+            child: PlanningDayEmptyState(onFocusQuickAdd: () {}),
+          ),
+        );
+      }
+      final frozenActualByPbId = DatabaseService.instance
+          .aggregateSourcePlanActualSecondsForWallCalendarDay(wallDay);
+      return TickerMode(
+        enabled: false,
+        child: IgnorePointer(
+          child: RepaintBoundary(
+            child: timeView.buildHourGridView(tasks, frozenActualByPbId),
+          ),
+        ),
       );
     }
-    final wallDay = widget.selectedDate ?? _today;
     final planActualByPbId = DatabaseService.instance
         .aggregateSourcePlanActualSecondsForWallCalendarDay(wallDay);
     if (tasks.isEmpty) {

@@ -393,4 +393,51 @@ void main() {
       expect(resolved.endUtcInstant, isNull);
     },
   );
+
+  test(
+    'Time View date swipe prewarms adjacent day and activates after settle',
+    () {
+      final shell = File(
+        'lib/features/planning/planning_page_shell.dart',
+      ).readAsStringSync();
+      expect(shell, contains('late int _activePageIndex;'));
+      expect(shell, contains('allowImplicitScrolling: true,'));
+      expect(shell, contains('index == _activePageIndex'));
+      expect(shell, contains('if (n.depth != 0) return false;'));
+      expect(shell, contains('_activateVisiblePageAfterSettle();'));
+
+      final pageChangedStart = shell.indexOf('onPageChanged: (int index) {');
+      final itemBuilderStart = shell.indexOf(
+        'itemBuilder: (context, index) {',
+        pageChangedStart,
+      );
+      expect(pageChangedStart, greaterThanOrEqualTo(0));
+      expect(itemBuilderStart, greaterThan(pageChangedStart));
+      final pageChangedBlock = shell.substring(
+        pageChangedStart,
+        itemBuilderStart,
+      );
+      expect(pageChangedBlock, isNot(contains('_activePageIndex')));
+      expect(pageChangedBlock, isNot(contains('onPageSettled(')));
+
+      final planning = File(
+        'lib/features/planning/planning_page.dart',
+      ).readAsStringSync();
+      final inactiveStart = planning.indexOf(
+        'if (!widget.isActivePlanningDay) {',
+      );
+      final actualStart = planning.indexOf(
+        'final planActualByPbId = DatabaseService.instance',
+        inactiveStart,
+      );
+      expect(inactiveStart, greaterThanOrEqualTo(0));
+      expect(actualStart, greaterThan(inactiveStart));
+      final inactiveBlock = planning.substring(inactiveStart, actualStart);
+      expect(inactiveBlock, contains('_sortMode != PlanSortMode.time'));
+      expect(inactiveBlock, contains('TickerMode('));
+      expect(inactiveBlock, contains('enabled: false'));
+      expect(inactiveBlock, contains('IgnorePointer('));
+      expect(inactiveBlock, contains('timeView.buildHourGridView('));
+    },
+  );
 }

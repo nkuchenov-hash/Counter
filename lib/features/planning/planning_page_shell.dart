@@ -53,6 +53,7 @@ class _PlanningSwipeWrapperState extends State<PlanningSwipeWrapper> {
   late PageController _controller;
   late DateTime _anchorDate;
   late int _visiblePageIndex;
+  late int _activePageIndex;
   int? _pendingExternalPage;
   bool _datePagerLocked = false;
   final DatePagerSettleGate _settleGate = DatePagerSettleGate();
@@ -76,9 +77,12 @@ class _PlanningSwipeWrapperState extends State<PlanningSwipeWrapper> {
     if (pending < 0 || pending >= _totalPageCount) return;
     if (!_controller.hasClients) return;
     final cur = _controller.page?.round();
-    if (cur == pending) return;
     _settleGate.resetCommittedPage(pending);
-    setState(() => _visiblePageIndex = pending);
+    setState(() {
+      _visiblePageIndex = pending;
+      _activePageIndex = pending;
+    });
+    if (cur == pending) return;
     _controller.jumpToPage(pending);
   }
 
@@ -94,7 +98,11 @@ class _PlanningSwipeWrapperState extends State<PlanningSwipeWrapper> {
     final page = _pendingExternalPage ?? _pageIndexForDate(widget.selectedDate);
     _pendingExternalPage = null;
     if (page < 0 || page >= _totalPageCount) return;
-    setState(() => _visiblePageIndex = page);
+    _settleGate.resetCommittedPage(page);
+    setState(() {
+      _visiblePageIndex = page;
+      _activePageIndex = page;
+    });
     if (!_controller.hasClients) return;
     final cur = _controller.page?.round();
     if (cur == page) return;
@@ -124,9 +132,12 @@ class _PlanningSwipeWrapperState extends State<PlanningSwipeWrapper> {
     RuntimeLog.p0tDisabled(platform: platform, enabled: kUseMountedDayStrip);
     RuntimeLog.biometricGate(enabled: false, reason: 'stabilization');
     _anchorDate = DateUtils.dateOnly(DateTime.now());
-    final daysOffset =
-        _dateOnly(widget.selectedDate).difference(_anchorDate).inDays;
+    final daysOffset = _dateOnly(
+      widget.selectedDate,
+    ).difference(_anchorDate).inDays;
     _visiblePageIndex = _initialPage + daysOffset;
+    _activePageIndex = _visiblePageIndex;
+    _settleGate.resetCommittedPage(_visiblePageIndex);
     _controller = PageController(initialPage: _visiblePageIndex);
     _controller.addListener(_onPageControllerTick);
     if (kPlansWarmWindowEnabled && !kUseMountedDayStrip) {
@@ -167,10 +178,17 @@ class _PlanningSwipeWrapperState extends State<PlanningSwipeWrapper> {
       _pendingExternalPage = page;
       return;
     }
-    setState(() => _visiblePageIndex = page);
+    _settleGate.resetCommittedPage(page);
     if (_controller.hasClients) {
       final cur = _controller.page;
-      if (cur != null && cur.round() == page) return;
+      if (cur != null && cur.round() == page) {
+        setState(() {
+          _visiblePageIndex = page;
+          _activePageIndex = page;
+        });
+        return;
+      }
+      setState(() => _visiblePageIndex = page);
       _settleGate.markProgrammaticAnimStart();
       _controller
           .animateToPage(
@@ -181,6 +199,8 @@ class _PlanningSwipeWrapperState extends State<PlanningSwipeWrapper> {
           .whenComplete(() {
             if (mounted) _settleGate.markProgrammaticAnimEnd();
           });
+    } else {
+      setState(() => _activePageIndex = page);
     }
   }
 
@@ -198,9 +218,30 @@ class _PlanningSwipeWrapperState extends State<PlanningSwipeWrapper> {
     if (targetIndex >= 0 &&
         targetIndex < _totalPageCount &&
         _controller.hasClients) {
+      _settleGate.resetCommittedPage(targetIndex);
+      setState(() {
+        _visiblePageIndex = targetIndex;
+        _activePageIndex = targetIndex;
+      });
       _controller.jumpToPage(targetIndex);
       widget.onDateChanged(dateOnly);
     }
+  }
+
+  void _activateVisiblePageAfterSettle() {
+    final page = _visiblePageIndex;
+    if (_activePageIndex != page) {
+      setState(() => _activePageIndex = page);
+    }
+    _settleGate.onPageSettled(
+      pageIndex: page,
+      onShellCommit: (settledPage) {
+        if (!mounted) return;
+        final committed = _dateForIndex(settledPage);
+        _schedulePrefetch(committed);
+        widget.onDateChanged(_dateOnly(committed));
+      },
+    );
   }
 
   @override
@@ -214,6 +255,7 @@ class _PlanningSwipeWrapperState extends State<PlanningSwipeWrapper> {
         behavior: const MouseDragScrollBehavior(),
         child: NotificationListener<ScrollNotification>(
           onNotification: (n) {
+            if (n.depth != 0) return false;
             if (n is ScrollStartNotification && n.dragDetails != null) {
               _settleGate.onUserDragStart();
               final from = _dateKeyFromDate(_dateForIndex(_visiblePageIndex));
@@ -224,6 +266,7 @@ class _PlanningSwipeWrapperState extends State<PlanningSwipeWrapper> {
             }
             if (n is ScrollEndNotification) {
               _settleGate.onUserDragEnd();
+              _activateVisiblePageAfterSettle();
               _applyPendingExternalPageIfNeeded();
               SchedulerBinding.instance.addPostFrameCallback((_) {
                 RebuildMetrics.instance.dateSwipeEnd(section: 'Planning');
@@ -237,24 +280,16 @@ class _PlanningSwipeWrapperState extends State<PlanningSwipeWrapper> {
                 ? const NeverScrollableScrollPhysics()
                 : const FeatherDateSwipePhysics(),
             itemCount: _totalPageCount,
+            allowImplicitScrolling: true,
             onPageChanged: (int index) {
               if (index < 0 || index >= _totalPageCount) return;
               setState(() => _visiblePageIndex = index);
-              _settleGate.onPageSettled(
-                pageIndex: index,
-                onShellCommit: (page) {
-                  if (!mounted) return;
-                  final committed = _dateForIndex(page);
-                  _schedulePrefetch(committed);
-                  widget.onDateChanged(_dateOnly(committed));
-                },
-              );
             },
             itemBuilder: (context, index) {
               final date = _dateForIndex(index);
               final dateKey = _dateKeyFromDate(date);
               final isActive =
-                  widget.shellTabActive && index == _visiblePageIndex;
+                  widget.shellTabActive && index == _activePageIndex;
               return PlanningPage(
                 key: ValueKey<String>('plan-page-$dateKey'),
                 selectedDateString: dateKey,
@@ -283,9 +318,7 @@ class _PlanningSwipeWrapperState extends State<PlanningSwipeWrapper> {
 
   /// Legacy P0S/P0T path — disabled when [kUseMountedDayStrip] is false.
   Widget _buildMountedStripFallback(BuildContext context) {
-    return AppErrorState(
-      message: t(currentLocale.value, 'no_data_found'),
-    );
+    return AppErrorState(message: t(currentLocale.value, 'no_data_found'));
   }
 }
 

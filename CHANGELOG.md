@@ -1,3 +1,8 @@
+## 2026-09-30 — Planning Time View date-swipe frame pacing [fix]
+- Adjacent Time View dates now render frozen snapshot content ahead of the horizontal swipe instead of staying blank until page activation.
+- Live Planning resources and shell date commits now switch only after the horizontal pager settles, removing recurrence/timezone/layout activation work from the swipe threshold without restoring the old multi-day mounted strip.
+- Nested vertical Time View scroll notifications no longer drive the horizontal date-pager settle gate.
+
 ## 2026-09-29 — Planner no-hidden-cascade recovery [fix]
 - Planning Time View: fixed stale UTC instants overriding manual/recurring wall-time moves, so dragged recurring plans and collision-resolved creates no longer snap back to their old time.
 - Recurrence: single-occurrence edits of materialized recurring plans now await the PocketBase patch before optimistic state is released.
