@@ -1,0 +1,45 @@
+name: Run Planning Time swipe jank fix
+
+on:
+  push:
+    branches: [fix/planning-time-swipe-jank]
+
+permissions:
+  contents: write
+
+jobs:
+  patch-test-and-clean:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/planning-time-swipe-jank
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Apply Planning Time swipe fix
+        run: python .github/scripts/fix_planning_time_swipe_jank.py
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.41.6
+          channel: stable
+          cache: true
+      - name: Install dependencies
+        run: flutter pub get
+      - name: Format changed Dart files
+        run: dart format lib/features/planning/planning_page.dart lib/features/planning/planning_page_shell.dart test/auto_plan_nearest_free_slot_test.dart
+      - name: Run planner regression suite
+        run: flutter test test/auto_plan_nearest_free_slot_test.dart
+      - name: Analyze Planning swipe owners
+        run: flutter analyze lib/features/planning/planning_page.dart lib/features/planning/planning_page_shell.dart --no-fatal-infos --no-fatal-warnings
+      - name: Remove one-shot patch files
+        run: |
+          rm -f .github/scripts/fix_planning_time_swipe_jank.py
+          rm -f .github/workflows/run-planning-time-swipe-jank-fix.yml
+      - name: Verify documentation parity
+        run: python scripts/audit/documentation_parity.py
+      - name: Commit verified fix
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Fix Planning Time date swipe jank"
+          git push origin HEAD:fix/planning-time-swipe-jank
