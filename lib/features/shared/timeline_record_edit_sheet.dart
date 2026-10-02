@@ -13,6 +13,7 @@ import 'package:counter/data/models.dart';
 import 'package:counter/data/recurrence_edit_scope.dart';
 import 'package:counter/data/smart_input_parser.dart';
 import 'package:counter/features/planning/recurrence_scope_dialog.dart';
+import 'package:counter/features/notes/note_editor_page.dart';
 import 'package:counter/features/profile/tag_settings_hub.dart';
 import 'package:counter/core/widgets/chip_component.dart';
 import 'package:counter/l10n/dictionary.dart';
@@ -23,7 +24,6 @@ import 'package:omni_datetime_picker/omni_datetime_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:counter/features/shared/edit_sheet/checklist_helpers.dart';
-import 'package:counter/features/shared/edit_sheet/inline_activity_notes_editor.dart';
 import 'package:counter/features/shared/edit_sheet/parallel_record_panels.dart';
 import 'package:counter/features/shared/edit_sheet/quill_link_launcher.dart';
 import 'package:counter/features/shared/edit_sheet/quill_toolbar_config.dart';
@@ -58,6 +58,7 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
   late QuillController _recordQuillController;
   late FocusNode _recordQuillFocus;
   late ScrollController _recordQuillScroll;
+  late NoteDocument _recordNoteDocument;
   int? _categoryId;
   DateTime? _startDisplay;
   DateTime? _endDisplay;
@@ -128,6 +129,7 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
       endTime: endUtc,
       categoryId: _categoryId,
       note: noteText.isEmpty ? null : noteText,
+      notesDeltaJson: _recordNoteDocument.encode(),
       checklist: checklistPayload.isEmpty ? null : checklistPayload,
       sourcePlanId: planPatch.sync
           ? (planPatch.clear ? null : planPatch.id)
@@ -157,6 +159,7 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
       endTime: endUtc,
       categoryId: categoryId ?? _categoryId,
       note: noteText,
+      notesDeltaJson: _recordNoteDocument.encode(),
       checklist: checklistPayload,
       syncSourcePlan: planPatch.sync,
       clearSourcePlan: planPatch.clear,
@@ -181,6 +184,7 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
       endTime: endUtc,
       categoryId: categoryId ?? _categoryId,
       note: noteText,
+      notesDeltaJson: _recordNoteDocument.encode(),
       checklist: checklistPayload,
       syncSourcePlan: planPatch.sync,
       clearSourcePlan: planPatch.clear,
@@ -200,10 +204,7 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
     void syncLatest() {
       final tTitle = _titleController.text.trim();
       if (tTitle.isEmpty) return;
-      final tNote = _recordQuillController.document
-          .toPlainText()
-          .replaceAll('\u200b', '')
-          .trim();
+      final tNote = _recordNoteDocument.toPlainText().trim();
       final tChecklist = _checklistForApi();
       final tPlanPatch = _sourcePlanPatchArgs();
       final tTimePatch = _autosaveTimePatch();
@@ -233,6 +234,10 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     _titleController = TextEditingController(text: widget.record.title);
+    _recordNoteDocument = NoteDocument.tryParse(
+      notesDeltaJson: widget.record.notesDeltaJson,
+      notesPlain: widget.record.note,
+    );
     _recordQuillController = QuillController(
       document: _documentForRecordPlain(widget.record.note),
       selection: const TextSelection.collapsed(offset: 0),
@@ -538,10 +543,7 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
 
   Future<void> _save() async {
     final title = _titleController.text.trim();
-    final noteText = _recordQuillController.document
-        .toPlainText()
-        .replaceAll('\u200b', '')
-        .trim();
+    final noteText = _recordNoteDocument.toPlainText().trim();
     final checklistPayload = _checklistForApi();
     final planPatch = _sourcePlanPatchArgs();
 
@@ -925,10 +927,29 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
                     ),
                   ],
                 ),
-                InlineActivityNotesEditor(
-                  controller: _recordQuillController,
-                  focusNode: _recordQuillFocus,
-                  scrollController: _recordQuillScroll,
+                SizedBox(
+                  height: MediaQuery.sizeOf(context).height < 720 ? 240 : 300,
+                  child: NoteEditorPage(
+                    task: PlanningTask(
+                      id: 0,
+                      planRowId: widget.record.recordId,
+                      pocketRecordId: widget.record.id,
+                      title: widget.record.title,
+                      categoryId:
+                          widget.record.categoryId ??
+                          CategoryRule.uncategorizedSyntheticId,
+                      dateKey: widget.record.dateKey,
+                      checklist: const <Map<String, dynamic>>[],
+                      notesPlain: widget.record.note,
+                      notesDeltaJson: widget.record.notesDeltaJson,
+                    ),
+                    inlineBodyOnly: true,
+                    initialDocument: _recordNoteDocument,
+                    onDocumentChanged: (document) {
+                      _recordNoteDocument = document;
+                      _onRecordFieldChanged();
+                    },
+                  ),
                 ),
                 SizedBox(
                   height: kAppCompactControlHeight,
