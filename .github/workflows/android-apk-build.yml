@@ -85,7 +85,7 @@ jobs:
             /tmp/lifeos-signing/; then
             echo "No persistent LIFE OS signing key yet; creating it once."
             STORE_PASSWORD="$(openssl rand -hex 24)"
-            KEY_PASSWORD="$(openssl rand -hex 24)"
+            KEY_PASSWORD="$STORE_PASSWORD"
             KEY_ALIAS="lifeos"
             keytool -genkeypair -v \
               -keystore /tmp/lifeos-signing/life-os-release.jks \
@@ -115,6 +115,20 @@ jobs:
           set -a
           source /tmp/lifeos-signing/signing.env
           set +a
+          # keytool's default PKCS12 store uses the store password for private-key
+          # entries even when a different -keypass was supplied.
+          ANDROID_KEY_PASSWORD="$ANDROID_KEYSTORE_PASSWORD"
+          {
+            printf 'ANDROID_KEYSTORE_PASSWORD=%s\n' "$ANDROID_KEYSTORE_PASSWORD"
+            printf 'ANDROID_KEY_ALIAS=%s\n' "$ANDROID_KEY_ALIAS"
+            printf 'ANDROID_KEY_PASSWORD=%s\n' "$ANDROID_KEY_PASSWORD"
+          } > /tmp/lifeos-signing/signing.env
+          scp -q -i ~/.ssh/lifeos_android_signing -P "$SSH_PORT" \
+            /tmp/lifeos-signing/signing.env \
+            "$SSH_USER@$SSH_HOST:$REMOTE_DIR/signing.env"
+          ssh -i ~/.ssh/lifeos_android_signing -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" \
+            "chmod 600 '$REMOTE_DIR/signing.env'"
+
           echo "::add-mask::$ANDROID_KEYSTORE_PASSWORD"
           echo "::add-mask::$ANDROID_KEY_PASSWORD"
           echo "LIFE_OS_KEYSTORE_PATH=${GITHUB_WORKSPACE}/android/app/life-os-release.jks" >> "$GITHUB_ENV"
