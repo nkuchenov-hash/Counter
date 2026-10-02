@@ -32,6 +32,7 @@ permissions:
 jobs:
   build-apk:
     runs-on: ubuntu-latest
+    environment: production
     timeout-minutes: 45
     steps:
       - name: Checkout repository
@@ -58,23 +59,78 @@ jobs:
         run: flutter test test/live_sync_contract_test.dart test/plan_recurrence_scope_test.dart
 
       - name: Configure persistent Android release signing
+        if: github.event_name != 'pull_request'
         shell: bash
         env:
-          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          SSH_PRIVATE_KEY: ${{ secrets.POCKETBASE_SSH_PRIVATE_KEY || secrets.VPS_SSH_KEY || secrets.SSH_PRIVATE_KEY }}
+          SSH_USER: ${{ secrets.POCKETBASE_SSH_USER || secrets.VPS_SSH_USER || secrets.SSH_USER }}
+          SSH_HOST: ${{ secrets.POCKETBASE_SSH_HOST || secrets.VPS_HOST || secrets.SSH_HOST }}
+          SSH_PORT: ${{ secrets.POCKETBASE_SSH_PORT || secrets.VPS_SSH_PORT || '22' }}
         run: |
-          if [[ -n "${ANDROID_KEYSTORE_BASE64}" ]]; then
-            printf '%s' "${ANDROID_KEYSTORE_BASE64}" | base64 --decode > android/app/life-os-release.jks
-            echo "LIFE_OS_KEYSTORE_PATH=${GITHUB_WORKSPACE}/android/app/life-os-release.jks" >> "${GITHUB_ENV}"
-            echo "ANDROID_KEYSTORE_PASSWORD=${ANDROID_KEYSTORE_PASSWORD}" >> "${GITHUB_ENV}"
-            echo "ANDROID_KEY_ALIAS=${ANDROID_KEY_ALIAS}" >> "${GITHUB_ENV}"
-            echo "ANDROID_KEY_PASSWORD=${ANDROID_KEY_PASSWORD}" >> "${GITHUB_ENV}"
-            echo "LIFE OS persistent release signing enabled."
-          else
-            echo "::warning::Persistent LIFE OS signing secrets are not configured; falling back to debug signing."
+          set -euo pipefail
+          [[ -n "${SSH_PRIVATE_KEY:-}" ]]
+          SSH_USER="${SSH_USER:-root}"
+          SSH_HOST="${SSH_HOST:-217.114.0.201}"
+          REMOTE_DIR=".lifeos/android-signing"
+
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/lifeos_android_signing
+          chmod 600 ~/.ssh/lifeos_android_signing
+          ssh-keyscan -p "$SSH_PORT" -H "$SSH_HOST" >> ~/.ssh/known_hosts
+
+          mkdir -p /tmp/lifeos-signing
+          if ! scp -q -i ~/.ssh/lifeos_android_signing -P "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST:$REMOTE_DIR/life-os-release.jks" \
+            "$SSH_USER@$SSH_HOST:$REMOTE_DIR/signing.env" \
+            /tmp/lifeos-signing/; then
+            echo "No persistent LIFE OS signing key yet; creating it once."
+            STORE_PASSWORD="$(openssl rand -hex 24)"
+            KEY_PASSWORD="$(openssl rand -hex 24)"
+            KEY_ALIAS="lifeos"
+            keytool -genkeypair -v \
+              -keystore /tmp/lifeos-signing/life-os-release.jks \
+              -storepass "$STORE_PASSWORD" \
+              -keypass "$KEY_PASSWORD" \
+              -alias "$KEY_ALIAS" \
+              -keyalg RSA -keysize 3072 -validity 36500 \
+              -dname "CN=LIFE OS, OU=LIFE OS, O=LIFE OS, L=Batumi, C=GE"
+            {
+              printf 'ANDROID_KEYSTORE_PASSWORD=%s\n' "$STORE_PASSWORD"
+              printf 'ANDROID_KEY_ALIAS=%s\n' "$KEY_ALIAS"
+              printf 'ANDROID_KEY_PASSWORD=%s\n' "$KEY_PASSWORD"
+            } > /tmp/lifeos-signing/signing.env
+            chmod 600 /tmp/lifeos-signing/life-os-release.jks /tmp/lifeos-signing/signing.env
+
+            ssh -i ~/.ssh/lifeos_android_signing -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" \
+              "mkdir -p '$REMOTE_DIR' && chmod 700 '$REMOTE_DIR'"
+            scp -q -i ~/.ssh/lifeos_android_signing -P "$SSH_PORT" \
+              /tmp/lifeos-signing/life-os-release.jks \
+              /tmp/lifeos-signing/signing.env \
+              "$SSH_USER@$SSH_HOST:$REMOTE_DIR/"
+            ssh -i ~/.ssh/lifeos_android_signing -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" \
+              "chmod 600 '$REMOTE_DIR/life-os-release.jks' '$REMOTE_DIR/signing.env'"
           fi
+
+          cp /tmp/lifeos-signing/life-os-release.jks android/app/life-os-release.jks
+          set -a
+          source /tmp/lifeos-signing/signing.env
+          set +a
+          echo "::add-mask::$ANDROID_KEYSTORE_PASSWORD"
+          echo "::add-mask::$ANDROID_KEY_PASSWORD"
+          echo "LIFE_OS_KEYSTORE_PATH=${GITHUB_WORKSPACE}/android/app/life-os-release.jks" >> "$GITHUB_ENV"
+          echo "ANDROID_KEYSTORE_PASSWORD=$ANDROID_KEYSTORE_PASSWORD" >> "$GITHUB_ENV"
+          echo "ANDROID_KEY_ALIAS=$ANDROID_KEY_ALIAS" >> "$GITHUB_ENV"
+          echo "ANDROID_KEY_PASSWORD=$ANDROID_KEY_PASSWORD" >> "$GITHUB_ENV"
+
+      - name: Verify persistent signing is configured
+        if: github.event_name != 'pull_request'
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ -f "$LIFE_OS_KEYSTORE_PATH" ]]
+          [[ -n "$ANDROID_KEYSTORE_PASSWORD" ]]
+          [[ -n "$ANDROID_KEY_ALIAS" ]]
+          [[ -n "$ANDROID_KEY_PASSWORD" ]]
 
       - name: Build arm64 release APK
         run: flutter build apk --release --target-platform android-arm64 --split-per-abi --no-tree-shake-icons
