@@ -89,17 +89,16 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
   }
 
   List<Map<String, dynamic>> _checklistForApi() {
-    syncChecklistDoneLength(_checklistControllers, _checklistDone);
-    final out = <Map<String, dynamic>>[];
-    for (var i = 0; i < _checklistControllers.length; i++) {
-      final text = _checklistControllers[i].text.trim();
-      if (text.isEmpty) continue;
-      out.add(<String, dynamic>{
-        'text': text,
-        'isDone': i < _checklistDone.length ? _checklistDone[i] : false,
-      });
-    }
-    return out;
+    return _recordNoteDocument.blocks
+        .where((block) => block.type == NoteBlockType.checklist)
+        .map(
+          (block) => <String, dynamic>{
+            'text': block.effectiveText,
+            'isDone': block.checked,
+          },
+        )
+        .where((item) => (item['text'] as String).trim().isNotEmpty)
+        .toList();
   }
 
   RecordAutosaveTimePatch _autosaveTimePatch() => buildRecordAutosaveTimePatch(
@@ -238,6 +237,14 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
     _recordNoteDocument = NoteDocument.tryParse(
       notesDeltaJson: widget.record.notesDeltaJson,
       notesPlain: widget.record.note,
+      checklist: (widget.record.checklist ?? const <Map<String, dynamic>>[])
+          .map(
+            (item) => <String, dynamic>{
+              'text': item['text']?.toString() ?? '',
+              'done': item['isDone'] == true || item['done'] == true,
+            },
+          )
+          .toList(),
     );
     _recordQuillController = QuillController(
       document: _documentForRecordPlain(widget.record.note),
@@ -489,10 +496,7 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
       _recordAutosaveGate.flush(() {
         final title = _titleController.text.trim();
         if (title.isEmpty) return;
-        final noteText = _recordQuillController.document
-            .toPlainText()
-            .replaceAll('\u200b', '')
-            .trim();
+        final noteText = _recordNoteDocument.toPlainText().trim();
         final checklistPayload = _checklistForApi();
         final planPatch = _sourcePlanPatchArgs();
         final timePatch = _autosaveTimePatch();
@@ -540,6 +544,26 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
       setState(() => _endDisplay = picked);
       _onRecordFieldChanged(immediate: true);
     }
+  }
+
+  Future<void> _showParallelActivitiesSheet(int categoryId) async {
+    FocusManager.instance.primaryFocus?.unfocus();
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (sheetContext) => DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.72,
+        minChildSize: 0.42,
+        maxChildSize: 0.95,
+        builder: (context, scrollController) => ParallelActivitiesTab(
+          parentRecord: widget.record,
+          scrollController: scrollController,
+          categoryId: categoryId,
+        ),
+      ),
+    );
   }
 
   Future<void> _save() async {
@@ -783,6 +807,7 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
 
   @override
   Widget build(BuildContext context) {
+    final keyboardOpen = MediaQuery.viewInsetsOf(context).bottom > 0;
     final pairs = DatabaseService.instance.allCategoryIdPathPairs;
     // ACTIVE_STATUS_LAW: running ⇔ end_time null (UI mirrors Brain).
     final isRunning = widget.record.endTime == null;
@@ -931,8 +956,7 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
                     ),
                   ],
                 ),
-                SizedBox(
-                  height: MediaQuery.sizeOf(context).height < 720 ? 240 : 300,
+                Expanded(
                   child: NoteEditorPage(
                     task: PlanningTask(
                       id: 0,
@@ -955,146 +979,24 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
                     },
                   ),
                 ),
-                SizedBox(
-                  height: kAppCompactControlHeight,
-                  child: TabBar(
-                    controller: _tabController,
-                    isScrollable: true,
-                    indicatorSize: TabBarIndicatorSize.tab,
-                    labelPadding: EdgeInsets.zero,
-                    tabAlignment: TabAlignment.start,
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    tabs: [
-                      AppCompactTextTab(
-                        text: t(currentLocale.value, 'checklist_tab'),
-                      ),
-                      AppCompactTextTab(
-                        text: t(currentLocale.value, 'parallel_activities_tab'),
-                      ),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  flex: 3,
-                  child: TabBarView(
-                    controller: _tabController,
-                    children: [
-                      ListView(
-                        primary: false,
-                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-                        children: [
-                          ...List.generate(_checklistControllers.length, (i) {
-                            final scheme = Theme.of(context).colorScheme;
-                            final rowDone =
-                                i < _checklistDone.length && _checklistDone[i];
-                            return ListTile(
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 4,
-                              ),
-                              horizontalTitleGap: 4,
-                              leading: Checkbox(
-                                value: rowDone,
-                                onChanged: (v) {
-                                  setState(() {
-                                    syncChecklistDoneLength(
-                                      _checklistControllers,
-                                      _checklistDone,
-                                    );
-                                    _checklistDone[i] = v ?? false;
-                                    partitionChecklistRowsByDone(
-                                      controllers: _checklistControllers,
-                                      done: _checklistDone,
-                                    );
-                                  });
-                                  _onRecordFieldChanged(immediate: true);
-                                },
-                              ),
-                              title: TextField(
-                                controller: _checklistControllers[i],
-                                onChanged: (_) => _onRecordFieldChanged(),
-                                style: TextStyle(
-                                  decoration: rowDone
-                                      ? TextDecoration.lineThrough
-                                      : TextDecoration.none,
-                                  color: rowDone
-                                      ? scheme.onSurface.withValues(alpha: 0.5)
-                                      : scheme.onSurface,
-                                  decorationColor: rowDone
-                                      ? scheme.onSurface.withValues(alpha: 0.5)
-                                      : null,
-                                ),
-                                decoration: InputDecoration(
-                                  hintText: t(
-                                    currentLocale.value,
-                                    'checklist_item',
-                                  ),
-                                  hintStyle: TextStyle(
-                                    color: scheme.onSurfaceVariant.withValues(
-                                      alpha: rowDone ? 0.35 : 0.5,
-                                    ),
-                                  ),
-                                  border: InputBorder.none,
-                                  isDense: true,
-                                  filled: true,
-                                  fillColor: scheme.surfaceContainerHighest
-                                      .withValues(alpha: 0.35),
-                                  contentPadding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 12,
-                                  ),
-                                ),
-                              ),
-                              trailing: IconButton(
-                                icon: Icon(
-                                  Icons.delete_outline_rounded,
-                                  color: scheme.error,
-                                ),
-                                tooltip: t(currentLocale.value, 'delete'),
-                                onPressed: () {
-                                  setState(() {
-                                    removeChecklistRowAt(
-                                      i,
-                                      controllers: _checklistControllers,
-                                      done: _checklistDone,
-                                    );
-                                  });
-                                  _onRecordFieldChanged(immediate: true);
-                                },
-                              ),
-                            );
-                          }),
-                          ListTile(
-                            leading: Icon(
-                              Icons.add_circle_outline_rounded,
-                              color: Theme.of(context).colorScheme.primary,
-                            ),
-                            title: Text(
-                              t(currentLocale.value, 'add_checklist_item'),
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.primary,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            onTap: () {
-                              setState(() {
-                                _checklistControllers.add(
-                                  TextEditingController(),
-                                );
-                                _checklistDone.add(false);
-                              });
-                              _onRecordFieldChanged();
-                            },
+                if (!keyboardOpen)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 2, 16, 2),
+                    child: Align(
+                      alignment: AlignmentDirectional.centerStart,
+                      child: TextButton.icon(
+                        onPressed: () =>
+                            unawaited(_showParallelActivitiesSheet(catVal)),
+                        icon: const Icon(Icons.call_split_rounded),
+                        label: Text(
+                          t(
+                            currentLocale.value,
+                            'parallel_activities_tab',
                           ),
-                        ],
+                        ),
                       ),
-                      ParallelActivitiesTab(
-                        parentRecord: widget.record,
-                        scrollController: widget.scrollController,
-                        categoryId: catVal,
-                      ),
-                    ],
+                    ),
                   ),
-                ),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
                   child: Row(
