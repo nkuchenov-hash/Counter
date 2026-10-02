@@ -510,7 +510,7 @@ class NoteDocument {
         }
       }
       final rawMeta = decoded['meta'];
-      return NoteDocument(
+      final document = NoteDocument(
         format: kLifeOsNotesBlocksFormat,
         version: kLifeOsNotesBlocksVersion,
         meta: rawMeta is Map<String, dynamic>
@@ -518,16 +518,39 @@ class NoteDocument {
             : const NoteDocumentMeta(),
         blocks: blocks,
       );
+      return _mergeLegacyChecklist(document, checklist);
     }
 
     if (decoded is List || (decoded is Map && decoded['ops'] is List)) {
       final document = _fromLegacyQuillDelta(decoded);
       return document.blocks.isEmpty
           ? _fromLegacyPlainAndChecklist(notesPlain, checklist)
-          : document;
+          : _mergeLegacyChecklist(document, checklist);
     }
 
     return _fromLegacyPlainAndChecklist(notesPlain, checklist);
+  }
+
+  static NoteDocument _mergeLegacyChecklist(
+    NoteDocument document,
+    List<Map<String, dynamic>>? checklist,
+  ) {
+    if (checklist == null || checklist.isEmpty) return document;
+    final legacy = _fromLegacyPlainAndChecklist(null, checklist).blocks
+        .where((block) => block.type == NoteBlockType.checklist)
+        .toList();
+    if (legacy.isEmpty) return document;
+
+    String keyFor(NoteBlock block) =>
+        '${block.checked ? 1 : 0}|${block.effectiveText.trim()}';
+
+    final existing = document.blocks
+        .where((block) => block.type == NoteBlockType.checklist)
+        .map(keyFor)
+        .toSet();
+    final missing = legacy.where((block) => !existing.contains(keyFor(block))).toList();
+    if (missing.isEmpty) return document;
+    return document.copyWith(blocks: <NoteBlock>[...document.blocks, ...missing]);
   }
 
   static NoteDocument _fromLegacyPlainAndChecklist(
