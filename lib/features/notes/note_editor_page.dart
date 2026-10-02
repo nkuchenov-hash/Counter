@@ -65,11 +65,25 @@ class NoteEditorPage extends StatefulWidget {
     required this.task,
     this.onClosed,
     this.parityPreview = false,
+    this.inlineBodyOnly = false,
+    this.initialDocument,
+    this.onDocumentChanged,
   });
 
   final PlanningTask task;
   final VoidCallback? onClosed;
   final bool parityPreview;
+
+  /// Reuse the exact production Notes block canvas + toolbar inside another
+  /// editor without duplicating the Notes title/navigation chrome.
+  final bool inlineBodyOnly;
+
+  /// Explicit document used by non-plan hosts such as Timeline records.
+  final NoteDocument? initialDocument;
+
+  /// Delegates persistence to the host. When null, normal plan-backed Notes
+  /// persistence remains unchanged.
+  final ValueChanged<NoteDocument>? onDocumentChanged;
 
   @override
   State<NoteEditorPage> createState() => _NoteEditorPageState();
@@ -102,7 +116,8 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
   void initState() {
     super.initState();
     _task = widget.task;
-    _sourceDocument = DatabaseService.instance.parseNoteDocument(_task);
+    _sourceDocument =
+        widget.initialDocument ?? DatabaseService.instance.parseNoteDocument(_task);
     _editor = NotesEditorDocumentController(_sourceDocument);
     _titleController = TextEditingController(text: _task.title);
     _gate = EditSheetAutosaveGate();
@@ -172,6 +187,13 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
     if (!_dirty || widget.parityPreview) return;
     final title = _titleController.text.trim();
     final document = _editor.document;
+    final delegated = widget.onDocumentChanged;
+    if (delegated != null) {
+      delegated(document);
+      _sourceDocument = document;
+      _dirty = false;
+      return;
+    }
     DatabaseService.instance.applyNoteEdit(
       planRowIdForBackend: _task.planRowIdForBackend,
       doc: document,
@@ -1667,6 +1689,7 @@ AppButton.destructive(
     );
 
     return NotesEditorScreen(
+      bodyOnly: widget.inlineBodyOnly,
       titleController: _titleController,
       titleHint: t(loc, 'notes_v3_editor_title_hint'),
       onTitleChanged: _scheduleSave,
