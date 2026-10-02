@@ -8,6 +8,51 @@ class NotesEditorMetadataTag {
   final Color? color;
 }
 
+
+/// Canonical Notes editing body shared by the standalone Notes screen and
+/// activity edit sheets. This keeps the block canvas and floating toolbar
+/// identical everywhere without duplicating editor UI.
+class NotesEditorBody extends StatelessWidget {
+  const NotesEditorBody({
+    super.key,
+    required this.content,
+    required this.toolbar,
+    this.embedded = false,
+  });
+
+  final Widget content;
+  final Widget toolbar;
+  final bool embedded;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        Positioned.fill(
+          child: Padding(
+            padding: const EdgeInsets.only(
+              bottom: NotesFigmaTokens.toolbarHeight + 28,
+            ),
+            child: content,
+          ),
+        ),
+        Positioned(
+          left: 0,
+          right: 0,
+          bottom: embedded ? 14 : 8,
+          child: RepaintBoundary(
+            child: Align(
+              alignment: Alignment.bottomCenter,
+              child: toolbar,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 /// Marks a Notes editor as part of the desktop master-detail workspace.
 ///
 /// In this mode the editor must not create another application-like canvas,
@@ -232,29 +277,10 @@ class _NotesEditorRail extends StatelessWidget {
                   collapseForKeyboard: collapseTitleForKeyboard,
                 ),
                 Expanded(
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      Positioned.fill(
-                        child: Padding(
-                          padding: const EdgeInsets.only(
-                            bottom: NotesFigmaTokens.toolbarHeight + 28,
-                          ),
-                          child: content,
-                        ),
-                      ),
-                      Positioned(
-                        left: 0,
-                        right: 0,
-                        bottom: embedded ? 14 : 8,
-                        child: RepaintBoundary(
-                          child: Align(
-                            alignment: Alignment.bottomCenter,
-                            child: toolbar,
-                          ),
-                        ),
-                      ),
-                    ],
+                  child: NotesEditorBody(
+                    content: content,
+                    toolbar: toolbar,
+                    embedded: embedded,
                   ),
                 ),
               ],
