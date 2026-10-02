@@ -9,7 +9,30 @@ kotlin {
     jvmToolchain(17)
 }
 
+val lifeOsKeystorePath = System.getenv("LIFE_OS_KEYSTORE_PATH")
+val lifeOsKeystorePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD")
+val lifeOsKeyAlias = System.getenv("ANDROID_KEY_ALIAS")
+val lifeOsKeyPassword = System.getenv("ANDROID_KEY_PASSWORD")
+val hasLifeOsReleaseSigning =
+    !lifeOsKeystorePath.isNullOrBlank() &&
+    !lifeOsKeystorePassword.isNullOrBlank() &&
+    !lifeOsKeyAlias.isNullOrBlank() &&
+    !lifeOsKeyPassword.isNullOrBlank() &&
+    file(lifeOsKeystorePath).exists()
+
+
 android {
+    signingConfigs {
+        if (hasLifeOsReleaseSigning) {
+            create("lifeOsRelease") {
+                storeFile = file(lifeOsKeystorePath!!)
+                storePassword = lifeOsKeystorePassword
+                keyAlias = lifeOsKeyAlias
+                keyPassword = lifeOsKeyPassword
+            }
+        }
+    }
+
     namespace = "com.example.counter"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
@@ -39,9 +62,14 @@ android {
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            // CI uses the persistent LIFE OS release key from repository secrets.
+            // Local builds without those secrets keep the debug fallback so development
+            // remains possible, but published CI releases must use lifeOsRelease.
+            signingConfig = if (hasLifeOsReleaseSigning) {
+                signingConfigs.getByName("lifeOsRelease")
+            } else {
+                signingConfigs.getByName("debug")
+            }
             isMinifyEnabled = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
