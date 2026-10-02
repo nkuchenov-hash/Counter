@@ -1334,53 +1334,50 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
                       ),
                     ),
                   ),
-                Padding(
-                  padding: EdgeInsets.fromLTRB(
-                    kPlanningEditActionBarPadH,
-                    keyboardOpen
-                        ? kPlanningEditActionBarPadVKeyboard
-                        : kPlanningEditActionBarPadV,
-                    kPlanningEditActionBarPadH,
-                    keyboardOpen
-                        ? kPlanningEditActionBarBottomPadKeyboard
-                        : kPlanningEditActionBarBottomPad,
-                  ),
-                  child: Row(
-                    children: [
-                      if (widget.onDelete != null)
+                if (!keyboardOpen)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      kPlanningEditActionBarPadH,
+                      kPlanningEditActionBarPadV,
+                      kPlanningEditActionBarPadH,
+                      kPlanningEditActionBarBottomPad,
+                    ),
+                    child: Row(
+                      children: [
+                        if (widget.onDelete != null)
+                          TextButton(
+                            onPressed: () {
+                              widget.onDelete!(widget.task);
+                              Navigator.of(context).pop<PlanningTask?>(null);
+                            },
+                            child: Text(
+                              t(currentLocale.value, 'delete'),
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.error,
+                              ),
+                            ),
+                          ),
+                        const Spacer(),
                         TextButton(
-                          onPressed: () {
-                            widget.onDelete!(widget.task);
-                            Navigator.of(context).pop<PlanningTask?>(null);
-                          },
+                          onPressed: () =>
+                              Navigator.of(context).pop<PlanningTask?>(null),
+                          child: Text(t(currentLocale.value, 'cancel')),
+                        ),
+                        const SizedBox(width: 8),
+                        FilledButton(
+                          onPressed: _commitSave,
                           child: Text(
-                            t(currentLocale.value, 'delete'),
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.error,
+                            t(
+                              currentLocale.value,
+                              _shouldShowGraduateUi
+                                  ? 'plan_graduate_from_idea'
+                                  : 'save',
                             ),
                           ),
                         ),
-                      const Spacer(),
-                      TextButton(
-                        onPressed: () =>
-                            Navigator.of(context).pop<PlanningTask?>(null),
-                        child: Text(t(currentLocale.value, 'cancel')),
-                      ),
-                      const SizedBox(width: 8),
-                      FilledButton(
-                        onPressed: _commitSave,
-                        child: Text(
-                          t(
-                            currentLocale.value,
-                            _shouldShowGraduateUi
-                                ? 'plan_graduate_from_idea'
-                                : 'save',
-                          ),
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
               ],
             ),
           ),
