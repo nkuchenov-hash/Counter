@@ -11,6 +11,7 @@ import 'package:counter/shared/categories/picker/category_tree_picker.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/planning/recurrence_scope_dialog.dart';
+import 'package:counter/features/notes/note_editor_page.dart';
 import 'package:counter/features/profile/tag_settings_hub.dart';
 import 'package:counter/core/widgets/chip_component.dart';
 import 'package:counter/l10n/dictionary.dart';
@@ -21,7 +22,6 @@ import 'package:omni_datetime_picker/omni_datetime_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:counter/features/shared/edit_sheet/checklist_helpers.dart';
-import 'package:counter/features/shared/edit_sheet/inline_activity_notes_editor.dart';
 import 'package:counter/features/shared/edit_sheet/parallel_record_panels.dart';
 import 'package:counter/features/shared/edit_sheet/plan_repeat_helpers.dart';
 import 'package:counter/features/shared/edit_sheet/quill_link_launcher.dart';
@@ -54,6 +54,7 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
   late final TextEditingController _titleController;
   late final QuillController _quillController;
   late final FocusNode _quillFocusNode;
+  late NoteDocument _noteDocument;
 
   /// Separate from [scrollController] so plan-mode outer [ListView] does not fight Quill.
   late final ScrollController _quillScrollController;
@@ -103,6 +104,10 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
       _planTabController = TabController(length: 3, vsync: this);
     }
     _titleController = TextEditingController(text: widget.task.title);
+    _noteDocument = NoteDocument.tryParse(
+      notesDeltaJson: widget.task.notesDeltaJson,
+      notesPlain: widget.task.notesPlain,
+    );
     final parsedNotes = _parseStoredNotesForLink(widget.task.notesPlain);
     _quillController = QuillController(
       document: _documentForPlanningNotes(
@@ -536,11 +541,8 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
     }
     final rruleWire = rruleWireFromRepeatUi(_repeatUi, _rruleCustomRaw);
     final clearR = rruleWire == null;
-    final deltaJson = jsonEncode(_quillController.document.toDelta().toJson());
-    final plainTrimmed = _quillController.document
-        .toPlainText()
-        .replaceAll('\u200b', '')
-        .trim();
+    final deltaJson = _noteDocument.encode();
+    final plainTrimmed = _noteDocument.toPlainText().trim();
     String? notesPlainOut;
     String? notesDeltaJsonOut;
     if (_startedAsUndatedBacklog) {
@@ -684,10 +686,17 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
           Expanded(
             child: Column(
               children: [
-                InlineActivityNotesEditor(
-                  controller: _quillController,
-                  focusNode: _quillFocusNode,
-                  scrollController: _quillScrollController,
+                SizedBox(
+                  height: compactChrome ? 240 : 300,
+                  child: NoteEditorPage(
+                    task: widget.task,
+                    inlineBodyOnly: true,
+                    initialDocument: _noteDocument,
+                    onDocumentChanged: (document) {
+                      _noteDocument = document;
+                      _onPlanFieldChanged();
+                    },
+                  ),
                 ),
                 if (_startedAsUndatedBacklog) ...[
                   Padding(
