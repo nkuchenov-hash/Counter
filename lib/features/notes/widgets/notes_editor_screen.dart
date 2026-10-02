@@ -124,12 +124,18 @@ class NotesEditorScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (bodyOnly) {
+      final keyboardInset = MediaQuery.viewInsetsOf(context).bottom;
       return Material(
         color: NotesFigmaTokens.surfaceCard(context),
-        child: NotesEditorBody(
-          content: content,
-          toolbar: toolbar,
-          embedded: true,
+        child: AnimatedPadding(
+          duration: const Duration(milliseconds: 120),
+          curve: Curves.easeOut,
+          padding: EdgeInsets.only(bottom: keyboardInset),
+          child: NotesEditorBody(
+            content: content,
+            toolbar: toolbar,
+            embedded: true,
+          ),
         ),
       );
     }
