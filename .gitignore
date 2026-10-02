@@ -74,3 +74,8 @@ installer/windows/stt_helper_build/*.exe
 
 # Generated timestamped real-helper latency reports (keep real_helper_latency_latest.json)
 test/fixtures/desktop_voice_wav/benchmark_reports/real_helper_latency_[0-9]*.json
+# Android signing keys must never be committed.
+*.jks
+*.keystore
+android/app/life-os-release.jks
+
