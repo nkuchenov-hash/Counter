@@ -827,7 +827,12 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
       child: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+            padding: EdgeInsets.fromLTRB(
+              16,
+              keyboardOpen ? 4 : 12,
+              16,
+              keyboardOpen ? 0 : 4,
+            ),
             child: Row(
               children: [
                 Expanded(
@@ -874,10 +879,11 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
                               _onRecordFieldChanged();
                             },
                           ),
-                          const SizedBox(height: 8),
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 8),
-                            child: CategoryTreeFormField(
+                          if (!keyboardOpen) ...[
+                            const SizedBox(height: 8),
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 8),
+                              child: CategoryTreeFormField(
                               value: catVal,
                               enabled: true,
                               decoration: InputDecoration(
@@ -897,20 +903,22 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
                             padding: const EdgeInsets.only(bottom: 8),
                             child: _buildPlanLinkDropdown(context),
                           ),
-                          if (_plansLoading)
-                            Padding(
-                              padding: const EdgeInsets.only(bottom: 6),
-                              child: LinearProgressIndicator(
-                                minHeight: 2,
-                                color: Theme.of(context).colorScheme.primary,
+                            if (_plansLoading)
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 6),
+                                child: LinearProgressIndicator(
+                                  minHeight: 2,
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
                               ),
-                            ),
+                          ],
                         ],
                       ),
                     ),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
-                      child: Row(
+                    if (!keyboardOpen)
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
+                        child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Expanded(
@@ -998,7 +1006,12 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
                     ),
                   ),
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                  padding: EdgeInsets.fromLTRB(
+                    16,
+                    keyboardOpen ? 2 : 8,
+                    16,
+                    keyboardOpen ? 4 : 16,
+                  ),
                   child: Row(
                     children: [
                       if (isRunning)
