@@ -1005,47 +1005,38 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
                       ),
                     ),
                   ),
-                Padding(
-                  padding: EdgeInsets.fromLTRB(
-                    16,
-                    keyboardOpen ? 2 : 8,
-                    16,
-                    keyboardOpen ? 4 : 16,
-                  ),
-                  child: Row(
-                    children: [
-                      if (isRunning)
-                        TextButton.icon(
-                          onPressed: widget.onStop,
-                          icon: const Icon(Icons.stop_rounded),
-                          label: Text(t(currentLocale.value, 'stop')),
-                        ),
-                      TextButton(
-                        onPressed: widget.onDelete,
-                        child: Text(
-                          t(currentLocale.value, 'delete'),
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.error,
+                if (!keyboardOpen)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                    child: Row(
+                      children: [
+                        if (isRunning)
+                          TextButton.icon(
+                            onPressed: widget.onStop,
+                            icon: const Icon(Icons.stop_rounded),
+                            label: Text(t(currentLocale.value, 'stop')),
+                          ),
+                        TextButton(
+                          onPressed: widget.onDelete,
+                          child: Text(
+                            t(currentLocale.value, 'delete'),
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.error,
+                            ),
                           ),
                         ),
-                      ),
-                      const Spacer(),
-                      FilledButton(
-                        onPressed: _save,
-                        child: Text(t(currentLocale.value, 'save')),
-                      ),
-                    ],
+                        const Spacer(),
+                        FilledButton(
+                          onPressed: _save,
+                          child: Text(t(currentLocale.value, 'save')),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
               ],
             ),
           ),
-          Padding(
-            padding: EdgeInsets.only(
-              bottom: MediaQuery.viewInsetsOf(context).bottom,
-            ),
-            child: const SizedBox.shrink(),
-          ),
+
         ],
       ),
     );
