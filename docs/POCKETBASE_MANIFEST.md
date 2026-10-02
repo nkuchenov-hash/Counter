@@ -102,6 +102,9 @@ Password reset is app-owned through `POST /api/auth/request-password-reset`; do 
 | `status` | select | `running` / `stopped` / `completed` (app contract). |
 | `start_time`, `end_time` | date | ISO strings; timeline buckets use **wall-clock** (see DATA_MAP). |
 | `record_id` | text | Business UUID (passive); never used as REST path **id**. |
+| `note` | text | Plain/search projection of the record note; legacy flat notes remain readable. |
+| `notes_delta` | json | Canonical LIFE OS Notes block document. Record and Plan edit sheets reuse the same production Notes editor; the client also maintains the plain projection. |
+| `checklist` | json | Existing dedicated record checklist, separate from Notes block content. |
 | `tags_link` | relation(s) | Optional expand `kPbRecordTagsExpand`. |
 | `sleep_source` | text | Imported sleep provider marker. Current primary value: `xiaomi`; legacy values may exist for historical/recovery rows. |
 | `sleep_external_id` | text | Provider sleep identity used for exact-idempotent imports; Xiaomi revised-night overlap dedupe is additionally required because boundaries may change. |
