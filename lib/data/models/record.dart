@@ -2,6 +2,19 @@
 // Split per ROADMAP Tier 4.2 (April 2026).
 part of '../models.dart';
 
+String? _recordNotesDeltaJson(dynamic raw) {
+  if (raw == null) return null;
+  if (raw is String) {
+    final value = raw.trim();
+    return value.isEmpty ? null : value;
+  }
+  try {
+    return jsonEncode(raw);
+  } catch (_) {
+    return null;
+  }
+}
+
 class Record {
   const Record({
     this.id,
@@ -151,7 +164,7 @@ class Record {
       sourcePlanId: srcPlan,
       title: data['title']?.toString(),
       note: mergeRecordNoteFields(data['note'], data['notes']),
-      notesDeltaJson: data['notes_delta']?.toString(),
+      notesDeltaJson: _recordNotesDeltaJson(data['notes_delta']),
       type: data['type']?.toString(),
       status: data['status']?.toString(),
       categoryId: categoryId,
@@ -363,7 +376,7 @@ class TimelineRecord {
     final startDt = _parseToUtcSecondPrecision(start);
     final endDt = _parseToUtcSecondPrecision(end);
     final note = mergeRecordNoteFields(data['note'], data['notes']);
-    final notesDeltaJson = data['notes_delta']?.toString();
+    final notesDeltaJson = _recordNotesDeltaJson(data['notes_delta']);
     final checklist = parseChecklistFromNoco(data['checklist']);
     final rawSubIds = _get(data, 'subRecordIds', 'sub_record_ids');
     List<int>? subRecordIds;
