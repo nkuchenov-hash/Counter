@@ -59,6 +59,10 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
   late FocusNode _recordQuillFocus;
   late ScrollController _recordQuillScroll;
   late NoteDocument _recordNoteDocument;
+
+  String get _recordNotesDeltaWire =>
+      _recordNoteDocument.isEmpty ? '' : _recordNotesDeltaWire;
+
   int? _categoryId;
   DateTime? _startDisplay;
   DateTime? _endDisplay;
@@ -129,7 +133,7 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
       endTime: endUtc,
       categoryId: _categoryId,
       note: noteText.isEmpty ? null : noteText,
-      notesDeltaJson: _recordNoteDocument.encode(),
+      notesDeltaJson: _recordNotesDeltaWire,
       checklist: checklistPayload.isEmpty ? null : checklistPayload,
       sourcePlanId: planPatch.sync
           ? (planPatch.clear ? null : planPatch.id)
@@ -159,7 +163,7 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
       endTime: endUtc,
       categoryId: categoryId ?? _categoryId,
       note: noteText,
-      notesDeltaJson: _recordNoteDocument.encode(),
+      notesDeltaJson: _recordNotesDeltaWire,
       checklist: checklistPayload,
       syncSourcePlan: planPatch.sync,
       clearSourcePlan: planPatch.clear,
@@ -184,7 +188,7 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
       endTime: endUtc,
       categoryId: categoryId ?? _categoryId,
       note: noteText,
-      notesDeltaJson: _recordNoteDocument.encode(),
+      notesDeltaJson: _recordNotesDeltaWire,
       checklist: checklistPayload,
       syncSourcePlan: planPatch.sync,
       clearSourcePlan: planPatch.clear,
@@ -593,7 +597,7 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
         endUtc,
         categoryId: _categoryId,
         note: noteText,
-        notesDeltaJson: _recordNoteDocument.encode(),
+        notesDeltaJson: _recordNotesDeltaWire,
         checklist: checklistPayload,
       );
       if (!mounted) return;
