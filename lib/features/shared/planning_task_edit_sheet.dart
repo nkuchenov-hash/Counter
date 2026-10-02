@@ -99,14 +99,22 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
     _startedAsUndatedBacklog =
         widget.task.startTime == null && widget.task.dateKey.trim().length < 10;
     if (_startedAsUndatedBacklog) {
-      _tabController = TabController(length: 3, vsync: this);
+      _tabController = TabController(length: 2, vsync: this);
     } else {
-      _planTabController = TabController(length: 3, vsync: this);
+      _planTabController = TabController(length: 2, vsync: this);
     }
     _titleController = TextEditingController(text: widget.task.title);
     _noteDocument = NoteDocument.tryParse(
       notesDeltaJson: widget.task.notesDeltaJson,
       notesPlain: widget.task.notesPlain,
+      checklist: widget.task.checklist
+          .map(
+            (item) => <String, dynamic>{
+              'text': item['text']?.toString() ?? '',
+              'done': item['isDone'] == true || item['done'] == true,
+            },
+          )
+          .toList(),
     );
     final parsedNotes = _parseStoredNotesForLink(widget.task.notesPlain);
     _quillController = QuillController(
@@ -512,16 +520,16 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
       ),
     );
     final newDateKey = _dateKeyFromDate(_date);
-    syncChecklistDoneLength(_checklistControllers, _checklistDone);
-    final List<Map<String, dynamic>> checklist = [];
-    for (var i = 0; i < _checklistControllers.length; i++) {
-      final text = _checklistControllers[i].text.trim();
-      if (text.isEmpty) continue;
-      checklist.add(<String, dynamic>{
-        'text': text,
-        'isDone': i < _checklistDone.length ? _checklistDone[i] : false,
-      });
-    }
+    final List<Map<String, dynamic>> checklist = _noteDocument.blocks
+        .where((block) => block.type == NoteBlockType.checklist)
+        .map(
+          (block) => <String, dynamic>{
+            'text': block.effectiveText,
+            'isDone': block.checked,
+          },
+        )
+        .where((item) => (item['text'] as String).trim().isNotEmpty)
+        .toList();
     if (_repeatUi == PlanRepeatUi.custom) {
       _rruleCustomRaw = _rruleCustomController.text.trim();
     }
@@ -650,6 +658,7 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
             ),
           ),
           const Divider(height: 1),
+          if (!keyboardOpen)
           Padding(
             padding: EdgeInsets.fromLTRB(
               16,
@@ -671,8 +680,8 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
           Expanded(
             child: Column(
               children: [
-                SizedBox(
-                  height: compactChrome ? 240 : 300,
+                Expanded(
+                  flex: keyboardOpen ? 1 : 5,
                   child: NoteEditorPage(
                     task: widget.task,
                     inlineBodyOnly: true,
@@ -683,7 +692,7 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
                     },
                   ),
                 ),
-                if (_startedAsUndatedBacklog) ...[
+                if (!keyboardOpen && _startedAsUndatedBacklog) ...[
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: SizedBox(
@@ -698,9 +707,6 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
                         tabAlignment: TabAlignment.start,
                         padding: EdgeInsets.zero,
                         tabs: [
-                          AppCompactTextTab(
-                            text: t(currentLocale.value, 'checklist_tab'),
-                          ),
                           AppCompactTextTab(
                             text: t(currentLocale.value, 'lists_subitems_tab'),
                           ),
@@ -718,123 +724,6 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
                     child: TabBarView(
                       controller: _tabController!,
                       children: [
-                        ListView(
-                          padding: EdgeInsets.fromLTRB(
-                            16,
-                            compactChrome ? 8 : 12,
-                            16,
-                            compactChrome ? 12 : 24,
-                          ),
-                          children: [
-                            ...List.generate(_checklistControllers.length, (i) {
-                              final scheme = Theme.of(context).colorScheme;
-                              final rowDone =
-                                  i < _checklistDone.length &&
-                                  _checklistDone[i];
-                              return ListTile(
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 4,
-                                ),
-                                horizontalTitleGap: 4,
-                                leading: Checkbox(
-                                  value: rowDone,
-                                  onChanged: (v) {
-                                    setState(() {
-                                      syncChecklistDoneLength(
-                                        _checklistControllers,
-                                        _checklistDone,
-                                      );
-                                      _checklistDone[i] = v ?? false;
-                                      partitionChecklistRowsByDone(
-                                        controllers: _checklistControllers,
-                                        done: _checklistDone,
-                                      );
-                                    });
-                                    _onPlanFieldChanged(immediate: true);
-                                  },
-                                ),
-                                title: TextField(
-                                  controller: _checklistControllers[i],
-                                  onChanged: (_) => _onPlanFieldChanged(),
-                                  style: TextStyle(
-                                    decoration: rowDone
-                                        ? TextDecoration.lineThrough
-                                        : TextDecoration.none,
-                                    color: rowDone
-                                        ? scheme.onSurface.withValues(
-                                            alpha: 0.5,
-                                          )
-                                        : scheme.onSurface,
-                                    decorationColor: rowDone
-                                        ? scheme.onSurface.withValues(
-                                            alpha: 0.5,
-                                          )
-                                        : null,
-                                  ),
-                                  decoration: InputDecoration(
-                                    hintText: t(
-                                      currentLocale.value,
-                                      'checklist_item',
-                                    ),
-                                    hintStyle: TextStyle(
-                                      color: scheme.onSurfaceVariant.withValues(
-                                        alpha: rowDone ? 0.35 : 0.5,
-                                      ),
-                                    ),
-                                    border: InputBorder.none,
-                                    isDense: true,
-                                    filled: true,
-                                    fillColor: scheme.surfaceContainerHighest
-                                        .withValues(alpha: 0.35),
-                                    contentPadding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                      vertical: 12,
-                                    ),
-                                  ),
-                                ),
-                                trailing: IconButton(
-                                  icon: Icon(
-                                    Icons.delete_outline_rounded,
-                                    color: scheme.error,
-                                  ),
-                                  tooltip: t(currentLocale.value, 'delete'),
-                                  onPressed: () {
-                                    setState(() {
-                                      removeChecklistRowAt(
-                                        i,
-                                        controllers: _checklistControllers,
-                                        done: _checklistDone,
-                                      );
-                                    });
-                                    _onPlanFieldChanged(immediate: true);
-                                  },
-                                ),
-                              );
-                            }),
-                            ListTile(
-                              leading: Icon(
-                                Icons.add_circle_outline_rounded,
-                                color: Theme.of(context).colorScheme.primary,
-                              ),
-                              title: Text(
-                                t(currentLocale.value, 'add_checklist_item'),
-                                style: TextStyle(
-                                  color: Theme.of(context).colorScheme.primary,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              onTap: () {
-                                setState(() {
-                                  _checklistControllers.add(
-                                    TextEditingController(),
-                                  );
-                                  _checklistDone.add(false);
-                                });
-                                _onPlanFieldChanged();
-                              },
-                            ),
-                          ],
-                        ),
                         BacklogSubItemsPanel(
                           parentTask: widget.task,
                           categoryId: _categoryId,
@@ -1072,7 +961,7 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
                       ],
                     ),
                   ),
-                ] else ...[
+                ] else if (!keyboardOpen) ...[
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1216,9 +1105,6 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
                               padding: EdgeInsets.zero,
                               tabs: [
                                 AppCompactTextTab(
-                                  text: t(currentLocale.value, 'checklist_tab'),
-                                ),
-                                AppCompactTextTab(
                                   text: t(
                                     currentLocale.value,
                                     'plan_repeat_label',
@@ -1238,134 +1124,6 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
                           child: TabBarView(
                             controller: _planTabController!,
                             children: [
-                              ListView(
-                                padding: const EdgeInsets.fromLTRB(
-                                  16,
-                                  12,
-                                  16,
-                                  24,
-                                ),
-                                children: [
-                                  ...List.generate(
-                                    _checklistControllers.length,
-                                    (i) {
-                                      final scheme = Theme.of(
-                                        context,
-                                      ).colorScheme;
-                                      final rowDone =
-                                          i < _checklistDone.length &&
-                                          _checklistDone[i];
-                                      return ListTile(
-                                        contentPadding:
-                                            const EdgeInsets.symmetric(
-                                              horizontal: 4,
-                                            ),
-                                        horizontalTitleGap: 4,
-                                        leading: Checkbox(
-                                          value: rowDone,
-                                          onChanged: (v) => setState(() {
-                                            syncChecklistDoneLength(
-                                              _checklistControllers,
-                                              _checklistDone,
-                                            );
-                                            _checklistDone[i] = v ?? false;
-                                            partitionChecklistRowsByDone(
-                                              controllers:
-                                                  _checklistControllers,
-                                              done: _checklistDone,
-                                            );
-                                          }),
-                                        ),
-                                        title: TextField(
-                                          controller: _checklistControllers[i],
-                                          style: TextStyle(
-                                            decoration: rowDone
-                                                ? TextDecoration.lineThrough
-                                                : TextDecoration.none,
-                                            color: rowDone
-                                                ? scheme.onSurface.withValues(
-                                                    alpha: 0.5,
-                                                  )
-                                                : scheme.onSurface,
-                                            decorationColor: rowDone
-                                                ? scheme.onSurface.withValues(
-                                                    alpha: 0.5,
-                                                  )
-                                                : null,
-                                          ),
-                                          decoration: InputDecoration(
-                                            hintText: t(
-                                              currentLocale.value,
-                                              'checklist_item',
-                                            ),
-                                            hintStyle: TextStyle(
-                                              color: scheme.onSurfaceVariant
-                                                  .withValues(
-                                                    alpha: rowDone ? 0.35 : 0.5,
-                                                  ),
-                                            ),
-                                            border: InputBorder.none,
-                                            isDense: true,
-                                            filled: true,
-                                            fillColor: scheme
-                                                .surfaceContainerHighest
-                                                .withValues(alpha: 0.35),
-                                            contentPadding:
-                                                const EdgeInsets.symmetric(
-                                                  horizontal: 12,
-                                                  vertical: 12,
-                                                ),
-                                          ),
-                                        ),
-                                        trailing: IconButton(
-                                          icon: Icon(
-                                            Icons.delete_outline_rounded,
-                                            color: scheme.error,
-                                          ),
-                                          tooltip: t(
-                                            currentLocale.value,
-                                            'delete',
-                                          ),
-                                          onPressed: () => setState(() {
-                                            removeChecklistRowAt(
-                                              i,
-                                              controllers:
-                                                  _checklistControllers,
-                                              done: _checklistDone,
-                                            );
-                                          }),
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                  ListTile(
-                                    leading: Icon(
-                                      Icons.add_circle_outline_rounded,
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.primary,
-                                    ),
-                                    title: Text(
-                                      t(
-                                        currentLocale.value,
-                                        'add_checklist_item',
-                                      ),
-                                      style: TextStyle(
-                                        color: Theme.of(
-                                          context,
-                                        ).colorScheme.primary,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                    onTap: () => setState(() {
-                                      _checklistControllers.add(
-                                        TextEditingController(),
-                                      );
-                                      _checklistDone.add(false);
-                                    }),
-                                  ),
-                                ],
-                              ),
                               ListView(
                                 padding: const EdgeInsets.fromLTRB(
                                   16,
