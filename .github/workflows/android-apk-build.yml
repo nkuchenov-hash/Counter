@@ -57,6 +57,25 @@ jobs:
       - name: Run live-sync and recurrence regression tests
         run: flutter test test/live_sync_contract_test.dart test/plan_recurrence_scope_test.dart
 
+      - name: Configure persistent Android release signing
+        shell: bash
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [[ -n "${ANDROID_KEYSTORE_BASE64}" ]]; then
+            printf '%s' "${ANDROID_KEYSTORE_BASE64}" | base64 --decode > android/app/life-os-release.jks
+            echo "LIFE_OS_KEYSTORE_PATH=${GITHUB_WORKSPACE}/android/app/life-os-release.jks" >> "${GITHUB_ENV}"
+            echo "ANDROID_KEYSTORE_PASSWORD=${ANDROID_KEYSTORE_PASSWORD}" >> "${GITHUB_ENV}"
+            echo "ANDROID_KEY_ALIAS=${ANDROID_KEY_ALIAS}" >> "${GITHUB_ENV}"
+            echo "ANDROID_KEY_PASSWORD=${ANDROID_KEY_PASSWORD}" >> "${GITHUB_ENV}"
+            echo "LIFE OS persistent release signing enabled."
+          else
+            echo "::warning::Persistent LIFE OS signing secrets are not configured; falling back to debug signing."
+          fi
+
       - name: Build arm64 release APK
         run: flutter build apk --release --target-platform android-arm64 --split-per-abi --no-tree-shake-icons
 
