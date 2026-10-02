@@ -21,6 +21,7 @@ import 'package:omni_datetime_picker/omni_datetime_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:counter/features/shared/edit_sheet/checklist_helpers.dart';
+import 'package:counter/features/shared/edit_sheet/inline_activity_notes_editor.dart';
 import 'package:counter/features/shared/edit_sheet/parallel_record_panels.dart';
 import 'package:counter/features/shared/edit_sheet/plan_repeat_helpers.dart';
 import 'package:counter/features/shared/edit_sheet/quill_link_launcher.dart';
@@ -97,9 +98,9 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
     _startedAsUndatedBacklog =
         widget.task.startTime == null && widget.task.dateKey.trim().length < 10;
     if (_startedAsUndatedBacklog) {
-      _tabController = TabController(length: 4, vsync: this);
+      _tabController = TabController(length: 3, vsync: this);
     } else {
-      _planTabController = TabController(length: 4, vsync: this);
+      _planTabController = TabController(length: 3, vsync: this);
     }
     _titleController = TextEditingController(text: widget.task.title);
     final parsedNotes = _parseStoredNotesForLink(widget.task.notesPlain);
@@ -683,6 +684,11 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
           Expanded(
             child: Column(
               children: [
+                InlineActivityNotesEditor(
+                  controller: _quillController,
+                  focusNode: _quillFocusNode,
+                  scrollController: _quillScrollController,
+                ),
                 if (_startedAsUndatedBacklog) ...[
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -698,9 +704,6 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
                         tabAlignment: TabAlignment.start,
                         padding: EdgeInsets.zero,
                         tabs: [
-                          AppCompactTextTab(
-                            text: t(currentLocale.value, 'notes_tab'),
-                          ),
                           AppCompactTextTab(
                             text: t(currentLocale.value, 'checklist_tab'),
                           ),
@@ -721,70 +724,6 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
                     child: TabBarView(
                       controller: _tabController!,
                       children: [
-                        Padding(
-                          padding: EdgeInsets.fromLTRB(
-                            16,
-                            compactChrome ? 4 : 8,
-                            16,
-                            compactChrome ? 12 : 24,
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              ConstrainedBox(
-                                constraints: const BoxConstraints(
-                                  minHeight: kPlanningEditQuillToolbarMinHeight,
-                                ),
-                                child: QuillSimpleToolbar(
-                                  controller: _quillController,
-                                  config: planningTaskEditQuillToolbarConfig(
-                                    context,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Expanded(
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.surface,
-                                    borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .outlineVariant
-                                          .withValues(alpha: 0.5),
-                                    ),
-                                  ),
-                                  clipBehavior: Clip.antiAlias,
-                                  child: QuillEditor.basic(
-                                    controller: _quillController,
-                                    focusNode: _quillFocusNode,
-                                    scrollController: _quillScrollController,
-                                    config: QuillEditorConfig(
-                                      expands: true,
-                                      padding: const EdgeInsets.all(12),
-                                      placeholder: t(
-                                        currentLocale.value,
-                                        'notes_hint_flat',
-                                      ),
-                                      onLaunchUrl: launchUrlFromQuillEditor,
-                                      customStyles: DefaultStyles.getInstance(
-                                        context,
-                                      ),
-                                      keyboardAppearance:
-                                          Theme.of(context).brightness ==
-                                              Brightness.dark
-                                          ? Brightness.dark
-                                          : Brightness.light,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
                         ListView(
                           padding: EdgeInsets.fromLTRB(
                             16,
@@ -1283,9 +1222,6 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
                               padding: EdgeInsets.zero,
                               tabs: [
                                 AppCompactTextTab(
-                                  text: t(currentLocale.value, 'notes_tab'),
-                                ),
-                                AppCompactTextTab(
                                   text: t(currentLocale.value, 'checklist_tab'),
                                 ),
                                 AppCompactTextTab(
@@ -1308,78 +1244,6 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
                           child: TabBarView(
                             controller: _planTabController!,
                             children: [
-                              Padding(
-                                padding: EdgeInsets.fromLTRB(
-                                  16,
-                                  compactChrome ? 4 : 8,
-                                  16,
-                                  compactChrome ? 12 : 24,
-                                ),
-                                child: Column(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.stretch,
-                                  children: [
-                                    ConstrainedBox(
-                                      constraints: const BoxConstraints(
-                                        minHeight:
-                                            kPlanningEditQuillToolbarMinHeight,
-                                      ),
-                                      child: QuillSimpleToolbar(
-                                        controller: _quillController,
-                                        config:
-                                            planningTaskEditQuillToolbarConfig(
-                                              context,
-                                            ),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Expanded(
-                                      child: Container(
-                                        decoration: BoxDecoration(
-                                          color: Theme.of(
-                                            context,
-                                          ).colorScheme.surface,
-                                          borderRadius: BorderRadius.circular(
-                                            8,
-                                          ),
-                                          border: Border.all(
-                                            color: Theme.of(context)
-                                                .colorScheme
-                                                .outlineVariant
-                                                .withValues(alpha: 0.5),
-                                          ),
-                                        ),
-                                        clipBehavior: Clip.antiAlias,
-                                        child: QuillEditor.basic(
-                                          controller: _quillController,
-                                          focusNode: _quillFocusNode,
-                                          scrollController:
-                                              _quillScrollController,
-                                          config: QuillEditorConfig(
-                                            expands: true,
-                                            padding: const EdgeInsets.all(12),
-                                            placeholder: t(
-                                              currentLocale.value,
-                                              'notes_hint_flat',
-                                            ),
-                                            onLaunchUrl:
-                                                launchUrlFromQuillEditor,
-                                            customStyles:
-                                                DefaultStyles.getInstance(
-                                                  context,
-                                                ),
-                                            keyboardAppearance:
-                                                Theme.of(context).brightness ==
-                                                    Brightness.dark
-                                                ? Brightness.dark
-                                                : Brightness.light,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
                               ListView(
                                 padding: const EdgeInsets.fromLTRB(
                                   16,
