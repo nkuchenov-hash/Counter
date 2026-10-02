@@ -101,6 +101,7 @@ class NotesEditorScreen extends StatelessWidget {
     this.categoryColor,
     this.tags = const <NotesEditorMetadataTag>[],
     this.titleHint,
+    this.bodyOnly = false,
   });
 
   final TextEditingController titleController;
@@ -118,9 +119,20 @@ class NotesEditorScreen extends StatelessWidget {
   final Color? categoryColor;
   final List<NotesEditorMetadataTag> tags;
   final String? titleHint;
+  final bool bodyOnly;
 
   @override
   Widget build(BuildContext context) {
+    if (bodyOnly) {
+      return Material(
+        color: NotesFigmaTokens.surfaceCard(context),
+        child: NotesEditorBody(
+          content: content,
+          toolbar: toolbar,
+          embedded: true,
+        ),
+      );
+    }
     final embeddedScope = NotesEmbeddedEditorScope.maybeOf(context);
     final embedded = embeddedScope != null;
     final editor = LayoutBuilder(
