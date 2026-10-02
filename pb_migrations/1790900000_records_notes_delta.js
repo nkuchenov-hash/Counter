@@ -1,5 +1,6 @@
 /// <reference path="../pb_data/types.d.ts" />
 
+// Production deploy retry after documentation parity fix.
 // Rich Notes parity for Timeline records: keep a searchable plain projection
 // in records.note and persist the canonical LIFE OS block document separately.
 migrate(function(app) {
