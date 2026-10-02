@@ -592,6 +592,9 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
         startUtc,
         endUtc,
         categoryId: _categoryId,
+        note: noteText,
+        notesDeltaJson: _recordNoteDocument.encode(),
+        checklist: checklistPayload,
       );
       if (!mounted) return;
       if (ok) {
