@@ -23,6 +23,7 @@ import 'package:omni_datetime_picker/omni_datetime_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:counter/features/shared/edit_sheet/checklist_helpers.dart';
+import 'package:counter/features/shared/edit_sheet/inline_activity_notes_editor.dart';
 import 'package:counter/features/shared/edit_sheet/parallel_record_panels.dart';
 import 'package:counter/features/shared/edit_sheet/quill_link_launcher.dart';
 import 'package:counter/features/shared/edit_sheet/quill_toolbar_config.dart';
@@ -230,7 +231,7 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 2, vsync: this);
     _titleController = TextEditingController(text: widget.record.title);
     _recordQuillController = QuillController(
       document: _documentForRecordPlain(widget.record.note),
@@ -924,6 +925,11 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
                     ),
                   ],
                 ),
+                InlineActivityNotesEditor(
+                  controller: _recordQuillController,
+                  focusNode: _recordQuillFocus,
+                  scrollController: _recordQuillScroll,
+                ),
                 SizedBox(
                   height: kAppCompactControlHeight,
                   child: TabBar(
@@ -934,9 +940,6 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
                     tabAlignment: TabAlignment.start,
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     tabs: [
-                      AppCompactTextTab(
-                        text: t(currentLocale.value, 'notes_tab'),
-                      ),
                       AppCompactTextTab(
                         text: t(currentLocale.value, 'checklist_tab'),
                       ),
@@ -951,63 +954,6 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
                   child: TabBarView(
                     controller: _tabController,
                     children: [
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            ConstrainedBox(
-                              constraints: const BoxConstraints(
-                                minHeight: kPlanningEditQuillToolbarMinHeight,
-                              ),
-                              child: QuillSimpleToolbar(
-                                controller: _recordQuillController,
-                                config: planningTaskEditQuillToolbarConfig(
-                                  context,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Expanded(
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: Theme.of(context).colorScheme.surface,
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .outlineVariant
-                                        .withValues(alpha: 0.5),
-                                  ),
-                                ),
-                                clipBehavior: Clip.antiAlias,
-                                child: QuillEditor.basic(
-                                  controller: _recordQuillController,
-                                  focusNode: _recordQuillFocus,
-                                  scrollController: _recordQuillScroll,
-                                  config: QuillEditorConfig(
-                                    expands: true,
-                                    padding: const EdgeInsets.all(12),
-                                    placeholder: t(
-                                      currentLocale.value,
-                                      'notes_hint_flat',
-                                    ),
-                                    onLaunchUrl: launchUrlFromQuillEditor,
-                                    customStyles: DefaultStyles.getInstance(
-                                      context,
-                                    ),
-                                    keyboardAppearance:
-                                        Theme.of(context).brightness ==
-                                            Brightness.dark
-                                        ? Brightness.dark
-                                        : Brightness.light,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
                       ListView(
                         primary: false,
                         padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
