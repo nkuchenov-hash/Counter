@@ -10,6 +10,7 @@ class Record {
     this.sourcePlanId,
     this.title,
     this.note,
+    this.notesDeltaJson,
     this.type,
     this.status,
     this.categoryId,
@@ -33,6 +34,8 @@ class Record {
   final String? title;
   /// Single description field (replaces legacy `notes`).
   final String? note;
+  /// Canonical LIFE OS Notes block document JSON for rich record notes.
+  final String? notesDeltaJson;
   final String? type;
   final String? status;
   final String? categoryId;
@@ -52,7 +55,9 @@ class Record {
   final List<int> linkedSubRecordIds;
 
   /// @DATA_MAP `records.note` (merged legacy `notes` in [fromJson]).
-  bool get hasNotes => note != null && note!.trim().isNotEmpty;
+  bool get hasNotes =>
+      (note != null && note!.trim().isNotEmpty) ||
+      (notesDeltaJson != null && notesDeltaJson!.trim().isNotEmpty);
 
   bool get hasChecklist => checklist.isNotEmpty;
 
@@ -146,6 +151,7 @@ class Record {
       sourcePlanId: srcPlan,
       title: data['title']?.toString(),
       note: mergeRecordNoteFields(data['note'], data['notes']),
+      notesDeltaJson: data['notes_delta']?.toString(),
       type: data['type']?.toString(),
       status: data['status']?.toString(),
       categoryId: categoryId,
@@ -191,6 +197,7 @@ class Record {
       sourcePlanId: data['source_plan_id']?.toString(),
       title: data['title']?.toString(),
       note: data['note']?.toString(),
+      notesDeltaJson: data['notes_delta']?.toString(),
       type: data['type']?.toString(),
       status: data['status']?.toString(),
       categoryId: cat?.toString(),
@@ -213,6 +220,8 @@ class Record {
           'source_plan_id': sourcePlanId,
         'title': title,
         if (note != null && note!.isNotEmpty) 'note': note,
+        if (notesDeltaJson != null && notesDeltaJson!.trim().isNotEmpty)
+          'notes_delta': notesDeltaJson,
         'type': type,
         'status': status,
         'category_id': categoryId,
@@ -247,6 +256,7 @@ class TimelineRecord {
     this.durationSeconds,
     this.checklist,
     this.note,
+    this.notesDeltaJson,
     this.subRecordIds,
     this.parentId,
     this.timezoneOffsetHours = 0,
@@ -270,6 +280,8 @@ class TimelineRecord {
   final int? durationSeconds;
   final List<Map<String, dynamic>>? checklist;
   final String? note;
+  /// Canonical LIFE OS Notes block document JSON for rich record notes.
+  final String? notesDeltaJson;
   final List<int>? subRecordIds;
   final int? parentId;
   /// Profile wall-clock offset (profiles.timezone_offset). Drives [dateKey] day bucket — no device TZ.
@@ -289,7 +301,9 @@ class TimelineRecord {
   bool get isActuallyRunning =>
       endTime == null && status == 'running';
 
-  bool get hasNotes => note != null && note!.trim().isNotEmpty;
+  bool get hasNotes =>
+      (note != null && note!.trim().isNotEmpty) ||
+      (notesDeltaJson != null && notesDeltaJson!.trim().isNotEmpty);
 
   bool get hasChecklist => (checklist?.isNotEmpty ?? false);
 
@@ -349,6 +363,7 @@ class TimelineRecord {
     final startDt = _parseToUtcSecondPrecision(start);
     final endDt = _parseToUtcSecondPrecision(end);
     final note = mergeRecordNoteFields(data['note'], data['notes']);
+    final notesDeltaJson = data['notes_delta']?.toString();
     final checklist = parseChecklistFromNoco(data['checklist']);
     final rawSubIds = _get(data, 'subRecordIds', 'sub_record_ids');
     List<int>? subRecordIds;
@@ -395,6 +410,7 @@ class TimelineRecord {
       durationSeconds: (_get(data, 'durationSeconds', 'duration_seconds') as int?) ?? data['duration'] as int?,
       checklist: checklist,
       note: note,
+      notesDeltaJson: notesDeltaJson,
       subRecordIds: subRecordIds,
       parentId: parentId,
       timezoneOffsetHours: timezoneOffsetHours,
@@ -426,6 +442,8 @@ class TimelineRecord {
         'duration': duration,
         'duration_seconds': durationSeconds,
         if (note != null && note!.isNotEmpty) 'note': note,
+        if (notesDeltaJson != null && notesDeltaJson!.trim().isNotEmpty)
+          'notes_delta': notesDeltaJson,
         if (checklist != null && checklist!.isNotEmpty) 'checklist': checklist,
         if (subRecordIds != null && subRecordIds!.isNotEmpty) 'sub_record_ids': subRecordIds,
         if (parentId != null) 'parent_id': parentId,
@@ -469,6 +487,7 @@ class TimelineRecord {
     int? durationSeconds,
     List<Map<String, dynamic>>? checklist,
     String? note,
+    String? notesDeltaJson,
     List<int>? subRecordIds,
     int? parentId,
     int? timezoneOffsetHours,
@@ -488,6 +507,7 @@ class TimelineRecord {
       durationSeconds: durationSeconds ?? this.durationSeconds,
       checklist: checklist ?? this.checklist,
       note: note ?? this.note,
+      notesDeltaJson: notesDeltaJson ?? this.notesDeltaJson,
       subRecordIds: subRecordIds ?? this.subRecordIds,
       parentId: parentId ?? this.parentId,
       timezoneOffsetHours: timezoneOffsetHours ?? this.timezoneOffsetHours,
