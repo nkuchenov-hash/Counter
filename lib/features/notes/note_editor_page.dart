@@ -180,6 +180,13 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
 
   void _scheduleSave([String? _]) {
     _dirty = true;
+    // Embedded Record/Plan editors own their save lifecycle. Publish the
+    // canonical NoteDocument immediately so an immediate outer Save cannot
+    // miss the user's latest keystroke; the host still debounces network I/O.
+    if (widget.onDocumentChanged != null) {
+      _syncToBrain();
+      return;
+    }
     _gate.schedule(_syncToBrain);
   }
 
