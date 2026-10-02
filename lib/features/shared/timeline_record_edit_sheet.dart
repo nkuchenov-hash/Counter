@@ -60,9 +60,6 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
   late ScrollController _recordQuillScroll;
   late NoteDocument _recordNoteDocument;
 
-  String get _recordNotesDeltaWire =>
-      _recordNoteDocument.isEmpty ? '' : _recordNotesDeltaWire;
-
   int? _categoryId;
   DateTime? _startDisplay;
   DateTime? _endDisplay;
@@ -133,7 +130,7 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
       endTime: endUtc,
       categoryId: _categoryId,
       note: noteText.isEmpty ? null : noteText,
-      notesDeltaJson: _recordNotesDeltaWire,
+      notesDeltaJson: _recordNoteDocument.isEmpty ? '' : _recordNoteDocument.encode(),
       checklist: checklistPayload.isEmpty ? null : checklistPayload,
       sourcePlanId: planPatch.sync
           ? (planPatch.clear ? null : planPatch.id)
@@ -163,7 +160,7 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
       endTime: endUtc,
       categoryId: categoryId ?? _categoryId,
       note: noteText,
-      notesDeltaJson: _recordNotesDeltaWire,
+      notesDeltaJson: _recordNoteDocument.isEmpty ? '' : _recordNoteDocument.encode(),
       checklist: checklistPayload,
       syncSourcePlan: planPatch.sync,
       clearSourcePlan: planPatch.clear,
@@ -188,7 +185,7 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
       endTime: endUtc,
       categoryId: categoryId ?? _categoryId,
       note: noteText,
-      notesDeltaJson: _recordNotesDeltaWire,
+      notesDeltaJson: _recordNoteDocument.isEmpty ? '' : _recordNoteDocument.encode(),
       checklist: checklistPayload,
       syncSourcePlan: planPatch.sync,
       clearSourcePlan: planPatch.clear,
@@ -597,7 +594,7 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
         endUtc,
         categoryId: _categoryId,
         note: noteText,
-        notesDeltaJson: _recordNotesDeltaWire,
+        notesDeltaJson: _recordNoteDocument.isEmpty ? '' : _recordNoteDocument.encode(),
         checklist: checklistPayload,
       );
       if (!mounted) return;
