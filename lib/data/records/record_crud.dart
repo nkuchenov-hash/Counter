@@ -55,7 +55,18 @@ extension RecordCrudExtension on DatabaseService {
       }
     }
     if (note != null) updates['note'] = note;
-    if (notesDeltaJson != null) updates['notes_delta'] = notesDeltaJson;
+    if (notesDeltaJson != null) {
+      final nd = notesDeltaJson.trim();
+      if (nd.isEmpty) {
+        updates['notes_delta'] = null;
+      } else {
+        try {
+          updates['notes_delta'] = jsonDecode(nd);
+        } catch (_) {
+          updates['notes_delta'] = null;
+        }
+      }
+    }
     if (tags != null) {
       final t = tags.trim();
       if (t.isNotEmpty) updates['tags'] = t;
