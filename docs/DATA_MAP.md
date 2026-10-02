@@ -45,7 +45,8 @@ description: Revisions and corrections for DATA_MAP.md.
 | **source_plan_id** | Relation | **Link** | NO | Optional relation to **plans** `id` (15-char). Many records may reference one plan. |
 | **tags** | String | Metadata | NO | Comma-separated tags string. |
 | **checklist** | JSON | Complex | **YES** | Default is `[]`. Encoded as JSON string in API layer. |
-| **note** | String | Text | NO | User remarks or comments. |
+| **note** | String | Text | NO | Searchable/plain-text projection of the record note; legacy flat notes remain readable. |
+| **notes_delta** | JSON | Complex | NO | Canonical LIFE OS Notes block document used by the same Notes editor embedded in Record and Plan editing. |
 | **sleep_source** | String | Imported sleep | NO | Provider marker. Current primary value is `xiaomi`; historical/recovery rows may use legacy Google values. |
 | **sleep_external_id** | String | Imported sleep identity | NO | Exact provider identity for idempotency. Not sufficient by itself for Xiaomi revised-night dedupe because revised boundaries may change interval-derived IDs. |
 | **external_source** | String | Generic import provenance | NO | Current Xiaomi sleep rows use `xiaomi`. |
@@ -124,7 +125,7 @@ description: Revisions and corrections for DATA_MAP.md.
 | **parent_plan_id**| Relation | Hierarchy / Recurrence | NO | Relation to **plans** `id` (15-char, **self-collection**). Used either for nested plan hierarchy or, on a materialized recurring occurrence, to point to its recurrence series row. |
 | **checklist** | JSON | Complex | **YES** | Array of sub-items (default: `[]`). |
 | **order** | Number | UI | **YES** | Manual sorting index (default: `0`). |
-| **notes_delta** | JSON | Complex | NO | Quill Delta (JSON array) for rich-text notes in the Idea Editor. |
+| **notes_delta** | JSON | Complex | NO | Canonical LIFE OS Notes block document. Legacy Quill Delta is still migrated/read by `NoteDocument.tryParse`. |
 | **notes_plain** | String | Text | NO | Plain-text extraction of notes for search and legacy display; may include `LIFEOS_LINK::` prefix for backlog link (see app). |
 | **tags** | String | Data | NO | Comma-separated tags string. |
 | **tags_link** | Relation (Mult)| **Expand** | NO | PB Relation to the `tags` collection. |
