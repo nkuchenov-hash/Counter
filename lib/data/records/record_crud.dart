@@ -7,6 +7,7 @@ extension RecordCrudExtension on DatabaseService {
     DateTime? endTime,
     int? categoryId,
     String? note,
+    String? notesDeltaJson,
     String? tags,
     List<Map<String, dynamic>>? checklist,
     bool syncSourcePlan = false,
@@ -54,6 +55,7 @@ extension RecordCrudExtension on DatabaseService {
       }
     }
     if (note != null) updates['note'] = note;
+    if (notesDeltaJson != null) updates['notes_delta'] = notesDeltaJson;
     if (tags != null) {
       final t = tags.trim();
       if (t.isNotEmpty) updates['tags'] = t;
@@ -489,6 +491,7 @@ extension RecordCrudExtension on DatabaseService {
     DateTime? endTime,
     int? categoryId,
     String? note,
+    String? notesDeltaJson,
     String? tags,
     List<Map<String, dynamic>>? checklist,
     bool syncSourcePlan = false,
@@ -562,6 +565,7 @@ extension RecordCrudExtension on DatabaseService {
             categoryApplied;
       }
       if (note != null) row['note'] = note;
+      if (notesDeltaJson != null) row['notes_delta'] = notesDeltaJson;
       if (tags != null) {
         final t = tags.trim();
         if (t.isNotEmpty) row['tags'] = t;
@@ -614,6 +618,9 @@ extension RecordCrudExtension on DatabaseService {
             _applyTimelineRecordMapCategory(pend, resolvedCategoryId) ||
             categoryApplied;
       }
+      if (note != null) pend['note'] = note;
+      if (notesDeltaJson != null) pend['notes_delta'] = notesDeltaJson;
+      if (checklist != null) pend['checklist'] = checklist;
       updatedPending = true;
       dayKey ??= (pend['calendarDayStr'] ?? '').toString().trim();
       _optimisticPendingStartRecordMap = pend;
@@ -857,6 +864,7 @@ extension RecordCrudExtension on DatabaseService {
     DateTime? endTime,
     int? categoryId,
     String? note,
+    String? notesDeltaJson,
 
     /// Comma-separated tag **names** (@DATA_MAP `records.tags` string). Omitted when null or blank.
     String? tags,
@@ -915,6 +923,7 @@ extension RecordCrudExtension on DatabaseService {
         endTime: endTime,
         categoryId: effectiveCategoryId,
         note: note,
+        notesDeltaJson: notesDeltaJson,
         tags: tags,
         checklist: checklist,
         syncSourcePlan: syncSourcePlan,
@@ -939,6 +948,7 @@ extension RecordCrudExtension on DatabaseService {
         endTime: endTime,
         categoryId: effectiveCategoryId,
         note: note,
+        notesDeltaJson: notesDeltaJson,
         tags: tags,
         checklist: checklist,
         syncSourcePlan: syncSourcePlan,
@@ -1160,6 +1170,7 @@ extension RecordCrudExtension on DatabaseService {
     DateTime? endTime,
     int? categoryId,
     String? note,
+    String? notesDeltaJson,
     String? tags,
     List<Map<String, dynamic>>? checklist,
     bool syncSourcePlan = false,
@@ -1173,6 +1184,7 @@ extension RecordCrudExtension on DatabaseService {
     endTime: endTime,
     categoryId: categoryId,
     note: note,
+    notesDeltaJson: notesDeltaJson,
     tags: tags,
     checklist: checklist,
     syncSourcePlan: syncSourcePlan,
