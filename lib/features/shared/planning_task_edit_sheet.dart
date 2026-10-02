@@ -462,20 +462,6 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
     return Document();
   }
 
-  bool _isTrivialEmptyNotes(String deltaJson, String plainTrimmed) {
-    if (plainTrimmed.isNotEmpty) return false;
-    try {
-      final d = jsonDecode(deltaJson);
-      if (d is! List) return true;
-      if (d.isEmpty) return true;
-      if (d.length == 1 && d[0] is Map) {
-        final m = Map<String, dynamic>.from(d[0] as Map);
-        if (m['insert'] == '\n' && m['attributes'] == null) return true;
-      }
-    } catch (_) {}
-    return false;
-  }
-
   String _dateKeyFromDate(DateTime d) =>
       '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
   String _shortMonth(int month) =>
@@ -552,8 +538,7 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
       notesPlainOut = plainTrimmed.isEmpty ? null : plainTrimmed;
       notesDeltaJsonOut = deltaJson;
     }
-    final shouldClear =
-        notesPlainOut == null && _isTrivialEmptyNotes(deltaJson, plainTrimmed);
+    final shouldClear = notesPlainOut == null && _noteDocument.isEmpty;
     return shouldClear
         ? widget.task.copyWith(
             title: title,
