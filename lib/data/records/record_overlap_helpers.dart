@@ -391,6 +391,9 @@ extension RecordOverlapExtension on DatabaseService {
     DateTime startTime,
     DateTime endTime, {
     int? categoryId,
+    String? note,
+    String? notesDeltaJson,
+    List<Map<String, dynamic>>? checklist,
   }) async {
     if (!_isInitialized || !_hasAuthenticatedUserId) return false;
     if (_writeRecordMutationInFlight) return false;
@@ -406,6 +409,15 @@ extension RecordOverlapExtension on DatabaseService {
         AppSnack.failed();
         return false;
       }
+      dynamic notesDelta;
+      final nd = notesDeltaJson?.trim() ?? '';
+      if (nd.isNotEmpty) {
+        try {
+          notesDelta = jsonDecode(nd);
+        } catch (_) {
+          notesDelta = null;
+        }
+      }
       final newId = await _createRecordPb(<String, dynamic>{
         'user_id': _pidForPbFilter,
         'record_id': DatabaseService._newClientRecordUuid(),
@@ -416,7 +428,9 @@ extension RecordOverlapExtension on DatabaseService {
         'category_id': _recordCategoryBusinessPkForApi(cid),
         'type': 'record',
         'parent_id': null,
-        'checklist': <Map<String, dynamic>>[],
+        'checklist': checklist ?? <Map<String, dynamic>>[],
+        if ((note ?? '').trim().isNotEmpty) 'note': note!.trim(),
+        if (notesDelta != null) 'notes_delta': notesDelta,
         if (parsed.tags.isNotEmpty) 'tags': parsed.tags.join(','),
       });
       if (newId == null) {
