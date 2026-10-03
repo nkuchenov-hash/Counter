@@ -233,7 +233,8 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 2, vsync: this)
+      ..addListener(_handleRecordTabChanged);
     _titleController = TextEditingController(text: widget.record.title);
     _recordNoteDocument = NoteDocument.tryParse(
       notesDeltaJson: widget.record.notesDeltaJson,
@@ -286,6 +287,14 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
       if (!mounted) return;
       _onRecordFieldChanged();
     });
+  }
+
+  void _handleRecordTabChanged() {
+    if (_tabController.index == 0) return;
+    FocusManager.instance.primaryFocus?.unfocus();
+    if (_notesEditorFocused && mounted) {
+      setState(() => _notesEditorFocused = false);
+    }
   }
 
   /// Same wall-calendar day as [DatabaseService._profileWallFromUtc] / planning fetch —
@@ -545,26 +554,6 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
       setState(() => _endDisplay = picked);
       _onRecordFieldChanged(immediate: true);
     }
-  }
-
-  Future<void> _showParallelActivitiesSheet(int categoryId) async {
-    FocusManager.instance.primaryFocus?.unfocus();
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      builder: (sheetContext) => DraggableScrollableSheet(
-        expand: false,
-        initialChildSize: 0.72,
-        minChildSize: 0.42,
-        maxChildSize: 0.95,
-        builder: (context, scrollController) => ParallelActivitiesTab(
-          parentRecord: widget.record,
-          scrollController: scrollController,
-          categoryId: categoryId,
-        ),
-      ),
-    );
   }
 
   Future<void> _save() async {
@@ -966,54 +955,71 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
                     ),
                   ],
                 ),
-                Expanded(
-                  child: Focus(
-                    onFocusChange: (focused) {
-                      if (!mounted || _notesEditorFocused == focused) return;
-                      setState(() => _notesEditorFocused = focused);
-                    },
-                    child: NoteEditorPage(
-                      inlineKeyboardActive: notesEditing,
-                      task: PlanningTask(
-                      id: 0,
-                      planRowId: widget.record.recordId,
-                      pocketRecordId: widget.record.id,
-                      title: widget.record.title,
-                      categoryId:
-                          widget.record.categoryId ??
-                          CategoryRule.uncategorizedSyntheticId,
-                      dateKey: widget.record.dateKey,
-                      checklist: const <Map<String, dynamic>>[],
-                      notesPlain: widget.record.note,
-                      notesDeltaJson: widget.record.notesDeltaJson,
-                    ),
-                    inlineBodyOnly: true,
-                    initialDocument: _recordNoteDocument,
-                      onDocumentChanged: (document) {
-                        _recordNoteDocument = document;
-                        _onRecordFieldChanged();
-                      },
-                    ),
-                  ),
-                ),
-                if (!notesEditing)
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 2, 16, 2),
-                    child: Align(
-                      alignment: AlignmentDirectional.centerStart,
-                      child: TextButton.icon(
-                        onPressed: () =>
-                            unawaited(_showParallelActivitiesSheet(catVal)),
-                        icon: const Icon(Icons.call_split_rounded),
-                        label: Text(
-                          t(
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: SizedBox(
+                    height: kAppCompactControlHeight,
+                    child: TabBar(
+                      controller: _tabController,
+                      isScrollable: true,
+                      indicatorSize: TabBarIndicatorSize.tab,
+                      labelPadding: const EdgeInsets.symmetric(horizontal: 10),
+                      tabAlignment: TabAlignment.start,
+                      padding: EdgeInsets.zero,
+                      tabs: [
+                        AppCompactTextTab(
+                          text: t(currentLocale.value, 'notes_tab'),
+                        ),
+                        AppCompactTextTab(
+                          text: t(
                             currentLocale.value,
                             'parallel_activities_tab',
                           ),
                         ),
-                      ),
+                      ],
                     ),
                   ),
+                ),
+                Expanded(
+                  child: TabBarView(
+                    controller: _tabController,
+                    children: [
+                      Focus(
+                        onFocusChange: (focused) {
+                          if (!mounted || _notesEditorFocused == focused) return;
+                          setState(() => _notesEditorFocused = focused);
+                        },
+                        child: NoteEditorPage(
+                          inlineKeyboardActive: notesEditing,
+                          task: PlanningTask(
+                            id: 0,
+                            planRowId: widget.record.recordId,
+                            pocketRecordId: widget.record.id,
+                            title: widget.record.title,
+                            categoryId:
+                                widget.record.categoryId ??
+                                CategoryRule.uncategorizedSyntheticId,
+                            dateKey: widget.record.dateKey,
+                            checklist: const <Map<String, dynamic>>[],
+                            notesPlain: widget.record.note,
+                            notesDeltaJson: widget.record.notesDeltaJson,
+                          ),
+                          inlineBodyOnly: true,
+                          initialDocument: _recordNoteDocument,
+                          onDocumentChanged: (document) {
+                            _recordNoteDocument = document;
+                            _onRecordFieldChanged();
+                          },
+                        ),
+                      ),
+                      ParallelActivitiesTab(
+                        parentRecord: widget.record,
+                        scrollController: widget.scrollController,
+                        categoryId: catVal,
+                      ),
+                    ],
+                  ),
+                ),
                 if (!notesEditing)
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
