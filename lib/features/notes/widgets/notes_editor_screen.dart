@@ -102,7 +102,6 @@ class NotesEditorScreen extends StatelessWidget {
     this.tags = const <NotesEditorMetadataTag>[],
     this.titleHint,
     this.bodyOnly = false,
-    this.bodyOnlyAvoidKeyboard = false,
   });
 
   final TextEditingController titleController;
@@ -121,25 +120,19 @@ class NotesEditorScreen extends StatelessWidget {
   final List<NotesEditorMetadataTag> tags;
   final String? titleHint;
   final bool bodyOnly;
-  final bool bodyOnlyAvoidKeyboard;
 
   @override
   Widget build(BuildContext context) {
     if (bodyOnly) {
-      final keyboardInset = bodyOnlyAvoidKeyboard
-          ? MediaQuery.viewInsetsOf(context).bottom
-          : 0.0;
+      // The host edit sheet is already resized by the platform keyboard.
+      // Adding viewInsets here would subtract the keyboard height a second
+      // time and collapse both the Notes canvas and its toolbar.
       return Material(
         color: NotesFigmaTokens.surfaceCard(context),
-        child: AnimatedPadding(
-          duration: const Duration(milliseconds: 120),
-          curve: Curves.easeOut,
-          padding: EdgeInsets.only(bottom: keyboardInset),
-          child: NotesEditorBody(
-            content: content,
-            toolbar: toolbar,
-            embedded: true,
-          ),
+        child: NotesEditorBody(
+          content: content,
+          toolbar: toolbar,
+          embedded: true,
         ),
       );
     }
