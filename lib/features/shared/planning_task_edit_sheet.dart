@@ -77,6 +77,7 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
 
   /// True until [DatabaseService.fetchTagsForCurrentUser] completes (strip stays visible).
   bool _tagsLoading = true;
+  bool _notesEditorFocused = false;
   late List<Tag> _selectedTags;
   int? _reminderMinutes;
   late PlanRepeatUi _repeatUi;
@@ -613,7 +614,8 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
     );
     final kbBottom = MediaQuery.viewInsetsOf(context).bottom;
     final keyboardOpen = kbBottom > 0;
-    final compactChrome = keyboardOpen;
+    final notesEditing = keyboardOpen && _notesEditorFocused;
+    final compactChrome = notesEditing;
 
     return Material(
       color: Theme.of(context).colorScheme.surface,
@@ -658,7 +660,7 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
             ),
           ),
           const Divider(height: 1),
-          if (!keyboardOpen)
+          if (!notesEditing)
           Padding(
             padding: EdgeInsets.fromLTRB(
               16,
@@ -681,18 +683,25 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
             child: Column(
               children: [
                 Expanded(
-                  flex: keyboardOpen ? 1 : 5,
-                  child: NoteEditorPage(
-                    task: widget.task,
+                  flex: notesEditing ? 1 : 5,
+                  child: Focus(
+                    onFocusChange: (focused) {
+                      if (!mounted || _notesEditorFocused == focused) return;
+                      setState(() => _notesEditorFocused = focused);
+                    },
+                    child: NoteEditorPage(
+                      task: widget.task,
+                      inlineKeyboardActive: notesEditing,
                     inlineBodyOnly: true,
                     initialDocument: _noteDocument,
-                    onDocumentChanged: (document) {
-                      _noteDocument = document;
-                      _onPlanFieldChanged();
-                    },
+                      onDocumentChanged: (document) {
+                        _noteDocument = document;
+                        _onPlanFieldChanged();
+                      },
+                    ),
                   ),
                 ),
-                if (!keyboardOpen && _startedAsUndatedBacklog) ...[
+                if (!notesEditing && _startedAsUndatedBacklog) ...[
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: SizedBox(
@@ -1321,7 +1330,7 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
                       16,
                       0,
                       16,
-                      keyboardOpen ? 4 : 8,
+                      notesEditing ? 4 : 8,
                     ),
                     child: Align(
                       alignment: Alignment.centerLeft,
@@ -1334,7 +1343,7 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
                       ),
                     ),
                   ),
-                if (!keyboardOpen)
+                if (!notesEditing)
                   Padding(
                     padding: const EdgeInsets.fromLTRB(
                       kPlanningEditActionBarPadH,
