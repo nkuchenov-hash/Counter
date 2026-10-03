@@ -1,6 +1,103 @@
 part of '../database_service.dart';
 
 extension CategoryCacheExtension on DatabaseService {
+  static const String _nordicCategoryColorMigrationKey =
+      'life_os_nordic_category_colors_v1';
+
+  MaterialColor _closestNordicFamilyForExistingColor(int? colorValue) {
+    if (colorValue == null || colorValue == 0) return kCategoryNeutral;
+    final color = Color(colorValue);
+    final hsv = HSVColor.fromColor(color);
+    if (hsv.saturation < 0.16) return kCategoryNeutral;
+
+    final families = kCategoryPickerMaterialColors
+        .where((c) => c != kCategoryNeutral)
+        .toList(growable: false);
+    MaterialColor best = families.first;
+    var bestDistance = double.infinity;
+    for (final family in families) {
+      final target = HSVColor.fromColor(family[500]!);
+      final rawHue = (hsv.hue - target.hue).abs();
+      final hueDistance = rawHue > 180 ? 360 - rawHue : rawHue;
+      final saturationDistance = (hsv.saturation - target.saturation).abs();
+      final valueDistance = (hsv.value - target.value).abs();
+      final distance =
+          hueDistance + saturationDistance * 22 + valueDistance * 10;
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        best = family;
+      }
+    }
+    return best;
+  }
+
+  Future<void> _migrateExistingCategoryColorsToNordicOnce() async {
+    if (_rules.isEmpty) return;
+    final prefs = _prefs ?? await SharedPreferences.getInstance();
+    final owner = (currentProfileId ?? _userIdForWhere ?? 'default').trim();
+    final key = '${_nordicCategoryColorMigrationKey}_$owner';
+    if (prefs.getBool(key) ?? false) return;
+
+    final changes = <({CategoryRule rule, int color})>[];
+
+    void collectChildren(CategoryRule parent, MaterialColor family) {
+      final children = parent.children ?? const <CategoryRule>[];
+      for (var i = 0; i < children.length; i++) {
+        final child = children[i];
+        final nextColor = categoryNordicChildColorValue(
+          family[500]!.toARGB32(),
+          i,
+        );
+        if (child.colorValue != nextColor) {
+          child.colorValue = nextColor;
+          changes.add((rule: child, color: nextColor));
+        }
+        collectChildren(child, family);
+      }
+    }
+
+    for (final root in _rules) {
+      if (root.isArchived) continue;
+      final family = _closestNordicFamilyForExistingColor(root.colorValue);
+      final rootColor = family[500]!.toARGB32();
+      if (root.colorValue != rootColor) {
+        root.colorValue = rootColor;
+        changes.add((rule: root, color: rootColor));
+      }
+      collectChildren(root, family);
+    }
+
+    if (changes.isEmpty) {
+      await prefs.setBool(key, true);
+      return;
+    }
+
+    _categoryController.add(List.from(_rules));
+
+    var allSaved = true;
+    for (final change in changes) {
+      try {
+        final result = await patchCategoryDelta(
+          change.rule.id,
+          <String, dynamic>{'color_value': change.color},
+        );
+        if (!result.ok) allSaved = false;
+      } catch (_) {
+        allSaved = false;
+      }
+    }
+
+    if (allSaved) {
+      await prefs.setBool(key, true);
+      DatabaseService._log(
+        'NORDIC_CATEGORY_COLORS: migrated ${changes.length} categories',
+      );
+    } else {
+      DatabaseService._log(
+        'NORDIC_CATEGORY_COLORS: partial migration; will retry next launch',
+      );
+    }
+  }
   Set<String> _categoryCacheOwnerAliases() {
     final aliases = <String>{};
 
@@ -329,6 +426,7 @@ extension CategoryCacheExtension on DatabaseService {
           : _buildCategoryTreeFromFlat(flat);
       _rules = built.$1;
       _categoryController.add(List.from(_rules));
+      unawaited(_migrateExistingCategoryColorsToNordicOnce());
       for (final g in built.$2) {
         unawaited(
           _persistCategoryOrdersBulkForce(g, contextLabel: 'nullOrderInit'),
