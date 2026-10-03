@@ -102,6 +102,7 @@ class NotesEditorScreen extends StatelessWidget {
     this.tags = const <NotesEditorMetadataTag>[],
     this.titleHint,
     this.bodyOnly = false,
+    this.bodyOnlyAvoidKeyboard = false,
   });
 
   final TextEditingController titleController;
@@ -120,11 +121,14 @@ class NotesEditorScreen extends StatelessWidget {
   final List<NotesEditorMetadataTag> tags;
   final String? titleHint;
   final bool bodyOnly;
+  final bool bodyOnlyAvoidKeyboard;
 
   @override
   Widget build(BuildContext context) {
     if (bodyOnly) {
-      final keyboardInset = MediaQuery.viewInsetsOf(context).bottom;
+      final keyboardInset = bodyOnlyAvoidKeyboard
+          ? MediaQuery.viewInsetsOf(context).bottom
+          : 0.0;
       return Material(
         color: NotesFigmaTokens.surfaceCard(context),
         child: AnimatedPadding(
