@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:counter/core/category_color_palette.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/l10n/dictionary.dart';
@@ -66,10 +67,18 @@ class _CreateCategoryDialogState extends State<_CreateCategoryDialog> {
     if (name.isEmpty) return;
     setState(() => _busy = true);
     try {
+      final db = DatabaseService.instance;
+      final siblings = db.getChildrenOf(widget.parentId);
+      final parent = widget.parentId == null
+          ? null
+          : db.getCategoryRuleById(widget.parentId!);
+      final defaultColorValue = parent == null
+          ? categoryNordicRootColorValue(siblings.length)
+          : categoryNordicChildColorValue(parent.colorValue, siblings.length);
       final child = CategoryRule(
-        id: DatabaseService.instance.newId(),
+        id: db.newId(),
         name: name,
-        colorValue: Colors.grey.toARGB32(),
+        colorValue: defaultColorValue,
         iconCodePoint: Icons.folder_rounded.codePoint,
       );
       final createdId =
