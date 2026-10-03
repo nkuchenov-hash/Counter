@@ -151,6 +151,21 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
   }
 
   @override
+  void didUpdateWidget(covariant NoteEditorPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!oldWidget.inlineKeyboardActive &&
+        widget.inlineKeyboardActive &&
+        _editor.activeBlockId != null) {
+      final blockId = _editor.activeBlockId!;
+      _ensureBlockVisible(blockId);
+      Future<void>.delayed(const Duration(milliseconds: 180), () {
+        if (!mounted || !widget.inlineKeyboardActive) return;
+        _ensureBlockVisible(blockId);
+      });
+    }
+  }
+
+  @override
   void dispose() {
     _secondarySelectionGuardTimer?.cancel();
     if (_dirty && !widget.parityPreview) {
@@ -274,6 +289,7 @@ if (_blockSelectionMode) {
           if (_editingBlockId != block.id || activeChanged) {
             setState(() => _editingBlockId = block.id);
           }
+          _ensureBlockVisible(block.id);
           return;
         }
         if (_editingBlockId == block.id) {
@@ -389,10 +405,12 @@ if (_blockSelectionMode) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
         node?.requestFocus();
+        _ensureBlockVisible(blockId);
       });
       return;
     }
     node?.requestFocus();
+    _ensureBlockVisible(blockId);
     if (changedActive && mounted) setState(() {});
   }
 
@@ -1064,6 +1082,22 @@ _deleteBlockFromMenu(block.id);
     return render.localToGlobal(Offset.zero) & render.size;
   }
 
+  void _ensureBlockVisible(String blockId) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final blockContext = _blockItemKeys[blockId]?.currentContext;
+      if (blockContext == null) return;
+      unawaited(
+        Scrollable.ensureVisible(
+          blockContext,
+          duration: const Duration(milliseconds: 120),
+          curve: Curves.easeOut,
+          alignmentPolicy: ScrollPositionAlignmentPolicy.keepVisibleAtEnd,
+        ),
+      );
+    });
+  }
+
   void _clearActiveBlock() {
     if (_blockSelectionMode) return;
     FocusManager.instance.primaryFocus?.unfocus();
@@ -1702,7 +1736,6 @@ AppButton.destructive(
 
     return NotesEditorScreen(
       bodyOnly: widget.inlineBodyOnly,
-      bodyOnlyAvoidKeyboard: widget.inlineKeyboardActive,
       titleController: _titleController,
       titleHint: t(loc, 'notes_v3_editor_title_hint'),
       onTitleChanged: _scheduleSave,
