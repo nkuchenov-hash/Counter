@@ -66,6 +66,7 @@ class NoteEditorPage extends StatefulWidget {
     this.onClosed,
     this.parityPreview = false,
     this.inlineBodyOnly = false,
+    this.inlineKeyboardActive = false,
     this.initialDocument,
     this.onDocumentChanged,
   });
@@ -77,6 +78,10 @@ class NoteEditorPage extends StatefulWidget {
   /// Reuse the exact production Notes block canvas + toolbar inside another
   /// editor without duplicating the Notes title/navigation chrome.
   final bool inlineBodyOnly;
+
+  /// True only while an embedded Notes field owns focus and the keyboard is open.
+  /// Host editors use this to avoid collapsing their chrome for unrelated fields.
+  final bool inlineKeyboardActive;
 
   /// Explicit document used by non-plan hosts such as Timeline records.
   final NoteDocument? initialDocument;
@@ -1697,6 +1702,7 @@ AppButton.destructive(
 
     return NotesEditorScreen(
       bodyOnly: widget.inlineBodyOnly,
+      bodyOnlyAvoidKeyboard: widget.inlineKeyboardActive,
       titleController: _titleController,
       titleHint: t(loc, 'notes_v3_editor_title_hint'),
       onTitleChanged: _scheduleSave,
