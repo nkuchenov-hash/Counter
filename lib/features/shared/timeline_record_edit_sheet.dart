@@ -71,6 +71,7 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
   late String _sourcePlanPbId;
   List<PlanningTask> _plansForLink = [];
   bool _plansLoading = true;
+  bool _notesEditorFocused = false;
   final EditSheetAutosaveGate _recordAutosaveGate = EditSheetAutosaveGate();
   StreamSubscription<DocChange>? _recordQuillChangesSub;
 
@@ -808,6 +809,7 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
   @override
   Widget build(BuildContext context) {
     final keyboardOpen = MediaQuery.viewInsetsOf(context).bottom > 0;
+    final notesEditing = keyboardOpen && _notesEditorFocused;
     final pairs = DatabaseService.instance.allCategoryIdPathPairs;
     // ACTIVE_STATUS_LAW: running ⇔ end_time null (UI mirrors Brain).
     final isRunning = widget.record.endTime == null;
@@ -829,9 +831,9 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
           Padding(
             padding: EdgeInsets.fromLTRB(
               16,
-              keyboardOpen ? 4 : 12,
+              notesEditing ? 4 : 12,
               16,
-              keyboardOpen ? 0 : 4,
+              notesEditing ? 0 : 4,
             ),
             child: Row(
               children: [
@@ -879,7 +881,7 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
                               _onRecordFieldChanged();
                             },
                           ),
-                          if (!keyboardOpen) ...[
+                          if (!notesEditing) ...[
                             const SizedBox(height: 8),
                             Padding(
                               padding: const EdgeInsets.only(bottom: 8),
@@ -915,7 +917,7 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
                         ],
                       ),
                     ),
-                    if (!keyboardOpen)
+                    if (!notesEditing)
                       Padding(
                         padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
                         child: Row(
@@ -965,8 +967,14 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
                   ],
                 ),
                 Expanded(
-                  child: NoteEditorPage(
-                    task: PlanningTask(
+                  child: Focus(
+                    onFocusChange: (focused) {
+                      if (!mounted || _notesEditorFocused == focused) return;
+                      setState(() => _notesEditorFocused = focused);
+                    },
+                    child: NoteEditorPage(
+                      inlineKeyboardActive: notesEditing,
+                      task: PlanningTask(
                       id: 0,
                       planRowId: widget.record.recordId,
                       pocketRecordId: widget.record.id,
@@ -981,13 +989,14 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
                     ),
                     inlineBodyOnly: true,
                     initialDocument: _recordNoteDocument,
-                    onDocumentChanged: (document) {
-                      _recordNoteDocument = document;
-                      _onRecordFieldChanged();
-                    },
+                      onDocumentChanged: (document) {
+                        _recordNoteDocument = document;
+                        _onRecordFieldChanged();
+                      },
+                    ),
                   ),
                 ),
-                if (!keyboardOpen)
+                if (!notesEditing)
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 2, 16, 2),
                     child: Align(
@@ -1005,7 +1014,7 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
                       ),
                     ),
                   ),
-                if (!keyboardOpen)
+                if (!notesEditing)
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
                     child: Row(
