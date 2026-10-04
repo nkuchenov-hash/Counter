@@ -134,7 +134,12 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
     }
     _syncEditorsWithDocument();
 
-    if (_editor.activeBlockId != null &&
+    // Embedded Notes inside Record/Plan editors must stay passive until
+    // the user explicitly taps into Notes. Otherwise opening an edit sheet can
+    // immediately steal focus and open the keyboard.
+    if (!widget.inlineBodyOnly &&
+        _editor.activeBlockId != null &&
+        _sourceDocument.blocks.isNotEmpty &&
         _sourceDocument.blocks.every(
           (block) => !NotesEditorDocumentController.isSupportedProductionBlock(
             block.type,
