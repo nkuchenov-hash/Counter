@@ -8,13 +8,13 @@ import 'dart:convert';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/features/notes/note_editor_page.dart';
 import 'package:counter/features/notes/notes_glm_surface.dart';
+import 'package:counter/features/notes/notes_visual_tokens.dart';
 import 'package:counter/features/notes/widgets/note_card.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:counter/shared/categories/picker/category_tree_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-const Color _kAllFolderSurface = Color(0xFFE3ECF8);
 const String _kChipModePrefsKey = 'list_chip_mode';
 const String _kPinnedIdsPrefsKey = 'list_pinned_ids';
 
@@ -86,12 +86,13 @@ class NotesLibraryProductionShell extends StatelessWidget {
     final dark = theme.brightness == Brightness.dark;
     final category = _categoryAdapter();
     final headerAdapter = _headerAdapter();
+    final sectionPalette = _sectionPaletteFor(category?.filterCategoryId);
     final paneFill = dark
         ? theme.colorScheme.surfaceContainerHigh.withValues(alpha: 0.88)
-        : _paneColorFor(category?.filterCategoryId);
+        : sectionPalette.pane;
     final paneBorder = dark
         ? theme.colorScheme.outlineVariant.withValues(alpha: 0.70)
-        : Color.lerp(paneFill, const Color(0xFFD8E0E9), 0.30)!;
+        : Color.lerp(sectionPalette.tab, const Color(0xFFD8E0E9), 0.52)!;
     final listView = headerAdapter?.notesView == NotesLibraryView.list;
 
     final tabs = category == null
@@ -146,8 +147,12 @@ class NotesLibraryProductionShell extends StatelessWidget {
                             ],
                     ),
                     clipBehavior: Clip.antiAlias,
-                    padding: listView ? EdgeInsets.zero : const EdgeInsets.all(28),
-                    child: content,
+                    padding:
+                        listView ? EdgeInsets.zero : const EdgeInsets.all(28),
+                    child: NotesSectionPaletteScope(
+                      palette: sectionPalette,
+                      child: content,
+                    ),
                   ),
                 ),
                 Positioned(
@@ -484,14 +489,11 @@ class _NewNoteButton extends StatelessWidget {
   }
 }
 
-Color _paneColorFor(int? categoryId) {
-  if (categoryId == null) return _kAllFolderSurface;
+NotesSectionPalette _sectionPaletteFor(int? categoryId) {
+  if (categoryId == null) return NotesSectionPalette.all;
   final rule = DatabaseService.instance.getCategoryRuleById(categoryId);
-  if (rule == null) return _kAllFolderSurface;
-  return Color.alphaBlend(
-    rule.colorOrDefault.withValues(alpha: 0.14),
-    const Color(0xFFF7F8FA),
-  );
+  if (rule == null) return NotesSectionPalette.all;
+  return NotesSectionPalette.forCategory(rule.name, rule.colorOrDefault);
 }
 
 class _NotesCategoryAdapter {
@@ -579,6 +581,7 @@ class _NotesPhysicalFolderTabsState extends State<_NotesPhysicalFolderTabs> {
   @override
   Widget build(BuildContext context) {
     final ids = _ids;
+    final allPalette = NotesSectionPalette.all;
     return SizedBox(
       height: 56,
       child: ScrollConfiguration(
@@ -594,8 +597,8 @@ class _NotesPhysicalFolderTabsState extends State<_NotesPhysicalFolderTabs> {
               child: _FolderTab(
                 label: _allLabel(currentLocale.value),
                 icon: Icons.format_list_bulleted_rounded,
-                accent: const Color(0xFF285B99),
-                fill: _kAllFolderSurface,
+                accent: allPalette.accent,
+                fill: allPalette.tab,
                 selected: widget.adapter.filterCategoryId == null,
                 onTap: () => widget.adapter.onFilterChanged(null),
               ),
@@ -624,15 +627,16 @@ class _NotesPhysicalFolderTabsState extends State<_NotesPhysicalFolderTabs> {
   Widget _categoryTab(int id) {
     final rule = DatabaseService.instance.getCategoryRuleById(id);
     if (rule == null) return const SizedBox.shrink();
-    final accent = rule.colorOrDefault;
+    final palette =
+        NotesSectionPalette.forCategory(rule.name, rule.colorOrDefault);
     final icon = rule.iconCodePoint == null
         ? Icons.folder_outlined
         : IconData(rule.iconCodePoint!, fontFamily: 'MaterialIcons');
     return _FolderTab(
       label: rule.name.trim().isEmpty ? '—' : rule.name.trim(),
       icon: icon,
-      accent: accent,
-      fill: _paneColorFor(id),
+      accent: palette.accent,
+      fill: palette.tab,
       selected: widget.adapter.filterCategoryId == id,
       onTap: () => widget.adapter.onFilterChanged(id),
     );
