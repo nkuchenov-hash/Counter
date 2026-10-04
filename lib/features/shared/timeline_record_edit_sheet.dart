@@ -70,7 +70,8 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
   /// PocketBase **plans** row id; empty = no link.
   late String _sourcePlanPbId;
   List<PlanningTask> _plansForLink = [];
-  bool _plansLoading = true;
+  bool _plansLoading = false;
+  bool _plansLoaded = false;
   bool _notesEditorFocused = false;
   final EditSheetAutosaveGate _recordAutosaveGate = EditSheetAutosaveGate();
   StreamSubscription<DocChange>? _recordQuillChangesSub;
@@ -278,9 +279,6 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
     _sourcePlanPbId =
         DatabaseService.pocketRelationIdOrNull(widget.record.sourcePlanId) ??
         '';
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      unawaited(_loadPlansForLink());
-    });
     _recordQuillChangesSub = _recordQuillController.document.changes.listen((
       _,
     ) {
@@ -323,15 +321,55 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
   }
 
   Future<void> _loadPlansForLink() async {
+    if (_plansLoading) return;
     if (mounted) setState(() => _plansLoading = true);
-    final list = await DatabaseService.instance.getPlanningTasksForWallDate(
-      _wallDayForRecord(),
+    try {
+      final list = await DatabaseService.instance
+          .getPlanningTasksForWallDate(_wallDayForRecord())
+          .timeout(const Duration(seconds: 8));
+      if (!mounted) return;
+      setState(() {
+        _plansForLink = list;
+        _plansLoaded = true;
+      });
+    } catch (e) {
+      debugPrint('UI ERROR: failed to load plans for record link: $e');
+    } finally {
+      if (mounted) setState(() => _plansLoading = false);
+    }
+  }
+
+  Future<void> _openPlanLinkPicker(BuildContext context) async {
+    if (!_plansLoaded) {
+      await _loadPlansForLink();
+      if (!mounted) return;
+    }
+    final loc = currentLocale.value;
+    final options = <MapEntry<String, String>>[
+      MapEntry('', t(loc, 'record_no_plan_link')),
+    ];
+    final seen = <String>{''};
+    for (final p in _plansForLink) {
+      final pid = DatabaseService.pocketRelationIdOrNull(p.pocketRecordId);
+      if (pid == null || seen.contains(pid)) continue;
+      seen.add(pid);
+      options.add(MapEntry(pid, p.title));
+    }
+    var selectedKey = _sourcePlanPbId;
+    if (selectedKey.isNotEmpty && !seen.contains(selectedKey)) {
+      final normalized = DatabaseService.pocketRelationIdOrNull(selectedKey);
+      if (normalized != null) {
+        options.insert(1, MapEntry(normalized, '—'));
+        selectedKey = normalized;
+      } else {
+        selectedKey = '';
+      }
+    }
+    await _showPlanLinkPickerSheet(
+      context,
+      options: options,
+      selectedKey: selectedKey,
     );
-    if (!mounted) return;
-    setState(() {
-      _plansForLink = list;
-      _plansLoading = false;
-    });
   }
 
   Future<void> _showPlanLinkPickerSheet(
@@ -450,13 +488,7 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
       child: InkWell(
         onTap: _plansLoading
             ? null
-            : () => unawaited(
-                _showPlanLinkPickerSheet(
-                  context,
-                  options: options,
-                  selectedKey: initial,
-                ),
-              ),
+            : () => unawaited(_openPlanLinkPicker(context)),
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 10),
           child: Row(
@@ -541,8 +573,11 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
     final initial = _startDisplay ?? displayNow();
     final picked = await showAppDateTimePicker(context, initial: initial);
     if (picked != null && mounted) {
-      setState(() => _startDisplay = picked);
-      unawaited(_loadPlansForLink());
+      setState(() {
+        _startDisplay = picked;
+        _plansLoaded = false;
+        _plansForLink = [];
+      });
       _onRecordFieldChanged(immediate: true);
     }
   }
