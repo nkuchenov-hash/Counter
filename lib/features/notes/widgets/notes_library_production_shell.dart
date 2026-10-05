@@ -210,15 +210,42 @@ class _HtmlNotesHeader extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: 54),
-          child: Row(
-            crossAxisAlignment:
-                mobile ? CrossAxisAlignment.start : CrossAxisAlignment.center,
+        if (mobile) ...[
+          Row(
             children: [
               Expanded(
-                child: Padding(
-                  padding: EdgeInsets.only(top: mobile ? 4 : 0),
+                child: Text(
+                  t(adapter.locale, 'notes_v3_title'),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 26,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.5,
+                    height: 1.1,
+                    color: scheme.onSurface,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              _NewNoteButton(locale: adapter.locale, onPressed: onNewNote),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              _ViewSwitch(adapter: adapter),
+              const SizedBox(width: 8),
+              _CheckboxModeButton(adapter: adapter),
+            ],
+          ),
+        ] else
+          ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 54),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(
                   child: Text(
                     t(adapter.locale, 'notes_v3_title'),
                     maxLines: 1,
@@ -226,24 +253,23 @@ class _HtmlNotesHeader extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontSize: wide ? 30 : 24,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: -0.4,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.5,
                       height: 1.15,
                       color: scheme.onSurface,
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              _ViewSwitch(adapter: adapter),
-              const SizedBox(width: 10),
-              _CheckboxModeButton(adapter: adapter),
-              const SizedBox(width: 10),
-              _NewNoteButton(locale: adapter.locale, onPressed: onNewNote),
-            ],
+                const SizedBox(width: 12),
+                _ViewSwitch(adapter: adapter),
+                const SizedBox(width: 10),
+                _CheckboxModeButton(adapter: adapter),
+                const SizedBox(width: 10),
+                _NewNoteButton(locale: adapter.locale, onPressed: onNewNote),
+              ],
+            ),
           ),
-        ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 10),
         NotesGlmLibraryInput(
           controller: adapter.searchController,
           focusNode: adapter.searchFocus,
