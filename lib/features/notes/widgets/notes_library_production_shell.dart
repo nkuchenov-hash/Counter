@@ -112,14 +112,23 @@ class NotesLibraryProductionShell extends StatelessWidget {
             ),
           const SizedBox(height: 12),
           SizedBox(height: 42, child: tabs),
-          const SizedBox(height: 10),
           Expanded(
             child: Container(
               decoration: BoxDecoration(
-                color: theme.colorScheme.surface,
-                borderRadius: BorderRadius.circular(16),
+                color: _folderPaneSurface(
+                  context,
+                  category?.filterCategoryId,
+                ),
+                borderRadius: const BorderRadius.only(
+                  topRight: Radius.circular(18),
+                  bottomLeft: Radius.circular(18),
+                  bottomRight: Radius.circular(18),
+                ),
                 border: Border.all(
-                  color: theme.colorScheme.outlineVariant.withValues(alpha: 0.60),
+                  color: _folderPaneBorder(
+                    context,
+                    category?.filterCategoryId,
+                  ),
                 ),
               ),
               clipBehavior: Clip.antiAlias,
@@ -474,12 +483,43 @@ class _NewNoteButton extends StatelessWidget {
   }
 }
 
+Color _folderAccentFor(int? categoryId) {
+  if (categoryId == null) return const Color(0xFF285B99);
+  final rule = DatabaseService.instance.getCategoryRuleById(categoryId);
+  return rule?.colorOrDefault ?? const Color(0xFF285B99);
+}
+
+Color _folderPaneSurface(BuildContext context, int? categoryId) {
+  final theme = Theme.of(context);
+  final accent = _folderAccentFor(categoryId);
+  if (theme.brightness == Brightness.dark) {
+    return Color.alphaBlend(
+      accent.withValues(alpha: 0.11),
+      theme.colorScheme.surfaceContainer,
+    );
+  }
+  if (categoryId == null) return _kAllFolderSurface;
+  return Color.alphaBlend(
+    accent.withValues(alpha: 0.12),
+    const Color(0xFFF7F8FA),
+  );
+}
+
+Color _folderPaneBorder(BuildContext context, int? categoryId) {
+  final theme = Theme.of(context);
+  final accent = _folderAccentFor(categoryId);
+  return Color.alphaBlend(
+    accent.withValues(alpha: theme.brightness == Brightness.dark ? 0.30 : 0.22),
+    theme.colorScheme.outlineVariant,
+  );
+}
+
 Color _paneColorFor(int? categoryId) {
   if (categoryId == null) return _kAllFolderSurface;
   final rule = DatabaseService.instance.getCategoryRuleById(categoryId);
   if (rule == null) return _kAllFolderSurface;
   return Color.alphaBlend(
-    rule.colorOrDefault.withValues(alpha: 0.14),
+    rule.colorOrDefault.withValues(alpha: 0.12),
     const Color(0xFFF7F8FA),
   );
 }
@@ -669,67 +709,108 @@ class _FolderTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final dark = Theme.of(context).brightness == Brightness.dark;
-    final scheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final dark = theme.brightness == Brightness.dark;
+    final scheme = theme.colorScheme;
     final mobile = MediaQuery.sizeOf(context).width <= 520;
-    final actualAccent = dark ? scheme.onSurface : accent;
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        onLongPress: onLongPress,
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          height: 36,
-          constraints: BoxConstraints(
-            minWidth: compact ? 42 : (mobile ? 82 : 92),
-          ),
-          margin: const EdgeInsets.only(right: 8),
-          padding: EdgeInsets.symmetric(
-            horizontal: compact ? 12 : (mobile ? 12 : 14),
-          ),
-          decoration: BoxDecoration(
-            color: selected
-                ? actualAccent.withValues(alpha: dark ? 0.18 : 0.10)
-                : (dark
-                    ? scheme.surfaceContainerHigh.withValues(alpha: 0.72)
-                    : scheme.surface),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: selected
-                  ? actualAccent.withValues(alpha: 0.42)
-                  : scheme.outlineVariant.withValues(alpha: 0.60),
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(icon, size: compact ? 16 : 15, color: actualAccent),
-                if (!compact) ...[
-                  const SizedBox(width: 7),
-                  ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 160),
-                    child: Text(
-                      label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 12.5,
-                        height: 1,
-                        fontWeight:
-                            selected ? FontWeight.w700 : FontWeight.w500,
-                        color: actualAccent,
+    final selectedFill = dark
+        ? Color.alphaBlend(
+            accent.withValues(alpha: 0.11),
+            scheme.surfaceContainer,
+          )
+        : fill;
+    final idleFill = Color.alphaBlend(
+      accent.withValues(alpha: dark ? 0.07 : 0.055),
+      dark ? scheme.surface : const Color(0xFFFCFDFE),
+    );
+    final borderColor = Color.alphaBlend(
+      accent.withValues(alpha: selected ? (dark ? 0.30 : 0.22) : 0.16),
+      scheme.outlineVariant,
+    );
+    final foreground = dark
+        ? Color.lerp(accent, Colors.white, 0.24)!
+        : Color.lerp(accent, const Color(0xFF111827), 0.08)!;
+
+    const radius = BorderRadius.only(
+      topLeft: Radius.circular(12),
+      topRight: Radius.circular(12),
+    );
+
+    return Transform.translate(
+      offset: Offset(0, selected ? 1 : 0),
+      child: Padding(
+        padding: const EdgeInsets.only(right: 6),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap,
+            onLongPress: onLongPress,
+            borderRadius: radius,
+            child: Container(
+              height: selected ? 40 : 37,
+              constraints: BoxConstraints(
+                minWidth: compact ? 42 : (mobile ? 82 : 92),
+              ),
+              padding: EdgeInsets.symmetric(
+                horizontal: compact ? 12 : (mobile ? 12 : 14),
+              ),
+              decoration: BoxDecoration(
+                color: compact
+                    ? kNotesInk
+                    : (selected ? selectedFill : idleFill),
+                borderRadius: radius,
+                border: Border(
+                  top: BorderSide(
+                    color: compact ? kNotesInk : borderColor,
+                  ),
+                  left: BorderSide(
+                    color: compact ? kNotesInk : borderColor,
+                  ),
+                  right: BorderSide(
+                    color: compact ? kNotesInk : borderColor,
+                  ),
+                  bottom: BorderSide(
+                    color: selected
+                        ? selectedFill
+                        : (compact ? kNotesInk : borderColor),
+                  ),
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    icon,
+                    size: compact ? 17 : 15,
+                    color: compact ? Colors.white : foreground,
+                  ),
+                  if (!compact) ...[
+                    const SizedBox(width: 7),
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 160),
+                      child: Text(
+                        label,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          height: 1,
+                          fontWeight:
+                              selected ? FontWeight.w700 : FontWeight.w600,
+                          color: foreground,
+                        ),
                       ),
                     ),
-                  ),
+                  ],
                 ],
-              ],
+              ),
             ),
           ),
         ),
-      );
+      ),
+    );
   }
 }
 
