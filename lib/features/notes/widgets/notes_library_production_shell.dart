@@ -646,15 +646,7 @@ class _FolderTab extends StatelessWidget {
     final dark = Theme.of(context).brightness == Brightness.dark;
     final scheme = Theme.of(context).colorScheme;
     final mobile = MediaQuery.sizeOf(context).width <= 520;
-    final actualFill = dark
-        ? (selected
-            ? scheme.surfaceContainerHigh
-            : scheme.surfaceContainer.withValues(alpha: 0.94))
-        : fill;
     final actualAccent = dark ? scheme.onSurface : accent;
-    final borderColor = dark
-        ? scheme.outlineVariant.withValues(alpha: 0.72)
-        : Color.lerp(actualFill, const Color(0xFFBFCAD8), 0.55)!;
 
     return Material(
       color: Colors.transparent,
