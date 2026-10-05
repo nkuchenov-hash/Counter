@@ -18,6 +18,7 @@ Figma component names should stay clean and designer-facing. Flutter component n
 | :--- | :--- |
 | `Button` | `AppButton` |
 | `Icon Button` | `AppIconButton` |
+| `Text Field` | `AppTextField` |
 | `Completion Checkbox` | `PlanCardCheckbox` |
 | `Card` | `AppTaskCard` or `AppCard` |
 | `Chip` | `AppTagChip` / `AppCategoryChip` |
@@ -128,6 +129,16 @@ Each mapping must answer:
 - Raw `IconButton` remains legacy allowed temporarily until migrated.
 - New feature-screen icon actions should not introduce fresh raw `IconButton` unless documented as temporary legacy.
 - Icon-only actions require a tooltip or semantic label where practical.
+
+### Text Fields / Search / Quick Entry
+
+- Canonical standard one-line input: `AppTextField` in `lib/core/widgets/app_text_field.dart`.
+- The approved geometry is the Notes library input: **42px height, 18px radius, shared fill/border/focus treatment, 13.5px text**.
+- Search is a parameter of the same component (`showSearchIcon: true`), not a separate visual component.
+- Timeline/Planning quick entry composes `AppTextField` + `AppButton` at the exact same 42px rendered height.
+- Raw feature-local `TextField` / `TextFormField` styling for standard one-line app inputs is forbidden. Feature screens must not define their own height, radius, fill, border, padding, hint typography, hover, or focus styling.
+- Exceptions are semantic editors/controls that are not standard one-line fields: Notes rich-text blocks, multiline editors, native/specialized picker internals, and other explicitly documented component internals.
+- Any future visual input change is made once in `AppTextField` and therefore changes Notes, Timeline, Planning, search, and other migrated one-line fields together.
 
 ### Completion Checkbox
 
