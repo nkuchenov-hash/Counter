@@ -61,36 +61,12 @@ class NotesGlmBackground extends StatelessWidget {
     if (theme.brightness == Brightness.dark) {
       return ColoredBox(color: theme.colorScheme.surface, child: child);
     }
-    return SizedBox.expand(
-      child: DecoratedBox(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFFF7F8FA),
-              Color(0xFFEDF4FA),
-              Color(0xFFF7F8FA),
-            ],
-            stops: [0.0, 0.46, 1.0],
-          ),
-        ),
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            const DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: RadialGradient(
-                  center: Alignment(-0.12, -0.9),
-                  radius: 0.72,
-                  colors: [Color(0xD9D9E5F2), Color(0x00D9E5F2)],
-                ),
-              ),
-            ),
-            child,
-          ],
-        ),
-      ),
+    // Notes should read like a focused productivity surface, not a decorative
+    // landing page. Keep the library background neutral and let hierarchy come
+    // from spacing, cards and typography.
+    return ColoredBox(
+      color: theme.colorScheme.surface,
+      child: child,
     );
   }
 }
