@@ -49,23 +49,32 @@ class CalendarMonthGrid extends StatelessWidget {
 
     return Column(
       children: [
-        Row(
-          children: [
-            for (final label in weekdayLabels)
-              Expanded(
-                child: Center(
-                  child: Text(
-                    label,
-                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: scheme.onSurfaceVariant,
-                      fontWeight: FontWeight.w600,
+        Container(
+          height: 34,
+          decoration: BoxDecoration(
+            border: Border(
+              bottom: BorderSide(
+                color: scheme.outlineVariant.withValues(alpha: 0.55),
+              ),
+            ),
+          ),
+          child: Row(
+            children: [
+              for (final label in weekdayLabels)
+                Expanded(
+                  child: Center(
+                    child: Text(
+                      label,
+                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                        color: scheme.onSurfaceVariant,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                 ),
-              ),
-          ],
+            ],
+          ),
         ),
-        const SizedBox(height: 8),
         Expanded(
           child: LayoutBuilder(
             builder: (context, constraints) {
@@ -91,18 +100,41 @@ class CalendarMonthGrid extends StatelessWidget {
                                       final day = gridStart.add(
                                         Duration(days: row * 7 + col),
                                       );
-                                      return CalendarMonthDayCell(
-                                        day: day,
-                                        focusedMonth: focusedMonth,
-                                        highlightDay: highlightDay,
-                                        today: today,
-                                        tasks:
-                                            tasksByDay[calendarDayKey(day)] ??
-                                            const [],
-                                        showEventPills: showEventPills,
-                                        maxVisibleEvents: maxEvents,
-                                        browsing: browsing,
-                                        onTap: onDayTap,
+                                      final inFocusedMonth =
+                                          day.year == focusedMonth.year &&
+                                          day.month == focusedMonth.month;
+                                      return DecoratedBox(
+                                        decoration: BoxDecoration(
+                                          border: Border(
+                                            right: col < 6
+                                                ? BorderSide(
+                                                    color: scheme.outlineVariant
+                                                        .withValues(alpha: 0.38),
+                                                  )
+                                                : BorderSide.none,
+                                            bottom: row < monthRowCount - 1
+                                                ? BorderSide(
+                                                    color: scheme.outlineVariant
+                                                        .withValues(alpha: 0.38),
+                                                  )
+                                                : BorderSide.none,
+                                          ),
+                                        ),
+                                        child: inFocusedMonth
+                                            ? CalendarMonthDayCell(
+                                                day: day,
+                                                focusedMonth: focusedMonth,
+                                                highlightDay: highlightDay,
+                                                today: today,
+                                                tasks: tasksByDay[
+                                                        calendarDayKey(day)] ??
+                                                    const [],
+                                                showEventPills: showEventPills,
+                                                maxVisibleEvents: maxEvents,
+                                                browsing: browsing,
+                                                onTap: onDayTap,
+                                              )
+                                            : const SizedBox.expand(),
                                       );
                                     },
                                   ),
@@ -176,17 +208,13 @@ class CalendarMonthDayCell extends StatelessWidget {
     final loc = currentLocale.value;
     final scheduled = tasks.where((t) => t.startTime != null).toList();
 
-    return Padding(
-      padding: const EdgeInsets.all(2),
-      child: Material(
-        color: Colors.transparent,
-        clipBehavior: Clip.antiAlias,
-        borderRadius: BorderRadius.circular(8),
-        child: InkWell(
-          onTap: () => onTap(day),
-          borderRadius: BorderRadius.circular(8),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(3, 3, 3, 3),
+    return Material(
+      color: Colors.transparent,
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => onTap(day),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(6, 5, 6, 5),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -214,7 +242,6 @@ class CalendarMonthDayCell extends StatelessWidget {
                 ),
               ],
             ),
-          ),
         ),
       ),
     );
