@@ -99,64 +99,23 @@ class TimelineHeaderControls extends StatelessWidget {
             child: selector,
           ),
         if (!showStatsView) ...[
-          if (desktopShell)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                kShellDesktopContentHorizontalPadding,
-                0,
-                kShellDesktopContentHorizontalPadding,
-                8,
-              ),
-              child: AppQuickEntryRow(
-                controller: titleController,
-                focusNode: titleFocus,
-                hintText: t(loc, 'input_placeholder_record'),
-                actionLabel: actionLabel,
-                actionIcon: actionIcon,
-                onAction: submit,
-                onSubmitted: (_) => submit(),
-              ),
-            )
-          else
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-              child: SizedBox(
-                height: kAppCompactControlHeight,
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: titleController,
-                        focusNode: titleFocus,
-                        textInputAction: TextInputAction.done,
-                        onSubmitted: (_) => submit(),
-                        textAlignVertical: TextAlignVertical.center,
-                        decoration: InputDecoration(
-                          hintText: t(loc, 'input_placeholder_record'),
-                          isDense: true,
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 0,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    FilledButton.icon(
-                      onPressed: submit,
-                      style: FilledButton.styleFrom(
-                        minimumSize: const Size(0, kAppCompactControlHeight),
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        visualDensity: VisualDensity.compact,
-                      ),
-                      icon: Icon(actionIcon, size: 18),
-                      label: Text(actionLabel),
-                    ),
-                  ],
-                ),
-              ),
+          Padding(
+            padding: EdgeInsets.fromLTRB(
+              desktopShell ? kShellDesktopContentHorizontalPadding : 16,
+              0,
+              desktopShell ? kShellDesktopContentHorizontalPadding : 16,
+              8,
             ),
+            child: AppQuickEntryRow(
+              controller: titleController,
+              focusNode: titleFocus,
+              hintText: t(loc, 'input_placeholder_record'),
+              actionLabel: actionLabel,
+              actionIcon: actionIcon,
+              onAction: submit,
+              onSubmitted: (_) => submit(),
+            ),
+          ),
           const SizedBox(height: 8),
         ],
         const Divider(height: 1),
