@@ -120,26 +120,41 @@ class TimelineHeaderControls extends StatelessWidget {
           else
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: titleController,
-                      focusNode: titleFocus,
-                      textInputAction: TextInputAction.done,
-                      onSubmitted: (_) => submit(),
-                      decoration: InputDecoration(
-                        hintText: t(loc, 'input_placeholder_record'),
+              child: SizedBox(
+                height: kAppCompactControlHeight,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: titleController,
+                        focusNode: titleFocus,
+                        textInputAction: TextInputAction.done,
+                        onSubmitted: (_) => submit(),
+                        textAlignVertical: TextAlignVertical.center,
+                        decoration: InputDecoration(
+                          hintText: t(loc, 'input_placeholder_record'),
+                          isDense: true,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 0,
+                          ),
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  FilledButton.icon(
-                    onPressed: submit,
-                    icon: Icon(actionIcon),
-                    label: Text(actionLabel),
-                  ),
-                ],
+                    const SizedBox(width: 10),
+                    FilledButton.icon(
+                      onPressed: submit,
+                      style: FilledButton.styleFrom(
+                        minimumSize: const Size(0, kAppCompactControlHeight),
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        visualDensity: VisualDensity.compact,
+                      ),
+                      icon: Icon(actionIcon, size: 18),
+                      label: Text(actionLabel),
+                    ),
+                  ],
+                ),
               ),
             ),
           const SizedBox(height: 8),
