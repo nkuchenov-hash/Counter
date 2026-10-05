@@ -1,6 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
-
 import 'package:counter/core/app_snackbar.dart';
 import 'package:counter/core/widgets/compact_nav_controls.dart';
 import 'package:counter/core/widgets/omni_date_time_picker_dialog.dart';
@@ -18,15 +16,10 @@ import 'package:counter/features/profile/tag_settings_hub.dart';
 import 'package:counter/core/widgets/chip_component.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_quill/flutter_quill.dart';
 import 'package:intl/intl.dart';
 import 'package:omni_datetime_picker/omni_datetime_picker.dart';
-import 'package:url_launcher/url_launcher.dart';
 
-import 'package:counter/features/shared/edit_sheet/checklist_helpers.dart';
 import 'package:counter/features/shared/edit_sheet/parallel_record_panels.dart';
-import 'package:counter/features/shared/edit_sheet/quill_link_launcher.dart';
-import 'package:counter/features/shared/edit_sheet/quill_toolbar_config.dart';
 import 'package:counter/features/shared/edit_sheet/record_edit_save_policy.dart';
 import 'package:counter/features/shared/edit_sheet/sheet_autosave_gate.dart';
 import 'package:counter/features/shared/edit_sheet/sheet_time_helpers.dart';
@@ -55,16 +48,11 @@ class TimelineRecordSheetContent extends StatefulWidget {
 class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
     with SingleTickerProviderStateMixin {
   late TextEditingController _titleController;
-  late QuillController _recordQuillController;
-  late FocusNode _recordQuillFocus;
-  late ScrollController _recordQuillScroll;
   late NoteDocument _recordNoteDocument;
 
   int? _categoryId;
   DateTime? _startDisplay;
   DateTime? _endDisplay;
-  final List<TextEditingController> _checklistControllers = [];
-  final List<bool> _checklistDone = [];
   late TabController _tabController;
 
   /// PocketBase **plans** row id; empty = no link.
@@ -74,7 +62,6 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
   bool _plansLoaded = false;
   bool _notesEditorFocused = false;
   final EditSheetAutosaveGate _recordAutosaveGate = EditSheetAutosaveGate();
-  StreamSubscription<DocChange>? _recordQuillChangesSub;
 
   /// True when Save/autosave can PATCH an existing/optimistic row (not past-date create).
   /// Prefer [record.id]; fall back to business `record_id` when fromMap dropped a UUID id.
@@ -249,12 +236,6 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
           )
           .toList(),
     );
-    _recordQuillController = QuillController(
-      document: _documentForRecordPlain(widget.record.note),
-      selection: const TextSelection.collapsed(offset: 0),
-    );
-    _recordQuillFocus = FocusNode();
-    _recordQuillScroll = ScrollController();
     _categoryId = widget.record.categoryId;
     _startDisplay = widget.record.startTime != null
         ? utcToDisplay(widget.record.startTime!)
@@ -262,29 +243,9 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
     _endDisplay = widget.record.endTime != null
         ? utcToDisplay(widget.record.endTime!)
         : null;
-    for (final item in widget.record.checklist ?? []) {
-      _checklistControllers.add(
-        TextEditingController(text: (item['text'] ?? '').toString()),
-      );
-      _checklistDone.add(item['isDone'] == true);
-    }
-    if (_checklistControllers.isEmpty) {
-      _checklistControllers.add(TextEditingController());
-      _checklistDone.add(false);
-    }
-    partitionChecklistRowsByDone(
-      controllers: _checklistControllers,
-      done: _checklistDone,
-    );
     _sourcePlanPbId =
         DatabaseService.pocketRelationIdOrNull(widget.record.sourcePlanId) ??
         '';
-    _recordQuillChangesSub = _recordQuillController.document.changes.listen((
-      _,
-    ) {
-      if (!mounted) return;
-      _onRecordFieldChanged();
-    });
   }
 
   void _handleRecordTabChanged() {
@@ -524,13 +485,6 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
     return (sync: true, clear: false, id: sel);
   }
 
-  Document _documentForRecordPlain(String? plain) {
-    final b = plain?.trim() ?? '';
-    if (b.isEmpty) return Document();
-    return Document.fromJson([
-      <String, dynamic>{'insert': '$b\n'},
-    ]);
-  }
 
   @override
   void dispose() {
@@ -556,16 +510,9 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
         );
       }, force: _recordAutosaveGate.isDirty);
     }
-    unawaited(_recordQuillChangesSub?.cancel());
     _recordAutosaveGate.dispose();
     _tabController.dispose();
     _titleController.dispose();
-    _recordQuillController.dispose();
-    _recordQuillFocus.dispose();
-    _recordQuillScroll.dispose();
-    for (final c in _checklistControllers) {
-      c.dispose();
-    }
     super.dispose();
   }
 
