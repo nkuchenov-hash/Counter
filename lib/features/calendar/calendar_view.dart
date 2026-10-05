@@ -265,7 +265,10 @@ class _CalendarViewState extends State<CalendarView>
               showEventPills: showPills,
               browsing: !_dayFocusActive,
               onDayTap: (d) => unawaited(_onDayTapped(d)),
-              currentMonthOnly: desktopCalendar,
+              // Month mode must show exactly the focused month on every
+              // viewport. Do not reserve a sixth trailing week for dates from
+              // the next month on phones.
+              currentMonthOnly: true,
             )
           : _dayFocusActive
           ? CalendarWeekCompactStrip(
