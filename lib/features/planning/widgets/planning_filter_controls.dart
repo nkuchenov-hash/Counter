@@ -96,8 +96,8 @@ class PlanningSortModeBar extends StatelessWidget {
   }
 }
 
-/// Planning quick-entry chrome. Desktop uses the same canonical entry row as
-/// Timeline; phone/tablet preserve the established tag-first arrangement.
+/// Planning quick-entry chrome. All form factors use the same canonical
+/// quick-entry row; phone/tablet only differ in surrounding action placement.
 class PlanningQuickAddChrome extends StatelessWidget {
   const PlanningQuickAddChrome({
     super.key,
@@ -162,8 +162,10 @@ class PlanningQuickAddChrome extends StatelessWidget {
         if (desktop) smartButton,
       ],
     );
-    final inputRow = desktop
-        ? AppQuickEntryRow(
+    final inputRow = Row(
+      children: [
+        Expanded(
+          child: AppQuickEntryRow(
             controller: controller,
             focusNode: focusNode,
             hintText: hintText,
@@ -172,28 +174,14 @@ class PlanningQuickAddChrome extends StatelessWidget {
             onAction: onAdd,
             onSubmitted: (_) => onAdd(),
             loading: loading,
-          )
-        : Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: controller,
-                  focusNode: focusNode,
-                  decoration: InputDecoration(hintText: hintText),
-                  textInputAction: TextInputAction.done,
-                  onSubmitted: (_) => onAdd(),
-                ),
-              ),
-              const SizedBox(width: 8),
-              FilledButton.icon(
-                onPressed: onAdd,
-                icon: const Icon(Icons.add_rounded),
-                label: Text(addLabel),
-              ),
-              const SizedBox(width: 8),
-              smartButton,
-            ],
-          );
+          ),
+        ),
+        if (!desktop) ...[
+          const SizedBox(width: 8),
+          smartButton,
+        ],
+      ],
+    );
     final content = Padding(
       padding: desktop
           ? const EdgeInsets.fromLTRB(
