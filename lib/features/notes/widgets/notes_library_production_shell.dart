@@ -85,7 +85,6 @@ class NotesLibraryProductionShell extends StatelessWidget {
     final theme = Theme.of(context);
     final category = _categoryAdapter();
     final headerAdapter = _headerAdapter();
-    final listView = headerAdapter?.notesView == NotesLibraryView.list;
     final tabs = category == null
         ? categoryBar
         : _NotesPhysicalFolderTabs(
@@ -113,28 +112,7 @@ class NotesLibraryProductionShell extends StatelessWidget {
           const SizedBox(height: 12),
           SizedBox(height: 42, child: tabs),
           Expanded(
-            child: Container(
-              decoration: BoxDecoration(
-                color: _folderPaneSurface(
-                  context,
-                  category?.filterCategoryId,
-                ),
-                borderRadius: const BorderRadius.only(
-                  topRight: Radius.circular(18),
-                  bottomLeft: Radius.circular(18),
-                  bottomRight: Radius.circular(18),
-                ),
-                border: Border.all(
-                  color: _folderPaneBorder(
-                    context,
-                    category?.filterCategoryId,
-                  ),
-                ),
-              ),
-              clipBehavior: Clip.antiAlias,
-              padding: listView ? EdgeInsets.zero : const EdgeInsets.all(14),
-              child: content,
-            ),
+            child: content,
           ),
         ],
       ),
@@ -483,37 +461,6 @@ class _NewNoteButton extends StatelessWidget {
   }
 }
 
-Color _folderAccentFor(int? categoryId) {
-  if (categoryId == null) return const Color(0xFF285B99);
-  final rule = DatabaseService.instance.getCategoryRuleById(categoryId);
-  return rule?.colorOrDefault ?? const Color(0xFF285B99);
-}
-
-Color _folderPaneSurface(BuildContext context, int? categoryId) {
-  final theme = Theme.of(context);
-  final accent = _folderAccentFor(categoryId);
-  if (theme.brightness == Brightness.dark) {
-    return Color.alphaBlend(
-      accent.withValues(alpha: 0.11),
-      theme.colorScheme.surfaceContainer,
-    );
-  }
-  if (categoryId == null) return _kAllFolderSurface;
-  return Color.alphaBlend(
-    accent.withValues(alpha: 0.12),
-    const Color(0xFFF7F8FA),
-  );
-}
-
-Color _folderPaneBorder(BuildContext context, int? categoryId) {
-  final theme = Theme.of(context);
-  final accent = _folderAccentFor(categoryId);
-  return Color.alphaBlend(
-    accent.withValues(alpha: theme.brightness == Brightness.dark ? 0.30 : 0.22),
-    theme.colorScheme.outlineVariant,
-  );
-}
-
 Color _paneColorFor(int? categoryId) {
   if (categoryId == null) return _kAllFolderSurface;
   final rule = DatabaseService.instance.getCategoryRuleById(categoryId);
@@ -716,96 +663,94 @@ class _FolderTab extends StatelessWidget {
 
     final selectedFill = dark
         ? Color.alphaBlend(
-            accent.withValues(alpha: 0.11),
-            scheme.surfaceContainer,
+            accent.withValues(alpha: 0.16),
+            scheme.surfaceContainerHigh,
           )
-        : fill;
-    final idleFill = Color.alphaBlend(
-      accent.withValues(alpha: dark ? 0.07 : 0.055),
-      dark ? scheme.surface : const Color(0xFFFCFDFE),
-    );
-    final borderColor = Color.alphaBlend(
-      accent.withValues(alpha: selected ? (dark ? 0.30 : 0.22) : 0.16),
-      scheme.outlineVariant,
-    );
+        : Color.alphaBlend(
+            accent.withValues(alpha: 0.13),
+            const Color(0xFFFCFDFE),
+          );
     final foreground = dark
-        ? Color.lerp(accent, Colors.white, 0.24)!
+        ? Color.lerp(accent, Colors.white, 0.22)!
         : Color.lerp(accent, const Color(0xFF111827), 0.08)!;
+    final idleForeground = selected
+        ? foreground
+        : Color.lerp(
+            foreground,
+            scheme.onSurfaceVariant,
+            dark ? 0.40 : 0.52,
+          )!;
 
-    const radius = BorderRadius.only(
-      topLeft: Radius.circular(12),
-      topRight: Radius.circular(12),
-    );
-
-    return Transform.translate(
-      offset: Offset(0, selected ? 1 : 0),
-      child: Padding(
-        padding: const EdgeInsets.only(right: 6),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: onTap,
-            onLongPress: onLongPress,
-            borderRadius: radius,
-            child: Container(
-              height: selected ? 40 : 37,
-              constraints: BoxConstraints(
-                minWidth: compact ? 42 : (mobile ? 82 : 92),
-              ),
-              padding: EdgeInsets.symmetric(
-                horizontal: compact ? 12 : (mobile ? 12 : 14),
-              ),
-              decoration: BoxDecoration(
-                color: compact
-                    ? kNotesInk
-                    : (selected ? selectedFill : idleFill),
-                borderRadius: radius,
-                border: Border(
-                  top: BorderSide(
-                    color: compact ? kNotesInk : borderColor,
-                  ),
-                  left: BorderSide(
-                    color: compact ? kNotesInk : borderColor,
-                  ),
-                  right: BorderSide(
-                    color: compact ? kNotesInk : borderColor,
-                  ),
-                  bottom: BorderSide(
-                    color: selected
-                        ? selectedFill
-                        : (compact ? kNotesInk : borderColor),
-                  ),
-                ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    icon,
-                    size: compact ? 17 : 15,
-                    color: compact ? Colors.white : foreground,
-                  ),
-                  if (!compact) ...[
-                    const SizedBox(width: 7),
-                    ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 160),
-                      child: Text(
-                        label,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 12.5,
-                          height: 1,
-                          fontWeight:
-                              selected ? FontWeight.w700 : FontWeight.w600,
-                          color: foreground,
+    return Padding(
+      padding: const EdgeInsets.only(right: 6),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(compact ? 12 : 10),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          onLongPress: onLongPress,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 140),
+            height: 38,
+            constraints: BoxConstraints(
+              minWidth: compact ? 42 : (mobile ? 82 : 92),
+            ),
+            padding: EdgeInsets.symmetric(
+              horizontal: compact ? 12 : (mobile ? 12 : 14),
+            ),
+            decoration: BoxDecoration(
+              color: compact
+                  ? kNotesInk
+                  : (selected ? selectedFill : Colors.transparent),
+              borderRadius: BorderRadius.circular(compact ? 12 : 10),
+            ),
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      icon,
+                      size: compact ? 17 : 15,
+                      color: compact ? Colors.white : idleForeground,
+                    ),
+                    if (!compact) ...[
+                      const SizedBox(width: 7),
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 160),
+                        child: Text(
+                          label,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 12.5,
+                            height: 1,
+                            fontWeight:
+                                selected ? FontWeight.w700 : FontWeight.w600,
+                            color: idleForeground,
+                          ),
                         ),
                       ),
-                    ),
+                    ],
                   ],
-                ],
-              ),
+                ),
+                if (selected && !compact)
+                  Positioned(
+                    left: 8,
+                    right: 8,
+                    bottom: 0,
+                    child: Container(
+                      height: 2,
+                      decoration: BoxDecoration(
+                        color: foreground,
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
         ),
