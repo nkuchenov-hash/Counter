@@ -35,18 +35,22 @@ Future<T?> showAppEditSheet<T>({
     backgroundColor: Colors.transparent,
     clipBehavior: Clip.none,
     builder: (sheetContext) {
-      return Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.viewInsetsOf(sheetContext).bottom,
-        ),
-        child: DraggableScrollableSheet(
-          expand: false,
-          initialChildSize: AppEditSheetTokens.initialChildSize,
-          minChildSize: AppEditSheetTokens.minChildSize,
-          maxChildSize: AppEditSheetTokens.maxChildSize,
-          builder: (context, scrollController) =>
-              builder(context, scrollController, sheetContext),
-        ),
+      final keyboardInset = MediaQuery.viewInsetsOf(sheetContext).bottom;
+      return DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: AppEditSheetTokens.initialChildSize,
+        minChildSize: AppEditSheetTokens.minChildSize,
+        maxChildSize: AppEditSheetTokens.maxChildSize,
+        builder: (context, scrollController) {
+          // Keep the draggable sheet geometry stable while the keyboard
+          // animates. Only the sheet's content moves above the IME.
+          return AnimatedPadding(
+            duration: const Duration(milliseconds: 160),
+            curve: Curves.easeOutCubic,
+            padding: EdgeInsets.only(bottom: keyboardInset),
+            child: builder(context, scrollController, sheetContext),
+          );
+        },
       );
     },
   );
