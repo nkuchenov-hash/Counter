@@ -1,6 +1,7 @@
 // Notes surfaces — shared visual layer for the Notes library and editor.
 // Presentation only. No Brain / PocketBase imports.
 
+import 'package:counter/core/widgets/app_text_field.dart';
 import 'package:flutter/material.dart';
 
 /// Editor column (`max-w-3xl`).
@@ -245,7 +246,10 @@ InputDecoration notesGlmSearchDecoration({
   );
 }
 
-/// Notes library input that follows the HTML's exact 42px search geometry.
+/// Compatibility wrapper for the Notes library.
+///
+/// Visual ownership is [AppTextField]; Notes must not define a second input
+/// surface or geometry.
 class NotesGlmLibraryInput extends StatelessWidget {
   const NotesGlmLibraryInput({
     super.key,
@@ -271,23 +275,16 @@ class NotesGlmLibraryInput extends StatelessWidget {
   final bool showSearchIcon;
 
   @override
-  Widget build(BuildContext context) => TextField(
+  Widget build(BuildContext context) => AppTextField(
         controller: controller,
         focusNode: focusNode,
+        hintText: hintText,
         textInputAction: textInputAction,
         textCapitalization: textCapitalization,
         onChanged: onChanged,
         onSubmitted: onSubmitted,
-        style: TextStyle(
-          fontSize: 13.5,
-          color: Theme.of(context).colorScheme.onSurface,
-        ),
-        decoration: notesGlmSearchDecoration(
-          hintText: hintText,
-          suffixIcon: suffixIcon,
-          context: context,
-          showSearchIcon: showSearchIcon,
-        ),
+        suffixIcon: suffixIcon,
+        showSearchIcon: showSearchIcon,
       );
 }
 
