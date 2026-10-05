@@ -83,17 +83,9 @@ class NotesLibraryProductionShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final dark = theme.brightness == Brightness.dark;
     final category = _categoryAdapter();
     final headerAdapter = _headerAdapter();
-    final paneFill = dark
-        ? theme.colorScheme.surfaceContainerHigh.withValues(alpha: 0.88)
-        : _paneColorFor(category?.filterCategoryId);
-    final paneBorder = dark
-        ? theme.colorScheme.outlineVariant.withValues(alpha: 0.70)
-        : Color.lerp(paneFill, const Color(0xFFD8E0E9), 0.30)!;
     final listView = headerAdapter?.notesView == NotesLibraryView.list;
-
     final tabs = category == null
         ? categoryBar
         : _NotesPhysicalFolderTabs(
@@ -118,49 +110,21 @@ class NotesLibraryProductionShell extends StatelessWidget {
                 ),
               ),
             ),
-          const SizedBox(height: 11),
+          const SizedBox(height: 12),
+          SizedBox(height: 42, child: tabs),
+          const SizedBox(height: 10),
           Expanded(
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Positioned.fill(
-                  top: 55,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: paneFill,
-                      border: Border.all(color: paneBorder),
-                      borderRadius: const BorderRadius.only(
-                        topRight: Radius.circular(20),
-                        bottomLeft: Radius.circular(20),
-                        bottomRight: Radius.circular(20),
-                      ),
-                      boxShadow: dark
-                          ? null
-                          : [
-                              BoxShadow(
-                                color: const Color(0xFF3F536C)
-                                    .withValues(alpha: 0.045),
-                                blurRadius: 28,
-                                offset: const Offset(0, 8),
-                              ),
-                            ],
-                    ),
-                    clipBehavior: Clip.antiAlias,
-                    padding: listView ? EdgeInsets.zero : const EdgeInsets.all(28),
-                    child: content,
-                  ),
+            child: Container(
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surface,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: theme.colorScheme.outlineVariant.withValues(alpha: 0.60),
                 ),
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  top: 0,
-                  height: 56,
-                  child: Align(
-                    alignment: Alignment.bottomLeft,
-                    child: tabs,
-                  ),
-                ),
-              ],
+              ),
+              clipBehavior: Clip.antiAlias,
+              padding: listView ? EdgeInsets.zero : const EdgeInsets.all(14),
+              child: content,
             ),
           ),
         ],
@@ -580,7 +544,7 @@ class _NotesPhysicalFolderTabsState extends State<_NotesPhysicalFolderTabs> {
   Widget build(BuildContext context) {
     final ids = _ids;
     return SizedBox(
-      height: 56,
+      height: 42,
       child: ScrollConfiguration(
         behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
         child: ListView(
@@ -692,50 +656,36 @@ class _FolderTab extends StatelessWidget {
         ? scheme.outlineVariant.withValues(alpha: 0.72)
         : Color.lerp(actualFill, const Color(0xFFBFCAD8), 0.55)!;
 
-    return Transform.translate(
-      offset: Offset(0, selected ? 1 : 0),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          onLongPress: onLongPress,
-          borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(12),
-            topRight: Radius.circular(12),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        onLongPress: onLongPress,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          height: 36,
+          constraints: BoxConstraints(
+            minWidth: compact ? 42 : (mobile ? 82 : 92),
           ),
-          child: Container(
-            height: 38,
-            constraints: BoxConstraints(
-              minWidth: compact ? 46 : (mobile ? 88 : 96),
+          margin: const EdgeInsets.only(right: 8),
+          padding: EdgeInsets.symmetric(
+            horizontal: compact ? 12 : (mobile ? 12 : 14),
+          ),
+          decoration: BoxDecoration(
+            color: selected
+                ? actualAccent.withValues(alpha: dark ? 0.18 : 0.10)
+                : (dark
+                    ? scheme.surfaceContainerHigh.withValues(alpha: 0.72)
+                    : scheme.surface),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: selected
+                  ? actualAccent.withValues(alpha: 0.42)
+                  : scheme.outlineVariant.withValues(alpha: 0.60),
             ),
-            padding: EdgeInsets.symmetric(
-              horizontal: compact ? 14 : (mobile ? 14 : 18),
-            ),
-            decoration: BoxDecoration(
-              color: actualFill,
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(12),
-                topRight: Radius.circular(12),
-              ),
-              border: Border(
-                top: BorderSide(color: borderColor),
-                left: BorderSide(color: borderColor),
-                right: BorderSide(color: borderColor),
-                bottom: BorderSide(
-                  color: selected ? actualFill : Colors.transparent,
-                  width: selected ? 0 : 1,
-                ),
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.white.withValues(alpha: dark ? 0.04 : 0.22),
-                  blurRadius: 1,
-                  offset: const Offset(0, -1),
-                ),
-              ],
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(icon, size: compact ? 16 : 15, color: actualAccent),
