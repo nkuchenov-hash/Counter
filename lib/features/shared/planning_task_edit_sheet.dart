@@ -16,16 +16,11 @@ import 'package:counter/features/profile/tag_settings_hub.dart';
 import 'package:counter/core/widgets/chip_component.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_quill/flutter_quill.dart';
 import 'package:intl/intl.dart';
 import 'package:omni_datetime_picker/omni_datetime_picker.dart';
-import 'package:url_launcher/url_launcher.dart';
 
-import 'package:counter/features/shared/edit_sheet/checklist_helpers.dart';
 import 'package:counter/features/shared/edit_sheet/parallel_record_panels.dart';
 import 'package:counter/features/shared/edit_sheet/plan_repeat_helpers.dart';
-import 'package:counter/features/shared/edit_sheet/quill_link_launcher.dart';
-import 'package:counter/features/shared/edit_sheet/quill_toolbar_config.dart';
 import 'package:counter/features/shared/edit_sheet/sheet_autosave_gate.dart';
 import 'package:counter/features/shared/edit_sheet/sheet_time_helpers.dart';
 import 'package:counter/features/shared/edit_sheet/sheet_time_picker.dart';
@@ -52,12 +47,7 @@ class PlanningTaskEditSheet extends StatefulWidget {
 class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
     with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late final TextEditingController _titleController;
-  late final QuillController _quillController;
-  late final FocusNode _quillFocusNode;
   late NoteDocument _noteDocument;
-
-  /// Separate from [scrollController] so plan-mode outer [ListView] does not fight Quill.
-  late final ScrollController _quillScrollController;
   late int _categoryId;
   DateTime? _scheduledTime;
   DateTime? _endTime;
@@ -65,8 +55,6 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
 
   /// Undated backlog / list item before any schedule is set (no wall date in [dateKey]).
   late final bool _startedAsUndatedBacklog;
-  final List<TextEditingController> _checklistControllers = [];
-  final List<bool> _checklistDone = [];
 
   /// Non-null only for list-item / Idea mode (3-tab Strike 19 layout).
   TabController? _tabController;
@@ -86,7 +74,6 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
   late final PlanningTask _baselineTask;
   final EditSheetAutosaveGate _planAutosaveGate = EditSheetAutosaveGate();
   final RecurrenceEditScopeGate _recurrenceScopeGate = RecurrenceEditScopeGate();
-  StreamSubscription<DocChange>? _planQuillChangesSub;
   Timer? _titleAssistDebounce;
 
   bool get _isPersistedPlan => widget.task.planRowIdForBackend.trim().isNotEmpty;
@@ -117,16 +104,6 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
           )
           .toList(),
     );
-    final parsedNotes = _parseStoredNotesForLink(widget.task.notesPlain);
-    _quillController = QuillController(
-      document: _documentForPlanningNotes(
-        parsedNotes.body,
-        legacyUrl: parsedNotes.link,
-      ),
-      selection: const TextSelection.collapsed(offset: 0),
-    );
-    _quillFocusNode = FocusNode();
-    _quillScrollController = ScrollController();
     _categoryId = widget.task.categoryId;
     _selectedTags = List<Tag>.from(widget.task.tags);
     final recurrenceSource = DatabaseService.instance.planningRecurrenceEditSource(widget.task);
@@ -165,24 +142,6 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
         widget.task.date ??
         DateTime.now();
     _date = DateTime(_date.year, _date.month, _date.day);
-    for (final item in widget.task.checklist) {
-      final text = (item['text'] ?? '').toString();
-      final done = item['isDone'] == true;
-      _checklistControllers.add(TextEditingController(text: text));
-      _checklistDone.add(done);
-    }
-    if (_checklistControllers.isEmpty) {
-      _checklistControllers.add(TextEditingController());
-      _checklistDone.add(false);
-    }
-    partitionChecklistRowsByDone(
-      controllers: _checklistControllers,
-      done: _checklistDone,
-    );
-    _planQuillChangesSub = _quillController.document.changes.listen((_) {
-      if (!mounted) return;
-      _onPlanFieldChanged();
-    });
   }
 
   bool get _shouldShowGraduateUi =>
@@ -199,19 +158,12 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
         }
       }, force: _planAutosaveGate.isDirty);
     }
-    unawaited(_planQuillChangesSub?.cancel());
     _titleAssistDebounce?.cancel();
     _planAutosaveGate.dispose();
     _tabController?.dispose();
     _planTabController?.dispose();
     _titleController.dispose();
-    _quillController.dispose();
-    _quillFocusNode.dispose();
-    _quillScrollController.dispose();
     _rruleCustomController.dispose();
-    for (final c in _checklistControllers) {
-      c.dispose();
-    }
     super.dispose();
   }
 
@@ -414,62 +366,6 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
         a.reminderOffset == b.reminderOffset;
   }
 
-  /// Optional URL line prefix in [notesPlain] for backlog ideas (no separate PB field).
-  static const String _kLifeOsLinkPrefix = 'LIFEOS_LINK::';
-
-  ({String link, String body}) _parseStoredNotesForLink(String? raw) {
-    final s = raw?.trim() ?? '';
-    if (!s.startsWith(_kLifeOsLinkPrefix)) {
-      return (link: '', body: s);
-    }
-    final rest = s.substring(_kLifeOsLinkPrefix.length);
-    final nl = rest.indexOf('\n');
-    if (nl < 0) {
-      return (link: rest.trim(), body: '');
-    }
-    return (
-      link: rest.substring(0, nl).trim(),
-      body: rest.substring(nl + 1).trimRight(),
-    );
-  }
-
-  /// Builds initial Quill [Document] from stored delta or legacy plain-only [legacyPlainBody].
-  /// [legacyUrl] migrates old `LIFEOS_LINK::` first line into an inline Quill link op.
-  Document _documentForPlanningNotes(
-    String legacyPlainBody, {
-    String? legacyUrl,
-  }) {
-    final deltaRaw = widget.task.notesDeltaJson?.trim() ?? '';
-    if (deltaRaw.isNotEmpty) {
-      try {
-        final decoded = jsonDecode(deltaRaw);
-        if (decoded is List) {
-          return Document.fromJson(decoded);
-        }
-      } catch (_) {}
-    }
-    final url = legacyUrl?.trim() ?? '';
-    final b = legacyPlainBody.trim();
-    if (url.isNotEmpty) {
-      final ops = <Map<String, dynamic>>[
-        <String, dynamic>{
-          'insert': url,
-          'attributes': LinkAttribute(url).toJson(),
-        },
-        <String, dynamic>{'insert': '\n'},
-      ];
-      if (b.isNotEmpty) {
-        ops.add(<String, dynamic>{'insert': '$b\n'});
-      }
-      return Document.fromJson(ops);
-    }
-    if (b.isNotEmpty) {
-      return Document.fromJson([
-        <String, dynamic>{'insert': '$b\n'},
-      ]);
-    }
-    return Document();
-  }
 
   String _dateKeyFromDate(DateTime d) =>
       '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
