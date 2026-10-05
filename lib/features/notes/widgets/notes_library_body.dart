@@ -259,7 +259,7 @@ class _NotesLibraryBodyState extends State<NotesLibraryBody> {
           mainAxisSpacing: 12,
           crossAxisSpacing: 12,
           childAspectRatio: 1,
-          mainAxisExtent: mobileSingle ? 170 : null,
+          mainAxisExtent: mobileSingle ? 148 : null,
         ),
         itemCount: cards.length,
         itemBuilder: (context, index) => _card(
