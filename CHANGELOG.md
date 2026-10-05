@@ -231,6 +231,14 @@
 
 # 📖 DEV_JOURNAL (Changelog)
 
+## [2026-10-06] - Canonical one-line input + Timeline mobile geometry
+
+* **`lib/core/widgets/app_text_field.dart`:** added `AppTextField` as the single canonical standard one-line input surface (42px height, 18px radius, shared Notes-derived styling; search icon is a parameter).
+* **Timeline:** mobile and desktop quick entry now use the same `AppQuickEntryRow`; the text field and Start/Plan/Add action render at the same 42px height instead of the mobile raw `TextField` / `FilledButton` fork.
+* **Notes:** `NotesGlmLibraryInput` now delegates visual ownership to `AppTextField` so Notes and Timeline cannot drift.
+* **Design system:** raw feature-local styling for standard one-line `TextField` / `TextFormField` inputs is forbidden; specialized rich/multiline editor internals remain explicit exceptions.
+
+
 > **WARNING FOR AI:** Read the latest entries to understand what features are ALREADY built and do not need to be recreated.
 >
 > 🚀 **FOUNDER'S VICTORY PROMPT (COPY & PASTE INTO CURSOR CHAT WHEN A FEATURE IS TESTED AND WORKS):**
