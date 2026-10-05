@@ -119,11 +119,8 @@ class _NotesLibraryBodyState extends State<NotesLibraryBody> {
   }
 
   int _gridColumnCount(double availableWidth) {
-    // The HTML breakpoints are viewport based while this widget receives the
-    // already-padded folder body. These thresholds are the same visual points
-    // translated into the real inner workspace. Wider displays add columns to
-    // preserve the reference card density rather than stretching five cards.
-    if (availableWidth <= 440) return 1;
+    // Grid mode must remain visually distinct from list mode on phones:
+    // compact mobile workspaces render two note tiles per row.
     if (availableWidth <= 931) return 2;
     if (availableWidth <= 1168) return 4;
     final wideCount = ((availableWidth + 12) / 252).floor();
@@ -250,7 +247,6 @@ class _NotesLibraryBodyState extends State<NotesLibraryBody> {
 
     if (view == NotesLibraryView.grid) {
       final count = _gridColumnCount(availableWidth);
-      final mobileSingle = count == 1;
       return GridView.builder(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: EdgeInsets.zero,
@@ -258,8 +254,7 @@ class _NotesLibraryBodyState extends State<NotesLibraryBody> {
           crossAxisCount: count,
           mainAxisSpacing: 12,
           crossAxisSpacing: 12,
-          childAspectRatio: 1,
-          mainAxisExtent: mobileSingle ? 148 : null,
+          childAspectRatio: availableWidth <= 520 ? 0.82 : 1,
         ),
         itemCount: cards.length,
         itemBuilder: (context, index) => _card(
