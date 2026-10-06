@@ -248,34 +248,45 @@ class _MobileNotesLibrary extends StatelessWidget {
           ],
         ),
         Positioned(
-          left: 8,
-          right: 8,
-          bottom: 12,
-          child: Row(
-            children: [
-              Expanded(
-                child: NotesGlmLibraryInput(
-                  controller: header.searchController,
-                  focusNode: header.searchFocus,
-                  hintText: t(header.locale, 'notes_v3_search_hint'),
-                  textInputAction: TextInputAction.search,
-                  textCapitalization: TextCapitalization.sentences,
-                  onChanged: header.onSearchChanged,
-                  suffixIcon: header.searchQuery.trim().isNotEmpty
-                      ? IconButton(
-                          onPressed: header.onClearSearch,
-                          icon: const Icon(Icons.close_rounded, size: 18),
-                        )
-                      : null,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          child: NotesBottomGlassFade(
+            height: 84,
+            horizontalPadding: 8,
+            child: Align(
+              alignment: Alignment.bottomCenter,
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: NotesGlmLibraryInput(
+                        controller: header.searchController,
+                        focusNode: header.searchFocus,
+                        hintText: t(header.locale, 'notes_v3_search_hint'),
+                        textInputAction: TextInputAction.search,
+                        textCapitalization: TextCapitalization.sentences,
+                        onChanged: header.onSearchChanged,
+                        glass: true,
+                        suffixIcon: header.searchQuery.trim().isNotEmpty
+                            ? IconButton(
+                                onPressed: header.onClearSearch,
+                                icon: const Icon(Icons.close_rounded, size: 18),
+                              )
+                            : null,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    _MobileRoundAction(
+                      icon: Icons.edit_outlined,
+                      size: 54,
+                      onTap: onNewNote,
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(width: 10),
-              _MobileRoundAction(
-                icon: Icons.edit_outlined,
-                size: 58,
-                onTap: onNewNote,
-              ),
-            ],
+            ),
           ),
         ),
       ],
@@ -296,8 +307,13 @@ class _MobileNotesModePill extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 18),
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: scheme.surfaceContainerHighest.withValues(alpha: 0.82),
+        color: scheme.surface.withValues(
+          alpha: Theme.of(context).brightness == Brightness.dark ? 0.30 : 0.18,
+        ),
         borderRadius: BorderRadius.circular(999),
+        border: Border.all(
+          color: scheme.onSurface.withValues(alpha: 0.08),
+        ),
       ),
       child: Text(
         t(locale, 'notes_v3_title'),
@@ -353,15 +369,13 @@ class _MobileRoundActionVisual extends StatelessWidget {
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: scheme.surfaceContainerHighest.withValues(alpha: 0.92),
+        color: scheme.surface.withValues(
+          alpha: Theme.of(context).brightness == Brightness.dark ? 0.30 : 0.18,
+        ),
         shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        border: Border.all(
+          color: scheme.onSurface.withValues(alpha: 0.08),
+        ),
       ),
       alignment: Alignment.center,
       child: Icon(icon, size: 26, color: scheme.onSurface),
