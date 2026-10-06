@@ -1,4 +1,5 @@
 import 'package:counter/features/notes/notes_figma_tokens.dart';
+import 'package:counter/features/notes/notes_glm_surface.dart';
 import 'package:flutter/material.dart';
 
 class NotesEditorMetadataTag {
@@ -40,11 +41,17 @@ class NotesEditorBody extends StatelessWidget {
         Positioned(
           left: 0,
           right: 0,
-          bottom: embedded ? 14 : 8,
-          child: RepaintBoundary(
-            child: Align(
-              alignment: Alignment.bottomCenter,
-              child: toolbar,
+          bottom: 0,
+          child: NotesBottomGlassFade(
+            height: embedded ? 78 : 86,
+            child: RepaintBoundary(
+              child: Align(
+                alignment: Alignment.bottomCenter,
+                child: Padding(
+                  padding: EdgeInsets.only(bottom: embedded ? 14 : 8),
+                  child: toolbar,
+                ),
+              ),
             ),
           ),
         ),
@@ -256,11 +263,10 @@ class _NotesEditorRail extends StatelessWidget {
         final contentWidth = (constraints.maxWidth - horizontalPadding * 2)
             .clamp(0.0, NotesFigmaTokens.editorContentMaxWidth)
             .toDouble();
-        final collapseTitleForKeyboard =
-            !embedded &&
-            constraints.maxWidth < 768 &&
-            constraints.maxHeight < 600 &&
-            FocusManager.instance.primaryFocus != null;
+        // Keep the editor geometry stable while focus moves between blocks.
+        // The title is already capped at two lines, so collapsing it on IME
+        // changes only creates visible jumps.
+        const collapseTitleForKeyboard = false;
         return Align(
           alignment: Alignment.topCenter,
           child: SizedBox(
@@ -728,9 +734,7 @@ class _NotesTitleBlockState extends State<_NotesTitleBlock> {
                   NotesFigmaTokens.titleLineHeight / NotesFigmaTokens.titleSize,
               fontWeight: FontWeight.w700,
               letterSpacing: -0.5,
-              color: _titleFocusNode.hasFocus
-                  ? NotesFigmaTokens.textPrimary(context)
-                  : NotesFigmaTokens.textSecondary(context),
+              color: NotesFigmaTokens.textPrimary(context),
             ),
             decoration: InputDecoration(
               hintText: widget.hintText,
