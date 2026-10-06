@@ -1,4 +1,3 @@
-import 'package:counter/core/app_colors.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/calendar/calendar_day_events.dart';
 import 'package:counter/features/calendar/calendar_helpers.dart';
@@ -50,7 +49,7 @@ class CalendarMonthGrid extends StatelessWidget {
     return Column(
       children: [
         Container(
-          height: 34,
+          height: 42,
           decoration: BoxDecoration(
             border: Border(
               bottom: BorderSide(
@@ -66,8 +65,9 @@ class CalendarMonthGrid extends StatelessWidget {
                     child: Text(
                       label,
                       style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                        color: scheme.onSurfaceVariant,
+                        color: scheme.onSurfaceVariant.withValues(alpha: 0.72),
                         fontWeight: FontWeight.w600,
+                        fontSize: 13,
                       ),
                     ),
                   ),
@@ -103,25 +103,8 @@ class CalendarMonthGrid extends StatelessWidget {
                                       final inFocusedMonth =
                                           day.year == focusedMonth.year &&
                                           day.month == focusedMonth.month;
-                                      return DecoratedBox(
-                                        decoration: BoxDecoration(
-                                          border: Border(
-                                            right: col < 6
-                                                ? BorderSide(
-                                                    color: scheme.outlineVariant
-                                                        .withValues(alpha: 0.38),
-                                                  )
-                                                : BorderSide.none,
-                                            bottom: row < monthRowCount - 1
-                                                ? BorderSide(
-                                                    color: scheme.outlineVariant
-                                                        .withValues(alpha: 0.38),
-                                                  )
-                                                : BorderSide.none,
-                                          ),
-                                        ),
-                                        child: inFocusedMonth
-                                            ? CalendarMonthDayCell(
+                                      return inFocusedMonth
+                                          ? CalendarMonthDayCell(
                                                 day: day,
                                                 focusedMonth: focusedMonth,
                                                 highlightDay: highlightDay,
@@ -132,10 +115,9 @@ class CalendarMonthGrid extends StatelessWidget {
                                                 showEventPills: showEventPills,
                                                 maxVisibleEvents: maxEvents,
                                                 browsing: browsing,
-                                                onTap: onDayTap,
-                                              )
-                                            : const SizedBox.expand(),
-                                      );
+                                              onTap: onDayTap,
+                                            )
+                                          : const SizedBox.expand();
                                     },
                                   ),
                                 ),
@@ -214,12 +196,12 @@ class CalendarMonthDayCell extends StatelessWidget {
       child: InkWell(
         onTap: () => onTap(day),
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(6, 5, 6, 5),
+          padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 7),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 SizedBox(
-                  height: 28,
+                  height: 40,
                   child: Align(
                     alignment: Alignment.centerLeft,
                     child: _CalendarDayNumberBadge(
@@ -258,7 +240,7 @@ class _CalendarDayNumberBadge extends StatelessWidget {
     required this.scheme,
   });
 
-  static const double _size = 28;
+  static const double _size = 40;
 
   final String label;
   final bool inMonth;
@@ -274,18 +256,13 @@ class _CalendarDayNumberBadge extends StatelessWidget {
     BoxDecoration? decoration;
     if (selected) {
       decoration = BoxDecoration(
-        color: scheme.primaryContainer.withValues(alpha: 0.65),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: scheme.primary, width: 1.5),
+        color: scheme.onSurface,
+        borderRadius: BorderRadius.circular(999),
       );
     } else if (isToday) {
       decoration = BoxDecoration(
-        color: AppColors.cardSurface,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: scheme.primary.withValues(alpha: 0.55),
-          width: 1,
-        ),
+        color: scheme.primary.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(999),
       );
     }
 
@@ -306,9 +283,9 @@ class _CalendarDayNumberBadge extends StatelessWidget {
               fontWeight: selected || isToday
                   ? FontWeight.w700
                   : FontWeight.w500,
-              fontSize: 14,
+              fontSize: 18,
               height: 1,
-              color: fg,
+              color: selected ? scheme.surface : (isToday ? scheme.primary : fg),
             ),
           ),
         ),
