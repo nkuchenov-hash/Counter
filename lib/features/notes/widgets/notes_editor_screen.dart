@@ -402,7 +402,9 @@ class _NotesNavigationHeader extends StatelessWidget {
                       height: 1.2,
                       fontWeight: FontWeight.w600,
                       letterSpacing: -0.1,
-                      color: NotesFigmaTokens.textPrimary(context),
+                      color: _titleFocusNode.hasFocus
+                  ? NotesFigmaTokens.textPrimary(context)
+                  : NotesFigmaTokens.textSecondary(context),
                     ),
                   );
                 },
@@ -720,7 +722,7 @@ class _NotesTitleBlockState extends State<_NotesTitleBlock> {
             textCapitalization: TextCapitalization.sentences,
             textInputAction: TextInputAction.next,
             minLines: 1,
-            maxLines: null,
+            maxLines: 2,
             scrollPadding: const EdgeInsets.fromLTRB(
               20,
               20,
