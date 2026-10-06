@@ -38,7 +38,9 @@ class CalendarWeekPlannerGrid extends StatelessWidget {
     if (start == null) return 0;
     final end = task.endDateTime ?? start.add(const Duration(minutes: 45));
     final minutes = end.difference(start).inMinutes.clamp(20, 24 * 60);
-    return (minutes / 60 * _hourHeight).clamp(22.0, _hourHeight * 4);
+    return (minutes / 60 * _hourHeight)
+        .clamp(22.0, _hourHeight * 4)
+        .toDouble();
   }
 
   @override
