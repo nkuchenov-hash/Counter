@@ -1,6 +1,8 @@
 // Notes surfaces — shared visual layer for the Notes library and editor.
 // Presentation only. No Brain / PocketBase imports.
 
+import 'dart:ui' as ui;
+
 import 'package:counter/core/widgets/app_text_field.dart';
 import 'package:flutter/material.dart';
 
@@ -262,6 +264,7 @@ class NotesGlmLibraryInput extends StatelessWidget {
     this.onSubmitted,
     this.suffixIcon,
     this.showSearchIcon = true,
+    this.glass = false,
   });
 
   final TextEditingController controller;
@@ -273,6 +276,7 @@ class NotesGlmLibraryInput extends StatelessWidget {
   final ValueChanged<String>? onSubmitted;
   final Widget? suffixIcon;
   final bool showSearchIcon;
+  final bool glass;
 
   @override
   Widget build(BuildContext context) => AppTextField(
@@ -285,7 +289,60 @@ class NotesGlmLibraryInput extends StatelessWidget {
         onSubmitted: onSubmitted,
         suffixIcon: suffixIcon,
         showSearchIcon: showSearchIcon,
+        surface: glass
+            ? AppTextFieldSurface.glass
+            : AppTextFieldSurface.standard,
       );
+}
+
+
+class NotesBottomGlassFade extends StatelessWidget {
+  const NotesBottomGlassFade({
+    super.key,
+    required this.child,
+    this.height = 82,
+    this.horizontalPadding = 0,
+    this.verticalPadding = 0,
+  });
+
+  final Widget child;
+  final double height;
+  final double horizontalPadding;
+  final double verticalPadding;
+
+  @override
+  Widget build(BuildContext context) {
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    return SizedBox(
+      height: height,
+      child: ClipRect(
+        child: BackdropFilter(
+          filter: ui.ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.transparent,
+                  Colors.black.withValues(alpha: dark ? 0.08 : 0.025),
+                  Colors.black.withValues(alpha: dark ? 0.14 : 0.055),
+                ],
+                stops: const [0.0, 0.55, 1.0],
+              ),
+            ),
+            child: Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: horizontalPadding,
+                vertical: verticalPadding,
+              ),
+              child: child,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 /// Card surface from the supplied Notes mockup: quiet paper, 14px corners,
