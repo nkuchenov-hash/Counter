@@ -5,7 +5,7 @@ import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-/// Week browsing grid — seven columns with scrollable event pills per day.
+/// Week browsing grid — real time grid with hourly rows and positioned events.
 class CalendarWeekPlannerGrid extends StatelessWidget {
   const CalendarWeekPlannerGrid({
     super.key,
@@ -15,6 +15,7 @@ class CalendarWeekPlannerGrid extends StatelessWidget {
     required this.loading,
     required this.showEventPills,
     required this.onDayTap,
+    required this.onTaskTap,
   });
 
   final DateTime weekStart;
@@ -23,113 +24,242 @@ class CalendarWeekPlannerGrid extends StatelessWidget {
   final bool loading;
   final bool showEventPills;
   final ValueChanged<DateTime> onDayTap;
+  final ValueChanged<PlanningTask> onTaskTap;
+
+  static const double _hourHeight = 64;
+  static const double _timeGutter = 44;
+  static const double _headerHeight = 52;
+
+  double _topFor(DateTime time) =>
+      (time.hour * 60 + time.minute) / 60 * _hourHeight;
+
+  double _heightFor(PlanningTask task) {
+    final start = task.startTime;
+    if (start == null) return 0;
+    final end = task.endDateTime ?? start.add(const Duration(minutes: 45));
+    final minutes = end.difference(start).inMinutes.clamp(20, 24 * 60);
+    return (minutes / 60 * _hourHeight).clamp(22.0, _hourHeight * 4);
+  }
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final loc = currentLocale.value;
+    final scrollController = ScrollController(
+      initialScrollOffset: 7 * _hourHeight,
+    );
+
     return Stack(
       children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+        Column(
           children: [
-            for (var i = 0; i < 7; i++)
-              Expanded(
-                child: Builder(
-                  builder: (context) {
-                    final day = weekStart.add(Duration(days: i));
-                    final key = calendarDayKey(day);
-                    final tasks = tasksByDay[key] ?? const <PlanningTask>[];
-                    final isToday =
-                        day.year == today.year &&
-                        day.month == today.month &&
-                        day.day == today.day;
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 2),
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          color: isToday
-                              ? scheme.secondaryContainer.withValues(
-                                  alpha: 0.22,
-                                )
-                              : scheme.surfaceContainerLow.withValues(
-                                  alpha: 0.35,
+            SizedBox(
+              height: _headerHeight,
+              child: Row(
+                children: [
+                  const SizedBox(width: _timeGutter),
+                  for (var i = 0; i < 7; i++)
+                    Expanded(
+                      child: Builder(
+                        builder: (context) {
+                          final day = weekStart.add(Duration(days: i));
+                          final isToday =
+                              day.year == today.year &&
+                              day.month == today.month &&
+                              day.day == today.day;
+                          return InkWell(
+                            onTap: () => onDayTap(day),
+                            borderRadius: BorderRadius.circular(14),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  DateFormat.E(loc).format(day),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .labelSmall
+                                      ?.copyWith(
+                                        color: scheme.onSurfaceVariant,
+                                        fontWeight: FontWeight.w600,
+                                      ),
                                 ),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(
-                            color: scheme.outlineVariant.withValues(
-                              alpha: 0.45,
+                                const SizedBox(height: 2),
+                                Container(
+                                  width: 28,
+                                  height: 28,
+                                  alignment: Alignment.center,
+                                  decoration: isToday
+                                      ? BoxDecoration(
+                                          color: scheme.onSurface,
+                                          shape: BoxShape.circle,
+                                        )
+                                      : null,
+                                  child: Text(
+                                    '${day.day}',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .labelLarge
+                                        ?.copyWith(
+                                          fontWeight: FontWeight.w700,
+                                          color: isToday
+                                              ? scheme.surface
+                                              : scheme.onSurface,
+                                        ),
+                                  ),
+                                ),
+                              ],
                             ),
-                          ),
-                        ),
-                        child: Material(
-                          color: Colors.transparent,
-                          clipBehavior: Clip.antiAlias,
-                          borderRadius: BorderRadius.circular(10),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              InkWell(
-                                onTap: () => onDayTap(day),
-                                child: Padding(
-                                  padding: const EdgeInsets.fromLTRB(
-                                    8,
-                                    8,
-                                    8,
-                                    6,
-                                  ),
-                                  child: Column(
-                                    children: [
-                                      Text(
-                                        DateFormat.E(loc).format(day),
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .labelSmall
-                                            ?.copyWith(
-                                              color: scheme.onSurfaceVariant,
-                                              fontWeight: FontWeight.w600,
-                                            ),
+                          );
+                        },
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: SingleChildScrollView(
+                controller: scrollController,
+                child: SizedBox(
+                  height: 24 * _hourHeight,
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      SizedBox(
+                        width: _timeGutter,
+                        child: Stack(
+                          children: [
+                            for (var hour = 0; hour < 24; hour++)
+                              Positioned(
+                                top: hour * _hourHeight - 7,
+                                right: 6,
+                                child: Text(
+                                  '${hour.toString().padLeft(2, '0')}:00',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .labelSmall
+                                      ?.copyWith(
+                                        fontSize: 10,
+                                        color: scheme.onSurfaceVariant
+                                            .withValues(alpha: 0.72),
                                       ),
-                                      Text(
-                                        '${day.day}',
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .titleMedium
-                                            ?.copyWith(
-                                              fontWeight: FontWeight.w700,
-                                            ),
-                                      ),
-                                    ],
-                                  ),
                                 ),
                               ),
-                              Expanded(
-                                child: SingleChildScrollView(
-                                  padding: const EdgeInsets.fromLTRB(
-                                    4,
-                                    0,
-                                    4,
-                                    6,
-                                  ),
-                                  child: CalendarDayEventList(
-                                    tasks: tasks
-                                        .where((t) => t.startTime != null)
-                                        .toList(),
-                                    loc: loc,
-                                    showPills: showEventPills,
-                                    maxVisible: 12,
-                                    vertical: true,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
+                          ],
                         ),
                       ),
-                    );
-                  },
+                      Expanded(
+                        child: Stack(
+                          children: [
+                            for (var hour = 0; hour <= 24; hour++)
+                              Positioned(
+                                left: 0,
+                                right: 0,
+                                top: hour * _hourHeight,
+                                child: Divider(
+                                  height: 1,
+                                  thickness: 1,
+                                  color: scheme.outlineVariant.withValues(
+                                    alpha: 0.42,
+                                  ),
+                                ),
+                              ),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                for (var i = 0; i < 7; i++)
+                                  Expanded(
+                                    child: Builder(
+                                      builder: (context) {
+                                        final day = weekStart.add(
+                                          Duration(days: i),
+                                        );
+                                        final tasks =
+                                            (tasksByDay[calendarDayKey(day)] ??
+                                                    const <PlanningTask>[])
+                                                .where(
+                                                  (task) =>
+                                                      task.startTime != null,
+                                                )
+                                                .toList()
+                                              ..sort(
+                                                (a, b) => a.startTime!.compareTo(
+                                                  b.startTime!,
+                                                ),
+                                              );
+                                        return DecoratedBox(
+                                          decoration: BoxDecoration(
+                                            border: Border(
+                                              left: BorderSide(
+                                                color: scheme.outlineVariant
+                                                    .withValues(alpha: 0.34),
+                                              ),
+                                            ),
+                                          ),
+                                          child: Stack(
+                                            clipBehavior: Clip.none,
+                                            children: [
+                                              for (final task in tasks)
+                                                Positioned(
+                                                  top: _topFor(task.startTime!),
+                                                  left: 2,
+                                                  right: 2,
+                                                  height: _heightFor(task),
+                                                  child: Material(
+                                                    color: scheme
+                                                        .primaryContainer
+                                                        .withValues(alpha: 0.72),
+                                                    borderRadius:
+                                                        BorderRadius.circular(7),
+                                                    clipBehavior: Clip.antiAlias,
+                                                    child: InkWell(
+                                                      onTap: () =>
+                                                          onTaskTap(task),
+                                                      child: Padding(
+                                                        padding:
+                                                            const EdgeInsets.symmetric(
+                                                              horizontal: 5,
+                                                              vertical: 4,
+                                                            ),
+                                                        child: Text(
+                                                          task.title,
+                                                          maxLines: 2,
+                                                          overflow: TextOverflow
+                                                              .ellipsis,
+                                                          style: Theme.of(context)
+                                                              .textTheme
+                                                              .labelSmall
+                                                              ?.copyWith(
+                                                                fontSize: 10.5,
+                                                                height: 1.05,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w600,
+                                                                color: scheme
+                                                                    .onPrimaryContainer,
+                                                              ),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                            ],
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
+            ),
           ],
         ),
         if (loading)
