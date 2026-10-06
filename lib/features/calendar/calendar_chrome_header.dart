@@ -179,75 +179,75 @@ class CalendarChromeHeader extends StatelessWidget {
       );
     }
 
-    final sidePad = dayFocusActive ? (compact ? 88.0 : 96.0) : 48.0;
+    final monthLabel = DateFormat.MMMM(loc).format(focusedMonth);
+    final yearLabel = '${focusedMonth.year}';
+
     return Padding(
-      padding: const EdgeInsets.fromLTRB(8, 8, 8, 4),
+      padding: const EdgeInsets.fromLTRB(20, 18, 20, 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          SizedBox(
-            height: 48,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                Row(
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (dayFocusActive) ...[
+                _CalendarRoundIconButton(
+                  icon: Icons.close_rounded,
+                  tooltip: t(loc, 'calendar_collapse'),
+                  onPressed: onCollapse,
+                ),
+                const SizedBox(width: 12),
+              ],
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (dayFocusActive)
-                      IconButton(
-                        tooltip: t(loc, 'calendar_collapse'),
-                        icon: const Icon(Icons.close_rounded),
-                        onPressed: onCollapse,
-                        visualDensity: VisualDensity.compact,
-                      ),
-                    IconButton(
-                      icon: const Icon(Icons.chevron_left_rounded),
-                      onPressed: onPrev,
-                      visualDensity: VisualDensity.compact,
+                    Text(
+                      dayFocusActive ? title : monthLabel,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: titleStyle,
                     ),
-                    const Spacer(),
-                    IconButton(
-                      icon: const Icon(Icons.chevron_right_rounded),
-                      onPressed: onNext,
-                      visualDensity: VisualDensity.compact,
+                    const SizedBox(height: 4),
+                    Text(
+                      dayFocusActive
+                          ? DateFormat.y(loc).format(selectedDay)
+                          : yearLabel,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                        color: scheme.onSurfaceVariant,
+                      ),
                     ),
                   ],
                 ),
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: sidePad),
-                  child: Text(
-                    title,
-                    textAlign: TextAlign.center,
-                    maxLines: 1,
-                    softWrap: false,
-                    overflow: TextOverflow.ellipsis,
-                    style: titleStyle,
-                  ),
-                ),
-              ],
-            ),
+              ),
+              const SizedBox(width: 12),
+              _CalendarRoundIconButton(
+                icon: Icons.chevron_left_rounded,
+                tooltip: null,
+                onPressed: onPrev,
+              ),
+              const SizedBox(width: 6),
+              _CalendarRoundIconButton(
+                icon: Icons.chevron_right_rounded,
+                tooltip: null,
+                onPressed: onNext,
+              ),
+            ],
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 14),
           Row(
             children: [
               SegmentedButton<CalendarViewMode>(
                 segments: [
                   ButtonSegment(
                     value: CalendarViewMode.month,
-                    label: Text(
-                      t(loc, 'calendar_month_view'),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    icon: const Icon(Icons.calendar_month_rounded, size: 18),
+                    label: Text(t(loc, 'calendar_month_view')),
                   ),
                   ButtonSegment(
                     value: CalendarViewMode.week,
-                    label: Text(
-                      t(loc, 'calendar_week_view'),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    icon: const Icon(Icons.view_week_rounded, size: 18),
+                    label: Text(t(loc, 'calendar_week_view')),
                   ),
                 ],
                 selected: {mode},
@@ -257,20 +257,41 @@ class CalendarChromeHeader extends StatelessWidget {
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
               ),
-              const Spacer(),
-              if (showToday)
-                FilledButton.tonal(
-                  onPressed: onToday,
-                  style: FilledButton.styleFrom(
-                    visualDensity: VisualDensity.compact,
-                    padding: const EdgeInsets.symmetric(horizontal: 14),
-                  ),
-                  child: Text(t(loc, 'calendar_today')),
-                ),
             ],
           ),
         ],
       ),
     );
+  }
+}
+
+class _CalendarRoundIconButton extends StatelessWidget {
+  const _CalendarRoundIconButton({
+    required this.icon,
+    required this.tooltip,
+    required this.onPressed,
+  });
+
+  final IconData icon;
+  final String? tooltip;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final button = Material(
+      color: scheme.surfaceContainerHigh.withValues(alpha: 0.72),
+      shape: const CircleBorder(),
+      child: InkWell(
+        onTap: onPressed,
+        customBorder: const CircleBorder(),
+        child: SizedBox(
+          width: 48,
+          height: 48,
+          child: Icon(icon, size: 26, color: scheme.onSurface),
+        ),
+      ),
+    );
+    return tooltip == null ? button : Tooltip(message: tooltip!, child: button);
   }
 }
