@@ -363,17 +363,24 @@ class NotesEditorToolbar extends StatelessWidget {
           ),
           child: BackdropFilter(
             filter: ui.ImageFilter.blur(
-              sigmaX: NotesFigmaTokens.glassBlur,
-              sigmaY: NotesFigmaTokens.glassBlur,
+              sigmaX: 18,
+              sigmaY: 18,
             ),
             child: DecoratedBox(
               decoration: BoxDecoration(
-                color: NotesFigmaTokens.glassFill(context),
+                color: Theme.of(context).colorScheme.surface.withValues(
+                  alpha: Theme.of(context).brightness == Brightness.dark
+                      ? 0.30
+                      : 0.18,
+                ),
                 borderRadius: BorderRadius.circular(
                   NotesFigmaTokens.toolbarRadius,
                 ),
                 border: Border.all(
-                  color: NotesFigmaTokens.glassStroke(context),
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.08),
                 ),
               ),
               child: LayoutBuilder(
