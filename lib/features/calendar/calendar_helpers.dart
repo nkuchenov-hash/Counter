@@ -22,15 +22,17 @@ String calendarMonthHeaderTitle(DateTime month, String loc) {
   return '$monthName ${month.year}';
 }
 
-/// Title style for calendar chrome — smaller on phone widths.
+/// Calendar chrome title. Mobile deliberately uses a large editorial scale so
+/// the month reads as the primary object instead of another compact toolbar.
 TextStyle? calendarHeaderTitleStyle(BuildContext context, {required bool compact}) {
-  final base = Theme.of(context).textTheme.titleLarge;
+  final base = Theme.of(context).textTheme.headlineMedium;
   if (!compact) {
-    return base?.copyWith(fontWeight: FontWeight.w700, fontSize: 20);
+    return base?.copyWith(fontWeight: FontWeight.w800, fontSize: 24, height: 1.05);
   }
   return base?.copyWith(
-    fontWeight: FontWeight.w700,
-    fontSize: 16,
-    height: 1.1,
+    fontWeight: FontWeight.w800,
+    fontSize: 34,
+    height: 1.02,
+    letterSpacing: -0.8,
   );
 }
