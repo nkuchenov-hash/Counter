@@ -261,10 +261,100 @@ class _ListRow extends StatelessWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) {
+        final mobile = constraints.maxWidth <= 520;
         final compact = constraints.maxWidth <= 820;
         final mid = constraints.maxWidth <= 1180;
         final gap = mid ? 10.0 : 14.0;
         final statusWidth = compact ? 80.0 : (mid ? 90.0 : 100.0);
+
+        if (mobile) {
+          return GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: onOpen,
+            onLongPress: onLongPress,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 140),
+              constraints: const BoxConstraints(minHeight: 92),
+              padding: const EdgeInsets.fromLTRB(14, 12, 8, 12),
+              decoration: BoxDecoration(
+                color: selected
+                    ? selectedFill
+                    : (isDone ? doneFill : normalFill),
+                border: Border(
+                  bottom: BorderSide(
+                    color: dark
+                        ? scheme.outlineVariant.withValues(alpha: 0.42)
+                        : const Color(0xFFE6E8EC),
+                  ),
+                ),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  if (checkboxesOn) ...[
+                    _DoneCheck(
+                      isDone: isDone,
+                      onToggle: onToggleDone,
+                      size: 30,
+                    ),
+                    const SizedBox(width: 12),
+                  ],
+                  Expanded(
+                    child: Opacity(
+                      opacity: isDone ? 0.60 : 1,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _LifeSelectableText(
+                            title,
+                            onTap: onOpen,
+                            maxLines: 1,
+                            style: TextStyle(
+                              fontSize: 18,
+                              height: 1.2,
+                              fontWeight: FontWeight.w600,
+                              decoration:
+                                  isDone ? TextDecoration.lineThrough : null,
+                              color: scheme.onSurface,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Row(
+                            children: [
+                              Flexible(
+                                child: Text(
+                                  preview.isEmpty
+                                      ? t(loc, 'notes_library_no_text')
+                                      : preview.replaceAll('\n', ' '),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 13.5,
+                                    height: 1.2,
+                                    color: scheme.onSurfaceVariant
+                                        .withValues(alpha: 0.72),
+                                    fontStyle: preview.isEmpty
+                                        ? FontStyle.italic
+                                        : null,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              _StatusMeta(data: data),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  _NoteCardMenuButton(onPressed: onOpenMenu),
+                ],
+              ),
+            ),
+          );
+        }
 
         return GestureDetector(
           behavior: HitTestBehavior.opaque,
