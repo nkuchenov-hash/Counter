@@ -248,33 +248,25 @@ class _MobileNotesLibrary extends StatelessWidget {
           ],
         ),
         Positioned(
-          left: 12,
-          right: 12,
-          bottom: 10,
+          left: 8,
+          right: 8,
+          bottom: 12,
           child: Row(
             children: [
               Expanded(
-                child: Material(
-                  color: scheme.surfaceContainerHighest.withValues(alpha: 0.92),
-                  borderRadius: BorderRadius.circular(999),
-                  elevation: 2,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4),
-                    child: NotesGlmLibraryInput(
-                      controller: header.searchController,
-                      focusNode: header.searchFocus,
-                      hintText: t(header.locale, 'notes_v3_search_hint'),
-                      textInputAction: TextInputAction.search,
-                      textCapitalization: TextCapitalization.sentences,
-                      onChanged: header.onSearchChanged,
-                      suffixIcon: header.searchQuery.trim().isNotEmpty
-                          ? IconButton(
-                              onPressed: header.onClearSearch,
-                              icon: const Icon(Icons.close_rounded, size: 18),
-                            )
-                          : null,
-                    ),
-                  ),
+                child: NotesGlmLibraryInput(
+                  controller: header.searchController,
+                  focusNode: header.searchFocus,
+                  hintText: t(header.locale, 'notes_v3_search_hint'),
+                  textInputAction: TextInputAction.search,
+                  textCapitalization: TextCapitalization.sentences,
+                  onChanged: header.onSearchChanged,
+                  suffixIcon: header.searchQuery.trim().isNotEmpty
+                      ? IconButton(
+                          onPressed: header.onClearSearch,
+                          icon: const Icon(Icons.close_rounded, size: 18),
+                        )
+                      : null,
                 ),
               ),
               const SizedBox(width: 10),
@@ -332,19 +324,47 @@ class _MobileRoundAction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     return Material(
-      color: scheme.surfaceContainerHighest.withValues(alpha: 0.92),
+      color: Colors.transparent,
       shape: const CircleBorder(),
-      elevation: 2,
+      clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
         customBorder: const CircleBorder(),
-        child: SizedBox.square(
-          dimension: size,
-          child: Icon(icon, size: 26, color: scheme.onSurface),
-        ),
+        child: _MobileRoundActionVisual(icon: icon, size: size),
       ),
+    );
+  }
+}
+
+class _MobileRoundActionVisual extends StatelessWidget {
+  const _MobileRoundActionVisual({
+    required this.icon,
+    required this.size,
+  });
+
+  final IconData icon;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHighest.withValues(alpha: 0.92),
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.06),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      alignment: Alignment.center,
+      child: Icon(icon, size: 26, color: scheme.onSurface),
     );
   }
 }
@@ -422,28 +442,11 @@ class _MobileNotesViewMenu extends StatelessWidget {
           ),
         ),
       ],
-      child: Container(
-        width: 54,
-        height: 54,
-        decoration: BoxDecoration(
-          color: scheme.surfaceContainerHighest.withValues(alpha: 0.92),
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.06),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        alignment: Alignment.center,
-        child: Icon(
-          adapter.notesView == NotesLibraryView.grid
-              ? Icons.grid_view_rounded
-              : Icons.view_list_rounded,
-          size: 26,
-          color: scheme.onSurface,
-        ),
+      child: _MobileRoundActionVisual(
+        icon: adapter.notesView == NotesLibraryView.grid
+            ? Icons.grid_view_rounded
+            : Icons.view_list_rounded,
+        size: 54,
       ),
     );
   }
