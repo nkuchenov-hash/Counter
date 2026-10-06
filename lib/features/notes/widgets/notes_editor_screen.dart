@@ -402,9 +402,7 @@ class _NotesNavigationHeader extends StatelessWidget {
                       height: 1.2,
                       fontWeight: FontWeight.w600,
                       letterSpacing: -0.1,
-                      color: _titleFocusNode.hasFocus
-                  ? NotesFigmaTokens.textPrimary(context)
-                  : NotesFigmaTokens.textSecondary(context),
+                      color: NotesFigmaTokens.textSecondary(context),
                     ),
                   );
                 },
