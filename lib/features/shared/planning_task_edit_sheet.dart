@@ -512,6 +512,8 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
     final keyboardOpen = kbBottom > 0;
     final notesEditing = keyboardOpen && _notesEditorFocused;
     final compactChrome = notesEditing;
+    final mobileDated =
+        !_startedAsUndatedBacklog && MediaQuery.sizeOf(context).width <= 600;
 
     return Material(
       color: Theme.of(context).colorScheme.surface,
@@ -526,32 +528,46 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
               compactChrome ? 4 : 8,
             ),
             child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
+                if (mobileDated) ...[
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded),
+                    onPressed: () =>
+                        Navigator.of(context).pop<PlanningTask?>(null),
+                  ),
+                  const SizedBox(width: 8),
+                ],
                 Expanded(
                   child: TextFormField(
                     controller: _titleController,
                     autofocus: _startedAsUndatedBacklog,
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.w700,
+                      fontSize: mobileDated ? 20 : null,
                     ),
                     minLines: 1,
-                    maxLines: compactChrome ? 2 : 4,
+                    maxLines: compactChrome ? 2 : (mobileDated ? 2 : 4),
                     textCapitalization: TextCapitalization.sentences,
                     decoration: InputDecoration(
                       hintText: t(currentLocale.value, 'title_label'),
                       border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      disabledBorder: InputBorder.none,
                       isDense: true,
+                      filled: false,
                       contentPadding: EdgeInsets.zero,
                     ),
                     onChanged: _onTitleChanged,
                   ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.close_rounded),
-                  onPressed: () =>
-                      Navigator.of(context).pop<PlanningTask?>(null),
-                ),
+                if (!mobileDated)
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded),
+                    onPressed: () =>
+                        Navigator.of(context).pop<PlanningTask?>(null),
+                  ),
               ],
             ),
           ),
@@ -568,6 +584,10 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
               value: dropdownValue,
               decoration: InputDecoration(
                 labelText: t(currentLocale.value, 'category_label'),
+                isDense: mobileDated,
+                contentPadding: mobileDated
+                    ? const EdgeInsets.symmetric(horizontal: 14, vertical: 12)
+                    : null,
               ),
               onChanged: (id) {
                 setState(() => _categoryId = id ?? _categoryId);
@@ -579,7 +599,7 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
             child: Column(
               children: [
                 Expanded(
-                  flex: notesEditing ? 1 : 5,
+                  flex: notesEditing ? 1 : (mobileDated ? 1 : 5),
                   child: Focus(
                     onFocusChange: (focused) {
                       if (!mounted || _notesEditorFocused == focused) return;
@@ -868,6 +888,7 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
                   ),
                 ] else if (!keyboardOpen) ...[
                   Expanded(
+                    flex: mobileDated ? 2 : 1,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
@@ -1240,47 +1261,64 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
                     ),
                   ),
                 if (!notesEditing)
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(
-                      kPlanningEditActionBarPadH,
-                      kPlanningEditActionBarPadV,
-                      kPlanningEditActionBarPadH,
-                      kPlanningEditActionBarBottomPad,
-                    ),
-                    child: Row(
-                      children: [
-                        if (widget.onDelete != null)
+                  SafeArea(
+                    top: false,
+                    minimum: const EdgeInsets.only(bottom: 4),
+                    child: Container(
+                      decoration: mobileDated
+                          ? BoxDecoration(
+                              color: Theme.of(context).colorScheme.surface,
+                              border: Border(
+                                top: BorderSide(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .outlineVariant
+                                      .withValues(alpha: 0.45),
+                                ),
+                              ),
+                            )
+                          : null,
+                      padding: EdgeInsets.fromLTRB(
+                        kPlanningEditActionBarPadH,
+                        mobileDated ? 8 : kPlanningEditActionBarPadV,
+                        kPlanningEditActionBarPadH,
+                        mobileDated ? 6 : kPlanningEditActionBarBottomPad,
+                      ),
+                      child: Row(
+                        children: [
+                          if (widget.onDelete != null)
+                            TextButton(
+                              onPressed: () {
+                                widget.onDelete!(widget.task);
+                                Navigator.of(context).pop<PlanningTask?>(null);
+                              },
+                              child: Text(
+                                t(currentLocale.value, 'delete'),
+                                style: TextStyle(
+                                  color: Theme.of(context).colorScheme.error,
+                                ),
+                              ),
+                            ),
+                          const Spacer(),
                           TextButton(
-                            onPressed: () {
-                              widget.onDelete!(widget.task);
-                              Navigator.of(context).pop<PlanningTask?>(null);
-                            },
+                            onPressed: () =>
+                                Navigator.of(context).pop<PlanningTask?>(null),
+                            child: Text(t(currentLocale.value, 'cancel')),
+                          ),
+                          const SizedBox(width: 8),
+                          FilledButton(
+                            onPressed: _commitSave,
                             child: Text(
-                              t(currentLocale.value, 'delete'),
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.error,
+                              t(
+                                currentLocale.value,
+                                _shouldShowGraduateUi
+                                    ? 'plan_graduate_from_idea'
+                                    : 'save',
                               ),
                             ),
                           ),
-                        const Spacer(),
-                        TextButton(
-                          onPressed: () =>
-                              Navigator.of(context).pop<PlanningTask?>(null),
-                          child: Text(t(currentLocale.value, 'cancel')),
-                        ),
-                        const SizedBox(width: 8),
-                        FilledButton(
-                          onPressed: _commitSave,
-                          child: Text(
-                            t(
-                              currentLocale.value,
-                              _shouldShowGraduateUi
-                                  ? 'plan_graduate_from_idea'
-                                  : 'save',
-                            ),
-                          ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
               ],
