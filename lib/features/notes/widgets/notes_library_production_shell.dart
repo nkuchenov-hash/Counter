@@ -82,15 +82,33 @@ class NotesLibraryProductionShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final category = _categoryAdapter();
     final headerAdapter = _headerAdapter();
+    final mobile = MediaQuery.sizeOf(context).width <= 520;
     final tabs = category == null
         ? categoryBar
         : _NotesPhysicalFolderTabs(
             adapter: category,
             onOpenSettings: headerAdapter?.onOpenSettings,
           );
+
+    final newNote = () => unawaited(
+          _createNewNote(
+            context,
+            preferredCategoryId: category?.filterCategoryId,
+          ),
+        );
+
+    if (mobile && headerAdapter != null && category != null) {
+      return NotesGlmLibraryFrame(
+        child: _MobileNotesLibrary(
+          header: headerAdapter,
+          category: category,
+          content: content,
+          onNewNote: newNote,
+        ),
+      );
+    }
 
     return NotesGlmLibraryFrame(
       child: Column(
@@ -102,18 +120,11 @@ class NotesLibraryProductionShell extends StatelessWidget {
           else
             _HtmlNotesHeader(
               adapter: headerAdapter,
-              onNewNote: () => unawaited(
-                _createNewNote(
-                  context,
-                  preferredCategoryId: category?.filterCategoryId,
-                ),
-              ),
+              onNewNote: newNote,
             ),
           const SizedBox(height: 12),
           SizedBox(height: 42, child: tabs),
-          Expanded(
-            child: content,
-          ),
+          Expanded(child: content),
         ],
       ),
     );
@@ -146,6 +157,450 @@ class NotesLibraryProductionShell extends StatelessWidget {
       onClosed: () {
         db.notifyPlanningRefresh(scheduleNetworkRefresh: false);
       },
+    );
+  }
+}
+
+
+class _MobileNotesLibrary extends StatelessWidget {
+  const _MobileNotesLibrary({
+    required this.header,
+    required this.category,
+    required this.content,
+    required this.onNewNote,
+  });
+
+  final _NotesHeaderAdapter header;
+  final _NotesCategoryAdapter category;
+  final Widget content;
+  final VoidCallback onNewNote;
+
+  String _activeTitle() {
+    final id = category.filterCategoryId;
+    if (id == null) {
+      switch (header.locale) {
+        case 'ru':
+          return 'Все заметки';
+        default:
+          return 'All notes';
+      }
+    }
+    final rule = DatabaseService.instance.getCategoryRuleById(id);
+    final name = rule?.name.trim() ?? '';
+    return name.isEmpty ? '—' : name;
+  }
+
+  Future<void> _openFolders(BuildContext context) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => _MobileNotesFoldersSheet(
+        adapter: category,
+        locale: header.locale,
+        onOpenSettings: header.onOpenSettings,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return Stack(
+      children: [
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                _MobileRoundAction(
+                  icon: Icons.space_dashboard_outlined,
+                  onTap: () => unawaited(_openFolders(context)),
+                ),
+                const Spacer(),
+                _MobileNotesModePill(locale: header.locale),
+                const Spacer(),
+                _MobileNotesViewMenu(adapter: header),
+              ],
+            ),
+            const SizedBox(height: 24),
+            Text(
+              _activeTitle(),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 34,
+                height: 1.02,
+                letterSpacing: -0.9,
+                fontWeight: FontWeight.w700,
+                color: scheme.onSurface,
+              ),
+            ),
+            const SizedBox(height: 24),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 86),
+                child: content,
+              ),
+            ),
+          ],
+        ),
+        Positioned(
+          left: 12,
+          right: 12,
+          bottom: 10,
+          child: Row(
+            children: [
+              Expanded(
+                child: Material(
+                  color: scheme.surfaceContainerHighest.withValues(alpha: 0.92),
+                  borderRadius: BorderRadius.circular(999),
+                  elevation: 2,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: NotesGlmLibraryInput(
+                      controller: header.searchController,
+                      focusNode: header.searchFocus,
+                      hintText: t(header.locale, 'notes_v3_search_hint'),
+                      textInputAction: TextInputAction.search,
+                      textCapitalization: TextCapitalization.sentences,
+                      onChanged: header.onSearchChanged,
+                      suffixIcon: header.searchQuery.trim().isNotEmpty
+                          ? IconButton(
+                              onPressed: header.onClearSearch,
+                              icon: const Icon(Icons.close_rounded, size: 18),
+                            )
+                          : null,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              _MobileRoundAction(
+                icon: Icons.edit_outlined,
+                size: 58,
+                onTap: onNewNote,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _MobileNotesModePill extends StatelessWidget {
+  const _MobileNotesModePill({required this.locale});
+
+  final String locale;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      height: 48,
+      padding: const EdgeInsets.symmetric(horizontal: 18),
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHighest.withValues(alpha: 0.82),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        t(locale, 'notes_v3_title'),
+        style: TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.w700,
+          color: scheme.onSurface,
+        ),
+      ),
+    );
+  }
+}
+
+class _MobileRoundAction extends StatelessWidget {
+  const _MobileRoundAction({
+    required this.icon,
+    required this.onTap,
+    this.size = 54,
+  });
+
+  final IconData icon;
+  final VoidCallback onTap;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Material(
+      color: scheme.surfaceContainerHighest.withValues(alpha: 0.92),
+      shape: const CircleBorder(),
+      elevation: 2,
+      child: InkWell(
+        onTap: onTap,
+        customBorder: const CircleBorder(),
+        child: SizedBox.square(
+          dimension: size,
+          child: Icon(icon, size: 26, color: scheme.onSurface),
+        ),
+      ),
+    );
+  }
+}
+
+enum _MobileNotesViewAction { list, grid, checkboxes }
+
+class _MobileNotesViewMenu extends StatelessWidget {
+  const _MobileNotesViewMenu({required this.adapter});
+
+  final _NotesHeaderAdapter adapter;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return PopupMenuButton<_MobileNotesViewAction>(
+      tooltip: t(adapter.locale, 'notes_editor_more_tooltip'),
+      position: PopupMenuPosition.under,
+      onSelected: (action) {
+        switch (action) {
+          case _MobileNotesViewAction.list:
+            adapter.onViewChanged(NotesLibraryView.list);
+          case _MobileNotesViewAction.grid:
+            adapter.onViewChanged(NotesLibraryView.grid);
+          case _MobileNotesViewAction.checkboxes:
+            adapter.onCheckboxModeChanged(!adapter.checkboxesOn);
+        }
+      },
+      itemBuilder: (context) => [
+        PopupMenuItem(
+          value: _MobileNotesViewAction.list,
+          child: Row(
+            children: [
+              Icon(
+                Icons.view_list_rounded,
+                color: adapter.notesView == NotesLibraryView.list
+                    ? scheme.primary
+                    : scheme.onSurfaceVariant,
+              ),
+              const SizedBox(width: 12),
+              Text(t(adapter.locale, 'notes_v3_view_list')),
+            ],
+          ),
+        ),
+        PopupMenuItem(
+          value: _MobileNotesViewAction.grid,
+          child: Row(
+            children: [
+              Icon(
+                Icons.grid_view_rounded,
+                color: adapter.notesView == NotesLibraryView.grid
+                    ? scheme.primary
+                    : scheme.onSurfaceVariant,
+              ),
+              const SizedBox(width: 12),
+              Text(t(adapter.locale, 'notes_v3_view_grid')),
+            ],
+          ),
+        ),
+        PopupMenuItem(
+          value: _MobileNotesViewAction.checkboxes,
+          child: Row(
+            children: [
+              Icon(
+                adapter.checkboxesOn
+                    ? Icons.check_box_rounded
+                    : Icons.check_box_outline_blank_rounded,
+              ),
+              const SizedBox(width: 12),
+              Text(
+                adapter.checkboxesOn
+                    ? t(adapter.locale, 'notes_v3_checkbox_mode_off')
+                    : t(adapter.locale, 'notes_v3_checkbox_mode_on'),
+              ),
+            ],
+          ),
+        ),
+      ],
+      child: _MobileRoundAction(
+        icon: adapter.notesView == NotesLibraryView.grid
+            ? Icons.grid_view_rounded
+            : Icons.view_list_rounded,
+        onTap: () {},
+      ),
+    );
+  }
+}
+
+class _MobileNotesFoldersSheet extends StatelessWidget {
+  const _MobileNotesFoldersSheet({
+    required this.adapter,
+    required this.locale,
+    required this.onOpenSettings,
+  });
+
+  final _NotesCategoryAdapter adapter;
+  final String locale;
+  final VoidCallback onOpenSettings;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return FractionallySizedBox(
+      heightFactor: 0.86,
+      child: Material(
+        color: scheme.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          children: [
+            const SizedBox(height: 10),
+            Container(
+              width: 42,
+              height: 4,
+              decoration: BoxDecoration(
+                color: scheme.outlineVariant,
+                borderRadius: BorderRadius.circular(99),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(22, 20, 14, 10),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      locale == 'ru' ? 'Папки' : 'Folders',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: scheme.onSurface,
+                      ),
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      onOpenSettings();
+                    },
+                    child: Text(locale == 'ru' ? 'Настроить' : 'Manage'),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(10, 4, 10, 24),
+                children: [
+                  _MobileFolderRow(
+                    icon: Icons.all_inbox_rounded,
+                    label: locale == 'ru' ? 'Все заметки' : 'All notes',
+                    selected: adapter.filterCategoryId == null,
+                    onTap: () {
+                      adapter.onFilterChanged(null);
+                      Navigator.of(context).pop();
+                    },
+                  ),
+                  for (final id in adapter.chipIds)
+                    _MobileCategoryFolderRow(
+                      id: id,
+                      selected: adapter.filterCategoryId == id,
+                      onTap: () {
+                        adapter.onFilterChanged(id);
+                        Navigator.of(context).pop();
+                      },
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MobileCategoryFolderRow extends StatelessWidget {
+  const _MobileCategoryFolderRow({
+    required this.id,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final int id;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final rule = DatabaseService.instance.getCategoryRuleById(id);
+    if (rule == null) return const SizedBox.shrink();
+    final icon = rule.iconCodePoint == null
+        ? Icons.folder_outlined
+        : IconData(rule.iconCodePoint!, fontFamily: 'MaterialIcons');
+    return _MobileFolderRow(
+      icon: icon,
+      label: rule.name.trim().isEmpty ? '—' : rule.name.trim(),
+      selected: selected,
+      accent: rule.colorOrDefault,
+      onTap: onTap,
+    );
+  }
+}
+
+class _MobileFolderRow extends StatelessWidget {
+  const _MobileFolderRow({
+    required this.icon,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+    this.accent,
+  });
+
+  final IconData icon;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+  final Color? accent;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final tone = accent ?? scheme.primary;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Material(
+        color: selected
+            ? tone.withValues(alpha: 0.12)
+            : Colors.transparent,
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+            child: Row(
+              children: [
+                Icon(icon, size: 24, color: selected ? tone : scheme.onSurfaceVariant),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                      color: scheme.onSurface,
+                    ),
+                  ),
+                ),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  color: scheme.onSurfaceVariant.withValues(alpha: 0.55),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
