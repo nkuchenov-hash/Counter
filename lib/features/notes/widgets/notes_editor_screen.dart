@@ -704,12 +704,6 @@ class _NotesTitleBlockState extends State<_NotesTitleBlock> {
 
   @override
   Widget build(BuildContext context) {
-    if (widget.collapseForKeyboard && !_titleFocusNode.hasFocus) {
-      return const SizedBox(
-        key: ValueKey('notes-editor-title-collapsed-for-keyboard'),
-      );
-    }
-
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
       child: Column(
@@ -736,7 +730,9 @@ class _NotesTitleBlockState extends State<_NotesTitleBlock> {
                   NotesFigmaTokens.titleLineHeight / NotesFigmaTokens.titleSize,
               fontWeight: FontWeight.w700,
               letterSpacing: -0.5,
-              color: NotesFigmaTokens.textPrimary(context),
+              color: _titleFocusNode.hasFocus
+                  ? NotesFigmaTokens.textPrimary(context)
+                  : NotesFigmaTokens.textSecondary(context),
             ),
             decoration: InputDecoration(
               hintText: widget.hintText,
