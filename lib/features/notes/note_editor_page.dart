@@ -134,22 +134,24 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
     }
     _syncEditorsWithDocument();
 
-    // Embedded Notes inside Record/Plan editors must stay passive until
-    // the user explicitly taps into Notes. Otherwise opening an edit sheet can
-    // immediately steal focus and open the keyboard.
-    if (!widget.inlineBodyOnly &&
-        _editor.activeBlockId != null &&
-        _sourceDocument.blocks.isNotEmpty &&
-        _sourceDocument.blocks.every(
-          (block) => !NotesEditorDocumentController.isSupportedProductionBlock(
-            block.type,
-          ),
-        )) {
+    // Standalone Notes open directly into the first editable content line.
+    // Embedded Notes inside Record/Plan editors stay passive until tapped.
+    if (!widget.inlineBodyOnly) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
+        NoteBlock? firstEditable;
+        for (final block in _editor.visibleBlocks) {
+          if (NotesEditorDocumentController.isEditableText(block.type)) {
+            firstEditable = block;
+            break;
+          }
+        }
+        if (firstEditable == null) return;
         _requestFocus(
-          _editor.activeBlockId!,
-          const TextSelection.collapsed(offset: 0),
+          firstEditable.id,
+          TextSelection.collapsed(
+            offset: firstEditable.effectiveText.length,
+          ),
         );
       });
     }
@@ -405,18 +407,14 @@ if (_blockSelectionMode) {
     }
 
     final node = _focusNodeFor(block);
-    if (_editingBlockId != blockId) {
-      if (mounted) setState(() => _editingBlockId = blockId);
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        node?.requestFocus();
-        _ensureBlockVisible(blockId);
-      });
-      return;
-    }
+    // Transfer focus first, then repaint selection state. Keeping the focus
+    // hand-off synchronous prevents Android from closing/reopening the IME
+    // while moving between adjacent Notes text blocks.
     node?.requestFocus();
     _ensureBlockVisible(blockId);
-    if (changedActive && mounted) setState(() {});
+    if (mounted && (_editingBlockId != blockId || changedActive)) {
+      setState(() => _editingBlockId = blockId);
+    }
   }
 
   void _onBlockTextChanged(NoteBlock block, String value) {
@@ -925,13 +923,7 @@ _deleteBlockFromMenu(block.id);
         : TextSelection.collapsed(offset: controller?.text.length ?? 0);
     final changed = _editor.selectBlock(blockId, selection);
     if (NotesEditorDocumentController.isEditableText(block.type)) {
-      if (mounted) {
-        setState(() => _editingBlockId = block.id);
-      }
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        _requestFocus(block.id, safeSelection);
-      });
+      _requestFocus(block.id, safeSelection);
     } else if (changed && mounted) {
       setState(() {});
     }
