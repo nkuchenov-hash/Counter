@@ -231,6 +231,13 @@
 
 # 📖 DEV_JOURNAL (Changelog)
 
+## [2026-10-06] - Calendar view selector and swipe navigation [shipped]
+
+* **Calendar mobile/desktop chrome:** removed persistent previous/next arrows; period navigation now uses horizontal swipe and a compact top action capsule.
+* **Calendar modes:** added **Year / Month / Week / Events** selector, year overview, agenda-style Events view, visible-period search, and Today/Back actions in the overflow menu.
+* **UX contract / l10n:** documented gesture-first calendar navigation and added RU/EN strings for the new modes and controls.
+
+
 ## [2026-10-06] - Canonical one-line input + Timeline mobile geometry
 
 * **`lib/core/widgets/app_text_field.dart`:** added `AppTextField` as the single canonical standard one-line input surface (42px height, 18px radius, shared Notes-derived styling; search icon is a parameter).

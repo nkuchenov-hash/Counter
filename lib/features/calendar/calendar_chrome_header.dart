@@ -1,13 +1,15 @@
 import 'package:counter/core/shell_adaptive.dart';
+import 'package:counter/core/widgets/app_icon_button.dart';
 import 'package:counter/features/calendar/calendar_helpers.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-enum _CalendarChromeView { month, week, day }
-
-/// Calendar navigation chrome. Desktop uses one compact row; phone/tablet keep
-/// the existing two-row layout.
+/// Calendar navigation chrome.
+///
+/// Phone/tablet follows the compact reference pattern: title below a floating
+/// action capsule. Horizontal date arrows are intentionally absent; period
+/// navigation belongs to left/right swipe on the calendar surface.
 class CalendarChromeHeader extends StatelessWidget {
   const CalendarChromeHeader({
     super.key,
@@ -19,9 +21,7 @@ class CalendarChromeHeader extends StatelessWidget {
     required this.weekAnchor,
     required this.dayFocusActive,
     required this.onModeChanged,
-    required this.onDaySelected,
-    required this.onPrev,
-    required this.onNext,
+    required this.onSearch,
     required this.onToday,
     required this.onCollapse,
     required this.showToday,
@@ -35,263 +35,200 @@ class CalendarChromeHeader extends StatelessWidget {
   final DateTime weekAnchor;
   final bool dayFocusActive;
   final ValueChanged<CalendarViewMode> onModeChanged;
-  final VoidCallback onDaySelected;
-  final VoidCallback onPrev;
-  final VoidCallback onNext;
+  final VoidCallback onSearch;
   final VoidCallback onToday;
   final VoidCallback onCollapse;
   final bool showToday;
 
-  String _title(bool compact) {
-    if (!compact && dayFocusActive) {
-      return DateFormat.yMMMEd(loc).format(selectedDay);
+  String _title() {
+    switch (mode) {
+      case CalendarViewMode.year:
+        return '${focusedMonth.year}';
+      case CalendarViewMode.month:
+        return DateFormat.MMMM(loc).format(focusedMonth);
+      case CalendarViewMode.week:
+        final start = dayFocusActive
+            ? calendarWeekStartMonday(selectedDay)
+            : weekAnchor;
+        final end = start.add(const Duration(days: 6));
+        if (start.month == end.month) {
+          return DateFormat.MMMM(loc).format(start);
+        }
+        return '${DateFormat.MMM(loc).format(start)}–${DateFormat.MMM(loc).format(end)}';
+      case CalendarViewMode.events:
+        return DateFormat.MMMM(loc).format(selectedDay);
     }
-    if (mode == CalendarViewMode.month) {
-      return calendarMonthHeaderTitle(focusedMonth, loc);
-    }
-    final start = dayFocusActive
-        ? selectedDay.subtract(Duration(days: selectedDay.weekday - 1))
-        : weekAnchor;
-    final end = start.add(const Duration(days: 6));
-    if (compact) {
-      return '${DateFormat.MMMd(loc).format(start)}–${DateFormat.MMMd(loc).format(end)}';
-    }
-    return '${DateFormat.MMMd(loc).format(start)} – ${DateFormat.MMMd(loc).format(end)}';
   }
 
-  _CalendarChromeView get _desktopSelection {
-    if (dayFocusActive) return _CalendarChromeView.day;
-    return mode == CalendarViewMode.month
-        ? _CalendarChromeView.month
-        : _CalendarChromeView.week;
+  String _subtitle() {
+    if (mode == CalendarViewMode.year) return '';
+    return '${mode == CalendarViewMode.week ? weekAnchor.year : focusedMonth.year}';
   }
 
-  void _onDesktopSelection(Set<_CalendarChromeView> selection) {
-    switch (selection.first) {
-      case _CalendarChromeView.month:
-        onModeChanged(CalendarViewMode.month);
-      case _CalendarChromeView.week:
-        onModeChanged(CalendarViewMode.week);
-      case _CalendarChromeView.day:
-        onDaySelected();
-    }
+  IconData _modeIcon(CalendarViewMode value) {
+    return switch (value) {
+      CalendarViewMode.year => Icons.calendar_view_month_rounded,
+      CalendarViewMode.month => Icons.calendar_month_rounded,
+      CalendarViewMode.week => Icons.calendar_view_week_rounded,
+      CalendarViewMode.events => Icons.view_agenda_outlined,
+    };
+  }
+
+  Widget _modeMenu(BuildContext context) {
+    return MenuAnchor(
+      alignmentOffset: const Offset(-72, 8),
+      menuChildren: [
+        for (final value in CalendarViewMode.values)
+          MenuItemButton(
+            leadingIcon: Icon(_modeIcon(value)),
+            trailingIcon: value == mode
+                ? Icon(Icons.check_rounded, color: scheme.primary)
+                : const SizedBox(width: 24),
+            onPressed: () => onModeChanged(value),
+            child: Text(
+              switch (value) {
+                CalendarViewMode.year => t(loc, 'calendar_year_view'),
+                CalendarViewMode.month => t(loc, 'calendar_month_view'),
+                CalendarViewMode.week => t(loc, 'calendar_week_view'),
+                CalendarViewMode.events => t(loc, 'calendar_events_view'),
+              },
+            ),
+          ),
+      ],
+      builder: (context, controller, child) => AppIconButton(
+        icon: _modeIcon(mode),
+        tooltip: t(loc, 'calendar_view_mode'),
+        selected: true,
+        size: AppIconButtonSize.l,
+        onPressed: () => controller.isOpen ? controller.close() : controller.open(),
+      ),
+    );
+  }
+
+  Widget _moreMenu(BuildContext context) {
+    return MenuAnchor(
+      alignmentOffset: const Offset(-110, 8),
+      menuChildren: [
+        MenuItemButton(
+          leadingIcon: const Icon(Icons.today_rounded),
+          onPressed: onToday,
+          child: Text(t(loc, 'calendar_today')),
+        ),
+        if (dayFocusActive)
+          MenuItemButton(
+            leadingIcon: const Icon(Icons.calendar_month_rounded),
+            onPressed: onCollapse,
+            child: Text(t(loc, 'calendar_collapse')),
+          ),
+      ],
+      builder: (context, controller, child) => AppIconButton(
+        icon: Icons.more_vert_rounded,
+        tooltip: t(loc, 'calendar_more_menu'),
+        size: AppIconButtonSize.l,
+        onPressed: () => controller.isOpen ? controller.close() : controller.open(),
+      ),
+    );
+  }
+
+  Widget _actionCapsule(BuildContext context) {
+    return Material(
+      color: scheme.surfaceContainerHighest.withValues(alpha: 0.92),
+      elevation: 2,
+      shadowColor: scheme.shadow.withValues(alpha: 0.12),
+      borderRadius: BorderRadius.circular(999),
+      clipBehavior: Clip.antiAlias,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AppIconButton(
+              icon: Icons.search_rounded,
+              tooltip: t(loc, 'calendar_search'),
+              size: AppIconButtonSize.l,
+              onPressed: onSearch,
+            ),
+            _modeMenu(context),
+            _moreMenu(context),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final viewportW = MediaQuery.sizeOf(context).width;
-    final compact = calendarIsCompactPhoneWidth(viewportW);
     final isWide = viewportW >= kShellDesktopNavBreakpoint;
-    final title = _title(compact);
-    final titleStyle = calendarHeaderTitleStyle(context, compact: compact);
+    final title = _title();
+    final subtitle = _subtitle();
 
     if (isWide) {
-      final isRu = loc.toLowerCase().startsWith('ru');
-      final weekStart = calendarWeekStartMonday(selectedDay);
-      final weekEnd = weekStart.add(const Duration(days: 6));
-      final desktopTitle = dayFocusActive
-          ? '${DateFormat.MMMd(loc).format(weekStart)} – ${DateFormat.MMMd(loc).format(weekEnd)}'
-          : title;
       return Padding(
         padding: const EdgeInsets.fromLTRB(
           kShellDesktopContentHorizontalPadding,
           kShellDesktopContentTopPadding,
           kShellDesktopContentHorizontalPadding,
-          6,
+          8,
         ),
-        child: SizedBox(
-          height: 44,
-          child: Row(
-            children: [
-              Text(
-                t(loc, 'calendar'),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w800,
-                  height: 1.1,
-                ),
-              ),
-              const SizedBox(width: 24),
-              Expanded(
-                child: Row(
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.chevron_left_rounded),
-                      onPressed: onPrev,
-                      visualDensity: VisualDensity.compact,
-                    ),
-                    Expanded(
-                      child: Text(
-                        desktopTitle,
-                        textAlign: TextAlign.center,
-                        maxLines: 1,
-                        softWrap: false,
-                        overflow: TextOverflow.ellipsis,
-                        style: titleStyle,
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.chevron_right_rounded),
-                      onPressed: onNext,
-                      visualDensity: VisualDensity.compact,
-                    ),
-                    if (showToday) ...[
-                      const SizedBox(width: 8),
-                      FilledButton.tonal(
-                        onPressed: onToday,
-                        style: FilledButton.styleFrom(
-                          visualDensity: VisualDensity.compact,
-                          padding: const EdgeInsets.symmetric(horizontal: 14),
-                        ),
-                        child: Text(t(loc, 'calendar_today')),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              const SizedBox(width: 24),
-              SegmentedButton<_CalendarChromeView>(
-                segments: [
-                  ButtonSegment(
-                    value: _CalendarChromeView.month,
-                    label: Text(t(loc, 'calendar_month_view')),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: calendarHeaderTitleStyle(context, compact: false),
                   ),
-                  ButtonSegment(
-                    value: _CalendarChromeView.week,
-                    label: Text(t(loc, 'calendar_week_view')),
-                  ),
-                  ButtonSegment(
-                    value: _CalendarChromeView.day,
-                    label: Text(isRu ? 'День' : 'Day'),
-                  ),
+                  if (subtitle.isNotEmpty)
+                    Text(
+                      subtitle,
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                            color: scheme.onSurfaceVariant,
+                            fontWeight: FontWeight.w500,
+                          ),
+                    ),
                 ],
-                selected: {_desktopSelection},
-                onSelectionChanged: _onDesktopSelection,
-                style: const ButtonStyle(
-                  visualDensity: VisualDensity.compact,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
               ),
-            ],
-          ),
+            ),
+            _actionCapsule(context),
+          ],
         ),
       );
     }
 
-    final monthLabel = DateFormat.MMMM(loc).format(focusedMonth);
-    final yearLabel = '${focusedMonth.year}';
-
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 18, 20, 8),
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (dayFocusActive) ...[
-                _CalendarRoundIconButton(
-                  icon: Icons.close_rounded,
-                  tooltip: t(loc, 'calendar_collapse'),
-                  onPressed: onCollapse,
-                ),
-                const SizedBox(width: 12),
-              ],
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      dayFocusActive ? title : monthLabel,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: titleStyle,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      dayFocusActive
-                          ? DateFormat.y(loc).format(selectedDay)
-                          : yearLabel,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w500,
-                        color: scheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 12),
-              _CalendarRoundIconButton(
-                icon: Icons.chevron_left_rounded,
-                tooltip: null,
-                onPressed: onPrev,
-              ),
-              const SizedBox(width: 6),
-              _CalendarRoundIconButton(
-                icon: Icons.chevron_right_rounded,
-                tooltip: null,
-                onPressed: onNext,
-              ),
-            ],
+          Align(
+            alignment: Alignment.centerRight,
+            child: _actionCapsule(context),
           ),
-          const SizedBox(height: 14),
-          Row(
-            children: [
-              SegmentedButton<CalendarViewMode>(
-                segments: [
-                  ButtonSegment(
-                    value: CalendarViewMode.month,
-                    label: Text(t(loc, 'calendar_month_view')),
-                  ),
-                  ButtonSegment(
-                    value: CalendarViewMode.week,
-                    label: Text(t(loc, 'calendar_week_view')),
-                  ),
-                ],
-                selected: {mode},
-                onSelectionChanged: (s) => onModeChanged(s.first),
-                style: const ButtonStyle(
-                  visualDensity: VisualDensity.compact,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-              ),
-            ],
+          const SizedBox(height: 22),
+          Text(
+            title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: calendarHeaderTitleStyle(context, compact: true),
           ),
+          if (subtitle.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Text(
+              subtitle,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                    color: scheme.onSurfaceVariant,
+                  ),
+            ),
+          ],
         ],
       ),
     );
-  }
-}
-
-class _CalendarRoundIconButton extends StatelessWidget {
-  const _CalendarRoundIconButton({
-    required this.icon,
-    required this.tooltip,
-    required this.onPressed,
-  });
-
-  final IconData icon;
-  final String? tooltip;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final button = Material(
-      color: scheme.surfaceContainerHigh.withValues(alpha: 0.72),
-      shape: const CircleBorder(),
-      child: InkWell(
-        onTap: onPressed,
-        customBorder: const CircleBorder(),
-        child: SizedBox(
-          width: 48,
-          height: 48,
-          child: Icon(icon, size: 26, color: scheme.onSurface),
-        ),
-      ),
-    );
-    return tooltip == null ? button : Tooltip(message: tooltip!, child: button);
   }
 }

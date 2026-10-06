@@ -3,7 +3,7 @@ import 'package:counter/core/shell_adaptive.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-enum CalendarViewMode { month, week }
+enum CalendarViewMode { year, month, week, events }
 
 DateTime calendarDateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
 

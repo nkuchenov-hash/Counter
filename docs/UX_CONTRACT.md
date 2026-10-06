@@ -130,6 +130,13 @@ Performance, responsiveness, and stability are **P0 correctness**, not polish. S
 - Any perceived performance regression (lag, freeze, missing instant update, “impossible to work”) is a **P0 correctness bug** and outranks feature/design/preload work.
 - No feature, design, preload, cache, animation, or architecture idea may remain active if it hurts app speed or stability.
 
+## Calendar navigation and view modes
+
+- Calendar period navigation is gesture-first: horizontal swipe moves to the previous/next year, month, week, day-focus date, or Events month. Do not add persistent previous/next arrow buttons to the calendar header.
+- The calendar header mode button opens one menu with exactly four primary views: **Year, Month, Week, Events**.
+- Year view shows all 12 months and lets a month/day tap drill into the existing calendar flow. Month and Week keep focused-day behavior. Events is an agenda-style upcoming list beginning at the selected day.
+- Calendar mode changes and swipes are local UI actions and must respond immediately; data refresh stays in the existing planning cache/stream path and must not block the gesture.
+
 ## Planning Time Mode
 
 - **Selected-time stability:** typing or editing a task title, notes, checklist, category, or tags must not change a start time selected on the Time View grid. Start/end changes require an explicit time control or drag/resize gesture.
