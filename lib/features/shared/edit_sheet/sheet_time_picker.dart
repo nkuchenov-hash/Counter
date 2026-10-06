@@ -18,7 +18,7 @@ class AppEditSheetTimeButton extends StatelessWidget {
     return OutlinedButton(
       onPressed: onPressed,
       child: SizedBox(
-        height: 72,
+        height: 56,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -30,9 +30,7 @@ class AppEditSheetTimeButton extends StatelessWidget {
                 Expanded(
                   child: Text(
                     label,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
+                    style: Theme.of(context).textTheme.labelMedium,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -44,9 +42,7 @@ class AppEditSheetTimeButton extends StatelessWidget {
               value,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
+              style: Theme.of(context).textTheme.bodySmall,
             ),
           ],
         ),
