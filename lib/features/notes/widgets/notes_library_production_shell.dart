@@ -248,45 +248,35 @@ class _MobileNotesLibrary extends StatelessWidget {
           ],
         ),
         Positioned(
-          left: 0,
-          right: 0,
-          bottom: 0,
-          child: NotesBottomGlassFade(
-            height: 84,
-            horizontalPadding: 8,
-            child: Align(
-              alignment: Alignment.bottomCenter,
-              child: Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: NotesGlmLibraryInput(
-                        controller: header.searchController,
-                        focusNode: header.searchFocus,
-                        hintText: t(header.locale, 'notes_v3_search_hint'),
-                        textInputAction: TextInputAction.search,
-                        textCapitalization: TextCapitalization.sentences,
-                        onChanged: header.onSearchChanged,
-                        glass: true,
-                        suffixIcon: header.searchQuery.trim().isNotEmpty
-                            ? IconButton(
-                                onPressed: header.onClearSearch,
-                                icon: const Icon(Icons.close_rounded, size: 18),
-                              )
-                            : null,
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    _MobileRoundAction(
-                      icon: Icons.edit_outlined,
-                      size: 54,
-                      onTap: onNewNote,
-                    ),
-                  ],
+          left: 8,
+          right: 8,
+          bottom: 10,
+          child: Row(
+            children: [
+              Expanded(
+                child: NotesGlmLibraryInput(
+                  controller: header.searchController,
+                  focusNode: header.searchFocus,
+                  hintText: t(header.locale, 'notes_v3_search_hint'),
+                  textInputAction: TextInputAction.search,
+                  textCapitalization: TextCapitalization.sentences,
+                  onChanged: header.onSearchChanged,
+                  glass: true,
+                  suffixIcon: header.searchQuery.trim().isNotEmpty
+                      ? IconButton(
+                          onPressed: header.onClearSearch,
+                          icon: const Icon(Icons.close_rounded, size: 18),
+                        )
+                      : null,
                 ),
               ),
-            ),
+              const SizedBox(width: 10),
+              _MobileRoundAction(
+                icon: Icons.edit_outlined,
+                size: 54,
+                onTap: onNewNote,
+              ),
+            ],
           ),
         ),
       ],
