@@ -7,10 +7,10 @@ import 'package:intl/intl.dart';
 
 /// Calendar navigation chrome.
 ///
-/// Phone/tablet follows the compact reference pattern: title below a floating
-/// action capsule. Horizontal date arrows are intentionally absent; period
-/// navigation belongs to left/right swipe on the calendar surface.
-class CalendarChromeHeader extends StatelessWidget {
+/// Period navigation is swipe-first. The center calendar button expands the
+/// four view choices inline, matching the mobile reference instead of opening
+/// a generic vertical popup menu.
+class CalendarChromeHeader extends StatefulWidget {
   const CalendarChromeHeader({
     super.key,
     required this.loc,
@@ -40,29 +40,36 @@ class CalendarChromeHeader extends StatelessWidget {
   final VoidCallback onCollapse;
   final bool showToday;
 
-  String _title() {
-    switch (mode) {
+  @override
+  State<CalendarChromeHeader> createState() => _CalendarChromeHeaderState();
+}
+
+class _CalendarChromeHeaderState extends State<CalendarChromeHeader> {
+  bool _viewMenuOpen = false;
+
+  String get _title {
+    switch (widget.mode) {
       case CalendarViewMode.year:
-        return '${focusedMonth.year}';
+        return '${widget.focusedMonth.year}';
       case CalendarViewMode.month:
-        return DateFormat.MMMM(loc).format(focusedMonth);
+        return DateFormat.MMMM(widget.loc).format(widget.focusedMonth);
       case CalendarViewMode.week:
-        final start = dayFocusActive
-            ? calendarWeekStartMonday(selectedDay)
-            : weekAnchor;
+        final start = widget.dayFocusActive
+            ? calendarWeekStartMonday(widget.selectedDay)
+            : widget.weekAnchor;
         final end = start.add(const Duration(days: 6));
         if (start.month == end.month) {
-          return DateFormat.MMMM(loc).format(start);
+          return DateFormat.MMMM(widget.loc).format(start);
         }
-        return '${DateFormat.MMM(loc).format(start)}–${DateFormat.MMM(loc).format(end)}';
+        return '${DateFormat.MMM(widget.loc).format(start)}–${DateFormat.MMM(widget.loc).format(end)}';
       case CalendarViewMode.events:
-        return DateFormat.MMMM(loc).format(selectedDay);
+        return DateFormat.MMMM(widget.loc).format(widget.selectedDay);
     }
   }
 
-  String _subtitle() {
-    if (mode == CalendarViewMode.year) return '';
-    return '${mode == CalendarViewMode.week ? weekAnchor.year : focusedMonth.year}';
+  String get _subtitle {
+    if (widget.mode == CalendarViewMode.year) return '';
+    return '${widget.mode == CalendarViewMode.week ? widget.weekAnchor.year : widget.focusedMonth.year}';
   }
 
   IconData _modeIcon(CalendarViewMode value) {
@@ -74,35 +81,18 @@ class CalendarChromeHeader extends StatelessWidget {
     };
   }
 
-  Widget _modeMenu(BuildContext context) {
-    return MenuAnchor(
-      alignmentOffset: const Offset(-72, 8),
-      menuChildren: [
-        for (final value in CalendarViewMode.values)
-          MenuItemButton(
-            leadingIcon: Icon(_modeIcon(value)),
-            trailingIcon: value == mode
-                ? Icon(Icons.check_rounded, color: scheme.primary)
-                : const SizedBox(width: 24),
-            onPressed: () => onModeChanged(value),
-            child: Text(
-              switch (value) {
-                CalendarViewMode.year => t(loc, 'calendar_year_view'),
-                CalendarViewMode.month => t(loc, 'calendar_month_view'),
-                CalendarViewMode.week => t(loc, 'calendar_week_view'),
-                CalendarViewMode.events => t(loc, 'calendar_events_view'),
-              },
-            ),
-          ),
-      ],
-      builder: (context, controller, child) => AppIconButton(
-        icon: _modeIcon(mode),
-        tooltip: t(loc, 'calendar_view_mode'),
-        selected: true,
-        size: AppIconButtonSize.l,
-        onPressed: () => controller.isOpen ? controller.close() : controller.open(),
-      ),
-    );
+  String _modeLabel(CalendarViewMode value) {
+    return switch (value) {
+      CalendarViewMode.year => t(widget.loc, 'calendar_year_view'),
+      CalendarViewMode.month => t(widget.loc, 'calendar_month_view'),
+      CalendarViewMode.week => t(widget.loc, 'calendar_week_view'),
+      CalendarViewMode.events => t(widget.loc, 'calendar_events_view'),
+    };
+  }
+
+  void _selectMode(CalendarViewMode value) {
+    setState(() => _viewMenuOpen = false);
+    widget.onModeChanged(value);
   }
 
   Widget _moreMenu(BuildContext context) {
@@ -111,30 +101,31 @@ class CalendarChromeHeader extends StatelessWidget {
       menuChildren: [
         MenuItemButton(
           leadingIcon: const Icon(Icons.today_rounded),
-          onPressed: onToday,
-          child: Text(t(loc, 'calendar_today')),
+          onPressed: widget.onToday,
+          child: Text(t(widget.loc, 'calendar_today')),
         ),
-        if (dayFocusActive)
+        if (widget.dayFocusActive)
           MenuItemButton(
             leadingIcon: const Icon(Icons.calendar_month_rounded),
-            onPressed: onCollapse,
-            child: Text(t(loc, 'calendar_collapse')),
+            onPressed: widget.onCollapse,
+            child: Text(t(widget.loc, 'calendar_collapse')),
           ),
       ],
       builder: (context, controller, child) => AppIconButton(
         icon: Icons.more_vert_rounded,
-        tooltip: t(loc, 'calendar_more_menu'),
+        tooltip: t(widget.loc, 'calendar_more_menu'),
         size: AppIconButtonSize.l,
-        onPressed: () => controller.isOpen ? controller.close() : controller.open(),
+        onPressed: () =>
+            controller.isOpen ? controller.close() : controller.open(),
       ),
     );
   }
 
   Widget _actionCapsule(BuildContext context) {
     return Material(
-      color: scheme.surfaceContainerHighest.withValues(alpha: 0.92),
+      color: widget.scheme.surfaceContainerHighest.withValues(alpha: 0.92),
       elevation: 2,
-      shadowColor: scheme.shadow.withValues(alpha: 0.12),
+      shadowColor: widget.scheme.shadow.withValues(alpha: 0.12),
       borderRadius: BorderRadius.circular(999),
       clipBehavior: Clip.antiAlias,
       child: Padding(
@@ -144,11 +135,17 @@ class CalendarChromeHeader extends StatelessWidget {
           children: [
             AppIconButton(
               icon: Icons.search_rounded,
-              tooltip: t(loc, 'calendar_search'),
+              tooltip: t(widget.loc, 'calendar_search'),
               size: AppIconButtonSize.l,
-              onPressed: onSearch,
+              onPressed: widget.onSearch,
             ),
-            _modeMenu(context),
+            AppIconButton(
+              icon: _modeIcon(widget.mode),
+              tooltip: t(widget.loc, 'calendar_view_mode'),
+              selected: _viewMenuOpen,
+              size: AppIconButtonSize.l,
+              onPressed: () => setState(() => _viewMenuOpen = !_viewMenuOpen),
+            ),
             _moreMenu(context),
           ],
         ),
@@ -156,77 +153,121 @@ class CalendarChromeHeader extends StatelessWidget {
     );
   }
 
+  Widget _viewStrip(BuildContext context) {
+    return AnimatedSize(
+      duration: const Duration(milliseconds: 180),
+      curve: Curves.easeOutCubic,
+      alignment: Alignment.topCenter,
+      child: !_viewMenuOpen
+          ? const SizedBox.shrink()
+          : Padding(
+              padding: const EdgeInsets.only(top: 12),
+              child: Row(
+                children: [
+                  for (final value in CalendarViewMode.values) ...[
+                    if (value != CalendarViewMode.values.first)
+                      const SizedBox(width: 8),
+                    Expanded(
+                      child: Material(
+                        color: value == widget.mode
+                            ? widget.scheme.primaryContainer.withValues(alpha: 0.65)
+                            : widget.scheme.surfaceContainerLow.withValues(alpha: 0.72),
+                        borderRadius: BorderRadius.circular(18),
+                        clipBehavior: Clip.antiAlias,
+                        child: InkWell(
+                          onTap: () => _selectMode(value),
+                          borderRadius: BorderRadius.circular(18),
+                          child: SizedBox(
+                            height: 88,
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  _modeIcon(value),
+                                  size: 27,
+                                  color: value == widget.mode
+                                      ? widget.scheme.primary
+                                      : widget.scheme.onSurfaceVariant,
+                                ),
+                                const SizedBox(height: 7),
+                                Text(
+                                  _modeLabel(value),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .labelLarge
+                                      ?.copyWith(
+                                        fontWeight: value == widget.mode
+                                            ? FontWeight.w700
+                                            : FontWeight.w500,
+                                        color: value == widget.mode
+                                            ? widget.scheme.primary
+                                            : widget.scheme.onSurfaceVariant,
+                                      ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final viewportW = MediaQuery.sizeOf(context).width;
     final isWide = viewportW >= kShellDesktopNavBreakpoint;
-    final title = _title();
-    final subtitle = _subtitle();
-
-    if (isWide) {
-      return Padding(
-        padding: const EdgeInsets.fromLTRB(
-          kShellDesktopContentHorizontalPadding,
-          kShellDesktopContentTopPadding,
-          kShellDesktopContentHorizontalPadding,
-          8,
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: calendarHeaderTitleStyle(context, compact: false),
-                  ),
-                  if (subtitle.isNotEmpty)
-                    Text(
-                      subtitle,
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                            color: scheme.onSurfaceVariant,
-                            fontWeight: FontWeight.w500,
-                          ),
-                    ),
-                ],
-              ),
-            ),
-            _actionCapsule(context),
-          ],
-        ),
-      );
-    }
+    final horizontalPadding =
+        isWide ? kShellDesktopContentHorizontalPadding : 20.0;
+    final topPadding = isWide ? kShellDesktopContentTopPadding : 12.0;
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
+      padding: EdgeInsets.fromLTRB(horizontalPadding, topPadding, horizontalPadding, 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Align(
-            alignment: Alignment.centerRight,
-            child: _actionCapsule(context),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      _title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: calendarHeaderTitleStyle(
+                        context,
+                        compact: !isWide,
+                      ),
+                    ),
+                    if (_subtitle.isNotEmpty) ...[
+                      const SizedBox(height: 5),
+                      Text(
+                        _subtitle,
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w500,
+                              color: widget.scheme.onSurfaceVariant,
+                            ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              _actionCapsule(context),
+            ],
           ),
-          const SizedBox(height: 22),
-          Text(
-            title,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: calendarHeaderTitleStyle(context, compact: true),
-          ),
-          if (subtitle.isNotEmpty) ...[
-            const SizedBox(height: 6),
-            Text(
-              subtitle,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w500,
-                    color: scheme.onSurfaceVariant,
-                  ),
-            ),
-          ],
+          _viewStrip(context),
         ],
       ),
     );
