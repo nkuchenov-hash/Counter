@@ -230,7 +230,7 @@ class _CalendarViewState extends State<CalendarView>
     final next = DateTime(
       targetMonth.year,
       targetMonth.month,
-      source.day.clamp(1, lastDay),
+      source.day > lastDay ? lastDay : source.day,
     );
     setState(() {
       _selectedDay = next;
