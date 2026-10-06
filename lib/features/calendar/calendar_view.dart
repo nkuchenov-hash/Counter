@@ -52,6 +52,7 @@ class _CalendarViewState extends State<CalendarView>
   late DateTime _weekAnchor;
   CalendarViewMode _mode = CalendarViewMode.month;
   bool _dayFocusActive = false;
+  int _pageMotion = 0;
   Map<String, List<PlanningTask>> _tasksByDayKey = {};
   bool _monthIndicatorsLoading = false;
   Stream<List<PlanningTask>>? _dayStream;
@@ -164,16 +165,13 @@ class _CalendarViewState extends State<CalendarView>
 
   Future<void> _onDayTapped(DateTime day) async {
     final d = calendarDateOnly(day);
-    if (_dayFocusActive && _isSameDay(d, _selectedDay)) {
-      _collapseDayFocus();
-      return;
-    }
     setState(() {
       _selectedDay = d;
-      _dayFocusActive = true;
+      _dayFocusActive = false;
       _dayStream = _createDayStream(d);
       _weekAnchor = calendarWeekStartMonday(d);
-      if (d.month != _focusedMonth.month || d.year != _focusedMonth.year) {
+      if (_mode == CalendarViewMode.month &&
+          (d.month != _focusedMonth.month || d.year != _focusedMonth.year)) {
         _focusedMonth = DateTime(d.year, d.month);
       }
     });
@@ -243,6 +241,7 @@ class _CalendarViewState extends State<CalendarView>
   }
 
   void _shiftActivePeriod(int delta) {
+    _pageMotion = delta.sign;
     if (_dayFocusActive) {
       _shiftDay(delta);
       return;
@@ -377,11 +376,53 @@ class _CalendarViewState extends State<CalendarView>
     );
   }
 
+  String _calendarPageKey() {
+    if (_dayFocusActive) return 'day-${calendarDayKey(_selectedDay)}';
+    return switch (_mode) {
+      CalendarViewMode.year => 'year-${_focusedMonth.year}',
+      CalendarViewMode.month =>
+        'month-${_focusedMonth.year}-${_focusedMonth.month}',
+      CalendarViewMode.week => 'week-${calendarDayKey(_weekAnchor)}',
+      CalendarViewMode.events => 'events-${calendarDayKey(_selectedDay)}',
+    };
+  }
+
   Widget _withHorizontalPaging(Widget child) {
+    final pageKey = _calendarPageKey();
     return GestureDetector(
       behavior: HitTestBehavior.translucent,
       onHorizontalDragEnd: _handleHorizontalDragEnd,
-      child: child,
+      child: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 280),
+        switchInCurve: Curves.easeOutCubic,
+        switchOutCurve: Curves.easeInCubic,
+        layoutBuilder: (currentChild, previousChildren) => Stack(
+          fit: StackFit.expand,
+          children: [
+            ...previousChildren,
+            if (currentChild != null) currentChild,
+          ],
+        ),
+        transitionBuilder: (transitionChild, animation) {
+          final incoming = transitionChild.key == ValueKey<String>(pageKey);
+          final direction = _pageMotion == 0 ? 1 : _pageMotion;
+          final begin = Offset(
+            incoming ? direction.toDouble() : -direction.toDouble(),
+            0,
+          );
+          return SlideTransition(
+            position: Tween<Offset>(
+              begin: begin,
+              end: Offset.zero,
+            ).animate(animation),
+            child: transitionChild,
+          );
+        },
+        child: KeyedSubtree(
+          key: ValueKey<String>(pageKey),
+          child: child,
+        ),
+      ),
     );
   }
 
@@ -474,6 +515,7 @@ class _CalendarViewState extends State<CalendarView>
                   loading: _monthIndicatorsLoading,
                   showEventPills: showPills,
                   onDayTap: (d) => unawaited(_onDayTapped(d)),
+                  onTaskTap: widget.onEditTask,
                 ),
               CalendarViewMode.events => _CalendarEventsList(
                   loc: loc,
