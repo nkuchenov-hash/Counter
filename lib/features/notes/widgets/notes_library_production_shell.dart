@@ -422,11 +422,28 @@ class _MobileNotesViewMenu extends StatelessWidget {
           ),
         ),
       ],
-      child: _MobileRoundAction(
-        icon: adapter.notesView == NotesLibraryView.grid
-            ? Icons.grid_view_rounded
-            : Icons.view_list_rounded,
-        onTap: () {},
+      child: Container(
+        width: 54,
+        height: 54,
+        decoration: BoxDecoration(
+          color: scheme.surfaceContainerHighest.withValues(alpha: 0.92),
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.06),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        alignment: Alignment.center,
+        child: Icon(
+          adapter.notesView == NotesLibraryView.grid
+              ? Icons.grid_view_rounded
+              : Icons.view_list_rounded,
+          size: 26,
+          color: scheme.onSurface,
+        ),
       ),
     );
   }
