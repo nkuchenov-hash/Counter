@@ -518,100 +518,44 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
       borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       child: Column(
         children: [
-          if (_startedAsUndatedBacklog) ...[
-            Padding(
-              padding: EdgeInsets.fromLTRB(
-                16,
-                compactChrome ? 6 : 12,
-                16,
-                compactChrome ? 4 : 8,
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: _titleController,
-                      autofocus: true,
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                      minLines: 1,
-                      maxLines: compactChrome ? 2 : 4,
-                      textCapitalization: TextCapitalization.sentences,
-                      decoration: InputDecoration(
-                        hintText: t(currentLocale.value, 'title_label'),
-                        border: InputBorder.none,
-                        isDense: true,
-                        contentPadding: EdgeInsets.zero,
-                      ),
-                      onChanged: _onTitleChanged,
+          Padding(
+            padding: EdgeInsets.fromLTRB(
+              16,
+              compactChrome ? 6 : 12,
+              16,
+              compactChrome ? 4 : 8,
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: _titleController,
+                    autofocus: _startedAsUndatedBacklog,
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w700,
                     ),
+                    minLines: 1,
+                    maxLines: compactChrome ? 2 : 4,
+                    textCapitalization: TextCapitalization.sentences,
+                    decoration: InputDecoration(
+                      hintText: t(currentLocale.value, 'title_label'),
+                      border: InputBorder.none,
+                      isDense: true,
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                    onChanged: _onTitleChanged,
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.close_rounded),
-                    onPressed: () =>
-                        Navigator.of(context).pop<PlanningTask?>(null),
-                  ),
-                ],
-              ),
-            ),
-            const Divider(height: 1),
-          ] else ...[
-            Padding(
-              padding: const EdgeInsets.fromLTRB(18, 14, 18, 10),
-              child: Row(
-                children: [
-                  _LargeRoundSheetAction(
-                    icon: Icons.close_rounded,
-                    onPressed: () =>
-                        Navigator.of(context).pop<PlanningTask?>(null),
-                  ),
-                  const Spacer(),
-                  _LargeRoundSheetAction(
-                    icon: Icons.check_rounded,
-                    emphasized: true,
-                    onPressed: _commitSave,
-                  ),
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 10),
-              child: Container(
-                constraints: const BoxConstraints(minHeight: 82),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 18,
-                  vertical: 16,
                 ),
-                decoration: BoxDecoration(
-                  color: Theme.of(context)
-                      .colorScheme
-                      .surfaceContainerHigh
-                      .withValues(alpha: 0.72),
-                  borderRadius: BorderRadius.circular(20),
+                IconButton(
+                  icon: const Icon(Icons.close_rounded),
+                  onPressed: () =>
+                      Navigator.of(context).pop<PlanningTask?>(null),
                 ),
-                child: TextFormField(
-                  controller: _titleController,
-                  autofocus: !_isPersistedPlan,
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    height: 1.15,
-                  ),
-                  minLines: 1,
-                  maxLines: 3,
-                  textCapitalization: TextCapitalization.sentences,
-                  decoration: InputDecoration(
-                    hintText: t(currentLocale.value, 'title_label'),
-                    border: InputBorder.none,
-                    isDense: true,
-                    contentPadding: EdgeInsets.zero,
-                  ),
-                  onChanged: _onTitleChanged,
-                ),
-              ),
+              ],
             ),
-          ],
+          ),
+          const Divider(height: 1),
           if (!notesEditing)
           Padding(
             padding: EdgeInsets.fromLTRB(
@@ -1295,8 +1239,7 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
                       ),
                     ),
                   ),
-                if (!notesEditing &&
-                    (_startedAsUndatedBacklog || widget.onDelete != null))
+                if (!notesEditing)
                   Padding(
                     padding: const EdgeInsets.fromLTRB(
                       kPlanningEditActionBarPadH,
@@ -1320,25 +1263,23 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
                             ),
                           ),
                         const Spacer(),
-                        if (_startedAsUndatedBacklog) ...[
-                          TextButton(
-                            onPressed: () =>
-                                Navigator.of(context).pop<PlanningTask?>(null),
-                            child: Text(t(currentLocale.value, 'cancel')),
-                          ),
-                          const SizedBox(width: 8),
-                          FilledButton(
-                            onPressed: _commitSave,
-                            child: Text(
-                              t(
-                                currentLocale.value,
-                                _shouldShowGraduateUi
-                                    ? 'plan_graduate_from_idea'
-                                    : 'save',
-                              ),
+                        TextButton(
+                          onPressed: () =>
+                              Navigator.of(context).pop<PlanningTask?>(null),
+                          child: Text(t(currentLocale.value, 'cancel')),
+                        ),
+                        const SizedBox(width: 8),
+                        FilledButton(
+                          onPressed: _commitSave,
+                          child: Text(
+                            t(
+                              currentLocale.value,
+                              _shouldShowGraduateUi
+                                  ? 'plan_graduate_from_idea'
+                                  : 'save',
                             ),
                           ),
-                        ],
+                        ),
                       ],
                     ),
                   ),
@@ -1346,44 +1287,6 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-
-class _LargeRoundSheetAction extends StatelessWidget {
-  const _LargeRoundSheetAction({
-    required this.icon,
-    required this.onPressed,
-    this.emphasized = false,
-  });
-
-  final IconData icon;
-  final VoidCallback onPressed;
-  final bool emphasized;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Material(
-      color: emphasized
-          ? scheme.primary
-          : scheme.surfaceContainerHighest.withValues(alpha: 0.92),
-      shape: const CircleBorder(),
-      elevation: emphasized ? 2 : 0,
-      child: InkWell(
-        onTap: onPressed,
-        customBorder: const CircleBorder(),
-        child: SizedBox(
-          width: 52,
-          height: 52,
-          child: Icon(
-            icon,
-            size: 28,
-            color: emphasized ? scheme.onPrimary : scheme.onSurface,
-          ),
-        ),
       ),
     );
   }
