@@ -285,23 +285,17 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
       final node = FocusNode(debugLabel: 'notes-block-${block.id}');
       node.canRequestFocus = !_secondarySelectionGuardActive;
       node.addListener(() {
-        if (!mounted) return;
-        if (node.hasFocus) {
-if (_blockSelectionMode) {
-  node.unfocus();
-  return;
-}
-          final selection = _textControllers[block.id]?.selection;
-          final activeChanged = _editor.selectBlock(block.id, selection);
-          if (_editingBlockId != block.id || activeChanged) {
-            setState(() => _editingBlockId = block.id);
-          }
-          _ensureBlockVisible(block.id);
+        if (!mounted || !node.hasFocus) return;
+        if (_blockSelectionMode) {
+          node.unfocus();
           return;
         }
-        if (_editingBlockId == block.id) {
-          setState(() => _editingBlockId = null);
+        final selection = _textControllers[block.id]?.selection;
+        final activeChanged = _editor.selectBlock(block.id, selection);
+        if (_editingBlockId != block.id || activeChanged) {
+          setState(() => _editingBlockId = block.id);
         }
+        _ensureBlockVisible(block.id);
       });
       return node;
     });
