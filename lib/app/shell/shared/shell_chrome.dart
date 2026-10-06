@@ -237,10 +237,9 @@ mixin ShellChrome on ShellLifecycle, ShellMoreMenu, ShellVoiceInput {
                             listenable: selectedDateListenable,
                             builder: (context, _) {
                               final showFab =
+                                  shellPageIndex != 3 &&
                                   shellPageIndex != 6 &&
-                                  (shellPageIndex == 1 ||
-                                      shellPageIndex == 3 ||
-                                      !isFutureDate);
+                                  (shellPageIndex == 1 || !isFutureDate);
                               if (!showFab) return const SizedBox.shrink();
                               return ListenableBuilder(
                                 listenable: shellLayout,
