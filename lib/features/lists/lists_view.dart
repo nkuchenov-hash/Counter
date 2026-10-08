@@ -903,10 +903,17 @@ class _ListsPageState extends State<ListsPage>
         AppSnack.failed();
         return;
       }
-      final task = db.getCachedPlanningTaskForEdit(rowId);
-      if (task != null) {
-        _openNoteEditor(task);
+      var task = db.getCachedPlanningTaskForEdit(rowId);
+      if (task == null) {
+        await db.fetchBacklogPlans(categoryId: cat, includeCompleted: true);
+        if (!mounted) return;
+        task = db.getCachedPlanningTaskForEdit(rowId);
       }
+      if (task == null) {
+        AppSnack.failed();
+        return;
+      }
+      _openNoteEditor(task);
     }());
   }
 
@@ -1011,6 +1018,7 @@ class _ListsPageState extends State<ListsPage>
               backgroundColor: Colors.transparent,
               body: NotesLibraryProductionShell(
                 topBar: null,
+                onNewNote: _submitInline,
                 header: _NotesLibraryHeader(
                         locale: loc,
                         searchController: _notesSearchController,
