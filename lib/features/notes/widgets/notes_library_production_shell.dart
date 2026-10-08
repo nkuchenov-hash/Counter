@@ -28,9 +28,11 @@ class NotesLibraryProductionShell extends StatelessWidget {
     this.inlineAdd,
     required this.content,
     this.topBar,
+    this.onNewNote,
   });
 
   final Widget? topBar;
+  final VoidCallback? onNewNote;
   final Widget header;
   final Widget categoryBar;
   final bool categoryBarInHeader;
@@ -92,12 +94,13 @@ class NotesLibraryProductionShell extends StatelessWidget {
             onOpenSettings: headerAdapter?.onOpenSettings,
           );
 
-    final newNote = () => unawaited(
-          _createNewNote(
-            context,
-            preferredCategoryId: category?.filterCategoryId,
-          ),
-        );
+    final newNote = onNewNote ??
+        () => unawaited(
+              _createNewNote(
+                context,
+                preferredCategoryId: category?.filterCategoryId,
+              ),
+            );
 
     if (mobile && headerAdapter != null && category != null) {
       return NotesGlmLibraryFrame(
@@ -191,16 +194,36 @@ class _MobileNotesLibrary extends StatelessWidget {
   }
 
   Future<void> _openFolders(BuildContext context) async {
-    await showModalBottomSheet<void>(
+    await showGeneralDialog<void>(
       context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => _MobileNotesFoldersSheet(
-        adapter: category,
-        locale: header.locale,
-        onOpenSettings: header.onOpenSettings,
+      barrierDismissible: true,
+      barrierLabel: header.locale == 'ru' ? 'Закрыть меню заметок' : 'Close notes menu',
+      barrierColor: Colors.black.withValues(alpha: 0.18),
+      transitionDuration: const Duration(milliseconds: 220),
+      pageBuilder: (ctx, animation, secondaryAnimation) => SafeArea(
+        child: Align(
+          alignment: Alignment.centerLeft,
+          child: _MobileNotesFoldersSheet(
+            adapter: category,
+            locale: header.locale,
+            onOpenSettings: header.onOpenSettings,
+          ),
+        ),
       ),
+      transitionBuilder: (ctx, animation, secondaryAnimation, child) {
+        final curved = CurvedAnimation(
+          parent: animation,
+          curve: Curves.easeOutCubic,
+          reverseCurve: Curves.easeInCubic,
+        );
+        return SlideTransition(
+          position: Tween<Offset>(
+            begin: const Offset(-0.08, 0),
+            end: Offset.zero,
+          ).animate(curved),
+          child: FadeTransition(opacity: curved, child: child),
+        );
+      },
     );
   }
 
@@ -470,73 +493,122 @@ class _MobileNotesFoldersSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return FractionallySizedBox(
-      heightFactor: 0.86,
+    final db = DatabaseService.instance;
+    final pairs = db.allCategoryIdPathPairs;
+    final ids = <int>[];
+    for (final pair in pairs) {
+      if (db.categoryExists(pair.id) && !ids.contains(pair.id)) {
+        ids.add(pair.id);
+      }
+    }
+    final allCount = db
+        .getBacklogPlansSnapshot(categoryId: null, includeCompleted: true)
+        .length;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 10, 0, 10),
       child: Material(
         color: scheme.surface,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        elevation: 10,
+        shadowColor: Colors.black.withValues(alpha: 0.16),
+        borderRadius: const BorderRadius.only(
+          topRight: Radius.circular(34),
+          bottomRight: Radius.circular(34),
+          topLeft: Radius.circular(28),
+          bottomLeft: Radius.circular(28),
+        ),
         clipBehavior: Clip.antiAlias,
-        child: Column(
-          children: [
-            const SizedBox(height: 10),
-            Container(
-              width: 42,
-              height: 4,
-              decoration: BoxDecoration(
-                color: scheme.outlineVariant,
-                borderRadius: BorderRadius.circular(99),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(22, 20, 14, 10),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      locale == 'ru' ? 'Папки' : 'Folders',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                        color: scheme.onSurface,
+        child: SizedBox(
+          width: (MediaQuery.sizeOf(context).width * 0.82).clamp(300.0, 430.0),
+          height: double.infinity,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(22, 20, 14, 10),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.menu_open_rounded,
+                      size: 28,
+                      color: scheme.onSurfaceVariant,
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Text(
+                        locale == 'ru' ? 'Папки' : 'Folders',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: scheme.onSurfaceVariant,
+                        ),
                       ),
                     ),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                      onOpenSettings();
-                    },
-                    child: Text(locale == 'ru' ? 'Настроить' : 'Manage'),
-                  ),
-                ],
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        onOpenSettings();
+                      },
+                      child: Text(locale == 'ru' ? 'Настроить' : 'Manage'),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(10, 4, 10, 24),
-                children: [
-                  _MobileFolderRow(
-                    icon: Icons.all_inbox_rounded,
-                    label: locale == 'ru' ? 'Все заметки' : 'All notes',
-                    selected: adapter.filterCategoryId == null,
-                    onTap: () {
-                      adapter.onFilterChanged(null);
-                      Navigator.of(context).pop();
-                    },
-                  ),
-                  for (final id in adapter.chipIds)
-                    _MobileCategoryFolderRow(
-                      id: id,
-                      selected: adapter.filterCategoryId == id,
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.fromLTRB(10, 4, 10, 18),
+                  children: [
+                    _MobileFolderRow(
+                      icon: Icons.all_inbox_rounded,
+                      label: locale == 'ru' ? 'Все заметки' : 'All notes',
+                      count: allCount,
+                      selected: adapter.filterCategoryId == null,
                       onTap: () {
-                        adapter.onFilterChanged(id);
+                        adapter.onFilterChanged(null);
                         Navigator.of(context).pop();
                       },
                     ),
-                ],
+                    const SizedBox(height: 4),
+                    for (final id in ids)
+                      _MobileCategoryFolderRow(
+                        id: id,
+                        selected: adapter.filterCategoryId == id,
+                        onTap: () {
+                          adapter.onFilterChanged(id);
+                          Navigator.of(context).pop();
+                        },
+                      ),
+                    if (ids.isEmpty)
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(14, 18, 14, 12),
+                        child: Text(
+                          locale == 'ru'
+                              ? 'Категории пока не созданы'
+                              : 'No categories yet',
+                          style: TextStyle(
+                            color: scheme.onSurfaceVariant,
+                            fontSize: 15,
+                          ),
+                        ),
+                      ),
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      child: Divider(height: 1),
+                    ),
+                    _MobileFolderRow(
+                      icon: Icons.tune_rounded,
+                      label: locale == 'ru' ? 'Настроить категории' : 'Manage categories',
+                      selected: false,
+                      onTap: () {
+                        Navigator.of(context).pop();
+                        onOpenSettings();
+                      },
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -561,9 +633,13 @@ class _MobileCategoryFolderRow extends StatelessWidget {
     final icon = rule.iconCodePoint == null
         ? Icons.folder_outlined
         : IconData(rule.iconCodePoint!, fontFamily: 'MaterialIcons');
+    final count = DatabaseService.instance
+        .getBacklogPlansSnapshot(categoryId: id, includeCompleted: true)
+        .length;
     return _MobileFolderRow(
       icon: icon,
       label: rule.name.trim().isEmpty ? '—' : rule.name.trim(),
+      count: count,
       selected: selected,
       accent: rule.colorOrDefault,
       onTap: onTap,
@@ -578,11 +654,13 @@ class _MobileFolderRow extends StatelessWidget {
     required this.selected,
     required this.onTap,
     this.accent,
+    this.count,
   });
 
   final IconData icon;
   final String label;
   final bool selected;
+  final int? count;
   final VoidCallback onTap;
   final Color? accent;
 
@@ -616,6 +694,16 @@ class _MobileFolderRow extends StatelessWidget {
                     ),
                   ),
                 ),
+                if (count != null) ...[
+                  Text(
+                    '$count',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: scheme.onSurfaceVariant.withValues(alpha: 0.72),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                ],
                 Icon(
                   Icons.chevron_right_rounded,
                   color: scheme.onSurfaceVariant.withValues(alpha: 0.55),
