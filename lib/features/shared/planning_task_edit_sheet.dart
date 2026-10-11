@@ -10,6 +10,7 @@ import 'package:counter/features/shared/edit_sheet/category_edit_draft.dart';
 import 'package:counter/shared/categories/picker/category_tree_picker.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
+import 'package:counter/data/recurrence_edit_scope.dart';
 import 'package:counter/features/planning/recurrence_scope_dialog.dart';
 import 'package:counter/features/notes/note_editor_page.dart';
 import 'package:counter/features/profile/tag_settings_hub.dart';
@@ -150,10 +151,15 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    if (_isPersistedPlan && !_recurrenceScopeGate.requiresChoice(_baselineIsRecurring)) {
+    if (_isPersistedPlan &&
+        !_recurrenceScopeGate.requiresChoice(_baselineIsRecurring)) {
       _planAutosaveGate.flush(() {
         final latest = _buildDraftTask();
         if (latest != null) {
+          // Closing the card is also a commit boundary. Keep the newest
+          // embedded-note draft in the local Brain immediately, then persist
+          // it even though this widget is about to unmount.
+          _applyPlanDraftLocally(latest);
           unawaited(_syncPlanDraftToNetwork(latest));
         }
       }, force: _planAutosaveGate.isDirty);
@@ -254,14 +260,23 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
 
   Future<void> _syncPlanDraftToNetwork(PlanningTask draft) async {
     if (!_isPersistedPlan) return;
-    final scope = await _recurrenceScopeGate.resolve(
-      context,
-      task: _baselineTask,
-      isRecurring: _baselineIsRecurring,
-    );
-    if (!mounted || scope == null) {
-      _planAutosaveGate.markClean();
-      return;
+
+    // Non-recurring cards must be able to finish autosaving after the edit
+    // sheet has already closed. Going through resolve() introduces an async
+    // gap and the old mounted check then discarded that final note update.
+    final RecurrenceEditScope? scope;
+    if (_baselineIsRecurring) {
+      scope = await _recurrenceScopeGate.resolve(
+        context,
+        task: _baselineTask,
+        isRecurring: true,
+      );
+      if (!mounted || scope == null) {
+        _planAutosaveGate.markClean();
+        return;
+      }
+    } else {
+      scope = RecurrenceEditScope.singleOccurrence;
     }
     final baseline = _baselineTask;
     final anchorShort = DatabaseService.instance.planningAuditAnchorDateKey(
