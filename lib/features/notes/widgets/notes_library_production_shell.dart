@@ -29,10 +29,12 @@ class NotesLibraryProductionShell extends StatelessWidget {
     required this.content,
     this.topBar,
     this.onNewNote,
+    this.creatingNewNote = false,
   });
 
   final Widget? topBar;
   final VoidCallback? onNewNote;
+  final bool creatingNewNote;
   final Widget header;
   final Widget categoryBar;
   final bool categoryBarInHeader;
@@ -109,6 +111,7 @@ class NotesLibraryProductionShell extends StatelessWidget {
           category: category,
           content: content,
           onNewNote: newNote,
+          creatingNewNote: creatingNewNote,
         ),
       );
     }
@@ -171,12 +174,14 @@ class _MobileNotesLibrary extends StatelessWidget {
     required this.category,
     required this.content,
     required this.onNewNote,
+    required this.creatingNewNote,
   });
 
   final _NotesHeaderAdapter header;
   final _NotesCategoryAdapter category;
   final Widget content;
   final VoidCallback onNewNote;
+  final bool creatingNewNote;
 
   String _activeTitle() {
     final id = category.filterCategoryId;
@@ -297,6 +302,8 @@ class _MobileNotesLibrary extends StatelessWidget {
               _MobileRoundAction(
                 icon: Icons.edit_outlined,
                 size: 54,
+                enabled: !creatingNewNote,
+                loading: creatingNewNote,
                 onTap: onNewNote,
               ),
             ],
@@ -345,11 +352,15 @@ class _MobileRoundAction extends StatelessWidget {
     required this.icon,
     required this.onTap,
     this.size = 54,
+    this.enabled = true,
+    this.loading = false,
   });
 
   final IconData icon;
   final VoidCallback onTap;
   final double size;
+  final bool enabled;
+  final bool loading;
 
   @override
   Widget build(BuildContext context) {
@@ -358,9 +369,13 @@ class _MobileRoundAction extends StatelessWidget {
       shape: const CircleBorder(),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: onTap,
+        onTap: enabled ? onTap : null,
         customBorder: const CircleBorder(),
-        child: _MobileRoundActionVisual(icon: icon, size: size),
+        child: _MobileRoundActionVisual(
+          icon: icon,
+          size: size,
+          loading: loading,
+        ),
       ),
     );
   }
@@ -370,10 +385,12 @@ class _MobileRoundActionVisual extends StatelessWidget {
   const _MobileRoundActionVisual({
     required this.icon,
     required this.size,
+    this.loading = false,
   });
 
   final IconData icon;
   final double size;
+  final bool loading;
 
   @override
   Widget build(BuildContext context) {
@@ -391,7 +408,16 @@ class _MobileRoundActionVisual extends StatelessWidget {
         ),
       ),
       alignment: Alignment.center,
-      child: Icon(icon, size: 26, color: scheme.onSurface),
+      child: loading
+          ? SizedBox(
+              width: 22,
+              height: 22,
+              child: CircularProgressIndicator(
+                strokeWidth: 2.2,
+                color: scheme.onSurface,
+              ),
+            )
+          : Icon(icon, size: 26, color: scheme.onSurface),
     );
   }
 }
