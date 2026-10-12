@@ -98,6 +98,7 @@ class _ListsPageState extends State<ListsPage>
   static const String _kPrefNotesCheckboxMode = 'lifeos.notes.checkboxMode';
   NotesLibraryView _notesView = NotesLibraryView.grid;
   bool _notesCheckboxesOn = false;
+  bool _creatingNote = false;
 
   /// Stable key for backlog rows (matches Planning bulk selection).
   static String _listKey(PlanningTask t) {
@@ -874,6 +875,8 @@ class _ListsPageState extends State<ListsPage>
   }
 
   void _submitInline() {
+    if (_creatingNote) return;
+
     final raw = _inlineController.text.trim();
     final cat = _effectiveCategoryIdForNewTask();
     if (cat == null) {
@@ -894,26 +897,39 @@ class _ListsPageState extends State<ListsPage>
     }
 
     _inlineController.clear();
-    setState(() {});
+    setState(() => _creatingNote = true);
+
     unawaited(() async {
-      final db = DatabaseService.instance;
-      final rowId = await db.createEmptyNote(categoryId: cat, title: title);
-      if (!mounted) return;
-      if (rowId == null) {
-        AppSnack.failed();
-        return;
-      }
-      var task = db.getCachedPlanningTaskForEdit(rowId);
-      if (task == null) {
-        await db.fetchBacklogPlans(categoryId: cat, includeCompleted: true);
+      try {
+        final db = DatabaseService.instance;
+        final rowId = await db.createEmptyNote(categoryId: cat, title: title);
         if (!mounted) return;
-        task = db.getCachedPlanningTaskForEdit(rowId);
+        if (rowId == null) {
+          AppSnack.failed();
+          return;
+        }
+
+        var task = db.getCachedPlanningTaskForEdit(rowId);
+        if (task == null) {
+          await db.fetchBacklogPlans(categoryId: cat, includeCompleted: true);
+          if (!mounted) return;
+          task = db.getCachedPlanningTaskForEdit(rowId);
+        }
+        if (task == null) {
+          AppSnack.failed();
+          return;
+        }
+
+        await showNoteEditorPage(
+          context: context,
+          task: task,
+          onClosed: _applyBacklogFromBrainSnapshot,
+        );
+      } finally {
+        if (mounted) {
+          setState(() => _creatingNote = false);
+        }
       }
-      if (task == null) {
-        AppSnack.failed();
-        return;
-      }
-      _openNoteEditor(task);
     }());
   }
 
@@ -1019,6 +1035,7 @@ class _ListsPageState extends State<ListsPage>
               body: NotesLibraryProductionShell(
                 topBar: null,
                 onNewNote: _submitInline,
+                creatingNewNote: _creatingNote,
                 header: _NotesLibraryHeader(
                         locale: loc,
                         searchController: _notesSearchController,
