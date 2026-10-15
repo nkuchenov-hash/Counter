@@ -1,6 +1,9 @@
 part of '../database_service.dart';
 
 extension RecordOutboxSyncExtension on DatabaseService {
+  void _showRecordNotSavedError() =>
+      AppSnack.show(t(currentLocale.value, 'record_create_not_saved'), error: true);
+
   Future<bool> _enqueueHighlanderStartMutation(
     Map<String, dynamic> runningFields, {
     Object? error,
@@ -99,7 +102,7 @@ extension RecordOutboxSyncExtension on DatabaseService {
         _cachedFlatRecords = beforeRows;
         _notifyTimelineAfterRecordCacheMutation();
       }
-      AppSnack.failed();
+      _showRecordNotSavedError();
       return false;
     }
   }
