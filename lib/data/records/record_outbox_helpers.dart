@@ -301,11 +301,15 @@ extension RecordOutboxSyncExtension on DatabaseService {
               .trim();
       final pbId = (item['pocketBaseId'] ?? '').toString().trim();
       if (originalInput.isEmpty || pbId.isEmpty) return true;
-      final nowIso = DatabaseService.getPlanetaryNow()
-          .toUtc()
-          .toIso8601String();
+      final storedPayload = item['payload'];
+      final storedEnd = storedPayload is Map
+          ? (storedPayload['end_time'] ?? '').toString().trim()
+          : '';
+      final stopIso = storedEnd.isNotEmpty
+          ? storedEnd
+          : DatabaseService.getPlanetaryNow().toUtc().toIso8601String();
       final stopFields = _nocoFieldsForPatch(<String, dynamic>{
-        'end_time': nowIso,
+        'end_time': stopIso,
         'status': 'stopped',
       });
       final stopCode = await _patchRecordsRowWith404Recovery(
