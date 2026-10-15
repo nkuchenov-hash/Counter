@@ -380,7 +380,7 @@ extension PlanTimeCascadeExtension on DatabaseService {
         defaultHour >= 0 && defaultHour <= 23 &&
         defaultMinute >= 0 && defaultMinute <= 59;
     final categoryStartMinutes = hasCategoryWorkStart
-        ? defaultHour * 60 + defaultMinute
+        ? defaultHour! * 60 + defaultMinute!
         : null;
     final startMinutes = max(
       timelineDayStartHour * 60,
