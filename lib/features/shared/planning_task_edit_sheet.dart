@@ -516,7 +516,6 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
             clearReminderOffset: _reminderMinutes == null,
           );
   }
-
   @override
   Widget build(BuildContext context) {
     final dropdownValue = resolveEditFieldCategoryId(
@@ -529,7 +528,6 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
     final compactChrome = notesEditing;
     final mobileDated =
         !_startedAsUndatedBacklog && MediaQuery.sizeOf(context).width <= 600;
-
     return Material(
       color: Theme.of(context).colorScheme.surface,
       borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
@@ -614,10 +612,6 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
             child: Column(
               children: [
                 Expanded(
-                  // The rich Notes canvas owns its own scroll/toolbar. It must
-                  // not consume almost the entire sheet while the dated plan's
-                  // time, tags, recurrence tabs and Save controls are squeezed.
-                  // Keep the Notes pane at one share of the available space.
                   key: const ValueKey('planning-edit-notes-pane'),
                   flex: 1,
                   child: Focus(
@@ -908,9 +902,6 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
                   ),
                 ] else if (!keyboardOpen) ...[
                   Expanded(
-                    // Schedule metadata needs more space than the embedded
-                    // Notes pane; otherwise its tab bar overlaps the action
-                    // footer even at full sheet height on desktop web.
                     key: const ValueKey('planning-edit-schedule-pane'),
                     flex: mobileDated ? 2 : 3,
                     child: Column(
