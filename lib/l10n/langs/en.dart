@@ -308,6 +308,10 @@ const Map<String, String> kEnL10n = {
   'tag_default_duration_clear': 'Clear default',
   'tag_duration_field_not_configured':
       'Tag duration field is not configured on the server (tags.default_plan_duration_minutes).',
+  'plan_auto_schedule_no_work_slot':
+      'No fitting work slot was found in the next 14 days. The plan was not scheduled.',
+  'plan_auto_schedule_moved_to':
+      'Workday full. Plan scheduled for %s.',
   'plan_schedule_overload_warning':
       'Possible overload: you may want to move some plans to tomorrow or reduce today\'s load.',
   'tag_manager_title': 'Tags',
