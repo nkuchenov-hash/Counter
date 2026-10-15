@@ -213,6 +213,19 @@ extension RecordCrudExtension on DatabaseService {
     return false;
   }
 
+  void _appendPendingRecordCreateShadow(Map<String, dynamic> fields) {
+    final businessId = (fields['record_id'] ?? '').toString().trim();
+    if (businessId.isEmpty) return;
+    final local = <String, dynamic>{
+      ...fields,
+      'id': businessId,
+      '_pb_record_id': '',
+      '_highlanderPendingPost': true,
+    };
+    _cachedFlatRecords = [..._cachedFlatRecords, local];
+    _notifyTimelineAfterRecordCacheMutation();
+  }
+
   Future<String?> writeRecord(
     String dateKey,
     String taskText, {
@@ -224,9 +237,8 @@ extension RecordCrudExtension on DatabaseService {
     String? sourcePlanPocketRecordId,
   }) async {
     if (!_isInitialized || !_hasAuthenticatedUserId) return null;
-    if (_writeRecordMutationInFlight) return null;
-    _writeRecordMutationInFlight = true;
-    var deferWriteRecordMutationRelease = false;
+    // A second deliberate create must not be rejected while the first POST
+    // waits on PocketBase. Each create has its own UUID and durable outbox item.
     try {
       final parsed = getCleanTitleAndTags(taskText);
       final sourcePlanForPayloadEarly =
@@ -294,116 +306,44 @@ extension RecordCrudExtension on DatabaseService {
         final isPrimary = !hasParent;
         late final String runningRecordBizId;
         if (isPrimary) {
-          runningRecordBizId = DatabaseService._newClientRecordUuid();
-          final runningFields = _nocoFieldsForPatch(<String, dynamic>{
-            'user_id': _pidForPbFilter,
-            'record_id': runningRecordBizId,
-            'status': 'running',
-            'title': parsed.title,
-            'start_time': startIso,
-            'end_time': null,
-            'category_id': _recordCategoryBusinessPkForApi(cid),
-            'type': 'record',
-            'checklist': <Map<String, dynamic>>[],
-            if (parsed.tags.isNotEmpty) 'tags': parsed.tags.join(','),
-            'source_plan_id': ?sourcePlanForPayload,
-          });
-          if (pr != null && pr.isNotEmpty) {
-            runningFields['parent_id'] = pr;
-          } else if (parentId != null) {
-            runningFields['parent_id'] = parentId.toString();
-          }
-          final patchTargets = <Map<String, String>>[];
-          _HighlanderRollbackToken? rollbackToken;
-          final prevNet = _primaryHighlanderNetworkChain;
-          final netDone = Completer<void>();
-          _primaryHighlanderNetworkChain = prevNet.then((_) => netDone.future);
-          try {
-            final shadowPerf = Stopwatch()..start();
-            var msSnap = 0;
-            var msApply = 0;
-            try {
-              _runBatchedRecordCacheTimelineNotifySync(() {
-                final tSnap = Stopwatch()..start();
-                final beforeLen = _cachedFlatRecords.length;
-                final runningSnapshots =
-                    _snapshotRunningRowsForHighlanderRollback();
-                msSnap = tSnap.elapsedMilliseconds;
-                final tApply = Stopwatch()..start();
-                clearOptimisticTimelineUi();
-                _startAtomicTaskSequenceApplyLocalPrimary(
-                  createBody: runningFields,
-                  patchTargetsOut: patchTargets,
-                );
-                final appended = _cachedFlatRecords.length > beforeLen;
-                rollbackToken = _HighlanderRollbackToken(
-                  runningSnapshotsByIndex: runningSnapshots,
-                  appendedPendingRow: appended,
-                );
-                _printAtomicCheckRunningCount();
-                msApply = tApply.elapsedMilliseconds;
-              });
-            } finally {
-              if (kDebugMode) {
-                debugPrint(
-                  '[SHADOW_PERF] cache+notify=${shadowPerf.elapsedMilliseconds}ms '
-                  '(snapshot_running=${msSnap}ms local_apply=${msApply}ms; '
-                  'bottleneck=${msSnap >= msApply ? "_snapshotRunningRowsForHighlanderRollback" : "clearOptimistic+_startAtomicTaskSequenceApplyLocalPrimary+_printAtomicCheckRunningCount"})',
-                );
-              }
-            }
-            deferWriteRecordMutationRelease = true;
-            unawaited(() async {
-              try {
-                await prevNet;
-                await _highlanderPrimaryServerSync(
-                  rollbackToken: rollbackToken,
-                  runningFields: runningFields,
-                );
-              } finally {
-                if (!netDone.isCompleted) netDone.complete();
-                _writeRecordMutationInFlight = false;
-              }
-            }());
-            return runningRecordBizId;
-          } catch (e, st) {
-            DatabaseService._log(
-              'writeRecord primary Highlander local phase: $e',
-            );
-            DatabaseService._log(st.toString());
-            clearOptimisticTimelineUi();
-            if (!netDone.isCompleted) netDone.complete();
-            rethrow;
-          }
-        }
+          // Child handoff: persist the stop(s) and the new create atomically
+        // before any PocketBase I/O. This also works without connectivity.
         runningRecordBizId = DatabaseService._newClientRecordUuid();
-        final rows = List<Map<String, dynamic>>.from(_cachedFlatRecords);
-        for (final r in rows) {
+        final beforeRows = List<Map<String, dynamic>>.from(_cachedFlatRecords);
+        final nextRows = <Map<String, dynamic>>[];
+        final stopItems = <Map<String, dynamic>>[];
+        for (final row in beforeRows) {
           var sameParent = false;
           if (pr != null && pr.isNotEmpty) {
-            sameParent = _parentFieldEqualsRecordId(r, pr);
+            sameParent = _parentFieldEqualsRecordId(row, pr);
           } else if (parentId != null) {
             sameParent =
-                CategoryServiceExtension._rowInt(r['parent_id']) == parentId;
+                CategoryServiceExtension._rowInt(row['parent_id']) == parentId;
           }
-          if (!sameParent) continue;
-          if (!CategoryServiceExtension._isNocoRowSacredStopTarget(r)) continue;
-          final id = CategoryServiceExtension.recordsTablePk(r);
-          if (id.isEmpty) continue;
-          DatabaseService._log('PATCH_ID_TRACE: child-stop pb id=$id');
-          final childFields = _nocoFieldsForPatch(<String, dynamic>{
+          if (!sameParent ||
+              !CategoryServiceExtension._isNocoRowSacredStopTarget(row)) {
+            nextRows.add(row);
+            continue;
+          }
+          final id = CategoryServiceExtension.recordsTablePk(row);
+          if (id.isEmpty) {
+            nextRows.add(row);
+            continue;
+          }
+          final biz = (row['record_id'] ?? '').toString().trim();
+          stopItems.add(
+            RecordMutationOutbox.newStopPatchItem(
+              businessId: biz.isNotEmpty ? biz : id,
+              pocketBaseId: id,
+              originalQueryId: biz.isNotEmpty ? biz : id,
+              endTimeIso: startIso,
+            ),
+          );
+          nextRows.add(<String, dynamic>{
+            ...row,
             'end_time': startIso,
             'status': 'stopped',
           });
-          final biz = (r['record_id'] ?? '').toString().trim();
-          final cr = await _patchRecordsRowWith404Recovery(
-            originalQueryId: biz.isNotEmpty ? biz : id,
-            restId: id,
-            fields: childFields,
-          );
-          if (cr == 404) {
-            _purgeGhostRecordById(id);
-          }
         }
         final runningFields = _nocoFieldsForPatch(<String, dynamic>{
           'user_id': _pidForPbFilter,
@@ -423,14 +363,32 @@ extension RecordCrudExtension on DatabaseService {
         } else if (parentId != null) {
           runningFields['parent_id'] = parentId.toString();
         }
-        final newId = await _createRecordPb(runningFields);
-        if (newId == null) {
-          DatabaseService._log('writeRecord PocketBase create failed');
+        _runBatchedRecordCacheTimelineNotifySync(() {
+          _cachedFlatRecords = nextRows;
+          _appendPendingRecordCreateShadow(runningFields);
+        });
+        try {
+          final prefs = _prefs ?? await SharedPreferences.getInstance();
+          await RecordMutationOutbox.enqueueAll(prefs, [
+            ...stopItems,
+            RecordMutationOutbox.newRecordCreateItem(
+              businessId: runningRecordBizId,
+              fields: runningFields,
+            ),
+          ]);
+          unawaited(offlineSync.refreshPendingCount());
+          unawaited(flushPendingRecordMutations());
+          return runningRecordBizId;
+        } catch (e) {
+          DatabaseService._log('writeRecord child persistence failed: $e');
+          if (_cachedFlatRecords.isNotEmpty &&
+              _cachedFlatRecords.last['record_id'] == runningRecordBizId) {
+            _cachedFlatRecords = beforeRows;
+            _notifyTimelineAfterRecordCacheMutation();
+          }
+          AppSnack.failed();
           return null;
         }
-        await _finalizeRecordCreateHandshake(pocketCreatedRecordId: newId);
-        _notifyTimelineAfterRecordCacheMutation();
-        return newId;
       } else {
         var cidForCompleted = cid;
         if (sourcePlanForPayload != null) {
@@ -467,16 +425,20 @@ extension RecordCrudExtension on DatabaseService {
         } else if (parentId != null) {
           completedFields['parent_id'] = parentId.toString();
         }
-        final newId = await _createRecordPb(completedFields);
-        if (newId == null) {
-          DatabaseService._log(
-            'writeRecord PocketBase create failed (completed branch)',
-          );
+        _appendPendingRecordCreateShadow(completedFields);
+        final staged = await _enqueueRecordCreateMutation(completedFields);
+        if (!staged) {
+          final businessId = completedFields['record_id'];
+          _cachedFlatRecords = [
+            for (final row in _cachedFlatRecords)
+              if (row['record_id'] != businessId) row,
+          ];
+          _notifyTimelineAfterRecordCacheMutation();
+          AppSnack.failed();
           return null;
         }
-        await _finalizeRecordCreateHandshake(pocketCreatedRecordId: newId);
-        _notifyTimelineAfterRecordCacheMutation();
-        return newId;
+        unawaited(flushPendingRecordMutations());
+        return completedFields['record_id'] as String;
       }
     } catch (e, st) {
       DatabaseService._log('writeRecord failed: $e');
@@ -487,10 +449,6 @@ extension RecordCrudExtension on DatabaseService {
         clearOptimisticTimelineUi();
       }
       return null;
-    } finally {
-      if (!deferWriteRecordMutationRelease) {
-        _writeRecordMutationInFlight = false;
-      }
     }
   }
 
