@@ -29,6 +29,81 @@ extension RecordOutboxSyncExtension on DatabaseService {
     }
   }
 
+  /// Child start is a local atomic handoff: the stops and create enter the
+  /// same durable queue before their first network request.
+  Future<bool> _stageChildRecordHandoff({
+    required Map<String, dynamic> fields,
+    required String startIso,
+    String? parentRecordId,
+    int? parentId,
+  }) async {
+    final bizId = (fields['record_id'] ?? '').toString().trim();
+    if (bizId.isEmpty) return false;
+    final beforeRows = List<Map<String, dynamic>>.from(_cachedFlatRecords);
+    final nextRows = <Map<String, dynamic>>[];
+    final stopItems = <Map<String, dynamic>>[];
+    final pr = parentRecordId?.trim();
+    for (final row in beforeRows) {
+      var sameParent = false;
+      if (pr != null && pr.isNotEmpty) {
+        sameParent = _parentFieldEqualsRecordId(row, pr);
+      } else if (parentId != null) {
+        sameParent =
+            CategoryServiceExtension._rowInt(row['parent_id']) == parentId;
+      }
+      if (!sameParent ||
+          !CategoryServiceExtension._isNocoRowSacredStopTarget(row)) {
+        nextRows.add(row);
+        continue;
+      }
+      final id = CategoryServiceExtension.recordsTablePk(row);
+      if (id.isEmpty) {
+        nextRows.add(row);
+        continue;
+      }
+      final biz = (row['record_id'] ?? '').toString().trim();
+      stopItems.add(
+        RecordMutationOutbox.newStopPatchItem(
+          businessId: biz.isNotEmpty ? biz : id,
+          pocketBaseId: id,
+          originalQueryId: biz.isNotEmpty ? biz : id,
+          endTimeIso: startIso,
+        ),
+      );
+      nextRows.add(<String, dynamic>{
+        ...row,
+        'end_time': startIso,
+        'status': 'stopped',
+      });
+    }
+    _runBatchedRecordCacheTimelineNotifySync(() {
+      _cachedFlatRecords = nextRows;
+      _appendPendingRecordCreateShadow(fields);
+    });
+    try {
+      final prefs = _prefs ?? await SharedPreferences.getInstance();
+      await RecordMutationOutbox.enqueueAll(prefs, [
+        ...stopItems,
+        RecordMutationOutbox.newRecordCreateItem(
+          businessId: bizId,
+          fields: fields,
+        ),
+      ]);
+      unawaited(offlineSync.refreshPendingCount());
+      unawaited(flushPendingRecordMutations());
+      return true;
+    } catch (e) {
+      DatabaseService._log('writeRecord child persistence failed: $e');
+      if (_cachedFlatRecords.isNotEmpty &&
+          _cachedFlatRecords.last['record_id'] == bizId) {
+        _cachedFlatRecords = beforeRows;
+        _notifyTimelineAfterRecordCacheMutation();
+      }
+      AppSnack.failed();
+      return false;
+    }
+  }
+
   Future<bool> _enqueueRecordCreateMutation(
     Map<String, dynamic> fields,
   ) async {
