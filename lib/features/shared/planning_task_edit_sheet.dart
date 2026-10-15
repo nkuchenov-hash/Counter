@@ -34,17 +34,14 @@ class PlanningTaskEditSheet extends StatefulWidget {
     this.onDelete,
     this.onSaved,
   });
-
   final PlanningTask task;
   final String dateKey;
   final ScrollController scrollController;
   final void Function(PlanningTask task)? onDelete;
   final void Function(dynamic updated)? onSaved;
-
   @override
   State<PlanningTaskEditSheet> createState() => PlanningTaskEditSheetState();
 }
-
 class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
     with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late final TextEditingController _titleController;
@@ -53,10 +50,8 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
   DateTime? _scheduledTime;
   DateTime? _endTime;
   late DateTime _date;
-
   /// Undated backlog / list item before any schedule is set (no wall date in [dateKey]).
   late final bool _startedAsUndatedBacklog;
-
   /// Non-null only for list-item / Idea mode (3-tab Strike 19 layout).
   TabController? _tabController;
 
@@ -90,7 +85,7 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
     if (_startedAsUndatedBacklog) {
       _tabController = TabController(length: 2, vsync: this);
     } else {
-      _planTabController = TabController(length: 2, vsync: this);
+      _planTabController = TabController(length: 3, vsync: this);
     }
     _titleController = TextEditingController(text: widget.task.title);
     _noteDocument = NoteDocument.tryParse(
@@ -516,6 +511,23 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
             clearReminderOffset: _reminderMinutes == null,
           );
   }
+  Widget _buildPlanNotes(bool notesEditing) => Focus(
+    onFocusChange: (focused) {
+      if (!mounted || _notesEditorFocused == focused) return;
+      setState(() => _notesEditorFocused = focused);
+    },
+    child: NoteEditorPage(
+      task: widget.task,
+      inlineKeyboardActive: notesEditing,
+      inlineBodyOnly: true,
+      initialDocument: _noteDocument,
+      onDocumentChanged: (document) {
+        _noteDocument = document;
+        _onPlanFieldChanged();
+      },
+    ),
+  );
+
   @override
   Widget build(BuildContext context) {
     final dropdownValue = resolveEditFieldCategoryId(
@@ -611,26 +623,11 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
           Expanded(
             child: Column(
               children: [
-                Expanded(
-                  key: const ValueKey('planning-edit-notes-pane'),
-                  flex: 1,
-                  child: Focus(
-                    onFocusChange: (focused) {
-                      if (!mounted || _notesEditorFocused == focused) return;
-                      setState(() => _notesEditorFocused = focused);
-                    },
-                    child: NoteEditorPage(
-                      task: widget.task,
-                      inlineKeyboardActive: notesEditing,
-                    inlineBodyOnly: true,
-                    initialDocument: _noteDocument,
-                      onDocumentChanged: (document) {
-                        _noteDocument = document;
-                        _onPlanFieldChanged();
-                      },
-                    ),
+                if (_startedAsUndatedBacklog || keyboardOpen)
+                  Expanded(
+                    key: const ValueKey('planning-edit-notes-pane'),
+                    child: _buildPlanNotes(notesEditing),
                   ),
-                ),
                 if (!notesEditing && _startedAsUndatedBacklog) ...[
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -901,13 +898,8 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
                     ),
                   ),
                 ] else if (!keyboardOpen) ...[
-                  Expanded(
-                    key: const ValueKey('planning-edit-schedule-pane'),
-                    flex: mobileDated ? 2 : 3,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
                         Padding(
+                          key: const ValueKey('planning-edit-time-row'),
                           padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -990,6 +982,7 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
                           ),
                         ),
                         Padding(
+                          key: const ValueKey('planning-edit-tag-strip'),
                           padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
                           child: SizedBox(
                             height: 40,
@@ -1032,6 +1025,7 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
                           ),
                         ),
                         Padding(
+                          key: const ValueKey('planning-edit-primary-tabs'),
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           child: SizedBox(
                             height: kAppCompactControlHeight,
@@ -1045,6 +1039,9 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
                               tabAlignment: TabAlignment.start,
                               padding: EdgeInsets.zero,
                               tabs: [
+                                AppCompactTextTab(
+                                  text: t(currentLocale.value, 'notes_tab'),
+                                ),
                                 AppCompactTextTab(
                                   text: t(
                                     currentLocale.value,
@@ -1062,9 +1059,14 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
                           ),
                         ),
                         Expanded(
+                          key: const ValueKey('planning-edit-tab-content'),
                           child: TabBarView(
                             controller: _planTabController!,
                             children: [
+                              KeyedSubtree(
+                                key: const ValueKey('planning-edit-notes-pane'),
+                                child: _buildPlanNotes(notesEditing),
+                              ),
                               ListView(
                                 padding: const EdgeInsets.fromLTRB(
                                   16,
@@ -1252,9 +1254,6 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
                             ],
                           ),
                         ),
-                      ],
-                    ),
-                  ),
                 ],
                 if (_shouldShowGraduateUi)
                   Padding(
@@ -1277,6 +1276,7 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
                   ),
                 if (!notesEditing)
                   SafeArea(
+                    key: const ValueKey('planning-edit-action-bar'),
                     top: false,
                     minimum: const EdgeInsets.only(bottom: 4),
                     child: Container(
