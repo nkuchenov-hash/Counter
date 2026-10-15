@@ -6,7 +6,7 @@ Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 879 — each appears **exactly once** below.
+**Tracked files:** 881 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -27,10 +27,10 @@ python scripts/manual/generate_app_structure_detailed.py
 | Role | Count |
 | :--- | ---: |
 | `production UI` | 174 |
-| `test` | 112 |
+| `test` | 113 |
 | `Brain/data` | 92 |
 | `platform build` | 83 |
-| `shared foundation` | 64 |
+| `shared foundation` | 65 |
 | `developer tool` | 63 |
 | `platform resource` | 44 |
 | `governing documentation` | 39 |
@@ -12355,6 +12355,28 @@ RU:
 - **Обязанности:** Реализует в UI: `AppErrorState`, `AppEmptyState`.
 - **Когда открывать:** Когда ломается поведение, связанное с `app_state_views.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/core/widgets/`, `docs/APP_STRUCTURE.md`
+
+
+### `lib/core/widgets/app_text_field.dart`
+
+EN:
+
+- **Human purpose:** Canonical shared LIFE OS text-field input.
+- **What this is:** Design-system Flutter text input widget.
+- **Why needed:** Shared input behavior and consistent UI.
+- **Repository role:** shared foundation
+- **Evidence of use:** Tracked widget in `lib/core/widgets/`.
+- **Necessity status:** REQUIRED
+- **Owner / layer:** shared design system
+- **Connected to:** `lib/core/widgets/`, `docs/APP_STRUCTURE.md`
+
+RU:
+
+- **Зачем файл человеку:** Канонический компонент текстового поля LIFE OS.
+- **Что это:** Общий Flutter-виджет ввода design system.
+- **Зачем:** Единое поведение и стиль текстового ввода.
+- **Владелец / слой:** общий design system
 - **Связано с:** `lib/core/widgets/`, `docs/APP_STRUCTURE.md`
 
 
@@ -35756,6 +35778,28 @@ RU:
 - **Когда открывать:** Падение CI или правка кода рядом с `realtime_app_open_contract`.
 - **Можно удалить?** Нет — нужен для тестов.
 - **Связано с:** Production files под `lib/` с похожим именем.
+
+
+### `test/record_write_durability_test.dart`
+
+EN:
+
+- **Human purpose:** Regression tests for rapid record input and durable record outbox.
+- **What this is:** Flutter tests for queue ordering, retry and acknowledgement.
+- **Why needed:** Prevents losing accepted records during overlapping submissions.
+- **Repository role:** test
+- **Evidence of use:** GitHub Actions Android build executes `flutter test test/record_write_durability_test.dart`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Owner / layer:** tests
+- **Connected to:** `lib/data/local_sync/record_mutation_outbox.dart`, `lib/data/records/record_crud.dart`
+
+RU:
+
+- **Зачем файл человеку:** Проверка сохранности быстрых записей и очереди синхронизации.
+- **Что это:** Регрессионные тесты Flutter.
+- **Зачем:** Предотвращает потерю подтверждённых локально записей из-за сетевых гонок.
+- **Владелец / слой:** тесты
+- **Связано с:** `lib/data/local_sync/record_mutation_outbox.dart`, `lib/data/records/record_crud.dart`
 
 
 ### `test/record_category_edit_brain_test.dart`

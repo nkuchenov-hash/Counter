@@ -27,59 +27,66 @@ PlanningTask _task(
 }
 
 void main() {
-  test('category-rule creation appends after the latest same-rule plan', () {
+  final db = DatabaseService.instance;
+  final day = DateTime(2026, 9, 21);
+
+  test('explicit time collision moves to the next available slot', () {
     final first = _task('first', 10, 9, 0);
     final later = _task('later', 11, 10, 0);
     final unrelated = _task('unrelated', 20, 11, 0, duration: 60);
 
-    final start = computePlanRuleChainAppendStart(
-      anchorStartWall: DateTime(2026, 9, 21, 9, 0),
-      sourceCategoryId: 10,
+    final resolved = db.resolveAutoPlanSchedule(
+      wallDay: day,
+      categoryId: 10,
+      tags: const [],
       existingDayPlans: [first, later, unrelated],
-      resolveRuleSourceCategoryId: (categoryId) => switch (categoryId) {
-        10 || 11 => 10,
-        20 => 20,
-        _ => null,
-      },
-      resolveDurationMinutes: (_) => 30,
+      explicitStartWall: DateTime(2026, 9, 21, 9, 0),
+      explicitEndWall: DateTime(2026, 9, 21, 9, 30),
+      hasExplicitTimeRange: true,
     );
 
-    expect(start, DateTime(2026, 9, 21, 10, 30));
+    expect(resolved.startWall, DateTime(2026, 9, 21, 9, 30));
+    expect(resolved.endWall, DateTime(2026, 9, 21, 10, 0));
   });
 
-  test('inherited child category participates in the same rule chain', () {
-    final parentPlan = _task('parent', 10, 9, 0);
-    final childPlan = _task('child', 11, 9, 30);
+  test('a gap shorter than the plan duration is skipped', () {
+    final first = _task('first', 10, 9, 0);
+    final second = _task('second', 11, 9, 45);
 
-    final start = computePlanRuleChainAppendStart(
-      anchorStartWall: DateTime(2026, 9, 21, 9, 0),
-      sourceCategoryId: 10,
-      existingDayPlans: [parentPlan, childPlan],
-      resolveRuleSourceCategoryId: (categoryId) =>
-          categoryId == 10 || categoryId == 11 ? 10 : null,
-      resolveDurationMinutes: (_) => 30,
+    final resolved = db.resolveAutoPlanSchedule(
+      wallDay: day,
+      categoryId: 10,
+      tags: const [],
+      existingDayPlans: [first, second],
+      explicitStartWall: DateTime(2026, 9, 21, 9, 0),
+      explicitEndWall: DateTime(2026, 9, 21, 9, 30),
+      hasExplicitTimeRange: true,
     );
 
-    expect(start, DateTime(2026, 9, 21, 10, 0));
+    expect(resolved.startWall, DateTime(2026, 9, 21, 10, 15));
+    expect(resolved.endWall, DateTime(2026, 9, 21, 10, 45));
   });
 
-  test('rule chain keeps its anchor when no matching plan exists', () {
-    final unrelated = _task('unrelated', 20, 10, 0);
-    final anchor = DateTime(2026, 9, 21, 9, 0);
+  test('an explicit non-overlapping interval keeps its original time', () {
+    final unrelated = _task('unrelated', 20, 11, 0);
+    final requestedStart = DateTime(2026, 9, 21, 9, 0);
+    final requestedEnd = DateTime(2026, 9, 21, 9, 30);
 
-    final start = computePlanRuleChainAppendStart(
-      anchorStartWall: anchor,
-      sourceCategoryId: 10,
+    final resolved = db.resolveAutoPlanSchedule(
+      wallDay: day,
+      categoryId: 10,
+      tags: const [],
       existingDayPlans: [unrelated],
-      resolveRuleSourceCategoryId: (categoryId) =>
-          categoryId == 20 ? 20 : null,
-      resolveDurationMinutes: (_) => 30,
+      explicitStartWall: requestedStart,
+      explicitEndWall: requestedEnd,
+      hasExplicitTimeRange: true,
     );
 
-    expect(start, anchor);
+    expect(resolved.startWall, requestedStart);
+    expect(resolved.endWall, requestedEnd);
   });
 
-  test('rule chain resolves duration when an existing plan has no end', () {
+  test('existing plans without an end use their resolved duration', () {
     final openEnded = _task(
       'open-ended',
       10,
@@ -88,14 +95,17 @@ void main() {
       explicitEnd: false,
     );
 
-    final start = computePlanRuleChainAppendStart(
-      anchorStartWall: DateTime(2026, 9, 21, 9, 0),
-      sourceCategoryId: 10,
+    final resolved = db.resolveAutoPlanSchedule(
+      wallDay: day,
+      categoryId: 10,
+      tags: const [],
       existingDayPlans: [openEnded],
-      resolveRuleSourceCategoryId: (_) => 10,
-      resolveDurationMinutes: (_) => 45,
+      explicitStartWall: DateTime(2026, 9, 21, 10, 0),
+      explicitEndWall: DateTime(2026, 9, 21, 10, 30),
+      hasExplicitTimeRange: true,
     );
 
-    expect(start, DateTime(2026, 9, 21, 10, 45));
+    expect(resolved.startWall, DateTime(2026, 9, 21, 10, 30));
+    expect(resolved.endWall, DateTime(2026, 9, 21, 11, 0));
   });
 }

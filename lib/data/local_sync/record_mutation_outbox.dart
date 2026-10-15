@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 
@@ -28,6 +29,7 @@ abstract final class RecordMutationOutbox {
   static const String _prefsKey = 'record_mutation_outbox_v1';
 
   static const String kindHighlanderStart = 'highlander_start';
+  static const String kindRecordCreate = 'record_create';
   static const String kindStopPatch = 'stop_patch';
   static const String kindRecordUpdate = 'record_update';
   static const String kindRecordDelete = 'record_delete';
@@ -49,21 +51,72 @@ abstract final class RecordMutationOutbox {
     }
   }
 
-  static Future<List<Map<String, dynamic>>> load(SharedPreferences prefs) async =>
-      _decode(prefs.getString(_prefsKey));
+  // Serialize all read-modify-write operations. A flush acknowledgement must
+  // never overwrite a create enqueued while the network request was running.
+  static Future<void> _writeBarrier = Future<void>.value();
+
+  static Future<T> _serializeWrite<T>(Future<T> Function() action) {
+    final next = _writeBarrier.then((_) => action());
+    _writeBarrier = next.then<void>(
+      (_) {},
+      onError: (Object _, StackTrace __) {},
+    );
+    return next;
+  }
+
+  static Future<void> _persist(
+    SharedPreferences prefs,
+    List<Map<String, dynamic>> items,
+  ) async {
+    if (!await prefs.setString(_prefsKey, jsonEncode(items))) {
+      throw StateError('Unable to persist record mutation outbox');
+    }
+  }
+
+  static Future<List<Map<String, dynamic>>> load(SharedPreferences prefs) async {
+    await _writeBarrier;
+    return _decode(prefs.getString(_prefsKey));
+  }
 
   static Future<void> save(
     SharedPreferences prefs,
     List<Map<String, dynamic>> items,
-  ) async {
-    await prefs.setString(_prefsKey, jsonEncode(items));
-  }
+  ) => _serializeWrite(() => _persist(prefs, items));
 
   static Future<void> replaceAll(
     SharedPreferences prefs,
     List<Map<String, dynamic>> items,
-  ) =>
-      save(prefs, items);
+  ) => save(prefs, items);
+
+  /// Remove only the confirmed operation from the latest queue, preserving
+  /// new writes that arrived during the network request.
+  static Future<bool> acknowledge(
+    SharedPreferences prefs,
+    String operationId,
+  ) => _serializeWrite(() async {
+    if (operationId.isEmpty) return false;
+    final items = _decode(prefs.getString(_prefsKey));
+    final before = items.length;
+    items.removeWhere((item) => item['operationId'] == operationId);
+    if (before == items.length) return false;
+    await _persist(prefs, items);
+    return true;
+  });
+
+  static Future<void> markFailure(
+    SharedPreferences prefs,
+    String operationId, {
+    required String error,
+  }) => _serializeWrite(() async {
+    final items = _decode(prefs.getString(_prefsKey));
+    for (final item in items) {
+      if (item['operationId'] != operationId) continue;
+      item['retryCount'] = ((item['retryCount'] as num?)?.toInt() ?? 0) + 1;
+      item['lastError'] = error;
+      await _persist(prefs, items);
+      break;
+    }
+  });
 
   static String _newOperationId() {
     final r = Random.secure();
@@ -141,6 +194,8 @@ abstract final class RecordMutationOutbox {
               ? Map<String, dynamic>.from(item['payload'] as Map)
               : <String, dynamic>{};
           existing['payload'] = <String, dynamic>{...prevPayload, ...nextPayload};
+          // A newer update must invalidate a stale in-flight acknowledgement.
+          existing['operationId'] = item['operationId'];
           final pb = (item['pocketBaseId'] ?? '').toString().trim();
           if (pb.isNotEmpty) existing['pocketBaseId'] = pb;
           out[idx] = existing;
@@ -202,10 +257,26 @@ abstract final class RecordMutationOutbox {
         syncStatus: syncStatus,
       );
 
+  static Map<String, dynamic> newRecordCreateItem({
+    required String businessId,
+    required Map<String, dynamic> fields,
+    Object? error,
+    String syncStatus = syncStatusPending,
+  }) =>
+      _baseItem(
+        operationType: 'create',
+        businessId: businessId,
+        kind: kindRecordCreate,
+        payload: fields,
+        error: error,
+        syncStatus: syncStatus,
+      );
+
   static Map<String, dynamic> newStopPatchItem({
     required String businessId,
     required String pocketBaseId,
     required String originalQueryId,
+    String? endTimeIso,
     Object? error,
     String syncStatus = syncStatusPending,
   }) =>
@@ -215,7 +286,10 @@ abstract final class RecordMutationOutbox {
         pocketBaseId: pocketBaseId,
         originalQueryId: originalQueryId,
         kind: kindStopPatch,
-        payload: const <String, dynamic>{'status': 'stopped'},
+        payload: <String, dynamic>{
+          'status': 'stopped',
+          if (endTimeIso != null) 'end_time': endTimeIso,
+        },
         error: error,
         syncStatus: syncStatus,
       );
@@ -260,9 +334,15 @@ abstract final class RecordMutationOutbox {
   static Future<void> enqueue(
     SharedPreferences prefs,
     Map<String, dynamic> item,
-  ) async {
-    final q = await load(prefs);
-    q.add(item);
-    await save(prefs, coalesceQueue(q));
-  }
+  ) => enqueueAll(prefs, [item]);
+
+  /// Atomically stage dependent operations (e.g. stop old child + create new).
+  static Future<void> enqueueAll(
+    SharedPreferences prefs,
+    List<Map<String, dynamic>> items,
+  ) => _serializeWrite(() async {
+    final q = _decode(prefs.getString(_prefsKey));
+    q.addAll(items);
+    await _persist(prefs, coalesceQueue(q));
+  });
 }

@@ -242,21 +242,27 @@ extension DbCoreExtension on DatabaseService {
   // ---------------------------------------------------------------------------
 
   Future<void> _hydrateRecordsCacheFromPrefsIfEmpty() async {
-    if (_cachedFlatRecords.isNotEmpty) return;
     try {
       final prefs = _prefs ?? await SharedPreferences.getInstance();
-      final raw = prefs.getString(
-        _scopedDataCacheKey(DatabaseService._cacheRecordsFlatKey),
-      );
-      if (raw == null || raw.trim().isEmpty) return;
-      final decoded = jsonDecode(raw);
-      if (decoded is! List) return;
-      _cachedFlatRecords = [
-        for (final e in decoded)
-          if (e is Map) Map<String, dynamic>.from(e),
-      ];
+      if (_cachedFlatRecords.isEmpty) {
+        final raw = prefs.getString(
+          _scopedDataCacheKey(DatabaseService._cacheRecordsFlatKey),
+        );
+        if (raw != null && raw.trim().isNotEmpty) {
+          final decoded = jsonDecode(raw);
+          if (decoded is List) {
+            _cachedFlatRecords = [
+              for (final e in decoded)
+                if (e is Map) Map<String, dynamic>.from(e),
+            ];
+          }
+        }
+      }
+      await _mergePendingRecordCreatesIntoRows(_cachedFlatRecords, prefs);
       _syncCanonicalRunningBusinessIdCache('prefsHydrate');
-    } catch (_) {}
+    } catch (e) {
+      DatabaseService._log('record cache hydration failed: $e');
+    }
   }
 
   // ---------------------------------------------------------------------------

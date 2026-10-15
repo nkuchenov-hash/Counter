@@ -19,6 +19,7 @@ mixin ShellTaskActions on ShellCoreLogic {
       if (!mounted) return;
       if (serverId == null || serverId.trim().isEmpty) {
         showSyncFailedSnackBar(
+          message: t(currentLocale.value, 'record_create_not_saved'),
           onRetry: () => unawaited(
             retryWriteNewTask(
               title,
@@ -47,6 +48,7 @@ mixin ShellTaskActions on ShellCoreLogic {
       debugPrint('UI ERROR: $e');
       if (mounted) {
         showSyncFailedSnackBar(
+          message: t(currentLocale.value, 'record_create_not_saved'),
           onRetry: () => unawaited(
             retryWriteNewTask(
               title,
@@ -78,6 +80,7 @@ mixin ShellTaskActions on ShellCoreLogic {
       if (!mounted) return;
       if (serverId == null || serverId.trim().isEmpty) {
         showSyncFailedSnackBar(
+          message: t(currentLocale.value, 'record_create_not_saved'),
           onRetry: () => unawaited(
             retryVoiceWriteNewTask(
               title,
@@ -106,6 +109,7 @@ mixin ShellTaskActions on ShellCoreLogic {
       debugPrint('UI ERROR: $e');
       if (mounted) {
         showSyncFailedSnackBar(
+          message: t(currentLocale.value, 'record_create_not_saved'),
           onRetry: () => unawaited(
             retryVoiceWriteNewTask(
               title,
@@ -139,7 +143,8 @@ mixin ShellTaskActions on ShellCoreLogic {
         ? DatabaseService.instance.getCategoryPath(cid)
         : 'Life';
 
-    titleController.clear();
+    // Keep the editable draft until the Brain confirms durable local staging.
+    // Slow network activity must never clear input before it is accepted.
     titleFocus.requestFocus();
 
     try {
@@ -153,6 +158,7 @@ mixin ShellTaskActions on ShellCoreLogic {
       if (!mounted) return;
       if (serverId == null || serverId.trim().isEmpty) {
         showSyncFailedSnackBar(
+          message: t(currentLocale.value, 'record_create_not_saved'),
           onRetry: () => unawaited(
             retryWriteNewTask(
               title,
@@ -163,6 +169,10 @@ mixin ShellTaskActions on ShellCoreLogic {
           ),
         );
         return;
+      }
+      // Do not erase new text entered while this save was in progress.
+      if (titleController.text.trim() == title) {
+        titleController.clear();
       }
       setState(() {
         tasks.add(
@@ -190,6 +200,7 @@ mixin ShellTaskActions on ShellCoreLogic {
       debugPrint('UI ERROR: $e');
       if (mounted) {
         showSyncFailedSnackBar(
+          message: t(currentLocale.value, 'record_create_not_saved'),
           onRetry: () => unawaited(
             retryWriteNewTask(
               title,
@@ -401,6 +412,7 @@ mixin ShellTaskActions on ShellCoreLogic {
       if (!mounted) return;
       if (id == null || id.trim().isEmpty) {
         showSyncFailedSnackBar(
+          message: t(currentLocale.value, 'record_create_not_saved'),
           onRetry: () => unawaited(
             startRecordFromPlanning(
               title,
@@ -425,6 +437,7 @@ mixin ShellTaskActions on ShellCoreLogic {
       debugPrint('UI ERROR: $e');
       if (mounted) {
         showSyncFailedSnackBar(
+          message: t(currentLocale.value, 'record_create_not_saved'),
           onRetry: () => unawaited(
             startRecordFromPlanning(
               title,

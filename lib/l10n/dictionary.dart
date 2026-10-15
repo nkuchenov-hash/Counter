@@ -10,6 +10,16 @@ import 'package:counter/l10n/langs/ko.dart' show kKoL10n;
 import 'package:counter/l10n/langs/ru.dart' show kRuL10n;
 import 'package:counter/l10n/langs/zh.dart' show kZhL10n;
 
+const Map<String, String> _recordWriteEn = {
+  'record_create_not_saved':
+      'Record not saved. Check your account, category, or device storage, then retry.',
+};
+
+const Map<String, String> _recordWriteRu = {
+  'record_create_not_saved':
+      'Запись не сохранена. Проверьте вход, категорию или память устройства и повторите.',
+};
+
 const Map<String, String> _planningAutoPlacementEn = {
   'plan_auto_placement_title': 'New plans without a time',
   'plan_auto_placement_subtitle':
@@ -244,6 +254,7 @@ final ValueNotifier<String> currentLocale = ValueNotifier<String>('en');
 
 final Map<String, String> _englishCatalog = Map<String, String>.unmodifiable({
   ...kEnL10n,
+  ..._recordWriteEn,
   ..._planningAutoPlacementEn,
   ..._healthAndGapEn,
   ..._calendarIntegrationsEn,
@@ -251,6 +262,7 @@ final Map<String, String> _englishCatalog = Map<String, String>.unmodifiable({
 
 final Map<String, String> _russianCatalog = Map<String, String>.unmodifiable({
   ...kRuL10n,
+  ..._recordWriteRu,
   ..._planningAutoPlacementRu,
   ..._healthAndGapRu,
   ..._calendarIntegrationsRu,

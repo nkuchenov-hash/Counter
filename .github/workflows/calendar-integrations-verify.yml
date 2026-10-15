@@ -49,8 +49,8 @@ jobs:
       - name: Analyze
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
 
-      - name: Run three focused tests
-        run: flutter test test/calendar_integrations_contract_test.dart
+      - name: Run calendar, category and planning regression tests
+        run: flutter test test/calendar_integrations_contract_test.dart test/category_order_sync_test.dart test/plan_rule_chain_append_test.dart
 
       - name: Build web release
         run: flutter build web --release --base-href="/Counter/" --no-tree-shake-icons --no-wasm-dry-run

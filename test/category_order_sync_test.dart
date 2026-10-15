@@ -45,61 +45,50 @@ void main() {
       expect(kids.map((r) => r.order).toList(), [0, 1]);
     });
 
-    testWidgets('center drop on another category emits reparent instead of reorder', (
+    testWidgets('category band selects and opens the editor on long press', (
       tester,
     ) async {
       final a = CategoryRule(id: 1, name: 'A');
       final b = CategoryRule(id: 2, name: 'B');
-      int? movedCategoryId;
-      int? movedParentId;
-      var reorderCalls = 0;
-
-      db.debugActivateRecordBrainTestHarness(
-        userId: 'categorydrag01',
-        categories: [a, b],
-      );
+      int? selectedId;
+      CategoryRule? edited;
 
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
             body: SizedBox(
               width: 420,
-              child: CategoryRowWidget(
-                items: [a, b],
-                depth: 0,
-                immediateParentId: null,
-                selectedId: null,
-                onSelect: (_) {},
-                onFullSettingsTap: (_) {},
-                onAppearanceTap: (_) {},
-                onLongPressOpenEditor: (_) {},
-                onReorder: (_, _) => reorderCalls += 1,
-                canMoveToParent: (data, parentId) =>
-                    data.categoryId != parentId,
-                onMoveToParent: (data, parentId) {
-                  movedCategoryId = data.categoryId;
-                  movedParentId = parentId;
-                },
-                editMode: true,
+              child: StatefulBuilder(
+                builder: (context, setState) => CategoryRowWidget(
+                  items: [a, b],
+                  depth: 0,
+                  immediateParentId: null,
+                  selectedId: selectedId,
+                  onSelect: (id) => setState(() => selectedId = id),
+                  onLongPressOpenEditor: (rule) => edited = rule,
+                ),
               ),
             ),
           ),
         ),
       );
 
-      final gesture = await tester.startGesture(tester.getCenter(find.text('A')));
-      await tester.pump(const Duration(milliseconds: 600));
-      await gesture.moveTo(tester.getCenter(find.text('B')));
-      await tester.pump(const Duration(milliseconds: 100));
-      await gesture.up();
+      await tester.tap(find.text('A'));
       await tester.pump();
+      expect(selectedId, 1);
 
-      expect(movedCategoryId, 1);
-      expect(movedParentId, 2);
-      expect(reorderCalls, 0);
+      await tester.tap(find.text('A'));
+      await tester.pump();
+      expect(selectedId, isNull);
+
+      await tester.longPress(find.text('B'));
+      await tester.pump();
+      expect(edited?.id, 2);
     });
 
-    testWidgets('dragging a parent into its descendant is rejected', (tester) async {
+    testWidgets('drilling into child categories preserves the hierarchy', (
+      tester,
+    ) async {
       final parent = CategoryRule(
         id: 10,
         name: 'Parent',
@@ -123,18 +112,8 @@ void main() {
       await tester.pump();
       expect(find.text('Child'), findsOneWidget);
 
-      await tester.tap(find.byType(Switch));
+      await tester.tap(find.text('Child'));
       await tester.pump();
-
-      final gesture = await tester.startGesture(
-        tester.getCenter(find.text('Parent')),
-      );
-      await tester.pump(const Duration(milliseconds: 600));
-      await gesture.moveTo(tester.getCenter(find.text('Child')));
-      await tester.pump(const Duration(milliseconds: 100));
-      await gesture.up();
-      await tester.pump();
-
       expect(db.getParentId(10), isNull);
       expect(db.getParentId(11), 10);
       expect(db.getChildrenOf(null).map((r) => r.id), contains(10));

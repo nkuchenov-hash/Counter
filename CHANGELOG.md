@@ -1,3 +1,12 @@
+## 2026-10-15 — Record create write-ahead and rapid-input reliability [fix]
+
+- Removed global previous-write gating from record creation so deliberately consecutive starts are not silently rejected during slow PocketBase requests.
+- Primary/child/completed record creates now stage durable UUID-keyed outbox operations before any network POST; child stop+create handoff is staged as one FIFO batch.
+- Serialized record outbox mutations and switched flush to per-operation acknowledgement; stale update acknowledgements no longer erase later edits or new creates.
+- Added server UUID lookup before create retries to avoid duplicate records after a lost response, and rehydrated queued local create shadows on full refresh/restart.
+- Preserved the quick-entry text until the local write is durably staged; genuinely failed record writes now display a specific localized error instead of a generic try-again toast.
+- Added focused record write durability regression tests. Live PocketBase and cross-platform verification remain required before release.
+
 ## 2026-09-30 — Planning Time View date-swipe frame pacing [fix]
 - Adjacent Time View dates now render frozen snapshot content ahead of the horizontal swipe instead of staying blank until page activation.
 - Live Planning resources and shell date commits now switch only after the horizontal pager settles, removing recurrence/timezone/layout activation work from the swipe threshold without restoring the old multi-day mounted strip.
