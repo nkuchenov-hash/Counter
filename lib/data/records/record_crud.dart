@@ -401,45 +401,7 @@ extension RecordCrudExtension on DatabaseService {
             rethrow;
           }
         }
-        // Child handoff: persist the stop(s) and the new create atomically
-        // before any PocketBase I/O. This also works without connectivity.
         runningRecordBizId = DatabaseService._newClientRecordUuid();
-        final beforeRows = List<Map<String, dynamic>>.from(_cachedFlatRecords);
-        final nextRows = <Map<String, dynamic>>[];
-        final stopItems = <Map<String, dynamic>>[];
-        for (final row in beforeRows) {
-          var sameParent = false;
-          if (pr != null && pr.isNotEmpty) {
-            sameParent = _parentFieldEqualsRecordId(row, pr);
-          } else if (parentId != null) {
-            sameParent =
-                CategoryServiceExtension._rowInt(row['parent_id']) == parentId;
-          }
-          if (!sameParent ||
-              !CategoryServiceExtension._isNocoRowSacredStopTarget(row)) {
-            nextRows.add(row);
-            continue;
-          }
-          final id = CategoryServiceExtension.recordsTablePk(row);
-          if (id.isEmpty) {
-            nextRows.add(row);
-            continue;
-          }
-          final biz = (row['record_id'] ?? '').toString().trim();
-          stopItems.add(
-            RecordMutationOutbox.newStopPatchItem(
-              businessId: biz.isNotEmpty ? biz : id,
-              pocketBaseId: id,
-              originalQueryId: biz.isNotEmpty ? biz : id,
-              endTimeIso: startIso,
-            ),
-          );
-          nextRows.add(<String, dynamic>{
-            ...row,
-            'end_time': startIso,
-            'status': 'stopped',
-          });
-        }
         final runningFields = _nocoFieldsForPatch(<String, dynamic>{
           'user_id': _pidForPbFilter,
           'record_id': runningRecordBizId,
@@ -458,32 +420,15 @@ extension RecordCrudExtension on DatabaseService {
         } else if (parentId != null) {
           runningFields['parent_id'] = parentId.toString();
         }
-        _runBatchedRecordCacheTimelineNotifySync(() {
-          _cachedFlatRecords = nextRows;
-          _appendPendingRecordCreateShadow(runningFields);
-        });
-        try {
-          final prefs = _prefs ?? await SharedPreferences.getInstance();
-          await RecordMutationOutbox.enqueueAll(prefs, [
-            ...stopItems,
-            RecordMutationOutbox.newRecordCreateItem(
-              businessId: runningRecordBizId,
-              fields: runningFields,
-            ),
-          ]);
-          unawaited(offlineSync.refreshPendingCount());
-          unawaited(flushPendingRecordMutations());
-          return runningRecordBizId;
-        } catch (e) {
-          DatabaseService._log('writeRecord child persistence failed: $e');
-          if (_cachedFlatRecords.isNotEmpty &&
-              _cachedFlatRecords.last['record_id'] == runningRecordBizId) {
-            _cachedFlatRecords = beforeRows;
-            _notifyTimelineAfterRecordCacheMutation();
-          }
-          AppSnack.failed();
+        if (!await _stageChildRecordHandoff(
+          fields: runningFields,
+          startIso: startIso,
+          parentRecordId: pr,
+          parentId: parentId,
+        )) {
           return null;
         }
+        return runningRecordBizId;
       } else {
         var cidForCompleted = cid;
         if (sourcePlanForPayload != null) {
