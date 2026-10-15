@@ -78,7 +78,9 @@ void main() {
         );
         expect(tab.tabs.length, 3);
         await tester.tap(find.byWidget(tab.tabs[1]));
-        await tester.pumpAndSettle();
+        // Tag catalog may still be loading; its progress indicator is an
+        // intentional perpetual animation until the backend resolves.
+        await tester.pump(const Duration(milliseconds: 400));
         expect(tester.takeException(), isNull);
       },
     );
