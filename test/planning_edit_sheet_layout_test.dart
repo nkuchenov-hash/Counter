@@ -1,6 +1,7 @@
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/shared/planning_task_edit_sheet.dart';
+import 'package:counter/shared/categories/picker/category_picker_contracts.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -21,6 +22,16 @@ void main() {
       categories: [CategoryRule(id: 1, name: 'Work')],
     );
     addTearDown(db.debugResetRecordBrainTestHarness);
+    // Production wires these read adapters in main.dart. Widget tests using
+    // the sheet directly must supply the same category picker contract.
+    CategoryTreeSource.categoryExists =
+        (categoryId) => db.getCategoryRuleById(categoryId) != null;
+    CategoryTreeSource.getCategoryPath = (categoryId) =>
+        db.getCategoryRuleById(categoryId)?.name ?? '';
+    addTearDown(() {
+      CategoryTreeSource.categoryExists = null;
+      CategoryTreeSource.getCategoryPath = null;
+    });
 
     final scrollController = ScrollController();
     addTearDown(scrollController.dispose);
