@@ -446,7 +446,7 @@ extension PlanTimeCascadeExtension on DatabaseService {
     final endMinutes = min(
       min(timelineDayEndHour * 60, 24 * 60),
       hasCategoryWorkStart
-          ? startMinutes + kPlanCategoryOverloadMinutes
+          ? categoryStartMinutes! + kPlanCategoryOverloadMinutes
           : 24 * 60,
     );
     // An impossible work window must not silently create an invisible card.
