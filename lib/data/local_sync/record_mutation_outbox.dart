@@ -194,6 +194,8 @@ abstract final class RecordMutationOutbox {
               ? Map<String, dynamic>.from(item['payload'] as Map)
               : <String, dynamic>{};
           existing['payload'] = <String, dynamic>{...prevPayload, ...nextPayload};
+          // A newer update must invalidate a stale in-flight acknowledgement.
+          existing['operationId'] = item['operationId'];
           final pb = (item['pocketBaseId'] ?? '').toString().trim();
           if (pb.isNotEmpty) existing['pocketBaseId'] = pb;
           out[idx] = existing;
