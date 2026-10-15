@@ -636,7 +636,7 @@ extension PlanServiceExtension on DatabaseService {
         ? range.startWallOn(ymd)
         : parsed?.wallDateTimeOn(ymd);
     final explicitEndWall = range?.endWallOn(ymd);
-    final schedule = resolveAutoPlanSchedule(
+    final schedule = resolveAutoPlanScheduleWithRollover(
       wallDay: ymd,
       categoryId: categoryId,
       tags: const [],
@@ -646,6 +646,10 @@ extension PlanServiceExtension on DatabaseService {
       hasExplicitTimeRange: range != null,
       timelineDayStartHour: 0,
     );
+    if (schedule == null) return false;
+    final scheduledWall = profileDisplayWallsFromAutoSchedule(schedule).startWall;
+    final scheduledKey =
+        '${scheduledWall.year}-${_two(scheduledWall.month)}-${_two(scheduledWall.day)}';
 
     if (getCategoryRuleById(categoryId) == null) {
       DatabaseService._log(
@@ -654,7 +658,7 @@ extension PlanServiceExtension on DatabaseService {
       return false;
     }
 
-    final nextOrder = await nextPlanningOrderForDate(ymd);
+    final nextOrder = await nextPlanningOrderForDate(scheduledWall);
     final clientPlanId = DatabaseService.newClientUuid();
 
     return addPlanningTask(
@@ -664,7 +668,9 @@ extension PlanServiceExtension on DatabaseService {
           title: title,
           categoryId: categoryId,
           isDone: false,
-          dateKey: taskDateKey,
+          dateKey: scheduledKey,
+          initialDateKey: taskDateKey,
+          isPostponed: scheduledKey.compareTo(taskDateKey) > 0,
           order: nextOrder,
           checklist: const [],
           parentPlanId: null,
@@ -699,20 +705,29 @@ extension PlanServiceExtension on DatabaseService {
           if (y != null && m != null && day != null) {
             final wallDay = DateTime(y, m, day);
             final existingDay = planningDayTasksSnapshot(wallDay);
-            final schedule = resolveAutoPlanSchedule(
+            final schedule = resolveAutoPlanScheduleWithRollover(
               wallDay: wallDay,
               categoryId: categoryId,
               tags: const [],
               existingDayPlans: existingDay,
               timelineDayStartHour: 0,
             );
+            if (schedule == null) {
+              AppSnack.warning(t(currentLocale.value, 'plan_auto_schedule_no_work_slot'));
+              return;
+            }
+            final scheduledWall = profileDisplayWallsFromAutoSchedule(schedule).startWall;
+            final scheduledKey =
+                '${scheduledWall.year}-${_two(scheduledWall.month)}-${_two(scheduledWall.day)}';
             await addPlanningTask(
               planningTaskWithAutoSchedule(
                 PlanningTask(
                   id: 0,
                   title: title,
                   categoryId: categoryId,
-                  dateKey: dateKey,
+                  dateKey: scheduledKey,
+                  initialDateKey: dateKey,
+                  isPostponed: scheduledKey.compareTo(dateKey) > 0,
                   order: 0,
                 ),
                 schedule,
