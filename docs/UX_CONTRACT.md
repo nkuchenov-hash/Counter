@@ -153,6 +153,10 @@ Performance, responsiveness, and stability are **P0 correctness**, not polish. S
 - **Card density:** Short blocks use **micro** / **compact** layouts (essential controls only). **Medium** / **large** blocks show progress separator + category breadcrumb + planned time footer (`PlanTimeTaskCard`).
 - **Interactions:** Checkbox, play, menu, body tap, drag, and resize keep independent hit zones; Time View body drag/tap overlays must not cover trailing Play/Menu controls; optimistic schedule updates follow the Iron Laws.
 
+## Planning edit-sheet geometry
+
+- Dated-plan edit sheets keep the embedded Notes canvas compact on desktop rather than allowing it to consume most of the modal height. Schedule/time, tag selection, recurrence tabs and the fixed Save footer must remain visible and non-overlapping at the canonical sheet size. The editor preserves its own scroll and floating Notes toolbar; do not add a second vertical scroll owner.
+
 ## Edit sheet Save (local-first)
 
 - **Save is a local commit button**, not a network gate. Valid Save applies optimistic Brain/cache/UI **immediately**, shows **Changes saved** (or a specific validation error), and closes the sheet without waiting for PocketBase.

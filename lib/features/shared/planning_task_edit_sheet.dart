@@ -516,7 +516,6 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
             clearReminderOffset: _reminderMinutes == null,
           );
   }
-
   @override
   Widget build(BuildContext context) {
     final dropdownValue = resolveEditFieldCategoryId(
@@ -529,7 +528,6 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
     final compactChrome = notesEditing;
     final mobileDated =
         !_startedAsUndatedBacklog && MediaQuery.sizeOf(context).width <= 600;
-
     return Material(
       color: Theme.of(context).colorScheme.surface,
       borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
@@ -614,7 +612,8 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
             child: Column(
               children: [
                 Expanded(
-                  flex: notesEditing ? 1 : (mobileDated ? 1 : 5),
+                  key: const ValueKey('planning-edit-notes-pane'),
+                  flex: 1,
                   child: Focus(
                     onFocusChange: (focused) {
                       if (!mounted || _notesEditorFocused == focused) return;
@@ -903,7 +902,8 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
                   ),
                 ] else if (!keyboardOpen) ...[
                   Expanded(
-                    flex: mobileDated ? 2 : 1,
+                    key: const ValueKey('planning-edit-schedule-pane'),
+                    flex: mobileDated ? 2 : 3,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
