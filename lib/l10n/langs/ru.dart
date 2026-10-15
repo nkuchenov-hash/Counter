@@ -308,10 +308,10 @@ const Map<String, String> kRuL10n = {
   'tag_default_duration_custom': 'Свои минуты',
   'tag_default_duration_apply_custom': 'Применить',
   'tag_default_duration_clear': 'Сбросить',
-  'tag_duration_field_not_configured':
-      'Поле длительности не настроено на сервере (tags.default_plan_duration_minutes).',
-  'plan_schedule_overload_warning':
-      'Возможная перегрузка: перенесите часть планов на завтра или сократите нагрузку на сегодня.',
+  'tag_duration_field_not_configured': 'Поле длительности не настроено на сервере (tags.default_plan_duration_minutes).',
+  'plan_auto_schedule_no_work_slot': 'На ближайшие 14 дней нет подходящего рабочего интервала. План не создан.',
+  'plan_auto_schedule_moved_to': 'Рабочий день заполнен. План перенесён на %s.',
+  'plan_schedule_overload_warning': 'Возможная перегрузка: перенесите часть планов на завтра или сократите нагрузку на сегодня.',
   'tag_manager_title': 'Теги',
   'tag_manager_reorder_hint':
       'Тяните за значок, чтобы задать порядок. Группы в планировании следуют ему.',

@@ -6,7 +6,7 @@ Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 882 — each appears **exactly once** below.
+**Tracked files:** 883 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -26,7 +26,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Role | Count |
 | :--- | ---: |
-| `production UI` | 174 |
+| `production UI` | 175 |
 | `test` | 114 |
 | `Brain/data` | 92 |
 | `platform build` | 83 |
@@ -57,7 +57,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 480 |
+| `PROVEN_REQUIRED` | 481 |
 | `REQUIRED_FOR_TEST_OR_TOOLING` | 216 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
 | `GOVERNING_DOCUMENTATION` | 39 |
@@ -68,7 +68,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 805 |
+| `HIGH` | 806 |
 | `MEDIUM` | 75 |
 
 ---
@@ -19090,6 +19090,46 @@ RU:
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Вкладка Plans (shell index 1)
 
+
+### `lib/features/planning/planning_quick_add_schedule.dart`
+
+EN:
+
+- **Human purpose:** Preserve the destination workday and date of quick-added plans.
+- **What this is:** Planning quick-add and Smart Plan scheduling extension, a Dart part of the day-page UI.
+- **Why needed:** Overflow should roll to an available workday without hiding the task from Time View.
+- **Contents:** Quick-add create, Smart Plan create, overload warning and destination notices.
+- **Key code names:** `PlanningQuickAddScheduling`, `_addTaskImpl`, `_injectSmartPlanTasksImpl`
+- **Repository role:** production UI
+- **Evidence of use:** Dart part directive in `lib/features/planning/planning_page.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Planning quick-add and Smart Plan will not compile.
+- **Confidence:** HIGH
+- **Owner / layer:** Planning UI
+- **Responsibilities:** Call Brain auto-schedule, preserve initial date, show rollover feedback.
+- **When to open:** New plan is beyond working hours or missing from Time View.
+- **Can it be deleted?** No, while the page uses this scheduling extension.
+- **Connected to:** `lib/data/plans/plan_time_cascade_helpers.dart`, `planning_page.dart`.
+
+RU:
+
+- **Зачем файл человеку:** Быстрое добавление не должно сохранять план за пределами рабочего дня.
+- **Что это:** Логика Quick Add и Smart Plan, отдельный Dart part экрана.
+- **Зачем:** Сохраняет новую дату, исходную дату обязательства и выводит время переноса.
+- **Содержимое:** Создание планов, проверка нагрузки, уведомления.
+- **Ключевые имена:** `_addTaskImpl`, `_injectSmartPlanTasksImpl`
+- **Роль в репозитории:** Production UI
+- **Подтверждение использования:** Part в `planning_page.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Последствие удаления:** Ошибка компиляции планирования.
+- **Достоверность:** HIGH
+- **Слой:** Planning UI
+- **Ответственность:** Перенос автопланов между днями и обратная связь.
+- **Когда открывать:** Неверный перенос или исчезновение плана из Time View.
+- **Можно удалить?** Нет.
+- **Связано с:** `planning_page.dart`, `plan_time_cascade_helpers.dart`.
+
+---
 
 ### `lib/features/planning/planning_quick_add_tags_controller.dart`
 

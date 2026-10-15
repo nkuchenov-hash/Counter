@@ -18,6 +18,21 @@ PlanningTask _plan(String id, DateTime start, DateTime end) => PlanningTask(
   endDateTime: end,
 );
 
+PlanningTask _workPlan(String id, DateTime start, DateTime end) =>
+    PlanningTask(
+      id: 0,
+      planRowId: id,
+      title: id,
+      categoryId: 1,
+      isDone: false,
+      dateKey:
+          '${start.year}-${start.month.toString().padLeft(2, '0')}-'
+          '${start.day.toString().padLeft(2, '0')}',
+      order: 0,
+      startTime: start,
+      endDateTime: end,
+    );
+
 void main() {
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
@@ -439,4 +454,95 @@ void main() {
       expect(hourGrid, contains('buildHourGridView(tasks, actualByPlanId)'));
     },
   );
+  group('workday rollover', () {
+    final day = DateTime(2026, 10, 15);
+
+    test('a full 09:00–17:00 day rolls to Friday 09:00', () {
+      final schedule = DatabaseService.instance.resolveAutoPlanScheduleWithRollover(
+        wallDay: day,
+        categoryId: 1,
+        tags: const [],
+        existingDayPlans: [
+          _workPlan('today-full', DateTime(2026, 10, 15, 9),
+              DateTime(2026, 10, 15, 17)),
+        ],
+        timelineDayStartHour: 9,
+        timelineDayEndHour: 17,
+      );
+      expect(schedule, isNotNull);
+      expect(schedule!.startWall, DateTime(2026, 10, 16, 9));
+      expect(schedule.endWall, DateTime(2026, 10, 16, 9, 30));
+    });
+
+    test('does not squeeze a 30-minute plan into the last 15 minutes', () {
+      final schedule = DatabaseService.instance.resolveAutoPlanScheduleWithRollover(
+        wallDay: day,
+        categoryId: 1,
+        tags: const [],
+        existingDayPlans: [
+          _workPlan('today-until-1645', DateTime(2026, 10, 15, 9),
+              DateTime(2026, 10, 15, 16, 45)),
+        ],
+        timelineDayStartHour: 9,
+        timelineDayEndHour: 17,
+      );
+      expect(schedule, isNotNull);
+      expect(schedule!.startWall, DateTime(2026, 10, 16, 9));
+      expect(schedule.endWall, DateTime(2026, 10, 16, 9, 30));
+    });
+
+    test('the next day preserves already scheduled future work', () {
+      final schedule = DatabaseService.instance.resolveAutoPlanScheduleWithRollover(
+        wallDay: day,
+        categoryId: 1,
+        tags: const [],
+        existingDayPlans: [
+          _workPlan('today-full', DateTime(2026, 10, 15, 9),
+              DateTime(2026, 10, 15, 17)),
+          _workPlan('tomorrow-busy', DateTime(2026, 10, 16, 9),
+              DateTime(2026, 10, 16, 10)),
+        ],
+        timelineDayStartHour: 9,
+        timelineDayEndHour: 17,
+      );
+      expect(schedule, isNotNull);
+      expect(schedule!.startWall, DateTime(2026, 10, 16, 10));
+      expect(schedule.endWall, DateTime(2026, 10, 16, 10, 30));
+    });
+
+    test('the explicit time is not silently rolled to tomorrow', () {
+      final schedule = DatabaseService.instance.resolveAutoPlanScheduleWithRollover(
+        wallDay: day,
+        categoryId: 1,
+        tags: const [],
+        existingDayPlans: const [],
+        explicitStartWall: DateTime(2026, 10, 15, 17, 30),
+        explicitDurationMinutes: 30,
+        timelineDayStartHour: 9,
+        timelineDayEndHour: 17,
+      );
+      expect(schedule, isNotNull);
+      expect(schedule!.startWall, DateTime(2026, 10, 15, 17, 30));
+    });
+
+    test('after-last mode starts an empty rolled day at workday start', () async {
+      await DatabaseService.instance.setPlanAutoPlacementMode(
+        PlanAutoPlacementMode.afterLastPlan,
+      );
+      final schedule = DatabaseService.instance.resolveAutoPlanScheduleWithRollover(
+        wallDay: day,
+        categoryId: 1,
+        tags: const [],
+        existingDayPlans: [
+          _workPlan('today-full', DateTime(2026, 10, 15, 9),
+              DateTime(2026, 10, 15, 17)),
+        ],
+        timelineDayStartHour: 9,
+        timelineDayEndHour: 17,
+      );
+      expect(schedule, isNotNull);
+      expect(schedule!.startWall, DateTime(2026, 10, 16, 9));
+    });
+  });
+
 }
