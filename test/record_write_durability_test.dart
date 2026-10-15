@@ -133,6 +133,31 @@ void main() {
     expect((queue.first['payload'] as Map)['title'], 'Entry offline-record');
   });
 
+  test('quick entry retains draft until local persistence succeeds', () {
+    final source = File('lib/app/shell/shared/shell_task_actions.dart')
+        .readAsStringSync();
+    final start = source.indexOf('Future<void> startTaskFromInput() async');
+    final end = source.indexOf('Future<void> planTaskFromInput()', start);
+    final method = source.substring(start, end);
+    final write = method.indexOf('await DatabaseService.instance.writeRecord(');
+    final clear = method.indexOf('titleController.clear()');
+    expect(write, greaterThanOrEqualTo(0));
+    expect(clear, greaterThan(write));
+    expect(method, contains('if (titleController.text.trim() == title)'));
+    expect(method, contains("'record_create_not_saved'"));
+  });
+
+  test('record create does not show generic error toast', () {
+    final source = File('lib/data/records/record_crud.dart').readAsStringSync();
+    final start = source.indexOf('Future<String?> writeRecord(');
+    final end = source.indexOf('/// In-memory cache patch', start);
+    expect(start, greaterThanOrEqualTo(0));
+    expect(end, greaterThan(start));
+    final method = source.substring(start, end);
+    expect(method, isNot(contains('AppSnack.failed()')));
+    expect(method, contains('_showRecordNotSavedError()'));
+  });
+
   test('record write path saves before dispatch and never drops rapid input', () {
     final crud = File('lib/data/records/record_crud.dart').readAsStringSync();
     final sync = File('lib/data/records/record_outbox_helpers.dart')
