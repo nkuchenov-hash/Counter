@@ -270,7 +270,7 @@ extension RecordCrudExtension on DatabaseService {
         DatabaseService._log(
           'writeRecord: cold-start could not resolve category_id',
         );
-        AppSnack.failed();
+        _showRecordNotSavedError();
         return null;
       }
       final now = DatabaseService.getPlanetaryNow();
@@ -376,7 +376,7 @@ extension RecordCrudExtension on DatabaseService {
                   ];
                 }
               });
-              AppSnack.failed();
+              _showRecordNotSavedError();
               if (!netDone.isCompleted) netDone.complete();
               return null;
             }
@@ -444,7 +444,7 @@ extension RecordCrudExtension on DatabaseService {
           DatabaseService._log(
             'writeRecord completed branch: cold-start could not resolve category_id',
           );
-          AppSnack.failed();
+          _showRecordNotSavedError();
           return null;
         }
         final completedFields = _nocoFieldsForPatch(<String, dynamic>{
@@ -474,7 +474,7 @@ extension RecordCrudExtension on DatabaseService {
               if (row['record_id'] != businessId) row,
           ];
           _notifyTimelineAfterRecordCacheMutation();
-          AppSnack.failed();
+          _showRecordNotSavedError();
           return null;
         }
         unawaited(flushPendingRecordMutations());
