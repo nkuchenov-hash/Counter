@@ -104,7 +104,7 @@ mixin ShellCoreLogic on ShellDashboardBase {
     } catch (_) {}
   }
 
-  void showSyncFailedSnackBar({VoidCallback? onRetry}) {
+  void showSyncFailedSnackBar({VoidCallback? onRetry, String? message}) {
     if (!mounted) return;
     final now = DateTime.now();
     if (lastSyncFailedSnackAt != null &&
@@ -118,7 +118,7 @@ mixin ShellCoreLogic on ShellDashboardBase {
     messenger.clearSnackBars();
     messenger.showSnackBar(
       SnackBar(
-        content: Text(t(loc, 'sync_failed_retry')),
+        content: Text(message ?? t(loc, 'sync_failed_retry')),
         behavior: SnackBarBehavior.floating,
         dismissDirection: DismissDirection.horizontal,
         duration: const Duration(seconds: 4),
