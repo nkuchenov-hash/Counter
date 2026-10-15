@@ -1,7 +1,7 @@
 part of '../database_service.dart';
 
 extension RecordOutboxSyncExtension on DatabaseService {
-  Future<void> _enqueueHighlanderStartMutation(
+  Future<bool> _enqueueHighlanderStartMutation(
     Map<String, dynamic> runningFields, {
     Object? error,
     String syncStatus = RecordMutationOutbox.syncStatusPending,
@@ -11,7 +11,7 @@ extension RecordOutboxSyncExtension on DatabaseService {
       final normalized =
           jsonDecode(jsonEncode(runningFields)) as Map<String, dynamic>;
       final businessId = (normalized['record_id'] ?? '').toString().trim();
-      if (businessId.isEmpty) return;
+      if (businessId.isEmpty) return false;
       await RecordMutationOutbox.enqueue(
         prefs,
         RecordMutationOutbox.newHighlanderStartItem(
@@ -22,8 +22,33 @@ extension RecordOutboxSyncExtension on DatabaseService {
         ),
       );
       unawaited(offlineSync.refreshPendingCount());
+      return true;
     } catch (e) {
       DatabaseService._log('RECORD_OUTBOX_ENQUEUE highlander: $e');
+      return false;
+    }
+  }
+
+  Future<bool> _enqueueRecordCreateMutation(
+    Map<String, dynamic> fields,
+  ) async {
+    try {
+      final prefs = _prefs ?? await SharedPreferences.getInstance();
+      final normalized = jsonDecode(jsonEncode(fields)) as Map<String, dynamic>;
+      final businessId = (normalized['record_id'] ?? '').toString().trim();
+      if (businessId.isEmpty) return false;
+      await RecordMutationOutbox.enqueue(
+        prefs,
+        RecordMutationOutbox.newRecordCreateItem(
+          businessId: businessId,
+          fields: normalized,
+        ),
+      );
+      unawaited(offlineSync.refreshPendingCount());
+      return true;
+    } catch (e) {
+      DatabaseService._log('RECORD_OUTBOX_ENQUEUE create: $e');
+      return false;
     }
   }
 
@@ -158,35 +183,36 @@ extension RecordOutboxSyncExtension on DatabaseService {
   }
   Future<void> flushPendingRecordMutations() async {
     if (!_isInitialized || !_hasAuthenticatedUserId) return;
-    if (_recordMutationOutboxFlushInFlight) return;
-    if (offlineSync.authPaused) return;
+    if (_recordMutationOutboxFlushInFlight || offlineSync.authPaused) return;
     _recordMutationOutboxFlushInFlight = true;
     offlineSync.setSyncing(true);
     try {
       await ensurePocketBaseReady();
       if (_pbHttpBackoffActive) return;
       final prefs = _prefs ?? await SharedPreferences.getInstance();
-      final q = await RecordMutationOutbox.load(prefs);
-      if (q.isEmpty) return;
-      var pendingTail = const <Map<String, dynamic>>[];
-      var i = 0;
-      for (; i < q.length; i++) {
-        final item = Map<String, dynamic>.from(q[i]);
+      // Snapshot for iteration only. Never replace the whole queue afterwards:
+      // new user writes can arrive while a PocketBase request is in flight.
+      final pending = await RecordMutationOutbox.load(prefs);
+      for (final item in pending) {
+        final operationId = (item['operationId'] ?? '').toString().trim();
+        if (operationId.isEmpty) {
+          offlineSync.setLastError('record_outbox_missing_operation_id');
+          break;
+        }
         final ok = await _flushOneRecordOutboxEntry(item);
-        if (!ok) {
-          item['retryCount'] = ((item['retryCount'] as num?)?.toInt() ?? 0) + 1;
-          item['lastError'] = offlineSync.lastError ?? 'sync_failed';
-          pendingTail = [item, ...q.sublist(i + 1)];
+        if (ok) {
+          await RecordMutationOutbox.acknowledge(prefs, operationId);
+        } else {
+          await RecordMutationOutbox.markFailure(
+            prefs,
+            operationId,
+            error: offlineSync.lastError ?? 'sync_failed',
+          );
           break;
         }
       }
-      if (pendingTail.isEmpty && i >= q.length) {
-        await RecordMutationOutbox.replaceAll(prefs, []);
+      if ((await RecordMutationOutbox.load(prefs)).isEmpty) {
         offlineSync.clearErrors();
-      } else if (pendingTail.isNotEmpty) {
-        await RecordMutationOutbox.replaceAll(prefs, pendingTail);
-      } else {
-        await RecordMutationOutbox.replaceAll(prefs, q.sublist(i));
       }
     } finally {
       offlineSync.setSyncing(false);
@@ -197,6 +223,22 @@ extension RecordOutboxSyncExtension on DatabaseService {
 
   Future<bool> _flushOneRecordOutboxEntry(Map<String, dynamic> item) async {
     final kind = (item['kind'] ?? '').toString();
+    if (kind == RecordMutationOutbox.kindRecordCreate) {
+      final wrapped = item['payload'];
+      if (wrapped is! Map) {
+        offlineSync.setLastError('record_create_missing_payload');
+        return false;
+      }
+      final payload = Map<String, dynamic>.from(wrapped);
+      final failureCode = await _runRecordCreateServerPhase(payload);
+      if (failureCode == null) return true;
+      if (failureCode == 401 || failureCode == 403) {
+        offlineSync.setAuthPaused(true, message: 'HTTP $failureCode');
+        return false;
+      }
+      offlineSync.setLastError('record_create HTTP $failureCode');
+      return false;
+    }
     if (kind == RecordMutationOutbox.kindHighlanderStart) {
       final wrapped = item['payload'];
       if (wrapped is! Map) return true;
@@ -221,13 +263,11 @@ extension RecordOutboxSyncExtension on DatabaseService {
           'businessId=${businessId.isEmpty ? '-' : businessId} '
           'reason=category_relation_not_resolved',
         );
-        return true;
+        offlineSync.setLastError('record_create_category_invalid');
+        return false;
       }
       final failureCode = await _runHighlanderStartServerPhase(payload);
-      if (failureCode == null) {
-        clearOptimisticTimelineUi(notifyTimeline: false);
-        return true;
-      }
+      if (failureCode == null) return true;
       if (failureCode == 401 || failureCode == 403) {
         offlineSync.setAuthPaused(true, message: 'HTTP $failureCode');
         return false;
@@ -243,6 +283,7 @@ extension RecordOutboxSyncExtension on DatabaseService {
         );
         return false;
       }
+      offlineSync.setLastError('record_start HTTP $failureCode');
       DatabaseService.logSyncFlushFailure(
         collection: PbCollections.records,
         operation: RecordMutationOutbox.kindHighlanderStart,
@@ -250,7 +291,8 @@ extension RecordOutboxSyncExtension on DatabaseService {
         pocketBaseId: (item['pocketBaseId'] ?? '').toString(),
         httpStatus: failureCode,
       );
-      return true;
+      // Validation errors require repair; never silently erase user input.
+      return false;
     }
     if (kind == RecordMutationOutbox.kindStopPatch) {
       final originalInput =
@@ -419,6 +461,57 @@ extension RecordOutboxSyncExtension on DatabaseService {
   String _bizKey(Map<String, dynamic> item) =>
       (item['businessId'] ?? '').toString().trim();
 
+  /// A read-before-retry makes a create with a stable business UUID idempotent,
+  /// including when PocketBase committed a request but its response timed out.
+  Future<RecordModel?> _existingRecordForCreate(String businessId) async {
+    final userId = (_pb.authStore.record?.id ?? '').trim();
+    if (userId.isEmpty) throw AuthenticatedUserIdRequiredException();
+    final result = await _pb.collection(PbCollections.records).getList(
+      page: 1,
+      perPage: 1,
+      filter:
+          'user_id = "${_escapeForPbFilter(userId)}" && '
+          'record_id = "${_escapeForPbFilter(businessId)}"',
+    );
+    return result.items.isEmpty ? null : result.items.first;
+  }
+
+  /// Plain creates (completed records and child records) do not stop primary
+  /// records. A confirmed existing UUID is an acknowledgement, not a re-POST.
+  Future<int?> _runRecordCreateServerPhase(
+    Map<String, dynamic> payload,
+  ) async {
+    try {
+      await ensurePocketBaseReady();
+      if (_pbHttpBackoffActive) return 0;
+      final businessId = (payload['record_id'] ?? '').toString().trim();
+      if (businessId.isEmpty) return 400;
+      final existing = await _existingRecordForCreate(businessId);
+      if (existing != null) {
+        _upsertFlatRecordFromPbModel(existing);
+        return null;
+      }
+      final createdId = await _createRecordPb(payload);
+      if (createdId == null || createdId.trim().isEmpty) {
+        if (!_pb.authStore.isValid) return 401;
+        return _lastRecordCreateFailureHttpCode > 0
+            ? _lastRecordCreateFailureHttpCode
+            : 0;
+      }
+      await _finalizeRecordCreateHandshake(pocketCreatedRecordId: createdId);
+      try {
+        await _fetchRecordsIntoCache(forceNetwork: true);
+      } catch (_) {}
+      _notifyTimelineAfterRecordCacheMutation();
+      return null;
+    } on ClientException catch (e) {
+      return e.statusCode;
+    } catch (e) {
+      DatabaseService._log('record create replay failed: $e');
+      return 0;
+    }
+  }
+
   /// Highlander server phase (PATCH old + POST new). Returns **null** on success, HTTP/synthetic code on failure.
   Future<int?> _runHighlanderStartServerPhase(
     Map<String, dynamic> runningFields,
@@ -445,6 +538,13 @@ extension RecordOutboxSyncExtension on DatabaseService {
       }
       await ensurePocketBaseReady();
       if (_pbHttpBackoffActive) return 0;
+      final businessId = (runningFields['record_id'] ?? '').toString().trim();
+      if (businessId.isEmpty) return 400;
+      final existing = await _existingRecordForCreate(businessId);
+      if (existing != null) {
+        _upsertFlatRecordFromPbModel(existing);
+        return null;
+      }
 
       _recordCacheTimelineNotifyBatchDepth++;
       try {
