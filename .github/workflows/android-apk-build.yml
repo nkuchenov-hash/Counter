@@ -8,6 +8,7 @@ on:
       - 'lib/**'
       - 'test/live_sync_contract_test.dart'
       - 'test/record_write_durability_test.dart'
+      - 'test/planning_edit_sheet_layout_test.dart'
       - 'test/plan_recurrence_scope_test.dart'
       - 'pubspec.yaml'
       - 'pubspec.lock'
@@ -57,7 +58,7 @@ jobs:
         run: flutter analyze lib --no-fatal-infos --no-fatal-warnings
 
       - name: Run live-sync and recurrence regression tests
-        run: flutter test test/live_sync_contract_test.dart test/plan_recurrence_scope_test.dart test/record_write_durability_test.dart
+        run: flutter test test/live_sync_contract_test.dart test/plan_recurrence_scope_test.dart test/record_write_durability_test.dart test/planning_edit_sheet_layout_test.dart
 
       - name: Configure persistent Android release signing
         if: github.event_name != 'pull_request'
