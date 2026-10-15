@@ -140,6 +140,14 @@ Performance, responsiveness, and stability are **P0 correctness**, not polish. S
 - Year view shows all 12 months and lets a month/day tap drill into the existing calendar flow. Month and Week keep focused-day behavior. Events is an agenda-style upcoming list beginning at the selected day.
 - Calendar mode changes and swipes are local UI actions and must respond immediately; data refresh stays in the existing planning cache/stream path and must not block the gesture.
 
+## Automatic plan workday rollover
+
+- Automatically placed (no user-specified clock time) dated plans must fit their **full duration** into the selected working window, never be persisted past visible hours and silently disappear from Time View.
+- If the requested day is full, search subsequent days using Brain cache and optimistic overlays. A category's inherited default start is the working-day start; the existing 8-hour category limit defines its auto-placement day unless a narrower Time View bound applies.
+- Preserve existing task positions, task duration, category, tags and original `initial_date_key`. Persist the actual destination wall date with the new start/end, and set `is_postponed` when moved later.
+- Explicit user clock-time input is not automatically moved to a different day. If no fitting auto-placement slot exists in the 14-day search horizon, display a specific error rather than creating a hidden plan.
+- An automatic move shows the destination date/time. No PocketBase reads or heavy full-history scans on the tap hot path.
+
 ## Planning Time Mode
 
 - **Selected-time stability:** typing or editing a task title, notes, checklist, category, or tags must not change a start time selected on the Time View grid. Start/end changes require an explicit time control or drag/resize gesture.
