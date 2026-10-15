@@ -274,6 +274,7 @@ abstract final class RecordMutationOutbox {
     required String businessId,
     required String pocketBaseId,
     required String originalQueryId,
+    String? endTimeIso,
     Object? error,
     String syncStatus = syncStatusPending,
   }) =>
@@ -283,7 +284,10 @@ abstract final class RecordMutationOutbox {
         pocketBaseId: pocketBaseId,
         originalQueryId: originalQueryId,
         kind: kindStopPatch,
-        payload: const <String, dynamic>{'status': 'stopped'},
+        payload: <String, dynamic>{
+          'status': 'stopped',
+          if (endTimeIso != null) 'end_time': endTimeIso,
+        },
         error: error,
         syncStatus: syncStatus,
       );
@@ -328,9 +332,15 @@ abstract final class RecordMutationOutbox {
   static Future<void> enqueue(
     SharedPreferences prefs,
     Map<String, dynamic> item,
+  ) => enqueueAll(prefs, [item]);
+
+  /// Atomically stage dependent operations (e.g. stop old child + create new).
+  static Future<void> enqueueAll(
+    SharedPreferences prefs,
+    List<Map<String, dynamic>> items,
   ) => _serializeWrite(() async {
     final q = _decode(prefs.getString(_prefsKey));
-    q.add(item);
+    q.addAll(items);
     await _persist(prefs, coalesceQueue(q));
   });
 }
