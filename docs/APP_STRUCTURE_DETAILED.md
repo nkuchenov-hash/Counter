@@ -6,7 +6,7 @@ Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 882 — each appears **exactly once** below.
+**Tracked files:** 883 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -26,7 +26,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Role | Count |
 | :--- | ---: |
-| `production UI` | 174 |
+| `production UI` | 175 |
 | `test` | 114 |
 | `Brain/data` | 92 |
 | `platform build` | 83 |
@@ -57,7 +57,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 480 |
+| `PROVEN_REQUIRED` | 481 |
 | `REQUIRED_FOR_TEST_OR_TOOLING` | 216 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
 | `GOVERNING_DOCUMENTATION` | 39 |
@@ -68,7 +68,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 805 |
+| `HIGH` | 806 |
 | `MEDIUM` | 75 |
 
 ---
