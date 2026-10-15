@@ -30,6 +30,63 @@ int? planningWallEstimateSeconds(PlanningTask task) {
 }
 
 extension PlanTimeCascadeExtension on DatabaseService {
+  // Dated direct-create placement uses the same workday rollover contract.
+  Future<void> addPlan({
+    required String title,
+    required int categoryId,
+    required String dateKey,
+  }) async {
+    if (!_isInitialized || !_hasAuthenticatedUserId) return;
+    if (!_isPlansTableConfigured) {
+      DatabaseService._log(
+        'TABLE_GUARD: blocked addPlan because plans table id equals records table id.',
+      );
+      return;
+    }
+    unawaited(() async {
+      try {
+        final d = dateKey.trim();
+        if (d.length >= 10) {
+          final y = int.tryParse(d.substring(0, 4));
+          final m = int.tryParse(d.substring(5, 7));
+          final day = int.tryParse(d.substring(8, 10));
+          if (y != null && m != null && day != null) {
+            final wallDay = DateTime(y, m, day);
+            final existingDay = planningDayTasksSnapshot(wallDay);
+            final schedule = resolveAutoPlanScheduleWithRollover(
+              wallDay: wallDay,
+              categoryId: categoryId,
+              tags: const [],
+              existingDayPlans: existingDay,
+              timelineDayStartHour: 0,
+            );
+            if (schedule == null) {
+              AppSnack.warning(t(currentLocale.value, 'plan_auto_schedule_no_work_slot'));
+              return;
+            }
+            final scheduledWall = profileDisplayWallsFromAutoSchedule(schedule).startWall;
+            final scheduledKey =
+                '${scheduledWall.year}-${_two(scheduledWall.month)}-${_two(scheduledWall.day)}';
+            await addPlanningTask(
+              planningTaskWithAutoSchedule(
+                PlanningTask(
+                  id: 0,
+                  title: title,
+                  categoryId: categoryId,
+                  dateKey: scheduledKey,
+                  initialDateKey: dateKey,
+                  isPostponed: scheduledKey.compareTo(dateKey) > 0,
+                  order: 0,
+                ),
+                schedule,
+              ),
+            );
+          }
+        }
+      } catch (_) {}
+    }());
+  }
+
   PlanAutoPlacementMode get planAutoPlacementMode => _planAutoPlacementMode;
 
   Future<void> loadPlanAutoPlacementMode() async {
