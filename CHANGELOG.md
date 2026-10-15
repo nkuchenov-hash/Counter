@@ -1,3 +1,10 @@
+## 2026-10-15 — Auto-scheduled plan workday rollover [fix]
+
+- Auto plan creation now checks that the full duration fits the visible/category working window; if full, it searches up to 14 days ahead rather than writing an invisible beyond-hours interval.
+- Planning quick add, Smart Plan, voice-plan and direct dated add update the actual destination date, initial commitment day and postponed flag together. Manual explicit times are preserved.
+- Shows scheduled destination or a clear no-slot warning and adds targeted overflow regression tests.
+- PocketBase schema unchanged. Existing historically misplaced plans are not automatically mutated; CI and production verification required before merging.
+
 ## 2026-10-15 — Planning dated edit-sheet layout recovery [fix]
 
 - Corrected desktop dated-plan edit-sheet pane allocation: Notes no longer takes five shares of the sheet while time, tags and recurrence are forced into one. The Notes pane now takes one share and schedule controls three, with existing mobile keyboard handling unchanged.
