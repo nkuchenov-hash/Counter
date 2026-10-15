@@ -163,7 +163,9 @@ Performance, responsiveness, and stability are **P0 correctness**, not polish. S
 
 ## Planning edit-sheet geometry
 
-- Dated-plan edit sheets keep the embedded Notes canvas compact on desktop rather than allowing it to consume most of the modal height. Schedule/time, tag selection, recurrence tabs and the fixed Save footer must remain visible and non-overlapping at the canonical sheet size. The editor preserves its own scroll and floating Notes toolbar; do not add a second vertical scroll owner.
+- Dated-plan edit sheets on desktop/web and mobile use one stable hierarchy: title → category → start/end times → tag strip → three tabs (**Notes**, **Repeat**, **Parallel plans**) → active tab content → fixed Delete/Cancel/Save footer. Do not place schedule controls below the Notes editor or divide the sheet into permanently competing Notes/schedule flex panes.
+- **Notes is the initial first tab**, rendered using the canonical `NoteEditorPage(inlineBodyOnly: true)` with its existing block canvas, floating Notes toolbar, and single scroll owner. Do not replace it with a text box or create a second toolbar. Repeat owns reminder/recurrence controls, Parallel plans owns linked plans.
+- Content area uses the remaining height; the footer stays visible without overlapping tabs or the editor. When the mobile keyboard is open, preserve the existing notes-focused compact mode. Keep the accepted category/time/tags ordering on both desktop and phone.
 
 ## Edit sheet Save (local-first)
 
