@@ -19,6 +19,7 @@ mixin ShellTaskActions on ShellCoreLogic {
       if (!mounted) return;
       if (serverId == null || serverId.trim().isEmpty) {
         showSyncFailedSnackBar(
+          message: t(currentLocale.value, 'record_create_not_saved'),
           onRetry: () => unawaited(
             retryWriteNewTask(
               title,
@@ -47,6 +48,7 @@ mixin ShellTaskActions on ShellCoreLogic {
       debugPrint('UI ERROR: $e');
       if (mounted) {
         showSyncFailedSnackBar(
+          message: t(currentLocale.value, 'record_create_not_saved'),
           onRetry: () => unawaited(
             retryWriteNewTask(
               title,
@@ -78,6 +80,7 @@ mixin ShellTaskActions on ShellCoreLogic {
       if (!mounted) return;
       if (serverId == null || serverId.trim().isEmpty) {
         showSyncFailedSnackBar(
+          message: t(currentLocale.value, 'record_create_not_saved'),
           onRetry: () => unawaited(
             retryVoiceWriteNewTask(
               title,
@@ -106,6 +109,7 @@ mixin ShellTaskActions on ShellCoreLogic {
       debugPrint('UI ERROR: $e');
       if (mounted) {
         showSyncFailedSnackBar(
+          message: t(currentLocale.value, 'record_create_not_saved'),
           onRetry: () => unawaited(
             retryVoiceWriteNewTask(
               title,
@@ -408,6 +412,7 @@ mixin ShellTaskActions on ShellCoreLogic {
       if (!mounted) return;
       if (id == null || id.trim().isEmpty) {
         showSyncFailedSnackBar(
+          message: t(currentLocale.value, 'record_create_not_saved'),
           onRetry: () => unawaited(
             startRecordFromPlanning(
               title,
@@ -432,6 +437,7 @@ mixin ShellTaskActions on ShellCoreLogic {
       debugPrint('UI ERROR: $e');
       if (mounted) {
         showSyncFailedSnackBar(
+          message: t(currentLocale.value, 'record_create_not_saved'),
           onRetry: () => unawaited(
             startRecordFromPlanning(
               title,
