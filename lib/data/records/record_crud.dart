@@ -237,8 +237,7 @@ extension RecordCrudExtension on DatabaseService {
     String? sourcePlanPocketRecordId,
   }) async {
     if (!_isInitialized || !_hasAuthenticatedUserId) return null;
-    // A second deliberate create must not be rejected while the first POST
-    // waits on PocketBase. Each create has its own UUID and durable outbox item.
+    // Each accepted submission is independent of prior in-flight writes.
     try {
       final parsed = getCleanTitleAndTags(taskText);
       final sourcePlanForPayloadEarly =
@@ -306,7 +305,103 @@ extension RecordCrudExtension on DatabaseService {
         final isPrimary = !hasParent;
         late final String runningRecordBizId;
         if (isPrimary) {
-          // Child handoff: persist the stop(s) and the new create atomically
+          runningRecordBizId = DatabaseService._newClientRecordUuid();
+          final runningFields = _nocoFieldsForPatch(<String, dynamic>{
+            'user_id': _pidForPbFilter,
+            'record_id': runningRecordBizId,
+            'status': 'running',
+            'title': parsed.title,
+            'start_time': startIso,
+            'end_time': null,
+            'category_id': _recordCategoryBusinessPkForApi(cid),
+            'type': 'record',
+            'checklist': <Map<String, dynamic>>[],
+            if (parsed.tags.isNotEmpty) 'tags': parsed.tags.join(','),
+            'source_plan_id': ?sourcePlanForPayload,
+          });
+          if (pr != null && pr.isNotEmpty) {
+            runningFields['parent_id'] = pr;
+          } else if (parentId != null) {
+            runningFields['parent_id'] = parentId.toString();
+          }
+          final patchTargets = <Map<String, String>>[];
+          _HighlanderRollbackToken? rollbackToken;
+          final prevNet = _primaryHighlanderNetworkChain;
+          final netDone = Completer<void>();
+          _primaryHighlanderNetworkChain = prevNet.then((_) => netDone.future);
+          try {
+            final shadowPerf = Stopwatch()..start();
+            var msSnap = 0;
+            var msApply = 0;
+            try {
+              _runBatchedRecordCacheTimelineNotifySync(() {
+                final tSnap = Stopwatch()..start();
+                final beforeLen = _cachedFlatRecords.length;
+                final runningSnapshots =
+                    _snapshotRunningRowsForHighlanderRollback();
+                msSnap = tSnap.elapsedMilliseconds;
+                final tApply = Stopwatch()..start();
+                clearOptimisticTimelineUi();
+                _startAtomicTaskSequenceApplyLocalPrimary(
+                  createBody: runningFields,
+                  patchTargetsOut: patchTargets,
+                );
+                final appended = _cachedFlatRecords.length > beforeLen;
+                rollbackToken = _HighlanderRollbackToken(
+                  runningSnapshotsByIndex: runningSnapshots,
+                  appendedPendingRow: appended,
+                );
+                _printAtomicCheckRunningCount();
+                msApply = tApply.elapsedMilliseconds;
+              });
+            } finally {
+              if (kDebugMode) {
+                debugPrint(
+                  '[SHADOW_PERF] cache+notify=${shadowPerf.elapsedMilliseconds}ms '
+                  '(snapshot_running=${msSnap}ms local_apply=${msApply}ms; '
+                  'bottleneck=${msSnap >= msApply ? "_snapshotRunningRowsForHighlanderRollback" : "clearOptimistic+_startAtomicTaskSequenceApplyLocalPrimary+_printAtomicCheckRunningCount"})',
+                );
+              }
+            }
+            final staged = await _enqueueHighlanderStartMutation(runningFields);
+            if (!staged) {
+              _runBatchedRecordCacheTimelineNotifySync(() {
+                if (_cachedFlatRecords.isNotEmpty &&
+                    _cachedFlatRecords.last['record_id'] == runningRecordBizId) {
+                  _restoreHighlanderRollbackToken(rollbackToken);
+                } else {
+                  _cachedFlatRecords = [
+                    for (final row in _cachedFlatRecords)
+                      if (row['record_id'] != runningRecordBizId) row,
+                  ];
+                }
+              });
+              AppSnack.failed();
+              if (!netDone.isCompleted) netDone.complete();
+              return null;
+            }
+            unawaited(() async {
+              try {
+                await prevNet;
+                await flushPendingRecordMutations();
+              } catch (e) {
+                DatabaseService._log('record outbox flush failed: $e');
+              } finally {
+                if (!netDone.isCompleted) netDone.complete();
+              }
+            }());
+            return runningRecordBizId;
+          } catch (e, st) {
+            DatabaseService._log(
+              'writeRecord primary Highlander local phase: $e',
+            );
+            DatabaseService._log(st.toString());
+            clearOptimisticTimelineUi();
+            if (!netDone.isCompleted) netDone.complete();
+            rethrow;
+          }
+        }
+        // Child handoff: persist the stop(s) and the new create atomically
         // before any PocketBase I/O. This also works without connectivity.
         runningRecordBizId = DatabaseService._newClientRecordUuid();
         final beforeRows = List<Map<String, dynamic>>.from(_cachedFlatRecords);
