@@ -1,3 +1,8 @@
+## 2026-10-15 — Planning dated edit-sheet layout recovery [fix]
+
+- Corrected desktop dated-plan edit-sheet pane allocation: Notes no longer takes five shares of the sheet while time, tags and recurrence are forced into one. The Notes pane now takes one share and schedule controls three, with existing mobile keyboard handling unchanged.
+- Added a widget regression test to keep the schedule panel larger than the rich-text editor, plus CI coverage.
+
 ## 2026-10-15 — Record create write-ahead and rapid-input reliability [fix]
 
 - Removed global previous-write gating from record creation so deliberately consecutive starts are not silently rejected during slow PocketBase requests.
