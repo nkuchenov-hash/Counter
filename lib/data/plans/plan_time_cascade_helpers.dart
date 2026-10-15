@@ -326,6 +326,118 @@ extension PlanTimeCascadeExtension on DatabaseService {
         start.day == wallDay.day;
   }
 
+  /// Find a full-duration slot inside the working window, rolling to the
+  /// next wall day instead of saving an invisible beyond-hours task.
+  /// Explicitly entered times remain under the existing collision contract.
+  /// The category's inherited default start is the workday anchor; its
+  /// 8-hour limit is the existing category overload threshold. The visible
+  /// Time View end may narrow the window, never extend that limit.
+  /// This only reads existing Brain cache and optimistic overlays (no I/O).
+  ({
+    DateTime startWall,
+    DateTime endWall,
+    DateTime? startUtcInstant,
+    DateTime? endUtcInstant,
+  })? resolveAutoPlanScheduleWithRollover({
+    required DateTime wallDay,
+    required int categoryId,
+    required List<Tag> tags,
+    required List<PlanningTask> existingDayPlans,
+    DateTime? explicitStartWall,
+    DateTime? explicitEndWall,
+    bool hasExplicitTimeRange = false,
+    int timelineDayStartHour = 0,
+    int timelineDayEndHour = PlanTimeVisibleWindow.defaultEndExtended,
+    int? explicitDurationMinutes,
+  }) {
+    if (explicitStartWall != null || hasExplicitTimeRange) {
+      return resolveAutoPlanSchedule(
+        wallDay: wallDay,
+        categoryId: categoryId,
+        tags: tags,
+        existingDayPlans: existingDayPlans,
+        explicitStartWall: explicitStartWall,
+        explicitEndWall: explicitEndWall,
+        hasExplicitTimeRange: hasExplicitTimeRange,
+        timelineDayStartHour: timelineDayStartHour,
+        explicitDurationMinutes: explicitDurationMinutes,
+      );
+    }
+
+    final duration = explicitDurationMinutes != null && explicitDurationMinutes > 0
+        ? explicitDurationMinutes.clamp(1, 24 * 60)
+        : resolvePlanDurationMinutesFromTags(tags);
+    final defaultHHmm = effectiveDefaultPlanScheduleForCategory(categoryId)?.hhmm;
+    final parts = defaultHHmm?.split(':');
+    final defaultHour = parts != null && parts.length == 2
+        ? int.tryParse(parts[0])
+        : null;
+    final defaultMinute = parts != null && parts.length == 2
+        ? int.tryParse(parts[1])
+        : null;
+    final hasCategoryWorkStart = defaultHour != null &&
+        defaultMinute != null &&
+        defaultHour >= 0 && defaultHour <= 23 &&
+        defaultMinute >= 0 && defaultMinute <= 59;
+    final categoryStartMinutes = hasCategoryWorkStart
+        ? defaultHour * 60 + defaultMinute
+        : null;
+    final startMinutes = max(
+      timelineDayStartHour * 60,
+      categoryStartMinutes ?? timelineDayStartHour * 60,
+    );
+    final endMinutes = min(
+      min(timelineDayEndHour * 60, 24 * 60),
+      hasCategoryWorkStart
+          ? startMinutes + kPlanCategoryOverloadMinutes
+          : 24 * 60,
+    );
+    // An impossible work window must not silently create an invisible card.
+    if (duration > endMinutes - startMinutes) return null;
+
+    // Bounded, synchronous cache-only search: no network or full-history fetch.
+    for (var dayOffset = 0; dayOffset <= 14; dayOffset++) {
+      final day = DateTime(wallDay.year, wallDay.month, wallDay.day + dayOffset);
+      final dayStart = DateTime(day.year, day.month, day.day, 
+          startMinutes ~/ 60, startMinutes % 60);
+      final dayEnd = DateTime(day.year, day.month, day.day,
+          endMinutes ~/ 60, endMinutes % 60);
+      final byId = <String, PlanningTask>{};
+      if (dayOffset > 0) {
+        for (final t in planningDayTasksSnapshot(day)) {
+          byId[t.planRowIdForBackend] = t;
+        }
+      }
+      for (final t in existingDayPlans) {
+        if (_planBelongsToWallDay(t, day)) {
+          byId[t.planRowIdForBackend] = t;
+        }
+      }
+      final dayTasks = byId.values.toList(growable: false);
+      final occupiedMinutes = dayTasks.fold<int>(0, (sum, t) {
+        final start = t.startTime;
+        final end = _resolvedPlanWallEnd(t);
+        if (start == null || end == null || !end.isAfter(start)) return sum;
+        return sum + end.difference(start).inMinutes;
+      });
+      if (occupiedMinutes + duration > kPlanDayOverloadTotalMinutes) continue;
+
+      final schedule = resolveAutoPlanSchedule(
+        wallDay: day,
+        categoryId: categoryId,
+        tags: tags,
+        existingDayPlans: dayTasks,
+        timelineDayStartHour: timelineDayStartHour,
+        explicitDurationMinutes: explicitDurationMinutes,
+      );
+      if (!schedule.startWall.isBefore(dayStart) &&
+          !schedule.endWall.isAfter(dayEnd)) {
+        return schedule;
+      }
+    }
+    return null;
+  }
+
   /// Auto start/end for a new plan on a day. Explicit parsed range always wins.
   /// Default automatic placement uses the earliest free slot where the full
   /// plan duration fits; when no fitting gap remains it naturally appends after
@@ -405,11 +517,29 @@ extension PlanTimeCascadeExtension on DatabaseService {
     if (explicitStartWall != null) {
       startWall = explicitStartWall;
     } else if (_planAutoPlacementMode == PlanAutoPlacementMode.afterLastPlan) {
-      startWall = _afterLastPlanWallStart(
+      final afterLast = _afterLastPlanWallStart(
         wallDay: wallDay,
         timelineDayStartHour: timelineDayStartHour,
         existingDayPlans: relevantDayPlans,
       );
+      // The after-last preference cannot override a category's 09:00 (or
+      // other configured) default start when a new workday is empty.
+      final categorySchedule = effectiveDefaultPlanScheduleForCategory(categoryId);
+      final hhmm = categorySchedule?.hhmm;
+      final h = hhmm != null && hhmm.length >= 5
+          ? int.tryParse(hhmm.substring(0, 2))
+          : null;
+      final m = hhmm != null && hhmm.length >= 5
+          ? int.tryParse(hhmm.substring(3, 5))
+          : null;
+      if (h != null && m != null && h >= 0 && h < 24 && m >= 0 && m < 60) {
+        usedCategoryDefault = true;
+        categoryDefaultTimezoneIana = categorySchedule!.timezoneIana;
+        final categoryStart = DateTime(wallDay.year, wallDay.month, wallDay.day, h, m);
+        startWall = afterLast.isBefore(categoryStart) ? categoryStart : afterLast;
+      } else {
+        startWall = afterLast;
+      }
     } else {
       final catSchedule = effectiveDefaultPlanScheduleForCategory(categoryId);
       final hhmm = catSchedule?.hhmm;
