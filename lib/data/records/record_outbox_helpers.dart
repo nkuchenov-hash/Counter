@@ -299,8 +299,20 @@ extension RecordOutboxSyncExtension on DatabaseService {
           (item['originalQueryId'] ?? item['businessId'] ?? '')
               .toString()
               .trim();
-      final pbId = (item['pocketBaseId'] ?? '').toString().trim();
-      if (originalInput.isEmpty || pbId.isEmpty) return true;
+      final storedId = (item['pocketBaseId'] ?? '').toString().trim();
+      final businessId = (item['businessId'] ?? originalInput).toString().trim();
+      if (originalInput.isEmpty || businessId.isEmpty) {
+        offlineSync.setLastError('record_stop_missing_identity');
+        return false;
+      }
+      final pbId = await _resolveRecordPbIdForOutboxReplay(
+        businessId: businessId,
+        pocketBaseId: storedId,
+      );
+      if (pbId == null || pbId.isEmpty) {
+        offlineSync.setLastError('record_stop_waiting_for_create');
+        return false;
+      }
       final storedPayload = item['payload'];
       final storedEnd = storedPayload is Map
           ? (storedPayload['end_time'] ?? '').toString().trim()
