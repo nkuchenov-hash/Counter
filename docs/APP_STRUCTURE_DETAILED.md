@@ -6,7 +6,7 @@ Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 881 — each appears **exactly once** below.
+**Tracked files:** 882 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -27,7 +27,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | Role | Count |
 | :--- | ---: |
 | `production UI` | 174 |
-| `test` | 113 |
+| `test` | 114 |
 | `Brain/data` | 92 |
 | `platform build` | 83 |
 | `shared foundation` | 65 |
@@ -58,7 +58,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | Necessity | Count |
 | :--- | ---: |
 | `PROVEN_REQUIRED` | 480 |
-| `REQUIRED_FOR_TEST_OR_TOOLING` | 215 |
+| `REQUIRED_FOR_TEST_OR_TOOLING` | 216 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
 | `GOVERNING_DOCUMENTATION` | 39 |
 | `HISTORICAL_RECORD` | 17 |
@@ -68,7 +68,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 804 |
+| `HIGH` | 805 |
 | `MEDIUM` | 75 |
 
 ---
@@ -35436,6 +35436,44 @@ RU:
 - **Когда открывать:** Падение CI или правка кода рядом с `planning_duplicate_plan_guard`.
 - **Можно удалить?** Нет — нужен для тестов.
 - **Связано с:** Production files под `lib/` с похожим именем.
+
+
+### `test/planning_edit_sheet_layout_test.dart`
+
+EN:
+
+- **Human purpose:** Regression test for the dated Planning edit-sheet layout, preventing oversized Notes from obscuring time/tags/recurrence and the Save footer.
+- **What this is:** Flutter widget test for desktop edit-sheet pane geometry.
+- **Why needed:** Protects the scheduled plan editor from the former desktop 5:1 Notes-to-schedule allocation.
+- **Contents:** Layout regression test (symbols: main).
+- **Key code names:** `main`
+- **Repository role:** test
+- **Evidence of use:** GitHub Actions Android build runs `flutter test test/planning_edit_sheet_layout_test.dart`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Lost automated protection against the plan editor schedule controls being clipped.
+- **Confidence:** HIGH
+- **Owner / layer:** tests
+- **Responsibilities:** Verify Notes and schedule pane allocations remain readable on desktop.
+- **When to open:** Planning edit-sheet overflow or layout regressions.
+- **Can it be deleted?** No — regression coverage for a production user-visible defect.
+- **Connected to:** `lib/features/shared/planning_task_edit_sheet.dart`
+
+RU:
+
+- **Зачем файл человеку:** Регрессионный тест окна редактирования плана, чтобы заметки не вытесняли время, теги и вкладки под кнопки сохранения.
+- **Что это:** Виджет-тест Flutter для геометрии окна плана на десктопе.
+- **Зачем:** Не допустить возврата соотношения 5:1 между заметками и настройками плана.
+- **Содержимое:** Проверки геометрии (символы: `main`).
+- **Роль в репозитории:** test
+- **Доказательства использования:** Запускается Android CI командой `flutter test test/planning_edit_sheet_layout_test.dart`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Потеряется автоматическая защита от перекрытия нижних элементов окна.
+- **Уверенность:** HIGH
+- **Владелец / слой:** тесты
+- **Обязанности:** Проверять достаточную высоту блока времени/тегов/повтора.
+- **Когда открывать:** Ошибки компоновки редактора плана.
+- **Можно удалить?** Нет — требуется для регрессионных тестов.
+- **Связано с:** `lib/features/shared/planning_task_edit_sheet.dart`.
 
 
 ### `test/planning_page_host_contract_test.dart`
