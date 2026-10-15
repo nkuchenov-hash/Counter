@@ -145,12 +145,13 @@ void main() {
     final body = crud.substring(createStart, createEnd);
     expect(body, isNot(contains('if (_writeRecordMutationInFlight) return null;')));
     expect(body, contains('await _enqueueHighlanderStartMutation(runningFields)'));
-    expect(body, contains('await RecordMutationOutbox.enqueueAll(prefs, ['));
+    expect(body, contains('await _stageChildRecordHandoff('));
     expect(body, contains('await _enqueueRecordCreateMutation(completedFields)'));
     expect(
       body.indexOf('await _enqueueHighlanderStartMutation(runningFields)'),
       lessThan(body.indexOf('await flushPendingRecordMutations()')),
     );
+    expect(sync, contains('await RecordMutationOutbox.enqueueAll(prefs, ['));
     expect(sync, contains('_existingRecordForCreate(businessId)'));
     expect(sync, contains('RecordMutationOutbox.acknowledge(prefs, operationId)'));
     expect(sync, isNot(contains('RecordMutationOutbox.replaceAll(prefs, [])')));
