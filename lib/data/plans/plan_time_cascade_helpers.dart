@@ -455,7 +455,7 @@ extension PlanTimeCascadeExtension on DatabaseService {
     // Bounded, synchronous cache-only search: no network or full-history fetch.
     for (var dayOffset = 0; dayOffset <= 14; dayOffset++) {
       final day = DateTime(wallDay.year, wallDay.month, wallDay.day + dayOffset);
-      final dayStart = DateTime(day.year, day.month, day.day, 
+      final dayStart = DateTime(day.year, day.month, day.day,
           startMinutes ~/ 60, startMinutes % 60);
       final dayEnd = DateTime(day.year, day.month, day.day,
           endMinutes ~/ 60, endMinutes % 60);
