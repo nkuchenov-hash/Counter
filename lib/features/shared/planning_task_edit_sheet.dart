@@ -614,7 +614,12 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
             child: Column(
               children: [
                 Expanded(
-                  flex: notesEditing ? 1 : (mobileDated ? 1 : 5),
+                  // The rich Notes canvas owns its own scroll/toolbar. It must
+                  // not consume almost the entire sheet while the dated plan's
+                  // time, tags, recurrence tabs and Save controls are squeezed.
+                  // Keep the Notes pane at one share of the available space.
+                  key: const ValueKey('planning-edit-notes-pane'),
+                  flex: 1,
                   child: Focus(
                     onFocusChange: (focused) {
                       if (!mounted || _notesEditorFocused == focused) return;
@@ -903,7 +908,11 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
                   ),
                 ] else if (!keyboardOpen) ...[
                   Expanded(
-                    flex: mobileDated ? 2 : 1,
+                    // Schedule metadata needs more space than the embedded
+                    // Notes pane; otherwise its tab bar overlaps the action
+                    // footer even at full sheet height on desktop web.
+                    key: const ValueKey('planning-edit-schedule-pane'),
+                    flex: mobileDated ? 2 : 3,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
