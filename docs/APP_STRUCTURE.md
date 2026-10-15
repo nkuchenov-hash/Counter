@@ -272,6 +272,7 @@ Desktop window/tray infrastructure only. Voice/STT production modules live under
 | File | Role |
 | :--- | :--- |
 | `app_button.dart` | `AppButton` |
+| `app_text_field.dart` | Canonical app text-field input component |
 | `app_settings_layout.dart` | `AppSettingsPageBody`, `AppSettingsSectionCard`, settings row helpers |
 | `app_icon_button.dart` | `AppIconButton` |
 | `app_timezone_icon.dart` | Canonical solid timezone icon family |
