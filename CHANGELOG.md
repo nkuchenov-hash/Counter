@@ -1,3 +1,9 @@
+## 2026-10-15 — Planning edit-sheet canonical three-tab layout [ui/fix]
+
+- Restored Notes as the first dated-plan tab alongside Repeat and Parallel plans, using the existing block editor and floating formatting toolbar (no substitute rich-text UI).
+- Placed start/end time and category tags immediately after the category picker, above the tabs. Fixed the action footer beneath the active content instead of splitting the modal into conflicting vertical sections.
+- Replaced the old desktop 5:1 Notes/schedule allocation with a single tab-content viewport; covered ordering, responsive desktop/phone geometry, and tab switching in Flutter widget tests.
+
 ## 2026-10-15 — Auto-scheduled plan workday rollover [fix]
 
 - Auto plan creation now checks that the full duration fits the visible/category working window; if full, it searches up to 14 days ahead rather than writing an invisible beyond-hours interval.
