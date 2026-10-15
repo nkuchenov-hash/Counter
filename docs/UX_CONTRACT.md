@@ -21,7 +21,10 @@ This document defines how Life OS behaves when people interact with it. It is th
 
 - Saves that affect records, plans, lists, Paths, categories, tags, or profile settings must update local state before network sync when the current architecture supports it.
 - Retriable network failures keep the optimistic state and enqueue where an outbox exists.
-- Non-retriable validation/schema failures roll back and show one concise error.
+- For records, successful local staging means the input is accepted even when PocketBase is slow/offline; rapid consecutive creates are distinct and never rejected because an earlier request is in flight.
+- A staged record remains visible across a full refresh or app restart until confirmed on the server; an uncertain POST retries against the same business ID without duplicating it.
+- Failed record create validation retains the original queued payload and shows a sync error rather than falsely showing server success. If device storage cannot persist the input, do not report it as accepted.
+- Other non-retriable validation/schema failures roll back and show one concise error.
 - Silent success is preferred; no success log spam for background sync.
 
 ## Edit Behavior
