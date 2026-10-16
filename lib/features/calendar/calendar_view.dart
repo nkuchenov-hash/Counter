@@ -152,17 +152,6 @@ class _CalendarViewState extends State<CalendarView>
     setState(() => _dayFocusActive = false);
   }
 
-  void _activateDayView() {
-    final d = _selectedDay;
-    setState(() {
-      _mode = CalendarViewMode.week;
-      _dayFocusActive = true;
-      _weekAnchor = calendarWeekStartMonday(d);
-      _dayStream = _createDayStream(d);
-    });
-    unawaited(_reloadIndicators());
-  }
-
   void _onDayTapped(DateTime day, {DateTime? startTime, bool createPlan = true}) {
     final d = calendarDateOnly(day);
     setState(() {
@@ -451,24 +440,6 @@ class _CalendarViewState extends State<CalendarView>
     widget.onEditTask(draft);
   }
 
-  void _openWeekGroup(DateTime day, String categoryName, List<PlanningTask> grouped) {
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      showDragHandle: true,
-      builder: (sheetContext) => CalendarTaskGroupSheet(
-        day: day,
-        categoryName: categoryName,
-        tasks: grouped,
-        onEditTask: (task) {
-          Navigator.of(sheetContext).pop();
-          widget.onEditTask(task);
-        },
-        onStartRecordFromTask: widget.onStartRecordFromTask,
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -533,7 +504,14 @@ class _CalendarViewState extends State<CalendarView>
                   onDayTap: _onDayTapped,
                   onTaskTap: widget.onEditTask,
                   onSlotTap: (time) => _onDayTapped(time, startTime: time),
-                  onGroupTap: _openWeekGroup,
+                  onGroupTap: (day, category, grouped) => showCalendarTaskGroupSheet(
+                    context: context,
+                    day: day,
+                    categoryName: category,
+                    tasks: grouped,
+                    onEditTask: widget.onEditTask,
+                    onStartRecordFromTask: widget.onStartRecordFromTask,
+                  ),
                 ),
               CalendarViewMode.events => _CalendarEventsList(
                   loc: loc,

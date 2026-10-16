@@ -7,6 +7,38 @@ import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+/// Present a category group without growing the Calendar controller.
+void showCalendarTaskGroupSheet({
+  required BuildContext context,
+  required DateTime day,
+  required String categoryName,
+  required List<PlanningTask> tasks,
+  required ValueChanged<PlanningTask> onEditTask,
+  required Future<void> Function(
+    String title,
+    int categoryId,
+    String dateKey, {
+    String? sourcePlanPocketRecordId,
+  }) onStartRecordFromTask,
+}) {
+  showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    useSafeArea: true,
+    showDragHandle: true,
+    builder: (sheetContext) => CalendarTaskGroupSheet(
+      day: day,
+      categoryName: categoryName,
+      tasks: tasks,
+      onEditTask: (task) {
+        Navigator.of(sheetContext).pop();
+        onEditTask(task);
+      },
+      onStartRecordFromTask: onStartRecordFromTask,
+    ),
+  );
+}
+
 /// Expanded normal-size LIFE OS cards for a visually grouped calendar category.
 class CalendarTaskGroupSheet extends StatelessWidget {
   const CalendarTaskGroupSheet({
