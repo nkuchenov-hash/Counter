@@ -210,7 +210,7 @@ class _ListsPageState extends State<ListsPage>
     if (shell.primaryTabIndex != 3) {
       return;
     }
-    final show = _filterCategoryId != null && _selectedListKeys.isNotEmpty;
+    final show = _selectedListKeys.isNotEmpty;
     final next = show ? _kShellBulkBarReservePx : 0.0;
     shell.setFabBottomReservePx(next);
   }
@@ -266,7 +266,7 @@ class _ListsPageState extends State<ListsPage>
     return out;
   }
 
-  Future<void> _listsBulkDelete(List<PlanningTask> display) async {
+  Future<void> _listsBulkDelete() async {
     if (_bulkDeleteInProgress) return;
     // Resolve from the current Brain snapshot, not a stale search/group slice.
     final tasks = _tasksMatchingSelectedKeys(_displayFlat);
@@ -315,6 +315,13 @@ class _ListsPageState extends State<ListsPage>
     if (failedIds.isNotEmpty) {
       db.notifyPlanningRefresh(scheduleNetworkRefresh: false);
     }
+    if (failedKeys.isNotEmpty) {
+      final locale = currentLocale.value;
+      final message = locale == 'ru'
+          ? 'Не удалось удалить ${failedKeys.length} из ${tasks.length} заметок'
+          : 'Could not delete ${failedKeys.length} of ${tasks.length} notes';
+      AppSnack.show(message, error: true);
+    }
     if (!mounted) {
       _bulkDeleteInProgress = false;
       return;
@@ -339,7 +346,7 @@ class _ListsPageState extends State<ListsPage>
       locale: currentLocale.value,
       selectedCount: _selectedListKeys.length,
       onEdit: () => _openListsBulkEditFirst(display),
-      onDelete: () => unawaited(_listsBulkDelete(display)),
+      onDelete: () => unawaited(_listsBulkDelete()),
     );
   }
 
@@ -1155,8 +1162,7 @@ class _ListsPageState extends State<ListsPage>
                         onRefresh: _reload,
                       ),
               ),
-              bottomNavigationBar:
-                  filterId != null && _selectedListKeys.isNotEmpty
+              bottomNavigationBar: _selectedListKeys.isNotEmpty
                   ? _listsBulkBottomBar(context, theme.colorScheme, flat)
                   : null,
             );
