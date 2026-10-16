@@ -97,8 +97,10 @@ class _HeaderDayPickerState extends State<_HeaderDayPicker> {
   Widget build(BuildContext context) {
     return AlertDialog(
       scrollable: true,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
       title: Text(t(widget.locale, 'header_date_picker_title')),
-      contentPadding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+      titlePadding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+      contentPadding: const EdgeInsets.fromLTRB(8, 12, 8, 8),
       content: SizedBox(
         width: 328,
         child: Column(
