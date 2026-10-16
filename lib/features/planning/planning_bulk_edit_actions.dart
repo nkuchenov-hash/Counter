@@ -5,12 +5,12 @@ extension PlanningBulkEditActions on _PlanningPageState {
   Future<void> _openBulkPlanningEditImpl(List<PlanningTask> tasks) async {
     if (_selectedPlanKeys.isEmpty) return;
     final loc = currentLocale.value;
-    final initial = widget.selectedDate ?? _PlanningPageState._today;
+    final initial = widget.selectedDate ?? _today;
 
     // Use the visible source order, never the order in which checkboxes were
     // clicked (which is how the Set of keys is ordered).
     final selected = tasks
-        .where((t) => _selectedPlanKeys.contains(_planKey(t)))
+        .where((t) => _selectedPlanKeys.contains(_PlanningPageState._planKey(t)))
         .where((t) {
           final pbId = t.pocketRecordId?.trim() ?? '';
           return pbId.isNotEmpty &&
@@ -25,7 +25,7 @@ extension PlanningBulkEditActions on _PlanningPageState {
       selectedTasks: selected,
     );
     if (result == null || !mounted) return;
-    final refDay = widget.selectedDate ?? _PlanningPageState._today;
+    final refDay = widget.selectedDate ?? _today;
     final sameDay = result.targetDate.year == refDay.year &&
         result.targetDate.month == refDay.month &&
         result.targetDate.day == refDay.day;
