@@ -342,6 +342,7 @@ class NotesBottomGlassFade extends StatelessWidget {
                     filter: ui.ImageFilter.blur(sigmaX: 16, sigmaY: 16),
                     child: ColoredBox(
                       color: surface.withValues(alpha: 0.08),
+                      child: const SizedBox.expand(),
                     ),
                   ),
                 ),
