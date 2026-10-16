@@ -25,7 +25,6 @@ import 'package:counter/features/lists/lists_card.dart';
 import 'package:counter/features/lists/lists_export.dart';
 import 'package:counter/features/lists/lists_bulk_actions.dart';
 
-part 'lists_bulk_delete.dart';
 import 'package:counter/features/lists/lists_empty_state.dart';
 import 'package:counter/features/lists/lists_filters.dart';
 import 'package:counter/features/notes/notes_glm_surface.dart';
@@ -33,6 +32,8 @@ import 'package:counter/features/notes/widgets/notes_library_production_shell.da
 import 'package:counter/features/notes/note_editor_page.dart';
 import 'package:counter/features/notes/widgets/note_card.dart';
 import 'package:counter/features/notes/widgets/notes_library_body.dart';
+
+part 'lists_bulk_delete.dart';
 
 /// Backlog screen: grouped headers by category path, Done + Delete, inline add.
 class ListsPage extends StatefulWidget {
