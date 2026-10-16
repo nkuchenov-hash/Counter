@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/notes/notes_editor_document_controller.dart';
 import 'package:counter/features/notes/notes_figma_tokens.dart';
+import 'package:counter/features/notes/notes_glm_surface.dart';
 import 'package:counter/features/notes/notes_image_tools.dart';
 import 'package:counter/features/notes/widgets/notes_canonical_components.dart';
 import 'package:counter/features/notes/widgets/note_editor_block_widgets.dart';
@@ -15,6 +16,43 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  testWidgets('Notes footer blur feathers in without a toolbar backplate', (
+    tester,
+  ) async {
+    const toolbarKey = ValueKey('floating-notes-toolbar');
+    await tester.pumpWidget(
+      _host(
+        const SizedBox(
+          width: 430,
+          height: 250,
+          child: NotesBottomGlassFade(
+            height: 86,
+            child: Align(
+              alignment: Alignment.bottomCenter,
+              child: SizedBox(
+                key: toolbarKey,
+                width: 350,
+                height: 48,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    final mask = find.byKey(const ValueKey('notes-feathered-bottom-fade'));
+    final toolbar = find.byKey(toolbarKey);
+    expect(mask, findsOneWidget);
+    expect(find.descendant(of: mask, matching: find.byType(BackdropFilter)), findsOneWidget);
+    expect(
+      tester.widget<ShaderMask>(mask).blendMode,
+      BlendMode.dstIn,
+    );
+    expect(find.ancestor(of: toolbar, matching: find.byType(ShaderMask)), findsNothing);
+    expect(find.ancestor(of: toolbar, matching: find.byType(BackdropFilter)), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
   test('v1 note migration round-trips rich and unsupported blocks', () {
     final source = jsonEncode({
       'format': kLifeOsNotesBlocksV1Format,

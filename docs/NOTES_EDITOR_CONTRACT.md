@@ -72,6 +72,13 @@ Do not change `web/index.html`, global `html/body` overflow behavior, global vie
 
 A Notes-only regression should be fixed inside the Notes feature whenever possible.
 
+## Embedded Notes toolbar fade
+
+- The embedded editor keeps the canonical floating Notes formatting toolbar; it must not sit on a separate blurred or tinted rectangular backplate.
+- The bottom-edge blur fades **from fully transparent at the top** into a subtle surface-matched feather near the editor bottom. It must not have a visible straight horizontal start line, black tint, or separate footer-like band.
+- The feather is decorative and ignores pointer events. The toolbar remains a separate interactive widget above the masked blur, so format buttons, menus and selection continue to work.
+- This applies consistently to desktop/web and mobile, including Notes inside Planning edit sheets. Preserve the one scroll-owner and existing keyboard-inset behavior.
+
 ## Known bad patterns
 
 The following approaches are specifically known to have broken the production Notes editor and should not be repeated:

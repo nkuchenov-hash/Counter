@@ -1,3 +1,9 @@
+## 2026-10-16 — Seamless Notes toolbar bottom fade [ui/fix]
+
+- Removed the opaque black-tinted blurred backplate behind the canonical floating Notes toolbar. The blur now feathers progressively into the editor at its bottom edge, with no rectangular boundary.
+- Kept the toolbar outside the filtered layer and interactive, preserving Notes block tools on mobile, desktop and in embedded Planning edit sheets.
+- Added the canonical fade regression to Android release CI. No data or sync schema changes.
+
 ## 2026-10-15 — Planning edit-sheet canonical three-tab layout [ui/fix]
 
 - Restored Notes as the first dated-plan tab alongside Repeat and Parallel plans, using the existing block editor and floating formatting toolbar (no substitute rich-text UI).
