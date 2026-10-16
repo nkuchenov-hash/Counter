@@ -48,6 +48,7 @@ import 'package:counter/features/planning/widgets/planning_select_mode_header.da
 import 'package:counter/features/planning/widgets/planning_quick_add_strip.dart';
 
 part 'planning_quick_add_schedule.dart';
+part 'planning_bulk_edit_actions.dart';
 
 class PlanningPage extends StatefulWidget {
   const PlanningPage({
@@ -631,123 +632,8 @@ class _PlanningPageState extends State<PlanningPage>
     _syncPlanningShellFabBulkReserve();
   }
 
-  Future<void> _openBulkPlanningEdit(List<PlanningTask> tasks) async {
-    if (_selectedPlanKeys.isEmpty) return;
-    final loc = currentLocale.value;
-    final initial = widget.selectedDate ?? _today;
-    final selectedList = <PlanningTask>[];
-    for (final t in tasks) {
-      if (_selectedPlanKeys.contains(_planKey(t))) {
-        selectedList.add(t);
-      }
-    }
-    if (selectedList.isEmpty) return;
-
-    final result = await showBulkPlanningEditSheet(
-      context,
-      initialDay: initial,
-      selectedTasks: selectedList,
-    );
-    if (result == null || !mounted) return;
-
-    final refDay = widget.selectedDate ?? _today;
-    final sameDay =
-        result.targetDate.year == refDay.year &&
-        result.targetDate.month == refDay.month &&
-        result.targetDate.day == refDay.day;
-    if (sameDay && !result.applyTargetTime) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(t(loc, 'plan_bulk_edit_no_changes'))),
-      );
-      return;
-    }
-
-    final patches = <PlanningBulkPatch>[];
-    for (final key in _selectedPlanKeys.toList()) {
-      PlanningTask? match;
-      for (final t in tasks) {
-        if (_planKey(t) == key) {
-          match = t;
-          break;
-        }
-      }
-      if (match == null) continue;
-      if (match.planRowIdForBackend.startsWith('optimistic-')) continue;
-      final pbId = match.pocketRecordId?.trim() ?? '';
-      if (pbId.isEmpty) continue;
-
-      final wall = computeBulkEditWallTimes(match, result);
-      final d = DateTime(wall.start.year, wall.start.month, wall.start.day);
-      final newKey = _dateKeyFromDate(d);
-      final anchorShort = DatabaseService.instance.planningAuditAnchorDateKey(
-        match,
-      );
-      const minKeyLen = 10;
-      final persistInitial = anchorShort.length >= minKeyLen
-          ? anchorShort
-          : DatabaseService.instance.planningWallScheduleDateKey(match);
-      final initForPatch = persistInitial.length >= minKeyLen
-          ? persistInitial
-          : newKey;
-      final postponed =
-          !match.isDone &&
-          DatabaseService.instance.planningShouldMarkPostponed(
-            anchorKey: initForPatch,
-            newScheduleKey: newKey,
-          );
-      final updated = match.copyWith(
-        dateKey: newKey,
-        date: DateTime.utc(d.year, d.month, d.day),
-        startTime: wall.start,
-        endDateTime: wall.end,
-        endDateKey: wall.end != null ? newKey : null,
-        clearEnd: wall.end == null,
-        initialDateKey: initForPatch,
-        isPostponed: postponed,
-      );
-      DatabaseService.instance.applyOptimisticPlanningTask(updated);
-      patches.add(
-        PlanningBulkPatch(
-          planRowId: match.planRowIdForBackend,
-          planBusinessId: match.planRowId,
-          startTimeDisplay: wall.start,
-          endDateTimeDisplay: wall.end,
-          clearEnd: wall.end == null,
-          initialDateKey: initForPatch,
-          isPostponed: postponed,
-        ),
-      );
-    }
-
-    if (patches.isEmpty) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(t(loc, 'plan_save_failed'))));
-      }
-      return;
-    }
-
-    DatabaseService.instance.notifyPlanningRefresh();
-    if (mounted) setState(() {});
-    final ok = await DatabaseService.instance.bulkUpdatePlans(
-      patches,
-      suppressAppSnack: true,
-    );
-    if (!mounted) return;
-    setState(() {
-      _selectedPlanKeys.clear();
-      _planSelectMode = false;
-    });
-    _syncPlanningShellFabBulkReserve();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          ok ? t(loc, 'plan_bulk_edit_success') : t(loc, 'plan_save_failed'),
-        ),
-      ),
-    );
-  }
+  Future<void> _openBulkPlanningEdit(List<PlanningTask> tasks) =>
+      _openBulkPlanningEditImpl(tasks);
 
   Future<void> _bulkDelete(List<PlanningTask> tasks) async {
     final ids = <String>[];
