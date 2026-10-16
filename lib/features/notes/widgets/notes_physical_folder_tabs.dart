@@ -371,4 +371,3 @@ class _FolderTab extends StatelessWidget {
     );
   }
 }
-
