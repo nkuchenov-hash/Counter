@@ -8,6 +8,7 @@ mixin ShellTaskActions on ShellCoreLogic {
     String? sourcePlanPocketRecordId,
   }) async {
     try {
+      await persistQuickEntryDraft(title);
       final startTime = DatabaseService.getPlanetaryNow();
       final serverId = await DatabaseService.instance.writeRecord(
         selectedDateString,
@@ -30,6 +31,10 @@ mixin ShellTaskActions on ShellCoreLogic {
           ),
         );
         return;
+      }
+      if (titleController.text.trim() == title) {
+        await persistQuickEntryDraft('');
+        titleController.clear();
       }
       setState(() {
         tasks.add(
@@ -143,6 +148,10 @@ mixin ShellTaskActions on ShellCoreLogic {
         ? DatabaseService.instance.getCategoryPath(cid)
         : 'Life';
 
+    // Persist the raw text before validation/auth can reject the write.
+    // A page reload must never erase a failed submission.
+    await persistQuickEntryDraft(title);
+
     // Keep the editable draft until the Brain confirms durable local staging.
     // Slow network activity must never clear input before it is accepted.
     titleFocus.requestFocus();
@@ -172,7 +181,10 @@ mixin ShellTaskActions on ShellCoreLogic {
       }
       // Do not erase new text entered while this save was in progress.
       if (titleController.text.trim() == title) {
+        await persistQuickEntryDraft('');
         titleController.clear();
+      } else {
+        await persistQuickEntryDraft(titleController.text);
       }
       setState(() {
         tasks.add(
