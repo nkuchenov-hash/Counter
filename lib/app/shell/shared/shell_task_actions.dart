@@ -6,16 +6,20 @@ mixin ShellTaskActions on ShellCoreLogic {
     int? cid,
     String pathTag, {
     String? sourcePlanPocketRecordId,
+    String? createBusinessId,
+    DateTime? capturedStartTime,
   }) async {
     try {
       await persistQuickEntryDraft(title);
-      final startTime = DatabaseService.getPlanetaryNow();
+      final startTime = capturedStartTime ?? DatabaseService.getPlanetaryNow();
+      final attemptId = createBusinessId ?? const Uuid().v4();
       final serverId = await DatabaseService.instance.writeRecord(
         selectedDateString,
         title,
         categoryId: cid,
         explicitStartTime: startTime,
         sourcePlanPocketRecordId: sourcePlanPocketRecordId,
+        stableCreateBusinessId: attemptId,
       );
       if (!mounted) return;
       if (serverId == null || serverId.trim().isEmpty) {
@@ -27,6 +31,8 @@ mixin ShellTaskActions on ShellCoreLogic {
               cid,
               pathTag,
               sourcePlanPocketRecordId: sourcePlanPocketRecordId,
+              createBusinessId: attemptId,
+              capturedStartTime: startTime,
             ),
           ),
         );
@@ -60,6 +66,8 @@ mixin ShellTaskActions on ShellCoreLogic {
               cid,
               pathTag,
               sourcePlanPocketRecordId: sourcePlanPocketRecordId,
+              createBusinessId: attemptId,
+              capturedStartTime: startTime,
             ),
           ),
         );
@@ -140,9 +148,11 @@ mixin ShellTaskActions on ShellCoreLogic {
     }
     lastPlayOrStartAction = tick;
 
-    unawaited(stopAnyActiveTask());
+    // The Brain performs an atomic start handoff only after a durable create.
+    // Do not stop the old recording before the new one is accepted.
 
     final now = DatabaseService.getPlanetaryNow();
+    final attemptId = const Uuid().v4();
     final cid = effectiveCategoryId;
     final pathTag = cid != null
         ? DatabaseService.instance.getCategoryPath(cid)
@@ -163,6 +173,7 @@ mixin ShellTaskActions on ShellCoreLogic {
         categoryId: cid,
         explicitStartTime: now,
         sourcePlanPocketRecordId: null,
+        stableCreateBusinessId: attemptId,
       );
       if (!mounted) return;
       if (serverId == null || serverId.trim().isEmpty) {
@@ -174,6 +185,8 @@ mixin ShellTaskActions on ShellCoreLogic {
               cid,
               pathTag,
               sourcePlanPocketRecordId: null,
+              createBusinessId: attemptId,
+              capturedStartTime: now,
             ),
           ),
         );
@@ -219,6 +232,8 @@ mixin ShellTaskActions on ShellCoreLogic {
               cid,
               pathTag,
               sourcePlanPocketRecordId: null,
+              createBusinessId: attemptId,
+              capturedStartTime: now,
             ),
           ),
         );
