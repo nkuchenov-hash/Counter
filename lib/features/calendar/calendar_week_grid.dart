@@ -1,4 +1,6 @@
 import 'package:counter/data/models.dart';
+import 'package:counter/data/database_service.dart';
+import 'package:counter/features/calendar/calendar_week_grouping.dart';
 import 'package:counter/features/calendar/calendar_day_events.dart';
 import 'package:counter/features/calendar/calendar_helpers.dart';
 import 'package:counter/l10n/dictionary.dart';
@@ -16,6 +18,8 @@ class CalendarWeekPlannerGrid extends StatelessWidget {
     required this.showEventPills,
     required this.onDayTap,
     required this.onTaskTap,
+    required this.onSlotTap,
+    required this.onGroupTap,
   });
 
   final DateTime weekStart;
@@ -25,6 +29,8 @@ class CalendarWeekPlannerGrid extends StatelessWidget {
   final bool showEventPills;
   final ValueChanged<DateTime> onDayTap;
   final ValueChanged<PlanningTask> onTaskTap;
+  final ValueChanged<DateTime> onSlotTap;
+  final void Function(DateTime day, String categoryName, List<PlanningTask> tasks) onGroupTap;
 
   static const double _hourHeight = 64;
   static const double _timeGutter = 44;
@@ -33,14 +39,34 @@ class CalendarWeekPlannerGrid extends StatelessWidget {
   double _topFor(DateTime time) =>
       (time.hour * 60 + time.minute) / 60 * _hourHeight;
 
-  double _heightFor(PlanningTask task) {
-    final start = task.startTime;
-    if (start == null) return 0;
-    final end = task.endDateTime ?? start.add(const Duration(minutes: 45));
-    final minutes = end.difference(start).inMinutes.clamp(20, 24 * 60);
-    return (minutes / 60 * _hourHeight)
-        .clamp(22.0, _hourHeight * 4)
-        .toDouble();
+  /// Choose the nearest category branch immediately below the top-level root.
+  /// This keeps different clients separated instead of lumping all work together.
+  int _groupCategory(int categoryId) {
+    final db = DatabaseService.instance;
+    var current = categoryId;
+    final visited = <int>{};
+    while (visited.add(current)) {
+      final parent = db.getParentId(current);
+      if (parent == null || db.getParentId(parent) == null) break;
+      current = parent;
+    }
+    return current;
+  }
+
+  static String _hhmm(DateTime date) =>
+      '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+
+  static double _blockHeight(CalendarWeekBlock block) {
+    final minutes = block.end.difference(block.start).inMinutes.clamp(20, 24 * 60);
+    return (minutes / 60 * _hourHeight).clamp(28.0, 24 * _hourHeight).toDouble();
+  }
+
+  /// A small localized hover summary; click opens full interactive task cards.
+  String _tooltip(CalendarWeekBlock block, String categoryName) {
+    return [
+      categoryName,
+      for (final task in block.tasks) '${_hhmm(task.startTime!)}  ${task.title}',
+    ].join('\n');
   }
 
   @override
@@ -177,76 +203,105 @@ class CalendarWeekPlannerGrid extends StatelessWidget {
                                         final day = weekStart.add(
                                           Duration(days: i),
                                         );
-                                        final tasks =
-                                            (tasksByDay[calendarDayKey(day)] ??
-                                                    const <PlanningTask>[])
-                                                .where(
-                                                  (task) =>
-                                                      task.startTime != null,
-                                                )
-                                                .toList()
-                                              ..sort(
-                                                (a, b) => a.startTime!.compareTo(
-                                                  b.startTime!,
-                                                ),
-                                              );
+                                        final tasks = (tasksByDay[calendarDayKey(day)] ??
+                                                const <PlanningTask>[])
+                                            .where((task) => task.startTime != null)
+                                            .toList();
+                                        final blocks = buildCalendarWeekBlocks(tasks, _groupCategory);
                                         return DecoratedBox(
                                           decoration: BoxDecoration(
                                             border: Border(
                                               left: BorderSide(
-                                                color: scheme.outlineVariant
-                                                    .withValues(alpha: 0.34),
+                                                color: scheme.outlineVariant.withValues(alpha: 0.34),
                                               ),
                                             ),
                                           ),
-                                          child: Stack(
-                                            clipBehavior: Clip.none,
-                                            children: [
-                                              for (final task in tasks)
-                                                Positioned(
-                                                  top: _topFor(task.startTime!),
-                                                  left: 2,
-                                                  right: 2,
-                                                  height: _heightFor(task),
-                                                  child: Material(
-                                                    color: scheme
-                                                        .primaryContainer
-                                                        .withValues(alpha: 0.72),
-                                                    borderRadius:
-                                                        BorderRadius.circular(7),
-                                                    clipBehavior: Clip.antiAlias,
-                                                    child: InkWell(
-                                                      onTap: () =>
-                                                          onTaskTap(task),
-                                                      child: Padding(
-                                                        padding:
-                                                            const EdgeInsets.symmetric(
-                                                              horizontal: 5,
-                                                              vertical: 4,
-                                                            ),
-                                                        child: Text(
-                                                          task.title,
-                                                          maxLines: 2,
-                                                          overflow: TextOverflow
-                                                              .ellipsis,
-                                                          style: Theme.of(context)
-                                                              .textTheme
-                                                              .labelSmall
-                                                              ?.copyWith(
-                                                                fontSize: 10.5,
-                                                                height: 1.05,
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .w600,
-                                                                color: scheme
-                                                                    .onPrimaryContainer,
-                                                              ),
-                                                        ),
-                                                      ),
+                                          child: LayoutBuilder(
+                                            builder: (context, constraints) {
+                                              final placements = layoutCalendarWeekBlocks(blocks);
+                                              return Stack(
+                                                clipBehavior: Clip.hardEdge,
+                                                children: [
+                                                  Positioned.fill(
+                                                    child: GestureDetector(
+                                                      behavior: HitTestBehavior.opaque,
+                                                      onTapUp: (details) {
+                                                        final minutes = ((details.localPosition.dy /
+                                                                _hourHeight * 60) ~/ 10 * 10)
+                                                            .clamp(0, 23 * 60 + 50);
+                                                        onSlotTap(DateTime(day.year, day.month, day.day,
+                                                            minutes ~/ 60, minutes % 60));
+                                                      },
                                                     ),
                                                   ),
-                                                ),
-                                            ],
+                                                  for (final placement in placements)
+                                                    Positioned(
+                                                      top: _topFor(placement.block.start),
+                                                      left: constraints.maxWidth * placement.lane / placement.laneCount + 2,
+                                                      width: (constraints.maxWidth / placement.laneCount - 4).clamp(1.0, double.infinity),
+                                                      height: _blockHeight(placement.block),
+                                                      child: Builder(
+                                                        builder: (context) {
+                                                          final block = placement.block;
+                                                          final grouped = block.tasks.length > 1;
+                                                          final name = grouped
+                                                              ? (DatabaseService.instance.getCategoryRuleById(block.groupCategoryId)?.name ??
+                                                                  t(loc, 'plan'))
+                                                              : block.tasks.first.title;
+                                                          final color = DatabaseService.instance
+                                                              .getCategoryColor(block.groupCategoryId);
+                                                          return Tooltip(
+                                                            waitDuration: const Duration(milliseconds: 400),
+                                                            message: _tooltip(block, name),
+                                                            child: Material(
+                                                              color: color.withValues(alpha: 0.17),
+                                                              borderRadius: BorderRadius.circular(7),
+                                                              clipBehavior: Clip.antiAlias,
+                                                              child: InkWell(
+                                                                onTap: grouped
+                                                                    ? () => onGroupTap(day, name, List.unmodifiable(block.tasks))
+                                                                    : () => onTaskTap(block.tasks.single),
+                                                                child: Container(
+                                                                  decoration: BoxDecoration(
+                                                                    border: Border(left: BorderSide(color: color, width: 3)),
+                                                                  ),
+                                                                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 4),
+                                                                  child: Column(
+                                                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                                                    children: [
+                                                                      Text(
+                                                                        name,
+                                                                        maxLines: grouped && _blockHeight(block) >= 52 ? 2 : 1,
+                                                                        overflow: TextOverflow.ellipsis,
+                                                                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                                                          fontWeight: FontWeight.w700,
+                                                                          color: scheme.onSurface,
+                                                                          height: 1.05,
+                                                                          fontSize: 11,
+                                                                        ),
+                                                                      ),
+                                                                      if (grouped && _blockHeight(block) >= 43)
+                                                                        Text(
+                                                                          '${block.tasks.length} × ${t(loc, 'plan')} · ${_hhmm(block.start)}–${_hhmm(block.end)}',
+                                                                          maxLines: 1,
+                                                                          overflow: TextOverflow.ellipsis,
+                                                                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                                                            fontSize: 10,
+                                                                            color: scheme.onSurfaceVariant,
+                                                                          ),
+                                                                        ),
+                                                                    ],
+                                                                  ),
+                                                                ),
+                                                              ),
+                                                            ),
+                                                          );
+                                                        },
+                                                      ),
+                                                    ),
+                                                ],
+                                              );
+                                            },
                                           ),
                                         );
                                       },

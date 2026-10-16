@@ -9,6 +9,7 @@ import 'package:counter/core/shell_adaptive.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/calendar/calendar_chrome_header.dart';
+import 'package:counter/features/calendar/calendar_task_group_sheet.dart';
 import 'package:counter/features/calendar/calendar_day_panel.dart';
 import 'package:counter/features/calendar/calendar_helpers.dart';
 import 'package:counter/features/calendar/calendar_month_grid.dart';
@@ -159,11 +160,10 @@ class _CalendarViewState extends State<CalendarView>
       _weekAnchor = calendarWeekStartMonday(d);
       _dayStream = _createDayStream(d);
     });
-    unawaited(widget.onSelectDate(d, d));
     unawaited(_reloadIndicators());
   }
 
-  Future<void> _onDayTapped(DateTime day) async {
+  void _onDayTapped(DateTime day, {DateTime? startTime, bool createPlan = true}) {
     final d = calendarDateOnly(day);
     setState(() {
       _selectedDay = d;
@@ -175,9 +175,8 @@ class _CalendarViewState extends State<CalendarView>
         _focusedMonth = DateTime(d.year, d.month);
       }
     });
-    await widget.onSelectDate(d, d);
-    if (!mounted) return;
     unawaited(_reloadIndicators());
+    if (createPlan) _openAddPlanForSelectedDay('', startTime);
   }
 
   void _goToday() {
@@ -188,7 +187,6 @@ class _CalendarViewState extends State<CalendarView>
       _weekAnchor = calendarWeekStartMonday(today);
       _dayStream = _createDayStream(today);
     });
-    unawaited(widget.onSelectDate(today, today));
     unawaited(_reloadIndicators());
   }
 
@@ -218,7 +216,7 @@ class _CalendarViewState extends State<CalendarView>
   }
 
   void _shiftDay(int delta) {
-    unawaited(_onDayTapped(_selectedDay.add(Duration(days: delta))));
+    _onDayTapped(_selectedDay.add(Duration(days: delta)), createPlan: false);
   }
 
   void _shiftEventsMonth(int delta) {
@@ -236,7 +234,6 @@ class _CalendarViewState extends State<CalendarView>
       _weekAnchor = calendarWeekStartMonday(next);
       _dayStream = _createDayStream(next);
     });
-    unawaited(widget.onSelectDate(next, next));
     unawaited(_reloadIndicators());
   }
 
@@ -360,7 +357,7 @@ class _CalendarViewState extends State<CalendarView>
                                 subtitle: Text(DateFormat.yMMMd(currentLocale.value).format(day)),
                                 onTap: () {
                                   Navigator.of(sheetContext).pop();
-                                  unawaited(_onDayTapped(day));
+                                  _onDayTapped(day, createPlan: false);
                                   widget.onEditTask(task);
                                 },
                               );
@@ -426,7 +423,7 @@ class _CalendarViewState extends State<CalendarView>
     );
   }
 
-  void _openAddPlanForSelectedDay([String initialTitle = '']) {
+  void _openAddPlanForSelectedDay([String initialTitle = '', DateTime? startTime]) {
     final d = _selectedDay;
     final dateKey = calendarDayKey(d);
     final categoryId =
@@ -434,7 +431,7 @@ class _CalendarViewState extends State<CalendarView>
         (DatabaseService.instance.rules.isNotEmpty
             ? DatabaseService.instance.rules.first.id
             : 0);
-    final wall = DateTime(d.year, d.month, d.day, 9, 0);
+    final wall = DateTime(d.year, d.month, d.day, startTime?.hour ?? 9, startTime?.minute ?? 0);
     final draft = PlanningTask(
       id: 0,
       planRowId: null,
@@ -452,6 +449,25 @@ class _CalendarViewState extends State<CalendarView>
       isPostponed: false,
     );
     widget.onEditTask(draft);
+  }
+
+  void _openWeekGroup(DateTime day, String categoryName, List<PlanningTask> grouped) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      showDragHandle: true,
+      builder: (sheetContext) => CalendarTaskGroupSheet(
+        day: day,
+        categoryName: categoryName,
+        tasks: grouped,
+        onEditTask: (task) {
+          Navigator.of(sheetContext).pop();
+          widget.onEditTask(task);
+        },
+        onStartRecordFromTask: widget.onStartRecordFromTask,
+      ),
+    );
   }
 
   @override
@@ -477,7 +493,7 @@ class _CalendarViewState extends State<CalendarView>
               selectedDay: _selectedDay,
               today: today,
               tasksByDay: _tasksByDayKey,
-              onDayTap: (d) => unawaited(_onDayTapped(d)),
+              onDayTap: _onDayTapped,
               minimal: true,
             )
           : _dayFocusActive
@@ -486,7 +502,7 @@ class _CalendarViewState extends State<CalendarView>
               selectedDay: _selectedDay,
               today: today,
               tasksByDay: _tasksByDayKey,
-              onDayTap: (d) => unawaited(_onDayTapped(d)),
+              onDayTap: _onDayTapped,
             )
           : switch (_mode) {
               CalendarViewMode.year => _CalendarYearGrid(
@@ -495,7 +511,7 @@ class _CalendarViewState extends State<CalendarView>
                   today: today,
                   tasksByDay: _tasksByDayKey,
                   onMonthTap: _openMonthFromYear,
-                  onDayTap: (d) => unawaited(_onDayTapped(d)),
+                  onDayTap: _onDayTapped,
                 ),
               CalendarViewMode.month => CalendarMonthGrid(
                   focusedMonth: _focusedMonth,
@@ -505,7 +521,7 @@ class _CalendarViewState extends State<CalendarView>
                   loading: _monthIndicatorsLoading,
                   showEventPills: showPills,
                   browsing: true,
-                  onDayTap: (d) => unawaited(_onDayTapped(d)),
+                  onDayTap: _onDayTapped,
                   currentMonthOnly: true,
                 ),
               CalendarViewMode.week => CalendarWeekPlannerGrid(
@@ -514,8 +530,10 @@ class _CalendarViewState extends State<CalendarView>
                   tasksByDay: _tasksByDayKey,
                   loading: _monthIndicatorsLoading,
                   showEventPills: showPills,
-                  onDayTap: (d) => unawaited(_onDayTapped(d)),
+                  onDayTap: _onDayTapped,
                   onTaskTap: widget.onEditTask,
+                  onSlotTap: (time) => _onDayTapped(time, startTime: time),
+                  onGroupTap: _openWeekGroup,
                 ),
               CalendarViewMode.events => _CalendarEventsList(
                   loc: loc,
