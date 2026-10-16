@@ -296,6 +296,9 @@ class NotesGlmLibraryInput extends StatelessWidget {
 }
 
 
+/// Feathered bottom-edge blur for Notes. The backdrop effect is masked to
+/// zero opacity at its top edge; it must never render as a rectangular strip
+/// behind the independent floating formatting toolbar.
 class NotesBottomGlassFade extends StatelessWidget {
   const NotesBottomGlassFade({
     super.key,
@@ -312,34 +315,47 @@ class NotesBottomGlassFade extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final dark = Theme.of(context).brightness == Brightness.dark;
+    final surface = Theme.of(context).colorScheme.surface;
     return SizedBox(
       height: height,
-      child: ClipRect(
-        child: BackdropFilter(
-          filter: ui.ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Colors.transparent,
-                  Colors.black.withValues(alpha: dark ? 0.08 : 0.025),
-                  Colors.black.withValues(alpha: dark ? 0.14 : 0.055),
-                ],
-                stops: const [0.0, 0.55, 1.0],
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          Positioned.fill(
+            child: IgnorePointer(
+              child: ClipRect(
+                child: ShaderMask(
+                  key: const ValueKey('notes-feathered-bottom-fade'),
+                  blendMode: BlendMode.dstIn,
+                  shaderCallback: (bounds) => const LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.transparent,
+                      Colors.transparent,
+                      Color(0x44000000),
+                      Colors.black,
+                    ],
+                    stops: [0, 0.32, 0.72, 1],
+                  ).createShader(bounds),
+                  child: BackdropFilter(
+                    filter: ui.ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                    child: ColoredBox(
+                      color: surface.withValues(alpha: 0.08),
+                    ),
+                  ),
+                ),
               ),
-            ),
-            child: Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: horizontalPadding,
-                vertical: verticalPadding,
-              ),
-              child: child,
             ),
           ),
-        ),
+          Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: horizontalPadding,
+              vertical: verticalPadding,
+            ),
+            child: child,
+          ),
+        ],
       ),
     );
   }
