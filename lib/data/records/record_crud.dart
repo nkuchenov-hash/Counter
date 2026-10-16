@@ -238,7 +238,14 @@ extension RecordCrudExtension on DatabaseService {
     String? stableCreateBusinessId,
   }) async {
     if (!_isInitialized || !_hasAuthenticatedUserId) return null;
-    // Each accepted submission is independent of prior in-flight writes.
+    // Retrying an accepted local capture reuses its business UUID, not a new
+    // record. Avoid duplicating an already-visible optimistic/server shadow.
+    if (stableCreateBusinessId != null &&
+        _cachedFlatRecords.any((row) =>
+            row['record_id'] == stableCreateBusinessId)) {
+      return stableCreateBusinessId;
+    }
+    // Each distinct submission is independent of prior in-flight writes.
     try {
       final parsed = getCleanTitleAndTags(taskText);
       final sourcePlanForPayloadEarly =
