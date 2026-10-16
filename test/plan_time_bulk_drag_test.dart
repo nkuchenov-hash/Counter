@@ -260,8 +260,17 @@ void main() {
       final movedB = result.previewRows.firstWhere(
         (t) => t.planRowIdForBackend == b.planRowIdForBackend,
       );
-      expect(movedA.startTime, DateTime(2026, 6, 15, 10, 30));
-      expect(movedB.startTime, DateTime(2026, 6, 15, 11, 0));
+      // Two 30-minute plans inserted BEFORE the 11:00 target must span
+      // 10:00–11:00, not overlap the target at 11:00.
+      expect(movedA.startTime, DateTime(2026, 6, 15, 10, 0));
+      expect(movedB.startTime, DateTime(2026, 6, 15, 10, 30));
+      expect(
+        scheduledPlansHaveWallOverlap(
+          result.previewRows.where((t) => t.startTime != null).toList(),
+          resolveDurationMinutes: (_) => 30,
+        ),
+        isFalse,
+      );
     });
 
     test('insert after target shifts lower touching flexible chain', () {
