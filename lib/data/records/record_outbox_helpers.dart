@@ -1,6 +1,19 @@
 part of '../database_service.dart';
 
 extension RecordOutboxSyncExtension on DatabaseService {
+  void _appendPendingRecordCreateShadow(Map<String, dynamic> fields) {
+    final businessId = (fields['record_id'] ?? '').toString().trim();
+    if (businessId.isEmpty) return;
+    final local = <String, dynamic>{
+      ...fields,
+      'id': businessId,
+      '_pb_record_id': '',
+      '_highlanderPendingPost': true,
+    };
+    _cachedFlatRecords = [..._cachedFlatRecords, local];
+    _notifyTimelineAfterRecordCacheMutation();
+  }
+
   void _showRecordNotSavedError() =>
       AppSnack.show(t(currentLocale.value, 'record_create_not_saved'), error: true);
 

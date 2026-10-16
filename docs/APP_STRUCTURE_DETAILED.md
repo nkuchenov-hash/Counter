@@ -6,7 +6,7 @@ Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 883 — each appears **exactly once** below.
+**Tracked files:** 885 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -27,8 +27,8 @@ python scripts/manual/generate_app_structure_detailed.py
 | Role | Count |
 | :--- | ---: |
 | `production UI` | 175 |
-| `test` | 114 |
-| `Brain/data` | 92 |
+| `test` | 115 |
+| `Brain/data` | 93 |
 | `platform build` | 83 |
 | `shared foundation` | 65 |
 | `developer tool` | 63 |
@@ -57,8 +57,8 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 481 |
-| `REQUIRED_FOR_TEST_OR_TOOLING` | 216 |
+| `PROVEN_REQUIRED` | 482 |
+| `REQUIRED_FOR_TEST_OR_TOOLING` | 217 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
 | `GOVERNING_DOCUMENTATION` | 39 |
 | `HISTORICAL_RECORD` | 17 |
@@ -68,7 +68,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 806 |
+| `HIGH` | 808 |
 | `MEDIUM` | 75 |
 
 ---
@@ -14237,6 +14237,46 @@ RU:
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** UI вызывает `DatabaseService.instance`; Offline banner в shell, flush при reconnect
 
+
+### `lib/data/local_sync/web_record_journal.dart`
+
+EN:
+
+- **Human purpose:** Saves Timeline recordings reliably in the browser even when localStorage is full.
+- **What this is:** IndexedDB transaction-backed record queue and draft store for Flutter Web.
+- **Why needed:** The durable capture journal must not share the smaller localStorage capacity used by settings and cache.
+- **Contents:** `WebRecordJournal` opens, reads and atomically updates queued mutation payloads, migration marker and recovery drafts.
+- **Key code names:** `WebRecordJournal`
+- **Repository role:** Brain/data
+- **Evidence of use:** Imported by `record_mutation_outbox.dart` and `app_shell.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Web capture queue and draft code will not compile.
+- **Confidence:** HIGH
+- **Owner / layer:** Brain/data
+- **Responsibilities:** Transactional IndexedDB persistence and migration safety.
+- **When to open:** Missing new records, full browser settings storage or duplicate retries.
+- **Can it be deleted?** No.
+- **Connected to:** `lib/data/local_sync/record_mutation_outbox.dart`, `lib/app/shell/shared/shell_core.dart`.
+
+RU:
+
+- **Зачем файл человеку:** Записи должны сохраняться локально при сетевых сбоях и заполненном хранилище настроек.
+- **Что это:** Транзакционная очередь IndexedDB для браузера.
+- **Зачем:** Не допустить потери новых записей и старой очереди при миграции.
+- **Содержимое:** `WebRecordJournal`, восстановление черновиков, запись очереди.
+- **Ключевые имена:** `WebRecordJournal`
+- **Роль в репозитории:** Brain/data
+- **Доказательства использования:** Импорт в production-модулях.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Последствие удаления:** Сборка перестанет проходить.
+- **Достоверность:** HIGH
+- **Слой:** Brain/data
+- **Ответственность:** IndexedDB для офлайн-записей.
+- **Когда открывать:** Ошибка сохранения новых записей в веб-версии.
+- **Можно удалить?** Нет.
+- **Связано с:** `record_mutation_outbox.dart` и `shell_core.dart`.
+
+---
 
 ### `lib/data/local_sync/sync_manager.dart`
 
@@ -35857,6 +35897,46 @@ RU:
 - **Можно удалить?** Нет — нужен для тестов.
 - **Связано с:** Production files под `lib/` с похожим именем.
 
+
+### `test/web_record_journal_test.dart`
+
+EN:
+
+- **Human purpose:** Verify real browser persistence, migration and draft recovery.
+- **What this is:** Headless Chrome Flutter regression for the Web IndexedDB record journal.
+- **Why needed:** Catch actual browser failures rather than relying on source-code inspection.
+- **Contents:** Migration from legacy prefs, duplicate suppression, pending queue reopen and draft recovery.
+- **Key code names:** `main`
+- **Repository role:** test
+- **Evidence of use:** Android release CI runs `flutter test --platform chrome test/web_record_journal_test.dart`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Browser storage regression would no longer be caught by release CI.
+- **Confidence:** HIGH
+- **Owner / layer:** tests
+- **Responsibilities:** Enforce durable IndexedDB behavior on web.
+- **When to open:** IndexedDB browser test or recorded-input regression.
+- **Can it be deleted?** No while release checks require it.
+- **Connected to:** `web_record_journal.dart`, `record_mutation_outbox.dart`.
+
+RU:
+
+- **Зачем файл человеку:** Проверка реального браузерного сохранения записей.
+- **Что это:** Регрессионный тест Flutter под Chrome.
+- **Зачем:** Проверять очередь и миграцию IndexedDB.
+- **Содержимое:** Тест миграции, повторов, восстановления после перезапуска и черновиков.
+- **Ключевые имена:** `main`
+- **Роль в репозитории:** test
+- **Доказательства использования:** GitHub Actions Chrome test.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Последствие удаления:** Потеря автоматической проверки.
+- **Достоверность:** HIGH
+- **Владелец / слой:** tests
+- **Обязанности:** Web IndexedDB smoke test.
+- **Когда открывать:** Ошибки сохранения записей.
+- **Можно удалить?** Нет.
+- **Связано с:** `record_mutation_outbox.dart`.
+
+---
 
 ### `test/record_write_durability_test.dart`
 

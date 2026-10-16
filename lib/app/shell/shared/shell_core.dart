@@ -15,6 +15,9 @@ mixin ShellCoreLogic on ShellDashboardBase {
       try {
         final prefs = await SharedPreferences.getInstance();
         final key = quickEntryDraftStorageKey;
+        if (kIsWeb) {
+          return WebRecordJournal.writeDraft(key, text);
+        }
         return text.isEmpty
             ? await prefs.remove(key)
             : await prefs.setString(key, text);
@@ -40,7 +43,20 @@ mixin ShellCoreLogic on ShellDashboardBase {
   Future<void> restoreQuickEntryDraft() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final draft = prefs.getString(quickEntryDraftStorageKey) ?? '';
+      final key = quickEntryDraftStorageKey;
+      var draft = kIsWeb ? await WebRecordJournal.readDraft(key) : null;
+      if (kIsWeb && draft == null) {
+        // Upgrade the older localStorage draft without losing it.
+        final legacy = prefs.getString(key);
+        if (legacy != null && legacy.isNotEmpty) {
+          await WebRecordJournal.writeDraft(key, legacy);
+          draft = legacy;
+          try {
+            await prefs.remove(key);
+          } catch (_) {}
+        }
+      }
+      draft ??= prefs.getString(key) ?? '';
       if (draft.isNotEmpty && titleController.text.isEmpty) {
         titleController.text = draft;
       }

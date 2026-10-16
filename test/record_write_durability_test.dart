@@ -38,6 +38,22 @@ void main() {
     );
   });
 
+  test('retrying one capture UUID cannot enqueue a second create', () async {
+    final prefs = await SharedPreferences.getInstance();
+    await RecordMutationOutbox.enqueue(prefs, create('same-uuid'));
+    await RecordMutationOutbox.enqueue(prefs, create('same-uuid'));
+    final queue = await RecordMutationOutbox.load(prefs);
+    expect(queue, hasLength(1));
+    expect(queue.single['businessId'], 'same-uuid');
+  });
+
+  test('distinct capture UUIDs remain independent, even with same titles', () async {
+    final prefs = await SharedPreferences.getInstance();
+    await RecordMutationOutbox.enqueue(prefs, create('first-uuid'));
+    await RecordMutationOutbox.enqueue(prefs, create('second-uuid'));
+    expect(await RecordMutationOutbox.load(prefs), hasLength(2));
+  });
+
   test('acknowledging an older POST does not delete a newer POST', () async {
     final prefs = await SharedPreferences.getInstance();
     final first = create('one');
@@ -180,6 +196,31 @@ void main() {
         .readAsStringSync();
     expect(replay, contains('await _loadRulesFromNoco()'));
     expect(replay, contains('record_create_waiting_for_category'));
+  });
+
+  test('retry preserves identity and cannot stop the previous timer early', () {
+    final shell = File('lib/app/shell/shared/shell_task_actions.dart')
+        .readAsStringSync();
+    final record = File('lib/data/records/record_crud.dart')
+        .readAsStringSync();
+    final start = shell.indexOf('Future<void> startTaskFromInput() async');
+    final end = shell.indexOf('Future<void> planTaskFromInput()', start);
+    final body = shell.substring(start, end);
+    expect(body, contains('stableCreateBusinessId: attemptId'));
+    expect(body, isNot(contains('unawaited(stopAnyActiveTask())')));
+    expect(body, contains('createBusinessId: attemptId'));
+    expect(body, contains('capturedStartTime: now'));
+    expect(record, contains('stableCreateBusinessId ?? DatabaseService._newClientRecordUuid()'));
+  });
+
+  test('record queue on web is transactional and migrates legacy prefs', () {
+    final journal = File('lib/data/local_sync/web_record_journal.dart')
+        .readAsStringSync();
+    final queue = File('lib/data/local_sync/record_mutation_outbox.dart')
+        .readAsStringSync();
+    expect(journal, contains('db.transaction<T>'));
+    expect(queue, contains('await _ensureWebMigration(prefs)'));
+    expect(queue, contains('WebRecordJournal.transact<void>'));
   });
 
   test('quick entry is journaled before submit and restored on reload', () {

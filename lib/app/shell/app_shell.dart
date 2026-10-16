@@ -31,6 +31,7 @@ import 'package:counter/core/widgets/global_app_header.dart';
 import 'package:counter/core/widgets/lazy_indexed_stack.dart';
 import 'package:counter/core/widgets/tag_display_mode_scope.dart';
 import 'package:counter/data/database_service.dart';
+import 'package:counter/data/local_sync/web_record_journal.dart';
 import 'package:counter/data/health/sleep_foreground_reconcile_service.dart';
 import 'package:counter/data/records/unfilled_time_gap_service.dart';
 import 'package:counter/data/models.dart';
@@ -62,6 +63,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:uuid/uuid.dart';
 
 part 'shared/shell_core.dart';
 part 'shared/shell_task_actions.dart';

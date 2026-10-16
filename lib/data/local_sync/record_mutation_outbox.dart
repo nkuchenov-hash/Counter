@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'web_record_journal.dart';
 
 /// Local-only queue for PocketBase **records** mutations when the network fails.
 ///
@@ -71,28 +73,72 @@ abstract final class RecordMutationOutbox {
     }
   }
 
+  /// One-time lossless migration: copy the existing localStorage queue into
+  /// IndexedDB, then remove the old key only after the IndexedDB transaction
+  /// commits. The migration marker is inside the same transaction as its data.
+  static Future<void> _ensureWebMigration(SharedPreferences prefs) async {
+    final legacy = prefs.getString(_prefsKey);
+    await WebRecordJournal.transact<void>((raw, migrated, put) async {
+      if (migrated) return;
+      final existing = _decode(raw);
+      final previous = _decode(legacy);
+      await put(jsonEncode(coalesceQueue([...existing, ...previous])), true);
+    });
+    if (legacy != null) {
+      // This only frees scarce localStorage space. If remove fails, the
+      // journal's imported marker prevents future re-import/duplicates.
+      try {
+        await prefs.remove(_prefsKey);
+      } catch (_) {}
+    }
+  }
+
   static Future<List<Map<String, dynamic>>> load(SharedPreferences prefs) async {
     await _writeBarrier;
+    if (kIsWeb) {
+      await _ensureWebMigration(prefs);
+      return _decode(await WebRecordJournal.readRaw());
+    }
     return _decode(prefs.getString(_prefsKey));
   }
 
   static Future<void> save(
     SharedPreferences prefs,
     List<Map<String, dynamic>> items,
-  ) => _serializeWrite(() => _persist(prefs, items));
+  ) => _serializeWrite(() async {
+    if (kIsWeb) {
+      await _ensureWebMigration(prefs);
+      await WebRecordJournal.transact<void>((_, migrated, put) async {
+        await put(jsonEncode(items), migrated);
+      });
+    } else {
+      await _persist(prefs, items);
+    }
+  });
 
   static Future<void> replaceAll(
     SharedPreferences prefs,
     List<Map<String, dynamic>> items,
   ) => save(prefs, items);
 
-  /// Remove only the confirmed operation from the latest queue, preserving
-  /// new writes that arrived during the network request.
+  /// Acknowledgement cannot remove an entry added while a network operation
+  /// was running. Read and write the latest queue in one IndexedDB transaction.
   static Future<bool> acknowledge(
     SharedPreferences prefs,
     String operationId,
   ) => _serializeWrite(() async {
     if (operationId.isEmpty) return false;
+    if (kIsWeb) {
+      await _ensureWebMigration(prefs);
+      return WebRecordJournal.transact<bool>((raw, migrated, put) async {
+        final items = _decode(raw);
+        final before = items.length;
+        items.removeWhere((item) => item['operationId'] == operationId);
+        if (items.length == before) return false;
+        await put(jsonEncode(items), migrated);
+        return true;
+      });
+    }
     final items = _decode(prefs.getString(_prefsKey));
     final before = items.length;
     items.removeWhere((item) => item['operationId'] == operationId);
@@ -106,6 +152,20 @@ abstract final class RecordMutationOutbox {
     String operationId, {
     required String error,
   }) => _serializeWrite(() async {
+    if (kIsWeb) {
+      await _ensureWebMigration(prefs);
+      await WebRecordJournal.transact<void>((raw, migrated, put) async {
+        final items = _decode(raw);
+        for (final item in items) {
+          if (item['operationId'] != operationId) continue;
+          item['retryCount'] = ((item['retryCount'] as num?)?.toInt() ?? 0) + 1;
+          item['lastError'] = error;
+          await put(jsonEncode(items), migrated);
+          break;
+        }
+      });
+      return;
+    }
     final items = _decode(prefs.getString(_prefsKey));
     for (final item in items) {
       if (item['operationId'] != operationId) continue;
@@ -178,6 +238,15 @@ abstract final class RecordMutationOutbox {
 
       if (biz.isNotEmpty &&
           out.any((e) => _bizKey(e) == biz && _isDeleteItem(e))) {
+        continue;
+      }
+
+      // A retry of the same capture cannot enqueue another create.
+      if ((kind == kindHighlanderStart || kind == kindRecordCreate) &&
+          biz.isNotEmpty &&
+          out.any((e) => _bizKey(e) == biz &&
+              (e['kind'] == kindHighlanderStart ||
+                  e['kind'] == kindRecordCreate))) {
         continue;
       }
 
@@ -339,8 +408,15 @@ abstract final class RecordMutationOutbox {
     SharedPreferences prefs,
     List<Map<String, dynamic>> items,
   ) => _serializeWrite(() async {
-    final q = _decode(prefs.getString(_prefsKey));
-    q.addAll(items);
+    if (kIsWeb) {
+      await _ensureWebMigration(prefs);
+      await WebRecordJournal.transact<void>((raw, migrated, put) async {
+        final q = _decode(raw)..addAll(items);
+        await put(jsonEncode(coalesceQueue(q)), migrated);
+      });
+      return;
+    }
+    final q = _decode(prefs.getString(_prefsKey))..addAll(items);
     await _persist(prefs, coalesceQueue(q));
   });
 }

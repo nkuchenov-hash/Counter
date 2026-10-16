@@ -213,19 +213,6 @@ extension RecordCrudExtension on DatabaseService {
     return false;
   }
 
-  void _appendPendingRecordCreateShadow(Map<String, dynamic> fields) {
-    final businessId = (fields['record_id'] ?? '').toString().trim();
-    if (businessId.isEmpty) return;
-    final local = <String, dynamic>{
-      ...fields,
-      'id': businessId,
-      '_pb_record_id': '',
-      '_highlanderPendingPost': true,
-    };
-    _cachedFlatRecords = [..._cachedFlatRecords, local];
-    _notifyTimelineAfterRecordCacheMutation();
-  }
-
   Future<String?> writeRecord(
     String dateKey,
     String taskText, {
@@ -235,9 +222,17 @@ extension RecordCrudExtension on DatabaseService {
     int? parentId,
     String? parentRecordId,
     String? sourcePlanPocketRecordId,
+    String? stableCreateBusinessId,
   }) async {
     if (!_isInitialized || !_hasAuthenticatedUserId) return null;
-    // Each accepted submission is independent of prior in-flight writes.
+    // Retrying an accepted local capture reuses its business UUID, not a new
+    // record. Avoid duplicating an already-visible optimistic/server shadow.
+    if (stableCreateBusinessId != null &&
+        _cachedFlatRecords.any((row) =>
+            row['record_id'] == stableCreateBusinessId)) {
+      return stableCreateBusinessId;
+    }
+    // Each distinct submission is independent of prior in-flight writes.
     try {
       final parsed = getCleanTitleAndTags(taskText);
       final sourcePlanForPayloadEarly =
@@ -301,7 +296,7 @@ extension RecordCrudExtension on DatabaseService {
         final isPrimary = !hasParent;
         late final String runningRecordBizId;
         if (isPrimary) {
-          runningRecordBizId = DatabaseService._newClientRecordUuid();
+          runningRecordBizId = stableCreateBusinessId ?? DatabaseService._newClientRecordUuid();
           final runningFields = _nocoFieldsForPatch(<String, dynamic>{
             'user_id': _pidForPbFilter,
             'record_id': runningRecordBizId,
@@ -397,7 +392,7 @@ extension RecordCrudExtension on DatabaseService {
             rethrow;
           }
         }
-        runningRecordBizId = DatabaseService._newClientRecordUuid();
+        runningRecordBizId = stableCreateBusinessId ?? DatabaseService._newClientRecordUuid();
         final runningFields = _nocoFieldsForPatch(<String, dynamic>{
           'user_id': _pidForPbFilter,
           'record_id': runningRecordBizId,
@@ -440,7 +435,7 @@ extension RecordCrudExtension on DatabaseService {
             : (cidForCompleted ?? _resolveColdStartRecordCategoryId(null));
         final completedFields = _nocoFieldsForPatch(<String, dynamic>{
           'user_id': _pidForPbFilter,
-          'record_id': DatabaseService._newClientRecordUuid(),
+          'record_id': stableCreateBusinessId ?? DatabaseService._newClientRecordUuid(),
           'status': 'completed',
           'title': parsed.title,
           'start_time': startIso,
