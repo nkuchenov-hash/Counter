@@ -235,6 +235,7 @@ extension RecordCrudExtension on DatabaseService {
     int? parentId,
     String? parentRecordId,
     String? sourcePlanPocketRecordId,
+    String? stableCreateBusinessId,
   }) async {
     if (!_isInitialized || !_hasAuthenticatedUserId) return null;
     // Each accepted submission is independent of prior in-flight writes.
@@ -301,7 +302,7 @@ extension RecordCrudExtension on DatabaseService {
         final isPrimary = !hasParent;
         late final String runningRecordBizId;
         if (isPrimary) {
-          runningRecordBizId = DatabaseService._newClientRecordUuid();
+          runningRecordBizId = stableCreateBusinessId ?? DatabaseService._newClientRecordUuid();
           final runningFields = _nocoFieldsForPatch(<String, dynamic>{
             'user_id': _pidForPbFilter,
             'record_id': runningRecordBizId,
@@ -397,7 +398,7 @@ extension RecordCrudExtension on DatabaseService {
             rethrow;
           }
         }
-        runningRecordBizId = DatabaseService._newClientRecordUuid();
+        runningRecordBizId = stableCreateBusinessId ?? DatabaseService._newClientRecordUuid();
         final runningFields = _nocoFieldsForPatch(<String, dynamic>{
           'user_id': _pidForPbFilter,
           'record_id': runningRecordBizId,
@@ -440,7 +441,7 @@ extension RecordCrudExtension on DatabaseService {
             : (cidForCompleted ?? _resolveColdStartRecordCategoryId(null));
         final completedFields = _nocoFieldsForPatch(<String, dynamic>{
           'user_id': _pidForPbFilter,
-          'record_id': DatabaseService._newClientRecordUuid(),
+          'record_id': stableCreateBusinessId ?? DatabaseService._newClientRecordUuid(),
           'status': 'completed',
           'title': parsed.title,
           'start_time': startIso,
