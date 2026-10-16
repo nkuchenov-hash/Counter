@@ -39,6 +39,15 @@ This document defines how Life OS behaves when people interact with it. It is th
 - Delete UI should disappear optimistically after confirmation.
 - Failed non-retriable deletes restore the item or show a clear recovery path.
 - Background delete retries must not produce repeated identical errors.
+- Notes bulk deletion must attempt every selected item, including after a rejected individual request. Successful deletes stay deleted; only rejected IDs are restored and remain selected for retry. A request durably queued for offline sync remains optimistically hidden, with pending sync shown globally.
+- Bulk deletion notifies the list once per batch instead of triggering a network reload per successfully deleted row.
+
+## Notes Library / Physical Folder Tabs
+
+- The category strip is a row of colored physical-folder tabs, using each category's configured color. All inactive tabs have visible outlines; the selected tab stays in its existing order position and its bottom edge visually merges into the same-color notes pane.
+- Clicking a category never moves it to the beginning of the tab list or forcibly resets horizontal scroll.
+- The `+` section-control and a distinct settings/Select control remain visible outside the horizontally scrolling tab list on desktop and mobile.
+- Select chooses the displayed sections; the selected section list and order persist under the existing Lists preferences. Hidden categories are not deleted.
 
 ## Loading States
 
