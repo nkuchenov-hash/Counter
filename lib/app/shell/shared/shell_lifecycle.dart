@@ -3,6 +3,8 @@ part of '../app_shell.dart';
 mixin ShellLifecycle
     on ShellTabHost, ShellVoiceIntegration, ShellBrowserExtensionQuickAdd {
   void initializeShellLifecycle() {
+    titleController.addListener(scheduleQuickEntryDraftWrite);
+    unawaited(restoreQuickEntryDraft());
     selectedDate = DatabaseService.instance.getTimelineDeviceLocalToday();
     focusedDay = DatabaseService.instance.getTimelineDeviceLocalToday();
     selectedDateListenable = ValueNotifier(selectedDate);
@@ -99,6 +101,8 @@ mixin ShellLifecycle
     notificationSub?.cancel();
     categoryRulesSub?.cancel();
     browserExtensionRecordSub?.cancel();
+    quickEntryDraftWriteTimer?.cancel();
+    titleController.removeListener(scheduleQuickEntryDraftWrite);
     titleController.dispose();
     titleFocus.dispose();
     shellLayout.dispose();

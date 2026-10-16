@@ -210,6 +210,14 @@ extension CategoryRecordBridgeExtension on DatabaseService {
     return (businessId: biz, relationId: rel);
   }
 
+  /// Preserve the caller's category choice until the category catalog recovers.
+  /// A locally accepted record must not fail before entering its durable outbox.
+  String _recordCategoryKeyForDurableCreate(int? id) {
+    final pair = _recordCategoryDualityForLocalId(id);
+    return pair?.businessId ??
+        (id != null && id > 0 ? id.toString() : 'uncategorized');
+  }
+
   int? _localCategoryIdFromRecordCategoryPayload(dynamic rawCat) {
     final key = rawCat?.toString().trim() ?? '';
     if (key.isEmpty) return null;
@@ -238,6 +246,13 @@ extension CategoryRecordBridgeExtension on DatabaseService {
     final beforeCat = merged['category_id'];
     final beforeLink = merged['category_link'];
     final oldCategory = beforeCat ?? beforeLink;
+    final requestedLocalId = int.tryParse(oldCategory?.toString() ?? '');
+    // Never silently remap an explicitly selected but temporarily unavailable
+    // category to an unrelated leaf while offline; retain intent for replay.
+    if (requestedLocalId != null &&
+        !_categoryIdResolvableForPbRecordPost(requestedLocalId)) {
+      return false;
+    }
 
     var localId = _localCategoryIdFromRecordCategoryPayload(beforeCat);
     localId ??= _localCategoryIdFromRecordCategoryPayload(beforeLink);

@@ -112,6 +112,8 @@ mixin ShellDashboardBase on State<LifeOSDashboard> {
 
   final titleController = TextEditingController();
   final titleFocus = FocusNode();
+  Timer? quickEntryDraftWriteTimer;
+  Future<void> quickEntryDraftWriteBarrier = Future<void>.value();
 
   StreamSubscription<String?>? notificationSub;
   StreamSubscription<List<CategoryRule>>? categoryRulesSub;

@@ -1,6 +1,54 @@
 part of '../app_shell.dart';
 
 mixin ShellCoreLogic on ShellDashboardBase {
+  /// Quick-entry text survives failed validation, auth loss and page reload.
+  /// The outbox remains the authoritative accepted-record journal; this draft
+  /// only protects text before that durable handoff succeeds.
+  String get quickEntryDraftStorageKey {
+    final user = DatabaseService.instance.currentProfileId?.trim() ?? '';
+    return 'lifeos_quick_entry_draft_v1_${user.isEmpty ? 'no_profile' : user}';
+  }
+
+  Future<bool> persistQuickEntryDraft(String text) {
+    quickEntryDraftWriteTimer?.cancel();
+    final write = quickEntryDraftWriteBarrier.then((_) async {
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final key = quickEntryDraftStorageKey;
+        return text.isEmpty
+            ? await prefs.remove(key)
+            : await prefs.setString(key, text);
+      } catch (e) {
+        debugPrint('QUICK_ENTRY_DRAFT_PERSIST: $e');
+        return false;
+      }
+    });
+    quickEntryDraftWriteBarrier = write.then<void>(
+      (_) {},
+      onError: (Object _, StackTrace __) {},
+    );
+    return write;
+  }
+
+  void scheduleQuickEntryDraftWrite() {
+    quickEntryDraftWriteTimer?.cancel();
+    quickEntryDraftWriteTimer = Timer(const Duration(milliseconds: 180), () {
+      unawaited(persistQuickEntryDraft(titleController.text));
+    });
+  }
+
+  Future<void> restoreQuickEntryDraft() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final draft = prefs.getString(quickEntryDraftStorageKey) ?? '';
+      if (draft.isNotEmpty && titleController.text.isEmpty) {
+        titleController.text = draft;
+      }
+    } catch (e) {
+      debugPrint('QUICK_ENTRY_DRAFT_RESTORE: $e');
+    }
+  }
+
   void onDeviceLocalCalendarDayWatchTick() {
     final key = DatabaseService.instance.getTimelineDeviceLocalTodayDateKey();
     if (key == deviceLocalDayKeyLast) {

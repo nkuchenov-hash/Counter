@@ -17,6 +17,20 @@ This document defines how Life OS behaves when people interact with it. It is th
 - A tap that opens a sheet, menu, route, picker, or mode must respond immediately.
 - Debounce repeated destructive or sync-heavy actions at the handler boundary.
 
+## Lossless record capture
+
+- A record's title, requested category and start-time intent must enter durable
+  device storage before the entry field is cleared or a server request is made.
+- A temporarily missing category catalog must **never** reject a new record
+  before local outbox staging. Keep the explicit category identity for replay;
+  do not silently remap it to an unrelated category.
+- Network downtime, auth refresh and PocketBase validation delay delivery, not
+  local acceptance. Pending records remain visible and survive reload.
+- Keep the draft recoverable if even the local write-ahead handoff fails. Never
+  display a false success if device storage cannot persist the input.
+- Corrupt record outbox bytes must be surfaced and preserved; never interpret
+  an unreadable queue as empty and overwrite its pending user data.
+
 ## Save Behavior
 
 - Saves that affect records, plans, lists, Paths, categories, tags, or profile settings must update local state before network sync when the current architecture supports it.
