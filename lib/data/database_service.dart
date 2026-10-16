@@ -57,6 +57,7 @@ part 'plans/plan_time_cascade_helpers.dart';
 part 'plans/plan_tags_helpers.dart';
 part 'plans/plan_cache_helpers.dart';
 part 'plans/plan_outbox_helpers.dart';
+part 'plans/plan_bulk_delete_helpers.dart';
 part 'plans/plan_snapshot_helpers.dart';
 part 'plans/plan_stream_helpers.dart';
 part 'plans/plan_optimistic_helpers.dart';
