@@ -214,7 +214,8 @@ extension CategoryRecordBridgeExtension on DatabaseService {
   /// A locally accepted record must not fail before entering its durable outbox.
   String _recordCategoryKeyForDurableCreate(int? id) {
     final pair = _recordCategoryDualityForLocalId(id);
-    return pair?.businessId ?? (id?.toString() ?? 'uncategorized');
+    return pair?.businessId ??
+        (id != null && id > 0 ? id.toString() : 'uncategorized');
   }
 
   int? _localCategoryIdFromRecordCategoryPayload(dynamic rawCat) {
