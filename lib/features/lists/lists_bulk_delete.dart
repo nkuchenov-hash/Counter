@@ -20,13 +20,13 @@ extension _ListsBulkDeleteExtension on _ListsPageState {
         continue;
       }
       if (pid.isEmpty) {
-        failedKeys.add(_listKey(t));
+        failedKeys.add(_ListsPageState._listKey(t));
         continue;
       }
       ids.add(pid);
       backups[pid] = t;
       db.applyOptimisticPlanningTask(
-        t.copyWith(dateKey: _kOptimisticPurgeDateKey),
+        t.copyWith(dateKey: _ListsPageState._kOptimisticPurgeDateKey),
       );
     }
     db.notifyPlanningRefresh(scheduleNetworkRefresh: false);
@@ -47,7 +47,7 @@ extension _ListsBulkDeleteExtension on _ListsPageState {
       final backup = backups[id];
       if (backup == null) continue;
       db.applyOptimisticPlanningTask(backup);
-      failedKeys.add(_listKey(backup));
+      failedKeys.add(_ListsPageState._listKey(backup));
     }
     if (failedIds.isNotEmpty) {
       db.notifyPlanningRefresh(scheduleNetworkRefresh: false);
