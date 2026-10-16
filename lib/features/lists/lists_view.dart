@@ -85,6 +85,7 @@ class _ListsPageState extends State<ListsPage>
   final FocusNode _inlineFocus = FocusNode();
 
   bool _listsSelectMode = false;
+  bool _bulkDeleteInProgress = false;
   final Set<String> _selectedListKeys = <String>{};
   bool _listsArchiveSectionExpanded = true;
 
@@ -266,41 +267,66 @@ class _ListsPageState extends State<ListsPage>
   }
 
   Future<void> _listsBulkDelete(List<PlanningTask> display) async {
-    final tasks = _tasksMatchingSelectedKeys(display);
+    if (_bulkDeleteInProgress) return;
+    // Resolve from the current Brain snapshot, not a stale search/group slice.
+    final tasks = _tasksMatchingSelectedKeys(_displayFlat);
     if (tasks.isEmpty) return;
-    final ids = <String>[];
+    _bulkDeleteInProgress = true;
     final db = DatabaseService.instance;
-    final backups = <PlanningTask>[];
+    final ids = <String>[];
+    final backups = <String, PlanningTask>{};
+    final failedKeys = <String>{};
     for (final t in tasks) {
-      if (t.planRowIdForBackend.startsWith('optimistic-')) {
-        db.clearOptimisticPlanningForPlanRow(t.planRowIdForBackend);
+      final pid = t.planRowIdForBackend.trim();
+      if (pid.startsWith('optimistic-')) {
+        db.clearOptimisticPlanningForPlanRow(pid);
         continue;
       }
-      final pid = t.planRowIdForBackend.trim();
-      if (pid.isNotEmpty) ids.add(pid);
-      backups.add(t);
+      if (pid.isEmpty) {
+        failedKeys.add(_listKey(t));
+        continue;
+      }
+      ids.add(pid);
+      backups[pid] = t;
       db.applyOptimisticPlanningTask(
         t.copyWith(dateKey: _kOptimisticPurgeDateKey),
       );
     }
-    if (ids.isEmpty) {
-      db.notifyPlanningRefresh(scheduleNetworkRefresh: false);
-      setState(() {});
-      _exitListsSelectMode();
-      return;
-    }
     db.notifyPlanningRefresh(scheduleNetworkRefresh: false);
-    setState(() {});
-    final ok = await db.deletePlanningTasksBulk(ids);
-    if (!ok && mounted) {
-      for (final t in backups) {
-        db.applyOptimisticPlanningTask(t);
-      }
-      db.notifyPlanningRefresh(scheduleNetworkRefresh: false);
-      setState(() {});
+    if (mounted) setState(() {});
+
+    Set<String> failedIds;
+    try {
+      failedIds = ids.isEmpty
+          ? <String>{}
+          : await db.deletePlanningTasksBulkFailedIds(ids);
+    } catch (_) {
+      failedIds = ids.toSet();
       AppSnack.failed();
     }
-    if (mounted) _exitListsSelectMode();
+
+    // Successful deletes stay deleted. Restore only rejected ones.
+    for (final id in failedIds) {
+      final backup = backups[id];
+      if (backup == null) continue;
+      db.applyOptimisticPlanningTask(backup);
+      failedKeys.add(_listKey(backup));
+    }
+    if (failedIds.isNotEmpty) {
+      db.notifyPlanningRefresh(scheduleNetworkRefresh: false);
+    }
+    if (!mounted) {
+      _bulkDeleteInProgress = false;
+      return;
+    }
+    setState(() {
+      _bulkDeleteInProgress = false;
+      _selectedListKeys
+        ..clear()
+        ..addAll(failedKeys);
+      _listsSelectMode = failedKeys.isNotEmpty;
+    });
+    _syncListsShellFabBulkReserve();
   }
 
   Widget? _listsBulkBottomBar(
@@ -575,12 +601,8 @@ class _ListsPageState extends State<ListsPage>
     } else {
       raw = List<int>.from(_pinnedChipIds);
     }
-    final available = _sanitizeIntCategoryIds(raw);
-    final active = _filterCategoryId;
-    if (active != null && available.contains(active)) {
-      return [active, ...available.where((x) => x != active)];
-    }
-    return available;
+    // Category selection never changes the physical tab order.
+    return _sanitizeIntCategoryIds(raw);
   }
 
   List<Tag> _tagsForFilterBar() {
@@ -610,12 +632,6 @@ class _ListsPageState extends State<ListsPage>
   }
 
   void _onFilterChanged(int? id) {
-    if (id != null && _chipMode == 'manual') {
-      final next = List<int>.from(_pinnedChipIds)..remove(id);
-      next.insert(0, id);
-      _pinnedChipIds = _sanitizeIntCategoryIds(next);
-      unawaited(_persistPinnedChipIds(_pinnedChipIds));
-    }
     setState(() {
       _filterCategoryId = id;
       _listsSelectMode = false;
@@ -623,6 +639,21 @@ class _ListsPageState extends State<ListsPage>
     });
     unawaited(_persistFilterCategoryId(id));
     _scrollChipBarToStart();
+  }
+
+  /// Visible folder sections are user-selected, ordered, and persisted.
+  void _onVisibleNoteSectionsChanged(List<int> ids) {
+    final next = _sanitizeIntCategoryIds(ids);
+    setState(() {
+      _chipMode = 'manual';
+      _pinnedChipIds = next;
+      if (_filterCategoryId != null && !next.contains(_filterCategoryId)) {
+        _filterCategoryId = null;
+      }
+    });
+    unawaited(_persistChipMode('manual'));
+    unawaited(_persistPinnedChipIds(next));
+    unawaited(_persistFilterCategoryId(_filterCategoryId));
   }
 
   void _onTagFilterChanged(String? tagPbId) {
@@ -1069,6 +1100,7 @@ class _ListsPageState extends State<ListsPage>
                     onFilterChanged: _onFilterChanged,
                     onManualChipReorder: (oldI, newI) =>
                         _onManualChipReorder(chipIds, oldI, newI),
+                    onVisibleSectionsChanged: _onVisibleNoteSectionsChanged,
                     glmPresentation: true,
                   ),
                 ),
