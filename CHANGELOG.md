@@ -1,3 +1,11 @@
+## 2026-10-16 — P0 resilient Timeline capture and idempotent retry [fix]
+
+- Moved browser record-mutation outbox from quota-constrained SharedPreferences/localStorage to IndexedDB transactions. Existing queued records migrate before the old journal key is released.
+- Timeline input drafts also persist in IndexedDB, with one-time legacy draft recovery.
+- Retry preserves one stable business UUID and original start instant; duplicate capture queue rows and stale-title retries are prevented.
+- The previous running timer is no longer stopped before the next recording has passed local durable staging.
+- Added real Chrome IndexedDB regression coverage in CI. Keep server/network status separate from confirmed local acceptance.
+
 ## 2026-10-16 — P0 record capture without category-related data loss [fix]
 
 - Removed the pre-outbox rejection when the category catalog has not hydrated; create requests now retain the selected local category ID and wait for valid PocketBase relations before replay.
