@@ -1397,6 +1397,7 @@ extension PlanServiceExtension on DatabaseService {
     var skipDeletedSnack = false;
     for (final id in raw) {
       final trimmed = id.trim();
+      try {
       if (trimmed.startsWith('optimistic-')) {
         clearOptimisticPlanningForPlanRow(trimmed);
         deferredNotify = true;
@@ -1426,6 +1427,7 @@ extension PlanServiceExtension on DatabaseService {
           originalInput: trimmed,
           resolvedPbId: shadowPb,
           businessId: businessId,
+          deferPlanningNotify: true,
         );
         if (!del.ok) {
           failedIds.add(trimmed);
@@ -1452,6 +1454,7 @@ extension PlanServiceExtension on DatabaseService {
           originalInput: trimmed,
           resolvedPbId: restId,
           businessId: businessId,
+          deferPlanningNotify: true,
         );
         if (!del.ok) {
           failedIds.add(trimmed);
@@ -1504,6 +1507,12 @@ extension PlanServiceExtension on DatabaseService {
         }
         failedIds.add(trimmed);
         continue;
+      }
+      } catch (error, stackTrace) {
+        if (kDebugMode) {
+          debugPrint('Bulk plan delete failed for a row: $error\n$stackTrace');
+        }
+        failedIds.add(trimmed);
       }
     }
     if (deferredNotify) {
