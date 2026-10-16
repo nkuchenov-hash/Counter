@@ -3,7 +3,6 @@
 // keeping the existing Lists/Brain callbacks as the data and mutation source.
 
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:counter/data/database_service.dart';
 import 'package:counter/features/notes/note_editor_page.dart';
@@ -12,11 +11,7 @@ import 'package:counter/features/notes/widgets/note_card.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:counter/shared/categories/picker/category_tree_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
-const Color _kAllFolderSurface = Color(0xFFE3ECF8);
-const String _kChipModePrefsKey = 'list_chip_mode';
-const String _kPinnedIdsPrefsKey = 'list_pinned_ids';
 
 class NotesLibraryProductionShell extends StatelessWidget {
   const NotesLibraryProductionShell({
@@ -56,6 +51,8 @@ class NotesLibraryProductionShell extends StatelessWidget {
         onFilterChanged: candidate.onFilterChanged as ValueChanged<int?>,
         onManualChipReorder:
             candidate.onManualChipReorder as void Function(int, int),
+        onVisibleSectionsChanged:
+            candidate.onVisibleSectionsChanged as ValueChanged<List<int>>,
       );
     } catch (_) {
       return null;
@@ -129,8 +126,13 @@ class NotesLibraryProductionShell extends StatelessWidget {
               onNewNote: newNote,
             ),
           const SizedBox(height: 12),
-          SizedBox(height: 42, child: tabs),
-          Expanded(child: content),
+          SizedBox(height: 44, child: tabs),
+          Expanded(
+            child: _NotesFolderPane(
+              categoryId: category?.filterCategoryId,
+              child: content,
+            ),
+          ),
         ],
       ),
     );
@@ -266,11 +268,21 @@ class _MobileNotesLibrary extends StatelessWidget {
                 color: scheme.onSurface,
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
+            SizedBox(
+              height: 44,
+              child: _NotesPhysicalFolderTabs(
+                adapter: category,
+                onOpenSettings: header.onOpenSettings,
+              ),
+            ),
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.only(bottom: 86),
-                child: content,
+                child: _NotesFolderPane(
+                  categoryId: category.filterCategoryId,
+                  child: content,
+                ),
               ),
             ),
           ],
@@ -1054,14 +1066,49 @@ class _NewNoteButton extends StatelessWidget {
   }
 }
 
-Color _paneColorFor(int? categoryId) {
-  if (categoryId == null) return _kAllFolderSurface;
-  final rule = DatabaseService.instance.getCategoryRuleById(categoryId);
-  if (rule == null) return _kAllFolderSurface;
+Color _paneColorFor(BuildContext context, int? categoryId) {
+  final scheme = Theme.of(context).colorScheme;
+  final dark = Theme.of(context).brightness == Brightness.dark;
+  final accent = categoryId == null
+      ? const Color(0xFF285B99)
+      : (DatabaseService.instance.getCategoryRuleById(categoryId)
+              ?.colorOrDefault ??
+          const Color(0xFF285B99));
   return Color.alphaBlend(
-    rule.colorOrDefault.withValues(alpha: 0.12),
-    const Color(0xFFF7F8FA),
+    accent.withValues(alpha: dark ? 0.20 : 0.12),
+    scheme.surface,
   );
+}
+
+/// The selected paper tab touches the same folder-colored content surface.
+class _NotesFolderPane extends StatelessWidget {
+  const _NotesFolderPane({required this.categoryId, required this.child});
+
+  final int? categoryId;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: _paneColorFor(context, categoryId),
+        border: Border(
+          left: BorderSide(color: scheme.outlineVariant.withValues(alpha: 0.65)),
+          right: BorderSide(color: scheme.outlineVariant.withValues(alpha: 0.65)),
+          bottom: BorderSide(color: scheme.outlineVariant.withValues(alpha: 0.65)),
+        ),
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(12),
+          bottomRight: Radius.circular(12),
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(10, 12, 10, 12),
+        child: child,
+      ),
+    );
+  }
 }
 
 class _NotesCategoryAdapter {
@@ -1080,6 +1127,7 @@ class _NotesCategoryAdapter {
   final ScrollController scrollController;
   final ValueChanged<int?> onFilterChanged;
   final void Function(int oldIndex, int newIndex) onManualChipReorder;
+  final ValueChanged<List<int>> onVisibleSectionsChanged;
 }
 
 class _NotesPhysicalFolderTabs extends StatefulWidget {
@@ -1134,46 +1182,53 @@ class _NotesPhysicalFolderTabsState extends State<_NotesPhysicalFolderTabs> {
       ...selected,
     ];
 
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_kChipModePrefsKey, 'manual');
-    await prefs.setString(_kPinnedIdsPrefsKey, jsonEncode(next));
     if (!mounted) return;
-
     setState(() => _localChipIds = next);
-    final active = widget.adapter.filterCategoryId;
-    if (active != null && !next.contains(active)) {
-      widget.adapter.onFilterChanged(null);
-    }
+    widget.adapter.onVisibleSectionsChanged(next);
   }
 
   @override
   Widget build(BuildContext context) {
     final ids = _ids;
     return SizedBox(
-      height: 42,
-      child: ScrollConfiguration(
-        behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
-        child: ListView(
-          controller: widget.adapter.scrollController,
-          scrollDirection: Axis.horizontal,
-          clipBehavior: Clip.none,
-          padding: const EdgeInsets.only(right: 12),
-          children: [
-            Align(
-              alignment: Alignment.bottomLeft,
-              child: _FolderTab(
-                label: _allLabel(currentLocale.value),
-                icon: Icons.format_list_bulleted_rounded,
-                accent: const Color(0xFF285B99),
-                fill: _kAllFolderSurface,
-                selected: widget.adapter.filterCategoryId == null,
-                onTap: () => widget.adapter.onFilterChanged(null),
+      height: 44,
+      child: Row(
+        children: [
+          Expanded(
+            child: ScrollConfiguration(
+              behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
+              child: ListView(
+                controller: widget.adapter.scrollController,
+                scrollDirection: Axis.horizontal,
+                clipBehavior: Clip.none,
+                padding: EdgeInsets.zero,
+                children: [
+                  Align(
+                    alignment: Alignment.bottomLeft,
+                    child: _FolderTab(
+                      label: _allLabel(currentLocale.value),
+                      icon: Icons.format_list_bulleted_rounded,
+                      accent: const Color(0xFF285B99),
+                      fill: _paneColorFor(context, null),
+                      selected: widget.adapter.filterCategoryId == null,
+                      onTap: () => widget.adapter.onFilterChanged(null),
+                    ),
+                  ),
+                  for (final id in ids)
+                    Align(
+                      alignment: Alignment.bottomLeft,
+                      child: _categoryTab(id),
+                    ),
+                ],
               ),
             ),
-            for (final id in ids)
-              Align(alignment: Alignment.bottomLeft, child: _categoryTab(id)),
-            Align(
-              alignment: Alignment.bottomLeft,
+          ),
+          Tooltip(
+            message: currentLocale.value == 'ru'
+                ? 'Добавить раздел'
+                : 'Add folder section',
+            child: Align(
+              alignment: Alignment.bottomCenter,
               child: _FolderTab(
                 label: '',
                 icon: Icons.add_rounded,
@@ -1182,11 +1237,28 @@ class _NotesPhysicalFolderTabsState extends State<_NotesPhysicalFolderTabs> {
                 selected: false,
                 compact: true,
                 onTap: () => unawaited(_editSections()),
+              ),
+            ),
+          ),
+          Tooltip(
+            message: currentLocale.value == 'ru'
+                ? 'Выбрать отображаемые разделы'
+                : 'Select visible folder sections',
+            child: Align(
+              alignment: Alignment.bottomCenter,
+              child: _FolderTab(
+                label: '',
+                icon: Icons.tune_rounded,
+                accent: Colors.white,
+                fill: kNotesInk,
+                selected: false,
+                compact: true,
+                onTap: () => unawaited(_editSections()),
                 onLongPress: widget.onOpenSettings,
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -1202,7 +1274,7 @@ class _NotesPhysicalFolderTabsState extends State<_NotesPhysicalFolderTabs> {
       label: rule.name.trim().isEmpty ? '—' : rule.name.trim(),
       icon: icon,
       accent: accent,
-      fill: _paneColorFor(id),
+      fill: _paneColorFor(context, id),
       selected: widget.adapter.filterCategoryId == id,
       onTap: () => widget.adapter.onFilterChanged(id),
     );
@@ -1254,49 +1326,56 @@ class _FolderTab extends StatelessWidget {
     final scheme = theme.colorScheme;
     final mobile = MediaQuery.sizeOf(context).width <= 520;
 
-    final selectedFill = dark
-        ? Color.alphaBlend(
-            accent.withValues(alpha: 0.16),
-            scheme.surfaceContainerHigh,
-          )
-        : Color.alphaBlend(
-            accent.withValues(alpha: 0.13),
-            const Color(0xFFFCFDFE),
-          );
-    final foreground = dark
-        ? Color.lerp(accent, Colors.white, 0.22)!
-        : Color.lerp(accent, const Color(0xFF111827), 0.08)!;
-    final idleForeground = selected
-        ? foreground
+    final tabFill = compact
+        ? kNotesInk
+        : selected
+            ? fill
+            : Color.alphaBlend(
+                accent.withValues(alpha: dark ? 0.32 : 0.23),
+                scheme.surface,
+              );
+    final foreground = compact
+        ? Colors.white
         : Color.lerp(
-            foreground,
-            scheme.onSurfaceVariant,
-            dark ? 0.40 : 0.52,
+            accent,
+            scheme.onSurface,
+            dark ? 0.58 : 0.67,
           )!;
+    final outline = compact
+        ? kNotesInk
+        : Color.lerp(accent, scheme.outline, dark ? 0.32 : 0.38)!;
 
     return Padding(
-      padding: const EdgeInsets.only(right: 6),
+      padding: const EdgeInsets.only(right: 5),
       child: Material(
         color: Colors.transparent,
-        borderRadius: BorderRadius.circular(compact ? 12 : 10),
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(9),
+          topRight: Radius.circular(9),
+        ),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: onTap,
           onLongPress: onLongPress,
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 140),
-            height: 38,
+            height: selected ? 44 : 40,
             constraints: BoxConstraints(
-              minWidth: compact ? 42 : (mobile ? 82 : 92),
+              minWidth: compact ? 39 : (mobile ? 82 : 94),
             ),
             padding: EdgeInsets.symmetric(
-              horizontal: compact ? 12 : (mobile ? 12 : 14),
+              horizontal: compact ? 10 : (mobile ? 12 : 15),
             ),
             decoration: BoxDecoration(
-              color: compact
-                  ? kNotesInk
-                  : (selected ? selectedFill : Colors.transparent),
-              borderRadius: BorderRadius.circular(compact ? 12 : 10),
+              color: tabFill,
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(9),
+                topRight: Radius.circular(9),
+              ),
+              border: Border.all(
+                color: outline.withValues(alpha: compact ? 1 : 0.78),
+                width: selected ? 1.4 : 1,
+              ),
             ),
             child: Stack(
               alignment: Alignment.center,
@@ -1305,11 +1384,7 @@ class _FolderTab extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(
-                      icon,
-                      size: compact ? 17 : 15,
-                      color: compact ? Colors.white : idleForeground,
-                    ),
+                    Icon(icon, size: compact ? 19 : 17, color: foreground),
                     if (!compact) ...[
                       const SizedBox(width: 7),
                       ConstrainedBox(
@@ -1319,28 +1394,28 @@ class _FolderTab extends StatelessWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
-                            fontSize: 12.5,
+                            fontSize: 16,
                             height: 1,
-                            fontWeight:
-                                selected ? FontWeight.w700 : FontWeight.w600,
-                            color: idleForeground,
+                            fontWeight: selected
+                                ? FontWeight.w700
+                                : FontWeight.w600,
+                            color: foreground,
                           ),
                         ),
                       ),
                     ],
                   ],
                 ),
+                // Hide only the selected tab's bottom outline so its paper
+                // surface visually continues into the content pane.
                 if (selected && !compact)
                   Positioned(
-                    left: 8,
-                    right: 8,
+                    left: 2,
+                    right: 2,
                     bottom: 0,
-                    child: Container(
-                      height: 2,
-                      decoration: BoxDecoration(
-                        color: foreground,
-                        borderRadius: BorderRadius.circular(999),
-                      ),
+                    child: ColoredBox(
+                      color: tabFill,
+                      child: const SizedBox(height: 2),
                     ),
                   ),
               ],
