@@ -814,6 +814,7 @@ extension PlanOutboxSyncExtension on DatabaseService {
     required String originalInput,
     required String resolvedPbId,
     required String businessId,
+    bool deferPlanningNotify = false,
   }) async {
     try {
       await _pb.collection(PbCollections.plans).delete(resolvedPbId);
@@ -821,8 +822,10 @@ extension PlanOutboxSyncExtension on DatabaseService {
       _removePlanFromUserCache(resolvedPbId);
       clearOptimisticPlanningForPlanRow(originalInput);
       clearOptimisticPlanningForPlanRow(resolvedPbId);
-      notifyPlanningRefresh(scheduleNetworkRefresh: false);
-      _notifyTimelineAfterRecordCacheMutation();
+      if (!deferPlanningNotify) {
+        notifyPlanningRefresh(scheduleNetworkRefresh: false);
+        _notifyTimelineAfterRecordCacheMutation();
+      }
       unawaited(offlineSync.refreshPendingCount());
       return (ok: true, queued: false);
     } on ClientException catch (e) {
@@ -830,7 +833,9 @@ extension PlanOutboxSyncExtension on DatabaseService {
       if (code == 404) {
         _removePlanFromUserCache(resolvedPbId);
         _removePlanFromUserCache(originalInput);
-        notifyPlanningRefresh(scheduleNetworkRefresh: false);
+        if (!deferPlanningNotify) {
+          notifyPlanningRefresh(scheduleNetworkRefresh: false);
+        }
         return (ok: true, queued: false);
       }
       if (code == 401 || code == 403) {
