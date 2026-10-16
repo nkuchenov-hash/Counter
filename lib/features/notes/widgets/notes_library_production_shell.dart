@@ -52,7 +52,8 @@ class NotesLibraryProductionShell extends StatelessWidget {
         onManualChipReorder:
             candidate.onManualChipReorder as void Function(int, int),
         onVisibleSectionsChanged:
-            candidate.onVisibleSectionsChanged as ValueChanged<List<int>>,
+            (candidate.onVisibleSectionsChanged as ValueChanged<List<int>>?) ??
+                (_) {},
       );
     } catch (_) {
       return null;
