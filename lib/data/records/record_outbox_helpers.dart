@@ -331,18 +331,25 @@ extension RecordOutboxSyncExtension on DatabaseService {
         'category_id=${payload['category_id']} category_link=${payload['category_link']} '
         'source_plan_id=${payload['source_plan_id']}',
       );
+      // A stale category catalog is a synchronization dependency, not a
+      // reason to reject or recategorize a locally accepted record.
       if (!_normalizeRecordCategoryFieldsForPbApi(
         payload,
         logBusinessId: businessId.isEmpty ? null : businessId,
       )) {
-        // ignore: avoid_print
-        print(
-          'RECORD_OUTBOX_DROPPED_INVALID_CATEGORY '
-          'businessId=${businessId.isEmpty ? '-' : businessId} '
-          'reason=category_relation_not_resolved',
-        );
-        offlineSync.setLastError('record_create_category_invalid');
-        return false;
+        try {
+          await _loadRulesFromNoco();
+        } catch (_) {}
+        payload
+          ..clear()
+          ..addAll(Map<String, dynamic>.from(wrapped));
+        if (!_normalizeRecordCategoryFieldsForPbApi(
+          payload,
+          logBusinessId: businessId.isEmpty ? null : businessId,
+        )) {
+          offlineSync.setLastError('record_create_waiting_for_category');
+          return false; // Keep the original durable outbox item.
+        }
       }
       final failureCode = await _runHighlanderStartServerPhase(payload);
       if (failureCode == null) return true;
@@ -584,6 +591,15 @@ extension RecordOutboxSyncExtension on DatabaseService {
       if (existing != null) {
         _upsertFlatRecordFromPbModel(existing);
         return null;
+      }
+      // Rehydrate missing category relations before POST, while the original
+      // UUID-keyed create remains safe in the persistent outbox.
+      if (!_normalizeRecordCategoryFieldsForPbApi(
+        Map<String, dynamic>.from(payload),
+      )) {
+        try {
+          await _loadRulesFromNoco();
+        } catch (_) {}
       }
       final createdId = await _createRecordPb(payload);
       if (createdId == null || createdId.trim().isEmpty) {
