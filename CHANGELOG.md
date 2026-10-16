@@ -1,3 +1,9 @@
+## 2026-10-16 — Unified global header calendar picker [pending QA]
+
+- Replaced web/desktop keyboard-only Material date input and mobile separate picker with one calendar view plus inline `DD.MM.YYYY` editing.
+- Calendar day tap immediately navigates without OK; manual entry navigates on Go/Enter or the field arrow; invalid dates stay editable.
+- Added widget regression tests for single-view display, instant selection, manual Go and invalid-date handling. No PocketBase/data/schema changes.
+
 ## 2026-10-16 — P0 resilient Timeline capture and idempotent retry [fix]
 
 - Moved browser record-mutation outbox from quota-constrained SharedPreferences/localStorage to IndexedDB transactions. Existing queued records migrate before the old journal key is released.
