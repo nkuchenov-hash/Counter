@@ -157,7 +157,9 @@ Performance, responsiveness, and stability are **P0 correctness**, not polish. S
 
 - Calendar period navigation is gesture-first: horizontal swipe moves to the previous/next year, month, week, day-focus date, or Events month. Do not add persistent previous/next arrow buttons to the calendar header.
 - The calendar header mode button opens one menu with exactly four primary views: **Year, Month, Week, Events**.
-- Year view shows all 12 months and lets a month/day tap drill into the existing calendar flow. Month and Week keep focused-day behavior. Events is an agenda-style upcoming list beginning at the selected day.
+- Year view shows all 12 months; month header enters the selected month and clicking a day cell starts new-plan creation. Month day cells and empty Week time slots start new-plan creation with the chosen wall date/time; tapping an existing task opens editing, and tapping a grouped week block opens full interactive task cards. Events is an agenda-style upcoming list beginning at the selected day.
+- Calendar browsing and cell taps never change the global header date or Timeline/Plans day selection. Calendar owns its own focused day. New plans use the standard shared editor and the existing local-first plan pipeline.
+- Week view collapses consecutive/overlapping plans under their shared category branch into a visual-only block. Different branches and gaps above 10 minutes do not merge. Independent plan records, exact times, and collision lanes remain intact; hover previews details, click opens canonical task cards.
 - Calendar mode changes and swipes are local UI actions and must respond immediately; data refresh stays in the existing planning cache/stream path and must not block the gesture.
 
 ## Multi-select bulk plan scheduling

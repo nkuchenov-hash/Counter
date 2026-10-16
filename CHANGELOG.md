@@ -1,3 +1,9 @@
+## 2026-10-16 — Calendar click-to-create and week category groups [fix]
+
+- Calendar date-cell and empty week time-slot taps now open a new plan draft with the clicked date/time, without changing the global header or Timeline/Plans day.
+- Week-grid dense tasks form visual-only contiguous parent-category blocks with collision-safe lanes, hover summaries, and a tap-to-expand sheet with canonical interactive plan cards; independent PocketBase plans are unchanged.
+- Added grouping/lane tests and updated the Calendar UX and structure contracts.
+
 ## 2026-10-16 — Bulk edit date/time sequential reschedule [fix]
 
 - Fixed multi-select rescheduling: a picked 09:00 is the start of the selected block, not the start of every plan.
