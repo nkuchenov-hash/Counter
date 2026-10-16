@@ -1091,22 +1091,30 @@ class _NotesFolderPane extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: _paneColorFor(context, categoryId),
-        border: Border(
-          left: BorderSide(color: scheme.outlineVariant.withValues(alpha: 0.65)),
-          right: BorderSide(color: scheme.outlineVariant.withValues(alpha: 0.65)),
-          bottom: BorderSide(color: scheme.outlineVariant.withValues(alpha: 0.65)),
-        ),
-        borderRadius: const BorderRadius.only(
-          bottomLeft: Radius.circular(12),
-          bottomRight: Radius.circular(12),
-        ),
+    return ClipRRect(
+      borderRadius: const BorderRadius.only(
+        bottomLeft: Radius.circular(12),
+        bottomRight: Radius.circular(12),
       ),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(10, 12, 10, 12),
-        child: child,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: _paneColorFor(context, categoryId),
+          border: Border(
+            left: BorderSide(
+              color: scheme.outlineVariant.withValues(alpha: 0.65),
+            ),
+            right: BorderSide(
+              color: scheme.outlineVariant.withValues(alpha: 0.65),
+            ),
+            bottom: BorderSide(
+              color: scheme.outlineVariant.withValues(alpha: 0.65),
+            ),
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(10, 12, 10, 12),
+          child: child,
+        ),
       ),
     );
   }
