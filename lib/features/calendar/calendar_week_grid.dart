@@ -233,7 +233,7 @@ class CalendarWeekPlannerGrid extends StatelessWidget {
                                                       onTapUp: (details) {
                                                         final minutes = ((details.localPosition.dy /
                                                                 _hourHeight * 60) ~/ 10 * 10)
-                                                            .clamp(0, 23 * 60 + 50);
+                                                            .clamp(0, 23 * 60 + 50).toInt();
                                                         onSlotTap(DateTime(day.year, day.month, day.day,
                                                             minutes ~/ 60, minutes % 60));
                                                       },
@@ -243,7 +243,7 @@ class CalendarWeekPlannerGrid extends StatelessWidget {
                                                     Positioned(
                                                       top: _topFor(placement.block.start),
                                                       left: constraints.maxWidth * placement.lane / placement.laneCount + 2,
-                                                      width: (constraints.maxWidth / placement.laneCount - 4).clamp(1.0, double.infinity),
+                                                      width: (constraints.maxWidth / placement.laneCount - 4).clamp(1.0, double.infinity).toDouble(),
                                                       height: _blockHeight(placement.block),
                                                       child: Builder(
                                                         builder: (context) {
