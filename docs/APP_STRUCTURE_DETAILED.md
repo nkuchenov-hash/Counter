@@ -6,7 +6,7 @@ Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 885 — each appears **exactly once** below.
+**Tracked files:** 886 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -26,7 +26,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Role | Count |
 | :--- | ---: |
-| `production UI` | 175 |
+| `production UI` | 176 |
 | `test` | 115 |
 | `Brain/data` | 93 |
 | `platform build` | 83 |
@@ -57,7 +57,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 482 |
+| `PROVEN_REQUIRED` | 483 |
 | `REQUIRED_FOR_TEST_OR_TOOLING` | 217 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
 | `GOVERNING_DOCUMENTATION` | 39 |
@@ -68,7 +68,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 808 |
+| `HIGH` | 809 |
 | `MEDIUM` | 75 |
 
 ---
@@ -19130,6 +19130,46 @@ RU:
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Вкладка Plans (shell index 1)
 
+
+### `lib/features/planning/planning_bulk_edit_actions.dart`
+
+EN:
+
+- **Human purpose:** Move multiple selected plans to a new date/time consecutively, starting at exactly the picked hour instead of assigning the same start to every plan.
+- **What this is:** A Dart part extending the Planning day page with multi-select bulk-edit actions.
+- **Why needed:** A bulk group moved from Thursday to Monday 09:00 must preserve order and full duration, prevent gaps/overlaps, and save correct timestamps for each plan.
+- **Contents:** `PlanningBulkEditActions`, `_openBulkPlanningEditImpl`, destination-day conflict cascade and optimistic batch.
+- **Key code names:** `PlanningBulkEditActions`, `_openBulkPlanningEditImpl`
+- **Repository role:** production UI
+- **Evidence of use:** Imported as a Dart part by `lib/features/planning/planning_page.dart` and invoked by its bulk bar.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compilation failure in PlanningPage bulk edit action.
+- **Confidence:** HIGH
+- **Owner / layer:** Planning UI (uses DatabaseService Brain for persistence).
+- **Responsibilities:** Apply one user-picked time to an ordered batch, maintain audit anchors and shift colliding destination plans.
+- **When to open:** Bulk plan rescheduling creates overlaps, gaps or unexpected clock times.
+- **Can it be deleted?** No, while PlanningPage uses the action.
+- **Connected to:** `planning_page.dart`, `bulk_planning_edit_sheet.dart`, `plan_service.dart`.
+
+RU:
+
+- **Зачем файл человеку:** Переносить выбранные планы на понедельник с 09:00 последовательно, а не одновременно.
+- **Что это:** Модуль группового переноса планов во вкладке «План».
+- **Зачем:** Сохраняет длительности, порядок, реальное расписание и проверку конфликтов.
+- **Содержимое:** `PlanningBulkEditActions`, перенос по датам, каскад планов уже назначенных на этот день.
+- **Ключевые имена:** `_openBulkPlanningEditImpl`
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Part-директива `planning_page.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Последствие удаления:** Ошибка компиляции.
+- **Достоверность:** HIGH
+- **Слой:** Planning UI.
+- **Ответственность:** Групповой перенос и создание последовательного расписания.
+- **Когда открывать:** Неправильное время после массового переноса.
+- **Можно удалить?** Нет.
+- **Связано с:** `bulk_planning_edit_sheet.dart` и `planning_page.dart`.
+
+---
 
 ### `lib/features/planning/planning_quick_add_schedule.dart`
 
