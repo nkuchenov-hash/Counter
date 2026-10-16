@@ -63,6 +63,7 @@ class _NotesCategoryAdapter {
     required this.scrollController,
     required this.onFilterChanged,
     required this.onManualChipReorder,
+    required this.onVisibleSectionsChanged,
   });
 
   final List<int> chipIds;
