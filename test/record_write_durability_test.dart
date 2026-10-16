@@ -133,6 +133,70 @@ void main() {
     expect((queue.first['payload'] as Map)['title'], 'Entry offline-record');
   });
 
+  test('a missing category stays in the journal for later resolution', () async {
+    final prefs = await SharedPreferences.getInstance();
+    final item = RecordMutationOutbox.newHighlanderStartItem(
+      businessId: 'category-recovery',
+      runningFields: <String, dynamic>{
+        'record_id': 'category-recovery',
+        'title': 'SNAP ADD SIN Questions',
+        'category_id': '912345',
+        'status': 'running',
+        'start_time': '2026-10-16T18:00:00.000Z',
+      },
+    );
+    await RecordMutationOutbox.enqueue(prefs, item);
+    final pending = await RecordMutationOutbox.load(prefs);
+    expect((pending.single['payload'] as Map)['category_id'], '912345');
+    expect((pending.single['payload'] as Map)['title'], 'SNAP ADD SIN Questions');
+  });
+
+  test('a corrupt journal is never silently treated as an empty queue', () async {
+    SharedPreferences.setMockInitialValues(<String, Object>{
+      'record_mutation_outbox_v1': '{invalid',
+    });
+    final prefs = await SharedPreferences.getInstance();
+    await expectLater(RecordMutationOutbox.load(prefs), throwsFormatException);
+    await expectLater(
+      RecordMutationOutbox.enqueue(prefs, create('should-not-overwrite')),
+      throwsFormatException,
+    );
+    expect(prefs.getString('record_mutation_outbox_v1'), '{invalid');
+  });
+
+  test('unavailable category does not reject record before durable handoff', () {
+    final crud = File('lib/data/records/record_crud.dart').readAsStringSync();
+    final start = crud.indexOf('Future<String?> writeRecord(');
+    final end = crud.indexOf('/// In-memory cache patch', start);
+    final body = crud.substring(start, end);
+    final catBridge = File('lib/data/categories/category_record_bridge.dart')
+        .readAsStringSync();
+    expect(body, isNot(contains('cold-start could not resolve category_id')));
+    expect(body, contains('_recordCategoryKeyForDurableCreate(cid)'));
+    expect(body, contains('_recordCategoryKeyForDurableCreate(cidForCompleted)'));
+    expect(body, contains('await _enqueueHighlanderStartMutation(runningFields)'));
+    expect(catBridge, contains('final requestedLocalId = int.tryParse('));
+  });
+
+  test('quick entry is journaled before submit and restored on reload', () {
+    final actions = File('lib/app/shell/shared/shell_task_actions.dart')
+        .readAsStringSync();
+    final lifecycle = File('lib/app/shell/shared/shell_lifecycle.dart')
+        .readAsStringSync();
+    final shell = File('lib/app/shell/shared/shell_core.dart')
+        .readAsStringSync();
+    final start = actions.indexOf('Future<void> startTaskFromInput() async');
+    final end = actions.indexOf('Future<void> planTaskFromInput()', start);
+    final method = actions.substring(start, end);
+    expect(
+      method.indexOf('await persistQuickEntryDraft(title)'),
+      lessThan(method.indexOf('await DatabaseService.instance.writeRecord(')),
+    );
+    expect(lifecycle, contains('unawaited(restoreQuickEntryDraft())'));
+    expect(lifecycle, contains('titleController.addListener(scheduleQuickEntryDraftWrite)'));
+    expect(shell, contains('quickEntryDraftWriteBarrier.then('));
+  });
+
   test('quick entry retains draft until local persistence succeeds', () {
     final source = File('lib/app/shell/shared/shell_task_actions.dart')
         .readAsStringSync();
