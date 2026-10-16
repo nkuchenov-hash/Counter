@@ -181,6 +181,15 @@ abstract final class RecordMutationOutbox {
         continue;
       }
 
+      // A retry of the same capture cannot enqueue another create.
+      if ((kind == kindHighlanderStart || kind == kindRecordCreate) &&
+          biz.isNotEmpty &&
+          out.any((e) => _bizKey(e) == biz &&
+              (e['kind'] == kindHighlanderStart ||
+                  e['kind'] == kindRecordCreate))) {
+        continue;
+      }
+
       if (_isRecordUpdateItem(item)) {
         if (biz.isNotEmpty && updateIndexByBiz.containsKey(biz)) {
           final idx = updateIndexByBiz[biz]!;
