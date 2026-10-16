@@ -4,9 +4,9 @@ Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
 **Generated from input HEAD `f6aca042` on 2026-10-02.**
 
-The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
+The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). The 2026-10-16 incremental manifest adds the new Calendar group files and their test; the original SHA remains the baseline for other entries.
 
-**Tracked files:** 886 — each appears **exactly once** below.
+**Tracked files:** 889 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -26,8 +26,8 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Role | Count |
 | :--- | ---: |
-| `production UI` | 176 |
-| `test` | 115 |
+| `production UI` | 178 |
+| `test` | 116 |
 | `Brain/data` | 93 |
 | `platform build` | 83 |
 | `shared foundation` | 65 |
@@ -57,8 +57,8 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 483 |
-| `REQUIRED_FOR_TEST_OR_TOOLING` | 217 |
+| `PROVEN_REQUIRED` | 485 |
+| `REQUIRED_FOR_TEST_OR_TOOLING` | 218 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
 | `GOVERNING_DOCUMENTATION` | 39 |
 | `HISTORICAL_RECORD` | 17 |
@@ -68,7 +68,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 809 |
+| `HIGH` | 812 |
 | `MEDIUM` | 75 |
 
 ---
@@ -17613,6 +17613,44 @@ RU:
 - **Связано с:** `lib/features/calendar/`, `docs/APP_STRUCTURE.md`
 
 
+### `lib/features/calendar/calendar_task_group_sheet.dart`
+
+EN:
+
+- **Human purpose:** Expanded category-group view with full interactive LIFE OS plan cards.
+- **What this is:** Expanded category-group view with full interactive LIFE OS plan cards.
+- **Why needed:** Expanded category-group view with full interactive LIFE OS plan cards.
+- **Contents:** Calendar plan grouping and interaction helpers.
+- **Repository role:** production UI
+- **Evidence of use:** Imported by production `lib/features/calendar/calendar_view.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** grouped calendar tasks lose editing, completion and play controls.
+- **Confidence:** HIGH
+- **Owner / layer:** Calendar UI
+- **Responsibilities:** Expanded category-group view with full interactive LIFE OS plan cards.
+- **When to open:** Calendar cell interactions, week grouping, or group detail regressions.
+- **Can it be deleted?** No — grouped calendar tasks lose editing, completion and play controls.
+- **Connected to:** Imported by production `lib/features/calendar/calendar_view.dart`.
+
+RU:
+
+- **Зачем файл человеку:** Expanded category-group view with full interactive LIFE OS plan cards.
+- **Что это:** Expanded category-group view with full interactive LIFE OS plan cards.
+- **Зачем:** Доступная и корректная работа календаря LIFE OS.
+- **Содержимое:** Flutter/Dart реализации группировки планов и взаимодействий.
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Imported by production `lib/features/calendar/calendar_view.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** grouped calendar tasks lose editing, completion and play controls.
+- **Уверенность:** HIGH
+- **Владелец / слой:** Calendar UI
+- **Обязанности:** Expanded category-group view with full interactive LIFE OS plan cards.
+- **Когда открывать:** При проблемах с сеткой календаря или карточками планов.
+- **Можно удалить?** Нет — grouped calendar tasks lose editing, completion and play controls.
+- **Связано с:** Imported by production `lib/features/calendar/calendar_view.dart`.
+
+---
+
 ### `lib/features/calendar/calendar_view.dart`
 
 EN:
@@ -17650,6 +17688,44 @@ RU:
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/features/calendar/`, `docs/APP_STRUCTURE.md`
 
+
+### `lib/features/calendar/calendar_week_grouping.dart`
+
+EN:
+
+- **Human purpose:** Pure contiguous category grouping and overlap-safe lane allocation for the Week grid.
+- **What this is:** Pure contiguous category grouping and overlap-safe lane allocation for the Week grid.
+- **Why needed:** Pure contiguous category grouping and overlap-safe lane allocation for the Week grid.
+- **Contents:** Calendar plan grouping and interaction helpers.
+- **Repository role:** production UI
+- **Evidence of use:** Imported by production `lib/features/calendar/calendar_week_grid.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** dense week blocks overlap and cannot be grouped.
+- **Confidence:** HIGH
+- **Owner / layer:** Calendar UI
+- **Responsibilities:** Pure contiguous category grouping and overlap-safe lane allocation for the Week grid.
+- **When to open:** Calendar cell interactions, week grouping, or group detail regressions.
+- **Can it be deleted?** No — dense week blocks overlap and cannot be grouped.
+- **Connected to:** Imported by production `lib/features/calendar/calendar_week_grid.dart`.
+
+RU:
+
+- **Зачем файл человеку:** Pure contiguous category grouping and overlap-safe lane allocation for the Week grid.
+- **Что это:** Pure contiguous category grouping and overlap-safe lane allocation for the Week grid.
+- **Зачем:** Доступная и корректная работа календаря LIFE OS.
+- **Содержимое:** Flutter/Dart реализации группировки планов и взаимодействий.
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Imported by production `lib/features/calendar/calendar_week_grid.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** dense week blocks overlap and cannot be grouped.
+- **Уверенность:** HIGH
+- **Владелец / слой:** Calendar UI
+- **Обязанности:** Pure contiguous category grouping and overlap-safe lane allocation for the Week grid.
+- **Когда открывать:** При проблемах с сеткой календаря или карточками планов.
+- **Можно удалить?** Нет — dense week blocks overlap and cannot be grouped.
+- **Связано с:** Imported by production `lib/features/calendar/calendar_week_grid.dart`.
+
+---
 
 ### `lib/features/calendar/calendar_week_grid.dart`
 
@@ -31589,6 +31665,44 @@ RU:
 - **Можно удалить?** Нет — нужен для тестов.
 - **Связано с:** Production files под `lib/` с похожим именем.
 
+
+### `test/calendar_week_grouping_test.dart`
+
+EN:
+
+- **Human purpose:** Regression tests for contiguous grouping, category separation, collision lanes, and time gaps.
+- **What this is:** Regression tests for contiguous grouping, category separation, collision lanes, and time gaps.
+- **Why needed:** Regression tests for contiguous grouping, category separation, collision lanes, and time gaps.
+- **Contents:** Calendar plan grouping and interaction helpers.
+- **Repository role:** test
+- **Evidence of use:** Flutter test: `flutter test test/calendar_week_grouping_test.dart`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** coverage for the calendar week grouping contract disappears.
+- **Confidence:** HIGH
+- **Owner / layer:** tests
+- **Responsibilities:** Regression tests for contiguous grouping, category separation, collision lanes, and time gaps.
+- **When to open:** Calendar cell interactions, week grouping, or group detail regressions.
+- **Can it be deleted?** No — coverage for the calendar week grouping contract disappears.
+- **Connected to:** Flutter test: `flutter test test/calendar_week_grouping_test.dart`.
+
+RU:
+
+- **Зачем файл человеку:** Regression tests for contiguous grouping, category separation, collision lanes, and time gaps.
+- **Что это:** Regression tests for contiguous grouping, category separation, collision lanes, and time gaps.
+- **Зачем:** Доступная и корректная работа календаря LIFE OS.
+- **Содержимое:** Flutter/Dart реализации группировки планов и взаимодействий.
+- **Роль в репозитории:** test
+- **Доказательства использования:** Flutter test: `flutter test test/calendar_week_grouping_test.dart`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** coverage for the calendar week grouping contract disappears.
+- **Уверенность:** HIGH
+- **Владелец / слой:** tests
+- **Обязанности:** Regression tests for contiguous grouping, category separation, collision lanes, and time gaps.
+- **Когда открывать:** При проблемах с сеткой календаря или карточками планов.
+- **Можно удалить?** Нет — coverage for the calendar week grouping contract disappears.
+- **Связано с:** Flutter test: `flutter test test/calendar_week_grouping_test.dart`.
+
+---
 
 ### `test/calendar_integrations_contract_test.dart`
 
