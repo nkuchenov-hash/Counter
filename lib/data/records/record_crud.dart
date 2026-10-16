@@ -265,14 +265,10 @@ extension RecordCrudExtension on DatabaseService {
           }
         }
       }
-      cid = _resolveColdStartRecordCategoryId(cid);
-      if (!_categoryIdResolvableForPbRecordPost(cid)) {
-        DatabaseService._log(
-          'writeRecord: cold-start could not resolve category_id',
-        );
-        _showRecordNotSavedError();
-        return null;
-      }
+      // Category hydration must never reject a user's record before it is
+      // written to the offline outbox. Preserve an unresolved picker id.
+      cid = _categoryIdResolvableForPbRecordPost(cid)
+          ? cid : (cid ?? _resolveColdStartRecordCategoryId(null));
       final now = DatabaseService.getPlanetaryNow();
       final start = explicitStartTime ?? now;
       final explicitEnd = explicitEndTime?.toUtc();
@@ -313,7 +309,7 @@ extension RecordCrudExtension on DatabaseService {
             'title': parsed.title,
             'start_time': startIso,
             'end_time': null,
-            'category_id': _recordCategoryBusinessPkForApi(cid),
+            'category_id': _recordCategoryKeyForDurableCreate(cid),
             'type': 'record',
             'checklist': <Map<String, dynamic>>[],
             if (parsed.tags.isNotEmpty) 'tags': parsed.tags.join(','),
@@ -409,7 +405,7 @@ extension RecordCrudExtension on DatabaseService {
           'title': parsed.title,
           'start_time': startIso,
           'end_time': null,
-          'category_id': _recordCategoryBusinessPkForApi(cid),
+          'category_id': _recordCategoryKeyForDurableCreate(cid),
           'type': 'record',
           'checklist': <Map<String, dynamic>>[],
           if (parsed.tags.isNotEmpty) 'tags': parsed.tags.join(','),
@@ -439,14 +435,9 @@ extension RecordCrudExtension on DatabaseService {
             cidForCompleted = pc;
           }
         }
-        cidForCompleted = _resolveColdStartRecordCategoryId(cidForCompleted);
-        if (!_categoryIdResolvableForPbRecordPost(cidForCompleted)) {
-          DatabaseService._log(
-            'writeRecord completed branch: cold-start could not resolve category_id',
-          );
-          _showRecordNotSavedError();
-          return null;
-        }
+        cidForCompleted = _categoryIdResolvableForPbRecordPost(cidForCompleted)
+            ? cidForCompleted
+            : (cidForCompleted ?? _resolveColdStartRecordCategoryId(null));
         final completedFields = _nocoFieldsForPatch(<String, dynamic>{
           'user_id': _pidForPbFilter,
           'record_id': DatabaseService._newClientRecordUuid(),
@@ -454,7 +445,7 @@ extension RecordCrudExtension on DatabaseService {
           'title': parsed.title,
           'start_time': startIso,
           'end_time': endTime?.toUtc().toIso8601String(),
-          'category_id': _recordCategoryBusinessPkForApi(cidForCompleted),
+          'category_id': _recordCategoryKeyForDurableCreate(cidForCompleted),
           'type': 'record',
           'checklist': <Map<String, dynamic>>[],
           if (parsed.tags.isNotEmpty) 'tags': parsed.tags.join(','),
