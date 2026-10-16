@@ -1,3 +1,10 @@
+## 2026-10-16 — Bulk edit date/time sequential reschedule [fix]
+
+- Fixed multi-select rescheduling: a picked 09:00 is the start of the selected block, not the start of every plan.
+- Placed selected plans end-to-start in their visible order, preserving durations and writing the final actual start/end to PocketBase.
+- Shift only conflicting destination-day plans to prevent new overlaps; abort rather than moving a nonpatchable virtual or optimistic target plan.
+- Date-only bulk moves retain individual clock times. Added tests for Thursday-to-Monday rollover, gaps, fallback durations and collisions.
+
 ## 2026-10-16 — P0 resilient Timeline capture and idempotent retry [fix]
 
 - Moved browser record-mutation outbox from quota-constrained SharedPreferences/localStorage to IndexedDB transactions. Existing queued records migrate before the old journal key is released.
