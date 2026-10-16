@@ -47,7 +47,9 @@ BulkEditWallTimes _bulkEditMapDateOnly(
   DateTime? end;
   final en = task.endDateTime;
   if (en != null) {
-    end = DateTime(targetDay.year, targetDay.month, targetDay.day, en.hour, en.minute);
+    end = st != null && en.isAfter(st)
+        ? start.add(en.difference(st))
+        : DateTime(targetDay.year, targetDay.month, targetDay.day, en.hour, en.minute);
   }
   return BulkEditWallTimes(start: start, end: end);
 }
@@ -76,6 +78,87 @@ BulkEditWallTimes computeBulkEditWallTimes(
   }
 
   return BulkEditWallTimes(start: newStart, end: null);
+}
+
+/// When the user picks a time for multiple plans, the picked time is the
+/// *block's* start, not the start of every member. Preserve visible/source
+/// order and each plan's effective duration; never insert artificial gaps.
+/// Without an explicit picked time, date-only moves preserve clock positions.
+List<BulkEditWallTimes> computeSequentialBulkEditWallTimes(
+  List<PlanningTask> orderedTasks,
+  BulkPlanningEditResult edit, {
+  required int Function(PlanningTask) durationMinutesForTask,
+}) {
+  if (!edit.applyTargetTime || edit.targetTime == null) {
+    return [
+      for (final task in orderedTasks) computeBulkEditWallTimes(task, edit),
+    ];
+  }
+  final tod = edit.targetTime!;
+  var cursor = DateTime(
+    edit.targetDate.year,
+    edit.targetDate.month,
+    edit.targetDate.day,
+    tod.hour,
+    tod.minute,
+  );
+  final placements = <BulkEditWallTimes>[];
+  for (final task in orderedTasks) {
+    final start = task.startTime;
+    final end = task.endDateTime;
+    final duration = start != null && end != null && end.isAfter(start)
+        ? end.difference(start)
+        : Duration(minutes: durationMinutesForTask(task).clamp(1, 1440));
+    final next = cursor.add(duration);
+    placements.add(BulkEditWallTimes(start: cursor, end: next));
+    cursor = next;
+  }
+  return placements;
+}
+
+/// Protect an explicitly inserted 09:00 batch from overlap with already
+/// scheduled destination-day plans. Cascade only incumbents it would collide
+/// with and any subsequent tasks affected by the displacement; preserve their
+/// original durations, dates and gaps whenever no collision exists.
+List<({PlanningTask task, BulkEditWallTimes times})>
+computeBulkDestinationConflictShifts({
+  required DateTime blockStart,
+  required DateTime blockEnd,
+  required List<PlanningTask> existingDestinationPlans,
+  required int Function(PlanningTask) durationMinutesForTask,
+}) {
+  final existing = existingDestinationPlans
+      .where((t) => t.startTime != null)
+      .toList()
+    ..sort((a, b) {
+      final time = a.startTime!.compareTo(b.startTime!);
+      if (time != 0) return time;
+      final order = a.order.compareTo(b.order);
+      if (order != 0) return order;
+      return a.planRowIdForBackend.compareTo(b.planRowIdForBackend);
+    });
+  final result = <({PlanningTask task, BulkEditWallTimes times})>[];
+  var occupiedUntil = blockEnd;
+  for (final task in existing) {
+    final oldStart = task.startTime!;
+    final oldEnd = task.endDateTime;
+    final duration = oldEnd != null && oldEnd.isAfter(oldStart)
+        ? oldEnd.difference(oldStart)
+        : Duration(minutes: durationMinutesForTask(task).clamp(1, 1440));
+    final effectiveEnd = oldStart.add(duration);
+    if (!effectiveEnd.isAfter(blockStart)) continue;
+    if (oldStart.isBefore(occupiedUntil)) {
+      final newEnd = occupiedUntil.add(duration);
+      result.add((
+        task: task,
+        times: BulkEditWallTimes(start: occupiedUntil, end: newEnd),
+      ));
+      occupiedUntil = newEnd;
+    } else {
+      occupiedUntil = effectiveEnd;
+    }
+  }
+  return result;
 }
 
 Future<BulkPlanningEditResult?> showBulkPlanningEditSheet(
