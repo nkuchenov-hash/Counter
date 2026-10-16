@@ -1,3 +1,10 @@
+## 2026-10-16 — P0 record capture without category-related data loss [fix]
+
+- Removed the pre-outbox rejection when the category catalog has not hydrated; create requests now retain the selected local category ID and wait for valid PocketBase relations before replay.
+- Added persistent Timeline quick-entry draft recovery, explicit submit journaling and serialized draft writes before clearing accepted input.
+- Corrupt record mutation outboxes are no longer silently decoded as empty and overwritten. Added durability, unresolved-category and draft recovery regression contracts.
+- User input remains recoverable during authentication or local persistence failures. Server-side receipt is still required before calling a pending record synchronized.
+
 ## 2026-10-16 — Seamless Notes toolbar bottom fade [ui/fix]
 
 - Removed the opaque black-tinted blurred backplate behind the canonical floating Notes toolbar. The blur now feathers progressively into the editor at its bottom edge, with no rectangular boundary.
