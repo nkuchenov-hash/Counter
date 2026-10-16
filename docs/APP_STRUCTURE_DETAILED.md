@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `f6aca042` on 2026-10-02.**
+**Generated from input HEAD `f6aca042` on 2026-10-02; file roster updated for new scoped Notes modules on 2026-10-16.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 883 — each appears **exactly once** below.
+**Tracked files:** 886 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -26,9 +26,9 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Role | Count |
 | :--- | ---: |
-| `production UI` | 175 |
+| `production UI` | 177 |
 | `test` | 114 |
-| `Brain/data` | 92 |
+| `Brain/data` | 93 |
 | `platform build` | 83 |
 | `shared foundation` | 65 |
 | `developer tool` | 63 |
@@ -57,7 +57,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 481 |
+| `PROVEN_REQUIRED` | 484 |
 | `REQUIRED_FOR_TEST_OR_TOOLING` | 216 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
 | `GOVERNING_DOCUMENTATION` | 39 |
@@ -68,7 +68,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 806 |
+| `HIGH` | 809 |
 | `MEDIUM` | 75 |
 
 ---
@@ -15299,6 +15299,44 @@ RU:
 - **Связано с:** UI вызывает `DatabaseService.instance`; Plans, Lists, Time View
 
 
+### `lib/data/plans/plan_bulk_delete_helpers.dart`
+
+EN:
+
+- **Human purpose:** Attempts every selected Notes/Lists deletion even when an individual PocketBase request fails, and reports precisely which IDs were rejected.
+- **What this is:** The scoped Brain extension for bulk plan deletes with offline queue acceptance and per-ID results.
+- **Why needed:** Already deleted notes must never reappear when a later item fails to delete.
+- **Contents:** `PlanBulkDeleteExtension`, `deletePlanningTasksBulkFailedIds`, per-row PocketBase delete and offline mutation enqueue.
+- **Key code names:** `PlanBulkDeleteExtension`, `deletePlanningTasksBulkFailedIds`
+- **Repository role:** Brain/data
+- **Evidence of use:** Included by `lib/data/database_service.dart` via a `part` directive; called by Lists and Plans.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Brain library compile failure and broken partial-failure reconciliation for Notes bulk delete.
+- **Confidence:** HIGH
+- **Owner / layer:** Brain Plans
+- **Responsibilities:** Attempt every selected ID; return failed ID set; avoid duplicate network refreshes.
+- **When to open:** Notes bulk deletion is incomplete, offline retries fail or successful rows are incorrectly restored.
+- **Can it be deleted?** No — required by the Brain library and Notes.
+- **Connected to:** `plan_service.dart`, `plans/plan_outbox_helpers.dart`, `features/lists/lists_bulk_delete.dart`
+
+RU:
+
+- **Зачем файл человеку:** Удаляет все выбранные заметки, не прерывая пакет после первой ошибки.
+- **Что это:** Отдельный модуль Brain для массового удаления задач/заметок через PocketBase.
+- **Зачем:** Успешно удалённые заметки не должны возвращаться из-за ошибки другой заметки.
+- **Содержимое:** Список неудачных ID, постановка операций в offline-очередь и итоговое уведомление.
+- **Ключевые имена:** `PlanBulkDeleteExtension`, `deletePlanningTasksBulkFailedIds`
+- **Роль в репозитории:** Brain/data
+- **Подтверждение использования:** Подключён директивой `part` к `database_service.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Последствие удаления:** Ошибка сборки Brain и нарушение массового удаления.
+- **Уверенность:** HIGH
+- **Владелец:** Brain Plans
+- **Когда открывать:** Частичное удаление заметок и ошибки синхронизации.
+- **Можно удалить?** Нет.
+- **Связано с:** `plan_service.dart`, `lists_bulk_delete.dart`
+
+
 ### `lib/data/plans/plan_cache_helpers.dart`
 
 EN:
@@ -17839,6 +17877,44 @@ RU:
 - **Связано с:** Вкладка Lists (shell index 3)
 
 
+### `lib/features/lists/lists_bulk_delete.dart`
+
+EN:
+
+- **Human purpose:** Keeps Notes bulk-selection actions responsive and restores only items rejected by the backend.
+- **What this is:** Lists UI extension for bulk-delete staging, result reconciliation and per-batch failure feedback.
+- **Why needed:** Selecting many Notes must delete the entire intended set without falsely restoring successful operations.
+- **Contents:** `_ListsBulkDeleteExtension`, optimistic cache apply, rejected-row reselect, localized failed count.
+- **Key code names:** `_ListsBulkDeleteExtension`, `_listsBulkDelete`
+- **Repository role:** production UI
+- **Evidence of use:** Included through the `part` directive in `lib/features/lists/lists_view.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Lists/Notes screen compile failure and loss of bulk-delete action.
+- **Confidence:** HIGH
+- **Owner / layer:** Lists UI
+- **Responsibilities:** UI-first bulk deletion and exact per-row restoration.
+- **When to open:** Selected Notes fail to delete completely or errors restore already deleted rows.
+- **Can it be deleted?** No.
+- **Connected to:** `lists_view.dart`, `data/plans/plan_bulk_delete_helpers.dart`
+
+RU:
+
+- **Зачем файл человеку:** Управляет массовым удалением заметок и правильным восстановлением только неудачных операций.
+- **Что это:** UI-модуль Lists, подключённый к основному экрану через `part`.
+- **Зачем:** Не допускать частичного удаления без объяснения и возврата успешно удалённых заметок.
+- **Содержимое:** Оптимистическое скрытие карточек, подсчёт ошибок и повторное выделение неудачных.
+- **Ключевые имена:** `_ListsBulkDeleteExtension`, `_listsBulkDelete`
+- **Роль в репозитории:** production UI
+- **Подтверждение использования:** Директива `part` в `lists_view.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Последствие удаления:** Ошибка компиляции Lists.
+- **Уверенность:** HIGH
+- **Владелец:** Lists UI
+- **Когда открывать:** Bulk Select / Delete на заметках.
+- **Можно удалить?** Нет.
+- **Связано с:** `lists_view.dart`, `plan_bulk_delete_helpers.dart`
+
+
 ### `lib/features/lists/lists_card.dart`
 
 EN:
@@ -18748,6 +18824,44 @@ RU:
 - **Когда открывать:** Когда ломается поведение, связанное с `notes_library_production_shell.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/features/notes/widgets/`, `docs/APP_STRUCTURE.md`
+
+
+### `lib/features/notes/widgets/notes_physical_folder_tabs.dart`
+
+EN:
+
+- **Human purpose:** Restores the colored physical-paper-folder section tabs with a fixed add (+) and visible-section selector.
+- **What this is:** Notes library folder tabs, continuous color-matched pane and saved visible-section picker.
+- **Why needed:** Selected folders must stay in place and merge visually with their content background across mobile/desktop.
+- **Contents:** `_NotesPhysicalFolderTabs`, `_FolderTab`, `_NotesFolderPane`, `_NotesCategoryAdapter` and selector logic.
+- **Key code names:** `_NotesPhysicalFolderTabs`, `_NotesFolderPane`, `_FolderTab`
+- **Repository role:** production UI
+- **Evidence of use:** Included via a `part` directive in `notes_library_production_shell.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Notes library compile failure and loss of folder navigation.
+- **Confidence:** HIGH
+- **Owner / layer:** Notes UI
+- **Responsibilities:** Color and outline tabs, stable order, always-visible +/Select controls, pane continuity.
+- **When to open:** Folder colors, selected tab position or visible-section controls regress.
+- **Can it be deleted?** No.
+- **Connected to:** `notes_library_production_shell.dart`, `lists_view.dart`, `lists_filters.dart`
+
+RU:
+
+- **Зачем файл человеку:** Возвращает цветные корешки бумажных папок и постоянно видимые кнопки «+» и выбора разделов.
+- **Что это:** Общий UI-модуль вкладок заметок для телефона и большого экрана.
+- **Зачем:** Активная вкладка не перемещается в начало и сливается с фоном своего раздела.
+- **Содержимое:** Цветные вкладки, контуры неактивных, связанная поверхность и выбор видимых папок.
+- **Ключевые имена:** `_NotesPhysicalFolderTabs`, `_FolderTab`, `_NotesFolderPane`
+- **Роль в репозитории:** production UI
+- **Подтверждение использования:** Директива `part` в `notes_library_production_shell.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Последствие удаления:** Ошибка компиляции Notes и отсутствие навигации папок.
+- **Уверенность:** HIGH
+- **Владелец:** Notes UI
+- **Когда открывать:** Дизайн вкладок папок и выбор видимых разделов.
+- **Можно удалить?** Нет.
+- **Связано с:** `notes_library_production_shell.dart`, `lists_filters.dart`
 
 
 ### `lib/features/paths/paths_page.dart`
