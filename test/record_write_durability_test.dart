@@ -176,6 +176,10 @@ void main() {
     expect(body, contains('_recordCategoryKeyForDurableCreate(cidForCompleted)'));
     expect(body, contains('await _enqueueHighlanderStartMutation(runningFields)'));
     expect(catBridge, contains('final requestedLocalId = int.tryParse('));
+    final replay = File('lib/data/records/record_outbox_helpers.dart')
+        .readAsStringSync();
+    expect(replay, contains('await _loadRulesFromNoco()'));
+    expect(replay, contains('record_create_waiting_for_category'));
   });
 
   test('quick entry is journaled before submit and restored on reload', () {
