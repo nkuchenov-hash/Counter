@@ -638,7 +638,7 @@ class _ListsPageState extends State<ListsPage>
       _selectedListKeys.clear();
     });
     unawaited(_persistFilterCategoryId(id));
-    _scrollChipBarToStart();
+    // Keep the horizontal folder-tab scroll position stable on selection.
   }
 
   /// Visible folder sections are user-selected, ordered, and persisted.
