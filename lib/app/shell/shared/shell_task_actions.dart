@@ -9,10 +9,13 @@ mixin ShellTaskActions on ShellCoreLogic {
     String? createBusinessId,
     DateTime? capturedStartTime,
   }) async {
+    // An old snackbar must not resubmit a previous title after the user has
+    // started typing a different recording (or create duplicate timers).
+    if (titleController.text.trim() != title) return;
+    final startTime = capturedStartTime ?? DatabaseService.getPlanetaryNow();
+    final attemptId = createBusinessId ?? const Uuid().v4();
     try {
-      await persistQuickEntryDraft(title);
-      final startTime = capturedStartTime ?? DatabaseService.getPlanetaryNow();
-      final attemptId = createBusinessId ?? const Uuid().v4();
+      if (!await persistQuickEntryDraft(title)) return;
       final serverId = await DatabaseService.instance.writeRecord(
         selectedDateString,
         title,
@@ -43,15 +46,21 @@ mixin ShellTaskActions on ShellCoreLogic {
         titleController.clear();
       }
       setState(() {
-        tasks.add(
-          Task(
-            title: title,
-            startTime: startTime,
+        for (final old in tasks.where((t) => t.isRunning)) {
+          old.isActive = false;
+          if (startTime.isAfter(old.startTime)) old.endTime = startTime;
+        }
+        if (!tasks.any((t) => t.title == title && t.startTime == startTime)) {
+          tasks.add(
+            Task(
+              title: title,
+              startTime: startTime,
             endTime: null,
             tags: [pathTag],
-            isActive: true,
-          ),
-        );
+              isActive: true,
+            ),
+          );
+        }
         tasks.sort((a, b) => a.startTime.compareTo(b.startTime));
       });
       await saveTasks();
@@ -160,7 +169,10 @@ mixin ShellTaskActions on ShellCoreLogic {
 
     // Persist the raw text before validation/auth can reject the write.
     // A page reload must never erase a failed submission.
-    await persistQuickEntryDraft(title);
+    if (!await persistQuickEntryDraft(title)) {
+      // Storage is unavailable: keep editable input, never claim acceptance.
+      return;
+    }
 
     // Keep the editable draft until the Brain confirms durable local staging.
     // Slow network activity must never clear input before it is accepted.
@@ -200,15 +212,21 @@ mixin ShellTaskActions on ShellCoreLogic {
         await persistQuickEntryDraft(titleController.text);
       }
       setState(() {
-        tasks.add(
-          Task(
-            title: title,
-            startTime: now,
+        for (final old in tasks.where((t) => t.isRunning)) {
+          old.isActive = false;
+          if (now.isAfter(old.startTime)) old.endTime = now;
+        }
+        if (!tasks.any((t) => t.title == title && t.startTime == now)) {
+          tasks.add(
+            Task(
+              title: title,
+              startTime: now,
             endTime: null,
             tags: [pathTag],
-            isActive: true,
-          ),
-        );
+              isActive: true,
+            ),
+          );
+        }
         tasks.sort((a, b) => a.startTime.compareTo(b.startTime));
       });
       unawaited(saveTasks());
