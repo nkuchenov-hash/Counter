@@ -123,6 +123,7 @@ class ListsCategoryChipBar extends StatefulWidget {
     required this.scrollController,
     required this.onFilterChanged,
     required this.onManualChipReorder,
+    this.onVisibleSectionsChanged,
     this.glmPresentation = false,
   });
 
@@ -132,12 +133,11 @@ class ListsCategoryChipBar extends StatefulWidget {
   final ScrollController scrollController;
   final ValueChanged<int?> onFilterChanged;
   final void Function(int oldIndex, int newIndex) onManualChipReorder;
+  final ValueChanged<List<int>>? onVisibleSectionsChanged;
   final bool glmPresentation;
-
   @override
   State<ListsCategoryChipBar> createState() => _ListsCategoryChipBarState();
 }
-
 class _ListsCategoryChipBarState extends State<ListsCategoryChipBar> {
   static const String _chipModePrefsKey = 'list_chip_mode';
   static const String _pinnedIdsPrefsKey = 'list_pinned_ids';

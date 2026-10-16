@@ -1,3 +1,11 @@
+## 2026-10-16 — Notes bulk delete and physical folder tabs [fix / pending CI]
+
+- Notes bulk deletion processes every selected PocketBase plan ID. Partial failures restore and reselect only failed notes; successful deletes remain removed. Retriable offline deletes continue through the existing mutation outbox.
+- Batched cache/UI notifications for bulk delete; avoid per-row network refreshes; prevent duplicate bulk-delete submissions.
+- Restored colored, outlined physical-paper-folder tabs, selected-tab/content-pane color continuity, and stable category order/scroll position.
+- Restored persistent `+` and Select sections buttons on desktop/mobile, preserving user-selected visible categories and ordering. No PocketBase schema changes.
+- Pending GitHub Actions Architecture Guard and Android/Windows checks; web smoke verification remains required before production release.
+
 ## 2026-10-16 — Seamless Notes toolbar bottom fade [ui/fix]
 
 - Removed the opaque black-tinted blurred backplate behind the canonical floating Notes toolbar. The blur now feathers progressively into the editor at its bottom edge, with no rectangular boundary.

@@ -3,7 +3,6 @@
 // keeping the existing Lists/Brain callbacks as the data and mutation source.
 
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:counter/data/database_service.dart';
 import 'package:counter/features/notes/note_editor_page.dart';
@@ -12,11 +11,9 @@ import 'package:counter/features/notes/widgets/note_card.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:counter/shared/categories/picker/category_tree_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
-const Color _kAllFolderSurface = Color(0xFFE3ECF8);
-const String _kChipModePrefsKey = 'list_chip_mode';
-const String _kPinnedIdsPrefsKey = 'list_pinned_ids';
+part 'notes_physical_folder_tabs.dart';
+
 
 class NotesLibraryProductionShell extends StatelessWidget {
   const NotesLibraryProductionShell({
@@ -56,6 +53,9 @@ class NotesLibraryProductionShell extends StatelessWidget {
         onFilterChanged: candidate.onFilterChanged as ValueChanged<int?>,
         onManualChipReorder:
             candidate.onManualChipReorder as void Function(int, int),
+        onVisibleSectionsChanged:
+            (candidate.onVisibleSectionsChanged as ValueChanged<List<int>>?) ??
+                (_) {},
       );
     } catch (_) {
       return null;
@@ -129,8 +129,13 @@ class NotesLibraryProductionShell extends StatelessWidget {
               onNewNote: newNote,
             ),
           const SizedBox(height: 12),
-          SizedBox(height: 42, child: tabs),
-          Expanded(child: content),
+          SizedBox(height: 44, child: tabs),
+          Expanded(
+            child: _NotesFolderPane(
+              categoryId: category?.filterCategoryId,
+              child: content,
+            ),
+          ),
         ],
       ),
     );
@@ -266,11 +271,21 @@ class _MobileNotesLibrary extends StatelessWidget {
                 color: scheme.onSurface,
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
+            SizedBox(
+              height: 44,
+              child: _NotesPhysicalFolderTabs(
+                adapter: category,
+                onOpenSettings: header.onOpenSettings,
+              ),
+            ),
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.only(bottom: 86),
-                child: content,
+                child: _NotesFolderPane(
+                  categoryId: category.filterCategoryId,
+                  child: content,
+                ),
               ),
             ),
           ],
@@ -1051,304 +1066,6 @@ class _NewNoteButton extends StatelessWidget {
       default:
         return 'New note';
     }
-  }
-}
-
-Color _paneColorFor(int? categoryId) {
-  if (categoryId == null) return _kAllFolderSurface;
-  final rule = DatabaseService.instance.getCategoryRuleById(categoryId);
-  if (rule == null) return _kAllFolderSurface;
-  return Color.alphaBlend(
-    rule.colorOrDefault.withValues(alpha: 0.12),
-    const Color(0xFFF7F8FA),
-  );
-}
-
-class _NotesCategoryAdapter {
-  const _NotesCategoryAdapter({
-    required this.chipIds,
-    required this.chipMode,
-    required this.filterCategoryId,
-    required this.scrollController,
-    required this.onFilterChanged,
-    required this.onManualChipReorder,
-  });
-
-  final List<int> chipIds;
-  final String chipMode;
-  final int? filterCategoryId;
-  final ScrollController scrollController;
-  final ValueChanged<int?> onFilterChanged;
-  final void Function(int oldIndex, int newIndex) onManualChipReorder;
-}
-
-class _NotesPhysicalFolderTabs extends StatefulWidget {
-  const _NotesPhysicalFolderTabs({
-    required this.adapter,
-    this.onOpenSettings,
-  });
-
-  final _NotesCategoryAdapter adapter;
-  final VoidCallback? onOpenSettings;
-
-  @override
-  State<_NotesPhysicalFolderTabs> createState() =>
-      _NotesPhysicalFolderTabsState();
-}
-
-class _NotesPhysicalFolderTabsState extends State<_NotesPhysicalFolderTabs> {
-  List<int>? _localChipIds;
-
-  List<int> get _ids => _localChipIds ?? widget.adapter.chipIds;
-
-  @override
-  void didUpdateWidget(covariant _NotesPhysicalFolderTabs oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    final local = _localChipIds;
-    if (local == null) return;
-    if (_sameIds(local, widget.adapter.chipIds)) {
-      _localChipIds = null;
-    }
-  }
-
-  bool _sameIds(List<int> a, List<int> b) {
-    if (a.length != b.length) return false;
-    for (var i = 0; i < a.length; i++) {
-      if (a[i] != b[i]) return false;
-    }
-    return true;
-  }
-
-  Future<void> _editSections() async {
-    final current = _ids;
-    final picked = await showCategoryTreeMultiPicker(
-      context,
-      initialCategoryIds: Set<int>.from(current),
-    );
-    if (!mounted || picked == null) return;
-
-    final selected = Set<int>.from(picked);
-    final next = <int>[
-      for (final id in current)
-        if (selected.remove(id)) id,
-      ...selected,
-    ];
-
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_kChipModePrefsKey, 'manual');
-    await prefs.setString(_kPinnedIdsPrefsKey, jsonEncode(next));
-    if (!mounted) return;
-
-    setState(() => _localChipIds = next);
-    final active = widget.adapter.filterCategoryId;
-    if (active != null && !next.contains(active)) {
-      widget.adapter.onFilterChanged(null);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final ids = _ids;
-    return SizedBox(
-      height: 42,
-      child: ScrollConfiguration(
-        behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
-        child: ListView(
-          controller: widget.adapter.scrollController,
-          scrollDirection: Axis.horizontal,
-          clipBehavior: Clip.none,
-          padding: const EdgeInsets.only(right: 12),
-          children: [
-            Align(
-              alignment: Alignment.bottomLeft,
-              child: _FolderTab(
-                label: _allLabel(currentLocale.value),
-                icon: Icons.format_list_bulleted_rounded,
-                accent: const Color(0xFF285B99),
-                fill: _kAllFolderSurface,
-                selected: widget.adapter.filterCategoryId == null,
-                onTap: () => widget.adapter.onFilterChanged(null),
-              ),
-            ),
-            for (final id in ids)
-              Align(alignment: Alignment.bottomLeft, child: _categoryTab(id)),
-            Align(
-              alignment: Alignment.bottomLeft,
-              child: _FolderTab(
-                label: '',
-                icon: Icons.add_rounded,
-                accent: Colors.white,
-                fill: kNotesInk,
-                selected: false,
-                compact: true,
-                onTap: () => unawaited(_editSections()),
-                onLongPress: widget.onOpenSettings,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _categoryTab(int id) {
-    final rule = DatabaseService.instance.getCategoryRuleById(id);
-    if (rule == null) return const SizedBox.shrink();
-    final accent = rule.colorOrDefault;
-    final icon = rule.iconCodePoint == null
-        ? Icons.folder_outlined
-        : IconData(rule.iconCodePoint!, fontFamily: 'MaterialIcons');
-    return _FolderTab(
-      label: rule.name.trim().isEmpty ? '—' : rule.name.trim(),
-      icon: icon,
-      accent: accent,
-      fill: _paneColorFor(id),
-      selected: widget.adapter.filterCategoryId == id,
-      onTap: () => widget.adapter.onFilterChanged(id),
-    );
-  }
-
-  String _allLabel(String locale) {
-    switch (locale) {
-      case 'ru':
-        return 'Все';
-      case 'de':
-        return 'Alle';
-      case 'fr':
-        return 'Tous';
-      case 'es':
-        return 'Todo';
-      case 'it':
-        return 'Tutte';
-      default:
-        return 'All';
-    }
-  }
-}
-
-class _FolderTab extends StatelessWidget {
-  const _FolderTab({
-    required this.label,
-    required this.icon,
-    required this.accent,
-    required this.fill,
-    required this.selected,
-    required this.onTap,
-    this.compact = false,
-    this.onLongPress,
-  });
-
-  final String label;
-  final IconData icon;
-  final Color accent;
-  final Color fill;
-  final bool selected;
-  final VoidCallback onTap;
-  final bool compact;
-  final VoidCallback? onLongPress;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final dark = theme.brightness == Brightness.dark;
-    final scheme = theme.colorScheme;
-    final mobile = MediaQuery.sizeOf(context).width <= 520;
-
-    final selectedFill = dark
-        ? Color.alphaBlend(
-            accent.withValues(alpha: 0.16),
-            scheme.surfaceContainerHigh,
-          )
-        : Color.alphaBlend(
-            accent.withValues(alpha: 0.13),
-            const Color(0xFFFCFDFE),
-          );
-    final foreground = dark
-        ? Color.lerp(accent, Colors.white, 0.22)!
-        : Color.lerp(accent, const Color(0xFF111827), 0.08)!;
-    final idleForeground = selected
-        ? foreground
-        : Color.lerp(
-            foreground,
-            scheme.onSurfaceVariant,
-            dark ? 0.40 : 0.52,
-          )!;
-
-    return Padding(
-      padding: const EdgeInsets.only(right: 6),
-      child: Material(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(compact ? 12 : 10),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: onTap,
-          onLongPress: onLongPress,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 140),
-            height: 38,
-            constraints: BoxConstraints(
-              minWidth: compact ? 42 : (mobile ? 82 : 92),
-            ),
-            padding: EdgeInsets.symmetric(
-              horizontal: compact ? 12 : (mobile ? 12 : 14),
-            ),
-            decoration: BoxDecoration(
-              color: compact
-                  ? kNotesInk
-                  : (selected ? selectedFill : Colors.transparent),
-              borderRadius: BorderRadius.circular(compact ? 12 : 10),
-            ),
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      icon,
-                      size: compact ? 17 : 15,
-                      color: compact ? Colors.white : idleForeground,
-                    ),
-                    if (!compact) ...[
-                      const SizedBox(width: 7),
-                      ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 160),
-                        child: Text(
-                          label,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 12.5,
-                            height: 1,
-                            fontWeight:
-                                selected ? FontWeight.w700 : FontWeight.w600,
-                            color: idleForeground,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-                if (selected && !compact)
-                  Positioned(
-                    left: 8,
-                    right: 8,
-                    bottom: 0,
-                    child: Container(
-                      height: 2,
-                      decoration: BoxDecoration(
-                        color: foreground,
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
   }
 }
 

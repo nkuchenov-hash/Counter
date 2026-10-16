@@ -24,6 +24,7 @@ import 'package:counter/core/widgets/app_state_views.dart';
 import 'package:counter/features/lists/lists_card.dart';
 import 'package:counter/features/lists/lists_export.dart';
 import 'package:counter/features/lists/lists_bulk_actions.dart';
+
 import 'package:counter/features/lists/lists_empty_state.dart';
 import 'package:counter/features/lists/lists_filters.dart';
 import 'package:counter/features/notes/notes_glm_surface.dart';
@@ -31,6 +32,8 @@ import 'package:counter/features/notes/widgets/notes_library_production_shell.da
 import 'package:counter/features/notes/note_editor_page.dart';
 import 'package:counter/features/notes/widgets/note_card.dart';
 import 'package:counter/features/notes/widgets/notes_library_body.dart';
+
+part 'lists_bulk_delete.dart';
 
 /// Backlog screen: grouped headers by category path, Done + Delete, inline add.
 class ListsPage extends StatefulWidget {
@@ -85,6 +88,7 @@ class _ListsPageState extends State<ListsPage>
   final FocusNode _inlineFocus = FocusNode();
 
   bool _listsSelectMode = false;
+  bool _bulkDeleteInProgress = false;
   final Set<String> _selectedListKeys = <String>{};
   bool _listsArchiveSectionExpanded = true;
 
@@ -209,7 +213,7 @@ class _ListsPageState extends State<ListsPage>
     if (shell.primaryTabIndex != 3) {
       return;
     }
-    final show = _filterCategoryId != null && _selectedListKeys.isNotEmpty;
+    final show = _selectedListKeys.isNotEmpty;
     final next = show ? _kShellBulkBarReservePx : 0.0;
     shell.setFabBottomReservePx(next);
   }
@@ -265,42 +269,20 @@ class _ListsPageState extends State<ListsPage>
     return out;
   }
 
-  Future<void> _listsBulkDelete(List<PlanningTask> display) async {
-    final tasks = _tasksMatchingSelectedKeys(display);
-    if (tasks.isEmpty) return;
-    final ids = <String>[];
-    final db = DatabaseService.instance;
-    final backups = <PlanningTask>[];
-    for (final t in tasks) {
-      if (t.planRowIdForBackend.startsWith('optimistic-')) {
-        db.clearOptimisticPlanningForPlanRow(t.planRowIdForBackend);
-        continue;
-      }
-      final pid = t.planRowIdForBackend.trim();
-      if (pid.isNotEmpty) ids.add(pid);
-      backups.add(t);
-      db.applyOptimisticPlanningTask(
-        t.copyWith(dateKey: _kOptimisticPurgeDateKey),
-      );
-    }
-    if (ids.isEmpty) {
-      db.notifyPlanningRefresh(scheduleNetworkRefresh: false);
-      setState(() {});
-      _exitListsSelectMode();
-      return;
-    }
-    db.notifyPlanningRefresh(scheduleNetworkRefresh: false);
-    setState(() {});
-    final ok = await db.deletePlanningTasksBulk(ids);
-    if (!ok && mounted) {
-      for (final t in backups) {
-        db.applyOptimisticPlanningTask(t);
-      }
-      db.notifyPlanningRefresh(scheduleNetworkRefresh: false);
-      setState(() {});
-      AppSnack.failed();
-    }
-    if (mounted) _exitListsSelectMode();
+  void _notifyBulkDeleteUI() {
+    if (mounted) setState(() {});
+  }
+
+  void _finishBulkDelete(Set<String> failedKeys) {
+    _bulkDeleteInProgress = false;
+    if (!mounted) return;
+    setState(() {
+      _selectedListKeys
+        ..clear()
+        ..addAll(failedKeys);
+      _listsSelectMode = failedKeys.isNotEmpty;
+    });
+    _syncListsShellFabBulkReserve();
   }
 
   Widget? _listsBulkBottomBar(
@@ -313,7 +295,7 @@ class _ListsPageState extends State<ListsPage>
       locale: currentLocale.value,
       selectedCount: _selectedListKeys.length,
       onEdit: () => _openListsBulkEditFirst(display),
-      onDelete: () => unawaited(_listsBulkDelete(display)),
+      onDelete: () => unawaited(_listsBulkDelete()),
     );
   }
 
@@ -575,12 +557,8 @@ class _ListsPageState extends State<ListsPage>
     } else {
       raw = List<int>.from(_pinnedChipIds);
     }
-    final available = _sanitizeIntCategoryIds(raw);
-    final active = _filterCategoryId;
-    if (active != null && available.contains(active)) {
-      return [active, ...available.where((x) => x != active)];
-    }
-    return available;
+    // Category selection never changes the physical tab order.
+    return _sanitizeIntCategoryIds(raw);
   }
 
   List<Tag> _tagsForFilterBar() {
@@ -610,19 +588,28 @@ class _ListsPageState extends State<ListsPage>
   }
 
   void _onFilterChanged(int? id) {
-    if (id != null && _chipMode == 'manual') {
-      final next = List<int>.from(_pinnedChipIds)..remove(id);
-      next.insert(0, id);
-      _pinnedChipIds = _sanitizeIntCategoryIds(next);
-      unawaited(_persistPinnedChipIds(_pinnedChipIds));
-    }
     setState(() {
       _filterCategoryId = id;
       _listsSelectMode = false;
       _selectedListKeys.clear();
     });
     unawaited(_persistFilterCategoryId(id));
-    _scrollChipBarToStart();
+    // Keep the horizontal folder-tab scroll position stable on selection.
+  }
+
+  /// Visible folder sections are user-selected, ordered, and persisted.
+  void _onVisibleNoteSectionsChanged(List<int> ids) {
+    final next = _sanitizeIntCategoryIds(ids);
+    setState(() {
+      _chipMode = 'manual';
+      _pinnedChipIds = next;
+      if (_filterCategoryId != null && !next.contains(_filterCategoryId)) {
+        _filterCategoryId = null;
+      }
+    });
+    unawaited(_persistChipMode('manual'));
+    unawaited(_persistPinnedChipIds(next));
+    unawaited(_persistFilterCategoryId(_filterCategoryId));
   }
 
   void _onTagFilterChanged(String? tagPbId) {
@@ -1069,6 +1056,7 @@ class _ListsPageState extends State<ListsPage>
                     onFilterChanged: _onFilterChanged,
                     onManualChipReorder: (oldI, newI) =>
                         _onManualChipReorder(chipIds, oldI, newI),
+                    onVisibleSectionsChanged: _onVisibleNoteSectionsChanged,
                     glmPresentation: true,
                   ),
                 ),
@@ -1123,8 +1111,7 @@ class _ListsPageState extends State<ListsPage>
                         onRefresh: _reload,
                       ),
               ),
-              bottomNavigationBar:
-                  filterId != null && _selectedListKeys.isNotEmpty
+              bottomNavigationBar: _selectedListKeys.isNotEmpty
                   ? _listsBulkBottomBar(context, theme.colorScheme, flat)
                   : null,
             );
