@@ -39,16 +39,21 @@ class CalendarWeekPlannerGrid extends StatelessWidget {
   double _topFor(DateTime time) =>
       (time.hour * 60 + time.minute) / 60 * _hourHeight;
 
-  /// Choose the nearest category branch immediately below the top-level root.
-  /// This keeps different clients separated instead of lumping all work together.
+  /// Group siblings under their closest shared category branch; retain an
+  /// intermediate branch when the hierarchy has a broad top-level category.
   int _groupCategory(int categoryId) {
     final db = DatabaseService.instance;
     var current = categoryId;
-    final visited = <int>{};
-    while (visited.add(current)) {
-      final parent = db.getParentId(current);
-      if (parent == null || db.getParentId(parent) == null) break;
+    var parent = db.getParentId(current);
+    if (parent == null) return current;
+    final visited = <int>{categoryId};
+    while (parent != null && visited.add(parent)) {
+      final grandparent = db.getParentId(parent);
+      if (grandparent == null) {
+        return current == categoryId ? parent : current;
+      }
       current = parent;
+      parent = grandparent;
     }
     return current;
   }
