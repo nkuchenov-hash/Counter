@@ -123,6 +123,7 @@ class ListsCategoryChipBar extends StatefulWidget {
     required this.scrollController,
     required this.onFilterChanged,
     required this.onManualChipReorder,
+    required this.onVisibleSectionsChanged,
     this.glmPresentation = false,
   });
 
@@ -132,6 +133,7 @@ class ListsCategoryChipBar extends StatefulWidget {
   final ScrollController scrollController;
   final ValueChanged<int?> onFilterChanged;
   final void Function(int oldIndex, int newIndex) onManualChipReorder;
+  final ValueChanged<List<int>> onVisibleSectionsChanged;
   final bool glmPresentation;
 
   @override
