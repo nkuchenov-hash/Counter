@@ -1371,20 +1371,28 @@ extension PlanServiceExtension on DatabaseService {
     return allOk;
   }
 
-  /// PocketBase [plans] rows: each id is a **record id** string.
-  Future<bool> deletePlanningTasksBulk(Iterable<String> planBackendIds) async {
-    if (!_isInitialized || !_hasAuthenticatedUserId) return false;
-    if (!_isPlansTableConfigured) {
+  /// Process every requested row. Failed IDs refer to the input IDs,
+  /// allowing optimistic callers to restore only failed rows.
+  /// Retriable/offline writes count as accepted once durably queued.
+  Future<Set<String>> deletePlanningTasksBulkFailedIds(
+    Iterable<String> planBackendIds,
+  ) async {
+    final requested = planBackendIds
+        .map((s) => s.trim())
+        .where((s) => s.isNotEmpty)
+        .toSet();
+    if (!_isInitialized || !_hasAuthenticatedUserId || !_isPlansTableConfigured) {
       DatabaseService._log('TABLE_GUARD: blocked deletePlanningTasksBulk.');
-      return false;
+      return requested;
     }
     final raw = planBackendIds
         .map((s) => s.trim())
         .where((s) => s.isNotEmpty)
         .toSet()
         .toList();
-    if (raw.isEmpty) return false;
+    if (raw.isEmpty) return <String>{};
 
+    final failedIds = <String>{};
     var deferredNotify = false;
     var skipDeletedSnack = false;
     for (final id in raw) {
@@ -1404,8 +1412,8 @@ extension PlanServiceExtension on DatabaseService {
           deferPlanningNotify: true,
         );
         if (!ok) {
-          AppSnack.failed();
-          return false;
+          failedIds.add(trimmed);
+          continue;
         }
         deferredNotify = true;
         continue;
@@ -1420,8 +1428,8 @@ extension PlanServiceExtension on DatabaseService {
           businessId: businessId,
         );
         if (!del.ok) {
-          AppSnack.failed();
-          return false;
+          failedIds.add(trimmed);
+          continue;
         }
         if (del.queued) skipDeletedSnack = true;
         deferredNotify = true;
@@ -1446,8 +1454,8 @@ extension PlanServiceExtension on DatabaseService {
           businessId: businessId,
         );
         if (!del.ok) {
-          AppSnack.failed();
-          return false;
+          failedIds.add(trimmed);
+          continue;
         }
         if (del.queued) skipDeletedSnack = true;
         deferredNotify = true;
@@ -1478,8 +1486,8 @@ extension PlanServiceExtension on DatabaseService {
           deferredNotify = true;
           continue;
         }
-        AppSnack.failed();
-        return false;
+        failedIds.add(trimmed);
+        continue;
       } catch (e, st) {
         DatabaseService._log('DELETE_PLAN_PB_BULK: $e');
         DatabaseService._log(st.toString());
@@ -1494,18 +1502,27 @@ extension PlanServiceExtension on DatabaseService {
           deferredNotify = true;
           continue;
         }
-        AppSnack.failed();
-        return false;
+        failedIds.add(trimmed);
+        continue;
       }
     }
     if (deferredNotify) {
       notifyPlanningRefresh();
       _notifyTimelineAfterRecordCacheMutation();
     }
-    if (!skipDeletedSnack) {
+    if (failedIds.isNotEmpty) {
+      AppSnack.failed();
+    } else if (!skipDeletedSnack) {
       AppSnack.deleted();
     }
-    return true;
+    return failedIds;
+  }
+
+  /// Preserve the existing bool API used by other plan/list callers.
+  Future<bool> deletePlanningTasksBulk(Iterable<String> planBackendIds) async {
+    final ids = planBackendIds.toList();
+    if (ids.isEmpty) return false;
+    return (await deletePlanningTasksBulkFailedIds(ids)).isEmpty;
   }
 
   /// Bulk `is_done` — Noco: integer wrapper PK string; PocketBase: record id string.
