@@ -19,6 +19,12 @@ This document defines how Life OS behaves when people interact with it. It is th
 
 ## Lossless record capture
 
+- Web record create/update/stop/delete mutations persist to a transactional IndexedDB journal, not the small browser settings localStorage; migrate legacy queued writes atomically, then release old storage.
+- Retry of one capture must reuse the same business UUID and original start time; a stale retry cannot submit a title once the input changed.
+- A new recording must not stop a running recording until the new capture is durably accepted.
+- Browser web tests must prove migration, persistence after reinitialization, draft recovery, and retry deduplication.
+
+
 - A record's title, requested category and start-time intent must enter durable
   device storage before the entry field is cleared or a server request is made.
 - A temporarily missing category catalog must **never** reject a new record
