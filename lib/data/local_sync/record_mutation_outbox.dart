@@ -39,16 +39,13 @@ abstract final class RecordMutationOutbox {
 
   static List<Map<String, dynamic>> _decode(String? raw) {
     if (raw == null || raw.trim().isEmpty) return [];
-    try {
-      final decoded = jsonDecode(raw);
-      if (decoded is! List) return [];
-      return [
-        for (final e in decoded)
-          if (e is Map) Map<String, dynamic>.from(e),
-      ];
-    } catch (_) {
-      return [];
+    // Corruption must never be interpreted as an empty queue. Doing so would
+    // let the next enqueue overwrite outstanding user-created records.
+    final decoded = jsonDecode(raw);
+    if (decoded is! List || decoded.any((e) => e is! Map)) {
+      throw const FormatException('Invalid record outbox journal');
     }
+    return [for (final e in decoded) Map<String, dynamic>.from(e as Map)];
   }
 
   // Serialize all read-modify-write operations. A flush acknowledgement must
@@ -68,7 +65,8 @@ abstract final class RecordMutationOutbox {
     SharedPreferences prefs,
     List<Map<String, dynamic>> items,
   ) async {
-    if (!await prefs.setString(_prefsKey, jsonEncode(items))) {
+    final encoded = jsonEncode(items);
+    if (!await prefs.setString(_prefsKey, encoded)) {
       throw StateError('Unable to persist record mutation outbox');
     }
   }
