@@ -40,7 +40,7 @@ void showCalendarTaskGroupSheet({
 }
 
 /// Expanded normal-size LIFE OS cards for a visually grouped calendar category.
-class CalendarTaskGroupSheet extends StatelessWidget {
+class CalendarTaskGroupSheet extends StatefulWidget {
   const CalendarTaskGroupSheet({
     super.key,
     required this.day,
@@ -61,6 +61,13 @@ class CalendarTaskGroupSheet extends StatelessWidget {
     String? sourcePlanPocketRecordId,
   }) onStartRecordFromTask;
 
+  @override
+  State<CalendarTaskGroupSheet> createState() => _CalendarTaskGroupSheetState();
+}
+
+class _CalendarTaskGroupSheetState extends State<CalendarTaskGroupSheet> {
+  final Map<String, bool> _optimisticDone = {};
+
   static String _time(DateTime date) =>
       '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
 
@@ -68,7 +75,7 @@ class CalendarTaskGroupSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final loc = currentLocale.value;
     final scheme = Theme.of(context).colorScheme;
-    final ordered = tasks.toList()
+    final ordered = widget.tasks.toList()
       ..sort((a, b) => a.startTime!.compareTo(b.startTime!));
     return FractionallySizedBox(
       heightFactor: 0.76,
@@ -82,9 +89,9 @@ class CalendarTaskGroupSheet extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(categoryName, style: Theme.of(context).textTheme.titleLarge
+                      Text(widget.categoryName, style: Theme.of(context).textTheme.titleLarge
                           ?.copyWith(fontWeight: FontWeight.w700)),
-                      Text(DateFormat.yMMMEd(loc).format(day),
+                      Text(DateFormat.yMMMEd(loc).format(widget.day),
                           style: TextStyle(color: scheme.onSurfaceVariant)),
                     ],
                   ),
@@ -107,17 +114,19 @@ class CalendarTaskGroupSheet extends StatelessWidget {
                 final st = task.startTime;
                 final label = st == null ? '' :
                     '${_time(st)}${task.endDateTime == null ? '' : ' – ${_time(task.endDateTime!)}'}';
+                final done = _optimisticDone[task.planRowIdForBackend] ?? task.isDone;
                 return PlanTimeTaskCard(
                   task: task,
                   density: planTimeCardDensityForList(task: task),
                   surface: PlanCardSurface.calendar,
                   timeLabel: label,
-                  displayIsDone: task.isDone,
+                  displayIsDone: done,
                   toggleDoneEnabled: !task.planRowIdForBackend.startsWith('optimistic-'),
-                  onTap: () => onEditTask(task),
-                  onOpenMenu: (_) => onEditTask(task),
+                  onTap: () => widget.onEditTask(task),
+                  onOpenMenu: (_) => widget.onEditTask(task),
                   onToggleDone: () {
-                    final next = !task.isDone;
+                    final next = !done;
+                    setState(() => _optimisticDone[task.planRowIdForBackend] = next);
                     DatabaseService.instance.applyOptimisticPlanningTask(task.copyWith(isDone: next));
                     unawaited(DatabaseService.instance.updatePlanningTask(
                       task.planRowIdForBackend,
@@ -126,8 +135,8 @@ class CalendarTaskGroupSheet extends StatelessWidget {
                       suppressAppSnack: true,
                     ));
                   },
-                  onPlay: task.isDone ? null : () {
-                    unawaited(onStartRecordFromTask(
+                  onPlay: done ? null : () {
+                    unawaited(widget.onStartRecordFromTask(
                       task.title,
                       task.categoryId,
                       task.dateKey,
