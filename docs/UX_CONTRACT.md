@@ -160,6 +160,20 @@ Performance, responsiveness, and stability are **P0 correctness**, not polish. S
 - Year view shows all 12 months and lets a month/day tap drill into the existing calendar flow. Month and Week keep focused-day behavior. Events is an agenda-style upcoming list beginning at the selected day.
 - Calendar mode changes and swipes are local UI actions and must respond immediately; data refresh stays in the existing planning cache/stream path and must not block the gesture.
 
+## Multi-select bulk plan scheduling
+
+- Selecting several plans and setting a destination date + start time means
+  that time is the **first plan's** start, not the start for every plan.
+- Place plans consecutively, in visible source order, with each plan retaining
+  its original duration (or its tag/default duration when no end exists).
+- Date-only bulk moves retain the original separate clock times.
+- Preserve the original audit anchor and postponed flag, persist each target
+  date and end-date correctly, and optimistically move the batch as one unit.
+- Never overlap destination plans. Cascade affected pre-existing destination
+  plans forward; leave unrelated plans outside the insertion unchanged.
+- Abort the batch before any optimistic change when a collision would require
+  a patch to an unsaved or virtual recurring instance.
+
 ## Automatic plan workday rollover
 
 - Automatically placed (no user-specified clock time) dated plans must fit their **full duration** into the selected working window, never be persisted past visible hours and silently disappear from Time View.
