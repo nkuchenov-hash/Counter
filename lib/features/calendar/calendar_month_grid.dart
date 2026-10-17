@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:counter/data/models.dart';
+import 'package:counter/features/calendar/calendar_drag_and_reschedule.dart';
 import 'package:counter/features/calendar/calendar_day_events.dart';
 import 'package:counter/features/calendar/calendar_helpers.dart';
 import 'package:counter/l10n/dictionary.dart';
@@ -17,6 +20,8 @@ class CalendarMonthGrid extends StatelessWidget {
     required this.showEventPills,
     required this.browsing,
     required this.onDayTap,
+    required this.onTaskTap,
+    required this.onPlanDrop,
     this.currentMonthOnly = false,
   });
 
@@ -28,6 +33,8 @@ class CalendarMonthGrid extends StatelessWidget {
   final bool showEventPills;
   final bool browsing;
   final ValueChanged<DateTime> onDayTap;
+  final ValueChanged<PlanningTask> onTaskTap;
+  final Future<void> Function(List<PlanningTask>, DateTime) onPlanDrop;
   final bool currentMonthOnly;
 
   @override
@@ -100,24 +107,36 @@ class CalendarMonthGrid extends StatelessWidget {
                                       final day = gridStart.add(
                                         Duration(days: row * 7 + col),
                                       );
-                                      final inFocusedMonth =
-                                          day.year == focusedMonth.year &&
-                                          day.month == focusedMonth.month;
-                                      return inFocusedMonth
-                                          ? CalendarMonthDayCell(
-                                                day: day,
-                                                focusedMonth: focusedMonth,
-                                                highlightDay: highlightDay,
-                                                today: today,
-                                                tasks: tasksByDay[
-                                                        calendarDayKey(day)] ??
-                                                    const [],
-                                                showEventPills: showEventPills,
-                                                maxVisibleEvents: maxEvents,
-                                                browsing: browsing,
-                                              onTap: onDayTap,
-                                            )
-                                          : const SizedBox.expand();
+                                      return DragTarget<CalendarDragPayload>(
+                                        onWillAcceptWithDetails: (details) => details.data.canMove,
+                                        onAcceptWithDetails: (details) {
+                                          final originalStart = details.data.tasks.first.startTime!;
+                                          unawaited(onPlanDrop(
+                                            details.data.tasks,
+                                            DateTime(day.year, day.month, day.day,
+                                                originalStart.hour, originalStart.minute),
+                                          ));
+                                        },
+                                        builder: (context, candidates, rejected) => DecoratedBox(
+                                          decoration: BoxDecoration(
+                                            color: candidates.isNotEmpty
+                                                ? scheme.primary.withValues(alpha: 0.13)
+                                                : Colors.transparent,
+                                          ),
+                                          child: CalendarMonthDayCell(
+                                            day: day,
+                                            focusedMonth: focusedMonth,
+                                            highlightDay: highlightDay,
+                                            today: today,
+                                            tasks: tasksByDay[calendarDayKey(day)] ?? const [],
+                                            showEventPills: showEventPills,
+                                            maxVisibleEvents: maxEvents,
+                                            browsing: browsing,
+                                            onTap: onDayTap,
+                                            onTaskTap: onTaskTap,
+                                          ),
+                                        ),
+                                      );
                                     },
                                   ),
                                 ),
@@ -161,6 +180,7 @@ class CalendarMonthDayCell extends StatelessWidget {
     required this.maxVisibleEvents,
     required this.browsing,
     required this.onTap,
+    required this.onTaskTap,
   });
 
   final DateTime day;
@@ -172,8 +192,9 @@ class CalendarMonthDayCell extends StatelessWidget {
   final int maxVisibleEvents;
   final bool browsing;
   final ValueChanged<DateTime> onTap;
+  final ValueChanged<PlanningTask> onTaskTap;
 
-  bool get _inMonth => day.month == focusedMonth.month;
+  bool get _inMonth => day.year == focusedMonth.year && day.month == focusedMonth.month;
   bool get _selected =>
       highlightDay != null &&
       day.year == highlightDay!.year &&
@@ -191,7 +212,9 @@ class CalendarMonthDayCell extends StatelessWidget {
     final scheduled = tasks.where((t) => t.startTime != null).toList();
 
     return Material(
-      color: Colors.transparent,
+      color: _inMonth
+          ? Colors.transparent
+          : scheme.surfaceContainerLow.withValues(alpha: 0.48),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: () => onTap(day),
@@ -220,6 +243,9 @@ class CalendarMonthDayCell extends StatelessWidget {
                     loc: loc,
                     showPills: showEventPills,
                     maxVisible: maxVisibleEvents,
+                    enableDrag: true,
+                    outsideMonth: !_inMonth,
+                    onTaskTap: onTaskTap,
                   ),
                 ),
               ],

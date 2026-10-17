@@ -1,4 +1,5 @@
 import 'package:counter/data/database_service.dart';
+import 'package:counter/features/calendar/calendar_drag_and_reschedule.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
@@ -12,6 +13,9 @@ class CalendarDayEventList extends StatelessWidget {
     required this.showPills,
     required this.maxVisible,
     this.vertical = false,
+    this.enableDrag = false,
+    this.outsideMonth = false,
+    this.onTaskTap,
   });
 
   final List<PlanningTask> tasks;
@@ -19,6 +23,9 @@ class CalendarDayEventList extends StatelessWidget {
   final bool showPills;
   final int maxVisible;
   final bool vertical;
+  final bool enableDrag;
+  final bool outsideMonth;
+  final ValueChanged<PlanningTask>? onTaskTap;
 
   @override
   Widget build(BuildContext context) {
@@ -32,15 +39,26 @@ class CalendarDayEventList extends StatelessWidget {
         spacing: 3,
         runSpacing: 2,
         children: [
-          for (final t in visible)
-            Container(
-              width: vertical ? double.infinity : 6,
-              height: vertical ? 4 : 6,
-              decoration: BoxDecoration(
-                color: DatabaseService.instance
-                    .getCategoryColor(t.categoryId)
-                    .withValues(alpha: 0.9),
-                borderRadius: BorderRadius.circular(vertical ? 2 : 99),
+          for (final task in visible)
+            CalendarPlanDraggable(
+              tasks: enableDrag ? [task] : const [],
+              child: InkWell(
+                onTap: onTaskTap == null ? null : () => onTaskTap!(task),
+                child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
+                child: Text(
+                  task.startTime == null
+                      ? '•'
+                      : '${task.startTime!.hour.toString().padLeft(2, '0')}:${task.startTime!.minute.toString().padLeft(2, '0')}',
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    fontSize: 10,
+                    color: outsideMonth
+                        ? scheme.onSurfaceVariant.withValues(alpha: 0.70)
+                        : DatabaseService.instance.getCategoryColor(task.categoryId),
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
               ),
             ),
           if (extra > 0)
@@ -62,7 +80,16 @@ class CalendarDayEventList extends StatelessWidget {
         for (final t in visible)
           Padding(
             padding: const EdgeInsets.only(bottom: 2),
-            child: CalendarEventPill(task: t, loc: loc),
+            child: CalendarPlanDraggable(
+              tasks: enableDrag ? [t] : const [],
+              child: InkWell(
+                onTap: onTaskTap == null ? null : () => onTaskTap!(t),
+                child: Opacity(
+                  opacity: outsideMonth ? 0.62 : 1,
+                  child: CalendarEventPill(task: t, loc: loc),
+                ),
+              ),
+            ),
           ),
         if (extra > 0)
           Text(

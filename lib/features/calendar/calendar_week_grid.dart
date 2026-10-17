@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:counter/data/models.dart';
+import 'package:counter/features/calendar/calendar_drag_and_reschedule.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/features/calendar/calendar_week_grouping.dart';
 import 'package:counter/features/calendar/calendar_day_events.dart';
@@ -20,6 +23,7 @@ class CalendarWeekPlannerGrid extends StatelessWidget {
     required this.onTaskTap,
     required this.onSlotTap,
     required this.onGroupTap,
+    required this.onPlanDrop,
   });
 
   final DateTime weekStart;
@@ -31,6 +35,7 @@ class CalendarWeekPlannerGrid extends StatelessWidget {
   final ValueChanged<PlanningTask> onTaskTap;
   final ValueChanged<DateTime> onSlotTap;
   final void Function(DateTime day, String categoryName, List<PlanningTask> tasks) onGroupTap;
+  final Future<void> Function(List<PlanningTask>, DateTime) onPlanDrop;
 
   static const double _hourHeight = 64;
   static const double _timeGutter = 44;
@@ -213,8 +218,25 @@ class CalendarWeekPlannerGrid extends StatelessWidget {
                                             .where((task) => task.startTime != null)
                                             .toList();
                                         final blocks = buildCalendarWeekBlocks(tasks, _groupCategory);
-                                        return DecoratedBox(
+                                        return DragTarget<CalendarDragPayload>(
+                                          onWillAcceptWithDetails: (details) => details.data.canMove,
+                                          onAcceptWithDetails: (details) {
+                                            final box = context.findRenderObject() as RenderBox?;
+                                            if (box == null) return;
+                                            final local = box.globalToLocal(details.offset);
+                                            final minutes = ((local.dy / _hourHeight * 60) / 10).round() * 10;
+                                            final snapped = minutes.clamp(0, 23 * 60 + 50);
+                                            unawaited(onPlanDrop(
+                                              details.data.tasks,
+                                              DateTime(day.year, day.month, day.day,
+                                                  snapped ~/ 60, snapped % 60),
+                                            ));
+                                          },
+                                          builder: (context, candidates, rejected) => DecoratedBox(
                                           decoration: BoxDecoration(
+                                            color: candidates.isNotEmpty
+                                                ? scheme.primary.withValues(alpha: 0.10)
+                                                : Colors.transparent,
                                             border: Border(
                                               left: BorderSide(
                                                 color: scheme.outlineVariant.withValues(alpha: 0.34),
@@ -255,7 +277,10 @@ class CalendarWeekPlannerGrid extends StatelessWidget {
                                                               : block.tasks.first.title;
                                                           final color = DatabaseService.instance
                                                               .getCategoryColor(block.groupCategoryId);
-                                                          return Tooltip(
+                                                          final timeLabel = grouped
+                                                              ? '${_hhmm(block.start)}–${_hhmm(block.end)}'
+                                                              : _hhmm(block.start);
+                                                          final card = Tooltip(
                                                             waitDuration: const Duration(milliseconds: 400),
                                                             message: _tooltip(block, name),
                                                             child: Material(
@@ -270,36 +295,58 @@ class CalendarWeekPlannerGrid extends StatelessWidget {
                                                                   decoration: BoxDecoration(
                                                                     border: Border(left: BorderSide(color: color, width: 3)),
                                                                   ),
-                                                                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 4),
-                                                                  child: Column(
-                                                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                                                    children: [
-                                                                      Text(
-                                                                        name,
-                                                                        maxLines: grouped && _blockHeight(block) >= 52 ? 2 : 1,
-                                                                        overflow: TextOverflow.ellipsis,
-                                                                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                                                                          fontWeight: FontWeight.w700,
-                                                                          color: scheme.onSurface,
-                                                                          height: 1.05,
-                                                                          fontSize: 11,
-                                                                        ),
-                                                                      ),
-                                                                      if (grouped && _blockHeight(block) >= 43)
-                                                                        Text(
-                                                                          '${block.tasks.length} × ${t(loc, 'plan')} · ${_hhmm(block.start)}–${_hhmm(block.end)}',
-                                                                          maxLines: 1,
-                                                                          overflow: TextOverflow.ellipsis,
-                                                                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                                                                            fontSize: 10,
-                                                                            color: scheme.onSurfaceVariant,
+                                                                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
+                                                                  child: LayoutBuilder(
+                                                                    builder: (context, cardConstraints) {
+                                                                      final compact = cardConstraints.maxWidth < 90;
+                                                                      return Column(
+                                                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                                                        mainAxisSize: MainAxisSize.min,
+                                                                        children: [
+                                                                          Text(
+                                                                            timeLabel,
+                                                                            maxLines: 1,
+                                                                            overflow: TextOverflow.ellipsis,
+                                                                            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                                                              fontSize: 11,
+                                                                              fontWeight: FontWeight.w800,
+                                                                              color: scheme.onSurface,
+                                                                              height: 1.05,
+                                                                            ),
                                                                           ),
-                                                                        ),
-                                                                    ],
+                                                                          if (!compact && cardConstraints.maxHeight >= 25)
+                                                                            Text(
+                                                                              name,
+                                                                              maxLines: 2,
+                                                                              overflow: TextOverflow.ellipsis,
+                                                                              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                                                                fontSize: 11,
+                                                                                fontWeight: FontWeight.w600,
+                                                                                color: scheme.onSurface,
+                                                                                height: 1.05,
+                                                                              ),
+                                                                            ),
+                                                                          if (grouped && cardConstraints.maxHeight >= 44)
+                                                                            Text(
+                                                                              '${block.tasks.length} × ${t(loc, 'plan')}',
+                                                                              maxLines: 1,
+                                                                              overflow: TextOverflow.ellipsis,
+                                                                              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                                                                fontSize: 10,
+                                                                                color: scheme.onSurfaceVariant,
+                                                                              ),
+                                                                            ),
+                                                                        ],
+                                                                      );
+                                                                    },
                                                                   ),
                                                                 ),
                                                               ),
                                                             ),
+                                                          );
+                                                          return CalendarPlanDraggable(
+                                                            tasks: block.tasks,
+                                                            child: card,
                                                           );
                                                         },
                                                       ),
@@ -307,6 +354,7 @@ class CalendarWeekPlannerGrid extends StatelessWidget {
                                                 ],
                                               );
                                             },
+                                          ),
                                           ),
                                         );
                                       },

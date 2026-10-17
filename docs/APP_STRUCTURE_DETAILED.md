@@ -6,7 +6,7 @@ Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). The 2026-10-16 incremental manifest adds the new Calendar group files and their test; the original SHA remains the baseline for other entries.
 
-**Tracked files:** 889 — each appears **exactly once** below.
+**Tracked files:** 891 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -26,8 +26,8 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Role | Count |
 | :--- | ---: |
-| `production UI` | 178 |
-| `test` | 116 |
+| `production UI` | 179 |
+| `test` | 117 |
 | `Brain/data` | 93 |
 | `platform build` | 83 |
 | `shared foundation` | 65 |
@@ -57,8 +57,8 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 485 |
-| `REQUIRED_FOR_TEST_OR_TOOLING` | 218 |
+| `PROVEN_REQUIRED` | 486 |
+| `REQUIRED_FOR_TEST_OR_TOOLING` | 219 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
 | `GOVERNING_DOCUMENTATION` | 39 |
 | `HISTORICAL_RECORD` | 17 |
@@ -68,7 +68,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 812 |
+| `HIGH` | 814 |
 | `MEDIUM` | 75 |
 
 ---
@@ -17461,6 +17461,44 @@ RU:
 - **Связано с:** `lib/features/calendar/`, `docs/APP_STRUCTURE.md`
 
 
+### `lib/features/calendar/calendar_drag_and_reschedule.dart`
+
+EN:
+
+- **Human purpose:** Provides draggable plan handles, guarded drop validation, rigid group schedule shifts and persisted Planning batch updates.
+- **What this is:** Provides draggable plan handles, guarded drop validation, rigid group schedule shifts and persisted Planning batch updates.
+- **Why needed:** Enables reliable, interactive Calendar plan scheduling without changing Timeline state.
+- **Contents:** Flutter/Dart code and tests dedicated to Calendar UX behavior.
+- **Repository role:** production UI
+- **Evidence of use:** Imported by Month, Week and Calendar views; uses existing Brain and Time View fixed-time contracts.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Missing Calendar behavior or missing regression protection.
+- **Confidence:** HIGH
+- **Owner / layer:** Calendar UI
+- **Responsibilities:** Provides draggable plan handles, guarded drop validation, rigid group schedule shifts and persisted Planning batch updates.
+- **When to open:** Calendar adjacent-month, drag/drop or time label regressions.
+- **Can it be deleted?** No — required for Calendar UX and verification.
+- **Connected to:** Imported by Month, Week and Calendar views; uses existing Brain and Time View fixed-time contracts.
+
+RU:
+
+- **Зачем файл человеку:** Provides draggable plan handles, guarded drop validation, rigid group schedule shifts and persisted Planning batch updates.
+- **Что это:** Часть поведения календаря LIFE OS.
+- **Зачем:** Чтобы даты, время планов и переносы работали предсказуемо.
+- **Содержимое:** Dart-логика и связанные проверки.
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Imported by Month, Week and Calendar views; uses existing Brain and Time View fixed-time contracts.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Пропадёт поведение календаря или его регрессионная проверка.
+- **Уверенность:** HIGH
+- **Владелец / слой:** UI календаря
+- **Обязанности:** Provides draggable plan handles, guarded drop validation, rigid group schedule shifts and persisted Planning batch updates.
+- **Когда открывать:** При ошибках планирования или переноса в календаре.
+- **Можно удалить?** Нет.
+- **Связано с:** Imported by Month, Week and Calendar views; uses existing Brain and Time View fixed-time contracts.
+
+---
+
 ### `lib/features/calendar/calendar_day_events.dart`
 
 EN:
@@ -31701,6 +31739,44 @@ RU:
 - **Когда открывать:** При проблемах с сеткой календаря или карточками планов.
 - **Можно удалить?** Нет — coverage for the calendar week grouping contract disappears.
 - **Связано с:** Flutter test: `flutter test test/calendar_week_grouping_test.dart`.
+
+---
+
+### `test/calendar_drag_and_reschedule_test.dart`
+
+EN:
+
+- **Human purpose:** Regression coverage for cross-date calendar moves, duration fidelity and stable group member offsets.
+- **What this is:** Regression coverage for cross-date calendar moves, duration fidelity and stable group member offsets.
+- **Why needed:** Enables reliable, interactive Calendar plan scheduling without changing Timeline state.
+- **Contents:** Flutter/Dart code and tests dedicated to Calendar UX behavior.
+- **Repository role:** test
+- **Evidence of use:** Flutter CI test/calendar_drag_and_reschedule_test.dart.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Missing Calendar behavior or missing regression protection.
+- **Confidence:** HIGH
+- **Owner / layer:** tests
+- **Responsibilities:** Regression coverage for cross-date calendar moves, duration fidelity and stable group member offsets.
+- **When to open:** Calendar adjacent-month, drag/drop or time label regressions.
+- **Can it be deleted?** No — required for Calendar UX and verification.
+- **Connected to:** Flutter CI test/calendar_drag_and_reschedule_test.dart.
+
+RU:
+
+- **Зачем файл человеку:** Regression coverage for cross-date calendar moves, duration fidelity and stable group member offsets.
+- **Что это:** Часть поведения календаря LIFE OS.
+- **Зачем:** Чтобы даты, время планов и переносы работали предсказуемо.
+- **Содержимое:** Dart-логика и связанные проверки.
+- **Роль в репозитории:** test
+- **Доказательства использования:** Flutter CI test/calendar_drag_and_reschedule_test.dart.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Пропадёт поведение календаря или его регрессионная проверка.
+- **Уверенность:** HIGH
+- **Владелец / слой:** Тесты
+- **Обязанности:** Regression coverage for cross-date calendar moves, duration fidelity and stable group member offsets.
+- **Когда открывать:** При ошибках планирования или переноса в календаре.
+- **Можно удалить?** Нет.
+- **Связано с:** Flutter CI test/calendar_drag_and_reschedule_test.dart.
 
 ---
 
