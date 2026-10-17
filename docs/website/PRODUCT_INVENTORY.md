@@ -278,7 +278,7 @@
 | Field | Detail |
 | :--- | :--- |
 | **User-facing capability** | The legacy Smart Plan sheet was retired. Planning Smart opens the in-app Viktor chat, which uses `POST /api/viktor/propose` for model-generated action proposals with explicit confirmation. |
-| **Proof** | `lib/features/planning/smart_plan_sheet.dart`; `lib/data/plan_service.dart` — `parsePlanningItemsViaAiBackend` |
+| **Proof** | `lib/features/viktor/viktor_chat_page.dart`; `lib/data/ai/viktor_gateway.dart`; `lib/data/ai/viktor_executor.dart` — AI action proposals, confirmation and Brain writes (draft) |
 | **User value** | Faster bulk plan entry for power users |
 | **Status** | **do-not-market-yet** on v1 — `profiles.tier` in DATA_MAP but **not parsed in client**; `pro_badge_*` l10n unused; server tier rules not verified in repo |
 | **Risks / caveats** | Requires live AI route; failure modes silent/null in some paths |
