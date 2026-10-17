@@ -1,6 +1,7 @@
 name: Regenerate Viktor structure map
 on:
   pull_request:
+    types: [synchronize]
     paths:
       - 'lib/data/ai/**'
       - 'lib/features/viktor/**'
@@ -8,6 +9,10 @@ on:
       - 'docs/VIKTOR_AI_ACTION_ENGINE.md'
       - 'docs/APP_STRUCTURE.md'
   workflow_dispatch:
+
+concurrency:
+  group: viktor-structure-regenerate-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: write
