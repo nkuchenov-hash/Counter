@@ -57,6 +57,8 @@ class _CalendarViewState extends State<CalendarView>
   int _pageMotion = 0;
   Map<String, List<PlanningTask>> _tasksByDayKey = {};
   bool _monthIndicatorsLoading = false;
+  bool _calendarPlanDragging = false;
+  DateTime? _lastCalendarPlanDragEnd;
   Stream<List<PlanningTask>>? _dayStream;
   StreamSubscription<void>? _planningRefreshSub;
 
@@ -232,6 +234,11 @@ class _CalendarViewState extends State<CalendarView>
   }
 
   void _handleHorizontalDragEnd(DragEndDetails details) {
+    // Shared Time View drag pointer must never also page the Calendar.
+    final last = _lastCalendarPlanDragEnd;
+    if (_calendarPlanDragging ||
+        (last != null && DateTime.now().difference(last) <
+            const Duration(milliseconds: 300))) return;
     final velocity = details.primaryVelocity ?? 0;
     if (velocity.abs() < 260) return;
     _shiftActivePeriod(velocity < 0 ? 1 : -1);
@@ -497,6 +504,10 @@ class _CalendarViewState extends State<CalendarView>
                   onSlotTap: (time) => _onDayTapped(time, startTime: time),
                   onPlanDrop: (tasks, target, fingerWall) async {
                     await calendarReschedulePlans(context, tasks, target, fingerWall);
+                  },
+                  onDragActiveChanged: (active) {
+                    _calendarPlanDragging = active;
+                    if (!active) _lastCalendarPlanDragEnd = DateTime.now();
                   },
                   onGroupTap: (day, category, grouped) => showCalendarTaskGroupSheet(
                     context: context,
