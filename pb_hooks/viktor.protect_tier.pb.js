@@ -1,21 +1,25 @@
 /// <reference path="../pb_data/types.d.ts" />
-// Prevent client-controlled upgrade to paid AI features.
-// Pro state must only be set by trusted server billing/admin jobs.
-function viktorRejectClientTierMutation(e) {
+// Stop untrusted clients forging the Pro tier via auth registration or PATCH.
+// Every hook callback is self-contained: PocketBase JSVM callback execution
+// may not retain file-global helpers.
+onRecordCreateRequest((e) => {
   const info = e.requestInfo();
-  const auth = info.auth;
   const body = info.body || {};
-  const isSuperuser = !!(auth && auth.isSuperuser);
-  if (!isSuperuser && Object.prototype.hasOwnProperty.call(body, "tier")) {
+  const auth = info.auth;
+  if (!(auth && auth.isSuperuser) &&
+      Object.prototype.hasOwnProperty.call(body, "tier")) {
     throw new ForbiddenError("Subscription entitlement is server managed.");
   }
   e.next();
-}
-
-onRecordCreateRequest((e) => {
-  viktorRejectClientTierMutation(e);
 }, "profiles");
 
 onRecordUpdateRequest((e) => {
-  viktorRejectClientTierMutation(e);
+  const info = e.requestInfo();
+  const body = info.body || {};
+  const auth = info.auth;
+  if (!(auth && auth.isSuperuser) &&
+      Object.prototype.hasOwnProperty.call(body, "tier")) {
+    throw new ForbiddenError("Subscription entitlement is server managed.");
+  }
+  e.next();
 }, "profiles");
