@@ -383,6 +383,16 @@ Future<PeoplePersonEditorResult?> showPeoplePersonEditor({
             }
           }
 
+          void removeContactAt(int index) {
+            setDialogState(() {
+              final removed = contacts.removeAt(index);
+              removed.dispose();
+            });
+          }
+          void openContactAt(int index) {
+            final uri = Uri.tryParse(contacts[index].linkController.text.trim());
+            if (uri != null) unawaited(launchUrl(uri));
+          }
           final previewUrl = removePhoto
               ? person?.sourceAvatarUrl ?? ''
               : person?.avatarUrl ?? '';
@@ -443,15 +453,11 @@ Future<PeoplePersonEditorResult?> showPeoplePersonEditor({
                                   actions: [
                                     AppButton.ghost(
                                       label: peopleT(locale, 'cancel'),
-                                      onPressed: () => Navigator.of(
-                                        confirmContext,
-                                      ).pop(false),
+                                      onPressed: () => Navigator.of(confirmContext).pop(false),
                                     ),
                                     AppButton.destructive(
                                       label: peopleT(locale, 'archive'),
-                                      onPressed: () => Navigator.of(
-                                        confirmContext,
-                                      ).pop(true),
+                                      onPressed: () => Navigator.of(confirmContext).pop(true),
                                     ),
                                   ],
                                 ),
@@ -668,11 +674,7 @@ Future<PeoplePersonEditorResult?> showPeoplePersonEditor({
                                         tooltip: peopleT(locale, 'remove_contact'),
                                         onPressed: saving
                                             ? null
-                                            : () => setDialogState(() {
-                                                  final removed =
-                                                      contacts.removeAt(index);
-                                                  removed.dispose();
-                                                }),
+                                            : () => removeContactAt(index),
                                       ),
                                     ],
                                   ),
@@ -708,17 +710,7 @@ Future<PeoplePersonEditorResult?> showPeoplePersonEditor({
                                                 .trim()
                                                 .isEmpty
                                             ? null
-                                            : () {
-                                                final uri = Uri.tryParse(
-                                                  contacts[index]
-                                                      .linkController
-                                                      .text
-                                                      .trim(),
-                                                );
-                                                if (uri != null) {
-                                                  unawaited(launchUrl(uri));
-                                                }
-                                              },
+                                            : () => openContactAt(index),
                                       ),
                                     ],
                                   ),
@@ -770,17 +762,7 @@ Future<PeoplePersonEditorResult?> showPeoplePersonEditor({
                                           .trim()
                                           .isEmpty
                                       ? null
-                                      : () {
-                                          final uri = Uri.tryParse(
-                                            contacts[index]
-                                                .linkController
-                                                .text
-                                                .trim(),
-                                          );
-                                          if (uri != null) {
-                                            unawaited(launchUrl(uri));
-                                          }
-                                        },
+                                      : () => openContactAt(index),
                                 ),
                                 AppIconButton(
                                   icon: Icons.delete_outline_rounded,
@@ -788,10 +770,7 @@ Future<PeoplePersonEditorResult?> showPeoplePersonEditor({
                                   tooltip: peopleT(locale, 'remove_contact'),
                                   onPressed: saving
                                       ? null
-                                      : () => setDialogState(() {
-                                            final removed = contacts.removeAt(index);
-                                            removed.dispose();
-                                          }),
+                                      : () => removeContactAt(index),
                                 ),
                               ],
                             ),
