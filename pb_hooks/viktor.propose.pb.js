@@ -53,7 +53,10 @@ routerAdd("POST", "/api/viktor/propose", (e) => {
     return e.json(400, {error: "invalid_mode"});
   }
 
-  const rawPlans = Array.isArray(body.day_plans) ? body.day_plans.slice(0, 60) : [];
+  if (Array.isArray(body.day_plans) && body.day_plans.length > 60) {
+    return e.json(413, {error: "day_context_too_large"});
+  }
+  const rawPlans = Array.isArray(body.day_plans) ? body.day_plans : [];
   const plans = [];
   for (const p of rawPlans) {
     if (!p || typeof p !== "object") continue;
