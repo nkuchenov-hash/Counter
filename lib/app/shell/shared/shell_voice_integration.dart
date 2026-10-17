@@ -55,7 +55,6 @@ mixin ShellVoiceIntegration on ShellVoiceRouting {
       );
       DesktopVoiceHotkeyMarkers.logRegistration(ok: ok);
       if (ok) {
-        DesktopSttHelperService.instance.prewarmRecognizerInBackground();
         DesktopVoicePipeline.mark('DESKTOP_VOICE_APP_READY');
       }
     } else {
@@ -110,7 +109,6 @@ mixin ShellVoiceIntegration on ShellVoiceRouting {
           : DesktopVoiceSettings.instance.hotkeyRegistrationError,
     );
     if (ok) {
-      DesktopSttHelperService.instance.prewarmRecognizerInBackground();
     }
     if (mounted) setState(() {});
     return ok;
