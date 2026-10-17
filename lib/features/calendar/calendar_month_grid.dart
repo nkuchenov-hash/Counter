@@ -20,6 +20,7 @@ class CalendarMonthGrid extends StatelessWidget {
     required this.showEventPills,
     required this.browsing,
     required this.onDayTap,
+    required this.onTaskTap,
     required this.onPlanDrop,
     this.currentMonthOnly = false,
   });
@@ -32,6 +33,7 @@ class CalendarMonthGrid extends StatelessWidget {
   final bool showEventPills;
   final bool browsing;
   final ValueChanged<DateTime> onDayTap;
+  final ValueChanged<PlanningTask> onTaskTap;
   final Future<void> Function(List<PlanningTask>, DateTime) onPlanDrop;
   final bool currentMonthOnly;
 
@@ -131,6 +133,7 @@ class CalendarMonthGrid extends StatelessWidget {
                                             maxVisibleEvents: maxEvents,
                                             browsing: browsing,
                                             onTap: onDayTap,
+                                            onTaskTap: onTaskTap,
                                           ),
                                         ),
                                       );
@@ -177,6 +180,7 @@ class CalendarMonthDayCell extends StatelessWidget {
     required this.maxVisibleEvents,
     required this.browsing,
     required this.onTap,
+    required this.onTaskTap,
   });
 
   final DateTime day;
@@ -188,6 +192,7 @@ class CalendarMonthDayCell extends StatelessWidget {
   final int maxVisibleEvents;
   final bool browsing;
   final ValueChanged<DateTime> onTap;
+  final ValueChanged<PlanningTask> onTaskTap;
 
   bool get _inMonth => day.year == focusedMonth.year && day.month == focusedMonth.month;
   bool get _selected =>
@@ -240,6 +245,7 @@ class CalendarMonthDayCell extends StatelessWidget {
                     maxVisible: maxVisibleEvents,
                     enableDrag: true,
                     outsideMonth: !_inMonth,
+                    onTaskTap: onTaskTap,
                   ),
                 ),
               ],
