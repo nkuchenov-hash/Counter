@@ -8,7 +8,43 @@ final Map<String, Map<String, PlanningTask>> _planningOptimisticByDateKey = {};
 
 const String _kBacklogOptimisticDayKey = '__backlog__';
 
+// Pending plan deletes remain hidden through background refetch/realtime.
+final Set<String> _optimisticDeletedPlanKeys = <String>{};
+
 extension PlanOptimisticOverlayExtension on DatabaseService {
+  bool _isOptimisticPlanDeleted(PlanningTask task) =>
+      _optimisticDeletedPlanKeys.contains(task.planRowIdForBackend.trim()) ||
+      _optimisticDeletedPlanKeys.contains((task.planRowId ?? '').trim()) ||
+      _optimisticDeletedPlanKeys.contains((task.pocketRecordId ?? '').trim());
+
+  bool _beginOptimisticPlanBulkDeletion(Iterable<String> ids) {
+    var applied = false;
+    for (final raw in ids) {
+      final id = raw.trim();
+      if (id.isEmpty || id.startsWith('virt-') || id.startsWith('optimistic-')) {
+        continue;
+      }
+      _optimisticDeletedPlanKeys.add(id);
+      final biz = _outboxBusinessPlanId(id);
+      if (biz.isNotEmpty) _optimisticDeletedPlanKeys.add(biz);
+      final pb = _tryResolvePlanPbIdFromCacheOnly(id);
+      if (pb != null && pb.isNotEmpty) _optimisticDeletedPlanKeys.add(pb);
+      applied = true;
+    }
+    if (applied) {
+      notifyPlanningRefresh(scheduleNetworkRefresh: false);
+      AppSnack.deleted();
+    }
+    return applied;
+  }
+
+  void _clearOptimisticPlanDeletion(
+    String originalInput, String businessId, String pocketBaseId,
+  ) {
+    _optimisticDeletedPlanKeys.removeAll(
+      <String>{originalInput.trim(), businessId.trim(), pocketBaseId.trim()},
+    );
+  }
   String _planOptimisticDayKeyFor(PlanningTask task) {
     var dk = task.dateKey.trim();
     if (dk.length >= 10) return dk.substring(0, 10);
@@ -94,7 +130,9 @@ extension PlanOptimisticOverlayExtension on DatabaseService {
       hiddenOnThisDay.addAll(e.value.keys);
     }
     final filtered = serverPlans
-        .where((t) => !hiddenOnThisDay.contains(t.planRowIdForBackend))
+        .where((t) =>
+            !hiddenOnThisDay.contains(t.planRowIdForBackend) &&
+            !_isOptimisticPlanDeleted(t))
         .toList();
     final overlay = _planningOptimisticByDateKey[targetDayStr];
     if (overlay == null || overlay.isEmpty) {
@@ -109,7 +147,7 @@ extension PlanOptimisticOverlayExtension on DatabaseService {
     };
     // Overlay wins for any row id present (tags/title edits until PATCH clears the overlay).
     for (final e in overlay.entries) {
-      byId[e.key] = e.value;
+      if (!_isOptimisticPlanDeleted(e.value)) byId[e.key] = e.value;
     }
     final merged = dedupePlanningTasksForDisplay(
       _dedupePlanningTasksByBusinessId(byId.values.toList()),
@@ -134,13 +172,16 @@ extension PlanOptimisticOverlayExtension on DatabaseService {
 
   List<PlanningTask> _mergeBacklogOptimistic(List<PlanningTask> server) {
     final overlay = _planningOptimisticByDateKey[_kBacklogOptimisticDayKey];
-    if (overlay == null || overlay.isEmpty) return server;
+    if (overlay == null || overlay.isEmpty) {
+      return server.where((t) => !_isOptimisticPlanDeleted(t)).toList();
+    }
     final byId = <String, PlanningTask>{
-      for (final t in server) t.planRowIdForBackend: t,
+      for (final t in server)
+        if (!_isOptimisticPlanDeleted(t)) t.planRowIdForBackend: t,
     };
     for (final e in overlay.entries) {
       final t = e.value;
-      if (t.startTime != null) continue;
+      if (t.startTime != null || _isOptimisticPlanDeleted(t)) continue;
       byId[e.key] = t;
     }
     final merged = byId.values.toList();
@@ -163,6 +204,7 @@ extension PlanOptimisticOverlayExtension on DatabaseService {
   }) {
     final base = <PlanningTask>[];
     for (final t in _allPlansUserCache) {
+      if (_isOptimisticPlanDeleted(t)) continue;
       final pid = t.planRowIdForBackend.trim();
       if (pid.startsWith('optimistic-') || pid.startsWith('virt-')) continue;
       if (!includeCompleted && t.isDone) continue;
