@@ -36,7 +36,7 @@ class CalendarWeekPlannerGrid extends StatelessWidget {
   final ValueChanged<PlanningTask> onTaskTap;
   final ValueChanged<DateTime> onSlotTap;
   final void Function(DateTime day, String categoryName, List<PlanningTask> tasks) onGroupTap;
-  final Future<void> Function(List<PlanningTask>, DateTime) onPlanDrop;
+  final Future<void> Function(List<PlanningTask>, DateTime, DateTime?) onPlanDrop;
 
   static const double _hourHeight = 64;
   static const double _timeGutter = 44;
@@ -354,7 +354,12 @@ class CalendarWeekPlannerGrid extends StatelessWidget {
                                                               final minutes = snapped.clamp(0, 23 * 60 + 55);
                                                               final wall = DateTime(destinationDay.year, destinationDay.month,
                                                                   destinationDay.day, minutes ~/ 60, minutes % 60);
-                                                              await onPlanDrop(dragged, wall);
+                                                              final fingerMinute = ((local.dy / _hourHeight * 60) / 5).round() * 5;
+                                                              final fingerSnap = fingerMinute.clamp(0, 23 * 60 + 55);
+                                                              final fingerWall = DateTime(destinationDay.year,
+                                                                  destinationDay.month, destinationDay.day,
+                                                                  fingerSnap ~/ 60, fingerSnap % 60);
+                                                              await onPlanDrop(dragged, wall, fingerWall);
                                                             },
                                                           );
                                                         },
