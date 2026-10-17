@@ -413,7 +413,7 @@ extension PlanOutboxSyncExtension on DatabaseService {
     }
   }
 
-  Future<void> _enqueuePlanDeleteMutation({
+  Future<PlanMutationReceipt?> _enqueuePlanDeleteMutation({
     required String originalInput,
     required String businessId,
     String? pocketBaseId,
@@ -422,8 +422,8 @@ extension PlanOutboxSyncExtension on DatabaseService {
   }) async {
     try {
       final prefs = _prefs ?? await SharedPreferences.getInstance();
-      if (businessId.trim().isEmpty) return;
-      await PlanMutationOutbox.enqueue(
+      if (businessId.trim().isEmpty) return null;
+      final receipt = await PlanMutationOutbox.enqueue(
         prefs,
         PlanMutationOutbox.newPlanDeleteItem(
           businessId: businessId.trim(),
@@ -433,9 +433,12 @@ extension PlanOutboxSyncExtension on DatabaseService {
           syncStatus: syncStatus,
         ),
       );
+      _rememberPendingPlanMutation(receipt);
       unawaited(offlineSync.refreshPendingCount());
+      return receipt;
     } catch (e) {
       DatabaseService._log('PLAN_OUTBOX_ENQUEUE delete: $e');
+      return null;
     }
   }
 
@@ -815,60 +818,58 @@ extension PlanOutboxSyncExtension on DatabaseService {
     required String resolvedPbId,
     required String businessId,
   }) async {
+    // The active list is already hidden by the caller's optimistic tombstone.
+    // Stage the delete durably before attempting PocketBase I/O.
+    final receipt = await _enqueuePlanDeleteMutation(
+      originalInput: originalInput,
+      businessId: businessId,
+      pocketBaseId: resolvedPbId,
+    );
+    if (receipt == null) {
+      _clearOptimisticPlanDeletion(originalInput, businessId, resolvedPbId);
+      notifyPlanningRefresh(scheduleNetworkRefresh: false);
+      return (ok: false, queued: false);
+    }
     try {
       await _pb.collection(PbCollections.plans).delete(resolvedPbId);
+      await _acknowledgePlanMutation(receipt);
       _removePlanFromUserCache(originalInput);
       _removePlanFromUserCache(resolvedPbId);
       clearOptimisticPlanningForPlanRow(originalInput);
       clearOptimisticPlanningForPlanRow(resolvedPbId);
+      _clearOptimisticPlanDeletion(originalInput, businessId, resolvedPbId);
       notifyPlanningRefresh(scheduleNetworkRefresh: false);
       _notifyTimelineAfterRecordCacheMutation();
-      unawaited(offlineSync.refreshPendingCount());
       return (ok: true, queued: false);
     } on ClientException catch (e) {
       final code = e.statusCode;
       if (code == 404) {
+        await _acknowledgePlanMutation(receipt);
         _removePlanFromUserCache(resolvedPbId);
         _removePlanFromUserCache(originalInput);
+        _clearOptimisticPlanDeletion(originalInput, businessId, resolvedPbId);
         notifyPlanningRefresh(scheduleNetworkRefresh: false);
         return (ok: true, queued: false);
       }
       if (code == 401 || code == 403) {
-        await _enqueuePlanDeleteMutation(
-          originalInput: originalInput,
-          businessId: businessId,
-          pocketBaseId: resolvedPbId,
-          error: code,
-          syncStatus: PlanMutationOutbox.syncStatusPausedAuth,
-        );
         offlineSync.setAuthPaused(true, message: 'HTTP $code');
         return (ok: true, queued: true);
       }
       if (_planMutationRetriableHttpCode(code)) {
-        await _enqueuePlanDeleteMutation(
-          originalInput: originalInput,
-          businessId: businessId,
-          pocketBaseId: resolvedPbId,
-          error: code,
-        );
         offlineSync.setConnectivityOffline(true);
         return (ok: true, queued: true);
       }
-      return (ok: false, queued: false);
     } catch (e, st) {
       DatabaseService._log('DELETE_PLAN_NETWORK: $e');
       DatabaseService._log(st.toString());
       if (_planMutationRetriableHttpCode(0)) {
-        await _enqueuePlanDeleteMutation(
-          originalInput: originalInput,
-          businessId: businessId,
-          pocketBaseId: resolvedPbId,
-          error: e,
-        );
         offlineSync.setConnectivityOffline(true);
         return (ok: true, queued: true);
       }
-      return (ok: false, queued: false);
     }
-  }
-}
+    // Validation failure: restore active UI; do not retain a doomed delete.
+    await _acknowledgePlanMutation(receipt);
+    _clearOptimisticPlanDeletion(originalInput, businessId, resolvedPbId);
+    notifyPlanningRefresh(scheduleNetworkRefresh: false);
+    return (ok: false, queued: false);
+  }}
