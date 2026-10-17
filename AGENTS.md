@@ -2,6 +2,10 @@
 
 This repository is Counter / Life OS: a Flutter time tracker and planning app backed by self-hosted PocketBase. Treat this file as the compact root guide for future Codex work. It is not a replacement for the governing docs; it tells you what to read and what rules to keep in force before editing.
 
+## Source branch safety (verified 2026-10-17)
+
+The GitHub repository default branch is currently `gh-pages` (published web output), but the Flutter application and governing docs live on **`main`**. All AI agents and GitHub integrations must explicitly fetch `ref: main` (or an intentional feature branch derived from `main`), never assume that the default branch contains application sources. Do not modify or delete the `gh-pages` deployment branch to resolve this mismatch. See `docs/DOCUMENTATION_PARITY_2026-10-17.md`.
+
 ## Start Here
 
 Future Codex work should usually start by reading:
